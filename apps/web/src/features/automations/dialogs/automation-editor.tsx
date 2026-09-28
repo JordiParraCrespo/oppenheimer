@@ -14,6 +14,7 @@ import {
   useUpdateAutomation,
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure, useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { notifySuccess } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { draftOf, emptyDraft, toCreateInput, toUpdateInput } from '../lib/automation-draft';
 import { AutomationEditor } from '../sections/automation-editor';
@@ -46,8 +47,18 @@ export function AutomationEditorDialog({
   const existing = useAutomation(automationId);
   const projects = useProjects();
   const hosts = useHosts();
-  const create = useCreateAutomation({ onSuccess: onSaved });
-  const update = useUpdateAutomation({ onSuccess: onSaved });
+  const create = useCreateAutomation({
+    onSuccess: (saved) => {
+      notifySuccess('automationCreated', { name: saved.name });
+      onSaved(saved);
+    },
+  });
+  const update = useUpdateAutomation({
+    onSuccess: (saved) => {
+      notifySuccess('automationSaved', { name: saved.name });
+      onSaved(saved);
+    },
+  });
   const editing = Boolean(automationId);
   const failure = lastFailure([create, update]).error;
 

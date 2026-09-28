@@ -19,7 +19,7 @@ importing it configures i18next; everything else is pure and may be dropped.
 | `theme` | `ThemeProvider`, `useTheme`, `ThemeToggle`, `BrandGlyph` | leaf |
 | `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, `RelativeTime`, the date, duration and person-name formatters | leaf |
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
-| `forms` | `ErrorAlert`, `useZodResolver`, `useSearchDraft`, `useServerFieldErrors` | leaf |
+| `forms` | `ErrorAlert`, `useZodResolver`, `useSearchDraft`, `useServerFieldErrors`, `notifySuccess` (what a write says when it lands) | leaf |
 | `hosts` | `HostPairingChrome`, and its two halves `HostPairingToken` and `HostPairingStatus` — the token clock and the status line that the onboarding step, the console's Add a host dialog and the Settings page all show; the chrome shows a refused mint through `ErrorAlert` | middle |
 | `layout` | `PageHead`, `FieldRow`, `RouteError`/`RouteNotFound`, `ConfirmDialog`, `QueryState` | middle |
 | `roles` | `RolePill` | middle |

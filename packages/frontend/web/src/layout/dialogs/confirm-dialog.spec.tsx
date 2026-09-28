@@ -3,7 +3,10 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ConfirmDialog } from './confirm-dialog';
 
-vi.mock('react-i18next', () => ({
+// Partial: the forms concern's index also loads the i18n instance, which
+// needs the real `initReactI18next`.
+vi.mock('react-i18next', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('react-i18next')>()),
   useTranslation: () => ({
     t: (key: string) => key,
     i18n: { exists: () => false, t: (key: string) => key },

@@ -1,6 +1,10 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 import { connectInstallation, createProject, pairHost } from '../../support/sessions';
 import { provisionedUser, signInAs } from '../../support/web';
+
+/** A success toast (sonner) carrying this text. */
+const toast = (page: Page, text: string) =>
+  page.locator('[data-sonner-toast]').filter({ hasText: text });
 
 /**
  * Automations, in a browser, against the real control plane
@@ -9,7 +13,8 @@ import { provisionedUser, signInAs } from '../../support/web';
  * The rail's second list and its pages, then an automation's whole life as a
  * person drives it: made in the three-step editor, listed in the table and
  * the sidebar, run now from its page, paused and resumed, edited into its
- * next revision, found on the Runs tab, and deleted with its runs kept. Only
+ * next revision, found on the Runs tab, duplicated, and deleted with its runs
+ * kept: the copy from the table, behind a confirm, the original from its page. Only
  * GitHub is faked (`support/github-stub.ts`); the host is paired but has no
  * runner, so a run's session waits to start, which is what a run on an
  * offline host does.
@@ -89,13 +94,20 @@ test('an automation from the editor to deletion', async ({ page }) => {
   await expect(row).toBeVisible();
   await expect(row).toContainText('Weekdays at 09:00 +1');
   await expect(row).toContainText('Active');
-  await expect(page.getByRole('listitem').filter({ hasText: 'Nightly audit' })).toBeVisible();
+  // The sidebar's item is a link with the listitem role; the created toast
+  // is a listitem too, so the link is named.
+  await expect(
+    page.getByRole('listitem').filter({ hasText: 'Nightly audit' }).and(page.locator('a')),
+  ).toBeVisible();
+  await expect(toast(page, '“Nightly audit” created.')).toBeVisible();
 
   // Its page: Run now starts a run, which the page's runs list shows.
   await row.click();
   await expect(page).toHaveURL(/\/automations\/[0-9a-f-]{36}$/);
   await expect(page.getByRole('heading', { name: 'Nightly audit' })).toBeVisible();
   await page.getByRole('button', { name: 'Run now' }).click();
+  // Nothing on the page moves until the run is listed, so a toast says it started.
+  await expect(toast(page, 'Run of “Nightly audit” started.')).toBeVisible();
   // Its title is the automation's and the cause until the agent names the
   // session; the row's automation column says whose it is either way.
   const run = page.getByRole('row').filter({ hasText: 'Nightly audit' }).last();
@@ -138,10 +150,38 @@ test('an automation from the editor to deletion', async ({ page }) => {
   await page.getByRole('button', { name: 'Clear' }).click();
   await expect(listed).toBeVisible();
 
+  // Duplicate from the table's menu: the copy's page opens, and a toast names it.
+  await page.goto('/automations');
+  await page
+    .getByRole('row', { name: 'Nightly dependency audit', exact: true })
+    .getByRole('button', { name: 'Automation actions' })
+    .click();
+  await page.getByRole('menuitem', { name: 'Duplicate' }).click();
+  await expect(toast(page, 'Duplicated as “Nightly dependency audit copy”.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Nightly dependency audit copy' })).toBeVisible();
+
+  // Delete from the table asks first: Cancel keeps the row, Delete removes it.
+  await page.goto('/automations');
+  const copy = page.getByRole('row', { name: 'Nightly dependency audit copy', exact: true });
+  const confirm = page.getByRole('alertdialog', {
+    name: 'Delete “Nightly dependency audit copy”?',
+  });
+  await copy.getByRole('button', { name: 'Automation actions' }).click();
+  await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
+  await expect(confirm).toContainText('Its triggers stop now. Past runs are kept.');
+  await confirm.getByRole('button', { name: 'Cancel' }).click();
+  await expect(confirm).toHaveCount(0);
+  await expect(copy).toBeVisible();
+  await copy.getByRole('button', { name: 'Automation actions' }).click();
+  await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
+  await confirm.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(confirm).toHaveCount(0);
+  await expect(copy).toHaveCount(0);
+  await expect(toast(page, '“Nightly dependency audit copy” deleted.')).toBeVisible();
+
   // Delete, behind a confirm, from its page: the list is empty again and the
   // run is kept, under the deleted automation's name.
-  await page.goto('/automations');
-  await page.getByRole('row', { name: 'Nightly dependency audit' }).click();
+  await page.getByRole('row', { name: 'Nightly dependency audit', exact: true }).click();
   await page.getByRole('button', { name: 'More actions' }).click();
   await page.getByRole('menuitem', { name: 'Delete automation' }).click();
   await page.getByRole('button', { name: 'Delete', exact: true }).click();

@@ -33,8 +33,11 @@ Everything is re-exported from the package root (`src/index.ts`):
 - **forms** — `ErrorAlert` (an inline failure: a raw `error` it resolves into
   the locale, or a `message` already resolved; its correlation id; Dismiss or
   the caller's own `action`), `useZodResolver`,
-  `useSearchDraft`, `useServerFieldErrors`, and the `ResolvedErrorMessage`
-  type. `useErrorMessage` itself is imported from
+  `useSearchDraft`, `useServerFieldErrors`, the `ResolvedErrorMessage`
+  type, and `notifySuccess(key, values?, action?)`: the success toast, which
+  takes a `toasts.*` key so its copy cannot live anywhere else. Errors never
+  go through it; they stay inline. When to toast is
+  `.agents/rules/frontend-ui.md`. `useErrorMessage` itself is imported from
   `@oppenheimer/frontend-core/react`.
 - **hosts** — `HostPairingChrome` and its parts, the pairing column the Add a
   host surfaces share.

@@ -1,6 +1,6 @@
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { useArchiveProject } from '@oppenheimer/frontend-consumer/react';
-import { ConfirmDialog } from '@oppenheimer/frontend-web';
+import { ConfirmDialog, notifySuccess } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -19,7 +19,12 @@ export function DeleteProjectDialog({
   onDeleted: () => void;
 }) {
   const { t } = useTranslation();
-  const archive = useArchiveProject({ onSuccess: onDeleted });
+  const archive = useArchiveProject({
+    onSuccess: () => {
+      notifySuccess('projectDeleted', { name: project.name });
+      onDeleted();
+    },
+  });
 
   return (
     <ConfirmDialog

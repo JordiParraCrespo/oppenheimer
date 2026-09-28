@@ -1,6 +1,6 @@
 'use client';
 
-import { InfoIcon } from 'lucide-react';
+import { CircleQuestionMarkIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -164,6 +164,7 @@ function EffortPicker({
   className?: string;
 }) {
   const [open, setOpen] = React.useState(false);
+  const hintId = React.useId();
   const current = stops.find((stop) => stop.value === value) ?? stops[0];
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -186,8 +187,12 @@ function EffortPicker({
             {current?.label}
           </span>
           <span className="flex-1" />
+          {/* The glyph is the pointer's way to the hint; the slider carries it as its description. */}
           <span className="flex text-fg-subtle" title={hint}>
-            <InfoIcon className="size-[15px]" aria-hidden />
+            <CircleQuestionMarkIcon className="size-[15px]" aria-hidden />
+          </span>
+          <span id={hintId} className="sr-only">
+            {hint}
           </span>
         </div>
         <div className="flex flex-col gap-2">
@@ -195,7 +200,13 @@ function EffortPicker({
             <span>{fasterLabel}</span>
             <span>{smarterLabel}</span>
           </div>
-          <EffortSlider stops={stops} value={value} onValueChange={onValueChange} aria-label={label} />
+          <EffortSlider
+            stops={stops}
+            value={value}
+            onValueChange={onValueChange}
+            aria-label={label}
+            aria-describedby={hintId}
+          />
         </div>
       </PopoverContent>
     </Popover>

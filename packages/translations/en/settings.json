@@ -57,7 +57,6 @@
     "mismatch": "The passwords do not match.",
     "submit": "Change password",
     "submitting": "Changing…",
-    "done": "Password changed. Other devices are signed out.",
     "failed": "The password could not be changed."
   },
   "devices": {

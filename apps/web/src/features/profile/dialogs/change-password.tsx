@@ -5,10 +5,9 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  toast,
 } from '@oppenheimer/design-system-web';
 import { useChangeOwnPassword } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { ErrorAlert, notifySuccess } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ChangePasswordForm } from '../forms/change-password-form';
 
@@ -22,7 +21,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const change = useChangeOwnPassword({
     onSuccess: () => {
-      toast.success(t('settings.changePassword.done'));
+      notifySuccess('passwordChanged');
       onClose();
     },
   });

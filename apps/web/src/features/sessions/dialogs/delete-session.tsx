@@ -1,7 +1,7 @@
 import { Checkbox, FieldLabel } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useCloseSession } from '@oppenheimer/frontend-consumer/react';
-import { ConfirmDialog } from '@oppenheimer/frontend-web';
+import { ConfirmDialog, notifySuccess } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -18,7 +18,8 @@ import { useTranslation } from 'react-i18next';
  * sentence and a box, not a hidden flag. Unticked, the copy says the delete
  * stops on such work, so a refusal is the expected answer rather than a
  * surprise. The dialog owns the mutation; a failure stays on screen next to
- * the button, never a toast.
+ * the button, never a toast. An accepted delete toasts that it was asked
+ * for, not that it happened: the host does the work and may still refuse.
  */
 export function DeleteSessionDialog({
   session,
@@ -29,7 +30,12 @@ export function DeleteSessionDialog({
 }) {
   const { t } = useTranslation();
   const [discard, setDiscard] = useState(false);
-  const close = useCloseSession({ onSuccess: onClose });
+  const close = useCloseSession({
+    onSuccess: () => {
+      notifySuccess('sessionDeleteRequested', { name: session.name });
+      onClose();
+    },
+  });
 
   return (
     <ConfirmDialog

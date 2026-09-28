@@ -13,7 +13,7 @@ import {
   useRevokeProfileSession,
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure, shareEntities } from '@oppenheimer/frontend-core/react';
-import { ErrorAlert, QueryState, RelativeTime } from '@oppenheimer/frontend-web';
+import { ErrorAlert, notifySuccess, QueryState, RelativeTime } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -27,7 +27,9 @@ export function DevicesSection() {
   const { t } = useTranslation();
   const devices = useProfileSessions({ structuralSharing: shareEntities });
   const revoke = useRevokeProfileSession();
-  const revokeOthers = useRevokeOtherProfileSessions();
+  const revokeOthers = useRevokeOtherProfileSessions({
+    onSuccess: () => notifySuccess('otherDevicesSignedOut'),
+  });
   const failure = lastFailure([revoke, revokeOthers]);
   // One sign-out at a time: the row in flight is pending, and the rest wait.
   const busy = revoke.isPending || revokeOthers.isPending;
@@ -70,13 +72,21 @@ export function DevicesSection() {
                       pending={revoke.isPending && revoke.variables === device.id}
                       pendingLabel={t('settings.devices.signingOut')}
                       disabled={busy}
-                      onClick={() => revoke.mutate(device.id)}
+                      onClick={() => {
+                        // The row's own label, from the click: the list drops it
+                        // the moment the write lands.
+                        const name = device.deviceLabel ?? t('settings.devices.unknown');
+                        revoke.mutate(device.id, {
+                          onSuccess: () => notifySuccess('deviceSignedOut', { name }),
+                        });
+                      }}
                     >
                       {t('settings.devices.signOut')}
                     </Button>
                   )}
                 </SettingsRow>
               ))}
+              {/* The rule and padding belong to the failure: no failure, no row. */}
               {failure.error ? (
                 <div className="border-t border-border-subtle px-5 py-3">
                   <ErrorAlert

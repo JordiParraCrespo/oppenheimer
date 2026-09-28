@@ -58,6 +58,8 @@ type ChipSelectAction = {
   label: string;
   /** Defaults to a plus. */
   icon?: React.ReactNode;
+  /** Defaults to a chevron. */
+  trailing?: React.ReactNode;
 } & ({ href: string } | { onSelect: () => void });
 
 /**
@@ -464,7 +466,12 @@ function ChipSelectActionRow({
         {action.icon ?? <PlusGlyph />}
       </span>
       <span className="min-w-0 flex-1 truncate">{action.label}</span>
-      <ChevronRightIcon className="size-3.5 shrink-0 text-fg-subtle" />
+      <span
+        aria-hidden
+        className="flex shrink-0 text-fg-subtle [&_svg:not([class*=size-])]:size-3.5"
+      >
+        {action.trailing ?? <ChevronRightIcon />}
+      </span>
     </>
   );
   return (

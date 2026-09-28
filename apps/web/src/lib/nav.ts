@@ -1,4 +1,4 @@
-import { Plus, Settings } from '@oppenheimer/design-system-web/icons';
+import { Plus, Settings2 } from '@oppenheimer/design-system-web/icons';
 import type { NavItem, NavLink } from '@oppenheimer/frontend-web';
 
 /**
@@ -29,5 +29,5 @@ export const NAV = [
 
 /** The account menu's links, above appearance and language. */
 export const USER_MENU = [
-  { to: '/settings', icon: Settings, labelKey: 'settings' },
+  { to: '/settings', icon: Settings2, labelKey: 'settings' },
 ] as const satisfies readonly NavLink[];

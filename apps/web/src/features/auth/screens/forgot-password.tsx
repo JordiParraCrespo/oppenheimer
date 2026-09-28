@@ -6,6 +6,7 @@ import {
   AuthSubtitle,
   AuthTitle,
   ErrorAlert,
+  notifySuccess,
 } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
@@ -16,6 +17,9 @@ import { ForgotPasswordForm } from '@/features/auth/forms/forgot-password-form';
  * an address has been submitted. Held locally rather than read off the
  * mutation so "use a different address" can walk the screen back without the
  * success flag dragging it forward again.
+ *
+ * The first send needs no toast: the screen turns into "Check your email".
+ * Resend leaves the screen exactly as it was, so it says the email went.
  */
 export function ForgotPasswordScreen() {
   const { t } = useTranslation();
@@ -42,7 +46,7 @@ export function ForgotPasswordScreen() {
           variant="secondary"
           size="lg"
           block
-          onClick={() => mutate(sentTo)}
+          onClick={() => mutate(sentTo, { onSuccess: () => notifySuccess('emailResent') })}
           pending={isPending}
           pendingLabel={t('auth.forgotPassword.submitting')}
         >

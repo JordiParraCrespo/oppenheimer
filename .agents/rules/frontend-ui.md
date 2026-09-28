@@ -27,7 +27,7 @@ multi-line, so a grep for `export` misses most of them.
 | A button whose request is in flight | `Button pending pendingLabel`; `pending` locks that button only, so a sibling that must wait (the other provider, Deny beside Allow) takes `disabled` | `disabled={isPending}` and a ternary label |
 | One "2 hours ago" line that has to keep moving | the kit's `RelativeTime`, which owns its tick | `useNow` in the row around it |
 | A list whose rows all show an age | one `useNow` in the list, `now` handed to the rows, the words from `formatAge` / `common.relative` — one tick per list, not one timer per row | a `RelativeTime` per row |
-| A success                             | `toast.success()`             | an `Alert`, an inline row                             |
+| A success (when it earns one, below)  | the kit's `notifySuccess()`   | an `Alert`, an inline row, `toast.success()` directly |
 | Field validation                      | `Field` + `FieldError`        | either of the above                                   |
 | "Nothing here" / "still loading"      | `EmptyState`, `Skeleton`      | a centred paragraph                                   |
 | Picking one value out of a list the workspace grows | `ChipSelect` (searchable) | a `<select>` over the first page of an endpoint |
@@ -67,6 +67,16 @@ multi-line, so a grep for `export` misses most of them.
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, and empty and loading states in five while `EmptyState` was used by
 one.
+
+## A success toasts when the reader could miss it
+
+A failure stays inline, next to what the reader has to fix. A success toasts,
+through the kit's `notifySuccess('<toasts key>', values)`, only when its result
+is not where the reader is looking: out of sight, off the page, or easy to miss
+in a long list. When the screen navigates to the result, shows a "done" view,
+or changes the very control that was pressed, it says nothing more. A form
+whose save row already says "Saved" beside the button keeps that and does not
+also toast.
 
 ## A picker over a list the workspace grows is an autocomplete
 

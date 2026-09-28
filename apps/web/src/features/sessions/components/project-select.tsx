@@ -3,7 +3,7 @@ import {
   type ChipSelectOption,
   type ChipSelectTriggerVariant,
 } from '@oppenheimer/design-system-web';
-import { FolderKanban } from '@oppenheimer/design-system-web/icons';
+import { Folder } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -43,7 +43,7 @@ export function ProjectSelect({
       value={value ?? ''}
       onValueChange={onValueChange}
       options={projects}
-      icon={<FolderKanban />}
+      icon={<Folder />}
       loading={loading}
       loadingText={t('sessions.new.project.loading')}
       disabled={disabled}
