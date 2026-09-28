@@ -282,10 +282,11 @@ what makes the pattern safe under horizontal scaling — and delivers them:
 
 Delivery is at least once, so **listeners must be idempotent**: an event row
 is one delivery to every `@OnEvent` listener of that event, so when one
-listener throws, the retry runs all of them again; a listener slower than the
-30 s lease can be claimed and run a second time by another replica; and a
-process that dies after publishing a batch but before marking it processed
-redelivers that batch.
+listener throws, the retry runs all of them again; a process that stalls past
+the 30 s lease (a slow listener alone does not: the relay renews the lease
+while it delivers) lets another replica claim and run the row a second time;
+and a process that dies after publishing a batch but before marking it
+processed redelivers that batch.
 
 Delivery failures retry with exponential backoff and park as `failed` after
 `maxAttempts` — kept for inspection, never dropped. Leases expire

@@ -15,15 +15,6 @@ export class Paginated<T> {
   }
 }
 
-export type OrderBy = { field: string | true; param: 'asc' | 'desc' };
-
-export type PaginatedQueryParams = {
-  limit: number;
-  page: number;
-  offset: number;
-  orderBy: OrderBy;
-};
-
 /**
  * The generic write-and-lookup surface of a non-tenant repository. Lists are
  * not part of it: a port that needs one declares it, bounded and with the

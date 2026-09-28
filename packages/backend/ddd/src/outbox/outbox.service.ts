@@ -51,7 +51,8 @@ const DEFAULT_MAX_ATTEMPTS = 8;
 const DEFAULT_BASE_RETRY_DELAY_MS = 5_000;
 const DEFAULT_MAX_RETRY_DELAY_MS = 15 * 60_000;
 const DEFAULT_BATCH_SIZE = 20;
-const DEFAULT_LEASE_MS = 30_000;
+/** Lease a claim holds before another relay may take the row; the relay renews it while it delivers. */
+export const DEFAULT_LEASE_MS = 30_000;
 
 /**
  * Transactional outbox: side effects (domain events, queued jobs) are written
@@ -252,14 +253,39 @@ export class OutboxService {
     return rows;
   }
 
-  /** Mark delivered rows, releasing their leases. */
-  async markProcessed(ids: readonly string[]): Promise<void> {
+  /**
+   * Renew `owner`'s lease on `ids` to `leaseMs` from now, and return the ids it
+   * still held. The relay calls it on a timer while it delivers a batch, so a
+   * listener slower than the lease keeps its rows instead of another replica
+   * claiming and running them again. A row whose lease `owner` already lost (it
+   * lapsed and another relay claimed it) or that is no longer pending is left
+   * alone and missing from the result.
+   */
+  async extendLease(owner: string, ids: readonly string[], leaseMs: number): Promise<string[]> {
+    if (ids.length === 0) return [];
+    // TypeORM returns `[rows, affectedCount]` for UPDATE on Postgres.
+    const [rows]: [{ id: string }[], number] = await this.dataSource.query(
+      `UPDATE "${OUTBOX_TABLE}"
+       SET "lockedUntil" = now() + ($3::int * interval '1 millisecond')
+       WHERE "id" = ANY($1) AND "lockedBy" = $2 AND "status" = 'pending'
+       RETURNING "id"`,
+      [ids, owner, leaseMs],
+    );
+    return rows.map((row) => row.id);
+  }
+
+  /**
+   * Mark delivered rows, releasing their leases. With `owner`, only rows that
+   * owner still leases are marked: a row another relay claimed after this one
+   * lost the lease is that relay's to finish.
+   */
+  async markProcessed(ids: readonly string[], owner?: string): Promise<void> {
     if (ids.length === 0) return;
     await this.dataSource.query(
       `UPDATE "${OUTBOX_TABLE}"
        SET "status" = 'processed', "processedAt" = now(), "lockedBy" = NULL, "lockedUntil" = NULL
-       WHERE "id" = ANY($1)`,
-      [ids],
+       WHERE "id" = ANY($1) AND ($2::varchar IS NULL OR "lockedBy" = $2::varchar)`,
+      [ids, owner ?? null],
     );
   }
 
@@ -289,6 +315,11 @@ export class OutboxService {
    * exponential-backoff `availableAt` until `maxAttempts` is exhausted, then
    * parks as `failed` — kept, with its reason and last error, rather than
    * dropped.
+   *
+   * The update is fenced on the claim `message` came from (its `lockedBy` and
+   * `attempts`): if that lease lapsed and another relay claimed the row since,
+   * this is a no-op, so a stale failure never releases the other relay's lease
+   * or rewinds its backoff.
    */
   async markFailed(message: OutboxMessageRecord, error: string): Promise<void> {
     const exhausted = message.attempts >= this.maxAttempts;
@@ -301,8 +332,9 @@ export class OutboxService {
       `UPDATE "${OUTBOX_TABLE}"
        SET "status" = $2, "lastError" = $3, "lockedBy" = NULL, "lockedUntil" = NULL,
            "availableAt" = now() + ($4::int * interval '1 millisecond')
-       WHERE "id" = $1`,
-      [message.id, status, error, delayMs],
+       WHERE "id" = $1 AND "attempts" = $5
+         AND ($6::varchar IS NULL OR "lockedBy" = $6::varchar)`,
+      [message.id, status, error, delayMs, message.attempts, message.lockedBy ?? null],
     );
   }
 

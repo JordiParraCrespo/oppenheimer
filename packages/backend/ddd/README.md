@@ -17,7 +17,7 @@ rules.
   `DomainPrimitive`, `Primitives`).
 - **CQRS bases**: `CommandBase`, `QueryBase`, `DomainEvent` (+ their metadata/props types).
 - **Ports**: `RepositoryPort` (`insert`, `save`, `findOneById`, `delete`),
-  `Paginated`, `PaginatedQueryParams`, `OrderBy`, and the `Mapper` interface.
+  `Paginated`, and the `Mapper` interface.
 - **Repository base**: `TypeOrmRepositoryBase`, the port's four methods for a
   non-tenant TypeORM adapter (map, write through `writeWithEvents`, map back;
   `idColumn` for a table keyed by something other than `id`). Tenant-scoped
@@ -30,7 +30,8 @@ rules.
   multi-statement write and wakes the relay after commit when it staged
   anything; stage domain events / BullMQ jobs in the same transaction as the
   aggregate write; claim with
-  `FOR UPDATE SKIP LOCKED`; retries with backoff and expiring leases; a
+  `FOR UPDATE SKIP LOCKED`; retries with backoff and expiring leases, renewed
+  by `extendLease` while a batch is delivered and fenced on the owner; a
   fire-and-forget `wake()`; `deleteProcessedBefore` for retention),
   `OutboxRelay` (a drain loop that runs one drain at a time and folds wakes
   into one more pass, + publisher contract), `OutboxMessageSchema`

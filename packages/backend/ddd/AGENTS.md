@@ -44,7 +44,9 @@ src/
   (or `writeWithEvents` for a single write), which wakes the relay after
   commit when something was staged and never after a rollback;
   `OutboxRelay` (hosted by the app) claims rows with `FOR UPDATE SKIP LOCKED`, so replicas lease disjoint rows
-  and expired leases are reclaimed. `wake()` is fire-and-forget: it asks the
+  and expired leases are reclaimed. While it delivers a batch the relay renews
+  the lease (`extendLease`, a heartbeat at a third of the lease), and the marks
+  that end a delivery only touch rows the relay still owns. `wake()` is fire-and-forget: it asks the
   relay for a drain and returns without waiting for delivery; at most one
   drain runs, and wakes during it collapse into one more pass. Delivery is at
   least once. `deleteProcessedBefore` is the retention delete the app
