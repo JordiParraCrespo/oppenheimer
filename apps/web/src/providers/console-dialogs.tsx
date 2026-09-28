@@ -48,7 +48,15 @@ export function ConsoleDialogs() {
           }}
         />
       ) : (
-        <AutomationEditorDialog projectId={request.projectId} onClose={close} />
+        <AutomationEditorDialog
+          automationId={request.automationId}
+          projectId={request.projectId}
+          onClose={close}
+          onSaved={(automation) => {
+            close();
+            request.onSaved?.(automation);
+          }}
+        />
       )}
     </Suspense>
   );

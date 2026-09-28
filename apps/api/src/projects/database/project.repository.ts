@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
+import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, In, Repository } from 'typeorm';
 import {
@@ -41,6 +42,7 @@ export class ProjectRepository
     @InjectRepository(ProjectOrmEntity)
     protected readonly repository: Repository<ProjectOrmEntity>,
     private readonly mapper: ProjectMapper,
+    private readonly outbox: OutboxService,
   ) {
     super();
   }
@@ -118,7 +120,8 @@ export class ProjectRepository
       .getQueryAndParameters();
     const table = this.repository.metadata.tableName;
 
-    return this.repository.manager.transaction(async (manager) => {
+    let staged = false;
+    const outcome = await this.repository.manager.transaction(async (manager) => {
       const locked: ProjectOrmEntity[] = await manager.query(
         `SELECT * FROM "${table}"
           WHERE "id" = $${parameters.length + 1} AND "id" IN (${reachable})
@@ -144,11 +147,17 @@ export class ProjectRepository
         RETURNING *`,
         [projectId, project.archivedAt],
       );
+      // The archive and what it owes commit together.
+      await this.outbox.stageEvents(manager, project.domainEvents);
+      project.clearEvents();
+      staged = true;
       return {
         result: 'archived' as const,
         project: this.mapper.toDomain(updated[0], repositories.get(projectId)),
       };
     });
+    if (staged) await this.outbox.wake();
+    return outcome;
   }
 
   async findAll(

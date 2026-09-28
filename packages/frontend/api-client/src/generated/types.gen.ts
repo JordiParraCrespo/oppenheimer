@@ -266,11 +266,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -288,7 +288,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -309,7 +309,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write';
     label: string;
     description: string;
     /**
@@ -324,7 +324,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'repositories' | 'flags';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'repositories' | 'flags';
     label: string;
     description: string;
     /**
@@ -342,12 +342,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -363,7 +363,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -1538,6 +1538,398 @@ export type RenameSessionRequest = {
 
 export type MoveSessionRequest = {
     projectId: string;
+};
+
+export type AutomationRepositoryResponseDto = {
+    /**
+     * The installation its tokens are minted through.
+     */
+    installationId: string;
+    /**
+     * GitHub’s repository id, as a string (a bigint).
+     */
+    githubRepoId: string;
+    /**
+     * `owner/repo`, as it was when the revision was saved.
+     */
+    fullName: string;
+};
+
+export type AutomationRevisionResponseDto = {
+    id: string;
+    /**
+     * Numbered from 1; each save that changes what a run executes adds one.
+     */
+    number: number;
+    hostId: string;
+    agent: string;
+    model?: string | null;
+    permission: 'auto' | 'full';
+    effort?: string | null;
+    /**
+     * The instructions every run is given.
+     */
+    prompt: string;
+    repositories: Array<AutomationRepositoryResponseDto>;
+    createdAt: string;
+};
+
+export type ScheduleResponseDto = {
+    frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+    hour: number;
+    minute: number;
+    /**
+     * Weekly: 0 = Sunday … 6 = Saturday.
+     */
+    days?: Array<number>;
+    dayOfMonth?: number;
+    /**
+     * Once: the local date, `YYYY-MM-DD`.
+     */
+    date?: string;
+    /**
+     * The IANA zone the wall time is in.
+     */
+    timezone: string;
+};
+
+export type TriggerFilterResponseDto = {
+    op: 'any' | 'equals';
+    /**
+     * The branch or label, when `op` is `equals`.
+     */
+    value?: string;
+};
+
+export type AutomationTriggerResponseDto = {
+    id: string;
+    /**
+     * The card’s place in the editor, from 0.
+     */
+    position: number;
+    source: 'schedule' | 'github';
+    /**
+     * `schedule`, or the catalog event (`pr_opened`, `push`, …).
+     */
+    event: string;
+    schedule?: ScheduleResponseDto;
+    /**
+     * GitHub: the repositories it listens on.
+     */
+    repositories?: Array<string>;
+    filter?: TriggerFilterResponseDto;
+    /**
+     * Schedule: the next slot, UTC.
+     */
+    nextFireAt?: string | null;
+};
+
+export type AutomationRunSummaryResponseDto = {
+    id: string;
+    /**
+     * The name the agent gave the session, or the automation’s name and cause.
+     */
+    title: string;
+    status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'skipped' | 'expired';
+    /**
+     * The session the run started — the run view — or null while queued or skipped.
+     */
+    sessionId: string | null;
+    createdAt: string;
+};
+
+export type AutomationResponseDto = {
+    id: string;
+    organizationId: string;
+    projectId: string;
+    /**
+     * Whose runs these are: every run acts as this person.
+     */
+    ownerUserId: string;
+    /**
+     * Whether the caller owns it.
+     */
+    ownedByMe: boolean;
+    name: string;
+    /**
+     * `running` while any run is live, else `active` or `paused`.
+     */
+    status: 'active' | 'paused' | 'running';
+    pausedAt?: string | null;
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access';
+    /**
+     * The earliest next slot of its schedule triggers. Null when paused or event-only.
+     */
+    nextRunAt?: string | null;
+    revision: AutomationRevisionResponseDto;
+    triggers: Array<AutomationTriggerResponseDto>;
+    overlap?: 'skip' | 'queue';
+    maxRunsPerHour?: number | null;
+    /**
+     * Send it back on a save; a stale one is refused (`AUTOMATIONS_003`).
+     */
+    version: number;
+    /**
+     * Runs that became sessions, over the listed window.
+     */
+    runCount: number;
+    /**
+     * The last six, newest first.
+     */
+    lastRuns: Array<AutomationRunSummaryResponseDto>;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type CreateAutomationRequest = {
+    projectId: string;
+    repositories: Array<{
+        installationId: string;
+        githubRepoId: number;
+    }>;
+    hostId: string;
+    name: string;
+    triggers: Array<{
+        source: 'schedule';
+        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+        hour: number;
+        minute: number;
+        days?: Array<number>;
+        dayOfMonth?: number;
+        date?: string;
+        timezone: string;
+    } | {
+        source: 'github';
+        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+        repositories: Array<number>;
+        filter: {
+            op: 'any';
+        } | {
+            op: 'equals';
+            value: string;
+        };
+    }>;
+    prompt: string;
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    launch?: {
+        model?: string;
+        permission?: 'auto' | 'full';
+        effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
+    };
+    active?: boolean;
+    overlap?: 'skip' | 'queue';
+    maxRunsPerHour?: number | null;
+};
+
+export type PreviewTriggerRequest = {
+    source: 'github';
+    event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+    repositories: Array<number>;
+    filter: {
+        op: 'any';
+    } | {
+        op: 'equals';
+        value: string;
+    };
+    days?: number;
+};
+
+export type TriggerPreviewMatchResponseDto = {
+    repository: string;
+    ref?: string;
+    title?: string;
+    actor?: string;
+    url?: string;
+    occurredAt: string;
+};
+
+export type TriggerPreviewResponseDto = {
+    /**
+     * How many stored events the card matches in the window.
+     */
+    count: number;
+    days: number;
+    /**
+     * The two most recent.
+     */
+    matches: Array<TriggerPreviewMatchResponseDto>;
+};
+
+export type UpdateAutomationRequest = {
+    projectId?: string;
+    repositories?: Array<{
+        installationId: string;
+        githubRepoId: number;
+    }>;
+    hostId?: string;
+    name?: string;
+    triggers?: Array<{
+        source: 'schedule';
+        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+        hour: number;
+        minute: number;
+        days?: Array<number>;
+        dayOfMonth?: number;
+        date?: string;
+        timezone: string;
+    } | {
+        source: 'github';
+        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+        repositories: Array<number>;
+        filter: {
+            op: 'any';
+        } | {
+            op: 'equals';
+            value: string;
+        };
+    }>;
+    prompt?: string;
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    launch?: {
+        model?: string;
+        permission?: 'auto' | 'full';
+        effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
+    };
+    overlap?: 'skip' | 'queue';
+    maxRunsPerHour?: number | null;
+    version: number;
+};
+
+export type RunCauseResponseDto = {
+    label: string;
+    text: string;
+    ref?: string;
+    actor?: string;
+    url?: string;
+    /**
+     * The catalog event, or `schedule` / `manual`.
+     */
+    eventType: string;
+};
+
+export type RunTurnResponseDto = {
+    state: 'queued' | 'in_progress' | 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired';
+    exitCode?: number | null;
+    /**
+     * The agent’s final message.
+     */
+    result?: string | null;
+    failureDetail?: string | null;
+    /**
+     * The agent’s own estimate.
+     */
+    costUsd?: number | null;
+    permissionDenials: number;
+    /**
+     * The prompt the agent was given.
+     */
+    prompt?: string | null;
+};
+
+export type AutomationRunResponseDto = {
+    id: string;
+    automationId: string;
+    /**
+     * The automation’s name, kept when it is deleted.
+     */
+    automationName: string;
+    /**
+     * The automation was deleted; the list reads “Deleted automation”.
+     */
+    automationDeleted: boolean;
+    projectId: string;
+    status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'skipped' | 'expired';
+    /**
+     * What became of the firing before a session.
+     */
+    outcome: 'pending' | 'skipped' | 'expired' | 'dispatched';
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable';
+    cause: 'schedule' | 'event' | 'manual';
+    causeSummary: RunCauseResponseDto;
+    title: string;
+    sessionId?: string | null;
+    /**
+     * The session’s working branch.
+     */
+    branch?: string | null;
+    revisionNumber: number;
+    agent: string;
+    model?: string | null;
+    hostId: string;
+    createdAt: string;
+    scheduledFor?: string | null;
+    dispatchedAt?: string | null;
+    startedAt?: string | null;
+    endedAt?: string | null;
+    /**
+     * Milliseconds, once ended.
+     */
+    durationMs?: number | null;
+    turn?: RunTurnResponseDto | null;
+};
+
+export type RunStatusCountsResponseDto = {
+    all: number;
+    completed: number;
+    failed: number;
+    /**
+     * Queued and running together, as the Running tab shows them.
+     */
+    running: number;
+};
+
+export type AutomationRunPageResponseDto = {
+    items: Array<AutomationRunResponseDto>;
+    total: number;
+    page: number;
+    limit: number;
+    /**
+     * Per status tab, under the same facets but not the status filter.
+     */
+    counts: RunStatusCountsResponseDto;
+};
+
+export type RunHistoryDayResponseDto = {
+    /**
+     * The local calendar day, `YYYY-MM-DD`.
+     */
+    date: string;
+    /**
+     * Runs that did not fail, running ones included, as the chart counts them.
+     */
+    succeeded: number;
+    failed: number;
+};
+
+export type RunHistoryResponseDto = {
+    /**
+     * Oldest first, today last.
+     */
+    days: Array<RunHistoryDayResponseDto>;
+    succeeded: number;
+    failed: number;
+    total: number;
+    timezone: string;
+};
+
+export type AutomationSettingsResponseDto = {
+    maxRunsPerAutomationHour: number;
+    maxRunsPerWorkspaceHour: number;
+    liveRunsPerHost: number;
+    overlap: 'skip' | 'queue';
+    staleTtlSeconds: number;
+    missedGraceSeconds: number;
+    maxRunSeconds: number;
+};
+
+export type UpdateAutomationSettingsRequest = {
+    maxRunsPerAutomationHour?: number | null;
+    maxRunsPerWorkspaceHour?: number | null;
+    liveRunsPerHost?: number | null;
+    overlap?: 'skip' | 'queue';
+    staleTtlSeconds?: number | null;
+    missedGraceSeconds?: number | null;
+    maxRunSeconds?: number | null;
 };
 
 export type CapabilitiesResponseDto = {
@@ -6158,6 +6550,513 @@ export type MoveSessionResponses = {
 };
 
 export type MoveSessionResponse = MoveSessionResponses[keyof MoveSessionResponses];
+
+export type ListAutomationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * One project’s automations
+         */
+        projectId?: string;
+    };
+    url: '/api/v1/automations';
+};
+
+export type ListAutomationsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type ListAutomationsError = ListAutomationsErrors[keyof ListAutomationsErrors];
+
+export type ListAutomationsResponses = {
+    200: Array<AutomationResponseDto>;
+};
+
+export type ListAutomationsResponse = ListAutomationsResponses[keyof ListAutomationsResponses];
+
+export type CreateAutomationData = {
+    body: CreateAutomationRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automations';
+};
+
+export type CreateAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_006 — A trigger would never fire
+     *
+     * AUTOMATIONS_005 — That agent cannot run an automation
+     *
+     * AUTOMATIONS_007 — That project cannot hold automations
+     */
+    422: ProblemDetailsDto;
+};
+
+export type CreateAutomationError = CreateAutomationErrors[keyof CreateAutomationErrors];
+
+export type CreateAutomationResponses = {
+    201: AutomationResponseDto;
+};
+
+export type CreateAutomationResponse = CreateAutomationResponses[keyof CreateAutomationResponses];
+
+export type PreviewAutomationTriggerData = {
+    body: PreviewTriggerRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automations/trigger-preview';
+};
+
+export type PreviewAutomationTriggerErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type PreviewAutomationTriggerError = PreviewAutomationTriggerErrors[keyof PreviewAutomationTriggerErrors];
+
+export type PreviewAutomationTriggerResponses = {
+    200: TriggerPreviewResponseDto;
+};
+
+export type PreviewAutomationTriggerResponse = PreviewAutomationTriggerResponses[keyof PreviewAutomationTriggerResponses];
+
+export type DeleteAutomationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{id}';
+};
+
+export type DeleteAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Automation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteAutomationError = DeleteAutomationErrors[keyof DeleteAutomationErrors];
+
+export type DeleteAutomationResponses = {
+    204: void;
+};
+
+export type DeleteAutomationResponse = DeleteAutomationResponses[keyof DeleteAutomationResponses];
+
+export type GetAutomationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{id}';
+};
+
+export type GetAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Automation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type GetAutomationError = GetAutomationErrors[keyof GetAutomationErrors];
+
+export type GetAutomationResponses = {
+    200: AutomationResponseDto;
+};
+
+export type GetAutomationResponse = GetAutomationResponses[keyof GetAutomationResponses];
+
+export type UpdateAutomationData = {
+    body: UpdateAutomationRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{id}';
+};
+
+export type UpdateAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Automation not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_003 — The automation was changed by someone else
+     */
+    409: ProblemDetailsDto;
+};
+
+export type UpdateAutomationError = UpdateAutomationErrors[keyof UpdateAutomationErrors];
+
+export type UpdateAutomationResponses = {
+    200: AutomationResponseDto;
+};
+
+export type UpdateAutomationResponse = UpdateAutomationResponses[keyof UpdateAutomationResponses];
+
+export type PauseAutomationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{id}/pause';
+};
+
+export type PauseAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Automation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type PauseAutomationError = PauseAutomationErrors[keyof PauseAutomationErrors];
+
+export type PauseAutomationResponses = {
+    200: AutomationResponseDto;
+};
+
+export type PauseAutomationResponse = PauseAutomationResponses[keyof PauseAutomationResponses];
+
+export type ResumeAutomationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{id}/resume';
+};
+
+export type ResumeAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Automation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type ResumeAutomationError = ResumeAutomationErrors[keyof ResumeAutomationErrors];
+
+export type ResumeAutomationResponses = {
+    200: AutomationResponseDto;
+};
+
+export type ResumeAutomationResponse = ResumeAutomationResponses[keyof ResumeAutomationResponses];
+
+export type DuplicateAutomationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{id}/duplicate';
+};
+
+export type DuplicateAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Automation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DuplicateAutomationError = DuplicateAutomationErrors[keyof DuplicateAutomationErrors];
+
+export type DuplicateAutomationResponses = {
+    201: AutomationResponseDto;
+};
+
+export type DuplicateAutomationResponse = DuplicateAutomationResponses[keyof DuplicateAutomationResponses];
+
+export type RunAutomationData = {
+    body?: never;
+    headers?: {
+        /**
+         * A retried Run now is the same run.
+         */
+        'Idempotency-Key'?: string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{id}/run';
+};
+
+export type RunAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Automation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RunAutomationError = RunAutomationErrors[keyof RunAutomationErrors];
+
+export type RunAutomationResponses = {
+    201: AutomationRunResponseDto;
+};
+
+export type RunAutomationResponse = RunAutomationResponses[keyof RunAutomationResponses];
+
+export type ListAutomationRunsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Default 10
+         */
+        limit?: number;
+        /**
+         * From 1
+         */
+        page?: number;
+        /**
+         * Default `30d`
+         */
+        window?: '24h' | '7d' | '30d';
+        /**
+         * Comma-separated, any of queued, running, completed, failed, cancelled, skipped, expired. Default: every status but skipped and expired
+         */
+        status?: string;
+        /**
+         * One project’s runs
+         */
+        projectId?: string;
+        /**
+         * One automation’s runs
+         */
+        automationId?: string;
+    };
+    url: '/api/v1/automation-runs';
+};
+
+export type ListAutomationRunsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type ListAutomationRunsError = ListAutomationRunsErrors[keyof ListAutomationRunsErrors];
+
+export type ListAutomationRunsResponses = {
+    200: AutomationRunPageResponseDto;
+};
+
+export type ListAutomationRunsResponse = ListAutomationRunsResponses[keyof ListAutomationRunsResponses];
+
+export type GetAutomationRunHistoryData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * The viewer’s IANA zone, whose midnights split the days. Default `UTC`
+         */
+        timezone?: string;
+        /**
+         * Default 30
+         */
+        days?: number;
+        /**
+         * One project’s runs
+         */
+        projectId?: string;
+        /**
+         * One automation’s runs
+         */
+        automationId?: string;
+    };
+    url: '/api/v1/automation-runs/history';
+};
+
+export type GetAutomationRunHistoryErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type GetAutomationRunHistoryError = GetAutomationRunHistoryErrors[keyof GetAutomationRunHistoryErrors];
+
+export type GetAutomationRunHistoryResponses = {
+    200: RunHistoryResponseDto;
+};
+
+export type GetAutomationRunHistoryResponse = GetAutomationRunHistoryResponses[keyof GetAutomationRunHistoryResponses];
+
+export type GetAutomationRunData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automation-runs/{id}';
+};
+
+export type GetAutomationRunErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_008 — Run not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type GetAutomationRunError = GetAutomationRunErrors[keyof GetAutomationRunErrors];
+
+export type GetAutomationRunResponses = {
+    200: AutomationRunResponseDto;
+};
+
+export type GetAutomationRunResponse = GetAutomationRunResponses[keyof GetAutomationRunResponses];
+
+export type GetAutomationSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automation-settings';
+};
+
+export type GetAutomationSettingsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type GetAutomationSettingsError = GetAutomationSettingsErrors[keyof GetAutomationSettingsErrors];
+
+export type GetAutomationSettingsResponses = {
+    200: AutomationSettingsResponseDto;
+};
+
+export type GetAutomationSettingsResponse = GetAutomationSettingsResponses[keyof GetAutomationSettingsResponses];
+
+export type UpdateAutomationSettingsData = {
+    body: UpdateAutomationSettingsRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automation-settings';
+};
+
+export type UpdateAutomationSettingsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type UpdateAutomationSettingsError = UpdateAutomationSettingsErrors[keyof UpdateAutomationSettingsErrors];
+
+export type UpdateAutomationSettingsResponses = {
+    200: AutomationSettingsResponseDto;
+};
+
+export type UpdateAutomationSettingsResponse = UpdateAutomationSettingsResponses[keyof UpdateAutomationSettingsResponses];
 
 export type CheckData = {
     body?: never;

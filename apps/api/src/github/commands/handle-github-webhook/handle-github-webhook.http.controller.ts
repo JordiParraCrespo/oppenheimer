@@ -36,6 +36,7 @@ export class HandleGithubWebhookHttpController {
     @Req() request: RawBodyRequest<Request>,
     @Headers('x-hub-signature-256') signature: string,
     @Headers('x-github-event') event: string,
+    @Headers('x-github-delivery') deliveryId: string,
   ): Promise<{ received: boolean }> {
     const payload = request.rawBody ?? Buffer.from('');
     await this.commandBus.execute<HandleGithubWebhookCommand, void>(
@@ -43,6 +44,7 @@ export class HandleGithubWebhookHttpController {
         payload,
         signature: signature ?? '',
         event: event ?? '',
+        deliveryId: deliveryId ?? '',
       }),
     );
     return { received: true };

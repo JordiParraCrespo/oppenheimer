@@ -34,10 +34,14 @@ export class OutboxRelayService implements OnApplicationBootstrap, OnApplication
     private readonly eventEmitter: EventEmitter2,
     @InjectQueue(QUEUE_NAMES.EMAIL) emailQueue: Queue,
     @InjectQueue(QUEUE_NAMES.FILE_PROCESSING) fileProcessingQueue: Queue,
+    @InjectQueue(QUEUE_NAMES.INBOUND_EVENTS) inboundEventsQueue: Queue,
+    @InjectQueue(QUEUE_NAMES.AUTOMATION_RUNS) automationRunsQueue: Queue,
   ) {
     this.queues = new Map<string, Queue>([
       [QUEUE_NAMES.EMAIL, emailQueue],
       [QUEUE_NAMES.FILE_PROCESSING, fileProcessingQueue],
+      [QUEUE_NAMES.INBOUND_EVENTS, inboundEventsQueue],
+      [QUEUE_NAMES.AUTOMATION_RUNS, automationRunsQueue],
     ]);
     this.relay = new OutboxRelay(outbox, (message) => this.publish(message), {
       owner: `${hostname()}:${process.pid}`,

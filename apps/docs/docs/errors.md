@@ -465,6 +465,58 @@ An oversized event payload is **not** an error code: the append reports it per r
 in the acknowledgement the runner reads, so one bad entry does not refuse a batch.
 
 <!-- oppenheimer:begin runner -->
+## Automations
+
+An automation is a saved prompt, where it runs, and the triggers — a schedule or a
+GitHub event — that start it. Every run is a session started as the automation's
+owner. See `product/versions/mvp/16-automations-architecture.md`.
+
+| Code                                         | Title                                       | HTTP |
+| -------------------------------------------- | ------------------------------------------- | ---- |
+| `AUTOMATIONS_001` <a id="automations_001" /> | Automation not found                        | 404  |
+| `AUTOMATIONS_002` <a id="automations_002" /> | Automations belong to an organization       | 400  |
+| `AUTOMATIONS_003` <a id="automations_003" /> | The automation was changed by someone else  | 409  |
+| `AUTOMATIONS_004` <a id="automations_004" /> | A repository is not available to this workspace | 422 |
+| `AUTOMATIONS_005` <a id="automations_005" /> | That agent cannot run an automation         | 422  |
+| `AUTOMATIONS_006` <a id="automations_006" /> | A trigger would never fire                  | 422  |
+| `AUTOMATIONS_007` <a id="automations_007" /> | That project cannot hold automations        | 422  |
+| `AUTOMATIONS_008` <a id="automations_008" /> | Run not found                               | 404  |
+
+`AUTOMATIONS_001` is also returned for an automation in another workspace, and for a
+deleted one: its runs stay readable, but it cannot be edited or run.
+
+`AUTOMATIONS_003` is optimistic concurrency: a save carries the `version` the editor
+loaded, and a save over a newer one is refused rather than silently winning. Reload
+and save again.
+
+`AUTOMATIONS_005` names an agent with no unattended mode: one that launches no
+command, has no permission levels, or names no models. The blank terminal is the
+example.
+
+`AUTOMATIONS_006` is a schedule trigger with no time left to fire at: a `once` in the
+past, or a rule with nothing to fire on.
+
+`AUTOMATIONS_007` is a project that is archived, or the workspace's Unassigned
+project, which holds sessions that name none and no automations.
+
+A run the owner can no longer start is not an error to the caller: it is recorded
+on the run as `skipped` with a reason (`not_launchable`, `agent_unavailable`,
+`overlapping`, the rate caps, `missed`), and a reason that would repeat every time
+pauses the automation with a `pausedReason`.
+
+## Inbound events
+
+What external systems tell us — GitHub's webhook today — stored once and normalized
+before any automation reads it.
+
+| Code                                 | Title                                | HTTP |
+| ------------------------------------ | ------------------------------------ | ---- |
+| `INBOUND_001` <a id="inbound_001" /> | That event source is not known       | 400  |
+| `INBOUND_002` <a id="inbound_002" /> | The delivery carries no delivery id  | 400  |
+
+Neither reaches a person. `INBOUND_002` is a webhook delivery without GitHub's
+`X-GitHub-Delivery` header, which is the key that makes a redelivery idempotent.
+
 ## Runner service
 
 The Go runner (`apps/runner`) emits the same document shape with its own

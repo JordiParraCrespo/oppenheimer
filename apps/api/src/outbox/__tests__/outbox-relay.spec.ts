@@ -134,6 +134,31 @@ describe('OutboxRelay', () => {
     expect(order).toEqual(['claim-1', 'claim-2']);
   });
 
+  it('does not deadlock when a delivery wakes the relay, and delivers what it staged', async () => {
+    // An event handler that dispatches a command whose repository stages the
+    // next job and wakes the relay: that wake runs inside the drain it waits on.
+    outbox.claim
+      .mockResolvedValueOnce([message({ id: 'event' })])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([message({ id: 'job', channel: 'queue' })])
+      .mockResolvedValue([]);
+    const published: string[] = [];
+    let nested: Promise<number> | undefined;
+    const relay = relayWith(async (m) => {
+      published.push(m.id);
+      if (m.id === 'event') {
+        nested = relay.drainOnce();
+        await nested;
+      }
+    });
+
+    await relay.drainOnce();
+    await expect(nested).resolves.toBe(0);
+    // The queued pass picks up the staged job; a later wake waits for it.
+    await relay.drainOnce();
+    expect(published).toEqual(['event', 'job']);
+  });
+
   it('registers itself as the wake drainer on start and unregisters on stop', async () => {
     const relay = relayWith(async () => {});
     relay.start();

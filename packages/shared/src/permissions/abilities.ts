@@ -63,6 +63,9 @@ export const KNOWN_SUBJECTS = [
   'Project',
   'Session',
   'Installation',
+  // Workspace-owned, like sessions: an automation is a saved prompt the
+  // workspace runs, and each of its runs is a session.
+  'Automation',
   'all',
 ] as const;
 
@@ -333,6 +336,11 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     {
       action: 'manage',
       subject: 'Installation',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'Automation',
       conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
     },
   ],

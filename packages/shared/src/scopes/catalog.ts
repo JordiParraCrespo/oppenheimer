@@ -25,6 +25,7 @@ export const SCOPE_RESOURCES = [
   'hosts',
   'projects',
   'sessions',
+  'automations',
   'repositories',
   'flags',
 ] as const;
@@ -348,6 +349,33 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
           { action: 'create', subject: 'Session' },
           { action: 'update', subject: 'Session' },
           { action: 'delete', subject: 'Session' },
+        ],
+      },
+    },
+  },
+  {
+    resource: 'automations',
+    label: 'Automations',
+    description: 'Automations, their triggers, their runs and the run history.',
+    levels: {
+      read: {
+        scope: 'automations:read',
+        label: 'Read',
+        description: 'List automations, read one, and read its runs and history.',
+        policies: [{ action: 'read', subject: 'Automation' }],
+      },
+      write: {
+        scope: 'automations:write',
+        label: 'Edit',
+        description:
+          'Create, edit, pause, resume, duplicate and delete automations, and run one now.',
+        // Run now starts a session as the automation's owner, which is the
+        // same reach the session routes grant; it is `update Automation`
+        // rather than a verb of its own for the reason `sessions:write` gives.
+        policies: [
+          { action: 'create', subject: 'Automation' },
+          { action: 'update', subject: 'Automation' },
+          { action: 'delete', subject: 'Automation' },
         ],
       },
     },

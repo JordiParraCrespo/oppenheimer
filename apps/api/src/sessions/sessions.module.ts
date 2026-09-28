@@ -40,6 +40,7 @@ import { RestartSessionHttpController } from './commands/restart-session/restart
 import { StopSessionCommandHandler } from './commands/stop-session/stop-session.command-handler';
 import { StopSessionHttpController } from './commands/stop-session/stop-session.http.controller';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
+import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import { WorkSessionRepository } from './database/work-session.repository';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
@@ -125,6 +126,7 @@ const adapters: Provider[] = [
       WorkSessionOrmEntity,
       SessionCheckoutOrmEntity,
       WorkSessionEventOrmEntity,
+      SessionTurnOrmEntity,
     ]),
     AuthzKernelModule.forFeature([SessionResource]),
     // The three modules this one is built on, imported rather than assumed: the
