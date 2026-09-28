@@ -35,6 +35,12 @@ type Service struct {
 	channel    string
 	pinned     string
 	now        func() time.Time
+	// applying lets one Apply or Rollback run at a time in this process: the
+	// periodic loop and the console's Update now would otherwise stage the
+	// same version into the same files and swap `current` over each other.
+	// A channel rather than a mutex, so a caller whose context ends while
+	// waiting stops waiting.
+	applying chan struct{}
 }
 
 // New builds the service.
@@ -51,6 +57,7 @@ func New(opts Options) *Service {
 		releases: opts.Releases, binaries: opts.Binaries, restarter: opts.Restarter,
 		state: opts.State, activities: activities,
 		version: opts.Version, channel: opts.Channel, pinned: opts.Pinned, now: now,
+		applying: make(chan struct{}, 1),
 	}
 }
 
@@ -88,7 +95,16 @@ type ApplyOptions struct {
 // Apply performs the update: stage, verify, self-check, promote, activate,
 // restart. It returns the plan it acted on. The restart ends this process, so
 // anything after it happens in the next one, driven by NoteBoot.
+//
+// Applies run one at a time: a second caller waits for the first, then checks
+// afresh — so a forced Update now that arrives while the loop is applying
+// runs after it, finding the host current if the first got as far as a
+// restart, or trying again if it failed.
 func (s *Service) Apply(ctx context.Context, opts ApplyOptions) (domain.Plan, error) {
+	if err := s.lock(ctx); err != nil {
+		return domain.Plan{}, err
+	}
+	defer s.unlock()
 	plan, err := s.Check(ctx)
 	if err != nil {
 		return domain.Plan{}, err
@@ -187,8 +203,13 @@ func (s *Service) MarkHealthy() error {
 	return s.binaries.Prune(state.To, state.From)
 }
 
-// Rollback returns to the previous version on request.
+// Rollback returns to the previous version on request. It waits for an Apply
+// in flight, as another Apply would.
 func (s *Service) Rollback(ctx context.Context) error {
+	if err := s.lock(ctx); err != nil {
+		return err
+	}
+	defer s.unlock()
 	state, err := s.state.Load()
 	if err != nil {
 		return domain.ErrRolledBack.WithDetail("%v", err).WithCause(err)
@@ -198,6 +219,18 @@ func (s *Service) Rollback(ctx context.Context) error {
 	}
 	return s.rollBack(ctx, state, "asked for")
 }
+
+// lock takes the apply slot, or gives up when ctx ends first.
+func (s *Service) lock(ctx context.Context) error {
+	select {
+	case s.applying <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (s *Service) unlock() { <-s.applying }
 
 func (s *Service) rollBack(ctx context.Context, state domain.State, reason string) error {
 	if err := s.binaries.Activate(state.From); err != nil {

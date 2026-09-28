@@ -151,7 +151,22 @@ What belongs here is what the runner does with it:
   through the event log, which is resent on the next link. The one
   exception is an attach: its id belongs to the link that allocated it,
   so one still queued when that link ends is dropped and the browser
-  reattaches.
+  reattaches — and so is one whose PTY finishes opening after that link
+  ended, whose PTY is closed rather than streamed on the next link.
+  Host commands follow the same rule, each on a lane of its own:
+  `host.update` on one, so a download that outlives the link it was asked
+  on still finishes, and `host.preflight` on another, so a preflight never
+  waits behind a download. What the read loop still does itself is only
+  what cannot block: a credit, a resize of an open attachment (one whose
+  attach is still opening keeps its place behind it in the lane), and a
+  browser's keystrokes, which go to a bounded queue per attachment that
+  one goroutine writes to the PTY. A PTY that stops taking them — a wedged
+  `tmux attach` client — fills its queue, and that attachment is closed
+  (`attachment.closed`, "input stalled") instead of stalling every other
+  one on the link. Event batches the link refuses while it stays up (a
+  full control queue) are offered again every few seconds, in order, and
+  at most 4096 wait: past that the oldest is dropped with a warning, and
+  the next hello's snapshot reconciles.
 - **Except when the control plane says the host was unpaired**: an HTTP
   `410` at the handshake or a `4410` close (01). That is not a drop but a
   verdict, so the link stops redialling, the revocation is written to
