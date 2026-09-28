@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { hostFactsSchema, hostNameSchema } from './primitives';
+import { hostFactsSchema, hostNameSchema } from './primitives.js';
 
 /**
  * Host shapes. A host belongs to a **person**, not a workspace: one laptop is

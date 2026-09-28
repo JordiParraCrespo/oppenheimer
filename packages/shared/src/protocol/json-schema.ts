@@ -6,13 +6,13 @@ import {
   RUNNER_LINK_CLOSE_CODES,
   RUNNER_LINK_REFUSAL_HEADER,
   RUNNER_LINK_REFUSALS,
-} from './link';
+} from './link.js';
 import {
   PROTOCOL_MAX_EVENT_PAYLOAD_BYTES,
   protocolMessageSchema,
   RUNNER_CAPABILITIES,
-} from './messages';
-import { PROTOCOL_VERSION } from './version';
+} from './messages.js';
+import { PROTOCOL_VERSION } from './version.js';
 
 /**
  * Emit the link's JSON Schema from the Zod union.

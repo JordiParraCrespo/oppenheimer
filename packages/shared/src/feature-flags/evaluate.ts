@@ -1,4 +1,4 @@
-import { isValidFlagValue } from './catalog';
+import { isValidFlagValue } from './catalog.js';
 import type {
   FlagCondition,
   FlagConfig,
@@ -8,7 +8,7 @@ import type {
   FlagSegment,
   FlagServe,
   FlagValue,
-} from './types';
+} from './types.js';
 
 /**
  * The flag evaluator: definition + config + context → value. Pure, synchronous

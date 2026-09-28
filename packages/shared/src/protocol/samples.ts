@@ -1,5 +1,5 @@
-import type { ProtocolMessage, ProtocolMessageType } from './messages';
-import type { SessionSnapshot } from './primitives';
+import type { ProtocolMessage, ProtocolMessageType } from './messages.js';
+import type { SessionSnapshot } from './primitives.js';
 
 /**
  * One sample of every message on the link.

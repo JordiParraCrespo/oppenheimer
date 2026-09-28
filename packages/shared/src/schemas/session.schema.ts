@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { SESSION_EFFORTS, SESSION_PERMISSIONS } from '../agents/catalog';
-import { PAGINATION } from '../constants';
-import { paginationSchema } from './pagination.schema';
+import { SESSION_EFFORTS, SESSION_PERMISSIONS } from '../agents/catalog.js';
+import { PAGINATION } from '../constants/index.js';
+import { paginationSchema } from './pagination.schema.js';
 import {
   codingAgentSchema,
   displayNameSchema,
@@ -9,7 +9,7 @@ import {
   gitRefSchema,
   installationIdSchema,
   promptSchema,
-} from './primitives';
+} from './primitives.js';
 
 /**
  * Session shapes.

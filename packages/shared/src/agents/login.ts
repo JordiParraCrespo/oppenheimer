@@ -1,4 +1,4 @@
-import type { CodingAgentLoginTarget } from './catalog';
+import type { CodingAgentLoginTarget } from './catalog.js';
 
 /**
  * The login URL check, derived from the catalog's `loginTargets`.

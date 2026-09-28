@@ -1,17 +1,21 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { attachTicketHintSchema, HINT_KINDS } from '../hint';
-import { toProtocolJsonSchema } from '../json-schema';
-import { RUNNER_LINK_CLOSE_CODES, RUNNER_LINK_REFUSAL_HEADER, RUNNER_LINK_REFUSALS } from '../link';
+import { attachTicketHintSchema, HINT_KINDS } from '../hint.js';
+import { toProtocolJsonSchema } from '../json-schema.js';
+import {
+  RUNNER_LINK_CLOSE_CODES,
+  RUNNER_LINK_REFUSAL_HEADER,
+  RUNNER_LINK_REFUSALS,
+} from '../link.js';
 import {
   PROTOCOL_MAX_EVENT_PAYLOAD_BYTES,
   PROTOCOL_MESSAGE_TYPES,
   protocolMessageSchema,
-} from '../messages';
-import { sessionSnapshotSchema } from '../primitives';
-import { commandId, hostFacts, occurredAt, SAMPLES, sessionId, snapshot } from '../samples';
-import { PROTOCOL_VERSION } from '../version';
+} from '../messages.js';
+import { sessionSnapshotSchema } from '../primitives.js';
+import { commandId, hostFacts, occurredAt, SAMPLES, sessionId, snapshot } from '../samples.js';
+import { PROTOCOL_VERSION } from '../version.js';
 
 describe('protocol message union', () => {
   it('covers every type the link carries, and nothing else', () => {

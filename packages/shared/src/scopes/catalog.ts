@@ -1,4 +1,4 @@
-import type { Actions, Subjects } from '../permissions';
+import type { Actions, Subjects } from '../permissions/index.js';
 
 /**
  * Access levels a permission group can be granted at. `write` always implies

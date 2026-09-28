@@ -1,4 +1,4 @@
-import type { ScheduleFrequency } from './catalog';
+import type { ScheduleFrequency } from './catalog.js';
 
 /**
  * A schedule rule and the arithmetic that turns it into instants.
