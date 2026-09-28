@@ -13,6 +13,7 @@ import { RecordSessionEventsResolver } from './application/record-session-events
 import { SessionAccountErasure } from './application/session-account-erasure.resolver';
 import { SessionHostUsage } from './application/session-host-usage.resolver';
 import { SessionLaunchSpecFactory } from './application/session-launch.factory';
+import { SessionLoaderResolver } from './application/session-loader.resolver';
 import { SessionLookupResolver } from './application/session-lookup.resolver';
 import { SessionNamingResolver } from './application/session-naming.resolver';
 import { SessionPlanFactory } from './application/session-plan.factory';
@@ -153,6 +154,7 @@ const adapters: Provider[] = [
     SessionPlanFactory,
     SessionLaunchSpecFactory,
     SessionNamingResolver,
+    SessionLoaderResolver,
     // Contributed rather than exported: the implementation is built here, in this
     // module's injector, so it injects this module's repository port while
     // `projects/` reaches across only for the registry.

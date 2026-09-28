@@ -4,6 +4,7 @@ import { Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HostAccessPort } from '../../../../hosts/application/host-access.port';
 import { HostErrors } from '../../../../hosts/domain/hosts.errors';
+import { SessionLoaderResolver } from '../../../application/session-loader.resolver';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
 import { IssueAttachTicketCommand } from '../issue-attach-ticket.command';
@@ -48,7 +49,7 @@ describe('IssueAttachTicketCommandHandler', () => {
     hosts = { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) };
     cache = { setIfAbsent: vi.fn().mockResolvedValue(true) };
     handler = new IssueAttachTicketCommandHandler(
-      sessions,
+      new SessionLoaderResolver(sessions),
       hosts as unknown as HostAccessPort,
       cache as unknown as CacheService,
     );

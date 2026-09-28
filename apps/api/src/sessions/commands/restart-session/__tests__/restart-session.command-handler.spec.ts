@@ -7,6 +7,7 @@ import type { ProjectLookupPort } from '../../../../projects/application/project
 import { ProjectEntity } from '../../../../projects/domain/project.entity';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import type { SessionLaunchSpecFactory } from '../../../application/session-launch.factory';
+import { SessionLoaderResolver } from '../../../application/session-loader.resolver';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
 import { RestartSessionCommand } from '../restart-session.command';
@@ -73,6 +74,7 @@ describe('RestartSessionCommandHandler', () => {
     dispatch = { restart: vi.fn().mockResolvedValue({ delivered: true, hints: [] }) };
     const launches = { build: vi.fn().mockResolvedValue({}) };
     handler = new RestartSessionCommandHandler(
+      new SessionLoaderResolver(sessions as unknown as WorkSessionRepositoryPort),
       sessions as unknown as WorkSessionRepositoryPort,
       projects,
       hosts as unknown as HostAccessPort,

@@ -5,10 +5,9 @@ import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
+import { SessionLoaderResolver } from '../../application/session-loader.resolver';
 import { ATTACH_TICKET_PREFIX, type AttachTicket } from '../../application/session-lookup.port';
-import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import { SessionErrors } from '../../domain/sessions.errors';
-import { WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
 import { IssueAttachTicketCommand } from './issue-attach-ticket.command';
 
 /**
@@ -56,26 +55,14 @@ export class IssueAttachTicketCommandHandler
   implements ICommandHandler<IssueAttachTicketCommand, IssuedAttachTicket>
 {
   constructor(
-    @Inject(WORK_SESSION_REPOSITORY)
-    private readonly sessions: WorkSessionRepositoryPort,
+    private readonly loader: SessionLoaderResolver,
     @Inject(HOST_ACCESS)
     private readonly hosts: HostAccessPort,
     private readonly cache: CacheService,
   ) {}
 
   async execute(command: IssueAttachTicketCommand): Promise<IssuedAttachTicket> {
-    const found = await this.sessions.findOneById(command.scope, command.sessionId);
-    if (found.isNone()) {
-      throw new AppError(SessionErrors.NOT_FOUND, {
-        detail: `No session with id ${command.sessionId}`,
-      });
-    }
-    const session = found.unwrap();
-    if (session.isResolved) {
-      throw new AppError(SessionErrors.ALREADY_RESOLVED, {
-        detail: `Session ${session.slug} is closed`,
-      });
-    }
+    const session = await this.loader.requireLive(command.scope, command.sessionId);
     // The session being yours is not the machine being yours to use: a grant
     // revoked, or a host unpaired, since the session was created ends the PTY.
     await this.hosts.assertUsable(command.scope, session.hostId);

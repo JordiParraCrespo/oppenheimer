@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { AutomationPlanFactory } from '../../application/automation-plan.factory';
 import { AUTOMATION_REPOSITORY } from '../../automations.di-tokens';
@@ -26,9 +26,10 @@ export class UpdateAutomationCommandHandler
 
   async execute(command: UpdateAutomationCommand): Promise<AggregateID> {
     const { scope, input } = command;
-    const found = await this.automations.findOneById(scope, command.automationId);
-    if (found.isNone()) throw new AppError(AutomationErrors.NOT_FOUND);
-    const automation = found.unwrap();
+    const automation = requireFound(
+      await this.automations.findOneById(scope, command.automationId),
+      AutomationErrors.NOT_FOUND,
+    );
     if (automation.version !== input.version) throw new AppError(AutomationErrors.VERSION_CONFLICT);
     const now = new Date();
 
