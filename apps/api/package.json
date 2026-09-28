@@ -17,7 +17,7 @@
     "migration:generate": "pnpm typeorm migration:generate -d src/config/data-source.ts",
     "migration:run": "pnpm typeorm migration:run -d src/config/data-source.ts",
     "migration:revert": "pnpm typeorm migration:revert -d src/config/data-source.ts",
-    "generate:openapi": "pnpm exec nest build && OPENAPI_GENERATION=true node dist/generate-openapi.js",
+    "generate:openapi": "pnpm exec nest build && node dist/generate-openapi.js && biome check --write openapi.json",
     "seed": "TS_NODE_PROJECT=tsconfig.typeorm.json ts-node src/database/seed.ts",
     "clean": "rm -rf dist"
   },
