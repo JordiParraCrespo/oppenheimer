@@ -110,12 +110,12 @@ async function bootstrap() {
     app,
     [
       QUEUE_NAMES.EMAIL,
-      QUEUE_NAMES.FILE_PROCESSING,
       QUEUE_NAMES.HOST_RETENTION,
       QUEUE_NAMES.INBOUND_EVENTS,
       QUEUE_NAMES.AUTOMATION_RUNS,
       QUEUE_NAMES.AUTOMATION_SCHEDULES,
       QUEUE_NAMES.AUTOMATION_RETENTION,
+      QUEUE_NAMES.OUTBOX_RETENTION,
     ],
     bullBoardUsername && bullBoardPassword
       ? { auth: { username: bullBoardUsername, password: bullBoardPassword } }

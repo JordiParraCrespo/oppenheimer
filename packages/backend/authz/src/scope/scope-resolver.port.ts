@@ -10,6 +10,12 @@ export interface ResolveScopeInput {
   isPlatformAdmin: boolean;
   /** A `manage all` holder within the organization. */
   hasFullAccess: boolean;
+  /**
+   * The ids of the roles the caller holds in the organization, when the caller
+   * already knows them (the application resolved them to build the ability).
+   * Omitted, the resolver reads them itself.
+   */
+  roleIds?: readonly string[];
 }
 
 /**

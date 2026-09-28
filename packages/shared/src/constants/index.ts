@@ -69,7 +69,6 @@ export const ORGANIZATION_ROLES = {
 
 export const QUEUE_NAMES = {
   EMAIL: 'email',
-  FILE_PROCESSING: 'file-processing',
   /** The daily purge of host networks and timeline past their retention. */
   HOST_RETENTION: 'host-retention',
   /** Normalise a stored webhook delivery and publish it to its consumers. */
@@ -80,4 +79,6 @@ export const QUEUE_NAMES = {
   AUTOMATION_SCHEDULES: 'automation-schedules',
   /** The nightly purge of inbound events and old automation runs. */
   AUTOMATION_RETENTION: 'automation-retention',
+  /** The daily purge of delivered outbox rows past their retention. */
+  OUTBOX_RETENTION: 'outbox-retention',
 } as const;

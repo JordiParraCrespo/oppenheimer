@@ -9,6 +9,8 @@ export class ConnectInstallationCommand extends CommandBase {
   readonly githubInstallationId: number;
   /** The OAuth code from the same redirect. Used once and discarded. */
   readonly code: string;
+  /** The install state GitHub echoed, nonce only. Redeemed once, before `code`. */
+  readonly state: string;
 
   constructor(props: CommandProps<ConnectInstallationCommand>) {
     super(props);
@@ -16,5 +18,6 @@ export class ConnectInstallationCommand extends CommandBase {
     this.userId = props.userId;
     this.githubInstallationId = props.githubInstallationId;
     this.code = props.code;
+    this.state = props.state;
   }
 }

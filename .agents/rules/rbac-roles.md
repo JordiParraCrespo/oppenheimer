@@ -21,8 +21,10 @@ paths:
 >   build.
 > - **Never cache structural scope.** Team membership is written by Better Auth
 >   outside any application transaction, so nothing invalidates it. Role *rules*
->   are cached on `organization.roleVersion`, bumped in the same transaction as
->   the write.
+>   are cached (see "Caching and the version counters" below) on three
+>   counters, and **every write that changes effective permissions bumps one in
+>   the same transaction as the write** — a missed bump is a revoked
+>   permission that stays live.
 > - **Nobody grants what they do not hold.** `RoleGrantPolicy` enforces it on
 >   role writes and assignments; `canGrantScope` on access grants. Role
 >   containment respects conditions: a rule someone holds only for their
@@ -102,7 +104,8 @@ export class PublishArticleHttpController {
 - `PoliciesGuard` asks the `ABILITY` port for the caller's ability,
   `AbilityFactory.forRequest(request)`: the union of the user's roles'
   permissions in the request's tenant (plus the legacy `user.role`), built
-  once and memoized on the request. It checks every `@CheckPolicies` rule and
+  once per request from the cached role set (see "Caching and the version
+  counters"). It checks every `@CheckPolicies` rule and
   attaches the ability to `request.ability`.
 - **No `@CheckPolicies` is fail-closed.** A route that declares neither
   `@CheckPolicies` nor `@NoPolicy('reason')` is refused (`AUTHZ_002`), and
@@ -177,6 +180,36 @@ Role endpoints are gated by `Role` policies (`create`/`read`/`update`/`delete`);
 assignment endpoints by `manage User`. New sign-ups are assigned the default
 `user` role; the migration seeds the system roles and backfills existing users
 from the legacy `user.role` column.
+
+## Caching and the version counters
+
+`AbilityFactory` reads three counters in one query at the start of every
+resolution (`roles/database/authz-version.repository.ts`), then:
+
+- the caller's `user_role`-derived permissions come from Redis under
+  `authz:roles:v1:{userId}:{organizationId|-}:{org}:{catalog}:{user}` (900 s
+  TTL, which only bounds memory), computed from the database on a miss;
+- the platform roles on `user.role` come from `GlobalRoleRegistry`, each
+  process's snapshot of the global roles, reloaded when `catalog` moves;
+- the ability and the role ids are memoized per request (`requestMemo` from
+  `@oppenheimer/backend-core`), so `PoliciesGuard` and `AccessScopeInterceptor`
+  share one resolution and the interceptor never re-reads `user_role`;
+- Redis failing falls back to the database (logged once per outage).
+
+| Counter | Covers | Bumped by |
+| --- | --- | --- |
+| `organization."roleVersion"` | the organization's own roles and every assignment scoped to it | `bumpRoleVersion` / `bumpForAssignment` (scoped writes), `bumpForRole` (an org role's create/edit/delete) |
+| `role_catalog_version` (one row) | every **global** role definition (`organizationId IS NULL` — `owner`, `user`, `admin`…) | `bumpRoleCatalogVersion` via `bumpForRole` |
+| `user_role_version` (one row per user) | a user's **global** assignments | `bumpUserRoleVersion` via `bumpForAssignment`; `bumpForRole` for holders of an org role outside that org |
+
+`RoleRepository` and `UserRoleRepository` call these inside their own
+transactions; a new writer of `role` or `user_role` must do the same. **A
+migration** that edits role permissions bumps the counter for the rows it
+touches: a global role (almost always — the system roles are global rows)
+needs `UPDATE "role_catalog_version" SET "version" = "version" + 1`; an
+organization's role needs its `roleVersion`. Migrations before
+`AddAuthzVersions` bumped only `roleVersion`, which was enough when nothing was
+cached.
 
 ## Wiring notes
 

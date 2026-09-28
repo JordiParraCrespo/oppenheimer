@@ -191,6 +191,17 @@ describe('API tokens & scopes (integration)', () => {
       'integration',
       user.id,
     ]);
+    // Written behind the application's back, so bump what its writers would
+    // (`authz-version.repository.ts`): a global role, the user's global
+    // assignments, and the scoped ones the delete above removed. Without it the
+    // cached role set from the previous test would still answer.
+    await dataSource.query('UPDATE "role_catalog_version" SET "version" = "version" + 1');
+    await dataSource.query(
+      `INSERT INTO "user_role_version" ("userId", "version") VALUES ($1, 2)
+       ON CONFLICT ("userId") DO UPDATE SET "version" = "user_role_version"."version" + 1`,
+      [user.id],
+    );
+    await dataSource.query('UPDATE "organization" SET "roleVersion" = "roleVersion" + 1');
   }
 
   // --- the migration -------------------------------------------------------
@@ -558,25 +569,27 @@ describe('API tokens & scopes (integration)', () => {
       });
 
       // The event row was written in the same transaction as the revocation
-      // and drained by the relay before the request returned: processed, with
-      // a lease trail and a human-readable reason.
-      const rows: {
-        status: string;
-        reason: string;
-        attempts: number;
-        lockedBy: string | null;
-        processedAt: Date | null;
-      }[] = await dataSource.query(
-        `SELECT "status", "reason", "attempts", "lockedBy", "processedAt"
-         FROM "outbox_message"
-         WHERE "eventName" = 'ApiTokenRevokedDomainEvent' AND "aggregateId" = $1`,
-        [created.id],
-      );
-      expect(rows).toHaveLength(1);
-      expect(rows[0].status).toBe('processed');
-      expect(rows[0].reason).toContain('revoked');
-      expect(rows[0].attempts).toBeGreaterThanOrEqual(1);
-      expect(rows[0].processedAt).not.toBeNull();
+      // and is drained by the relay right after it, without the request
+      // waiting for it: processed, with a lease trail and a human-readable reason.
+      await vi.waitFor(async () => {
+        const rows: {
+          status: string;
+          reason: string;
+          attempts: number;
+          lockedBy: string | null;
+          processedAt: Date | null;
+        }[] = await dataSource.query(
+          `SELECT "status", "reason", "attempts", "lockedBy", "processedAt"
+           FROM "outbox_message"
+           WHERE "eventName" = 'ApiTokenRevokedDomainEvent' AND "aggregateId" = $1`,
+          [created.id],
+        );
+        expect(rows).toHaveLength(1);
+        expect(rows[0].status).toBe('processed');
+        expect(rows[0].reason).toContain('revoked');
+        expect(rows[0].attempts).toBeGreaterThanOrEqual(1);
+        expect(rows[0].processedAt).not.toBeNull();
+      });
     });
 
     it('refuses an expired token', async () => {

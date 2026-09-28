@@ -53,7 +53,7 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
       });
       return true;
     });
-    if (received) await this.outbox.wake();
+    if (received) this.outbox.wake();
     return received;
   }
 
@@ -124,7 +124,7 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
       await this.outbox.stageEvents(manager, notifications);
       return notifications.length;
     });
-    if (stored > 0) await this.outbox.wake();
+    if (stored > 0) this.outbox.wake();
     return stored;
   }
 
@@ -171,7 +171,7 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
       }
       return { restaged: due.length, abandoned: abandoned.length };
     });
-    if (result.restaged > 0) await this.outbox.wake();
+    if (result.restaged > 0) this.outbox.wake();
     return result;
   }
 

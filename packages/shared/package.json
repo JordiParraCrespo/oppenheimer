@@ -152,7 +152,8 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/emit-protocol-schema.cjs && node scripts/emit-agent-catalog.cjs && node scripts/emit-session-step.cjs && node scripts/emit-session-image.cjs",
+    "build": "tsc -p tsconfig.json && node scripts/emit-protocol-schema.cjs && node scripts/emit-link-protocol.cjs && node scripts/emit-agent-catalog.cjs && node scripts/emit-session-step.cjs && node scripts/emit-session-image.cjs",
+    "check:generated": "node scripts/emit-protocol-schema.cjs --check && node scripts/emit-link-protocol.cjs --check && node scripts/emit-agent-catalog.cjs --check && node scripts/emit-session-step.cjs --check && node scripts/emit-session-image.cjs --check",
     "dev": "tsc -p tsconfig.json --watch",
     "clean": "rm -rf dist",
     "lint": "biome check src/",

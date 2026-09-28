@@ -1,6 +1,11 @@
 import { inject, injectable } from 'inversify';
 import { TOKENS } from '../../di/tokens';
-import type { InstallationEntity, RepositoryEntity } from './installation.entity';
+import type {
+  InstallationCallback,
+  InstallationEntity,
+  InstallationStart,
+  RepositoryEntity,
+} from './installation.entity';
 import type { InstallationsRepository } from './installations.repository';
 
 @injectable()
@@ -14,9 +19,14 @@ export class InstallationsService {
     return this.repository.findAll();
   }
 
-  /** Attach the installation GitHub just created, using the code from its redirect. */
-  connect(githubInstallationId: number, code: string): Promise<InstallationEntity> {
-    return this.repository.connect(githubInstallationId, code);
+  /** Mint the install state and the App URL that carries it. On click only. */
+  startInstall(): Promise<InstallationStart> {
+    return this.repository.startInstall();
+  }
+
+  /** Attach the installation GitHub just created, using the values on its redirect. */
+  connect(callback: InstallationCallback): Promise<InstallationEntity> {
+    return this.repository.connect(callback);
   }
 
   remove(id: string): Promise<void> {

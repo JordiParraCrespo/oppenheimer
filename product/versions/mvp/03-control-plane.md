@@ -77,11 +77,12 @@ version `1`), so the paths below carry that prefix and the runner's
 
 ## The `github/` module, as built
 
-The installations half of the control plane, implemented. Six routes, one
+The installations half of the control plane, implemented. Seven routes, one
 table, and one port for the slices that follow.
 
 ```
 GET    /api/v1/installations                                            read Installation    repositories:read
+POST   /api/v1/installations/install-state                              create Installation  repositories:write
 POST   /api/v1/installations                                            create Installation  repositories:write
 DELETE /api/v1/installations/{id}                                       delete Installation  repositories:write
 GET    /api/v1/installations/{id}/repositories                          read Installation    repositories:read
@@ -96,6 +97,17 @@ and `deletedAt`. There is no repository table. The picker asks GitHub
 through the installation's own token (one Redis key per installation, a
 minute), branches are read live, and a repository is remembered only by the
 checkout that took it.
+
+**The install redirect must carry a state this console minted.** The
+redirect's OAuth `code` proves which GitHub account can see an installation,
+not which console user's browser posts it, so a callback someone stopped
+halfway through their own install would connect their installation to
+whoever opened it. `POST /installations/install-state` mints a single-use
+state bound to the caller and the workspace (a Redis key, fifteen minutes)
+and answers the App's install URL carrying it; `POST /installations`
+requires it back and spends it before GitHub is called. Missing, expired,
+reused and someone else's are one refusal, `GITHUB_011`. The console mints
+on click, never on render.
 
 **A claim is something a workspace holds, not something it once touched.**
 `githubInstallationId` is unique among live rows only, so a disconnected or

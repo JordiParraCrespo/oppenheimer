@@ -4,12 +4,15 @@ import { AUTOMATION_SETTINGS_REPOSITORY } from '../automations.di-tokens';
 import type { AutomationSettingsRepositoryPort } from '../database/automation-settings.repository.port';
 import {
   type AutomationLimits,
+  type AutomationOverrides,
   DEFAULT_PLATFORM_LIMITS,
   type PlatformLimits,
   resolveAutomationLimits,
+  type WorkspaceLimits,
 } from '../domain/automation-limits.policy';
 
 const DEFAULT_SCHEDULER_BATCH = 200;
+const NO_OVERRIDES: AutomationOverrides = { maxRunsPerHour: null, overlap: null };
 
 /** The effective limits for one automation: platform ∩ workspace ∩ automation. */
 @Injectable()
@@ -22,16 +25,27 @@ export class AutomationLimitsResolver {
 
   async resolve(
     organizationId: string,
-    automation: { maxRunsPerHour: number | null; overlap: 'skip' | 'queue' | null } = {
-      maxRunsPerHour: null,
-      overlap: null,
-    },
+    automation: AutomationOverrides = NO_OVERRIDES,
   ): Promise<AutomationLimits> {
-    return resolveAutomationLimits(
-      this.platform,
-      await this.settings.find(organizationId),
-      automation,
-    );
+    return this.resolveWith(await this.workspace(organizationId), automation);
+  }
+
+  /** The workspace's saved overrides, read once for a caller that weighs many automations. */
+  workspace(organizationId: string): Promise<WorkspaceLimits> {
+    return this.settings.find(organizationId);
+  }
+
+  /** {@link resolve} over overrides the caller already read: pure, no I/O. */
+  resolveWith(
+    workspace: WorkspaceLimits,
+    automation: AutomationOverrides = NO_OVERRIDES,
+  ): AutomationLimits {
+    return resolveAutomationLimits(this.platform, workspace, automation);
+  }
+
+  /** The platform's run-limit ceiling: no workspace lets a run live longer than this. */
+  get maxRunCeilingMs(): number {
+    return this.platform.ceilings.maxRunSeconds * 1000;
   }
 
   get schedulerBatch(): number {

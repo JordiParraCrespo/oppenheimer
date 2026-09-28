@@ -27,4 +27,8 @@ export const InstallationsErrors = {
     code: 'INSTALLATIONS_CLIENT_005',
     message: 'Failed to load branches',
   },
+  START_FAILED: {
+    code: 'INSTALLATIONS_CLIENT_006',
+    message: 'Failed to start the GitHub installation',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

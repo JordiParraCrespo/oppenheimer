@@ -1,6 +1,11 @@
+import type { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  INSTALL_STATE_PREFIX,
+  InstallStateResolver,
+} from '../../../application/install-state.resolver';
 import type { GithubInstallationRepositoryPort } from '../../../database/github-installation.repository.port';
 import { GithubErrors } from '../../../domain/github.errors';
 import { GithubInstallationEntity } from '../../../domain/github-installation.entity';
@@ -13,7 +18,12 @@ import { ConnectInstallationCommand } from '../connect-installation.command';
 import { ConnectInstallationCommandHandler } from '../connect-installation.command-handler';
 
 /**
- * Two things are asserted here, and they fail independently.
+ * Three things are asserted here, and they fail independently.
+ *
+ * The **install state**: the redirect's `code` binds the claim to a GitHub
+ * account, not to the console user whose browser posts it, so without a state
+ * this person minted, a callback URL someone else stopped halfway would connect
+ * their installation to whoever opened it.
  *
  * The **claim proof**: `POST /installations` takes an installation id from the
  * caller's browser, so if the handler trusted it, anyone could post someone
@@ -40,6 +50,27 @@ interface Rows {
   insertFails?: AppError;
 }
 
+/** A state minted for `ana` in `org-acme`, seeded into every `build()`. */
+const STATE = 'the-install-state-nonce';
+
+/** `setIfAbsent` / `take` over a Map: the two semantics the resolver relies on. */
+function memoryCache() {
+  const store = new Map<string, unknown>();
+  return {
+    store,
+    setIfAbsent: vi.fn(async (key: string, value: unknown) => {
+      if (store.has(key)) return false;
+      store.set(key, value);
+      return true;
+    }),
+    take: vi.fn(async (key: string) => {
+      const value = store.get(key);
+      store.delete(key);
+      return value;
+    }),
+  };
+}
+
 function build(rows: Rows = {}) {
   const installations = {
     insert: vi.fn().mockImplementation(() => {
@@ -64,13 +95,18 @@ function build(rows: Rows = {}) {
     readInstallation: vi.fn().mockResolvedValue(rows.claim ?? CLAIM),
   } satisfies Pick<GithubAppPort, 'isConfigured' | 'listUserInstallations' | 'readInstallation'>;
 
+  const cache = memoryCache();
+  cache.store.set(`${INSTALL_STATE_PREFIX}${STATE}`, { userId: 'ana', organizationId: 'org-acme' });
+  const installState = new InstallStateResolver(cache as unknown as CacheService);
+
   const handler = new ConnectInstallationCommandHandler(
     installations as unknown as GithubInstallationRepositoryPort,
     github as unknown as GithubAppPort,
     new GithubInstallationMapper(),
+    installState,
   );
 
-  return { handler, installations, github };
+  return { handler, installations, github, installState, cache };
 }
 
 function command(overrides: Partial<ConnectInstallationCommand> = {}) {
@@ -79,6 +115,7 @@ function command(overrides: Partial<ConnectInstallationCommand> = {}) {
     userId: 'ana',
     githubInstallationId: CLAIM.githubInstallationId,
     code: 'the-oauth-code',
+    state: STATE,
     ...overrides,
   });
 }
@@ -94,6 +131,55 @@ function connected(organizationId: string, suspendedAt: Date | null = null) {
     suspendedAt,
   });
 }
+
+describe('the install state', () => {
+  it('refuses a state this console never minted, before GitHub is called', async () => {
+    // The regression: Mallory's stopped callback carries her code and no state
+    // of Victor's, and used to connect her installation to his workspace.
+    const subject = build();
+
+    await expect(
+      subject.handler.execute(command({ state: 'never-minted-state-nonce' })),
+    ).rejects.toMatchObject({ code: 'GITHUB_011' });
+    expect(subject.github.listUserInstallations).not.toHaveBeenCalled();
+    expect(subject.installations.insert).not.toHaveBeenCalled();
+  });
+
+  it('refuses a state minted for someone else, or in another workspace', async () => {
+    for (const overrides of [{ userId: 'mallory' }, { organizationId: 'org-rival' }]) {
+      const subject = build();
+
+      await expect(subject.handler.execute(command(overrides))).rejects.toMatchObject({
+        code: 'GITHUB_011',
+      });
+      expect(subject.github.listUserInstallations).not.toHaveBeenCalled();
+    }
+  });
+
+  it('spends the state: a second post with it is refused', async () => {
+    const subject = build();
+
+    await expect(subject.handler.execute(command())).resolves.toBeTruthy();
+    await expect(subject.handler.execute(command())).rejects.toMatchObject({
+      code: 'GITHUB_011',
+    });
+    expect(subject.github.listUserInstallations).toHaveBeenCalledTimes(1);
+  });
+
+  it('spends the state even when GitHub then refuses the claim', async () => {
+    const subject = build({ visible: [] });
+
+    await expect(subject.handler.execute(command())).rejects.toMatchObject({ code: 'GITHUB_004' });
+    expect(subject.cache.store.size).toBe(0);
+  });
+
+  it('accepts a state the resolver minted for this person in this workspace', async () => {
+    const subject = build();
+    const { state } = await subject.installState.mint('ana', 'org-acme');
+
+    await expect(subject.handler.execute(command({ state }))).resolves.toBeTruthy();
+  });
+});
 
 describe('the claim proof', () => {
   let subject: ReturnType<typeof build>;

@@ -51,21 +51,46 @@ export function parseWalk(search: Record<string, unknown>): FirstRunWalk {
  * GitHub echoes back untouched, which is what it is for. Without this, a
  * reader who actually installs the App mid-walk loses the walk on the return
  * leg and is turned away from Ready two clicks later.
+ *
+ * `state` is also the API's single-use nonce, which is its real job, so the
+ * walk rides as a prefix of it: `first-run.<nonce>`. The GitHub route reads
+ * the walk off it and hands the rest on as the nonce.
  */
 export const WALK_STATE = 'first-run';
 
+/** The prefix a walk puts in front of the nonce; a nonce is base64url, so never a `.`. */
+const WALK_PREFIX = `${WALK_STATE}.`;
+
 /**
- * The deployment's install URL with the walk pinned where GitHub will return it.
+ * Whether the `state` GitHub echoed says this visit is the first-run walk.
  *
- * `URL` rather than string concatenation, because the deployment serves this
- * address and may already have put a query on it — and an address it cannot
- * parse is handed back untouched. Losing the walk costs the reader the
- * landing; throwing here would cost them the step.
+ * The bare `first-run` is still read, for an install started before the state
+ * became a nonce: it keeps the walk, and — carrying no nonce — posts nothing.
+ */
+export function isWalkState(raw: unknown): boolean {
+  return typeof raw === 'string' && (raw === WALK_STATE || raw.startsWith(WALK_PREFIX));
+}
+
+/** The echoed `state` with the walk's prefix off, which is what the API minted. */
+export function stateWithoutWalk(raw: unknown): unknown {
+  return typeof raw === 'string' && raw.startsWith(WALK_PREFIX)
+    ? raw.slice(WALK_PREFIX.length)
+    : raw;
+}
+
+/**
+ * The install URL the API minted, with the walk pinned where GitHub will
+ * return it: its `state` prefixed. `URL` rather than string concatenation,
+ * because the address may already have a query — and one it cannot parse, or
+ * one with no state, is handed back untouched: losing the walk costs the
+ * reader the landing, throwing here would cost them the step.
  */
 export function installUrlCarryingWalk(installUrl: string): string {
   try {
     const url = new URL(installUrl);
-    url.searchParams.set('state', WALK_STATE);
+    const state = url.searchParams.get('state');
+    if (!state) return installUrl;
+    url.searchParams.set('state', `${WALK_PREFIX}${state}`);
     return url.toString();
   } catch {
     return installUrl;

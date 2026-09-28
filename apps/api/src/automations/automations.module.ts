@@ -1,14 +1,13 @@
-import { BullModule } from '@nestjs/bullmq';
 import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
-import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
 import { InboundEventsModule } from '../inbound-events/inbound-events.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { ProjectsModule } from '../projects/projects.module';
+import { QueueModule } from '../queue/queue.module';
 import { UsersModule } from '../users/user.module';
 import { AutomationAccountErasure } from './application/automation-account-erasure.resolver';
 import { AutomationLimitsResolver } from './application/automation-limits.resolver';
@@ -137,11 +136,8 @@ const queryHandlers: Provider[] = [
       AutomationSettingsOrmEntity,
     ]),
     AuthzKernelModule.forFeature([AutomationResource]),
-    BullModule.registerQueue(
-      { name: QUEUE_NAMES.AUTOMATION_RUNS },
-      { name: QUEUE_NAMES.AUTOMATION_SCHEDULES },
-      { name: QUEUE_NAMES.AUTOMATION_RETENTION },
-    ),
+    // The automation-runs, -schedules and -retention queues.
+    QueueModule,
     // What an automation names, confirmed through the owners' ports: a project,
     // a host, repositories; the workspace membership a run's owner must keep;
     // the hub's events; and the sessions module, whose create command a run is.

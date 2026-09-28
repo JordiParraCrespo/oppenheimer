@@ -148,4 +148,11 @@ export async function setUserRole(userId: string, role: string): Promise<void> {
        ON CONFLICT DO NOTHING`,
     [userId, role],
   );
+  // A global assignment written behind the API's back: bump the user's role
+  // version as `UserRoleRepository` would, or a cached role set keeps answering.
+  await query(
+    `INSERT INTO "user_role_version" ("userId", "version") VALUES ($1, 2)
+     ON CONFLICT ("userId") DO UPDATE SET "version" = "user_role_version"."version" + 1`,
+    [userId],
+  );
 }

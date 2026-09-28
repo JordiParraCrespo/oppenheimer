@@ -12,6 +12,7 @@ import {
 import { AutomationRunMapper } from './automation-run.mapper';
 import type { AutomationOrmEntity } from './database/automation.orm-entity';
 import type { AutomationRevisionOrmEntity } from './database/automation-revision.orm-entity';
+import type { AutomationSettingsOrmEntity } from './database/automation-settings.orm-entity';
 import type { AutomationTriggerOrmEntity } from './database/automation-trigger.orm-entity';
 import { AutomationEntity } from './domain/automation.entity';
 import type {
@@ -20,6 +21,7 @@ import type {
   AutomationTriggerProps,
   ScheduleTriggerConfig,
 } from './domain/automation.types';
+import type { WorkspaceLimits } from './domain/automation-limits.policy';
 import type { AutomationRunDigest } from './domain/automation-read.types';
 import {
   AutomationRepositoryResponseDto,
@@ -38,6 +40,24 @@ function asRecord(value: unknown): Json {
 
 function oneOf<T extends string>(values: readonly T[], value: unknown): T | null {
   return (values as readonly unknown[]).includes(value) ? (value as T) : null;
+}
+
+/**
+ * A workspace's `automation_settings` row as the limits it sets; no row is no
+ * override. Pure, so the settings store and the scheduler's claim — which
+ * reads the rows inside its own transaction — shape them the same way.
+ */
+export function workspaceLimitsOf(record: AutomationSettingsOrmEntity | null): WorkspaceLimits {
+  if (!record) return {};
+  return {
+    maxRunsPerAutomationHour: record.maxRunsPerAutomationHour,
+    maxRunsPerWorkspaceHour: record.maxRunsPerWorkspaceHour,
+    liveRunsPerHost: record.liveRunsPerHost,
+    overlap: oneOf(AUTOMATION_OVERLAP_POLICIES, record.overlap),
+    staleTtlSeconds: record.staleTtlSeconds,
+    missedGraceSeconds: record.missedGraceSeconds,
+    maxRunSeconds: record.maxRunSeconds,
+  };
 }
 
 /**

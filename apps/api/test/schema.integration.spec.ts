@@ -501,10 +501,19 @@ describe('the migrated schema (integration)', () => {
           ]);
           expect(result.exitCode, result.output).toBe(0);
         };
+        // The indexes of the tables this migration and its ops scripts touch.
+        // Migrations after it are reverted and re-applied along with it, and
+        // the indexes they create come back with new oids; they are not what
+        // this compares.
         const oids = () =>
           byName<{ name: string; oid: number }>(
-            `SELECT c.relname AS name, c.oid::int AS oid FROM pg_class c
-              WHERE c.relkind = 'i' AND c.relnamespace = 'public'::regnamespace`,
+            `SELECT c.relname AS name, c.oid::int AS oid
+               FROM pg_class c
+               JOIN pg_index i ON i.indexrelid = c.oid
+               JOIN pg_class t ON t.oid = i.indrelid
+              WHERE c.relkind = 'i' AND c.relnamespace = 'public'::regnamespace
+                AND t.relname IN ('automation_run', 'automation_trigger', 'session_checkout',
+                                  'work_session', 'work_session_event')`,
           );
 
         await revertThroughHotPath();

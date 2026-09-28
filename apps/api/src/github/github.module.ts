@@ -3,6 +3,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { InboundEventsModule } from '../inbound-events/inbound-events.module';
+import { InstallStateResolver } from './application/install-state.resolver';
 import { RepositoryAccessResolver } from './application/repository-access.resolver';
 import { ConnectInstallationCommandHandler } from './commands/connect-installation/connect-installation.command-handler';
 import { ConnectInstallationHttpController } from './commands/connect-installation/connect-installation.http.controller';
@@ -10,6 +11,8 @@ import { DisconnectInstallationCommandHandler } from './commands/disconnect-inst
 import { DisconnectInstallationHttpController } from './commands/disconnect-installation/disconnect-installation.http.controller';
 import { HandleGithubWebhookCommandHandler } from './commands/handle-github-webhook/handle-github-webhook.command-handler';
 import { HandleGithubWebhookHttpController } from './commands/handle-github-webhook/handle-github-webhook.http.controller';
+import { StartInstallationCommandHandler } from './commands/start-installation/start-installation.command-handler';
+import { StartInstallationHttpController } from './commands/start-installation/start-installation.http.controller';
 import { GithubInstallationOrmEntity } from './database/github-installation.orm-entity';
 import { GithubInstallationRepository } from './database/github-installation.repository';
 import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY, REPOSITORY_ACCESS } from './github.di-tokens';
@@ -29,6 +32,7 @@ import { ListRepositoryBranchesQueryHandler } from './queries/list-repository-br
 // shadowed and `:id/repositories` is registered before `:id/...` variants.
 const httpControllers = [
   FindInstallationsHttpController,
+  StartInstallationHttpController,
   ConnectInstallationHttpController,
   HandleGithubWebhookHttpController,
   ListInstallationRepositoriesHttpController,
@@ -40,6 +44,7 @@ const commandHandlers: Provider[] = [
   ConnectInstallationCommandHandler,
   DisconnectInstallationCommandHandler,
   HandleGithubWebhookCommandHandler,
+  StartInstallationCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -55,6 +60,7 @@ const adapters: Provider[] = [
   { provide: GITHUB_INSTALLATION_REPOSITORY, useClass: GithubInstallationRepository },
   { provide: GITHUB_APP, useClass: GithubRestAdapter },
   { provide: REPOSITORY_ACCESS, useClass: RepositoryAccessResolver },
+  InstallStateResolver,
 ];
 
 /**

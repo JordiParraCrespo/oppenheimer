@@ -7,7 +7,13 @@ import {
 } from '@oppenheimer/api-client';
 import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
-import { BranchEntity, InstallationEntity, RepositoryEntity } from './installation.entity';
+import {
+  BranchEntity,
+  type InstallationCallback,
+  InstallationEntity,
+  type InstallationStart,
+  RepositoryEntity,
+} from './installation.entity';
 import { InstallationsErrors } from './installations.errors';
 
 /**
@@ -64,19 +70,33 @@ export class InstallationsRepository {
   }
 
   /**
+   * Start a GitHub App install: the API mints a single-use `state` for this
+   * person in this workspace and answers with the App's install URL carrying
+   * it. Called on click, never on render — each call is a key in Redis.
+   */
+  @MapApiError(InstallationsErrors.START_FAILED)
+  async startInstall(): Promise<InstallationStart> {
+    const data = await unwrapBody(heyApiSdk.startInstallation(), InstallationsErrors.START_FAILED);
+    return { url: data.url, state: data.state, expiresAt: new Date(data.expiresAt) };
+  }
+
+  /**
    * Attach the installation GitHub just created to this workspace.
    *
-   * Both values come off the install redirect. The `code` proves the caller
-   * can see the installation and is exchanged once, server-side, then
-   * discarded — it is never stored, and re-posting the same installation
-   * refreshes what GitHub reports about it rather than duplicating it.
+   * All three values come off the install redirect. The `state` is the one
+   * `startInstall` minted, and proves this person started this install; the
+   * `code` proves the caller can see the installation and is exchanged once,
+   * server-side, then discarded — it is never stored, and re-posting the same
+   * installation refreshes what GitHub reports about it rather than
+   * duplicating it.
    */
   @MapApiError(InstallationsErrors.CONNECT_FAILED)
-  async connect(githubInstallationId: number, code: string): Promise<InstallationEntity> {
+  async connect(callback: InstallationCallback): Promise<InstallationEntity> {
+    const { githubInstallationId, code, state } = callback;
     const data = await unwrapBody(
       heyApiClient.post<{ 201: InstallationDto }>({
         url: INSTALLATIONS_URL,
-        body: { githubInstallationId, code },
+        body: { githubInstallationId, code, state },
       }),
       InstallationsErrors.CONNECT_FAILED,
     );

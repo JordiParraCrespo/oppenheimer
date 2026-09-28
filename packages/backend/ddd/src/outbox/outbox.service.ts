@@ -86,9 +86,9 @@ export class OutboxService {
    * Run a repository write and stage the aggregates' collected domain events
    * **inside one transaction**, so the state change and the events it owes
    * commit or roll back together. After commit the relay is woken to deliver
-   * immediately; if that fails, the rows stay pending and the relay's poll
-   * retries them. Writes with no events skip the explicit transaction — a
-   * single statement is already atomic.
+   * soon, without waiting for it; if delivery fails, the rows stay pending and
+   * the relay's poll retries them. Writes with no events skip the explicit
+   * transaction — a single statement is already atomic.
    *
    * This is the one write path every repository adapter shares:
    *
@@ -110,7 +110,7 @@ export class OutboxService {
       return value;
     });
     for (const entity of entities) entity.clearEvents();
-    await this.wake();
+    this.wake();
     return result;
   }
 
@@ -171,6 +171,11 @@ export class OutboxService {
    * lease (`lockedUntil`) lapsed are claimed again — lease expiry *is* the
    * crash recovery. The attempt counter increments at claim time so a process
    * that dies mid-delivery still consumes an attempt.
+   *
+   * The inner `SELECT` walks `IDX_outbox_message_pending` (`createdAt`,
+   * partial on `status = 'pending'`) in its `ORDER BY`, so it reads the oldest
+   * pending rows and stops at `LIMIT` instead of sorting the backlog. None of
+   * the columns this sets is indexed, so the lease update can be HOT.
    */
   async claim(owner: string, options: ClaimOptions = {}): Promise<OutboxMessageRecord[]> {
     const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
@@ -209,6 +214,27 @@ export class OutboxService {
   }
 
   /**
+   * Delete up to `batch` delivered rows created before `cutoff`, and return how
+   * many went. The retention job calls it in a loop until a batch comes back
+   * short. The batch is picked by `ctid` (the BRIN index on `createdAt` serves
+   * the range), so one call locks only its own rows. `pending` rows are owed
+   * and `failed` rows are the inspection trail; neither is ever deleted here.
+   */
+  async deleteProcessedBefore(cutoff: Date, batch: number): Promise<number> {
+    // TypeORM returns `[rows, affectedCount]` for DELETE on Postgres.
+    const [, affected]: [unknown, number] = await this.dataSource.query(
+      `DELETE FROM "${OUTBOX_TABLE}"
+        WHERE ctid = ANY (ARRAY(
+          SELECT ctid FROM "${OUTBOX_TABLE}"
+           WHERE "createdAt" < $1 AND "status" = 'processed'
+           LIMIT $2
+        ))`,
+      [cutoff, batch],
+    );
+    return affected ?? 0;
+  }
+
+  /**
    * Record a delivery failure. The row goes back to `pending` with an
    * exponential-backoff `availableAt` until `maxAttempts` is exhausted, then
    * parks as `failed` — kept, with its reason and last error, rather than
@@ -239,19 +265,27 @@ export class OutboxService {
   }
 
   /**
-   * Drain staged rows now, if a relay is registered. Call after the staging
-   * transaction commits. Failures are swallowed: the rows are durable and the
-   * relay's next poll retries them, so a delivery hiccup must not fail the
-   * request whose state change already committed.
+   * Ask the relay to drain soon, if one is registered. Call after the staging
+   * transaction commits. Never waits for delivery and never throws: the rows
+   * are durable and the relay's next poll retries them, so neither the
+   * delivery backlog nor a delivery hiccup reaches the request whose state
+   * change already committed. A caller does not know when its listeners run.
    */
-  async wake(): Promise<void> {
+  wake(): void {
     if (!this.drainer) return;
+    let drain: Promise<unknown>;
     try {
-      await this.drainer();
+      drain = this.drainer();
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger?.warn(`Outbox drain failed; rows stay pending for the next poll: ${message}`);
+      this.warnDrainFailed(error);
+      return;
     }
+    void drain.catch((error: unknown) => this.warnDrainFailed(error));
+  }
+
+  private warnDrainFailed(error: unknown): void {
+    const message = error instanceof Error ? error.message : String(error);
+    this.logger?.warn(`Outbox drain failed; rows stay pending for the next poll: ${message}`);
   }
 
   private buildRow(row: {

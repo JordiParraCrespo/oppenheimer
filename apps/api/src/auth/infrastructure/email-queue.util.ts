@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { Queue } from 'bullmq';
+import { EMAIL_JOB_OPTIONS } from '../../config/queue-options.config';
 
 /**
  * Standalone BullMQ queue used by the Better Auth instance to enqueue
@@ -10,6 +11,10 @@ import { Queue } from 'bullmq';
  * inject the queue provided by `@nestjs/bullmq`. Instead it pushes jobs onto
  * the same Redis queue, which is consumed by the existing `EmailProcessor`
  * worker registered in `QueueModule`.
+ *
+ * Job options are per producer, so this queue carries the same
+ * `EMAIL_JOB_OPTIONS` (retries, then quick removal from Redis) as the
+ * DI-registered one; the two must not drift.
  */
 export const emailQueue = new Queue(QUEUE_NAMES.EMAIL, {
   connection: {
@@ -17,6 +22,7 @@ export const emailQueue = new Queue(QUEUE_NAMES.EMAIL, {
     port: Number.parseInt(process.env.REDIS_PORT ?? '6379', 10),
     password: process.env.REDIS_PASSWORD || undefined,
   },
+  defaultJobOptions: EMAIL_JOB_OPTIONS,
 });
 
 // A BullMQ queue is an EventEmitter, so an `error` from its Redis connection —

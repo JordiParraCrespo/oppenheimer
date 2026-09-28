@@ -275,7 +275,7 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
       }
       return { network, movedFrom };
     });
-    if (staged) await this.outbox.wake();
+    if (staged) this.outbox.wake();
     return recorded;
   }
 

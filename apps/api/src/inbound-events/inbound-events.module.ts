@@ -1,8 +1,7 @@
-import { BullModule } from '@nestjs/bullmq';
 import { Module, type Provider, type Type } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { QUEUE_NAMES } from '@oppenheimer/shared';
+import { QueueModule } from '../queue/queue.module';
 import type { ExternalEventSourcePort } from './application/external-event-source.port';
 import { ExternalEventSourceRegistry } from './application/external-event-source.registry';
 import { InboundEventLookupResolver } from './application/inbound-event-lookup.resolver';
@@ -32,7 +31,9 @@ import { InboundEventsProcessor } from './infrastructure/inbound-events.processo
   imports: [
     CqrsModule,
     TypeOrmModule.forFeature([InboundDeliveryOrmEntity, InboundEventOrmEntity]),
-    BullModule.registerQueue({ name: QUEUE_NAMES.INBOUND_EVENTS }),
+    // The inbound-events queue: the processor's sweep and purge, and the
+    // relay's deliveries, all go through its single registration.
+    QueueModule,
   ],
   providers: [
     ReceiveInboundDeliveryCommandHandler,

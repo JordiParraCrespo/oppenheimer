@@ -81,6 +81,7 @@
     "GITHUB_008": "That GitHub installation is suspended or no longer installed.",
     "GITHUB_009": "GitHub did not answer. Try again in a moment.",
     "GITHUB_010": "That repository is not one this GitHub installation covers.",
+    "GITHUB_011": "That GitHub link was not started here. Connect GitHub again from this page.",
     "PROJECTS_001": "That project could not be found.",
     "PROJECTS_002": "Choose a workspace before working with projects.",
     "PROJECTS_003": "Projects cannot be archived right now. Try again in a moment.",

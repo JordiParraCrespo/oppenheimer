@@ -14,7 +14,8 @@ const PLATFORM_ROLES: readonly string[] = [ROLES.SUPERADMIN, ROLES.ADMIN];
  * Resolves the caller's {@link AccessScope} and attaches it to the request.
  *
  * Applied per controller rather than globally: resolving membership costs two
- * queries, and only routes touching a scoped resource need it.
+ * queries (team membership, then grants), and only routes touching a scoped
+ * resource need it.
  *
  * Order matters — this runs after the auth guards have populated
  * `request.user` and stamped `request.tenant`. The scope is resolved in that
@@ -36,15 +37,21 @@ export class AccessScopeInterceptor implements NestInterceptor {
     if (user?.id) {
       const organizationId = tenantOrganizationIdOf(request);
 
-      // The ability is memoized on the request, so asking it whether the caller
-      // holds `manage all` costs nothing the guard was not already paying.
-      const ability = await this.abilityFactory.forRequest(request);
+      // The ability and the role ids it was built from are memoized per
+      // request, so asking whether the caller holds `manage all`, and which
+      // roles grants may address, costs nothing the guard was not already
+      // paying — `user_role` is not read a second time.
+      const [ability, roleIds] = await Promise.all([
+        this.abilityFactory.forRequest(request),
+        this.abilityFactory.roleIdsForRequest(request),
+      ]);
 
       request[ACCESS_SCOPE_KEY] = await this.scopeResolver.resolve({
         userId: user.id,
         organizationId,
         isPlatformAdmin: PLATFORM_ROLES.includes(user.role ?? ''),
         hasFullAccess: ability.can('manage', 'all'),
+        roleIds,
       });
     }
 

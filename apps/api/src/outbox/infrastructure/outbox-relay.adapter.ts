@@ -20,8 +20,9 @@ import type { Queue } from 'bullmq';
  *
  * The relay drains on two triggers: repositories `wake()` it right after their
  * staging transaction commits (keeping happy-path latency at in-process
- * levels), and a background poll reclaims rows whose process died between
- * commit and delivery — the case the outbox exists for.
+ * levels, without the request waiting for delivery), and a background poll
+ * reclaims rows whose process died between commit and delivery — the case the
+ * outbox exists for.
  */
 @Injectable()
 export class OutboxRelayService implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -33,13 +34,11 @@ export class OutboxRelayService implements OnApplicationBootstrap, OnApplication
     outbox: OutboxService,
     private readonly eventEmitter: EventEmitter2,
     @InjectQueue(QUEUE_NAMES.EMAIL) emailQueue: Queue,
-    @InjectQueue(QUEUE_NAMES.FILE_PROCESSING) fileProcessingQueue: Queue,
     @InjectQueue(QUEUE_NAMES.INBOUND_EVENTS) inboundEventsQueue: Queue,
     @InjectQueue(QUEUE_NAMES.AUTOMATION_RUNS) automationRunsQueue: Queue,
   ) {
     this.queues = new Map<string, Queue>([
       [QUEUE_NAMES.EMAIL, emailQueue],
-      [QUEUE_NAMES.FILE_PROCESSING, fileProcessingQueue],
       [QUEUE_NAMES.INBOUND_EVENTS, inboundEventsQueue],
       [QUEUE_NAMES.AUTOMATION_RUNS, automationRunsQueue],
     ]);

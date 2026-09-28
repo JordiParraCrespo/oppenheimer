@@ -107,7 +107,7 @@ export class PersonalWorkspaceRepository implements PersonalWorkspaceRepositoryP
     workspace.clearEvents();
     // Deliver now rather than at the relay's next poll; a failure here leaves
     // the row for that poll to reclaim, which is the point of the outbox.
-    await this.outbox.wake();
+    this.outbox.wake();
     return true;
   }
 }

@@ -386,8 +386,7 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			h.lanes.run(m.SessionID, func() { h.detach(m.AttachmentID) })
 		}
 	case "session.stop", "session.restart", "session.close", "session.window.open", "session.window.close":
-		var m link.SessionCommand
-		if msg.Decode(&m) == nil {
+		if m, ok := decodeLifecycle(msg); ok {
 			h.lanes.run(m.SessionID, func() { h.lifecycle(h.life, m) })
 		}
 	case "attachment.credit":
@@ -408,7 +407,7 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			h.credentials.Revoke(m.SessionID)
 		}
 	case "host.preflight":
-		var m link.SessionCommand
+		var m link.HostPreflight
 		if msg.Decode(&m) == nil {
 			h.lanes.run(laneHostPreflight, func() { h.preflight(h.life, m.CommandID) })
 		}

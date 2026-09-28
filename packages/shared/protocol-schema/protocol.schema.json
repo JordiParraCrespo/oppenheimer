@@ -1174,5 +1174,25 @@
       "maximum": 9007199254740991,
       "id": "githubRepoId"
     }
+  },
+  "x-constants": {
+    "protocolVersion": 1,
+    "closeCodes": {
+      "HELLO_EXPECTED": 4400,
+      "HELLO_TIMEOUT": 4408,
+      "REPLACED": 4409,
+      "UNPAIRED": 4410,
+      "PROTOCOL_MISMATCH": 4426
+    },
+    "refusalHeader": "X-Oppenheimer-Refusal",
+    "refusals": {
+      "UNPAIRED": "host-unpaired"
+    },
+    "frameHeaderBytes": 4,
+    "creditWindowBytes": 262144,
+    "capabilities": [
+      "session.image"
+    ],
+    "maxEventPayloadBytes": 8192
   }
 }

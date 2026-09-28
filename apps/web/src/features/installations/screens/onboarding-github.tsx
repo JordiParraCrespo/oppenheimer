@@ -15,6 +15,7 @@ import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InstallationCard } from '@/features/installations/components/installation-card';
 import { useConnectInstallationCallback } from '@/features/installations/hooks/use-connect-installation-callback';
+import { useStartGithubInstall } from '@/features/installations/hooks/use-start-github-install';
 
 /**
  * Onboarding step 3: install the GitHub App. One primary button that sends the
@@ -22,13 +23,16 @@ import { useConnectInstallationCallback } from '@/features/installations/hooks/u
  * account and how many repositories it covers, with Continue below. Skippable:
  * the repo picker stays empty until it is done.
  *
- * The button is a plain link out, not a mutation — the install happens on
- * GitHub. What comes back is `installation_id` and `code` on the query string,
- * which the hook below exchanges once for the installation row.
+ * The button mints the install state first, then leaves for GitHub with it —
+ * the install happens there. What comes back is `installation_id`, `code` and
+ * that `state` on the query string, which the hook below exchanges once for
+ * the installation row. A callback without a state was not started here, and
+ * is refused on screen rather than posted.
  */
 export function OnboardingGithubScreen({
   githubInstallationId,
   code,
+  state,
   installUrlFor,
   onExchanged,
   step,
@@ -41,10 +45,12 @@ export function OnboardingGithubScreen({
   githubInstallationId?: number;
   /** The one-shot code from the same redirect. */
   code?: string;
+  /** The install state GitHub echoed, nonce only. */
+  state?: string;
   /**
-   * The deployment's install URL as this visit should use it. The route pins
-   * what must survive the round trip through github.com; this screen only
-   * sends the reader there.
+   * The minted install URL as this visit should use it. The route pins what
+   * must survive the round trip through github.com; this screen only sends the
+   * reader there.
    */
   installUrlFor: (installUrl: string) => string;
   /** The code was exchanged: the route clears the spent callback from its URL. */
@@ -60,18 +66,20 @@ export function OnboardingGithubScreen({
   skip: ReactElement;
 }) {
   const { t } = useTranslation();
-  // Where the browser goes to install, as the deployment reports it. An
+  // Whether there is an App to install, as the deployment reports it. An
   // unreachable read leaves it undefined, which renders a disabled offer
-  // rather than a link to a page that may not exist.
+  // rather than a button to a page that may not exist. Where the browser goes
+  // is minted on click, with the state.
   const { data: deployment } = useDeploymentCapabilities();
-  const address = deployment?.github_app_install_url ?? undefined;
-  const installUrl = address ? installUrlFor(address) : address;
+  const canInstall = Boolean(deployment?.github_app_install_url);
+  const { start, isStarting, error: startError } = useStartGithubInstall(installUrlFor);
 
   const {
     isExchanging,
     connected,
+    unstarted,
     error: connectError,
-  } = useConnectInstallationCallback(githubInstallationId, code, onExchanged);
+  } = useConnectInstallationCallback(githubInstallationId, code, state, onExchanged);
   const { data: installations, isPending, error: listError } = useInstallations();
 
   // The installation this visit connected, when there was one — the callback
@@ -90,7 +98,7 @@ export function OnboardingGithubScreen({
   const { data: repositories } = useInstallationRepositories(
     installation && !installation.coversEveryRepository ? installation.id : undefined,
   );
-  const error = connectError ?? listError;
+  const error = startError ?? connectError ?? listError;
 
   return (
     <div className="flex flex-col gap-5">
@@ -105,6 +113,7 @@ export function OnboardingGithubScreen({
       </StepHeader>
 
       <ErrorAlert error={error} fallback={t('onboarding.flow.github.failed')} />
+      <ErrorAlert message={unstarted ? t('onboarding.flow.github.unstarted') : null} />
 
       {isPending || isExchanging ? (
         <Card className="flex-row items-center gap-3 px-[18px] py-4">
@@ -120,8 +129,11 @@ export function OnboardingGithubScreen({
           <Button size="lg" block render={next(installation.id)}>
             {t('onboarding.flow.continue')}
           </Button>
-          {installUrl && (
-            <TextLink className="self-start text-sm" render={<a href={installUrl} />}>
+          {canInstall && (
+            <TextLink
+              className="self-start text-sm"
+              render={<button type="button" onClick={start} disabled={isStarting} />}
+            >
               {t('onboarding.flow.github.change')}
             </TextLink>
           )}
@@ -130,7 +142,14 @@ export function OnboardingGithubScreen({
         <div className="flex flex-col gap-3.5">
           {/* No slug configured means no install page to send anyone to, so the
               offer is disabled rather than pointing at a GitHub 404. */}
-          <Button size="lg" block disabled={!installUrl} render={<a href={installUrl ?? '#'} />}>
+          <Button
+            size="lg"
+            block
+            disabled={!canInstall}
+            pending={isStarting}
+            pendingLabel={t('onboarding.flow.github.starting')}
+            onClick={start}
+          >
             {t('onboarding.flow.github.connect')}
           </Button>
           <div className="flex flex-col items-start gap-1.5">
