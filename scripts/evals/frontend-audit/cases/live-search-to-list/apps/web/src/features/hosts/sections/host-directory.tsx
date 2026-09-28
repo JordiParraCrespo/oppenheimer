@@ -20,8 +20,8 @@ export function HostDirectory() {
       <SidebarSearch
         value={query}
         onValueChange={setQuery}
-        placeholder={t('common.search')}
-        aria-label={t('common.search')}
+        placeholder={t('sessions.new.host.search')}
+        aria-label={t('sessions.new.host.search')}
       />
       {isPending ? (
         <Skeleton className="h-8 w-full" />

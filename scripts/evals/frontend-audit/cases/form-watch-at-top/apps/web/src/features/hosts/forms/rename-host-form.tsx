@@ -35,7 +35,7 @@ export function RenameHostForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <FieldGroup>
-        <AuthField label={t('common.edit')} htmlFor="name" error={errors.name}>
+        <AuthField label={t('hosts.settings.renameLabel')} htmlFor="name" error={errors.name}>
           <Input
             {...register('name')}
             id="name"
@@ -60,7 +60,7 @@ export function RenameHostForm({
           ))}
         </div>
         <Button type="submit" disabled={isPending || name === current}>
-          {t('common.save')}
+          {t('hosts.settings.save')}
         </Button>
       </FieldGroup>
     </form>

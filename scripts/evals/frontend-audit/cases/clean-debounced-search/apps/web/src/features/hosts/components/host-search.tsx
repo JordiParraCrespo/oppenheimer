@@ -8,8 +8,8 @@ export function HostSearch({ onChange }: { onChange: (query: string) => void }) 
   return (
     <SidebarSearchField
       onChange={onChange}
-      label={t('common.search')}
-      clearLabel={t('common.clearSearch')}
+      label={t('sessions.new.host.search')}
+      clearLabel={t('sessions.sidebar.clearSearch')}
     />
   );
 }
