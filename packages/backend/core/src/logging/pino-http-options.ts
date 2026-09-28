@@ -1,4 +1,6 @@
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Options } from 'pino-http';
+import { CORRELATION_HEADER, resolveCorrelationId } from './correlation-id';
 
 export interface LoggingOptions {
   /** Render through `pino-pretty` instead of emitting JSON (development only). */
@@ -37,6 +39,15 @@ function stripQuery(url: string): string {
  */
 export function buildPinoHttpOptions(options: LoggingOptions = {}): Options {
   return {
+    // The request id is the correlation id: a valid client-sent
+    // `x-correlation-id` or a fresh UUID (never pino's default counter), echoed
+    // on the response so the log line, the header and the problem document
+    // all carry the same value. `RequestContextMiddleware` reuses it.
+    genReqId(req: IncomingMessage, res: ServerResponse) {
+      const id = resolveCorrelationId(req as IncomingMessage & { id?: unknown });
+      res.setHeader(CORRELATION_HEADER, id);
+      return id;
+    },
     redact: { paths: REDACT_PATHS, remove: true },
     serializers: {
       // pino-http wraps these, so `req`/`res` arrive already serialized by the

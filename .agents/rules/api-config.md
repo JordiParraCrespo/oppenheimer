@@ -232,6 +232,13 @@ Request logging comes from `LoggingModule` in `@oppenheimer/backend-core`
   );
   ```
 
+- **Correlation ids are opened in middleware.** `RequestContextMiddleware`
+  (applied to every route in `AppModule.configure`) opens the
+  `RequestContextService` scope before any guard runs, so a 401/403/429 carries
+  a `correlationId` too. The id is pino's `req.id` and is echoed as the
+  `x-correlation-id` response header: a client's header is honoured only when it
+  is 1–64 characters of `[A-Za-z0-9._:-]`, otherwise a UUID replaces it. Log
+  the validated id, never the raw header.
 - **User context is automatic.** `UserContextInterceptor` attaches `userId`
   (and the credential's effective `scopes`) to the request log context once the
   auth guards resolve — never add them by hand, and never log emails or names.

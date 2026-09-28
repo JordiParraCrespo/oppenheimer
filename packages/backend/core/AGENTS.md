@@ -1,7 +1,7 @@
 # @oppenheimer/backend-core — Agent Instructions
 
 Shared NestJS backend primitives: errors, exception filters, pipes,
-interceptors, request helpers, and base services. Consumed by `apps/api` and
+interceptors, middleware, request helpers, and base services. Consumed by `apps/api` and
 other backend packages.
 
 > Read the root [`CLAUDE.md`](../../../CLAUDE.md) first, and the backend rules
@@ -15,8 +15,8 @@ src/
 ├── filters/        # NestJS exception filters
 ├── decorators/     # Swagger decorators (ApiProblemResponse)
 ├── dtos/           # Swagger models (ProblemDetailsDto)
-├── interceptors/   # response/logging interceptors
-├── logging/        # hardened nestjs-pino setup (LoggingModule + helpers)
+├── logging/        # hardened nestjs-pino setup (LoggingModule + helpers, correlation ids)
+├── middleware/     # Nest middleware (RequestContextMiddleware)
 ├── pipes/          # validation & transform pipes
 ├── requests/       # request-scoped helpers
 ├── responses/      # paginated response helpers (toPageMeta, PaginatedResponseDto)

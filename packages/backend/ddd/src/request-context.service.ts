@@ -8,7 +8,7 @@ interface RequestContext {
  * Process-wide request context backed by AsyncLocalStorage. Used to propagate a
  * correlation id into domain events and commands without threading it through
  * every call. Framework-agnostic: the HTTP layer (see
- * `@oppenheimer/backend-core`'s `RequestContextInterceptor`) seeds it per request.
+ * `@oppenheimer/backend-core`'s `RequestContextMiddleware`) seeds it per request.
  */
 export class RequestContextService {
   private static storage = new AsyncLocalStorage<RequestContext>();
