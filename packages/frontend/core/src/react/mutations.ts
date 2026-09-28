@@ -1,6 +1,6 @@
 'use client';
 
-import type { UseMutationOptions } from '@tanstack/react-query';
+import type { QueryClient, UseMutationOptions } from '@tanstack/react-query';
 
 type HookMutationOptions<TData, TError, TVariables, TOnMutateResult> = Omit<
   UseMutationOptions<TData, TError, TVariables, TOnMutateResult>,
@@ -43,4 +43,18 @@ export function withCacheOnSuccess<TData, TError, TVariables, TOnMutateResult = 
       return options?.onSuccess?.(...args);
     },
   };
+}
+
+/**
+ * Refetch every cached read, because the caller now stands somewhere else.
+ *
+ * The one write that may do this is one that changes who the caller is or
+ * which workspace they are in — creating their first workspace: the shell,
+ * the nav's permission set and every org-scoped list were all answers to "who
+ * are you and where". Anything else invalidates by the narrowest key that
+ * covers what changed; the name is here so a bare `invalidateQueries()` is
+ * never copied from this one.
+ */
+export function refetchEverythingForNewIdentity(queryClient: QueryClient): Promise<void> {
+  return queryClient.invalidateQueries();
 }

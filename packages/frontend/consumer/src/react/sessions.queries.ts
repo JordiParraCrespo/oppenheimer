@@ -12,6 +12,7 @@ import {
 import type { CreateSessionInput, SessionEntity } from '../modules/sessions/session.entity';
 import type { SessionStartProgress } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
+import { LIVE_POLL } from './live-poll';
 
 /**
  * Query key factory for the `sessions` feature, from the most generic (`all`)
@@ -26,19 +27,6 @@ export const sessionsKeys = {
   start: (id: string | undefined, failed: boolean) =>
     [...sessionsKeys.detail(id), 'start', { failed }] as const,
 };
-
-/**
- * How often a session that is still starting is asked about again.
- *
- * Nothing pushes a session's lifecycle to the console yet: the host builds the
- * worktree and opens the PTY, the control plane flips the row to `open`, and a
- * screen that read it as `starting` would sit on the provisioning pane until a
- * reload. So a query holding a starting session polls until it holds none — a
- * clone from GitHub takes seconds, and polling past that would be a request
- * every two seconds that can only answer "still open". When session events are
- * streamed to the console this goes.
- */
-const PROVISIONING_POLL_MS = 2000;
 
 /**
  * The sessions a console asked to close and has not yet seen resolve, each
@@ -125,7 +113,7 @@ export function useSessions<TData = SessionEntity[]>(
       query.state.data?.some(
         (session) => session.isProvisioning || closesOf(queryClient).has(session.id),
       )
-        ? PROVISIONING_POLL_MS
+        ? LIVE_POLL.sessionStarting
         : false,
     ...options,
   });
@@ -140,7 +128,8 @@ export function useSession(
   return useQuery({
     queryKey: sessionsKeys.detail(id),
     queryFn: id ? () => app.sessions.findById(id) : skipToken,
-    refetchInterval: (query) => (query.state.data?.isProvisioning ? PROVISIONING_POLL_MS : false),
+    refetchInterval: (query) =>
+      query.state.data?.isProvisioning ? LIVE_POLL.sessionStarting : false,
     ...options,
   });
 }
@@ -175,7 +164,7 @@ export function useSessionStartProgress(
     queryKey: sessionsKeys.start(id, failed),
     queryFn:
       id && (starting || failed) ? () => app.sessions.startProgress(id, { failed }) : skipToken,
-    refetchInterval: (query) => (query.state.data?.settled ? false : PROVISIONING_POLL_MS),
+    refetchInterval: (query) => (query.state.data?.settled ? false : LIVE_POLL.sessionStarting),
     ...options,
   });
 }

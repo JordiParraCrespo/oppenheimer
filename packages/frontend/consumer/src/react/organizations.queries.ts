@@ -1,7 +1,11 @@
 'use client';
 
 import type { UpdateOrganizationRequest } from '@oppenheimer/api-client';
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import {
+  refetchEverythingForNewIdentity,
+  useQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import type { CreateOrganizationDto } from '@oppenheimer/shared';
 import {
   skipToken,
@@ -96,7 +100,7 @@ export function useCreateOrganization(
         ...(current ?? []),
         organization,
       ]);
-      await queryClient.invalidateQueries();
+      await refetchEverythingForNewIdentity(queryClient);
     }),
   });
 }
