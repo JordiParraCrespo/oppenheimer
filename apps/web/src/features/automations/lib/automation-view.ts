@@ -38,7 +38,7 @@ function isKnownPausedReason(reason: string): reason is AutomationPausedReason {
 }
 
 /** Why a run never started, in words. */
-export function skipReasonText(reason: string, t: TFunction): string {
+function skipReasonText(reason: string, t: TFunction): string {
   return isKnownSkipReason(reason)
     ? t(`automations.skipReason.${reason}`)
     : t('automations.skipReasonOther');
@@ -119,12 +119,12 @@ export function sidebarMeta(automation: AutomationEntity, now: number, t: TFunct
 }
 
 /** The agent's name as the catalog has it. */
-export function agentLabel(agent: string): string {
+function agentLabel(agent: string): string {
   return isCodingAgentId(agent) ? CODING_AGENTS[agent].label : agent;
 }
 
 /** The model's name, or the agent's default model's when none was picked. */
-export function modelLabel(agent: string, model: string | null): string | null {
+function modelLabel(agent: string, model: string | null): string | null {
   if (!isCodingAgentId(agent)) return model;
   const models = CODING_AGENTS[agent].models;
   const picked = model ? models.find((candidate) => candidate.id === model) : undefined;

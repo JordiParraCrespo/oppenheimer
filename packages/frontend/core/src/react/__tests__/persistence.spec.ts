@@ -8,7 +8,7 @@ const organizationsList = ['organizations', 'list'] as const;
 import {
   cacheOwnerKey,
   createQueryPersistOptions,
-  QUERY_PERSIST_GC_TIME,
+  defaultQueryClientOptions,
   QUERY_PERSIST_MAX_AGE,
   reconcileCacheOwner,
   shouldDehydrateQuery,
@@ -73,7 +73,9 @@ describe('createQueryPersistOptions', () => {
 
   it('keeps queries alive at least as long as they are persisted', () => {
     // A query collected before it is written would persist nothing.
-    expect(QUERY_PERSIST_GC_TIME).toBeGreaterThanOrEqual(QUERY_PERSIST_MAX_AGE);
+    expect(defaultQueryClientOptions(0).queries.gcTime).toBeGreaterThanOrEqual(
+      QUERY_PERSIST_MAX_AGE,
+    );
   });
 });
 

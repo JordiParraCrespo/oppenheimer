@@ -52,7 +52,7 @@ public/
 
 ## Where the shared code lives
 
-- UI and browser glue below the routes — `AppShell`, `PageHead`,
+- UI and browser glue below the routes — `AppShell`, `ConfirmDialog`,
   `useZodResolver`, `dateFormatter` — are in
   `@oppenheimer/frontend-web` (`packages/frontend/web`).
 - Primitives are in `@oppenheimer/design-system-web`.

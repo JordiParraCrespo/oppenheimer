@@ -92,6 +92,11 @@ jobs:
       # package carries. Import rules are dependency-cruiser's, above.
       - name: Frontend structure
         run: pnpm check:structure
+      # Unused exports, files and dependencies in the console and the frontend
+      # packages (knip, `knip.json`): an export nobody imports is deleted, not
+      # left for someone to wonder about.
+      - name: Unused code
+        run: pnpm check:unused
       # oppenheimer:end web
       # oppenheimer:begin starter
       # The starter's feature manifest must keep describing the repo: every

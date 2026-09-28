@@ -154,5 +154,5 @@ row takes its policies from `ENDPOINT_POLICIES` in `@oppenheimer/shared/permissi
 — the same catalog the API's `@CheckPolicies` decorators are asserted against —
 keyed by the endpoint that row's screen reads, so a route the caller cannot
 open is never offered. The rows live in
-`apps/web/src/lib/nav.ts`, and `useAuthorizedNav` and `useAbility` from
-`@oppenheimer/frontend-web` filter them.
+`apps/web/src/lib/nav.ts`, and the kit's shell filters them against the
+caller's permissions (`useMyPermissions` from `@oppenheimer/frontend-core/react`).

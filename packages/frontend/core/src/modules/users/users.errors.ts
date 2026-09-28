@@ -9,12 +9,4 @@ export const UsersErrors = {
     code: 'USERS_CLIENT_002',
     message: 'Failed to fetch user',
   },
-  UPDATE_FAILED: {
-    code: 'USERS_CLIENT_003',
-    message: 'Failed to update user',
-  },
-  DELETE_FAILED: {
-    code: 'USERS_CLIENT_004',
-    message: 'Failed to delete user',
-  },
 } as const satisfies Record<string, ErrorDefinition>;

@@ -152,14 +152,13 @@ test('a feature named after a page is reported; a module or an allowlisted name 
   const { report } = check({
     'src/features/settings/screens/settings.tsx': 'export function SettingsScreen() {}\n',
     'src/features/users/screens/users.tsx': 'export function UsersScreen() {}\n',
-    'src/features/automations/screens/automations.tsx': 'export function AutomationsScreen() {}\n',
     'src/features/public/screens/about.tsx': 'export function AboutScreen() {}\n',
   });
   assert.match(
     report,
     /features\/settings: not a module of @oppenheimer\/frontend-core or @oppenheimer\/frontend-consumer/,
   );
-  assert.doesNotMatch(report, /features\/(users|automations|public): not a module/);
+  assert.doesNotMatch(report, /features\/(users|public): not a module/);
 });
 
 test('a feature holds only flat kind directories, with no barrel and no loose file', () => {

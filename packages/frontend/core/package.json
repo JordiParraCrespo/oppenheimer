@@ -57,7 +57,6 @@
     "@oppenheimer/api-client": "workspace:*",
     "@oppenheimer/shared": "workspace:*",
     "@tanstack/query-core": "^5.102.8",
-    "better-auth": "^1.6.25",
     "inversify": "^8.2.3",
     "reflect-metadata": "^0.2.2",
     "zod": "^3.25.76",

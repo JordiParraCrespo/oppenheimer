@@ -326,6 +326,7 @@ pnpm arch               # Architecture boundaries (dependency-cruiser), API and 
 pnpm check:structure    # Frontend layout contract: feature names, kinds, route cap, docs
 pnpm check:flags        # Feature flags: none past expiry, none declared but unread
 pnpm check:compiler     # What the React Compiler leaves uncompiled, silently (oxc bailouts)
+pnpm check:unused       # Unused files, exports and dependencies in the frontend (knip)
 pnpm docker:dev         # Start Postgres + Redis
 # oppenheimer:begin e2e
 node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)

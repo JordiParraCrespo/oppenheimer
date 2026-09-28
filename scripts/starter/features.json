@@ -12,9 +12,10 @@
         "scripts/evals/query-keys",
         "scripts/evals/frontend-audit",
         ".agents/skills/frontend-audit",
-        ".agents/skills/scaffold-feature/evals"
+        ".agents/skills/scaffold-feature/evals",
+        "knip.json"
       ],
-      "scripts": ["dev:mvp"]
+      "scripts": ["dev:mvp", "check:unused"]
     },
     "web-showcase": {
       "title": "Web design-system showcase",

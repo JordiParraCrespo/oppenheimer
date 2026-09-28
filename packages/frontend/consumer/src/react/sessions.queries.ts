@@ -265,18 +265,6 @@ export function useCloseSession(
   });
 }
 
-export function useStopSession(options?: UseMutationOptions<SessionEntity, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => app.sessions.stop(id),
-    ...withCacheOnSuccess(options, () => {
-      queryClient.invalidateQueries({ queryKey: sessionsKeys.all });
-    }),
-  });
-}
-
 /**
  * Paste an image into one window's prompt. Nothing is cached and no key is
  * kept: success is the path appearing in the terminal, which the terminal

@@ -134,13 +134,12 @@ and fetch it again. The update goes through `withCacheOnSuccess` from
 whether it runs at all:
 
 ```typescript
-export function useUpdateUser(options?: UpdateUserOptions) {
+export function useRenameSession(options?: RenameSessionOptions) {
   return useMutation({
-    mutationFn: ({ id, dto }) => app.users.update(id, dto),
-    ...withCacheOnSuccess(options, (updated, { id }) => {
-      queryClient.setQueryData(usersKeys.detail(id), updated);
-      queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: usersKeys.me() });
+    mutationFn: ({ id, name }) => app.sessions.rename(id, name),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     }),
   });
 }

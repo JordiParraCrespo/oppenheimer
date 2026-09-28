@@ -11,14 +11,6 @@ import { authKeys, userSettingsKeys } from './query-keys';
 export const QUERY_PERSIST_MAX_AGE = 24 * 60 * 60 * 1000;
 
 /**
- * `gcTime` for the persisted client. It must be **at least** `maxAge`: React
- * Query garbage-collects an unused query after `gcTime`, and a collected query
- * is not written to storage, so a shorter `gcTime` would silently persist
- * nothing. Both apps get this from {@link defaultQueryClientOptions}.
- */
-export const QUERY_PERSIST_GC_TIME = QUERY_PERSIST_MAX_AGE;
-
-/**
  * Features whose queries never reach storage, whatever the product. The
  * session is the kernel's own; a product adds its sensitive features (a
  * credential list, a profile) through `nonPersistedFeatures` when the app
@@ -118,15 +110,18 @@ export function createQueryPersistOptions(appVersion: string, config: QueryPersi
 }
 
 /**
- * Query defaults every app shares. `gcTime` is pinned to the persist window;
- * `staleTime` is per-app because "how stale is too stale" depends on how long
- * the app's screens stay open.
+ * Query defaults every app shares. `gcTime` is pinned to the persist window:
+ * it must be **at least** `maxAge`, because React Query garbage-collects an
+ * unused query after `gcTime` and a collected query is not written to storage,
+ * so a shorter one would silently persist nothing. `staleTime` is per-app
+ * because "how stale is too stale" depends on how long the app's screens stay
+ * open.
  */
 export function defaultQueryClientOptions(staleTime: number) {
   return {
     queries: {
       staleTime,
-      gcTime: QUERY_PERSIST_GC_TIME,
+      gcTime: QUERY_PERSIST_MAX_AGE,
       retry: 1,
     },
   };

@@ -16,14 +16,6 @@ export const userSettingsKeys = {
 };
 
 /**
- * The query key every organization member list starts with, whatever renders
- * it. It lives in the kernel so that whatever changes something those lists
- * are filtered by (a user's roles) can invalidate them without importing the
- * product package that lists them.
- */
-export const MEMBER_LISTS_KEY = ['organizations', 'members'] as const;
-
-/**
  * Query key factory for the `auth` feature. Defined here rather than in
  * `auth.queries.ts` because `persistence.ts` needs it at module load, and
  * `auth.queries.ts` imports `persistence.ts`: keeping it here breaks the cycle.

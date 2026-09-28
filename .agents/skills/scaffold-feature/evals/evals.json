@@ -102,7 +102,7 @@
         "Dates use useLocale() and a formatter from the kit instead of toLocaleDateString() without a locale",
         "Every hard-coded string ('Loading…', 'Filter', 'No devices', 'Unknown device', 'Last seen', 'This device', 'Sign out') goes through t(), with keys present in en and es, and the missing profile.devices.title key is added or replaced",
         "text-muted-foreground and text-gray-500 are replaced by semantic tokens (text-fg-muted…), and Badge uses a lifecycle/neutral variant instead of secondary",
-        "The raw <h1> is replaced by the page heading the context uses (SettingsTitle in Settings, PageHead in the console), and loading/empty/failed use Skeleton/EmptyState/Alert",
+        "The raw <h1> is replaced by the page heading the context uses (SettingsTitle in Settings, the PageHeader parts in the console), and loading/empty/failed use Skeleton/EmptyState/Alert",
         "The page is moved into Settings (a section of Settings → Profile, or a Settings child route with a SettingsSidebar item) rather than left as /devices inside the console chrome, and the route change follows the tanstack-routing skill",
         "The final message lists each planted violation with what was changed (or why it was left) and which checks it ran"
       ]

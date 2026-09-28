@@ -1,7 +1,7 @@
 import { heyApiSdk, type UserResponseDto } from '@oppenheimer/api-client';
-import type { PermissionDefinition, Role, UpdateUserDto } from '@oppenheimer/shared';
+import type { PermissionDefinition, Role } from '@oppenheimer/shared';
 import { injectable } from 'inversify';
-import { unwrap, unwrapBody } from '../core/errors';
+import { unwrapBody } from '../core/errors';
 import { MapApiError } from '../core/map-api-error.decorator';
 import { UserEntity } from './user.entity';
 import { UsersErrors } from './users.errors';
@@ -78,19 +78,5 @@ export class UsersRepository {
       UsersErrors.FETCH_FAILED,
     );
     return toEntity(data);
-  }
-
-  @MapApiError(UsersErrors.UPDATE_FAILED)
-  async update(id: string, dto: UpdateUserDto): Promise<UserEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.updateUser({ path: { id }, body: dto }),
-      UsersErrors.UPDATE_FAILED,
-    );
-    return toEntity(data);
-  }
-
-  @MapApiError(UsersErrors.DELETE_FAILED)
-  async delete(id: string): Promise<void> {
-    await unwrap(heyApiSdk.deleteUser({ path: { id } }), UsersErrors.DELETE_FAILED);
   }
 }

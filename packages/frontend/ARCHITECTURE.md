@@ -23,7 +23,7 @@ imports it.
 **By platform, for UI and glue.** A component, a hook over a browser API, an
 i18n bootstrap belong to a platform kit. `web` is the web kit (`shell`,
 `auth`, `layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`,
-`roles`, `pairing`). A kit is organised by concern, each concern with the kind
+`pairing`). A kit is organised by concern, each concern with the kind
 directories a feature has.
 
 The split by product keeps logic free of the DOM and testable without one;
@@ -126,12 +126,6 @@ createQueryPersistOptions(__APP_VERSION__, {
 The kernel never imports the product, so what the kernel defines for every
 product to follow is an export, not an import:
 
-- `MEMBER_LISTS_KEY` (`core/src/react/query-keys.ts`) is the prefix of every
-  organization member list, whatever renders it, so anything that changes what
-  those lists are filtered by (a user's roles) can invalidate them without
-  knowing who lists them. The consumer product lists no members today
-  (workspaces are personal); when the teams slice does, it lists them under
-  this key.
 - `KERNEL_NON_PERSISTED_FEATURES` names the features whose queries never
   reach storage whatever the product (`auth`, `userSettings`);
   `CONSUMER_NON_PERSISTED_FEATURES` adds the consumer's (`sessions`, `hosts`,
@@ -184,9 +178,11 @@ Nothing moves before its second consumer appears; nothing is written twice.
 5. `src/modules/things/things.module.ts` — a `ContainerModule` binding
    `TOKENS.ThingsRepository` (and `TOKENS.ThingsService`, if there is one) in
    singleton scope.
-6. `src/modules/things/index.ts` — export the entity, errors, module,
-   repository and any service; add `export * from './things'` to
-   `src/modules/index.ts`.
+6. `src/modules/things/index.ts` — export the entity, the module, and the
+   repository or service `ConsumerApp` hands out; add `export * from
+   './things'` to `src/modules/index.ts`. The error catalog stays unexported
+   until an app reads it: `pnpm check:unused` fails on an export nothing
+   imports.
 7. `src/di/tokens.ts` — add the `ThingsRepository` symbol (and
    `ThingsService`) next to the spread kernel `TOKENS`.
 8. `src/di/consumer-app.ts` — push `ThingsModule` into `consumerModules` and
@@ -255,3 +251,9 @@ shapes the cruiser cannot: feature names against the module lists, kind
 directories, the route line cap, app files the kit already ships, and that
 every package here carries a `README.md`, an `AGENTS.md` linking a rule file,
 and — for the tier and the kits — an `ARCHITECTURE.md`.
+
+`pnpm check:unused` (knip, `knip.json`) fails on an unused file, dependency or
+export in `apps/web`, the kit and the product package — checked through their
+barrels, so a package exports what the app imports — and in the kernel's
+files. The rule is "Nothing is kept for later" in
+`.agents/rules/frontend-architecture.md`.

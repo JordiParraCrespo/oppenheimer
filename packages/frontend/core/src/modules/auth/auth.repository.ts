@@ -40,10 +40,6 @@ export class AuthRepository {
     return this.client.resetPassword(token, password);
   }
 
-  changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    return this.client.changePassword(currentPassword, newPassword);
-  }
-
   logout(): Promise<void> {
     return this.client.signOut();
   }

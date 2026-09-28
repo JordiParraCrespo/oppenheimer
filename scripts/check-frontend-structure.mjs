@@ -60,9 +60,7 @@ const APPS = [
     routes: 'src/routes',
     features: 'src/features',
     product: 'consumer',
-    // `automations`: the console's second list, whose pages render no entity
-    // until the API names one (`product/versions/mvp/13-automations.md`).
-    allow: ['public', 'automations'],
+    allow: ['public'],
     kit: 'web',
   },
   // oppenheimer:end web

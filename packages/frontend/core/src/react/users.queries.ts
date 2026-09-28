@@ -1,17 +1,9 @@
 'use client';
 
-import type { PermissionDefinition, Role, UpdateUserDto } from '@oppenheimer/shared';
-import {
-  type QueryClient,
-  skipToken,
-  type UseMutationOptions,
-  type UseQueryOptions,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import type { PermissionDefinition, Role } from '@oppenheimer/shared';
+import { skipToken, type UseQueryOptions } from '@tanstack/react-query';
 import type { UserEntity } from '../modules/users/user.entity';
 import { useOppenheimerApp } from './context';
-import { withCacheOnSuccess } from './mutations';
 import { useQuery } from './query';
 
 export interface UsersListParams {
@@ -40,11 +32,6 @@ export const usersKeys = {
   me: () => [...usersKeys.all, 'me'] as const,
   permissions: () => [...usersKeys.me(), 'permissions'] as const,
 };
-
-/** Whether `id` is the signed-in user, as far as the cache knows. */
-function isCaller(queryClient: QueryClient, id: string): boolean {
-  return queryClient.getQueryData<UserEntity>(usersKeys.me())?.id === id;
-}
 
 /**
  * The caller's own effective permissions (CASL rules), used to gate which
@@ -112,48 +99,5 @@ export function useUser(
     queryKey: usersKeys.detail(id),
     queryFn: id ? () => app.users.findById(id) : skipToken,
     ...options,
-  });
-}
-
-export function useUpdateUser(
-  options?: Omit<
-    UseMutationOptions<UserEntity, Error, { id: string; dto: UpdateUserDto }>,
-    'mutationFn'
-  >,
-) {
-  const app = useOppenheimerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, dto }: { id: string; dto: UpdateUserDto }) => app.users.update(id, dto),
-    // Write the row the server answered with, where it is cached: its detail,
-    // and the caller's own entry when the row is the caller. The lists it
-    // appears in are refetched. `UpdateUserDto` cannot touch roles, so the
-    // permissions under `me()` stay as they are.
-    ...withCacheOnSuccess(options, (user, { id }) => {
-      queryClient.setQueryData(usersKeys.detail(id), user);
-      if (isCaller(queryClient, id)) queryClient.setQueryData(usersKeys.me(), user);
-      queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
-    }),
-  });
-}
-
-export function useDeleteUser(
-  options?: Omit<UseMutationOptions<void, Error, string>, 'mutationFn'>,
-) {
-  const app = useOppenheimerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => app.users.delete(id),
-    // The row is gone, so its detail is dropped rather than refetched. An
-    // admin may delete their own account: then the caller's entry and its
-    // permissions go too, or the shell keeps rendering the identity just
-    // removed.
-    ...withCacheOnSuccess(options, (_, id) => {
-      queryClient.removeQueries({ queryKey: usersKeys.detail(id) });
-      if (isCaller(queryClient, id)) queryClient.removeQueries({ queryKey: usersKeys.me() });
-      queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
-    }),
   });
 }

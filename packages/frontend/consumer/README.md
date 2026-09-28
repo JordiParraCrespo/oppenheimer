@@ -20,31 +20,33 @@ An app becomes the consumer product by loading `consumerModules` into
 
 `@oppenheimer/frontend-consumer` (`src/index.ts`):
 
-- **di** — `ConsumerApp`, `consumerModules`, `TOKENS` (the kernel's `TOKENS`
-  spread, plus a `<Module>Repository` per module and `SessionsService`,
-  `OrganizationsService`, `ProfileService`).
+The barrel exports what an app uses and nothing more — `pnpm check:unused`
+(knip) fails on an export nobody imports. Each module's error catalog and, where
+a service fronts it, its repository stay inside the package.
+
+- **di** — `consumerModules`, the container modules an app hands
+  `OppenheimerApp.create`.
 - **modules/hosts** — `HostEntity`, `HostPairing`, `HostState`,
-  `HostsRepository`, `HostsModule`, `HostsErrors`.
+  `HostsRepository`, `HostsModule`.
 - **modules/projects** — `ProjectEntity`, `ProjectRepository`,
   `CreateProjectInput`, `UpdateProjectInput`, `ProjectRepositoryInput`,
-  `shortName`, `ProjectsRepository`, `ProjectsModule`, `ProjectsErrors`.
+  `shortName`, `ProjectsRepository`, `ProjectsModule`.
 - **modules/installations** and **modules/automations** — their entities,
-  `InstallationsRepository` / `AutomationsRepository`, modules and errors.
+  `InstallationsRepository` / `AutomationsRepository` and modules.
 - **modules/sessions** — `SessionEntity`, `CreateSessionInput`,
-  `SessionAgent`, `SessionState`, `SessionsService`, `SessionsRepository`,
-  `SessionsModule`, `SessionsErrors`, `isSessionNotFound`. The terminal's
-  transport lives here too, with no platform in it:
-  `SessionsService.openStream(id, window)` returns a `SessionStream` (the
-  attach socket, its reconnect ladder, a fresh ticket per dial and the
-  byte credit). `createResizeCoalescer` and `FakeSessionStream` sit
-  beside it. The app only renders what the stream delivers.
+  `SessionAgent`, `SessionState`, `SessionsService`, `SessionsModule`,
+  `isSessionNotFound`. The terminal's transport lives here too, with no
+  platform in it: `SessionsService.openStream(id, window)` returns a
+  `SessionStream` (the attach socket, its reconnect ladder, a fresh ticket per
+  dial and the byte credit), and `createResizeCoalescer` sits beside it. The
+  app only renders what the stream delivers.
 - **modules/organizations** — `OrganizationEntity`, `OrganizationsService`,
-  `OrganizationsRepository`, `OrganizationsModule`, `OrganizationsErrors`.
+  `OrganizationsModule`, `isProvisionalSlug`.
 - **modules/profile** — `ProfileEntity`, `UserSessionEntity`,
-  `ProfileService`, `ProfileRepository`, `ProfileModule`, `ProfileErrors`.
-- **modules/api-tokens** — `ApiTokenEntity`, `CreatedApiToken`,
-  `CurrentCredential`, `PermissionCatalog`, `ApiTokensRepository`,
-  `ApiTokensModule`, `ApiTokensErrors`.
+  `ProfileService`, `ProfileModule`.
+- **modules/api-tokens** — `PermissionCatalog`, `ApiTokensRepository`,
+  `ApiTokensModule`: the permission catalog OAuth consent names scopes from.
+  The console mints no tokens.
 
 `@oppenheimer/frontend-consumer/react` (`src/react/index.ts`):
 

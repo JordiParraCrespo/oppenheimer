@@ -92,8 +92,6 @@
     "add": "Add host",
     "empty": "No hosts yet",
     "emptyHint": "Hosts you connect appear here with their live session count. Sessions cannot start until one is online.",
-    "online": "Online",
-    "offline": "Offline",
     "failed": "The hosts could not be loaded."
   }
 }

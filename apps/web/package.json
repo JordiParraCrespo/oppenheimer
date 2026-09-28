@@ -15,8 +15,6 @@
     "arch": "depcruise src --config .dependency-cruiser.cjs"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.9.1",
-    "@oppenheimer/api-client": "workspace:*",
     "@oppenheimer/auth": "workspace:*",
     "@oppenheimer/design-system-web": "workspace:*",
     "@oppenheimer/frontend-consumer": "workspace:*",
@@ -34,8 +32,6 @@
     "@xterm/xterm": "^6.0.0",
     "better-auth": "^1.6.25",
     "i18next": "^26.4.2",
-    "i18next-browser-languagedetector": "^8.2.1",
-    "posthog-js": "^1.432.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.88.0",

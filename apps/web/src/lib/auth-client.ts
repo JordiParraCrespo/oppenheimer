@@ -26,7 +26,7 @@ const apiBaseUrl = import.meta.env.VITE_API_URL ?? '';
  */
 const authBaseUrl = new URL(`${apiBaseUrl}/api/auth`, window.location.origin).toString();
 
-export const authClient = createAuthClient({
+const authClient = createAuthClient({
   baseURL: authBaseUrl,
   // The shared plugin set (additional user fields, admin, organizations) comes
   // from @oppenheimer/auth so the client types stay in lockstep with the server.
@@ -95,10 +95,6 @@ export const webAuthClient: IAuthClient = {
 
   async resetPassword(token, newPassword) {
     unwrap(await authClient.resetPassword({ token, newPassword }));
-  },
-
-  async changePassword(currentPassword, newPassword) {
-    unwrap(await authClient.changePassword({ currentPassword, newPassword }));
   },
 
   async getSession() {

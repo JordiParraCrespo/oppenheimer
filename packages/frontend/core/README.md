@@ -39,10 +39,9 @@ persistence policy, and the contracts a product builds on.
 
 - `OppenheimerProvider`, `useOppenheimerApp`, `useAuthState`.
 - Session: `useLogin`, `useLogout`, `useSessionRestore`, `useSocialLogin`,
-  `useForgotPassword`, `useResetPassword`, `useChangePassword`, `authKeys`.
-- Users: `useProfile`, `useUser`, `useUsers`, `useUpdateUser`, `useDeleteUser`,
-  `useMyPermissions`, `usersKeys`.
-- Settings: `useUserSettings`, `useUpdateUserSettings`, `userSettingsKeys`.
+  `useForgotPassword`, `useResetPassword`, `authKeys`.
+- Users: `useProfile`, `useUser`, `useUsers`, `useMyPermissions`, `usersKeys`.
+- Settings: `useUserSettings`, `userSettingsKeys`.
 - Analytics: `useAnalytics`, `useCaptureEvent`, `usePageView`, `analyticsKeys`.
 - Feature flags: `useFeatureFlag`, `useFeatureFlagValue`, `useFeatureFlags`,
   `featureFlagKeys`, `featureFlagsQueryOptions`. Values come from the API,
@@ -51,7 +50,7 @@ persistence policy, and the contracts a product builds on.
 - Capabilities: `useDeploymentCapabilities`, `capabilitiesKeys`.
 - Cache policy: `defaultQueryClientOptions`, `createQueryPersistOptions`,
   `shouldDehydrateQuery`, `KERNEL_NON_PERSISTED_FEATURES`, `cacheOwnerKey`.
-- Contracts a product builds on: `MEMBER_LISTS_KEY`, `withFeaturePrefix`.
+- Contracts a product builds on: `withFeaturePrefix`.
 
 ## How to use it
 

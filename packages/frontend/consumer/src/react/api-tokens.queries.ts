@@ -1,45 +1,15 @@
 'use client';
 
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
-import type { CreateApiTokenDto } from '@oppenheimer/shared';
-import {
-  type UseMutationOptions,
-  type UseQueryOptions,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
-import type {
-  ApiTokenEntity,
-  CreatedApiToken,
-  CurrentCredential,
-  PermissionCatalog,
-} from '../modules/api-tokens/api-token.entity';
+import { useQuery } from '@oppenheimer/frontend-core/react';
+import type { UseQueryOptions } from '@tanstack/react-query';
+import type { PermissionCatalog } from '../modules/api-tokens/permission-catalog';
 import { useConsumerApp } from './context';
 
-/**
- * Query key factory for the `apiTokens` feature, structured from the most
- * generic (`all`) to the most specific so a whole subtree can be invalidated
- * with one key.
- */
+/** Query key factory for the `apiTokens` feature. */
 export const apiTokensKeys = {
   all: ['apiTokens'] as const,
-  lists: () => [...apiTokensKeys.all, 'list'] as const,
-  list: () => [...apiTokensKeys.lists()] as const,
   permissions: () => [...apiTokensKeys.all, 'permissions'] as const,
-  credential: () => [...apiTokensKeys.all, 'credential'] as const,
 };
-
-export function useApiTokens(
-  options?: Omit<UseQueryOptions<ApiTokenEntity[], Error>, 'queryKey' | 'queryFn'>,
-) {
-  const app = useConsumerApp();
-
-  return useQuery({
-    queryKey: apiTokensKeys.list(),
-    queryFn: () => app.apiTokens.findAll(),
-    ...options,
-  });
-}
 
 /**
  * The permission catalog and the subset the signed-in user may grant. Cached
@@ -55,43 +25,5 @@ export function usePermissionCatalog(
     queryFn: () => app.apiTokens.permissions(),
     staleTime: 5 * 60 * 1000,
     ...options,
-  });
-}
-
-export function useCurrentCredential(
-  options?: Omit<UseQueryOptions<CurrentCredential, Error>, 'queryKey' | 'queryFn'>,
-) {
-  const app = useConsumerApp();
-
-  return useQuery({
-    queryKey: apiTokensKeys.credential(),
-    queryFn: () => app.apiTokens.currentCredential(),
-    ...options,
-  });
-}
-
-export function useCreateApiToken(
-  options?: UseMutationOptions<CreatedApiToken, Error, CreateApiTokenDto>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (dto: CreateApiTokenDto) => app.apiTokens.create(dto),
-    ...withCacheOnSuccess(options, () => {
-      queryClient.invalidateQueries({ queryKey: apiTokensKeys.lists() });
-    }),
-  });
-}
-
-export function useRevokeApiToken(options?: UseMutationOptions<void, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => app.apiTokens.revoke(id),
-    ...withCacheOnSuccess(options, () => {
-      queryClient.invalidateQueries({ queryKey: apiTokensKeys.lists() });
-    }),
   });
 }

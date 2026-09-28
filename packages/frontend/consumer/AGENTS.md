@@ -50,9 +50,8 @@ pnpm --filter @oppenheimer/frontend-consumer build   # the apps import dist/
   knows kernel services; a consumer hook reads `useConsumerApp().sessions`.
 - Adding a member or invitation hook to `organizations` because the API has
   the endpoint. The console has no roster; that surface is the teams slice's.
-- Defining a query key or type here that the kernel owns, such as the member
-  list prefix: use the kernel contract (`MEMBER_LISTS_KEY` from
-  `@oppenheimer/frontend-core/react`).
+- Defining a query key or type here that the kernel owns: use the kernel's
+  contract from `@oppenheimer/frontend-core/react`.
 - Putting a component or a DOM import here. A product package holds no
   platform code; `domain-knows-no-platform` fails.
 - Importing `src/react/` from `src/modules/`. Services know nothing of React;

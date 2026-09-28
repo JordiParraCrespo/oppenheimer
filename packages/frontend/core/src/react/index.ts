@@ -11,7 +11,6 @@ export {
 export {
   authKeys,
   type SocialLoginVariables,
-  useChangePassword,
   useExpireSession,
   useForgotPassword,
   useLogin,
@@ -42,7 +41,6 @@ export {
   createQueryPersistOptions,
   defaultQueryClientOptions,
   KERNEL_NON_PERSISTED_FEATURES,
-  QUERY_PERSIST_GC_TIME,
   QUERY_PERSIST_MAX_AGE,
   type QueryPersistConfig,
   reconcileCacheOwner,
@@ -56,15 +54,13 @@ export {
   type SessionExpiryTarget,
   shouldRetryQuery,
 } from './query-client';
-export { MEMBER_LISTS_KEY, withFeaturePrefix } from './query-keys';
+export { withFeaturePrefix } from './query-keys';
 export { shareEntities } from './share-entities';
-export { userSettingsKeys, useUpdateUserSettings, useUserSettings } from './user-settings.queries';
+export { userSettingsKeys, useUserSettings } from './user-settings.queries';
 export {
-  useDeleteUser,
   useMyPermissions,
   useProfile,
   usersKeys,
-  useUpdateUser,
   useUser,
   useUsers,
 } from './users.queries';

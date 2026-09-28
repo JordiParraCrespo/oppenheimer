@@ -7,7 +7,7 @@ export type ThemePreference = 'light' | 'dark' | 'system';
 export type Theme = 'light' | 'dark';
 
 /** localStorage key holding this device's own theme choice. */
-export const THEME_STORAGE_KEY = 'theme';
+const THEME_STORAGE_KEY = 'theme';
 
 const ThemeContext = createContext<{
   theme: ThemePreference;

@@ -44,9 +44,8 @@ new feature. Before creating anything, answer these:
   `packages/frontend/core` (`auth`, `users`, `user-settings`, `capabilities`,
   `analytics`, `feature-flags`) or of the product package
   `packages/frontend/consumer` (`sessions`, `hosts`, `projects`,
-  `installations`, `organizations`, `profile`, `api-tokens`), or is on the
-  app's allowlist (`public`, and `automations` until the API names that
-  entity). Never name it after a page (`settings`, `console`, `home`).
+  `installations`, `automations`, `organizations`, `profile`, `api-tokens`),
+  or is on the app's allowlist (`public`). Never name it after a page (`settings`, `console`, `home`).
   `ls packages/frontend/*/src/modules` shows what exists.
   - `sessions` are the agent sessions (a worktree and a tmux terminal on a
     host). The browsers signed in to an account are `profile`
@@ -160,8 +159,10 @@ from step 1.
 - **Actions:** each action is offered only where the server would allow it,
   and never where a business rule makes it a certain refusal. A workspace's
   owner holds every rule today, so the console's rows are ungated; a screen
-  whose endpoint does need a rule checks it with `useAbility()` from the kit
-  and hides the action rather than letting it end in a 403.
+  whose endpoint does need a rule builds the caller's ability from
+  `useMyPermissions()` (kernel) with `defineAbilitiesFromPermissions`
+  (`@oppenheimer/shared/permissions`) — the kit's nav does the same — and
+  hides the action rather than letting it end in a 403.
 - **Nav rows:** a gated row in `apps/web/src/lib/nav.ts` or a
   `SettingsSidebar` item takes `policies` from
   `ENDPOINT_POLICIES['<METHOD> <route>']` (`@oppenheimer/shared/permissions`),
@@ -254,9 +255,10 @@ pieces from your plan, following `references/templates.md`:
 - **Design system and kit first.** Read
   `packages/frontend/design-system/web/src/index.ts` in full (its exports are
   multi-line) and `packages/frontend/web/src/index.ts` before writing markup.
-  - Kit: `PageHead`, `ConfirmDialog`, `FieldRow`, `RouteError` /
-    `RouteNotFound`, `useErrorMessage`, `useZodResolver`, `useSearchDraft`,
-    `useLocale` and the date formatters, `useAbility`, `SettingsSidebar`.
+  - Kit: `ConfirmDialog`, `QueryState`, `ErrorAlert`, `RouteError` /
+    `RouteNotFound`, `useZodResolver`, `SidebarSearchField`, `useLocale` and
+    the date formatters, `SettingsSidebar`; `useErrorMessage` comes from the
+    kernel's React entry.
   - Design system: `SettingsTitle` / `SettingsGroup` / `SettingsRow` for a
     settings page, `HostCard`, `EmptyState`, `Skeleton`, `Alert`, `Callout`,
     `Badge` (lifecycle `active` / `paused` / `ended` / `draft`, `neutral` for

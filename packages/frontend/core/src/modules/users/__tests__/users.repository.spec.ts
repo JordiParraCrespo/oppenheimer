@@ -8,8 +8,6 @@ const api = vi.hoisted(() => ({
   getMe: vi.fn(),
   getMyPermissions: vi.fn(),
   findUserById: vi.fn(),
-  updateUser: vi.fn(),
-  deleteUser: vi.fn(),
 }));
 
 vi.mock('@oppenheimer/api-client', () => ({ heyApiSdk: api }));
@@ -190,20 +188,6 @@ describe('UsersRepository', () => {
       api.findUserById.mockResolvedValue(ok(undefined));
 
       await expect(repository.findById('user-9')).rejects.toBeInstanceOf(AppError);
-    });
-  });
-
-  describe('update', () => {
-    it('maps the saved user back', async () => {
-      api.updateUser.mockResolvedValue(ok(dto({ firstName: 'Grace' })));
-
-      const saved = await repository.update('user-1', { firstName: 'Grace' });
-
-      expect(saved.firstName).toBe('Grace');
-      expect(api.updateUser).toHaveBeenCalledWith({
-        path: { id: 'user-1' },
-        body: { firstName: 'Grace' },
-      });
     });
   });
 });

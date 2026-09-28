@@ -20,7 +20,7 @@ they disagree, fix the code or update both together. The tier-wide model is
   src/features/<module>/          screens sections dialogs forms
       │                           components hooks lib __tests__
       ├──────────────► @oppenheimer/frontend-web        the web platform kit
-      │                  AppShell, PageHead, useZodResolver,
+      │                  AppShell, ConfirmDialog, useZodResolver,
       │                  dateFormatter, LocalStorageService
       │                       │
       │                       ▼

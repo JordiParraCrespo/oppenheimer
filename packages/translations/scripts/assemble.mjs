@@ -17,12 +17,10 @@ const namespaces = JSON.parse(readFileSync(join(root, 'namespaces.json'), 'utf8'
  * app bundles the default locale's catalog in its entry chunk, and a namespace
  * no screen renders is weight every first visit pays.
  *
- * - `emails`: the API's email templates.
- * - `control`, `pages`, `home`: copy from the starter's other apps. No screen
- *   in `apps/web` reads them (#118 decides whether they go). A screen that
- *   starts reading one takes it off this list.
+ * - `emails`: the API's email templates. A screen that starts reading a
+ *   namespace on this list takes it off.
  */
-const NOT_IN_BROWSER = ['emails', 'control', 'pages', 'home'];
+const NOT_IN_BROWSER = ['emails'];
 
 for (const locale of readdirSync(root, { withFileTypes: true })
   .filter((entry) => entry.isDirectory() && /^[a-z]{2}$/.test(entry.name))

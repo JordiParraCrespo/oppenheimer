@@ -12,7 +12,8 @@ for names, shapes and where a query is subscribed to, Biome for effects and
 memo, Biome plugins in `biome-plugins/` for query keys, `skipToken` and
 mutation cache updates (the rules are
 [`apps/docs/docs/architecture/query-keys.md`](../../apps/docs/docs/architecture/query-keys.md)),
-and a `*-render.spec.tsx` for what a component costs. The Claude Code Stop hook
+`pnpm check:unused` (knip) for code nothing reaches, and a `*-render.spec.tsx`
+for what a component costs. The Claude Code Stop hook
 runs all three. The layer model and the cookbooks are in
 [`packages/frontend/ARCHITECTURE.md`](../../packages/frontend/ARCHITECTURE.md)
 and `apps/web/ARCHITECTURE.md`; `/scaffold-feature` produces the shape.
@@ -97,7 +98,7 @@ shared ─► core ─► consumer ─► apps/web
 ## The kit is concerns, not kinds, at its top level
 
 `packages/frontend/web/src/<concern>/<kind>/` — `shell`, `auth`,
-`layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`, `roles`,
+`layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`,
 `pairing`. A concern is named after what it does, never after a product
 module. Each
 concern has an `index.ts`; a concern imports another only through it. The
@@ -255,6 +256,24 @@ moving or guarding a route — or touching `routeTree.gen.ts`, `beforeLoad`,
 (`.agents/skills/tanstack-routing/`). It carries the file-name table, the
 guard and search-param rules, and the check that proves a restructure did not
 change a URL.
+
+## Nothing is kept for later
+
+`pnpm check:unused` runs knip (`knip.json`) over `apps/web` and the kernel,
+product and kit packages, and fails on an unused file, dependency or export.
+
+- In the app, the kit and the product package an export is checked **through
+  the barrel**: a package exports what the app imports and nothing else. A
+  component, hook or error catalog only the package itself uses stays in it,
+  unexported from `index.ts`. Keeping something "for a later screen" is the
+  shape this check exists to stop — a later screen re-exports it.
+- The kernel's entry points are the surface any app builds on (feature flags,
+  analytics, users), so its barrels are not checked; the files behind them
+  are.
+- Exported types are not checked: they cost nothing at run time and are the
+  vocabulary a caller annotates with.
+- When you delete the last caller of a hook, delete the service and
+  repository methods only it reached. Knip does not see class members.
 
 ## Patterns agents get wrong
 

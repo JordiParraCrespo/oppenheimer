@@ -1,15 +1,7 @@
 'use client';
-
-import type { UpdateUserSettingsDto } from '@oppenheimer/shared/schemas/profile';
-import {
-  type UseMutationOptions,
-  type UseQueryOptions,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { type UseQueryOptions } from '@tanstack/react-query';
 import type { UserSettingsEntity } from '../modules/user-settings/user-settings.entity';
 import { useOppenheimerApp } from './context';
-import { withCacheOnSuccess } from './mutations';
 import { useQuery } from './query';
 import { userSettingsKeys } from './query-keys';
 
@@ -24,19 +16,5 @@ export function useUserSettings(
     queryKey: userSettingsKeys.me(),
     queryFn: () => app.userSettings.get(),
     ...options,
-  });
-}
-
-export function useUpdateUserSettings(
-  options?: UseMutationOptions<UserSettingsEntity, Error, UpdateUserSettingsDto>,
-) {
-  const app = useOppenheimerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (dto: UpdateUserSettingsDto) => app.userSettings.update(dto),
-    ...withCacheOnSuccess(options, (settings) => {
-      queryClient.setQueryData(userSettingsKeys.me(), settings);
-    }),
   });
 }
