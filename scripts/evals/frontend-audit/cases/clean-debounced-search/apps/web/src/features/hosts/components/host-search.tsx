@@ -1,4 +1,4 @@
-import { SearchInput } from '@oppenheimer/design-system-web';
+import { SidebarSearch } from '@oppenheimer/design-system-web';
 import { useSearchDraft } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
@@ -8,10 +8,11 @@ export function HostSearch({ onChange }: { onChange: (query: string) => void }) 
   const { draft, type } = useSearchDraft({ onChange });
 
   return (
-    <SearchInput
+    <SidebarSearch
       value={draft}
-      onChange={(event) => type(event.target.value)}
+      onValueChange={type}
       placeholder={t('common.search')}
+      aria-label={t('common.search')}
     />
   );
 }
