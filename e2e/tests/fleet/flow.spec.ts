@@ -17,6 +17,20 @@ test.describe.configure({ timeout: 600_000 });
 /** Generous on purpose: the claim is "not behind the flood", not a benchmark. */
 const ECHO_P90_BUDGET_MS = 1_000;
 
+/** 01's credit window: what an attachment may have in flight unacknowledged. */
+const CREDIT_WINDOW = 262_144;
+
+/**
+ * Each flood prints ~100 MB, but the runner reads the pane through
+ * `tmux attach-session`, and tmux stops forwarding a client's output and
+ * redraws its screen instead when that client falls behind — so how many bytes
+ * reach the socket is a measure of how fast the reader drained them (4 MB on a
+ * machine running the other fleet specs beside this one, 10 MB+ alone), not of
+ * flow control. What flow control owes is credit coming back: a pane whose
+ * credit stopped would sit at one window. Several windows is that claim.
+ */
+const FLOWED_BYTES = 8 * CREDIT_WINDOW;
+
 async function echoP90(pane: Terminal, label: string): Promise<number> {
   const samples: number[] = [];
   for (let i = 0; i < 20; i += 1) {
@@ -62,7 +76,7 @@ test('floods on three panes stall neither themselves nor typing on a fourth', as
     await pane.waitFor('FLOOD-DONE', 300_000);
     pane.send('echo alive-$((6*7))\r');
     await pane.waitFor('alive-42');
-    expect(pane.bytes()).toBeGreaterThan(10_000_000);
+    expect(pane.bytes()).toBeGreaterThan(FLOWED_BYTES);
   }
   expect(panes.map((pane) => pane.closeCode())).toEqual(panes.map(() => null));
   await Promise.all(panes.map((pane) => pane.close()));
