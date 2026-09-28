@@ -127,6 +127,7 @@ export type {
   MintedPairingTokenResponseDto,
   MintPairingTokenRequest,
   MoveSessionRequest,
+  PaginatedAccessGrantsResponseDto,
   PaginatedFlagChangesResponseDto,
   PaginatedSessionsResponseDto,
   PairingTokenResponseDto,

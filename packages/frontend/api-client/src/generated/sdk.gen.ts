@@ -240,6 +240,8 @@ export const catalog = <ThrowOnError extends boolean = false>(options?: Options<
 
 /**
  * List the access grants in the active organization
+ *
+ * Newest first, one page at a time (`page`, `limit` up to 100).
  */
 export const list = <ThrowOnError extends boolean = false>(options?: Options<ListData, ThrowOnError>): RequestResult<ListResponses, ListErrors, ThrowOnError> => (options?.client ?? client).get<ListResponses, ListErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

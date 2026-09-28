@@ -453,6 +453,8 @@ export const listQueryKey = (options?: Options<ListData>) => createQueryKey('lis
 
 /**
  * List the access grants in the active organization
+ *
+ * Newest first, one page at a time (`page`, `limit` up to 100).
  */
 export const listOptions = (options?: Options<ListData>) => queryOptions<ListResponse, ListError, ListResponse, ReturnType<typeof listQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -466,6 +468,38 @@ export const listOptions = (options?: Options<ListData>) => queryOptions<ListRes
     },
     queryKey: listQueryKey(options)
 });
+
+export const listInfiniteQueryKey = (options?: Options<ListData>): QueryKey<Options<ListData>> => createQueryKey('list', options, true);
+
+/**
+ * List the access grants in the active organization
+ *
+ * Newest first, one page at a time (`page`, `limit` up to 100).
+ */
+export const listInfiniteOptions = (options?: Options<ListData>) => {
+    const opts = infiniteQueryOptions<ListResponse, ListError, InfiniteData<ListResponse>, QueryKey<Options<ListData>>, number | Pick<QueryKey<Options<ListData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await list({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
 
 /**
  * Grant access to specific records

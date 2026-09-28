@@ -248,6 +248,18 @@ export type AccessGrantResponseDto = {
     createdAt: string;
 };
 
+export type AccessGrantPaginationMetaDto = {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+};
+
+export type PaginatedAccessGrantsResponseDto = {
+    data: Array<AccessGrantResponseDto>;
+    meta: AccessGrantPaginationMetaDto;
+};
+
 export type CreateAccessGrantRequest = {
     principalType: 'user' | 'team' | 'role';
     principalId: string;
@@ -2576,7 +2588,16 @@ export type CatalogResponse = CatalogResponses[keyof CatalogResponses];
 export type ListData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Items per page (default: 20, max: 100)
+         */
+        limit?: number;
+        /**
+         * Page number (default: 1)
+         */
+        page?: number;
+    };
     url: '/api/v1/access-grants';
 };
 
@@ -2594,7 +2615,7 @@ export type ListErrors = {
 export type ListError = ListErrors[keyof ListErrors];
 
 export type ListResponses = {
-    200: Array<AccessGrantResponseDto>;
+    200: PaginatedAccessGrantsResponseDto;
 };
 
 export type ListResponse = ListResponses[keyof ListResponses];
