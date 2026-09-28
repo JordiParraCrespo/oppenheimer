@@ -4,12 +4,19 @@ import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 
 /**
- * Exchange the `installation_id` and `code` GitHub put on the return leg.
+ * Exchange the `installation_id`, `code` and `state` GitHub put on the return
+ * leg.
  *
  * The effect synchronises with the URL — the one system React does not own
- * here. It runs once per code: `exchanged` guards against React's double
- * invoke in development and against a re-render mid-flight, because the code
- * is one-shot and a second POST with it fails.
+ * here. It runs once per state: `exchanged` guards against React's double
+ * invoke in development and against a re-render mid-flight, because the state
+ * and the code are both one-shot and a second POST with them fails.
+ *
+ * **No state, no post.** The state is the nonce this console minted when the
+ * reader pressed Connect; a callback without one was not started here — a link
+ * someone else stopped halfway through their own install, or GitHub's own
+ * "Configure" redirect. Posting it would connect whoever's installation it is
+ * to this workspace, so the hook reports `unstarted` and the step says so.
  *
  * The parameters are cleared **on success only**. They are spent either way,
  * but a failed exchange still needs to say which attempt failed: dropping them
@@ -28,6 +35,7 @@ import { useEffect, useRef } from 'react';
 export function useConnectInstallationCallback(
   githubInstallationId?: number,
   code?: string,
+  state?: string,
   walk?: true,
 ) {
   const navigate = useNavigate();
@@ -35,24 +43,26 @@ export function useConnectInstallationCallback(
   const exchanged = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!githubInstallationId || !code) return;
-    if (exchanged.current === code) return;
-    exchanged.current = code;
+    if (!githubInstallationId || !code || !state) return;
+    if (exchanged.current === state) return;
+    exchanged.current = state;
 
     mutate(
-      { githubInstallationId, code },
+      { githubInstallationId, code, state },
       {
         onSuccess: () =>
           navigate({ to: '/onboarding/github', search: walk ? { walk } : {}, replace: true }),
       },
     );
-  }, [githubInstallationId, code, walk, mutate, navigate]);
+  }, [githubInstallationId, code, state, walk, mutate, navigate]);
 
   return {
     /** True while the code is being exchanged, so the step can hold its place. */
     isExchanging: isPending,
     /** The installation this visit connected, if it did. */
     connected: connected as InstallationEntity | undefined,
+    /** A GitHub callback that carried no state this console minted: never posted. */
+    unstarted: Boolean(githubInstallationId && code && !state),
     error,
   };
 }

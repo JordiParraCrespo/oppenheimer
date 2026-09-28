@@ -92,6 +92,8 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useInstallations: () => ({ data: [], isPending: false }),
   useInstallationRepositoriesFor: () => ({ repositories: [], isPending: false }),
   useRepositoryBranchesFor: () => ({ byRepository: new Map(), isPending: false }),
+  // "Manage repository access" mints on click; nothing here clicks it.
+  useStartInstallation: () => ({ mutate: vi.fn(), error: null, reset: vi.fn() }),
   // Called once per render of NewSessionSend, so it doubles as that section's count.
   useCreateSession: () => {
     renders.set('send', (renders.get('send') ?? 0) + 1);

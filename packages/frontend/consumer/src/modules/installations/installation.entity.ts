@@ -31,6 +31,29 @@ export class InstallationEntity {
   }
 }
 
+/**
+ * A GitHub App install the API has just started: the App's install URL with a
+ * single-use `state` already on it, minted for this person in this workspace.
+ */
+export interface InstallationStart {
+  /** Where to send the browser. Carries `state`. */
+  url: string;
+  /** The nonce GitHub will echo back on the redirect. */
+  state: string;
+  /** When the state stops being redeemable. */
+  expiresAt: Date;
+}
+
+/** What GitHub's install redirect carries, and the connect call posts. */
+export interface InstallationCallback {
+  /** GitHub's own installation id, not the control plane's. */
+  githubInstallationId: number;
+  /** The OAuth code, exchanged once server-side and never stored. */
+  code: string;
+  /** The install state, nonce only: without the console's walk prefix. */
+  state: string;
+}
+
 /** A repository the installation can reach, for the picker and the summary. */
 export class RepositoryEntity {
   constructor(

@@ -120,28 +120,37 @@ describe('renameHostSchema / updateProjectSchema / renameSessionSchema', () => {
 });
 
 describe('connectInstallationSchema', () => {
-  it('requires GitHub’s numeric installation id and the OAuth code', () => {
-    expect(connectInstallationSchema.parse({ githubInstallationId: 12345, code: 'abc' })).toEqual({
-      githubInstallationId: 12345,
-      code: 'abc',
-    });
-    expect(connectInstallationSchema.safeParse({ githubInstallationId: 12345 }).success).toBe(
-      false,
-    );
-    expect(connectInstallationSchema.safeParse({ code: 'abc' }).success).toBe(false);
+  const state = 'kX9_mZq-4vR2tY7wB1nC3dE5fG8hJ0kL';
+
+  it('requires GitHub’s numeric installation id, the OAuth code and the install state', () => {
+    expect(
+      connectInstallationSchema.parse({ githubInstallationId: 12345, code: 'abc', state }),
+    ).toEqual({ githubInstallationId: 12345, code: 'abc', state });
+    expect(
+      connectInstallationSchema.safeParse({ githubInstallationId: 12345, state }).success,
+    ).toBe(false);
+    expect(connectInstallationSchema.safeParse({ code: 'abc', state }).success).toBe(false);
+  });
+
+  it('rejects a missing or malformed state', () => {
+    const base = { githubInstallationId: 12345, code: 'abc' };
+    expect(connectInstallationSchema.safeParse(base).success).toBe(false);
+    for (const bad of ['', 'short', `first-run.${state}`, `${state}!`, 'a'.repeat(129)]) {
+      expect(connectInstallationSchema.safeParse({ ...base, state: bad }).success).toBe(false);
+    }
   });
 
   it('does not answer to the old `installationId` name', () => {
     expect(
-      connectInstallationSchema.safeParse({ installationId: 12345, code: 'abc' }).success,
+      connectInstallationSchema.safeParse({ installationId: 12345, code: 'abc', state }).success,
     ).toBe(false);
   });
 
   it('rejects a non-positive or fractional id', () => {
     for (const githubInstallationId of [0, -1, 1.5]) {
-      expect(connectInstallationSchema.safeParse({ githubInstallationId, code: 'a' }).success).toBe(
-        false,
-      );
+      expect(
+        connectInstallationSchema.safeParse({ githubInstallationId, code: 'a', state }).success,
+      ).toBe(false);
     }
   });
 });
