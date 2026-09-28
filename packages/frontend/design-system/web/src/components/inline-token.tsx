@@ -46,7 +46,7 @@ function InlineToken({
       aria-expanded={open}
       className={cn(
         'inline-flex items-center gap-1.5 rounded-pill whitespace-nowrap text-fg outline-none transition-[background-color,box-shadow,transform] duration-fast ease-standard hover:bg-control-hover focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-popup-open:bg-selected-surface data-popup-open:ring-3 data-popup-open:ring-ring data-dirty:bg-selected-surface data-dirty:text-link',
-        size === 'md' ? 'h-[30px] bg-card px-[11px] text-[14px] tracking-[-0.006em]' : 'h-7 bg-hover-surface px-2.5 text-[13px]',
+        size === 'md' ? 'h-[30px] bg-card px-[11px] text-operate tracking-[-0.006em]' : 'h-7 bg-hover-surface px-2.5 text-[13px]',
         mono && (size === 'md' ? 'figures text-[13px]' : 'figures text-[12.5px]'),
         className,
       )}
@@ -64,7 +64,7 @@ function TokenSentence({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="token-sentence"
-      className={cn('flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-[14px] text-fg-muted', className)}
+      className={cn('flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-operate text-fg-muted', className)}
       {...props}
     />
   );
@@ -163,7 +163,7 @@ function AddRow({ open, className, children, ...props }: React.ComponentProps<'b
       data-popup-open={open ? '' : undefined}
       aria-expanded={open}
       className={cn(
-        'flex h-(--control-h-lg) w-full items-center gap-2 rounded-pill border border-dashed border-border px-3.5 text-[14px] text-fg-muted outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface hover:text-fg focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 data-popup-open:bg-hover-surface data-popup-open:text-fg',
+        'flex h-(--control-h-lg) w-full items-center gap-2 rounded-pill border border-dashed border-border px-3.5 text-operate text-fg-muted outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface hover:text-fg focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 data-popup-open:bg-hover-surface data-popup-open:text-fg',
         className,
       )}
       {...props}

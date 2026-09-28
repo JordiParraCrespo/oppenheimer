@@ -7,7 +7,6 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  EditorPageBack,
   IconButton,
   PageHeader,
   PageHeaderCrumbs,
@@ -16,7 +15,7 @@ import {
   PageHeaderNote,
   PageHeaderRow,
   PageHeaderSep,
-  RoutineStatus,
+  StatusDot,
 } from '@oppenheimer/design-system-web';
 import { Ellipsis, Play } from '@oppenheimer/design-system-web/icons';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
@@ -57,10 +56,6 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
 
   return (
     <PageHeader>
-      {/* The frame's 18px under Back plus the page's 16px gap, less the header's own 10. */}
-      <EditorPageBack render={<Link to="/automations" />} className="mb-6">
-        {t('automations.detail.back')}
-      </EditorPageBack>
       <PageHeaderCrumbs>
         <Link to="/automations">{t('automations.detail.crumb')}</Link>
         <span>/</span>
@@ -146,9 +141,13 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
         }
       />
       <PageHeaderMeta>
-        <RoutineStatus state={automationDot(automation)}>
+        <StatusDot
+          state={automationDot(automation)}
+          density="compact"
+          pulse={automation.status === 'running'}
+        >
           {t(`automations.status.${automation.status}`)}
-        </RoutineStatus>
+        </StatusDot>
         <NextRunCountdown automation={automation} />
         <PageHeaderSep />
         <span>{automationTriggerText(automation, locale, t)}</span>

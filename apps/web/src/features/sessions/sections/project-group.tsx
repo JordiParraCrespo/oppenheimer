@@ -2,6 +2,7 @@ import {
   IconButton,
   SessionList,
   SidebarEmptyRow,
+  SidebarProjectGroup,
   SidebarProjectHeader,
 } from '@oppenheimer/design-system-web';
 import { Plus, Settings } from '@oppenheimer/design-system-web/icons';
@@ -61,7 +62,7 @@ export function ProjectGroup({
   });
 
   return (
-    <div className="mt-1.5 flex flex-col px-3">
+    <SidebarProjectGroup>
       <SidebarProjectHeader
         name={label}
         count={sessions.length}
@@ -109,6 +110,6 @@ export function ProjectGroup({
           ))}
         </SessionList>
       )}
-    </div>
+    </SidebarProjectGroup>
   );
 }

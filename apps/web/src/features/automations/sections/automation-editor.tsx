@@ -108,8 +108,10 @@ export function AutomationEditor({
         whereDone={whereDone}
         onStepChange={setStep}
       />
-      {/* The frame holds the body at 300px so the dialog keeps its height across steps. */}
-      <DialogBody className="min-h-[300px]">
+      {/* A floor so the dialog keeps its height across steps, on a screen
+          tall enough for it; below that the body shrinks and scrolls, so the
+          footer's buttons stay reachable. */}
+      <DialogBody className="[@media(min-height:720px)]:min-h-75">
         {failure ? (
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>{failure}</AlertDescription>

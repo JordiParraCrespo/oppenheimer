@@ -1,7 +1,7 @@
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
-import type { StatusState } from './status-dot';
+import { StatusDot, type StatusState } from './status-dot';
 
 /**
  * RoutineTable — the Routines overview: one row per routine in an 18px
@@ -113,50 +113,14 @@ function RoutineTableRow({
         {nextRelative ? <span className="figures text-[11.5px] text-fg-subtle">{nextRelative}</span> : null}
       </span>
       <span role="cell">
-        <RoutineStatus state={status}>{statusLabel}</RoutineStatus>
+        <StatusDot state={status} density="compact" pulse={status === 'running'}>
+          {statusLabel}
+        </StatusDot>
       </span>
       <span role="cell" className="flex justify-end [&_button]:size-7 [&_button]:text-fg-muted [&_button:hover]:text-fg">
         {action}
       </span>
     </div>
-  );
-}
-
-/**
- * A routine's status as the table and the routine's page print it
- * (`op-rtable__st`): a 7px dot 7px from the word, tighter than `StatusDot`'s
- * run-state column. Active and running are green, running pulses, and a
- * paused routine mutes its word.
- */
-function RoutineStatus({
-  state,
-  className,
-  children,
-  ...props
-}: React.ComponentProps<'span'> & { state: StatusState }) {
-  return (
-    <span
-      data-slot="routine-status"
-      data-state={state}
-      className={cn('inline-flex items-center gap-[7px] text-[13px] text-fg data-[state=paused]:text-fg-muted', className)}
-      {...props}
-    >
-      <span
-        aria-hidden
-        className={cn(
-          'size-[7px] shrink-0 rounded-pill',
-          state === 'active' || state === 'running' || state === 'completed'
-            ? 'bg-success'
-            : state === 'failed'
-              ? 'bg-danger'
-              : state === 'needs-input'
-                ? 'bg-warning'
-                : 'bg-fg-subtle',
-          state === 'running' && 'motion-safe:animate-pulse',
-        )}
-      />
-      {children}
-    </span>
   );
 }
 
@@ -170,4 +134,4 @@ function RoutineTableEmpty({ className, ...props }: React.ComponentProps<'div'>)
   );
 }
 
-export { RoutineStatus, RoutineTable, RoutineTableEmpty, RoutineTableHead, RoutineTableRow };
+export { RoutineTable, RoutineTableEmpty, RoutineTableHead, RoutineTableRow };

@@ -5,7 +5,7 @@ import {
   FieldSelectRow,
 } from '@oppenheimer/design-system-web';
 import { Bot, Boxes, Cpu, GitBranch, Layers } from '@oppenheimer/design-system-web/icons';
-import { repositoryKey } from '@oppenheimer/frontend-consumer';
+import { repositoryKey, shortName } from '@oppenheimer/frontend-consumer';
 import { useHosts, useProjects } from '@oppenheimer/frontend-consumer/react';
 import { CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import { useTranslation } from 'react-i18next';
@@ -42,9 +42,9 @@ export function EditorWhereStep({
       installationId: repository.installationId,
       githubRepoId: repository.githubRepoId,
     }),
-    // The row names a repository the way the frame does, owner dropped; the
-    // list keeps the full name under it.
-    label: repository.fullName.split('/').pop() ?? repository.fullName,
+    // Named without its owner, as the project entity names it; the list keeps
+    // the full name under it.
+    label: shortName(repository.fullName),
     description: repository.fullName,
   }));
   const models = CODING_AGENTS[draft.agent].models;

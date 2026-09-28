@@ -70,6 +70,8 @@ import {
 import { SessionItem, SessionList } from '@oppenheimer/design-system-web/session-item';
 import {
   SidebarEmptyRow,
+  SidebarListHead,
+  SidebarProjectGroup,
   SidebarProjectHeader,
   SidebarSearch,
 } from '@oppenheimer/design-system-web/sidebar';
@@ -841,14 +843,12 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
             New session
           </Button>
         </div>
-        <div className="mt-4 flex h-[26px] items-center gap-2 pr-2.5 pl-5">
-          <span className="eyebrow">Projects</span>
-          <span className="figures ml-auto text-[11px] text-sidebar-muted">{projects.length}</span>
+        <SidebarListHead label="Projects" count={projects.length} className="mt-4">
           <IconButton aria-label="New project" size="xs" variant="quiet">
             <PlusIcon />
           </IconButton>
           <FilterMenuDemo />
-        </div>
+        </SidebarListHead>
         <SidebarSearch value={query} onValueChange={setQuery} placeholder="Search sessions" />
         {filters.length ? (
           <div className="flex flex-wrap gap-1 px-3 pb-2">
@@ -877,7 +877,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                 term ? (names[name] ?? name).toLowerCase().includes(term) : true,
               );
               return (
-                <div key={project.name} className="mt-1.5 flex flex-col px-3">
+                <SidebarProjectGroup key={project.name}>
                   <SidebarProjectHeader
                     name={project.name}
                     count={project.sessions.length}
@@ -939,7 +939,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                       </SessionList>
                     )
                   ) : null}
-                </div>
+                </SidebarProjectGroup>
               );
             })
           )}

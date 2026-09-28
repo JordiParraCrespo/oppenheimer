@@ -1,4 +1,4 @@
-import { IconButton, SidebarSearch } from '@oppenheimer/design-system-web';
+import { IconButton, SidebarListHead, SidebarSearch } from '@oppenheimer/design-system-web';
 import { Plus } from '@oppenheimer/design-system-web/icons';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -50,13 +50,7 @@ export function SessionsSidebarHead({
     <>
       <div className="px-3 pb-2.5">{newSession}</div>
 
-      <div className="flex items-center gap-2 px-3 pt-0.5 pb-1.5">
-        <span className="eyebrow min-w-0 flex-1 font-normal tracking-[0.04em] text-fg-muted">
-          {t('sessions.sidebar.projects')}
-        </span>
-        {projectCount !== undefined ? (
-          <span className="figures text-[11px] text-fg-muted">{projectCount}</span>
-        ) : null}
+      <SidebarListHead label={t('sessions.sidebar.projects')} count={projectCount}>
         <IconButton
           size="xs"
           variant="quiet"
@@ -74,7 +68,7 @@ export function SessionsSidebarHead({
             onClear={onFiltersClear}
           />
         ) : null}
-      </div>
+      </SidebarListHead>
 
       <SidebarSearch
         value={query}

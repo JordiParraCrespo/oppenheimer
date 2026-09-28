@@ -82,7 +82,7 @@ function DialogContent({
               <IconButton
                 aria-label={closeLabel}
                 size="sm"
-                className="absolute top-6 right-[22px]"
+                className="absolute top-6 right-5.5"
               />
             }
           >

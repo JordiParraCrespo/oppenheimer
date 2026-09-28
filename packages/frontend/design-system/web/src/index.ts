@@ -199,7 +199,6 @@ export {
 } from './components/routine-item';
 export { RoutineStep, RoutineStepFields, RoutineSteps } from './components/routine-steps';
 export {
-  RoutineStatus,
   RoutineTable,
   RoutineTableEmpty,
   RoutineTableHead,
@@ -252,6 +251,7 @@ export {
   SidebarHeader,
   SidebarInput,
   SidebarInset,
+  SidebarListHead,
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuBadge,
@@ -261,6 +261,7 @@ export {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarProjectGroup,
   SidebarProjectHeader,
   SidebarProvider,
   SidebarRail,

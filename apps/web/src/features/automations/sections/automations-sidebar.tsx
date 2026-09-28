@@ -8,6 +8,8 @@ import {
   RoutineRunsEmpty,
   SessionList,
   SidebarEmptyRow,
+  SidebarListHead,
+  SidebarProjectGroup,
   SidebarProjectHeader,
   SidebarSearch,
   Skeleton,
@@ -74,14 +76,7 @@ export function AutomationsSidebar() {
         </Button>
       </div>
 
-      <div className="flex items-center gap-2 px-3 pt-0.5 pb-1.5">
-        <span className="eyebrow min-w-0 flex-1 font-normal tracking-[0.04em] text-fg-muted">
-          {t('automations.sidebar.projects')}
-        </span>
-        {projects.data ? (
-          <span className="figures text-[11px] text-fg-muted">{projects.data.length}</span>
-        ) : null}
-      </div>
+      <SidebarListHead label={t('automations.sidebar.projects')} count={projects.data?.length} />
 
       {automations.data?.length ? (
         <SidebarSearch
@@ -122,7 +117,7 @@ export function AutomationsSidebar() {
           shown.map(({ project, items }) => {
             const open = Boolean(term) || !closed.includes(project.id);
             return (
-              <div key={project.id} className="mt-1.5 flex flex-col px-3">
+              <SidebarProjectGroup key={project.id}>
                 <SidebarProjectHeader
                   name={project.name}
                   count={items.length}
@@ -151,12 +146,7 @@ export function AutomationsSidebar() {
                         <Fragment key={automation.id}>
                           <RoutineItem
                             name={automation.name}
-                            icon={
-                              <TriggerGlyph
-                                scheduled={automation.isScheduled}
-                                className={automation.isRunning ? undefined : 'text-fg opacity-80'}
-                              />
-                            }
+                            icon={<TriggerGlyph scheduled={automation.isScheduled} />}
                             meta={sidebarMeta(automation, now, t)}
                             running={automation.isRunning}
                             paused={automation.isPaused}
@@ -217,7 +207,7 @@ export function AutomationsSidebar() {
                     </button>
                   </SidebarEmptyRow>
                 ) : null}
-              </div>
+              </SidebarProjectGroup>
             );
           })
         ) : (

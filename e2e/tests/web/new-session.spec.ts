@@ -74,7 +74,10 @@ test.describe('New session', () => {
     // Adding a repository makes it cloned by default.
     await projectDialog.getByRole('button', { name: 'Add a repository…' }).click();
     // The picker's listbox is a popover, portaled outside the dialog.
-    await page.getByRole('option', { name: new RegExp(STUB_REPOSITORIES.web.name) }).click();
+    await page
+      .getByRole('listbox')
+      .getByRole('option', { name: new RegExp(STUB_REPOSITORIES.web.name) })
+      .click();
     // The default host is in the Defaults fold.
     await projectDialog.getByRole('button', { name: /^Defaults/ }).click();
     await projectDialog.getByRole('button', { name: 'E2E box' }).click();

@@ -25,7 +25,8 @@
   ending on New session"; decided 2026-09-19 with the version-1 frames.)
 - Sidebar: sessions as a branch glyph coloured by state, name, age on
   hover; a session still provisioning joins the list at once with a
-  pulsing grey glyph; New session on top; a filter menu (project,
+  pulsing grey glyph; New session on top, the primary button while a
+  session is open and secondary on New session itself, where send is; a filter menu (project,
   repository, agent, host, sort) with the active filters as chips under
   the header; the account menu at the bottom with appearance, language
   and Settings. Since the 2026-09-26 export the

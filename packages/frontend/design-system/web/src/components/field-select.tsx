@@ -17,10 +17,23 @@ import { Popover, PopoverTrigger } from './popover';
  * Mobile").
  *
  * Wrap it in `Field` + `FieldLabel` like any control. `variant="quiet"` is
- * the same picker as the value at the end of a `FieldSelectRow`: a 32px
- * borderless pill sized to what it shows, washed on hover, whose listbox
- * opens under its right edge at least 280px wide.
+ * the same picker as the value at the end of a `FieldSelectRow`: a borderless
+ * pill sized to what it shows, washed on hover, whose listbox opens under its
+ * right edge.
  */
+/**
+ * The two looks, keyed on `data-variant` so one class list carries both: the
+ * labelled field, and the quiet pill at the end of a `FieldSelectRow`.
+ */
+const TRIGGER = [
+  'flex items-center text-left text-fg outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-standard disabled:pointer-events-none disabled:opacity-50',
+  'data-[variant=field]:h-(--control-h-lg) data-[variant=field]:w-full data-[variant=field]:gap-2 data-[variant=field]:rounded-sm data-[variant=field]:border data-[variant=field]:border-border data-[variant=field]:bg-card data-[variant=field]:pr-3 data-[variant=field]:pl-3.5 data-[variant=field]:text-operate data-[variant=field]:hover:border-fg-subtle data-[variant=field]:focus-visible:border-primary data-[variant=field]:focus-visible:ring-3 data-[variant=field]:focus-visible:ring-ring data-[variant=field]:data-popup-open:border-primary data-[variant=field]:data-popup-open:ring-3 data-[variant=field]:data-popup-open:ring-ring',
+  'data-[variant=quiet]:h-8 data-[variant=quiet]:w-auto data-[variant=quiet]:border data-[variant=quiet]:border-transparent data-[variant=quiet]:max-w-full data-[variant=quiet]:gap-1.5 data-[variant=quiet]:rounded-pill data-[variant=quiet]:pr-2 data-[variant=quiet]:pl-3 data-[variant=quiet]:text-[13.5px] data-[variant=quiet]:hover:bg-hover-surface data-[variant=quiet]:focus-visible:ring-3 data-[variant=quiet]:focus-visible:ring-ring data-[variant=quiet]:data-popup-open:bg-hover-surface',
+].join(' ');
+
+/** A quiet trigger is only as wide as its value, so its list takes a floor of its own. */
+const QUIET_POPUP_MIN_WIDTH = 280;
+
 type FieldSelectOption = {
   value: string;
   label: React.ReactNode;
@@ -59,7 +72,6 @@ function FieldSelect(props: FieldSelectProps) {
     width,
     variant = 'field',
   } = props;
-  const quiet = variant === 'quiet';
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const trigger = React.useRef<HTMLButtonElement>(null);
@@ -102,13 +114,7 @@ function FieldSelect(props: FieldSelectProps) {
             disabled={disabled}
             data-slot="field-select"
             data-variant={variant}
-            className={cn(
-              'flex items-center text-left text-fg outline-none disabled:pointer-events-none disabled:opacity-50',
-              quiet
-                ? 'h-8 w-auto max-w-full gap-1.5 rounded-pill border border-transparent pr-2 pl-3 text-[13.5px] transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:ring-3 focus-visible:ring-ring data-popup-open:bg-hover-surface'
-                : 'h-(--control-h-lg) w-full gap-2 rounded-sm border border-border bg-card pr-3 pl-3.5 text-[14px] transition-[border-color,box-shadow] duration-fast ease-standard hover:border-fg-subtle focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring data-popup-open:border-primary data-popup-open:ring-3 data-popup-open:ring-ring',
-              className,
-            )}
+            className={cn(TRIGGER, className)}
           />
         }
       >
@@ -123,10 +129,15 @@ function FieldSelect(props: FieldSelectProps) {
         <ChevronDownIcon className="size-3.5 shrink-0 text-fg-subtle" aria-hidden />
       </PopoverTrigger>
       <ChipSelectPopup
-        width={width ?? (quiet ? Math.max(280, trigger.current?.offsetWidth ?? 0) : (trigger.current?.offsetWidth ?? 260))}
+        width={
+          width ??
+          (variant === 'quiet'
+            ? Math.max(QUIET_POPUP_MIN_WIDTH, trigger.current?.offsetWidth ?? 0)
+            : (trigger.current?.offsetWidth ?? 260))
+        }
         maxHeight={320}
         side="bottom"
-        align={quiet ? 'end' : 'start'}
+        align={variant === 'quiet' ? 'end' : 'start'}
       >
         <ChipSelectSearch
           value={query}
@@ -175,10 +186,10 @@ function FieldSelect(props: FieldSelectProps) {
 }
 
 /**
- * FieldSelectGroup — the editor's Where it runs: pickers as the rows of one
- * hairline card on an 18px radius, instead of a stack of labelled fields.
- * Each `FieldSelectRow` is 52px: a 16px subtle glyph, the label at 14px,
- * and on the right the quiet `FieldSelect`, never wider than 60% of the row.
+ * FieldSelectGroup — labelled pickers as the rows of one hairline card rather
+ * than a stack of fields (the automation editor's Where it runs is one). Each
+ * `FieldSelectRow` holds a subtle glyph, the label, and on the right a quiet
+ * `FieldSelect`, never wider than three fifths of the row.
  */
 function FieldSelectGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -216,8 +227,8 @@ function FieldSelectRow({
           {icon}
         </span>
       ) : null}
-      <span className="min-w-0 flex-1 text-[14px] text-fg">{label}</span>
-      <div className="flex max-w-[60%] min-w-0 shrink-0 justify-end">{children}</div>
+      <span className="min-w-0 flex-1 text-operate text-fg">{label}</span>
+      <div className="flex max-w-3/5 min-w-0 shrink-0 justify-end">{children}</div>
     </div>
   );
 }
