@@ -26,7 +26,7 @@ import { useEffect, useRef } from 'react';
  * wrote rather than guessing at the head of a list.
  */
 export function useConnectInstallationCallback(
-  installationId?: number,
+  githubInstallationId?: number,
   code?: string,
   walk?: true,
 ) {
@@ -35,18 +35,18 @@ export function useConnectInstallationCallback(
   const exchanged = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!installationId || !code) return;
+    if (!githubInstallationId || !code) return;
     if (exchanged.current === code) return;
     exchanged.current = code;
 
     mutate(
-      { githubInstallationId: installationId, code },
+      { githubInstallationId, code },
       {
         onSuccess: () =>
           navigate({ to: '/onboarding/github', search: walk ? { walk } : {}, replace: true }),
       },
     );
-  }, [installationId, code, walk, mutate, navigate]);
+  }, [githubInstallationId, code, walk, mutate, navigate]);
 
   return {
     /** True while the code is being exchanged, so the step can hold its place. */

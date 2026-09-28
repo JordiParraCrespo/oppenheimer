@@ -24,7 +24,11 @@ export const Route = createFileRoute('/_auth/onboarding/github')({
 });
 
 function GithubStep() {
-  const { installation_id, code, walk } = Route.useSearch();
+  // The search keeps GitHub's snake_case keys because it is the URL; the
+  // rename to the shared schema's name happens here, at the boundary.
+  const { installation_id: githubInstallationId, code, walk } = Route.useSearch();
 
-  return <OnboardingGithubScreen installationId={installation_id} code={code} walk={walk} />;
+  return (
+    <OnboardingGithubScreen githubInstallationId={githubInstallationId} code={code} walk={walk} />
+  );
 }

@@ -30,12 +30,12 @@ import { installUrlCarryingWalk } from '@/features/organizations/lib/first-run';
  * which the hook below exchanges once for the installation row.
  */
 export function OnboardingGithubScreen({
-  installationId,
+  githubInstallationId,
   code,
   walk,
 }: {
-  /** GitHub's installation id, present only on the return leg. */
-  installationId?: number;
+  /** GitHub's numeric installation id (not our row's UUID), present only on the return leg. */
+  githubInstallationId?: number;
   /** The one-shot code from the same redirect. */
   code?: string;
   /** Set when this visit is the first-run walk, and handed on to the next step. */
@@ -57,7 +57,7 @@ export function OnboardingGithubScreen({
     isExchanging,
     connected,
     error: connectError,
-  } = useConnectInstallationCallback(installationId, code, walk);
+  } = useConnectInstallationCallback(githubInstallationId, code, walk);
   const { data: installations, isPending, error: listError } = useInstallations();
 
   // The installation this visit connected, when there was one — the callback
@@ -68,7 +68,7 @@ export function OnboardingGithubScreen({
   const installation =
     (connected && installations?.find((row) => row.id === connected.id)) ??
     connected ??
-    installations?.find((row) => row.githubInstallationId === installationId) ??
+    installations?.find((row) => row.githubInstallationId === githubInstallationId) ??
     installations?.[0];
   // The card shows the count, but a `components/` file never fetches, so the
   // screen that renders it asks. Skipped entirely for an installation that
