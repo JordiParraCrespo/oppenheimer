@@ -178,6 +178,7 @@ export function useSessionStartProgress(
 
   return useQuery({
     queryKey: sessionsKeys.start(id, failed),
+    structuralSharing: shareEntities,
     queryFn:
       id && (starting || failed) ? () => app.sessions.startProgress(id, { failed }) : skipToken,
     refetchInterval: (query) => (query.state.data?.settled ? false : PROVISIONING_POLL_MS),

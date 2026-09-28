@@ -1,17 +1,13 @@
 import { Wordmark } from '@oppenheimer/design-system-web';
 import { useOrganizations } from '@oppenheimer/frontend-consumer/react';
-import {
-  AppShell,
-  ConsoleDialogProvider,
-  RouteError,
-  useConsoleList,
-} from '@oppenheimer/frontend-web';
+import { AppShell, RouteError } from '@oppenheimer/frontend-web';
 import { createFileRoute, Navigate, Outlet, redirect, useMatches } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NotFoundScreen } from '@/features/public/screens/not-found';
 import { ConsoleRail } from '@/features/sessions/sections/console-rail';
 import { SessionsSidebar } from '@/features/sessions/sections/sessions-sidebar';
+import { ConsoleDialogProvider, useConsoleList } from '@/lib/console';
 import { NAV, USER_MENU } from '@/lib/nav';
 import { ConsoleDialogs } from '@/providers/console-dialogs';
 

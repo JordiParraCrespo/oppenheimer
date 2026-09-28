@@ -15,6 +15,7 @@ import { withCacheOnSuccess } from './mutations';
 import { reconcileCacheOwner } from './persistence';
 import { expireSession } from './query-client';
 import { authKeys } from './query-keys';
+import { shareEntities } from './share-entities';
 import { usersKeys } from './users.queries';
 
 export { authKeys };
@@ -27,6 +28,7 @@ export function useSessionRestore(
 
   return useQuery({
     queryKey: authKeys.session(),
+    structuralSharing: shareEntities,
     queryFn: async () => {
       const userId = await app.auth.restoreSession();
 

@@ -214,4 +214,27 @@ test('components/ at the app root is the pre-features layout', () => {
   const { report } = check({ 'src/components/thing.tsx': 'export function Thing() {}\n' });
   assert.match(report, /apps\/web\/src\/components: components live in src\/features/);
 });
+test('a product query without structuralSharing is reported, with it passes', () => {
+  const { report } = check(
+    {},
+    {
+      'packages/frontend/consumer/src/react/things.queries.ts': `export function useThings() {
+  return useQuery({
+    queryKey: thingsKeys.list(),
+    queryFn: () => app.things.findAll(),
+  });
+}
+export function useThing(id: string) {
+  return useQuery({
+    queryKey: thingsKeys.detail(id),
+    queryFn: () => app.things.find(id),
+    structuralSharing: shareEntities,
+  });
+}
+`,
+    },
+  );
+  assert.match(report, /things\.queries\.ts:4: a query without structuralSharing/);
+  assert.doesNotMatch(report, /things\.queries\.ts:10:/);
+});
 // oppenheimer:end web

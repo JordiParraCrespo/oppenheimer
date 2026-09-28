@@ -96,6 +96,7 @@ export function useCurrentPairing(
 
   return useQuery({
     queryKey: hostsKeys.pairingDetail(name),
+    structuralSharing: shareEntities,
     queryFn: () => app.hosts.pair(name),
     staleTime: 0,
     gcTime: 0,
@@ -135,6 +136,7 @@ export function usePairingTokens(
 
   return useQuery({
     queryKey: hostsKeys.pairingList(),
+    structuralSharing: shareEntities,
     queryFn: () => app.hosts.pairings(),
     ...options,
   });

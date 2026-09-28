@@ -1,7 +1,7 @@
 'use client';
 
 import type { UpdateOrganizationRequest } from '@oppenheimer/api-client';
-import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { shareEntities, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import type { CreateOrganizationDto } from '@oppenheimer/shared';
 import {
   skipToken,
@@ -49,6 +49,7 @@ export function useCheckSlug(
 
   return useQuery({
     queryKey: organizationsKeys.slug(slug),
+    structuralSharing: shareEntities,
     queryFn: slug ? () => app.organizations.checkSlug(slug) : skipToken,
     staleTime: 0,
     gcTime: 30_000,
@@ -65,6 +66,7 @@ export function useOrganizations(
 
   return useQuery({
     queryKey: organizationsKeys.list(),
+    structuralSharing: shareEntities,
     queryFn: () => app.organizations.findAll(),
     ...options,
   });

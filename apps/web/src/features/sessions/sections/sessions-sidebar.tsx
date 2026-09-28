@@ -8,16 +8,11 @@ import {
   useSessions,
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure } from '@oppenheimer/frontend-core/react';
-import {
-  combineQueries,
-  ErrorAlert,
-  notifySuccess,
-  QueryState,
-  useConsoleDialog,
-} from '@oppenheimer/frontend-web';
+import { combineQueries, ErrorAlert, notifySuccess, QueryState } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useConsoleDialog } from '@/lib/console';
 import { SessionsSidebarHead } from '../components/sessions-sidebar-head';
 import {
   ALL,

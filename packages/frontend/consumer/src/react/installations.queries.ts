@@ -1,6 +1,6 @@
 'use client';
 
-import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { shareEntities, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   skipToken,
   type UseMutationOptions,
@@ -77,6 +77,7 @@ export function useInstallations(
 
   return useQuery({
     queryKey: installationsKeys.list(),
+    structuralSharing: shareEntities,
     queryFn: () => app.installations.findAll(),
     ...options,
   });
@@ -132,6 +133,7 @@ export function useInstallationRepositories(
 
   return useQuery({
     queryKey: installationsKeys.repositoryList(installationId),
+    structuralSharing: shareEntities,
     queryFn: installationId ? () => app.installations.repositories(installationId) : skipToken,
     ...options,
   });
@@ -153,6 +155,7 @@ export function useRepositoryBranches(
 
   return useQuery({
     queryKey: installationsKeys.branches(installationId, githubRepoId),
+    structuralSharing: shareEntities,
     queryFn:
       installationId && githubRepoId
         ? () => app.installations.branches(installationId, githubRepoId)
@@ -211,6 +214,7 @@ export function useRepositoryBranchesFor(repositories: readonly RepositoryRef[])
   return useQueries({
     queries: repositories.map((repository) => ({
       queryKey: installationsKeys.branches(repository.installationId, repository.githubRepoId),
+      structuralSharing: shareEntities,
       queryFn: () => app.installations.branches(repository.installationId, repository.githubRepoId),
     })),
     combine,
@@ -232,6 +236,7 @@ export function useInstallationRepositoriesFor(installationIds: readonly string[
   return useQueries({
     queries: installationIds.map((installationId) => ({
       queryKey: installationsKeys.repositoryList(installationId),
+      structuralSharing: shareEntities,
       queryFn: () => app.installations.repositories(installationId),
     })),
     combine: (results) => ({

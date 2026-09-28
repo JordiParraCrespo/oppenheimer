@@ -1,7 +1,7 @@
 import { Button, EditorPageTop, PillTab, PillTabs } from '@oppenheimer/design-system-web';
-import { useConsoleDialog } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { useConsoleDialog } from '@/lib/console';
 
 /**
  * The overview's first row: the two views as tabs, each the router's link,

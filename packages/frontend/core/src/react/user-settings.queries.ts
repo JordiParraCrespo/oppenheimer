@@ -12,6 +12,7 @@ import type { UserSettingsEntity } from '../modules/user-settings/user-settings.
 import { useOppenheimerApp } from './context';
 import { withCacheOnSuccess } from './mutations';
 import { userSettingsKeys } from './query-keys';
+import { shareEntities } from './share-entities';
 
 export { userSettingsKeys };
 
@@ -22,6 +23,7 @@ export function useUserSettings(
 
   return useQuery({
     queryKey: userSettingsKeys.me(),
+    structuralSharing: shareEntities,
     queryFn: () => app.userSettings.get(),
     ...options,
   });

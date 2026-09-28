@@ -1,6 +1,6 @@
 'use client';
 
-import { usersKeys, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { shareEntities, usersKeys, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import type {
   ChangeEmailDto,
   ChangeOwnPasswordDto,
@@ -38,6 +38,7 @@ export function useMyProfile(
 
   return useQuery({
     queryKey: profileKeys.me(),
+    structuralSharing: shareEntities,
     queryFn: () => app.profile.get(),
     ...options,
   });
@@ -116,6 +117,7 @@ export function useProfileSessions(
 
   return useQuery({
     queryKey: profileKeys.sessions(),
+    structuralSharing: shareEntities,
     queryFn: () => app.profile.getSessions(),
     ...options,
   });

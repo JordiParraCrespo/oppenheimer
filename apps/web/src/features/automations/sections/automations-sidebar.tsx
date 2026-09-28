@@ -17,10 +17,11 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Plus, Zap } from '@oppenheimer/design-system-web/icons';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { combineQueries, formatAge, QueryState, useConsoleDialog } from '@oppenheimer/frontend-web';
+import { combineQueries, formatAge, QueryState } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useConsoleDialog } from '@/lib/console';
 import { TriggerGlyph } from '../components/trigger-glyph';
 import { runState, sidebarMeta } from '../lib/automation-view';
 

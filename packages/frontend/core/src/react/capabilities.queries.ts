@@ -3,6 +3,7 @@
 import type { ClientDeployment } from '@oppenheimer/shared';
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import { useOppenheimerApp } from './context';
+import { shareEntities } from './share-entities';
 
 /**
  * Query key factory for the `capabilities` feature. Same shape as the other
@@ -36,6 +37,7 @@ export function useDeploymentCapabilities<TData = ClientDeployment>(
 
   return useQuery({
     queryKey: capabilitiesKeys.deployment(),
+    structuralSharing: shareEntities,
     queryFn: () => app.capabilities.get(),
     staleTime: 5 * 60 * 1000,
     ...options,

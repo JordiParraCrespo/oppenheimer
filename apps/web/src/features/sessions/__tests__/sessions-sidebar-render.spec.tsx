@@ -1,9 +1,9 @@
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { shareEntities } from '@oppenheimer/frontend-core/react';
-import { ConsoleDialogProvider } from '@oppenheimer/frontend-web';
 import { act, cleanup, render } from '@testing-library/react';
 import { useSyncExternalStore } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ConsoleDialogProvider } from '@/lib/console';
 import { SessionsSidebar } from '../sections/sessions-sidebar';
 
 /**

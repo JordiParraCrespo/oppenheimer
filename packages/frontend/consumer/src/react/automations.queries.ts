@@ -99,6 +99,7 @@ export function useAutomationRuns(filter: RunsFilter) {
   const app = useConsumerApp();
   return useQuery<RunPage, Error>({
     queryKey: automationsKeys.runList(filter),
+    structuralSharing: shareEntities,
     queryFn: () => app.automations.findRuns(filter),
     placeholderData: keepPreviousData,
     refetchInterval: (query) =>
@@ -122,6 +123,7 @@ export function useRunHistory(filter: RunHistoryFilter) {
   const app = useConsumerApp();
   return useQuery<RunHistory, Error>({
     queryKey: automationsKeys.history(filter),
+    structuralSharing: shareEntities,
     queryFn: () => app.automations.history(filter),
     placeholderData: keepPreviousData,
   });
@@ -136,6 +138,7 @@ export function useTriggerPreview(trigger: GithubTriggerInput | undefined) {
   const app = useConsumerApp();
   return useQuery<TriggerPreview, Error>({
     queryKey: automationsKeys.preview(trigger),
+    structuralSharing: shareEntities,
     queryFn: trigger ? () => app.automations.previewTrigger(trigger) : skipToken,
     placeholderData: keepPreviousData,
     staleTime: 30_000,

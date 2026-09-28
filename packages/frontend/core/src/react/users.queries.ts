@@ -13,6 +13,7 @@ import {
 import type { UserEntity } from '../modules/users/user.entity';
 import { useOppenheimerApp } from './context';
 import { withCacheOnSuccess } from './mutations';
+import { shareEntities } from './share-entities';
 
 export interface UsersListParams {
   page?: number;
@@ -58,6 +59,7 @@ export function useMyPermissions(
 
   return useQuery({
     queryKey: usersKeys.permissions(),
+    structuralSharing: shareEntities,
     queryFn: () => app.users.myPermissions(),
     ...options,
   });
@@ -70,6 +72,7 @@ export function useProfile(
 
   return useQuery({
     queryKey: usersKeys.me(),
+    structuralSharing: shareEntities,
     queryFn: () => app.users.me(),
     ...options,
   });
@@ -97,6 +100,7 @@ export function useUsers(
 
   return useQuery({
     queryKey: usersKeys.list(params),
+    structuralSharing: shareEntities,
     queryFn: () => app.users.findAll(params?.page, params?.limit, params?.search, params?.role),
     ...options,
   });
@@ -110,6 +114,7 @@ export function useUser(
 
   return useQuery({
     queryKey: usersKeys.detail(id),
+    structuralSharing: shareEntities,
     queryFn: id ? () => app.users.findById(id) : skipToken,
     ...options,
   });

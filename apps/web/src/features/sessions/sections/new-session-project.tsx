@@ -1,11 +1,11 @@
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useHostsSnapshot, useProjects } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { useConsoleDialog } from '@oppenheimer/frontend-web';
 import { useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { useConsoleDialog } from '@/lib/console';
 import { ProjectSelect } from '../components/project-select';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { useSearchPick } from '../hooks/use-search-pick';

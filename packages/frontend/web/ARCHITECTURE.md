@@ -23,7 +23,7 @@ importing it configures i18next; everything else is pure and may be dropped.
 | `hosts` | `HostPairingChrome`, and its two halves `HostPairingToken` and `HostPairingStatus` — the token clock and the status line that the onboarding step, the console's Add a host dialog and the Settings page all show; the chrome shows a refused mint through `ErrorAlert` | middle |
 | `layout` | `PageHead`, `FieldRow`, `RouteError`/`RouteNotFound`, `ConfirmDialog`, `QueryState` | middle |
 | `roles` | `RolePill` | middle |
-| `shell` | `AppShell`, `AppSidebar`, `TopBar`, `UserMenu`, `CommandPalette`, `ShellProvider`/`useShell`, `useAbility`, `useAuthorizedNav`, the nav types | top |
+| `shell` | `AppShell`, `AppSidebar`, `TopBar`, `UserMenu`, `CommandPalette`, `SettingsSidebar`, `ShellProvider`/`useShell`, `createDialogSlot` (one dialog up at a time, its actions and its request on two contexts; the app names the requests), `useHotkey`, `useAbility`, `useAuthorizedNav`, the nav types | top |
 | `auth` | `AuthLayout`, `AuthArtPanel`, `BrandLogo`, the auth primitives, `PasswordInput`, `SocialLoginButtons`, `OAuthCallbackNotice`, `redirectSignedIn` | top |
 
 The lists live in [`.dependency-cruiser.cjs`](.dependency-cruiser.cjs), which

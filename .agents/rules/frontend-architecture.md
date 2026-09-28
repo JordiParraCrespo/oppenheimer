@@ -234,6 +234,11 @@ name the jobs and split *those*.
   and a read that only happens in an event handler uses the module's
   `use…Snapshot()` rather than subscribing.
 
+  `pnpm check:structure` holds it for every query a `src/react/*.queries.ts`
+  declares, entity or not: whether a result holds an entity is not in its type
+  (a page wraps them), and `shareEntities` is a superset of the default for
+  plain data. A query that must not share says `structuralSharing: false`.
+
 ## Routing is its own skill
 
 `apps/web` routes with TanStack Router, where a file's
