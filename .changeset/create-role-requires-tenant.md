@@ -1,6 +1,7 @@
 ---
 "@oppenheimer/api": patch
 "@oppenheimer/translations": patch
+"@oppenheimer/api-client": patch
 ---
 
 Creating a role no longer falls back to a global role when the request has no
