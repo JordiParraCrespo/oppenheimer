@@ -16,7 +16,8 @@
  * and two ids are cheaper than a first-run store to keep in sync. `walk` is
  * the third such fact.
  *
- * It is minted by step 2's claim, the only thing that opens a walk, and
+ * It is minted when step 2's claim lands (the workspace route) — the only
+ * thing that opens a walk — and
  * carried by the flow's own links. A reader New session sent here to pair a
  * second machine has no `walk`, so Continue takes them back to the console
  * rather than to a landing that congratulates them on first-run. Nothing has

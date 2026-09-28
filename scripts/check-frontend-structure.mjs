@@ -391,11 +391,12 @@ for (const { app, routes, features, product, allow, kit } of APPS) {
 // One component per file, in an app. Biome's `noNestedComponentDefinitions`
 // only sees a component declared inside another; two declared side by side
 // pass it, and the second one is always the one nobody finds. A component is
-// a top-level `function Name` or `const Name = (…) =>` with a capital first
-// letter. The kit is exempt: a primitives file there exports a family meant to
+// a top-level `function Name`, `const Name = (…) =>` (typed or not) or
+// `const Name = memo(…)`/`forwardRef(…)` with a capital first letter. It is a
+// tripwire on those shapes, not a parser. The kit is exempt: a primitives file there exports a family meant to
 // be read together (`AuthLink`, `AuthBackLink`, …).
 const TOP_LEVEL_COMPONENT =
-  /^(?:export\s+)?(?:default\s+)?(?:function\s+([A-Z]\w*)|const\s+([A-Z]\w*)\s*=\s*(?:\([^)]*\)|\w+)\s*=>)/gm;
+  /^(?:export\s+)?(?:default\s+)?(?:function\s+([A-Z]\w*)|const\s+([A-Z]\w*)\s*(?::[^=]+)?=\s*(?:\([^)]*\)\s*(?::[^=]*)?=>|\w+\s*=>|(?:memo|forwardRef)\())/gm;
 for (const { app } of APPS) {
   const src = join(root, app, 'src');
   if (!existsSync(src)) continue;

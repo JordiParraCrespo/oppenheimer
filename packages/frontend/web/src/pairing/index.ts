@@ -1,11 +1,11 @@
 export {
-  HostPairingChrome,
-  HostPairingStatus,
-  HostPairingToken,
-  type PairingHost,
+  type PairedMachine,
+  PairingChrome,
+  PairingStatus,
+  PairingToken,
 } from './components/pairing-chrome';
 export {
-  HostPairingCopyButtons,
-  HostPairingInstruction,
-  type PairingInstruction,
+  type PairingCommands,
+  PairingCopyButtons,
+  PairingInstruction,
 } from './components/pairing-install';

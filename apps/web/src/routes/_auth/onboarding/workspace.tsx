@@ -1,7 +1,19 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { OnboardingWorkspaceScreen } from '@/features/organizations/screens/onboarding-workspace';
 
-/** Step 2. The screen holds its own first-run gate: it is the one that reads the workspace. */
+/** Step 2. The claim opens the walk, so it is what mints `walk` on the way to GitHub. */
 export const Route = createFileRoute('/_auth/onboarding/workspace')({
-  component: OnboardingWorkspaceScreen,
+  component: WorkspaceStep,
 });
+
+function WorkspaceStep() {
+  const navigate = useNavigate();
+
+  return (
+    <OnboardingWorkspaceScreen
+      step={2}
+      total={4}
+      onClaimed={() => navigate({ to: '/onboarding/github', search: { walk: true } })}
+    />
+  );
+}

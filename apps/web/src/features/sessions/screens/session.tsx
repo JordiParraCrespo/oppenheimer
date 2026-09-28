@@ -4,8 +4,8 @@ import { useSession } from '@oppenheimer/frontend-consumer/react';
 import { RouteError, RouteNotFound } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { SessionClosed } from '../components/session-closed';
 import { SessionSkeleton } from '../components/session-skeleton';
-import { SessionClosed } from '../sections/session-closed';
 import { SessionProvisioning } from '../sections/session-provisioning';
 import { SessionTerminal } from '../sections/session-terminal';
 
@@ -60,6 +60,7 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
       <SessionClosed
         name={session.name}
         copy={session.isResolved ? 'sessions.closed.deleted' : 'sessions.closed.description'}
+        newSession={<Link to="/sessions/new" />}
       />
     );
   }

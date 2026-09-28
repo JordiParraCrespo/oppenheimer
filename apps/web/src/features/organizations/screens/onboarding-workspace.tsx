@@ -33,7 +33,17 @@ import { workspaceAddressPrefix } from '@/features/organizations/lib/workspace-a
  * one. Creating is the fallback for the one account that has none: the sign-up
  * hook is best-effort, and this step is also the recovery path.
  */
-export function OnboardingWorkspaceScreen() {
+export function OnboardingWorkspaceScreen({
+  step,
+  total,
+  onClaimed,
+}: {
+  /** Where this step sits in the flow the route is part of. */
+  step: number;
+  total: number;
+  /** The address is claimed: the route takes the reader on. */
+  onClaimed: () => void;
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: profile } = useProfile();
@@ -89,23 +99,16 @@ export function OnboardingWorkspaceScreen() {
   const edit = (changes: Partial<{ name: string; address: string }>) =>
     setDraft({ name, address, ...changes });
 
-  // The claim is what opens a walk, so it is what mints `walk` — and it mints
-  // it on success, not on click, because a claim that failed has opened
-  // nothing. From here the flow's own links carry it to Ready, which is the
-  // step that turns away anyone who did not walk (the kit's `auth/lib/first-run.ts`).
   const submit = () =>
-    claim.mutate(
-      { existing, name: name.trim(), slug: address },
-      { onSuccess: () => navigate({ to: '/onboarding/github', search: { walk: true } }) },
-    );
+    claim.mutate({ existing, name: name.trim(), slug: address }, { onSuccess: onClaimed });
 
   if (claimedOnArrival) return <Navigate to="/sessions/new" replace />;
 
   return (
     <div className="flex flex-col gap-5">
       <StepHeader
-        step={2}
-        total={4}
+        step={step}
+        total={total}
         back={{ render: <button type="button" onClick={leave} /> }}
         backLabel={t('onboarding.flow.back')}
         title={t('onboarding.flow.workspace.title')}

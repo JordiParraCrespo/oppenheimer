@@ -84,12 +84,11 @@ shared ─► core ─► consumer ─► apps/web
   in.
 - The kernel never imports the product package, and the kit imports only the
   kernel. `pnpm arch` fails either way.
-- A feature never imports React Query (`features-query-through-the-product`):
-  the query keys, the cache writes and the entity sharing are the product
-  package's, and a feature reads and writes through its hooks. Tests may.
-- `src/providers/` is app glue around the routes, and may import a feature's
-  `dialogs/` only (`providers-mount-dialogs`) — the console's dialog owner
-  lazy-loads them — besides the kit, the kernel and the product package.
+- A feature never imports React Query outside its tests
+  (`features-query-through-the-product`); it reads and writes through the
+  product package's hooks.
+- `src/providers/` imports a feature's `dialogs/` and nothing else of a
+  feature (`providers-mount-dialogs`).
 - The kit is imported by its package name (`@oppenheimer/frontend-web`), never by a
   path into its `src/`.
 - An app never keeps a file the kit ships. `pnpm check:structure` compares
@@ -100,8 +99,7 @@ shared ─► core ─► consumer ─► apps/web
 `packages/frontend/web/src/<concern>/<kind>/` — `shell`, `auth`,
 `layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`, `roles`,
 `pairing`. A concern is named after what it does, never after a product
-module: `pairing` is the chrome three surfaces draw around a pairing they
-hand it, and it was `hosts` until that name suggested it owned the hosts. Each
+module. Each
 concern has an `index.ts`; a concern imports another only through it. The
 concerns are layered (leaves → middle → top) and `pnpm arch` holds the order.
 A concern that needs a product hook is a feature, not kit.

@@ -1,6 +1,5 @@
 import type { InstallationEntity } from '@oppenheimer/frontend-consumer';
 import { useConnectInstallation } from '@oppenheimer/frontend-consumer/react';
-import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 
 /**
@@ -17,10 +16,8 @@ import { useEffect, useRef } from 'react';
  * to tell a refusal from never having tried. The guard already stops a refresh
  * from re-posting a dead code.
  *
- * Clearing them means writing the search, and the search is also where the
- * first-run walk lives, so `walk` is put back rather than swept away with the
- * spent code — otherwise installing the App mid-walk is the one path through
- * the flow that loses it, and Ready turns the reader away two clicks later.
+ * Clearing them is the route's (`onExchanged`): the search is its, and it
+ * knows what else the URL carries that must survive the rewrite.
  *
  * Returns the installation it connected, so the caller renders the row it just
  * wrote rather than guessing at the head of a list.
@@ -28,9 +25,8 @@ import { useEffect, useRef } from 'react';
 export function useConnectInstallationCallback(
   githubInstallationId?: number,
   code?: string,
-  walk?: true,
+  onExchanged?: () => void,
 ) {
-  const navigate = useNavigate();
   const { mutate, data: connected, isPending, error } = useConnectInstallation();
   const exchanged = useRef<string | null>(null);
 
@@ -39,14 +35,8 @@ export function useConnectInstallationCallback(
     if (exchanged.current === code) return;
     exchanged.current = code;
 
-    mutate(
-      { githubInstallationId, code },
-      {
-        onSuccess: () =>
-          navigate({ to: '/onboarding/github', search: walk ? { walk } : {}, replace: true }),
-      },
-    );
-  }, [githubInstallationId, code, walk, mutate, navigate]);
+    mutate({ githubInstallationId, code }, { onSuccess: () => onExchanged?.() });
+  }, [githubInstallationId, code, onExchanged, mutate]);
 
   return {
     /** True while the code is being exchanged, so the step can hold its place. */

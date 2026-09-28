@@ -1,19 +1,21 @@
 import { Button, EmptyState } from '@oppenheimer/design-system-web';
 import { CircleOff, Terminal } from '@oppenheimer/design-system-web/icons';
-import { Link } from '@tanstack/react-router';
+import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
  * A session whose terminal is gone: stopped or deleted. There is no reattaching
  * to a tmux session that has exited; the caller says which sentence explains
- * why.
+ * why, and hands the New session link the way out renders.
  */
 export function SessionClosed({
   name,
   copy,
+  newSession,
 }: {
   name: string;
   copy: 'sessions.closed.description' | 'sessions.closed.deleted';
+  newSession: ReactElement;
 }) {
   const { t } = useTranslation();
 
@@ -27,7 +29,7 @@ export function SessionClosed({
         <EmptyState.Description>{t(copy)}</EmptyState.Description>
       </EmptyState.Header>
       <EmptyState.Content>
-        <Button variant="secondary" render={<Link to="/sessions/new" />}>
+        <Button variant="secondary" render={newSession}>
           <Terminal />
           {t('nav.newSession')}
         </Button>

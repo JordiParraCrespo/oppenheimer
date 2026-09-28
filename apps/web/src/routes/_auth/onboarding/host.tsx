@@ -1,6 +1,6 @@
-import { type FirstRunWalk, parseWalk } from '@oppenheimer/frontend-web';
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { OnboardingHostScreen } from '@/features/hosts/screens/onboarding-host';
+import { type FirstRunWalk, parseWalk } from '@/features/organizations/lib/first-run';
 
 /**
  * Carries the installation Connect GitHub wrote, so Ready can name it whether
@@ -35,8 +35,11 @@ function HostStep() {
 
   return (
     <OnboardingHostScreen
+      step={4}
+      total={4}
       back={<Link to="/onboarding/github" search={{ walk }} />}
       next={(host) => <Link to="/onboarding/ready" search={{ installation, host, walk }} />}
+      skip={<Link to="/onboarding/ready" search={{ installation, walk }} />}
     />
   );
 }

@@ -10,7 +10,7 @@ import {
   useInstallations,
 } from '@oppenheimer/frontend-consumer/react';
 import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
-import { ErrorAlert, installUrlCarryingWalk } from '@oppenheimer/frontend-web';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InstallationCard } from '@/features/installations/components/installation-card';
@@ -29,27 +29,35 @@ import { useConnectInstallationCallback } from '@/features/installations/hooks/u
 export function OnboardingGithubScreen({
   githubInstallationId,
   code,
-  walk,
+  installUrlFor,
+  onExchanged,
+  step,
+  total,
   back,
   next,
+  skip,
 }: {
   /** GitHub's numeric installation id (not our row's UUID), present only on the return leg. */
   githubInstallationId?: number;
   /** The one-shot code from the same redirect. */
   code?: string;
   /**
-   * Set when this visit is the first-run walk: pinned on the install URL, so
-   * it survives the round trip through GitHub, and put back on the return leg.
+   * The deployment's install URL as this visit should use it. The route pins
+   * what must survive the round trip through github.com; this screen only
+   * sends the reader there.
    */
-  walk?: true;
-  /** The previous step, as a link element the header's back renders. */
+  installUrlFor: (installUrl: string) => string;
+  /** The code was exchanged: the route clears the spent callback from its URL. */
+  onExchanged: () => void;
+  /** Where this step sits in the flow the route is part of. */
+  step: number;
+  total: number;
+  /** The link the header's back renders. */
   back: ReactElement;
-  /**
-   * The step after this one, as a link element: with the connected
-   * installation's id (Continue), without it (Skip). The route builds it,
-   * because the route knows the flow.
-   */
-  next: (installationId?: string) => ReactElement;
+  /** Continue's link, with the connected installation's id. */
+  next: (installationId: string) => ReactElement;
+  /** Skip's link, for a reader who connects GitHub later. */
+  skip: ReactElement;
 }) {
   const { t } = useTranslation();
   // Where the browser goes to install, as the deployment reports it. An
@@ -57,16 +65,13 @@ export function OnboardingGithubScreen({
   // rather than a link to a page that may not exist.
   const { data: deployment } = useDeploymentCapabilities();
   const address = deployment?.github_app_install_url ?? undefined;
-  // Leaving for GitHub loses the query this step was opened with, so a walk
-  // travels as `state` and comes back under that name. A reader New session
-  // sent here is not walking and pins nothing.
-  const installUrl = address && walk ? installUrlCarryingWalk(address) : address;
+  const installUrl = address ? installUrlFor(address) : address;
 
   const {
     isExchanging,
     connected,
     error: connectError,
-  } = useConnectInstallationCallback(githubInstallationId, code, walk);
+  } = useConnectInstallationCallback(githubInstallationId, code, onExchanged);
   const { data: installations, isPending, error: listError } = useInstallations();
 
   // The installation this visit connected, when there was one — the callback
@@ -90,8 +95,8 @@ export function OnboardingGithubScreen({
   return (
     <div className="flex flex-col gap-5">
       <StepHeader
-        step={3}
-        total={4}
+        step={step}
+        total={total}
         back={{ render: back }}
         backLabel={t('onboarding.flow.back')}
         title={t('onboarding.flow.github.title')}
@@ -129,7 +134,7 @@ export function OnboardingGithubScreen({
             {t('onboarding.flow.github.connect')}
           </Button>
           <div className="flex flex-col items-start gap-1.5">
-            <TextLink render={next()}>{t('onboarding.flow.github.skip')}</TextLink>
+            <TextLink render={skip}>{t('onboarding.flow.github.skip')}</TextLink>
             <p className="text-xs leading-normal text-fg-subtle">
               {t('onboarding.flow.github.skipNote')}
             </p>

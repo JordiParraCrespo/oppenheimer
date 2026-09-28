@@ -1,18 +1,14 @@
 import { cn, Separator, StatusDot, Link as TextLink } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
 import { ErrorAlert } from '../../forms';
-import {
-  HostPairingCopyButtons,
-  HostPairingInstruction,
-  type PairingInstruction,
-} from './pairing-install';
+import { type PairingCommands, PairingCopyButtons, PairingInstruction } from './pairing-install';
 import { TokenCountdown } from './token-countdown';
 
 /**
  * A machine as the pairing chrome names it. Structural rather than
  * `HostEntity`: the kit imports no product package (`kit-knows-no-product`), and these three fields are all a status row reads.
  */
-export interface PairingHost {
+export interface PairedMachine {
   name: string;
   /** Whether the runner is dialled in right now, as the API reports it. */
   online: boolean;
@@ -31,8 +27,8 @@ export interface PairingHost {
  * step's large buttons and 12px line (`design/version1/AddHost.dc.html`),
  * the dialog's medium buttons and 11.5px line (`SessionsConsole.dc.html`).
  * Settings pairs on a page of its own with the instruction shown outright,
- * so it composes the parts — `HostPairingToken`, `HostPairingInstruction`
- * with its panel layout, `HostPairingStatus` — rather than this column.
+ * so it composes the parts — `PairingToken`, `PairingInstruction`
+ * with its panel layout, `PairingStatus` — rather than this column.
  *
  * The status word says what the API said: a host row exists once the runner
  * registers, and `online` is the only thing the control plane reports about it.
@@ -41,7 +37,7 @@ export interface PairingHost {
  * so the row says the runner is up or that it is still coming up, and the card
  * arrives with the capabilities themselves.
  */
-export function HostPairingChrome({
+export function PairingChrome({
   pairing,
   expiresAt,
   expired,
@@ -52,7 +48,7 @@ export function HostPairingChrome({
   layout = 'dialog',
 }: {
   /** Absent while the token is being minted. */
-  pairing: PairingInstruction | null;
+  pairing: PairingCommands | null;
   /**
    * When the token runs out. The countdown ticks in `TokenCountdown`, so a
    * second passing re-renders that line and not this chrome or its surface.
@@ -63,7 +59,7 @@ export function HostPairingChrome({
   /** While a fresh token is being minted. */
   busy?: boolean;
   /** The machine this token paired, once one has spent it. */
-  host: PairingHost | null;
+  host: PairedMachine | null;
   /** A mint that was refused. The last token, if any, stays on screen and spendable. */
   error?: unknown;
   /** `step`: onboarding's sizes. `dialog`: Add a host's. */
@@ -75,8 +71,8 @@ export function HostPairingChrome({
     <>
       <ErrorAlert error={error} fallback={t('hosts.pairing.mintFailed')} />
       <div className="flex flex-col gap-2.5">
-        <HostPairingCopyButtons pairing={pairing} size={step ? 'lg' : 'md'} />
-        <HostPairingToken
+        <PairingCopyButtons pairing={pairing} size={step ? 'lg' : 'md'} />
+        <PairingToken
           expiresAt={expiresAt}
           expired={expired}
           onRegenerate={onRegenerate}
@@ -84,15 +80,15 @@ export function HostPairingChrome({
           layout={layout}
         />
       </div>
-      <HostPairingInstruction pairing={pairing} layout="fold" />
+      <PairingInstruction pairing={pairing} layout="fold" />
       <Separator />
-      <HostPairingStatus host={host} layout={layout} />
+      <PairingStatus host={host} layout={layout} />
     </>
   );
 }
 
 /** The token's clock and the way to replace it. */
-export function HostPairingToken({
+export function PairingToken({
   expiresAt,
   expired,
   onRegenerate,
@@ -137,11 +133,11 @@ export function HostPairingToken({
 }
 
 /** The status line that resolves in place when a runner spends the token. */
-export function HostPairingStatus({
+export function PairingStatus({
   host,
   layout = 'dialog',
 }: {
-  host: PairingHost | null;
+  host: PairedMachine | null;
   layout?: 'step' | 'dialog';
 }) {
   const { t } = useTranslation();

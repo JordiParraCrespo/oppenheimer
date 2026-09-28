@@ -20,11 +20,11 @@ importing it configures i18next; everything else is pure and may be dropped.
 | `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, `RelativeTime`, the date, duration and person-name formatters | leaf |
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
 | `forms` | `ErrorAlert`, `useZodResolver`, `useSearchDraft`, `SidebarSearchField` (a sidebar search box on it), `useServerFieldErrors`, `notifySuccess` (what a write says when it lands) | leaf |
-| `pairing` | `HostPairingChrome`, and its two halves `HostPairingToken` and `HostPairingStatus` — the token clock and the status line that the onboarding step, the console's Add a host dialog and the Settings page all show; the chrome shows a refused mint through `ErrorAlert` | middle |
-| `layout` | `PageHead`, `FieldRow`, `RouteError`/`RouteNotFound`, `ConfirmDialog`, `QueryState` | middle |
+| `pairing` | `PairingChrome`, the column that pairs a machine with a pairing it is handed: `PairingCopyButtons`, `PairingToken` (the token and its countdown), `PairingInstruction` (the command and the agent prompt) and `PairingStatus` (waiting, then the machine that registered); a refused mint shows through `ErrorAlert` | middle |
+| `layout` | `PageHead`, `FieldRow`, `RouteError`/`RouteNotFound`, `AppPending`, `ConfirmDialog`, `QueryState` | middle |
 | `roles` | `RolePill` | middle |
 | `shell` | `AppShell`, `AppSidebar`, `TopBar`, `UserMenu`, `CommandPalette`, `SettingsSidebar`, `ShellProvider`/`useShell`, `createDialogSlot` (one dialog up at a time, its actions and its request on two contexts; the app names the requests), `useHotkey`, `useAbility`, `useAuthorizedNav`, the nav types | top |
-| `auth` | `AuthLayout`, `AuthArtPanel`, `BrandLogo`, the auth primitives, `PasswordInput`, `SocialLoginButtons`, `OAuthCallbackNotice`, `redirectSignedIn` | top |
+| `auth` | `AuthLayout`, `AuthArtPanel`, `BrandLogo`, the auth primitives, `PasswordInput`, `SocialLoginButtons`, `OAuthCallbackNotice`, `SessionRestoreError`, `redirectSignedIn` | top |
 
 The lists live in [`.dependency-cruiser.cjs`](.dependency-cruiser.cjs), which
 passes them to `packages/tsconfig/depcruise/frontend-kit.cjs`.

@@ -232,6 +232,7 @@ in `packages/tsconfig/depcruise/`.
 
 `frontend-app.cjs` (`apps/web`): `no-circular`, `features-are-islands`,
 `routes-compose`, `forms-and-components-stay-pure`, `lib-has-no-jsx`,
+`providers-mount-dialogs`, `features-query-through-the-product`,
 `one-product-per-app`, `kit-through-its-entry`. Their meaning is in
 `.agents/rules/frontend-architecture.md`.
 
