@@ -56,7 +56,7 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
   inside the console and no settings pane in it: Settings is its own chrome
   beside the console (`routes/_authenticated/settings.tsx`), and its sections
   are features named after their modules (`profile`, `hosts`). The console
-  pairs a machine in a dialog, `sessions/dialogs/add-host.tsx`, from the
+  pairs a machine in a dialog, `hosts/dialogs/add-host.tsx`, from the
   composer's host chip; the one pairing page, `AddHostScreen`, is Settings'
   own at `/settings/hosts/new`. New project, Project settings and the
   automation editor are dialogs too, not pages

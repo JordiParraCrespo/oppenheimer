@@ -26,7 +26,7 @@ export interface PairingHost {
  *
  * One place because two surfaces draw the same column — the onboarding
  * step (`apps/web/.../hosts/screens/onboarding-host.tsx`) and the console's
- * Add a host dialog (`.../sessions/dialogs/add-host.tsx`) — and a feature
+ * Add a host dialog (`.../hosts/dialogs/add-host.tsx`) — and a feature
  * may not import another feature. `layout` is the export's two sizes: the
  * step's large buttons and 12px line (`design/version1/AddHost.dc.html`),
  * the dialog's medium buttons and 11.5px line (`SessionsConsole.dc.html`).
