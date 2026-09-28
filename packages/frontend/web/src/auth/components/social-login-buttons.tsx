@@ -1,12 +1,9 @@
 import { Alert, AlertDescription, BrandGlyph, Button } from '@oppenheimer/design-system-web';
 import { Info } from '@oppenheimer/design-system-web/icons';
 import type { SocialAuthIntent } from '@oppenheimer/frontend-core';
-import {
-  useDeploymentCapabilities,
-  useErrorMessage,
-  useSocialLogin,
-} from '@oppenheimer/frontend-core/react';
+import { useDeploymentCapabilities, useSocialLogin } from '@oppenheimer/frontend-core/react';
 import { useTranslation } from 'react-i18next';
+import { ErrorAlert } from '../../forms';
 
 /**
  * The social sign-in row at the top of the sign-in and create-account
@@ -33,7 +30,6 @@ export function SocialLoginButtons({
   intent?: SocialAuthIntent;
 }) {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
   const social = useSocialLogin();
   const { data, error } = useDeploymentCapabilities();
 
@@ -56,25 +52,24 @@ export function SocialLoginButtons({
     );
   }
 
+  const busyWith = social.isPending ? social.variables?.provider : undefined;
+
   return (
     <div className="flex flex-col gap-2.5">
       {/* Starting the round-trip can fail before the redirect ever happens —
           the API unreachable, the provider rejected server-side. It used to
           fail silently: the button simply stopped spinning. */}
-      {social.error && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {resolveError(social.error, t('auth.login.socialFailed')).message}
-          </AlertDescription>
-        </Alert>
-      )}
+      <ErrorAlert error={social.error} fallback={t('auth.login.socialFailed')} />
+      {/* The provider in flight is pending; the other is locked beside it,
+          since one sign-in at a time is all a redirect can carry. */}
       {google && (
         <Button
           variant="social"
           size="lg"
           block
           type="button"
-          disabled={disabled || social.isPending}
+          pending={busyWith === 'google'}
+          disabled={disabled || busyWith === 'github'}
           onClick={() => social.mutate({ provider: 'google', intent })}
         >
           <BrandGlyph name="google" />
@@ -87,7 +82,8 @@ export function SocialLoginButtons({
           size="lg"
           block
           type="button"
-          disabled={disabled || social.isPending}
+          pending={busyWith === 'github'}
+          disabled={disabled || busyWith === 'google'}
           onClick={() => social.mutate({ provider: 'github', intent })}
         >
           <BrandGlyph name="github" />

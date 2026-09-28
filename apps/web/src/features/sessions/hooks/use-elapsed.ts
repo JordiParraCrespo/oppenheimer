@@ -1,5 +1,5 @@
+import { formatElapsed } from '@oppenheimer/frontend-web';
 import { useEffect, useState } from 'react';
-import { formatElapsed } from '../lib/elapsed';
 
 /**
  * How long something has been going on, as a clock that ticks.

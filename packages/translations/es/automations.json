@@ -295,6 +295,8 @@
   "deleteDialog": {
     "title": "¿Eliminar «{{name}}»?",
     "description": "Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan.",
-    "confirm": "Eliminar"
+    "confirm": "Eliminar",
+    "deleting": "Eliminando…",
+    "failed": "No se pudo eliminar la automatización."
   }
 }

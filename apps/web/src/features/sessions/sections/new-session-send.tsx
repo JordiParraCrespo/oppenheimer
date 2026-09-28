@@ -1,11 +1,10 @@
-import { Alert, AlertDescription } from '@oppenheimer/design-system-web';
 import type { CreateSessionInput } from '@oppenheimer/frontend-consumer';
 import {
   useCreateSession,
   useHosts,
   useProjectsSnapshot,
 } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { type ReactNode, useRef } from 'react';
 import { useWatch } from 'react-hook-form';
@@ -40,7 +39,6 @@ export function NewSessionSend({
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const resolveError = useErrorMessage();
   const { control, getValues } = useNewSessionDraft();
   const hostId = useWatch({ control, name: 'hostId' });
   // What `start` posts, not what the picker holds, so the gate and the body agree.
@@ -108,13 +106,7 @@ export function NewSessionSend({
         engine={engine}
       />
 
-      {create.isError ? (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {resolveError(create.error, t('sessions.new.failed')).message}
-          </AlertDescription>
-        </Alert>
-      ) : null}
+      <ErrorAlert error={create.error} fallback={t('sessions.new.failed')} />
     </div>
   );
 }

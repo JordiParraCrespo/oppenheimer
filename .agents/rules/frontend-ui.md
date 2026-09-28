@@ -19,7 +19,14 @@ multi-line, so a grep for `export` misses most of them.
 
 | Need                                  | Use                           | Not                                                   |
 | ------------------------------------- | ----------------------------- | ----------------------------------------------------- |
-| Whole-form or whole-page failure      | `Alert variant="destructive"` | a styled `div`, a bare `<p class="text-destructive">` |
+| Whole-form or whole-page failure      | the kit's `ErrorAlert`: `error` + `fallback` to resolve a raw failure, `message` for one a form already resolved, `onDismiss` or `action` for its one button | a hand-built destructive `Alert`, a styled `div`, a bare `<p class="text-destructive">` |
+| A refusal about one field (a name the server rejected) | `FieldError` under the field | an `ErrorAlert` above the form |
+| A section that draws a read's failed, loading, empty and loaded states | the kit's `QueryState` (`combineQueries` for two reads, `stale="keep"` to keep a drawn page beside a later failure, `renderError` for a 404 said as "not found") | a hand-written ternary ladder, a forged `{ isPending, error, data }` |
+| A picker chip whose loading and failure show inside its popup | its `loading` and `failure` props — the chip stays on screen in every state, so it is not a `QueryState` site | a skeleton in the chip's place |
+| "Are you sure?" before something that cannot be undone | the kit's `ConfirmDialog` | a hand-built `Dialog` with its own Cancel |
+| A button whose request is in flight | `Button pending pendingLabel`; `pending` locks that button only, so a sibling that must wait (the other provider, Deny beside Allow) takes `disabled` | `disabled={isPending}` and a ternary label |
+| One "2 hours ago" line that has to keep moving | the kit's `RelativeTime`, which owns its tick | `useNow` in the row around it |
+| A list whose rows all show an age | one `useNow` in the list, `now` handed to the rows, the words from `formatAge` / `common.relative` — one tick per list, not one timer per row | a `RelativeTime` per row |
 | A success (when it earns one, below)  | the kit's `notifySuccess()`   | an `Alert`, an inline row, `toast.success()` directly |
 | Field validation                      | `Field` + `FieldError`        | either of the above                                   |
 | "Nothing here" / "still loading"      | `EmptyState`, `Skeleton`      | a centred paragraph                                   |

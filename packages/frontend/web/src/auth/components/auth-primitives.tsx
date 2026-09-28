@@ -1,6 +1,4 @@
 import {
-  Alert,
-  AlertDescription,
   cn,
   Field,
   FieldAction,
@@ -112,18 +110,6 @@ export function AuthBackLink({ children }: { children?: React.ReactNode }) {
     <p className="mt-5 text-sm">
       <AuthLink to="/login">{children ?? t('auth.forgotPassword.backToSignIn')}</AuthLink>
     </p>
-  );
-}
-
-/**
- * Failed submissions surface here, above the first field. The design system's
- * `Alert` carries the destructive treatment and the `role="alert"`.
- */
-export function AuthFormError({ children }: { children: React.ReactNode }) {
-  return (
-    <Alert variant="destructive">
-      <AlertDescription>{children}</AlertDescription>
-    </Alert>
   );
 }
 

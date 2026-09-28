@@ -1,4 +1,4 @@
-import { useLogin } from '@oppenheimer/frontend-core/react';
+import { useErrorMessage, useLogin } from '@oppenheimer/frontend-core/react';
 import {
   AuthDivider,
   AuthFooterNote,
@@ -7,7 +7,6 @@ import {
   AuthTitle,
   OAuthCallbackNotice,
   SocialLoginButtons,
-  useErrorMessage,
 } from '@oppenheimer/frontend-web';
 import type { LoginDto } from '@oppenheimer/shared/schemas/auth';
 import { useNavigate } from '@tanstack/react-router';

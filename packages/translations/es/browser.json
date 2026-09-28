@@ -541,8 +541,7 @@
       "image": {
         "sending": "Enviando imagen",
         "hostOffline": "La imagen no se envió: el equipo está desconectado.",
-        "failedTitle": "La imagen no llegó a la sesión",
-        "dismiss": "Cerrar"
+        "failedTitle": "La imagen no llegó a la sesión"
       },
       "retryNow": "Reintentar ahora",
       "retry": "Intentar de nuevo",
@@ -909,7 +908,9 @@
     "deleteDialog": {
       "title": "¿Eliminar «{{name}}»?",
       "description": "Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan.",
-      "confirm": "Eliminar"
+      "confirm": "Eliminar",
+      "deleting": "Eliminando…",
+      "failed": "No se pudo eliminar la automatización."
     }
   },
   "hosts": {
@@ -971,6 +972,7 @@
       "save": "Guardar",
       "cancel": "Cancelar",
       "remove": "Eliminar equipo",
+      "removing": "Eliminando…",
       "removeTitle": "¿Eliminar {{name}}?",
       "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
       "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
@@ -1048,7 +1050,9 @@
       "lastSeen": "Activo {{when}}",
       "activeNow": "Activo ahora",
       "signOut": "Cerrar sesión",
+      "signingOut": "Cerrando sesión…",
       "signOutOthers": "Cerrar sesión en los demás dispositivos",
+      "signingOutOthers": "Cerrando las demás sesiones…",
       "failed": "No se han podido cargar los dispositivos.",
       "revokeFailed": "No se ha podido cerrar la sesión en ese dispositivo."
     },

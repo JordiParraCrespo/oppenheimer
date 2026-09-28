@@ -1,6 +1,4 @@
 import {
-  Alert,
-  AlertDescription,
   Button,
   EditorPageBack,
   PageHeader,
@@ -12,15 +10,15 @@ import {
   RoutineSteps,
 } from '@oppenheimer/design-system-web';
 import { Cpu } from '@oppenheimer/design-system-web/icons';
-import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import {
+  ErrorAlert,
   HostPairingInstruction,
   HostPairingStatus,
   HostPairingToken,
 } from '@oppenheimer/frontend-web';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { usePairing } from '../hooks/use-pairing';
 
 /**
  * Settings → Hosts → Add a host: pairing a machine from Settings
@@ -37,8 +35,9 @@ import { useTranslation } from 'react-i18next';
  * return to the list.
  *
  * The console pairs a machine in a dialog instead
- * (`sessions/dialogs/add-host.tsx`, the 2026-09-27 export); this page is
- * Settings' own, because its frame keeps Settings around it.
+ * (`hosts/dialogs/add-host.tsx`, the 2026-09-27 export); this page is
+ * Settings' own, because its frame keeps Settings around it. Both finish on
+ * a registered host (`usePairing`'s rules).
  *
  * Both forms of the instruction come from the API with the secret already in
  * them: it is shown once, the server is the only place that knows it, so
@@ -48,11 +47,10 @@ export function AddHostScreen() {
   const { t } = useTranslation();
   const back = { to: '/settings/hosts' as const };
   const navigate = useNavigate();
-  const resolveError = useErrorMessage();
-  const { pairing, expiresAt, expired, host, isPending, error, regenerate } = useHostPairing(
+  const { pairing, expiresAt, expired, host, isPending, error, regenerate, done } = usePairing(
     t('hosts.add.defaultName'),
+    'registered',
   );
-  const connected = host !== null;
 
   return (
     <>
@@ -72,12 +70,7 @@ export function AddHostScreen() {
               <Button type="button" variant="secondary" size="sm" render={<Link {...back} />}>
                 {t('common.cancel')}
               </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={!host}
-                onClick={() => host && navigate(back)}
-              >
+              <Button type="button" size="sm" disabled={!done} onClick={() => navigate(back)}>
                 {t('hosts.add.done')}
               </Button>
             </>
@@ -88,20 +81,14 @@ export function AddHostScreen() {
         </PageHeaderMeta>
       </PageHeader>
 
-      {error ? (
-        <Alert variant="destructive" className="mb-6">
-          <AlertDescription>
-            {resolveError(error, t('hosts.pairing.mintFailed')).message}
-          </AlertDescription>
-        </Alert>
-      ) : null}
+      <ErrorAlert error={error} fallback={t('hosts.pairing.mintFailed')} className="mb-6" />
 
       <RoutineSteps>
         <RoutineStep
           number={1}
           title={t('hosts.add.install.title')}
           subtitle={t('hosts.add.install.subtitle')}
-          done={connected}
+          done={done}
           summary={t('hosts.add.install.done')}
         >
           <div className="flex flex-col gap-2">
@@ -120,7 +107,7 @@ export function AddHostScreen() {
           number={2}
           title={t('hosts.add.connect.title')}
           subtitle={t('hosts.add.connect.subtitle')}
-          done={connected}
+          done={done}
           summary={host ? [host.name, host.os].filter(Boolean).join(' · ') : undefined}
           last
         >

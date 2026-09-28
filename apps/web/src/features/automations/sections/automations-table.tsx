@@ -1,9 +1,4 @@
 import {
-  Alert,
-  AlertAction,
-  AlertDescription,
-  AlertTitle,
-  Button,
   RoutineTable,
   RoutineTableEmpty,
   RoutineTableHead,
@@ -12,8 +7,13 @@ import {
 import { Zap } from '@oppenheimer/design-system-web/icons';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { ConfirmDialog, useConsoleDialog, useLocale } from '@oppenheimer/frontend-web';
+import {
+  ConfirmDialog,
+  ErrorAlert,
+  QueryState,
+  useConsoleDialog,
+  useLocale,
+} from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -38,7 +38,6 @@ export function AutomationsTable() {
   const locale = useLocale();
   const navigate = useNavigate();
   const dialogs = useConsoleDialog();
-  const resolveError = useErrorMessage();
   const automations = useAutomations();
   const { data: projectNames } = useProjects({
     select: (projects) => new Map(projects.map((project) => [project.id, project.name])),
@@ -55,36 +54,41 @@ export function AutomationsTable() {
 
   return (
     <div className="flex flex-col gap-3">
-      {actions.failure ? (
-        <Alert variant="destructive">
-          {failedName ? (
-            <AlertTitle>{t('automations.page.actionFailedFor', { name: failedName })}</AlertTitle>
-          ) : null}
-          <AlertDescription>
-            {resolveError(actions.failure, t('automations.page.actionFailed')).message}
-          </AlertDescription>
-          <AlertAction>
-            <Button variant="ghost" size="sm" onClick={actions.dismissFailure}>
-              {t('common.dismiss')}
-            </Button>
-          </AlertAction>
-        </Alert>
-      ) : null}
-      {automations.isError ? (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {resolveError(automations.error, t('automations.page.loadFailed')).message}
-          </AlertDescription>
-        </Alert>
-      ) : null}
-      <RoutineTable>
-        {automations.isPending ? (
-          <div className="flex flex-col gap-1.5 p-1.5">
-            <Skeleton className="h-[54px] w-full" />
-            <Skeleton className="h-[54px] w-full" />
-          </div>
-        ) : automations.data?.length ? (
-          <>
+      <ErrorAlert
+        error={actions.failure}
+        fallback={t('automations.page.actionFailed')}
+        title={failedName ? t('automations.page.actionFailedFor', { name: failedName }) : undefined}
+        onDismiss={actions.dismissFailure}
+      />
+      {/* A failed load is the page's to say, beside a failed action — not a
+          row of the table. */}
+      <QueryState
+        query={automations}
+        pending={
+          <RoutineTable>
+            <div className="flex flex-col gap-1.5 p-1.5">
+              <Skeleton className="h-13.5 w-full" />
+              <Skeleton className="h-13.5 w-full" />
+            </div>
+          </RoutineTable>
+        }
+        errorFallback={t('automations.page.loadFailed')}
+        empty={{
+          when: (rows) => rows.length === 0,
+          show: (
+            <RoutineTable>
+              <RoutineTableEmpty>
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-hover-surface text-fg-muted [&_svg]:size-4">
+                  <Zap />
+                </span>
+                <span>{t('automations.page.empty')}</span>
+              </RoutineTableEmpty>
+            </RoutineTable>
+          ),
+        }}
+      >
+        {(rows) => (
+          <RoutineTable>
             <RoutineTableHead
               columns={[
                 t('automations.table.automation'),
@@ -93,7 +97,7 @@ export function AutomationsTable() {
                 t('automations.table.status'),
               ]}
             />
-            {automations.data.map((automation) => (
+            {rows.map((automation) => (
               <AutomationTableRow
                 key={automation.id}
                 automation={automation}
@@ -112,23 +116,18 @@ export function AutomationsTable() {
                 onDelete={() => setDeleting(automation)}
               />
             ))}
-          </>
-        ) : (
-          <RoutineTableEmpty>
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-hover-surface text-fg-muted [&_svg]:size-4">
-              <Zap />
-            </span>
-            <span>{t('automations.page.empty')}</span>
-          </RoutineTableEmpty>
+          </RoutineTable>
         )}
-      </RoutineTable>
+      </QueryState>
       {deleting ? (
         <ConfirmDialog
           title={t('automations.deleteDialog.title', { name: deleting.name })}
           description={t('automations.deleteDialog.description')}
           confirmLabel={t('automations.deleteDialog.confirm')}
+          pendingLabel={t('automations.deleteDialog.deleting')}
           pending={actions.removing}
           error={actions.removeFailure}
+          errorFallback={t('automations.deleteDialog.failed')}
           onClose={() => {
             actions.resetRemove();
             setDeleting(null);

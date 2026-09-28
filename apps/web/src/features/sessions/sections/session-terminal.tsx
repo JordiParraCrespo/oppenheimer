@@ -1,15 +1,12 @@
 import {
-  Alert,
-  AlertAction,
-  AlertDescription,
   Button,
   Terminal,
   TerminalStatusBar,
   TerminalStatusItem,
 } from '@oppenheimer/design-system-web';
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { ImagePasteAlert } from '../components/image-paste-alert';
 import { useImagePaste } from '../hooks/use-image-paste';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
@@ -71,20 +68,25 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
           again rather than sit on "Disconnected". */}
       {ended === 'forbidden' || ended === 'refused' ? (
         <div className="px-5 pb-3">
-          <Alert variant="destructive">
-            <AlertDescription>{t(`sessions.session.ended.${ended}`)}</AlertDescription>
-            <AlertAction>
+          <ErrorAlert
+            message={t(`sessions.session.ended.${ended}`)}
+            action={
               <Button variant="ghost" size="sm" onClick={retryNow}>
                 {t('sessions.session.retry')}
               </Button>
-            </AlertAction>
-          </Alert>
+            }
+          />
         </div>
       ) : null}
 
       {image.failure ? (
         <div className="px-5 pb-3">
-          <ImagePasteAlert message={image.failure} onDismiss={image.dismiss} />
+          <ErrorAlert
+            error={image.failure}
+            fallback={t('errors.fallback')}
+            title={t('sessions.session.image.failedTitle')}
+            onDismiss={image.dismiss}
+          />
         </div>
       ) : null}
 

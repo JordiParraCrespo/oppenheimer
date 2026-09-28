@@ -75,8 +75,14 @@ export function LoginForm({
           />
         </AuthField>
 
-        <Button type="submit" size="lg" block disabled={isPending}>
-          {isPending ? t('auth.login.submitting') : t('auth.login.submit')}
+        <Button
+          type="submit"
+          size="lg"
+          block
+          pending={isPending}
+          pendingLabel={t('auth.login.submitting')}
+        >
+          {t('auth.login.submit')}
         </Button>
       </FieldGroup>
     </form>

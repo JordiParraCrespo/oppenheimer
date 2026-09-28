@@ -1,7 +1,7 @@
 import { EditorPageBack, EmptyState, Skeleton } from '@oppenheimer/design-system-web';
 import { useAutomation } from '@oppenheimer/frontend-consumer/react';
 import { AppError } from '@oppenheimer/frontend-core';
-import { RouteError } from '@oppenheimer/frontend-web';
+import { QueryState, RouteError } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { AutomationHeader } from '../sections/automation-header';
@@ -18,39 +18,40 @@ export function AutomationScreen({ automationId }: { automationId: string }) {
   const { t } = useTranslation();
   const automation = useAutomation(automationId);
 
-  if (automation.isPending) {
-    return (
-      <div className="flex flex-col gap-3">
-        <Skeleton className="h-6 w-40" />
-        <Skeleton className="h-11 w-2/3" />
-        <Skeleton className="h-32 w-full" />
-      </div>
-    );
-  }
-  // Only a 404 is "not found"; any other failure is a failure, and says so.
-  if (
-    automation.isError &&
-    !(automation.error instanceof AppError && automation.error.status === 404)
-  ) {
-    return <RouteError error={automation.error} />;
-  }
-  if (!automation.data) {
-    return (
-      <EmptyState>
-        <EmptyState.Header>
-          <EmptyState.Description>{t('automations.detail.notFound')}</EmptyState.Description>
-        </EmptyState.Header>
-      </EmptyState>
-    );
-  }
   return (
-    <div className="flex flex-col gap-4">
-      <EditorPageBack render={<Link to="/automations" />}>
-        {t('automations.detail.back')}
-      </EditorPageBack>
-      <AutomationHeader automation={automation.data} />
-      <RunHistoryCard automationId={automationId} />
-      <RunsTable automationId={automationId} />
-    </div>
+    <QueryState
+      query={automation}
+      pending={
+        <div className="flex flex-col gap-3">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-11 w-2/3" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+      }
+      errorFallback={t('errors.fallback')}
+      // Only a 404 is "not found"; any other failure is a failure, and says so.
+      renderError={(error) =>
+        error instanceof AppError && error.status === 404 ? (
+          <EmptyState>
+            <EmptyState.Header>
+              <EmptyState.Description>{t('automations.detail.notFound')}</EmptyState.Description>
+            </EmptyState.Header>
+          </EmptyState>
+        ) : (
+          <RouteError error={error} />
+        )
+      }
+    >
+      {(data) => (
+        <div className="flex flex-col gap-4">
+          <EditorPageBack render={<Link to="/automations" />}>
+            {t('automations.detail.back')}
+          </EditorPageBack>
+          <AutomationHeader automation={data} />
+          <RunHistoryCard automationId={automationId} />
+          <RunsTable automationId={automationId} />
+        </div>
+      )}
+    </QueryState>
   );
 }

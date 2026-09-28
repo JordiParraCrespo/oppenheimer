@@ -1,4 +1,7 @@
-export { type ResolvedErrorMessage, useErrorMessage } from '@oppenheimer/frontend-core/react';
+// The type only: a feature's `forms/` takes a resolved failure as a prop and may
+// not import the kernel's React entry. The hook itself is imported from there.
+export type { ResolvedErrorMessage } from '@oppenheimer/frontend-core/react';
+export { ErrorAlert } from './components/error-alert';
 export { SEARCH_DEBOUNCE_MS, useSearchDraft } from './hooks/use-search-draft';
 export {
   type ServerFieldErrorSource,

@@ -1,3 +1,6 @@
+import type { TFunction } from 'i18next';
+import { formatShortDuration } from './format-duration';
+
 /**
  * Date formatting shared by the workspace screens. Everything goes through
  * `Intl`, so the reader's locale decides the wording and the order — nothing
@@ -36,7 +39,7 @@ export function formatRelativeTime(date: Date, locale: string, now = new Date())
   const elapsedMs = date.getTime() - now.getTime();
   if (Math.abs(elapsedMs) < JUST_NOW_MS) return null;
 
-  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+  const formatter = relativeFormatter(locale);
 
   let amount = elapsedMs / 1000;
   for (const [unit, size] of DIVISIONS) {
@@ -94,6 +97,16 @@ export function compactAge(
 }
 
 /**
+ * "5m", "3h", "2d" — how long ago, in the `common.relative.*` words that every
+ * compact age uses (`formatShortDuration`) — and `common.relative.now` under a
+ * minute.
+ */
+export function formatAge(date: Date, now: Date | number, t: TFunction): string {
+  const ms = (typeof now === 'number' ? now : now.getTime()) - date.getTime();
+  return ms < 60_000 ? t('common.relative.now') : formatShortDuration(ms, t);
+}
+
+/**
  * `Intl.DateTimeFormat` is expensive to construct and the tables were building
  * one per row. Formatters are pure for a given (locale, options), so they are
  * cached here and every helper below goes through this.
@@ -109,6 +122,18 @@ export function dateFormatter(
   if (!formatter) {
     formatter = new Intl.DateTimeFormat(locale, options);
     formatterCache.set(key, formatter);
+  }
+  return formatter;
+}
+
+const relativeCache = new Map<string, Intl.RelativeTimeFormat>();
+
+/** One `Intl.RelativeTimeFormat` per locale, for the same reason. */
+function relativeFormatter(locale: string): Intl.RelativeTimeFormat {
+  let formatter = relativeCache.get(locale);
+  if (!formatter) {
+    formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+    relativeCache.set(locale, formatter);
   }
   return formatter;
 }
@@ -141,7 +166,7 @@ export function formatMessageTime(date: Date, locale: string, now = new Date()):
     return dateFormatter(locale, { hour: 'numeric', minute: '2-digit' }).format(date);
   }
   if (time >= startOfToday - DAY_MS) {
-    return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(-1, 'day');
+    return relativeFormatter(locale).format(-1, 'day');
   }
   // Inside the last week a weekday is the most readable thing a row can say —
   // "Mon" places a message without the reader doing arithmetic on a date.

@@ -1,5 +1,4 @@
 import { usePasteSessionImage } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-web';
 
 /**
  * An image pasted or dropped onto a session's terminal, on its way to the
@@ -11,13 +10,12 @@ import { useErrorMessage } from '@oppenheimer/frontend-web';
  * a file over the cap that never leaves the browser, is the mutation's error.
  */
 export function useImagePaste(sessionId: string, window: number) {
-  const resolveError = useErrorMessage();
   const paste = usePasteSessionImage(sessionId, window);
 
   return {
     onImage: (image: File) => paste.mutate(image),
     sending: paste.isPending,
-    failure: paste.error ? resolveError(paste.error).message : null,
+    failure: paste.error,
     dismiss: () => paste.reset(),
   };
 }

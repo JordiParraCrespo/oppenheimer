@@ -163,7 +163,9 @@ test('an automation from the editor to deletion', async ({ page }) => {
   // Delete from the table asks first: Cancel keeps the row, Delete removes it.
   await page.goto('/automations');
   const copy = page.getByRole('row', { name: 'Nightly dependency audit copy', exact: true });
-  const confirm = page.getByRole('dialog', { name: 'Delete “Nightly dependency audit copy”?' });
+  const confirm = page.getByRole('alertdialog', {
+    name: 'Delete “Nightly dependency audit copy”?',
+  });
   await copy.getByRole('button', { name: 'Automation actions' }).click();
   await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
   await expect(confirm).toContainText('Its triggers stop now. Past runs are kept.');

@@ -1,12 +1,7 @@
-import {
-  Alert,
-  AlertDescription,
-  SettingsGroup,
-  SettingsRow,
-  Skeleton,
-} from '@oppenheimer/design-system-web';
+import { SettingsGroup, SettingsRow, Skeleton } from '@oppenheimer/design-system-web';
 import { useMyProfile } from '@oppenheimer/frontend-consumer/react';
-import { shareEntities, useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { shareEntities } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ProfileEmailSection } from './profile-email';
 import { ProfileNameSection } from './profile-name';
@@ -20,17 +15,10 @@ import { ProfilePictureSection } from './profile-picture';
  */
 export function ProfileDetailsSection() {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
   const profile = useMyProfile({ structuralSharing: shareEntities });
 
   if (profile.isError) {
-    return (
-      <Alert variant="destructive">
-        <AlertDescription>
-          {resolveError(profile.error, t('settings.profile.failed')).message}
-        </AlertDescription>
-      </Alert>
-    );
+    return <ErrorAlert error={profile.error} fallback={t('settings.profile.failed')} />;
   }
 
   if (!profile.data) {

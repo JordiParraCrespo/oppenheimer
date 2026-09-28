@@ -8,7 +8,7 @@ const ProjectDialog = lazy(() =>
   })),
 );
 const AddHostDialog = lazy(() =>
-  import('@/features/sessions/dialogs/add-host').then((module) => ({
+  import('@/features/hosts/dialogs/add-host').then((module) => ({
     default: module.AddHostDialog,
   })),
 );

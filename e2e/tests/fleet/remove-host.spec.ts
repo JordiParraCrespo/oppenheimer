@@ -44,7 +44,7 @@ test('removing a host stops its sessions on the machine', async ({ page }) => {
     .getByRole('button', { name: `${box.host.name} actions` })
     .click();
   await page.getByRole('menuitem', { name: 'Remove host' }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('alertdialog');
   await expect(dialog).toContainText(`1 session is running on ${box.host.name}. It is stopped`);
   await dialog.getByRole('button', { name: 'Remove host' }).click();
   await expect(page.getByTestId('host-card')).toHaveCount(0);

@@ -1,5 +1,6 @@
 import type { RunState } from '@oppenheimer/design-system-web';
 import type { AutomationEntity, AutomationRunEntity } from '@oppenheimer/frontend-consumer';
+import { formatCountdown, formatShortDuration } from '@oppenheimer/frontend-web';
 import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
 import {
   AUTOMATION_PAUSED_REASONS,
@@ -9,7 +10,7 @@ import {
   type AutomationSkipReason,
 } from '@oppenheimer/shared/automations';
 import type { TFunction } from 'i18next';
-import { clock, countdown, dayOffset, shortWait, viewerTimeZone, weekdayDate } from './time';
+import { clock, dayOffset, viewerTimeZone, weekdayDate } from './time';
 
 /**
  * Entities in, what a row prints out. Nothing here renders and nothing here
@@ -92,9 +93,13 @@ export function nextInstantText(next: Date, now: number, locale: string, t: TFun
 }
 
 /** The mono countdown under a next run, or nothing when there is none. */
-export function nextRunCountdown(automation: AutomationEntity, now: number): string | null {
+export function nextRunCountdown(
+  automation: AutomationEntity,
+  now: number,
+  locale: string,
+): string | null {
   if (automation.isPaused || !automation.nextRunAt) return null;
-  return countdown(automation.nextRunAt.getTime() - now);
+  return formatCountdown(automation.nextRunAt.getTime() - now, locale);
 }
 
 /**
@@ -105,7 +110,10 @@ export function sidebarMeta(automation: AutomationEntity, now: number, t: TFunct
   if (automation.isRunning) return t('automations.sidebar.running');
   if (automation.isPaused) return t('automations.sidebar.paused');
   if (automation.nextRunAt) {
-    return t('automations.next.in', { time: shortWait(automation.nextRunAt.getTime() - now) });
+    const wait = automation.nextRunAt.getTime() - now;
+    return t('automations.next.in', {
+      time: formatShortDuration(wait, t, 'wait'),
+    });
   }
   return automation.runCount ? String(automation.runCount) : '';
 }

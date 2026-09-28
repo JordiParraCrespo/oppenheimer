@@ -66,7 +66,9 @@
     "lastSeen": "Active {{when}}",
     "activeNow": "Active now",
     "signOut": "Sign out",
+    "signingOut": "Signing out…",
     "signOutOthers": "Sign out of all other devices",
+    "signingOutOthers": "Signing out of other devices…",
     "failed": "The devices could not be loaded.",
     "revokeFailed": "That device could not be signed out."
   },

@@ -1,7 +1,4 @@
 import {
-  Alert,
-  AlertAction,
-  AlertDescription,
   Button,
   DropdownMenu,
   DropdownMenuContent,
@@ -21,8 +18,7 @@ import {
 import { Ellipsis, Play } from '@oppenheimer/design-system-web/icons';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { ConfirmDialog, useConsoleDialog, useLocale } from '@oppenheimer/frontend-web';
+import { ConfirmDialog, ErrorAlert, useConsoleDialog, useLocale } from '@oppenheimer/frontend-web';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -45,7 +41,6 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
   const locale = useLocale();
   const navigate = useNavigate();
   const dialogs = useConsoleDialog();
-  const resolveError = useErrorMessage();
   const [deleting, setDeleting] = useState(false);
   const { data: projectName } = useProjects({
     select: (projects) => projects.find((project) => project.id === automation.projectId)?.name,
@@ -140,25 +135,20 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
           {pausedReasonText(automation.pausedReason, t)}
         </PageHeaderNote>
       ) : null}
-      {actions.failure ? (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {resolveError(actions.failure, t('automations.page.actionFailed')).message}
-          </AlertDescription>
-          <AlertAction>
-            <Button variant="ghost" size="sm" onClick={actions.dismissFailure}>
-              {t('common.dismiss')}
-            </Button>
-          </AlertAction>
-        </Alert>
-      ) : null}
+      <ErrorAlert
+        error={actions.failure}
+        fallback={t('automations.page.actionFailed')}
+        onDismiss={actions.dismissFailure}
+      />
       {deleting ? (
         <ConfirmDialog
           title={t('automations.deleteDialog.title', { name: automation.name })}
           description={t('automations.deleteDialog.description')}
           confirmLabel={t('automations.deleteDialog.confirm')}
+          pendingLabel={t('automations.deleteDialog.deleting')}
           pending={actions.removing}
           error={actions.removeFailure}
+          errorFallback={t('automations.deleteDialog.failed')}
           onClose={() => {
             actions.resetRemove();
             setDeleting(false);

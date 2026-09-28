@@ -1,5 +1,6 @@
 import { cn, Separator, StatusDot, Link as TextLink } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
+import { ErrorAlert } from '../../forms';
 import {
   HostPairingCopyButtons,
   HostPairingInstruction,
@@ -25,7 +26,7 @@ export interface PairingHost {
  *
  * One place because two surfaces draw the same column — the onboarding
  * step (`apps/web/.../hosts/screens/onboarding-host.tsx`) and the console's
- * Add a host dialog (`.../sessions/dialogs/add-host.tsx`) — and a feature
+ * Add a host dialog (`.../hosts/dialogs/add-host.tsx`) — and a feature
  * may not import another feature. `layout` is the export's two sizes: the
  * step's large buttons and 12px line (`design/version1/AddHost.dc.html`),
  * the dialog's medium buttons and 11.5px line (`SessionsConsole.dc.html`).
@@ -47,6 +48,7 @@ export function HostPairingChrome({
   onRegenerate,
   busy,
   host,
+  error = null,
   layout = 'dialog',
 }: {
   /** Absent while the token is being minted. */
@@ -62,12 +64,16 @@ export function HostPairingChrome({
   busy?: boolean;
   /** The machine this token paired, once one has spent it. */
   host: PairingHost | null;
+  /** A mint that was refused. The last token, if any, stays on screen and spendable. */
+  error?: unknown;
   /** `step`: onboarding's sizes. `dialog`: Add a host's. */
   layout?: 'step' | 'dialog';
 }) {
+  const { t } = useTranslation();
   const step = layout === 'step';
   return (
     <>
+      <ErrorAlert error={error} fallback={t('hosts.pairing.mintFailed')} />
       <div className="flex flex-col gap-2.5">
         <HostPairingCopyButtons pairing={pairing} size={step ? 'lg' : 'md'} />
         <HostPairingToken

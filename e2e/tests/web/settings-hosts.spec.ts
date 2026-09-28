@@ -58,7 +58,7 @@ test('lists, renames and removes a host from Settings', async ({ page }) => {
   // ── Remove, behind its confirm ───────────────────────────────────────────
   await card.getByRole('button', { name: 'build-03 actions' }).click();
   await page.getByRole('menuitem', { name: 'Remove host' }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('alertdialog');
   await expect(dialog).toContainText('Remove build-03?');
   await expect(dialog).toContainText(
     'No sessions are running on build-03. The runner’s token is revoked and automations targeting it are paused.',

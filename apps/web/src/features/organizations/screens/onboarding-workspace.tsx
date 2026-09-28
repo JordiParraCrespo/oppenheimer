@@ -1,6 +1,4 @@
 import {
-  Alert,
-  AlertDescription,
   Button,
   Field,
   FieldDescription,
@@ -13,7 +11,8 @@ import {
 } from '@oppenheimer/design-system-web';
 import { isProvisionalSlug } from '@oppenheimer/frontend-consumer';
 import { useClaimPersonalWorkspace, useOrganizations } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage, useLogout, useProfile } from '@oppenheimer/frontend-core/react';
+import { useLogout, useProfile } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -37,7 +36,6 @@ import { workspaceAddressPrefix } from '@/features/organizations/lib/workspace-a
 export function OnboardingWorkspaceScreen() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const resolveError = useErrorMessage();
   const { data: profile } = useProfile();
   // Back and "use a different account" both leave first-run for the sign-in
   // screen, which is only true if the session goes with them: a still-signed-in
@@ -168,23 +166,11 @@ export function OnboardingWorkspaceScreen() {
       {/* The create can fail after the address read as free — someone else may
           have taken it in between — so the failure belongs on this step, not
           on the one it would otherwise have navigated to. */}
-      {claim.error && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {resolveError(claim.error, t('onboarding.flow.workspace.claimFailed')).message}
-          </AlertDescription>
-        </Alert>
-      )}
+      <ErrorAlert error={claim.error} fallback={t('onboarding.flow.workspace.claimFailed')} />
 
       {/* Leaving signs out first; a sign-out that failed leaves the reader here,
           signed in, and says so rather than doing nothing. */}
-      {logout.error ? (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {resolveError(logout.error, t('nav.logOutFailed')).message}
-          </AlertDescription>
-        </Alert>
-      ) : null}
+      <ErrorAlert error={logout.error} fallback={t('nav.logOutFailed')} />
 
       <Button
         size="lg"
@@ -193,10 +179,12 @@ export function OnboardingWorkspaceScreen() {
         // `workspacesRead` is the guard against creating a second workspace:
         // until the list has answered, this step does not know whether there
         // is a row to claim.
-        disabled={!workspacesRead || !addressReady || !name.trim() || claim.isPending}
+        disabled={!workspacesRead || !addressReady || !name.trim()}
         onClick={submit}
+        pending={claim.isPending}
+        pendingLabel={t('onboarding.flow.workspace.claiming')}
       >
-        {claim.isPending ? t('onboarding.flow.workspace.claiming') : t('onboarding.flow.continue')}
+        {t('onboarding.flow.continue')}
       </Button>
 
       <div className="flex flex-col items-center gap-1 text-sm text-fg-muted">

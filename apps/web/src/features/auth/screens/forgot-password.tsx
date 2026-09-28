@@ -1,12 +1,12 @@
-import { Alert, AlertDescription, Button } from '@oppenheimer/design-system-web';
-import { useForgotPassword } from '@oppenheimer/frontend-core/react';
+import { Button } from '@oppenheimer/design-system-web';
+import { useErrorMessage, useForgotPassword } from '@oppenheimer/frontend-core/react';
 import {
   AuthBackLink,
   AuthFooterNote,
   AuthSubtitle,
   AuthTitle,
+  ErrorAlert,
   notifySuccess,
-  useErrorMessage,
 } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
@@ -40,22 +40,17 @@ export function ForgotPasswordScreen() {
         </AuthSubtitle>
 
         {/* A failed Resend stays on this view: the form it came from is gone. */}
-        {error ? (
-          <Alert variant="destructive">
-            <AlertDescription>
-              {resolveError(error, t('auth.forgotPassword.resendFailed')).message}
-            </AlertDescription>
-          </Alert>
-        ) : null}
+        <ErrorAlert error={error} fallback={t('auth.forgotPassword.resendFailed')} />
 
         <Button
           variant="secondary"
           size="lg"
           block
-          disabled={isPending}
           onClick={() => mutate(sentTo, { onSuccess: () => notifySuccess('emailResent') })}
+          pending={isPending}
+          pendingLabel={t('auth.forgotPassword.submitting')}
         >
-          {isPending ? t('auth.forgotPassword.submitting') : t('auth.forgotPassword.resend')}
+          {t('auth.forgotPassword.resend')}
         </Button>
 
         <AuthFooterNote>

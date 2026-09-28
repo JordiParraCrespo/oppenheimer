@@ -539,8 +539,7 @@
       "image": {
         "sending": "Sending image",
         "hostOffline": "The image was not sent: the host is offline.",
-        "failedTitle": "The image did not reach the session",
-        "dismiss": "Dismiss"
+        "failedTitle": "The image did not reach the session"
       },
       "retryNow": "Retry now",
       "retry": "Try again",
@@ -905,7 +904,9 @@
     "deleteDialog": {
       "title": "Delete “{{name}}”?",
       "description": "Its triggers stop now. Past runs are kept.",
-      "confirm": "Delete"
+      "confirm": "Delete",
+      "deleting": "Deleting…",
+      "failed": "The automation could not be deleted."
     }
   },
   "hosts": {
@@ -966,6 +967,7 @@
       "save": "Save",
       "cancel": "Cancel",
       "remove": "Remove host",
+      "removing": "Removing…",
       "removeTitle": "Remove {{name}}?",
       "removeRunning_one": "{{count}} session is running on {{name}}. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
       "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
@@ -1042,7 +1044,9 @@
       "lastSeen": "Active {{when}}",
       "activeNow": "Active now",
       "signOut": "Sign out",
+      "signingOut": "Signing out…",
       "signOutOthers": "Sign out of all other devices",
+      "signingOutOthers": "Signing out of other devices…",
       "failed": "The devices could not be loaded.",
       "revokeFailed": "That device could not be signed out."
     },

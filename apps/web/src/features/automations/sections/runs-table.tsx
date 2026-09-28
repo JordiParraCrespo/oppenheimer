@@ -1,6 +1,4 @@
 import {
-  Alert,
-  AlertDescription,
   PillTab,
   PillTabs,
   RunRow,
@@ -16,8 +14,7 @@ import {
   useAutomations,
   useProjects,
 } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { useLocale } from '@oppenheimer/frontend-web';
+import { QueryState, useLocale } from '@oppenheimer/frontend-web';
 import { RUN_WINDOWS } from '@oppenheimer/shared/automations';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -45,7 +42,6 @@ export function RunsTable({ automationId }: { automationId?: string }) {
   const { t } = useTranslation();
   const locale = useLocale();
   const navigate = useNavigate();
-  const resolveError = useErrorMessage();
   const filters = useRunsFilters({ automationId });
   const runs = useAutomationRuns(filters.filter);
   // The facets are the workspace-wide list's only; an automation's page has none.
@@ -136,46 +132,54 @@ export function RunsTable({ automationId }: { automationId?: string }) {
         ]}
       />
 
-      {runs.isError && !page ? (
-        <Alert variant="destructive" className="mx-1.5 mb-1.5">
-          <AlertDescription>
-            {resolveError(runs.error, t('automations.runs.loadFailed')).message}
-          </AlertDescription>
-        </Alert>
-      ) : runs.isPending ? (
-        <div className="flex flex-col gap-1 px-1.5">
-          <Skeleton className="h-11 w-full" />
-          <Skeleton className="h-11 w-full" />
-          <Skeleton className="h-11 w-full" />
-        </div>
-      ) : page?.items.length ? (
-        page.items.map((run) => (
-          <RunRow
-            key={run.id}
-            state={runState(run.status)}
-            title={runTitle(run, t)}
-            aria-label={`${runTitle(run, t)} · ${t(`automations.runStatus.${run.status}`)}`}
-            routine={run.automationDeleted ? t('automations.runs.deleted') : run.automationName}
-            date={monthDay(run.createdAt, locale)}
-            time={clock(run.createdAt)}
-            disabled={!run.sessionId}
-            onClick={() => {
-              if (run.sessionId) {
-                navigate({
-                  to: '/automations/$automationId/sessions/$sessionId',
-                  params: { automationId: run.automationId, sessionId: run.sessionId },
-                });
-              }
-            }}
-          />
-        ))
-      ) : (
-        <RunsListEmpty>
-          {counts?.all || filters.dirty
-            ? t('automations.runs.noMatch')
-            : t('automations.page.runsEmpty')}
-        </RunsListEmpty>
-      )}
+      {/* A refetch that fails keeps the page already drawn, with the
+          failure above it. */}
+      <QueryState
+        query={runs}
+        stale="keep"
+        pending={
+          <div className="flex flex-col gap-1 px-1.5">
+            <Skeleton className="h-11 w-full" />
+            <Skeleton className="h-11 w-full" />
+            <Skeleton className="h-11 w-full" />
+          </div>
+        }
+        errorFallback={t('automations.runs.loadFailed')}
+        errorClassName="mx-1.5 mb-1.5"
+        empty={{
+          when: (data) => data.items.length === 0,
+          show: (
+            <RunsListEmpty>
+              {counts?.all || filters.dirty
+                ? t('automations.runs.noMatch')
+                : t('automations.page.runsEmpty')}
+            </RunsListEmpty>
+          ),
+        }}
+      >
+        {(data) =>
+          data.items.map((run) => (
+            <RunRow
+              key={run.id}
+              state={runState(run.status)}
+              title={runTitle(run, t)}
+              aria-label={`${runTitle(run, t)} · ${t(`automations.runStatus.${run.status}`)}`}
+              routine={run.automationDeleted ? t('automations.runs.deleted') : run.automationName}
+              date={monthDay(run.createdAt, locale)}
+              time={clock(run.createdAt)}
+              disabled={!run.sessionId}
+              onClick={() => {
+                if (run.sessionId) {
+                  navigate({
+                    to: '/automations/$automationId/sessions/$sessionId',
+                    params: { automationId: run.automationId, sessionId: run.sessionId },
+                  });
+                }
+              }}
+            />
+          ))
+        }
+      </QueryState>
 
       {page?.total ? (
         <RunsListFoot

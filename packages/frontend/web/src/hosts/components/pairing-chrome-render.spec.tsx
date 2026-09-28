@@ -13,7 +13,10 @@ import { HostPairingChrome } from './pairing-chrome';
  * `TokenCountdown` now. Runs without the React Compiler.
  */
 
-vi.mock('react-i18next', () => ({
+// Partial: the forms concern's index also loads the i18n instance, which
+// needs the real `initReactI18next`.
+vi.mock('react-i18next', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('react-i18next')>()),
   useTranslation: () => ({
     t: (key: string, options?: { time?: string }) =>
       options?.time === undefined ? key : `${key} ${options.time}`,

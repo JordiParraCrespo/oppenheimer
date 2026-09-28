@@ -1,6 +1,4 @@
 import {
-  Alert,
-  AlertDescription,
   Avatar,
   AvatarFallback,
   AvatarImage,
@@ -9,7 +7,8 @@ import {
 } from '@oppenheimer/design-system-web';
 import type { ProfileEntity } from '@oppenheimer/frontend-consumer';
 import { useDeleteAvatar, useUploadAvatar } from '@oppenheimer/frontend-consumer/react';
-import { lastFailure, useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { lastFailure } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { AVATAR_MIME_TYPES } from '@oppenheimer/shared/schemas/profile';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -22,7 +21,6 @@ import { useTranslation } from 'react-i18next';
  */
 export function ProfilePictureSection({ profile }: { profile: ProfileEntity }) {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
   const input = useRef<HTMLInputElement>(null);
   const upload = useUploadAvatar();
   const remove = useDeleteAvatar();
@@ -72,17 +70,15 @@ export function ProfilePictureSection({ profile }: { profile: ProfileEntity }) {
           size="sm"
           disabled={busy}
           onClick={() => input.current?.click()}
+          pending={upload.isPending}
+          pendingLabel={t('settings.profile.uploading')}
         >
-          {upload.isPending ? t('settings.profile.uploading') : t('settings.profile.upload')}
+          {t('settings.profile.upload')}
         </Button>
       </SettingsRow>
       {failure ? (
         <div className="border-t border-border-subtle px-5 py-3">
-          <Alert variant="destructive">
-            <AlertDescription>
-              {resolveError(failure, t('settings.profile.pictureFailed')).message}
-            </AlertDescription>
-          </Alert>
+          <ErrorAlert error={failure} fallback={t('settings.profile.pictureFailed')} />
         </div>
       ) : null}
     </>

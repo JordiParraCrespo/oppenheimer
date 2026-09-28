@@ -26,8 +26,8 @@
 
 ## Telling the user something worked, or didn't
 
-- **A failure stays on screen**: `<Alert variant="destructive">` next to what
-  failed. Never a toast — a faded submission error cannot be re-read.
+- **A failure stays on screen**: `<ErrorAlert>` from `@oppenheimer/frontend-web`
+  next to what failed. Never a toast — a faded submission error cannot be re-read.
 - **A success is transient**: `notifySuccess()` from `@oppenheimer/frontend-web`
   (not `toast` directly, and never `sonner`), copy under `toasts.*`, and only
   when the result is easy to miss. When to toast and when not to is
@@ -58,7 +58,7 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
   inside the console and no settings pane in it: Settings is its own chrome
   beside the console (`routes/_authenticated/settings.tsx`), and its sections
   are features named after their modules (`profile`, `hosts`). The console
-  pairs a machine in a dialog, `sessions/dialogs/add-host.tsx`, from the
+  pairs a machine in a dialog, `hosts/dialogs/add-host.tsx`, from the
   composer's host chip; the one pairing page, `AddHostScreen`, is Settings'
   own at `/settings/hosts/new`. New project, Project settings and the
   automation editor are dialogs too, not pages

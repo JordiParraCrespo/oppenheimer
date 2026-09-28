@@ -1,6 +1,5 @@
 import type { FieldValues, UseFormReturn } from 'react-hook-form';
-import { type ResolvedErrorMessage, useServerFieldErrors } from '../../forms';
-import { AuthFormError } from './auth-primitives';
+import { ErrorAlert, type ResolvedErrorMessage, useServerFieldErrors } from '../../forms';
 
 /**
  * A sign-in screen's failed submission, where it belongs: the fields the
@@ -18,5 +17,7 @@ export function AuthFormFailure<TValues extends FieldValues>({
   error?: ResolvedErrorMessage;
 }) {
   const { showAlert } = useServerFieldErrors(form, error);
-  return error && showAlert ? <AuthFormError>{error.message}</AuthFormError> : null;
+  return (
+    <ErrorAlert message={showAlert ? error?.message : null} correlationId={error?.correlationId} />
+  );
 }

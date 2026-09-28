@@ -293,6 +293,8 @@
   "deleteDialog": {
     "title": "Delete “{{name}}”?",
     "description": "Its triggers stop now. Past runs are kept.",
-    "confirm": "Delete"
+    "confirm": "Delete",
+    "deleting": "Deleting…",
+    "failed": "The automation could not be deleted."
   }
 }

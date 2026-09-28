@@ -1,12 +1,6 @@
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-  Button,
-  Toaster,
-} from '@oppenheimer/design-system-web';
+import { Button, Toaster } from '@oppenheimer/design-system-web';
 import { useAuthState, useSessionRestore } from '@oppenheimer/frontend-core/react';
-import { RouteError, useTheme } from '@oppenheimer/frontend-web';
+import { ErrorAlert, RouteError, useTheme } from '@oppenheimer/frontend-web';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { app } from '@/lib/oppenheimer';
@@ -129,19 +123,22 @@ function SessionRestoreError({
 
   return (
     <div className="flex min-h-svh items-center justify-center bg-canvas p-6">
-      <Alert variant="destructive" className="max-w-sm">
-        <AlertTitle>{t('auth.session.errorTitle')}</AlertTitle>
-        <AlertDescription>{t('auth.session.errorMessage')}</AlertDescription>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={onRetry}
-          disabled={isRetrying}
-          className="mt-3.5 w-fit"
-        >
-          {isRetrying ? t('auth.session.retrying') : t('auth.session.retry')}
-        </Button>
-      </Alert>
+      <ErrorAlert
+        className="max-w-sm"
+        title={t('auth.session.errorTitle')}
+        message={t('auth.session.errorMessage')}
+        action={
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onRetry}
+            pending={isRetrying}
+            pendingLabel={t('auth.session.retrying')}
+          >
+            {t('auth.session.retry')}
+          </Button>
+        }
+      />
     </div>
   );
 }

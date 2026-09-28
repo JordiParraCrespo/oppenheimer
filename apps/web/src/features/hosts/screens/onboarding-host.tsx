@@ -1,9 +1,8 @@
-import { Alert, AlertDescription, Button, StepHeader } from '@oppenheimer/design-system-web';
-import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { Button, StepHeader } from '@oppenheimer/design-system-web';
 import { AuthLink, HostPairingChrome } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { usePairing } from '../hooks/use-pairing';
 
 /**
  * Onboarding step 4: pair the first host (`design/version1/AddHost.dc.html`,
@@ -16,7 +15,7 @@ import { useTranslation } from 'react-i18next';
  * What is this step's is the header and that wait. The column under it —
  * the buttons, the token line, the fold, the status row — is the kit's
  * `HostPairingChrome`, which the console's Add a host dialog draws too at
- * its smaller size, and the flow under both is `useHostPairing`.
+ * its smaller size, and the flow under both is `usePairing`.
  *
  * Both forms come from the API with the secret already in them: it is shown
  * once, and the server is the only place that knows it, so neither string is
@@ -37,9 +36,11 @@ export function OnboardingHostScreen({
   walk?: true;
 }) {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
-  const { pairing, expiresAt, expired, host, isPending, error, regenerate } = useHostPairing(
+  // Online, not merely registered: the row appears when the runner registers,
+  // and its service may still be starting (`usePairing`'s rules).
+  const { pairing, expiresAt, expired, host, isPending, error, regenerate, done } = usePairing(
     t('onboarding.flow.host.defaultName'),
+    'online',
   );
 
   return (
@@ -54,14 +55,6 @@ export function OnboardingHostScreen({
         {t('onboarding.flow.host.description')}
       </StepHeader>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {resolveError(error, t('hosts.pairing.mintFailed')).message}
-          </AlertDescription>
-        </Alert>
-      )}
-
       <HostPairingChrome
         pairing={pairing ?? null}
         expiresAt={expiresAt}
@@ -69,17 +62,14 @@ export function OnboardingHostScreen({
         onRegenerate={regenerate}
         busy={isPending}
         host={host}
+        error={error}
         layout="step"
       />
 
       <div className="flex flex-col items-start gap-3.5">
-        {/* Online, not merely registered: the row appears when the runner
-            registers, and its service may still be starting. Continuing on a
-            host that never came up is onboarding claiming a machine the
-            console cannot use. */}
         <Button
           size="lg"
-          disabled={!host?.online}
+          disabled={!done}
           render={
             <Link
               to="/onboarding/ready"
