@@ -113,7 +113,7 @@ function RoutineTableRow({
         {nextRelative ? <span className="figures text-[11.5px] text-fg-subtle">{nextRelative}</span> : null}
       </span>
       <span role="cell">
-        <StatusDot state={status} className={cn('items-center text-[13px]', paused && 'text-fg-muted')}>
+        <StatusDot state={status} density="compact" pulse={status === 'running'}>
           {statusLabel}
         </StatusDot>
       </span>

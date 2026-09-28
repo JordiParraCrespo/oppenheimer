@@ -44,7 +44,7 @@ export function EditorTriggerStep({
   const full = triggers.length >= MAX_AUTOMATION_TRIGGERS;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-1.5">
       <span className="text-sm text-fg-muted">{t('automations.editor.triggerLead')}</span>
       {triggers.map((card) =>
         card.source === 'schedule' ? (

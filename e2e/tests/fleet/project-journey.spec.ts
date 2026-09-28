@@ -38,7 +38,11 @@ test('a project made in the console starts a session its host builds', async ({ 
   const dialog = page.getByRole('dialog', { name: 'New project' });
   await dialog.getByLabel('Name').fill(project);
   await dialog.getByRole('button', { name: 'Add a repository…' }).click();
-  await dialog.getByRole('option', { name: new RegExp(STUB_REPOSITORIES.mobile.name) }).click();
+  // The picker's listbox is a popover, portaled outside the dialog.
+  await page
+    .getByRole('listbox')
+    .getByRole('option', { name: new RegExp(STUB_REPOSITORIES.mobile.name) })
+    .click();
   await dialog.getByRole('button', { name: /^Defaults/ }).click();
   await dialog.getByRole('button', { name: box.host.name }).click();
   await dialog.getByRole('button', { name: 'Create project' }).click();

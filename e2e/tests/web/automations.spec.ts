@@ -30,6 +30,9 @@ test('the rail switches to the automations list, and its pages link up', async (
     page.getByRole('button', { name: 'New automation', exact: true }).first(),
   ).toBeVisible();
   await expect(page.getByRole('link', { name: 'New session', exact: true })).toHaveCount(0);
+  // The run history is drawn before the first run: thirty empty days.
+  await expect(page.getByText('Run history')).toBeVisible();
+  await expect(page.getByRole('button', { name: /^0 runs/ })).toBeVisible();
 
   await page.getByRole('link', { name: 'Runs', exact: true }).click();
   await expect(page).toHaveURL(/\/automations\/runs$/);

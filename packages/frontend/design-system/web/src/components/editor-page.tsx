@@ -17,6 +17,12 @@ import { cn } from '../lib/utils';
  * Project settings, Add a host from the console and the automation editor
  * are dialogs since the 2026-09-27 export, not pages.
  *
+ * The ground is `canvas-recessed`, the grey the frames draw these pages on
+ * (`op-rp` and `op-rpage` sit on the export's `--canvas`, gray-50): the run
+ * history, the table and the runs list are white cards, and the selected
+ * view tab is a white pill, so on the console's white canvas all three would
+ * vanish. Dark lifts the card instead, where the two grounds are one.
+ *
  * `EditorPageBack` navigates, so it takes `render` for the router's link the
  * way `Link` does; on its own it is an anchor.
  *
@@ -34,7 +40,7 @@ function EditorPage({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="editor-page"
-      className={cn('flex min-h-0 flex-1 flex-col overflow-y-auto bg-canvas', className)}
+      className={cn('flex min-h-0 flex-1 flex-col overflow-y-auto bg-canvas-recessed', className)}
       {...props}
     />
   );
@@ -51,8 +57,9 @@ function EditorPageBody({
       data-slot="editor-page-body"
       data-wide={wide || undefined}
       className={cn(
-        'mx-auto flex w-full flex-col px-8 pt-6 pb-18',
-        wide ? 'max-w-230 gap-4' : 'max-w-190',
+        'mx-auto flex w-full flex-col px-8 pb-18',
+        // `op-rp__inner` opens 28px down; the narrow `op-rpage__body`, 24px.
+        wide ? 'max-w-230 gap-4 pt-7' : 'max-w-190 pt-6',
         className,
       )}
       {...props}

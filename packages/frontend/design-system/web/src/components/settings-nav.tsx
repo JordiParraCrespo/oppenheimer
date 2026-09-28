@@ -54,7 +54,7 @@ function SettingsNavItem({
       {
         type: 'button',
         className: cn(
-          'flex h-8 w-full items-center gap-[9px] rounded-sm px-2.5 text-left text-operate text-fg no-underline outline-none transition-colors duration-instant ease-standard hover:bg-sidebar-item-hover hover:no-underline focus-visible:outline-2 focus-visible:outline-ring data-active:bg-sidebar-item-active data-active:font-medium [&_svg:not([class*=size-])]:size-[15px]',
+          'flex h-8 w-full items-center gap-2.5 rounded-sm px-2.5 text-left text-operate text-fg no-underline outline-none transition-colors duration-instant ease-standard hover:bg-sidebar-item-hover hover:no-underline focus-visible:outline-2 focus-visible:outline-ring data-active:bg-sidebar-item-active data-active:font-medium [&_svg:not([class*=size-])]:size-[15px]',
           className,
         ),
         children: (

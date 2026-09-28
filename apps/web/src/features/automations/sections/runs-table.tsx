@@ -68,6 +68,7 @@ export function RunsTable({ automationId }: { automationId?: string }) {
     <RunsList>
       <RunsListFilters>
         <PillTabs
+          size="sm"
           value={state.status}
           onValueChange={(value) => filters.setStatus(value as RunStatusTab)}
         >

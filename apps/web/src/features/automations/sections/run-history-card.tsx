@@ -1,4 +1,4 @@
-import { RunHistory } from '@oppenheimer/design-system-web';
+import { RunHistory, Skeleton } from '@oppenheimer/design-system-web';
 import { useRunHistory } from '@oppenheimer/frontend-consumer/react';
 import { useLocale } from '@oppenheimer/frontend-web';
 import { RUN_HISTORY_DAYS } from '@oppenheimer/shared/automations';
@@ -16,8 +16,9 @@ function dayLabel(date: string | undefined, locale: string): string {
  * Run history: the last thirty local days as one bar each, the viewer's days
  * because the zone travels with the request. The overview's Automations tab
  * shows a "65 runs ›" link to the Runs tab where the Runs tab and an
- * automation's page show the legend. It renders nothing until there is a run
- * to draw, as the frames do.
+ * automation's page show the legend. It is always drawn, a new workspace's
+ * thirty empty days included, so the page keeps its shape from the first
+ * visit; a card-sized placeholder holds the place while it loads.
  */
 export function RunHistoryCard({
   automationId,
@@ -34,7 +35,7 @@ export function RunHistoryCard({
     days: RUN_HISTORY_DAYS,
     timezone: viewerTimeZone(),
   });
-  if (!data || data.total === 0) return null;
+  if (!data) return <Skeleton className="h-[190px] w-full rounded-lg" />;
 
   return (
     <RunHistory
