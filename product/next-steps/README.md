@@ -55,3 +55,6 @@ where these land is the first open question below.
   is rules first, with TypeSafe's Jev only for what rules cannot read,
   gated by confidence, opt-in per workspace, and never reordering
   triage in 0.2 (`0.2-pull-requests.md` §8).
+- 2026-09-28: analytics stays inside the Pull requests area for now
+  (`0.2-pull-requests.md` §5); it becomes its own rail item, with PRs as
+  one tab, once it covers sessions, agents, hosts or automations.
