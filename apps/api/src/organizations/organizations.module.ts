@@ -50,8 +50,11 @@ import { InvitationRepository } from './database/invitation.repository';
 import { MemberOrmEntity } from './database/member.orm-entity';
 import { MemberRepository } from './database/member.repository';
 import { OrganizationOrmEntity } from './database/organization.orm-entity';
+import { OrganizationRepository } from './database/organization.repository';
 import { OrganizationAccessRepository } from './database/organization-access.repository';
 import { PersonalWorkspaceRepository } from './database/personal-workspace.repository';
+import { TeamOrmEntity } from './database/team.orm-entity';
+import { TeamMemberOrmEntity } from './database/team-member.orm-entity';
 import { WorkspaceLookupRepository } from './database/workspace-lookup.repository';
 import { InvitationAuthGateway } from './infrastructure/invitation-auth.gateway';
 import { OrganizationAuthGateway } from './infrastructure/organization-auth.gateway';
@@ -62,12 +65,18 @@ import {
   MEMBER_REPOSITORY,
   ORGANIZATION_ACCESS,
   ORGANIZATION_AUTH,
+  ORGANIZATION_REPOSITORY,
   PERSONAL_WORKSPACE_REPOSITORY,
   WORKSPACE_AUTH,
   WORKSPACE_LOOKUP,
 } from './organizations.di-tokens';
 import { CheckSlugHttpController } from './queries/check-slug/check-slug.http.controller';
 import { CheckSlugQueryHandler } from './queries/check-slug/check-slug.query-handler';
+import { FindInvitationQueryHandler } from './queries/find-invitation/find-invitation.query-handler';
+import { FindMemberQueryHandler } from './queries/find-member/find-member.query-handler';
+import { FindOrganizationQueryHandler } from './queries/find-organization/find-organization.query-handler';
+import { FindWorkspaceQueryHandler } from './queries/find-workspace/find-workspace.query-handler';
+import { FindWorkspaceMemberQueryHandler } from './queries/find-workspace-member/find-workspace-member.query-handler';
 import { GetInvitationHttpController } from './queries/get-invitation/get-invitation.http.controller';
 import { GetInvitationQueryHandler } from './queries/get-invitation/get-invitation.query-handler';
 import { GetMembershipHttpController } from './queries/get-membership/get-membership.http.controller';
@@ -147,6 +156,11 @@ const commandHandlers: Provider[] = [
 ];
 
 const queryHandlers: Provider[] = [
+  FindOrganizationQueryHandler,
+  FindMemberQueryHandler,
+  FindInvitationQueryHandler,
+  FindWorkspaceQueryHandler,
+  FindWorkspaceMemberQueryHandler,
   ListOrganizationsQueryHandler,
   CheckSlugQueryHandler,
   GetOrganizationQueryHandler,
@@ -166,6 +180,7 @@ const repositories: Provider[] = [
   { provide: MEMBER_REPOSITORY, useClass: MemberRepository },
   { provide: INVITATION_REPOSITORY, useClass: InvitationRepository },
   { provide: ORGANIZATION_ACCESS, useClass: OrganizationAccessRepository },
+  { provide: ORGANIZATION_REPOSITORY, useClass: OrganizationRepository },
 ];
 
 // Better Auth's organization plugin, bound once to the tokens its ports are
@@ -194,14 +209,17 @@ const adapters: Provider[] = [
   imports: [
     CqrsModule,
     // The account behind each member row, the roles they hold (so the members
-    // list can search on them), and the session and access-grant tables that
-    // membership removal cleans up.
+    // list can search on them), the organization and team rows a write is read
+    // back from, and the session and access-grant tables that membership
+    // removal cleans up.
     TypeOrmModule.forFeature([
       UserOrmEntity,
       UserRoleOrmEntity,
       InvitationOrmEntity,
       MemberOrmEntity,
       OrganizationOrmEntity,
+      TeamOrmEntity,
+      TeamMemberOrmEntity,
       Session,
       AccessGrantOrmEntity,
     ]),

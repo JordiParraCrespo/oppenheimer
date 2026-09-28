@@ -22,7 +22,10 @@ describe('CreateOrganizationCommandHandler', () => {
     addMember: vi.fn(),
     setActive: vi.fn(),
   };
-  const membershipAccess = { grant: vi.fn() };
+  // A stand-in that behaves as `MembershipAccessPolicy.admit` does (its own
+  // spec holds it to that): write, grant, and undo the write if the grant fails.
+  const membershipAccess = { admit: vi.fn() };
+  const grant = vi.fn();
   const events = { emitAsync: vi.fn() };
   let handler: CreateOrganizationCommandHandler;
 
@@ -34,7 +37,17 @@ describe('CreateOrganizationCommandHandler', () => {
     organizations.create.mockResolvedValue(organization);
     organizations.delete.mockResolvedValue(organization);
     workspaces.create.mockResolvedValue({ id: 'team1' });
-    membershipAccess.grant.mockResolvedValue(undefined);
+    grant.mockResolvedValue(undefined);
+    membershipAccess.admit.mockImplementation(async (write, undo) => {
+      const entry = await write();
+      try {
+        await grant(entry);
+      } catch (error) {
+        await undo(entry).catch(() => {});
+        throw error;
+      }
+      return entry;
+    });
     events.emitAsync.mockResolvedValue([]);
     handler = new CreateOrganizationCommandHandler(
       organizations as never,
@@ -63,10 +76,10 @@ describe('CreateOrganizationCommandHandler', () => {
   });
 
   it('touches no roles and makes no workspace without an authenticated creator', async () => {
-    const result = await create({ name: 'Acme' });
+    const id = await create({ name: 'Acme' });
 
-    expect(result.id).toBe('org1');
-    expect(membershipAccess.grant).not.toHaveBeenCalled();
+    expect(id).toBe('org1');
+    expect(membershipAccess.admit).not.toHaveBeenCalled();
     expect(workspaces.create).not.toHaveBeenCalled();
   });
 
@@ -77,7 +90,7 @@ describe('CreateOrganizationCommandHandler', () => {
    */
   it('grants the creator the org-scoped role that opens the organization', async () => {
     await create({ name: 'Acme' }, 'u1');
-    expect(membershipAccess.grant).toHaveBeenCalledWith('u1', 'org1', 'owner');
+    expect(grant).toHaveBeenCalledWith({ userId: 'u1', organizationId: 'org1', role: 'owner' });
   });
 
   it('gives the organization a default workspace with its creator in it', async () => {
@@ -91,19 +104,19 @@ describe('CreateOrganizationCommandHandler', () => {
     expect(workspaces.setActive).toHaveBeenCalledWith(headers, 'team1');
   });
 
-  // The caller's own workspace, made on /onboarding: announced as sign-up's
-  // is, so the projects module gives it its Unassigned project.
-  it('announces the workspace it provisioned', async () => {
+  // Its own event, not sign-up's: an organization made from the console is
+  // not a personal workspace, though both get an Unassigned project.
+  it('announces the organization it created', async () => {
     await create({ name: 'Acme' }, 'u1');
     expect(events.emitAsync).toHaveBeenCalledWith(
-      'PersonalWorkspaceProvisionedDomainEvent',
-      expect.objectContaining({ aggregateId: 'org1' }),
+      'OrganizationCreatedDomainEvent',
+      expect.objectContaining({ aggregateId: 'org1', creatorId: 'u1' }),
     );
   });
 
   it('discards the organization when the role that opens it cannot be written', async () => {
     const failure = new Error('role store unavailable');
-    membershipAccess.grant.mockRejectedValueOnce(failure);
+    grant.mockRejectedValueOnce(failure);
 
     await expect(create({ name: 'Acme' }, 'u1')).rejects.toBe(failure);
 
@@ -114,7 +127,7 @@ describe('CreateOrganizationCommandHandler', () => {
 
   it('reports the original failure even when the cleanup itself fails', async () => {
     const failure = new Error('role store unavailable');
-    membershipAccess.grant.mockRejectedValueOnce(failure);
+    grant.mockRejectedValueOnce(failure);
     organizations.delete.mockRejectedValueOnce(new Error('delete failed too'));
 
     await expect(create({ name: 'Acme' }, 'u1')).rejects.toBe(failure);
@@ -128,14 +141,12 @@ describe('CreateOrganizationCommandHandler', () => {
   it('still returns the organization when the default workspace cannot be made', async () => {
     workspaces.create.mockRejectedValue(new Error('teams are unavailable'));
 
-    const result = await create({ name: 'Acme' }, 'u1');
-
-    expect(result.id).toBe('org1');
-    expect(membershipAccess.grant).toHaveBeenCalledWith('u1', 'org1', 'owner');
+    expect(await create({ name: 'Acme' }, 'u1')).toBe('org1');
+    expect(grant).toHaveBeenCalledOnce();
   });
 
   it('still returns the organization when a listener fails', async () => {
     events.emitAsync.mockRejectedValue(new Error('listener down'));
-    expect((await create({ name: 'Acme' }, 'u1')).id).toBe('org1');
+    expect(await create({ name: 'Acme' }, 'u1')).toBe('org1');
   });
 });

@@ -12,7 +12,6 @@ vi.mock('../../../auth/infrastructure/better-auth.config', () => ({
       listOrganizations: vi.fn(),
       getFullOrganization: vi.fn(),
       checkOrganizationSlug: vi.fn(),
-      listMembers: vi.fn(),
       addMember: vi.fn(),
       removeMember: vi.fn(),
       updateMemberRole: vi.fn(),
@@ -118,26 +117,33 @@ describe('OrganizationAuthGateway', () => {
       expect(await gateway.isSlugAvailable(headers, 'free-slug')).toBe(true);
     });
 
-    it('is false when Better Auth throws an APIError (slug taken)', async () => {
+    it('is false when Better Auth says the slug is taken', async () => {
       api.checkOrganizationSlug.mockRejectedValue(
-        new APIError('BAD_REQUEST', { message: 'taken' }),
+        new APIError('BAD_REQUEST', {
+          message: 'Organization slug already taken',
+          code: 'ORGANIZATION_SLUG_ALREADY_TAKEN',
+        }),
       );
       expect(await gateway.isSlugAvailable(headers, 'taken-slug')).toBe(false);
     });
 
-    it('rethrows non-APIError failures', async () => {
-      api.checkOrganizationSlug.mockRejectedValue(new Error('network down'));
-      await expect(gateway.isSlugAvailable(headers, 'x')).rejects.toThrow('network down');
+    // Not every refusal means "taken": signed out, or the plugin refusing the
+    // request, is a problem the caller is told about.
+    it('reports any other Better Auth refusal as the problem it is', async () => {
+      api.checkOrganizationSlug.mockRejectedValue(
+        new APIError('UNAUTHORIZED', { message: 'no session' }),
+      );
+      await expect(gateway.isSlugAvailable(headers, 'x')).rejects.toMatchObject({
+        code: 'ORG_003',
+      });
     });
-  });
 
-  it('lists members unwrapping the `{ members }` envelope', async () => {
-    api.listMembers.mockResolvedValue({ members: [memberRecord] });
-    const result = await gateway.listMembers(headers, 'org1');
-    expect(result.map((member) => member.id)).toEqual(['m1']);
-    expect(api.listMembers).toHaveBeenCalledWith(
-      expect.objectContaining({ query: { organizationId: 'org1' } }),
-    );
+    it('reports a transport failure as an upstream failure', async () => {
+      api.checkOrganizationSlug.mockRejectedValue(new Error('network down'));
+      await expect(gateway.isSlugAvailable(headers, 'x')).rejects.toMatchObject({
+        code: 'ORG_016',
+      });
+    });
   });
 
   it('adds a member forwarding role and teamId', async () => {

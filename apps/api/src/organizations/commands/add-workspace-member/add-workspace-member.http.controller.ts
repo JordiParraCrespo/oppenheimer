@@ -8,7 +8,7 @@ import {
   UseGuards,
   Version,
 } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import type { Request } from 'express';
@@ -19,6 +19,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { WorkspaceProblemResponses } from '../../decorators/workspace-problem-responses.decorator';
 import { WorkspaceMemberResponseDto } from '../../dtos/workspace.response.dto';
+import { FindWorkspaceMemberQuery } from '../../queries/find-workspace-member/find-workspace-member.query';
 import { AddWorkspaceMemberCommand } from './add-workspace-member.command';
 import { AddWorkspaceMemberRequest } from './add-workspace-member.request.dto';
 
@@ -30,7 +31,10 @@ import { AddWorkspaceMemberRequest } from './add-workspace-member.request.dto';
 @UsesBetterAuthSession()
 @Controller('workspaces')
 export class AddWorkspaceMemberHttpController {
-  constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+  ) {}
 
   @Post(':id/members')
   @Version('1')
@@ -38,13 +42,16 @@ export class AddWorkspaceMemberHttpController {
   @CheckPolicies({ action: 'update', subject: 'Workspace' })
   @ApiOperation({ summary: 'Add a user to a workspace' })
   @ApiResponse({ status: 201, type: WorkspaceMemberResponseDto })
-  addMember(
+  async addMember(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: AddWorkspaceMemberRequest,
   ): Promise<WorkspaceMemberResponseDto> {
-    return this.commandBus.execute<AddWorkspaceMemberCommand, WorkspaceMemberResponseDto>(
+    await this.commandBus.execute<AddWorkspaceMemberCommand, void>(
       new AddWorkspaceMemberCommand({ headers: req.headers, workspaceId: id, userId: body.userId }),
+    );
+    return this.queryBus.execute<FindWorkspaceMemberQuery, WorkspaceMemberResponseDto>(
+      new FindWorkspaceMemberQuery({ workspaceId: id, userId: body.userId }),
     );
   }
 }

@@ -1,11 +1,13 @@
 import type { IncomingHttpHeaders } from 'node:http';
 import { Inject, Injectable } from '@nestjs/common';
+import { AppError } from '@oppenheimer/backend-core';
 import type { AdminCreateUserDto, AdminUpdateUserDto, ListUsersQuery } from '@oppenheimer/shared';
 import { DELEGATED_SESSION } from '../../auth/auth.di-tokens';
 import { auth } from '../../auth/infrastructure/better-auth.config';
 import { asRecord, betterAuthHeaders } from '../../auth/infrastructure/better-auth.util';
 import type { DelegatedSessionPort } from '../../auth/infrastructure/delegated-session.port';
 import { AdminUserMapper } from '../admin-user.mapper';
+import { AdminErrors } from '../domain/admin.errors';
 import type {
   AdminSessionResponseDto,
   AdminSuccessResponseDto,
@@ -24,8 +26,10 @@ function asAdminRole(role: string | string[]): AdminRole | AdminRole[] {
   return role as AdminRole | AdminRole[];
 }
 
-/** The most session rows the admin list returns for one user. */
-const MAX_LISTED_SESSIONS = 1_000;
+/** How many session rows are read at a time; the list reads every page. */
+const SESSION_PAGE = 500;
+
+type SessionAction = 'list' | 'revoke';
 
 /**
  * The admin port, over the Better Auth **admin** plugin (`auth.api.*`).
@@ -68,10 +72,7 @@ export class AdminAuthGateway implements AdminAuthPort {
     return AdminUserMapper.fromEnvelope(result);
   }
 
-  async createUser(
-    headers: IncomingHttpHeaders,
-    input: AdminCreateUserDto,
-  ): Promise<AdminUserResponseDto> {
+  async createUser(headers: IncomingHttpHeaders, input: AdminCreateUserDto): Promise<string> {
     const result = await invokeAdminApi(() =>
       auth.api.createUser({
         body: {
@@ -83,43 +84,37 @@ export class AdminAuthGateway implements AdminAuthPort {
         headers: betterAuthHeaders(headers),
       }),
     );
-    return AdminUserMapper.fromEnvelope(result);
+    return AdminUserMapper.fromEnvelope(result).id;
   }
 
   async updateUser(
     headers: IncomingHttpHeaders,
     userId: string,
     data: AdminUpdateUserDto,
-  ): Promise<AdminUserResponseDto> {
-    const result = await invokeAdminApi(() =>
+  ): Promise<void> {
+    await invokeAdminApi(() =>
       auth.api.adminUpdateUser({
         body: { userId, data },
         headers: betterAuthHeaders(headers),
       }),
     );
-    return AdminUserMapper.fromEnvelope(result);
   }
 
   async setRole(
     headers: IncomingHttpHeaders,
     userId: string,
     role: string | string[],
-  ): Promise<AdminUserResponseDto> {
-    const result = await invokeAdminApi(() =>
+  ): Promise<void> {
+    await invokeAdminApi(() =>
       auth.api.setRole({
         body: { userId, role: asAdminRole(role) },
         headers: betterAuthHeaders(headers),
       }),
     );
-    return AdminUserMapper.fromEnvelope(result);
   }
 
-  async ban(
-    headers: IncomingHttpHeaders,
-    userId: string,
-    input: BanInput,
-  ): Promise<AdminUserResponseDto> {
-    const result = await invokeAdminApi(() =>
+  async ban(headers: IncomingHttpHeaders, userId: string, input: BanInput): Promise<void> {
+    await invokeAdminApi(() =>
       auth.api.banUser({
         body: { userId, banReason: input.banReason, banExpiresIn: input.banExpiresIn },
         headers: betterAuthHeaders(headers),
@@ -128,18 +123,16 @@ export class AdminAuthGateway implements AdminAuthPort {
     // The ban deleted the user's session rows, delegated ones included, but
     // not the tokens cached for their credentials. Move them onto fresh keys.
     await this.delegatedSessions.invalidateForUser(userId);
-    return AdminUserMapper.fromEnvelope(result);
   }
 
-  async unban(headers: IncomingHttpHeaders, userId: string): Promise<AdminUserResponseDto> {
-    const result = await invokeAdminApi(() =>
+  async unban(headers: IncomingHttpHeaders, userId: string): Promise<void> {
+    await invokeAdminApi(() =>
       auth.api.unbanUser({ body: { userId }, headers: betterAuthHeaders(headers) }),
     );
     // Anything cached since the ban points at a row the ban deleted; without
     // this, every façade call through the user's credentials would fail until
     // the entry expired.
     await this.delegatedSessions.invalidateForUser(userId);
-    return AdminUserMapper.fromEnvelope(result);
   }
 
   async remove(headers: IncomingHttpHeaders, userId: string): Promise<AdminSuccessResponseDto> {
@@ -165,46 +158,62 @@ export class AdminAuthGateway implements AdminAuthPort {
 
   /**
    * The user's live sessions, read from Postgres. Better Auth's
-   * `listUserSessions` is still called, for the admin plugin's own permission
-   * check, but its answer is not the list: with `secondaryStorage` it walks the
+   * `listUserSessions` is not the list: with `secondaryStorage` it walks the
    * Redis index of cached sessions, which misses every session signed in
    * before the cache existed (they answer from Postgres until they expire) and
-   * any whose index entry was lost. The table is the record.
+   * any whose index entry was lost. The table is the record, read to the end.
    */
   async listSessions(
     headers: IncomingHttpHeaders,
     userId: string,
   ): Promise<AdminSessionResponseDto[]> {
-    await this.assertMayListSessions(headers, userId);
-    return AdminUserMapper.toSessionsResponse(await this.sessionRows(userId));
+    await this.assertMay(headers, 'list');
+    const context = await auth.$context;
+    const rows: Record<string, unknown>[] = [];
+    for (let offset = 0; ; offset += SESSION_PAGE) {
+      const page = await context.adapter.findMany<Record<string, unknown>>({
+        model: 'session',
+        where: [
+          { field: 'userId', value: userId },
+          { field: 'expiresAt', value: new Date(), operator: 'gt' },
+        ],
+        sortBy: { field: 'createdAt', direction: 'desc' },
+        // Better Auth caps `findMany` at 100 unless told otherwise.
+        limit: SESSION_PAGE,
+        offset,
+      });
+      rows.push(...page);
+      if (page.length < SESSION_PAGE) break;
+    }
+    return AdminUserMapper.toSessionsResponse(rows);
   }
 
   /**
-   * The Better Auth admin API revokes by session token, and the token is a
-   * live bearer credential, so it is never handed to the client (see
-   * `AdminSessionResponseDto`). The id is resolved to its token here — after
-   * the same permission check as the list, and from the same rows, so a
-   * session the cache index never listed can be revoked too.
+   * The row is found by its id and its owner, straight from the table — so a
+   * session the cache index never listed can be revoked, and no list stands
+   * between the id and the row — and revoked with its token, which never
+   * leaves this method.
    */
-  async sessionToken(
+  async revokeSessionById(
     headers: IncomingHttpHeaders,
     userId: string,
     sessionId: string,
-  ): Promise<string | null> {
-    await this.assertMayListSessions(headers, userId);
-    const match = (await this.sessionRows(userId))
-      .map(asRecord)
-      .find((session) => String(session.id) === sessionId);
-    return match ? String(match.token) : null;
-  }
-
-  async revokeSession(
-    headers: IncomingHttpHeaders,
-    token: string,
   ): Promise<AdminSuccessResponseDto> {
+    await this.assertMay(headers, 'revoke');
+    const context = await auth.$context;
+    const row = await context.adapter.findOne<Record<string, unknown>>({
+      model: 'session',
+      where: [
+        { field: 'id', value: sessionId },
+        { field: 'userId', value: userId },
+        { field: 'expiresAt', value: new Date(), operator: 'gt' },
+      ],
+    });
+    if (!row) throw new AppError(AdminErrors.SESSION_NOT_FOUND);
+
     const result = await invokeAdminApi(() =>
       auth.api.revokeUserSession({
-        body: { sessionToken: token },
+        body: { sessionToken: String(asRecord(row).token) },
         headers: betterAuthHeaders(headers),
       }),
     );
@@ -221,15 +230,15 @@ export class AdminAuthGateway implements AdminAuthPort {
     return AdminUserMapper.toSuccess(result);
   }
 
-  async impersonate(headers: IncomingHttpHeaders, userId: string): Promise<IssuedSession> {
-    const { response, headers: outHeaders } = await invokeAdminApi(() =>
+  async impersonate(headers: IncomingHttpHeaders, userId: string): Promise<string[]> {
+    const { headers: outHeaders } = await invokeAdminApi(() =>
       auth.api.impersonateUser({
         body: { userId },
         headers: betterAuthHeaders(headers),
         returnHeaders: true,
       }),
     );
-    return { user: AdminUserMapper.fromEnvelope(response), cookies: outHeaders.getSetCookie() };
+    return outHeaders.getSetCookie();
   }
 
   async stopImpersonating(headers: IncomingHttpHeaders): Promise<IssuedSession> {
@@ -239,28 +248,18 @@ export class AdminAuthGateway implements AdminAuthPort {
     return { user: AdminUserMapper.fromEnvelope(response), cookies: outHeaders.getSetCookie() };
   }
 
-  /** The admin plugin's own check that the caller may see `userId`'s sessions. */
-  private async assertMayListSessions(headers: IncomingHttpHeaders, userId: string): Promise<void> {
-    await invokeAdminApi(() =>
-      auth.api.listUserSessions({ body: { userId }, headers: betterAuthHeaders(headers) }),
-    );
-  }
-
   /**
-   * A user's unexpired session rows, newest first, straight from the table
-   * (Better Auth's database adapter, which never reads the Redis copy).
+   * The admin plugin's own answer to whether the caller may do this to
+   * sessions, asked as a question rather than inferred from a list call whose
+   * rows would be thrown away.
    */
-  private async sessionRows(userId: string): Promise<Record<string, unknown>[]> {
-    const context = await auth.$context;
-    return context.adapter.findMany<Record<string, unknown>>({
-      model: 'session',
-      where: [
-        { field: 'userId', value: userId },
-        { field: 'expiresAt', value: new Date(), operator: 'gt' },
-      ],
-      sortBy: { field: 'createdAt', direction: 'desc' },
-      // Better Auth caps `findMany` at 100 unless told otherwise.
-      limit: MAX_LISTED_SESSIONS,
-    });
+  private async assertMay(headers: IncomingHttpHeaders, action: SessionAction): Promise<void> {
+    const result = await invokeAdminApi(() =>
+      auth.api.userHasPermission({
+        body: { permissions: { session: [action] } },
+        headers: betterAuthHeaders(headers),
+      }),
+    );
+    if (!asRecord(result).success) throw new AppError(AdminErrors.NOT_ALLOWED);
   }
 }

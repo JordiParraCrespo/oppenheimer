@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { SessionCachePort } from '../../auth/application/session-cache.port';
 import { SESSION_CACHE } from '../../auth/auth.di-tokens';
 import { missingSystemRole } from '../../roles/application/missing-system-role.factory';
@@ -9,20 +9,28 @@ import type { OrganizationAccessRepositoryPort } from '../database/organization-
 import { applicationRoleFor } from '../domain/application-role.policy';
 import { ORGANIZATION_ACCESS } from '../organizations.di-tokens';
 
+/** A membership as Better Auth wrote it: who, where, in which organization role. */
+export interface RosterEntry {
+  userId: string;
+  organizationId: string;
+  role: string;
+}
+
 /**
  * Keeps what the app lets a person do in an organization aligned with Better
  * Auth's roster of it.
  *
  * Better Auth owns memberships and their organization roles; CASL owns what
- * the app's routes allow. Every path that creates or changes a membership —
- * creating an organization, adding a member, changing their role, accepting an
- * invitation — grants the application role that goes with it, and every path
- * that ends one revokes everything the organization gave them. Doing it at the
- * moment the membership changes is what makes "you are in this organization"
- * and "you may work in it" one fact rather than two that disagree.
+ * the app's routes allow. The two live in different stores, so no transaction
+ * spans them. What makes "you are in this organization" and "you may work in
+ * it" one fact is that neither half is ever left standing alone: a roster
+ * write whose application role cannot be written is undone, and ending a
+ * membership takes everything the organization gave in one transaction.
  */
 @Injectable()
 export class MembershipAccessPolicy {
+  private readonly logger = new Logger(MembershipAccessPolicy.name);
+
   constructor(
     @Inject(ROLE_REPOSITORY)
     private readonly roles: RoleRepositoryPort,
@@ -35,30 +43,61 @@ export class MembershipAccessPolicy {
   ) {}
 
   /**
-   * Give `userId` the org-scoped application role their organization role
-   * stands for. Only that role (`owner` or `user`) is swapped; custom roles an
-   * admin assigned in this organization are the member's too, and a roster
-   * change must not take them away.
+   * Make a roster change and the application role that goes with it, or
+   * neither. `write` is Better Auth's roster write; if the role that opens the
+   * organization cannot be granted after it (the system role is missing, the
+   * store failed), `undo` reverts the roster and the original error is raised.
+   * Every door into an organization goes through here: creating it, adding a
+   * member, changing their role, accepting an invitation.
    */
-  async grant(userId: string, organizationId: string, organizationRole: string): Promise<void> {
-    const roleName = applicationRoleFor(organizationRole);
-    const role = await this.roles.findOneByName(roleName, null);
-    if (role.isNone()) throw missingSystemRole(roleName);
-    await this.userRoles.replaceMembershipRole(userId, organizationId, role.unwrap().id);
+  async admit<Entry extends RosterEntry>(
+    write: () => Promise<Entry>,
+    undo: (entry: Entry) => Promise<unknown>,
+  ): Promise<Entry> {
+    const entry = await write();
+    try {
+      await this.grant(entry);
+    } catch (error) {
+      try {
+        await undo(entry);
+      } catch (undoError) {
+        // The caller must see why they were refused, not an error about the
+        // cleanup; the half-made membership is what this log is for.
+        this.logger.error(
+          {
+            message: 'Could not undo a roster change whose application role failed',
+            userId: entry.userId,
+            organizationId: entry.organizationId,
+          },
+          undoError instanceof Error ? undoError.stack : String(undoError),
+        );
+      }
+      throw error;
+    }
+    return entry;
   }
 
   /**
-   * Revoke every organization-local access path after Better Auth removes the
-   * membership. The role assignment is the authorization boundary; clearing
-   * grants and stale session selection prevents the removed person from still
-   * appearing or acting inside the organization through secondary tables.
+   * Everything the organization gave `userId` — their roles, access grants
+   * and a session still acting in it — taken in one transaction after Better
+   * Auth removes the membership, then Better Auth's cached copies of those
+   * sessions refreshed, since the rows were written behind its back.
    */
   async revoke(userId: string, organizationId: string): Promise<void> {
-    await this.userRoles.setRolesForUser(userId, [], organizationId);
     await this.access.revokeFor(userId, organizationId);
-    // Written behind Better Auth's back, so its cached copies of these
-    // sessions still name the organization; without this the removed member
-    // keeps acting in it until the session expires.
     await this.sessionCache.refreshUser(userId);
+  }
+
+  /**
+   * The org-scoped application role the organization role stands for. Only
+   * that role (`owner` or `user`) is swapped; custom roles an admin assigned
+   * in this organization are the member's too, and a roster change must not
+   * take them away.
+   */
+  private async grant({ userId, organizationId, role }: RosterEntry): Promise<void> {
+    const roleName = applicationRoleFor(role);
+    const found = await this.roles.findOneByName(roleName, null);
+    if (found.isNone()) throw missingSystemRole(roleName);
+    await this.userRoles.replaceMembershipRole(userId, organizationId, found.unwrap().id);
   }
 }

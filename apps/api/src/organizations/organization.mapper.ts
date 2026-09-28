@@ -1,5 +1,5 @@
 import { asArray, asRecord } from '../auth/infrastructure/better-auth.util';
-import type { MembershipUser } from './domain/membership.types';
+import type { Membership, MembershipUser } from './domain/membership.types';
 import type {
   FullOrganizationResponseDto,
   InvitationResponseDto,
@@ -11,6 +11,22 @@ import type {
   WorkspaceMemberResponseDto,
   WorkspaceResponseDto,
 } from './dtos/workspace.response.dto';
+
+/** One row of the member ⋈ user read, as `MemberRepository` aliases it. */
+export interface MembershipRow {
+  id: string;
+  organizationId: string;
+  userId: string;
+  role: string;
+  createdAt: Date;
+  userName: string;
+  userEmail: string;
+  userImage: string | null;
+  userFirstName: string;
+  userLastName: string;
+  userIsActive: boolean;
+  userEmailVerified: boolean;
+}
 
 function toDate(value: unknown): Date {
   return value instanceof Date ? value : new Date(value as string);
@@ -33,9 +49,10 @@ function parseMetadata(value: unknown): Record<string, unknown> | null {
 }
 
 /**
- * Maps what the Better Auth organization plugin returns onto this module's
- * response DTOs: organizations, their members and invitations, and workspaces
- * (Better Auth teams).
+ * Maps what the Better Auth organization plugin returns — and the rows of the
+ * tables it owns, read straight from Postgres — onto this module's read models
+ * and response DTOs: organizations, their members and invitations, and
+ * workspaces (Better Auth teams).
  *
  * Better Auth owns and writes these tables, so there is no aggregate to map to
  * and from — the personal workspace, the one rule the app owns here, has its
@@ -97,6 +114,50 @@ export class OrganizationMapper {
       lastName: String(user.lastName ?? ''),
       isActive: user.isActive !== false,
       emailVerified: user.emailVerified === true,
+    };
+  }
+
+  /** A member row joined to its account, as the members list reads it. */
+  static toMembership(row: MembershipRow): Membership {
+    return {
+      id: row.id,
+      organizationId: row.organizationId,
+      userId: row.userId,
+      role: row.role,
+      createdAt: toDate(row.createdAt),
+      user: {
+        id: row.userId,
+        name: row.userName,
+        email: row.userEmail,
+        image: row.userImage,
+        firstName: row.userFirstName,
+        lastName: row.userLastName,
+        isActive: row.userIsActive,
+        emailVerified: row.userEmailVerified,
+      },
+    };
+  }
+
+  /** The account behind a membership, from the users table. */
+  static toMembershipUser(user: {
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+    firstName: string;
+    lastName: string;
+    isActive: boolean;
+    emailVerified: boolean;
+  }): MembershipUser {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      isActive: user.isActive,
+      emailVerified: user.emailVerified,
     };
   }
 

@@ -17,3 +17,5 @@ export const ORGANIZATION_AUTH = Symbol('ORGANIZATION_AUTH');
 export const INVITATION_AUTH = Symbol('INVITATION_AUTH');
 /** Better Auth's organization plugin: teams, which the console calls workspaces. */
 export const WORKSPACE_AUTH = Symbol('WORKSPACE_AUTH');
+/** Better Auth's organization and team rows, read to answer with what was just written. */
+export const ORGANIZATION_REPOSITORY = Symbol('ORGANIZATION_REPOSITORY');

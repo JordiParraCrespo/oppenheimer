@@ -37,7 +37,6 @@ import { UpdateOrganizationHttpController } from '../../organizations/commands/u
 import { CheckSlugHttpController } from '../../organizations/queries/check-slug/check-slug.http.controller';
 import { GetInvitationHttpController } from '../../organizations/queries/get-invitation/get-invitation.http.controller';
 import { GetOrganizationHttpController } from '../../organizations/queries/get-organization/get-organization.http.controller';
-import { ListMembersHttpController } from '../../organizations/queries/list-members/list-members.http.controller';
 import { ListMyInvitationsHttpController } from '../../organizations/queries/list-my-invitations/list-my-invitations.http.controller';
 import { ListMyWorkspacesHttpController } from '../../organizations/queries/list-my-workspaces/list-my-workspaces.http.controller';
 import { ListOrganizationInvitationsHttpController } from '../../organizations/queries/list-organization-invitations/list-organization-invitations.http.controller';
@@ -89,7 +88,6 @@ const CALLERS: Record<string, readonly (abstract new (...args: never[]) => unkno
     UpdateOrganizationHttpController,
     DeleteOrganizationHttpController,
     SetActiveOrganizationHttpController,
-    ListMembersHttpController,
     AddMemberHttpController,
     UpdateMemberRoleHttpController,
     RemoveMemberHttpController,

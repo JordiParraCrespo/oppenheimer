@@ -20,7 +20,8 @@ export interface NewOrganization {
  * headers, because the provider decides what the caller may do from them.
  *
  * The members these return carry only what the provider's rows hold; the
- * account behind each one is read from the users table (`MemberRepositoryPort`).
+ * account behind each one, and the members list itself, are read from Postgres
+ * (`MemberRepositoryPort`).
  */
 export interface OrganizationAuthPort {
   create(headers: IncomingHttpHeaders, input: NewOrganization): Promise<OrganizationResponseDto>;
@@ -44,7 +45,6 @@ export interface OrganizationAuthPort {
   ): Promise<FullOrganizationResponseDto | null>;
   isSlugAvailable(headers: IncomingHttpHeaders, slug: string): Promise<boolean>;
 
-  listMembers(headers: IncomingHttpHeaders, organizationId: string): Promise<MemberResponseDto[]>;
   addMember(
     headers: IncomingHttpHeaders,
     organizationId: string,

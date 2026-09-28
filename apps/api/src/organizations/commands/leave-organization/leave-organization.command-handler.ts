@@ -12,6 +12,9 @@ import { LeaveOrganizationCommand } from './leave-organization.command';
  * Ends the caller's own membership, and everything it gave them: their roles,
  * grants and a session still acting in the organization. Better Auth refuses
  * the last owner.
+ *
+ * Answers with the membership it ended rather than its id: the row is gone,
+ * so no query could read it back.
  */
 @CommandHandler(LeaveOrganizationCommand)
 export class LeaveOrganizationCommandHandler

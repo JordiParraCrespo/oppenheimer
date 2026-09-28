@@ -14,10 +14,9 @@ export interface BanInput {
 }
 
 /**
- * A user, and the `Set-Cookie` values that put the caller's browser on the
- * session the call just issued. Impersonating someone, and stopping, both
- * replace the session the request was made with; a client that never stores
- * the new cookie is still acting as whoever it was before.
+ * The administrator an impersonation handed back, and the `Set-Cookie` values
+ * that put the caller's browser on their restored session. A client that never
+ * stores the new cookie is still acting as whoever it was impersonating.
  */
 export interface IssuedSession {
   user: AdminUserResponseDto;
@@ -41,22 +40,12 @@ export interface AdminAuthPort {
     query: Partial<ListUsersQuery>,
   ): Promise<AdminUserListResponseDto>;
   getUser(headers: IncomingHttpHeaders, userId: string): Promise<AdminUserResponseDto>;
-  createUser(
-    headers: IncomingHttpHeaders,
-    input: AdminCreateUserDto,
-  ): Promise<AdminUserResponseDto>;
-  updateUser(
-    headers: IncomingHttpHeaders,
-    userId: string,
-    data: AdminUpdateUserDto,
-  ): Promise<AdminUserResponseDto>;
-  setRole(
-    headers: IncomingHttpHeaders,
-    userId: string,
-    role: string | string[],
-  ): Promise<AdminUserResponseDto>;
-  ban(headers: IncomingHttpHeaders, userId: string, input: BanInput): Promise<AdminUserResponseDto>;
-  unban(headers: IncomingHttpHeaders, userId: string): Promise<AdminUserResponseDto>;
+  /** Resolves to the new account's id. */
+  createUser(headers: IncomingHttpHeaders, input: AdminCreateUserDto): Promise<string>;
+  updateUser(headers: IncomingHttpHeaders, userId: string, data: AdminUpdateUserDto): Promise<void>;
+  setRole(headers: IncomingHttpHeaders, userId: string, role: string | string[]): Promise<void>;
+  ban(headers: IncomingHttpHeaders, userId: string, input: BanInput): Promise<void>;
+  unban(headers: IncomingHttpHeaders, userId: string): Promise<void>;
   remove(headers: IncomingHttpHeaders, userId: string): Promise<AdminSuccessResponseDto>;
   setPassword(
     headers: IncomingHttpHeaders,
@@ -64,23 +53,26 @@ export interface AdminAuthPort {
     newPassword: string,
   ): Promise<AdminSuccessResponseDto>;
 
-  /** The account's live sessions. Never their tokens: those are credentials. */
+  /** The account's live sessions, newest first. Never their tokens: those are credentials. */
   listSessions(headers: IncomingHttpHeaders, userId: string): Promise<AdminSessionResponseDto[]>;
   /**
-   * The token of one of `userId`'s live sessions, named by id; `null` when
-   * they hold no such session. It stays inside the API: the provider revokes
-   * by token, and a client is only ever shown the id.
+   * Sign out one of `userId`'s sessions, named by id; `ADMIN_009` when they
+   * hold no such live session. The provider revokes by token, and the token
+   * is a bearer credential, so resolving one is the adapter's business: no
+   * token crosses this port.
    */
-  sessionToken(
+  revokeSessionById(
     headers: IncomingHttpHeaders,
     userId: string,
     sessionId: string,
-  ): Promise<string | null>;
-  revokeSession(headers: IncomingHttpHeaders, token: string): Promise<AdminSuccessResponseDto>;
+  ): Promise<AdminSuccessResponseDto>;
   revokeAllSessions(headers: IncomingHttpHeaders, userId: string): Promise<AdminSuccessResponseDto>;
 
-  /** Start acting as `userId`, on a session the provider issues for it. */
-  impersonate(headers: IncomingHttpHeaders, userId: string): Promise<IssuedSession>;
+  /**
+   * Start acting as `userId`, on a session the provider issues for it.
+   * Resolves to the `Set-Cookie` values that move the caller's browser onto it.
+   */
+  impersonate(headers: IncomingHttpHeaders, userId: string): Promise<string[]>;
   /** End an impersonation and restore the administrator's own session. */
   stopImpersonating(headers: IncomingHttpHeaders): Promise<IssuedSession>;
 }

@@ -24,13 +24,3 @@ export interface Membership {
   createdAt: Date;
   user: MembershipUser;
 }
-
-/**
- * One role a member holds in an organization: the name a search matches, the
- * id a role facet picks — two organizations may name a role the same thing,
- * and only the id says which one was chosen.
- */
-export interface AssignedRole {
-  id: string;
-  name: string;
-}

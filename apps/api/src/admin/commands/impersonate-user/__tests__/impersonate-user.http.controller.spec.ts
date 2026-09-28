@@ -1,7 +1,8 @@
-import type { CommandBus } from '@nestjs/cqrs';
+import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { Request, Response } from 'express';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminUserResponseDto } from '../../../dtos/admin-user.response.dto';
+import { GetUserQuery } from '../../../queries/get-user/get-user.query';
 import { ImpersonateUserCommand } from '../impersonate-user.command';
 import { ImpersonateUserHttpController } from '../impersonate-user.http.controller';
 
@@ -13,29 +14,35 @@ function makeRes(): Response & { setHeader: ReturnType<typeof vi.fn> } {
 }
 
 describe('ImpersonateUserHttpController', () => {
-  const execute = vi.fn();
+  const command = vi.fn();
+  const query = vi.fn();
   let controller: ImpersonateUserHttpController;
 
   beforeEach(() => {
-    execute.mockReset();
-    controller = new ImpersonateUserHttpController({ execute } as unknown as CommandBus);
+    command.mockReset();
+    query.mockReset().mockResolvedValue(user);
+    controller = new ImpersonateUserHttpController(
+      { execute: command } as unknown as CommandBus,
+      { execute: query } as unknown as QueryBus,
+    );
   });
 
-  it('forwards the impersonation cookie to the response', async () => {
-    execute.mockResolvedValue({ user, cookies: ['session=impersonated; Path=/'] });
+  it('forwards the impersonation cookie and answers with the user it now acts as', async () => {
+    command.mockResolvedValue(['session=impersonated; Path=/']);
     const res = makeRes();
 
     const result = await controller.impersonate(req, res, 'u1');
 
-    expect(result).toBe(user);
-    const command = execute.mock.calls[0][0] as ImpersonateUserCommand;
-    expect(command).toBeInstanceOf(ImpersonateUserCommand);
-    expect(command.userId).toBe('u1');
+    expect(command.mock.calls[0][0]).toBeInstanceOf(ImpersonateUserCommand);
+    expect(command.mock.calls[0][0].userId).toBe('u1');
     expect(res.setHeader).toHaveBeenCalledWith('set-cookie', ['session=impersonated; Path=/']);
+    // The user is read back with a query; the command answers only the cookies.
+    expect(query.mock.calls[0][0]).toBeInstanceOf(GetUserQuery);
+    expect(result).toBe(user);
   });
 
   it('does not set a cookie header when Better Auth returns none', async () => {
-    execute.mockResolvedValue({ user, cookies: [] });
+    command.mockResolvedValue([]);
     const res = makeRes();
 
     await controller.impersonate(req, res, 'u1');

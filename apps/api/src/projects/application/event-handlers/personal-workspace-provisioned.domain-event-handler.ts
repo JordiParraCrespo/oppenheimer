@@ -10,8 +10,9 @@ import { PROJECT_REPOSITORY } from '../../projects.di-tokens';
  *
  * The workspace is the organizations module's row; the project is here. The
  * write is idempotent, so the outbox redelivering the event writes nothing the
- * second time. A workspace made on `/onboarding` raises no event; its first
- * session provisions the project on the way instead.
+ * second time. A workspace made on `/onboarding` is an organization created
+ * from the console, and gets its project from
+ * `OrganizationCreatedDomainEventHandler` instead.
  */
 @Injectable()
 export class PersonalWorkspaceProvisionedDomainEventHandler {

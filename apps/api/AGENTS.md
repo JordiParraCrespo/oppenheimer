@@ -75,6 +75,17 @@ that speaks to `auth.api.*`, and one use-case slice per operation.
   (teams) — plus the repository ports for what it reads straight from
   Postgres (members' accounts and roles, invitations, the access a removed
   member loses).
+- Every door into an organization — creating one, adding a member, changing
+  a member's role, accepting an invitation — goes through
+  `MembershipAccessPolicy.admit(write, undo)`: Better Auth's roster write, then
+  the application role that opens it, and the write undone if the role cannot
+  be granted. There is no transaction across the two stores, so a new door
+  that grants by hand reopens issue #106.
+- Commands answer an id, as everywhere else; the controller reads the result
+  back with a query over the tables Better Auth writes (`find-organization`,
+  `find-member`, …), so the answer costs no second Better Auth round trip. The
+  exceptions answer what no query could read back: a deleted organization, a
+  removed member, the administrator `stop-impersonating` restores.
 - The problem responses every route of a group documents are one decorator in
   the module's `decorators/` (`AdminProblemResponses`,
   `OrganizationProblemResponses`, …), so each use-case controller carries the

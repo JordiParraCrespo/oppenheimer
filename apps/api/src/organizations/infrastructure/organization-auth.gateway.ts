@@ -1,9 +1,10 @@
 import type { IncomingHttpHeaders } from 'node:http';
 import { Injectable } from '@nestjs/common';
+import { AppError } from '@oppenheimer/backend-core';
 import type { AddMemberDto, UpdateOrganizationDto } from '@oppenheimer/shared';
-import { APIError } from 'better-auth/api';
 import { auth } from '../../auth/infrastructure/better-auth.config';
-import { betterAuthHeaders, unwrap, unwrapArray } from '../../auth/infrastructure/better-auth.util';
+import { betterAuthHeaders, unwrap } from '../../auth/infrastructure/better-auth.util';
+import { OrganizationErrors } from '../domain/organization.errors';
 import type {
   FullOrganizationResponseDto,
   MemberResponseDto,
@@ -94,31 +95,26 @@ export class OrganizationAuthGateway implements OrganizationAuthPort {
     return result ? OrganizationMapper.toFullOrganization(result) : null;
   }
 
-  /** Better Auth throws when a slug is taken; translate that to a boolean. */
+  /**
+   * Better Auth answers a taken slug with an error; that one error is the
+   * answer "no". Any other failure — not signed in, the plugin refusing the
+   * request — stays the problem document the invoker makes of it.
+   */
   async isSlugAvailable(headers: IncomingHttpHeaders, slug: string): Promise<boolean> {
     try {
-      await auth.api.checkOrganizationSlug({
-        body: { slug },
-        headers: betterAuthHeaders(headers),
-      });
+      await invokeOrganizationApi(() =>
+        auth.api.checkOrganizationSlug({
+          body: { slug },
+          headers: betterAuthHeaders(headers),
+        }),
+      );
       return true;
-    } catch (err) {
-      if (err instanceof APIError) return false;
-      throw err;
+    } catch (error) {
+      if (error instanceof AppError && error.code === OrganizationErrors.SLUG_TAKEN.code) {
+        return false;
+      }
+      throw error;
     }
-  }
-
-  async listMembers(
-    headers: IncomingHttpHeaders,
-    organizationId: string,
-  ): Promise<MemberResponseDto[]> {
-    const result = await invokeOrganizationApi(() =>
-      auth.api.listMembers({
-        query: { organizationId },
-        headers: betterAuthHeaders(headers),
-      }),
-    );
-    return OrganizationMapper.toMembers(unwrapArray(result, 'members'));
   }
 
   async addMember(

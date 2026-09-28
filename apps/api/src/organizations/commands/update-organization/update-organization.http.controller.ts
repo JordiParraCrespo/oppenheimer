@@ -8,9 +8,10 @@ import {
   UseGuards,
   Version,
 } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
+import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { Request } from 'express';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { OrganizationScoped } from '../../../auth/decorators/organization-scoped.decorator';
@@ -20,6 +21,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { OrganizationProblemResponses } from '../../decorators/organization-problem-responses.decorator';
 import { OrganizationResponseDto } from '../../dtos/organization.response.dto';
+import { FindOrganizationQuery } from '../../queries/find-organization/find-organization.query';
 import { UpdateOrganizationCommand } from './update-organization.command';
 import { UpdateOrganizationRequest } from './update-organization.request.dto';
 
@@ -31,7 +33,10 @@ import { UpdateOrganizationRequest } from './update-organization.request.dto';
 @UsesBetterAuthSession()
 @Controller('organizations')
 export class UpdateOrganizationHttpController {
-  constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+  ) {}
 
   @Patch(':id')
   @Version('1')
@@ -40,13 +45,16 @@ export class UpdateOrganizationHttpController {
   @CheckPolicies({ action: 'update', subject: 'Organization' })
   @ApiOperation({ summary: 'Update an organization' })
   @ApiResponse({ status: 200, type: OrganizationResponseDto })
-  update(
+  async update(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateOrganizationRequest,
   ): Promise<OrganizationResponseDto> {
-    return this.commandBus.execute<UpdateOrganizationCommand, OrganizationResponseDto>(
+    await this.commandBus.execute<UpdateOrganizationCommand, AggregateID>(
       new UpdateOrganizationCommand({ headers: req.headers, organizationId: id, data: body }),
+    );
+    return this.queryBus.execute<FindOrganizationQuery, OrganizationResponseDto>(
+      new FindOrganizationQuery({ organizationId: id }),
     );
   }
 }

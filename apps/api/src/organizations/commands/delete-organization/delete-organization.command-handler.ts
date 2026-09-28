@@ -5,7 +5,10 @@ import type { OrganizationAuthPort } from '../../infrastructure/organization-aut
 import { ORGANIZATION_AUTH } from '../../organizations.di-tokens';
 import { DeleteOrganizationCommand } from './delete-organization.command';
 
-/** Deletes an organization. */
+/**
+ * Deletes an organization. Answers with the organization it deleted rather
+ * than its id: the row is gone, so no query could read it back.
+ */
 @CommandHandler(DeleteOrganizationCommand)
 export class DeleteOrganizationCommandHandler
   implements ICommandHandler<DeleteOrganizationCommand, OrganizationResponseDto>

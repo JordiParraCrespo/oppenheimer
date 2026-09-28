@@ -18,10 +18,23 @@ const invitation = {
 
 describe('AcceptInvitationCommandHandler', () => {
   const invitationAuth = { accept: vi.fn() };
-  const organizations = { setActive: vi.fn() };
+  const organizations = { setActive: vi.fn(), leave: vi.fn() };
   const invitations = { findOneById: vi.fn() };
   const workspaces = { isMember: vi.fn() };
-  const membershipAccess = { grant: vi.fn() };
+  const grant = vi.fn();
+  // Behaves as `MembershipAccessPolicy.admit` does: write, grant, undo on failure.
+  const membershipAccess = {
+    admit: vi.fn(async (write: () => Promise<unknown>, undo: (e: unknown) => Promise<unknown>) => {
+      const entry = await write();
+      try {
+        await grant(entry);
+      } catch (error) {
+        await undo(entry);
+        throw error;
+      }
+      return entry;
+    }),
+  };
   let handler: AcceptInvitationCommandHandler;
 
   const accept = (caller: { id: string; email: string } | null) =>
@@ -31,7 +44,7 @@ describe('AcceptInvitationCommandHandler', () => {
     vi.clearAllMocks();
     invitations.findOneById.mockResolvedValue(None);
     workspaces.isMember.mockResolvedValue(false);
-    membershipAccess.grant.mockResolvedValue(undefined);
+    grant.mockResolvedValue(undefined);
     handler = new AcceptInvitationCommandHandler(
       invitationAuth as never,
       organizations as never,
@@ -41,17 +54,17 @@ describe('AcceptInvitationCommandHandler', () => {
     );
   });
 
-  it('accepts through Better Auth and grants the role the invitation carries', async () => {
+  it('accepts through Better Auth, grants the role the invitation carries, answers its id', async () => {
     invitationAuth.accept.mockResolvedValue({ invitation, userId: 'u2' });
 
-    const result = await accept(null);
-
-    expect(result.id).toBe('inv1');
+    expect(await accept(null)).toBe('inv1');
     expect(invitationAuth.accept).toHaveBeenCalledWith(headers, 'inv1');
-    expect(membershipAccess.grant).toHaveBeenCalledWith('u2', 'org1', 'member');
+    expect(grant).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'u2', organizationId: 'org1', role: 'member' }),
+    );
   });
 
-  it('grants an invited admin their organization role, which the policy scopes', async () => {
+  it('passes an invited admin’s organization role for the policy to scope', async () => {
     invitationAuth.accept.mockResolvedValue({
       invitation: { ...invitation, role: 'admin' },
       userId: 'u2',
@@ -59,19 +72,35 @@ describe('AcceptInvitationCommandHandler', () => {
 
     await accept(null);
 
-    expect(membershipAccess.grant).toHaveBeenCalledWith('u2', 'org1', 'admin');
+    expect(grant).toHaveBeenCalledWith(expect.objectContaining({ role: 'admin' }));
   });
 
-  it('repairs and returns an already-accepted invitation for the same member', async () => {
+  // Not a membership the UI did not expect plus a 4xx: the caller leaves again.
+  it('leaves the organization when the role that opens it cannot be granted', async () => {
+    invitationAuth.accept.mockResolvedValue({ invitation, userId: 'u2' });
+    grant.mockRejectedValue(Object.assign(new Error('x'), { code: 'ROLE_007' }));
+
+    await expect(accept(null)).rejects.toMatchObject({ code: 'ROLE_007' });
+    expect(organizations.leave).toHaveBeenCalledWith(headers, 'org1');
+  });
+
+  it('finishes an already-accepted invitation for the same member', async () => {
     invitations.findOneById.mockResolvedValue(Some({ ...invitation, status: 'accepted' }));
     workspaces.isMember.mockResolvedValue(true);
 
-    const result = await accept({ id: 'u2', email: 'INVITEE@x.com' });
-
-    expect(result.status).toBe('accepted');
+    expect(await accept({ id: 'u2', email: 'INVITEE@x.com' })).toBe('inv1');
     expect(invitationAuth.accept).not.toHaveBeenCalled();
     expect(organizations.setActive).toHaveBeenCalledWith(headers, 'org1');
-    expect(membershipAccess.grant).toHaveBeenCalledWith('u2', 'org1', 'member');
+    expect(grant).toHaveBeenCalledWith(expect.objectContaining({ userId: 'u2' }));
+  });
+
+  it('does not leave a membership that predates the request', async () => {
+    invitations.findOneById.mockResolvedValue(Some({ ...invitation, status: 'accepted' }));
+    workspaces.isMember.mockResolvedValue(true);
+    grant.mockRejectedValue(new Error('grant failed'));
+
+    await expect(accept({ id: 'u2', email: invitation.email })).rejects.toThrow('grant failed');
+    expect(organizations.leave).not.toHaveBeenCalled();
   });
 
   it('does not recover an accepted invitation for a different account', async () => {
@@ -92,12 +121,5 @@ describe('AcceptInvitationCommandHandler', () => {
 
     expect(workspaces.isMember).toHaveBeenCalledWith('org1', 'u2');
     expect(invitationAuth.accept).toHaveBeenCalled();
-  });
-
-  it('fails visibly when the grant fails', async () => {
-    invitationAuth.accept.mockResolvedValue({ invitation, userId: 'u2' });
-    membershipAccess.grant.mockRejectedValue(Object.assign(new Error('x'), { code: 'ROLE_007' }));
-
-    await expect(accept(null)).rejects.toMatchObject({ code: 'ROLE_007' });
   });
 });

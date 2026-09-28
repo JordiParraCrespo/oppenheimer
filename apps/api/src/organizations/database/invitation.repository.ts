@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { None, type Option, Some } from 'oxide.ts';
 import type { Repository } from 'typeorm';
 import type { Invitation } from '../domain/invitation.types';
+import { OrganizationMapper } from '../organization.mapper';
 import { InvitationOrmEntity } from './invitation.orm-entity';
 import type { InvitationRepositoryPort } from './invitation.repository.port';
 
@@ -16,17 +17,6 @@ export class InvitationRepository implements InvitationRepositoryPort {
 
   async findOneById(invitationId: string): Promise<Option<Invitation>> {
     const row = await this.invitations.findOne({ where: { id: invitationId } });
-    if (!row) return None;
-    return Some({
-      id: row.id,
-      organizationId: row.organizationId,
-      email: row.email,
-      role: row.role,
-      status: row.status,
-      teamId: row.teamId,
-      inviterId: row.inviterId,
-      expiresAt: row.expiresAt,
-      createdAt: row.createdAt,
-    });
+    return row ? Some(OrganizationMapper.toInvitation(row)) : None;
   }
 }

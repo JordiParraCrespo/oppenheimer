@@ -8,7 +8,7 @@ import {
   UseGuards,
   Version,
 } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import type { Request, Response } from 'express';
@@ -19,7 +19,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { AdminProblemResponses } from '../../decorators/admin-problem-responses.decorator';
 import { AdminUserResponseDto } from '../../dtos/admin-user.response.dto';
-import type { IssuedSession } from '../../infrastructure/admin-auth.port';
+import { GetUserQuery } from '../../queries/get-user/get-user.query';
 import { ImpersonateUserCommand } from './impersonate-user.command';
 
 @ApiTags('Admin')
@@ -30,7 +30,10 @@ import { ImpersonateUserCommand } from './impersonate-user.command';
 @UsesBetterAuthSession()
 @Controller('admin')
 export class ImpersonateUserHttpController {
-  constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+  ) {}
 
   @Post('users/:id/impersonate')
   @Version('1')
@@ -45,12 +48,14 @@ export class ImpersonateUserHttpController {
     @Res({ passthrough: true }) res: Response,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<AdminUserResponseDto> {
-    const { user, cookies } = await this.commandBus.execute<ImpersonateUserCommand, IssuedSession>(
+    const cookies = await this.commandBus.execute<ImpersonateUserCommand, string[]>(
       new ImpersonateUserCommand({ headers: req.headers, userId: id }),
     );
     // Better Auth issued a session for the caller; the browser only moves onto
     // it if it stores the cookie.
     if (cookies.length > 0) res.setHeader('set-cookie', cookies);
-    return user;
+    return this.queryBus.execute<GetUserQuery, AdminUserResponseDto>(
+      new GetUserQuery({ headers: req.headers, userId: id }),
+    );
   }
 }

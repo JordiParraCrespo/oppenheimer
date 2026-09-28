@@ -26,8 +26,9 @@ const membership: Membership = {
 function membersAnswering(found: Option<Membership>) {
   return {
     findMembership: vi.fn().mockResolvedValue(found),
+    findMembershipById: vi.fn(),
+    findMembers: vi.fn(),
     findAccounts: vi.fn(),
-    findAssignedRoles: vi.fn(),
   };
 }
 
