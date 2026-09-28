@@ -68,7 +68,7 @@ func TestEnsureClonesThenFetches(t *testing.T) {
 	c, layout := client(t)
 	ctx := context.Background()
 
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatalf("first ensure (clone): %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(layout.Mirror(repo), ".git")); err != nil {
@@ -77,15 +77,107 @@ func TestEnsureClonesThenFetches(t *testing.T) {
 
 	// The second call fetches, and needs no remote: the host already knows
 	// where the repository came from.
-	if err := c.Ensure(ctx, repo, ""); err != nil {
+	if err := c.Ensure(ctx, repo, "", "main"); err != nil {
 		t.Fatalf("second ensure (fetch): %v", err)
+	}
+}
+
+// advance lands a commit on branch in the origin, from a scratch clone.
+func advance(t *testing.T, remote, branch string) {
+	t.Helper()
+	work := filepath.Join(t.TempDir(), "advance")
+	git(t, "", "clone", "-q", remote, work)
+	git(t, work, "-c", "user.email=test@example.com", "-c", "user.name=Test",
+		"commit", "--allow-empty", "-q", "-m", "upstream moved")
+	git(t, work, "push", "-q", "origin", "HEAD:refs/heads/"+branch)
+}
+
+func remoteRef(t *testing.T, mirror, ref string) string {
+	t.Helper()
+	cmd := exec.Command("git", "rev-parse", "--verify", "--quiet", "refs/remotes/origin/"+ref)
+	cmd.Dir = mirror
+	out, _ := cmd.Output()
+	return strings.TrimSpace(string(out))
+}
+
+func TestEnsureClonesBloblessWithNothingCheckedOut(t *testing.T) {
+	bare := origin(t)
+	// A local path clones by copying the object store, filter or not; the
+	// file transport is how git behaves against a server.
+	git(t, bare, "config", "uploadpack.allowFilter", "true")
+	c, layout := client(t)
+	ctx := context.Background()
+
+	if err := c.Ensure(ctx, repo, "file://"+bare, "main"); err != nil {
+		t.Fatalf("ensure: %v", err)
+	}
+
+	mirror := layout.Mirror(repo)
+	if got := strings.TrimSpace(git(t, mirror, "config", "remote.origin.partialclonefilter")); got != "blob:none" {
+		t.Fatalf("partialclonefilter = %q, want blob:none", got)
+	}
+	if _, err := os.Stat(filepath.Join(mirror, "README.md")); !os.IsNotExist(err) {
+		t.Fatalf("the mirror has a working tree: %v", err)
+	}
+	// A worktree cut from it still has every file: the checkout fetches them.
+	worktree := layout.Worktree(repo, "blobless")
+	if err := c.Add(ctx, repo, worktree, "oppenheimer/blobless", "main", true); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(worktree, "README.md")); err != nil {
+		t.Fatalf("the worktree has no files: %v", err)
+	}
+}
+
+func TestEnsureFetchesOnlyTheBranchesItIsGiven(t *testing.T) {
+	remote := origin(t)
+	c, layout := client(t)
+	ctx := context.Background()
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	mirror := layout.Mirror(repo)
+	before := remoteRef(t, mirror, "main")
+	advance(t, remote, "main")
+	advance(t, remote, "elsewhere")
+
+	if err := c.Ensure(ctx, repo, "", "main"); err != nil {
+		t.Fatalf("ensure: %v", err)
+	}
+
+	if remoteRef(t, mirror, "main") == before {
+		t.Fatal("origin/main did not move")
+	}
+	if remoteRef(t, mirror, "elsewhere") != "" {
+		t.Fatal("a branch nobody asked for was fetched")
+	}
+}
+
+func TestEnsureFailsWhenTheRefIsNotABranchOnTheRemote(t *testing.T) {
+	remote := origin(t)
+	c, layout := client(t)
+	ctx := context.Background()
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	advance(t, remote, "elsewhere")
+
+	err := c.Ensure(ctx, repo, "", "no-such-branch")
+
+	var prob *problem.Error
+	if !isProblem(err, &prob, domain.ErrGitCommand.Code) {
+		t.Fatalf("err = %v, want %s", err, domain.ErrGitCommand.Code)
+	}
+	// One fetch, not a second one of everything.
+	if remoteRef(t, layout.Mirror(repo), "elsewhere") != "" {
+		t.Fatal("a failed fetch went on to fetch every branch")
 	}
 }
 
 func TestEnsureRefusesARepositoryItHasNeverSeenWithNoRemote(t *testing.T) {
 	c, _ := client(t)
 
-	err := c.Ensure(context.Background(), repo, "")
+	err := c.Ensure(context.Background(), repo, "", "main")
 
 	var prob *problem.Error
 	if !isProblem(err, &prob, "GIT_001") {
@@ -97,7 +189,7 @@ func TestEnsureRefusesARepositoryNameThatWouldEscapeTheLayout(t *testing.T) {
 	c, _ := client(t)
 
 	for _, name := range []string{"../../etc", "owner/../../etc", "not-a-repo"} {
-		if err := c.Ensure(context.Background(), name, "https://example.test/x.git"); err == nil {
+		if err := c.Ensure(context.Background(), name, "https://example.test/x.git", "main"); err == nil {
 			t.Fatalf("%q must not be accepted as a repository name", name)
 		}
 	}
@@ -107,7 +199,7 @@ func TestAddCutsANewBranchFromTheBaseAndRemoveTakesItAway(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "session-abc")
@@ -136,7 +228,7 @@ func TestAddRefusesToReuseAPathThatExists(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "taken")
@@ -156,7 +248,7 @@ func TestDirtyAndPush(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "session-push")
@@ -202,7 +294,7 @@ func TestGitNeverWaitsForAPassword(t *testing.T) {
 	// A remote that cannot be reached must fail fast, not hang a session
 	// create. What it is classified as is pinned against a remote that does
 	// answer, in recovery_test.go.
-	err := c.Ensure(ctx, repo, "https://127.0.0.1:1/private.git")
+	err := c.Ensure(ctx, repo, "https://127.0.0.1:1/private.git", "main")
 
 	if err == nil || ctx.Err() != nil {
 		t.Fatalf("err = %v, ctx = %v; want a prompt failure, not a wait", err, ctx.Err())

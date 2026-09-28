@@ -15,6 +15,7 @@ import {
 import { SessionResource } from '../sessions.resource';
 import { WorkSessionMapper } from '../work-session.mapper';
 import { SessionCheckoutOrmEntity } from './session-checkout.orm-entity';
+import type { SessionTurnOrmEntity } from './session-turn.orm-entity';
 import { WorkSessionOrmEntity } from './work-session.orm-entity';
 import type {
   HostSessionRow,
@@ -95,8 +96,8 @@ export class WorkSessionRepository
         `INSERT INTO "work_session"
            ("id", "organizationId", "projectId", "createdByUserId", "hostId", "name",
             "nameSource", "slug", "agent", "cwdCheckoutId", "idempotencyKey",
-            "state", "stateSeq", "agentSessionId", "lastEventAt", "stoppedAt")
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+            "state", "stateSeq", "agentSessionId", "lastEventAt", "stoppedAt", "origin")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
          -- The index is partial, so its predicate has to be repeated or Postgres
          -- cannot infer which constraint is meant.
          ON CONFLICT ("organizationId", "idempotencyKey")
@@ -124,6 +125,7 @@ export class WorkSessionRepository
           record.agentSessionId,
           record.lastEventAt,
           record.stoppedAt,
+          record.origin,
         ],
       );
       if (inserted.length === 0) return 'taken' as const;
@@ -421,6 +423,12 @@ export class WorkSessionRepository
     // would write a projection the log does not support. The lock is what makes
     // this read final.
     session.reseatFold(this.mapper.foldOf(locked[0]));
+    // The latest turn is folded like the row, so it is read under the same lock.
+    const [latestTurn]: SessionTurnOrmEntity[] = await manager.query(
+      `SELECT * FROM "session_turn" WHERE "sessionId" = $1 ORDER BY "seq" DESC LIMIT 1`,
+      [session.id],
+    );
+    session.reseatLatestTurn(latestTurn ? this.mapper.turnToDomain(latestTurn) : null);
 
     // A **second** statement, deliberately. Under READ COMMITTED a statement's
     // snapshot is taken before it blocks on a row lock, so reading the maximum in
@@ -531,10 +539,55 @@ export class WorkSessionRepository
           record.projectId,
         ],
       );
+      await this.writeTurns(manager, session);
       await this.outbox.stageEvents(manager, session.domainEvents);
     }
 
     return { accepted, rejected, appended };
+  }
+
+  /**
+   * Write back the turns this append's folds moved: an upsert on
+   * `(sessionId, seq)`, because a fold both opens turns and moves them.
+   */
+  private async writeTurns(manager: EntityManager, session: WorkSessionEntity): Promise<void> {
+    for (const turn of session.takeChangedTurns()) {
+      const row = this.mapper.turnToPersistence(session, turn);
+      await manager.query(
+        `INSERT INTO "session_turn"
+           ("organizationId", "sessionId", "seq", "origin", "drive", "state", "prompt",
+            "observedWorking", "startedAt", "endedAt", "exitCode", "agentSessionId",
+            "result", "failureDetail", "costUsd", "permissionDenials", "outputRef")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+         ON CONFLICT ("sessionId", "seq") DO UPDATE SET
+           "drive" = EXCLUDED."drive", "state" = EXCLUDED."state",
+           "prompt" = EXCLUDED."prompt", "observedWorking" = EXCLUDED."observedWorking",
+           "startedAt" = EXCLUDED."startedAt", "endedAt" = EXCLUDED."endedAt",
+           "exitCode" = EXCLUDED."exitCode", "agentSessionId" = EXCLUDED."agentSessionId",
+           "result" = EXCLUDED."result", "failureDetail" = EXCLUDED."failureDetail",
+           "costUsd" = EXCLUDED."costUsd", "permissionDenials" = EXCLUDED."permissionDenials",
+           "outputRef" = EXCLUDED."outputRef", "updatedAt" = now()`,
+        [
+          row.organizationId,
+          row.sessionId,
+          row.seq,
+          row.origin,
+          row.drive,
+          row.state,
+          row.prompt,
+          row.observedWorking,
+          row.startedAt,
+          row.endedAt,
+          row.exitCode,
+          row.agentSessionId,
+          row.result,
+          row.failureDetail,
+          row.costUsd,
+          row.permissionDenials,
+          row.outputRef,
+        ],
+      );
+    }
   }
 
   private async existingKeys(

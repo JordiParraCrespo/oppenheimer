@@ -92,6 +92,7 @@ export class CreateSessionHttpController {
         userId,
         input: body,
         idempotencyKey: idempotencyKey?.trim() || null,
+        origin: 'person',
       }),
     );
     const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(

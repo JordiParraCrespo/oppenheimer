@@ -7,8 +7,8 @@ import {
   useConsoleList,
 } from '@oppenheimer/frontend-web';
 import { createFileRoute, Navigate, Outlet, redirect, useMatches } from '@tanstack/react-router';
+import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AutomationsSidebar } from '@/features/automations/sections/automations-sidebar';
 import { NotFoundScreen } from '@/features/public/screens/not-found';
 import { ConsoleRail } from '@/features/sessions/sections/console-rail';
 import { SessionsSidebar } from '@/features/sessions/sections/sessions-sidebar';
@@ -25,10 +25,25 @@ declare module '@tanstack/react-router' {
   }
 }
 
+/**
+ * The automations sidebar loads with the automations pages, not with the
+ * shell: most visits are to sessions, and its trigger catalog and schedule
+ * arithmetic have no business on their first load.
+ */
+const AutomationsSidebar = lazy(() =>
+  import('@/features/automations/sections/automations-sidebar').then((module) => ({
+    default: module.AutomationsSidebar,
+  })),
+);
+
 /** The sidebar each of the console's lists shows. */
 const SIDEBARS = {
   sessions: <SessionsSidebar />,
-  automations: <AutomationsSidebar />,
+  automations: (
+    <Suspense fallback={null}>
+      <AutomationsSidebar />
+    </Suspense>
+  ),
 };
 
 export const Route = createFileRoute('/_authenticated')({

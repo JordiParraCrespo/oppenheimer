@@ -127,6 +127,23 @@ type CreateInput struct {
 	Progress func(domain.StageEvent)
 }
 
+// base is the branch a new session's branch is cut from.
+func (in CreateInput) base() string {
+	if in.BaseBranch == "" {
+		return "main"
+	}
+	return in.BaseBranch
+}
+
+// fetchRef is the one branch a create fetches: the one its worktree is made
+// from, which is the existing branch it checks out or the base it cuts from.
+func (in CreateInput) fetchRef() string {
+	if in.Existing {
+		return in.Branch
+	}
+	return in.base()
+}
+
 // Create makes a session: mirror, worktree, tmux session, agent in window 0.
 // Each step is observable on disk, so a failure half-way leaves something a
 // person can look at rather than a mystery.
@@ -144,10 +161,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 	if !agent.Valid() {
 		return domain.Session{}, domain.ErrInvalidInput.WithDetail("%v: %q", domain.ErrUnknownAgent, agent)
 	}
-	base := in.BaseBranch
-	if base == "" {
-		base = "main"
-	}
+	base := in.base()
 	if err := domain.ValidateBranch(base); err != nil {
 		return domain.Session{}, domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
 	}
@@ -212,7 +226,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 	}
 
 	if err := run(domain.StageClone, func() error {
-		return s.worktrees.Ensure(ctx, in.Repo, in.Remote)
+		return s.worktrees.Ensure(ctx, in.Repo, in.Remote, in.fetchRef())
 	}); err != nil {
 		return domain.Session{}, err
 	}

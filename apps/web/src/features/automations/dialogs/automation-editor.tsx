@@ -1,98 +1,104 @@
 import {
-  Button,
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  Field,
-  FieldDescription,
-  FieldLabel,
-  Input,
-  Textarea,
+  Skeleton,
 } from '@oppenheimer/design-system-web';
-import { useProjects } from '@oppenheimer/frontend-consumer/react';
-import { useState } from 'react';
+import {
+  useAutomation,
+  useCreateAutomation,
+  useHosts,
+  useProjects,
+  useUpdateAutomation,
+} from '@oppenheimer/frontend-consumer/react';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useTranslation } from 'react-i18next';
+import { draftOf, emptyDraft, toCreateInput, toUpdateInput } from '../lib/automation-draft';
+import { AutomationEditor } from '../sections/automation-editor';
 
 /**
- * New automation (`product/versions/mvp/13-automations.md`): a dialog over
- * the console, opened from the sidebar's button, a project header's plus
- * and the overview's button.
+ * New automation and Edit automation (`product/versions/mvp/13-automations.md`):
+ * a dialog over the console, opened from the sidebar's button, a project
+ * header's plus, the overview's button, a row's Edit and a page's Edit.
  *
- * The frame draws a three-step wizard — Task, Trigger, Where it runs. Until
- * the API names a trigger, only the first step exists: the name and what
- * the agent should do, live, with the project it was opened for named
- * under them; the footer says the rest is coming and Create stays off.
- * The strip of steps and the pickers arrive with the resource, not before.
+ * It waits for what the editor starts from — the automation being edited,
+ * or the projects and hosts a new one is prefilled from — so the draft is
+ * seeded once, then owns the save. A save that fails keeps the dialog open
+ * with the reason; one that lands closes it.
  */
 export function AutomationEditorDialog({
+  automationId,
   projectId,
   onClose,
+  onSaved,
 }: {
+  /** Present edits this automation; absent creates one. */
+  automationId?: string;
   /** The project a header's plus opened it for. */
   projectId?: string;
   onClose: () => void;
+  onSaved: (automation: { id: string }) => void;
 }) {
   const { t } = useTranslation();
-  const [name, setName] = useState('');
-  const [prompt, setPrompt] = useState('');
-  // The named project, for the line under the fields. Read here rather than
-  // handed in: three surfaces open this, and none holds the row.
-  const { data: project } = useProjects({
-    select: (rows) => rows.find((row) => row.id === projectId),
-  });
+  const resolveError = useErrorMessage();
+  const existing = useAutomation(automationId);
+  const projects = useProjects();
+  const hosts = useHosts();
+  const create = useCreateAutomation({ onSuccess: onSaved });
+  const update = useUpdateAutomation({ onSuccess: onSaved });
+  const editing = Boolean(automationId);
+  const failure = create.error ?? update.error;
+
+  const ready = editing ? Boolean(existing.data) : Boolean(projects.data && hosts.data);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent size="lg" closeLabel={t('common.close')}>
-        <DialogHeader>
-          <DialogTitle>{t('automations.editor.newTitle')}</DialogTitle>
-        </DialogHeader>
-
-        <DialogBody>
-          <div className="flex flex-col gap-5">
-            <Field>
-              <FieldLabel htmlFor="automation-name">{t('automations.editor.name')}</FieldLabel>
-              <Input
-                id="automation-name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder={t('automations.editor.namePlaceholder')}
-                autoFocus
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="automation-prompt">{t('automations.editor.prompt')}</FieldLabel>
-              <Textarea
-                id="automation-prompt"
-                value={prompt}
-                onChange={(event) => setPrompt(event.target.value)}
-                placeholder={t('automations.editor.promptPlaceholder')}
-                className="min-h-28"
-              />
-              <FieldDescription>{t('automations.editor.promptHint')}</FieldDescription>
-            </Field>
-            {project ? (
-              <FieldDescription>
-                {t('automations.editor.forProject', { name: project.name })}
-              </FieldDescription>
-            ) : null}
-          </div>
-        </DialogBody>
-
-        <DialogFooter className="items-center">
-          <span className="min-w-0 flex-1 text-[12.5px] text-pretty text-fg-muted">
-            {t('automations.editor.soon')}
-          </span>
-          <Button type="button" variant="secondary" onClick={onClose}>
-            {t('common.cancel')}
-          </Button>
-          <Button type="button" disabled>
-            {t('automations.editor.create')}
-          </Button>
-        </DialogFooter>
+        {ready ? (
+          <AutomationEditor
+            initialDraft={
+              existing.data
+                ? draftOf(existing.data)
+                : emptyDraft(projects.data ?? [], hosts.data ?? [], projectId)
+            }
+            initialTask={
+              existing.data
+                ? { name: existing.data.name, prompt: existing.data.revision.prompt }
+                : { name: '', prompt: '' }
+            }
+            editing={editing}
+            saving={create.isPending || update.isPending}
+            failure={
+              failure ? resolveError(failure, t('automations.editor.saveFailed')).message : null
+            }
+            onCancel={onClose}
+            onSubmit={(draft, task) => {
+              if (existing.data) {
+                const input = toUpdateInput(draft, task, existing.data.version);
+                if (input) update.mutate({ id: existing.data.id, input });
+              } else {
+                const input = toCreateInput(draft, task);
+                if (input) create.mutate(input);
+              }
+            }}
+          />
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>
+                {editing ? t('automations.editor.editTitle') : t('automations.editor.newTitle')}
+              </DialogTitle>
+            </DialogHeader>
+            <DialogBody>
+              <div className="flex flex-col gap-3">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-28 w-full" />
+              </div>
+            </DialogBody>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

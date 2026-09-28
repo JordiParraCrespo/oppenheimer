@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import type { CreateSessionDto } from '@oppenheimer/shared';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
+import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import type { NewSessionEvent } from './database/work-session.repository.port';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
@@ -13,6 +14,15 @@ import {
   type SessionFold,
   type SessionLaunchFold,
 } from './domain/session-state.policy';
+import {
+  type SessionTurnFold,
+  TURN_DRIVES,
+  TURN_ORIGINS,
+  TURN_STATES,
+  type TurnDrive,
+  type TurnOrigin,
+  type TurnState,
+} from './domain/session-turn.policy';
 import { WorkSessionEntity } from './domain/work-session.entity';
 import { WorkSessionEventEntity } from './domain/work-session-event.entity';
 import { SessionCheckoutResponseDto, SessionResponseDto } from './dtos/session.response.dto';
@@ -50,6 +60,7 @@ export class WorkSessionMapper
     record.slug = entity.slug;
     record.agent = entity.agent;
     record.idempotencyKey = entity.idempotencyKey;
+    record.origin = entity.origin;
     const fold = entity.fold;
     record.state = fold.state;
     record.stateSeq = fold.stateSeq;
@@ -83,6 +94,9 @@ export class WorkSessionMapper
         agent: record.agent as SessionAgent,
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
+        origin: record.origin === 'automation' ? 'automation' : 'person',
+        // Loaded by the repository when it folds, under the row lock.
+        latestTurn: null,
         ...this.foldOf(record),
         // After the fold: on a row the listed project is never null.
         projectId: record.projectId,
@@ -90,6 +104,55 @@ export class WorkSessionMapper
     });
     for (const checkout of checkouts) session.attachCheckout(this.checkoutToDomain(checkout));
     return session;
+  }
+
+  /** A stored turn as the fold reads it. Values outside the unions read as their safest member. */
+  turnToDomain(record: SessionTurnOrmEntity): SessionTurnFold {
+    return {
+      seq: record.seq,
+      origin: (TURN_ORIGINS as readonly string[]).includes(record.origin)
+        ? (record.origin as TurnOrigin)
+        : 'person',
+      drive: (TURN_DRIVES as readonly string[]).includes(record.drive)
+        ? (record.drive as TurnDrive)
+        : 'interactive',
+      state: (TURN_STATES as readonly string[]).includes(record.state)
+        ? (record.state as TurnState)
+        : 'queued',
+      prompt: record.prompt,
+      observedWorking: record.observedWorking,
+      startedAt: record.startedAt ? new Date(record.startedAt) : null,
+      endedAt: record.endedAt ? new Date(record.endedAt) : null,
+      exitCode: record.exitCode,
+      agentSessionId: record.agentSessionId,
+      result: record.result,
+      failureDetail: record.failureDetail,
+      costUsd: record.costUsd === null ? null : Number(record.costUsd),
+      permissionDenials: record.permissionDenials,
+      outputRef: record.outputRef,
+    };
+  }
+
+  turnToPersistence(session: WorkSessionEntity, turn: SessionTurnFold): SessionTurnOrmEntity {
+    const record = new SessionTurnOrmEntity();
+    record.organizationId = session.organizationId;
+    record.sessionId = session.id;
+    record.seq = turn.seq;
+    record.origin = turn.origin;
+    record.drive = turn.drive;
+    record.state = turn.state;
+    record.prompt = turn.prompt;
+    record.observedWorking = turn.observedWorking;
+    record.startedAt = turn.startedAt;
+    record.endedAt = turn.endedAt;
+    record.exitCode = turn.exitCode;
+    record.agentSessionId = turn.agentSessionId;
+    record.result = turn.result;
+    record.failureDetail = turn.failureDetail;
+    record.costUsd = turn.costUsd === null ? null : turn.costUsd.toFixed(6);
+    record.permissionDenials = turn.permissionDenials;
+    record.outputRef = turn.outputRef;
+    return record;
   }
 
   /**

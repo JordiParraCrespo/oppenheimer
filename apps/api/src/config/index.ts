@@ -1,4 +1,5 @@
 export { appConfig } from './app.config';
+export { automationsConfig } from './automations.config';
 export { databaseConfig } from './database.config';
 export { emailConfig } from './email.config';
 export { githubAppConfig } from './github.config';

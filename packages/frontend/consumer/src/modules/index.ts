@@ -1,4 +1,5 @@
 export * from './api-tokens';
+export * from './automations';
 export * from './hosts';
 export * from './installations';
 export * from './organizations';
