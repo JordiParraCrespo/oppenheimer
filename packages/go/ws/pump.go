@@ -81,6 +81,11 @@ func pump(ctx context.Context, conn *websocket.Conn, src source, opts PumpOption
 		pingCtx, cancel := context.WithTimeout(ctx, opts.PingTimeout)
 		defer cancel()
 		if err := conn.Ping(pingCtx); err != nil {
+			// ctx ending mid-ping closes the socket under it, and the
+			// failure then reads as a write on a closed connection.
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				return ctxErr
+			}
 			return fmt.Errorf("%w: %w", ErrPing, err)
 		}
 		return nil
@@ -122,6 +127,9 @@ func pump(ctx context.Context, conn *websocket.Conn, src source, opts PumpOption
 		err = conn.Write(writeCtx, kind, frame.Data)
 		cancel()
 		if err != nil {
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				return ctxErr
+			}
 			return fmt.Errorf("%w: %w", ErrWrite, err)
 		}
 	}
