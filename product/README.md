@@ -278,3 +278,6 @@ earlier note:
   automations pages on the grey canvas with white cards, as the frame does,
   and drew Where it runs as rows of one card rather than stacked fields
   (2026-09-28).
+- The frames draw run history only once there is a run; the console now
+  draws it always, thirty empty days on a new workspace, so the pages keep
+  their shape from the first visit (2026-09-28).

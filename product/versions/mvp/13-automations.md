@@ -56,7 +56,8 @@ fired, guarded and dispatched is 16; the tables and modules are 10.
 - **The overview** is one frame, `EditorPage` with its wide body, mounted by
   the layout route; each tab is a route of its own, so the address says
   which is open. The run-history chart is thirty bars of the viewer's local
-  days. The table's row menu edits, runs now, pauses or resumes, duplicates
+  days, drawn from the first visit: with no runs yet it is the empty axis,
+  not absent (2026-09-28). The table's row menu edits, runs now, pauses or resumes, duplicates
   and deletes. The Runs tab keeps its status pill, facets (automation,
   project, window) and page in the URL; a page is ten runs.
 - **One automation**: Back, then the page header (the frame's `op-ph`:
