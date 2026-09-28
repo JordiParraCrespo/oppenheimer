@@ -26,7 +26,7 @@ they disagree, fix the code or update both together. The tier-wide model is
       │                       ▼
       │                @oppenheimer/design-system-web   Base UI + Tailwind v4
       │
-      ├──────────────► @oppenheimer/frontend-consumer   sessions, projects, hosts; organizations, profile, api-tokens
+      ├──────────────► @oppenheimer/frontend-consumer   sessions, projects, hosts; organizations, profile, permissions
       │                       │
       └──────────────► @oppenheimer/frontend-core       auth, users, user-settings,
                               │                   capabilities, analytics, OppenheimerApp
@@ -151,7 +151,7 @@ translation keys, and
 add a spec in `e2e/tests/web/`.
 
 Module names this app may use: the kernel's `analytics`, `auth`,
-`capabilities`, `user-settings`, `users`; the console's `api-tokens`,
+`capabilities`, `user-settings`, `users`; the console's `permissions`,
 `organizations`, `profile`, `sessions`, `hosts` (the first three have no
 feature here yet); and the app's allowlist, `public`
 (the marketing pages render no entity). Anything else has to become a module of

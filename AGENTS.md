@@ -241,8 +241,8 @@ The frontend is split twice, and the two splits answer different questions:
 
 - **By product** for logic. `core` is the kernel every app loads (session,
   users, user settings, capabilities, analytics, the InversifyJS container,
-  config, validation). `consumer` (`sessions`, `hosts`, `automations`, and the account chrome:
-  `organizations` as the personal workspace, `profile`, `api-tokens`) is the
+  validation). `consumer` (`sessions`, `hosts`, `automations`, and the account chrome:
+  `organizations` as the personal workspace, `profile`, `permissions`) is the
   product's domain (entities, repositories, services, TanStack Query hooks);
   the app loads it through `OppenheimerApp.create({ modules })`. The kernel
   never imports the product package.

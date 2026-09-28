@@ -1,6 +1,4 @@
 import type { OppenheimerApp } from '@oppenheimer/frontend-core';
-import type { ApiTokensRepository } from '../modules/api-tokens';
-import { ApiTokensModule } from '../modules/api-tokens';
 import type { AutomationsRepository } from '../modules/automations';
 import { AutomationsModule } from '../modules/automations';
 import type { HostsRepository } from '../modules/hosts';
@@ -9,6 +7,8 @@ import type { InstallationsRepository } from '../modules/installations';
 import { InstallationsModule } from '../modules/installations';
 import type { OrganizationsService } from '../modules/organizations';
 import { OrganizationsModule } from '../modules/organizations';
+import type { PermissionsRepository } from '../modules/permissions';
+import { PermissionsModule } from '../modules/permissions';
 import type { ProfileService } from '../modules/profile';
 import { ProfileModule } from '../modules/profile';
 import type { ProjectsRepository } from '../modules/projects';
@@ -27,7 +27,7 @@ export const consumerModules = [
   AutomationsModule,
   HostsModule,
   InstallationsModule,
-  ApiTokensModule,
+  PermissionsModule,
   OrganizationsModule,
   ProfileModule,
 ];
@@ -87,8 +87,9 @@ export class ConsumerApp {
     return this.kernel.container.get(TOKENS.InstallationsRepository);
   }
 
-  get apiTokens(): ApiTokensRepository {
-    return this.kernel.container.get(TOKENS.ApiTokensRepository);
+  /** The permission catalog OAuth consent names scopes from. */
+  get permissions(): PermissionsRepository {
+    return this.kernel.container.get(TOKENS.PermissionsRepository);
   }
 
   get organizations(): OrganizationsService {

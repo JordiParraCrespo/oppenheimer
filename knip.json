@@ -17,7 +17,8 @@
       "ignoreDependencies": ["tailwindcss"]
     },
     "packages/frontend/core": {
-      "project": ["src/**/*.{ts,tsx}"]
+      "project": ["src/**/*.{ts,tsx}"],
+      "includeEntryExports": true
     },
     "packages/frontend/consumer": {
       "project": ["src/**/*.{ts,tsx}"],

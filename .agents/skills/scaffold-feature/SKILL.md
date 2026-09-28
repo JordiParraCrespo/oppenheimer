@@ -1,6 +1,6 @@
 ---
 name: scaffold-feature
-description: Build a feature in the Oppenheimer web console (apps/web) the way a senior frontend engineer on this codebase would. It starts from the domain module in packages/frontend (sessions, hosts, projects, installations, organizations, profile, api-tokens, or the kernel's), writes down every query and mutation and which component draws each result, then places each piece in its kind directory, and it ends with the checks passing. Use it whenever the user asks for a new screen, page, section, dialog, form, list, settings page or UI flow in the console. Also use it when they describe something that needs UI ("show a host's activity", "let people revoke API tokens"), when a new API endpoint needs a screen, or when they ask to review, fix or refactor a frontend feature, even if they never say "feature" or "scaffold".
+description: Build a feature in the Oppenheimer web console (apps/web) the way a senior frontend engineer on this codebase would. It starts from the domain module in packages/frontend (sessions, hosts, projects, installations, automations, organizations, profile, or the kernel's), writes down every query and mutation and which component draws each result, then places each piece in its kind directory, and it ends with the checks passing. Use it whenever the user asks for a new screen, page, section, dialog, form, list, settings page or UI flow in the console. Also use it when they describe something that needs UI ("show a host's activity", "let people pause an automation from its row"), when a new API endpoint needs a screen, or when they ask to review, fix or refactor a frontend feature, even if they never say "feature" or "scaffold".
 ---
 
 # Build a console feature
@@ -44,7 +44,7 @@ new feature. Before creating anything, answer these:
   `packages/frontend/core` (`auth`, `users`, `user-settings`, `capabilities`,
   `analytics`, `feature-flags`) or of the product package
   `packages/frontend/consumer` (`sessions`, `hosts`, `projects`,
-  `installations`, `automations`, `organizations`, `profile`, `api-tokens`),
+  `installations`, `automations`, `organizations`, `profile`, `permissions`),
   or is on the app's allowlist (`public`). Never name it after a page (`settings`, `console`, `home`).
   `ls packages/frontend/*/src/modules` shows what exists.
   - `sessions` are the agent sessions (a worktree and a tmux terminal on a
@@ -125,8 +125,8 @@ it. The steps are the "Add a module to a product package" cookbook in
      `invalidateQueries()`.
    - The Biome plugins in `biome-plugins/*.grit` enforce the key-factory,
      `skipToken` and `withCacheOnSuccess` rules; the guide is
-     `apps/docs/docs/architecture/query-keys.md`. A key for a generated
-     hey-api query goes through `withFeaturePrefix`.
+     `apps/docs/docs/architecture/query-keys.md`. The key factory stays in its
+     file; the barrel exports the hooks the app imports (`pnpm check:unused`).
 6. If the data must never reach storage (secrets, a pairing token, personal
    data), add `thingsKeys.all[0]` to `CONSUMER_NON_PERSISTED_FEATURES` in
    `src/react/persistence.ts`.
@@ -159,9 +159,9 @@ from step 1.
 - **Actions:** each action is offered only where the server would allow it,
   and never where a business rule makes it a certain refusal. A workspace's
   owner holds every rule today, so the console's rows are ungated; a screen
-  whose endpoint does need a rule builds the caller's ability from
-  `useMyPermissions()` (kernel) with `defineAbilitiesFromPermissions`
-  (`@oppenheimer/shared/permissions`) — the kit's nav does the same — and
+  whose endpoint does need a rule reads the caller's ability from the kit's
+  `useAbilityState()` (`shell/hooks/use-ability.ts`, what the nav filters
+  with; export it from the shell barrel when the first screen needs it) and
   hides the action rather than letting it end in a 403.
 - **Nav rows:** a gated row in `apps/web/src/lib/nav.ts` or a
   `SettingsSidebar` item takes `policies` from

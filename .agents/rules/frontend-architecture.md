@@ -13,8 +13,8 @@ memo, Biome plugins in `biome-plugins/` for query keys, `skipToken` and
 mutation cache updates (the rules are
 [`apps/docs/docs/architecture/query-keys.md`](../../apps/docs/docs/architecture/query-keys.md)),
 `pnpm check:unused` (knip) for code nothing reaches, and a `*-render.spec.tsx`
-for what a component costs. The Claude Code Stop hook
-runs all three. The layer model and the cookbooks are in
+for what a component costs. The Claude Code Stop hook runs dependency-cruiser
+and `pnpm check:structure`; CI runs every check. The layer model and the cookbooks are in
 [`packages/frontend/ARCHITECTURE.md`](../../packages/frontend/ARCHITECTURE.md)
 and `apps/web/ARCHITECTURE.md`; `/scaffold-feature` produces the shape.
 
@@ -262,18 +262,20 @@ change a URL.
 `pnpm check:unused` runs knip (`knip.json`) over `apps/web` and the kernel,
 product and kit packages, and fails on an unused file, dependency or export.
 
-- In the app, the kit and the product package an export is checked **through
-  the barrel**: a package exports what the app imports and nothing else. A
-  component, hook or error catalog only the package itself uses stays in it,
-  unexported from `index.ts`. Keeping something "for a later screen" is the
-  shape this check exists to stop — a later screen re-exports it.
-- The kernel's entry points are the surface any app builds on (feature flags,
-  analytics, users), so its barrels are not checked; the files behind them
-  are.
+- An export is checked **through its package's barrel**, the kernel's
+  included: a package exports what the console imports and nothing else. A
+  hook, key factory or error catalog only the package itself uses stays in it,
+  unexported. Keeping something "for a later screen" is the shape this check
+  exists to stop — the later screen re-exports it.
+- A kernel export that is a documented contract with no caller yet (the
+  flags rule's `useFeatureFlag`, the analytics doc's `useCaptureEvent`) is
+  tagged `/** @public <why> */` on its line in the barrel. One symbol, one
+  reason; never a package or a file.
 - Exported types are not checked: they cost nothing at run time and are the
   vocabulary a caller annotates with.
-- When you delete the last caller of a hook, delete the service and
-  repository methods only it reached. Knip does not see class members.
+- Knip does not see class members. When you delete the last caller of a hook,
+  delete the service and repository methods only it reached, and the error
+  codes only they raised.
 
 ## Patterns agents get wrong
 

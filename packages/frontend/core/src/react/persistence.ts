@@ -17,10 +17,7 @@ export const QUERY_PERSIST_MAX_AGE = 24 * 60 * 60 * 1000;
  * builds its persist options — `CONSUMER_NON_PERSISTED_FEATURES` in
  * `@oppenheimer/frontend-consumer` is the list the consumer apps pass.
  */
-export const KERNEL_NON_PERSISTED_FEATURES: readonly string[] = [
-  authKeys.all[0],
-  userSettingsKeys.all[0],
-];
+const KERNEL_NON_PERSISTED_FEATURES: readonly string[] = [authKeys.all[0], userSettingsKeys.all[0]];
 
 export interface QueryPersistConfig {
   /** Feature key prefixes (the first segment of a query key) to keep out of storage. */

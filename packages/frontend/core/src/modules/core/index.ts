@@ -1,4 +1,4 @@
-export { type CoreModuleConfig, createCoreModule } from './core.module';
+export type { CoreModuleConfig } from './core.module';
 export {
   createErrorMessageResolver,
   type ErrorMessageKey,
@@ -11,7 +11,6 @@ export {
   type AppErrorOptions,
   type ErrorDefinition,
   type SdkResult,
-  toAppError,
   unwrap,
   unwrapBody,
 } from './errors';

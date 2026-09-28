@@ -5,8 +5,6 @@ import { useOppenheimerApp } from './context';
 import { useQuery } from './query';
 import { userSettingsKeys } from './query-keys';
 
-export { userSettingsKeys };
-
 export function useUserSettings(
   options?: Omit<UseQueryOptions<UserSettingsEntity, Error>, 'queryKey' | 'queryFn'>,
 ) {

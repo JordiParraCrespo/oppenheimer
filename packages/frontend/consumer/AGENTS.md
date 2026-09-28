@@ -6,7 +6,7 @@ The console's domain on top of `@oppenheimer/frontend-core`: `sessions` (a
 worktree with a terminal on a host), `projects` (what sessions belong to),
 `hosts` (the machines the user owns) and `automations` (saved prompts that
 start sessions on a schedule or an event, and the runs they made)
-are the product; `organizations`, `profile` and `api-tokens` are the account
+are the product; `organizations`, `profile` and `permissions` are the account
 chrome it keeps. `organizations` is the *personal workspace* only — read it,
 rename it, create one for an account that has none. Workspaces have no roster
 (`product/versions/mvp/08-auth.md`): there is no member or invitation hook

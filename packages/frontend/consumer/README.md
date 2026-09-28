@@ -5,7 +5,8 @@ with a terminal on a host), `projects` (the bodies of work sessions belong
 to, with the defaults New session is prefilled with) and `hosts` (the
 machines the user owns) are the product; `organizations` (the personal workspace only — no roster, no
 members, no invitations, see `product/versions/mvp/08-auth.md`), `profile`
-and `api-tokens` are the account chrome it keeps. Each module is an entity, an
+and `permissions` (the catalog OAuth consent names scopes from) are the account
+chrome it keeps. Each module is an entity, an
 error catalog, a repository over `@oppenheimer/api-client` and an InversifyJS
 `ContainerModule`, plus a service where there is a use case to hold (sessions,
 organizations, profile); `src/react/` turns `app.<module>` — the service, or
@@ -44,18 +45,16 @@ a service fronts it, its repository stay inside the package.
   `OrganizationsModule`, `isProvisionalSlug`.
 - **modules/profile** — `ProfileEntity`, `UserSessionEntity`,
   `ProfileService`, `ProfileModule`.
-- **modules/api-tokens** — `PermissionCatalog`, `ApiTokensRepository`,
-  `ApiTokensModule`: the permission catalog OAuth consent names scopes from.
-  The console mints no tokens.
+- **modules/permissions** — `PermissionCatalog`, `PermissionsRepository`,
+  `PermissionsModule`: the permission catalog OAuth consent names scopes from.
 
 `@oppenheimer/frontend-consumer/react` (`src/react/index.ts`):
 
-The TanStack Query hooks and key factories for each module above — one
-`<module>.queries.ts` per module, a `use…` hook per read or write and a
-`<module>Keys` factory — plus `useConsumerApp`, the product's modules off
-the kernel container, and `CONSUMER_NON_PERSISTED_FEATURES`, the prefixes an
-app keeps out of the persisted query cache. The barrel is the catalog; it is
-not repeated here.
+The named hooks the console imports — one `<module>.queries.ts` per module
+behind them, `usePermissionCatalog` among them for OAuth consent — and
+`CONSUMER_NON_PERSISTED_FEATURES`, the prefixes an app keeps out of the
+persisted query cache. Key factories stay in their files: nothing outside the
+package names a key. The barrel is the catalog; it is not repeated here.
 
 ## How to use it
 

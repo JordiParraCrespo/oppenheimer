@@ -15,7 +15,14 @@
         ".agents/skills/scaffold-feature/evals",
         "knip.json"
       ],
-      "scripts": ["dev:mvp", "check:unused"]
+      "scripts": ["dev:mvp", "check:unused"],
+      "json": [
+        {
+          "file": "package.json",
+          "path": "devDependencies",
+          "deleteKeys": ["knip"]
+        }
+      ]
     },
     "web-showcase": {
       "title": "Web design-system showcase",

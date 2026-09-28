@@ -1,5 +1,5 @@
 import { heyApiSdk, type UserResponseDto } from '@oppenheimer/api-client';
-import type { PermissionDefinition, Role } from '@oppenheimer/shared';
+import type { PermissionDefinition } from '@oppenheimer/shared';
 import { injectable } from 'inversify';
 import { unwrapBody } from '../core/errors';
 import { MapApiError } from '../core/map-api-error.decorator';
@@ -34,26 +34,6 @@ function toPermissions(rules: Array<{ [key: string]: unknown }>): PermissionDefi
 
 @injectable()
 export class UsersRepository {
-  @MapApiError(UsersErrors.FETCH_LIST_FAILED)
-  async findAll(
-    page?: number,
-    limit?: number,
-    search?: string,
-    role?: Role,
-  ): Promise<{
-    data: UserEntity[];
-    meta: { total: number; page: number; limit: number; totalPages: number };
-  }> {
-    const result = await unwrapBody(
-      heyApiSdk.findUsers({ query: { search, role, limit, page } }),
-      UsersErrors.FETCH_LIST_FAILED,
-    );
-    return {
-      data: result.data.map(toEntity),
-      meta: result.meta,
-    };
-  }
-
   @MapApiError(UsersErrors.FETCH_FAILED)
   async me(): Promise<UserEntity> {
     const data = await unwrapBody(heyApiSdk.getMe(), UsersErrors.FETCH_FAILED);
@@ -69,14 +49,5 @@ export class UsersRepository {
   async myPermissions(): Promise<PermissionDefinition[]> {
     const data = await unwrapBody(heyApiSdk.getMyPermissions(), UsersErrors.FETCH_FAILED);
     return toPermissions(data.permissions);
-  }
-
-  @MapApiError(UsersErrors.FETCH_FAILED)
-  async findById(id: string): Promise<UserEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.findUserById({ path: { id } }),
-      UsersErrors.FETCH_FAILED,
-    );
-    return toEntity(data);
   }
 }

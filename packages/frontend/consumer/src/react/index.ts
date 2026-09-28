@@ -1,4 +1,3 @@
-export { usePermissionCatalog } from './api-tokens.queries';
 export { useRegister } from './auth.queries';
 export {
   type PauseAutomationVariables,
@@ -16,10 +15,9 @@ export {
   useTriggerPreview,
   useUpdateAutomation,
 } from './automations.queries';
-// `useCurrentPairing`, `usePairingTokens` and the host poll are the flow's
-// internals: a surface that reached for them directly would be back to asking
-// "is there a host?" instead of "was this token spent?". They stay exported
-// from their own file for a spec or a later drawer; the barrel offers the flow.
+// The pairing flow, not its parts: a surface that read the token or the host
+// poll directly would be back to asking "is there a host?" instead of "was
+// this token spent?".
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
   useHostPresence,
@@ -44,6 +42,7 @@ export {
   useClaimPersonalWorkspace,
   useOrganizations,
 } from './organizations.queries';
+export { usePermissionCatalog } from './permissions.queries';
 export { CONSUMER_NON_PERSISTED_FEATURES } from './persistence';
 export {
   useChangeEmail,

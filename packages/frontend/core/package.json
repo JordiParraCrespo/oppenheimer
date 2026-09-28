@@ -24,10 +24,6 @@
     "./validation": {
       "types": "./dist/validation/index.d.ts",
       "import": "./dist/validation/index.js"
-    },
-    "./config": {
-      "types": "./src/config/index.ts",
-      "import": "./src/config/index.ts"
     }
   },
   "peerDependencies": {
