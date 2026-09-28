@@ -311,6 +311,15 @@ type Worktrees struct {
 	EnsureErr error
 	// Pushed records the branches that reached the remote.
 	Pushed []string
+	// Fetched records the ref each Ensure was asked to fetch, in order.
+	Fetched []string
+}
+
+// FetchedRefs is Fetched, read under the lock.
+func (w *Worktrees) FetchedRefs() []string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return append([]string(nil), w.Fetched...)
 }
 
 // NewWorktrees returns an empty git.
@@ -319,7 +328,7 @@ func NewWorktrees() *Worktrees {
 }
 
 // Ensure implements app.Worktrees.
-func (w *Worktrees) Ensure(_ context.Context, repo, _ string, _ ...string) error {
+func (w *Worktrees) Ensure(_ context.Context, repo, _, ref string) error {
 	if err := domain.ValidateRepo(repo); err != nil {
 		return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
 	}
@@ -329,6 +338,7 @@ func (w *Worktrees) Ensure(_ context.Context, repo, _ string, _ ...string) error
 		return w.EnsureErr
 	}
 	w.Mirrors[repo]++
+	w.Fetched = append(w.Fetched, ref)
 	return nil
 }
 

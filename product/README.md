@@ -257,8 +257,3 @@ earlier note:
   "local" open. It shows the city and country code of the host's
   connecting address, from DB-IP Lite, instead of a cloud region
   (2026-09-26).
-- `versions/mvp/02-runner.md` §5 said a store was a `git clone --bare`
-  refreshed by fetching every branch. It is a blobless clone with nothing
-  checked out, and a session fetches only the branch it is made from, the
-  way Orca does: a first session on a large repository went from 63 s to
-  24 s (2026-09-27).

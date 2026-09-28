@@ -68,7 +68,7 @@ func TestEnsureClonesThenFetches(t *testing.T) {
 	c, layout := client(t)
 	ctx := context.Background()
 
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatalf("first ensure (clone): %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(layout.Mirror(repo), ".git")); err != nil {
@@ -77,7 +77,7 @@ func TestEnsureClonesThenFetches(t *testing.T) {
 
 	// The second call fetches, and needs no remote: the host already knows
 	// where the repository came from.
-	if err := c.Ensure(ctx, repo, ""); err != nil {
+	if err := c.Ensure(ctx, repo, "", "main"); err != nil {
 		t.Fatalf("second ensure (fetch): %v", err)
 	}
 }
@@ -153,7 +153,7 @@ func TestEnsureFetchesOnlyTheBranchesItIsGiven(t *testing.T) {
 	}
 }
 
-func TestEnsureFetchesEverythingWhenANamedBranchCannotBeFetched(t *testing.T) {
+func TestEnsureFailsWhenTheRefIsNotABranchOnTheRemote(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
@@ -162,21 +162,22 @@ func TestEnsureFetchesEverythingWhenANamedBranchCannotBeFetched(t *testing.T) {
 	}
 	advance(t, remote, "elsewhere")
 
-	// Not a branch on the remote: the named fetch fails and the wide one
-	// runs instead, so whatever the worktree is cut from next is there.
-	if err := c.Ensure(ctx, repo, "", "no-such-branch"); err != nil {
-		t.Fatalf("ensure: %v", err)
-	}
+	err := c.Ensure(ctx, repo, "", "no-such-branch")
 
-	if remoteRef(t, layout.Mirror(repo), "elsewhere") == "" {
-		t.Fatal("the fallback fetch did not bring every branch")
+	var prob *problem.Error
+	if !isProblem(err, &prob, domain.ErrGitCommand.Code) {
+		t.Fatalf("err = %v, want %s", err, domain.ErrGitCommand.Code)
+	}
+	// One fetch, not a second one of everything.
+	if remoteRef(t, layout.Mirror(repo), "elsewhere") != "" {
+		t.Fatal("a failed fetch went on to fetch every branch")
 	}
 }
 
 func TestEnsureRefusesARepositoryItHasNeverSeenWithNoRemote(t *testing.T) {
 	c, _ := client(t)
 
-	err := c.Ensure(context.Background(), repo, "")
+	err := c.Ensure(context.Background(), repo, "", "main")
 
 	var prob *problem.Error
 	if !isProblem(err, &prob, "GIT_001") {
@@ -188,7 +189,7 @@ func TestEnsureRefusesARepositoryNameThatWouldEscapeTheLayout(t *testing.T) {
 	c, _ := client(t)
 
 	for _, name := range []string{"../../etc", "owner/../../etc", "not-a-repo"} {
-		if err := c.Ensure(context.Background(), name, "https://example.test/x.git"); err == nil {
+		if err := c.Ensure(context.Background(), name, "https://example.test/x.git", "main"); err == nil {
 			t.Fatalf("%q must not be accepted as a repository name", name)
 		}
 	}
@@ -198,7 +199,7 @@ func TestAddCutsANewBranchFromTheBaseAndRemoveTakesItAway(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "session-abc")
@@ -227,7 +228,7 @@ func TestAddRefusesToReuseAPathThatExists(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "taken")
@@ -247,7 +248,7 @@ func TestDirtyAndPush(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "session-push")
@@ -293,7 +294,7 @@ func TestGitNeverWaitsForAPassword(t *testing.T) {
 	// A remote that cannot be reached must fail fast, not hang a session
 	// create. What it is classified as is pinned against a remote that does
 	// answer, in recovery_test.go.
-	err := c.Ensure(ctx, repo, "https://127.0.0.1:1/private.git")
+	err := c.Ensure(ctx, repo, "https://127.0.0.1:1/private.git", "main")
 
 	if err == nil || ctx.Err() != nil {
 		t.Fatalf("err = %v, ctx = %v; want a prompt failure, not a wait", err, ctx.Err())

@@ -58,6 +58,9 @@ type App struct {
 	// Terminals is the tmux server, exposed so `sessions attach` can hand
 	// the terminal over to tmux directly.
 	Terminals *tmux.Server
+	// Worktrees is the sessions' git, kept for waiting on the spare worktree
+	// it makes after a create (CreateSession).
+	Worktrees *gitadapter.Client
 	// Link is the control-plane link while `run` holds one, for `status`.
 	Link *link.Client
 	// Credentials answers the git credential helper while `run` holds a link.
@@ -113,31 +116,40 @@ func New(version string) (*App, error) {
 		return nil, err
 	}
 	layout := sessionsdomain.Layout{Root: paths.Workspaces}
+	worktrees := gitadapter.New(gitadapter.Options{
+		Layout: layout,
+		// git asks the runner over the local socket when it needs a
+		// token; nothing is written to disk and nothing is passed on a
+		// command line.
+		CredentialHelper: credentialHelper(),
+		// A create takes a worktree checked out ahead of it and leaves
+		// the next one behind (02-runner §5).
+		Spares: true,
+	})
 	sessions, err := sessionsapp.New(sessionsapp.Options{
-		Terminals: terminals,
-		Worktrees: gitadapter.New(gitadapter.Options{
-			Layout: layout,
-			// git asks the runner over the local socket when it needs a
-			// token; nothing is written to disk and nothing is passed on a
-			// command line.
-			CredentialHelper: credentialHelper(),
-		}),
+		Terminals:  terminals,
+		Worktrees:  worktrees,
 		Classifier: manifest.New(manifest.Options{Dir: paths.Manifests()}),
 		Store:      sessionstate.New(paths.State()),
 		Images:     imagestore.New(paths.Images()),
 		Layout:     layout,
 		Env: func(session sessionsdomain.Session) map[string]string {
-			return map[string]string{
+			env := map[string]string{
 				"OPPENHEIMER_SESSION": session.ID,
 				"OPPENHEIMER_SOCKET":  paths.Socket(),
 				"OPPENHEIMER_REPO":    session.Repo,
 			}
+			for key, value := range shellCredentialHelper(paths) {
+				env[key] = value
+			}
+			return env
 		},
 	})
 	if err != nil {
 		return nil, err
 	}
 	app.Sessions = sessions
+	app.Worktrees = worktrees
 	app.Terminals = terminals
 
 	binStore, err := binaries.New(binaries.Options{
@@ -268,6 +280,30 @@ func utf8Locale(current string) string {
 // credentialHelper is the command git calls for a password: this binary's own
 // subcommand, resolved to an absolute path so git finds it whatever PATH a
 // session's shell ends up with.
+// shellCredentialHelper is git configuration, as environment, that points
+// the git in a session's shell at the runner's helper for GitHub (02-runner
+// §8). The store is blobless, so a `git log -p` or `blame` there fetches
+// contents the checkout never needed, and needs the session's token as much
+// as a push does. Configuration from the environment is read after every
+// file, so a helper the person set up is still asked first.
+//
+// The helper is the service's `current` link, not this binary: a session
+// outlives an update, and the version it was created under may be gone.
+func shellCredentialHelper(paths Paths) map[string]string {
+	helper := credentialHelper()
+	if _, err := os.Stat(paths.Current()); err == nil {
+		helper = paths.Current() + " credential-helper"
+	}
+	if helper == "" {
+		return nil
+	}
+	return map[string]string{
+		"GIT_CONFIG_COUNT":   "1",
+		"GIT_CONFIG_KEY_0":   "credential.https://github.com.helper",
+		"GIT_CONFIG_VALUE_0": helper,
+	}
+}
+
 func credentialHelper() string {
 	executable, err := os.Executable()
 	if err != nil {

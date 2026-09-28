@@ -481,3 +481,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   behind an Inspect fold, in the console and in onboarding; the
   automation editor holds its Task step alone until the API names a
   trigger (05, 13).
+- 2026-09-28: 02 §5's store was a `git clone --bare` refreshed by
+  fetching every branch. It is blobless with no working tree, a create
+  fetches only the ref its worktree is made from, and each repository
+  keeps one spare worktree checked out ahead of the next create (02).

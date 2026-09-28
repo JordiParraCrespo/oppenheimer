@@ -2,4 +2,4 @@
 "@oppenheimer/runner": minor
 ---
 
-Sessions start faster: a repository's store is a blobless clone with nothing checked out, and each session fetches only the branch it is made from, with no tags and git's automatic gc off.
+A repository's store is a blobless clone with no working tree. A session create fetches only the branch its worktree is made from, with no tags and no automatic gc, and takes a spare worktree the runner checked out ahead of it.

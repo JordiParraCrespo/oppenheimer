@@ -192,20 +192,16 @@ started last is the one that failed:
    `sessions/<slug>/` **before** anything else. Only
    a directory carrying it is ours to delete, ever (10, the rules
    learned from Orca).
-2. For each checkout, ensure the workspace's bare store
-   `repos/<store>.git` exists and is fetched
-   (`git clone --filter=blob:none` the first time, with nothing checked
-   out in the store, then `git fetch` of only the branches the session
-   is made from — the base, or the existing branch it checks out — with
-   no tags and git's automatic gc off, falling back to fetching every
-   ref when one of them is not a branch on the remote), authenticated
-   through the credential helper (§8). This is Orca's shape: a session
-   waits on its own base and nothing else. On a 30k-file, 12k-commit
-   repository over GitHub a first session went from 63 s to 24 s and a
-   repeat one from 5.2 s to 4.4 s, and the store from 1.1 GB to 185 MB
-   (2026-09-27). A blobless store fetches a file's older contents the
-   first time something reads them, so `git log -p` or `blame` in the
-   session's shell needs the same credential its push does. The store
+2. For each checkout, ensure the workspace's store
+   `repos/<store>.git` exists and is fetched (the runner still keeps it
+   at `<owner>/<repo>/main`, until note 10's layout lands). The store
+   is blobless and has no working tree: `git clone --filter=blob:none
+   --no-checkout` the first time. A create then fetches only the ref
+   its worktree is made from — the base, or the existing branch it
+   checks out — with no tags and git's automatic gc off, and a ref that
+   is not a branch on the remote fails the create. Both go through the
+   credential helper (§8), and so does a blob the session's shell reads
+   later (`git log -p`, `blame`). The store
    is found **by GitHub id**, never by name: the runner writes
    `git config oppenheimer.repo-id <id>` into the bare repo when it
    creates it as `<owner>--<repo>.git`, suffixes the name if that one is
@@ -227,6 +223,17 @@ started last is the one that failed:
    finished), a registration whose directory is gone is pruned, and a
    branch the attempt cut is reused only while it holds nothing the base
    does not. Anything else at the path is `SESS_004`.
+   Each store keeps one **spare** worktree beside the sessions'
+   (`worktrees/.spare`), detached at the base the last create used and
+   fully checked out. A create for a new branch moves it to the
+   session's path and checks out the session's branch there, which
+   writes only what changed on the base since; the runner then makes
+   the next spare in the background. A spare still being made is not
+   waited for, a finished one on disk is taken after a restart, and
+   something at `.spare` the store never registered is left alone.
+   A detached worktree at a session's path is a claim cut short
+   between the move and the checkout; the next attempt finishes it.
+   The cost is one checked-out tree per repository on the host.
 4. `tmux new-session -d -s <id> -c <cwd>` on the dedicated socket, where
    `<cwd>` is the checkout the control plane names as the working
    directory, or the session directory when it names none, with the

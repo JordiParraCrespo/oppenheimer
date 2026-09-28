@@ -61,6 +61,12 @@ type Client struct {
 	// both clone it, or cut worktrees while the other is fetching.
 	mu    sync.Mutex
 	repos map[string]*sync.Mutex
+
+	// prewarm keeps a spare worktree per repository (spares.go), held in
+	// spares under mu; warming counts the ones being made.
+	prewarm bool
+	spares  map[string]*spare
+	warming sync.WaitGroup
 }
 
 // Options configure the client.
@@ -68,6 +74,9 @@ type Options struct {
 	Layout           domain.Layout
 	Binary           string
 	CredentialHelper string
+	// Spares keeps one worktree per repository checked out ahead of the next
+	// create.
+	Spares bool
 }
 
 // New builds the client.
@@ -78,7 +87,7 @@ func New(opts Options) *Client {
 	}
 	return &Client{
 		layout: opts.Layout, binary: binary, credentialHelper: opts.CredentialHelper,
-		repos: map[string]*sync.Mutex{},
+		repos: map[string]*sync.Mutex{}, prewarm: opts.Spares, spares: map[string]*spare{},
 	}
 }
 
@@ -95,32 +104,25 @@ func (c *Client) lock(repo string) func() {
 	return m.Unlock
 }
 
-// Ensure makes sure the repository's mirror exists and that branches are
-// fresh in it. The first call clones; later ones fetch. A clone lands whole or
-// not at all: it is made beside the mirror and renamed into place.
-//
-// Both are shaped by what a session create waits on, the way Orca shapes its
-// own (product/versions/mvp/02-runner.md §5):
-//
-//   - The clone is blobless and checks nothing out. History arrives as commits
-//     and trees only; a file's contents are fetched the first time a checkout
-//     or a command needs them, through the same credential helper. The mirror
-//     is never edited, so a working tree there was a second copy of the
-//     repository written for nobody. On a 30k-file, 12k-commit repository this
-//     is 9s instead of 58s, and 93 MB instead of 1.1 GB.
-//   - A fetch names the branches the session is made from, with no tags and no
-//     automatic gc, instead of every ref and tag the remote has: 0.4s instead
-//     of 1.6s on the same repository, and it stays that way as the remote
-//     grows. When a named fetch fails — a base that is a tag or a commit, not
-//     a branch — the whole remote is fetched, as before.
-func (c *Client) Ensure(ctx context.Context, repo, remote string, branches ...string) error {
+// Ensure makes sure the repository's store exists and that ref is fresh in
+// it; an empty ref fetches every branch. The first call clones; later ones
+// fetch. A clone lands whole or not at all: it is made beside the store and
+// renamed into place. The store is blobless and has no working tree
+// (02-runner §5): a file's contents arrive when a checkout or a command first
+// reads them, through the same credential helper.
+func (c *Client) Ensure(ctx context.Context, repo, remote, ref string) error {
 	if err := domain.ValidateRepo(repo); err != nil {
 		return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
+	}
+	if ref != "" {
+		if err := domain.ValidateBranch(ref); err != nil {
+			return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
+		}
 	}
 	defer c.lock(repo)()
 	mirror := c.layout.Mirror(repo)
 	if _, err := os.Stat(filepath.Join(mirror, ".git")); err == nil {
-		return c.fetch(ctx, repo, mirror, branches)
+		return c.fetch(ctx, repo, mirror, ref)
 	}
 	if remote == "" {
 		return domain.ErrWorktree.WithDetail(
@@ -143,8 +145,11 @@ func (c *Client) Ensure(ctx context.Context, repo, remote string, branches ...st
 	if err != nil {
 		return domain.ErrWorktree.WithDetail("create a directory to clone into: %v", err).WithCause(err)
 	}
-	if _, err := c.run(ctx, command{timeout: fetchTimeout, repo: repo},
-		"clone", "--filter=blob:none", "--no-checkout", remote, partial); err != nil {
+	// Every branch, and the tags: a clone's refspec is what a bare `git fetch`
+	// in the session's shell uses afterwards, and commits and trees are cheap
+	// next to the blobs this leaves behind.
+	clone := append(append([]string{}, noMaintenance...), "clone", "--filter=blob:none", "--no-checkout", remote, partial)
+	if _, err := c.run(ctx, command{timeout: fetchTimeout, repo: repo}, clone...); err != nil {
 		_ = os.RemoveAll(partial)
 		return err
 	}
@@ -155,43 +160,22 @@ func (c *Client) Ensure(ctx context.Context, repo, remote string, branches ...st
 	return nil
 }
 
-// noMaintenance keeps git from packing or gc-ing the mirror on the back of a
-// session's fetch: that work is git's to do some other time, not while a
+// noMaintenance keeps git from packing or gc-ing the store on the back of a
+// session's clone or fetch: that work is git's to do some other time, not while a
 // person waits for a terminal.
 var noMaintenance = []string{"-c", "maintenance.auto=false", "-c", "gc.auto=0"}
 
-// fetch brings branches up to date in the mirror, or every ref when none is
-// named or a named one cannot be fetched on its own.
-func (c *Client) fetch(ctx context.Context, repo, mirror string, branches []string) error {
-	how := command{timeout: fetchTimeout, dir: mirror, repo: repo}
-	if refspecs := branchRefspecs(branches); len(refspecs) > 0 {
-		args := append(append([]string{}, noMaintenance...), "fetch", "--no-tags", "origin")
-		_, err := c.run(ctx, how, append(args, refspecs...)...)
-		// A refused credential or a runner that stopped waiting fails the
-		// same way whatever is fetched; only git's own "no such ref" is
-		// worth a second, wider try.
-		var prob *problem.Error
-		if err == nil || !errors.As(err, &prob) || prob.Code != domain.ErrGitCommand.Code {
-			return err
-		}
+// fetch is the one fetch a create waits on: the ref its worktree is made from,
+// or every branch when it names none.
+func (c *Client) fetch(ctx context.Context, repo, mirror, ref string) error {
+	args := append(append([]string{}, noMaintenance...), "fetch", "--no-tags", "origin")
+	if ref == "" {
+		args = append(args, "--prune")
+	} else {
+		args = append(args, "+refs/heads/"+ref+":refs/remotes/origin/"+ref)
 	}
-	_, err := c.run(ctx, how, "fetch", "--prune", "--tags", "origin")
+	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: mirror, repo: repo}, args...)
 	return err
-}
-
-// branchRefspecs maps branches onto the remote-tracking refs a worktree is cut
-// from (startPoint). A name that is not a plain branch yields nothing, so the
-// caller fetches everything instead.
-func branchRefspecs(branches []string) []string {
-	var out []string
-	for _, branch := range branches {
-		branch = strings.TrimPrefix(branch, "origin/")
-		if branch == "" || domain.ValidateBranch(branch) != nil {
-			return nil
-		}
-		out = append(out, "+refs/heads/"+branch+":refs/remotes/origin/"+branch)
-	}
-	return out
 }
 
 // sweepPartials removes clones in progress that no clone is still writing:
@@ -236,11 +220,24 @@ func (c *Client) Add(ctx context.Context, repo, path, branch, base string, newBr
 		return domain.ErrSessionExists.WithDetail("%s", found.reason)
 	case adopt:
 		return c.adopt(ctx, mirror, path, found)
+	case claimed:
+		if !newBranch {
+			return domain.ErrSessionExists.WithDetail("%s already exists, on a detached HEAD", path)
+		}
+		if err := c.checkoutSession(ctx, mirror, path, branch, base); err != nil {
+			return err
+		}
+		c.warm(ctx, repo, base)
+		return nil
 	case recreate:
 		if err := c.clear(ctx, mirror, path, found); err != nil {
 			return err
 		}
 	case vacant:
+	}
+	if newBranch && c.claim(ctx, repo, mirror, path, branch, base) {
+		c.warm(ctx, repo, base)
+		return nil
 	}
 
 	args := []string{"worktree", "add"}
@@ -252,8 +249,11 @@ func (c *Client) Add(ctx context.Context, repo, path, branch, base string, newBr
 	default:
 		args = append(args, "-b", branch, path, startPoint(base))
 	}
-	_, err = c.run(ctx, command{timeout: fetchTimeout, dir: mirror}, args...)
-	return err
+	if _, err = c.run(ctx, command{timeout: fetchTimeout, dir: mirror}, args...); err != nil {
+		return err
+	}
+	c.warm(ctx, repo, base)
+	return nil
 }
 
 // Remove deletes a worktree and prunes git's record of it.
