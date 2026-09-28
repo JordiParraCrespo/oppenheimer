@@ -136,6 +136,10 @@ export class FakeSessionStream implements SessionStream {
     // still unwritten.
   }
 
+  reconnectNow(): void {
+    // The replay never drops, so there is never a wait to cut short.
+  }
+
   dispose(): void {
     this.disposed = true;
     for (const timer of this.timers) clearTimeout(timer);

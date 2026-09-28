@@ -29,7 +29,9 @@
       "year": "{{count}}y"
     },
     "save": "Save",
-    "search": "Search"
+    "search": "Search",
+    "dismiss": "Dismiss",
+    "breadcrumb": "Breadcrumb"
   },
   "validation": {
     "title": "Validation error",
@@ -39,7 +41,15 @@
     "maxLength": "Must be at most {{max}} characters",
     "minItems": "Select at least {{min}}",
     "maxItems": "Select at most {{max}}",
-    "url": "Enter a valid URL, including https://"
+    "url": "Enter a valid URL, including https://",
+    "invalid": "This value is not valid",
+    "format": "This is not in the expected format",
+    "choice": "Choose one of the options",
+    "date": "Enter a valid date",
+    "min": "Must be at least {{min}}",
+    "max": "Must be at most {{max}}",
+    "multipleOf": "Must be a multiple of {{step}}",
+    "tooLong": "This is too long"
   },
   "errors": {
     "fallback": "Something went wrong. Please try again.",
@@ -186,7 +196,20 @@
       "AUTOMATIONS_007": "That project can't hold automations.",
       "AUTOMATIONS_008": "That run doesn't exist.",
       "INBOUND_001": "That event source isn't known.",
-      "INBOUND_002": "The delivery carries no delivery id."
+      "INBOUND_002": "The delivery carries no delivery id.",
+      "SESS_001": "The host has no record of that session.",
+      "SESS_002": "The host could not start a session with those settings.",
+      "SESS_003": "That session is not running on its host.",
+      "SESS_004": "The host already has a session in that worktree.",
+      "SESS_005": "The host could not give that image to the session.",
+      "TMUX_001": "tmux is not installed on the host. Install it, then try again.",
+      "TMUX_002": "tmux on the host refused to start the session.",
+      "GIT_001": "The host could not prepare the worktree.",
+      "GIT_002": "A git command failed on the host.",
+      "GIT_003": "The branch could not be pushed.",
+      "GIT_004": "The host cannot reach that repository. Check that the GitHub App has access to it.",
+      "GIT_005": "A git command on the host took too long and was stopped.",
+      "CONSENT_CLIENT_002": "The server did not say where to send you next."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -196,7 +219,8 @@
     "unexpected": {
       "title": "This screen could not be drawn",
       "retry": "Try again"
-    }
+    },
+    "code": "Code: {{code}}"
   },
   "auth": {
     "email": "Email",
@@ -249,7 +273,8 @@
       "sentMessage": "We sent a password reset link to <address>{{email}}</address>. It expires in 30 minutes.",
       "emailLabel": "Work email",
       "resend": "Resend link",
-      "differentAddress": "Use a different address"
+      "differentAddress": "Use a different address",
+      "resendFailed": "Could not send the email again. Try again in a moment."
     },
     "resetPassword": {
       "title": "Set a new password",
@@ -355,7 +380,8 @@
       "deleteHint": "Delete this project",
       "deleteBlocked_one": "Move or delete its {{count}} session first",
       "deleteBlocked_other": "Move or delete its {{count}} sessions first",
-      "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted."
+      "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted.",
+      "loadFailed": "Could not load this project."
     },
     "deleteDialog": {
       "title": "Delete {{name}}?",
@@ -399,7 +425,8 @@
       "progressFailed": "Could not load how the start is going.",
       "codes": {
         "SESS_002": "This host makes sessions with one repository."
-      }
+      },
+      "details": "Details from the host: {{detail}}"
     },
     "group": {
       "working": "Working",
@@ -427,7 +454,8 @@
         "empty": "No host matches.",
         "loading": "Loading hosts…",
         "add": "Add host…",
-        "offline": "Offline"
+        "offline": "Offline",
+        "failed": "Could not load your hosts."
       },
       "project": {
         "label": "Project",
@@ -436,7 +464,8 @@
         "empty": "No project matches.",
         "loading": "Loading projects…",
         "add": "New project…",
-        "noRepositories": "No repositories"
+        "noRepositories": "No repositories",
+        "failed": "Could not load your projects."
       },
       "repository": {
         "label": "Repositories",
@@ -450,7 +479,8 @@
         "changeBranch": "Change branch",
         "manage": "Manage repository access",
         "noApp": "This deployment has no GitHub App, so there are no repositories to pick.",
-        "archived": "Archived"
+        "archived": "Archived",
+        "failed": "Could not load your repositories."
       },
       "branch": {
         "label": "Branch",
@@ -511,6 +541,12 @@
         "hostOffline": "The image was not sent: the host is offline.",
         "failedTitle": "The image did not reach the session",
         "dismiss": "Dismiss"
+      },
+      "retryNow": "Retry now",
+      "retry": "Try again",
+      "ended": {
+        "forbidden": "You do not have access to this session's terminal.",
+        "refused": "The host refused to open this terminal."
       }
     },
     "sidebar": {
@@ -532,7 +568,8 @@
       "moveTitle": "Move to project",
       "moveNone": "No other project holds this session's repository.",
       "delete": "Delete",
-      "writeFailed": "That change did not land. Try again."
+      "writeFailed": "That change did not land. Try again.",
+      "loadFailed": "Could not load your sessions."
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",
@@ -587,7 +624,8 @@
       "noProjects": "No project yet. Make one from New session, and its automations gather here.",
       "noRuns": "No runs yet.",
       "running": "Running",
-      "paused": "Paused"
+      "paused": "Paused",
+      "loadFailed": "Could not load your automations."
     },
     "page": {
       "tabs": {
@@ -598,7 +636,8 @@
       "empty": "No automations yet. An automation starts a session on a schedule or when something happens on GitHub.",
       "runsEmpty": "No runs yet. Each run appears here with the session it started.",
       "loadFailed": "Automations could not be loaded.",
-      "actionFailed": "That did not go through."
+      "actionFailed": "That did not go through.",
+      "actionFailedFor": "“{{name}}” was not updated"
     },
     "status": {
       "active": "Active",
@@ -860,8 +899,14 @@
       "save": "Save",
       "create": "Create automation",
       "saveFailed": "The automation could not be saved.",
-      "forProject": "For {{name}}."
-    }
+      "forProject": "For {{name}}.",
+      "noMatch": "No match for “{{query}}”.",
+      "chooseRepositories": "Choose repositories…",
+      "chooseAgent": "Choose an agent…",
+      "chooseModel": "Choose a model…"
+    },
+    "skipReasonOther": "Skipped",
+    "pausedReasonOther": "Paused. Triggers are ignored until it is resumed."
   },
   "hosts": {
     "pairing": {
@@ -924,7 +969,9 @@
       "removeTitle": "Remove {{name}}?",
       "removeRunning_one": "{{count}} session is running on {{name}}. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
       "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
-      "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused."
+      "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
+      "renameFailed": "Could not rename this host. Try again.",
+      "removeFailed": "Could not remove this host. Try again."
     }
   },
   "settings": {
@@ -1069,7 +1116,8 @@
     "sidebarTitle": "Navigation",
     "sidebarDescription": "Your sessions, your automations and your account.",
     "settings": "Settings",
-    "automations": "Automations"
+    "automations": "Automations",
+    "logOutFailed": "Could not log you out. Try again."
   },
   "control": {
     "accessDeniedTitle": "Control plane access required",
@@ -1338,7 +1386,6 @@
     "invalidTitle": "This link has expired",
     "invalidDescription": "Start the connection again from the application that sent you here.",
     "backToSessions": "Back to sessions",
-    "noRedirect": "The server did not say where to send you next.",
     "sensitiveScope": "Sensitive",
     "unknownClient": "An application",
     "failed": "That did not go through. Try again."
@@ -1410,7 +1457,8 @@
         "noWorkspace": "No workspace yet",
         "noGithub": "Not connected",
         "noHost": "No host yet",
-        "doneLabel": "Done"
+        "doneLabel": "Done",
+        "failed": "Could not load this. Reload the page to try again."
       }
     }
   },

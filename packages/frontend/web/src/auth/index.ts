@@ -1,3 +1,4 @@
+export { AuthFormFailure } from './components/auth-form-failure';
 export { AuthLayout, type AuthLayoutProps } from './components/auth-layout';
 export * from './components/auth-primitives';
 export { BrandLogo } from './components/brand-logo';

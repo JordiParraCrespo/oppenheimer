@@ -63,3 +63,15 @@ describe('toAppError', () => {
     expect(toAppError(original, FETCH_FAILED)).toBe(original);
   });
 });
+
+describe('toAppError on a body that is not a problem document', () => {
+  it("keeps the code Better Auth's `{ code, message }` body names, and the status", () => {
+    const error = toAppError(
+      { status: 400, body: { code: 'INVALID_CONSENT', message: 'Bad code' } },
+      FETCH_FAILED,
+    );
+
+    expect(error.code).toBe('INVALID_CONSENT');
+    expect(error.status).toBe(400);
+  });
+});

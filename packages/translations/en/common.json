@@ -28,5 +28,7 @@
     "year": "{{count}}y"
   },
   "save": "Save",
-  "search": "Search"
+  "search": "Search",
+  "dismiss": "Dismiss",
+  "breadcrumb": "Breadcrumb"
 }

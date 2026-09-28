@@ -56,8 +56,8 @@ export const Route = createFileRoute('/_authenticated')({
     }
   },
   component: AuthenticatedShell,
-  // Inside the shell, not over it: a 404 or a thrown render keeps the sidebar,
-  // so the reader is still in the product with their sessions one click away.
+  // A 404 keeps the shell. A render error here replaces it, so the panes have
+  // the router's `defaultErrorComponent`; this catches what the shell throws.
   errorComponent: RouteError,
   notFoundComponent: NotFoundScreen,
 });

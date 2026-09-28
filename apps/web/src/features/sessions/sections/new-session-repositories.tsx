@@ -3,7 +3,7 @@ import {
   useInstallations,
   useRepositoryBranchesFor,
 } from '@oppenheimer/frontend-consumer/react';
-import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
+import { useDeploymentCapabilities, useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { RepositoryBranchSelect } from '../components/repository-branch-select';
@@ -25,6 +25,7 @@ export function NewSessionRepositories() {
   const { control } = useNewSessionDraft();
   const { field } = useController({ control, name: 'scope' });
 
+  const resolveError = useErrorMessage();
   const installations = useInstallations();
   const installUrl = useDeploymentCapabilities({
     select: (deployment) => deployment.github_app_install_url,
@@ -49,6 +50,14 @@ export function NewSessionRepositories() {
       manageUrl={installUrl.data ?? null}
       loading={installations.isPending || repositories.isPending || installUrl.isPending}
       branchesLoading={branches.isPending}
+      failure={
+        (installations.error ?? repositories.error)
+          ? resolveError(
+              installations.error ?? repositories.error,
+              t('sessions.new.repository.failed'),
+            ).message
+          : undefined
+      }
       variant="tab"
     />
   );

@@ -151,6 +151,16 @@ export function useSession(
 }
 
 /**
+ * Refetch one session now. Its detail query has no polling of its own once it
+ * is live, so a screen that learns the row changed under it — a terminal
+ * whose stream ended — asks here rather than reaching into the query cache.
+ */
+export function useInvalidateSession(id: string): () => void {
+  const queryClient = useQueryClient();
+  return () => void queryClient.invalidateQueries({ queryKey: sessionsKeys.detail(id) });
+}
+
+/**
  * How a session's start is going: the steps the host reported, and its reason
  * when the start failed.
  *

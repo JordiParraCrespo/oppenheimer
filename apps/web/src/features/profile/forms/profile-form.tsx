@@ -8,7 +8,11 @@ import {
   SettingsRow,
   SettingsSaveRow,
 } from '@oppenheimer/design-system-web';
-import { useZodResolver } from '@oppenheimer/frontend-web';
+import {
+  type ResolvedErrorMessage,
+  useServerFieldErrors,
+  useZodResolver,
+} from '@oppenheimer/frontend-web';
 import {
   type UpdateProfileDto,
   updateProfileSchema,
@@ -57,7 +61,7 @@ export function ProfileForm({
   /** The last save went through; shown as Saved while nothing is edited. */
   saved: boolean;
   /** The resolved failure message, if the last save failed. */
-  error?: string;
+  error?: ResolvedErrorMessage;
   onSubmit: (dto: UpdateProfileDto) => void;
   onDiscard: () => void;
   /** The card's rows above the fields, which save on their own. */
@@ -68,6 +72,8 @@ export function ProfileForm({
   // callbacks `register` hands out, so a reset — Discard, or the saved
   // profile arriving — would change the form's values and not the inputs.
   const {
+    setError,
+    getValues,
     control,
     handleSubmit,
     reset,
@@ -76,6 +82,8 @@ export function ProfileForm({
     resolver: useZodResolver(profileFormSchema),
     values,
   });
+  // Fields the server refused are marked on the fields; the alert keeps the rest.
+  const { showAlert } = useServerFieldErrors({ setError, getValues }, error);
 
   const submit = handleSubmit((form) => {
     const parsed = profileFormSchema.parse(form);
@@ -152,10 +160,10 @@ export function ProfileForm({
           )}
         />
       </SettingsRow>
-      {error ? (
+      {error && showAlert ? (
         <div className="border-t border-border-subtle px-5 py-3">
           <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>{error.message}</AlertDescription>
           </Alert>
         </div>
       ) : null}

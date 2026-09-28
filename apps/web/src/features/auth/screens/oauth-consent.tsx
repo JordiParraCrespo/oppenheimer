@@ -11,11 +11,11 @@ import {
   CardTitle,
 } from '@oppenheimer/design-system-web';
 import { usePermissionCatalog } from '@oppenheimer/frontend-consumer/react';
-import { useProfile } from '@oppenheimer/frontend-core/react';
+import { useErrorMessage, useProfile } from '@oppenheimer/frontend-core/react';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ConsentSearch, describeScopes, readError } from '@/features/auth/lib/consent';
+import { type ConsentSearch, describeScopes, submitConsent } from '@/features/auth/lib/consent';
 
 /**
  * OAuth consent screen.
@@ -30,38 +30,29 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
   const { data: user } = useProfile();
 
   const [pending, setPending] = useState<'accept' | 'deny' | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  const resolveError = useErrorMessage();
 
   // The catalog comes from the API rather than the shared package: it is the
   // deployment's own answer, and it keeps this screen correct if the two drift.
   const catalog = usePermissionCatalog();
   const { scopes, unknown } = describeScopes(search.scope, catalog.data?.groups ?? []);
 
-  async function respond(accept: boolean) {
+  function respond(accept: boolean) {
+    if (!search.consent_code) return;
     setPending(accept ? 'accept' : 'deny');
     setError(null);
 
-    try {
-      const response = await fetch('/api/auth/oauth2/consent', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ accept, consent_code: search.consent_code }),
-      });
-
-      if (!response.ok) throw new Error((await readError(response)) ?? t('consent.failed'));
-
-      const { redirectURI } = (await response.json()) as {
-        redirectURI?: string;
-      };
-      if (!redirectURI) throw new Error(t('consent.noRedirect'));
-
-      // Hand control back to the OAuth client.
-      window.location.href = redirectURI;
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-      setPending(null);
-    }
+    submitConsent(accept, search.consent_code).then(
+      (redirectURI) => {
+        // Hand control back to the OAuth client.
+        window.location.href = redirectURI;
+      },
+      (cause: unknown) => {
+        setError(cause);
+        setPending(null);
+      },
+    );
   }
 
   if (!search.consent_code) {
@@ -87,11 +78,13 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
         </CardHeader>
 
         <CardContent className="flex flex-col gap-4">
-          {error && (
+          {error ? (
             <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>
+                {resolveError(error, t('consent.failed')).message}
+              </AlertDescription>
             </Alert>
-          )}
+          ) : null}
 
           <div className="divide-y rounded-md border">
             {scopes.length === 0 && (

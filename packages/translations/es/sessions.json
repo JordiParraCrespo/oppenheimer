@@ -31,7 +31,8 @@
     "progressFailed": "No se pudo cargar el progreso del inicio.",
     "codes": {
       "SESS_002": "Este host crea sesiones con un solo repositorio."
-    }
+    },
+    "details": "Detalles del host: {{detail}}"
   },
   "group": {
     "working": "Trabajando",
@@ -59,7 +60,8 @@
       "empty": "Ningún host coincide.",
       "loading": "Cargando hosts…",
       "add": "Añadir host…",
-      "offline": "Desconectado"
+      "offline": "Desconectado",
+      "failed": "No se han podido cargar tus hosts."
     },
     "project": {
       "label": "Proyecto",
@@ -68,7 +70,8 @@
       "empty": "Ningún proyecto coincide.",
       "loading": "Cargando proyectos…",
       "add": "Nuevo proyecto…",
-      "noRepositories": "Sin repositorios"
+      "noRepositories": "Sin repositorios",
+      "failed": "No se han podido cargar tus proyectos."
     },
     "repository": {
       "label": "Repositorios",
@@ -82,7 +85,8 @@
       "changeBranch": "Cambiar de rama",
       "manage": "Gestionar el acceso a repositorios",
       "noApp": "Este despliegue no tiene la GitHub App, así que no hay repositorios que elegir.",
-      "archived": "Archivado"
+      "archived": "Archivado",
+      "failed": "No se han podido cargar tus repositorios."
     },
     "branch": {
       "label": "Rama",
@@ -143,6 +147,12 @@
       "hostOffline": "La imagen no se envió: el equipo está desconectado.",
       "failedTitle": "La imagen no llegó a la sesión",
       "dismiss": "Cerrar"
+    },
+    "retryNow": "Reintentar ahora",
+    "retry": "Intentar de nuevo",
+    "ended": {
+      "forbidden": "No tienes acceso al terminal de esta sesión.",
+      "refused": "El host se ha negado a abrir este terminal."
     }
   },
   "sidebar": {
@@ -164,7 +174,8 @@
     "moveTitle": "Mover a un proyecto",
     "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
     "delete": "Eliminar",
-    "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo."
+    "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
+    "loadFailed": "No se han podido cargar tus sesiones."
   },
   "deleteSession": {
     "title": "¿Eliminar “{{name}}”?",

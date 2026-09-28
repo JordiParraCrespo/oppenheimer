@@ -176,6 +176,16 @@ export function OnboardingWorkspaceScreen() {
         </Alert>
       )}
 
+      {/* Leaving signs out first; a sign-out that failed leaves the reader here,
+          signed in, and says so rather than doing nothing. */}
+      {logout.error ? (
+        <Alert variant="destructive">
+          <AlertDescription>
+            {resolveError(logout.error, t('nav.logOutFailed')).message}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
       <Button
         size="lg"
         block

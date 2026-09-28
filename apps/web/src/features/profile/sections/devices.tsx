@@ -1,5 +1,6 @@
 import {
   Alert,
+  AlertAction,
   AlertDescription,
   Badge,
   Button,
@@ -14,7 +15,7 @@ import {
   useRevokeOtherProfileSessions,
   useRevokeProfileSession,
 } from '@oppenheimer/frontend-consumer/react';
-import { shareEntities, useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { lastFailure, shareEntities, useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { notifySuccess } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { DeviceLastSeen } from '../components/device-last-seen';
@@ -43,7 +44,7 @@ export function DevicesSection() {
   const revokeOthers = useRevokeOtherProfileSessions({
     onSuccess: () => notifySuccess(t('toasts.otherDevicesSignedOut')),
   });
-  const failure = revoke.error ?? revokeOthers.error;
+  const failure = lastFailure([revoke, revokeOthers]);
   // This device first: it is the one row with nothing to do.
   const sorted = [...(devices.data ?? [])].sort((a, b) => Number(b.current) - Number(a.current));
 
@@ -81,12 +82,17 @@ export function DevicesSection() {
               )}
             </SettingsRow>
           ))}
-          {failure ? (
+          {failure.error ? (
             <div className="border-t border-border-subtle px-5 py-3">
               <Alert variant="destructive">
                 <AlertDescription>
-                  {resolveError(failure, t('settings.devices.revokeFailed')).message}
+                  {resolveError(failure.error, t('settings.devices.revokeFailed')).message}
                 </AlertDescription>
+                <AlertAction>
+                  <Button variant="ghost" size="sm" onClick={failure.dismiss}>
+                    {t('common.dismiss')}
+                  </Button>
+                </AlertAction>
               </Alert>
             </div>
           ) : null}

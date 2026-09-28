@@ -83,18 +83,28 @@ password: z.string().min(8),
 email: z.string().email('Invalid email address'),
 ```
 
-The exception is a `refine` whose meaning cannot be recovered from the issue
-code (an IP-or-CIDR check, say). Those keep their message and fall through
-untranslated by design.
+A `refine` has no issue code worth reading (`custom`), so it names its message
+through params instead of stating one:
+
+```ts
+.refine((value) => byteLength(value) <= MAX, { params: { i18nKey: 'validation.tooLong' } })
+```
+
+The map translates the key, interpolating any other params; a `refine` that
+names no key reads as `validation.invalid`. Every issue code has a case, so
+nothing reaches a form in Zod's English. The one remaining exception is a
+check that states its own message (the IP-or-CIDR refine on API tokens): Zod
+never asks the map about it.
 
 ## Adding a message
 
-`createZodErrorMap` (in `@oppenheimer/frontend/validation`) maps a Zod issue code onto
+`createZodErrorMap` (in `@oppenheimer/frontend-core/validation` (`packages/frontend/core/src/validation/`)) maps a Zod issue code onto
 a `validation.*` translation key. To cover a new issue code:
 
 1. Add the case to `createZodErrorMap`.
-2. Add the key to `ValidationMessageKey` in the same file.
-3. Add the message to **every** locale in `packages/translations/*/index.json`.
+2. Add the key to `VALIDATION_MESSAGE_KEYS` in the same file.
+3. Add the message to **every** locale in `packages/translations/*/validation.json`,
+   then run `pnpm --filter @oppenheimer/translations assemble`.
 
 `TranslateFn` is narrow on purpose — the app hands it a `t` typed over the
 whole catalog, so a key you forget to add is a compile error rather than a raw

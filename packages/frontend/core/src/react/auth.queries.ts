@@ -13,6 +13,7 @@ import { useOppenheimerApp } from './context';
 import { featureFlagsQueryOptions } from './feature-flags.queries';
 import { withCacheOnSuccess } from './mutations';
 import { reconcileCacheOwner } from './persistence';
+import { expireSession } from './query-client';
 import { authKeys } from './query-keys';
 import { usersKeys } from './users.queries';
 
@@ -100,6 +101,17 @@ export function useLogout(options?: Omit<UseMutationOptions<void, Error, void>, 
       queryClient.clear();
     }),
   });
+}
+
+/**
+ * End a session the server has stopped honouring, from something that is not a
+ * query: a terminal's stream closing as `unauthorized`, say. The query client
+ * does the same for every 401 it sees; this is that path for the rest.
+ */
+export function useExpireSession(): () => void {
+  const app = useOppenheimerApp();
+  const queryClient = useQueryClient();
+  return () => expireSession(app, queryClient);
 }
 
 export function useForgotPassword(

@@ -5,6 +5,7 @@ import {
   useRunAutomation,
   useSetAutomationPaused,
 } from '@oppenheimer/frontend-consumer/react';
+import { lastFailure } from '@oppenheimer/frontend-core/react';
 import { notifySuccess } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +19,9 @@ interface Target {
 /**
  * What a row menu and a page header do to an automation: Run now, pause or
  * resume, duplicate, delete. One hook for both so they cannot drift, and so
- * the surface shows the one failure the last action left.
+ * the surface shows the one failure the last action left — and which
+ * automation it was, so a list can name it. A later action that succeeds
+ * clears it, and `dismiss` does too.
  *
  * Every action toasts when it lands: the table's row changes somewhere in a
  * long list, and duplicate and delete leave the page they started on. Run now
@@ -60,7 +63,12 @@ export function useAutomationActions(options?: {
   });
   const remove = useDeleteAutomation();
 
-  const failure = run.error ?? pause.error ?? duplicate.error ?? remove.error;
+  const failure = lastFailure([run, pause, duplicate, remove]);
+  // The automation the failed action was for: each mutation's own variables,
+  // in the order the list above names them.
+  const failedId = [run.variables?.id, pause.variables?.id, duplicate.variables, remove.variables][
+    failure.index
+  ];
 
   // The run's session, once it has one; the Runs tab while it is still queued.
   function openRun(started: AutomationRunEntity) {
@@ -89,6 +97,8 @@ export function useAutomationActions(options?: {
     running: run.isPending,
     removing: remove.isPending,
     removeFailure: remove.error,
-    failure,
+    failure: failure.error,
+    failedId,
+    dismissFailure: failure.dismiss,
   };
 }

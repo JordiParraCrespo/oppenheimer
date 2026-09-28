@@ -1,5 +1,6 @@
 import {
   Alert,
+  AlertAction,
   AlertDescription,
   Button,
   DropdownMenu,
@@ -28,7 +29,7 @@ import { useTranslation } from 'react-i18next';
 import { NextRunCountdown } from '../components/next-run-countdown';
 import { TriggerGlyph } from '../components/trigger-glyph';
 import { useAutomationActions } from '../hooks/use-automation-actions';
-import { automationDot, automationSubline } from '../lib/automation-view';
+import { automationDot, automationSubline, pausedReasonText } from '../lib/automation-view';
 import { automationTriggerText } from '../lib/trigger-text';
 
 /**
@@ -56,7 +57,7 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
 
   return (
     <PageHeader>
-      <PageHeaderCrumbs>
+      <PageHeaderCrumbs aria-label={t('common.breadcrumb')}>
         <Link to="/automations">{t('automations.detail.crumb')}</Link>
         <span>/</span>
         <PageHeaderHere>{automation.name}</PageHeaderHere>
@@ -166,7 +167,7 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
             </Button>
           }
         >
-          {t(`automations.pausedReason.${automation.pausedReason ?? 'user'}`)}
+          {pausedReasonText(automation.pausedReason, t)}
         </PageHeaderNote>
       ) : null}
       {actions.failure ? (
@@ -174,6 +175,11 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
           <AlertDescription>
             {resolveError(actions.failure, t('automations.page.actionFailed')).message}
           </AlertDescription>
+          <AlertAction>
+            <Button variant="ghost" size="sm" onClick={actions.dismissFailure}>
+              {t('common.dismiss')}
+            </Button>
+          </AlertAction>
         </Alert>
       ) : null}
     </PageHeader>

@@ -1,6 +1,7 @@
 import { HostCard } from '@oppenheimer/design-system-web';
 import type { HostEntity } from '@oppenheimer/frontend-consumer';
 import { useRenameHost } from '@oppenheimer/frontend-consumer/react';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { notifySuccess } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +23,7 @@ export function HostRow({ host }: { host: HostEntity }) {
   const { t } = useTranslation();
   const [renaming, setRenaming] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const resolveError = useErrorMessage();
   const rename = useRenameHost({
     onSuccess: (renamed) => {
       setRenaming(false);
@@ -52,8 +54,16 @@ export function HostRow({ host }: { host: HostEntity }) {
             <RenameHostForm
               defaultName={host.name}
               pending={rename.isPending}
+              error={
+                rename.error
+                  ? resolveError(rename.error, t('hosts.settings.renameFailed')).message
+                  : undefined
+              }
               onSubmit={(name) => rename.mutate({ id: host.id, name })}
-              onCancel={() => setRenaming(false)}
+              onCancel={() => {
+                rename.reset();
+                setRenaming(false);
+              }}
             />
           ) : undefined
         }

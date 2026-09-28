@@ -70,7 +70,7 @@ export function ResetPasswordScreen({
 
       <ResetPasswordForm
         isPending={isPending}
-        error={error ? resolveError(error, t('auth.resetPassword.error')).message : undefined}
+        error={error ? resolveError(error, t('auth.resetPassword.error')) : undefined}
         onSubmit={(values) =>
           mutate({ token, password: values.password }, { onSuccess: () => setDone(true) })
         }

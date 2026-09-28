@@ -21,7 +21,9 @@ export const createOrganizationSchema = z.object({
     .string()
     .min(2)
     .max(48)
-    .regex(/^[a-z0-9-]+$/, 'Slug may only contain lowercase letters, numbers and hyphens')
+    // No message: Zod 3's `regex` takes no params, so a form words it from the
+    // issue code (`validation.format`) rather than from English pinned here.
+    .regex(/^[a-z0-9-]+$/)
     .optional(),
   logo: z.string().url().optional(),
 });

@@ -1,5 +1,6 @@
 import { dateFormatter } from '@oppenheimer/frontend-web';
 import { wallTimeAt } from '@oppenheimer/shared/automations';
+import type { TFunction } from 'i18next';
 
 /**
  * Time as the automations pages print it. Every instant arrives in UTC and is
@@ -81,13 +82,13 @@ export function shortWait(ms: number): string {
   return hours < 48 ? `${hours}h` : `${Math.round(hours / 24)}d`;
 }
 
-/** An age: "now", "5m", "3h", "2d". */
-export function age(ms: number): string {
+/** An age: "now", "5m", "3h", "2d", in the reader's language (`common.relative`). */
+export function age(ms: number, t: TFunction): string {
   const minutes = ms / MINUTE;
-  if (minutes < 1) return 'now';
-  if (minutes < 60) return `${Math.round(minutes)}m`;
-  if (minutes < 1440) return `${Math.round(minutes / 60)}h`;
-  return `${Math.round(minutes / 1440)}d`;
+  if (minutes < 1) return t('common.relative.now');
+  if (minutes < 60) return t('common.relative.minute', { count: Math.round(minutes) });
+  if (minutes < 1440) return t('common.relative.hour', { count: Math.round(minutes / 60) });
+  return t('common.relative.day', { count: Math.round(minutes / 1440) });
 }
 
 /** "2h ago" for the trigger preview's matches, "5m ago" under an hour. */

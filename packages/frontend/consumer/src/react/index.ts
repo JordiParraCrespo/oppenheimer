@@ -91,6 +91,7 @@ export {
   sessionsKeys,
   useCloseSession,
   useCreateSession,
+  useInvalidateSession,
   useMoveSession,
   usePasteSessionImage,
   useRenameSession,

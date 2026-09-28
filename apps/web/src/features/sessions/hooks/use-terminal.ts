@@ -22,6 +22,12 @@ import { mountSessionTerminal } from '../lib/terminal-runtime';
  * survive StrictMode's remount: the cleanup closes it, and the terminal that
  * mounts next subscribes to something already shut, which renders blank in
  * development and nowhere else. `createStream` must be a stable reference.
+ *
+ * `retryNow` is the reader's way past a wait: while the stream is between
+ * reconnects it dials at once, and after an end it opens a new stream. The
+ * browser coming back online, or the tab becoming visible again, does the
+ * first on its own — a laptop that wakes should not sit out a thirty-second
+ * rung of the ladder.
  */
 export function useTerminal(
   createStream: () => SessionStream,
@@ -33,6 +39,11 @@ export function useTerminal(
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [status, setStatus] = useState<StreamStatus>('connecting');
+  // Why the stream ended, if it has; cleared by a retry that opens a new one.
+  const [ended, setEnded] = useState<StreamEnd | null>(null);
+  // Bumped to open a new stream after an end.
+  const [generation, setGeneration] = useState(0);
+  const streamRef = useRef<SessionStream | null>(null);
   // Read through a ref so a new callback identity never rebuilds the terminal.
   // Written after commit, not during render: a ref written in render is one of
   // the things the React Compiler silently refuses to compile.
@@ -44,25 +55,50 @@ export function useTerminal(
   });
   const agentWindow = options.agentWindow ?? false;
 
+  // `generation` is read only to re-run: a retry after an end is a new stream.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: generation is the re-run key
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const stream = createStream();
+    streamRef.current = stream;
     const unmount = mountSessionTerminal(container, stream, {
       agentWindow,
       onImage: (image) => onImageRef.current?.(image),
     });
     const offStatus = stream.onStatus(setStatus);
-    const offEnd = stream.onEnd((reason) => onEndRef.current?.(reason));
+    const offEnd = stream.onEnd((reason) => {
+      setEnded(reason);
+      onEndRef.current?.(reason);
+    });
+    // The browser's connectivity and the tab's visibility: either coming back
+    // is a reason to stop waiting on the ladder.
+    const wake = () => {
+      if (document.visibilityState === 'visible') stream.reconnectNow();
+    };
+    window.addEventListener('online', wake);
+    document.addEventListener('visibilitychange', wake);
 
     return () => {
+      window.removeEventListener('online', wake);
+      document.removeEventListener('visibilitychange', wake);
       offStatus();
       offEnd();
       unmount();
       stream.dispose();
+      if (streamRef.current === stream) streamRef.current = null;
     };
-  }, [createStream, agentWindow]);
+  }, [createStream, agentWindow, generation]);
 
-  return { containerRef, status };
+  const retryNow = () => {
+    if (ended) {
+      setEnded(null);
+      setGeneration((current) => current + 1);
+      return;
+    }
+    streamRef.current?.reconnectNow();
+  };
+
+  return { containerRef, status, ended, retryNow };
 }

@@ -38,8 +38,8 @@ import {
   useSessions,
   useUpdateProject,
 } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { notifySuccess, useZodResolver } from '@oppenheimer/frontend-web';
+import { lastFailure, useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { notifySuccess, useServerFieldErrors, useZodResolver } from '@oppenheimer/frontend-web';
 import { CODING_AGENT_IDS, CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import { createProjectSchema } from '@oppenheimer/shared/schemas/project';
 import { useState } from 'react';
@@ -94,6 +94,7 @@ export function ProjectDialog({
   onSaved: (project: ProjectEntity) => void;
 }) {
   const { t } = useTranslation();
+  const resolveError = useErrorMessage();
   const projects = useProjects();
   const project = projectId ? projects.data?.find((row) => row.id === projectId) : undefined;
 
@@ -108,6 +109,13 @@ export function ProjectDialog({
             <div className="pb-7">
               {projects.isPending ? (
                 <Skeleton className="h-30 w-full" />
+              ) : projects.isError ? (
+                // A failed read is not a deleted project.
+                <Alert variant="destructive">
+                  <AlertDescription>
+                    {resolveError(projects.error, t('projects.dialog.loadFailed')).message}
+                  </AlertDescription>
+                </Alert>
               ) : (
                 <FieldDescription>{t('projects.dialog.gone')}</FieldDescription>
               )}
@@ -195,17 +203,28 @@ function ProjectForm({
     },
   });
   const pending = create.isPending || update.isPending;
-  const failure = create.error ?? update.error;
+  const saveFailure = lastFailure([create, update]).error;
+  const failure = saveFailure
+    ? resolveError(
+        saveFailure,
+        t(editing ? 'projects.dialog.saveFailed' : 'projects.dialog.failed'),
+      )
+    : null;
 
   const {
     register,
     handleSubmit,
     control,
+    setError,
+    getValues,
     formState: { errors },
   } = useForm<NameValues>({
     resolver: useZodResolver(nameSchema),
     defaultValues: { name: project?.name ?? '' },
   });
+  // A name the server refused is marked on the name field itself, and the
+  // alert stays only for what the fields cannot say.
+  const { showAlert } = useServerFieldErrors({ setError, getValues }, failure);
   // The footer's Save reads the name as it is typed; this dialog is the lowest
   // component that shows the answer, so the subscription is here.
   const name = useWatch({ control, name: 'name' });
@@ -285,16 +304,9 @@ function ProjectForm({
 
             <DialogBody>
               <div className="flex flex-col gap-5.5">
-                {failure ? (
+                {failure && showAlert ? (
                   <Alert variant="destructive">
-                    <AlertDescription>
-                      {
-                        resolveError(
-                          failure,
-                          t(editing ? 'projects.dialog.saveFailed' : 'projects.dialog.failed'),
-                        ).message
-                      }
-                    </AlertDescription>
+                    <AlertDescription>{failure.message}</AlertDescription>
                   </Alert>
                 ) : null}
 
