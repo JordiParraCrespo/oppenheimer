@@ -6,7 +6,9 @@ import { NewSessionForm } from '../sections/new-session-form';
  *
  * The column is the export's `.op-newsession__inner` — 720px centred, 48px of
  * air over 32px of gutter — and what lands in it is the chip row and the
- * composer (`product/versions/mvp/05-screens.md`).
+ * composer (`product/versions/mvp/05-screens.md`). It sits on the grey
+ * `canvas-recessed` ground, as `.op-newsession` does, so the white composer
+ * reads as the one surface; an open session's terminal is white edge to edge.
  *
  * The screen composes and nothing else. Every read this pane makes belongs to
  * the section below it, which is the component that renders the result.
@@ -15,7 +17,7 @@ export function NewSessionScreen() {
   const { t } = useTranslation();
 
   return (
-    <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas">
+    <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas-recessed">
       <div className="m-auto flex w-full max-w-[720px] flex-col gap-4.5 px-8 py-12">
         <div>
           <h1 className="font-display text-[32px] leading-[1.1] font-semibold tracking-[-0.021em] text-fg">
