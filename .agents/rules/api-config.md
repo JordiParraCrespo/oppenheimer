@@ -146,7 +146,11 @@ All API endpoints need `@ApiOperation`, `@ApiResponse`, and `@ApiTags` decorator
 ## Validation
 
 - Request DTOs use Zod schemas from `packages/shared`
-- All user input is sanitized via `SanitizePipe` (strips HTML) and validated via `ZodValidationPipe`
+- All user input is sanitized via `SanitizePipe` (strips HTML) and validated via
+  `nestjs-zod`'s `ZodValidationPipe`; both are registered globally in `apps/api/src/main.ts`
+- Paginated list queries extend `paginationSchema` from `@oppenheimer/shared` (its bounds are
+  `PAGINATION`); the controller builds the response `meta` with `toPageMeta` from
+  `@oppenheimer/backend-core`
 
 ## Rate limiting
 

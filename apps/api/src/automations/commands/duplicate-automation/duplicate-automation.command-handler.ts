@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { AUTOMATION_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
@@ -25,9 +25,10 @@ export class DuplicateAutomationCommandHandler
 
   async execute(command: DuplicateAutomationCommand): Promise<AggregateID> {
     const { scope } = command;
-    const found = await this.automations.findOneById(scope, command.automationId);
-    if (found.isNone()) throw new AppError(AutomationErrors.NOT_FOUND);
-    const original = found.unwrap();
+    const original = requireFound(
+      await this.automations.findOneById(scope, command.automationId),
+      AutomationErrors.NOT_FOUND,
+    );
     const { id: _id, number: _number, createdAt: _createdAt, ...revision } = original.revision;
     const copy = AutomationEntity.createNew({
       organizationId: original.organizationId,

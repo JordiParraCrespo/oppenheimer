@@ -227,9 +227,12 @@ export class UpdateUserCommandHandler implements ICommandHandler<
     @Inject(USER_REPOSITORY) private readonly repo: UserRepositoryPort,
   ) {}
   async execute(command: UpdateUserCommand): Promise<AggregateID> {
-    const found = await this.repo.findOneById(command.userId);
-    if (found.isNone()) throw new AppError(UserErrors.NOT_FOUND);
-    const user = found.unwrap();
+    // requireFound (@oppenheimer/backend-core): the value, or the catalog error.
+    const user = requireFound(
+      await this.repo.findOneById(command.userId),
+      UserErrors.NOT_FOUND,
+      { detail: `No user with id ${command.userId}` },
+    );
     user.updateProfile({ ...command });
     await this.repo.save(user);
     return user.id; // commands return only the id

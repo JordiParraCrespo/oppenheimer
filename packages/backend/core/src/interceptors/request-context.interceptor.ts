@@ -5,8 +5,8 @@ import {
   Injectable,
   type NestInterceptor,
 } from '@nestjs/common';
+import { RequestContextService } from '@oppenheimer/backend-ddd';
 import { Observable } from 'rxjs';
-import { RequestContextService } from '../services/request-context.service';
 
 @Injectable()
 export class RequestContextInterceptor implements NestInterceptor {

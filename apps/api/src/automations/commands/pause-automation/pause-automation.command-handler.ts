@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { AUTOMATION_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
@@ -18,9 +18,10 @@ export class PauseAutomationCommandHandler
   ) {}
 
   async execute(command: PauseAutomationCommand): Promise<AggregateID> {
-    const found = await this.automations.findOneById(command.scope, command.automationId);
-    if (found.isNone()) throw new AppError(AutomationErrors.NOT_FOUND);
-    const automation = found.unwrap();
+    const automation = requireFound(
+      await this.automations.findOneById(command.scope, command.automationId),
+      AutomationErrors.NOT_FOUND,
+    );
     automation.pause('user', new Date());
     if ((await this.automations.save(automation, automation.version)) === 'conflict') {
       throw new AppError(AutomationErrors.VERSION_CONFLICT);

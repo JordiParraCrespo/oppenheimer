@@ -1,6 +1,7 @@
 import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
+import { SessionLoaderResolver } from '../../../application/session-loader.resolver';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { SessionErrors } from '../../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
@@ -44,7 +45,10 @@ function harness(
   const dispatch = {
     pasteImage: vi.fn().mockResolvedValue(outcome),
   } as unknown as SessionDispatchPort;
-  return { dispatch, handler: new PasteSessionImageCommandHandler(sessions, dispatch) };
+  return {
+    dispatch,
+    handler: new PasteSessionImageCommandHandler(new SessionLoaderResolver(sessions), dispatch),
+  };
 }
 
 const paste = (sessionId: string, data: Buffer, window = 0) =>

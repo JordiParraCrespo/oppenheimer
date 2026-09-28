@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '@oppenheimer/backend-core';
 import type { SessionEffortDto, SessionPermissionDto } from '@oppenheimer/shared';
 import {
   SESSION_EFFORTS,
@@ -225,13 +226,10 @@ export class SessionPageMetaDto {
   nextCursor!: string | null;
 }
 
-export class PaginatedSessionsResponseDto {
-  @ApiProperty({ type: [SessionResponseDto] })
-  data!: SessionResponseDto[];
-
-  @ApiProperty({ type: SessionPageMetaDto })
-  meta!: SessionPageMetaDto;
-}
+export class PaginatedSessionsResponseDto extends PaginatedResponseDto(
+  SessionResponseDto,
+  SessionPageMetaDto,
+) {}
 
 /**
  * What `POST /sessions/{id}/attach-ticket` answers.

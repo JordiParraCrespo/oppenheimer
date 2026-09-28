@@ -19,8 +19,8 @@ src/
 ├── logging/        # hardened nestjs-pino setup (LoggingModule + helpers)
 ├── pipes/          # validation & transform pipes
 ├── requests/       # request-scoped helpers
+├── responses/      # paginated response helpers (toPageMeta, PaginatedResponseDto)
 ├── services/       # shared base services
-├── interfaces/     # shared interfaces
 └── index.ts        # public surface
 ```
 
