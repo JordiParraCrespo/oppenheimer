@@ -10,8 +10,8 @@
  *
  * Adding a barrel export here is a bundle decision, not a convenience.
  */
-export * from './constants';
-export * from './permissions';
-export * from './schemas';
-export * from './scopes';
-export * from './types';
+export * from './constants/index.js';
+export * from './permissions/index.js';
+export * from './schemas/index.js';
+export * from './scopes/index.js';
+export * from './types/index.js';

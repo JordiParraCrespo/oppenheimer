@@ -129,9 +129,13 @@ Full context in [`.agents/rules/forms.md`](../../.agents/rules/forms.md).
   `@oppenheimer/api-client`. Check consumers before altering the public surface.
 - The build is two outputs from one source: CommonJS plus the `.d.ts` in
   `dist/` for `require` (the API, the backend packages, the `emit-*.cjs`
-  scripts), and ESM in `dist/esm/` for `import` (Vite, vitest, Next). The ESM
-  output keeps extensionless relative imports, so only a bundler can load it;
-  that is why `require` and `default` stay on CommonJS.
+  scripts), and ESM in `dist/esm/` for `import` (Vite, vitest, Next, and a
+  plain Node ESM `import`). Node's ESM loader takes no extensionless or
+  directory specifier, so **every relative import in `src/` is fully
+  specified**: `'./link.js'`, `'./constants/index.js'` (the `.js` resolves to
+  the `.ts` for tsc and vitest). The build's last step,
+  `scripts/check-esm-imports.mjs`, imports every ESM entry in plain Node and
+  fails on one that is not. `require` and `default` stay on CommonJS.
 - The export map is four patterns: `.`, `./schemas/*` →
   `schemas/*.schema`, `./feature-flags/catalog`, and `./*` → `*/index`. Every
   new `src/<dir>/index.ts` is therefore a public subpath, and a new

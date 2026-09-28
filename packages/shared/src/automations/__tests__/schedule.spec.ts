@@ -4,7 +4,7 @@ import {
   nextScheduleOccurrence,
   type ScheduleRule,
   zonedWallTimeToInstant,
-} from '../schedule';
+} from '../schedule.js';
 
 const madrid = 'Europe/Madrid';
 

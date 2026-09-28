@@ -4,9 +4,9 @@ import {
   CODING_AGENTS,
   SESSION_EFFORTS,
   SESSION_PERMISSIONS,
-} from '../agents/catalog';
-import { loginUrlPattern } from '../agents/login';
-import { FIELD_BOUNDS, HOST_PLATFORMS, promptByteLength } from '../schemas/primitives';
+} from '../agents/catalog.js';
+import { loginUrlPattern } from '../agents/login.js';
+import { FIELD_BOUNDS, HOST_PLATFORMS, promptByteLength } from '../schemas/primitives.js';
 
 /**
  * The pieces more than one message is built from. Nothing here is a message:

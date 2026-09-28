@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   hostFactsSchema as wireHostFactsSchema,
   promptTextSchema as wirePromptSchema,
-} from '../protocol/primitives';
+} from '../protocol/primitives.js';
 import {
   hostFactsSchema as dtoHostFactsSchema,
   promptSchema as dtoPromptSchema,
   FIELD_BOUNDS,
   promptByteLength,
-} from '../schemas/primitives';
+} from '../schemas/primitives.js';
 
 /**
  * The package is on two Zod entry points for as long as the JSON Schema emitter

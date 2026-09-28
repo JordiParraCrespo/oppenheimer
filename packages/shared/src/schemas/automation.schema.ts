@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SESSION_EFFORTS } from '../agents/catalog';
+import { SESSION_EFFORTS } from '../agents/catalog.js';
 import {
   AUTOMATION_OVERLAP_POLICIES,
   AUTOMATION_PERMISSIONS,
@@ -8,8 +8,8 @@ import {
   RUN_WINDOWS,
   SCHEDULE_FREQUENCIES,
   SCHEDULE_MAX_DAY_OF_MONTH,
-} from '../automations/catalog';
-import { isValidTimeZone } from '../automations/schedule';
+} from '../automations/catalog.js';
+import { isValidTimeZone } from '../automations/schedule.js';
 import {
   codingAgentSchema,
   displayNameSchema,
@@ -17,7 +17,7 @@ import {
   gitRefSchema,
   installationIdSchema,
   promptSchema,
-} from './primitives';
+} from './primitives.js';
 
 /**
  * Automation shapes (`product/versions/mvp/16-automations-architecture.md`).

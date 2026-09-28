@@ -1,2 +1,2 @@
-export * from './catalog';
-export * from './schedule';
+export * from './catalog.js';
+export * from './schedule.js';

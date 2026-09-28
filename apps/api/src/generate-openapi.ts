@@ -1,4 +1,4 @@
-import '@oppenheimer/env/load';
+import './openapi-env';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { VersioningType } from '@nestjs/common';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { pasteSessionImageSchema } from '../../schemas/session.schema';
-import { SESSION_IMAGE_TYPES, sniffSessionImage } from '../session-image';
+import { pasteSessionImageSchema } from '../../schemas/session.schema.js';
+import { SESSION_IMAGE_TYPES, sniffSessionImage } from '../session-image.js';
 
 const bytes = (...values: (number | string)[]) =>
   new Uint8Array(

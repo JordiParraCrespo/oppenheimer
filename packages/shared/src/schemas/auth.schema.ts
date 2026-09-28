@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { PASSWORD_LEGACY_MIN_LENGTH, PASSWORD_MIN_LENGTH } from '../constants';
+import { PASSWORD_LEGACY_MIN_LENGTH, PASSWORD_MIN_LENGTH } from '../constants/index.js';
 
 /**
  * Auth DTOs. These carry no failure messages on purpose: an explicit message

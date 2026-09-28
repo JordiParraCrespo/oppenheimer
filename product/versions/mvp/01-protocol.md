@@ -37,6 +37,16 @@ runner does with it and point back.
   indices never appear in a binary frame.
 - The control plane allocates attachment ids per link and frees them on
   detach.
+- **No frame on the link is larger than 512 KiB**, text or binary, in
+  either direction: `LINK_MAX_FRAME_BYTES` in
+  `packages/shared/src/protocol/link.ts`, from which the runner's
+  `MaxFrameBytes` is generated. The control plane closes a runner that
+  sends a bigger one with 1009 before buffering it (`ws`'s
+  `maxPayload`); the runner reads no bigger one and refuses to send one
+  rather than lose the link over it. A PTY frame is at most 32 KiB plus
+  its header, so the one message that can approach the cap is the
+  session list in `hello` and `heartbeat`, which the runner fits to it
+  (below).
 
 ### Authentication
 
@@ -160,7 +170,14 @@ runner does with it and point back.
   "persisted before the disconnect" from "never arrived", so the runner
   keeps a batch until an ack accounts for every key in it and resends
   otherwise; the append is `ON CONFLICT DO NOTHING` per row, which is
-  what makes the resend free. The log the batch lands in is 03's; the
+  what makes the resend free. It resends on every reconnect, after
+  hello, and also on a link that stays up: a batch the link took but
+  that has had no ack for **one minute** is sent again, together with
+  every batch made after it, in order — sending only the overdue one
+  would put it behind newer batches the control plane may not have
+  either. The timeout is generous because a control plane whose
+  database is behind stops reading the link, and a resend then only
+  adds to the backlog. The log the batch lands in is 03's; the
   wire that carries it is this note's. While a session starts, the
   runner logs `session.step`: its kind and `{ step, status, durationMs }`
   payload are `packages/shared/src/protocol/session-step.ts`, and the Go
@@ -205,7 +222,21 @@ grounds can still fetch, verify and install the version that fixes it
 - **Hello**, the first message after the upgrade: runner version, the
   protocol range it speaks, host facts, and a snapshot of every session
   it holds. The control plane reconciles against its own state rather
-  than replaying a queue.
+  than replaying a queue: an open session the hello leaves out is
+  recorded **stopped**, so the console offers a restart rather than a
+  terminal that will never attach, and one still starting is dispatched
+  again (the create is idempotent by session id).
+- **The session list is fitted to the frame cap**, in `hello` and
+  `heartbeat` alike, giving up a little more at each step: every
+  snapshot as built; then every session **compacted** to its id, agent,
+  state and age, with no windows and no optional fields (what
+  reconciliation reads is the id); and only if that still does not fit,
+  **truncated** to as many compact snapshots as fit, logged as an error
+  on the runner. A truncated hello therefore gets the open sessions it
+  left out recorded stopped, although tmux still runs them. No host comes near it — a compact snapshot is
+  under 190 bytes, room for some 2,800 sessions — and the step exists so
+  that one that does still has a link, where an over-cap hello would be
+  closed with 1009 on every redial.
 - **Heartbeat**, every 15 s: per-session state, host load, free disk on
   the workspaces filesystem, the versions of `git`, `tmux` and the
   agent, and the update channel.
