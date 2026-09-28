@@ -73,6 +73,8 @@ export interface AutomationRunSummary {
   id: string;
   title: string;
   status: AutomationRunStatus;
+  /** The session it started, which is what opening the run shows. */
+  sessionId: string | null;
   createdAt: Date;
 }
 

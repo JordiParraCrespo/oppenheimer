@@ -132,6 +132,14 @@ export class AutomationRunSummaryResponseDto {
   @ApiProperty({ enum: AUTOMATION_RUN_STATUSES })
   status!: AutomationRunStatus;
 
+  @ApiProperty({
+    format: 'uuid',
+    type: String,
+    nullable: true,
+    description: 'The session the run started — the run view — or null while queued or skipped.',
+  })
+  sessionId!: string | null;
+
   @ApiProperty()
   createdAt!: Date;
 }

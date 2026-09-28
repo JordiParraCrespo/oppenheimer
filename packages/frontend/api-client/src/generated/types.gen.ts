@@ -1631,6 +1631,10 @@ export type AutomationRunSummaryResponseDto = {
      */
     title: string;
     status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'skipped' | 'expired';
+    /**
+     * The session the run started — the run view — or null while queued or skipped.
+     */
+    sessionId: string | null;
     createdAt: string;
 };
 

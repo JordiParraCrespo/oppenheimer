@@ -243,6 +243,7 @@ export class AutomationRunMapper {
     dto.id = run.id;
     dto.title = this.titleOf(run);
     dto.status = run.status;
+    dto.sessionId = run.sessionId;
     dto.createdAt = run.createdAt;
     return dto;
   }

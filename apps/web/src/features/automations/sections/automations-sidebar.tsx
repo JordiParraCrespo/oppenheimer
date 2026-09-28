@@ -3,42 +3,63 @@ import {
   EmptyState,
   IconButton,
   RoutineItem,
+  RoutineRun,
+  RoutineRunList,
+  RoutineRunsEmpty,
+  SessionList,
   SidebarEmptyRow,
   SidebarProjectHeader,
   Skeleton,
+  useNow,
 } from '@oppenheimer/design-system-web';
-import { Plus, Zap } from '@oppenheimer/design-system-web/icons';
-import { useProjects } from '@oppenheimer/frontend-consumer/react';
+import { Plus, Search, X, Zap } from '@oppenheimer/design-system-web/icons';
+import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
 import { useConsoleDialog } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TriggerGlyph } from '../components/trigger-glyph';
+import { runState, sidebarMeta } from '../lib/automation-view';
+import { age } from '../lib/time';
 
 /**
  * The console's sidebar body on its automations list
  * (`product/versions/mvp/13-automations.md`): New automation on top, the
- * Projects line with its count, then All automations and a folding header
- * per project — each with New automation in it — over the project's
- * automations. New automation, everywhere it appears, asks the console for
- * its editor dialog, for the project whose header it sits in.
+ * Projects line with its count, the search, then All automations and a
+ * folding header per project — each with New automation in it — over the
+ * project's automations. The selected automation expands its last six runs,
+ * each opening the session it started.
  *
- * The projects are read because the groups are theirs, all but the
- * workspace's Unassigned: it holds the sessions that name no project, and an
- * automation is set up for one, so it has no group here. Every group is
- * empty until the API behind automations lands, and the empty row says so.
- * The rows, the search that narrows them and the expanded runs under the
- * selected one arrive with that slice — a search with nothing to narrow is
- * not mounted.
+ * The workspace's Unassigned project has no group: it holds the sessions
+ * that name no project, and an automation is always set up for one.
  */
 export function AutomationsSidebar() {
   const { t } = useTranslation();
   const matchRoute = useMatchRoute();
-  const projects = useProjects();
-  const named = projects.data?.filter((project) => !project.isUnassigned);
+  const projects = useProjects({ select: (rows) => rows.filter((row) => !row.isUnassigned) });
+  const automations = useAutomations();
   const [closed, setClosed] = useState<string[]>([]);
+  const [query, setQuery] = useState('');
   const dialogs = useConsoleDialog();
+  const now = useNow(60_000);
+
+  const detail = matchRoute({ to: '/automations/$automationId' });
+  const selectedId = detail ? detail.automationId : null;
   const all =
     Boolean(matchRoute({ to: '/automations' })) || Boolean(matchRoute({ to: '/automations/runs' }));
+
+  const term = query.trim().toLowerCase();
+  const groups = (projects.data ?? []).map((project) => ({
+    project,
+    items: (automations.data ?? []).filter(
+      (automation) =>
+        automation.projectId === project.id &&
+        (!term ||
+          automation.name.toLowerCase().includes(term) ||
+          project.name.toLowerCase().includes(term)),
+    ),
+  }));
+  const shown = term ? groups.filter((group) => group.items.length) : groups;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -50,33 +71,68 @@ export function AutomationsSidebar() {
 
       <div className="flex items-center gap-2 px-3 pt-0.5 pb-1.5">
         <span className="eyebrow min-w-0 flex-1">{t('automations.sidebar.projects')}</span>
-        {named ? <span className="figures text-xs text-fg-muted">{named.length}</span> : null}
+        {projects.data ? (
+          <span className="figures text-xs text-fg-muted">{projects.data.length}</span>
+        ) : null}
       </div>
 
+      {automations.data?.length ? (
+        <div className="mx-3 mb-1.5 flex h-8 items-center gap-2 rounded-sm bg-hover-surface px-2.5 text-fg-subtle focus-within:ring-3 focus-within:ring-ring [&_svg]:size-3.5 [&_svg]:shrink-0">
+          <Search aria-hidden />
+          <input
+            type="text"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') setQuery('');
+            }}
+            aria-label={t('automations.sidebar.search')}
+            placeholder={t('automations.sidebar.search')}
+            className="min-w-0 flex-1 bg-transparent text-[13px] text-fg outline-none placeholder:text-fg-subtle"
+          />
+          {query ? (
+            <IconButton
+              size="xs"
+              variant="quiet"
+              aria-label={t('automations.sidebar.clearSearch')}
+              onClick={() => setQuery('')}
+            >
+              <X />
+            </IconButton>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
+        {term && !shown.length ? (
+          <p className="m-0 px-3 pt-2 text-[13px] text-fg-muted">
+            {t('automations.sidebar.noMatch', { query: query.trim() })}
+          </p>
+        ) : null}
         <div className="px-3 pt-2">
           <RoutineItem
             name={t('automations.sidebar.all')}
             icon={<Zap />}
+            meta={automations.data ? String(automations.data.length) : undefined}
             active={all}
             className="mb-1.5"
             render={<Link to="/automations" />}
           />
         </div>
 
-        {projects.isPending ? (
+        {projects.isPending || automations.isPending ? (
           <div className="flex flex-col gap-2 px-3 pt-2">
             <Skeleton className="h-7.5 w-full" />
             <Skeleton className="h-7.5 w-full" />
           </div>
-        ) : named?.length ? (
-          named.map((project) => {
-            const open = !closed.includes(project.id);
+        ) : projects.data?.length ? (
+          shown.map(({ project, items }) => {
+            const open = Boolean(term) || !closed.includes(project.id);
             return (
               <div key={project.id} className="mt-1.5 flex flex-col">
                 <SidebarProjectHeader
                   name={project.name}
-                  count={0}
+                  count={items.length}
                   open={open}
                   onOpenChange={(next) =>
                     setClosed((current) =>
@@ -94,7 +150,59 @@ export function AutomationsSidebar() {
                     </IconButton>
                   }
                 />
-                {open ? (
+                {open && items.length ? (
+                  <SessionList className="px-3">
+                    {items.map((automation) => {
+                      const selected = automation.id === selectedId;
+                      return (
+                        <Fragment key={automation.id}>
+                          <RoutineItem
+                            name={automation.name}
+                            icon={<TriggerGlyph scheduled={automation.isScheduled} />}
+                            meta={sidebarMeta(automation, now, t)}
+                            running={automation.isRunning}
+                            paused={automation.isPaused}
+                            active={selected}
+                            render={
+                              <Link
+                                to="/automations/$automationId"
+                                params={{ automationId: automation.id }}
+                              />
+                            }
+                          />
+                          {selected ? (
+                            <RoutineRunList>
+                              {automation.lastRuns.length ? (
+                                automation.lastRuns.map((run) => (
+                                  <RoutineRun
+                                    key={run.id}
+                                    title={run.title}
+                                    ago={age(now - run.createdAt.getTime())}
+                                    state={runState(run.status)}
+                                    disabled={!run.sessionId}
+                                    render={
+                                      run.sessionId ? (
+                                        <Link
+                                          to="/sessions/$sessionId"
+                                          params={{ sessionId: run.sessionId }}
+                                        />
+                                      ) : undefined
+                                    }
+                                  />
+                                ))
+                              ) : (
+                                <RoutineRunsEmpty>
+                                  {t('automations.sidebar.noRuns')}
+                                </RoutineRunsEmpty>
+                              )}
+                            </RoutineRunList>
+                          ) : null}
+                        </Fragment>
+                      );
+                    })}
+                  </SessionList>
+                ) : null}
+                {open && !items.length && !term ? (
                   <SidebarEmptyRow>
                     {t('automations.sidebar.emptyProject')}{' '}
                     <button

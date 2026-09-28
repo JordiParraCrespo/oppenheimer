@@ -158,6 +158,14 @@ const automationFields = z.object({
   maxRunsPerHour: z.number().int().min(1).max(1000).nullable().optional(),
 });
 
+/**
+ * The editor's Task step: the two fields a person types. The rest of the
+ * editor is picked, not typed, and the API checks it whole on save.
+ */
+export const automationTaskSchema = automationFields.pick({ name: true, prompt: true });
+
+export type AutomationTaskDto = z.infer<typeof automationTaskSchema>;
+
 /** Every GitHub trigger listens only on repositories the automation works in. */
 function triggersWithinRepositories(value: {
   repositories?: AutomationRepositoryInputDto[];

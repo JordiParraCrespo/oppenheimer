@@ -31,6 +31,7 @@ import { Route as AuthOnboardingHostRouteImport } from './routes/_auth/onboardin
 import { Route as AuthOnboardingReadyRouteImport } from './routes/_auth/onboarding/ready'
 import { Route as AuthOnboardingWorkspaceRouteImport } from './routes/_auth/onboarding/workspace'
 import { Route as AuthenticatedAutomationsIndexRouteImport } from './routes/_authenticated/automations/index'
+import { Route as AuthenticatedAutomationsAutomationIdRouteImport } from './routes/_authenticated/automations/$automationId'
 import { Route as AuthenticatedAutomationsRunsRouteImport } from './routes/_authenticated/automations/runs'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
@@ -150,6 +151,12 @@ const AuthenticatedAutomationsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAutomationsRoute,
   } as any)
+const AuthenticatedAutomationsAutomationIdRoute =
+  AuthenticatedAutomationsAutomationIdRouteImport.update({
+    id: '/$automationId',
+    path: '/$automationId',
+    getParentRoute: () => AuthenticatedAutomationsRoute,
+  } as any)
 const AuthenticatedAutomationsRunsRoute =
   AuthenticatedAutomationsRunsRouteImport.update({
     id: '/runs',
@@ -217,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/host': typeof AuthOnboardingHostRoute
   '/onboarding/ready': typeof AuthOnboardingReadyRoute
   '/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
+  '/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -243,6 +251,7 @@ export interface FileRoutesByTo {
   '/onboarding/host': typeof AuthOnboardingHostRoute
   '/onboarding/ready': typeof AuthOnboardingReadyRoute
   '/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
+  '/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -276,6 +285,7 @@ export interface FileRoutesById {
   '/_auth/onboarding/host': typeof AuthOnboardingHostRoute
   '/_auth/onboarding/ready': typeof AuthOnboardingReadyRoute
   '/_auth/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
+  '/_authenticated/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
   '/_authenticated/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -307,6 +317,7 @@ export interface FileRouteTypes {
     | '/onboarding/host'
     | '/onboarding/ready'
     | '/onboarding/workspace'
+    | '/automations/$automationId'
     | '/automations/runs'
     | '/sessions/$sessionId'
     | '/sessions/new'
@@ -333,6 +344,7 @@ export interface FileRouteTypes {
     | '/onboarding/host'
     | '/onboarding/ready'
     | '/onboarding/workspace'
+    | '/automations/$automationId'
     | '/automations/runs'
     | '/sessions/$sessionId'
     | '/sessions/new'
@@ -365,6 +377,7 @@ export interface FileRouteTypes {
     | '/_auth/onboarding/host'
     | '/_auth/onboarding/ready'
     | '/_auth/onboarding/workspace'
+    | '/_authenticated/automations/$automationId'
     | '/_authenticated/automations/runs'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
@@ -543,6 +556,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAutomationsIndexRouteImport
       parentRoute: typeof AuthenticatedAutomationsRoute
     }
+    '/_authenticated/automations/$automationId': {
+      id: '/_authenticated/automations/$automationId'
+      path: '/$automationId'
+      fullPath: '/automations/$automationId'
+      preLoaderRoute: typeof AuthenticatedAutomationsAutomationIdRouteImport
+      parentRoute: typeof AuthenticatedAutomationsRoute
+    }
     '/_authenticated/automations/runs': {
       id: '/_authenticated/automations/runs'
       path: '/runs'
@@ -653,12 +673,15 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface AuthenticatedAutomationsRouteChildren {
+  AuthenticatedAutomationsAutomationIdRoute: typeof AuthenticatedAutomationsAutomationIdRoute
   AuthenticatedAutomationsRunsRoute: typeof AuthenticatedAutomationsRunsRoute
   AuthenticatedAutomationsIndexRoute: typeof AuthenticatedAutomationsIndexRoute
 }
 
 const AuthenticatedAutomationsRouteChildren: AuthenticatedAutomationsRouteChildren =
   {
+    AuthenticatedAutomationsAutomationIdRoute:
+      AuthenticatedAutomationsAutomationIdRoute,
     AuthenticatedAutomationsRunsRoute: AuthenticatedAutomationsRunsRoute,
     AuthenticatedAutomationsIndexRoute: AuthenticatedAutomationsIndexRoute,
   }

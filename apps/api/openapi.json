@@ -16102,6 +16102,12 @@
               "expired"
             ]
           },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The session the run started — the run view — or null while queued or skipped."
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -16111,6 +16117,7 @@
           "id",
           "title",
           "status",
+          "sessionId",
           "createdAt"
         ]
       },

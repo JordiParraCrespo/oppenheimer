@@ -573,10 +573,16 @@
       "new": "New automation",
       "projects": "Projects",
       "all": "All automations",
+      "search": "Search automations",
+      "clearSearch": "Clear search",
+      "noMatch": "No automations match “{{query}}”.",
       "emptyProject": "No automations yet.",
       "createOne": "Create one",
       "newHere": "New automation in {{name}}",
-      "noProjects": "No project yet. Make one from New session, and its automations gather here."
+      "noProjects": "No project yet. Make one from New session, and its automations gather here.",
+      "noRuns": "No runs yet.",
+      "running": "Running",
+      "paused": "Paused"
     },
     "page": {
       "tabs": {
@@ -585,18 +591,267 @@
       },
       "new": "New automation",
       "empty": "No automations yet. An automation starts a session on a schedule or when something happens on GitHub.",
-      "runsEmpty": "No runs yet. Each run appears here with the session it started."
+      "runsEmpty": "No runs yet. Each run appears here with the session it started.",
+      "loadFailed": "Automations could not be loaded.",
+      "actionFailed": "That did not go through."
+    },
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "running": "Running"
+    },
+    "runStatus": {
+      "queued": "Queued",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "skipped": "Skipped",
+      "expired": "Expired"
+    },
+    "skipReason": {
+      "paused": "Skipped: the automation was paused",
+      "deleted": "Skipped: the automation was deleted",
+      "own_event": "Skipped: the event was our own",
+      "automation_rate_limited": "Skipped: this automation’s hourly limit",
+      "workspace_rate_limited": "Skipped: the workspace’s hourly limit",
+      "overlapping": "Skipped: a run was still going",
+      "missed": "Skipped: the slot was missed",
+      "not_launchable": "Skipped: the session could not start",
+      "agent_unavailable": "Skipped: the agent is not on the host"
+    },
+    "pausedReason": {
+      "user": "Paused. Triggers are ignored until you resume it; Run now still works.",
+      "project_archived": "Paused because its project was deleted. Move it to another project to resume it.",
+      "host_unpaired": "Paused because its host was removed. Pick another host in Edit to resume it.",
+      "owner_lost_access": "Paused because its owner can no longer run it."
+    },
+    "frequency": {
+      "once": {
+        "label": "Once",
+        "desc": "On a chosen date and time"
+      },
+      "hourly": {
+        "label": "Hourly",
+        "desc": "Every hour, at a chosen minute"
+      },
+      "daily": {
+        "label": "Daily",
+        "desc": "Every day at a chosen time"
+      },
+      "weekdays": {
+        "label": "Weekdays",
+        "desc": "Monday to Friday at a chosen time"
+      },
+      "weekly": {
+        "label": "Weekly",
+        "desc": "On the days you pick"
+      },
+      "monthly": {
+        "label": "Monthly",
+        "desc": "On one day of the month"
+      }
+    },
+    "event": {
+      "pr_opened": {
+        "label": "Pull request opened",
+        "desc": "Opened, or a draft marked ready for review"
+      },
+      "pr_draft": {
+        "label": "Draft opened",
+        "desc": "Opened as a draft, or converted to one"
+      },
+      "pr_sync": {
+        "label": "Pull request pushed",
+        "desc": "New commits pushed to an open pull request"
+      },
+      "pr_merged": {
+        "label": "Pull request merged",
+        "desc": "After the merge lands"
+      },
+      "comment": {
+        "label": "Comment added",
+        "desc": "On a pull request or issue"
+      },
+      "push": {
+        "label": "Push to branch",
+        "desc": "One run per push, not per commit"
+      },
+      "issue_labeled": {
+        "label": "Label added",
+        "desc": "On a pull request or issue, once per label"
+      },
+      "check_failed": {
+        "label": "Check failed",
+        "desc": "Any Actions workflow or status check"
+      },
+      "issue_opened": {
+        "label": "Issue opened",
+        "desc": "New issues only, not reopened ones"
+      },
+      "mention": {
+        "label": "Mentioned @oppenheimer",
+        "desc": "In an issue, pull request or review"
+      },
+      "release": {
+        "label": "Release published",
+        "desc": "Pre-releases excluded"
+      }
+    },
+    "trigger": {
+      "once": "Once, {{date}} at {{time}}",
+      "hourly": "Hourly at :{{minute}}",
+      "daily": "Daily at {{time}}",
+      "weekdays": "Weekdays at {{time}}",
+      "weekly": "Every {{days}} at {{time}}",
+      "monthly": "Monthly on day {{day}} at {{time}}",
+      "event": "On {{event}}",
+      "more": "{{summary}} +{{count}}",
+      "manual": "Manual only",
+      "monFri": "Mon–Fri",
+      "weekend": "Sat, Sun"
+    },
+    "next": {
+      "onEvent": "On next event",
+      "none": "—",
+      "today": "Today, {{time}}",
+      "tomorrow": "Tomorrow, {{time}}",
+      "in": "in {{time}}",
+      "nextIn": "Next in"
+    },
+    "table": {
+      "automation": "Automation",
+      "trigger": "Trigger",
+      "next": "Next run",
+      "status": "Status",
+      "actions": "Automation actions",
+      "edit": "Edit",
+      "runNow": "Run now",
+      "pause": "Pause",
+      "resume": "Resume",
+      "duplicate": "Duplicate",
+      "delete": "Delete"
+    },
+    "history": {
+      "title": "Run history",
+      "range": "Last 30 days",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "runs_one": "{{count}} run",
+      "runs_other": "{{count}} runs"
+    },
+    "runs": {
+      "all": "All",
+      "completed": "Completed",
+      "failed": "Failed",
+      "running": "Running",
+      "run": "Run",
+      "automation": "Automation",
+      "time": "Time",
+      "allAutomations": "All automations",
+      "allProjects": "All projects",
+      "window": {
+        "24h": "Last 24 hours",
+        "7d": "Last 7 days",
+        "30d": "Last 30 days"
+      },
+      "clear": "Clear",
+      "noMatch": "No runs match these filters.",
+      "range": "{{from}}–{{to}} of {{total}}",
+      "previous": "Previous page",
+      "next": "Next page",
+      "deleted": "Deleted automation",
+      "noSession": "This run did not start a session."
+    },
+    "detail": {
+      "back": "Back",
+      "crumb": "Automations",
+      "runNow": "Run now",
+      "edit": "Edit",
+      "more": "More actions",
+      "pause": "Pause automation",
+      "resume": "Resume automation",
+      "duplicate": "Duplicate",
+      "delete": "Delete automation",
+      "confirmDelete": "Delete this automation? Its triggers stop now. Past runs are kept.",
+      "cancel": "Cancel",
+      "confirm": "Delete",
+      "resumeAction": "Resume",
+      "notFound": "This automation does not exist, or was deleted."
     },
     "editor": {
       "newTitle": "New automation",
+      "editTitle": "Edit automation",
+      "steps": {
+        "label": "Automation steps",
+        "task": "Task",
+        "trigger": "Trigger",
+        "where": "Where it runs"
+      },
       "name": "Name",
       "namePlaceholder": "Name this automation",
       "prompt": "What should the agent do?",
       "promptPlaceholder": "Describe the work for every run…",
       "promptHint": "The pull request, issue or commit that fired the run is passed in as context.",
-      "forProject": "For {{name}}.",
-      "soon": "The trigger, where it runs and Create arrive with the automations API.",
-      "create": "Create automation"
+      "triggerLead": "Any trigger starts a run.",
+      "addTrigger": "Add trigger",
+      "addAnother": "Add another trigger",
+      "groupSchedule": "Schedule",
+      "groupGithub": "GitHub",
+      "removeTrigger": "Remove trigger",
+      "on": "on",
+      "at": "at",
+      "in": "in",
+      "onThe": "on day",
+      "targeting": "targeting",
+      "labeled": "labeled",
+      "anyBranch": "any branch",
+      "anyLabel": "any label",
+      "branchPlaceholder": "Branch name",
+      "labelPlaceholder": "Label name",
+      "anyOfRepos": "any of {{count}} repositories",
+      "someRepos": "{{count}} repositories",
+      "reposHead": "Repositories · pick one or more",
+      "atLeastOne": "At least one is required",
+      "hour": "Hour",
+      "minute": "Minute",
+      "minutesPast": "Minutes past the hour",
+      "dayOfMonth": "Day of the month",
+      "days": "Days",
+      "nextRun": "Next run",
+      "inRel": "· in",
+      "passed": "That time has passed. Pick a later one.",
+      "listening_one": "Listening on {{repos}} · would have run once in the last 7 days",
+      "listening_other": "Listening on {{repos}} · would have run {{count}} times in the last 7 days",
+      "listeningNone": "Listening on {{repos}} · nothing matched in the last 7 days",
+      "code": "Code",
+      "project": "Project",
+      "chooseProject": "Choose a project",
+      "searchProjects": "Search projects",
+      "noRepositories": "No repositories",
+      "repositories": "Repositories",
+      "searchRepositories": "Search repositories",
+      "inProject": "In {{name}}",
+      "runsOn": "Runs on",
+      "host": "Host",
+      "chooseHost": "Choose a host",
+      "searchHosts": "Search hosts",
+      "agent": "Agent",
+      "searchAgents": "Search agents",
+      "model": "Model",
+      "searchModels": "Search models",
+      "agentDefault": "The agent’s default",
+      "branchHint": "Each run is its own session on a fresh opp/ branch — nothing lands on main without a pull request.",
+      "missingName": "Add a name.",
+      "missingPrompt": "Describe the work.",
+      "missingTrigger": "Add a trigger.",
+      "missingWhere": "Pick a project, a repository and a host.",
+      "back": "Back",
+      "next": "Next",
+      "save": "Save",
+      "create": "Create automation",
+      "saveFailed": "The automation could not be saved.",
+      "forProject": "For {{name}}."
     }
   },
   "hosts": {

@@ -8,11 +8,7 @@ import {
 } from '@oppenheimer/api-client';
 import { AppError, MapApiError } from '@oppenheimer/frontend-core';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
-import {
-  GITHUB_EVENT_TYPES,
-  type GithubEventType,
-  type TriggerFilter,
-} from '@oppenheimer/shared/automations';
+import type { GithubEventType, TriggerFilter } from '@oppenheimer/shared/automations';
 import { injectable } from 'inversify';
 import {
   AutomationEntity,
@@ -42,17 +38,17 @@ function triggerOf(dto: AutomationTriggerResponseDto): AutomationTrigger | null 
     const { timezone, ...rule } = dto.schedule;
     return { source: 'schedule', id: dto.id, ...rule, timezone, nextFireAt: date(dto.nextFireAt) };
   }
-  if (dto.source === 'github' && (GITHUB_EVENT_TYPES as readonly string[]).includes(dto.event)) {
+  if (dto.source === 'github') {
     return {
       source: 'github',
       id: dto.id,
+      // Typed as the catalog's, unchecked: the catalog is not worth a place on
+      // the first load, and an event a newer API sends reads by its raw name.
       event: dto.event as GithubEventType,
       repositories: dto.repositories ?? [],
       filter: filterOf(dto.filter),
     };
   }
-  // An event this build does not know yet: it still fires on the server, and
-  // the console leaves out what it could not draw rather than guessing.
   return null;
 }
 
@@ -82,7 +78,11 @@ function toEntity(dto: AutomationResponseDto): AutomationEntity {
     dto.maxRunsPerHour ?? null,
     dto.version,
     dto.runCount,
-    dto.lastRuns.map((run) => ({ ...run, createdAt: new Date(run.createdAt) })),
+    dto.lastRuns.map((run) => ({
+      ...run,
+      sessionId: run.sessionId ?? null,
+      createdAt: new Date(run.createdAt),
+    })),
     new Date(dto.createdAt),
     new Date(dto.updatedAt),
   );
