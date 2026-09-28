@@ -130,15 +130,7 @@ reads it off the innermost match.
   dialog around it. A dialog-level `useWatch` is the thing this replaced.
 - **An effect synchronises with something outside React, and says what.** It
   lives in a `hooks/` file with a comment naming the system; Biome forbids
-  `useEffect` anywhere else in the app. Five hooks have one, each
-  naming its system: xterm and the session stream
-  (`sessions/hooks/use-terminal.ts`), a one-second timer (`use-elapsed.ts`),
-  a pick the URL asked for once its list arrives (`use-search-pick.ts`), the
-  form store's subscription that remembers the New session draft
-  (`use-new-session-form.ts`), and GitHub's install callback in the URL,
-  exchanged once (`installations/hooks/use-connect-installation-callback.ts`). The
-  browser glue every app needs (theme, analytics, i18n) sits in
-  `@oppenheimer/frontend-web`.
+  `useEffect` anywhere else in the app.
 - **The React Compiler is on** (`compiler: true` in `vite.config.ts`). No
   `useMemo`, `useCallback` or `memo` outside `hooks/`; Biome forbids the import.
 - **One component per file.** Biome's `noNestedComponentDefinitions` is on.
@@ -157,15 +149,11 @@ by the method and route it reads — `ENDPOINT_POLICIES['GET /tokens']`), add th
 translation keys, and
 add a spec in `e2e/tests/web/`.
 
-Module names this app may use are read from the packages, not listed by hand:
-every directory under `packages/frontend/core/src/modules/` except `core`,
-the kernel's own wiring that renders nothing (so `analytics`, `auth`,
-`capabilities`, `feature-flags`, `user-settings`, `users`), and every one
-under `packages/frontend/consumer/src/modules/` (`sessions`,
-`projects`, `hosts`, `installations`, `automations`, `organizations`,
-`profile`, `permissions`), plus the app's allowlist, `public` (the marketing
-pages render no entity). Every consumer module but `permissions` has a feature
-here; `auth` is the kernel's. Anything else has to become a module of
+A feature's name is a module's: `pnpm check:structure` reads the module
+directories of the kernel and of this app's product package (the kernel's
+`core/`, its own wiring, excepted) and adds the app's allowlist, `public` (the
+marketing pages render no entity). The directories are the list — a new module
+makes a new feature name legal. Anything else has to become a module of
 `@oppenheimer/frontend-consumer` first — the domain leads.
 
 ## What the checkers enforce
@@ -188,14 +176,10 @@ here; `auth` is the kernel's. Anything else has to become a module of
   product package.
 - `kit-through-its-entry` — `@oppenheimer/frontend-web` by its package name only.
 
-`pnpm check:structure` — feature names against the module lists above, the
-kind directories, no barrel and no sub-directory inside a kind, the 120-line
-route cap, the `src/lib/` allowlist, no app file whose basename the kit
-already ships, one component per file, a query subscribed to where its result
-is rendered (not held by a screen for one child, not forwarded as a prop), no
-`refetchInterval` in the app (the product package's `LIVE_POLL` is the one
-poll policy), and that this app carries a README, an AGENTS.md linking a rule
-file, and this document.
+`pnpm check:structure` — the layout and the render rules this document states
+that a cruiser cannot see: feature names and kinds, the route cap, what may sit
+in `src/lib/`, and where a query is subscribed. `scripts/check-frontend-structure.mjs`
+is the list.
 
 `pnpm check:unused` (knip) — no unused file, dependency or export here or in
 the frontend packages.

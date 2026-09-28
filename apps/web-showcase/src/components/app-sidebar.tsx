@@ -28,7 +28,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <div className="flex h-10 items-center justify-between gap-2.5 px-2">
           <Wordmark product="Design" />
-          <span className="figures text-[11px] text-sidebar-muted">{TOC_COUNT}</span>
+          <span className="figures text-micro text-sidebar-muted">{TOC_COUNT}</span>
         </div>
       </SidebarHeader>
 

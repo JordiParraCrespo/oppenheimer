@@ -19,8 +19,8 @@ export function AboutScreen() {
 
   return (
     <PublicSiteLayout>
-      <section className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:px-8 lg:py-28">
-        <div>
+      <section className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:flex lg:items-center lg:px-8 lg:py-28">
+        <div className="lg:flex-3">
           <p className="mb-5 text-sm font-medium tracking-wide text-accent-blue uppercase">
             {t('public.home.eyebrow')}
           </p>
@@ -41,7 +41,7 @@ export function AboutScreen() {
           </div>
         </div>
 
-        <aside className="rounded-3xl border border-border-default bg-surface-sunken p-8 shadow-sm">
+        <aside className="lg:flex-2 rounded-3xl border border-border-default bg-surface-sunken p-8 shadow-sm">
           <p className="text-sm font-medium text-ink-500">{t('public.home.google.eyebrow')}</p>
           <h2 className="mt-3 text-2xl font-semibold text-ink-900">
             {t('public.home.google.title')}

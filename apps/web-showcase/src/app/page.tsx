@@ -273,10 +273,10 @@ export default function Page() {
         </Swatch>
         <Swatch label="primary with glyph">
           <Button size="lg">
-            <BrandGlyph name="github" className="text-white" /> Connect GitHub
+            <BrandGlyph name="github" /> Connect GitHub
           </Button>
         </Swatch>
-        <div className="flex w-full max-w-[340px] flex-col gap-2.5">
+        <div className="flex w-full max-w-85 flex-col gap-2.5">
           <Button variant="social" size="lg" block>
             <BrandGlyph name="google" /> Continue with Google
           </Button>
@@ -481,10 +481,10 @@ export default function Page() {
         desc="A 1px hairline in the subtle border. Rare on its own, since sections divide by whitespace; the labelled form is the OR between social sign-in and the email form."
         code={`<Separator>or</Separator>`}
       >
-        <div className="w-full max-w-[340px]">
+        <div className="w-full max-w-85">
           <Separator>or</Separator>
         </div>
-        <div className="w-full max-w-[340px]">
+        <div className="w-full max-w-85">
           <Separator />
         </div>
         <Swatch label="vertical">
@@ -523,15 +523,17 @@ export default function Page() {
         desc="The content container: 18px radius, a subtle hairline, the lit surface on the canvas, no shadow. Header, content and footer carry the 24px padding; padded puts it on the card for a single block."
         code={`<Card><CardHeader><CardTitle>…</CardTitle><CardDescription>…</CardDescription></CardHeader><CardContent>…</CardContent></Card>`}
       >
-        <Card className="w-full max-w-[360px]">
+        <Card className="w-full max-w-90">
           <CardHeader>
             <CardTitle>mac-studio</CardTitle>
             <CardDescription>macOS 15 · echo 38 ms · 3 sessions</CardDescription>
           </CardHeader>
-          <CardContent className="flex gap-2">
-            <Chip icon={<CheckIcon className="text-success" strokeWidth={2.5} />}>git</Chip>
-            <Chip icon={<CheckIcon className="text-success" strokeWidth={2.5} />}>tmux</Chip>
-            <Chip icon={<CheckIcon className="text-success" strokeWidth={2.5} />}>claude</Chip>
+          <CardContent>
+            <div className="flex gap-2">
+              <Chip icon={<CheckIcon className="text-success" strokeWidth={2.5} />}>git</Chip>
+              <Chip icon={<CheckIcon className="text-success" strokeWidth={2.5} />}>tmux</Chip>
+              <Chip icon={<CheckIcon className="text-success" strokeWidth={2.5} />}>claude</Chip>
+            </div>
           </CardContent>
           <CardFooter>
             <StatusDot state="running">Connected</StatusDot>
@@ -541,7 +543,7 @@ export default function Page() {
           </CardFooter>
         </Card>
         <ThemePair className="md:grid-cols-1">
-          <Card padded className="max-w-[300px]">
+          <Card padded className="max-w-75">
             <div className="text-h4 font-semibold">Tonal depth</div>
             <p className="mt-1 text-sm text-fg-muted">A lit card on the canvas. No border shadow, in either theme.</p>
           </Card>
@@ -572,7 +574,7 @@ export default function Page() {
             />
           </Card>
         </div>
-        <div className="w-full max-w-[384px]">
+        <div className="w-full max-w-96">
           <CodeBlock
             layout="panel"
             code={`curl -fsSL https://app.oppenheimer.dev/install.sh \\\n  | sh -s -- --token opk_7f3a9c`}
@@ -587,7 +589,7 @@ export default function Page() {
         desc="Facts a person checks before moving on: the Ready screen's workspace, code and host. A Card of rows with hairlines between them, a muted 13px label on the left and a mono value on the right. Values are mono because they are things, not prose."
         code={`<SummaryCard><SummaryRow label="Workspace">oppenheimer.dev/versio</SummaryRow>…</SummaryCard>`}
       >
-        <SummaryCard className="w-full max-w-[400px]">
+        <SummaryCard className="w-full max-w-100">
           <SummaryRow label="Workspace">oppenheimer.dev/versio</SummaryRow>
           <SummaryRow label="Code">JordiParraCrespo · 12 repos</SummaryRow>
           <SummaryRow label="Host">mac-studio · macOS 15</SummaryRow>
@@ -607,7 +609,7 @@ export default function Page() {
         <Swatch label="sm · 36">
           <SuccessMark size="sm" />
         </Swatch>
-        <div className="flex max-w-[400px] flex-col gap-3.5">
+        <div className="flex max-w-100 flex-col gap-3.5">
           <SuccessMark />
           <StepHeader title="You're all set">
             Versio Platform is ready. Start a session and watch every step it takes.
@@ -623,7 +625,7 @@ export default function Page() {
         code={`<StepHeader step={2} total={4} back={{ href: '/sign-in' }} title="Name your workspace">A workspace holds your hosts, repositories and run history.</StepHeader>`}
       >
         <StepHeader
-          className="max-w-[400px]"
+          className="max-w-100"
           step={2}
           total={4}
           back={{ href: '#stepheader' }}
@@ -643,7 +645,7 @@ export default function Page() {
       >
         {CODING_AGENT_IDS.map((agent) => (
           <Swatch key={agent} label={agent}>
-            <span className="flex items-center gap-2.5 text-[13px] text-fg">
+            <span className="flex items-center gap-2.5 text-sm text-fg">
               <AgentMark agent={agent} />
               {CODING_AGENTS[agent].label}
             </span>
@@ -658,7 +660,7 @@ export default function Page() {
         desc="An empty state names the next action. The full form has a title, a description and one button; compact is the left-aligned sidebar line."
         code={`<EmptyState compact><EmptyState.Header><EmptyState.Description>No sessions yet…</EmptyState.Description></EmptyState.Header></EmptyState>`}
       >
-        <Card className="w-full max-w-[420px]">
+        <Card className="w-full max-w-105">
           <EmptyState>
             <EmptyState.Header>
               <EmptyState.Media variant="icon">
@@ -709,7 +711,7 @@ export default function Page() {
   <FieldDescription>Twelve characters minimum.</FieldDescription>
 </Field>`}
       >
-        <FieldGroup className="w-full max-w-[340px]">
+        <FieldGroup className="w-full max-w-85">
           <Field>
             <FieldLabel htmlFor="email">Email</FieldLabel>
             <Input id="email" type="email" size="lg" placeholder="you@company.com" />
@@ -730,7 +732,7 @@ export default function Page() {
             <FieldError>Passwords do not match.</FieldError>
           </Field>
         </FieldGroup>
-        <div className="flex w-full max-w-[340px] flex-col gap-3">
+        <div className="flex w-full max-w-85 flex-col gap-3">
           <Input size="sm" placeholder="sm · 28" />
           <Input size="md" placeholder="md · 34" leading={<SearchIcon />} />
           <Input size="lg" placeholder="lg · 42" />
@@ -787,7 +789,7 @@ export default function Page() {
         desc="The multi-line field at the 10px radius, sized to its content from 88px."
         code={`<Textarea placeholder="Session name" />`}
       >
-        <Field className="w-full max-w-[420px]">
+        <Field className="w-full max-w-105">
           <FieldLabel htmlFor="notes">Session name</FieldLabel>
           <Textarea id="notes" placeholder="Describe the task in one or two lines." />
         </Field>

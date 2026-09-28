@@ -11,7 +11,7 @@ export function ProjectAgentField({ control }: { control: Control<ProjectFormVal
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-[12.5px] text-fg-muted">{t('projects.dialog.agent')}</span>
+      <span className="text-xs text-fg-muted">{t('projects.dialog.agent')}</span>
       <div className="flex flex-wrap gap-1.5">
         {CODING_AGENT_IDS.map((agent) => (
           <Chip

@@ -143,10 +143,10 @@ export function SessionsSidebar() {
         <QueryState
           query={combineQueries({ isPending, error, data: sessions }, projects, () => groups)}
           pending={
-            <SessionList className="px-3 pt-2">
-              <Skeleton className="h-7.5 w-full rounded-sm" />
-              <Skeleton className="h-7.5 w-full rounded-sm" />
-              <Skeleton className="h-7.5 w-full rounded-sm" />
+            <SessionList className="mx-3 mt-2">
+              <Skeleton shape="sm" className="h-7.5 w-full" />
+              <Skeleton shape="sm" className="h-7.5 w-full" />
+              <Skeleton shape="sm" className="h-7.5 w-full" />
             </SessionList>
           }
           errorFallback={t('sessions.sidebar.loadFailed')}

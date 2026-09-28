@@ -26,7 +26,7 @@ built from this starter.
 | Question | Answer | Goes in |
 | --- | --- | --- |
 | Is it logic (an entity, a repository, a service, a query hook)? | kernel: session, users, settings, anything any app needs | `packages/frontend/core` |
-| | the product's domain: sessions, hosts, the account chrome | `packages/frontend/consumer` |
+| | the product's domain and its account chrome | `packages/frontend/consumer` |
 | Is it UI or platform glue below the routes that needs no product hook? | | `packages/frontend/web` |
 | Is it a design-system primitive? | | `packages/frontend/design-system/web` |
 | Everything else | | `apps/web/src/features/<module>/<kind>/` |
@@ -90,15 +90,6 @@ shared ─► core ─► consumer ─► apps/web
   product package's hooks.
 - `src/providers/` imports a feature's `dialogs/` and nothing else of a
   feature (`providers-mount-dialogs`).
-- The API's own endpoints are called through `@oppenheimer/api-client`'s
-  root, `heyApiSdk` through `unwrap` / `unwrapBody`, never through a path
-  into its `src/` (`one-api-client`, which checks the import, not the call).
-  There was a second, hand-maintained client once; it had no sessions or
-  hosts, and the raw calls written around it drifted. Better Auth's routes
-  under `/api/auth` are not in the generated SDK: they go through the Better
-  Auth client (`auth.client.ts` in the kernel, `lib/auth-client.ts` in the
-  app), and OAuth consent's `postConsent` (`features/auth/lib/consent.ts`),
-  which that client does not wrap, is a `fetch`.
 - The kit is imported by its package name (`@oppenheimer/frontend-web`), never by a
   path into its `src/`.
 - An app never keeps a file the kit ships. `pnpm check:structure` compares

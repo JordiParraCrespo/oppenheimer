@@ -18,10 +18,10 @@ export function NewSessionScreen() {
 
   return (
     <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas-recessed">
-      <div className="m-auto flex w-full max-w-[720px] flex-col gap-4.5 px-8 py-12">
+      <div className="m-auto flex w-full max-w-180 flex-col gap-4.5 px-8 py-12">
         <NewSessionForm
           heading={
-            <h1 className="font-display text-[32px] leading-[1.1] font-semibold tracking-[-0.021em] text-fg">
+            <h1 className="font-display text-metric font-semibold text-fg">
               {t('sessions.new.title')}
             </h1>
           }

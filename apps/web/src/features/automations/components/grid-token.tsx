@@ -35,19 +35,22 @@ export function GridToken({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger render={<InlineToken mono={mono} open={open} />}>{label}</PopoverTrigger>
-      <ChipSelectPopup width={292} maxHeight={420} className="gap-2 p-3">
-        {panes.map((pane) => (
-          <TimeGrid
-            key={pane.label}
-            groups={[{ label: pane.label, cells: pane.cells }]}
-            columns={pane.columns}
-            value={pane.value}
-            onValueChange={(value) => {
-              pane.onValueChange(value);
-              if (pane.closes) setOpen(false);
-            }}
-          />
-        ))}
+      <ChipSelectPopup width={292} maxHeight={420}>
+        {/* The popup's own 4px, plus 8px: the grids sit 12px in. */}
+        <div className="flex flex-col gap-2 p-2">
+          {panes.map((pane) => (
+            <TimeGrid
+              key={pane.label}
+              groups={[{ label: pane.label, cells: pane.cells }]}
+              columns={pane.columns}
+              value={pane.value}
+              onValueChange={(value) => {
+                pane.onValueChange(value);
+                if (pane.closes) setOpen(false);
+              }}
+            />
+          ))}
+        </div>
       </ChipSelectPopup>
     </Popover>
   );

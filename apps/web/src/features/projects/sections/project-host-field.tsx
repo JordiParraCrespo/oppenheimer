@@ -14,7 +14,7 @@ export function ProjectHostField({ control }: { control: Control<ProjectFormValu
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-[12.5px] text-fg-muted">{t('projects.dialog.host')}</span>
+      <span className="text-xs text-fg-muted">{t('projects.dialog.host')}</span>
       <div className="flex flex-wrap gap-1.5">
         {hosts.isPending ? (
           <Skeleton className="h-7 w-24" />

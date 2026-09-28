@@ -9,14 +9,15 @@ type Tone = { name: string; token: string; note?: string; ring?: boolean };
 /** A swatch column: the colour at the 6px radius, the token in mono, a note. */
 function ToneChip({ name, token, note, ring }: Tone) {
   return (
-    <div className="w-[7.5rem] min-w-0">
+    <div className="w-30 min-w-0">
       <div
         className={`h-12 rounded-xs border ${ring ? 'border-border' : 'border-transparent'}`}
+        // oxlint-disable-next-line shadcn/no-inline-styles -- the swatch's colour is the token this row names (data); drawing the raw token is the point
         style={{ background: `var(${token})` }}
       />
       <div className="mt-2 truncate text-sm text-fg">{name}</div>
-      <div className="figures mt-0.5 truncate text-[11px] text-fg-subtle">{token}</div>
-      {note ? <div className="mt-0.5 text-[11px] leading-snug text-fg-subtle">{note}</div> : null}
+      <div className="figures mt-0.5 truncate text-micro text-fg-subtle">{token}</div>
+      {note ? <div className="mt-0.5 text-micro leading-snug text-fg-subtle">{note}</div> : null}
     </div>
   );
 }
@@ -192,7 +193,7 @@ export function TypeLadder() {
     <div className="flex w-full flex-col gap-5">
       {TYPE_LADDER.map(([cls, spec, extra, sample]) => (
         <div key={cls} className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
-          <span className="figures w-40 shrink-0 text-[11px] text-fg-subtle">
+          <span className="figures w-40 shrink-0 text-micro text-fg-subtle">
             {cls}
             <br />
             <span className="text-fg-subtle/70">{spec}</span>
@@ -201,14 +202,14 @@ export function TypeLadder() {
         </div>
       ))}
       <div className="mt-2 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
-        <span className="figures w-40 shrink-0 text-[11px] text-fg-subtle">
+        <span className="figures w-40 shrink-0 text-micro text-fg-subtle">
           text-metric
           <br />
           <span className="text-fg-subtle/70">32 · 1.05 · mono</span>
         </span>
         <span className="figures text-metric text-fg">
-          98.2<span className="text-[0.55em] text-fg-muted">%</span> &nbsp; 812
-          <span className="text-[0.55em] text-fg-muted">ms</span> &nbsp; 6,420 / 10,000
+          98.2<span className="text-lg text-fg-muted">%</span> &nbsp; 812
+          <span className="text-lg text-fg-muted">ms</span> &nbsp; 6,420 / 10,000
         </span>
       </div>
     </div>
@@ -223,9 +224,9 @@ export function Weights() {
         ['500', 'font-medium', 'Medium carries labels and controls.'],
         ['600', 'font-semibold', 'Semibold is the ceiling; 700 reads as panic.'],
       ].map(([w, cls, copy]) => (
-        <div key={w} className="min-w-[14rem] flex-1">
+        <div key={w} className="min-w-56 flex-1">
           <div className={`text-h3 ${cls}`}>{copy}</div>
-          <div className="figures mt-2 text-[11px] text-fg-subtle">{cls} · {w}</div>
+          <div className="figures mt-2 text-micro text-fg-subtle">{cls} · {w}</div>
         </div>
       ))}
       <div className="w-full">
@@ -233,7 +234,7 @@ export function Weights() {
           SF Mono sets every number a human compares: <span className="text-term-accent">$</span> gh
           auth login --web · opk_7f3a9c · 763.4 MB
         </div>
-        <div className="figures mt-2 text-[11px] text-fg-subtle">figures · SF Mono · tabular-nums</div>
+        <div className="figures mt-2 text-micro text-fg-subtle">figures · SF Mono · tabular-nums</div>
       </div>
     </div>
   );
@@ -248,15 +249,16 @@ export function SpaceScale() {
     <div className="flex w-full flex-col gap-2">
       {SPACE.map((px) => (
         <div key={px} className="flex items-center gap-4">
-          <span className="figures w-10 text-right text-[11px] text-fg-subtle">{px}</span>
+          <span className="figures w-10 text-right text-micro text-fg-subtle">{px}</span>
           <span
-            className="h-3 rounded-[1px] bg-primary/80"
-            style={{ width: px * 3, minWidth: 2 }}
+            className="h-3 min-w-0.5 bg-primary/80"
+            // oxlint-disable-next-line shadcn/no-inline-styles -- the bar's length is the spacing step it draws (data, px × 3)
+            style={{ width: px * 3 }}
           />
-          {px >= 40 ? <span className="text-[11px] text-fg-subtle">page rhythm</span> : null}
+          {px >= 40 ? <span className="text-micro text-fg-subtle">page rhythm</span> : null}
         </div>
       ))}
-      <p className="mt-3 max-w-[60ch] text-xs text-fg-subtle">
+      <p className="mt-3 max-w-prose text-xs text-fg-subtle">
         4px base. Product UI lives between 4 and 24; 40 to 80 is page and section rhythm. If two
         blocks seem to need a line between them, add 24px instead.
       </p>
@@ -268,21 +270,20 @@ export function ControlRamp() {
   return (
     <div className="flex w-full flex-wrap items-end gap-8">
       {[
-        ['sm', '28px', '--control-h-sm'],
-        ['md', '34px', '--control-h-md'],
-        ['lg', '42px', '--control-h-lg'],
-      ].map(([name, px, token]) => (
+        ['sm', '28px', '--control-h-sm', 'h-(--control-h-sm)'],
+        ['md', '34px', '--control-h-md', 'h-(--control-h-md)'],
+        ['lg', '42px', '--control-h-lg', 'h-(--control-h-lg)'],
+      ].map(([name, px, token, height]) => (
         <div key={name} className="flex flex-col items-start gap-2">
           <div
-            className="flex items-center rounded-pill bg-control px-4 text-operate text-control-fg"
-            style={{ height: `var(${token})` }}
+            className={`flex ${height} items-center rounded-pill bg-control px-4 text-operate text-control-fg`}
           >
             {name} · {px}
           </div>
-          <span className="figures text-[11px] text-fg-subtle">{token}</span>
+          <span className="figures text-micro text-fg-subtle">{token}</span>
         </div>
       ))}
-      <p className="w-full max-w-[60ch] text-xs text-fg-subtle">
+      <p className="w-full max-w-prose text-xs text-fg-subtle">
         One height ramp for every interactive element, so a Button, an Input and a ChipSelect sit on
         a row without adjustment. Sidebar 264px, collapsed 60px; top bar 56px.
       </p>
@@ -307,7 +308,7 @@ export function Radii() {
       {RADII.map(([px, cls, usage]) => (
         <div key={cls} className="flex flex-col items-start gap-2">
           <div className={`h-16 w-28 border border-border bg-card ${cls}`} />
-          <span className="figures text-[11px] text-fg-subtle">
+          <span className="figures text-micro text-fg-subtle">
             {cls} · {px}
           </span>
           <span className="max-w-28 text-xs leading-snug text-fg-muted">{usage}</span>
@@ -327,19 +328,20 @@ export function Elevation() {
           <div className="flex h-24 w-40 items-center justify-center rounded-lg border border-border-subtle bg-card text-xs text-fg-muted">
             card · no shadow
           </div>
-          <span className="figures text-[11px] text-fg-subtle">tonal: card on canvas</span>
+          <span className="figures text-micro text-fg-subtle">tonal: card on canvas</span>
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex h-24 w-40 items-center justify-center rounded-md bg-popover text-xs text-fg-muted shadow-popover">
             popover
           </div>
-          <span className="figures text-[11px] text-fg-subtle">shadow-popover</span>
+          <span className="figures text-micro text-fg-subtle">shadow-popover</span>
         </div>
         <div className="flex flex-col gap-2">
+          {/* oxlint-disable-next-line shadcn/no-raw-colors -- false positive: shadow-modal is the elevation token, read as a colour (like shadow-panel) */}
           <div className="flex h-24 w-40 items-center justify-center rounded-xl bg-popover text-xs text-fg-muted shadow-modal">
             modal
           </div>
-          <span className="figures text-[11px] text-fg-subtle">shadow-modal</span>
+          <span className="figures text-micro text-fg-subtle">shadow-modal</span>
         </div>
       </div>
     </ThemePair>
@@ -348,24 +350,31 @@ export function Elevation() {
 
 /* ── Motion ──────────────────────────────────────────────────────────────── */
 
+/** Each duration's own class, spelled out so Tailwind generates it. */
+const DURATION_CLASS: Record<(typeof DURATIONS)[number][0], string> = {
+  instant: 'duration-instant',
+  fast: 'duration-fast',
+  base: 'duration-base',
+  slow: 'duration-slow',
+};
+
 export function Motion() {
   return (
     <div className="flex w-full flex-col gap-3">
       {DURATIONS.map(([name, ms, use]) => (
         <div key={name} className="group flex items-center gap-4">
-          <span className="figures w-28 text-[11px] text-fg-subtle">
+          <span className="figures w-28 text-micro text-fg-subtle">
             duration-{name} · {ms}
           </span>
           <span className="relative h-2 w-48 overflow-hidden rounded-pill bg-control">
             <span
-              className="absolute inset-y-0 left-0 w-1/3 rounded-pill bg-primary transition-transform ease-standard group-hover:translate-x-[200%]"
-              style={{ transitionDuration: ms }}
+              className={`absolute inset-y-0 left-0 w-1/3 rounded-pill bg-primary transition-transform ease-standard group-hover:translate-x-32 ${DURATION_CLASS[name]}`}
             />
           </span>
           <span className="text-xs text-fg-muted">{use}</span>
         </div>
       ))}
-      <p className="mt-2 max-w-[60ch] text-xs text-fg-subtle">
+      <p className="mt-2 max-w-prose text-xs text-fg-subtle">
         Hover a row. Short, eased, never bouncy: cubic-bezier(.4,0,.2,1) standard,
         cubic-bezier(.16,1,.3,1) on entry. Menus and dialogs rise 4px and fade; nothing slides in
         from an edge. Everything collapses to 0ms under prefers-reduced-motion.
@@ -431,7 +440,7 @@ function pascal(name: string) {
 
 export function Icons() {
   return (
-    <div className="grid w-full grid-cols-[repeat(auto-fill,minmax(88px,1fr))] gap-1.5">
+    <div className="grid w-full grid-cols-3 sm:grid-cols-5 md:grid-cols-7 xl:grid-cols-9 gap-1.5">
       {ICON_NAMES.map((name) => {
         const Glyph = LUCIDE[pascal(name) as keyof typeof LUCIDE];
         if (!Glyph) return null;
@@ -442,7 +451,7 @@ export function Icons() {
             className="flex flex-col items-center gap-2 rounded-sm border border-border-subtle bg-card px-1.5 py-3.5"
           >
             <Glyph className="size-4 text-fg" />
-            <span className="figures text-center text-[10.5px] leading-tight break-words text-fg-subtle">
+            <span className="figures text-center text-micro leading-tight break-words text-fg-subtle">
               {name}
             </span>
           </div>
