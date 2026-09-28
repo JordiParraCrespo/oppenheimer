@@ -18,6 +18,20 @@ export interface UserRoleRepositoryPort {
   setRolesForUser(userId: string, roleIds: string[], organizationId?: string | null): Promise<void>;
 
   /**
+   * Make `roleId` the membership role (`MEMBERSHIP_ROLES` in `@oppenheimer/shared`) the user
+   * holds in exactly `organizationId` — what a roster change calls when a
+   * member's organization role moves.
+   *
+   * In one transaction: the user's assignments of the *other* membership roles
+   * scoped to that organization are removed, `roleId` is granted there, and the
+   * organization's role version is bumped. Nothing else is touched — not a
+   * custom role an admin assigned in that organization (even one the user also
+   * holds globally: the scoped row is its own grant), not a global assignment,
+   * not another organization's.
+   */
+  replaceMembershipRole(userId: string, organizationId: string, roleId: string): Promise<void>;
+
+  /**
    * Grant one role, leaving every other assignment the user holds alone.
    *
    * Additive on purpose, and distinct from `setRolesForUser`: the caller is

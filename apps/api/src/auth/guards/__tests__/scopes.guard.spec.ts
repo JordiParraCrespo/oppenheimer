@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { toResourceScope } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CredentialScopeResolver } from '../../application/credential-scope.resolver';
+import { RequestTenantResolver } from '../../application/request-tenant.resolver';
 import { ORGANIZATION_PARAM_KEY } from '../../decorators/organization-scoped.decorator';
 import { ALLOW_ANY_SCOPE_KEY, REQUIRE_SCOPES_KEY } from '../../decorators/require-scopes.decorator';
 import type { ScopeContext } from '../../domain/scope-context.types';
@@ -26,6 +27,9 @@ const tokenContext = (overrides: Partial<ScopeContext> = {}): ScopeContext => ({
   expiresAt: null,
   ...overrides,
 });
+
+const ORG_1 = '11111111-1111-4111-8111-111111111111';
+const ORG_2 = '22222222-2222-4222-8222-222222222222';
 
 describe('ScopesGuard', () => {
   let guard: ScopesGuard;
@@ -51,7 +55,11 @@ describe('ScopesGuard', () => {
       ((key: string) => metadata[key]) as never,
     );
     credentials = { resolve: vi.fn().mockResolvedValue(null) };
-    guard = new ScopesGuard(reflector, credentials as CredentialScopeResolver);
+    guard = new ScopesGuard(
+      reflector,
+      credentials as CredentialScopeResolver,
+      new RequestTenantResolver(reflector),
+    );
   });
 
   const useCredential = (ctx: ScopeContext | null) => {
@@ -133,17 +141,17 @@ describe('ScopesGuard', () => {
   describe('organization restriction', () => {
     beforeEach(() => {
       metadata[REQUIRE_SCOPES_KEY] = ['members:read'];
-      metadata[ORGANIZATION_PARAM_KEY] = 'orgId';
+      metadata[ORGANIZATION_PARAM_KEY] = { param: 'orgId', from: 'path' };
     });
 
     it('admits a request inside the credential’s organizations', async () => {
       useCredential(
         tokenContext({
           scopes: ['members:read'],
-          resourceScope: toResourceScope(['org-1']),
+          resourceScope: toResourceScope([ORG_1]),
         }),
       );
-      request.params = { orgId: 'org-1' };
+      request.params = { orgId: ORG_1 };
 
       await expect(guard.canActivate(context())).resolves.toBe(true);
     });
@@ -152,10 +160,10 @@ describe('ScopesGuard', () => {
       useCredential(
         tokenContext({
           scopes: ['members:read'],
-          resourceScope: toResourceScope(['org-1']),
+          resourceScope: toResourceScope([ORG_1]),
         }),
       );
-      request.params = { orgId: 'org-2' };
+      request.params = { orgId: ORG_2 };
 
       await expect(guard.canActivate(context())).rejects.toMatchObject({
         code: 'TOKEN_007',
@@ -164,51 +172,99 @@ describe('ScopesGuard', () => {
 
     it('ignores the restriction for an unrestricted credential', async () => {
       useCredential(tokenContext({ scopes: ['members:read'] }));
-      request.params = { orgId: 'org-2' };
+      request.params = { orgId: ORG_2 };
 
       await expect(guard.canActivate(context())).resolves.toBe(true);
     });
 
-    it('also reads the organization from the request body', async () => {
-      metadata[ORGANIZATION_PARAM_KEY] = undefined;
+    it('holds a body-named organization to the restriction on a route that declares it', async () => {
+      metadata[ORGANIZATION_PARAM_KEY] = { param: 'organizationId', from: 'body' };
       useCredential(
         tokenContext({
           scopes: ['members:read'],
-          resourceScope: toResourceScope(['org-1']),
+          resourceScope: toResourceScope([ORG_1]),
         }),
       );
-      request.body = { organizationId: 'org-2' };
+      request.body = { organizationId: ORG_2 };
 
       await expect(guard.canActivate(context())).rejects.toMatchObject({
         code: 'TOKEN_007',
       });
     });
 
-    it('also reads the organization from the query string', async () => {
-      metadata[ORGANIZATION_PARAM_KEY] = undefined;
+    it('holds a query-named organization to the restriction on a route that declares it', async () => {
+      metadata[ORGANIZATION_PARAM_KEY] = { param: 'organizationId', from: 'query' };
       useCredential(
         tokenContext({
           scopes: ['members:read'],
-          resourceScope: toResourceScope(['org-1']),
+          resourceScope: toResourceScope([ORG_1]),
         }),
       );
-      request.query = { organizationId: 'org-2' };
+      request.query = { organizationId: ORG_2 };
 
       await expect(guard.canActivate(context())).rejects.toMatchObject({
         code: 'TOKEN_007',
       });
     });
 
-    it('allows a route that names no organization at all', async () => {
+    it('refuses a malformed organization id in the path before anything reads it', async () => {
+      useCredential(
+        tokenContext({
+          scopes: ['members:read'],
+          resourceScope: toResourceScope([ORG_1]),
+        }),
+      );
+      request.params = { orgId: 'not-a-uuid' };
+
+      await expect(guard.canActivate(context())).rejects.toMatchObject({ code: 'AUTHZ_003' });
+    });
+
+    it('checks the same tenant the request is stamped with, before ApiAuthGuard runs', async () => {
+      useCredential(
+        tokenContext({
+          scopes: ['members:read'],
+          resourceScope: toResourceScope([ORG_1]),
+        }),
+      );
+      request.params = { orgId: ORG_1 };
+
+      await guard.canActivate(context());
+
+      // Stamped here, through the one writer; ApiAuthGuard's later stamp is a no-op.
+      expect(request.tenant).toEqual({ organizationId: ORG_1 });
+    });
+
+    it("acts in a single-organization token's pinned organization on a route that names none", async () => {
       metadata[ORGANIZATION_PARAM_KEY] = undefined;
       useCredential(
         tokenContext({
           scopes: ['members:read'],
-          resourceScope: toResourceScope(['org-1']),
+          resourceScope: toResourceScope([ORG_1]),
         }),
       );
+      // A body or query `organizationId` on a route that does not declare it
+      // is not the tenant and cannot move the request out of the restriction.
+      request.body = { organizationId: ORG_2 };
+      request.query = { organizationId: ORG_2 };
 
       await expect(guard.canActivate(context())).resolves.toBe(true);
+      expect(request.tenant).toEqual({ organizationId: ORG_1 });
+    });
+
+    it('leaves a multi-organization token in no organization on a route that names none', async () => {
+      metadata[ORGANIZATION_PARAM_KEY] = undefined;
+      useCredential(
+        tokenContext({
+          scopes: ['members:read'],
+          resourceScope: toResourceScope([ORG_1, ORG_2]),
+        }),
+      );
+      request.session = { activeOrganizationId: ORG_2 };
+
+      await expect(guard.canActivate(context())).resolves.toBe(true);
+      // Null means no organization's roles, grants or rows: global roles only,
+      // so there is nothing outside the restriction to reach.
+      expect(request.tenant).toEqual({ organizationId: null });
     });
   });
 

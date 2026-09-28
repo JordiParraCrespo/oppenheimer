@@ -27,16 +27,13 @@ export class CreateRoleCommandHandler implements ICommandHandler<CreateRoleComma
         ? {
             id: command.actorId,
             role: command.actorRole,
-            activeOrganizationId: command.activeOrganizationId,
+            organizationId: command.organizationId,
           }
         : undefined,
       command.permissions,
     );
 
-    const existing = await this.roleRepository.findOneByName(
-      command.name,
-      command.activeOrganizationId,
-    );
+    const existing = await this.roleRepository.findOneByName(command.name, command.organizationId);
     if (existing.isSome()) throw new AppError(RoleErrors.NAME_TAKEN);
 
     const role = RoleEntity.createNew({
@@ -44,7 +41,7 @@ export class CreateRoleCommandHandler implements ICommandHandler<CreateRoleComma
       description: command.description,
       // A role created inside an organization belongs to it. Global roles are
       // seeded, not created through the API.
-      organizationId: command.activeOrganizationId ?? null,
+      organizationId: command.organizationId ?? null,
       permissions: command.permissions.map((permission) => Permission.fromDefinition(permission)),
     });
 

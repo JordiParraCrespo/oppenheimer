@@ -2720,6 +2720,16 @@
               }
             }
           },
+          "400": {
+            "description": "AUTHZ_003 — The organization id is not a UUID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "401": {
             "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
             "content": {
@@ -2731,37 +2741,7 @@
             }
           },
           "403": {
-            "description": "ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing members\n\nAUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "ORG_001 / ORG_005 — The organization or the member does not exist",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "ORG_006 / ORG_007 / ORG_014 — Already a member, the last owner cannot leave, or a membership limit was reached",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "ORG_016 — The organization service failed to handle the request",
+            "description": "ORG_003 — The caller is not a member of this organization\n\nAUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
             "content": {
               "application/problem+json": {
                 "schema": {

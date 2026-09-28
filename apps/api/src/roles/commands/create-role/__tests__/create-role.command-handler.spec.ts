@@ -65,7 +65,7 @@ describe('CreateRoleCommandHandler', () => {
       new CreateRoleCommand({
         name: 'Content Lead',
         permissions: [],
-        activeOrganizationId: 'organization-1',
+        organizationId: 'organization-1',
       }),
     );
 

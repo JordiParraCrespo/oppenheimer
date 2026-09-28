@@ -146,15 +146,18 @@ one code so the endpoint cannot be used as a probing oracle.
 
 ## Authorization
 
-| Code                             | Title                                                  | HTTP |
-| -------------------------------- | ------------------------------------------------------ | ---- |
-| `AUTHZ_001` <a id="authz_001" /> | The active organization is not one of your memberships | 403  |
-| `AUTHZ_002` <a id="authz_002" /> | This route declares no authorization policy            | 500  |
+| Code                             | Title                                                          | HTTP |
+| -------------------------------- | -------------------------------------------------------------- | ---- |
+| `AUTHZ_002` <a id="authz_002" /> | This route declares no authorization policy                    | 500  |
+| `AUTHZ_003` <a id="authz_003" /> | The organization this request names is not a valid id          | 400  |
+| `AUTHZ_004` <a id="authz_004" /> | This route names an organization parameter it does not declare | 500  |
 
 `AUTHZ_002` is a 500 rather than a 403 on purpose. A route that reached
 production without declaring what it requires is a programming error, and
 reporting it as a permission problem would send whoever hits it looking in the
-wrong place.
+wrong place. `AUTHZ_004` is the same kind of fault: `@OrganizationScoped`
+names a path parameter the route does not have. Which organization a request
+is authorized in is `product/versions/mvp/08-auth.md`.
 
 ## Access grants
 

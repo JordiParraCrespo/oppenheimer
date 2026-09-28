@@ -11,7 +11,7 @@ function policyFor(actorPermissions: PermissionDefinition[]): RoleGrantPolicy {
   return new RoleGrantPolicy(abilityFactory);
 }
 
-const ACTOR = { id: 'admin-1', activeOrganizationId: 'org-1' };
+const ACTOR = { id: 'admin-1', organizationId: 'org-1' };
 
 describe('RoleGrantPolicy', () => {
   it('allows granting what the actor already holds', async () => {

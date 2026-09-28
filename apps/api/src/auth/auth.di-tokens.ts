@@ -20,3 +20,6 @@ export const CREDENTIAL_OWNER = Symbol('CREDENTIAL_OWNER');
 
 /** Builds the caller's effective CASL ability for a request. */
 export const ABILITY = Symbol('ABILITY');
+
+/** Stamps a request with the one organization it acts in (`request.tenant`). */
+export const REQUEST_TENANT = Symbol('REQUEST_TENANT');

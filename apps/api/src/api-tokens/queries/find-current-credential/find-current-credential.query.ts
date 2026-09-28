@@ -11,20 +11,20 @@ import type { Scope } from '@oppenheimer/shared';
 export class FindCurrentCredentialQuery extends QueryBase {
   readonly userId: string;
   readonly role?: string;
-  readonly activeOrganizationId?: string | null;
+  readonly organizationId?: string | null;
   /** `null` for a browser session, which carries no scope restriction. */
   readonly grantedScopes: Scope[] | null;
 
   constructor(props: {
     userId: string;
     role?: string;
-    activeOrganizationId?: string | null;
+    organizationId?: string | null;
     grantedScopes: Scope[] | null;
   }) {
     super();
     this.userId = props.userId;
     this.role = props.role;
-    this.activeOrganizationId = props.activeOrganizationId;
+    this.organizationId = props.organizationId;
     this.grantedScopes = props.grantedScopes;
   }
 }

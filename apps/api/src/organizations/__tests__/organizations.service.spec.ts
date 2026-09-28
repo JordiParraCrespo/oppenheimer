@@ -100,7 +100,7 @@ describe('OrganizationsService', () => {
   };
   const userRoles = {
     setRolesForUser: vi.fn().mockResolvedValue(undefined),
-    findRoleIdsForUser: vi.fn().mockResolvedValue([]),
+    replaceMembershipRole: vi.fn().mockResolvedValue(undefined),
   };
   const memberRecords = { findOne: vi.fn().mockResolvedValue(null) };
   const sessions = { update: vi.fn().mockResolvedValue({ affected: 1 }) };
@@ -128,7 +128,6 @@ describe('OrganizationsService', () => {
       unwrap: () => ({ id: 'system-role' }),
     });
     memberRecords.findOne.mockResolvedValue(null);
-    userRoles.findRoleIdsForUser.mockResolvedValue([]);
     service = new OrganizationsService(
       users as never,
       userRoleRecords as never,
@@ -199,7 +198,7 @@ describe('OrganizationsService', () => {
       await service.create(headers, { name: 'Acme' });
 
       expect(roles.findOneByName).toHaveBeenCalledWith('owner', null);
-      expect(userRoles.setRolesForUser).toHaveBeenCalledWith('u1', ['system-role'], 'org1');
+      expect(userRoles.replaceMembershipRole).toHaveBeenCalledWith('u1', 'org1', 'system-role');
     });
 
     it('gives the organization a default workspace with its creator in it', async () => {
@@ -228,7 +227,7 @@ describe('OrganizationsService', () => {
       api.createOrganization.mockResolvedValue(orgRecord);
       api.getSession.mockResolvedValue({ user: { id: 'u1' } });
       const failure = new Error('role store unavailable');
-      userRoles.setRolesForUser.mockRejectedValueOnce(failure);
+      userRoles.replaceMembershipRole.mockRejectedValueOnce(failure);
 
       await expect(service.create(headers, { name: 'Acme' })).rejects.toBe(failure);
 
@@ -243,7 +242,7 @@ describe('OrganizationsService', () => {
       api.createOrganization.mockResolvedValue(orgRecord);
       api.getSession.mockResolvedValue({ user: { id: 'u1' } });
       const failure = new Error('role store unavailable');
-      userRoles.setRolesForUser.mockRejectedValueOnce(failure);
+      userRoles.replaceMembershipRole.mockRejectedValueOnce(failure);
       api.deleteOrganization.mockRejectedValueOnce(new Error('delete failed too'));
 
       // The caller needs the reason they could not create a workspace, not a
@@ -264,7 +263,7 @@ describe('OrganizationsService', () => {
       const result = await service.create(headers, { name: 'Acme' });
 
       expect(result.id).toBe('org1');
-      expect(userRoles.setRolesForUser).toHaveBeenCalledWith('u1', ['system-role'], 'org1');
+      expect(userRoles.replaceMembershipRole).toHaveBeenCalledWith('u1', 'org1', 'system-role');
     });
   });
 
@@ -444,7 +443,7 @@ describe('OrganizationsService', () => {
         }),
       );
       expect(roles.findOneByName).toHaveBeenCalledWith('user', null);
-      expect(userRoles.setRolesForUser).toHaveBeenCalledWith('u1', ['system-role'], 'org1');
+      expect(userRoles.replaceMembershipRole).toHaveBeenCalledWith('u1', 'org1', 'system-role');
     });
 
     it('removes a member unwrapping the `{ member }` envelope', async () => {
@@ -472,27 +471,35 @@ describe('OrganizationsService', () => {
         }),
       );
       expect(roles.findOneByName).toHaveBeenCalledWith('owner', null);
-      expect(userRoles.setRolesForUser).toHaveBeenCalledWith('u1', ['system-role'], 'org1');
+      expect(userRoles.replaceMembershipRole).toHaveBeenCalledWith('u1', 'org1', 'system-role');
     });
 
-    it('keeps custom roles scoped to the organization when the membership role changes', async () => {
+    it('swaps only the membership role, through the roles port, when the organization role changes', async () => {
       api.updateMemberRole.mockResolvedValue(memberRecord);
       roles.findOneByName.mockImplementation(async (name: string) => ({
         isNone: () => false,
         unwrap: () => ({ id: `${name}-role` }),
       }));
-      // Scoped reads include the global assignments; the global read is those alone.
-      userRoles.findRoleIdsForUser.mockImplementation(async (_userId: string, scope: unknown) =>
-        scope === null ? ['global-role'] : ['global-role', 'user-role', 'custom-role'],
-      );
 
       await service.updateMemberRole(headers, 'org1', 'm1', 'admin');
 
-      expect(userRoles.setRolesForUser).toHaveBeenCalledWith(
-        'u1',
-        ['custom-role', 'owner-role'],
-        'org1',
+      // One role looked up — the one the new organization role maps onto — and
+      // the port keeps every other assignment. The service no longer reads or
+      // rewrites the member's role set.
+      expect(roles.findOneByName).toHaveBeenCalledTimes(1);
+      expect(roles.findOneByName).toHaveBeenCalledWith('owner', null);
+      expect(userRoles.replaceMembershipRole).toHaveBeenCalledWith('u1', 'org1', 'owner-role');
+      expect(userRoles.setRolesForUser).not.toHaveBeenCalled();
+    });
+
+    it('refuses a membership whose system role is not installed (ROLE_007)', async () => {
+      api.updateMemberRole.mockResolvedValue(memberRecord);
+      roles.findOneByName.mockResolvedValue({ isNone: () => true, unwrap: () => undefined });
+
+      await expect(service.updateMemberRole(headers, 'org1', 'm1', 'member')).rejects.toMatchObject(
+        { code: 'ROLE_007' },
       );
+      expect(userRoles.replaceMembershipRole).not.toHaveBeenCalled();
     });
 
     it('leaves an organization', async () => {
@@ -500,27 +507,6 @@ describe('OrganizationsService', () => {
       const result = await service.leave(headers, 'org1');
       expect(result.id).toBe('m1');
       expect(userRoles.setRolesForUser).toHaveBeenCalledWith('u1', [], 'org1');
-    });
-
-    it("reads the caller's own membership row in the organization named", async () => {
-      memberRecords.findOne.mockResolvedValue({ ...memberRecord, createdAt: new Date() });
-
-      const result = await service.getMembership('org1', 'u1');
-
-      // The organization comes from the path, never the session's active one.
-      expect(memberRecords.findOne).toHaveBeenCalledWith({
-        where: { organizationId: 'org1', userId: 'u1' },
-      });
-      expect(result).toMatchObject({ id: 'm1', organizationId: 'org1', userId: 'u1' });
-      expect(result.user).toMatchObject({ email: 'member@x.com' });
-    });
-
-    it('refuses a caller with no membership there as not a member (ORG_003)', async () => {
-      memberRecords.findOne.mockResolvedValue(null);
-
-      await expect(service.getMembership('org1', 'u1')).rejects.toMatchObject({
-        code: 'ORG_003',
-      });
     });
   });
 });

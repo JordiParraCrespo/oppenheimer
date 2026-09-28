@@ -57,7 +57,10 @@ throws `TOKEN_006` for any scoped credential. Forgetting the decorator makes an
 endpoint invisible to tokens — it never makes it accidentally reachable.
 
 Organization-bound routes must also declare which parameter carries the
-organization id, or a restricted token could reach another organization:
+organization id, or a restricted token could reach another organization. The
+same declaration names the request's tenant (`product/versions/mvp/08-auth.md`).
+A route that takes the organization in the query or body says so:
+`@OrganizationScoped('organizationId', 'query')`.
 
 ```ts
 @Get(':orgId/members')

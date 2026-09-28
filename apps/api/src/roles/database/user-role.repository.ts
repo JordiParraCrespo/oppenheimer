@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { MEMBERSHIP_ROLES } from '@oppenheimer/shared';
 import { type EntityManager, In, IsNull, type Repository } from 'typeorm';
 import type { RoleEntity } from '../domain/role.entity';
 import { RoleMapper } from '../roles.mapper';
@@ -76,6 +77,38 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
       .orIgnore()
       .execute();
     if (organizationId) await bumpRoleVersion(manager, organizationId);
+  }
+
+  async replaceMembershipRole(
+    userId: string,
+    organizationId: string,
+    roleId: string,
+  ): Promise<void> {
+    await this.userRoleRepository.manager.transaction(async (manager) => {
+      // The global system roles a membership maps onto, read in the same
+      // transaction as the swap: the rows it may remove. Anything else scoped
+      // to the organization is left alone.
+      const membershipRoles = await manager.find(RoleOrmEntity, {
+        where: { name: In([...MEMBERSHIP_ROLES]), organizationId: IsNull() },
+        select: { id: true },
+      });
+      const replaced = membershipRoles.map((role) => role.id).filter((id) => id !== roleId);
+      if (replaced.length > 0) {
+        await manager.delete(UserRoleOrmEntity, {
+          userId,
+          organizationId,
+          roleId: In(replaced),
+        });
+      }
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(UserRoleOrmEntity)
+        .values({ userId, roleId, organizationId })
+        .orIgnore()
+        .execute();
+      await bumpRoleVersion(manager, organizationId);
+    });
   }
 
   async setRolesForUser(

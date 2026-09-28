@@ -29,16 +29,13 @@ export class UpdateRolePermissionsCommandHandler
         ? {
             id: command.actorId,
             role: command.actorRole,
-            activeOrganizationId: command.activeOrganizationId,
+            organizationId: command.organizationId,
           }
         : undefined,
       command.permissions,
     );
 
-    const found = await this.roleRepository.findOneById(
-      command.roleId,
-      command.activeOrganizationId,
-    );
+    const found = await this.roleRepository.findOneById(command.roleId, command.organizationId);
     if (found.isNone()) throw new AppError(RoleErrors.NOT_FOUND);
 
     const role = found.unwrap();
@@ -47,7 +44,7 @@ export class UpdateRolePermissionsCommandHandler
         ? {
             id: command.actorId,
             role: command.actorRole,
-            activeOrganizationId: command.activeOrganizationId,
+            organizationId: command.organizationId,
           }
         : undefined,
       role,

@@ -6,6 +6,7 @@ import { PERMISSION_GROUPS, type Scope } from '@oppenheimer/shared';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
+import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
 import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PermissionCatalogResponseDto } from '../../dtos/permission-catalog.response.dto';
@@ -33,15 +34,11 @@ export class FindGrantablePermissionsHttpController {
     @Req() request: ScopedRequest,
     @CurrentUser() user: { id: string; role?: string },
   ): Promise<PermissionCatalogResponseDto> {
-    const session = request.session as {
-      activeOrganizationId?: string | null;
-    } | null;
-
     const grantable = await this.queryBus.execute<FindGrantablePermissionsQuery, Scope[]>(
       new FindGrantablePermissionsQuery({
         userId: user.id,
         role: user.role,
-        activeOrganizationId: session?.activeOrganizationId ?? null,
+        organizationId: tenantOrganizationIdOf(request),
       }),
     );
 

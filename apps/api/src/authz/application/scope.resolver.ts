@@ -12,13 +12,21 @@ import type { AccessGrantRepositoryPort } from '../database/access-grant.reposit
 /**
  * The application's default scope resolver.
  *
+ * Everything is resolved in **one organization**, `input.organizationId`,
+ * which `AccessScopeInterceptor` fills from the request's tenant — the same
+ * organization `PoliciesGuard` built the caller's ability in (on an
+ * `@OrganizationScoped` route, the one the path names). Teams, roles and grants
+ * are all read in it, so the scope and the ability never describe two
+ * different tenants.
+ *
  * Composes two sources:
  *
- * 1. **Structural** — the teams the caller belongs to inside the active
- *    organization. No new tables: `teamMember` joined to `team`.
- * 2. **Explicit** — unexpired `access_grant` rows addressed to the caller
- *    directly, to one of their teams or to a role they hold here (global or
- *    scoped to the organization), read through the aggregate's port.
+ * 1. **Structural** — the teams the caller belongs to in that organization.
+ *    No new tables: `teamMember` joined to `team`.
+ * 2. **Explicit** — unexpired `access_grant` rows in that organization
+ *    addressed to the caller directly, to one of their teams or to a role they
+ *    hold there (global, or scoped to that organization), read through the
+ *    aggregate's port.
  *
  * **Nothing here is cached.** Team membership is written by Better Auth
  * (`auth.api.addTeamMember` / `removeTeamMember`) outside any application
@@ -81,7 +89,7 @@ export class ScopeResolver implements ScopeResolverPort {
     };
   }
 
-  /** Teams the user belongs to, narrowed to the active organization. */
+  /** Teams the user belongs to, narrowed to the organization. */
   private async teamIdsFor(userId: string, organizationId: string): Promise<string[]> {
     const memberships = await this.teamMembers.find({
       where: { userId },

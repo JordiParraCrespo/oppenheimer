@@ -84,7 +84,6 @@ export { AuthorizationApi } from './data-access/api/openapi/services/Authorizati
 export { HealthApi } from './data-access/api/openapi/services/HealthApi';
 export { InvitationsApi } from './data-access/api/openapi/services/InvitationsApi';
 export { OrganizationInvitationsApi } from './data-access/api/openapi/services/OrganizationInvitationsApi';
-export { OrganizationMembersApi } from './data-access/api/openapi/services/OrganizationMembersApi';
 export { OrganizationsApi } from './data-access/api/openapi/services/OrganizationsApi';
 export { ProfileApi } from './data-access/api/openapi/services/ProfileApi';
 export { RolesApi } from './data-access/api/openapi/services/RolesApi';

@@ -482,6 +482,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   behind an Inspect fold, in the console and in onboarding; the
   automation editor holds its Task step alone until the API names a
   trigger (05, 13).
+- 2026-09-27: organization routes are authorized in the organization they name (08).
 - 2026-09-27: **automations move into the MVP** (00, 16). A run is a
   headless session for any agent in the catalog, translated in the API;
   `sessions/` owns execution (`session_turn`) and `automations/` only the

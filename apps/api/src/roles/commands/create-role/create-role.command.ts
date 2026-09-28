@@ -8,7 +8,7 @@ export class CreateRoleCommand extends CommandBase {
 
   readonly actorId?: string;
   readonly actorRole?: string;
-  readonly activeOrganizationId?: string | null;
+  readonly organizationId?: string | null;
 
   constructor(props: CommandProps<CreateRoleCommand>) {
     super(props);
@@ -17,6 +17,6 @@ export class CreateRoleCommand extends CommandBase {
     this.permissions = props.permissions;
     this.actorId = props.actorId;
     this.actorRole = props.actorRole;
-    this.activeOrganizationId = props.activeOrganizationId;
+    this.organizationId = props.organizationId;
   }
 }

@@ -3347,27 +3347,19 @@ export type GetMembershipData = {
 
 export type GetMembershipErrors = {
     /**
+     * AUTHZ_003 — The organization id is not a UUID
+     */
+    400: ProblemDetailsDto;
+    /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
     401: ProblemDetailsDto;
     /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing members
+     * ORG_003 — The caller is not a member of this organization
      *
      * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
      */
     403: ProblemDetailsDto;
-    /**
-     * ORG_001 / ORG_005 — The organization or the member does not exist
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_006 / ORG_007 / ORG_014 — Already a member, the last owner cannot leave, or a membership limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
 };
 
 export type GetMembershipError = GetMembershipErrors[keyof GetMembershipErrors];

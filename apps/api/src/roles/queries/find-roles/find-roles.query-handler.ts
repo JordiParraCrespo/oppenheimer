@@ -18,7 +18,7 @@ export class FindRolesQueryHandler implements IQueryHandler<FindRolesQuery, Pagi
       page: query.page,
       limit: query.limit,
       search: query.search,
-      organizationId: query.activeOrganizationId,
+      organizationId: query.organizationId,
     });
   }
 }

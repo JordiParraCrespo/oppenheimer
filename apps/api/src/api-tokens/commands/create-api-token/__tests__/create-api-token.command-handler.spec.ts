@@ -73,7 +73,7 @@ describe('CreateApiTokenCommandHandler', () => {
 
     expect(abilityFactory.createForUser).toHaveBeenCalledWith(
       { id: 'user-1', role: 'user' },
-      { activeOrganizationId: null },
+      { organizationId: null },
     );
   });
 

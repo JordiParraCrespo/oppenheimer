@@ -16,7 +16,6 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@ne
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import type { Request } from 'express';
 import { CheckPolicies } from '../auth/decorators/check-policies.decorator';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { OrganizationScoped } from '../auth/decorators/organization-scoped.decorator';
 import { RequireScopes } from '../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../auth/guards/api-auth.guard';
@@ -57,20 +56,6 @@ import { OrganizationsService } from './organizations.service';
 @Controller('organizations')
 export class MembersController {
   constructor(private readonly organizations: OrganizationsService) {}
-
-  @Get(':orgId/members/me')
-  @Version('1')
-  @RequireScopes('members:read')
-  @OrganizationScoped('orgId')
-  @CheckPolicies({ action: 'read', subject: 'Member' })
-  @ApiOperation({ summary: "Get the caller's own membership in an organization" })
-  @ApiResponse({ status: 200, type: MemberResponseDto })
-  getMembership(
-    @Param('orgId', ParseUUIDPipe) orgId: string,
-    @CurrentUser('id') userId: string,
-  ): Promise<MemberResponseDto> {
-    return this.organizations.getMembership(orgId, userId);
-  }
 
   @Get(':orgId/members')
   @Version('1')
