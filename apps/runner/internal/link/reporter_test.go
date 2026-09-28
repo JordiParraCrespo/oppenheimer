@@ -65,10 +65,7 @@ func TestARejectedKeyIsDroppedNotResent(t *testing.T) {
 	r := link.NewReporter("run", sender, nil)
 	r.Append("s1", "session.started", map[string]any{})
 	ack := link.EventsAck{BatchID: sender.sent[0].BatchID}
-	ack.Rejected = append(ack.Rejected, struct {
-		IdempotencyKey string `json:"idempotencyKey"`
-		Reason         string `json:"reason"`
-	}{"run:1", "no such session on this host"})
+	ack.Rejected = append(ack.Rejected, link.EventsAckRejected{IdempotencyKey: "run:1", Reason: "no such session on this host"})
 	r.Ack(ack)
 	if r.Pending() != 0 {
 		t.Fatal("a rejected batch must not be resent")

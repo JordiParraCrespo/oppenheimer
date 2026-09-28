@@ -2,9 +2,8 @@ package link
 
 import "encoding/binary"
 
-// FrameHeader is the 4-byte big-endian attachment id every binary frame on the
-// link starts with (01-protocol, "Framing").
-const FrameHeader = 4
+// The frame layout is FrameHeader bytes of big-endian attachment id, then the
+// PTY bytes; FrameHeader is generated (protocol.gen.go).
 
 // EncodeFrame prefixes PTY bytes with their attachment id.
 func EncodeFrame(attachmentID uint32, bytes []byte) []byte {
