@@ -5,7 +5,7 @@ import {
   SidebarProjectGroup,
   SidebarProjectHeader,
 } from '@oppenheimer/design-system-web';
-import { Plus, Settings } from '@oppenheimer/design-system-web/icons';
+import { Plus, Settings2 } from '@oppenheimer/design-system-web/icons';
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -86,7 +86,7 @@ export function ProjectGroup({
                 aria-label={t('sessions.sidebar.projectSettings', { name: label })}
                 onClick={() => onSettings(project)}
               >
-                <Settings />
+                <Settings2 />
               </IconButton>
             </>
           ) : undefined

@@ -500,3 +500,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   fetching every branch. It is blobless with no working tree, a create
   fetches only the ref its worktree is made from, and each repository
   keeps one spare worktree checked out ahead of the next create (02).
+- 2026-09-28: **Settings is two sliders, not a cog** (05). The
+  version-1 export's `settings` glyph is lucide's `settings-2`, so the
+  account menu's link and a project header's action both draw it, and
+  05's "cog" is gone. 05 now keeps the glyph map: folder for a project,
+  an arrow out for a foot action that opens another site, `Callout` and
+  the Auto shield kept against the export, with the reasons.

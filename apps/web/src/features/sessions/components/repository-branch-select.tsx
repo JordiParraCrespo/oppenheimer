@@ -5,7 +5,7 @@ import {
   type RepositoryScope,
   RepositorySelect,
 } from '@oppenheimer/design-system-web';
-import { Folder } from '@oppenheimer/design-system-web/icons';
+import { ArrowUpRight, Folder } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import { capRepositories } from '../lib/session-options';
 
@@ -87,6 +87,7 @@ export function RepositoryBranchSelect({
           : {
               label: t('sessions.new.repository.manage'),
               icon: <BrandGlyph name="github" size={15} />,
+              trailing: <ArrowUpRight />,
               href: manageUrl,
             }
       }
