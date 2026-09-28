@@ -13,7 +13,7 @@ import { CompleteSignUpCommand } from '../commands/complete-sign-up/complete-sig
 import { RotateDelegatedSessionsCommand } from '../commands/rotate-delegated-sessions/rotate-delegated-sessions.command';
 import { standingChangeOf } from './admin-ban-hook.util';
 import { dispatchFromAuthHook } from './auth-command-bus.util';
-import { betterAuthSecondaryStorage } from './better-auth-secondary-storage.adapter';
+import { betterAuthSecondaryStorage, sessionStore } from './better-auth-secondary-storage.adapter';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue.util';
 import { buildInvitationUrl } from './invitation-url.util';
 import { sessionDeleteHooks } from './session-delete-hook.util';
@@ -104,7 +104,7 @@ const sessionDeletion = sessionDeleteHooks({
         userId,
       ])
     ).rows.map((row) => row.token),
-  evict: (token) => betterAuthSecondaryStorage.delete(token),
+  evict: (token) => sessionStore.delete(token),
 });
 
 export const auth = betterAuth({
