@@ -152,8 +152,8 @@ func TestPumpReturnsCtxErrorWhenCancelledDuringAPing(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	time.AfterFunc(100*time.Millisecond, cancel)
 	err := Pump(ctx, conn, &listSource{never: make(chan struct{})}, opts)
-	if err != context.Canceled {
-		t.Fatalf("Pump = %v, want exactly context.Canceled", err)
+	if !errors.Is(err, context.Canceled) || errors.Is(err, ErrPing) {
+		t.Fatalf("Pump = %v, want context.Canceled and not a ping failure", err)
 	}
 }
 
@@ -164,8 +164,8 @@ func TestPumpReturnsCtxErrorOnABusySocket(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	time.AfterFunc(50*time.Millisecond, cancel)
 	err := Pump(ctx, conn, busySource{}, pumpOptions(time.Hour))
-	if err != context.Canceled {
-		t.Fatalf("Pump = %v, want exactly context.Canceled", err)
+	if !errors.Is(err, context.Canceled) || errors.Is(err, ErrWrite) {
+		t.Fatalf("Pump = %v, want context.Canceled and not a write failure", err)
 	}
 }
 
