@@ -28,8 +28,9 @@ and the full "add a module" cookbook are
 - A new query hook → `src/react/things.queries.ts`, keys derived from
   `thingsKeys.all`, hooks over `useConsumerApp()`, mutations invalidating by
   prefix through `withCacheOnSuccess(options, update)` from
-  `@oppenheimer/frontend-core/react`; export both by name from
-  `src/react/index.ts`.
+  `@oppenheimer/frontend-core/react`; export by name from
+  `src/react/index.ts` the hooks the app imports. The key factory stays in
+  its file — `pnpm check:unused` fails an export nothing outside reads.
 - Data that must not be written to storage → its key prefix in
   `CONSUMER_NON_PERSISTED_FEATURES` (`src/react/persistence.ts`).
 - Something that is not product logic (every app would need it) → promote it
