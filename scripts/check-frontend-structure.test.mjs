@@ -214,4 +214,20 @@ test('components/ at the app root is the pre-features layout', () => {
   const { report } = check({ 'src/components/thing.tsx': 'export function Thing() {}\n' });
   assert.match(report, /apps\/web\/src\/components: components live in src\/features/);
 });
+test("a product query hook on TanStack's own useQuery is reported; the core's passes", () => {
+  const { report } = check(
+    {},
+    {
+      'packages/frontend/consumer/src/react/things.queries.ts': `import { useMutation, useQuery } from '@tanstack/react-query';
+export const useThings = () => useQuery({ queryKey: ['things'], queryFn: () => [] });
+`,
+      'packages/frontend/consumer/src/react/other.queries.ts': `import { useQuery } from '@oppenheimer/frontend-core/react';
+import { useMutation } from '@tanstack/react-query';
+export const useOther = () => useQuery({ queryKey: ['other'], queryFn: () => [] });
+`,
+    },
+  );
+  assert.match(report, /things\.queries\.ts: imports useQuery from @tanstack\/react-query/);
+  assert.doesNotMatch(report, /other\.queries\.ts/);
+});
 // oppenheimer:end web

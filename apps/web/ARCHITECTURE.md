@@ -184,7 +184,7 @@ Biome (`overrides` in `biome.json`) — no `useEffect` outside `hooks/`, no
 ## What is deliberately per-app
 
 `src/lib/` holds configuration, never helpers: `oppenheimer.ts`, `auth-client.ts`,
-`nav.ts`. A fourth file fails `check:structure`.
+`nav.ts`, `console.ts`. A fifth file fails `check:structure`.
 
 - **`oppenheimer.ts`** — `OppenheimerApp.create({ modules: consumerModules })` with the
   kit's `LocalStorageService` and `createWebAnalyticsClient()`. Loading the

@@ -18,10 +18,11 @@ import {
 import { Ellipsis, Play } from '@oppenheimer/design-system-web/icons';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
-import { ConfirmDialog, ErrorAlert, useConsoleDialog, useLocale } from '@oppenheimer/frontend-web';
+import { ConfirmDialog, ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useConsoleDialog } from '@/lib/console';
 import { NextRunCountdown } from '../components/next-run-countdown';
 import { TriggerGlyph } from '../components/trigger-glyph';
 import { useAutomationActions } from '../hooks/use-automation-actions';

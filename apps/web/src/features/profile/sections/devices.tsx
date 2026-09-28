@@ -12,7 +12,7 @@ import {
   useRevokeOtherProfileSessions,
   useRevokeProfileSession,
 } from '@oppenheimer/frontend-consumer/react';
-import { lastFailure, shareEntities } from '@oppenheimer/frontend-core/react';
+import { lastFailure } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert, notifySuccess, QueryState, RelativeTime } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
@@ -25,7 +25,7 @@ import { useTranslation } from 'react-i18next';
  */
 export function DevicesSection() {
   const { t } = useTranslation();
-  const devices = useProfileSessions({ structuralSharing: shareEntities });
+  const devices = useProfileSessions();
   const revoke = useRevokeProfileSession();
   const revokeOthers = useRevokeOtherProfileSessions({
     onSuccess: () => notifySuccess('otherDevicesSignedOut'),

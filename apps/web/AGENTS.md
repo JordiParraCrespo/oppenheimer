@@ -20,7 +20,9 @@
 - A form → `src/features/<module>/forms/` (props in, `onSubmit` out; never fetches).
 - A dialog → `src/features/<module>/dialogs/`, one per file, owning its mutation.
 - A helper or component a second screen wants → `@oppenheimer/frontend-web`, not a
-  second copy and not `src/lib/` (that holds only `oppenheimer.ts`, `auth-client.ts`, `nav.ts`).
+  second copy and not `src/lib/` (that holds only configuration: `oppenheimer.ts`,
+  `auth-client.ts`, `nav.ts`, and `console.ts`, which names the console's dialogs
+  and lists for the kit's generic `createDialogSlot`; `pnpm check:structure` holds the list).
 - Logic — entities, repositories, query hooks → `@oppenheimer/frontend-consumer` or
   `@oppenheimer/frontend-core`.
 

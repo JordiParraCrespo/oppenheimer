@@ -1,17 +1,17 @@
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { shareEntities } from '@oppenheimer/frontend-core/react';
-import { ConsoleDialogProvider } from '@oppenheimer/frontend-web';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useSyncExternalStore } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ConsoleDialogProvider } from '@/lib/console';
 import { SessionsSidebar } from '../sections/sessions-sidebar';
 
 /**
  * The sessions sidebar's render budget, one assertion per clock.
  *
- * The sidebar is a list on three clocks: the sessions query (a two-second poll
+ * The sidebar is a list on four clocks: the sessions query (a two-second poll
  * while anything is starting, and a refetch on every window focus), the route
- * (which row is highlighted) and the minute its ages move by. It used to redraw
+ * (which row is highlighted), the minute its ages move by, and the search box. It used to redraw
  * every row on the first two and never on the third: each poll handed every
  * row a new entity, the sidebar subscribed to the whole pathname, and each age
  * read the clock during render where nothing could tell it to move.
@@ -75,6 +75,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useHosts: () => ({ data: [] }),
   // No project holds these rows, so they all sit under the one unfiled group.
   useProjects: () => ({ data: [], isPending: false }),
+  useProjectsSnapshot: () => () => [],
   useRenameSession: () => ({ mutate: vi.fn(), error: null }),
   useMoveSession: () => ({ mutate: vi.fn(), error: null }),
 }));
@@ -87,6 +88,7 @@ vi.mock('@oppenheimer/frontend-core/react', async (original) => ({
 vi.mock('@tanstack/react-router', () => ({
   Link: () => null,
   useNavigate: () => vi.fn(),
+  useMatchRoute: () => () => false,
   // Applies the caller's `select`, as the router does, and compares its result.
   useRouterState: ({
     select,
@@ -98,7 +100,11 @@ vi.mock('@tanstack/react-router', () => ({
     ),
 }));
 
-vi.mock('../components/sessions-sidebar-head', () => ({ SessionsSidebarHead: () => null }));
+// The head is real, so a keystroke goes through the search box the way it
+// does in the app; its menus are not what this budgets.
+vi.mock('../components/sessions-filter-menu', () => ({ SessionsFilterMenu: () => null }));
+vi.mock('../components/session-filter-chips', () => ({ SessionFilterChips: () => null }));
+vi.mock('./new-session-button', () => ({ NewSessionButton: () => null }));
 vi.mock('../components/session-row-menu', () => ({ SessionRowMenu: () => null }));
 
 const MINUTE = 60_000;
@@ -174,5 +180,30 @@ describe('SessionsSidebar', () => {
     act(() => world.set({ now: START + MINUTE }));
     expect(rendered()).toEqual(['alpha', 'bravo', 'charlie', 'delta', 'echo']);
     expect(document.body.textContent).not.toBe(before);
+  });
+
+  /**
+   * A burst of typing. The half-typed word is the search box's, so no row
+   * renders until the burst settles; the settled word then narrows the list
+   * once, and the rows it keeps render once.
+   */
+  it('renders no row while typing, and the matching row once when typing settles', () => {
+    vi.useFakeTimers();
+    try {
+      const search = screen.getByRole('textbox', { name: 'sessions.sidebar.search' });
+      for (const draft of ['a', 'al', 'alp', 'alph']) {
+        act(() => {
+          fireEvent.change(search, { target: { value: draft } });
+          vi.advanceTimersByTime(50);
+        });
+      }
+      expect(rendered()).toEqual([]);
+
+      act(() => vi.advanceTimersByTime(1_000));
+      expect(rendered()).toEqual(['alpha']);
+      expect(document.body.textContent).not.toContain('bravo');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

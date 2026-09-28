@@ -1,9 +1,9 @@
-import { useConsoleDialog } from '@oppenheimer/frontend-web';
 import { lazy, Suspense } from 'react';
+import { useConsoleDialog, useConsoleDialogRequest } from '@/lib/console';
 
 /** Each loads when first opened: the shell is on every authenticated route. */
 const ProjectDialog = lazy(() =>
-  import('@/features/sessions/dialogs/project').then((module) => ({
+  import('@/features/projects/dialogs/project').then((module) => ({
     default: module.ProjectDialog,
   })),
 );
@@ -25,7 +25,8 @@ const AutomationEditorDialog = lazy(() =>
  * features' and a feature never imports another.
  */
 export function ConsoleDialogs() {
-  const { request, close } = useConsoleDialog();
+  const request = useConsoleDialogRequest();
+  const { close } = useConsoleDialog();
   if (!request) return null;
 
   return (

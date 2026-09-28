@@ -7,12 +7,12 @@ import {
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type { UserEntity } from '../modules/users/user.entity';
 import { useOppenheimerApp } from './context';
 import { withCacheOnSuccess } from './mutations';
+import { useQuery } from './query';
 
 export interface UsersListParams {
   page?: number;
