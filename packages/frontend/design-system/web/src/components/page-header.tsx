@@ -149,7 +149,7 @@ function PageHeaderNote({
     <div
       data-slot="page-header-note"
       className={cn(
-        'mt-1 flex items-center gap-3 rounded-md bg-card py-2.5 pr-2.5 pl-3.5 text-[13px] text-fg-muted motion-safe:animate-label-in',
+        'mt-1 ml-12 flex items-center gap-3 rounded-md bg-card py-2.5 pr-2.5 pl-3.5 text-[13px] text-fg-muted motion-safe:animate-label-in',
         className,
       )}
       {...props}

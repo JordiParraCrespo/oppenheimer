@@ -272,3 +272,9 @@ earlier note:
   no place — and a run past the run limit is stopped. A run opens in the
   session pane under `/automations`, keeping the automations list beside
   it (2026-09-28).
+- An automation's page opened on the large page header (44px glyph, 28px
+  title) and no Back at desktop widths; the frame draws the ordinary page
+  header under a Back pill, so the console does too. The same pass put the
+  automations pages on the grey canvas with white cards, as the frame does,
+  and drew Where it runs as rows of one card rather than stacked fields
+  (2026-09-28).

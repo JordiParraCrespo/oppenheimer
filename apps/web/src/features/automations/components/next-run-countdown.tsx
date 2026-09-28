@@ -16,7 +16,7 @@ export function NextRunCountdown({ automation }: { automation: AutomationEntity 
     <>
       <PageHeaderSep />
       <span>{t('automations.next.nextIn')}</span>
-      <span className="figures text-fg">{relative}</span>
+      <span className="figures text-[12.5px] text-fg">{relative}</span>
     </>
   );
 }

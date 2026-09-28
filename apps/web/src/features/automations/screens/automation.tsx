@@ -34,7 +34,7 @@ export function AutomationScreen({ automationId }: { automationId: string }) {
     );
   }
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className="flex flex-col gap-4">
       <AutomationHeader automation={automation.data} />
       <RunHistoryCard automationId={automationId} />
       <RunsTable automationId={automationId} />

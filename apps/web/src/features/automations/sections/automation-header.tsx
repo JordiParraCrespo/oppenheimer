@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  EditorPageBack,
   IconButton,
   PageHeader,
   PageHeaderCrumbs,
@@ -15,9 +16,9 @@ import {
   PageHeaderNote,
   PageHeaderRow,
   PageHeaderSep,
-  StatusDot,
+  RoutineStatus,
 } from '@oppenheimer/design-system-web';
-import { ChevronLeft, Ellipsis, Play } from '@oppenheimer/design-system-web/icons';
+import { Ellipsis, Play } from '@oppenheimer/design-system-web/icons';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
@@ -56,20 +57,16 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
 
   return (
     <PageHeader>
-      <Link
-        to="/automations"
-        className="-ml-1 inline-flex w-fit items-center gap-1 text-[13px] text-fg-muted hover:text-fg md:hidden"
-      >
-        <ChevronLeft className="size-3.5" />
+      {/* The frame's 18px under Back plus the page's 16px gap, less the header's own 10. */}
+      <EditorPageBack render={<Link to="/automations" />} className="mb-6">
         {t('automations.detail.back')}
-      </Link>
+      </EditorPageBack>
       <PageHeaderCrumbs>
         <Link to="/automations">{t('automations.detail.crumb')}</Link>
         <span>/</span>
         <PageHeaderHere>{automation.name}</PageHeaderHere>
       </PageHeaderCrumbs>
       <PageHeaderRow
-        size="lg"
         icon={<TriggerGlyph scheduled={automation.isScheduled} size={17} />}
         title={automation.name}
         actions={
@@ -149,9 +146,9 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
         }
       />
       <PageHeaderMeta>
-        <StatusDot state={automationDot(automation)} className="items-center text-[13px]">
+        <RoutineStatus state={automationDot(automation)}>
           {t(`automations.status.${automation.status}`)}
-        </StatusDot>
+        </RoutineStatus>
         <NextRunCountdown automation={automation} />
         <PageHeaderSep />
         <span>{automationTriggerText(automation, locale, t)}</span>

@@ -93,7 +93,11 @@ import {
 } from '@oppenheimer/design-system-web/tooltip';
 import { Wordmark } from '@oppenheimer/design-system-web/wordmark';
 import { Callout } from '@oppenheimer/design-system-web/callout';
-import { FieldSelect } from '@oppenheimer/design-system-web/field-select';
+import {
+  FieldSelect,
+  FieldSelectGroup,
+  FieldSelectRow,
+} from '@oppenheimer/design-system-web/field-select';
 import { HostCard } from '@oppenheimer/design-system-web/host-card';
 import {
   AddRow,
@@ -873,7 +877,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                 term ? (names[name] ?? name).toLowerCase().includes(term) : true,
               );
               return (
-                <div key={project.name} className="mt-1.5 flex flex-col">
+                <div key={project.name} className="mt-1.5 flex flex-col px-3">
                   <SidebarProjectHeader
                     name={project.name}
                     count={project.sessions.length}
@@ -899,7 +903,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                         No sessions yet. <button type="button">Start one</button>
                       </SidebarEmptyRow>
                     ) : (
-                      <SessionList className="px-3">
+                      <SessionList>
                         {rows.map(([name, age, state]) => (
                           <SessionItem
                             key={name}
@@ -1316,7 +1320,6 @@ export function PageHeaderDemo() {
           <PageHeaderHere>Nightly dependency audit</PageHeaderHere>
         </PageHeaderCrumbs>
         <PageHeaderRow
-          size="lg"
           icon={<ClockIcon />}
           title="Nightly dependency audit"
           actions={
@@ -1591,6 +1594,42 @@ export function TimeTokenDemo() {
         />
       </ChipSelectPopup>
     </Popover>
+  );
+}
+
+/** Where it runs, as the editor draws it: pickers as the rows of one hairline card. */
+export function FieldSelectGroupDemo() {
+  const [host, setHost] = React.useState<string | null>('optimus');
+  const [agent, setAgent] = React.useState<string | null>('claude-code');
+  return (
+    <FieldSelectGroup className="w-full max-w-146">
+      <FieldSelectRow icon={<CpuIcon />} label="Host">
+        <FieldSelect
+          variant="quiet"
+          aria-label="Host"
+          value={host}
+          onValueChange={setHost}
+          searchPlaceholder="Search hosts"
+          options={[
+            { value: 'optimus', label: 'optimus', description: 'Ubuntu 24.04 · idle' },
+            { value: 'mac', label: 'jordis-mac-studio', description: 'macOS 15 · running' },
+          ]}
+        />
+      </FieldSelectRow>
+      <FieldSelectRow icon={<BotIcon />} label="Agent">
+        <FieldSelect
+          variant="quiet"
+          aria-label="Agent"
+          value={agent}
+          onValueChange={setAgent}
+          searchPlaceholder="Search agents"
+          options={[
+            { value: 'claude-code', label: 'Claude Code' },
+            { value: 'codex', label: 'Codex' },
+          ]}
+        />
+      </FieldSelectRow>
+    </FieldSelectGroup>
   );
 }
 

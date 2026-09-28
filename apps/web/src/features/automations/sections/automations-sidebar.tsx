@@ -9,10 +9,11 @@ import {
   SessionList,
   SidebarEmptyRow,
   SidebarProjectHeader,
+  SidebarSearch,
   Skeleton,
   useNow,
 } from '@oppenheimer/design-system-web';
-import { Plus, Search, X, Zap } from '@oppenheimer/design-system-web/icons';
+import { Plus, Zap } from '@oppenheimer/design-system-web/icons';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
 import { useConsoleDialog } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
@@ -74,37 +75,25 @@ export function AutomationsSidebar() {
       </div>
 
       <div className="flex items-center gap-2 px-3 pt-0.5 pb-1.5">
-        <span className="eyebrow min-w-0 flex-1">{t('automations.sidebar.projects')}</span>
+        <span className="eyebrow min-w-0 flex-1 font-normal tracking-[0.04em] text-fg-muted">
+          {t('automations.sidebar.projects')}
+        </span>
         {projects.data ? (
-          <span className="figures text-xs text-fg-muted">{projects.data.length}</span>
+          <span className="figures text-[11px] text-fg-muted">{projects.data.length}</span>
         ) : null}
       </div>
 
       {automations.data?.length ? (
-        <div className="mx-3 mb-1.5 flex h-8 items-center gap-2 rounded-sm bg-hover-surface px-2.5 text-fg-subtle focus-within:ring-3 focus-within:ring-ring [&_svg]:size-3.5 [&_svg]:shrink-0">
-          <Search aria-hidden />
-          <input
-            type="text"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') setQuery('');
-            }}
-            aria-label={t('automations.sidebar.search')}
-            placeholder={t('automations.sidebar.search')}
-            className="min-w-0 flex-1 bg-transparent text-[13px] text-fg outline-none placeholder:text-fg-subtle"
-          />
-          {query ? (
-            <IconButton
-              size="xs"
-              variant="quiet"
-              aria-label={t('automations.sidebar.clearSearch')}
-              onClick={() => setQuery('')}
-            >
-              <X />
-            </IconButton>
-          ) : null}
-        </div>
+        <SidebarSearch
+          value={query}
+          onValueChange={setQuery}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setQuery('');
+          }}
+          aria-label={t('automations.sidebar.search')}
+          placeholder={t('automations.sidebar.search')}
+          clearLabel={t('automations.sidebar.clearSearch')}
+        />
       ) : null}
 
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
@@ -133,7 +122,7 @@ export function AutomationsSidebar() {
           shown.map(({ project, items }) => {
             const open = Boolean(term) || !closed.includes(project.id);
             return (
-              <div key={project.id} className="mt-1.5 flex flex-col">
+              <div key={project.id} className="mt-1.5 flex flex-col px-3">
                 <SidebarProjectHeader
                   name={project.name}
                   count={items.length}
@@ -155,14 +144,19 @@ export function AutomationsSidebar() {
                   }
                 />
                 {open && items.length ? (
-                  <SessionList className="px-3">
+                  <SessionList>
                     {items.map((automation) => {
                       const selected = automation.id === selectedId;
                       return (
                         <Fragment key={automation.id}>
                           <RoutineItem
                             name={automation.name}
-                            icon={<TriggerGlyph scheduled={automation.isScheduled} />}
+                            icon={
+                              <TriggerGlyph
+                                scheduled={automation.isScheduled}
+                                className={automation.isRunning ? undefined : 'text-fg opacity-80'}
+                              />
+                            }
                             meta={sidebarMeta(automation, now, t)}
                             running={automation.isRunning}
                             paused={automation.isPaused}

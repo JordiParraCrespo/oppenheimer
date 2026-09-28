@@ -404,7 +404,7 @@ function SidebarProjectHeader({
       >
         <ChevronDownIcon
           className={cn(
-            'size-3.5 shrink-0 transition-transform duration-base ease-standard',
+            'size-[13px] shrink-0 transition-transform duration-base ease-standard',
             !open && '-rotate-90',
           )}
           aria-hidden

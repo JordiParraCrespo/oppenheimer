@@ -56,7 +56,7 @@ function RoutineItem({
       >
         {name}
       </span>
-      {meta ? <span className="figures shrink-0 text-[11px] text-fg-subtle">{meta}</span> : null}
+      {meta ? <span className="figures shrink-0 text-[11px] text-fg">{meta}</span> : null}
     </ButtonPrimitive>
   );
 }

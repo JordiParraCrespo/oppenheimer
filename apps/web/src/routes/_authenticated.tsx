@@ -78,12 +78,9 @@ export const Route = createFileRoute('/_authenticated')({
  * work" from an unanswered question would bounce every reader out of the app
  * on a network blip, or straight back to the onboarding screen they just left.
  *
- * A route that declares `shell: 'own'` (Settings) is rendered bare: it goes
- * through the same guard and the same redirect, and draws its own chrome.
- *
- * The console's dialogs — New project, Add a host, New automation — have
- * one owner, here: `ConsoleDialogProvider` holds which is up and
- * `ConsoleDialogs` mounts it, so a chip or a sidebar button only asks.
+ * A `shell: 'own'` route (Settings) passes the same guard and draws its own
+ * chrome. The console's dialogs have one owner, here: `ConsoleDialogProvider`
+ * holds which is up and `ConsoleDialogs` mounts it; a button only asks.
  */
 function AuthenticatedShell() {
   const { t } = useTranslation();

@@ -47,6 +47,7 @@ multi-line, so a grep for `export` misses most of them.
 | Views inside one page (Routines / Runs, categories, run status) | `PillTabs` with `count` | a tab strip, `SegmentedControl` |
 | How a routine page opens | `PageHeader` parts | a hand-built title row |
 | A labelled picker in the routine editor | `FieldSelect` | `ChipSelect`, a `<select>` |
+| Several picks read as one card (the editor's Where it runs) | `FieldSelectGroup` + `FieldSelectRow` around a `FieldSelect variant="quiet"` | a stack of labelled `FieldSelect`s |
 | A trigger's variable parts | `InlineToken` in a `TokenSentence` | a form of pickers |
 | A time or weekday pick | `TimeGrid` in a popover | a `<select>` of hours |
 | Runs per day | `RunHistory` | a chart library |

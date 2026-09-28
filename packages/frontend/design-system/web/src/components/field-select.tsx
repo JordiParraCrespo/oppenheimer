@@ -16,7 +16,10 @@ import { Popover, PopoverTrigger } from './popover';
  * on the picked ones. Options can carry a `group` eyebrow ("In XRP
  * Mobile").
  *
- * Wrap it in `Field` + `FieldLabel` like any control.
+ * Wrap it in `Field` + `FieldLabel` like any control. `variant="quiet"` is
+ * the same picker as the value at the end of a `FieldSelectRow`: a 32px
+ * borderless pill sized to what it shows, washed on hover, whose listbox
+ * opens under its right edge at least 280px wide.
  */
 type FieldSelectOption = {
   value: string;
@@ -35,8 +38,9 @@ type FieldSelectProps = {
   disabled?: boolean;
   className?: string;
   'aria-label'?: string;
-  /** Popup width; defaults to the trigger's. */
+  /** Popup width; defaults to the trigger's (at least 280px when quiet). */
   width?: number;
+  variant?: 'field' | 'quiet';
 } & (
   | { multiple?: false; value: string | null; onValueChange: (value: string) => void }
   | { multiple: true; value: string[]; onValueChange: (value: string[]) => void }
@@ -53,7 +57,9 @@ function FieldSelect(props: FieldSelectProps) {
     className,
     'aria-label': ariaLabel,
     width,
+    variant = 'field',
   } = props;
+  const quiet = variant === 'quiet';
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const trigger = React.useRef<HTMLButtonElement>(null);
@@ -95,8 +101,12 @@ function FieldSelect(props: FieldSelectProps) {
             aria-haspopup="listbox"
             disabled={disabled}
             data-slot="field-select"
+            data-variant={variant}
             className={cn(
-              'flex h-(--control-h-lg) w-full items-center gap-2 rounded-sm border border-border bg-card pr-3 pl-3.5 text-left text-sm text-fg outline-none transition-[border-color,box-shadow] duration-fast ease-standard hover:border-fg-subtle focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring data-popup-open:border-primary data-popup-open:ring-3 data-popup-open:ring-ring disabled:pointer-events-none disabled:opacity-50',
+              'flex items-center text-left text-fg outline-none disabled:pointer-events-none disabled:opacity-50',
+              quiet
+                ? 'h-8 w-auto max-w-full gap-1.5 rounded-pill border border-transparent pr-2 pl-3 text-[13.5px] transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:ring-3 focus-visible:ring-ring data-popup-open:bg-hover-surface'
+                : 'h-(--control-h-lg) w-full gap-2 rounded-sm border border-border bg-card pr-3 pl-3.5 text-[14px] transition-[border-color,box-shadow] duration-fast ease-standard hover:border-fg-subtle focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring data-popup-open:border-primary data-popup-open:ring-3 data-popup-open:ring-ring',
               className,
             )}
           />
@@ -113,10 +123,10 @@ function FieldSelect(props: FieldSelectProps) {
         <ChevronDownIcon className="size-3.5 shrink-0 text-fg-subtle" aria-hidden />
       </PopoverTrigger>
       <ChipSelectPopup
-        width={width ?? trigger.current?.offsetWidth ?? 260}
+        width={width ?? (quiet ? Math.max(280, trigger.current?.offsetWidth ?? 0) : (trigger.current?.offsetWidth ?? 260))}
         maxHeight={320}
         side="bottom"
-        align="start"
+        align={quiet ? 'end' : 'start'}
       >
         <ChipSelectSearch
           value={query}
@@ -164,5 +174,53 @@ function FieldSelect(props: FieldSelectProps) {
   );
 }
 
-export { FieldSelect };
+/**
+ * FieldSelectGroup — the editor's Where it runs: pickers as the rows of one
+ * hairline card on an 18px radius, instead of a stack of labelled fields.
+ * Each `FieldSelectRow` is 52px: a 16px subtle glyph, the label at 14px,
+ * and on the right the quiet `FieldSelect`, never wider than 60% of the row.
+ */
+function FieldSelectGroup({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="field-select-group"
+      className={cn('flex flex-col rounded-lg border border-border-subtle', className)}
+      {...props}
+    />
+  );
+}
+
+function FieldSelectRow({
+  icon,
+  label,
+  className,
+  children,
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'children'> & {
+  icon?: React.ReactNode;
+  label: React.ReactNode;
+  /** The quiet `FieldSelect`. */
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      data-slot="field-select-row"
+      className={cn(
+        'flex min-h-13 items-center gap-3 border-t border-border-subtle pr-2 pl-4 first:border-t-0',
+        className,
+      )}
+      {...props}
+    >
+      {icon ? (
+        <span aria-hidden className="flex shrink-0 text-fg-subtle [&_svg:not([class*=size-])]:size-4">
+          {icon}
+        </span>
+      ) : null}
+      <span className="min-w-0 flex-1 text-[14px] text-fg">{label}</span>
+      <div className="flex max-w-[60%] min-w-0 shrink-0 justify-end">{children}</div>
+    </div>
+  );
+}
+
+export { FieldSelect, FieldSelectGroup, FieldSelectRow };
 export type { FieldSelectOption };

@@ -48,7 +48,7 @@ function SettingsRow({
       {...props}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-sm font-medium text-fg">{label}</span>
+        <span className="text-[14px] font-medium text-fg">{label}</span>
         {hint ? <span className="text-[13px] text-fg-muted">{hint}</span> : null}
       </div>
       {children ? (

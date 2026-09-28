@@ -16,7 +16,7 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useConsoleDialog } from '@oppenheimer/frontend-web';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionsSidebarHead } from '../components/sessions-sidebar-head';
@@ -33,6 +33,7 @@ import {
   type SessionFilters,
 } from '../lib/session-filters';
 import { groupByProject, matchesQuery, projectsForMove } from '../lib/session-groups';
+import { NewSessionButton } from './new-session-button';
 import { ProjectGroup } from './project-group';
 import type { SessionRowActions } from './session-row';
 
@@ -148,7 +149,7 @@ export function SessionsSidebar() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <SessionsSidebarHead
-        newSessionLink={<Link to="/sessions/new" />}
+        newSession={<NewSessionButton />}
         projectCount={projects.data?.length}
         filters={filters}
         options={options}

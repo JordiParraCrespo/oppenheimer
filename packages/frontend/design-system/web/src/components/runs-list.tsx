@@ -84,7 +84,7 @@ function RunRow({
       data-state={state}
       className={cn(
         GRID,
-        'h-11 w-full rounded-sm text-left text-sm text-fg outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2',
+        'h-11 w-full rounded-sm text-left text-[14px] text-fg outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2',
         className,
       )}
       {...props}

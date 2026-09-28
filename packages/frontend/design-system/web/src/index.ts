@@ -133,7 +133,7 @@ export {
   FieldTitle,
 } from './components/field';
 export type { FieldSelectOption } from './components/field-select';
-export { FieldSelect } from './components/field-select';
+export { FieldSelect, FieldSelectGroup, FieldSelectRow } from './components/field-select';
 export type { HostCardStatus } from './components/host-card';
 export { HostCard } from './components/host-card';
 export type { IconButtonProps } from './components/icon-button';
@@ -199,6 +199,7 @@ export {
 } from './components/routine-item';
 export { RoutineStep, RoutineStepFields, RoutineSteps } from './components/routine-steps';
 export {
+  RoutineStatus,
   RoutineTable,
   RoutineTableEmpty,
   RoutineTableHead,
