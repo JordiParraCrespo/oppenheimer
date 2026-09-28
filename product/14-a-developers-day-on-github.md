@@ -198,27 +198,25 @@ happen:
 Every auto-merge is in an audit log with its policy version and its
 evidence.
 
-### 4.5 Approving and merging
+### 4.5 Approving and merging, in the user's name
 
 Auto-merge covers **every PR** in the repository that passes (owner,
 2026-09-27): ours, our agents', and anyone else's.
 
-When the repository requires an approval, **we approve**. The approving
-review comes from the Oppenheimer GitHub App, as its own reviewer
-identity: an agent PR is opened under the person's account, and GitHub
-does not let an author approve their own PR. The review body carries the
-lane, Jev's probabilities, the policy lines and the verification run's
-evidence. The App then merges.
+**We act in the user's name** (owner, 2026-09-28). The approving review
+and the merge are made with the user's own GitHub authorization, the
+user-to-server token of the App's install flow (note 09 §1), so on
+GitHub they are the user's approval and the user's merge. The review body
+carries the lane, Jev's probabilities, the policy lines and the
+verification run's evidence, marked as done by Oppenheimer on the user's
+behalf.
 
-Two build steps, not open questions:
-
-- The App needs *Pull requests: write* to approve and *Contents: write*
-  to merge (note 09 §3 already asks for both).
-- Where a repository's rules do not count an App's approval toward the
-  required reviews, the console detects it on the first auto-merge
-  attempt and shows the one setting that fixes it: add the App to the
-  ruleset's bypass list, or allow app approvals. It links to that
-  GitHub settings page.
+**If GitHub will not let the merge happen, we wait.** A required approval
+the user cannot give — their own PR, including every PR their agents
+opened under their account — a required check still pending, a code
+owner's review, or a merge queue: the PR stays **Auto**, shows what it is
+waiting for, and merges the moment GitHub allows it. No bot identity, no
+bypass list, and no rule on the repository is changed to get through.
 
 ## 5. The review session
 
@@ -371,8 +369,9 @@ approval is required, then the collision radar.
 
 ## 8. Decided (owner, 2026-09-27)
 
-1. **Approvals:** when a repository requires one, the Oppenheimer App
-   approves and merges (§4.5).
+1. **Approvals:** we approve and merge in the user's name, with their
+   own authorization. When GitHub will not allow it, the PR waits until
+   it does (§4.5).
 2. **Lanes:** Jev decides the lane. Every lane has an agent: a
    verification run for Auto, a summary for Quick, the full review
    session for Deep (§3).

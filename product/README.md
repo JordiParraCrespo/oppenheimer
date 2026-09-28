@@ -233,5 +233,8 @@ earlier note:
 - Note 14 then settled its own questions with the owner (2026-09-27):
   Jev picks the lane, and each lane has an agent (verification, summary,
   full review); review is an automation with the agent picked in its
-  Agent step; the Oppenheimer App approves when a repository requires
-  approval; auto-merge covers every PR that passes.
+  Agent step; auto-merge covers every PR that passes. The same day it
+  said the Oppenheimer App would approve as its own reviewer; on
+  2026-09-28 the owner changed that: we approve and merge in the user's
+  name, with their own authorization, and when GitHub will not allow it
+  the PR waits.
