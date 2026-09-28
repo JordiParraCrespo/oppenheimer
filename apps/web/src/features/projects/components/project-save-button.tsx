@@ -23,13 +23,7 @@ export function ProjectSaveButton({
 }) {
   const { t } = useTranslation();
   const [name, rows] = useWatch({ control, name: ['name', 'rows'] });
-  const block = projectBlock(
-    name ?? '',
-    { rows, defaultHostId: null, defaultAgent: null },
-    {
-      holdsNone: fixed,
-    },
-  );
+  const block = projectBlock(name ?? '', rows, { holdsNone: fixed });
 
   return (
     <Button

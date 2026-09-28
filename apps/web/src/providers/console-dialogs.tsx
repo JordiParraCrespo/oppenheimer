@@ -3,7 +3,7 @@ import { useConsoleDialog, useConsoleDialogRequest } from '@/lib/console';
 
 /** Each loads when first opened: the shell is on every authenticated route. */
 const ProjectDialog = lazy(() =>
-  import('@/features/sessions/dialogs/project').then((module) => ({
+  import('@/features/projects/dialogs/project').then((module) => ({
     default: module.ProjectDialog,
   })),
 );
