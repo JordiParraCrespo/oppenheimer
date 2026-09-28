@@ -8504,7 +8504,130 @@
             }
           },
           "409": {
-            "description": "SESSIONS_011 — The host's runner is older than the agent picked\n\nSESSIONS_006 — That project is archived",
+            "description": "SESSIONS_017 — Images, old runner\n\nSESSIONS_011 — The host's runner is older than the agent picked\n\nSESSIONS_006 — That project is archived",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "SESSIONS_019 — Attachment gone",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SESSIONS_016 — Images, host offline",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start a session",
+        "tags": ["Sessions"]
+      }
+    },
+    "/api/v1/sessions/attachments": {
+      "post": {
+        "description": "Kept briefly for the `POST /sessions` that names it in `attachmentIds`; the host saves it and gives the agent its path with the task. Only its uploader can name it.",
+        "operationId": "uploadSessionAttachment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionAttachmentResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SESSIONS_015 — No image attached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "SESSIONS_012 — Image too large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "SESSIONS_013 — Not an image",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8529,7 +8652,7 @@
             "bearer": []
           }
         ],
-        "summary": "Start a session",
+        "summary": "Attach an image to a first task",
         "tags": ["Sessions"]
       }
     },
@@ -15027,9 +15150,39 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 2048
+          },
+          "attachmentIds": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         },
         "required": ["hostId", "agent", "checkouts"]
+      },
+      "SessionAttachmentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "What `attachmentIds` names it by."
+          },
+          "mediaType": {
+            "type": "string",
+            "enum": ["image/png", "image/jpeg", "image/gif", "image/webp"],
+            "description": "What the bytes are by their magic bytes, never the label the browser gave them."
+          },
+          "size": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5242880,
+            "description": "Bytes."
+          }
+        },
+        "required": ["id", "mediaType", "size"]
       },
       "SessionEventResponseDto": {
         "type": "object",

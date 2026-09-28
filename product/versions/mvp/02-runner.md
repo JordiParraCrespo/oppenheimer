@@ -400,6 +400,14 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
   re-checks the bytes against the generated image table, writes the file
   (§11), and pastes the path through a tmux buffer named for the command,
   as a bracketed paste. A paste that does not land deletes its file.
+- **Images attached to the first task** (`session.create`'s `images`)
+  are pulled the same way, before anything is made, and a pull that
+  fails fails the create with the reason. They are saved where pasted
+  images go (§11) just before the agent starts, and their paths are
+  appended to the prompt it is launched with, a blank line after the
+  task and one path to a line. The session keeps the task as typed, so
+  a restart, by which time the images went with the tmux session, names
+  no file that is gone.
 
 ### 8. Git and credentials
 

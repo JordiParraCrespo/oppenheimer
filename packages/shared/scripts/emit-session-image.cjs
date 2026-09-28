@@ -14,6 +14,7 @@ const { join, relative } = require('node:path');
 const {
   SESSION_IMAGE_TYPES,
   SESSION_IMAGE_MAX_BYTES,
+  SESSION_CREATE_MAX_IMAGES,
 } = require('../dist/protocol/session-image.js');
 
 const outputPath = join(
@@ -52,6 +53,9 @@ function render() {
     '',
     '// ImageMaxBytes is the largest image a session takes.',
     `const ImageMaxBytes = ${SESSION_IMAGE_MAX_BYTES}`,
+    '',
+    "// CreateMaxImages is how many images a session's first task may carry.",
+    `const CreateMaxImages = ${SESSION_CREATE_MAX_IMAGES}`,
     '',
     '// imageTypes is what counts as an image, in the order they are tried.',
     'var imageTypes = []imageType{',

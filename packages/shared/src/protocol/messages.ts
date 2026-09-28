@@ -15,7 +15,7 @@ import {
   sessionSnapshotSchema,
   windowIndexSchema,
 } from './primitives.js';
-import { SESSION_IMAGE_MEDIA_TYPES } from './session-image.js';
+import { SESSION_CREATE_MAX_IMAGES, SESSION_IMAGE_MEDIA_TYPES } from './session-image.js';
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON
@@ -38,7 +38,7 @@ import { SESSION_IMAGE_MEDIA_TYPES } from './session-image.js';
  * dropping it.
  */
 /** What a runner can name in `hello.capabilities`. */
-export const RUNNER_CAPABILITIES = ['session.image'] as const;
+export const RUNNER_CAPABILITIES = ['session.image', 'session.create.images'] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
 export const helloSchema = z.object({
@@ -235,6 +235,27 @@ export const sessionCreateSchema = z.object({
    * writers never collide and never need a shared key (02 §7).
    */
   prompt: promptTextSchema.optional(),
+  /**
+   * The images attached to the first task in the composer. Like
+   * `session.image`, the bytes are **not** here: the control plane parks each
+   * under its `imageId` and the runner pulls it once over HTTPS
+   * (`GET /hosts/self/images/{imageId}`) before it starts the agent, saves it
+   * outside the worktree, and appends its path to `prompt` so the agent reads
+   * it with the task (02 §7).
+   *
+   * Present only with a `prompt`, and sent only to a runner whose `hello`
+   * named `session.create.images`: an older runner would drop the field and
+   * launch the task without the pictures it talks about.
+   */
+  images: z
+    .array(
+      z.object({
+        imageId: commandIdSchema,
+        mediaType: z.enum(SESSION_IMAGE_MEDIA_TYPES),
+      }),
+    )
+    .max(SESSION_CREATE_MAX_IMAGES)
+    .optional(),
   branch: gitRefSchema,
   checkouts: z.array(
     z.object({

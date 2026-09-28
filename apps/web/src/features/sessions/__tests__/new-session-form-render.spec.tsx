@@ -97,13 +97,29 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   // Called once per render of NewSessionSend, so it doubles as that section's count.
   useCreateSession: () => {
     renders.set('send', (renders.get('send') ?? 0) + 1);
-    return { mutate: vi.fn(), isPending: false, isError: false };
+    return {
+      mutate: vi.fn(),
+      reset: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+      submittedAt: 0,
+    };
   },
+  // Nothing here attaches a file, so nothing is uploaded.
+  useUploadSessionAttachment: () => ({
+    mutateAsync: vi.fn(),
+    reset: vi.fn(),
+    isPending: false,
+    error: null,
+    submittedAt: 0,
+  }),
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', () => ({
   useDeploymentCapabilities: () => ({ data: null, isPending: false }),
   useErrorMessage: () => (_error: unknown, fallback: string) => ({ message: fallback }),
+  lastFailure: () => ({ error: null, index: -1, dismiss: vi.fn() }),
 }));
 
 const PROJECTS = [
@@ -212,17 +228,16 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual([]);
   });
 
-  /** The line under the title says what sending will do once a project is picked. */
-  it('summarises the picked project under the title', () => {
+  /** The heading stands alone over the composer: no line under it reads the draft. */
+  it('places the heading over the composer with no subtitle', () => {
     cleanup();
     render(
       <ConsoleDialogProvider>
         <NewSessionForm heading={<h1>title</h1>} />
       </ConsoleDialogProvider>,
     );
-    expect(screen.getByText('sessions.new.subtitle')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'project' }));
-    expect(screen.getByText('sessions.new.subtitleProject')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'title' })).toBeTruthy();
+    expect(screen.queryByText(/sessions\.new\.subtitle/)).toBeNull();
   });
 
   /** The send gate (05): a host still in the workspace and one repository the body can carry. */

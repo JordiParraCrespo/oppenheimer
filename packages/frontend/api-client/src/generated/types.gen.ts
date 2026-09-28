@@ -1497,6 +1497,22 @@ export type CreateSessionRequest = {
         effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
     };
     prompt?: string;
+    attachmentIds?: Array<string>;
+};
+
+export type SessionAttachmentResponseDto = {
+    /**
+     * What `attachmentIds` names it by.
+     */
+    id: string;
+    /**
+     * What the bytes are by their magic bytes, never the label the browser gave them.
+     */
+    mediaType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
+    /**
+     * Bytes.
+     */
+    size: number;
 };
 
 export type SessionEventResponseDto = {
@@ -6163,15 +6179,25 @@ export type CreateSessionErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_017 — Images, old runner
+     *
      * SESSIONS_011 — The host's runner is older than the agent picked
      *
      * SESSIONS_006 — That project is archived
      */
     409: ProblemDetailsDto;
     /**
+     * SESSIONS_019 — Attachment gone
+     */
+    410: ProblemDetailsDto;
+    /**
      * RATE_001 — Rate limit reached
      */
     429: ProblemDetailsDto;
+    /**
+     * SESSIONS_016 — Images, host offline
+     */
+    503: ProblemDetailsDto;
 };
 
 export type CreateSessionError = CreateSessionErrors[keyof CreateSessionErrors];
@@ -6181,6 +6207,50 @@ export type CreateSessionResponses = {
 };
 
 export type CreateSessionResponse = CreateSessionResponses[keyof CreateSessionResponses];
+
+export type UploadSessionAttachmentData = {
+    body: {
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/attachments';
+};
+
+export type UploadSessionAttachmentErrors = {
+    /**
+     * SESSIONS_015 — No image attached
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_012 — Image too large
+     */
+    413: ProblemDetailsDto;
+    /**
+     * SESSIONS_013 — Not an image
+     */
+    415: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type UploadSessionAttachmentError = UploadSessionAttachmentErrors[keyof UploadSessionAttachmentErrors];
+
+export type UploadSessionAttachmentResponses = {
+    201: SessionAttachmentResponseDto;
+};
+
+export type UploadSessionAttachmentResponse = UploadSessionAttachmentResponses[keyof UploadSessionAttachmentResponses];
 
 export type FindSessionEventsData = {
     body?: never;

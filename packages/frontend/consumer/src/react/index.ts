@@ -101,5 +101,6 @@ export {
   useSessionStartProgress,
   useSessions,
   useStopSession,
+  useUploadSessionAttachment,
 } from './sessions.queries';
 export { useSessionStream } from './sessions.stream';

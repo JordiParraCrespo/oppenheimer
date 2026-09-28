@@ -10,6 +10,7 @@ import { injectable } from 'inversify';
 import {
   type AttachTicket,
   type CreateSessionInput,
+  type SessionAttachment,
   SessionCheckoutEntity,
   SessionEntity,
 } from './session.entity';
@@ -93,6 +94,7 @@ function toRequest(input: CreateSessionInput): CreateSessionRequest {
     ...(input.cwdGithubRepoId !== undefined ? { cwdGithubRepoId: input.cwdGithubRepoId } : {}),
     ...(launch && Object.keys(launch).length ? { launch } : {}),
     ...(input.prompt ? { prompt: input.prompt } : {}),
+    ...(input.attachmentIds?.length ? { attachmentIds: input.attachmentIds } : {}),
     ...(input.name ? { name: input.name } : {}),
     ...(input.projectId ? { projectId: input.projectId } : {}),
   };
@@ -273,6 +275,21 @@ export class SessionsRepository {
    * API judges the type by the bytes and answers an unreachable host as an
    * error, so a resolved call means the host has it.
    */
+  /**
+   * An image for a session that does not exist yet: kept briefly by the API
+   * for the `create` that names its id in `attachmentIds`. A file over the cap
+   * is refused here, before it is sent; the API judges the type by the bytes.
+   */
+  @MapApiError(SessionsErrors.UPLOAD_ATTACHMENT_FAILED)
+  async uploadAttachment(image: Blob): Promise<SessionAttachment> {
+    if (image.size > SESSION_IMAGE_MAX_BYTES) throw new AppError(SessionsErrors.IMAGE_TOO_LARGE);
+    const data = await unwrapBody(
+      heyApiSdk.uploadSessionAttachment({ body: { file: image } }),
+      SessionsErrors.UPLOAD_ATTACHMENT_FAILED,
+    );
+    return { id: data.id, mediaType: data.mediaType, size: data.size };
+  }
+
   @MapApiError(SessionsErrors.PASTE_IMAGE_FAILED)
   async pasteImage(id: string, image: Blob, window = 0): Promise<void> {
     if (image.size > SESSION_IMAGE_MAX_BYTES) throw new AppError(SessionsErrors.IMAGE_TOO_LARGE);

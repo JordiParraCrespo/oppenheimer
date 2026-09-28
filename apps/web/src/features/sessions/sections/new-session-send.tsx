@@ -3,7 +3,10 @@ import {
   useCreateSession,
   useHosts,
   useProjectsSnapshot,
+  useUploadSessionAttachment,
 } from '@oppenheimer/frontend-consumer/react';
+import { AppError } from '@oppenheimer/frontend-core';
+import { lastFailure } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { type ReactNode, useRef } from 'react';
@@ -13,8 +16,12 @@ import { NewSessionComposer } from '../components/new-session-composer';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { toCheckouts, toLaunchInput } from '../lib/session-options';
 
+/** The API's answer to a create naming an upload that is no longer waiting. */
+const ATTACHMENT_NOT_FOUND = 'SESSIONS_019';
+
 /**
- * The composer of New session, and the one request the draft makes.
+ * The composer of New session, and the requests the draft makes: an upload
+ * per attached image, then the create that names them.
  *
  * What this section reads during render is only what it must: whether a host
  * is picked and still paired, and whether the pick names one repository the
@@ -70,17 +77,52 @@ export function NewSessionSend({
    * the API would answer it with the session the first one made.
    */
   const attempt = useRef<{ key: string; body: string } | null>(null);
+  /**
+   * The upload each attached file already has, so a second press of send
+   * names the same ids — the same body, so the same key — instead of uploading
+   * again and minting a second session. Forgotten when the API says an upload
+   * is no longer waiting, so the next press uploads it anew.
+   */
+  const uploaded = useRef(new Map<File, string>());
+  const upload = useUploadSessionAttachment();
   const create = useCreateSession({
     onSuccess: (session) => {
       attempt.current = null;
       navigate({ to: '/sessions/$sessionId', params: { sessionId: session.id } });
     },
+    onError: (error) => {
+      if (error instanceof AppError && error.code === ATTACHMENT_NOT_FOUND)
+        uploaded.current.clear();
+    },
   });
 
-  function start(prompt: string) {
+  /** Each file's upload id, uploading the ones that have none; null when one failed. */
+  async function attach(files: File[]): Promise<string[] | null> {
+    const ids: string[] = [];
+    for (const file of files) {
+      let id = uploaded.current.get(file);
+      if (!id) {
+        try {
+          id = (await upload.mutateAsync(file)).id;
+        } catch {
+          // The failure is the mutation's error, which the alert below reads.
+          return null;
+        }
+        uploaded.current.set(file, id);
+      }
+      ids.push(id);
+    }
+    return ids;
+  }
+
+  async function start(prompt: string, files: File[]) {
     const draft = getValues();
     const [checkout] = toCheckouts(draft.scope);
     if (!draft.hostId || hostKnown === false || !checkout) return;
+    create.reset();
+    upload.reset();
+    const attachmentIds = await attach(files);
+    if (!attachmentIds) return;
     const projectId = projects()?.find((project) => project.id === draft.projectId)?.id ?? null;
     const input: CreateSessionInput = {
       hostId: draft.hostId,
@@ -89,6 +131,7 @@ export function NewSessionSend({
       checkouts: [checkout],
       launch: toLaunchInput(draft),
       prompt,
+      ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
     };
     const body = JSON.stringify(input);
     if (attempt.current?.body !== body) attempt.current = { key: crypto.randomUUID(), body };
@@ -99,14 +142,14 @@ export function NewSessionSend({
     <div className="flex flex-col gap-4.5">
       <NewSessionComposer
         onSubmit={start}
-        busy={create.isPending}
+        busy={upload.isPending || create.isPending}
         disabled={!hostId || hostKnown === false || !hasCheckout}
         scope={scope}
         tools={tools}
         engine={engine}
       />
 
-      <ErrorAlert error={create.error} fallback={t('sessions.new.failed')} />
+      <ErrorAlert error={lastFailure([upload, create]).error} fallback={t('sessions.new.failed')} />
     </div>
   );
 }

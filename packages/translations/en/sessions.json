@@ -48,11 +48,7 @@
   },
   "new": {
     "title": "New session",
-    "subtitle": "Set the scope, then describe the work.",
-    "subtitleProject_one": "In {{name}} · cloning {{picked}} of {{count}} repository, each on its own opp/ branch.",
-    "subtitleProject_other": "In {{name}} · cloning {{picked}} of {{count}} repositories, each on its own opp/ branch.",
-    "subtitleCloning_one": "In {{name}} · cloning {{count}} repository, on its own opp/ branch.",
-    "subtitleCloning_other": "In {{name}} · cloning {{count}} repositories, each on its own opp/ branch.",
+    "heading": "Ready when you are.",
     "host": {
       "label": "Host",
       "placeholder": "Host",
@@ -131,7 +127,12 @@
     "composer": {
       "placeholder": "Describe a task or ask a question",
       "send": "Send",
-      "stop": "Stop"
+      "stop": "Stop",
+      "attach": "Attach images",
+      "removeAttachment": "Remove {{name}}",
+      "attachTooLarge": "{{name}} is over 5 MB. Crop it or save it smaller, then attach it again.",
+      "attachNotImage": "{{name}} is not an image a session can take: attach a PNG, JPEG, GIF or WebP.",
+      "attachTooMany": "A first task carries at most {{max}} images."
     },
     "queued": "Your first task is queued for this host.",
     "failed": "The session could not be created."

@@ -3,7 +3,7 @@ import type { WorkspaceLookupPort } from '../../organizations/application/worksp
 import { WORKSPACE_LOOKUP } from '../../organizations/organizations.di-tokens';
 import { sessionBranchName } from '../domain/session-layout.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
-import type { SessionLaunchSpec } from './session-dispatch.port';
+import type { SessionAttachedImage, SessionLaunchSpec } from './session-dispatch.port';
 
 /**
  * Builds what the host is told to make, from the session and the one name it
@@ -22,7 +22,7 @@ export class SessionLaunchSpecFactory {
 
   async build(
     session: WorkSessionEntity,
-    extra: { prompt?: string } = {},
+    extra: { prompt?: string; images?: SessionAttachedImage[] } = {},
   ): Promise<SessionLaunchSpec> {
     const organizationSlug = await this.workspaces.slugOf(session.organizationId);
     // The session row was written in this workspace; a missing slug is a broken
@@ -34,6 +34,7 @@ export class SessionLaunchSpecFactory {
       // layout keeps the name its worktrees are already on.
       branch: session.branch ?? sessionBranchName(session.slug),
       ...(extra.prompt ? { prompt: extra.prompt } : {}),
+      ...(extra.images?.length ? { images: extra.images } : {}),
     };
   }
 }

@@ -54,7 +54,25 @@ export interface SessionLaunchSpec {
    * folded.
    */
   prompt?: string;
+  /**
+   * Images attached to the first task. Only a create carries them, and like
+   * the prompt they are not stored: the host saves them and names their paths
+   * to the agent with the task.
+   */
+  images?: SessionAttachedImage[];
 }
+
+/** One image attached to a first task. */
+export interface SessionAttachedImage {
+  mediaType: SessionImageMediaType;
+  data: Buffer;
+}
+
+/**
+ * Whether a host can be given images now: `ready`, no link (`host_offline`),
+ * or a runner that did not say it takes them (`not_supported`).
+ */
+export type SessionImageSupport = 'ready' | 'host_offline' | 'not_supported';
 
 export interface SessionCloseSpec {
   /**
@@ -89,6 +107,12 @@ export interface SessionDispatchPort {
     checkout: SessionCheckoutEntity,
     spec: SessionLaunchSpec,
   ): Promise<SessionDispatchOutcome>;
+  /**
+   * Whether a create for this host could carry images, asked before the row is
+   * written so a create that could not is refused rather than launched without
+   * them.
+   */
+  createImageSupport(hostId: string): SessionImageSupport;
   /** Give a window's program an image: saved on the host, its path pasted in. */
   pasteImage(session: WorkSessionEntity, image: SessionImageSpec): Promise<SessionDispatchOutcome>;
   /** Remove one checkout's worktree, with the same refuse-on-unpushed-work posture. */

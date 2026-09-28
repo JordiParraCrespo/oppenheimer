@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
+	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
@@ -39,6 +40,35 @@ func (h *linkHandler) image(ctx context.Context, m link.SessionImage) {
 			h.fail(m.CommandID, err)
 		}
 	}()
+}
+
+// pullCreateImages fetches the images a `session.create` attached to its
+// first task, before anything is made: they are parked for about as long as
+// a pull takes, and the task that names them must not start without them.
+// One that cannot be pulled fails the create, with the reason.
+func (h *linkHandler) pullCreateImages(ctx context.Context, attached []link.SessionCreateImages) ([]sessionsapp.CreateImage, error) {
+	if len(attached) == 0 {
+		return nil, nil
+	}
+	if len(attached) > sessionsdomain.CreateMaxImages {
+		return nil, sessionsdomain.ErrInvalidInput.WithDetail(
+			"a first task carries at most %d images; this one carried %d", sessionsdomain.CreateMaxImages, len(attached))
+	}
+	ctx, cancel := context.WithTimeout(ctx, imagePullTimeout)
+	defer cancel()
+	images := make([]sessionsapp.CreateImage, 0, len(attached))
+	for _, image := range attached {
+		// The id names the file on disk and the pull's path.
+		if !link.IsCommandID(image.ImageID) {
+			return nil, sessionsdomain.ErrImage.WithDetail("an attached image id is not one")
+		}
+		data, err := h.pullImage(ctx, image.ImageID)
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, sessionsapp.CreateImage{ID: image.ImageID, MediaType: image.MediaType, Data: data})
+	}
+	return images, nil
 }
 
 // pullImage fetches the parked image. The route names no host: the assertion

@@ -3,12 +3,17 @@ import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HostAccessPort } from '../../../../hosts/application/host-access.port';
 import { ProjectEntity } from '../../../../projects/domain/project.entity';
+import { SessionAttachmentsResolver } from '../../../application/session-attachments.resolver';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../../application/session-launch.factory';
 import type { SessionNamingResolver } from '../../../application/session-naming.resolver';
 import type { SessionPlanFactory } from '../../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
+import type {
+  SessionAttachment,
+  SessionAttachmentStorePort,
+} from '../../../infrastructure/session-attachment-store.port';
 import { WorkSessionMapper } from '../../../work-session.mapper';
 import { CreateSessionCommand } from '../create-session.command';
 import { CreateSessionCommandHandler } from '../create-session.command-handler';
@@ -59,15 +64,34 @@ function launches(): SessionLaunchSpecFactory {
   });
 }
 
+/** The attachment store in memory, keyed by id and checked against its owner as the adapter is. */
+function attachmentStore(uploads: SessionAttachment[] = []) {
+  const kept = new Map(uploads.map((upload) => [upload.id, upload]));
+  return {
+    put: vi.fn(async (upload: SessionAttachment) => void kept.set(upload.id, upload)),
+    find: vi.fn(async (id: string, owner: { organizationId: string; userId: string }) => {
+      const upload = kept.get(id);
+      return upload?.organizationId === owner.organizationId && upload.userId === owner.userId
+        ? upload
+        : undefined;
+    }),
+    remove: vi.fn(async (ids: readonly string[]) => {
+      for (const id of ids) kept.delete(id);
+    }),
+  } satisfies SessionAttachmentStorePort;
+}
+
 describe('CreateSessionCommandHandler', () => {
   let sessions: WorkSessionRepositoryPort;
   let hosts: { assertUsable: ReturnType<typeof vi.fn> };
   let dispatch: SessionDispatchPort;
   let plan: SessionPlanFactory;
   let naming: { propose: ReturnType<typeof vi.fn>; record: ReturnType<typeof vi.fn> };
+  let store: ReturnType<typeof attachmentStore>;
   let handler: CreateSessionCommandHandler;
 
   beforeEach(() => {
+    store = attachmentStore();
     sessions = {
       findOneByIdempotencyKey: vi.fn().mockResolvedValue(None),
       createIfUnclaimed: vi.fn().mockImplementation(async (session: WorkSessionEntity) => ({
@@ -79,6 +103,7 @@ describe('CreateSessionCommandHandler', () => {
     hosts = { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) };
     dispatch = {
       create: vi.fn().mockResolvedValue({ delivered: false, hints: [] }),
+      createImageSupport: vi.fn().mockReturnValue('ready'),
     } as unknown as SessionDispatchPort;
     plan = {
       resolveProject: vi.fn().mockResolvedValue(project()),
@@ -99,6 +124,7 @@ describe('CreateSessionCommandHandler', () => {
       launches(),
       naming as unknown as SessionNamingResolver,
       new WorkSessionMapper(),
+      new SessionAttachmentsResolver(store, dispatch),
     );
   });
 
@@ -226,6 +252,63 @@ describe('CreateSessionCommandHandler', () => {
     expect(dispatch.create).not.toHaveBeenCalled();
   });
 
+  describe('attached images', () => {
+    const upload = (id: string, userId = 'user-1'): SessionAttachment => ({
+      id,
+      organizationId: 'org-acme',
+      userId,
+      mediaType: 'image/png',
+      data: Buffer.from('png'),
+    });
+    const attached = (ids: string[]) =>
+      command({ input: { ...INPUT, prompt: 'look at this', attachmentIds: ids } });
+
+    it('hands the host the uploads the create names, then lets them go', async () => {
+      await store.put(upload('a-1'));
+      await store.put(upload('a-2'));
+
+      await handler.execute(attached(['a-1', 'a-2']));
+
+      const [, spec] = vi.mocked(dispatch.create).mock.calls[0];
+      expect(spec.prompt).toBe('look at this');
+      expect(spec.images).toEqual([
+        { mediaType: 'image/png', data: Buffer.from('png') },
+        { mediaType: 'image/png', data: Buffer.from('png') },
+      ]);
+      expect(store.remove).toHaveBeenCalledWith(['a-1', 'a-2']);
+    });
+
+    it('refuses an upload that is not the caller’s, before writing anything', async () => {
+      await store.put(upload('a-1', 'someone-else'));
+
+      await expect(handler.execute(attached(['a-1']))).rejects.toMatchObject({
+        code: 'SESSIONS_019',
+      });
+      expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
+    });
+
+    it('refuses a host that cannot take them now, before writing anything', async () => {
+      await store.put(upload('a-1'));
+      vi.mocked(dispatch.createImageSupport).mockReturnValue('host_offline');
+      await expect(handler.execute(attached(['a-1']))).rejects.toMatchObject({
+        code: 'SESSIONS_016',
+      });
+
+      vi.mocked(dispatch.createImageSupport).mockReturnValue('not_supported');
+      await expect(handler.execute(attached(['a-1']))).rejects.toMatchObject({
+        code: 'SESSIONS_017',
+      });
+      expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
+    });
+
+    it('asks nothing of the host when nothing is attached', async () => {
+      await handler.execute(command());
+
+      expect(dispatch.createImageSupport).not.toHaveBeenCalled();
+      expect(vi.mocked(dispatch.create).mock.calls[0][1].images).toBeUndefined();
+    });
+  });
+
   it('refuses when the project the repository belongs to is archived', async () => {
     vi.mocked(plan.resolveProject).mockRejectedValue(
       new AppError({ code: 'PROJECTS_004', message: 'That project is archived', httpStatus: 409 }),
@@ -286,6 +369,7 @@ describe('CreateSessionCommandHandler: the launch and the first task', () => {
       launches(),
       naming as unknown as SessionNamingResolver,
       new WorkSessionMapper(),
+      new SessionAttachmentsResolver(attachmentStore(), dispatch),
     );
   });
 

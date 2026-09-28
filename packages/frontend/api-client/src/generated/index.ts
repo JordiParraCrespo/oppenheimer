@@ -145,6 +145,7 @@ export {
   updateUserSettings,
   updateWorkspace,
   uploadAvatar,
+  uploadSessionAttachment,
 } from './sdk.gen';
 export type {
   AcceptData,
@@ -839,6 +840,7 @@ export type {
   ScopeLevelDto,
   ScopeLevelsDto,
   ScopePolicyDto,
+  SessionAttachmentResponseDto,
   SessionCheckoutResponseDto,
   SessionEventPageResponseDto,
   SessionEventResponseDto,
@@ -990,6 +992,11 @@ export type {
   UploadAvatarErrors,
   UploadAvatarResponse,
   UploadAvatarResponses,
+  UploadSessionAttachmentData,
+  UploadSessionAttachmentError,
+  UploadSessionAttachmentErrors,
+  UploadSessionAttachmentResponse,
+  UploadSessionAttachmentResponses,
   UserResponseDto,
   UserSessionResponseDto,
   UserSettingsResponseDto,

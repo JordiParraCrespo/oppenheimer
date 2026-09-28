@@ -146,4 +146,14 @@ export const SessionErrors = {
     message: 'The session’s host cannot take images until its runner is updated',
     httpStatus: 409,
   },
+  /**
+   * A create names an attachment that is not waiting for this person: it
+   * expired, it was already used, or it was never theirs. The three are one
+   * answer, so an id cannot be probed.
+   */
+  ATTACHMENT_NOT_FOUND: {
+    code: 'SESSIONS_019',
+    message: 'An attached image is no longer waiting',
+    httpStatus: 410,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

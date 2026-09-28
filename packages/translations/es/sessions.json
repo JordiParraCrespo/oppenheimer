@@ -48,11 +48,7 @@
   },
   "new": {
     "title": "Nueva sesión",
-    "subtitle": "Define el alcance y describe el trabajo.",
-    "subtitleProject_one": "En {{name}} · clonando {{picked}} de {{count}} repositorio, cada uno en su propia rama opp/.",
-    "subtitleProject_other": "En {{name}} · clonando {{picked}} de {{count}} repositorios, cada uno en su propia rama opp/.",
-    "subtitleCloning_one": "En {{name}} · clonando {{count}} repositorio, en su propia rama opp/.",
-    "subtitleCloning_other": "En {{name}} · clonando {{count}} repositorios, cada uno en su propia rama opp/.",
+    "heading": "Cuando quieras, empezamos.",
     "host": {
       "label": "Host",
       "placeholder": "Host",
@@ -131,7 +127,12 @@
     "composer": {
       "placeholder": "Describe una tarea o haz una pregunta",
       "send": "Enviar",
-      "stop": "Detener"
+      "stop": "Detener",
+      "attach": "Adjuntar imágenes",
+      "removeAttachment": "Quitar {{name}}",
+      "attachTooLarge": "{{name}} pesa más de 5 MB. Recórtala o guárdala más pequeña y vuelve a adjuntarla.",
+      "attachNotImage": "{{name}} no es una imagen que una sesión pueda recibir: adjunta un PNG, JPEG, GIF o WebP.",
+      "attachTooMany": "Una primera tarea lleva como mucho {{max}} imágenes."
     },
     "queued": "Tu primera tarea está en cola para este host.",
     "failed": "No se pudo crear la sesión."

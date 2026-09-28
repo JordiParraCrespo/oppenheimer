@@ -40,7 +40,7 @@ test.describe('New session', () => {
     await signInAs(page, owner.user);
     await page.goto('/sessions/new');
 
-    await expect(page.getByRole('heading', { name: 'New session' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Ready when you are.' })).toBeVisible();
 
     // ── The prompt box has the size the export gives it ──────────────────────
     // It lost that size once: `field-sizing-content` overrides the `rows`

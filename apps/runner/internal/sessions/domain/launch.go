@@ -85,6 +85,21 @@ func (l Launch) Env(agent Agent) map[string]string {
 	return launchCatalog[agent.CatalogID()].permission[l.Permission].env
 }
 
+// PromptWithImages is the first task followed by the paths of the images
+// attached to it, a blank line after the task and one path to a line: the
+// agent reads them as it reads paths pasted into its prompt. With no paths it
+// is the task unchanged.
+func PromptWithImages(prompt string, paths []string) string {
+	if len(paths) == 0 {
+		return prompt
+	}
+	list := strings.Join(paths, "\n")
+	if prompt == "" {
+		return list
+	}
+	return prompt + "\n\n" + list
+}
+
 func substitute(vector []string, placeholder, value string) []string {
 	out := make([]string, len(vector))
 	for i, word := range vector {

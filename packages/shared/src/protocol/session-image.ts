@@ -70,6 +70,12 @@ export const SESSION_IMAGE_MEDIA_TYPES = SESSION_IMAGE_TYPES.map(
  */
 export const SESSION_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
+/**
+ * How many images a session's first task may carry. Each is pulled before the
+ * agent starts, so the cap bounds how long a launch can wait on downloads.
+ */
+export const SESSION_CREATE_MAX_IMAGES = 5;
+
 /** The type an image's bytes declare, or `null` when they declare none of the table's. */
 export function sniffSessionImage(bytes: Uint8Array): SessionImageMediaType | null {
   const matches = (part: SignaturePart) =>

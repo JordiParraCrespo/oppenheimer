@@ -437,6 +437,47 @@ func TestStoppingDropsTheSessionsImages(t *testing.T) {
 	}
 }
 
+func TestCreateSavesTheFirstTasksImagesAndNamesThemInTheLaunch(t *testing.T) {
+	h := newFakeHarness(t)
+
+	session, err := h.svc.Create(context.Background(), app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		BaseBranch: "main", Agent: domain.AgentClaude,
+		Launch: domain.Launch{Permission: "ask", Prompt: "fix this"},
+		Images: []app.CreateImage{{ID: imageCommand, MediaType: "image/png", Data: png}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := h.images.Saved[session.ID][imageCommand+".png"]; string(got) != string(png) {
+		t.Fatal("the attached image was not saved under the session")
+	}
+	command := h.terminals.CommandOf(session.TmuxName())
+	if !strings.Contains(command, "fix this") || !strings.Contains(command, "/"+session.ID+"/"+imageCommand+".png") {
+		t.Fatalf("command = %q, want the task followed by the image's path", command)
+	}
+	if session.Launch.Prompt != "fix this" {
+		t.Fatalf("stored prompt = %q: a restart must not name images that are gone", session.Launch.Prompt)
+	}
+}
+
+func TestCreateRefusesAttachedImagesThatAreNotWhatTheyClaim(t *testing.T) {
+	h := newFakeHarness(t)
+
+	_, err := h.svc.Create(context.Background(), app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		BaseBranch: "main", Agent: domain.AgentClaude, Launch: domain.Launch{Prompt: "look"},
+		Images: []app.CreateImage{{ID: imageCommand, MediaType: "image/jpeg", Data: png}},
+	})
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != "SESS_005" {
+		t.Fatalf("err = %v, want SESS_005", err)
+	}
+	if len(h.worktrees.Paths) != 0 || len(h.images.Saved) != 0 {
+		t.Fatal("a refused image must be refused before anything is made")
+	}
+}
+
 func TestCloseDropsTheSessionsImages(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)

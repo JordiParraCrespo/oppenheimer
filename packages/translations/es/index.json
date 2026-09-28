@@ -182,12 +182,13 @@
       "FLAG_005": "Ya existe un segmento con esa clave.",
       "FLAG_006": "Ese segmento todavía lo usa un flag. Quítalo primero de sus reglas.",
       "FLAG_007": "Las condiciones de ese segmento no son válidas.",
-      "SESSIONS_012": "La imagen pesa más de 5 MB. Recórtala o guárdala más pequeña y vuelve a pegarla.",
-      "SESSIONS_013": "Solo se pueden pegar imágenes PNG, JPEG, GIF y WebP en una sesión.",
+      "SESSIONS_012": "La imagen pesa más de 5 MB. Recórtala o guárdala más pequeña y vuelve a intentarlo.",
+      "SESSIONS_013": "Solo se pueden dar imágenes PNG, JPEG, GIF y WebP a una sesión.",
       "SESSIONS_014": "Esta sesión está detenida. Reiníciala para pegar una imagen en su prompt.",
       "SESSIONS_015": "No se adjuntó ninguna imagen. Vuelve a pegarla o arrastrarla.",
-      "SESSIONS_016": "El equipo de esta sesión está desconectado, así que la imagen no se envió.",
-      "SESSIONS_017": "El equipo de esta sesión necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a pegarla.",
+      "SESSIONS_016": "El equipo está desconectado, así que la imagen no se envió.",
+      "SESSIONS_017": "Este equipo necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a intentarlo.",
+      "SESSIONS_019": "Una imagen adjunta caducó antes de que empezara la sesión. Vuelve a enviar para subirla de nuevo.",
       "HOSTS_007": "No hay ninguna imagen esperando para esa orden.",
       "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
       "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",
@@ -446,11 +447,7 @@
     },
     "new": {
       "title": "Nueva sesión",
-      "subtitle": "Define el alcance y describe el trabajo.",
-      "subtitleProject_one": "En {{name}} · clonando {{picked}} de {{count}} repositorio, cada uno en su propia rama opp/.",
-      "subtitleProject_other": "En {{name}} · clonando {{picked}} de {{count}} repositorios, cada uno en su propia rama opp/.",
-      "subtitleCloning_one": "En {{name}} · clonando {{count}} repositorio, en su propia rama opp/.",
-      "subtitleCloning_other": "En {{name}} · clonando {{count}} repositorios, cada uno en su propia rama opp/.",
+      "heading": "Cuando quieras, empezamos.",
       "host": {
         "label": "Host",
         "placeholder": "Host",
@@ -529,7 +526,12 @@
       "composer": {
         "placeholder": "Describe una tarea o haz una pregunta",
         "send": "Enviar",
-        "stop": "Detener"
+        "stop": "Detener",
+        "attach": "Adjuntar imágenes",
+        "removeAttachment": "Quitar {{name}}",
+        "attachTooLarge": "{{name}} pesa más de 5 MB. Recórtala o guárdala más pequeña y vuelve a adjuntarla.",
+        "attachNotImage": "{{name}} no es una imagen que una sesión pueda recibir: adjunta un PNG, JPEG, GIF o WebP.",
+        "attachTooMany": "Una primera tarea lleva como mucho {{max}} imágenes."
       },
       "queued": "Tu primera tarea está en cola para este host.",
       "failed": "No se pudo crear la sesión."

@@ -173,4 +173,51 @@ describe('RelayDispatchAdapter', () => {
     expect(link.send).not.toHaveBeenCalled();
     expect(images.park).not.toHaveBeenCalled();
   });
+
+  describe('a first task with images', () => {
+    const spec = {
+      organizationSlug: 'jordi',
+      branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
+      prompt: 'Match this screenshot',
+      images: [{ mediaType: 'image/png' as const, data: Buffer.from([0x89, 0x50]) }],
+    };
+
+    it('parks each image for the host and names it on the create', async () => {
+      const { adapter, link, images } = harness(true, ['session.create.images']);
+      const work = session();
+
+      const outcome = await adapter.create(work, spec);
+
+      expect(outcome).toEqual({ delivered: true, hints: [] });
+      const sent = sessionCreateSchema.parse(vi.mocked(link.send).mock.calls[0]?.[0]);
+      expect(sent.images).toHaveLength(1);
+      expect(sent.images?.[0]?.mediaType).toBe('image/png');
+      expect(images.park).toHaveBeenCalledWith(sent.images?.[0]?.imageId, {
+        hostId: HOST,
+        sessionId: work.id,
+        mediaType: 'image/png',
+        data: spec.images[0].data,
+      });
+    });
+
+    it('sends nothing to a runner that cannot take them at launch', async () => {
+      const { adapter, link, images } = harness(true, ['session.image']);
+
+      const outcome = await adapter.create(session(), spec);
+
+      expect(outcome).toEqual({ delivered: false, hints: ['not_supported'] });
+      expect(link.send).not.toHaveBeenCalled();
+      expect(images.park).not.toHaveBeenCalled();
+    });
+
+    it('says whether a host could take them before anything is written', () => {
+      expect(harness(false).adapter.createImageSupport(HOST)).toBe('host_offline');
+      expect(harness(true, ['session.image']).adapter.createImageSupport(HOST)).toBe(
+        'not_supported',
+      );
+      expect(harness(true, ['session.create.images']).adapter.createImageSupport(HOST)).toBe(
+        'ready',
+      );
+    });
+  });
 });

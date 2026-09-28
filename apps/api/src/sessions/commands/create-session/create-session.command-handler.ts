@@ -4,6 +4,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import { requireLaunchableHost } from '../../application/require-launchable-host.policy';
+import { SessionAttachmentsResolver } from '../../application/session-attachments.resolver';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../application/session-launch.factory';
 import { SessionNamingResolver } from '../../application/session-naming.resolver';
@@ -21,13 +22,11 @@ import { CreateSessionCommand } from './create-session.command';
  * Starts a session: the project, the slug, the checkouts, the first entry of the
  * log, and the job the host is owed.
  *
- * The order matters. The host is checked **first**, because `hostId` is the one
- * reference in the schema a constraint cannot hold — a host belongs to a person and
- * carries no workspace column — so a foreign host must be refused before anything is
- * written. The project comes next, because the branch name needs its slug. The row,
- * its checkouts and its log then commit together, and only a session that was
- * genuinely created is dispatched: a retry hands back the first one rather than
- * asking the host to build a second worktree.
+ * The order matters. The host is checked **first**: `hostId` is the one reference
+ * a constraint cannot hold (a host is a person's, with no workspace column), so a
+ * foreign host is refused before anything is written; then the attached images,
+ * then the project, whose slug the branch needs. The row, its checkouts and its log
+ * commit together, and only a session genuinely created is dispatched.
  */
 @CommandHandler(CreateSessionCommand)
 export class CreateSessionCommandHandler
@@ -44,6 +43,7 @@ export class CreateSessionCommandHandler
     private readonly launches: SessionLaunchSpecFactory,
     private readonly naming: SessionNamingResolver,
     private readonly mapper: WorkSessionMapper,
+    private readonly attachments: SessionAttachmentsResolver,
   ) {}
 
   async execute(command: CreateSessionCommand): Promise<SessionCommandResult> {
@@ -58,6 +58,8 @@ export class CreateSessionCommandHandler
     }
 
     await requireLaunchableHost(this.hosts, scope, input.hostId, input.agent);
+    // Before the row: a task that talks about a picture must not start without it.
+    const images = await this.attachments.resolve(scope, command.userId, input);
     const project = await this.plan.resolveProject(scope, input);
 
     const session = WorkSessionEntity.request({
@@ -86,9 +88,8 @@ export class CreateSessionCommandHandler
         cwdCheckoutId: this.plan.cwdCheckoutIdFor(session, input.cwdGithubRepoId),
       }),
     );
-    // The project was retired between the lookup and the insert. The project row is
-    // locked inside that transaction, so this is the race decided rather than
-    // detected afterwards.
+    // The project was retired between the lookup and the insert; the locked
+    // project row decides that race rather than detecting it afterwards.
     if (created.projectArchived) {
       throw new AppError(SessionErrors.PROJECT_ARCHIVED, {
         detail: `Project ${project.slug} is archived`,
@@ -100,14 +101,13 @@ export class CreateSessionCommandHandler
     // model's round trip overlaps the dispatch rather than following it. It
     // resolves within the namer's deadline and never rejects: a slow model is
     // replaced by the prompt's own words, so the response carries a readable name.
-    const naming = input.prompt
-      ? this.naming.propose(created.session, input.prompt)
-      : Promise.resolve(null);
+    const naming = input.prompt ? this.naming.propose(created.session, input.prompt) : null;
 
     const { hints } = await this.dispatch.create(
       created.session,
-      await this.launches.build(created.session, { prompt: input.prompt }),
+      await this.launches.build(created.session, { prompt: input.prompt, images }),
     );
+    await this.attachments.release(input.attachmentIds);
 
     await this.naming.record(
       created.session,

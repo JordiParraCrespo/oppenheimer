@@ -102,14 +102,21 @@
   email typed out. Full name is **two fields side by side**, not the
   export's one, because the account stores first and last name apart
   and splitting one string on its first space gets names wrong.
-- New session: on the grey canvas, a line under the title that says what
-  sending will do once a project is picked ("In XRP Mobile · cloning 1 of
-  1 repository, each on its own opp/ branch."; "Set the scope, then
-  describe the work." until then); chips for project, host, repository,
-  branch, in the grey
+- New session: on the grey canvas, one centred line, "Ready when you
+  are.", and no line under it (until 2026-09-28 a subtitle said what
+  sending would do; the chips already say it); chips for project, host,
+  repository, branch, in the grey
   band fused to the top of the composer (the tabbed composer of the
   2026-09-26 export); a composer for the
   first task whose foot row reads scope of action, then engine: attach
+  (images for the first task — PNG, JPEG, GIF or WebP, up to five of
+  5 MB each, picked with the paperclip or pasted into the field, each a
+  removable chip under the text; a file the session cannot take is
+  refused under the field with the reason, never dropped. They are
+  uploaded when the task is sent, and the host saves them outside the
+  worktree and appends their paths to the task, so the agent reads them
+  with it. A host offline or on a runner too old for them refuses the
+  create before anything is written)
   and the permission level on the left (ask for approval, approve for
   me, full access, the last in a warning tone because it changes a
   machine unattended); the agent and model, the effort and dictation on
