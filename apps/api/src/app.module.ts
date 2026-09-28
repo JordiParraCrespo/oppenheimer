@@ -28,9 +28,11 @@ import { AuthModule } from './auth/auth.module';
 import { ScopesGuard } from './auth/guards/scopes.guard';
 import { auth } from './auth/infrastructure/better-auth.config';
 import { AuthzModule } from './authz/authz.module';
+import { AutomationsModule } from './automations/automations.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
 import {
   appConfig,
+  automationsConfig,
   databaseConfig,
   emailConfig,
   githubAppConfig,
@@ -47,6 +49,7 @@ import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { GithubModule } from './github/github.module';
 import { HealthModule } from './health/health.module';
 import { HostsModule } from './hosts/hosts.module';
+import { InboundEventsModule } from './inbound-events/inbound-events.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
@@ -75,6 +78,7 @@ import { UsersModule } from './users/user.module';
         hostsConfig,
         llmConfig,
         sessionsConfig,
+        automationsConfig,
       ],
     }),
     // Request logging with hardened defaults (credential redaction, no
@@ -198,6 +202,9 @@ import { UsersModule } from './users/user.module';
     // (hosts, installations, projects, sessions, relay) follow it here as they
     // land.
     OrganizationsModule,
+    // What external systems tell us, stored once and normalized: the hub the
+    // providers below feed and automations consume.
+    InboundEventsModule,
     // What GitHub grants a workspace, and how the platform exercises it. The
     // first of the product contexts named above.
     GithubModule,
@@ -211,6 +218,8 @@ import { UsersModule } from './users/user.module';
     // The module the other three feed into: the sessions themselves, their
     // checkouts, and the append-only log the row is a fold of.
     SessionsModule,
+    // Saved prompts and their triggers, whose every run is a session above.
+    AutomationsModule,
     RelayModule,
     HealthModule,
     QueueModule,

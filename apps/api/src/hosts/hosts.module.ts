@@ -17,6 +17,7 @@ import { HostKeyResolver } from './application/host-key.resolver';
 import { HostPresenceResolver } from './application/host-presence.resolver';
 import type { HostUsagePort } from './application/host-usage.port';
 import { HostUsageRegistry } from './application/host-usage.registry';
+import { HostVitalsResolver } from './application/host-vitals.resolver';
 import { CollectSessionImageCommandHandler } from './commands/collect-session-image/collect-session-image.command-handler';
 import { CollectSessionImageHttpController } from './commands/collect-session-image/collect-session-image.http.controller';
 import { MintPairingTokenCommandHandler } from './commands/mint-pairing-token/mint-pairing-token.command-handler';
@@ -51,6 +52,7 @@ import {
   HOST_PAIRING_TOKEN_REPOSITORY,
   HOST_PRESENCE,
   HOST_REPOSITORY,
+  HOST_VITALS,
   IP_GEOLOCATION,
 } from './hosts.di-tokens';
 import { HostResource } from './hosts.resource';
@@ -123,6 +125,7 @@ const resolvers: Provider[] = [
   { provide: HOST_ASSERTION, useClass: HostAssertionResolver },
   { provide: HOST_ACCESS, useClass: HostAccessResolver },
   { provide: HOST_PRESENCE, useClass: HostPresenceResolver },
+  { provide: HOST_VITALS, useClass: HostVitalsResolver },
   { provide: HOST_KEY, useClass: HostKeyResolver },
 ];
 
@@ -183,7 +186,7 @@ const resolvers: Provider[] = [
   //
   // `HostUsageRegistry` is the other half of that surface: what runs on a host
   // is contributed into it by the module that owns the work.
-  exports: [HOST_ASSERTION, HOST_ACCESS, HOST_PRESENCE, HOST_KEY, HostUsageRegistry],
+  exports: [HOST_ASSERTION, HOST_ACCESS, HOST_PRESENCE, HOST_VITALS, HOST_KEY, HostUsageRegistry],
 })
 export class HostsModule {
   /**

@@ -110,6 +110,7 @@ describe('CreateSessionCommandHandler', () => {
       userId: 'user-1',
       input: INPUT,
       idempotencyKey: 'key-1',
+      origin: 'person',
       ...overrides,
     });
 
@@ -295,6 +296,7 @@ describe('CreateSessionCommandHandler: the launch and the first task', () => {
         userId: 'user-1',
         input: { ...INPUT, ...input } as never,
         idempotencyKey: null,
+        origin: 'person',
       }),
     );
 

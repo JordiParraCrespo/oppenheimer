@@ -25,15 +25,24 @@ export interface AccountErasurePort {
 /**
  * The order the contributions run in, each after the one before it:
  *
- * 1. `hosts` — unpair the account's machines, which stops the sessions on
+ * 1. `automations` — the workspace's automations and their runs, first so
+ *    no trigger fires while the rest goes, and because a run names a session
+ *    and a revision names a host;
+ * 2. `hosts` — unpair the account's machines, which stops the sessions on
  *    them and closes their links for good, while the rows that say where to
  *    send that still exist;
- * 2. `sessions`, then 3. `projects` — the work in the personal workspace,
+ * 3. `sessions`, then 4. `projects` — the work in the personal workspace,
  *    the two tables that refuse to lose their workspace;
- * 4. `workspace` — the personal workspace itself.
+ * 5. `workspace` — the personal workspace itself.
  *
  * The user row goes last, with every sign-in (they cascade from it), in the
  * handler's own write.
  */
-export const ACCOUNT_ERASURE_STEPS = ['hosts', 'sessions', 'projects', 'workspace'] as const;
+export const ACCOUNT_ERASURE_STEPS = [
+  'automations',
+  'hosts',
+  'sessions',
+  'projects',
+  'workspace',
+] as const;
 export type AccountErasureStep = (typeof ACCOUNT_ERASURE_STEPS)[number];

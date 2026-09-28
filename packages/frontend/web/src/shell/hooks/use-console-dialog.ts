@@ -3,7 +3,7 @@ import { createContext, useContext } from 'react';
 /**
  * The console's dialogs, named by what opens them
  * (`product/versions/mvp/05-screens.md`, `13-automations.md`): New project
- * and Project settings, Add a host, New automation. A surface — a chip's
+ * and Project settings, Add a host, New and Edit automation. A surface — a chip's
  * foot row, a sidebar button, a header's plus — only says which one to
  * open; one owner at the authenticated layout mounts it.
  *
@@ -21,8 +21,11 @@ export type ConsoleDialogRequest =
   | { kind: 'add-host'; onUseHost?: (hostId: string) => void }
   | {
       kind: 'automation';
+      /** Present edits this automation; absent creates one. */
+      automationId?: string;
       /** The project a header's plus opened it for. */
       projectId?: string;
+      onSaved?: (automation: { id: string }) => void;
     };
 
 export interface ConsoleDialogs {

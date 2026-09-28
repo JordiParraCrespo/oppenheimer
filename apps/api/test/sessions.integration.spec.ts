@@ -700,6 +700,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       const projects = new ProjectRepository(
         dataSource.getRepository(ProjectOrmEntity),
         new ProjectMapper(),
+        outbox(),
       );
       const work = session();
 

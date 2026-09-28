@@ -20,7 +20,9 @@ whose contract the API serves.
 | **Organizations** (name, slug, logo, members) | the Better Auth `organization` + `member` tables, unchanged — there is no `url` column today; one would be a nullable column on `organization`, not a table | no |
 | **Hosts** | `hosts/` → `host` (keys inline; owned by a **person**, borrowed by workspaces), `host_pairing_token` | yes |
 | **Projects** | `projects/` → `project`, `project_repository` (the repositories a project holds, and its defaults) | yes |
-| **Sessions** | `sessions/` → `work_session`, `session_checkout` (which is also where a repository is remembered), `work_session_event` | yes |
+| **Sessions** | `sessions/` → `work_session`, `session_checkout` (which is also where a repository is remembered), `work_session_event`, `session_turn` (a session's turns, folded from its log; a run's status is its first) | yes |
+| **External events** | `inbound-events/` → `inbound_delivery` (a webhook as it arrived, 7 days), `inbound_event` (one normalized event per workspace, 30 days); provider-neutral, GitHub its first source (16 §Q6–Q7) | yes |
+| **Automations** | `automations/` → `automation`, `automation_revision`, `automation_trigger`, `automation_trigger_subject`, `automation_run` (why a run fired and what the guards decided, and the session it dispatched), `automation_settings` (a workspace's limits); the design is 16, the console 13 | yes |
 | **Repositories** | **no table** — listed live from GitHub through the installation; a checkout records the GitHub id, the installation and a name snapshot inline | no table |
 | **GitHub allowed repositories** | *not stored at all* — the installation is the allowlist, and GitHub answers it | — |
 | **Coding agents** | a closed catalog in `packages/shared`, plus what the runner last saw on `host.capabilities` — a hint, never a gate | no table |

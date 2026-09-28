@@ -33,7 +33,9 @@
   console's lists — Sessions and Automations, both links, the one under
   the address current, each named with its list's count beside the rail
   the moment it is hovered or focused, and the automations list is the
-  second sidebar (13) — the head reads Projects with the
+  second sidebar (13). A session is shown in the session pane under either
+  list: opened from a run, it keeps the automations list beside it, at
+  `/automations/$automationId/sessions/$sessionId` (13) — the head reads Projects with the
   count, a New project button and the filter menu, a live search box
   narrows the rows, and each project is a folding header with its count
   and two hover actions — New session here (`/sessions/new?project=`,

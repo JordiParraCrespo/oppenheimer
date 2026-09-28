@@ -71,6 +71,12 @@
       "require": "./dist/schemas/github.schema.js",
       "default": "./dist/schemas/github.schema.js"
     },
+    "./schemas/automation": {
+      "types": "./dist/schemas/automation.schema.d.ts",
+      "import": "./dist/schemas/automation.schema.js",
+      "require": "./dist/schemas/automation.schema.js",
+      "default": "./dist/schemas/automation.schema.js"
+    },
     "./types": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/types/index.js",
@@ -113,6 +119,12 @@
       "require": "./dist/agents/index.js",
       "default": "./dist/agents/index.js"
     },
+    "./automations": {
+      "types": "./dist/automations/index.d.ts",
+      "import": "./dist/automations/index.js",
+      "require": "./dist/automations/index.js",
+      "default": "./dist/automations/index.js"
+    },
     "./protocol": {
       "types": "./dist/protocol/index.d.ts",
       "import": "./dist/protocol/index.js",
@@ -133,6 +145,9 @@
       ],
       "feature-flags/catalog": [
         "./dist/feature-flags/catalog.d.ts"
+      ],
+      "automations": [
+        "./dist/automations/index.d.ts"
       ]
     }
   },

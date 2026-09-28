@@ -257,3 +257,18 @@ earlier note:
   "local" open. It shows the city and country code of the host's
   connecting address, from DB-IP Lite, instead of a cloud region
   (2026-09-26).
+- `versions/mvp/00-scope.md` kept automations out of the MVP, and
+  `versions/mvp/13-automations.md` built only their console routes. They
+  are in the MVP now, designed in `versions/mvp/16-automations-architecture.md`:
+  headless runs for any agent, an inbound-events hub for GitHub and later
+  Slack, schedules fired by a tick, a run acting as its owner. Note 05 §7's
+  API `POST /fire` trigger, its regex PR filters and its `claude/` branch
+  prefix are not in the frames and are not built; the frames' one filter
+  value per trigger and the event-dependent starting branch are
+  (2026-09-27).
+- The automations architecture capped **headless** runs per host; runs
+  are interactive sessions until the headless drive lands, so the cap
+  counts **live** runs of either drive — a run whose agent finished holds
+  no place — and a run past the run limit is stopped. A run opens in the
+  session pane under `/automations`, keeping the automations list beside
+  it (2026-09-28).

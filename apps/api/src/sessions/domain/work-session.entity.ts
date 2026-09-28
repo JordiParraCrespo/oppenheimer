@@ -9,6 +9,7 @@ import {
 import type { SessionGroup, SessionState } from '@oppenheimer/shared';
 import { SessionCreatedDomainEvent } from './events/session-created.domain-event';
 import { SessionStateChangedDomainEvent } from './events/session-state-changed.domain-event';
+import { SessionTurnChangedDomainEvent } from './events/session-turn-changed.domain-event';
 import type { SessionCheckoutEntity } from './session-checkout.entity';
 import { sessionGroup } from './session-group.policy';
 import { SESSION_SLUG_PATTERN } from './session-slug.policy';
@@ -23,6 +24,12 @@ import {
   type SessionLogEntry,
   type SessionNameSource,
 } from './session-state.policy';
+import {
+  foldTurnEvent,
+  type SessionOrigin,
+  type SessionTurnFold,
+  sameTurn,
+} from './session-turn.policy';
 import { SessionErrors } from './sessions.errors';
 import type { WorkSessionEventEntity } from './work-session-event.entity';
 
@@ -46,6 +53,14 @@ export interface WorkSessionProps extends SessionFold {
   idempotencyKey: string | null;
   /** Members of the aggregate, including retired ones. */
   checkouts: SessionCheckoutEntity[];
+  /** Who asked for the session: a person, or an automation's run. Immutable. */
+  origin: SessionOrigin;
+  /**
+   * The session's latest turn, as the repository last read it under the row
+   * lock. Null before the first prompt. Folded by `recordEvent` like every other
+   * projection; the changed turns are written back by the repository.
+   */
+  latestTurn: SessionTurnFold | null;
 }
 
 export interface CreateWorkSessionProps {
@@ -57,6 +72,8 @@ export interface CreateWorkSessionProps {
   agent: SessionAgent;
   name?: string;
   idempotencyKey?: string | null;
+  /** Absent is a person's session. */
+  origin?: SessionOrigin;
 }
 
 /**
@@ -81,6 +98,12 @@ export interface CreateWorkSessionProps {
  * name, and therefore a stranger's agent conversation state.
  */
 export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
+  /**
+   * Turns the fold changed since the repository last took them. Not a prop: it
+   * is the write-back list of one append, never part of what the row is.
+   */
+  private changedTurns = new Map<number, SessionTurnFold>();
+
   static create(create: CreateEntityProps<WorkSessionProps>): WorkSessionEntity {
     return new WorkSessionEntity(create);
   }
@@ -111,6 +134,8 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         agent: props.agent,
         idempotencyKey: props.idempotencyKey ?? null,
         checkouts: [],
+        origin: props.origin ?? 'person',
+        latestTurn: null,
         name: props.name ?? props.slug,
         nameSource: props.name ? 'user' : null,
       },
@@ -132,6 +157,31 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
 
   get organizationId(): string {
     return this.props.organizationId;
+  }
+
+  get origin(): SessionOrigin {
+    return this.props.origin;
+  }
+
+  /** The latest turn as last folded. Null before the first prompt. */
+  get latestTurn(): SessionTurnFold | null {
+    return this.props.latestTurn;
+  }
+
+  /**
+   * Re-seat the latest turn on what the database holds, inside the row lock —
+   * the turn counterpart of {@link reseatFold}, and for the same reason.
+   */
+  reseatLatestTurn(turn: SessionTurnFold | null): void {
+    this.props.latestTurn = turn;
+    this.changedTurns.clear();
+  }
+
+  /** The turns the folds since the last call moved, for the repository to write. */
+  takeChangedTurns(): SessionTurnFold[] {
+    const turns = [...this.changedTurns.values()].sort((a, b) => a.seq - b.seq);
+    this.changedTurns.clear();
+    return turns;
   }
 
   get projectId(): string {
@@ -311,6 +361,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       checkout?.remove(entry.occurredAt);
     }
     const folded = this.fold;
+    this.foldTurn(entry);
     this.setUpdatedAt(new Date());
     this.validate();
 
@@ -361,6 +412,28 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
   /** The key the API uses for its own log entries: the command that caused them. */
   static apiIdempotencyKey(commandId: string, kind: string): string {
     return `${kind}:${commandId}`;
+  }
+
+  /** Fold the entry onto the latest turn, and remember what to write back. */
+  private foldTurn(entry: SessionLogEntry): void {
+    const before = this.props.latestTurn;
+    const after = foldTurnEvent(before, entry, this.props.origin);
+    if (!after || sameTurn(before, after)) return;
+    this.props.latestTurn = after;
+    this.changedTurns.set(after.seq, after);
+    const from = before && before.seq === after.seq ? before.state : null;
+    if (from === after.state) return;
+    this.addEvent(
+      new SessionTurnChangedDomainEvent({
+        aggregateId: this.id,
+        reason: `turn ${after.seq} of this session moved to ${after.state}`,
+        organizationId: this.props.organizationId,
+        turn: after.seq,
+        origin: after.origin,
+        from,
+        to: after.state,
+      }),
+    );
   }
 
   public validate(): void {

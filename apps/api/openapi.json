@@ -9370,6 +9370,1025 @@
         "tags": ["Sessions"]
       }
     },
+    "/api/v1/automations": {
+      "get": {
+        "description": "Oldest first, as the sidebar groups them by project. Each carries its status (running while a run is live), its next run, its run count over the last 30 days and its last six runs.",
+        "operationId": "listAutomations",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "description": "One project’s automations",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutomationResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the workspace’s automations",
+        "tags": ["Automations"]
+      },
+      "post": {
+        "description": "A saved prompt, where it runs and the triggers that start it. The caller becomes its owner: every run acts as them. It starts listening as soon as it is saved.",
+        "operationId": "createAutomation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAutomationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "AUTOMATIONS_006 — A trigger would never fire\n\nAUTOMATIONS_005 — That agent cannot run an automation\n\nAUTOMATIONS_007 — That project cannot hold automations",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create an automation",
+        "tags": ["Automations"]
+      }
+    },
+    "/api/v1/automations/trigger-preview": {
+      "post": {
+        "description": "“Would have run N times in the last 7 days”: the card, unsaved, matched against what the webhook actually received, with the two most recent matches. A POST because the card is a body, not because anything changes.",
+        "operationId": "previewAutomationTrigger",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewTriggerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriggerPreviewResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Replay a GitHub trigger against recent events",
+        "tags": ["Automations"]
+      }
+    },
+    "/api/v1/automations/{id}": {
+      "get": {
+        "operationId": "getAutomation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Automation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read one automation",
+        "tags": ["Automations"]
+      },
+      "patch": {
+        "description": "What the editor changed, with the version it loaded. A change to what a run executes becomes the next revision; triggers, when sent, replace the set.",
+        "operationId": "updateAutomation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAutomationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Automation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTOMATIONS_003 — The automation was changed by someone else",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save an automation",
+        "tags": ["Automations"]
+      },
+      "delete": {
+        "description": "Its triggers stop now. Past runs are kept, and read “Deleted automation”.",
+        "operationId": "deleteAutomation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Automation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an automation",
+        "tags": ["Automations"]
+      }
+    },
+    "/api/v1/automations/{id}/pause": {
+      "post": {
+        "description": "Triggers are ignored until it is resumed; Run now still works. Its schedule stops firing now.",
+        "operationId": "pauseAutomation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Automation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Pause an automation",
+        "tags": ["Automations"]
+      }
+    },
+    "/api/v1/automations/{id}/resume": {
+      "post": {
+        "description": "Triggers listen again, and each schedule’s next slot is computed from now, so a paused week does not fire a burst of missed runs.",
+        "operationId": "resumeAutomation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Automation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resume an automation",
+        "tags": ["Automations"]
+      }
+    },
+    "/api/v1/automations/{id}/duplicate": {
+      "post": {
+        "description": "A copy named after the original, owned by the caller, with the same instructions, place and triggers and a first revision of its own.",
+        "operationId": "duplicateAutomation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Automation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Duplicate an automation",
+        "tags": ["Automations"]
+      }
+    },
+    "/api/v1/automations/{id}/run": {
+      "post": {
+        "description": "Queues a run that starts a session as the automation’s owner, whether or not it is paused. The run comes back queued; its session follows within seconds.",
+        "operationId": "runAutomation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "A retried Run now is the same run.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationRunResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Automation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Run an automation now",
+        "tags": ["Automations"]
+      }
+    },
+    "/api/v1/automation-runs": {
+      "get": {
+        "description": "The Runs tab, and one automation’s runs: newest first, a page of ten by default, with the total and the count per status tab under the same facets. Runs that never became a session (skipped, expired) are left out unless their status is asked for.",
+        "operationId": "listAutomationRuns",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Default 10",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "From 1",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "window",
+            "required": false,
+            "in": "query",
+            "description": "Default `30d`",
+            "schema": {
+              "enum": ["24h", "7d", "30d"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated, any of queued, running, completed, failed, cancelled, skipped, expired. Default: every status but skipped and expired",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "description": "One project’s runs",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "automationId",
+            "required": false,
+            "in": "query",
+            "description": "One automation’s runs",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationRunPageResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List automation runs",
+        "tags": ["Automations"]
+      }
+    },
+    "/api/v1/automation-runs/history": {
+      "get": {
+        "description": "One bucket per local day of the given zone, today last: runs that did not fail (running ones included) and runs that failed, under the same facets as the runs list.",
+        "operationId": "getAutomationRunHistory",
+        "parameters": [
+          {
+            "name": "timezone",
+            "required": false,
+            "in": "query",
+            "description": "The viewer’s IANA zone, whose midnights split the days. Default `UTC`",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "description": "Default 30",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "description": "One project’s runs",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "automationId",
+            "required": false,
+            "in": "query",
+            "description": "One automation’s runs",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunHistoryResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Run history by day",
+        "tags": ["Automations"]
+      }
+    },
+    "/api/v1/automation-runs/{id}": {
+      "get": {
+        "description": "Why it ran, what the guards decided, the session it started and that session’s turn: the prompt the agent was given, the state, the result and the times.",
+        "operationId": "getAutomationRun",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationRunResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_008 — Run not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read one automation run",
+        "tags": ["Automations"]
+      }
+    },
+    "/api/v1/automation-settings": {
+      "get": {
+        "description": "Effective values: the workspace’s own where set, the platform’s defaults elsewhere, under the platform ceilings.",
+        "operationId": "getAutomationSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationSettingsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The workspace’s automation limits",
+        "tags": ["Automations"]
+      },
+      "patch": {
+        "description": "Rate caps, runs at once per host, overlap, the stale TTL, the missed-slot grace and the longest run. Null clears a value back to the platform default; the platform ceilings still apply.",
+        "operationId": "updateAutomationSettings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAutomationSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationSettingsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set the workspace’s automation limits",
+        "tags": ["Automations"]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "check",
@@ -10395,6 +11414,8 @@
                 "projects:write",
                 "sessions:read",
                 "sessions:write",
+                "automations:read",
+                "automations:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -10432,6 +11453,8 @@
                 "projects:write",
                 "sessions:read",
                 "sessions:write",
+                "automations:read",
+                "automations:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -10508,6 +11531,8 @@
                 "projects:write",
                 "sessions:read",
                 "sessions:write",
+                "automations:read",
+                "automations:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -10608,6 +11633,8 @@
               "projects:write",
               "sessions:read",
               "sessions:write",
+              "automations:read",
+              "automations:write",
               "repositories:read",
               "repositories:write",
               "flags:read",
@@ -10663,6 +11690,7 @@
               "hosts",
               "projects",
               "sessions",
+              "automations",
               "repositories",
               "flags"
             ],
@@ -10727,6 +11755,8 @@
                 "projects:write",
                 "sessions:read",
                 "sessions:write",
+                "automations:read",
+                "automations:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -10775,6 +11805,8 @@
                 "projects:write",
                 "sessions:read",
                 "sessions:write",
+                "automations:read",
+                "automations:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -10855,6 +11887,8 @@
                 "projects:write",
                 "sessions:read",
                 "sessions:write",
+                "automations:read",
+                "automations:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -13971,6 +15005,1269 @@
           }
         },
         "required": ["projectId"]
+      },
+      "AutomationRepositoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "installationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The installation its tokens are minted through."
+          },
+          "githubRepoId": {
+            "type": "string",
+            "description": "GitHub’s repository id, as a string (a bigint).",
+            "example": "821374923"
+          },
+          "fullName": {
+            "type": "string",
+            "description": "`owner/repo`, as it was when the revision was saved.",
+            "example": "acme/xrp-mobile"
+          }
+        },
+        "required": ["installationId", "githubRepoId", "fullName"]
+      },
+      "AutomationRevisionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "number",
+            "description": "Numbered from 1; each save that changes what a run executes adds one."
+          },
+          "hostId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "agent": {
+            "type": "string",
+            "example": "claude-code"
+          },
+          "model": {
+            "type": "string",
+            "nullable": true
+          },
+          "permission": {
+            "type": "string",
+            "enum": ["auto", "full"]
+          },
+          "effort": {
+            "type": "string",
+            "nullable": true
+          },
+          "prompt": {
+            "type": "string",
+            "description": "The instructions every run is given."
+          },
+          "repositories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationRepositoryResponseDto"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "hostId",
+          "agent",
+          "permission",
+          "prompt",
+          "repositories",
+          "createdAt"
+        ]
+      },
+      "ScheduleResponseDto": {
+        "type": "object",
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": ["once", "hourly", "daily", "weekdays", "weekly", "monthly"]
+          },
+          "hour": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 23
+          },
+          "minute": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 59
+          },
+          "days": {
+            "description": "Weekly: 0 = Sunday … 6 = Saturday.",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "dayOfMonth": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 28
+          },
+          "date": {
+            "type": "string",
+            "description": "Once: the local date, `YYYY-MM-DD`."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "The IANA zone the wall time is in.",
+            "example": "Europe/Madrid"
+          }
+        },
+        "required": ["frequency", "hour", "minute", "timezone"]
+      },
+      "TriggerFilterResponseDto": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": ["any", "equals"]
+          },
+          "value": {
+            "type": "string",
+            "description": "The branch or label, when `op` is `equals`."
+          }
+        },
+        "required": ["op"]
+      },
+      "AutomationTriggerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "position": {
+            "type": "number",
+            "description": "The card’s place in the editor, from 0."
+          },
+          "source": {
+            "type": "string",
+            "enum": ["schedule", "github"]
+          },
+          "event": {
+            "type": "string",
+            "description": "`schedule`, or the catalog event (`pr_opened`, `push`, …)."
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/ScheduleResponseDto"
+          },
+          "repositories": {
+            "description": "GitHub: the repositories it listens on.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "filter": {
+            "$ref": "#/components/schemas/TriggerFilterResponseDto"
+          },
+          "nextFireAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Schedule: the next slot, UTC."
+          }
+        },
+        "required": ["id", "position", "source", "event"]
+      },
+      "AutomationRunSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "description": "The name the agent gave the session, or the automation’s name and cause."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["queued", "running", "completed", "failed", "cancelled", "skipped", "expired"]
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The session the run started — the run view — or null while queued or skipped."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "title", "status", "sessionId", "createdAt"]
+      },
+      "AutomationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ownerUserId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Whose runs these are: every run acts as this person."
+          },
+          "ownedByMe": {
+            "type": "boolean",
+            "description": "Whether the caller owns it."
+          },
+          "name": {
+            "type": "string",
+            "example": "Review new pull requests"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "paused", "running"],
+            "description": "`running` while any run is live, else `active` or `paused`."
+          },
+          "pausedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "pausedReason": {
+            "type": "string",
+            "nullable": true,
+            "enum": ["user", "project_archived", "host_unpaired", "owner_lost_access"]
+          },
+          "nextRunAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "The earliest next slot of its schedule triggers. Null when paused or event-only."
+          },
+          "revision": {
+            "$ref": "#/components/schemas/AutomationRevisionResponseDto"
+          },
+          "triggers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationTriggerResponseDto"
+            }
+          },
+          "overlap": {
+            "type": "string",
+            "nullable": true,
+            "enum": ["skip", "queue"]
+          },
+          "maxRunsPerHour": {
+            "type": "number",
+            "nullable": true
+          },
+          "version": {
+            "type": "number",
+            "description": "Send it back on a save; a stale one is refused (`AUTOMATIONS_003`)."
+          },
+          "runCount": {
+            "type": "number",
+            "description": "Runs that became sessions, over the listed window."
+          },
+          "lastRuns": {
+            "description": "The last six, newest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationRunSummaryResponseDto"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organizationId",
+          "projectId",
+          "ownerUserId",
+          "ownedByMe",
+          "name",
+          "status",
+          "revision",
+          "triggers",
+          "version",
+          "runCount",
+          "lastRuns",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateAutomationRequest": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "repositories": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "properties": {
+                "installationId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "githubRepoId": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                }
+              },
+              "required": ["installationId", "githubRepoId"]
+            }
+          },
+          "hostId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "triggers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": ["schedule"]
+                    },
+                    "frequency": {
+                      "type": "string",
+                      "enum": ["once", "hourly", "daily", "weekdays", "weekly", "monthly"]
+                    },
+                    "hour": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "exclusiveMinimum": false,
+                      "maximum": 23,
+                      "exclusiveMaximum": false
+                    },
+                    "minute": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "exclusiveMinimum": false,
+                      "maximum": 59,
+                      "exclusiveMaximum": false
+                    },
+                    "days": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 7,
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "exclusiveMinimum": false,
+                        "maximum": 6,
+                        "exclusiveMaximum": false
+                      }
+                    },
+                    "dayOfMonth": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "exclusiveMinimum": false,
+                      "maximum": 28,
+                      "exclusiveMaximum": false
+                    },
+                    "date": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "timezone": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    }
+                  },
+                  "required": ["source", "frequency", "hour", "minute", "timezone"]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": ["github"]
+                    },
+                    "event": {
+                      "type": "string",
+                      "enum": [
+                        "pr_opened",
+                        "pr_draft",
+                        "pr_sync",
+                        "pr_merged",
+                        "comment",
+                        "push",
+                        "issue_labeled",
+                        "check_failed",
+                        "issue_opened",
+                        "mention",
+                        "release"
+                      ]
+                    },
+                    "repositories": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 20,
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "exclusiveMinimum": true
+                      }
+                    },
+                    "filter": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "op": {
+                              "type": "string",
+                              "enum": ["any"]
+                            }
+                          },
+                          "required": ["op"]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "op": {
+                              "type": "string",
+                              "enum": ["equals"]
+                            },
+                            "value": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 255
+                            }
+                          },
+                          "required": ["op", "value"]
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["source", "event", "repositories", "filter"]
+                }
+              ]
+            }
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "agent": {
+            "type": "string",
+            "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
+          },
+          "launch": {
+            "type": "object",
+            "properties": {
+              "model": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "permission": {
+                "type": "string",
+                "enum": ["auto", "full"],
+                "default": "auto"
+              },
+              "effort": {
+                "type": "string",
+                "enum": ["minimal", "low", "medium", "high", "max"]
+              }
+            },
+            "default": {
+              "permission": "auto"
+            }
+          },
+          "active": {
+            "type": "boolean",
+            "default": true
+          },
+          "overlap": {
+            "type": "string",
+            "enum": ["skip", "queue"],
+            "nullable": true
+          },
+          "maxRunsPerHour": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 1000,
+            "exclusiveMaximum": false,
+            "nullable": true
+          }
+        },
+        "required": ["projectId", "repositories", "hostId", "name", "triggers", "prompt", "agent"]
+      },
+      "PreviewTriggerRequest": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": ["github"]
+          },
+          "event": {
+            "type": "string",
+            "enum": [
+              "pr_opened",
+              "pr_draft",
+              "pr_sync",
+              "pr_merged",
+              "comment",
+              "push",
+              "issue_labeled",
+              "check_failed",
+              "issue_opened",
+              "mention",
+              "release"
+            ]
+          },
+          "repositories": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "exclusiveMinimum": true
+            }
+          },
+          "filter": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "type": "string",
+                    "enum": ["any"]
+                  }
+                },
+                "required": ["op"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "type": "string",
+                    "enum": ["equals"]
+                  },
+                  "value": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  }
+                },
+                "required": ["op", "value"]
+              }
+            ]
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 30,
+            "exclusiveMaximum": false,
+            "default": 7
+          }
+        },
+        "required": ["source", "event", "repositories", "filter"]
+      },
+      "TriggerPreviewMatchResponseDto": {
+        "type": "object",
+        "properties": {
+          "repository": {
+            "type": "string",
+            "example": "acme/xrp-mobile"
+          },
+          "ref": {
+            "type": "string",
+            "example": "#124"
+          },
+          "title": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string",
+            "example": "jordiparra"
+          },
+          "url": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["repository", "occurredAt"]
+      },
+      "TriggerPreviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "How many stored events the card matches in the window."
+          },
+          "days": {
+            "type": "number"
+          },
+          "matches": {
+            "description": "The two most recent.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TriggerPreviewMatchResponseDto"
+            }
+          }
+        },
+        "required": ["count", "days", "matches"]
+      },
+      "UpdateAutomationRequest": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "repositories": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "properties": {
+                "installationId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "githubRepoId": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                }
+              },
+              "required": ["installationId", "githubRepoId"]
+            }
+          },
+          "hostId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "triggers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": ["schedule"]
+                    },
+                    "frequency": {
+                      "type": "string",
+                      "enum": ["once", "hourly", "daily", "weekdays", "weekly", "monthly"]
+                    },
+                    "hour": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "exclusiveMinimum": false,
+                      "maximum": 23,
+                      "exclusiveMaximum": false
+                    },
+                    "minute": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "exclusiveMinimum": false,
+                      "maximum": 59,
+                      "exclusiveMaximum": false
+                    },
+                    "days": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 7,
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "exclusiveMinimum": false,
+                        "maximum": 6,
+                        "exclusiveMaximum": false
+                      }
+                    },
+                    "dayOfMonth": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "exclusiveMinimum": false,
+                      "maximum": 28,
+                      "exclusiveMaximum": false
+                    },
+                    "date": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "timezone": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    }
+                  },
+                  "required": ["source", "frequency", "hour", "minute", "timezone"]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": ["github"]
+                    },
+                    "event": {
+                      "type": "string",
+                      "enum": [
+                        "pr_opened",
+                        "pr_draft",
+                        "pr_sync",
+                        "pr_merged",
+                        "comment",
+                        "push",
+                        "issue_labeled",
+                        "check_failed",
+                        "issue_opened",
+                        "mention",
+                        "release"
+                      ]
+                    },
+                    "repositories": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 20,
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "exclusiveMinimum": true
+                      }
+                    },
+                    "filter": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "op": {
+                              "type": "string",
+                              "enum": ["any"]
+                            }
+                          },
+                          "required": ["op"]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "op": {
+                              "type": "string",
+                              "enum": ["equals"]
+                            },
+                            "value": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 255
+                            }
+                          },
+                          "required": ["op", "value"]
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["source", "event", "repositories", "filter"]
+                }
+              ]
+            }
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "agent": {
+            "type": "string",
+            "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
+          },
+          "launch": {
+            "type": "object",
+            "properties": {
+              "model": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "permission": {
+                "type": "string",
+                "enum": ["auto", "full"],
+                "default": "auto"
+              },
+              "effort": {
+                "type": "string",
+                "enum": ["minimal", "low", "medium", "high", "max"]
+              }
+            },
+            "default": {
+              "permission": "auto"
+            }
+          },
+          "overlap": {
+            "type": "string",
+            "enum": ["skip", "queue"],
+            "nullable": true
+          },
+          "maxRunsPerHour": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 1000,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false
+          }
+        },
+        "required": ["version"]
+      },
+      "RunCauseResponseDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "example": "Pull request opened"
+          },
+          "text": {
+            "type": "string",
+            "example": "Harden API config loading"
+          },
+          "ref": {
+            "type": "string",
+            "example": "acme/xrp-mobile#124"
+          },
+          "actor": {
+            "type": "string",
+            "example": "jordiparra"
+          },
+          "url": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string",
+            "description": "The catalog event, or `schedule` / `manual`."
+          }
+        },
+        "required": ["label", "text", "eventType"]
+      },
+      "RunTurnResponseDto": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "in_progress",
+              "requires_action",
+              "completed",
+              "failed",
+              "cancelled",
+              "expired"
+            ]
+          },
+          "exitCode": {
+            "type": "number",
+            "nullable": true
+          },
+          "result": {
+            "type": "string",
+            "nullable": true,
+            "description": "The agent’s final message."
+          },
+          "failureDetail": {
+            "type": "string",
+            "nullable": true
+          },
+          "costUsd": {
+            "type": "number",
+            "nullable": true,
+            "description": "The agent’s own estimate."
+          },
+          "permissionDenials": {
+            "type": "number"
+          },
+          "prompt": {
+            "type": "string",
+            "nullable": true,
+            "description": "The prompt the agent was given."
+          }
+        },
+        "required": ["state", "permissionDenials"]
+      },
+      "AutomationRunResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "automationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "automationName": {
+            "type": "string",
+            "description": "The automation’s name, kept when it is deleted."
+          },
+          "automationDeleted": {
+            "type": "boolean",
+            "description": "The automation was deleted; the list reads “Deleted automation”."
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["queued", "running", "completed", "failed", "cancelled", "skipped", "expired"]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["pending", "skipped", "expired", "dispatched"],
+            "description": "What became of the firing before a session."
+          },
+          "skipReason": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "paused",
+              "deleted",
+              "own_event",
+              "automation_rate_limited",
+              "workspace_rate_limited",
+              "overlapping",
+              "missed",
+              "not_launchable",
+              "agent_unavailable"
+            ]
+          },
+          "cause": {
+            "type": "string",
+            "enum": ["schedule", "event", "manual"]
+          },
+          "causeSummary": {
+            "$ref": "#/components/schemas/RunCauseResponseDto"
+          },
+          "title": {
+            "type": "string",
+            "example": "Review #124 · Harden API config loading"
+          },
+          "sessionId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "branch": {
+            "type": "string",
+            "nullable": true,
+            "description": "The session’s working branch."
+          },
+          "revisionNumber": {
+            "type": "number"
+          },
+          "agent": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string",
+            "nullable": true
+          },
+          "hostId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "scheduledFor": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "dispatchedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "endedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "durationMs": {
+            "type": "number",
+            "nullable": true,
+            "description": "Milliseconds, once ended."
+          },
+          "turn": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RunTurnResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "automationId",
+          "automationName",
+          "automationDeleted",
+          "projectId",
+          "status",
+          "outcome",
+          "cause",
+          "causeSummary",
+          "title",
+          "revisionNumber",
+          "agent",
+          "hostId",
+          "createdAt"
+        ]
+      },
+      "RunStatusCountsResponseDto": {
+        "type": "object",
+        "properties": {
+          "all": {
+            "type": "number"
+          },
+          "completed": {
+            "type": "number"
+          },
+          "failed": {
+            "type": "number"
+          },
+          "running": {
+            "type": "number",
+            "description": "Queued and running together, as the Running tab shows them."
+          }
+        },
+        "required": ["all", "completed", "failed", "running"]
+      },
+      "AutomationRunPageResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationRunResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "counts": {
+            "description": "Per status tab, under the same facets but not the status filter.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RunStatusCountsResponseDto"
+              }
+            ]
+          }
+        },
+        "required": ["items", "total", "page", "limit", "counts"]
+      },
+      "RunHistoryDayResponseDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "The local calendar day, `YYYY-MM-DD`.",
+            "example": "2026-09-25"
+          },
+          "succeeded": {
+            "type": "number",
+            "description": "Runs that did not fail, running ones included, as the chart counts them."
+          },
+          "failed": {
+            "type": "number"
+          }
+        },
+        "required": ["date", "succeeded", "failed"]
+      },
+      "RunHistoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "description": "Oldest first, today last.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunHistoryDayResponseDto"
+            }
+          },
+          "succeeded": {
+            "type": "number"
+          },
+          "failed": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Europe/Madrid"
+          }
+        },
+        "required": ["days", "succeeded", "failed", "total", "timezone"]
+      },
+      "AutomationSettingsResponseDto": {
+        "type": "object",
+        "properties": {
+          "maxRunsPerAutomationHour": {
+            "type": "number"
+          },
+          "maxRunsPerWorkspaceHour": {
+            "type": "number"
+          },
+          "liveRunsPerHost": {
+            "type": "number"
+          },
+          "overlap": {
+            "type": "string",
+            "enum": ["skip", "queue"]
+          },
+          "staleTtlSeconds": {
+            "type": "number"
+          },
+          "missedGraceSeconds": {
+            "type": "number"
+          },
+          "maxRunSeconds": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "maxRunsPerAutomationHour",
+          "maxRunsPerWorkspaceHour",
+          "liveRunsPerHost",
+          "overlap",
+          "staleTtlSeconds",
+          "missedGraceSeconds",
+          "maxRunSeconds"
+        ]
+      },
+      "UpdateAutomationSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "maxRunsPerAutomationHour": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 10000,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "maxRunsPerWorkspaceHour": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 100000,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "liveRunsPerHost": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 100,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "overlap": {
+            "type": "string",
+            "enum": ["skip", "queue"],
+            "nullable": true
+          },
+          "staleTtlSeconds": {
+            "type": "integer",
+            "minimum": 60,
+            "exclusiveMinimum": false,
+            "maximum": 604800,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "missedGraceSeconds": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false,
+            "maximum": 86400,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "maxRunSeconds": {
+            "type": "integer",
+            "minimum": 60,
+            "exclusiveMinimum": false,
+            "maximum": 604800,
+            "exclusiveMaximum": false,
+            "nullable": true
+          }
+        }
       },
       "CapabilitiesResponseDto": {
         "type": "object",
