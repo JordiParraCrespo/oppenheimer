@@ -636,7 +636,9 @@ func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.S
 	}
 	var pushErr error
 	if in.Push {
-		if _, pushErr = s.worktrees.Push(ctx, session.Worktree, session.Branch); pushErr != nil {
+		// The push is this session's, as its create's clone was: without it
+		// the credential helper asks for nobody and GitHub refuses the push.
+		if _, pushErr = s.worktrees.Push(domain.WithSession(ctx, id), session.Worktree, session.Branch); pushErr != nil {
 			// Report and keep going: the session is over either way, and
 			// the branch is still in the worktree we are about to name.
 			session.Dirty = true

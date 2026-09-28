@@ -220,6 +220,21 @@ func TestCloseKeepsUnsavedWorkAndForceMeansIt(t *testing.T) {
 	}
 }
 
+// The push asks the credential helper for this session's token; a push done
+// for nobody gets none, and GitHub refuses it, which kept every close that
+// did not accept losing work from removing the worktree.
+func TestClosePushesForTheSession(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+
+	if _, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Push: true}); err != nil {
+		t.Fatal(err)
+	}
+	if len(h.worktrees.PushedFor) != 1 || h.worktrees.PushedFor[0] != session.ID {
+		t.Fatalf("pushed for %q, want [%q]", h.worktrees.PushedFor, session.ID)
+	}
+}
+
 func TestCloseIsIdempotentEnoughToRetry(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
