@@ -158,9 +158,10 @@ translation keys, and
 add a spec in `e2e/tests/web/`.
 
 Module names this app may use are read from the packages, not listed by hand:
-every directory under `packages/frontend/core/src/modules/` (the kernel's
-`analytics`, `auth`, `capabilities`, `feature-flags`, `user-settings`,
-`users`) and `packages/frontend/consumer/src/modules/` (`sessions`,
+every directory under `packages/frontend/core/src/modules/` except `core`,
+the kernel's own wiring that renders nothing (so `analytics`, `auth`,
+`capabilities`, `feature-flags`, `user-settings`, `users`), and every one
+under `packages/frontend/consumer/src/modules/` (`sessions`,
 `projects`, `hosts`, `installations`, `automations`, `organizations`,
 `profile`, `permissions`), plus the app's allowlist, `public` (the marketing
 pages render no entity). Every consumer module but `permissions` has a feature
