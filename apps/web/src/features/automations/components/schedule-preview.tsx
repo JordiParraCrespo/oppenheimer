@@ -1,10 +1,10 @@
 import { TokenMono, useNow, WeekdayStrip } from '@oppenheimer/design-system-web';
-import { useLocale } from '@oppenheimer/frontend-web';
+import { formatCountdown, useLocale } from '@oppenheimer/frontend-web';
 import { nextScheduleOccurrence } from '@oppenheimer/shared/automations';
 import { useTranslation } from 'react-i18next';
 import type { ScheduleCard } from '../lib/automation-draft';
 import { nextInstantText } from '../lib/automation-view';
-import { countdown, localDate, viewerTimeZone } from '../lib/time';
+import { localDate, viewerTimeZone } from '../lib/time';
 import { weekdayName } from '../lib/trigger-text';
 
 const DAY = 86_400_000;
@@ -51,7 +51,7 @@ export function SchedulePreview({ card }: { card: ScheduleCard }) {
           <span>{t('automations.editor.nextRun')}</span>
           <TokenMono>{nextInstantText(next, now, locale, t)}</TokenMono>
           <span>{t('automations.editor.inRel')}</span>
-          <TokenMono>{countdown(next.getTime() - now)}</TokenMono>
+          <TokenMono>{formatCountdown(next.getTime() - now, locale)}</TokenMono>
         </>
       ) : (
         <span>{t('automations.editor.passed')}</span>

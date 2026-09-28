@@ -52,7 +52,7 @@ the kernel or the kit imports it back.
 | `forms/` | React Hook Form over a shared Zod schema; props in, `onSubmit` out | no | no | `auth/forms/login-form.tsx` |
 | `components/` | entity UI: a row, a badge, a hero, a checklist | no | no | `organizations/components/installation-card.tsx` |
 | `hooks/` | `use-*.ts` over queries and UI state; the only home of an effect | yes | yes | `sessions/hooks/use-elapsed.ts` |
-| `lib/` | types, mappers, constants; no JSX | no | no | `sessions/lib/elapsed.ts` |
+| `lib/` | types, mappers, constants; no JSX | no | no | `sessions/lib/session-groups.ts` |
 | `__tests__/` | Vitest + Testing Library specs | — | — | — |
 
 `forms-and-components-stay-pure` is the cruiser rule behind the two "no"

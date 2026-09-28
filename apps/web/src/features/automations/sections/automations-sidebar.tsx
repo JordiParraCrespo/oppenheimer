@@ -17,13 +17,12 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Plus, Zap } from '@oppenheimer/design-system-web/icons';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { QueryState, useConsoleDialog } from '@oppenheimer/frontend-web';
+import { formatAge, QueryState, useConsoleDialog, useLocale } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TriggerGlyph } from '../components/trigger-glyph';
 import { runState, sidebarMeta } from '../lib/automation-view';
-import { age } from '../lib/time';
 
 /**
  * The console's sidebar body on its automations list
@@ -46,6 +45,7 @@ export function AutomationsSidebar() {
   const [query, setQuery] = useState('');
   const dialogs = useConsoleDialog();
   const now = useNow(60_000);
+  const locale = useLocale();
 
   // The selected automation is the page's, or the run's whose session is open.
   const detail = matchRoute({ to: '/automations/$automationId' });
@@ -173,7 +173,7 @@ export function AutomationsSidebar() {
                             <RoutineItem
                               name={automation.name}
                               icon={<TriggerGlyph scheduled={automation.isScheduled} />}
-                              meta={sidebarMeta(automation, now, t)}
+                              meta={sidebarMeta(automation, now, locale, t)}
                               running={automation.isRunning}
                               paused={automation.isPaused}
                               active={selected}
@@ -191,7 +191,7 @@ export function AutomationsSidebar() {
                                     <RoutineRun
                                       key={run.id}
                                       title={run.title}
-                                      ago={age(now - run.createdAt.getTime(), t)}
+                                      ago={formatAge(run.createdAt, now, t)}
                                       state={runState(run.status)}
                                       disabled={!run.sessionId}
                                       active={

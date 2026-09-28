@@ -13,9 +13,8 @@ import {
   useRevokeProfileSession,
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure, shareEntities } from '@oppenheimer/frontend-core/react';
-import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
+import { ErrorAlert, QueryState, RelativeTime } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { DeviceLastSeen } from '../components/device-last-seen';
 
 /**
  * Devices: every browser signed in to the account, this one first and
@@ -48,7 +47,16 @@ export function DevicesSection() {
                 <SettingsRow
                   key={device.id}
                   label={device.deviceLabel ?? t('settings.devices.unknown')}
-                  hint={<DeviceLastSeen at={device.lastSeenAt} />}
+                  hint={
+                    // On a clock of its own: the tick redraws this line, not the list.
+                    <RelativeTime date={device.lastSeenAt}>
+                      {(when) =>
+                        when
+                          ? t('settings.devices.lastSeen', { when })
+                          : t('settings.devices.activeNow')
+                      }
+                    </RelativeTime>
+                  }
                 >
                   {device.current ? (
                     <Badge variant="neutral">{t('settings.devices.current')}</Badge>
