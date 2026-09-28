@@ -110,7 +110,7 @@ describe('useAutomations', () => {
     const { result } = renderHook(() => useAutomations(), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(pollInterval(queryClient, automationsKeys.list())).toBe(LIVE_POLL.liveRun);
+    expect(pollInterval(queryClient, automationsKeys.list())).toBe(LIVE_POLL.liveRun.interval);
 
     queryClient.setQueryData(automationsKeys.list(), [automation('a-1'), automation('a-2')]);
     expect(pollInterval(queryClient, automationsKeys.list())).toBe(false);
@@ -158,7 +158,9 @@ describe('useAutomation', () => {
     const { result } = renderHook(() => useAutomation('a-1'), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(pollInterval(queryClient, automationsKeys.detail('a-1'))).toBe(LIVE_POLL.liveRun);
+    expect(pollInterval(queryClient, automationsKeys.detail('a-1'))).toBe(
+      LIVE_POLL.liveRun.interval,
+    );
 
     queryClient.setQueryData(automationsKeys.detail('a-1'), automation('a-1'));
     expect(pollInterval(queryClient, automationsKeys.detail('a-1'))).toBe(false);
@@ -173,7 +175,7 @@ describe('useAutomationRuns', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     const key = automationsKeys.runList({ page: 1 });
-    expect(pollInterval(queryClient, key)).toBe(LIVE_POLL.liveRun);
+    expect(pollInterval(queryClient, key)).toBe(LIVE_POLL.liveRun.interval);
 
     queryClient.setQueryData(key, page(new Run('r-1', false)));
     expect(pollInterval(queryClient, key)).toBe(false);

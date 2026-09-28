@@ -95,7 +95,9 @@ describe('useHostPresence', () => {
     await waitFor(() => expect(result.current.presence.isSuccess).toBe(true));
     expect(result.current.plain.data).toBe(result.current.presence.data);
     expect(findAll).toHaveBeenCalledTimes(1);
-    expect(observerIntervals(queryClient, hostsKeys.list())).toContain(LIVE_POLL.hostPresence);
+    expect(observerIntervals(queryClient, hostsKeys.list())).toContain(
+      LIVE_POLL.hostPresence.interval,
+    );
   });
 });
 
