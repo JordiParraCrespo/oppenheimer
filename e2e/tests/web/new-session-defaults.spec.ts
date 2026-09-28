@@ -51,6 +51,22 @@ test.describe('New session: project defaults', () => {
     await page.goto('/sessions/new');
     await expectDefaults(page);
 
+    // ── Picked away by hand, then named again from the sidebar ───────────────
+    // The landing pick is its own one-shot: it must not count as the address
+    // having named Wallet already, or "New session in Wallet" — which changes
+    // only the search on the mounted screen — would be ignored.
+    await page.getByRole('button', { name: 'Project', exact: true }).click();
+    await page.getByRole('option', { name: /Unassigned/ }).click();
+    await expect(page.getByRole('button', { name: 'Project', exact: true })).toContainText(
+      'Unassigned',
+    );
+    await page.getByRole('button', { name: 'Repositories' }).click();
+    await page.getByRole('option', { name: new RegExp(STUB_REPOSITORIES.mobile.name) }).click();
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'New session in Wallet' }).first().click();
+    await expect(page).toHaveURL(new RegExp(`project=${projectId}`));
+    await expectDefaults(page);
+
     // ── Sent as it stands: the session is the one the defaults describe ─────
     await page.getByRole('textbox', { name: /Describe a task/ }).fill('tidy the wallet header');
     await page.getByRole('button', { name: /send/i }).click();

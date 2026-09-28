@@ -12,12 +12,6 @@ import { useEffect, useRef } from 'react';
  * were gone. The pick runs once per address: a value the reader then changes
  * by hand stays changed, and an id the list does not hold is ignored rather
  * than written.
- *
- * `fallback` is what the screen landed on when the address named nothing —
- * for the project chip, the project it starts on (the one the last visit
- * remembered, or Unassigned). It is picked the same way, but only while
- * nothing has been: it is the arrival, and once a pick has been applied, a
- * later address with no id leaves the draft as the reader has it.
  */
 export function useSearchPick<T extends { id: string }>(
   id: string | undefined,
@@ -25,15 +19,13 @@ export function useSearchPick<T extends { id: string }>(
   /** Whether everything the pick reads has settled; the pick waits for it. */
   ready: boolean,
   pick: (item: T) => void,
-  fallback?: string | null,
 ) {
   const applied = useRef<string | null>(null);
   useEffect(() => {
-    const target = id ?? (applied.current === null ? fallback : undefined);
-    if (!target || !items || !ready || applied.current === target) return;
-    const item = items.find((candidate) => candidate.id === target);
+    if (!id || !items || !ready || applied.current === id) return;
+    const item = items.find((candidate) => candidate.id === id);
     if (!item) return;
-    applied.current = target;
+    applied.current = id;
     pick(item);
-  }, [id, fallback, items, ready, pick]);
+  }, [id, items, ready, pick]);
 }

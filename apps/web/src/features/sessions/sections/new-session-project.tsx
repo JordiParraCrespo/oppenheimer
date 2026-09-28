@@ -7,6 +7,7 @@ import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { ProjectSelect } from '../components/project-select';
+import { useLandingPick } from '../hooks/use-landing-pick';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { useSearchPick } from '../hooks/use-search-pick';
 import { projectPrefill, toProjectOptions } from '../lib/session-options';
@@ -67,9 +68,16 @@ export function NewSessionProject() {
   }
 
   // The sidebar's "New session here" names the project in the address; the
-  // dialog names the one it made. Either is picked once the lists can, and
-  // with neither, the project the chip starts on is, on arrival.
-  useSearchPick(created ?? search.project, projects.data, hostsReady === true, pick, value);
+  // dialog names the one it made. Either is picked once the lists can.
+  useSearchPick(created ?? search.project, projects.data, hostsReady === true, pick);
+
+  // With neither, the project the chip starts on offers its defaults on
+  // arrival. Precedence, per chip: a default the project names wins over the
+  // last visit's choice; a chip it names nothing for (no default host, no
+  // default agent) keeps what `initialDraft` restored, because `projectPrefill`
+  // leaves a missing default out of the patch. The scope is never remembered,
+  // so it is always the project's first default repository, or empty.
+  useLandingPick(value, projects.data, hostsReady === true, Boolean(search.project), pick);
 
   return (
     <ProjectSelect

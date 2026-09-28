@@ -132,11 +132,10 @@
   project offers its defaults — its host, its agent, its first default
   repository on its base — and the chips stay the person's to change: a
   repository outside the project is as good as one inside it (10). The
-  project the chip starts on offers them the same way, whichever way the
-  screen was reached: named in the address, remembered from the last
-  visit, or Unassigned — a visit never opens on a project with its
-  repository chip empty (fixed 2026-09-28; until then only a pick or an
-  address applied them). The
+  project a visit starts on — named in the address, remembered, or
+  Unassigned — offers the same defaults a pick does: its default
+  repository is in the repository chip when it names one, and its host
+  and agent win over the last visit's choice when it names them. The
   agent lives in the engine button, not a chip: opening it
   lists the harnesses, choosing one slides to its models with a search,
   and a blank terminal is picked outright. Effort is a five-stop slider
@@ -238,7 +237,9 @@
   model and the effort, in `localStorage`, on the device that chose
   them. It is a convenience, not a record: the scope is never
   remembered, because the repositories one visit is about are not the
-  next visit's.
+  next visit's. The project a visit starts on outranks the memory where it
+  names a default: its host or agent replaces the remembered one, and a
+  chip it names nothing for keeps the last choice.
 - The pane beside the sidebar is a URL: `/sessions/new` (the composer),
   `/sessions/{id}` (the terminal, or the provisioning pane while the
   session is starting, or a closed session), and anything else (a 404
