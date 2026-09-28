@@ -31,8 +31,8 @@ import { useTranslation } from 'react-i18next';
  * sentence and a box, not a hidden flag. Unticked, the copy says the delete
  * stops on such work, so a refusal is the expected answer rather than a
  * surprise. The dialog owns the mutation; a failure stays on screen next to
- * the button, never a toast. A delete that lands does toast: the row just
- * leaves the list, which is easy to miss.
+ * the button, never a toast. An accepted delete toasts that it was asked
+ * for, not that it happened: the host does the work and may still refuse.
  */
 export function DeleteSessionDialog({
   session,
@@ -46,7 +46,7 @@ export function DeleteSessionDialog({
   const [discard, setDiscard] = useState(false);
   const close = useCloseSession({
     onSuccess: () => {
-      notifySuccess(t('toasts.sessionDeleted', { name: session.name }));
+      notifySuccess('sessionDeleteRequested', { name: session.name });
       onClose();
     },
   });

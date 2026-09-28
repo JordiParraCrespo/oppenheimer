@@ -29,7 +29,7 @@ export function RemoveHostDialog({ host, onClose }: { host: HostEntity; onClose:
   const resolveError = useErrorMessage();
   const remove = useRemoveHost({
     onSuccess: () => {
-      notifySuccess(t('toasts.hostRemoved', { name: host.name }));
+      notifySuccess('hostRemoved', { name: host.name });
       onClose();
     },
   });

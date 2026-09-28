@@ -10,7 +10,6 @@ import {
 import type { ProfileEntity } from '@oppenheimer/frontend-consumer';
 import { useDeleteAvatar, useUploadAvatar } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure, useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { notifySuccess } from '@oppenheimer/frontend-web';
 import { AVATAR_MIME_TYPES } from '@oppenheimer/shared/schemas/profile';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,12 +24,8 @@ export function ProfilePictureSection({ profile }: { profile: ProfileEntity }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
   const input = useRef<HTMLInputElement>(null);
-  const upload = useUploadAvatar({
-    onSuccess: () => notifySuccess(t('toasts.pictureChanged')),
-  });
-  const remove = useDeleteAvatar({
-    onSuccess: () => notifySuccess(t('toasts.pictureRemoved')),
-  });
+  const upload = useUploadAvatar();
+  const remove = useDeleteAvatar();
   const busy = upload.isPending || remove.isPending;
   const failure = lastFailure([upload, remove]).error;
 

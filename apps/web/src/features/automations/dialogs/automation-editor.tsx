@@ -49,13 +49,13 @@ export function AutomationEditorDialog({
   const hosts = useHosts();
   const create = useCreateAutomation({
     onSuccess: (saved) => {
-      notifySuccess(t('toasts.automationCreated', { name: saved.name }));
+      notifySuccess('automationCreated', { name: saved.name });
       onSaved(saved);
     },
   });
   const update = useUpdateAutomation({
     onSuccess: (saved) => {
-      notifySuccess(t('toasts.automationSaved', { name: saved.name }));
+      notifySuccess('automationSaved', { name: saved.name });
       onSaved(saved);
     },
   });

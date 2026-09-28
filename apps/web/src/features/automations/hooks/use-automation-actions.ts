@@ -7,14 +7,6 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure } from '@oppenheimer/frontend-core/react';
 import { notifySuccess } from '@oppenheimer/frontend-web';
-import { useNavigate } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
-
-/** What an action needs to know about the automation it acts on. */
-interface Target {
-  id: string;
-  name: string;
-}
 
 /**
  * What a row menu and a page header do to an automation: Run now, pause or
@@ -23,80 +15,64 @@ interface Target {
  * automation it was, so a list can name it. A later action that succeeds
  * clears it, and `dismiss` does too.
  *
- * Every action toasts when it lands: the table's row changes somewhere in a
- * long list, and duplicate and delete leave the page they started on. Run now
- * starts work nothing on screen shows, so its toast opens the run.
+ * Delete is the exception: it goes through a confirm, and its failure stays
+ * in that dialog (`removeFailure`), never on the page as well.
+ *
+ * Each action toasts when it lands, with the name its response carries; the
+ * delete's is the one the confirm already holds. Where Run now's Open leads
+ * is the caller's (`onOpenRun`).
  *
  * Run now mints one idempotency key per click: a retried request of that
  * click is the same run, and a second click is a second run.
  */
-export function useAutomationActions(options?: {
+export function useAutomationActions(options: {
+  onOpenRun: (run: AutomationRunEntity) => void;
   onDuplicated?: (id: string) => void;
   onDeleted?: () => void;
 }) {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  // Run, pause and duplicate answer with the automation's name, so their
-  // toasts sit on the hook and a second click before the first lands still
-  // gets its own. Delete answers with nothing; one at a time goes through a
-  // confirm, so its toast rides the call.
   const run = useRunAutomation({
     onSuccess: (started) =>
-      notifySuccess(t('toasts.runStarted', { name: started.automationName }), {
-        label: t('toasts.openRun'),
-        onClick: () => openRun(started),
-      }),
+      notifySuccess(
+        'runStarted',
+        { name: started.automationName },
+        { label: 'openRun', onClick: () => options.onOpenRun(started) },
+      ),
   });
   const pause = useSetAutomationPaused({
     onSuccess: (automation) =>
-      notifySuccess(
-        t(automation.isPaused ? 'toasts.automationPaused' : 'toasts.automationResumed', {
-          name: automation.name,
-        }),
-      ),
+      notifySuccess(automation.isPaused ? 'automationPaused' : 'automationResumed', {
+        name: automation.name,
+      }),
   });
   const duplicate = useDuplicateAutomation({
     onSuccess: (copy) => {
-      notifySuccess(t('toasts.automationDuplicated', { name: copy.name }));
-      options?.onDuplicated?.(copy.id);
+      notifySuccess('automationDuplicated', { name: copy.name });
+      options.onDuplicated?.(copy.id);
     },
   });
   const remove = useDeleteAutomation();
 
-  const failure = lastFailure([run, pause, duplicate, remove]);
+  const failure = lastFailure([run, pause, duplicate]);
   // The automation the failed action was for: each mutation's own variables,
   // in the order the list above names them.
-  const failedId = [run.variables?.id, pause.variables?.id, duplicate.variables, remove.variables][
-    failure.index
-  ];
-
-  // The run's session, once it has one; the Runs tab while it is still queued.
-  function openRun(started: AutomationRunEntity) {
-    if (started.sessionId) {
-      navigate({
-        to: '/automations/$automationId/sessions/$sessionId',
-        params: { automationId: started.automationId, sessionId: started.sessionId },
-      });
-    } else {
-      navigate({ to: '/automations/runs' });
-    }
-  }
+  const failedId = [run.variables?.id, pause.variables?.id, duplicate.variables][failure.index];
 
   return {
-    runNow: (automation: Target) =>
-      run.mutate({ id: automation.id, idempotencyKey: crypto.randomUUID() }),
-    setPaused: (automation: Target, paused: boolean) => pause.mutate({ id: automation.id, paused }),
-    duplicate: (automation: Target) => duplicate.mutate(automation.id),
-    remove: (automation: Target) =>
-      remove.mutate(automation.id, {
+    runNow: (id: string) => run.mutate({ id, idempotencyKey: crypto.randomUUID() }),
+    setPaused: (id: string, paused: boolean) => pause.mutate({ id, paused }),
+    duplicate: (id: string) => duplicate.mutate(id),
+    remove: (id: string, name: string) =>
+      remove.mutate(id, {
         onSuccess: () => {
-          notifySuccess(t('toasts.automationDeleted', { name: automation.name }));
-          options?.onDeleted?.();
+          notifySuccess('automationDeleted', { name });
+          options.onDeleted?.();
         },
       }),
     running: run.isPending,
     removing: remove.isPending,
     removeFailure: remove.error,
+    /** Clears a refused delete, so the next confirm opens clean. */
+    resetRemove: () => remove.reset(),
     failure: failure.error,
     failedId,
     dismissFailure: failure.dismiss,

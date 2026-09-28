@@ -192,13 +192,13 @@ function ProjectForm({
   // or a chip on New session, so the save says so.
   const create = useCreateProject({
     onSuccess: (saved) => {
-      notifySuccess(t('toasts.projectCreated', { name: saved.name }));
+      notifySuccess('projectCreated', { name: saved.name });
       onSaved(saved);
     },
   });
   const update = useUpdateProject({
     onSuccess: (saved) => {
-      notifySuccess(t('toasts.projectSaved', { name: saved.name }));
+      notifySuccess('projectSaved', { name: saved.name });
       onSaved(saved);
     },
   });

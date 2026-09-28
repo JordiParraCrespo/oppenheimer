@@ -9,7 +9,7 @@ compiles it and tree-shakes what it does not use.
 The kit is organised by concern, not by kind: `src/<concern>/<kind>/`, with
 the same kind directories a feature has. A concern imports another only
 through that concern's `index.ts`, and the concerns are layered — `platform`,
-`theme`, `i18n`, `analytics`, `forms` and `feedback` are leaves, `layout` and
+`theme`, `i18n`, `analytics` and `forms` are leaves, `layout` and
 `roles` build on them, `shell` and `auth` sit on top. The kit imports the
 design system and `@oppenheimer/frontend-core`, never a product package: a
 component that needs a product hook is a feature in an app, not kit.
@@ -26,14 +26,12 @@ Everything is re-exported from the package root (`src/index.ts`):
   `SocialLoginButtons`, `OAuthCallbackNotice`, the auth primitives, the
   password-requirement helpers, the provider icons, `redirectSignedIn`.
 - **layout** — `PageHead`, the section primitives, `ConfirmDialog`.
-- **forms** — `useZodResolver`, `useSearchDraft`;
-  `useErrorMessage` is owned by frontend core and
-  re-exported for compatibility.
-- **feedback** — `notifySuccess(message, action?)`, the one way the console
-  says a write landed: a success toast with an optional button (Run now's
-  "Open"). It takes a translated `toasts.*` string. Errors never go through
-  it; they stay inline. When to toast and when not to is the "A success"
-  section of `.agents/rules/frontend-ui.md`.
+- **forms** — `useZodResolver`, `useSearchDraft`, and
+  `notifySuccess(key, values?, action?)`: the success toast, which takes a
+  `toasts.*` key so its copy cannot live anywhere else. Errors never go
+  through it; they stay inline. When to toast is
+  `.agents/rules/frontend-ui.md`. `useErrorMessage` is owned by frontend
+  core and re-exported for compatibility.
 - **theme** — `ThemeProvider`, `ThemeToggle`, `BrandGlyph`.
 - **i18n** — `i18n`, `i18nReady`, `LOCALE_STORAGE_KEY`, `LanguageSwitcher`,
   `useLocale`, `useApplyUserSettings`, the date formatters

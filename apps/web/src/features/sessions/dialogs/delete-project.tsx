@@ -36,7 +36,7 @@ export function DeleteProjectDialog({
   const resolveError = useErrorMessage();
   const archive = useArchiveProject({
     onSuccess: () => {
-      notifySuccess(t('toasts.projectDeleted', { name: project.name }));
+      notifySuccess('projectDeleted', { name: project.name });
       onDeleted();
     },
   });

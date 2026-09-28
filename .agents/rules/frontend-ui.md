@@ -63,33 +63,13 @@ one.
 
 ## A success toasts when the reader could miss it
 
-A failure stays inline, next to what the reader has to fix: an `Alert` in
-the dialog or above the list, never a toast. A success is the other way
-round. It goes through the kit's `notifySuccess(message, action?)`, a thin
-wrapper over the design system's sonner, and only when the result is not
-where the reader is looking:
-
-- **Toast** when the result is easy to miss or out of sight: a row that
-  changed somewhere in a long list (rename, move, pause, a device signed
-  out), something that left the list (delete, remove), a background action
-  (Run now, an image pasted into a session, Resend), or a write that closes
-  its dialog or navigates away from where it started (create or save a
-  project or an automation, duplicate, delete from an automation's page).
-- **No toast** when the screen navigates to the result or turns into a
-  "done" view: sign-in, register, social sign-in, the first forgot-password
-  send, reset password, change email, delete account, claiming a workspace,
-  the GitHub install callback, New session, regenerating a pairing token.
-- **An inline "Saved"** stays where a form's own save row already says it,
-  beside the button just pressed: the profile's name card. It does not also
-  toast.
-
-The copy lives under `toasts.*` in every locale and names the object where
-there is one (`“{{name}}” deleted.`). A toast that leads somewhere carries an
-action (Run now's Open). The `<Toaster />` is mounted once at the app root, so
-a toast fired before or after a `navigate` survives it. A mutation whose
-response carries the name toasts from the hook's own `onSuccess`, not from
-`mutate(…, { onSuccess })`: TanStack Query fires only the last call's
-callbacks, so two quick clicks would lose a toast.
+A failure stays inline, next to what the reader has to fix. A success toasts,
+through the kit's `notifySuccess('<toasts key>', values)`, only when its result
+is not where the reader is looking: out of sight, off the page, or easy to miss
+in a long list. When the screen navigates to the result, shows a "done" view,
+or changes the very control that was pressed, it says nothing more. A form
+whose save row already says "Saved" beside the button keeps that and does not
+also toast.
 
 ## A picker over a list the workspace grows is an autocomplete
 

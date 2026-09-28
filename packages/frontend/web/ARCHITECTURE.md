@@ -19,8 +19,7 @@ importing it configures i18next; everything else is pure and may be dropped.
 | `theme` | `ThemeProvider`, `useTheme`, `ThemeToggle`, `BrandGlyph` | leaf |
 | `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, the date and person-name formatters | leaf |
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
-| `forms` | `useZodResolver`, `useSearchDraft` | leaf |
-| `feedback` | `notifySuccess` — the success toast, over the design system's sonner | leaf |
+| `forms` | `useZodResolver`, `useSearchDraft`, `notifySuccess` (what a write says when it lands) | leaf |
 | `hosts` | `HostPairingChrome`, and its two halves `HostPairingToken` and `HostPairingStatus` — the token clock and the status line that the onboarding step and the console's Add a host page both show | leaf |
 | `layout` | `PageHead`, `FieldRow`, `RouteError`/`RouteNotFound`, `ConfirmDialog` | middle |
 | `roles` | `RolePill` | middle |
@@ -146,7 +145,7 @@ page. An app with only the sign-in half would call `redirectSignedIn` from its
 ## What `pnpm arch` enforces
 
 - `no-circular` — no import cycles, counting value imports only.
-- `leaves-stay-leaves` — `platform`, `theme`, `i18n`, `analytics`, `forms`, `feedback`
+- `leaves-stay-leaves` — `platform`, `theme`, `i18n`, `analytics`, `forms`
   never import a middle or top concern.
 - `middle-below-top` — `layout`, `roles` never import `shell` or
   `auth`.

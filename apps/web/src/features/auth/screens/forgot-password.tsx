@@ -53,9 +53,7 @@ export function ForgotPasswordScreen() {
           size="lg"
           block
           disabled={isPending}
-          onClick={() =>
-            mutate(sentTo, { onSuccess: () => notifySuccess(t('toasts.emailResent')) })
-          }
+          onClick={() => mutate(sentTo, { onSuccess: () => notifySuccess('emailResent') })}
         >
           {isPending ? t('auth.forgotPassword.submitting') : t('auth.forgotPassword.resend')}
         </Button>

@@ -776,9 +776,7 @@
       "pause": "Pausar",
       "resume": "Reanudar",
       "duplicate": "Duplicar",
-      "delete": "Eliminar",
-      "confirmDeleteTitle": "¿Eliminar «{{name}}»?",
-      "confirmDelete": "Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan."
+      "delete": "Eliminar"
     },
     "history": {
       "title": "Historial de ejecuciones",
@@ -823,9 +821,6 @@
       "resume": "Reanudar automatización",
       "duplicate": "Duplicar",
       "delete": "Eliminar automatización",
-      "confirmDelete": "¿Eliminar esta automatización? Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan.",
-      "cancel": "Cancelar",
-      "confirm": "Eliminar",
       "resumeAction": "Reanudar",
       "notFound": "Esta automatización no existe o se eliminó."
     },
@@ -910,7 +905,12 @@
       "chooseModel": "Elige un modelo…"
     },
     "skipReasonOther": "Omitida",
-    "pausedReasonOther": "En pausa. Los disparadores se ignoran hasta que se reanude."
+    "pausedReasonOther": "En pausa. Los disparadores se ignoran hasta que se reanude.",
+    "deleteDialog": {
+      "title": "¿Eliminar «{{name}}»?",
+      "description": "Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan.",
+      "confirm": "Eliminar"
+    }
   },
   "hosts": {
     "pairing": {
@@ -1362,10 +1362,9 @@
     "runStarted": "Se ha iniciado una ejecución de «{{name}}».",
     "openRun": "Abrir",
     "emailResent": "Correo enviado de nuevo.",
-    "imageSent": "Imagen enviada a la sesión.",
     "sessionRenamed": "Renombrada a «{{name}}».",
     "sessionMoved": "«{{name}}» se ha movido a {{project}}.",
-    "sessionDeleted": "Se ha eliminado «{{name}}».",
+    "sessionDeleteRequested": "Se ha pedido al host que elimine «{{name}}».",
     "projectCreated": "Se ha creado «{{name}}».",
     "projectSaved": "Se ha guardado «{{name}}».",
     "projectDeleted": "Se ha eliminado «{{name}}».",
@@ -1373,8 +1372,6 @@
     "hostRemoved": "Se ha quitado «{{name}}».",
     "deviceSignedOut": "Se ha cerrado la sesión en «{{name}}».",
     "otherDevicesSignedOut": "Se ha cerrado la sesión en tus otros dispositivos.",
-    "pictureChanged": "Foto de perfil actualizada.",
-    "pictureRemoved": "Foto de perfil eliminada.",
     "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos."
   }
 }

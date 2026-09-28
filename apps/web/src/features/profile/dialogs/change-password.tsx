@@ -25,7 +25,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
   const resolveError = useErrorMessage();
   const change = useChangeOwnPassword({
     onSuccess: () => {
-      notifySuccess(t('toasts.passwordChanged'));
+      notifySuccess('passwordChanged');
       onClose();
     },
   });

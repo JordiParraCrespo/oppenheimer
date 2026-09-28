@@ -774,9 +774,7 @@
       "pause": "Pause",
       "resume": "Resume",
       "duplicate": "Duplicate",
-      "delete": "Delete",
-      "confirmDeleteTitle": "Delete “{{name}}”?",
-      "confirmDelete": "Its triggers stop now. Past runs are kept."
+      "delete": "Delete"
     },
     "history": {
       "title": "Run history",
@@ -820,9 +818,6 @@
       "resume": "Resume automation",
       "duplicate": "Duplicate",
       "delete": "Delete automation",
-      "confirmDelete": "Delete this automation? Its triggers stop now. Past runs are kept.",
-      "cancel": "Cancel",
-      "confirm": "Delete",
       "resumeAction": "Resume",
       "notFound": "This automation does not exist, or was deleted."
     },
@@ -906,7 +901,12 @@
       "chooseModel": "Choose a model…"
     },
     "skipReasonOther": "Skipped",
-    "pausedReasonOther": "Paused. Triggers are ignored until it is resumed."
+    "pausedReasonOther": "Paused. Triggers are ignored until it is resumed.",
+    "deleteDialog": {
+      "title": "Delete “{{name}}”?",
+      "description": "Its triggers stop now. Past runs are kept.",
+      "confirm": "Delete"
+    }
   },
   "hosts": {
     "pairing": {
@@ -1356,10 +1356,9 @@
     "runStarted": "Run of “{{name}}” started.",
     "openRun": "Open",
     "emailResent": "Email sent again.",
-    "imageSent": "Image sent to the session.",
     "sessionRenamed": "Renamed to “{{name}}”.",
     "sessionMoved": "“{{name}}” moved to {{project}}.",
-    "sessionDeleted": "“{{name}}” deleted.",
+    "sessionDeleteRequested": "Asked the host to delete “{{name}}”.",
     "projectCreated": "“{{name}}” created.",
     "projectSaved": "“{{name}}” saved.",
     "projectDeleted": "“{{name}}” deleted.",
@@ -1367,8 +1366,6 @@
     "hostRemoved": "“{{name}}” removed.",
     "deviceSignedOut": "“{{name}}” signed out.",
     "otherDevicesSignedOut": "Your other devices are signed out.",
-    "pictureChanged": "Profile picture updated.",
-    "pictureRemoved": "Profile picture removed.",
     "passwordChanged": "Password changed. Other devices are signed out."
   }
 }

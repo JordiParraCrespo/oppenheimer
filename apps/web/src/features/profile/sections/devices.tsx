@@ -31,18 +31,9 @@ export function DevicesSection() {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
   const devices = useProfileSessions({ structuralSharing: shareEntities });
-  const revoke = useRevokeProfileSession({
-    onSuccess: (_, id) => {
-      const device = devices.data?.find((candidate) => candidate.id === id);
-      notifySuccess(
-        t('toasts.deviceSignedOut', {
-          name: device?.deviceLabel ?? t('settings.devices.unknown'),
-        }),
-      );
-    },
-  });
+  const revoke = useRevokeProfileSession();
   const revokeOthers = useRevokeOtherProfileSessions({
-    onSuccess: () => notifySuccess(t('toasts.otherDevicesSignedOut')),
+    onSuccess: () => notifySuccess('otherDevicesSignedOut'),
   });
   const failure = lastFailure([revoke, revokeOthers]);
   // This device first: it is the one row with nothing to do.
@@ -75,7 +66,14 @@ export function DevicesSection() {
                   variant="ghost"
                   size="sm"
                   disabled={revoke.isPending || revokeOthers.isPending}
-                  onClick={() => revoke.mutate(device.id)}
+                  onClick={() => {
+                    // The row's own label, from the click: the list drops it
+                    // the moment the write lands.
+                    const name = device.deviceLabel ?? t('settings.devices.unknown');
+                    revoke.mutate(device.id, {
+                      onSuccess: () => notifySuccess('deviceSignedOut', { name }),
+                    });
+                  }}
                 >
                   {t('settings.devices.signOut')}
                 </Button>

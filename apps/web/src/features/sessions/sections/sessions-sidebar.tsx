@@ -97,19 +97,9 @@ export function SessionsSidebar() {
   // A renamed or moved row can land anywhere in a long, grouped list, so
   // both say where it went.
   const rename = useRenameSession({
-    onSuccess: (session) => notifySuccess(t('toasts.sessionRenamed', { name: session.name })),
+    onSuccess: (session) => notifySuccess('sessionRenamed', { name: session.name }),
   });
-  const move = useMoveSession({
-    onSuccess: (session) => {
-      const project = projects.data?.find((candidate) => candidate.id === session.projectId);
-      notifySuccess(
-        t('toasts.sessionMoved', {
-          name: session.name,
-          project: !project || project.isUnassigned ? t('projects.unassigned') : project.name,
-        }),
-      );
-    },
-  });
+  const move = useMoveSession();
   // One clock for every row's age, ticking once a minute. Every row redraws on
   // the tick, because every age may have moved; that is one render a minute,
   // where a clock read inside each row stopped the ages moving at all.
@@ -158,7 +148,17 @@ export function SessionsSidebar() {
     onRenameCommit: commitRename,
     onRenameCancel: () => setRenaming(null),
     onRename: (session) => setRenaming({ id: session.id, draft: session.name }),
-    onMove: (session, projectId) => move.mutate({ id: session.id, projectId }),
+    onMove: (session, projectId) => {
+      // The destination's name from the pane that was just picked from.
+      const target = projectsForMove(projects.data ?? [], session).find(
+        (project) => project.id === projectId,
+      );
+      const project = target?.isUnassigned ? t('projects.unassigned') : (target?.name ?? '');
+      move.mutate(
+        { id: session.id, projectId },
+        { onSuccess: (moved) => notifySuccess('sessionMoved', { name: moved.name, project }) },
+      );
+    },
     onDelete: (session) => setDeleting(session),
     moveTargets: (session) => projectsForMove(projects.data ?? [], session),
   };

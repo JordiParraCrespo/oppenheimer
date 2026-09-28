@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { AutomationTableRow } from '../components/automation-table-row';
 import { useAutomationActions } from '../hooks/use-automation-actions';
 import { automationSubline } from '../lib/automation-view';
+import { runLocation } from '../lib/run-location';
 import { automationTriggerText } from '../lib/trigger-text';
 
 /**
@@ -44,6 +45,7 @@ export function AutomationsTable() {
   });
   const [deleting, setDeleting] = useState<AutomationEntity | null>(null);
   const actions = useAutomationActions({
+    onOpenRun: (run) => navigate(runLocation(run)),
     onDuplicated: (id) =>
       navigate({ to: '/automations/$automationId', params: { automationId: id } }),
     onDeleted: () => setDeleting(null),
@@ -104,9 +106,9 @@ export function AutomationsTable() {
                   })
                 }
                 onEdit={() => dialogs.open({ kind: 'automation', automationId: automation.id })}
-                onRunNow={() => actions.runNow(automation)}
-                onTogglePause={() => actions.setPaused(automation, !automation.isPaused)}
-                onDuplicate={() => actions.duplicate(automation)}
+                onRunNow={() => actions.runNow(automation.id)}
+                onTogglePause={() => actions.setPaused(automation.id, !automation.isPaused)}
+                onDuplicate={() => actions.duplicate(automation.id)}
                 onDelete={() => setDeleting(automation)}
               />
             ))}
@@ -122,13 +124,16 @@ export function AutomationsTable() {
       </RoutineTable>
       {deleting ? (
         <ConfirmDialog
-          title={t('automations.table.confirmDeleteTitle', { name: deleting.name })}
-          description={t('automations.table.confirmDelete')}
-          confirmLabel={t('automations.table.delete')}
+          title={t('automations.deleteDialog.title', { name: deleting.name })}
+          description={t('automations.deleteDialog.description')}
+          confirmLabel={t('automations.deleteDialog.confirm')}
           pending={actions.removing}
           error={actions.removeFailure}
-          onClose={() => setDeleting(null)}
-          onConfirm={() => actions.remove(deleting)}
+          onClose={() => {
+            actions.resetRemove();
+            setDeleting(null);
+          }}
+          onConfirm={() => actions.remove(deleting.id, deleting.name)}
         />
       ) : null}
     </div>

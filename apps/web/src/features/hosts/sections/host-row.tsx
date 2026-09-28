@@ -27,7 +27,7 @@ export function HostRow({ host }: { host: HostEntity }) {
   const rename = useRenameHost({
     onSuccess: (renamed) => {
       setRenaming(false);
-      notifySuccess(t('toasts.hostRenamed', { name: renamed.name }));
+      notifySuccess('hostRenamed', { name: renamed.name });
     },
   });
 
