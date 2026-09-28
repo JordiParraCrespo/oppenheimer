@@ -22,7 +22,7 @@ import type {
   UpdateAutomationInput,
 } from '../modules/automations/automation.entity';
 import { useConsumerApp } from './context';
-import { LIVE_POLL } from './live-poll';
+import { type PollKeys, pollWhile } from './live-poll';
 
 /**
  * Query key factory for the `automations` feature. Runs sit under the same
@@ -52,31 +52,34 @@ type GithubTriggerInput = Extract<TriggerInput, { source: 'github' }>;
  * and its last six runs, so neither needs a second request.
  */
 export function useAutomations<TData = AutomationEntity[]>(
-  options?: Omit<UseQueryOptions<AutomationEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
+  options?: Omit<
+    UseQueryOptions<AutomationEntity[], Error, TData>,
+    'queryKey' | 'queryFn' | PollKeys
+  >,
 ) {
   const app = useConsumerApp();
   return useQuery<AutomationEntity[], Error, TData>({
     queryKey: automationsKeys.list(),
     queryFn: () => app.automations.findAll(),
-    refetchInterval: (query) =>
-      query.state.data?.some((automation) => automation.isRunning) ? LIVE_POLL.liveRun : false,
-    refetchIntervalInBackground: true,
     ...options,
+    ...pollWhile<AutomationEntity[]>(
+      'liveRun',
+      (rows) => rows?.some((automation) => automation.isRunning) ?? false,
+    ),
   });
 }
 
 /** One automation, for its page. */
 export function useAutomation(
   id: string | undefined,
-  options?: Omit<UseQueryOptions<AutomationEntity, Error>, 'queryKey' | 'queryFn'>,
+  options?: Omit<UseQueryOptions<AutomationEntity, Error>, 'queryKey' | 'queryFn' | PollKeys>,
 ) {
   const app = useConsumerApp();
   return useQuery<AutomationEntity, Error>({
     queryKey: automationsKeys.detail(id),
     queryFn: id ? () => app.automations.findById(id) : skipToken,
-    refetchInterval: (query) => (query.state.data?.isRunning ? LIVE_POLL.liveRun : false),
-    refetchIntervalInBackground: true,
     ...options,
+    ...pollWhile<AutomationEntity>('liveRun', (automation) => automation?.isRunning ?? false),
   });
 }
 
@@ -91,9 +94,7 @@ export function useAutomationRuns(filter: RunsFilter) {
     queryKey: automationsKeys.runList(filter),
     queryFn: () => app.automations.findRuns(filter),
     placeholderData: keepPreviousData,
-    refetchInterval: (query) =>
-      query.state.data?.items.some((run) => run.isLive) ? LIVE_POLL.liveRun : false,
-    refetchIntervalInBackground: true,
+    ...pollWhile<RunPage>('liveRun', (page) => page?.items.some((run) => run.isLive) ?? false),
   });
 }
 
@@ -103,8 +104,7 @@ export function useAutomationRun(id: string | undefined) {
   return useQuery<AutomationRunEntity, Error>({
     queryKey: automationsKeys.run(id),
     queryFn: id ? () => app.automations.findRun(id) : skipToken,
-    refetchInterval: (query) => (query.state.data?.isLive ? LIVE_POLL.liveRun : false),
-    refetchIntervalInBackground: true,
+    ...pollWhile<AutomationRunEntity>('liveRun', (run) => run?.isLive ?? false),
   });
 }
 

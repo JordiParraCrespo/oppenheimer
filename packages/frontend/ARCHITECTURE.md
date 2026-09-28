@@ -255,7 +255,6 @@ shapes the cruiser cannot: feature names against the module lists, kind
 directories, the route line cap, app files the kit already ships, a query a
 screen holds for one child, two components in one app file, TanStack's own
 `useQuery` in a package's React layer (the core's shares entities), a
-`refetchInterval` in the app and one in a package without
-`refetchIntervalInBackground` decided beside it (`LIVE_POLL`), and that
+`refetchInterval` anywhere but the product package's `live-poll.ts`, and that
 every package here carries a `README.md`, an `AGENTS.md` linking a rule file,
 and — for the tier and the kits — an `ARCHITECTURE.md`.

@@ -52,8 +52,8 @@ A script already rejects wrong directories, forbidden imports, `useEffect`
 outside `hooks/`, manual memo imports, nested component definitions, raw
 colours, a route file over 120 lines, two components in one app file, a query
 a screen holds for one child, TanStack's own `useQuery` in a package's React
-layer, a `refetchInterval` in the app or one in a package without
-`refetchIntervalInBackground` beside it, React Query imported by a feature, a
+layer, a `refetchInterval` anywhere but the product package's
+`live-poll.ts`, React Query imported by a feature, a
 path into the API client, and `providers/` importing more than a feature's
 `dialogs/`. **Do not report those again**. Report them only when the script
 missed a case, and say which script missed it.
@@ -160,10 +160,8 @@ reported:
 - The rule is one whose fix is local: `M-biome`, `M-structure` (a misnamed
   kind directory or a route over the cap), `R2`, `R3`, `R4`, `R5`, `R8`,
   `R9`, `R10`, `R12`, `R13`, `U1`, `U2`, `U3`, or `R11` when the fix is a
-  new `*-render.spec.tsx` modelled on an existing one, or `R14` when the fix
-  is the flag beside an interval or moving an interval into `LIVE_POLL`.
-  Everything else
-  (`P*`, `R1`, `R6`, `R7`, `U4`, `U5`, `M-arch`, `M-design`, `M-compiler`,
+  new `*-render.spec.tsx` modelled on an existing one. Everything else
+  (`P*`, `R1`, `R6`, `R7`, `R14`, `U4`, `U5`, `M-arch`, `M-design`, `M-compiler`,
   `M-render`, `M-bundle`) moves code between packages, splits a component,
   changes a budget or needs a new e2e spec: a person decides those.
 - The fix stays inside `apps/web`, `packages/frontend/*` and
@@ -228,7 +226,7 @@ tracking issue and the evals key on them.
 | `R11` | A component with a fast clock (typing, a stream, a timer, a list of more than a few rows) and no `*-render.spec.tsx`, or a budget that misses one of its clocks | "A component whose cost is the point gets a render budget" |
 | `R12` | Query data that loses its identity on every refetch or poll (class instances without a `structuralSharing` function, a getter or `select` that builds a new object), under a component that renders a list or sits on a poll | this skill, "What the React Compiler does not fix" |
 | `R13` | A render that reads the clock or randomness, which the compiler then caches | same |
-| `R14` | A poll outside `LIVE_POLL`, one that watches something finish without `refetchIntervalInBackground`, or one that never settles and runs on a hidden tab | frontend-architecture.md "Polling is one policy" |
+| `R14` | A `LIVE_POLL` entry whose hidden-tab behaviour disagrees with what it watches: a poll that never settles kept running on a hidden tab, or one that watches something finish paused there (the script sees where an interval is set, not what it watches) | frontend-architecture.md "Polling is one policy" |
 | `U1` | Hand-built markup where the design system ships the component | frontend-ui.md "Reach for the design system" |
 | `U2` | A colour outside the token vocabulary that the linter did not catch (an inline `style`, a `dark:` override, a shadcn alias) | "One colour vocabulary" |
 | `U3` | A user-visible string not going through `t()` | "Translate everything the user can read" |
@@ -315,11 +313,3 @@ the default branch. In this mode:
 5. Add a comment only when something changed: new findings, resolved ones, a
    check that changed state, or a fix pull request opened or updated. List
    them by fingerprint and link the pull request. No comment on a quiet day.
-
-The issue is the run's output, and a quiet day and a run that published
-nothing look the same from outside. So step 1 runs before any check, and a
-run that cannot write to GitHub (the GitHub tools are not in the session, the
-repository is out of scope, a write fails) does not go quiet: it writes the
-report to `frontend-audit-<YYYY-MM-DD>.md` in its scratchpad and ends with the
-error, quoted, instead of the summary. Never end a routine run without either
-a write to the issue or a stated reason.

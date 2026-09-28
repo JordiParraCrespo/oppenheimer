@@ -212,14 +212,6 @@ checkout came from (`git remote get-url origin`):
 4. Never @-mention anyone, never assign, and never label anything other than
    this one issue and the pull request from step 7.
 
-The issue is the run's output, and a quiet day and a run that published
-nothing look the same from outside. A run that cannot write to GitHub (the
-GitHub tools are not in the session, the repository is out of scope, a write
-fails) does not go quiet: it writes the report to
-`hexagon-audit-<YYYY-MM-DD>.md` in its scratchpad and ends with the error,
-quoted, instead of the one-line summary. Never end a run without either a
-write to the issue or a stated reason.
-
 ## 7. Fix pull request (blocking findings only)
 
 Skip this step under `--dry-run`, and when there are no blocking findings.

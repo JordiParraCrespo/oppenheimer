@@ -440,48 +440,32 @@ for (const pkg of readdirSync(join(root, 'packages/frontend'))) {
   }
 }
 
-// How often the console polls is one policy, `LIVE_POLL` in the product
-// package, read by its query hooks. An app that sets `refetchInterval` is a
-// second policy nobody finds: it asks the product package for the read that
-// polls (`useHostPresence`) instead.
-for (const { app } of APPS) {
-  const src = join(root, app, 'src');
-  if (!existsSync(src)) continue;
-  for (const file of walk(src)) {
-    if (!/\.tsx?$/.test(file) || /\.(spec|test)\.tsx?$/.test(file) || file.includes('/__tests__/'))
-      continue;
-    if (/\brefetchInterval\b/.test(readFileSync(file, 'utf8'))) {
-      fail(
-        `${relative(root, file)}: sets refetchInterval — polling is LIVE_POLL's, in the product package; use (or add) the query hook there that polls`,
-      );
-    }
-  }
-}
-
-// A poll in a frontend package's React layer says whether it goes on while
-// the tab is hidden. TanStack Query pauses `refetchInterval` on a hidden
-// document unless `refetchIntervalInBackground` says otherwise, and a poll
-// that watches something finish (a session start, a run) has to go on: the
-// tab it was launched from is the one the reader leaves, and the pane came
-// back frozen on a step that had finished (#111). So every `refetchInterval`
-// in `src/react/` carries `refetchIntervalInBackground` beside it, `true` or
-// an explicit `false` — counted per file with comments stripped, not parsed.
-// A `//` comment is stripped wherever it starts on the line, except after a
-// `:` or a quote, so `https://` inside a string survives.
-const COMMENTS = /\/\*[\s\S]*?\*\/|(^|[^:'"`])\/\/.*$/gm;
-for (const pkg of readdirSync(join(root, 'packages/frontend'))) {
-  const dir = join(root, 'packages/frontend', pkg, 'src/react');
-  if (!existsSync(dir)) continue;
-  for (const name of readdirSync(dir)) {
-    if (!/\.tsx?$/.test(name) || /\.(spec|test)\.tsx?$/.test(name)) continue;
-    const source = readFileSync(join(dir, name), 'utf8').replace(COMMENTS, '$1');
-    const intervals = (source.match(/\brefetchInterval\s*:/g) ?? []).length;
-    const decided = (source.match(/\brefetchIntervalInBackground\s*:/g) ?? []).length;
-    if (intervals !== decided) {
-      fail(
-        `packages/frontend/${pkg}/src/react/${name}: ${intervals} refetchInterval but ${decided} refetchIntervalInBackground — every poll says whether it goes on while the tab is hidden: true for one that watches something finish, false for one that never settles. See LIVE_POLL in packages/frontend/consumer/src/react/live-poll.ts`,
-      );
-    }
+// How the console polls is one policy, `LIVE_POLL` in the product package's
+// `live-poll.ts`: the interval and whether it survives a hidden tab, spread
+// into a query hook by `pollWhile()`. That file is the only one that names
+// TanStack's polling options. An app that sets `refetchInterval` is a second
+// policy nobody finds: it asks the product package for the read that polls
+// (`useHostPresence`) instead. A package hook that sets it by hand is one
+// that skipped the catalog.
+const sources = (dir) =>
+  [...walk(dir)].filter(
+    (file) =>
+      /\.tsx?$/.test(file) && !/\.(spec|test)\.tsx?$/.test(file) && !file.includes('/__tests__/'),
+  );
+const polling = [
+  ...APPS.flatMap(({ app }) =>
+    existsSync(join(root, app, 'src')) ? sources(join(root, app, 'src')) : [],
+  ),
+  ...readdirSync(join(root, 'packages/frontend')).flatMap((pkg) => {
+    const dir = join(root, 'packages/frontend', pkg, 'src/react');
+    return existsSync(dir) ? sources(dir).filter((file) => !file.endsWith('/live-poll.ts')) : [];
+  }),
+];
+for (const file of polling) {
+  if (/\brefetchInterval\b/.test(readFileSync(file, 'utf8'))) {
+    fail(
+      `${relative(root, file)}: sets refetchInterval — polling is LIVE_POLL's (packages/frontend/consumer/src/react/live-poll.ts): a package hook spreads pollWhile(), and an app asks the package for the hook that polls`,
+    );
   }
 }
 

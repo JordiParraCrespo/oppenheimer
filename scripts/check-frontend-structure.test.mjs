@@ -229,34 +229,34 @@ export const useOther = () => useQuery({ queryKey: ['other'], queryFn: () => [] 
   assert.match(report, /things\.queries\.ts: imports useQuery from @tanstack\/react-query/);
   assert.doesNotMatch(report, /other\.queries\.ts/);
 });
-test('a package poll decides refetchIntervalInBackground beside its interval', () => {
+test('a poll is LIVE_POLL: a raw refetchInterval fails, a hook that spreads pollWhile passes', () => {
   const { report } = check(
-    {},
     {
-      'packages/frontend/consumer/src/react/starts.queries.ts': `import { useQuery } from '@oppenheimer/frontend-core/react';
-// A comment naming refetchIntervalInBackground: true does not count.
-export const useStart = () =>
-  useQuery({ queryKey: ['start'], queryFn: () => [], refetchInterval: 2000 });
+      'src/features/things/sections/thing-list.tsx': `import { useThings } from '@oppenheimer/frontend-consumer/react';
+export function ThingList() {
+  const things = useThings({ refetchInterval: 2000 });
+  return <ul>{things.data?.map((row) => <li key={row}>{row}</li>)}</ul>;
+}
 `,
-      'packages/frontend/consumer/src/react/runs.queries.ts': `import { useQuery } from '@oppenheimer/frontend-core/react';
-const DOCS = 'https://example.test/refetchIntervalInBackground';
-export const useRun = () =>
-  useQuery({ queryKey: [DOCS], queryFn: () => [], refetchInterval: 2000 }); // refetchIntervalInBackground: true
+    },
+    {
+      'packages/frontend/consumer/src/react/live-poll.ts': `export const LIVE_POLL = { thing: { interval: 2000, inBackground: true } } as const;
+export const pollWhile = (kind, active) => ({ refetchInterval: active ? LIVE_POLL[kind].interval : false, refetchIntervalInBackground: LIVE_POLL[kind].inBackground });
 `,
-      'packages/frontend/consumer/src/react/presence.queries.ts': `import { useQuery } from '@oppenheimer/frontend-core/react';
-export const usePresence = () =>
-  useQuery({
-    queryKey: ['presence'],
-    queryFn: () => [],
-    refetchInterval: 15_000,
-    refetchIntervalInBackground: false,
-  });
+      'packages/frontend/consumer/src/react/raw.queries.ts': `import { useQuery } from '@oppenheimer/frontend-core/react';
+export const useRaw = () => useQuery({ queryKey: ['raw'], queryFn: () => [], refetchInterval: 2000 });
+`,
+      'packages/frontend/consumer/src/react/things.queries.ts': `import { useQuery } from '@oppenheimer/frontend-core/react';
+import { pollWhile } from './live-poll';
+export const useThings = (options) =>
+  useQuery({ queryKey: ['things'], queryFn: () => [], ...options, ...pollWhile('thing', true) });
 `,
     },
   );
-  assert.match(report, /starts\.queries\.ts: 1 refetchInterval but 0 refetchIntervalInBackground/);
-  assert.match(report, /runs\.queries\.ts: 1 refetchInterval but 0 refetchIntervalInBackground/);
-  assert.doesNotMatch(report, /presence\.queries\.ts/);
+  assert.match(report, /features\/things\/sections\/thing-list\.tsx: sets refetchInterval/);
+  assert.match(report, /raw\.queries\.ts: sets refetchInterval/);
+  assert.doesNotMatch(report, /things\.queries\.ts: sets refetchInterval/);
+  assert.doesNotMatch(report, /live-poll\.ts: sets/);
 });
 
 test('two components side by side in an app file are reported; one passes', () => {

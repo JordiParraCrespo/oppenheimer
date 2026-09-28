@@ -95,13 +95,17 @@ edit(
 edit(
   'P3',
   api('users/commands/delete-user/delete-user.command-handler.ts'),
-  `    await this.erasure.eraseFor(user.id);
-    user.delete();`,
-  `    await this.erasure.eraseFor(user.id);
+  `    const user = found.unwrap();
+
+    if (
+      command.confirmation`,
+  `    const user = found.unwrap();
     if (user.role === 'admin') {
       throw new ForbiddenException('Admins cannot be deleted through this endpoint');
     }
-    user.delete();`,
+
+    if (
+      command.confirmation`,
 );
 edit(
   'P3',

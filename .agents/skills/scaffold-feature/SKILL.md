@@ -128,12 +128,10 @@ it. The steps are the "Add a module to a product package" cookbook in
      `skipToken` and `withCacheOnSuccess` rules; the guide is
      `apps/docs/docs/architecture/query-keys.md`. A key for a generated
      hey-api query goes through `withFeaturePrefix`.
-   - A poll is one of `LIVE_POLL`'s intervals (`src/react/live-poll.ts`), set
-     in the package's hook and never in a feature (`pnpm check:structure`
-     fails a `refetchInterval` in the app: the feature asks for the hook that
-     polls, as `useHostPresence`). Beside the interval the hook decides
-     `refetchIntervalInBackground`: `true` for a poll that watches something
-     finish, `false` for one that never settles. The check counts the two.
+   - A poll is `LIVE_POLL` (`src/react/live-poll.ts`): the hook spreads
+     `pollWhile(kind, stillMoving)` after its options, and a feature asks for
+     the hook that already polls (`useHostPresence`) rather than setting
+     `refetchInterval`.
 6. If the data must never reach storage (secrets, a pairing token, personal
    data), add `thingsKeys.all[0]` to `CONSUMER_NON_PERSISTED_FEATURES` in
    `src/react/persistence.ts`.
