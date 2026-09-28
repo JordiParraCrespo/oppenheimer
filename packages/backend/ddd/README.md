@@ -23,8 +23,10 @@ rules.
   `ArgumentOutOfRangeException`.
 - **Transactional outbox**: `OutboxService` (stage domain events / BullMQ jobs
   in the same transaction as the aggregate write; claim with
-  `FOR UPDATE SKIP LOCKED`; retries with backoff and expiring leases),
-  `OutboxRelay` (drain loop + publisher contract), `OutboxMessageSchema`
+  `FOR UPDATE SKIP LOCKED`; retries with backoff and expiring leases; a
+  fire-and-forget `wake()`; `deleteProcessedBefore` for retention),
+  `OutboxRelay` (a drain loop that runs one drain at a time and folds wakes
+  into one more pass, + publisher contract), `OutboxMessageSchema`
   (decorator-free `EntitySchema` for the `outbox_message` table), and
   `TIMESTAMP_COLUMN_TYPE` — `timestamptz`, the type its dates and every date
   column of the API's ORM entities are stored as.

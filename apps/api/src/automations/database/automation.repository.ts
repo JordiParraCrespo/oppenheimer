@@ -206,7 +206,7 @@ export class AutomationRepository
       }
       return runs;
     });
-    if (queued.length > 0) await this.outbox.wake();
+    if (queued.length > 0) this.outbox.wake();
     return queued;
   }
 

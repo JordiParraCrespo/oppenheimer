@@ -267,8 +267,12 @@ Design for the table at a hundred times today's size.
   says so) and erase a tenant's rows with the batched purge or partition drop.
 - Counters that many requests bump at once (views, likes) do not live on a
   hot parent row. Write them to their own table, or aggregate them.
-- Queues and work tables are claimed with `FOR UPDATE SKIP LOCKED` on a
-  `(status, availableAt)` index, as `outbox_message` is.
+- Queues and work tables are claimed with `FOR UPDATE SKIP LOCKED` through a
+  partial index on the claim's `ORDER BY` column, `WHERE "status" = 'pending'`
+  (`IDX_outbox_message_pending` on `("createdAt")`), so the claim reads the
+  oldest claimable rows and stops at its `LIMIT` with no `Sort`, and the lease
+  and retry columns stay out of every index (HOT updates). Processed rows are
+  purged on a schedule.
 
 ## Migrations
 

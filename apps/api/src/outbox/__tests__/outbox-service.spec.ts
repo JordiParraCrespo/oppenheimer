@@ -135,19 +135,51 @@ describe('OutboxService', () => {
     });
   });
 
+  describe('deleteProcessedBefore', () => {
+    it('deletes one batch of old processed rows by ctid and returns how many went', async () => {
+      // TypeORM returns [rows, affected] for a DELETE.
+      const query = vi.fn().mockResolvedValue([[], 42]);
+      const service = new OutboxService({ query } as unknown as DataSource);
+      const cutoff = new Date('2026-09-01T00:00:00Z');
+
+      await expect(service.deleteProcessedBefore(cutoff, 5000)).resolves.toBe(42);
+
+      const [sql, params] = query.mock.calls[0];
+      expect(sql).toMatch(/DELETE FROM "outbox_message"\s+WHERE ctid = ANY \(ARRAY\(/);
+      expect(sql).toContain(`"createdAt" < $1 AND "status" = 'processed'`);
+      expect(sql).toContain('LIMIT $2');
+      expect(params).toEqual([cutoff, 5000]);
+    });
+  });
+
   describe('wake', () => {
-    it('runs the registered drainer and swallows its failure', async () => {
+    it('starts the registered drainer without waiting for it', () => {
       const service = new OutboxService({} as DataSource);
-      const drainer = vi.fn().mockRejectedValue(new Error('db gone'));
+      const drainer = vi.fn(() => new Promise(() => {}));
       service.registerDrainer(drainer);
 
-      await expect(service.wake()).resolves.toBeUndefined();
+      expect(service.wake()).toBeUndefined();
       expect(drainer).toHaveBeenCalledTimes(1);
     });
 
-    it('is a no-op with no drainer registered', async () => {
+    it('never throws, and logs a failed drain', async () => {
+      const warn = vi.fn();
+      const service = new OutboxService({} as DataSource, { logger: { warn } });
+      service.registerDrainer(vi.fn().mockRejectedValue(new Error('db gone')));
+
+      expect(() => service.wake()).not.toThrow();
+      await vi.waitFor(() => expect(warn).toHaveBeenCalledWith(expect.stringContaining('db gone')));
+
+      service.registerDrainer(() => {
+        throw new Error('sync boom');
+      });
+      expect(() => service.wake()).not.toThrow();
+      expect(warn).toHaveBeenLastCalledWith(expect.stringContaining('sync boom'));
+    });
+
+    it('is a no-op with no drainer registered', () => {
       const service = new OutboxService({} as DataSource);
-      await expect(service.wake()).resolves.toBeUndefined();
+      expect(service.wake()).toBeUndefined();
     });
   });
 
@@ -161,7 +193,8 @@ describe('OutboxService', () => {
       const service = new OutboxService({
         transaction,
       } as unknown as DataSource);
-      const drainer = vi.fn().mockResolvedValue(0);
+      // A drain that never settles: the write must not wait for it.
+      const drainer = vi.fn(() => new Promise(() => {}));
       service.registerDrainer(drainer);
 
       const event = new ThingDeletedDomainEvent({

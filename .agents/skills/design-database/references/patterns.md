@@ -258,8 +258,8 @@ GIN index is fine for free-form labels that are only filtered on.
 ## 11. Work queue
 
 The `outbox_message` shape: `status`, `attempts`, `availableAt`, `lockedBy`,
-`lockedUntil`, `lastError`, and a `("status", "availableAt")` index (or a
-partial index `WHERE "status" = 'pending'`). Claimed with
+`lockedUntil`, `lastError`, and a partial index on the claim's order,
+`("createdAt") WHERE "status" = 'pending'`. Claimed with
 `FOR UPDATE SKIP LOCKED`; a lapsed lease makes a row reclaimable. Processed
 rows are deleted or moved on a schedule, so the table stays small.
 
