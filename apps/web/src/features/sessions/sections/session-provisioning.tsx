@@ -18,7 +18,7 @@ import { failureReason, PENDING_START, provisioningSteps } from '../lib/provisio
  * pending, so nothing on this pane advances on its own.
  */
 export function SessionProvisioning({ session }: { session: SessionEntity }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const resolveError = useErrorMessage();
   const failed = session.lifecycle === 'failed';
   const progress = useSessionStartProgress(session.id, {
@@ -34,6 +34,10 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
   const host = hostName ?? t('sessions.provisioning.steps.host.fallback');
   const checkout = session.cwdCheckout;
 
+  const failure = failureReason(progress.data?.failure, t, (code) => {
+    const key = `errors.byCode.${code}`;
+    return i18n.exists(key) ? (i18n.t(key as never) as string) : undefined;
+  });
   const steps = provisioningSteps(
     progress.data?.steps ?? PENDING_START,
     {
@@ -42,7 +46,7 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
       repo: checkout?.repositoryName ?? session.slug,
       branch: checkout?.branch ?? session.slug,
       agent: CODING_AGENTS[session.agent].label,
-      failure: failureReason(progress.data?.failure, t),
+      failure: failure?.reason ?? null,
     },
     t,
   );
@@ -76,6 +80,14 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
           elapsed={<ElapsedClock since={session.createdAt} ticking={!failed} />}
           status={t(failed ? 'sessions.provisioning.failed' : 'sessions.provisioning.working')}
         />
+
+        {/* The host's own words, English and for whoever reads its logs: a
+            secondary line under the translated reason, never the reason. */}
+        {failed && failure?.detail ? (
+          <p className="mt-4 text-xs break-words text-fg-subtle">
+            {t('sessions.provisioning.details', { detail: failure.detail })}
+          </p>
+        ) : null}
       </div>
     </div>
   );

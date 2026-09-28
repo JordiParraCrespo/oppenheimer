@@ -7,5 +7,12 @@
   "minItems": "Selecciona al menos {{min}}",
   "maxItems": "Selecciona como máximo {{max}}",
   "url": "Introduce una URL válida, incluyendo https://",
-  "invalid": "Este valor no es válido"
+  "invalid": "Este valor no es válido",
+  "format": "El formato no es válido",
+  "choice": "Elige una de las opciones",
+  "date": "Introduce una fecha válida",
+  "min": "Debe ser como mínimo {{min}}",
+  "max": "Debe ser como máximo {{max}}",
+  "multipleOf": "Debe ser múltiplo de {{step}}",
+  "tooLong": "Es demasiado largo"
 }

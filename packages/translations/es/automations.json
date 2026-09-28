@@ -170,7 +170,8 @@
     "succeeded": "Correctas",
     "failed": "Fallidas",
     "runs_one": "{{count}} ejecución",
-    "runs_other": "{{count}} ejecuciones"
+    "runs_other": "{{count}} ejecuciones",
+    "runs_many": "{{count}} ejecuciones"
   },
   "runs": {
     "all": "Todas",
@@ -256,6 +257,7 @@
     "passed": "Esa hora ya ha pasado. Elige una posterior.",
     "listening_one": "Escuchando en {{repos}} · se habría ejecutado una vez en los últimos 7 días",
     "listening_other": "Escuchando en {{repos}} · se habría ejecutado {{count}} veces en los últimos 7 días",
+    "listening_many": "Escuchando en {{repos}} · se habría ejecutado {{count}} veces en los últimos 7 días",
     "listeningNone": "Escuchando en {{repos}} · nada coincidió en los últimos 7 días",
     "code": "Código",
     "project": "Proyecto",
@@ -284,6 +286,12 @@
     "save": "Guardar",
     "create": "Crear automatización",
     "saveFailed": "No se ha podido guardar la automatización.",
-    "forProject": "Para {{name}}."
-  }
+    "forProject": "Para {{name}}.",
+    "noMatch": "Nada coincide con «{{query}}».",
+    "chooseRepositories": "Elige repositorios…",
+    "chooseAgent": "Elige un agente…",
+    "chooseModel": "Elige un modelo…"
+  },
+  "skipReasonOther": "Omitida",
+  "pausedReasonOther": "En pausa. Los disparadores se ignoran hasta que se reanude."
 }

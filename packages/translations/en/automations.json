@@ -284,6 +284,12 @@
     "save": "Save",
     "create": "Create automation",
     "saveFailed": "The automation could not be saved.",
-    "forProject": "For {{name}}."
-  }
+    "forProject": "For {{name}}.",
+    "noMatch": "No match for “{{query}}”.",
+    "chooseRepositories": "Choose repositories…",
+    "chooseAgent": "Choose an agent…",
+    "chooseModel": "Choose a model…"
+  },
+  "skipReasonOther": "Skipped",
+  "pausedReasonOther": "Paused. Triggers are ignored until it is resumed."
 }

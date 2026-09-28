@@ -30,7 +30,8 @@
     },
     "save": "Guardar",
     "search": "Buscar",
-    "dismiss": "Descartar"
+    "dismiss": "Descartar",
+    "breadcrumb": "Ruta de navegación"
   },
   "validation": {
     "title": "Error de validación",
@@ -41,7 +42,14 @@
     "minItems": "Selecciona al menos {{min}}",
     "maxItems": "Selecciona como máximo {{max}}",
     "url": "Introduce una URL válida, incluyendo https://",
-    "invalid": "Este valor no es válido"
+    "invalid": "Este valor no es válido",
+    "format": "El formato no es válido",
+    "choice": "Elige una de las opciones",
+    "date": "Introduce una fecha válida",
+    "min": "Debe ser como mínimo {{min}}",
+    "max": "Debe ser como máximo {{max}}",
+    "multipleOf": "Debe ser múltiplo de {{step}}",
+    "tooLong": "Es demasiado largo"
   },
   "errors": {
     "fallback": "Algo ha ido mal. Inténtalo de nuevo.",
@@ -188,7 +196,19 @@
       "AUTOMATIONS_007": "Ese proyecto no puede tener automatizaciones.",
       "AUTOMATIONS_008": "Esa ejecución no existe.",
       "INBOUND_001": "Esa fuente de eventos no se conoce.",
-      "INBOUND_002": "La entrega no incluye un identificador de entrega."
+      "INBOUND_002": "La entrega no incluye un identificador de entrega.",
+      "SESS_001": "El host no tiene constancia de esa sesión.",
+      "SESS_002": "El host no ha podido iniciar una sesión con esos ajustes.",
+      "SESS_003": "Esa sesión no se está ejecutando en su host.",
+      "SESS_004": "El host ya tiene una sesión en ese worktree.",
+      "SESS_005": "El host no ha podido pasar esa imagen a la sesión.",
+      "TMUX_001": "tmux no está instalado en el host. Instálalo y vuelve a intentarlo.",
+      "TMUX_002": "tmux se ha negado a iniciar la sesión en el host.",
+      "GIT_001": "El host no ha podido preparar el worktree.",
+      "GIT_002": "Ha fallado un comando de git en el host.",
+      "GIT_003": "No se ha podido subir la rama.",
+      "GIT_004": "El host no puede acceder a ese repositorio. Comprueba que la GitHub App tiene acceso.",
+      "GIT_005": "Un comando de git en el host ha tardado demasiado y se ha detenido."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -348,6 +368,7 @@
       "selectFirst": "Elige repositorios arriba primero.",
       "clonedCount_one": "{{count}} clonado",
       "clonedCount_other": "{{count}} clonados",
+      "clonedCount_many": "{{count}} clonados",
       "branchEmpty": "No hay ninguna rama llamada “{{query}}”",
       "create": "Crear proyecto",
       "creating": "Creando…",
@@ -359,6 +380,7 @@
       "deleteHint": "Elimina este proyecto",
       "deleteBlocked_one": "Mueve o elimina su {{count}} sesión primero",
       "deleteBlocked_other": "Mueve o elimina sus {{count}} sesiones primero",
+      "deleteBlocked_many": "Mueve o elimina sus {{count}} sesiones primero",
       "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar.",
       "loadFailed": "No se ha podido cargar este proyecto."
     },
@@ -404,7 +426,8 @@
       "progressFailed": "No se pudo cargar el progreso del inicio.",
       "codes": {
         "SESS_002": "Este host crea sesiones con un solo repositorio."
-      }
+      },
+      "details": "Detalles del host: {{detail}}"
     },
     "group": {
       "working": "Trabajando",
@@ -756,7 +779,8 @@
       "succeeded": "Correctas",
       "failed": "Fallidas",
       "runs_one": "{{count}} ejecución",
-      "runs_other": "{{count}} ejecuciones"
+      "runs_other": "{{count}} ejecuciones",
+      "runs_many": "{{count}} ejecuciones"
     },
     "runs": {
       "all": "Todas",
@@ -842,6 +866,7 @@
       "passed": "Esa hora ya ha pasado. Elige una posterior.",
       "listening_one": "Escuchando en {{repos}} · se habría ejecutado una vez en los últimos 7 días",
       "listening_other": "Escuchando en {{repos}} · se habría ejecutado {{count}} veces en los últimos 7 días",
+      "listening_many": "Escuchando en {{repos}} · se habría ejecutado {{count}} veces en los últimos 7 días",
       "listeningNone": "Escuchando en {{repos}} · nada coincidió en los últimos 7 días",
       "code": "Código",
       "project": "Proyecto",
@@ -870,8 +895,14 @@
       "save": "Guardar",
       "create": "Crear automatización",
       "saveFailed": "No se ha podido guardar la automatización.",
-      "forProject": "Para {{name}}."
-    }
+      "forProject": "Para {{name}}.",
+      "noMatch": "Nada coincide con «{{query}}».",
+      "chooseRepositories": "Elige repositorios…",
+      "chooseAgent": "Elige un agente…",
+      "chooseModel": "Elige un modelo…"
+    },
+    "skipReasonOther": "Omitida",
+    "pausedReasonOther": "En pausa. Los disparadores se ignoran hasta que se reanude."
   },
   "hosts": {
     "pairing": {
@@ -913,6 +944,7 @@
       "state": {
         "running_one": "En marcha · {{count}} sesión",
         "running_other": "En marcha · {{count}} sesiones",
+        "running_many": "En marcha · {{count}} sesiones",
         "idle": "Inactivo",
         "offline": "Desconectado"
       },
@@ -934,6 +966,7 @@
       "removeTitle": "¿Eliminar {{name}}?",
       "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
       "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_many": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
       "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
       "renameFailed": "No se ha podido renombrar este host. Inténtalo de nuevo.",
       "removeFailed": "No se ha podido eliminar este host. Inténtalo de nuevo."
@@ -1073,7 +1106,7 @@
     "team": "Equipo",
     "users": "Usuarios",
     "roles": "Roles",
-    "featureFlags": "Feature flags",
+    "featureFlags": "Indicadores de funcionalidad",
     "toggleSidebar": "Mostrar u ocultar el menú",
     "sessions": "Sesiones",
     "newSession": "Nueva sesión",
@@ -1102,7 +1135,8 @@
       "title": "Roles y permisos",
       "description": "Define reglas de acceso reutilizables para las aplicaciones de consumo.",
       "permissionCount_one": "{{count}} permiso",
-      "permissionCount_other": "{{count}} permisos"
+      "permissionCount_other": "{{count}} permisos",
+      "permissionCount_many": "{{count}} permisos"
     },
     "users": {
       "title": "Usuarios",
@@ -1173,17 +1207,17 @@
       }
     },
     "flags": {
-      "title": "Feature flags",
+      "title": "Indicadores de funcionalidad",
       "description": "Lanza funcionalidades, ejecuta experimentos y activa interruptores de emergencia para todo este despliegue.",
       "tabs": {
-        "flags": "Flags",
+        "flags": "Indicadores",
         "segments": "Segmentos",
         "history": "Historial"
       },
-      "search": "Buscar flags",
-      "empty": "Ningún flag coincide.",
+      "search": "Buscar indicadores",
+      "empty": "Ningún indicador coincide.",
       "columns": {
-        "flag": "Flag",
+        "flag": "Indicador",
         "kind": "Tipo",
         "serving": "Sirve",
         "enabled": "Activo"
@@ -1194,7 +1228,7 @@
         "experiment": "Experimento"
       },
       "expired": "Caducado",
-      "expiredHint": "Pasó el {{date}}. Lánzalo y elimina el flag del código.",
+      "expiredHint": "Pasó el {{date}}. Lánzalo y elimina el indicador del código.",
       "expires": "Hasta el {{date}}",
       "serving": {
         "default": "Por defecto: {{value}}",
@@ -1202,7 +1236,8 @@
         "value": "{{value}} para el resto",
         "split": "Reparto {{arms}}",
         "rules_one": "{{count}} regla y después",
-        "rules_other": "{{count}} reglas y después"
+        "rules_other": "{{count}} reglas y después",
+        "rules_many": "{{count}} reglas y después"
       },
       "actions": {
         "edit": "Editar segmentación",
@@ -1258,7 +1293,7 @@
       "attributes": {
         "userId": "ID de usuario",
         "organizationId": "ID de organización",
-        "email": "Email",
+        "email": "Correo electrónico",
         "platformRole": "Rol de plataforma",
         "platform": "Plataforma",
         "appVersion": "Versión de la app",
@@ -1273,21 +1308,21 @@
       },
       "explain": {
         "title": "Explicar: {{key}}",
-        "description": "Qué sirve este flag a alguien y por qué. Describe todo lo que sepas de esa persona.",
+        "description": "Qué sirve este indicador a alguien y por qué. Describe todo lo que sepas de esa persona.",
         "submit": "Explicar",
         "result": "Sirve {{value}}",
         "reasons": {
           "DEFAULT": "Nada decidió, así que se sirvió el valor por defecto del catálogo.",
-          "DISABLED": "El flag está apagado.",
+          "DISABLED": "El indicador está apagado.",
           "TARGETING_MATCH": "Coincidió la regla «{{rule}}».",
           "SPLIT": "Asignado por un reparto por porcentaje.",
           "FALLTHROUGH": "No coincidió ninguna regla; lo sirvió el valor para el resto.",
-          "ERROR": "La segmentación sirvió un valor que este flag no admite, así que se sirvió el valor por defecto."
+          "ERROR": "La segmentación sirvió un valor que este indicador no admite, así que se sirvió el valor por defecto."
         }
       },
       "segments": {
         "search": "Buscar segmentos",
-        "empty": "Aún no hay segmentos. Un segmento es una audiencia con nombre, como el equipo o los clientes beta, a la que pueden apuntar las reglas de cualquier flag.",
+        "empty": "Aún no hay segmentos. Un segmento es una audiencia con nombre, como el equipo o los clientes beta, a la que pueden apuntar las reglas de cualquier indicador.",
         "new": "Nuevo segmento",
         "edit": "Editar",
         "delete": "Eliminar",
@@ -1298,7 +1333,8 @@
         },
         "conditionCount_one": "{{count}} condición",
         "conditionCount_other": "{{count}} condiciones",
-        "unused": "Ningún flag",
+        "conditionCount_many": "{{count}} condiciones",
+        "unused": "Ningún indicador",
         "newTitle": "Nuevo segmento",
         "editTitle": "Editar segmento",
         "formDescription": "Quien cumpla todas estas condiciones está en el segmento.",
@@ -1310,15 +1346,15 @@
         "save": "Guardar segmento",
         "saving": "Guardando…",
         "deleteTitle": "¿Eliminar este segmento?",
-        "deleteDescription": "Ningún flag apunta a él, así que no cambia el flag de nadie.",
+        "deleteDescription": "Ningún indicador apunta a él, así que no cambia el indicador de nadie.",
         "inUse": "Lo usa {{flags}}. Quítalo primero de sus reglas."
       },
       "history": {
-        "search": "Filtrar por clave de flag o segmento",
+        "search": "Filtrar por clave de indicador o segmento",
         "empty": "Aún no hay cambios.",
         "columns": {
           "when": "Cuándo",
-          "subject": "Flag o segmento",
+          "subject": "Indicador o segmento",
           "change": "Cambio",
           "by": "Quién",
           "comment": "Motivo"
@@ -1475,7 +1511,7 @@
       "members": {
         "cancelInvite": "Cancelar invitación",
         "columns": {
-          "email": "Email",
+          "email": "Correo electrónico",
           "joined": "Alta",
           "name": "Nombre",
           "organizationRole": "Rol en la organización",

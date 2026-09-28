@@ -22,11 +22,17 @@ function PageHeader({ className, ...props }: React.ComponentProps<'header'>) {
   );
 }
 
-/** The crumbs: buttons or links for the parents, a muted span for here. */
-function PageHeaderCrumbs({ className, children, ...props }: React.ComponentProps<'nav'>) {
+/**
+ * The crumbs: buttons or links for the parents, a muted span for here. The
+ * landmark's name is the caller's to translate, so it is required.
+ */
+function PageHeaderCrumbs({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'nav'> & { 'aria-label': string }) {
   return (
     <nav
-      aria-label="Breadcrumb"
       data-slot="page-header-crumbs"
       className={cn(
         'flex min-h-5 flex-wrap items-center gap-1.5 text-[13px] text-fg-subtle [&_a]:text-fg-muted [&_a:hover]:text-fg [&_button]:text-fg-muted [&_button:hover]:text-fg',

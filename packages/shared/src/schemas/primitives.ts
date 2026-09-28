@@ -110,7 +110,11 @@ export const promptSchema = z
   // refine below is the rule — and that is the honest shape for a bound the
   // wire measures in bytes.
   .max(FIELD_BOUNDS.prompt.maxBytes)
-  .refine((value) => promptByteLength(value) <= FIELD_BOUNDS.prompt.maxBytes);
+  // The key names the message for a form's error map; a refine's own issue
+  // code (`custom`) says nothing a person could act on.
+  .refine((value) => promptByteLength(value) <= FIELD_BOUNDS.prompt.maxBytes, {
+    params: { i18nKey: 'validation.tooLong' },
+  });
 
 /**
  * The host family, at the granularity the installer and the service manager care

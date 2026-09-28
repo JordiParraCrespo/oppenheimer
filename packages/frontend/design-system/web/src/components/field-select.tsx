@@ -29,9 +29,15 @@ type FieldSelectOption = {
 type FieldSelectProps = {
   options: FieldSelectOption[];
   meta?: React.ReactNode;
-  placeholder?: React.ReactNode;
-  searchPlaceholder?: string;
-  emptyText?: (query: string) => React.ReactNode;
+  /**
+   * The trigger's text while nothing is picked, the search field's hint and
+   * the no-match line. Required: the design system takes no i18n, so a
+   * default here could only be English, and a caller that forgot one would
+   * ship it to every locale.
+   */
+  placeholder: React.ReactNode;
+  searchPlaceholder: string;
+  emptyText: (query: string) => React.ReactNode;
   disabled?: boolean;
   className?: string;
   'aria-label'?: string;
@@ -46,9 +52,9 @@ function FieldSelect(props: FieldSelectProps) {
   const {
     options,
     meta,
-    placeholder = 'Choose…',
-    searchPlaceholder = 'Search…',
-    emptyText = (query) => `No match for “${query}”.`,
+    placeholder,
+    searchPlaceholder,
+    emptyText,
     disabled,
     className,
     'aria-label': ariaLabel,

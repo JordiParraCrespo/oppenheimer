@@ -48,6 +48,13 @@ template-string import.
 - Interpolate validation bounds with named params (`{{min}}`, `{{max}}`), not
   `count` — i18next reads `count` as a pluralisation trigger and looks for
   `_one` / `_other` variants.
+- A counted key needs every plural form its locale has. English has `_one` and
+  `_other`; Spanish also has `_many` (a million or more: "1 millón de
+  sesiones"), which i18next asks for and does not fall back from. Give it the
+  `_other` wording unless the sentence needs "de".
+- A refine in a shared schema names its message with
+  `.refine(fn, { params: { i18nKey: 'validation.…' } })`; the key must be one
+  of `VALIDATION_MESSAGE_KEYS` in `createZodErrorMap`.
 
 ## Commands
 

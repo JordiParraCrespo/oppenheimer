@@ -197,7 +197,7 @@ export function AutomationsSidebar() {
                                   <RoutineRun
                                     key={run.id}
                                     title={run.title}
-                                    ago={age(now - run.createdAt.getTime())}
+                                    ago={age(now - run.createdAt.getTime(), t)}
                                     state={runState(run.status)}
                                     disabled={!run.sessionId}
                                     active={

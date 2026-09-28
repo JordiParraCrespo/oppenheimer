@@ -50,6 +50,7 @@ export function EditorWhereStep({
             aria-label={t('automations.editor.project')}
             placeholder={t('automations.editor.chooseProject')}
             searchPlaceholder={t('automations.editor.searchProjects')}
+            emptyText={(query) => t('automations.editor.noMatch', { query })}
             value={draft.projectId}
             meta={project ? String(project.repositories.length) : undefined}
             options={projects.map((row) => ({
@@ -80,6 +81,8 @@ export function EditorWhereStep({
             multiple
             aria-label={t('automations.editor.repositories')}
             searchPlaceholder={t('automations.editor.searchRepositories')}
+            placeholder={t('automations.editor.chooseRepositories')}
+            emptyText={(query) => t('automations.editor.noMatch', { query })}
             value={draft.repositoryKeys}
             options={repositoryOptions}
             onValueChange={(repositoryKeys) => {
@@ -98,6 +101,7 @@ export function EditorWhereStep({
             aria-label={t('automations.editor.host')}
             placeholder={t('automations.editor.chooseHost')}
             searchPlaceholder={t('automations.editor.searchHosts')}
+            emptyText={(query) => t('automations.editor.noMatch', { query })}
             value={draft.hostId}
             options={hosts.map((host) => ({
               value: host.id,
@@ -112,6 +116,8 @@ export function EditorWhereStep({
           <FieldSelect
             aria-label={t('automations.editor.agent')}
             searchPlaceholder={t('automations.editor.searchAgents')}
+            placeholder={t('automations.editor.chooseAgent')}
+            emptyText={(query) => t('automations.editor.noMatch', { query })}
             value={draft.agent}
             options={AUTOMATION_AGENTS.map((agent) => ({
               value: agent,
@@ -130,6 +136,8 @@ export function EditorWhereStep({
           <FieldSelect
             aria-label={t('automations.editor.model')}
             searchPlaceholder={t('automations.editor.searchModels')}
+            placeholder={t('automations.editor.chooseModel')}
+            emptyText={(query) => t('automations.editor.noMatch', { query })}
             value={draft.model ?? DEFAULT_MODEL}
             options={[
               { value: DEFAULT_MODEL, label: t('automations.editor.agentDefault') },

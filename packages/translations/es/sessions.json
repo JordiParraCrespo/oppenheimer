@@ -31,7 +31,8 @@
     "progressFailed": "No se pudo cargar el progreso del inicio.",
     "codes": {
       "SESS_002": "Este host crea sesiones con un solo repositorio."
-    }
+    },
+    "details": "Detalles del host: {{detail}}"
   },
   "group": {
     "working": "Trabajando",

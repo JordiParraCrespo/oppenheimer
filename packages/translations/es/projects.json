@@ -22,6 +22,7 @@
     "selectFirst": "Elige repositorios arriba primero.",
     "clonedCount_one": "{{count}} clonado",
     "clonedCount_other": "{{count}} clonados",
+    "clonedCount_many": "{{count}} clonados",
     "branchEmpty": "No hay ninguna rama llamada “{{query}}”",
     "create": "Crear proyecto",
     "creating": "Creando…",
@@ -33,6 +34,7 @@
     "deleteHint": "Elimina este proyecto",
     "deleteBlocked_one": "Mueve o elimina su {{count}} sesión primero",
     "deleteBlocked_other": "Mueve o elimina sus {{count}} sesiones primero",
+    "deleteBlocked_many": "Mueve o elimina sus {{count}} sesiones primero",
     "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar.",
     "loadFailed": "No se ha podido cargar este proyecto."
   },

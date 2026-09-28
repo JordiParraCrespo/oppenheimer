@@ -32,7 +32,8 @@ export const createApiTokenSchema = z.object({
   /** Human-readable label shown in the token list. */
   name: z.string().trim().min(1).max(80),
   /** Permissions to grant. Must be a subset of what the creator may grant. */
-  scopes: z.array(scopeSchema).min(1, 'Select at least one permission'),
+  // No message: a form words it from the issue (`validation.minItems`).
+  scopes: z.array(scopeSchema).min(1),
   /**
    * Restrict the token to these organizations. Omit (or pass an empty array)
    * to let it follow the owner's memberships.

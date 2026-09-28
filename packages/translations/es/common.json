@@ -29,5 +29,6 @@
   },
   "save": "Guardar",
   "search": "Buscar",
-  "dismiss": "Descartar"
+  "dismiss": "Descartar",
+  "breadcrumb": "Ruta de navegación"
 }

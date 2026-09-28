@@ -29,7 +29,7 @@ import { useTranslation } from 'react-i18next';
 import { NextRunCountdown } from '../components/next-run-countdown';
 import { TriggerGlyph } from '../components/trigger-glyph';
 import { useAutomationActions } from '../hooks/use-automation-actions';
-import { automationDot, automationSubline } from '../lib/automation-view';
+import { automationDot, automationSubline, pausedReasonText } from '../lib/automation-view';
 import { automationTriggerText } from '../lib/trigger-text';
 
 /**
@@ -64,7 +64,7 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
         <ChevronLeft className="size-3.5" />
         {t('automations.detail.back')}
       </Link>
-      <PageHeaderCrumbs>
+      <PageHeaderCrumbs aria-label={t('common.breadcrumb')}>
         <Link to="/automations">{t('automations.detail.crumb')}</Link>
         <span>/</span>
         <PageHeaderHere>{automation.name}</PageHeaderHere>
@@ -171,7 +171,7 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
             </Button>
           }
         >
-          {t(`automations.pausedReason.${automation.pausedReason ?? 'user'}`)}
+          {pausedReasonText(automation.pausedReason, t)}
         </PageHeaderNote>
       ) : null}
       {actions.failure ? (

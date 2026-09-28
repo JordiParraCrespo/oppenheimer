@@ -66,8 +66,8 @@ function meta(step: SessionStartStep, context: ProvisioningContext, t: TFunction
 }
 
 /**
- * The runner codes a person can act on, said in the console's words rather
- * than the host's. Anything else keeps the host's own detail.
+ * Runner codes that read differently on this screen than in the shared
+ * catalog: said in the console's words, for what a person can do about them.
  */
 const KNOWN_FAILURE_CODES = ['SESS_002'] as const;
 
@@ -77,14 +77,31 @@ function isKnownFailureCode(code: string): code is KnownFailureCode {
   return (KNOWN_FAILURE_CODES as readonly string[]).includes(code);
 }
 
-/** What to put under a failed step: the code's meaning when there is one, else the host's words. */
+/** Why a start failed, in the reader's language, and the host's own words beside it. */
+export interface FailureReason {
+  /** Translated: the code's meaning, or the generic line when it has none. */
+  reason: string;
+  /** The host's raw detail, English, for a secondary "details" line only. */
+  detail: string | null;
+}
+
+/**
+ * What to put under a failed step. The host's `detail` is English written for
+ * an operator, so it is never the reason itself: the code picks the sentence —
+ * this screen's own copy first, then the shared `errors.byCode` catalog through
+ * `translateCode` — and a code neither knows reads as the generic failure. The
+ * detail rides along for the screen to show as a secondary line.
+ */
 export function failureReason(
   failure: { code: string | null; detail: string | null } | null | undefined,
   t: TFunction,
-): string | null {
+  translateCode: (code: string) => string | undefined,
+): FailureReason | null {
   if (!failure) return null;
-  if (failure.code && isKnownFailureCode(failure.code)) {
-    return t(`sessions.provisioning.codes.${failure.code}`);
-  }
-  return failure.detail;
+  const { code, detail } = failure;
+  const reason =
+    code && isKnownFailureCode(code)
+      ? t(`sessions.provisioning.codes.${code}`)
+      : ((code ? translateCode(code) : undefined) ?? t('sessions.provisioning.failed'));
+  return { reason, detail };
 }
