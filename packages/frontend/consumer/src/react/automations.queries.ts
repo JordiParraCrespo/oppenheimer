@@ -38,7 +38,6 @@ export const automationsKeys = {
   detail: (id: string | undefined) => [...automationsKeys.details(), id] as const,
   runs: () => [...automationsKeys.all, 'runs'] as const,
   runList: (filter: RunsFilter) => [...automationsKeys.runs(), 'list', filter] as const,
-  run: (id: string | undefined) => [...automationsKeys.runs(), 'detail', id] as const,
   history: (filter: RunHistoryFilter) => [...automationsKeys.runs(), 'history', filter] as const,
   preview: (trigger: GithubTriggerInput | undefined) =>
     [...automationsKeys.all, 'preview', trigger] as const,
@@ -95,16 +94,6 @@ export function useAutomationRuns(filter: RunsFilter) {
     queryFn: () => app.automations.findRuns(filter),
     placeholderData: keepPreviousData,
     ...pollWhile<RunPage>('liveRun', (page) => page?.items.some((run) => run.isLive) ?? false),
-  });
-}
-
-/** One run. */
-export function useAutomationRun(id: string | undefined) {
-  const app = useConsumerApp();
-  return useQuery<AutomationRunEntity, Error>({
-    queryKey: automationsKeys.run(id),
-    queryFn: id ? () => app.automations.findRun(id) : skipToken,
-    ...pollWhile<AutomationRunEntity>('liveRun', (run) => run?.isLive ?? false),
   });
 }
 

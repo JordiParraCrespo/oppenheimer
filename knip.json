@@ -1,0 +1,32 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "include": [
+    "files",
+    "dependencies",
+    "devDependencies",
+    "unlisted",
+    "unresolved",
+    "exports",
+    "duplicates"
+  ],
+  "workspaces": {
+    "apps/web": {
+      "entry": ["src/main.tsx", "src/routes/**/*.tsx"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "includeEntryExports": true,
+      "ignoreDependencies": ["tailwindcss"]
+    },
+    "packages/frontend/core": {
+      "project": ["src/**/*.{ts,tsx}"],
+      "includeEntryExports": true
+    },
+    "packages/frontend/consumer": {
+      "project": ["src/**/*.{ts,tsx}"],
+      "includeEntryExports": true
+    },
+    "packages/frontend/web": {
+      "project": ["src/**/*.{ts,tsx}"],
+      "includeEntryExports": true
+    }
+  }
+}

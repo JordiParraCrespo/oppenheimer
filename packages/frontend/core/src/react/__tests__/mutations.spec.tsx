@@ -6,7 +6,7 @@ import type { OppenheimerApp } from '../../di/oppenheimer-app';
 import { useLogin, useLogout } from '../auth.queries';
 import { OppenheimerProvider } from '../context';
 import { withCacheOnSuccess } from '../mutations';
-import { useDeleteUser, usersKeys, useUpdateUser } from '../users.queries';
+import { usersKeys } from '../users.queries';
 
 /**
  * Every mutation hook takes `options`, and a caller's `onSuccess` must run
@@ -20,11 +20,7 @@ function setup() {
     login: vi.fn().mockResolvedValue(undefined),
     logout: vi.fn().mockResolvedValue(undefined),
   };
-  const users = {
-    update: vi.fn().mockResolvedValue(SAVED),
-    delete: vi.fn().mockResolvedValue(undefined),
-  };
-  const app = { auth, users } as unknown as OppenheimerApp;
+  const app = { auth } as unknown as OppenheimerApp;
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
@@ -79,70 +75,5 @@ describe('a caller’s onSuccess runs alongside the cache update', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(onSuccess).toHaveBeenCalled();
     expect(invalidated(queryClient, usersKeys.me())).toBe(true);
-  });
-
-  it('an update writes the saved row and leaves it fresh', async () => {
-    const { wrapper, queryClient } = setup();
-    queryClient.setQueryData(usersKeys.list(), []);
-    queryClient.setQueryData(usersKeys.me(), { id: 'someone-else' });
-    queryClient.setQueryData(usersKeys.permissions(), []);
-    const onSuccess = vi.fn();
-
-    const { result } = renderHook(() => useUpdateUser({ onSuccess }), { wrapper });
-    act(() => result.current.mutate({ id: 'user-1', dto: { firstName: 'Saved' } }));
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(onSuccess).toHaveBeenCalled();
-    expect(queryClient.getQueryData(usersKeys.detail('user-1'))).toEqual(SAVED);
-    // Invalidating `all` here would mark the row just written stale.
-    expect(invalidated(queryClient, usersKeys.detail('user-1'))).toBe(false);
-    expect(invalidated(queryClient, usersKeys.list())).toBe(true);
-    // Someone else's row: the caller's entry and permissions are untouched.
-    expect(queryClient.getQueryData(usersKeys.me())).toEqual({ id: 'someone-else' });
-    expect(invalidated(queryClient, usersKeys.me())).toBe(false);
-    expect(invalidated(queryClient, usersKeys.permissions())).toBe(false);
-  });
-
-  it('an update of the caller writes their own entry, not their permissions', async () => {
-    const { wrapper, queryClient } = setup();
-    queryClient.setQueryData(usersKeys.me(), { id: 'user-1', firstName: 'Before' });
-    queryClient.setQueryData(usersKeys.permissions(), []);
-
-    const { result } = renderHook(() => useUpdateUser(), { wrapper });
-    act(() => result.current.mutate({ id: 'user-1', dto: { firstName: 'Saved' } }));
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(queryClient.getQueryData(usersKeys.me())).toEqual(SAVED);
-    expect(invalidated(queryClient, usersKeys.permissions())).toBe(false);
-  });
-
-  it('a delete drops the row and refreshes the lists', async () => {
-    const { wrapper, queryClient } = setup();
-    queryClient.setQueryData(usersKeys.detail('user-1'), SAVED);
-    queryClient.setQueryData(usersKeys.list(), [SAVED]);
-    queryClient.setQueryData(usersKeys.me(), { id: 'someone-else' });
-    const onSuccess = vi.fn();
-
-    const { result } = renderHook(() => useDeleteUser({ onSuccess }), { wrapper });
-    act(() => result.current.mutate('user-1'));
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(onSuccess).toHaveBeenCalled();
-    expect(queryClient.getQueryData(usersKeys.detail('user-1'))).toBeUndefined();
-    expect(invalidated(queryClient, usersKeys.list())).toBe(true);
-    expect(queryClient.getQueryData(usersKeys.me())).toEqual({ id: 'someone-else' });
-  });
-
-  it('deleting the caller drops their own entry and permissions', async () => {
-    const { wrapper, queryClient } = setup();
-    queryClient.setQueryData(usersKeys.me(), SAVED);
-    queryClient.setQueryData(usersKeys.permissions(), []);
-
-    const { result } = renderHook(() => useDeleteUser(), { wrapper });
-    act(() => result.current.mutate('user-1'));
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(queryClient.getQueryData(usersKeys.me())).toBeUndefined();
-    expect(queryClient.getQueryData(usersKeys.permissions())).toBeUndefined();
   });
 });

@@ -4,7 +4,7 @@ import {
   type RepositoryBranchResponseDto,
   type RepositoryResponseDto,
 } from '@oppenheimer/api-client';
-import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { MapApiError, unwrapBody } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import {
   BranchEntity,
@@ -86,14 +86,6 @@ export class InstallationsRepository {
       InstallationsErrors.CONNECT_FAILED,
     );
     return toEntity(data);
-  }
-
-  @MapApiError(InstallationsErrors.REMOVE_FAILED)
-  async remove(id: string): Promise<void> {
-    await unwrap(
-      heyApiSdk.disconnectInstallation({ path: { id } }),
-      InstallationsErrors.REMOVE_FAILED,
-    );
   }
 
   @MapApiError(InstallationsErrors.FETCH_REPOSITORIES_FAILED)

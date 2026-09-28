@@ -284,7 +284,6 @@
     "save": "Guardar",
     "create": "Crear automatización",
     "saveFailed": "No se ha podido guardar la automatización.",
-    "forProject": "Para {{name}}.",
     "noMatch": "Nada coincide con «{{query}}».",
     "chooseRepositories": "Elige repositorios…",
     "chooseAgent": "Elige un agente…",

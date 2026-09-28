@@ -60,8 +60,7 @@ const APPS = [
     routes: 'src/routes',
     features: 'src/features',
     product: 'consumer',
-    // `public`: pages that render no entity. `automations` left this list
-    // when the consumer got its module.
+    // `public`: pages that render no entity.
     allow: ['public'],
     kit: 'web',
   },

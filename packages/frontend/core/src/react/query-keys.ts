@@ -1,27 +1,8 @@
-/**
- * Prefix a generated hey-api query key with the feature name Oppenheimer persist
- * and invalidation already use (`queryKey[0] === 'users'`).
- */
-export function withFeaturePrefix<const T extends readonly unknown[]>(
-  feature: string,
-  key: T,
-): [string, ...T] {
-  return [feature, ...key];
-}
-
 /** Query keys of the signed-in user's own preferences. */
 export const userSettingsKeys = {
   all: ['userSettings'] as const,
   me: () => [...userSettingsKeys.all, 'me'] as const,
 };
-
-/**
- * The query key every organization member list starts with, whatever renders
- * it. It lives in the kernel so that whatever changes something those lists
- * are filtered by (a user's roles) can invalidate them without importing the
- * product package that lists them.
- */
-export const MEMBER_LISTS_KEY = ['organizations', 'members'] as const;
 
 /**
  * Query key factory for the `auth` feature. Defined here rather than in

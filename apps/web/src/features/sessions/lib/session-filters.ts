@@ -57,7 +57,7 @@ export function projectOptions(
 }
 
 /** `owner/repo` is how a session names its repository; the menu wants `repo`. */
-export function repositoryLabel(repository: string): string {
+function repositoryLabel(repository: string): string {
   return repository.slice(repository.lastIndexOf('/') + 1) || repository;
 }
 

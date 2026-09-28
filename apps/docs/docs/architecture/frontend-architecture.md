@@ -16,7 +16,7 @@ bootstrap belongs to the platform kit.
 
 | Package                   | Name                      | Holds                                                                                                  |
 | ------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `packages/frontend/core`      | `@oppenheimer/frontend-core`      | The kernel: `auth`, `users`, `user-settings`, `capabilities`, `analytics`, the InversifyJS container (`OppenheimerApp`, `TOKENS`), `config/`, `validation/` |
+| `packages/frontend/core`      | `@oppenheimer/frontend-core`      | The kernel: `auth`, `users`, `user-settings`, `capabilities`, `analytics`, the InversifyJS container (`OppenheimerApp`, `TOKENS`), `validation/` |
 | `packages/frontend/consumer`  | `@oppenheimer/frontend-consumer`  | The product: `sessions`, `hosts`, `installations`, and the account chrome (`organizations`, `profile`, `api-tokens`) |
 | `packages/frontend/api-client`| `@oppenheimer/api-client`         | The typed client generated from the API's OpenAPI spec                                                |
 | `packages/frontend/web`       | `@oppenheimer/frontend-web`       | The web platform kit, by concern: `shell`, `auth`, `table`, `layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`, `roles`, `hosts` |
@@ -154,5 +154,5 @@ row takes its policies from `ENDPOINT_POLICIES` in `@oppenheimer/shared/permissi
 — the same catalog the API's `@CheckPolicies` decorators are asserted against —
 keyed by the endpoint that row's screen reads, so a route the caller cannot
 open is never offered. The rows live in
-`apps/web/src/lib/nav.ts`, and `useAuthorizedNav` and `useAbility` from
-`@oppenheimer/frontend-web` filter them.
+`apps/web/src/lib/nav.ts`, and the kit's shell filters them with the caller's
+ability (`useAbilityState` in the kit's `shell` concern).
