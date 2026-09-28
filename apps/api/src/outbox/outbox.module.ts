@@ -14,10 +14,7 @@ import { OutboxRetentionProcessor } from './infrastructure/outbox-retention.proc
  */
 @Global()
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([OutboxMessageSchema]),
-    QueueModule,
-  ],
+  imports: [TypeOrmModule.forFeature([OutboxMessageSchema]), QueueModule],
   providers: [
     {
       provide: OutboxService,
