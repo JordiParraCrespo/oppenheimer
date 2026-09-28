@@ -30,7 +30,7 @@ ran it:
   and need diagnosing one at a time
 
 Fixing that is its own piece of work: port or retire each spec against the
-surface the console has now, then add `--project=web` to the CI job. Until then a green CI says
+surface the console has now, then add the `web` project to the e2e job in `scripts/ci/local.mjs`. Until then a green CI says
 nothing about the browser journeys, so run `pnpm --filter @oppenheimer/e2e e2e:web`
 locally when you touch them.
 

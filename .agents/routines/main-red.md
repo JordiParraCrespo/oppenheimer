@@ -1,11 +1,11 @@
 # Routine: get `main` green again
 
-`.github/workflows/ci.yml` runs every job on `main` every eight hours (at
-:17 past 00, 08 and 16 UTC). Pull requests get no GitHub CI; each one carries
-a green `pnpm ci:local` report instead (`.agents/skills/steward/SKILL.md`). A
-red scheduled run opens the one `main-red` issue, and the next green run closes
-it. This routine runs an hour after each scheduled run, and it is the owner of
-that issue.
+`.github/workflows/ci.yml` runs `pnpm ci:local --all` on `main` on the
+schedule its `cron` sets. Pull requests get no GitHub CI; each one carries a
+`pnpm ci:local` report instead (`.agents/skills/steward/SKILL.md`). A red
+scheduled run opens the `main-red` issue with the failed rows, and the next
+green run closes it. This routine runs an hour after each scheduled run, and it
+is the owner of that issue.
 
 ## 1. Is there anything to do?
 
@@ -24,16 +24,18 @@ pnpm install --frozen-lockfile
 pnpm ci:local --all
 ```
 
-- **It fails the same way.** Go to step 3.
-- **It passes.** Run the failing job's tests under load before believing it:
-  `go test -count=300 -cpu 1 -run <Test> ./<pkg>` with a few `yes > /dev/null`
-  running beside it, or `vitest run --sequence.shuffle --repeat 20` for a
-  TypeScript suite. A test that fails under load is a race to fix (step 3). If
-  it still passes, re-run the workflow once (`workflow_dispatch`) and comment
-  on the issue what you ran. That is the only re-run: a second red run is a
-  real failure.
-- **The job died before any test ran** (a runner lost, an install or image
-  pull that failed). Re-run the workflow once and say so on the issue.
+The scheduled run ran this same command, so it should fail the same way;
+go to step 3.
+
+When it passes here, the difference is the machine, not the program, and
+that difference is the bug to find. Read the failing step's log in the run,
+then look for what the runner has and this checkout does not: load (run the
+failing test under it, `go test -count=300 -cpu 1 -run <Test> ./<pkg>` with a
+few `yes > /dev/null` beside it, or `vitest run --repeat 20`), a service
+already listening, an environment variable the runner defines. A test that
+fails under load is a race in the code to fix in step 3. Re-run the workflow
+(`workflow_dispatch`) only when the job died before any step of `ci:local`
+ran (a lost runner, an install that failed), and say so on the issue.
 
 ## 3. Fix
 

@@ -118,26 +118,26 @@ When you add a file that mentions an optional app (CI, compose,
   already covers — see `.agents/rules/frontend-ui.md`
 - Conventional commits enforced via commitlint
 - Independent versioning per package via Changesets
-- No git hooks, and no CI on pull requests: **CI is local**. Before you push,
-  run `pnpm ci:local` (`scripts/ci/local.mjs`). It runs the workflow's jobs
-  (lint, Go, build and test, the API's integration suite, the API e2e suite
-  against the local stack) on what the branch touches against `origin/main`,
-  starting Docker when it needs to. Push only on a green run, and paste its
-  report (`.ci-local/report.md`) into the pull request. The report is the
-  merge gate: a pull request without a green one for its head is not ready
-- `.github/workflows/ci.yml` is the safety net. It runs everything on `main`
-  every eight hours, and on demand (`workflow_dispatch`). A red run opens a
-  `main-red` issue with the run's link, and the next green run closes it. An
-  open `main-red` issue comes before new work: reproduce it with
-  `pnpm ci:local --all` on that commit, and fix it in its own pull request
-- Both choose what to run the same way: `scripts/ci/affected.mjs` asks
-  Turborepo which packages the diff affects (a change in `packages/shared`
-  reaches every app that imports it), and the jobs build, test and package
-  only those. `--all`, the scheduled run, or a change to a file no package
-  owns (the workflow, the lockfile, `docker/`, `scripts/`) runs everything.
-  A new Docker image is a row in that script's `IMAGES`; a new root-level
-  file every package relies on is a pattern in its `GLOBAL_PATHS`. A new CI
-  step goes in both the workflow and `local.mjs`
+- No git hooks, and no CI on pull requests: **CI is local**. The pipeline is
+  `scripts/ci/local.mjs`: lint, Go, build and test, and, behind
+  `scripts/stack/stack.mjs up`, the API's integration and e2e suites. A new
+  CI step goes there and nowhere else. Before you push, commit and run
+  `pnpm ci:local`; push only on a green run, and paste its report
+  (`.ci-local/report.md`) into the pull request. No GitHub check gates a
+  pull request: whoever merges reads that report, and the scheduled run is
+  what catches a report that was wrong
+- `.github/workflows/ci.yml` runs that same program, `pnpm ci:local --all`,
+  on `main` every eight hours and on demand (`workflow_dispatch`), and then
+  builds the images. A red run opens a `main-red` issue with the failed
+  rows, and the next green run closes it. An open `main-red` issue comes
+  before new work: `pnpm ci:local --all` on that commit reproduces it
+- `scripts/ci/affected.mjs` chooses what runs: it asks Turborepo which
+  packages the diff against `origin/main` affects (a change in
+  `packages/shared` reaches every app that imports it). `--all`, or a change
+  to a file no package owns (the workflow, the lockfile, `docker/`,
+  `scripts/`), runs everything. A new Docker image is a row in its `IMAGES`;
+  a new root-level file every package relies on is a pattern in its
+  `GLOBAL_PATHS`
 
 ### Backend (`apps/api` + `packages/backend/*`)
 

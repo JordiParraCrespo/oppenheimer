@@ -7,17 +7,20 @@
  *   pnpm ci:local --base origin/feat   # against another base
  *   pnpm ci:local --skip e2e,integration
  *
- * Pull requests get no GitHub CI: waiting in a queue for a shared runner took
- * most of an hour for a few minutes of work. Every agent runs this instead,
- * and `.github/workflows/ci.yml` runs everything on main every eight hours as
- * the safety net. The jobs below are that workflow's, with the same
- * conditions, chosen from the same `affected.mjs` selection:
+ * This file is the pipeline. Pull requests get no GitHub CI: every agent
+ * runs this before it pushes, and `.github/workflows/ci.yml` runs
+ * `pnpm ci:local --all` on main every eight hours, so the report a pull
+ * request carries and the scheduled run are the same program. A new CI step
+ * goes here and nowhere else. The jobs, chosen by `affected.mjs`:
  *
  *   lint         Biome, the design-system lint, architecture, structure, flags
  *   go           vet, golangci-lint, tests, the runner for every target
  *   test         build, generated files committed, unit tests, bundle budget
  *   integration  the API's suite (Testcontainers, so Docker)
- *   e2e          the API suite against `scripts/stack/stack.mjs up`
+ *   e2e          the API suite against the stack
+ *
+ * Integration and e2e run after `scripts/stack/stack.mjs up`, and the stack
+ * comes down when they finish.
  *
  * It runs on the commit checked out, so commit first; it refuses a tree with
  * uncommitted changes to tracked files. A job stops at its first failed step;
@@ -26,8 +29,8 @@
  * `.ci-local/report.md` — paste it into the pull request. The exit code is
  * non-zero when any step failed.
  */
-import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,7 +38,6 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OUT = join(ROOT, '.ci-local');
 const JOBS = ['lint', 'go', 'test', 'integration', 'e2e'];
-const isRoot = process.getuid?.() === 0;
 
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -54,10 +56,6 @@ for (const job of skip) {
 
 function git(...gitArgs) {
   return execFileSync('git', gitArgs, { cwd: ROOT, encoding: 'utf8' }).trim();
-}
-
-function succeeds(command, commandArgs) {
-  return spawnSync(command, commandArgs, { cwd: ROOT, stdio: 'ignore' }).status === 0;
 }
 
 // ------------------------------------------------------------------ selection
@@ -132,38 +130,6 @@ function job(name, steps) {
 }
 
 const touches = (packages, name) => packages.includes(name);
-
-// ------------------------------------------------------------- docker, stack
-
-/** Starts dockerd when it is not running; returns the pid it started, if any. */
-async function ensureDocker() {
-  if (succeeds('docker', ['info'])) return null;
-  if (!isRoot || !succeeds('sh', ['-c', 'command -v dockerd'])) return null;
-  mkdirSync(OUT, { recursive: true });
-  const log = openSync(join(OUT, 'dockerd.log'), 'a');
-  const child = spawn('dockerd', [], { detached: true, stdio: ['ignore', log, log] });
-  child.unref();
-  for (let i = 0; i < 30; i++) {
-    if (succeeds('docker', ['info'])) return child.pid;
-    await new Promise((r) => setTimeout(r, 1_000));
-  }
-  return child.pid;
-}
-
-/**
- * Docker Hub answers anonymous pulls from a shared address with 429; the
- * same mirrors `stack.mjs` uses serve the official images.
- */
-function ensureImage(image) {
-  if (succeeds('docker', ['image', 'inspect', image])) return;
-  if (succeeds('docker', ['pull', '-q', image])) return;
-  for (const mirror of ['mirror.gcr.io/library/', 'public.ecr.aws/docker/library/']) {
-    if (succeeds('docker', ['pull', '-q', `${mirror}${image}`])) {
-      succeeds('docker', ['tag', `${mirror}${image}`, image]);
-      return;
-    }
-  }
-}
 
 // ----------------------------------------------------------------------- run
 
@@ -283,53 +249,35 @@ const needsE2e =
   (touches(packages, '@oppenheimer/api') || touches(packages, '@oppenheimer/e2e')) &&
   !skip.has('e2e');
 // oppenheimer:end e2e
-let dockerd = null;
-let stackStarted = false;
-try {
-  if (needsIntegration) {
-    dockerd = await ensureDocker();
-    if (!succeeds('docker', ['info'])) {
-      rows.push({
-        job: 'integration',
-        name: 'Docker is not running and could not be started',
-        ok: false,
-        seconds: 0,
-      });
-    } else {
-      for (const image of ['postgres:16-alpine', 'redis:7-alpine']) ensureImage(image);
-      job('integration', [
-        ['build the API', 'pnpm', ['turbo', 'run', 'build', '--filter=@oppenheimer/api...']],
-        // Ryuk is one more image to pull from Docker Hub; every suite stops
-        // its own containers.
-        [
-          'pnpm test:integration',
-          'pnpm',
-          ['test:integration'],
-          { env: { TESTCONTAINERS_RYUK_DISABLED: 'true' } },
-        ],
-      ]);
+for (const name of ['integration', 'e2e']) if (skip.has(name)) job(name, []);
+
+// Both suites need the stack's services: `stack.mjs up` uses a Postgres and
+// Redis already listening (the workflow's service containers), and otherwise
+// starts them under Docker, starting the daemon in a sandbox that ships it
+// stopped. Testcontainers then needs that same daemon, so where Postgres and
+// Redis run outside Docker, Docker still has to be running.
+if (needsIntegration || needsE2e) {
+  try {
+    if (step('services', 'stack up', 'node', ['scripts/stack/stack.mjs', 'up'])) {
+      if (needsIntegration) {
+        job('integration', [
+          ['build the API', 'pnpm', ['turbo', 'run', 'build', '--filter=@oppenheimer/api...']],
+          // Ryuk is one more image to pull from Docker Hub; every suite
+          // stops its own containers.
+          [
+            'pnpm test:integration',
+            'pnpm',
+            ['test:integration'],
+            { env: { TESTCONTAINERS_RYUK_DISABLED: 'true' } },
+          ],
+        ]);
+      }
+      // oppenheimer:begin e2e
+      if (needsE2e) job('e2e', [['e2e:api', 'pnpm', ['--filter', '@oppenheimer/e2e', 'e2e:api']]]);
+      // oppenheimer:end e2e
     }
-  } else if (skip.has('integration')) {
-    job('integration', []);
-  }
-  // oppenheimer:begin e2e
-  if (needsE2e) {
-    stackStarted = true;
-    job('e2e', [
-      ['stack up', 'node', ['scripts/stack/stack.mjs', 'up']],
-      ['e2e:api', 'pnpm', ['--filter', '@oppenheimer/e2e', 'e2e:api']],
-    ]);
-  } else if (skip.has('e2e')) {
-    job('e2e', []);
-  }
-  // oppenheimer:end e2e
-} finally {
-  if (stackStarted)
+  } finally {
     spawnSync('node', ['scripts/stack/stack.mjs', 'down'], { cwd: ROOT, stdio: 'inherit' });
-  if (dockerd) {
-    try {
-      process.kill(dockerd, 'SIGTERM');
-    } catch {}
   }
 }
 
