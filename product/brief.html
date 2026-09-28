@@ -100,6 +100,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="#grok">Grok Bot lessons</a></li>
   <li><a href="#herdr">herdr lessons</a></li>
   <li><a href="#devday">Reviewing at agent speed</a></li>
+  <li><a href="#landscape">Landscape</a></li>
   <li><a href="#phases">Phases</a></li>
   <li><a href="#questions">Open questions</a></li>
 </ul></nav>
@@ -734,6 +735,9 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 
 <h2 id="devday">Reviewing at the speed agents write</h2>
 <p>Research from 2026-09-27 (note 14): review, not writing, is now the bottleneck. Teams with high AI adoption merge far more PRs, while review time and PR size grow faster. The answer is to review faster, not to write less. Every PR lands in a lane. <strong>Auto</strong> PRs merge under a readable per-repository policy — docs, tests, formatting, safe bumps, refactors that provably change nothing — proven first in a dry run over the last 100 merged PRs. <strong>Quick</strong> PRs take one key in triage, with the brief on screen. <strong>Deep</strong> PRs get a <strong>review session</strong>, prepared on the developer's host before they open the PR: the checkout built, the affected checks run, the app started, a context pack of callers, history, rules and the author's transcript loaded, and a brief with its findings drafted as pending comments. Other tools read diffs; this one ran the code.</p>
+
+<h2 id="landscape">The landscape, September 2026</h2>
+<p>Note 15 maps five groups: AI review (CodeRabbit, Greptile, Bugbot, Copilot, Codex, Claude, Macroscope, Baz…), agent consoles (Orca, Superset, Conductor, the Codex and Copilot apps, Cursor…), merge tools (gh-stack, Agent Merge, Graphite, Aviator, Trunk, Mergify), analytics (Swarmia, DX, Jellyfish, LinearB) and sandboxes (Modal, E2B, Daytona, Namespace). Almost every reviewer reads the diff and none makes running the code the review. Auto-approve by readable policy is real (Macroscope, Copilot), but nobody acts in the user's name after running the code. Worktree consoles are crowded and being commoditised, and two funded ones shut down. The open ground is a browser console over hosts you own and the PR back half: agent PRs wait 17.6 hours for review against 3.4 for unassisted ones (LinearB, 8.1M PRs).</p>
 
 <h2 id="phases">Phases</h2>
 <div class="note"><strong>Superseded by the MVP order of work above.</strong> The original phase table put direct-mode sessions first and VMs in phase 6; a later revision moved VMs into the MVP; the 2026-09-12 reset took them out again. After the MVP, the slices in order are: VMs on the runner host with sleep tiers, the accounts model, Create PR and diff view, auto-fix and PR subscriptions, accounts usage meters and headroom routing, delegation between sessions, routines and triggers, cloud provider adapters, Tailscale mode and signed updates. <strong>Superseded on 2026-09-26</strong> by <code>next-steps/</code>: 0.2 Git/GitHub (with a Pull requests area in the rail: first a PR list and a keyboard triage that always opens the next PR to review, then a rule-based queue, saved views and analytics), 0.3 Kanban, 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, and multi-account with no version yet. VMs are not placed.</div>

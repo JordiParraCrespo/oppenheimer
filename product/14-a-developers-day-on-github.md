@@ -336,6 +336,9 @@ automation editor like any other:
 The auto-merge policy's hard lines live on the same automation, so
 "how this repository is reviewed" is one page.
 
+The wider market, and what to take from it (a learning loop, the policy
+as a file, a ready-to-merge agent), is note 15.
+
 ## 6. Also worth building
 
 These are kept from the first version because they make the same person
