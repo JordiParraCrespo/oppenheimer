@@ -191,6 +191,17 @@ describe('API tokens & scopes (integration)', () => {
       'integration',
       user.id,
     ]);
+    // Written behind the application's back, so bump what its writers would
+    // (`authz-version.repository.ts`): a global role, the user's global
+    // assignments, and the scoped ones the delete above removed. Without it the
+    // cached role set from the previous test would still answer.
+    await dataSource.query('UPDATE "role_catalog_version" SET "version" = "version" + 1');
+    await dataSource.query(
+      `INSERT INTO "user_role_version" ("userId", "version") VALUES ($1, 2)
+       ON CONFLICT ("userId") DO UPDATE SET "version" = "user_role_version"."version" + 1`,
+      [user.id],
+    );
+    await dataSource.query('UPDATE "organization" SET "roleVersion" = "roleVersion" + 1');
   }
 
   // --- the migration -------------------------------------------------------
