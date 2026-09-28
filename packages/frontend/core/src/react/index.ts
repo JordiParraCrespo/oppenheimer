@@ -47,6 +47,12 @@ export {
   shouldDehydrateQuery,
 } from './persistence';
 export { MEMBER_LISTS_KEY, withFeaturePrefix } from './query-keys';
+export {
+  createQueryClientConfig,
+  isUnauthorized,
+  type SessionExpiryTarget,
+  shouldRetryQuery,
+} from './session-expiry';
 export { shareEntities } from './share-entities';
 export { userSettingsKeys, useUpdateUserSettings, useUserSettings } from './user-settings.queries';
 export {

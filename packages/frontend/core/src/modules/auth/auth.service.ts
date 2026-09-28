@@ -125,6 +125,25 @@ export class AuthService {
   }
 
   /**
+   * The server stopped honouring the session — it expired, or was revoked from
+   * another device — while the app still believed in it.
+   *
+   * Not a logout: the server has already forgotten the session, so there is
+   * nothing to sign out of, and the analytics identity is kept because the
+   * same person will most likely sign straight back in. Flipping the store is
+   * what matters: the router's guards read it and send the user to /login.
+   *
+   * Returns whether the store changed, so a burst of failing queries expires
+   * the session once.
+   */
+  expireSession(): boolean {
+    if (!this.store.getState().isAuthenticated) return false;
+    this.store.setState({ isAuthenticated: false });
+    this.identityEpoch += 1;
+    return true;
+  }
+
+  /**
    * Emits the sign-in event for an OAuth round-trip, if one just completed.
    *
    * The marker is cleared first so a reload can't double-count it. Note this
