@@ -17,7 +17,10 @@ import { UserResponseDto } from './dtos/user.response.dto';
  * user is not the one looking. `image` is round-tripped rather than skipped: the
  * avatar endpoints write it, and mapping it both ways means an update that does
  * not mention the avatar leaves whatever is there — including one a social
- * provider supplied at sign-up — exactly as it was.
+ * provider supplied at sign-up — exactly as it was. The admin plugin's ban
+ * columns (`banned`, `banReason`, `banExpires`) are read but never written:
+ * a profile save racing a ban would otherwise write the stale `banned = false`
+ * back over it.
  */
 @Injectable()
 export class UserMapper implements Mapper<UserEntity, UserOrmEntity, UserResponseDto> {
@@ -54,6 +57,10 @@ export class UserMapper implements Mapper<UserEntity, UserOrmEntity, UserRespons
         role: record.role,
         isActive: record.isActive,
         emailVerified: record.emailVerified,
+        // Defaulted: the record `save` hands back is the one `toPersistence`
+        // built, which leaves the ban columns unset.
+        banned: record.banned ?? false,
+        banExpires: record.banExpires ?? null,
       },
     });
   }

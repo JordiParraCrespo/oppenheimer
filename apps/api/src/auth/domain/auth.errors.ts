@@ -60,8 +60,8 @@ export const AuthErrors = {
   },
   /**
    * One opaque answer for every unusable credential — unknown, revoked,
-   * expired, or owned by an account that is gone or deactivated. Telling the
-   * caller which it was would hand them a probing oracle.
+   * expired, or owned by an account that is gone, deactivated or banned.
+   * Telling the caller which it was would hand them a probing oracle.
    */
   INVALID_CREDENTIAL: {
     code: 'TOKEN_003',

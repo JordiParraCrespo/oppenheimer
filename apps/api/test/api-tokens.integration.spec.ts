@@ -644,6 +644,116 @@ describe('API tokens & scopes (integration)', () => {
     });
   });
 
+  // --- the owner's standing -----------------------------------------------
+
+  describe('owner standing', () => {
+    /** A fresh account, so its ban or deactivation touches no other test. */
+    let owner: { id: string; email: string; sessionToken: string };
+    let token: string;
+
+    beforeAll(async () => {
+      owner = await signUp('standing@example.com');
+      const created = await call('/api/v1/tokens', {
+        method: 'POST',
+        token: owner.sessionToken,
+        body: { name: 'standing', scopes: ['tokens:read'] },
+      });
+      expect(created.status).toBe(201);
+      token = (created.body as { token: string }).token;
+    });
+
+    const setStanding = (sql: string) =>
+      dataSource.query(`UPDATE "user" SET ${sql} WHERE "id" = $1`, [owner.id]);
+
+    it('accepts the token of an owner in good standing', async () => {
+      expect((await call('/api/v1/me/credential', { token })).status).toBe(200);
+    });
+
+    it('refuses the token of an owner banned with no expiry', async () => {
+      await setStanding(`"banned" = true, "banExpires" = NULL`);
+
+      const response = await call('/api/v1/me/credential', { token });
+      expect(response.status).toBe(401);
+      expect(response.body?.code).toBe('TOKEN_003');
+    });
+
+    it('refuses the token while the ban has not expired', async () => {
+      await setStanding(`"banned" = true, "banExpires" = now() + interval '1 hour'`);
+
+      const response = await call('/api/v1/me/credential', { token });
+      expect(response.status).toBe(401);
+      expect(response.body?.code).toBe('TOKEN_003');
+    });
+
+    it('refuses a banned owner’s session with the same answer as no session', async () => {
+      // A ban written straight to the table leaves the session rows alive (the
+      // plugin's own ban deletes them); the rule still refuses them.
+      await setStanding(`"banned" = true, "banExpires" = NULL`);
+
+      const banned = await call('/api/v1/users/me', { token: owner.sessionToken });
+      const anonymous = await call('/api/v1/users/me');
+      expect(banned.status).toBe(401);
+      expect(banned.body?.code).toBe('AUTH_001');
+      expect(banned.body?.detail).toBe(anonymous.body?.detail);
+    });
+
+    it('accepts the token again once the ban has expired', async () => {
+      await setStanding(`"banned" = true, "banExpires" = now() - interval '1 minute'`);
+
+      expect((await call('/api/v1/me/credential', { token })).status).toBe(200);
+      expect((await call('/api/v1/users/me', { token: owner.sessionToken })).status).toBe(200);
+    });
+
+    it('refuses the token and the session of a deactivated owner', async () => {
+      await setStanding(`"banned" = false, "banExpires" = NULL, "isActive" = false`);
+
+      const byToken = await call('/api/v1/me/credential', { token });
+      expect(byToken.status).toBe(401);
+      expect(byToken.body?.code).toBe('TOKEN_003');
+
+      const bySession = await call('/api/v1/users/me', { token: owner.sessionToken });
+      expect(bySession.status).toBe(401);
+      expect(bySession.body?.code).toBe('AUTH_001');
+
+      await setStanding(`"isActive" = true`);
+    });
+
+    it('signs a deactivated account out everywhere, through the outbox', async () => {
+      // Only a change from active raises the event.
+      await setStanding(`"banned" = false, "banExpires" = NULL, "isActive" = true`);
+      const { CommandBus } = await import('@nestjs/cqrs');
+      const { UpdateUserCommand } = await import(
+        '../src/users/commands/update-user/update-user.command'
+      );
+      const countSessions = async () =>
+        Number(
+          (
+            await dataSource.query('SELECT count(*)::int AS n FROM "session" WHERE "userId" = $1', [
+              owner.id,
+            ])
+          )[0].n,
+        );
+      expect(await countSessions()).toBeGreaterThan(0);
+
+      await app
+        .get(CommandBus)
+        .execute(new UpdateUserCommand({ userId: owner.id, isActive: false }));
+
+      // The relay is woken on commit; give it a moment to deliver.
+      for (let i = 0; i < 50 && (await countSessions()) > 0; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      expect(await countSessions()).toBe(0);
+
+      const rows: { status: string }[] = await dataSource.query(
+        `SELECT "status" FROM "outbox_message"
+         WHERE "eventName" = 'UserDeactivatedDomainEvent' AND "aggregateId" = $1`,
+        [owner.id],
+      );
+      expect(rows).toEqual([{ status: 'processed' }]);
+    });
+  });
+
   // --- organization restriction -------------------------------------------
 
   describe('organization restriction', () => {
