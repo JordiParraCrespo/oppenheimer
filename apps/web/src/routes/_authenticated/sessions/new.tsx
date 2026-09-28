@@ -1,4 +1,3 @@
-import { RouteError } from '@oppenheimer/frontend-web';
 import { createFileRoute } from '@tanstack/react-router';
 import { NewSessionScreen } from '@/features/sessions/screens/new-session';
 
@@ -13,9 +12,6 @@ import { NewSessionScreen } from '@/features/sessions/screens/new-session';
  * machine it paired. Unknown keys are carried through, as `__root.tsx` asks.
  */
 export const Route = createFileRoute('/_authenticated/sessions/new')({
-  // Its own boundary, so a thrown render replaces this pane and not the
-  // shell around it: without one the error climbs to `_authenticated`.
-  errorComponent: RouteError,
   component: NewSessionScreen,
   staticData: { pane: 'full' },
   validateSearch: (search: Record<string, unknown>): { project?: string; host?: string } => ({

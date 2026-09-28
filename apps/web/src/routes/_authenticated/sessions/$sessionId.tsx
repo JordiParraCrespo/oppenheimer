@@ -1,4 +1,3 @@
-import { RouteError } from '@oppenheimer/frontend-web';
 import { createFileRoute } from '@tanstack/react-router';
 import { SessionScreen } from '@/features/sessions/screens/session';
 
@@ -8,9 +7,6 @@ import { SessionScreen } from '@/features/sessions/screens/session';
  * own; `staticData.pane` is read by `AppShell`.
  */
 export const Route = createFileRoute('/_authenticated/sessions/$sessionId')({
-  // Its own boundary, so a thrown render replaces this pane and not the
-  // shell around it: without one the error climbs to `_authenticated`.
-  errorComponent: RouteError,
   component: SessionRoute,
   staticData: { pane: 'full' },
 });

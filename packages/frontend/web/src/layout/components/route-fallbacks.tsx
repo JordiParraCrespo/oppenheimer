@@ -1,6 +1,5 @@
 import { Button, EmptyState } from '@oppenheimer/design-system-web';
 import { CircleAlert, Compass } from '@oppenheimer/design-system-web/icons';
-import { AppError } from '@oppenheimer/frontend-core';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useRouter } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
@@ -45,17 +44,18 @@ export function RouteNotFound({ children }: { children?: ReactNode }) {
  * `errorComponent` without a cast.
  *
  * The message shown is never the error's own: what a bundler throws is not a
- * sentence anyone can act on. A failure the API answered is resolved like any
- * other — by its code, into the reader's language — and its code and
- * correlation id are shown, so a bug report can quote them. Anything else gets
- * the fallback sentence: a render error has no status, and the resolver would
- * otherwise blame the connection for it.
+ * sentence anyone can act on. A failure that names a code — the API's, or a
+ * repository's fallback — is resolved like any other, into the reader's
+ * language, and its code and correlation id are shown so a bug report can
+ * quote them. Anything else gets the fallback sentence: a render error has no
+ * status either, and the resolver would otherwise blame the connection for it.
  */
 export function RouteError({ error }: { error: unknown }) {
   const { t } = useTranslation();
   const router = useRouter();
   const resolveError = useErrorMessage();
-  const resolved = error instanceof AppError ? resolveError(error) : undefined;
+  const resolution = resolveError(error);
+  const resolved = resolution.code ? resolution : undefined;
 
   return (
     <EmptyState className="my-auto">

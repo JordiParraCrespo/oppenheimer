@@ -1,4 +1,3 @@
-import { RouteError } from '@oppenheimer/frontend-web';
 import { createFileRoute } from '@tanstack/react-router';
 import { AddHostScreen } from '@/features/hosts/screens/add-host';
 
@@ -10,9 +9,6 @@ import { AddHostScreen } from '@/features/hosts/screens/add-host';
  * spacing.
  */
 export const Route = createFileRoute('/_authenticated/settings/hosts/new')({
-  // Its own boundary, so a thrown render replaces this pane and not the
-  // shell around it: without one the error climbs to `_authenticated`.
-  errorComponent: RouteError,
   component: SettingsAddHost,
 });
 

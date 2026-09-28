@@ -1,4 +1,3 @@
-import { RouteError } from '@oppenheimer/frontend-web';
 import { createFileRoute } from '@tanstack/react-router';
 import { ProfileSettingsScreen } from '@/features/profile/screens/profile-settings';
 
@@ -9,9 +8,6 @@ import { ProfileSettingsScreen } from '@/features/profile/screens/profile-settin
  * as `__root.tsx` asks.
  */
 export const Route = createFileRoute('/_authenticated/settings/profile')({
-  // Its own boundary, so a thrown render replaces this pane and not the
-  // shell around it: without one the error climbs to `_authenticated`.
-  errorComponent: RouteError,
   component: ProfileSettingsScreen,
   // The link carries `1`; the router validates its own output again, when
   // the value is already `true` — refusing that stripped it on arrival.

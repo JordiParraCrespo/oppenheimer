@@ -56,8 +56,8 @@ export const Route = createFileRoute('/_authenticated')({
     }
   },
   component: AuthenticatedShell,
-  // A 404 renders inside the shell, keeping the sidebar. A render error caught
-  // here replaces the shell too, so each pane route has its own boundary.
+  // A 404 keeps the shell. A render error here replaces it, so the panes have
+  // the router's `defaultErrorComponent`; this catches what the shell throws.
   errorComponent: RouteError,
   notFoundComponent: NotFoundScreen,
 });
