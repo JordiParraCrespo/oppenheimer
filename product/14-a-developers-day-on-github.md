@@ -271,23 +271,39 @@ Code gathers it, so the agent does not have to guess:
 
 ### 5.3 The brief
 
-What you see first, above the diff:
+One format for every lane. The Quick lane's summary agent writes the top
+half, and the Deep lane's review session writes all of it. It is shown in
+the console above the diff, and posted on the PR as one comment, edited
+in place on every push and never re-posted.
 
-- **Purpose**, in two lines.
-- **Reading order:** the core change first, callers next, tests last.
-  Code computes this from the import graph; the agent does not choose it.
-- **What it ran:** the commands and their results. For example: "Ran the
-  `orders` tests: 48 passed. Started the app; checkout with an empty cart
-  returns 400."
-- **Findings**, each tied to a line, with a severity. They are drafted as
-  pending review comments: `enter` keeps one, `e` edits it, `x` drops it.
-- **Questions it could not answer.** These are usually the questions for
-  the author.
-- **The lane**, and why.
+The shape starts from CodeRabbit's walkthrough (a screenshot the owner
+shared on 2026-09-28): a walkthrough paragraph, changes grouped into
+cohorts in a table, then priority, estimated review effort, change type
+and merge risk pinned to a commit, with pre-merge checks and "finishing
+touches" folded underneath. We keep that shape. What changes is **who
+decides each field** and **what the agent actually ran**:
 
-Pullpo's AI analysis gives the purpose, the relevant files and
-suggestions, from the diff. The brief adds the part that needs a
-machine: it ran the code.
+| Field | CodeRabbit | Ours |
+|-------|------------|------|
+| **Walkthrough** | Two lines from the diff | Two lines from the diff and the context pack (§5.2): the linked issue and the history of the changed lines, not only the diff |
+| **Changes** | Files grouped into cohorts, each with a summary | The same table, but code groups the cohorts (by package and directory, along the import graph) and orders them as the **reading order**: core change, then callers, then tests. The agent only writes each cohort's summary |
+| **Lane** | — | Auto, Quick or Deep, with Jev's probabilities (§3) |
+| **Priority** | The model's guess (Low) | Labels, the base branch and PRs stacked on this one (0.2 §8.2). Jev's *urgent?* shows only as a chip |
+| **Estimated review effort** | A 1–5 score and minutes | The formula's minutes (0.2 §3.5), raised one band by Jev's effort score when it disagrees, never lowered |
+| **Change type** | *Other* for a skill deletion | The conventional-commit prefix when there is one, Jev's type above 0.9 when there is not, otherwise *unclassified*, never *Other* |
+| **Merge risk, up to `<sha>`** | A level and a sentence | A level and the reasons: risky paths touched, Jev's auth, data and *changes behaviour?* answers, findings. Pinned to the head commit like theirs, and marked stale in the console the moment a new push lands |
+| **What it ran** | — | The commands and their results, from the session's terminal. For example: "`pnpm test --filter orders`: 48 passed. Started the app; an empty cart returns 400." This is the row nobody else can fill |
+| **Findings** | Inline comments | Drafted as a pending review in the user's name: `enter` keeps one, `e` edits it, `x` drops it. Nothing is posted until the user, or the Auto lane's policy, submits |
+| **Questions for the author** | — | What the agent could not answer from the code, the history or a run |
+| **Pre-merge checks** | Its own checks (title, description, docstrings…) | The auto-merge policy's lines (§4.2), ticked or crossed, plus the required GitHub checks. The same list that decides whether it merges |
+| **Finishing touches** | Buttons to generate docstrings or tests | Actions that start a session on the PR's branch: *add tests*, *split into a stack* (§6.6), *fix findings*. They push to the PR as the user |
+
+Two things from the screenshot are deliberately not copied. A change type
+of *Other* is a classifier with no confident answer that shows one
+anyway; our gate shows *unclassified*. And a priority the model infers
+from the diff alone (the screenshot's *Low*) is exactly what the Jev
+spike showed is unreliable (0.2 §8.6), so priority stays with labels and
+rules.
 
 ### 5.4 Talking to it
 
