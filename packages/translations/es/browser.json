@@ -604,10 +604,6 @@
       "oldest": "Más antiguas primero",
       "name": "Nombre"
     },
-    "agents": {
-      "claude-code": "Claude Code",
-      "codex": "Codex"
-    },
     "row": {
       "actions": "Acciones de la sesión",
       "move": "Mover a un proyecto…",

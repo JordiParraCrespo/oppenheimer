@@ -19,13 +19,9 @@ import { RUN_WINDOWS } from '@oppenheimer/shared/automations';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ChoiceToken } from '../components/choice-token';
-import {
-  RUN_STATUS_TABS,
-  RUNS_PAGE_SIZE,
-  type RunStatusTab,
-  useRunsFilters,
-} from '../hooks/use-runs-filters';
+import { RUNS_PAGE_SIZE, useRunsFilters } from '../hooks/use-runs-filters';
 import { runState, runTitle } from '../lib/automation-view';
+import { RUN_STATUS_TABS, type RunStatusTab } from '../lib/runs-search';
 import { clock, monthDay } from '../lib/time';
 import { automationTriggerText } from '../lib/trigger-text';
 

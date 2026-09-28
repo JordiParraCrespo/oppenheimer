@@ -83,11 +83,6 @@ export class ThingsRepository {
 }
 ```
 
-Where the generated SDK names collide across controllers (`list6`,
-`revoke3`), call `heyApiClient.get<{ 200: ThingResponseDto[] }>({ url })`
-with the status-keyed map instead; `hosts.repository.ts` explains why the map
-is needed.
-
 ```ts
 // things.service.ts: the use cases; inject the repository by token
 @injectable()

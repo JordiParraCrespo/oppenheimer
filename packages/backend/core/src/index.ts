@@ -4,6 +4,7 @@ export {
   ApiProblemResponse,
   type ApiProblemResponseOptions,
 } from './decorators/api-problem-response.decorator';
+export { nullableEnum } from './decorators/nullable-enum';
 export { InvalidParamDto, ProblemDetailsDto } from './dtos/problem-details.dto';
 export {
   AppError,

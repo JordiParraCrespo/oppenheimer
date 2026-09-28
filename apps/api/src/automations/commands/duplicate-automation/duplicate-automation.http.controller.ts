@@ -43,7 +43,6 @@ export class DuplicateAutomationHttpController {
   @CheckPolicies({ action: 'create', subject: 'Automation' })
   @RequireScopes('automations:write')
   @ApiOperation({
-    operationId: 'duplicateAutomation',
     summary: 'Duplicate an automation',
     description:
       'A copy named after the original, owned by the caller, with the same instructions, place and triggers and a first revision of its own.',

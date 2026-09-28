@@ -11,14 +11,17 @@ import { OrganizationsErrors } from '../organizations.errors';
  */
 
 const organizations = vi.hoisted(() => ({
-  list: vi.fn(),
-  create: vi.fn(),
-  update: vi.fn(),
+  listOrganizations: vi.fn(),
+  createOrganization: vi.fn(),
+  updateOrganization: vi.fn(),
 }));
 
-vi.mock('@oppenheimer/api-client', () => ({
-  OrganizationsApi: organizations,
-}));
+vi.mock('@oppenheimer/api-client', () => ({ heyApiSdk: organizations }));
+
+/** A generated SDK call's result: the body, and no error. */
+function ok(data: unknown) {
+  return { data, error: undefined, response: new Response(null, { status: 200 }) };
+}
 
 const { OrganizationsRepository } = await import('../organizations.repository');
 
@@ -44,7 +47,7 @@ describe('OrganizationsRepository', () => {
 
   describe('findAll', () => {
     it('maps the response into entities, parsing the dates', async () => {
-      organizations.list.mockResolvedValue([organizationDto()]);
+      organizations.listOrganizations.mockResolvedValue(ok([organizationDto()]));
 
       const [organization] = await repository.findAll();
 
@@ -55,7 +58,7 @@ describe('OrganizationsRepository', () => {
     });
 
     it('normalises an absent logo to null', async () => {
-      organizations.list.mockResolvedValue([organizationDto({ logo: undefined })]);
+      organizations.listOrganizations.mockResolvedValue(ok([organizationDto({ logo: undefined })]));
 
       expect((await repository.findAll())[0].logo).toBeNull();
     });
@@ -63,13 +66,13 @@ describe('OrganizationsRepository', () => {
     it('returns an empty list for an empty response body', async () => {
       // `[]` from the server genuinely is no organizations, and must not be
       // confused with the failure below.
-      organizations.list.mockResolvedValue([]);
+      organizations.listOrganizations.mockResolvedValue(ok([]));
 
       await expect(repository.findAll()).resolves.toEqual([]);
     });
 
     it('treats an absent body as a failed read, not an empty collection', async () => {
-      organizations.list.mockResolvedValue(undefined);
+      organizations.listOrganizations.mockResolvedValue(ok(undefined));
 
       const error = await repository.findAll().catch((thrown: AppError) => thrown);
 
@@ -79,24 +82,28 @@ describe('OrganizationsRepository', () => {
   });
 
   it('creates an organization and maps the reply into an entity', async () => {
-    organizations.create.mockResolvedValue({
-      id: 'org-2',
-      name: 'Acme',
-      slug: 'acme',
-      logo: null,
-      metadata: null,
-      createdAt: '2026-08-01T00:00:00.000Z',
-    });
+    organizations.createOrganization.mockResolvedValue(
+      ok({
+        id: 'org-2',
+        name: 'Acme',
+        slug: 'acme',
+        logo: null,
+        metadata: null,
+        createdAt: '2026-08-01T00:00:00.000Z',
+      }),
+    );
 
     const created = await repository.create({ name: 'Acme', slug: 'acme' });
 
-    expect(organizations.create).toHaveBeenCalledWith({ name: 'Acme', slug: 'acme' });
+    expect(organizations.createOrganization).toHaveBeenCalledWith({
+      body: { name: 'Acme', slug: 'acme' },
+    });
     expect(created).toMatchObject({ id: 'org-2', name: 'Acme', slug: 'acme', logo: null });
     expect(created.createdAt).toBeInstanceOf(Date);
   });
 
   it('treats an absent reply to a create as a failure', async () => {
-    organizations.create.mockResolvedValue(undefined);
+    organizations.createOrganization.mockResolvedValue(ok(undefined));
 
     const error = await repository.create({ name: 'Acme' }).catch((e) => e as AppError);
 

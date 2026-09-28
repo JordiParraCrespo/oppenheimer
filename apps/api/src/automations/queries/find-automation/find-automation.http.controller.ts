@@ -38,7 +38,7 @@ export class FindAutomationHttpController {
   @Version('1')
   @CheckPolicies({ action: 'read', subject: 'Automation' })
   @RequireScopes('automations:read')
-  @ApiOperation({ operationId: 'getAutomation', summary: 'Read one automation' })
+  @ApiOperation({ summary: 'Read one automation' })
   @ApiResponse({ status: 200, type: AutomationResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Automation not found', code: 'AUTOMATIONS_001' })
   async find(

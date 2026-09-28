@@ -42,7 +42,9 @@ export class UpdateRoleHttpController {
   @Version('1')
   @CheckPolicies({ action: 'update', subject: 'Role' })
   @RequireScopes('roles:write')
-  @ApiOperation({ summary: 'Update a role (description and/or permissions)' })
+  @ApiOperation({
+    summary: 'Update a role (description and/or permissions)',
+  })
   @ApiResponse({ status: 200, type: RoleResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Role not found', code: 'ROLE_001' })
   async update(

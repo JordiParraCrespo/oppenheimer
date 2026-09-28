@@ -1,7 +1,11 @@
 'use client';
 
 import type { UpdateOrganizationRequest } from '@oppenheimer/api-client';
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import {
+  refetchEverythingForNewIdentity,
+  useQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import type { CreateOrganizationDto } from '@oppenheimer/shared';
 import {
   skipToken,
@@ -96,7 +100,7 @@ export function useCreateOrganization(
         ...(current ?? []),
         organization,
       ]);
-      await queryClient.invalidateQueries();
+      await refetchEverythingForNewIdentity(queryClient);
     }),
   });
 }
@@ -112,9 +116,10 @@ export interface ClaimPersonalWorkspaceVariables {
  * Claim the personal workspace — name the row sign-up provisioned, or create
  * one for the account that has none.
  *
- * Drops the whole cache for the same reason `useCreateOrganization` does: the
- * workspace's name and address are what the shell, the nav and every
- * org-scoped list were answers about.
+ * With no row to name, this creates the workspace, which changes where the
+ * caller stands: every cached read is refetched, as `useCreateOrganization`
+ * does. Naming an existing row changes only that row, so it is patched into
+ * the list.
  */
 export function useClaimPersonalWorkspace(
   options?: UseMutationOptions<OrganizationEntity, Error, ClaimPersonalWorkspaceVariables>,
@@ -125,13 +130,13 @@ export function useClaimPersonalWorkspace(
   return useMutation({
     mutationFn: (variables: ClaimPersonalWorkspaceVariables) =>
       app.organizations.claimPersonalWorkspace(variables),
-    ...withCacheOnSuccess(options, (organization) => {
+    ...withCacheOnSuccess(options, async (organization, { existing }) => {
       queryClient.setQueryData<OrganizationEntity[]>(organizationsKeys.list(), (current) =>
         current?.some((row) => row.id === organization.id)
           ? current.map((row) => (row.id === organization.id ? organization : row))
           : [...(current ?? []), organization],
       );
-      queryClient.invalidateQueries({ queryKey: organizationsKeys.lists() });
+      if (!existing) await refetchEverythingForNewIdentity(queryClient);
     }),
   });
 }

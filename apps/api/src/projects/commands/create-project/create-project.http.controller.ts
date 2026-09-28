@@ -32,7 +32,6 @@ export class CreateProjectHttpController {
   @CheckPolicies({ action: 'create', subject: 'Project' })
   @RequireScopes('projects:write')
   @ApiOperation({
-    operationId: 'createProject',
     summary: 'Create a project',
     description:
       'A saved scope: the repositories its sessions usually work on, each with a base branch and whether it is offered by default, plus the host and agent a new session starts with. The defaults are offered, never applied. The slug is derived from the name once and never changes.',

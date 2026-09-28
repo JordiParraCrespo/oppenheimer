@@ -25,7 +25,7 @@ import { RevokeSessionCommand } from './revoke-session.command';
 @UseGuards(ApiAuthGuard)
 @UsesBetterAuthSession()
 @Controller('profile')
-export class RevokeSessionHttpController {
+export class RevokeProfileSessionHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Delete('sessions/:id')

@@ -70,7 +70,6 @@ export class PasteSessionImageHttpController {
     },
   })
   @ApiOperation({
-    operationId: 'pasteSessionImage',
     summary: 'Paste an image into a session’s prompt',
     description:
       'The agent reads its host’s clipboard, not the browser’s, so a pasted screenshot comes here; the host’s runner pulls it and pastes its path into the window.',

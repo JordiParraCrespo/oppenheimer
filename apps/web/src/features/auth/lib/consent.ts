@@ -1,11 +1,15 @@
 import { AppError, type SdkResult, unwrapBody } from '@oppenheimer/frontend-core';
+import { searchText } from '@oppenheimer/frontend-web';
 import type { PermissionGroup, Scope } from '@oppenheimer/shared';
+import { z } from 'zod';
 
-export interface ConsentSearch {
-  consent_code?: string;
-  client_id?: string;
-  scope?: string;
-}
+/** What the authorization server hands the consent screen, in its own snake_case. */
+export const consentSearchSchema = z.object({
+  consent_code: searchText,
+  client_id: searchText,
+  scope: searchText,
+});
+export type ConsentSearch = z.infer<typeof consentSearchSchema>;
 
 /**
  * Match the requested scope string against the catalog. Anything the catalog

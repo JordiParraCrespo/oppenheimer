@@ -41,8 +41,6 @@ export class FindPairingTokenHttpController {
   @CheckPolicies({ action: 'read', subject: 'Host' })
   @RequireScopes('hosts:read')
   @ApiOperation({
-    // Named, so adding this route does not renumber the generated client's `getN`.
-    operationId: 'getPairingToken',
     summary: 'Get one pairing token, and the host it paired',
     description:
       'What Add host polls while it listens for a machine: `host` stays null until a runner spends the token, then carries the new host with its status and the tools it reported.',

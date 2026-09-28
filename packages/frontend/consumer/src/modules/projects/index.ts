@@ -9,4 +9,3 @@ export {
 export { ProjectsErrors } from './projects.errors';
 export { ProjectsModule } from './projects.module';
 export { ProjectsRepository } from './projects.repository';
-export { ProjectsService } from './projects.service';

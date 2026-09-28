@@ -98,14 +98,17 @@ export class ProfileRepository {
 
   @MapApiError(ProfileErrors.FETCH_SESSIONS_FAILED)
   async getSessions(): Promise<UserSessionEntity[]> {
-    const data = await unwrapBody(heyApiSdk.findSessions(), ProfileErrors.FETCH_SESSIONS_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.findProfileSessions(),
+      ProfileErrors.FETCH_SESSIONS_FAILED,
+    );
     return data.map(toSession);
   }
 
   @MapApiError(ProfileErrors.REVOKE_SESSION_FAILED)
   async revokeSession(sessionId: string): Promise<void> {
     await unwrap(
-      heyApiSdk.revokeSession({ path: { id: sessionId } }),
+      heyApiSdk.revokeProfileSession({ path: { id: sessionId } }),
       ProfileErrors.REVOKE_SESSION_FAILED,
     );
   }

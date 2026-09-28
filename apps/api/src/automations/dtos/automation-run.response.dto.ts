@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { nullableEnum } from '@oppenheimer/backend-core';
 import {
   AUTOMATION_RUN_CAUSES,
   AUTOMATION_RUN_OUTCOMES,
@@ -92,7 +93,7 @@ export class AutomationRunResponseDto {
   })
   outcome!: AutomationRunOutcome;
 
-  @ApiPropertyOptional({ nullable: true, enum: AUTOMATION_SKIP_REASONS })
+  @ApiPropertyOptional(nullableEnum(AUTOMATION_SKIP_REASONS))
   skipReason!: AutomationSkipReason | null;
 
   @ApiProperty({ enum: AUTOMATION_RUN_CAUSES })

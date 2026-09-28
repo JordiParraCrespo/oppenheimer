@@ -43,7 +43,6 @@ export class ResumeAutomationHttpController {
   @CheckPolicies({ action: 'update', subject: 'Automation' })
   @RequireScopes('automations:write')
   @ApiOperation({
-    operationId: 'resumeAutomation',
     summary: 'Resume an automation',
     description:
       'Triggers listen again, and each schedule’s next slot is computed from now, so a paused week does not fire a burst of missed runs.',
