@@ -9,7 +9,6 @@ BullMQ job queues plus a Bull Board dashboard for the NestJS API.
 
 ```
 src/
-├── queue.module.ts       # NestJS module (register queues)
 ├── bull-board.setup.ts   # Bull Board admin UI wiring
 └── index.ts
 ```
@@ -18,8 +17,10 @@ src/
 
 - Queue names are defined centrally as `QUEUE_NAMES` in `@oppenheimer/shared` — use
   them, don't hardcode strings.
-- Producers/consumers live in `apps/api` (`src/queue/`); this package provides
-  the module wiring and dashboard.
+- Queue registration, job options, producers and consumers live in `apps/api`:
+  every queue is registered once, in `src/queue/queue.module.ts`, with its
+  options from `src/queue/infrastructure/queue-options.config.ts`. This
+  package provides the dashboard only.
 - Ships **CommonJS**.
 
 ## Commands

@@ -1,8 +1,6 @@
-import { BullModule } from '@nestjs/bullmq';
 import { Global, Logger, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
-import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { DataSource } from 'typeorm';
 import { QueueModule } from '../queue/queue.module';
 import { OutboxRelayService } from './infrastructure/outbox-relay.adapter';
@@ -16,11 +14,7 @@ import { OutboxRetentionProcessor } from './infrastructure/outbox-retention.proc
  */
 @Global()
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([OutboxMessageSchema]),
-    QueueModule,
-    BullModule.registerQueue({ name: QUEUE_NAMES.OUTBOX_RETENTION }),
-  ],
+  imports: [TypeOrmModule.forFeature([OutboxMessageSchema]), QueueModule],
   providers: [
     {
       provide: OutboxService,

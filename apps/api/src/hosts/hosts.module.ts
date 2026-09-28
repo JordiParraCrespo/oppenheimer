@@ -1,11 +1,10 @@
-import { BullModule } from '@nestjs/bullmq';
 import { Module, type Provider, type Type } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
-import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { AuthModule } from '../auth/auth.module';
 import { LinksModule } from '../links/links.module';
+import { QueueModule } from '../queue/queue.module';
 import { UsersModule } from '../users/user.module';
 import { HostNetworkChangedDomainEventHandler } from './application/event-handlers/host-network-changed.domain-event-handler';
 import { HostRegisteredDomainEventHandler } from './application/event-handlers/host-registered.domain-event-handler';
@@ -158,11 +157,11 @@ const resolvers: Provider[] = [
       HostEventOrmEntity,
     ]),
     AuthzKernelModule.forFeature([HostResource]),
-    // The owner's address for the new-host notice, and the queue it goes out on.
+    // The owner's address for the new-host notice.
     UsersModule,
-    BullModule.registerQueue({ name: QUEUE_NAMES.EMAIL }),
-    // The daily purge of networks and timeline past their retention.
-    BullModule.registerQueue({ name: QUEUE_NAMES.HOST_RETENTION }),
+    // The email queue the notice goes out on, and the host-retention queue of
+    // the daily purge of networks and timeline past their retention.
+    QueueModule,
   ],
   controllers: [...httpControllers],
   providers: [

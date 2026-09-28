@@ -110,7 +110,6 @@ async function bootstrap() {
     app,
     [
       QUEUE_NAMES.EMAIL,
-      QUEUE_NAMES.FILE_PROCESSING,
       QUEUE_NAMES.HOST_RETENTION,
       QUEUE_NAMES.INBOUND_EVENTS,
       QUEUE_NAMES.AUTOMATION_RUNS,
