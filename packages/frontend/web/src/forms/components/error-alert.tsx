@@ -1,6 +1,12 @@
-import { Alert, AlertAction, AlertDescription, IconButton } from '@oppenheimer/design-system-web';
-import { XIcon } from '@oppenheimer/design-system-web/icons';
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+  Button,
+} from '@oppenheimer/design-system-web';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -13,18 +19,22 @@ import { useTranslation } from 'react-i18next';
  * the server sent one, under the sentence, in mono.
  *
  * Renders nothing while `error` is `null`, so a caller writes
- * `<ErrorAlert error={mutation.error} … />` with no guard. `onDismiss` adds the
- * close button; wire it to `lastFailure(…).dismiss` or a mutation's `reset`.
+ * `<ErrorAlert error={mutation.error} … />` with no guard. `onDismiss` adds
+ * Dismiss; wire it to `lastFailure(…).dismiss` or a mutation's `reset`. `title`
+ * names what failed when one alert speaks for several rows ("Could not pause
+ * Nightly triage").
  */
 export function ErrorAlert({
   error,
   fallback,
+  title,
   onDismiss,
   className,
 }: {
   error: unknown;
   /** Already translated: the screen's own sentence for a failure with no known code. */
   fallback: string;
+  title?: ReactNode;
   onDismiss?: () => void;
   className?: string;
 }) {
@@ -35,6 +45,7 @@ export function ErrorAlert({
 
   return (
     <Alert variant="destructive" className={className}>
+      {title ? <AlertTitle>{title}</AlertTitle> : null}
       <AlertDescription>
         {message}
         {correlationId ? (
@@ -45,9 +56,9 @@ export function ErrorAlert({
       </AlertDescription>
       {onDismiss ? (
         <AlertAction>
-          <IconButton size="xs" aria-label={t('common.dismiss')} onClick={onDismiss}>
-            <XIcon />
-          </IconButton>
+          <Button variant="ghost" size="sm" onClick={onDismiss}>
+            {t('common.dismiss')}
+          </Button>
         </AlertAction>
       ) : null}
     </Alert>

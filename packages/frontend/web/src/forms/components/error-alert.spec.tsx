@@ -38,6 +38,11 @@ describe('ErrorAlert', () => {
     expect(screen.getByText('errors.correlationId req-42')).toBeTruthy();
   });
 
+  it('names what failed when given a title', () => {
+    render(<ErrorAlert error={refused()} fallback="Could not pause" title="Nightly triage" />);
+    expect(screen.getByRole('alert').textContent).toContain('Nightly triage');
+  });
+
   it('offers a dismiss only when asked', () => {
     const onDismiss = vi.fn();
     const { rerender } = render(<ErrorAlert error={refused()} fallback="Could not delete" />);
