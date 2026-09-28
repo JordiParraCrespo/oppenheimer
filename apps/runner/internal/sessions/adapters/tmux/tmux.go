@@ -22,6 +22,7 @@ import (
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/execx"
 )
 
 var _ app.Terminals = (*Server)(nil)
@@ -117,12 +118,17 @@ func (s *Server) args(rest ...string) []string {
 	return append(args, rest...)
 }
 
+// run is one control command. It is not run in a process group of its own:
+// the first command starts the tmux server, which must outlive it, and a
+// group kill on a timeout would take the server and every session with it.
 func (s *Server) run(ctx context.Context, args ...string) (string, error) {
-	ctx, cancel := context.WithTimeout(ctx, commandTimeout)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, s.binary, s.args(args...)...) //nolint:gosec // the binary is looked up from PATH and the arguments are built here
-	out, err := cmd.CombinedOutput()
-	return strings.TrimRight(string(out), "\n"), err
+	res, err := execx.Run(ctx, execx.Spec{
+		Name:    s.binary,
+		Args:    s.args(args...),
+		Timeout: commandTimeout,
+		Output:  execx.Combined,
+	})
+	return res.Out, execx.Cause(err)
 }
 
 func (s *Server) command(ctx context.Context, args ...string) (string, error) {
@@ -328,7 +334,7 @@ func (s *Server) Paste(ctx context.Context, target, id, text string) error {
 // and a session ending.
 func (s *Server) Attach(ctx context.Context, target string, size app.Size) (app.Attachment, error) {
 	// -d would detach other clients; several devices may watch one window.
-	cmd := exec.CommandContext(ctx, s.binary, s.args("attach-session", "-t", target)...) //nolint:gosec // same as run: fixed binary, arguments built here
+	cmd := exec.CommandContext(ctx, s.binary, s.args("attach-session", "-t", target)...) //nolint:gosec // fixed binary, arguments built here
 	cmd.Env = append(os.Environ(), "TERM=xterm-256color")
 	file, err := pty.StartWithSize(cmd, &pty.Winsize{Cols: size.Cols, Rows: size.Rows})
 	if err != nil {

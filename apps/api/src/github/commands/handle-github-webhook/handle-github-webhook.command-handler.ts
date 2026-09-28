@@ -3,15 +3,14 @@ import { ConfigService } from '@nestjs/config';
 import { CommandBus, CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { ReceiveInboundDeliveryCommand } from '../../../inbound-events/commands/receive-inbound-delivery/receive-inbound-delivery.command';
-import type {
-  GithubInstallationRepositoryPort,
-  InstallationStatusChange,
-} from '../../database/github-installation.repository.port';
+import type { GithubInstallationRepositoryPort } from '../../database/github-installation.repository.port';
 import { GithubErrors } from '../../domain/github.errors';
 import { GITHUB_INSTALLATION_REPOSITORY } from '../../github.di-tokens';
 import {
-  type InstallationWebhookAction,
+  installationStatusChange,
+  parseDeliveryBody,
   parseInstallationEvent,
+  payloadDigest,
   verifyWebhookSignature,
 } from '../../infrastructure/github-webhook.util';
 import { HandleGithubWebhookCommand } from './handle-github-webhook.command';
@@ -21,7 +20,8 @@ import { HandleGithubWebhookCommand } from './handle-github-webhook.command';
  *
  * **`installation`** — suspend, unsuspend, uninstall — is this module's own:
  * the three facts about an installation that change without us and that a
- * token mint has to respect. Each is a status write and idempotent to repeat.
+ * token mint has to respect. Each is a status write, idempotent to repeat and
+ * ordered by GitHub's own time, so a late retry cannot undo a newer change.
  *
  * **Every other event** is handed to the inbound-events hub
  * (`product/versions/mvp/16-automations-architecture.md` §Q6), which stores it
@@ -64,40 +64,46 @@ export class HandleGithubWebhookCommandHandler
     const delivery = parseInstallationEvent(command.event, command.payload);
     if (delivery.type === 'ignored') return;
 
+    const facts = { githubInstallationId: delivery.githubInstallationId, action: delivery.action };
+    if (!delivery.occurredAt) {
+      this.logger.warn({
+        message: 'Installation webhook carries no time; using receipt',
+        ...facts,
+      });
+    }
     // Keyed by GitHub's own id and matched across every workspace: a delivery
     // arrives with no notion of our tenants. Only a live row is touched — a
     // disconnected one is history, and GitHub's news about it changes nothing.
-    const applied = await this.installations.applyStatusChange({
-      githubInstallationId: delivery.githubInstallationId,
-      ...changeFor(delivery.action),
-    });
+    const result = await this.installations.applyStatusChange(
+      installationStatusChange(delivery, new Date()),
+    );
 
-    if (!applied) {
+    if (result === 'missing') {
       this.logger.warn({
         message: 'Ignoring an installation webhook for an installation no workspace holds',
-        githubInstallationId: delivery.githubInstallationId,
-        action: delivery.action,
+        ...facts,
       });
+    } else if (result === 'stale') {
+      this.logger.log({ message: 'Ignoring an out-of-order installation webhook', ...facts });
     }
   }
 
-  /** A verified delivery the hub stores and normalizes. A body that is not JSON is dropped. */
+  /**
+   * A verified delivery the hub stores and normalizes. A body that is not a
+   * JSON object is dropped. The digest is of the raw bytes (see
+   * `payloadDigest`): the same signed bytes are one delivery, whatever id the
+   * unsigned `X-GitHub-Delivery` header claims.
+   */
   private async handToHub(command: HandleGithubWebhookCommand): Promise<void> {
-    const text =
-      typeof command.payload === 'string' ? command.payload : command.payload.toString('utf8');
-    let body: unknown;
-    try {
-      body = JSON.parse(text);
-    } catch {
-      return;
-    }
-    if (typeof body !== 'object' || body === null || Array.isArray(body)) return;
+    const body = parseDeliveryBody(command.payload);
+    if (!body) return;
     await this.commandBus.execute(
       new ReceiveInboundDeliveryCommand({
         source: 'github',
         deliveryId: command.deliveryId,
         eventName: command.event,
-        payload: body as Record<string, unknown>,
+        payload: body,
+        payloadDigest: payloadDigest(command.payload),
       }),
     );
   }
@@ -105,13 +111,4 @@ export class HandleGithubWebhookCommandHandler
   private get webhookSecret(): string | undefined {
     return this.configService.get<string>('githubApp.webhookSecret');
   }
-}
-
-/** Only the columns the action is about. Everything else is left alone. */
-function changeFor(
-  action: InstallationWebhookAction,
-): Omit<InstallationStatusChange, 'githubInstallationId'> {
-  if (action === 'suspend') return { suspendedAt: new Date() };
-  if (action === 'unsuspend') return { suspendedAt: null };
-  return { deletedAt: new Date() };
 }

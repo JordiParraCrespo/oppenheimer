@@ -3,9 +3,9 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { sniffSessionImage } from '@oppenheimer/shared/protocol';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
-import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
+import { SessionLoaderResolver } from '../../application/session-loader.resolver';
 import { SessionErrors } from '../../domain/sessions.errors';
-import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
+import { SESSION_DISPATCH } from '../../sessions.di-tokens';
 import { PasteSessionImageCommand } from './paste-session-image.command';
 
 /**
@@ -28,8 +28,7 @@ export class PasteSessionImageCommandHandler
   implements ICommandHandler<PasteSessionImageCommand, void>
 {
   constructor(
-    @Inject(WORK_SESSION_REPOSITORY)
-    private readonly sessions: WorkSessionRepositoryPort,
+    private readonly loader: SessionLoaderResolver,
     @Inject(SESSION_DISPATCH)
     private readonly dispatch: SessionDispatchPort,
   ) {}
@@ -42,13 +41,7 @@ export class PasteSessionImageCommandHandler
       });
     }
 
-    const found = await this.sessions.findOneById(command.scope, command.sessionId);
-    if (found.isNone()) {
-      throw new AppError(SessionErrors.NOT_FOUND, {
-        detail: `No session with id ${command.sessionId}`,
-      });
-    }
-    const session = found.unwrap();
+    const session = await this.loader.find(command.scope, command.sessionId);
     const refusal = session.inputRefusal;
     if (refusal) {
       throw new AppError(refusal, { detail: `Session ${session.slug} cannot take input` });

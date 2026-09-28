@@ -62,14 +62,16 @@ the search with what the schema returns, so a key it does not name is dropped,
 on purpose: one rule, and no second writer of the URL for it to
 protect. A value of the wrong shape reads as absent (`.catch(undefined)`)
 rather than failing the route. A list's filters are search params of the
-routes that show the list (`runsSearchSchema` on both runs routes), read with
-`useSearch({ strict: false })` and written with
-`navigate({ to: '.', search: (previous) => …, replace: true })`.
+routes that show the list (`runsSearchSchema` on both runs routes), read and
+written through the route that draws it — `getRouteApi(id).useSearch()` and
+its `useNavigate()` with `search: (previous) => …, replace: true` — never
+`useSearch({ strict: false })`, which reads keys the route did not name.
 
 `validateSearch` is critical-path code that `autoCodeSplitting` will not split
-out, so a schema imports nothing heavy: Zod is already on the first load, but
-a catalog from `@oppenheimer/shared` may not be (the runs list checks its
-window against the catalog itself). `pnpm check:bundle` is the arbiter.
+out, so a schema imports nothing heavy: Zod is already on the first load, and
+whatever a schema reaches in `@oppenheimer/shared` lands on it (the package
+tree-shakes, but what is used is kept whole). `pnpm check:bundle` is the
+arbiter.
 
 **`to` is a pathname, never a URL with a query.** `to: '/settings?section=security'`
 puts the whole string in the pathname and 404s. Split it and pass `search`

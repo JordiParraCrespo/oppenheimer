@@ -8,6 +8,7 @@ use (
 	./packages/go/auth
 	./packages/go/config
 	./packages/go/core
+	./packages/go/execx
 	./packages/go/health
 	./packages/go/httpx
 	./packages/go/postgres

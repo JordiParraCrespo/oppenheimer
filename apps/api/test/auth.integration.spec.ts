@@ -137,4 +137,79 @@ describe('Auth (integration)', () => {
       expect(((await probe.json()) as { code?: string }).code).toBe('SESSIONS_001');
     });
   });
+
+  describe('a ban made straight through Better Auth', () => {
+    async function signUp(): Promise<{ id: string; email: string; token: string }> {
+      const email = `ban-${randomUUID()}@example.com`;
+      const response = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password: 'Integration-test-password-1',
+          name: 'Some One',
+          firstName: 'Some',
+          lastName: 'One',
+        }),
+      });
+      expect(response.ok).toBe(true);
+      const { user } = (await response.json()) as { user: { id: string } };
+      return { id: user.id, email, token: response.headers.get('set-auth-token') ?? '' };
+    }
+
+    async function adminToken(): Promise<string> {
+      const admin = await signUp();
+      await dataSource.query(`UPDATE "user" SET "role" = 'admin' WHERE "id" = $1`, [admin.id]);
+      // A fresh session, so the role the plugin checks is read after the update.
+      const response = await fetch(`${baseUrl}/api/auth/sign-in/email`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: admin.email, password: 'Integration-test-password-1' }),
+      });
+      expect(response.ok).toBe(true);
+      return response.headers.get('set-auth-token') ?? '';
+    }
+
+    const adminCall = (path: string, token: string, userId: string) =>
+      fetch(`${baseUrl}/api/auth/admin/${path}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId }),
+      });
+
+    it("rotates the account's delegated sessions on ban and on unban", async () => {
+      const { DELEGATED_SESSION } = await import('../src/auth/auth.di-tokens');
+      const delegated = app.get<{ invalidateForUser(userId: string): Promise<void> }>(
+        DELEGATED_SESSION,
+      );
+      const rotate = vi.spyOn(delegated, 'invalidateForUser');
+      const target = await signUp();
+      const token = await adminToken();
+
+      // Regression: only `AdminService.ban` rotated the generation, so a ban
+      // through Better Auth's own endpoint left cached delegated sessions alive.
+      expect((await adminCall('ban-user', token, target.id)).ok).toBe(true);
+      expect(rotate).toHaveBeenCalledWith(target.id);
+
+      rotate.mockClear();
+      expect((await adminCall('unban-user', token, target.id)).ok).toBe(true);
+      expect(rotate).toHaveBeenCalledWith(target.id);
+      rotate.mockRestore();
+    });
+
+    it('rotates nothing for a ban the plugin refused', async () => {
+      const { DELEGATED_SESSION } = await import('../src/auth/auth.di-tokens');
+      const delegated = app.get<{ invalidateForUser(userId: string): Promise<void> }>(
+        DELEGATED_SESSION,
+      );
+      const rotate = vi.spyOn(delegated, 'invalidateForUser');
+      const caller = await signUp();
+      const target = await signUp();
+
+      // Not an admin: the plugin refuses, and nothing is rotated.
+      expect((await adminCall('ban-user', caller.token, target.id)).ok).toBe(false);
+      expect(rotate).not.toHaveBeenCalled();
+      rotate.mockRestore();
+    });
+  });
 });

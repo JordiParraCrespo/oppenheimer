@@ -6,6 +6,7 @@ import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Queue } from 'bullmq';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
+import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import type { HostPresencePort } from '../src/hosts/application/host-presence.port';
 import type { HostMetadataRepositoryPort } from '../src/hosts/database/host-metadata.repository.port';
 import { HOST_METADATA_REPOSITORY, HOST_PRESENCE } from '../src/hosts/hosts.di-tokens';
@@ -694,13 +695,13 @@ describe('Hosts & pairing (integration)', () => {
           facts: { ...FACTS, diskFreeBytes: 100 },
           loadAverage: 1.5,
         }),
-      ).toBe(true);
+      ).toBe('recorded');
       expect(
         await presence.observe(hostId, {
           facts: { ...FACTS, diskFreeBytes: 99 },
           roundTripMillis: 12,
         }),
-      ).toBe(true);
+      ).toBe('recorded');
 
       expect(
         await rows(`SELECT 1 FROM "host_presence" WHERE "hostId" = $1`, [hostId]),
@@ -722,6 +723,21 @@ describe('Hosts & pairing (integration)', () => {
       ]);
       expect(after?.changedAt).toEqual(before?.changedAt);
       expect(await kinds()).toEqual(['paired']);
+    });
+
+    it('records nothing for a host whose owner is banned, and again once they are not', async () => {
+      // A hello always asks after the owner (a heartbeat trusts the last answer
+      // for a minute), so the ban is seen at once here.
+      const hello = () => presence.observe(hostId, { facts: FACTS, connectedAt: new Date() });
+      await dataSource.query(`UPDATE "user" SET "banned" = true WHERE "id" = $1`, [user.id]);
+      try {
+        // The link that reported this is closed, and not as unpaired: the ban
+        // can be lifted and the same host let back in.
+        expect(await hello()).toBe('owner_refused');
+      } finally {
+        await dataSource.query(`UPDATE "user" SET "banned" = false WHERE "id" = $1`, [user.id]);
+      }
+      expect(await hello()).toBe('recorded');
     });
 
     it('logs a changed fact with its diff, and a newly known one as nothing', async () => {
@@ -808,6 +824,61 @@ describe('Hosts & pairing (integration)', () => {
         1,
       );
       expect(await kinds()).not.toContain('network_changed');
+    });
+
+    it('writes presence only for a paired host, in one statement that is also the check', async () => {
+      const presenceOf = () =>
+        rows(
+          `SELECT "loadAverage"::float8 AS "loadAverage", "roundTripMillis" FROM "host_presence" WHERE "hostId" = $1`,
+          [hostId],
+        );
+      await dataSource.query(`DELETE FROM "host_presence" WHERE "hostId" = $1`, [hostId]);
+
+      // Inserts, then updates, keeping what a later report leaves out.
+      expect(await metadata.recordVitalsIfPaired(hostId, { loadAverage: 0.5 }, new Date())).toBe(
+        true,
+      );
+      expect(await presenceOf()).toEqual([{ loadAverage: 0.5, roundTripMillis: null }]);
+      expect(await metadata.recordVitalsIfPaired(hostId, { roundTripMillis: 7 }, new Date())).toBe(
+        true,
+      );
+      expect(await presenceOf()).toEqual([{ loadAverage: 0.5, roundTripMillis: 7 }]);
+
+      // A host nobody paired, and one unpaired since: nothing is written.
+      expect(
+        await metadata.recordVitalsIfPaired(
+          'e0e0e0e0-0000-4000-8000-000000000000',
+          { loadAverage: 9 },
+          new Date(),
+        ),
+      ).toBe(false);
+      await dataSource.query(`UPDATE "host" SET "unpairedAt" = now() WHERE "id" = $1`, [hostId]);
+      try {
+        expect(await metadata.recordVitalsIfPaired(hostId, { loadAverage: 9 }, new Date())).toBe(
+          false,
+        );
+        expect(await presence.observe(hostId, { facts: FACTS })).toBe('unpaired');
+        expect(await presenceOf()).toEqual([{ loadAverage: 0.5, roundTripMillis: 7 }]);
+      } finally {
+        await dataSource.query(`UPDATE "host" SET "unpairedAt" = NULL WHERE "id" = $1`, [hostId]);
+      }
+    });
+
+    it('answers a heartbeat whose inventory is unchanged with one statement', async () => {
+      // The first beat after the hello records what this process last saw.
+      await presence.observe(hostId, { facts: FACTS });
+      const spy = vi.spyOn(PostgresQueryRunner.prototype, 'query');
+      try {
+        expect(await presence.observe(hostId, { facts: FACTS, loadAverage: 0.25 })).toBe(
+          'recorded',
+        );
+        // Only this host's statements: the app's own background work runs beside it.
+        const mine = spy.mock.calls.filter(([, parameters]) => (parameters ?? []).includes(hostId));
+        expect(mine).toHaveLength(1);
+        expect(String(mine[0]?.[0])).toMatch(/INSERT INTO "host_presence"/);
+      } finally {
+        spy.mockRestore();
+      }
     });
   });
 

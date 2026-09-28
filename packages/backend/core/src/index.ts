@@ -21,9 +21,9 @@ export {
   problemTypeFor,
   titleForStatus,
 } from './errors/problem-details';
+export { type Maybe, requireFound } from './errors/require-found';
 export { AllExceptionsFilter } from './filters/all-exceptions.filter';
 export { RequestContextInterceptor } from './interceptors/request-context.interceptor';
-export type { Mapper } from './interfaces/mapper.interface';
 export {
   type AuthRouteLoggingMiddleware,
   createAuthRouteLoggingMiddleware,
@@ -38,14 +38,10 @@ export {
 } from './logging/pino-http-options';
 export { UserContextInterceptor } from './logging/user-context.interceptor';
 export { SanitizePipe } from './pipes/sanitize.pipe';
-export { ZodValidationPipe } from './pipes/zod-validation.pipe';
-export {
-  PaginatedRequest,
-  paginationSchema,
-} from './requests/paginated.request';
 export { requestMemo } from './requests/request-memo';
+export { type PageMeta, toPageMeta } from './responses/page-meta';
+export { PaginatedResponseDto } from './responses/paginated-response.dto';
 export {
   CapabilitiesService,
   type CapabilityMap,
 } from './services/capabilities.service';
-export { RequestContextService } from './services/request-context.service';

@@ -388,9 +388,9 @@ export function ThingForm({
 ```
 
 - `useZodResolver` comes from `@oppenheimer/frontend-web`; the schema from
-  `@oppenheimer/shared/schemas/<area>`, a subpath. In `apps/web` that is
-  required, and a new subpath also needs `optimizeDeps.include` in
-  `vite.config.ts` and an `exports` entry in `packages/shared/package.json`.
+  `@oppenheimer/shared/schemas/<area>`, a subpath rather than the root, so the
+  import names what it depends on. A new `src/schemas/<area>.schema.ts` is
+  that subpath with no `exports` or Vite config.
 - The section or dialog above resolves the failure:
   `error={mutation.error ? resolveError(mutation.error, t('common.error')).message : undefined}`,
   with `resolveError = useErrorMessage()`.

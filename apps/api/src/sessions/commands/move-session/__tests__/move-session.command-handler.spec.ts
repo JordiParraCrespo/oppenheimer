@@ -3,6 +3,7 @@ import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectLookupPort } from '../../../../projects/application/project-lookup.port';
 import { ProjectEntity } from '../../../../projects/domain/project.entity';
+import { SessionLoaderResolver } from '../../../application/session-loader.resolver';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { SessionCheckoutEntity } from '../../../domain/session-checkout.entity';
 import { SESSION_EVENT_KINDS } from '../../../domain/session-state.policy';
@@ -93,7 +94,11 @@ describe('MoveSessionCommandHandler', () => {
         Some(id === 'narrow' ? project('narrow', ['7']) : project(id, ['42', '7'])),
       ),
     } as unknown as ProjectLookupPort;
-    handler = new MoveSessionCommandHandler(sessions, projects);
+    handler = new MoveSessionCommandHandler(
+      new SessionLoaderResolver(sessions),
+      sessions,
+      projects,
+    );
   });
 
   const move = (projectId: string) =>

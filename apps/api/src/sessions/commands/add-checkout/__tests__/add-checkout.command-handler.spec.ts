@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ProjectLookupPort } from '../../../../projects/application/project-lookup.port';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import type { SessionLaunchSpecFactory } from '../../../application/session-launch.factory';
+import { SessionLoaderResolver } from '../../../application/session-loader.resolver';
 import type { SessionPlanFactory } from '../../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { SessionCheckoutEntity } from '../../../domain/session-checkout.entity';
@@ -57,6 +58,7 @@ describe('AddCheckoutCommandHandler', () => {
     const plan = { attachCheckout: vi.fn() } as unknown as SessionPlanFactory;
     const dispatch = { addCheckout: vi.fn() } as unknown as SessionDispatchPort;
     const handler = new AddCheckoutCommandHandler(
+      new SessionLoaderResolver(sessions),
       sessions,
       { findActive: vi.fn() } as unknown as ProjectLookupPort,
       dispatch,

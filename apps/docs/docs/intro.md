@@ -27,7 +27,7 @@ Full-stack monorepo boilerplate for bootstrapping applications fast.
 
 Reusable NestJS modules under `packages/backend/`, each following a pluggable service pattern:
 
-- **@oppenheimer/backend-core** — Errors, filters, interceptors, pipes, mapper interface
+- **@oppenheimer/backend-core** — Errors, filters, interceptors, pipes, pagination helpers
 - **@oppenheimer/backend-email** — Pluggable email (Console / Nodemailer / Resend) with React Email templates
 - **@oppenheimer/backend-cache** — Redis cache abstraction
 - **@oppenheimer/backend-llm** — One interface over LLM providers (OpenRouter, Together, Anthropic, any OpenAI-compatible server)

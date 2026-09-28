@@ -3,9 +3,9 @@ import type { ProblemDetails } from '@oppenheimer/shared';
 /**
  * Local twin of `@oppenheimer/shared`'s `isProblemDetails`.
  *
- * `apps/web` may only import *types* from `@oppenheimer/shared` — Rollup cannot
- * tree-shake that package's CJS build — so this module keeps to `import type`
- * and carries the one runtime check it needs.
+ * Kept local from when `@oppenheimer/shared` shipped only CommonJS and the web
+ * tier could import nothing but types from it. The package tree-shakes now, so
+ * importing the shared one would also do.
  */
 function isProblemDetails(value: unknown): value is ProblemDetails {
   if (typeof value !== 'object' || value === null) return false;

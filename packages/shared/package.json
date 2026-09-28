@@ -4,157 +4,60 @@
   "private": true,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "sideEffects": [
+    "./dist/protocol/messages.js",
+    "./dist/protocol/primitives.js",
+    "./dist/esm/protocol/messages.js",
+    "./dist/esm/protocol/primitives.js"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "import": "./dist/esm/index.js",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./schemas": {
-      "types": "./dist/schemas/index.d.ts",
-      "import": "./dist/schemas/index.js",
-      "require": "./dist/schemas/index.js",
-      "default": "./dist/schemas/index.js"
-    },
-    "./schemas/auth": {
-      "types": "./dist/schemas/auth.schema.d.ts",
-      "import": "./dist/schemas/auth.schema.js",
-      "require": "./dist/schemas/auth.schema.js",
-      "default": "./dist/schemas/auth.schema.js"
-    },
-    "./schemas/admin": {
-      "types": "./dist/schemas/admin.schema.d.ts",
-      "import": "./dist/schemas/admin.schema.js",
-      "require": "./dist/schemas/admin.schema.js",
-      "default": "./dist/schemas/admin.schema.js"
-    },
-    "./schemas/profile": {
-      "types": "./dist/schemas/profile.schema.d.ts",
-      "import": "./dist/schemas/profile.schema.js",
-      "require": "./dist/schemas/profile.schema.js",
-      "default": "./dist/schemas/profile.schema.js"
-    },
-    "./schemas/organization": {
-      "types": "./dist/schemas/organization.schema.d.ts",
-      "import": "./dist/schemas/organization.schema.js",
-      "require": "./dist/schemas/organization.schema.js",
-      "default": "./dist/schemas/organization.schema.js"
-    },
-    "./schemas/role": {
-      "types": "./dist/schemas/role.schema.d.ts",
-      "import": "./dist/schemas/role.schema.js",
-      "require": "./dist/schemas/role.schema.js",
-      "default": "./dist/schemas/role.schema.js"
-    },
-    "./schemas/host": {
-      "types": "./dist/schemas/host.schema.d.ts",
-      "import": "./dist/schemas/host.schema.js",
-      "require": "./dist/schemas/host.schema.js",
-      "default": "./dist/schemas/host.schema.js"
-    },
-    "./schemas/project": {
-      "types": "./dist/schemas/project.schema.d.ts",
-      "import": "./dist/schemas/project.schema.js",
-      "require": "./dist/schemas/project.schema.js",
-      "default": "./dist/schemas/project.schema.js"
-    },
-    "./schemas/session": {
-      "types": "./dist/schemas/session.schema.d.ts",
-      "import": "./dist/schemas/session.schema.js",
-      "require": "./dist/schemas/session.schema.js",
-      "default": "./dist/schemas/session.schema.js"
-    },
-    "./schemas/github": {
-      "types": "./dist/schemas/github.schema.d.ts",
-      "import": "./dist/schemas/github.schema.js",
-      "require": "./dist/schemas/github.schema.js",
-      "default": "./dist/schemas/github.schema.js"
-    },
-    "./schemas/automation": {
-      "types": "./dist/schemas/automation.schema.d.ts",
-      "import": "./dist/schemas/automation.schema.js",
-      "require": "./dist/schemas/automation.schema.js",
-      "default": "./dist/schemas/automation.schema.js"
-    },
-    "./types": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/types/index.js",
-      "require": "./dist/types/index.js",
-      "default": "./dist/types/index.js"
-    },
-    "./permissions": {
-      "types": "./dist/permissions/index.d.ts",
-      "import": "./dist/permissions/index.js",
-      "require": "./dist/permissions/index.js",
-      "default": "./dist/permissions/index.js"
-    },
-    "./constants": {
-      "types": "./dist/constants/index.d.ts",
-      "import": "./dist/constants/index.js",
-      "require": "./dist/constants/index.js",
-      "default": "./dist/constants/index.js"
-    },
-    "./scopes": {
-      "types": "./dist/scopes/index.d.ts",
-      "import": "./dist/scopes/index.js",
-      "require": "./dist/scopes/index.js",
-      "default": "./dist/scopes/index.js"
-    },
-    "./feature-flags": {
-      "types": "./dist/feature-flags/index.d.ts",
-      "import": "./dist/feature-flags/index.js",
-      "require": "./dist/feature-flags/index.js",
-      "default": "./dist/feature-flags/index.js"
+    "./schemas/*": {
+      "types": "./dist/schemas/*.schema.d.ts",
+      "import": "./dist/esm/schemas/*.schema.js",
+      "require": "./dist/schemas/*.schema.js",
+      "default": "./dist/schemas/*.schema.js"
     },
     "./feature-flags/catalog": {
       "types": "./dist/feature-flags/catalog.d.ts",
-      "import": "./dist/feature-flags/catalog.js",
+      "import": "./dist/esm/feature-flags/catalog.js",
       "require": "./dist/feature-flags/catalog.js",
       "default": "./dist/feature-flags/catalog.js"
     },
-    "./agents": {
-      "types": "./dist/agents/index.d.ts",
-      "import": "./dist/agents/index.js",
-      "require": "./dist/agents/index.js",
-      "default": "./dist/agents/index.js"
-    },
-    "./automations": {
-      "types": "./dist/automations/index.d.ts",
-      "import": "./dist/automations/index.js",
-      "require": "./dist/automations/index.js",
-      "default": "./dist/automations/index.js"
-    },
-    "./protocol": {
-      "types": "./dist/protocol/index.d.ts",
-      "import": "./dist/protocol/index.js",
-      "require": "./dist/protocol/index.js",
-      "default": "./dist/protocol/index.js"
+    "./*": {
+      "types": "./dist/*/index.d.ts",
+      "import": "./dist/esm/*/index.js",
+      "require": "./dist/*/index.js",
+      "default": "./dist/*/index.js"
     }
   },
   "typesVersions": {
     "*": {
-      "agents": [
-        "./dist/agents/index.d.ts"
+      "dist/*": [
+        "./dist/*"
       ],
-      "protocol": [
-        "./dist/protocol/index.d.ts"
-      ],
-      "feature-flags": [
-        "./dist/feature-flags/index.d.ts"
+      "schemas/*": [
+        "./dist/schemas/*.schema.d.ts"
       ],
       "feature-flags/catalog": [
         "./dist/feature-flags/catalog.d.ts"
       ],
-      "automations": [
-        "./dist/automations/index.d.ts"
+      "*": [
+        "./dist/*/index.d.ts"
       ]
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/emit-protocol-schema.cjs && node scripts/emit-link-protocol.cjs && node scripts/emit-agent-catalog.cjs && node scripts/emit-session-step.cjs && node scripts/emit-session-image.cjs",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.esm.json && node scripts/write-esm-package-json.cjs && node scripts/emit-protocol-schema.cjs && node scripts/emit-link-protocol.cjs && node scripts/emit-agent-catalog.cjs && node scripts/emit-session-step.cjs && node scripts/emit-session-image.cjs",
     "check:generated": "node scripts/emit-protocol-schema.cjs --check && node scripts/emit-link-protocol.cjs --check && node scripts/emit-agent-catalog.cjs --check && node scripts/emit-session-step.cjs --check && node scripts/emit-session-image.cjs --check",
-    "dev": "tsc -p tsconfig.json --watch",
+    "dev": "node scripts/write-esm-package-json.cjs && pnpm run \"/^dev:/\"",
+    "dev:cjs": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "dev:esm": "tsc -p tsconfig.esm.json --watch --preserveWatchOutput",
     "clean": "rm -rf dist",
     "lint": "biome check src/",
     "test": "vitest run --passWithNoTests",

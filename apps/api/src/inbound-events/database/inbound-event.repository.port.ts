@@ -11,13 +11,16 @@ export interface NewDelivery {
   deliveryId: string;
   eventName: string;
   payload: Record<string, unknown>;
+  /** SHA-256 hex of the raw bytes the provider signed. */
+  payloadDigest: string;
 }
 
 export interface InboundEventRepositoryPort {
   /**
    * Store a delivery and stage the job that owes its processing, in one
-   * transaction. `false` when the provider retried a delivery already stored:
-   * nothing is written and nothing is owed twice.
+   * transaction. `false` when the provider retried a delivery already stored,
+   * or when the same signed bytes arrive again under another delivery id (a
+   * replay): nothing is written and nothing is owed twice.
    */
   receive(delivery: NewDelivery): Promise<boolean>;
 
@@ -28,6 +31,10 @@ export interface InboundEventRepositoryPort {
    * `ExternalEventReceived` per event that landed, and mark the delivery
    * processed — together. An event already stored (re-processing) is skipped,
    * and so is its notification.
+   *
+   * Returns how many events were **newly stored** by this call (what the
+   * outbox is woken for); the delivery's `eventCount` column is the **total**
+   * stored for it, so a re-run neither resets nor inflates it.
    */
   recordProcessed(
     delivery: InboundDelivery,

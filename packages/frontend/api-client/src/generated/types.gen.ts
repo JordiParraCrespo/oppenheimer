@@ -1440,18 +1440,25 @@ export type SessionResponseDto = {
 
 export type SessionPageMetaDto = {
     /**
-     * Total matching sessions, across all pages.
+     * Total matching sessions, across all pages. Page mode only: absent when `cursor` was sent.
      */
-    total: number;
+    total?: number;
     /**
-     * 1-based page number.
+     * 1-based page number. Page mode only: absent when `cursor` was sent.
      */
-    page: number;
+    page?: number;
     /**
      * Sessions per page.
      */
     limit: number;
-    totalPages: number;
+    /**
+     * Page mode only: absent when `cursor` was sent.
+     */
+    totalPages?: number;
+    /**
+     * Send it back as `cursor`, with the same `sort`, for the page after this one. Null on the last page. Present in both modes.
+     */
+    nextCursor: string | null;
 };
 
 export type PaginatedSessionsResponseDto = {
@@ -6072,7 +6079,11 @@ export type FindSessionsData = {
          */
         limit?: number;
         /**
-         * Page number (default: 1)
+         * Opaque: the previous page’s `meta.nextCursor`, for the same `sort`. Walks without counting, and a session is never returned twice in one walk.
+         */
+        cursor?: string;
+        /**
+         * Page number (default: 1). Ignored when `cursor` is sent.
          */
         page?: number;
     };
@@ -6206,6 +6217,8 @@ export type IssueAttachTicketErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * HOSTS_001 — Host not found
+     *
      * SESSIONS_001 — Session not found
      */
     404: ProblemDetailsDto;
@@ -6353,6 +6366,8 @@ export type RestartSessionErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * HOSTS_001 — Host not found
+     *
      * SESSIONS_001 — Session not found
      */
     404: ProblemDetailsDto;

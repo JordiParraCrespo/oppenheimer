@@ -1,4 +1,4 @@
-import { paginationSchema } from '@oppenheimer/backend-core';
+import { paginationSchema } from '@oppenheimer/shared';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 

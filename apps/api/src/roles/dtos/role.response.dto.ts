@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '@oppenheimer/backend-core';
 import type { PermissionDefinition } from '@oppenheimer/shared';
 
 export class RoleResponseDto {
@@ -49,10 +50,7 @@ export class RolePaginationMetaDto {
   totalPages!: number;
 }
 
-export class PaginatedRolesResponseDto {
-  @ApiProperty({ type: [RoleResponseDto] })
-  data!: RoleResponseDto[];
-
-  @ApiProperty({ type: RolePaginationMetaDto })
-  meta!: RolePaginationMetaDto;
-}
+export class PaginatedRolesResponseDto extends PaginatedResponseDto(
+  RoleResponseDto,
+  RolePaginationMetaDto,
+) {}

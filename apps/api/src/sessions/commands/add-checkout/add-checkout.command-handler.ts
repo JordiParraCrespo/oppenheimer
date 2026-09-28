@@ -7,6 +7,7 @@ import { PROJECT_LOOKUP } from '../../../projects/projects.di-tokens';
 import { requireActiveProject } from '../../application/require-active-project.policy';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../application/session-launch.factory';
+import { SessionLoaderResolver } from '../../application/session-loader.resolver';
 import { SessionPlanFactory } from '../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
@@ -31,6 +32,7 @@ export class AddCheckoutCommandHandler
   implements ICommandHandler<AddCheckoutCommand, SessionCommandResult>
 {
   constructor(
+    private readonly loader: SessionLoaderResolver,
     @Inject(WORK_SESSION_REPOSITORY)
     private readonly sessions: WorkSessionRepositoryPort,
     @Inject(PROJECT_LOOKUP)
@@ -42,18 +44,7 @@ export class AddCheckoutCommandHandler
   ) {}
 
   async execute(command: AddCheckoutCommand): Promise<SessionCommandResult> {
-    const found = await this.sessions.findOneById(command.scope, command.sessionId);
-    if (found.isNone()) {
-      throw new AppError(SessionErrors.NOT_FOUND, {
-        detail: `No session with id ${command.sessionId}`,
-      });
-    }
-    const session = found.unwrap();
-    if (session.isResolved) {
-      throw new AppError(SessionErrors.ALREADY_RESOLVED, {
-        detail: `Session ${session.slug} is closed`,
-      });
-    }
+    const session = await this.loader.requireLive(command.scope, command.sessionId);
     // The partial unique on `(sessionId, githubRepoId) WHERE removedAt IS NULL`
     // says the same thing; saying it here is what turns a constraint violation
     // into a sentence about the repository the caller named.

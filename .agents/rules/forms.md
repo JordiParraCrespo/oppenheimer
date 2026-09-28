@@ -116,16 +116,17 @@ variants that do not exist.
 
 ## Schemas that would bloat the web bundle
 
-`apps/web` must not import runtime values from the `@oppenheimer/shared` **root**; see
-the note in the repo-root `AGENTS.md`. For forms this means:
+`@oppenheimer/shared` tree-shakes in `apps/web` (see the note in the
+repo-root `AGENTS.md`), so the cost of a schema is what it reaches, not where
+it is imported from. For forms this means:
 
 - Auth forms import from `@oppenheimer/shared/schemas/auth`, which pulls in nothing
-  but Zod.
+  but Zod. Prefer the schema's own subpath over the root; it names the
+  dependency.
 - `createApiTokenSchema` imports the scope catalog, so the API-token form
   declares its value type locally and validates with React Hook Form's built-in
   rules instead. Reach for the same escape hatch for any schema whose
   transitive imports do not belong in a browser bundle.
-- A new narrow subpath needs an `exports` entry in `packages/shared/package.json`
-  **and** an entry in `optimizeDeps.include` in `apps/web/vite.config.ts`;
-  workspace `dist` folders sit outside `node_modules`, so Vite will not
-  pre-bundle the CommonJS build without being told.
+- A new schema file `src/schemas/<area>.schema.ts` is reachable as
+  `@oppenheimer/shared/schemas/<area>` with no config: the export map is a
+  pattern.

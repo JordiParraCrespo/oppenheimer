@@ -92,8 +92,8 @@ client reports, so gate on flags that target identity.
   the last set across a cold start.
 - **The catalog is not in the `@oppenheimer/shared` root barrel.** The API
   imports `@oppenheimer/shared/feature-flags`; the web tier reads the Zod-free
-  `@oppenheimer/shared/feature-flags/catalog` (pre-bundled in
-  `apps/web/vite.config.ts`) and imports types from the former.
+  `@oppenheimer/shared/feature-flags/catalog`, which keeps Zod and the
+  evaluator out of the browser, and imports types from the former.
 
 ## What is not a flag
 

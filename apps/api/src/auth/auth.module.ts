@@ -12,6 +12,7 @@ import {
   REQUEST_TENANT,
 } from './auth.di-tokens';
 import { CompleteSignUpCommandHandler } from './commands/complete-sign-up/complete-sign-up.command-handler';
+import { RotateDelegatedSessionsCommandHandler } from './commands/rotate-delegated-sessions/rotate-delegated-sessions.command-handler';
 import { Account } from './database/account.orm-entity';
 import { OAuthAccessTokenOrmEntity } from './database/oauth-access-token.orm-entity';
 import { OAuthApplicationOrmEntity } from './database/oauth-application.orm-entity';
@@ -91,6 +92,9 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     AuthCommandBusBridge,
     // The one handler that knows what sign-up owes a new account.
     CompleteSignUpCommandHandler,
+    // What a ban or unban made straight through Better Auth owes the account's
+    // cached delegated sessions (raised by the admin plugin's after-hook).
+    RotateDelegatedSessionsCommandHandler,
     PoliciesGuard,
     ApiAuthGuard,
     OptionalApiAuthGuard,

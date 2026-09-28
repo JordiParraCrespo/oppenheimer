@@ -9,9 +9,15 @@ import { RUNNER_LINK_CLOSE_CODES } from '@oppenheimer/shared/protocol';
 import type { HostPresencePort } from '../../hosts/application/host-presence.port';
 import { HOST_PRESENCE } from '../../hosts/hosts.di-tokens';
 import type { RunnerLink } from '../../links/application/link-registry.port';
-import type { RecordSessionEventsPort } from '../../sessions/application/record-session-events.port';
+import type {
+  RecordSessionEventsPort,
+  RunnerEventAck,
+} from '../../sessions/application/record-session-events.port';
 import type { SessionReconciliationPort } from '../../sessions/application/session-reconciliation.port';
 import { RECORD_SESSION_EVENTS, SESSION_RECONCILIATION } from '../../sessions/sessions.di-tokens';
+
+/** RFC 6455's generic "policy violation": not one of the link's own codes, so the runner redials. */
+const POLICY_VIOLATION = 1008;
 
 /**
  * What the control plane does with what a runner reports: a batch of one
@@ -41,10 +47,11 @@ export class RelayEventsProcessor {
     connectedAt = new Date(),
     address: string | null = null,
   ): Promise<void> {
-    if (!(await this.presence.observe(link.hostId, { facts: hello.host, connectedAt }))) {
-      // Unpaired between the handshake's check and this hello: nothing it holds
-      // is reconciled, and it is told why rather than left to redial.
-      this.closeUnpaired(link);
+    const observed = await this.presence.observe(link.hostId, { facts: hello.host, connectedAt });
+    if (observed !== 'recorded') {
+      // Unpaired (or its owner refused) between the handshake's check and this
+      // hello: nothing it holds is reconciled, and it is told why.
+      this.closeRefused(link, observed);
       return;
     }
     // Where the link came from, recorded once per link. A failure here costs
@@ -88,17 +95,30 @@ export class RelayEventsProcessor {
       memoryAvailableBytes: heartbeat.load.memoryAvailableBytes,
       roundTripMillis: link.roundTripMillis ?? null,
     };
-    if (!(await this.presence.observe(link.hostId, report))) {
+    const observed = await this.presence.observe(link.hostId, report);
+    if (observed !== 'recorded') {
       // The host was unpaired while its link was open. The domain event closes
       // the link at once on the instance that holds it; this is what closes it
-      // on every other one, within a heartbeat.
-      this.closeUnpaired(link);
+      // on every other one, within a heartbeat. The same goes for an owner
+      // banned or deactivated while it was open, which raises no event here.
+      this.closeRefused(link, observed);
     }
   }
 
-  private closeUnpaired(link: RunnerLink): void {
-    this.logger.log({ message: 'closing the link of an unpaired host', hostId: link.hostId });
-    link.close(RUNNER_LINK_CLOSE_CODES.UNPAIRED, 'host unpaired');
+  private closeRefused(link: RunnerLink, why: 'unpaired' | 'owner_refused'): void {
+    if (why === 'unpaired') {
+      this.logger.log({ message: 'closing the link of an unpaired host', hostId: link.hostId });
+      link.close(RUNNER_LINK_CLOSE_CODES.UNPAIRED, 'host unpaired');
+      return;
+    }
+    // Not UNPAIRED, which is terminal: a ban can be lifted. A plain policy
+    // close sends the runner down its reconnect ladder, and the handshake
+    // refuses it (401) until the owner may act again.
+    this.logger.log({
+      message: 'closing the link of a host whose owner may not act',
+      hostId: link.hostId,
+    });
+    link.close(POLICY_VIOLATION, 'owner may not act');
   }
 
   /**
@@ -150,18 +170,44 @@ export class RelayEventsProcessor {
     });
   }
 
-  async onEventsAppend(link: RunnerLink, batch: EventsAppendMessage): Promise<void> {
+  /**
+   * One or more consecutive batches for **one** session, applied as one append —
+   * one lock and one insert — and acknowledged as the runner sent them: an
+   * `events.ack` per `batchId`, naming only that batch's keys. The runner keeps
+   * each batch until its own ack accounts for every key in it, so an ack that
+   * named another batch's keys, or one ack for several, would be resent forever.
+   */
+  async onEventsAppend(
+    link: RunnerLink,
+    batches: readonly [EventsAppendMessage, ...EventsAppendMessage[]],
+  ): Promise<void> {
+    const [first] = batches;
     const ack = await this.events.record({
-      batchId: batch.batchId,
-      sessionId: batch.sessionId,
+      batchId: first.batchId,
+      sessionId: first.sessionId,
       hostId: link.hostId,
-      events: batch.events,
+      events: batches.flatMap((batch) => batch.events),
     });
-    link.send({
-      type: 'events.ack',
-      batchId: ack.batchId,
-      accepted: ack.accepted,
-      ...(ack.rejected.length ? { rejected: ack.rejected } : {}),
-    });
+    for (const batch of batches) {
+      const own = ackFor(batch, ack);
+      link.send({
+        type: 'events.ack',
+        batchId: batch.batchId,
+        accepted: own.accepted,
+        ...(own.rejected.length ? { rejected: own.rejected } : {}),
+      });
+    }
   }
+}
+
+/** The part of a coalesced append's answer that is about this batch's keys. */
+function ackFor(
+  batch: EventsAppendMessage,
+  ack: RunnerEventAck,
+): Pick<RunnerEventAck, 'accepted' | 'rejected'> {
+  const keys = new Set(batch.events.map((event) => event.idempotencyKey));
+  return {
+    accepted: ack.accepted.filter((key) => keys.has(key)),
+    rejected: ack.rejected.filter((rejection) => keys.has(rejection.idempotencyKey)),
+  };
 }

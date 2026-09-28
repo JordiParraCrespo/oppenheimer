@@ -45,6 +45,7 @@ export class ReceiveInboundDeliveryCommandHandler
       deliveryId: command.deliveryId,
       eventName: command.eventName,
       payload: command.payload,
+      payloadDigest: command.payloadDigest,
     });
     return stored ? 'stored' : 'duplicate';
   }

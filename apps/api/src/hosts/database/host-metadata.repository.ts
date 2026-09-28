@@ -84,16 +84,24 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
   }
 
   /**
-   * Q3. One row, nothing it writes indexed, so a HOT update. A value not
-   * reported this time keeps the one on file, so a hello that carries no load
-   * does not blank the last heartbeat's.
+   * Q3, for a host that is still paired, in one statement. One row, nothing it
+   * writes indexed, so a HOT update. A value not reported this time keeps the
+   * one on file, so a hello that carries no load does not blank the last
+   * heartbeat's.
+   *
+   * The pairing check rides the insert: the row to write is selected from
+   * `host` by primary key with `"unpairedAt" IS NULL`, so an unpaired or
+   * unknown host yields no row to insert, nothing is written, and `RETURNING`
+   * comes back empty. That is the whole of what a heartbeat used to read the
+   * host row for.
    */
-  async recordVitals(hostId: string, report: VitalsReport, at: Date): Promise<void> {
-    await this.dataSource.query(
+  async recordVitalsIfPaired(hostId: string, report: VitalsReport, at: Date): Promise<boolean> {
+    const written: unknown[] = await this.dataSource.query(
       `INSERT INTO "host_presence" AS p
          ("hostId", "lastSeenAt", "connectedAt", "roundTripMillis", "loadAverage",
           "memoryAvailableBytes", "diskFreeBytes", "updatedAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $2)
+       SELECT h."id", $2, $3, $4, $5, $6, $7, $2
+         FROM "host" h WHERE h."id" = $1 AND h."unpairedAt" IS NULL
        ON CONFLICT ("hostId") DO UPDATE SET
          "lastSeenAt" = EXCLUDED."lastSeenAt",
          "connectedAt" = COALESCE(EXCLUDED."connectedAt", p."connectedAt"),
@@ -101,7 +109,8 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
          "loadAverage" = COALESCE(EXCLUDED."loadAverage", p."loadAverage"),
          "memoryAvailableBytes" = COALESCE(EXCLUDED."memoryAvailableBytes", p."memoryAvailableBytes"),
          "diskFreeBytes" = COALESCE(EXCLUDED."diskFreeBytes", p."diskFreeBytes"),
-         "updatedAt" = EXCLUDED."updatedAt"`,
+         "updatedAt" = EXCLUDED."updatedAt"
+       RETURNING 1`,
       [
         hostId,
         at,
@@ -112,6 +121,7 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
         report.diskFreeBytes ?? null,
       ],
     );
+    return written.length > 0;
   }
 
   /**

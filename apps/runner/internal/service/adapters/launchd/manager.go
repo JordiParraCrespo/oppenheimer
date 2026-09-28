@@ -10,13 +10,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/execx"
 )
 
 var _ app.Manager = (*Manager)(nil)
@@ -34,7 +34,7 @@ type Options struct {
 	Dir string
 	// UID is the user's numeric id, the GUI domain launchctl addresses.
 	UID int
-	// Commands runs launchctl; defaults to os/exec.
+	// Commands runs launchctl; defaults to execx.
 	Commands app.Commands
 }
 
@@ -151,9 +151,9 @@ func controlFailed(command, out string, err error) error {
 type execCommands struct{}
 
 func (execCommands) Run(ctx context.Context, name string, args ...string) (string, error) {
-	out, err := exec.CommandContext(ctx, name, args...).CombinedOutput()
+	res, err := execx.Run(ctx, execx.Spec{Name: name, Args: args, Output: execx.Combined})
 	if err != nil {
-		return string(out), fmt.Errorf("%s: %w", name, err)
+		return res.Out, fmt.Errorf("%s: %w", name, execx.Cause(err))
 	}
-	return string(out), nil
+	return res.Out, nil
 }

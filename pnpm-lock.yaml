@@ -276,6 +276,9 @@ importers:
       '@oppenheimer/go-core':
         specifier: workspace:*
         version: link:../../packages/go/core
+      '@oppenheimer/go-execx':
+        specifier: workspace:*
+        version: link:../../packages/go/execx
       '@oppenheimer/go-health':
         specifier: workspace:*
         version: link:../../packages/go/health
@@ -548,9 +551,6 @@ importers:
       '@nestjs/common':
         specifier: ^11.1.28
         version: 11.1.28(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/config':
-        specifier: ^4.0.4
-        version: 4.0.4(@nestjs/common@11.1.28(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
       '@nestjs/core':
         specifier: ^11.1.28
         version: 11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -1118,6 +1118,8 @@ importers:
   packages/go/config: {}
 
   packages/go/core: {}
+
+  packages/go/execx: {}
 
   packages/go/health:
     devDependencies:

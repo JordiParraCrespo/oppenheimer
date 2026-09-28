@@ -277,9 +277,9 @@ pieces from your plan, following `references/templates.md`:
   declare: check `globals.css`.
 - **Forms:** `useForm` with `useZodResolver(schema)` from
   `@oppenheimer/frontend-web`, the schema from
-  `@oppenheimer/shared/schemas/<area>` (never the package root in
-  `apps/web`; a new subpath also needs `optimizeDeps.include` in
-  `vite.config.ts`), `noValidate`, `Field` with `FieldLabel`,
+  `@oppenheimer/shared/schemas/<area>` (the schema's own subpath rather than
+  the package root; a new `<area>.schema.ts` is a subpath with no config),
+  `noValidate`, `Field` with `FieldLabel`,
   `FieldDescription` and `FieldError`, `data-invalid` and `aria-invalid`
   both set. A picker is a `Controller`. An edit form takes `values` (or a
   `key` on the record) so it resets on new data, with no effect. The form

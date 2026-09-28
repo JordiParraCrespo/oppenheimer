@@ -52,6 +52,7 @@ export class IssueAttachTicketHttpController {
   })
   @ApiResponse({ status: 201, type: AttachTicketResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Session not found', code: 'SESSIONS_001' })
+  @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
   @ApiProblemResponse({ status: 409, description: 'That session is closed', code: 'SESSIONS_005' })
   @ApiProblemResponse({
     status: 503,
