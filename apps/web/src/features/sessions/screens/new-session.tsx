@@ -19,14 +19,13 @@ export function NewSessionScreen() {
   return (
     <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas-recessed">
       <div className="m-auto flex w-full max-w-[720px] flex-col gap-4.5 px-8 py-12">
-        <div>
-          <h1 className="font-display text-[32px] leading-[1.1] font-semibold tracking-[-0.021em] text-fg">
-            {t('sessions.new.title')}
-          </h1>
-          <p className="mt-1.5 text-base text-fg-muted">{t('sessions.new.subtitle')}</p>
-        </div>
-
-        <NewSessionForm />
+        <NewSessionForm
+          heading={
+            <h1 className="font-display text-[32px] leading-[1.1] font-semibold tracking-[-0.021em] text-fg">
+              {t('sessions.new.title')}
+            </h1>
+          }
+        />
       </div>
     </div>
   );

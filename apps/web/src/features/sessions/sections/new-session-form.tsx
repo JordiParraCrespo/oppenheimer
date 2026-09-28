@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NewSessionFormContext, useNewSessionForm } from '../hooks/use-new-session-form';
 import { NewSessionAgent } from './new-session-agent';
@@ -8,6 +9,7 @@ import { NewSessionPermission } from './new-session-permission';
 import { NewSessionProject } from './new-session-project';
 import { NewSessionRepositories } from './new-session-repositories';
 import { NewSessionSend } from './new-session-send';
+import { NewSessionSubtitle } from './new-session-subtitle';
 
 /**
  * New session: the draft's store, and where each of its controls sits.
@@ -29,18 +31,29 @@ import { NewSessionSend } from './new-session-send';
  * Compiler would give the same result for a component shaped worse; this shape
  * does not depend on it, and `new-session-form-render.spec.tsx` holds it there.
  *
+ * `heading` is the screen's title; the subtitle under it is a section of
+ * its own that watches the project and the repositories it summarises.
+ *
  * The chips sit in the composer's `scope` slot, the grey band fused to the
  * top of the field (the 2026-09-26 export's tabbed composer): project first,
  * because picking one prefills the rest
  * (`product/versions/mvp/05-screens.md`); then the host, the
  * repository, and the branch while exactly one repository is selected.
  */
-export function NewSessionForm() {
+export function NewSessionForm({ heading }: { heading?: ReactNode }) {
   const { t } = useTranslation();
   const form = useNewSessionForm();
 
   return (
     <NewSessionFormContext.Provider value={form}>
+      {heading ? (
+        // The title comes from the screen; the line under it reads the draft,
+        // so it lives inside the store's provider.
+        <div>
+          {heading}
+          <NewSessionSubtitle />
+        </div>
+      ) : null}
       <NewSessionSend
         scope={
           // A fieldset rather than a div with `role="group"`: the chips are

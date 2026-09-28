@@ -87,7 +87,11 @@
   email typed out. Full name is **two fields side by side**, not the
   export's one, because the account stores first and last name apart
   and splitting one string on its first space gets names wrong.
-- New session: chips for project, host, repository, branch, in the grey
+- New session: on the grey canvas, a line under the title that says what
+  sending will do once a project is picked ("In XRP Mobile · cloning 1 of
+  1 repository, each on its own opp/ branch."; "Set the scope, then
+  describe the work." until then); chips for project, host, repository,
+  branch, in the grey
   band fused to the top of the composer (the tabbed composer of the
   2026-09-26 export); a composer for the
   first task whose foot row reads scope of action, then engine: attach
