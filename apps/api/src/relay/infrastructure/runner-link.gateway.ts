@@ -8,6 +8,7 @@ import {
   type ProtocolMessage,
   protocolMessageSchema,
   RUNNER_LINK_CLOSE_CODES,
+  RUNNER_LINK_REFUSALS,
   welcomeSchema,
 } from '@oppenheimer/shared/protocol';
 import { type WebSocket, WebSocketServer } from 'ws';
@@ -109,7 +110,7 @@ export class RunnerLinkGateway {
         socket,
         410,
         'this host was unpaired; pair it again from Add host',
-        'host-unpaired',
+        RUNNER_LINK_REFUSALS.UNPAIRED,
       );
       return;
     }

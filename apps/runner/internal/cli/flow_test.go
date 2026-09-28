@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 )
 
 func TestFlowWindowPausesAtTheWindowAndResumesOnCredit(t *testing.T) {
@@ -12,7 +14,7 @@ func TestFlowWindowPausesAtTheWindowAndResumesOnCredit(t *testing.T) {
 	if !w.acquire(ctx) {
 		t.Fatal("a fresh window must admit a read")
 	}
-	w.sent(creditWindow)
+	w.sent(link.CreditWindow)
 	acquired := make(chan bool, 1)
 	go func() { acquired <- w.acquire(ctx) }()
 	select {
@@ -33,7 +35,7 @@ func TestFlowWindowPausesAtTheWindowAndResumesOnCredit(t *testing.T) {
 
 func TestFlowWindowReleasesOnCloseAndOnContext(t *testing.T) {
 	w := newFlowWindow()
-	w.sent(creditWindow)
+	w.sent(link.CreditWindow)
 	done := make(chan bool, 1)
 	go func() { done <- w.acquire(context.Background()) }()
 	w.close()
@@ -42,7 +44,7 @@ func TestFlowWindowReleasesOnCloseAndOnContext(t *testing.T) {
 	}
 
 	w2 := newFlowWindow()
-	w2.sent(creditWindow)
+	w2.sent(link.CreditWindow)
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() { done <- w2.acquire(ctx) }()
 	cancel()
