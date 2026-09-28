@@ -44,6 +44,7 @@ import {
   sessionsConfig,
   storageConfig,
 } from './config';
+import { DEFAULT_JOB_OPTIONS } from './config/queue-options.config';
 import { TypeOrmQueryLogger } from './config/typeorm-query.logger';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { GithubModule } from './github/github.module';
@@ -149,6 +150,9 @@ import { UsersModule } from './users/user.module';
           port: configService.get('redis.port'),
           password: configService.get('redis.password'),
         },
+        // Every queue removes its finished jobs; a queue that needs retries
+        // or a longer window sets its own in `QueueModule`.
+        defaultJobOptions: DEFAULT_JOB_OPTIONS,
       }),
     }),
     EventEmitterModule.forRoot(),
