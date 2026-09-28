@@ -24,6 +24,7 @@ wired into the API.
 | `createAuthRouteLoggingMiddleware`                        | Request logging for Better Auth routes (its `middleware` option)        |
 | `toPageMeta`, `PageMeta`                                  | A paginated response's `meta` from a repository's `Paginated` result    |
 | `PaginatedResponseDto(Item, Meta)`                        | Base class for a paginated response DTO's `data` / `meta`               |
+| `likeContains`                                            | An `ILIKE` contains-pattern with the term's `%`, `_` and `\` escaped     |
 | `requestMemo`                                             | One in-flight computation per key per request, shared by every caller   |
 
 ## Usage

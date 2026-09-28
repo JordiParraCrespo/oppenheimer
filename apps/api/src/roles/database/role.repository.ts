@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { likeContains } from '@oppenheimer/backend-core';
 import { type AggregateID, OutboxService, Paginated } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { type FindOptionsWhere, ILike, In, IsNull, type Repository } from 'typeorm';
@@ -145,7 +146,8 @@ function searchWhere(
 ): FindOptionsWhere<RoleOrmEntity> | FindOptionsWhere<RoleOrmEntity>[] {
   if (!search) return scopedWhere({}, organizationId);
 
-  const needle = ILike(`%${search}%`);
+  // The term's `%` and `_` match literally.
+  const needle = ILike(likeContains(search));
 
   return [{ name: needle }, { description: needle }].flatMap((match) => {
     const scoped = scopedWhere(match, organizationId);

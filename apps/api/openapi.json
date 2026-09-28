@@ -731,8 +731,9 @@
             "name": "search",
             "required": false,
             "in": "query",
-            "description": "Search by name or email",
+            "description": "Search by name or email; `%` and `_` match literally",
             "schema": {
+              "maxLength": 100,
               "type": "string"
             }
           },
@@ -1583,8 +1584,9 @@
             "name": "search",
             "required": false,
             "in": "query",
-            "description": "Search by role name",
+            "description": "Search by role name or description; `%` and `_` match literally",
             "schema": {
+              "maxLength": 100,
               "type": "string"
             }
           },

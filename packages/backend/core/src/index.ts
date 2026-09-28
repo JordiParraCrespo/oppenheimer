@@ -1,3 +1,4 @@
+export { likeContains } from './database/like-contains';
 export {
   ApiAuthProblemResponses,
   ApiProblemResponse,

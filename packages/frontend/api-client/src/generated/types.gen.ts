@@ -2363,7 +2363,7 @@ export type FindAllData = {
     path?: never;
     query?: {
         /**
-         * Search by name or email
+         * Search by name or email; `%` and `_` match literally
          */
         search?: string;
         /**
@@ -2818,7 +2818,7 @@ export type FindAll3Data = {
     path?: never;
     query?: {
         /**
-         * Search by role name
+         * Search by role name or description; `%` and `_` match literally
          */
         search?: string;
         /**
