@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { nullableEnum } from '@oppenheimer/backend-core';
 import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
 
 /** One repository a project holds, in the project's order. */
@@ -64,8 +65,7 @@ export class ProjectResponseDto {
   // The enum is the contract: a default agent is written only through
   // `codingAgentSchema`, so a stored one is always a catalog id.
   @ApiPropertyOptional({
-    nullable: true,
-    enum: CODING_AGENT_IDS,
+    ...nullableEnum(CODING_AGENT_IDS),
     description: 'The agent a new session is offered, from the coding-agent catalog.',
     example: 'claude-code',
   })

@@ -1,11 +1,7 @@
 import type { RunsFilter } from '@oppenheimer/frontend-consumer';
-import {
-  type AutomationRunStatus,
-  RUN_WINDOWS,
-  type RunWindow,
-} from '@oppenheimer/shared/automations';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { type RunStatusTab, type RunsSearch } from '../lib/runs-search';
+import type { AutomationRunStatus, RunWindow } from '@oppenheimer/shared/automations';
+import { getRouteApi } from '@tanstack/react-router';
+import type { RunStatusTab, RunsSearch } from '../lib/runs-search';
 
 /** What each pill asks the API for; `all` is the listed statuses, the API's default. */
 const TAB_STATUSES: Record<RunStatusTab, readonly AutomationRunStatus[] | undefined> = {
@@ -20,31 +16,33 @@ const DEFAULT_WINDOW: RunWindow = '30d';
 /** Pages of ten, as the foot reads "1–10 of 65". */
 export const RUNS_PAGE_SIZE = 10;
 
+/** The two routes that draw the list, each declaring `runsSearchSchema`. */
+const overview = getRouteApi('/_authenticated/automations/runs');
+const automation = getRouteApi('/_authenticated/automations/$automationId');
+
 /**
- * The runs list's facets and page, in the URL (`runsSearchSchema`, declared on
- * each route that shows the list): a filtered list is a link someone can send,
- * and Back undoes a filter. A default is written as no key, so an unfiltered
- * list is a clean URL, and narrowing any facet goes back to page one.
+ * The runs list's facets and page, in the URL (`runsSearchSchema`): a filtered
+ * list is a link someone can send, and Back undoes a filter. The search is
+ * read from the route that draws the list, as its schema left it. A default
+ * is written as no key, so an unfiltered list is a clean URL, and narrowing
+ * any facet goes back to page one.
  */
 export function useRunsFilters(scope: { automationId?: string }) {
-  const search: RunsSearch = useSearch({ strict: false });
-  const navigate = useNavigate();
+  const route = scope.automationId ? automation : overview;
+  const search: RunsSearch = route.useSearch();
+  const navigate = route.useNavigate();
 
   const state = {
     status: search.status ?? 'all',
     automation: search.automation ?? null,
     project: search.project ?? null,
-    window: RUN_WINDOWS.find((window) => window === search.window) ?? DEFAULT_WINDOW,
+    window: search.window ?? DEFAULT_WINDOW,
     page: search.page ?? 1,
   };
 
   // The URL's own history entry, replaced: a filter is not a page to go Back to.
   const write = (patch: Partial<RunsSearch>) =>
-    navigate({
-      to: '.',
-      search: (previous: RunsSearch) => ({ ...previous, ...patch }),
-      replace: true,
-    });
+    navigate({ search: (previous) => ({ ...previous, ...patch }), replace: true });
 
   const filter: RunsFilter = {
     automationId: scope.automationId ?? state.automation ?? undefined,

@@ -76,7 +76,7 @@ export class ProjectsRepository {
   async findAll(): Promise<ProjectEntity[]> {
     // An absent body is a failed read, not an empty collection — returning `[]`
     // would render "no projects" over a request that never succeeded.
-    const data = await unwrapBody(heyApiSdk.listProjects(), ProjectsErrors.FETCH_LIST_FAILED);
+    const data = await unwrapBody(heyApiSdk.findProjects(), ProjectsErrors.FETCH_LIST_FAILED);
     return data.map(toEntity);
   }
 

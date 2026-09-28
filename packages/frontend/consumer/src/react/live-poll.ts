@@ -1,8 +1,10 @@
 /**
- * How often a view that shows something moving asks the API again, in one
- * place. Each interval is a poll only while the thing it watches is moving —
- * the hooks return `false` once it settles — and each goes when the console
- * streams that fact instead.
+ * Every interval at which the console asks the API again, in one place and
+ * read only by this package's query hooks: a feature never sets
+ * `refetchInterval`. The first three poll only while the thing they watch is
+ * moving — the hooks return `false` once it settles; presence polls while a
+ * view that shows it is mounted (`useHostPresence`). Each goes when the
+ * console streams that fact instead.
  *
  * - `sessionStarting`: a session a host is still building. A clone from GitHub
  *   takes seconds; past that, a request every two seconds can only answer

@@ -43,7 +43,6 @@ export class UpdateRoleHttpController {
   @CheckPolicies({ action: 'update', subject: 'Role' })
   @RequireScopes('roles:write')
   @ApiOperation({
-    operationId: 'updateRole',
     summary: 'Update a role (description and/or permissions)',
   })
   @ApiResponse({ status: 200, type: RoleResponseDto })

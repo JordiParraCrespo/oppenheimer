@@ -63,7 +63,6 @@ export class MembersController {
   @OrganizationScoped('orgId')
   @CheckPolicies({ action: 'read', subject: 'Member' })
   @ApiOperation({
-    operationId: 'listOrganizationMembers',
     summary: 'List members of an organization',
   })
   @ApiQuery({
@@ -82,7 +81,7 @@ export class MembersController {
       'Role facet: keep members holding any of these assigned roles; repeat the parameter to select several',
   })
   @ApiResponse({ status: 200, type: [MemberResponseDto] })
-  list(
+  listOrganizationMembers(
     @Req() req: Request,
     @Param('orgId', ParseUUIDPipe) orgId: string,
     @Query() query: ListMembersRequest,
@@ -113,9 +112,9 @@ export class MembersController {
   @RequireScopes('members:write')
   @OrganizationScoped('orgId')
   @CheckPolicies({ action: 'update', subject: 'Member' })
-  @ApiOperation({ operationId: 'updateMemberRole', summary: "Change a member's organization role" })
+  @ApiOperation({ summary: "Change a member's organization role" })
   @ApiResponse({ status: 200, type: MemberResponseDto })
-  updateRole(
+  updateMemberRole(
     @Req() req: Request,
     @Param('orgId', ParseUUIDPipe) orgId: string,
     @Param('memberId', ParseUUIDPipe) memberId: string,
@@ -130,11 +129,10 @@ export class MembersController {
   @OrganizationScoped('orgId')
   @CheckPolicies({ action: 'delete', subject: 'Member' })
   @ApiOperation({
-    operationId: 'removeOrganizationMember',
     summary: 'Remove a member from an organization',
   })
   @ApiResponse({ status: 200, type: MemberResponseDto })
-  remove(
+  removeOrganizationMember(
     @Req() req: Request,
     @Param('orgId', ParseUUIDPipe) orgId: string,
     @Param('memberIdOrEmail') memberIdOrEmail: string,

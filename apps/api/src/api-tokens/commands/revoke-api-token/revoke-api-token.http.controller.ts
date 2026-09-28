@@ -31,7 +31,6 @@ export class RevokeApiTokenHttpController {
   @CheckPolicies({ action: 'delete', subject: 'ApiToken' })
   @RequireScopes('tokens:write')
   @ApiOperation({
-    operationId: 'revokeApiToken',
     summary: 'Revoke an API token',
     description:
       'Takes effect immediately. The record is kept so the audit trail survives; the secret stops working.',

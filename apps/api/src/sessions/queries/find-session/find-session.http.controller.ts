@@ -39,7 +39,6 @@ export class FindSessionHttpController {
   @CheckPolicies({ action: 'read', subject: 'Session' })
   @RequireScopes('sessions:read')
   @ApiOperation({
-    operationId: 'getSession',
     summary: 'Read one session',
     description: 'With its live checkouts. Retired checkouts are left out.',
   })

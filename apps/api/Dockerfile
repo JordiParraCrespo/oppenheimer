@@ -6,6 +6,8 @@ RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 FROM base AS manifests
 WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+# pnpm applies these on install; the lockfile records their hashes.
+COPY patches ./patches
 COPY apps/api/package.json ./apps/api/
 COPY packages/auth/package.json ./packages/auth/
 COPY packages/shared/package.json ./packages/shared/

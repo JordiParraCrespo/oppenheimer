@@ -103,8 +103,8 @@ it. The steps are the "Add a module to a product package" cookbook in
 2. **Errors:** `THINGS_CLIENT_00n` fallbacks, used only when the API sent no
    problem document.
 3. **Repository:** calls `heyApiSdk` from `@oppenheimer/api-client` through
-   `unwrap` / `unwrapBody` (a generic controller method gets an explicit
-   `operationId` in the API rather than a hand-written URL here), maps DTOs to
+   `unwrap` / `unwrapBody` (the SDK function is the API slice's name:
+   `FindThingsHttpController` is `findThings`), maps DTOs to
    entities, and puts `@MapApiError` on every method. An absent body is a
    failed read, never `[]`.
 4. **Module, tokens, `ConsumerApp` getter** — and a **service only when a

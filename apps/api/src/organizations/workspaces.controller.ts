@@ -68,9 +68,9 @@ export class WorkspacesController {
   @Version('1')
   @RequireScopes('workspaces:read')
   @CheckPolicies({ action: 'read', subject: 'Workspace' })
-  @ApiOperation({ operationId: 'listMyWorkspaces', summary: "List the caller's workspaces" })
+  @ApiOperation({ summary: "List the caller's workspaces" })
   @ApiResponse({ status: 200, type: [WorkspaceResponseDto] })
-  async listMine(
+  async listMyWorkspaces(
     @Req() req: Request,
     @CurrentScope() scope: ScopeContext | null,
   ): Promise<WorkspaceResponseDto[]> {
@@ -88,12 +88,11 @@ export class WorkspacesController {
   @OrganizationScoped('organizationId', 'query')
   @CheckPolicies({ action: 'read', subject: 'Workspace' })
   @ApiOperation({
-    operationId: 'listWorkspaces',
     summary: "List an organization's workspaces (defaults to the active org)",
   })
   @ApiQuery({ name: 'organizationId', required: false, type: String })
   @ApiResponse({ status: 200, type: [WorkspaceResponseDto] })
-  list(@Req() req: Request & TenantRequest): Promise<WorkspaceResponseDto[]> {
+  listWorkspaces(@Req() req: Request & TenantRequest): Promise<WorkspaceResponseDto[]> {
     // The request's tenant: the `organizationId` query field, or the
     // session's organization — the one the request was authorized in.
     return this.workspaces.listForOrganization(
@@ -107,9 +106,9 @@ export class WorkspacesController {
   @RequireScopes('workspaces:write')
   @OrganizationScoped('organizationId', 'body')
   @CheckPolicies({ action: 'create', subject: 'Workspace' })
-  @ApiOperation({ operationId: 'createWorkspace', summary: 'Create a workspace' })
+  @ApiOperation({ summary: 'Create a workspace' })
   @ApiResponse({ status: 201, type: WorkspaceResponseDto })
-  create(
+  createWorkspace(
     @Req() req: Request & TenantRequest,
     @Body() body: CreateWorkspaceRequest,
   ): Promise<WorkspaceResponseDto> {
@@ -123,9 +122,9 @@ export class WorkspacesController {
   @Version('1')
   @RequireScopes('workspaces:write')
   @CheckPolicies({ action: 'update', subject: 'Workspace' })
-  @ApiOperation({ operationId: 'updateWorkspace', summary: 'Rename a workspace' })
+  @ApiOperation({ summary: 'Rename a workspace' })
   @ApiResponse({ status: 200, type: WorkspaceResponseDto })
-  update(
+  updateWorkspace(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateWorkspaceRequest,
@@ -138,9 +137,9 @@ export class WorkspacesController {
   @RequireScopes('workspaces:write')
   @HttpCode(204)
   @CheckPolicies({ action: 'delete', subject: 'Workspace' })
-  @ApiOperation({ operationId: 'deleteWorkspace', summary: 'Delete a workspace' })
+  @ApiOperation({ summary: 'Delete a workspace' })
   @ApiResponse({ status: 204 })
-  remove(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<void> {
+  deleteWorkspace(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.workspaces.remove(req.headers, id);
   }
 
@@ -149,11 +148,10 @@ export class WorkspacesController {
   @RequireScopes('workspaces:read')
   @CheckPolicies({ action: 'read', subject: 'Workspace' })
   @ApiOperation({
-    operationId: 'setActiveWorkspace',
     summary: 'Set the active workspace for the current session',
   })
   @ApiResponse({ status: 200, type: WorkspaceResponseDto })
-  setActive(
+  setActiveWorkspace(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<WorkspaceResponseDto | null> {

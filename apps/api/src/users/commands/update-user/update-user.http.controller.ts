@@ -41,7 +41,7 @@ export class UpdateUserHttpController {
   @Version('1')
   @CheckPolicies({ action: 'update', subject: 'User' })
   @RequireScopes('users:write')
-  @ApiOperation({ operationId: 'patchUser', summary: 'Update user' })
+  @ApiOperation({ summary: 'Update user' })
   @ApiResponse({ status: 200, type: UserResponseDto })
   @ApiProblemResponse({
     status: 404,

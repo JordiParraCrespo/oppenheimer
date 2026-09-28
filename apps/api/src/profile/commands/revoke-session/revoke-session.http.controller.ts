@@ -23,7 +23,7 @@ import { RevokeSessionCommand } from './revoke-session.command';
 @ApiAuthProblemResponses()
 @UseGuards(ApiAuthGuard)
 @Controller('profile')
-export class RevokeSessionHttpController {
+export class RevokeProfileSessionHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Delete('sessions/:id')
@@ -34,7 +34,6 @@ export class RevokeSessionHttpController {
   // on its owner's behalf should be able to do.
   @HttpCode(204)
   @ApiOperation({
-    operationId: 'revokeProfileSession',
     summary: 'Revoke one of the current user’s sessions',
     description: 'Session-authenticated only. The session in use cannot revoke itself.',
   })

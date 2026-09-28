@@ -33,6 +33,7 @@ export { useConsumerApp } from './context';
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
   hostsKeys,
+  useHostPresence,
   useHosts,
   useHostsSnapshot,
   useRemoveHost,
@@ -51,7 +52,6 @@ export {
   useRepositoryBranchesFor,
   useStartInstallation,
 } from './installations.queries';
-export { LIVE_POLL } from './live-poll';
 export {
   type ClaimPersonalWorkspaceVariables,
   organizationsKeys,

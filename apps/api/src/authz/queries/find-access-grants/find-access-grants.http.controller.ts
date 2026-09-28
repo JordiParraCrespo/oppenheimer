@@ -36,7 +36,6 @@ export class FindAccessGrantsHttpController {
   @CheckPolicies({ action: 'read', subject: 'Role' })
   @RequireScopes('roles:read')
   @ApiOperation({
-    operationId: 'listAccessGrants',
     summary: 'List the access grants in the active organization',
   })
   @ApiResponse({ status: 200, type: [AccessGrantResponseDto] })

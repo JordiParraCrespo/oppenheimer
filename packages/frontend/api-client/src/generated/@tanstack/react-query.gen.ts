@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, add, addMember, addSessionCheckout, archiveProject, assign, ban, cancel, catalog, changeEmail, changePassword, check, checkSlug, closeSession, collectSessionImage, connectInstallation, createAccessGrant, createApiToken, createAutomation, createFlagSegment, createOrganization, createProject, createRole, createSession, createUser, createWorkspace, current, deleteAutomation, deleteAvatar, deleteFlagSegment, deleteOrganization, deleteOwnAccount, deleteRole, deleteUser, deleteWorkspace, deploymentCapabilities, disconnectInstallation, duplicateAutomation, evaluateFeatureFlag, findFeatureFlag, findFeatureFlags, findFlagChanges, findFlagSegments, findMyPermissions, findSessions, findUser, findUserRoles, findUsers, getAutomation, getAutomationRun, getAutomationRunHistory, getAutomationSettings, getClientFeatureFlags, getFull, getHost, getHostTimeline, getInvitation, getMembership, getPairingToken, getProfile, getProject, getRole, getSession, getSettings, getUser, impersonate, invite, issueAttachTicket, leave, listAccessGrants, listApiTokens, listAutomationRuns, listAutomations, listGrantablePermissions, listHosts, listInstallationRepositories, listInstallations, listMembers, listMyInvitations, listMyWorkspaces, listOrganizationInvitations, listOrganizationMembers, listOrganizations, listPairingTokens, listProjects, listRepositoryBranches, listRoles, listSessionEvents, listSessions, listUsers, listUserSessions, listWorkspaces, me, mint, moveSession, type Options, pasteSessionImage, patchUser, pauseAutomation, previewAutomationTrigger, readiness, register, reject, removeMember, removeOrganizationMember, removeSessionCheckout, removeUser, rename, renameSession, restartSession, resumeAutomation, revokeAccessGrant, revokeApiToken, revokeOtherSessions, revokePairingToken, revokeProfileSession, revokeSessions, revokeUserSession, runAutomation, setActiveOrganization, setActiveWorkspace, setPassword, setRole, startInstallation, stopImpersonating, stopSession, toggleFeatureFlag, unban, uninstall, unpair, updateAutomation, updateAutomationSettings, updateFeatureFlag, updateFlagSegment, updateMemberRole, updateOrganization, updatePermissions, updateProfile, updateProject, updateRole, updateSettings, updateUser, updateWorkspace, uploadAvatar } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AddSessionCheckoutData, AddSessionCheckoutError, AddSessionCheckoutResponse, ArchiveProjectData, ArchiveProjectError, ArchiveProjectResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangeEmailData, ChangeEmailError, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, CloseSessionData, CloseSessionError, CloseSessionResponse, CollectSessionImageData, CollectSessionImageError, ConnectInstallationData, ConnectInstallationError, ConnectInstallationResponse, CreateAccessGrantData, CreateAccessGrantError, CreateAccessGrantResponse, CreateApiTokenData, CreateApiTokenError, CreateApiTokenResponse, CreateAutomationData, CreateAutomationError, CreateAutomationResponse, CreateFlagSegmentData, CreateFlagSegmentError, CreateFlagSegmentResponse, CreateOrganizationData, CreateOrganizationError, CreateOrganizationResponse, CreateProjectData, CreateProjectError, CreateProjectResponse, CreateRoleData, CreateRoleError, CreateRoleResponse, CreateSessionData, CreateSessionError, CreateSessionResponse, CreateUserData, CreateUserError, CreateUserResponse, CreateWorkspaceData, CreateWorkspaceError, CreateWorkspaceResponse, CurrentData, CurrentError, CurrentResponse, DeleteAutomationData, DeleteAutomationError, DeleteAutomationResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteFlagSegmentData, DeleteFlagSegmentError, DeleteFlagSegmentResponse, DeleteOrganizationData, DeleteOrganizationError, DeleteOrganizationResponse, DeleteOwnAccountData, DeleteOwnAccountError, DeleteOwnAccountResponse, DeleteRoleData, DeleteRoleError, DeleteUserData, DeleteUserError, DeleteWorkspaceData, DeleteWorkspaceError, DeleteWorkspaceResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, DisconnectInstallationData, DisconnectInstallationError, DisconnectInstallationResponse, DuplicateAutomationData, DuplicateAutomationError, DuplicateAutomationResponse, EvaluateFeatureFlagData, EvaluateFeatureFlagError, EvaluateFeatureFlagResponse, FindFeatureFlagData, FindFeatureFlagError, FindFeatureFlagResponse, FindFeatureFlagsData, FindFeatureFlagsError, FindFeatureFlagsResponse, FindFlagChangesData, FindFlagChangesError, FindFlagChangesResponse, FindFlagSegmentsData, FindFlagSegmentsError, FindFlagSegmentsResponse, FindMyPermissionsData, FindMyPermissionsError, FindMyPermissionsResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserData, FindUserError, FindUserResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, FindUsersData, FindUsersError, FindUsersResponse, GetAutomationData, GetAutomationError, GetAutomationResponse, GetAutomationRunData, GetAutomationRunError, GetAutomationRunHistoryData, GetAutomationRunHistoryError, GetAutomationRunHistoryResponse, GetAutomationRunResponse, GetAutomationSettingsData, GetAutomationSettingsError, GetAutomationSettingsResponse, GetClientFeatureFlagsData, GetClientFeatureFlagsResponse, GetFullData, GetFullError, GetFullResponse, GetHostData, GetHostError, GetHostResponse, GetHostTimelineData, GetHostTimelineError, GetHostTimelineResponse, GetInvitationData, GetInvitationError, GetInvitationResponse, GetMembershipData, GetMembershipError, GetMembershipResponse, GetPairingTokenData, GetPairingTokenError, GetPairingTokenResponse, GetProfileData, GetProfileError, GetProfileResponse, GetProjectData, GetProjectError, GetProjectResponse, GetRoleData, GetRoleError, GetRoleResponse, GetSessionData, GetSessionError, GetSessionResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, IssueAttachTicketData, IssueAttachTicketError, IssueAttachTicketResponse, LeaveData, LeaveError, LeaveResponse, ListAccessGrantsData, ListAccessGrantsError, ListAccessGrantsResponse, ListApiTokensData, ListApiTokensError, ListApiTokensResponse, ListAutomationRunsData, ListAutomationRunsError, ListAutomationRunsResponse, ListAutomationsData, ListAutomationsError, ListAutomationsResponse, ListGrantablePermissionsData, ListGrantablePermissionsError, ListGrantablePermissionsResponse, ListHostsData, ListHostsError, ListHostsResponse, ListInstallationRepositoriesData, ListInstallationRepositoriesError, ListInstallationRepositoriesResponse, ListInstallationsData, ListInstallationsError, ListInstallationsResponse, ListMembersData, ListMembersError, ListMembersResponse, ListMyInvitationsData, ListMyInvitationsError, ListMyInvitationsResponse, ListMyWorkspacesData, ListMyWorkspacesError, ListMyWorkspacesResponse, ListOrganizationInvitationsData, ListOrganizationInvitationsError, ListOrganizationInvitationsResponse, ListOrganizationMembersData, ListOrganizationMembersError, ListOrganizationMembersResponse, ListOrganizationsData, ListOrganizationsError, ListOrganizationsResponse, ListPairingTokensData, ListPairingTokensError, ListPairingTokensResponse, ListProjectsData, ListProjectsError, ListProjectsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListRolesData, ListRolesError, ListRolesResponse, ListSessionEventsData, ListSessionEventsError, ListSessionEventsResponse, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUserSessionsData, ListUserSessionsError, ListUserSessionsResponse, ListUsersResponse, ListWorkspacesData, ListWorkspacesError, ListWorkspacesResponse, MeData, MeError, MeResponse, MintData, MintError, MintResponse, MoveSessionData, MoveSessionError, MoveSessionResponse, PasteSessionImageData, PasteSessionImageError, PatchUserData, PatchUserError, PatchUserResponse, PauseAutomationData, PauseAutomationError, PauseAutomationResponse, PreviewAutomationTriggerData, PreviewAutomationTriggerError, PreviewAutomationTriggerResponse, ReadinessData, ReadinessError, ReadinessResponse, RegisterData, RegisterError, RegisterResponse, RejectData, RejectError, RejectResponse, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveOrganizationMemberData, RemoveOrganizationMemberError, RemoveOrganizationMemberResponse, RemoveSessionCheckoutData, RemoveSessionCheckoutError, RemoveSessionCheckoutResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, RenameData, RenameError, RenameResponse, RenameSessionData, RenameSessionError, RenameSessionResponse, RestartSessionData, RestartSessionError, RestartSessionResponse, ResumeAutomationData, ResumeAutomationError, ResumeAutomationResponse, RevokeAccessGrantData, RevokeAccessGrantError, RevokeAccessGrantResponse, RevokeApiTokenData, RevokeApiTokenError, RevokeApiTokenResponse, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokePairingTokenData, RevokePairingTokenError, RevokePairingTokenResponse, RevokeProfileSessionData, RevokeProfileSessionError, RevokeProfileSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, RevokeUserSessionData, RevokeUserSessionError, RevokeUserSessionResponse, RunAutomationData, RunAutomationError, RunAutomationResponse, SetActiveOrganizationData, SetActiveOrganizationError, SetActiveOrganizationResponse, SetActiveWorkspaceData, SetActiveWorkspaceError, SetActiveWorkspaceResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StartInstallationData, StartInstallationError, StartInstallationResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, StopSessionData, StopSessionError, StopSessionResponse, ToggleFeatureFlagData, ToggleFeatureFlagError, ToggleFeatureFlagResponse, UnbanData, UnbanError, UnbanResponse, UninstallData, UninstallError, UninstallResponse, UnpairData, UnpairError, UnpairResponse, UpdateAutomationData, UpdateAutomationError, UpdateAutomationResponse, UpdateAutomationSettingsData, UpdateAutomationSettingsError, UpdateAutomationSettingsResponse, UpdateFeatureFlagData, UpdateFeatureFlagError, UpdateFeatureFlagResponse, UpdateFlagSegmentData, UpdateFlagSegmentError, UpdateFlagSegmentResponse, UpdateMemberRoleData, UpdateMemberRoleError, UpdateMemberRoleResponse, UpdateOrganizationData, UpdateOrganizationError, UpdateOrganizationResponse, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateProjectData, UpdateProjectError, UpdateProjectResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UpdateWorkspaceData, UpdateWorkspaceError, UpdateWorkspaceResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
+import { accept, add, addCheckout, addMember, adminUpdateUser, archiveProject, assignUserRoles, ban, cancel, changeEmail, changePassword, check, checkSlug, closeSession, collectSessionImage, connectInstallation, createAccessGrant, createApiToken, createAutomation, createFlagSegment, createOrganization, createProject, createRole, createSession, createUser, createWorkspace, deleteAutomation, deleteAvatar, deleteFlagSegment, deleteOrganization, deleteOwnAccount, deleteRole, deleteUser, deleteWorkspace, deploymentCapabilities, disconnectInstallation, duplicateAutomation, evaluateFeatureFlag, findAccessGrants, findApiTokens, findAuthzCatalog, findAutomation, findAutomationRun, findAutomationRuns, findAutomations, findAutomationSettings, findCurrentCredential, findFeatureFlag, findFeatureFlags, findFlagChanges, findFlagSegments, findGrantablePermissions, findHost, findHosts, findHostTimeline, findInstallations, findPairingToken, findPairingTokens, findProfileSessions, findProject, findProjects, findRoleById, findRoles, findRunHistory, findSession, findSessionEvents, findSessions, findUserById, findUserRoles, findUsers, getClientFeatureFlags, getFull, getInvitation, getMe, getMembership, getMyPermissions, getProfile, getUser, getUserSettings, impersonate, invite, issueAttachTicket, leave, listInstallationRepositories, listMembers, listMyInvitations, listMyWorkspaces, listOrganizationInvitations, listOrganizationMembers, listOrganizations, listRepositoryBranches, listUsers, listUserSessions, listWorkspaces, mintPairingToken, moveSession, type Options, pasteSessionImage, pauseAutomation, previewTrigger, readiness, registerHost, reject, removeCheckout, removeMember, removeOrganizationMember, removeUser, renameHost, renameSession, restartSession, resumeAutomation, revokeAccessGrant, revokeApiToken, revokeOtherSessions, revokePairingToken, revokeProfileSession, revokeSessions, revokeUserSession, runAutomation, setActiveOrganization, setActiveWorkspace, setPassword, setRole, startInstallation, stopImpersonating, stopSession, toggleFeatureFlag, unban, uninstallHost, unpairHost, updateAutomation, updateAutomationSettings, updateFeatureFlag, updateFlagSegment, updateMemberRole, updateOrganization, updateProfile, updateProject, updateRole, updateRolePermissions, updateUser, updateUserSettings, updateWorkspace, uploadAvatar } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptResponse, AddCheckoutData, AddCheckoutError, AddCheckoutResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AdminUpdateUserData, AdminUpdateUserError, AdminUpdateUserResponse, ArchiveProjectData, ArchiveProjectError, ArchiveProjectResponse, AssignUserRolesData, AssignUserRolesError, AssignUserRolesResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, ChangeEmailData, ChangeEmailError, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, CloseSessionData, CloseSessionError, CloseSessionResponse, CollectSessionImageData, CollectSessionImageError, ConnectInstallationData, ConnectInstallationError, ConnectInstallationResponse, CreateAccessGrantData, CreateAccessGrantError, CreateAccessGrantResponse, CreateApiTokenData, CreateApiTokenError, CreateApiTokenResponse, CreateAutomationData, CreateAutomationError, CreateAutomationResponse, CreateFlagSegmentData, CreateFlagSegmentError, CreateFlagSegmentResponse, CreateOrganizationData, CreateOrganizationError, CreateOrganizationResponse, CreateProjectData, CreateProjectError, CreateProjectResponse, CreateRoleData, CreateRoleError, CreateRoleResponse, CreateSessionData, CreateSessionError, CreateSessionResponse, CreateUserData, CreateUserError, CreateUserResponse, CreateWorkspaceData, CreateWorkspaceError, CreateWorkspaceResponse, DeleteAutomationData, DeleteAutomationError, DeleteAutomationResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteFlagSegmentData, DeleteFlagSegmentError, DeleteFlagSegmentResponse, DeleteOrganizationData, DeleteOrganizationError, DeleteOrganizationResponse, DeleteOwnAccountData, DeleteOwnAccountError, DeleteOwnAccountResponse, DeleteRoleData, DeleteRoleError, DeleteUserData, DeleteUserError, DeleteWorkspaceData, DeleteWorkspaceError, DeleteWorkspaceResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, DisconnectInstallationData, DisconnectInstallationError, DisconnectInstallationResponse, DuplicateAutomationData, DuplicateAutomationError, DuplicateAutomationResponse, EvaluateFeatureFlagData, EvaluateFeatureFlagError, EvaluateFeatureFlagResponse, FindAccessGrantsData, FindAccessGrantsError, FindAccessGrantsResponse, FindApiTokensData, FindApiTokensError, FindApiTokensResponse, FindAuthzCatalogData, FindAuthzCatalogError, FindAuthzCatalogResponse, FindAutomationData, FindAutomationError, FindAutomationResponse, FindAutomationRunData, FindAutomationRunError, FindAutomationRunResponse, FindAutomationRunsData, FindAutomationRunsError, FindAutomationRunsResponse, FindAutomationsData, FindAutomationsError, FindAutomationSettingsData, FindAutomationSettingsError, FindAutomationSettingsResponse, FindAutomationsResponse, FindCurrentCredentialData, FindCurrentCredentialError, FindCurrentCredentialResponse, FindFeatureFlagData, FindFeatureFlagError, FindFeatureFlagResponse, FindFeatureFlagsData, FindFeatureFlagsError, FindFeatureFlagsResponse, FindFlagChangesData, FindFlagChangesError, FindFlagChangesResponse, FindFlagSegmentsData, FindFlagSegmentsError, FindFlagSegmentsResponse, FindGrantablePermissionsData, FindGrantablePermissionsError, FindGrantablePermissionsResponse, FindHostData, FindHostError, FindHostResponse, FindHostsData, FindHostsError, FindHostsResponse, FindHostTimelineData, FindHostTimelineError, FindHostTimelineResponse, FindInstallationsData, FindInstallationsError, FindInstallationsResponse, FindPairingTokenData, FindPairingTokenError, FindPairingTokenResponse, FindPairingTokensData, FindPairingTokensError, FindPairingTokensResponse, FindProfileSessionsData, FindProfileSessionsError, FindProfileSessionsResponse, FindProjectData, FindProjectError, FindProjectResponse, FindProjectsData, FindProjectsError, FindProjectsResponse, FindRoleByIdData, FindRoleByIdError, FindRoleByIdResponse, FindRolesData, FindRolesError, FindRolesResponse, FindRunHistoryData, FindRunHistoryError, FindRunHistoryResponse, FindSessionData, FindSessionError, FindSessionEventsData, FindSessionEventsError, FindSessionEventsResponse, FindSessionResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserByIdData, FindUserByIdError, FindUserByIdResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, FindUsersData, FindUsersError, FindUsersResponse, GetClientFeatureFlagsData, GetClientFeatureFlagsResponse, GetFullData, GetFullError, GetFullResponse, GetInvitationData, GetInvitationError, GetInvitationResponse, GetMeData, GetMeError, GetMembershipData, GetMembershipError, GetMembershipResponse, GetMeResponse, GetMyPermissionsData, GetMyPermissionsError, GetMyPermissionsResponse, GetProfileData, GetProfileError, GetProfileResponse, GetUserData, GetUserError, GetUserResponse, GetUserSettingsData, GetUserSettingsError, GetUserSettingsResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, IssueAttachTicketData, IssueAttachTicketError, IssueAttachTicketResponse, LeaveData, LeaveError, LeaveResponse, ListInstallationRepositoriesData, ListInstallationRepositoriesError, ListInstallationRepositoriesResponse, ListMembersData, ListMembersError, ListMembersResponse, ListMyInvitationsData, ListMyInvitationsError, ListMyInvitationsResponse, ListMyWorkspacesData, ListMyWorkspacesError, ListMyWorkspacesResponse, ListOrganizationInvitationsData, ListOrganizationInvitationsError, ListOrganizationInvitationsResponse, ListOrganizationMembersData, ListOrganizationMembersError, ListOrganizationMembersResponse, ListOrganizationsData, ListOrganizationsError, ListOrganizationsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListUsersData, ListUsersError, ListUserSessionsData, ListUserSessionsError, ListUserSessionsResponse, ListUsersResponse, ListWorkspacesData, ListWorkspacesError, ListWorkspacesResponse, MintPairingTokenData, MintPairingTokenError, MintPairingTokenResponse, MoveSessionData, MoveSessionError, MoveSessionResponse, PasteSessionImageData, PasteSessionImageError, PauseAutomationData, PauseAutomationError, PauseAutomationResponse, PreviewTriggerData, PreviewTriggerError, PreviewTriggerResponse, ReadinessData, ReadinessError, ReadinessResponse, RegisterHostData, RegisterHostError, RegisterHostResponse, RejectData, RejectError, RejectResponse, RemoveCheckoutData, RemoveCheckoutError, RemoveCheckoutResponse, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveOrganizationMemberData, RemoveOrganizationMemberError, RemoveOrganizationMemberResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, RenameHostData, RenameHostError, RenameHostResponse, RenameSessionData, RenameSessionError, RenameSessionResponse, RestartSessionData, RestartSessionError, RestartSessionResponse, ResumeAutomationData, ResumeAutomationError, ResumeAutomationResponse, RevokeAccessGrantData, RevokeAccessGrantError, RevokeAccessGrantResponse, RevokeApiTokenData, RevokeApiTokenError, RevokeApiTokenResponse, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokePairingTokenData, RevokePairingTokenError, RevokePairingTokenResponse, RevokeProfileSessionData, RevokeProfileSessionError, RevokeProfileSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, RevokeUserSessionData, RevokeUserSessionError, RevokeUserSessionResponse, RunAutomationData, RunAutomationError, RunAutomationResponse, SetActiveOrganizationData, SetActiveOrganizationError, SetActiveOrganizationResponse, SetActiveWorkspaceData, SetActiveWorkspaceError, SetActiveWorkspaceResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StartInstallationData, StartInstallationError, StartInstallationResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, StopSessionData, StopSessionError, StopSessionResponse, ToggleFeatureFlagData, ToggleFeatureFlagError, ToggleFeatureFlagResponse, UnbanData, UnbanError, UnbanResponse, UninstallHostData, UninstallHostError, UninstallHostResponse, UnpairHostData, UnpairHostError, UnpairHostResponse, UpdateAutomationData, UpdateAutomationError, UpdateAutomationResponse, UpdateAutomationSettingsData, UpdateAutomationSettingsError, UpdateAutomationSettingsResponse, UpdateFeatureFlagData, UpdateFeatureFlagError, UpdateFeatureFlagResponse, UpdateFlagSegmentData, UpdateFlagSegmentError, UpdateFlagSegmentResponse, UpdateMemberRoleData, UpdateMemberRoleError, UpdateMemberRoleResponse, UpdateOrganizationData, UpdateOrganizationError, UpdateOrganizationResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateProjectData, UpdateProjectError, UpdateProjectResponse, UpdateRoleData, UpdateRoleError, UpdateRolePermissionsData, UpdateRolePermissionsError, UpdateRolePermissionsResponse, UpdateRoleResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UpdateUserSettingsData, UpdateUserSettingsError, UpdateUserSettingsResponse, UpdateWorkspaceData, UpdateWorkspaceError, UpdateWorkspaceResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -39,16 +39,16 @@ const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions
     return [params];
 };
 
-export const getSettingsQueryKey = (options?: Options<GetSettingsData>) => createQueryKey('getSettings', options);
+export const getUserSettingsQueryKey = (options?: Options<GetUserSettingsData>) => createQueryKey('getUserSettings', options);
 
 /**
  * Get the current user’s preferences
  *
  * Answers with the defaults when the user has never saved any.
  */
-export const getSettingsOptions = (options?: Options<GetSettingsData>) => queryOptions<GetSettingsResponse, GetSettingsError, GetSettingsResponse, ReturnType<typeof getSettingsQueryKey>>({
+export const getUserSettingsOptions = (options?: Options<GetUserSettingsData>) => queryOptions<GetUserSettingsResponse, GetUserSettingsError, GetUserSettingsResponse, ReturnType<typeof getUserSettingsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getSettings({
+        const { data } = await getUserSettings({
             ...options,
             ...queryKey[0],
             signal,
@@ -56,7 +56,7 @@ export const getSettingsOptions = (options?: Options<GetSettingsData>) => queryO
         });
         return data;
     },
-    queryKey: getSettingsQueryKey(options)
+    queryKey: getUserSettingsQueryKey(options)
 });
 
 /**
@@ -64,10 +64,10 @@ export const getSettingsOptions = (options?: Options<GetSettingsData>) => queryO
  *
  * Every preference is required — this is a replace, not a patch.
  */
-export const updateSettingsMutation = (options?: Partial<Options<UpdateSettingsData>>): UseMutationOptions<UpdateSettingsResponse, UpdateSettingsError, Options<UpdateSettingsData>> => {
-    const mutationOptions: UseMutationOptions<UpdateSettingsResponse, UpdateSettingsError, Options<UpdateSettingsData>> = {
+export const updateUserSettingsMutation = (options?: Partial<Options<UpdateUserSettingsData>>): UseMutationOptions<UpdateUserSettingsResponse, UpdateUserSettingsError, Options<UpdateUserSettingsData>> => {
+    const mutationOptions: UseMutationOptions<UpdateUserSettingsResponse, UpdateUserSettingsError, Options<UpdateUserSettingsData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await updateSettings({
+            const { data } = await updateUserSettings({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -131,16 +131,16 @@ export const revokeOtherSessionsMutation = (options?: Partial<Options<RevokeOthe
     return mutationOptions;
 };
 
-export const findSessionsQueryKey = (options?: Options<FindSessionsData>) => createQueryKey('findSessions', options);
+export const findProfileSessionsQueryKey = (options?: Options<FindProfileSessionsData>) => createQueryKey('findProfileSessions', options);
 
 /**
  * List the current user’s active sessions
  *
  * Devices signed in to this account. Internal sessions minted for API tokens and OAuth clients are not devices and are not listed — revoke those where they are managed. Session tokens are never returned — revoke by session id instead.
  */
-export const findSessionsOptions = (options?: Options<FindSessionsData>) => queryOptions<FindSessionsResponse, FindSessionsError, FindSessionsResponse, ReturnType<typeof findSessionsQueryKey>>({
+export const findProfileSessionsOptions = (options?: Options<FindProfileSessionsData>) => queryOptions<FindProfileSessionsResponse, FindProfileSessionsError, FindProfileSessionsResponse, ReturnType<typeof findProfileSessionsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await findSessions({
+        const { data } = await findProfileSessions({
             ...options,
             ...queryKey[0],
             signal,
@@ -148,7 +148,7 @@ export const findSessionsOptions = (options?: Options<FindSessionsData>) => quer
         });
         return data;
     },
-    queryKey: findSessionsQueryKey(options)
+    queryKey: findProfileSessionsQueryKey(options)
 });
 
 /**
@@ -339,14 +339,14 @@ export const findUsersInfiniteOptions = (options?: Options<FindUsersData>) => {
     return opts as Omit<typeof opts, 'initialData'>;
 };
 
-export const meQueryKey = (options?: Options<MeData>) => createQueryKey('me', options);
+export const getMeQueryKey = (options?: Options<GetMeData>) => createQueryKey('getMe', options);
 
 /**
  * Get current user profile
  */
-export const meOptions = (options?: Options<MeData>) => queryOptions<MeResponse, MeError, MeResponse, ReturnType<typeof meQueryKey>>({
+export const getMeOptions = (options?: Options<GetMeData>) => queryOptions<GetMeResponse, GetMeError, GetMeResponse, ReturnType<typeof getMeQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await me({
+        const { data } = await getMe({
             ...options,
             ...queryKey[0],
             signal,
@@ -354,19 +354,19 @@ export const meOptions = (options?: Options<MeData>) => queryOptions<MeResponse,
         });
         return data;
     },
-    queryKey: meQueryKey(options)
+    queryKey: getMeQueryKey(options)
 });
 
-export const findMyPermissionsQueryKey = (options?: Options<FindMyPermissionsData>) => createQueryKey('findMyPermissions', options);
+export const getMyPermissionsQueryKey = (options?: Options<GetMyPermissionsData>) => createQueryKey('getMyPermissions', options);
 
 /**
  * Get the current user’s effective permissions
  *
  * The union of every role assigned to the caller, as CASL rules. Drives which routes the web app shows in its sidebar.
  */
-export const findMyPermissionsOptions = (options?: Options<FindMyPermissionsData>) => queryOptions<FindMyPermissionsResponse, FindMyPermissionsError, FindMyPermissionsResponse, ReturnType<typeof findMyPermissionsQueryKey>>({
+export const getMyPermissionsOptions = (options?: Options<GetMyPermissionsData>) => queryOptions<GetMyPermissionsResponse, GetMyPermissionsError, GetMyPermissionsResponse, ReturnType<typeof getMyPermissionsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await findMyPermissions({
+        const { data } = await getMyPermissions({
             ...options,
             ...queryKey[0],
             signal,
@@ -374,7 +374,7 @@ export const findMyPermissionsOptions = (options?: Options<FindMyPermissionsData
         });
         return data;
     },
-    queryKey: findMyPermissionsQueryKey(options)
+    queryKey: getMyPermissionsQueryKey(options)
 });
 
 /**
@@ -394,14 +394,14 @@ export const deleteUserMutation = (options?: Partial<Options<DeleteUserData>>): 
     return mutationOptions;
 };
 
-export const findUserQueryKey = (options: Options<FindUserData>) => createQueryKey('findUser', options);
+export const findUserByIdQueryKey = (options: Options<FindUserByIdData>) => createQueryKey('findUserById', options);
 
 /**
  * Get user by ID
  */
-export const findUserOptions = (options: Options<FindUserData>) => queryOptions<FindUserResponse, FindUserError, FindUserResponse, ReturnType<typeof findUserQueryKey>>({
+export const findUserByIdOptions = (options: Options<FindUserByIdData>) => queryOptions<FindUserByIdResponse, FindUserByIdError, FindUserByIdResponse, ReturnType<typeof findUserByIdQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await findUser({
+        const { data } = await findUserById({
             ...options,
             ...queryKey[0],
             signal,
@@ -409,16 +409,16 @@ export const findUserOptions = (options: Options<FindUserData>) => queryOptions<
         });
         return data;
     },
-    queryKey: findUserQueryKey(options)
+    queryKey: findUserByIdQueryKey(options)
 });
 
 /**
  * Update user
  */
-export const patchUserMutation = (options?: Partial<Options<PatchUserData>>): UseMutationOptions<PatchUserResponse, PatchUserError, Options<PatchUserData>> => {
-    const mutationOptions: UseMutationOptions<PatchUserResponse, PatchUserError, Options<PatchUserData>> = {
+export const updateUserMutation = (options?: Partial<Options<UpdateUserData>>): UseMutationOptions<UpdateUserResponse, UpdateUserError, Options<UpdateUserData>> => {
+    const mutationOptions: UseMutationOptions<UpdateUserResponse, UpdateUserError, Options<UpdateUserData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await patchUser({
+            const { data } = await updateUser({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -429,16 +429,16 @@ export const patchUserMutation = (options?: Partial<Options<PatchUserData>>): Us
     return mutationOptions;
 };
 
-export const catalogQueryKey = (options?: Options<CatalogData>) => createQueryKey('catalog', options);
+export const findAuthzCatalogQueryKey = (options?: Options<FindAuthzCatalogData>) => createQueryKey('findAuthzCatalog', options);
 
 /**
  * List every declared resource and what the caller may grant
  *
  * Drives the role builder. Resources are contributed by the modules that own them, so a new module appears here without editing a central catalog.
  */
-export const catalogOptions = (options?: Options<CatalogData>) => queryOptions<CatalogResponse, CatalogError, CatalogResponse, ReturnType<typeof catalogQueryKey>>({
+export const findAuthzCatalogOptions = (options?: Options<FindAuthzCatalogData>) => queryOptions<FindAuthzCatalogResponse, FindAuthzCatalogError, FindAuthzCatalogResponse, ReturnType<typeof findAuthzCatalogQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await catalog({
+        const { data } = await findAuthzCatalog({
             ...options,
             ...queryKey[0],
             signal,
@@ -446,17 +446,17 @@ export const catalogOptions = (options?: Options<CatalogData>) => queryOptions<C
         });
         return data;
     },
-    queryKey: catalogQueryKey(options)
+    queryKey: findAuthzCatalogQueryKey(options)
 });
 
-export const listAccessGrantsQueryKey = (options?: Options<ListAccessGrantsData>) => createQueryKey('listAccessGrants', options);
+export const findAccessGrantsQueryKey = (options?: Options<FindAccessGrantsData>) => createQueryKey('findAccessGrants', options);
 
 /**
  * List the access grants in the active organization
  */
-export const listAccessGrantsOptions = (options?: Options<ListAccessGrantsData>) => queryOptions<ListAccessGrantsResponse, ListAccessGrantsError, ListAccessGrantsResponse, ReturnType<typeof listAccessGrantsQueryKey>>({
+export const findAccessGrantsOptions = (options?: Options<FindAccessGrantsData>) => queryOptions<FindAccessGrantsResponse, FindAccessGrantsError, FindAccessGrantsResponse, ReturnType<typeof findAccessGrantsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listAccessGrants({
+        const { data } = await findAccessGrants({
             ...options,
             ...queryKey[0],
             signal,
@@ -464,7 +464,7 @@ export const listAccessGrantsOptions = (options?: Options<ListAccessGrantsData>)
         });
         return data;
     },
-    queryKey: listAccessGrantsQueryKey(options)
+    queryKey: findAccessGrantsQueryKey(options)
 });
 
 /**
@@ -503,16 +503,16 @@ export const revokeAccessGrantMutation = (options?: Partial<Options<RevokeAccess
     return mutationOptions;
 };
 
-export const currentQueryKey = (options?: Options<CurrentData>) => createQueryKey('current', options);
+export const findCurrentCredentialQueryKey = (options?: Options<FindCurrentCredentialData>) => createQueryKey('findCurrentCredential', options);
 
 /**
  * Describe the calling credential and its effective permissions
  *
  * Returns the credential kind, its granted scopes and what those scopes actually amount to once the owner’s roles are applied. The MCP server filters its tool list by `effectiveScopes`.
  */
-export const currentOptions = (options?: Options<CurrentData>) => queryOptions<CurrentResponse, CurrentError, CurrentResponse, ReturnType<typeof currentQueryKey>>({
+export const findCurrentCredentialOptions = (options?: Options<FindCurrentCredentialData>) => queryOptions<FindCurrentCredentialResponse, FindCurrentCredentialError, FindCurrentCredentialResponse, ReturnType<typeof findCurrentCredentialQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await current({
+        const { data } = await findCurrentCredential({
             ...options,
             ...queryKey[0],
             signal,
@@ -520,19 +520,19 @@ export const currentOptions = (options?: Options<CurrentData>) => queryOptions<C
         });
         return data;
     },
-    queryKey: currentQueryKey(options)
+    queryKey: findCurrentCredentialQueryKey(options)
 });
 
-export const listApiTokensQueryKey = (options?: Options<ListApiTokensData>) => createQueryKey('listApiTokens', options);
+export const findApiTokensQueryKey = (options?: Options<FindApiTokensData>) => createQueryKey('findApiTokens', options);
 
 /**
  * List the caller’s API tokens
  *
  * Secrets are never returned — only the display prefix and metadata.
  */
-export const listApiTokensOptions = (options?: Options<ListApiTokensData>) => queryOptions<ListApiTokensResponse, ListApiTokensError, ListApiTokensResponse, ReturnType<typeof listApiTokensQueryKey>>({
+export const findApiTokensOptions = (options?: Options<FindApiTokensData>) => queryOptions<FindApiTokensResponse, FindApiTokensError, FindApiTokensResponse, ReturnType<typeof findApiTokensQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listApiTokens({
+        const { data } = await findApiTokens({
             ...options,
             ...queryKey[0],
             signal,
@@ -540,7 +540,7 @@ export const listApiTokensOptions = (options?: Options<ListApiTokensData>) => qu
         });
         return data;
     },
-    queryKey: listApiTokensQueryKey(options)
+    queryKey: findApiTokensQueryKey(options)
 });
 
 /**
@@ -562,16 +562,16 @@ export const createApiTokenMutation = (options?: Partial<Options<CreateApiTokenD
     return mutationOptions;
 };
 
-export const listGrantablePermissionsQueryKey = (options?: Options<ListGrantablePermissionsData>) => createQueryKey('listGrantablePermissions', options);
+export const findGrantablePermissionsQueryKey = (options?: Options<FindGrantablePermissionsData>) => createQueryKey('findGrantablePermissions', options);
 
 /**
  * List the permission catalog and what the caller may grant
  *
  * Drives the permission picker on the token-creation screen and the CLI’s --permissions validation.
  */
-export const listGrantablePermissionsOptions = (options?: Options<ListGrantablePermissionsData>) => queryOptions<ListGrantablePermissionsResponse, ListGrantablePermissionsError, ListGrantablePermissionsResponse, ReturnType<typeof listGrantablePermissionsQueryKey>>({
+export const findGrantablePermissionsOptions = (options?: Options<FindGrantablePermissionsData>) => queryOptions<FindGrantablePermissionsResponse, FindGrantablePermissionsError, FindGrantablePermissionsResponse, ReturnType<typeof findGrantablePermissionsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listGrantablePermissions({
+        const { data } = await findGrantablePermissions({
             ...options,
             ...queryKey[0],
             signal,
@@ -579,7 +579,7 @@ export const listGrantablePermissionsOptions = (options?: Options<ListGrantableP
         });
         return data;
     },
-    queryKey: listGrantablePermissionsQueryKey(options)
+    queryKey: findGrantablePermissionsQueryKey(options)
 });
 
 /**
@@ -601,14 +601,14 @@ export const revokeApiTokenMutation = (options?: Partial<Options<RevokeApiTokenD
     return mutationOptions;
 };
 
-export const listRolesQueryKey = (options?: Options<ListRolesData>) => createQueryKey('listRoles', options);
+export const findRolesQueryKey = (options?: Options<FindRolesData>) => createQueryKey('findRoles', options);
 
 /**
  * List all roles
  */
-export const listRolesOptions = (options?: Options<ListRolesData>) => queryOptions<ListRolesResponse, ListRolesError, ListRolesResponse, ReturnType<typeof listRolesQueryKey>>({
+export const findRolesOptions = (options?: Options<FindRolesData>) => queryOptions<FindRolesResponse, FindRolesError, FindRolesResponse, ReturnType<typeof findRolesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listRoles({
+        const { data } = await findRoles({
             ...options,
             ...queryKey[0],
             signal,
@@ -616,27 +616,27 @@ export const listRolesOptions = (options?: Options<ListRolesData>) => queryOptio
         });
         return data;
     },
-    queryKey: listRolesQueryKey(options)
+    queryKey: findRolesQueryKey(options)
 });
 
-export const listRolesInfiniteQueryKey = (options?: Options<ListRolesData>): QueryKey<Options<ListRolesData>> => createQueryKey('listRoles', options, true);
+export const findRolesInfiniteQueryKey = (options?: Options<FindRolesData>): QueryKey<Options<FindRolesData>> => createQueryKey('findRoles', options, true);
 
 /**
  * List all roles
  */
-export const listRolesInfiniteOptions = (options?: Options<ListRolesData>) => {
-    const opts = infiniteQueryOptions<ListRolesResponse, ListRolesError, InfiniteData<ListRolesResponse>, QueryKey<Options<ListRolesData>>, number | Pick<QueryKey<Options<ListRolesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+export const findRolesInfiniteOptions = (options?: Options<FindRolesData>) => {
+    const opts = infiniteQueryOptions<FindRolesResponse, FindRolesError, InfiniteData<FindRolesResponse>, QueryKey<Options<FindRolesData>>, number | Pick<QueryKey<Options<FindRolesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
     // @ts-ignore
     {
         queryFn: async ({ pageParam, queryKey, signal }) => {
             // @ts-ignore
-            const page: Pick<QueryKey<Options<ListRolesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+            const page: Pick<QueryKey<Options<FindRolesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
                 query: {
                     page: pageParam
                 }
             };
             const params = createInfiniteParams(queryKey, page);
-            const { data } = await listRoles({
+            const { data } = await findRoles({
                 ...options,
                 ...params,
                 signal,
@@ -644,7 +644,7 @@ export const listRolesInfiniteOptions = (options?: Options<ListRolesData>) => {
             });
             return data;
         },
-        queryKey: listRolesInfiniteQueryKey(options)
+        queryKey: findRolesInfiniteQueryKey(options)
     });
     return opts as Omit<typeof opts, 'initialData'>;
 };
@@ -683,14 +683,14 @@ export const deleteRoleMutation = (options?: Partial<Options<DeleteRoleData>>): 
     return mutationOptions;
 };
 
-export const getRoleQueryKey = (options: Options<GetRoleData>) => createQueryKey('getRole', options);
+export const findRoleByIdQueryKey = (options: Options<FindRoleByIdData>) => createQueryKey('findRoleById', options);
 
 /**
  * Get role by ID
  */
-export const getRoleOptions = (options: Options<GetRoleData>) => queryOptions<GetRoleResponse, GetRoleError, GetRoleResponse, ReturnType<typeof getRoleQueryKey>>({
+export const findRoleByIdOptions = (options: Options<FindRoleByIdData>) => queryOptions<FindRoleByIdResponse, FindRoleByIdError, FindRoleByIdResponse, ReturnType<typeof findRoleByIdQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getRole({
+        const { data } = await findRoleById({
             ...options,
             ...queryKey[0],
             signal,
@@ -698,7 +698,7 @@ export const getRoleOptions = (options: Options<GetRoleData>) => queryOptions<Ge
         });
         return data;
     },
-    queryKey: getRoleQueryKey(options)
+    queryKey: findRoleByIdQueryKey(options)
 });
 
 /**
@@ -721,10 +721,10 @@ export const updateRoleMutation = (options?: Partial<Options<UpdateRoleData>>): 
 /**
  * Replace a role's permission set
  */
-export const updatePermissionsMutation = (options?: Partial<Options<UpdatePermissionsData>>): UseMutationOptions<UpdatePermissionsResponse, UpdatePermissionsError, Options<UpdatePermissionsData>> => {
-    const mutationOptions: UseMutationOptions<UpdatePermissionsResponse, UpdatePermissionsError, Options<UpdatePermissionsData>> = {
+export const updateRolePermissionsMutation = (options?: Partial<Options<UpdateRolePermissionsData>>): UseMutationOptions<UpdateRolePermissionsResponse, UpdateRolePermissionsError, Options<UpdateRolePermissionsData>> => {
+    const mutationOptions: UseMutationOptions<UpdateRolePermissionsResponse, UpdateRolePermissionsError, Options<UpdateRolePermissionsData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await updatePermissions({
+            const { data } = await updateRolePermissions({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -756,10 +756,10 @@ export const findUserRolesOptions = (options: Options<FindUserRolesData>) => que
 /**
  * Replace a user's assigned roles
  */
-export const assignMutation = (options?: Partial<Options<AssignData>>): UseMutationOptions<AssignResponse, AssignError, Options<AssignData>> => {
-    const mutationOptions: UseMutationOptions<AssignResponse, AssignError, Options<AssignData>> = {
+export const assignUserRolesMutation = (options?: Partial<Options<AssignUserRolesData>>): UseMutationOptions<AssignUserRolesResponse, AssignUserRolesError, Options<AssignUserRolesData>> => {
+    const mutationOptions: UseMutationOptions<AssignUserRolesResponse, AssignUserRolesError, Options<AssignUserRolesData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await assign({
+            const { data } = await assignUserRoles({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1273,16 +1273,16 @@ export const removeMemberMutation = (options?: Partial<Options<RemoveMemberData>
     return mutationOptions;
 };
 
-export const listInstallationsQueryKey = (options?: Options<ListInstallationsData>) => createQueryKey('listInstallations', options);
+export const findInstallationsQueryKey = (options?: Options<FindInstallationsData>) => createQueryKey('findInstallations', options);
 
 /**
  * List the workspace’s connected GitHub installations
  *
  * A read of the workspace’s own rows, not of GitHub. An empty list is what the console reads as “connect GitHub”, including on a deployment with no App configured.
  */
-export const listInstallationsOptions = (options?: Options<ListInstallationsData>) => queryOptions<ListInstallationsResponse, ListInstallationsError, ListInstallationsResponse, ReturnType<typeof listInstallationsQueryKey>>({
+export const findInstallationsOptions = (options?: Options<FindInstallationsData>) => queryOptions<FindInstallationsResponse, FindInstallationsError, FindInstallationsResponse, ReturnType<typeof findInstallationsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listInstallations({
+        const { data } = await findInstallations({
             ...options,
             ...queryKey[0],
             signal,
@@ -1290,7 +1290,7 @@ export const listInstallationsOptions = (options?: Options<ListInstallationsData
         });
         return data;
     },
-    queryKey: listInstallationsQueryKey(options)
+    queryKey: findInstallationsQueryKey(options)
 });
 
 /**
@@ -1390,16 +1390,16 @@ export const disconnectInstallationMutation = (options?: Partial<Options<Disconn
     return mutationOptions;
 };
 
-export const listHostsQueryKey = (options?: Options<ListHostsData>) => createQueryKey('listHosts', options);
+export const findHostsQueryKey = (options?: Options<FindHostsData>) => createQueryKey('findHosts', options);
 
 /**
  * List the hosts the caller can reach
  *
  * The machines the caller paired, plus any shared with them, each with its status and the sessions running on it. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock. Unpaired hosts are left out unless `include=unpaired`.
  */
-export const listHostsOptions = (options?: Options<ListHostsData>) => queryOptions<ListHostsResponse, ListHostsError, ListHostsResponse, ReturnType<typeof listHostsQueryKey>>({
+export const findHostsOptions = (options?: Options<FindHostsData>) => queryOptions<FindHostsResponse, FindHostsError, FindHostsResponse, ReturnType<typeof findHostsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listHosts({
+        const { data } = await findHosts({
             ...options,
             ...queryKey[0],
             signal,
@@ -1407,19 +1407,19 @@ export const listHostsOptions = (options?: Options<ListHostsData>) => queryOptio
         });
         return data;
     },
-    queryKey: listHostsQueryKey(options)
+    queryKey: findHostsQueryKey(options)
 });
 
-export const listPairingTokensQueryKey = (options?: Options<ListPairingTokensData>) => createQueryKey('listPairingTokens', options);
+export const findPairingTokensQueryKey = (options?: Options<FindPairingTokensData>) => createQueryKey('findPairingTokens', options);
 
 /**
  * List the caller’s pairing tokens
  *
  * Both source addresses are here: where each token was minted and, once spent, where it was redeemed from. A mismatch is the interesting one.
  */
-export const listPairingTokensOptions = (options?: Options<ListPairingTokensData>) => queryOptions<ListPairingTokensResponse, ListPairingTokensError, ListPairingTokensResponse, ReturnType<typeof listPairingTokensQueryKey>>({
+export const findPairingTokensOptions = (options?: Options<FindPairingTokensData>) => queryOptions<FindPairingTokensResponse, FindPairingTokensError, FindPairingTokensResponse, ReturnType<typeof findPairingTokensQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listPairingTokens({
+        const { data } = await findPairingTokens({
             ...options,
             ...queryKey[0],
             signal,
@@ -1427,7 +1427,7 @@ export const listPairingTokensOptions = (options?: Options<ListPairingTokensData
         });
         return data;
     },
-    queryKey: listPairingTokensQueryKey(options)
+    queryKey: findPairingTokensQueryKey(options)
 });
 
 /**
@@ -1435,10 +1435,10 @@ export const listPairingTokensOptions = (options?: Options<ListPairingTokensData
  *
  * Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored. With `replaces`, the caller’s named token is revoked in the same write.
  */
-export const mintMutation = (options?: Partial<Options<MintData>>): UseMutationOptions<MintResponse, MintError, Options<MintData>> => {
-    const mutationOptions: UseMutationOptions<MintResponse, MintError, Options<MintData>> = {
+export const mintPairingTokenMutation = (options?: Partial<Options<MintPairingTokenData>>): UseMutationOptions<MintPairingTokenResponse, MintPairingTokenError, Options<MintPairingTokenData>> => {
+    const mutationOptions: UseMutationOptions<MintPairingTokenResponse, MintPairingTokenError, Options<MintPairingTokenData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await mint({
+            const { data } = await mintPairingToken({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1468,16 +1468,16 @@ export const revokePairingTokenMutation = (options?: Partial<Options<RevokePairi
     return mutationOptions;
 };
 
-export const getPairingTokenQueryKey = (options: Options<GetPairingTokenData>) => createQueryKey('getPairingToken', options);
+export const findPairingTokenQueryKey = (options: Options<FindPairingTokenData>) => createQueryKey('findPairingToken', options);
 
 /**
  * Get one pairing token, and the host it paired
  *
  * What Add host polls while it listens for a machine: `host` stays null until a runner spends the token, then carries the new host with its status and the tools it reported.
  */
-export const getPairingTokenOptions = (options: Options<GetPairingTokenData>) => queryOptions<GetPairingTokenResponse, GetPairingTokenError, GetPairingTokenResponse, ReturnType<typeof getPairingTokenQueryKey>>({
+export const findPairingTokenOptions = (options: Options<FindPairingTokenData>) => queryOptions<FindPairingTokenResponse, FindPairingTokenError, FindPairingTokenResponse, ReturnType<typeof findPairingTokenQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getPairingToken({
+        const { data } = await findPairingToken({
             ...options,
             ...queryKey[0],
             signal,
@@ -1485,7 +1485,7 @@ export const getPairingTokenOptions = (options: Options<GetPairingTokenData>) =>
         });
         return data;
     },
-    queryKey: getPairingTokenQueryKey(options)
+    queryKey: findPairingTokenQueryKey(options)
 });
 
 /**
@@ -1493,10 +1493,10 @@ export const getPairingTokenOptions = (options: Options<GetPairingTokenData>) =>
  *
  * Called by the runner from the install command. Redemption and host creation commit together, so a retry with the same key after a lost response returns the same host rather than pairing the machine twice.
  */
-export const registerMutation = (options?: Partial<Options<RegisterData>>): UseMutationOptions<RegisterResponse, RegisterError, Options<RegisterData>> => {
-    const mutationOptions: UseMutationOptions<RegisterResponse, RegisterError, Options<RegisterData>> = {
+export const registerHostMutation = (options?: Partial<Options<RegisterHostData>>): UseMutationOptions<RegisterHostResponse, RegisterHostError, Options<RegisterHostData>> => {
+    const mutationOptions: UseMutationOptions<RegisterHostResponse, RegisterHostError, Options<RegisterHostData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await register({
+            const { data } = await registerHost({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1512,10 +1512,10 @@ export const registerMutation = (options?: Partial<Options<RegisterData>>): UseM
  *
  * Called by the runner when it is uninstalled. Answers 204 whether or not the host was still paired: the machine cannot tell the two apart and neither side would do anything differently.
  */
-export const uninstallMutation = (options?: Partial<Options<UninstallData>>): UseMutationOptions<UninstallResponse, UninstallError, Options<UninstallData>> => {
-    const mutationOptions: UseMutationOptions<UninstallResponse, UninstallError, Options<UninstallData>> = {
+export const uninstallHostMutation = (options?: Partial<Options<UninstallHostData>>): UseMutationOptions<UninstallHostResponse, UninstallHostError, Options<UninstallHostData>> => {
+    const mutationOptions: UseMutationOptions<UninstallHostResponse, UninstallHostError, Options<UninstallHostData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await uninstall({
+            const { data } = await uninstallHost({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1551,10 +1551,10 @@ export const collectSessionImageOptions = (options: Options<CollectSessionImageD
  *
  * Stops this machine being given work. The record is kept so the pairing history survives; the runner on it learns it is gone the next time it connects.
  */
-export const unpairMutation = (options?: Partial<Options<UnpairData>>): UseMutationOptions<UnpairResponse, UnpairError, Options<UnpairData>> => {
-    const mutationOptions: UseMutationOptions<UnpairResponse, UnpairError, Options<UnpairData>> = {
+export const unpairHostMutation = (options?: Partial<Options<UnpairHostData>>): UseMutationOptions<UnpairHostResponse, UnpairHostError, Options<UnpairHostData>> => {
+    const mutationOptions: UseMutationOptions<UnpairHostResponse, UnpairHostError, Options<UnpairHostData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await unpair({
+            const { data } = await unpairHost({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1565,14 +1565,14 @@ export const unpairMutation = (options?: Partial<Options<UnpairData>>): UseMutat
     return mutationOptions;
 };
 
-export const getHostQueryKey = (options: Options<GetHostData>) => createQueryKey('getHost', options);
+export const findHostQueryKey = (options: Options<FindHostData>) => createQueryKey('findHost', options);
 
 /**
  * Get one host
  */
-export const getHostOptions = (options: Options<GetHostData>) => queryOptions<GetHostResponse, GetHostError, GetHostResponse, ReturnType<typeof getHostQueryKey>>({
+export const findHostOptions = (options: Options<FindHostData>) => queryOptions<FindHostResponse, FindHostError, FindHostResponse, ReturnType<typeof findHostQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getHost({
+        const { data } = await findHost({
             ...options,
             ...queryKey[0],
             signal,
@@ -1580,7 +1580,7 @@ export const getHostOptions = (options: Options<GetHostData>) => queryOptions<Ge
         });
         return data;
     },
-    queryKey: getHostQueryKey(options)
+    queryKey: findHostQueryKey(options)
 });
 
 /**
@@ -1588,10 +1588,10 @@ export const getHostOptions = (options: Options<GetHostData>) => queryOptions<Ge
  *
  * Display only — nothing on the machine is named after this.
  */
-export const renameMutation = (options?: Partial<Options<RenameData>>): UseMutationOptions<RenameResponse, RenameError, Options<RenameData>> => {
-    const mutationOptions: UseMutationOptions<RenameResponse, RenameError, Options<RenameData>> = {
+export const renameHostMutation = (options?: Partial<Options<RenameHostData>>): UseMutationOptions<RenameHostResponse, RenameHostError, Options<RenameHostData>> => {
+    const mutationOptions: UseMutationOptions<RenameHostResponse, RenameHostError, Options<RenameHostData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await rename({
+            const { data } = await renameHost({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1602,16 +1602,16 @@ export const renameMutation = (options?: Partial<Options<RenameData>>): UseMutat
     return mutationOptions;
 };
 
-export const getHostTimelineQueryKey = (options: Options<GetHostTimelineData>) => createQueryKey('getHostTimeline', options);
+export const findHostTimelineQueryKey = (options: Options<FindHostTimelineData>) => createQueryKey('findHostTimeline', options);
 
 /**
  * A host’s timeline, newest first
  *
  * Paired, renamed, unpaired, what changed about the machine, the networks it moved between and its runner updates. Kept for 180 days.
  */
-export const getHostTimelineOptions = (options: Options<GetHostTimelineData>) => queryOptions<GetHostTimelineResponse, GetHostTimelineError, GetHostTimelineResponse, ReturnType<typeof getHostTimelineQueryKey>>({
+export const findHostTimelineOptions = (options: Options<FindHostTimelineData>) => queryOptions<FindHostTimelineResponse, FindHostTimelineError, FindHostTimelineResponse, ReturnType<typeof findHostTimelineQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getHostTimeline({
+        const { data } = await findHostTimeline({
             ...options,
             ...queryKey[0],
             signal,
@@ -1619,7 +1619,7 @@ export const getHostTimelineOptions = (options: Options<GetHostTimelineData>) =>
         });
         return data;
     },
-    queryKey: getHostTimelineQueryKey(options)
+    queryKey: findHostTimelineQueryKey(options)
 });
 
 export const listUsersQueryKey = (options?: Options<ListUsersData>) => createQueryKey('listUsers', options);
@@ -1759,10 +1759,10 @@ export const getUserOptions = (options: Options<GetUserData>) => queryOptions<Ge
 /**
  * Update a user's profile fields
  */
-export const updateUserMutation = (options?: Partial<Options<UpdateUserData>>): UseMutationOptions<UpdateUserResponse, UpdateUserError, Options<UpdateUserData>> => {
-    const mutationOptions: UseMutationOptions<UpdateUserResponse, UpdateUserError, Options<UpdateUserData>> = {
+export const adminUpdateUserMutation = (options?: Partial<Options<AdminUpdateUserData>>): UseMutationOptions<AdminUpdateUserResponse, AdminUpdateUserError, Options<AdminUpdateUserData>> => {
+    const mutationOptions: UseMutationOptions<AdminUpdateUserResponse, AdminUpdateUserError, Options<AdminUpdateUserData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await updateUser({
+            const { data } = await adminUpdateUser({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -2132,16 +2132,16 @@ export const updateFeatureFlagMutation = (options?: Partial<Options<UpdateFeatur
     return mutationOptions;
 };
 
-export const listProjectsQueryKey = (options?: Options<ListProjectsData>) => createQueryKey('listProjects', options);
+export const findProjectsQueryKey = (options?: Options<FindProjectsData>) => createQueryKey('findProjects', options);
 
 /**
  * List the projects in the caller’s workspace
  *
  * Newest first. Archived projects are left out unless asked for.
  */
-export const listProjectsOptions = (options?: Options<ListProjectsData>) => queryOptions<ListProjectsResponse, ListProjectsError, ListProjectsResponse, ReturnType<typeof listProjectsQueryKey>>({
+export const findProjectsOptions = (options?: Options<FindProjectsData>) => queryOptions<FindProjectsResponse, FindProjectsError, FindProjectsResponse, ReturnType<typeof findProjectsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listProjects({
+        const { data } = await findProjects({
             ...options,
             ...queryKey[0],
             signal,
@@ -2149,7 +2149,7 @@ export const listProjectsOptions = (options?: Options<ListProjectsData>) => quer
         });
         return data;
     },
-    queryKey: listProjectsQueryKey(options)
+    queryKey: findProjectsQueryKey(options)
 });
 
 /**
@@ -2190,14 +2190,14 @@ export const archiveProjectMutation = (options?: Partial<Options<ArchiveProjectD
     return mutationOptions;
 };
 
-export const getProjectQueryKey = (options: Options<GetProjectData>) => createQueryKey('getProject', options);
+export const findProjectQueryKey = (options: Options<FindProjectData>) => createQueryKey('findProject', options);
 
 /**
  * Get one project
  */
-export const getProjectOptions = (options: Options<GetProjectData>) => queryOptions<GetProjectResponse, GetProjectError, GetProjectResponse, ReturnType<typeof getProjectQueryKey>>({
+export const findProjectOptions = (options: Options<FindProjectData>) => queryOptions<FindProjectResponse, FindProjectError, FindProjectResponse, ReturnType<typeof findProjectQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getProject({
+        const { data } = await findProject({
             ...options,
             ...queryKey[0],
             signal,
@@ -2205,7 +2205,7 @@ export const getProjectOptions = (options: Options<GetProjectData>) => queryOpti
         });
         return data;
     },
-    queryKey: getProjectQueryKey(options)
+    queryKey: findProjectQueryKey(options)
 });
 
 /**
@@ -2227,16 +2227,16 @@ export const updateProjectMutation = (options?: Partial<Options<UpdateProjectDat
     return mutationOptions;
 };
 
-export const listSessionsQueryKey = (options?: Options<ListSessionsData>) => createQueryKey('listSessions', options);
+export const findSessionsQueryKey = (options?: Options<FindSessionsData>) => createQueryKey('findSessions', options);
 
 /**
  * List the sessions in the caller’s workspace
  *
  * Last activity first unless `sort` says otherwise. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.
  */
-export const listSessionsOptions = (options?: Options<ListSessionsData>) => queryOptions<ListSessionsResponse, ListSessionsError, ListSessionsResponse, ReturnType<typeof listSessionsQueryKey>>({
+export const findSessionsOptions = (options?: Options<FindSessionsData>) => queryOptions<FindSessionsResponse, FindSessionsError, FindSessionsResponse, ReturnType<typeof findSessionsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listSessions({
+        const { data } = await findSessions({
             ...options,
             ...queryKey[0],
             signal,
@@ -2244,29 +2244,29 @@ export const listSessionsOptions = (options?: Options<ListSessionsData>) => quer
         });
         return data;
     },
-    queryKey: listSessionsQueryKey(options)
+    queryKey: findSessionsQueryKey(options)
 });
 
-export const listSessionsInfiniteQueryKey = (options?: Options<ListSessionsData>): QueryKey<Options<ListSessionsData>> => createQueryKey('listSessions', options, true);
+export const findSessionsInfiniteQueryKey = (options?: Options<FindSessionsData>): QueryKey<Options<FindSessionsData>> => createQueryKey('findSessions', options, true);
 
 /**
  * List the sessions in the caller’s workspace
  *
  * Last activity first unless `sort` says otherwise. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.
  */
-export const listSessionsInfiniteOptions = (options?: Options<ListSessionsData>) => {
-    const opts = infiniteQueryOptions<ListSessionsResponse, ListSessionsError, InfiniteData<ListSessionsResponse>, QueryKey<Options<ListSessionsData>>, number | Pick<QueryKey<Options<ListSessionsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+export const findSessionsInfiniteOptions = (options?: Options<FindSessionsData>) => {
+    const opts = infiniteQueryOptions<FindSessionsResponse, FindSessionsError, InfiniteData<FindSessionsResponse>, QueryKey<Options<FindSessionsData>>, number | Pick<QueryKey<Options<FindSessionsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
     // @ts-ignore
     {
         queryFn: async ({ pageParam, queryKey, signal }) => {
             // @ts-ignore
-            const page: Pick<QueryKey<Options<ListSessionsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+            const page: Pick<QueryKey<Options<FindSessionsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
                 query: {
                     page: pageParam
                 }
             };
             const params = createInfiniteParams(queryKey, page);
-            const { data } = await listSessions({
+            const { data } = await findSessions({
                 ...options,
                 ...params,
                 signal,
@@ -2274,7 +2274,7 @@ export const listSessionsInfiniteOptions = (options?: Options<ListSessionsData>)
             });
             return data;
         },
-        queryKey: listSessionsInfiniteQueryKey(options)
+        queryKey: findSessionsInfiniteQueryKey(options)
     });
     return opts as Omit<typeof opts, 'initialData'>;
 };
@@ -2298,16 +2298,16 @@ export const createSessionMutation = (options?: Partial<Options<CreateSessionDat
     return mutationOptions;
 };
 
-export const listSessionEventsQueryKey = (options: Options<ListSessionEventsData>) => createQueryKey('listSessionEvents', options);
+export const findSessionEventsQueryKey = (options: Options<FindSessionEventsData>) => createQueryKey('findSessionEvents', options);
 
 /**
  * Read a session’s log
  *
  * The append-only log, which is the truth per session — the row is a fold of it. Paginated by `seq`, which is dense and assigned by the control plane.
  */
-export const listSessionEventsOptions = (options: Options<ListSessionEventsData>) => queryOptions<ListSessionEventsResponse, ListSessionEventsError, ListSessionEventsResponse, ReturnType<typeof listSessionEventsQueryKey>>({
+export const findSessionEventsOptions = (options: Options<FindSessionEventsData>) => queryOptions<FindSessionEventsResponse, FindSessionEventsError, FindSessionEventsResponse, ReturnType<typeof findSessionEventsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listSessionEvents({
+        const { data } = await findSessionEvents({
             ...options,
             ...queryKey[0],
             signal,
@@ -2315,7 +2315,7 @@ export const listSessionEventsOptions = (options: Options<ListSessionEventsData>
         });
         return data;
     },
-    queryKey: listSessionEventsQueryKey(options)
+    queryKey: findSessionEventsQueryKey(options)
 });
 
 /**
@@ -2399,10 +2399,10 @@ export const restartSessionMutation = (options?: Partial<Options<RestartSessionD
  *
  * The checkout takes the session’s own branch, created from the base given here or the repository’s default, and a directory name no checkout of this session has ever used.
  */
-export const addSessionCheckoutMutation = (options?: Partial<Options<AddSessionCheckoutData>>): UseMutationOptions<AddSessionCheckoutResponse, AddSessionCheckoutError, Options<AddSessionCheckoutData>> => {
-    const mutationOptions: UseMutationOptions<AddSessionCheckoutResponse, AddSessionCheckoutError, Options<AddSessionCheckoutData>> = {
+export const addCheckoutMutation = (options?: Partial<Options<AddCheckoutData>>): UseMutationOptions<AddCheckoutResponse, AddCheckoutError, Options<AddCheckoutData>> => {
+    const mutationOptions: UseMutationOptions<AddCheckoutResponse, AddCheckoutError, Options<AddCheckoutData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await addSessionCheckout({
+            const { data } = await addCheckout({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -2418,10 +2418,10 @@ export const addSessionCheckoutMutation = (options?: Partial<Options<AddSessionC
  *
  * Removes the worktree on the host with the same refuse-on-unpushed-work posture as closing a session, then retires the checkout. The row is kept: the directory name it used is never reissued inside this session.
  */
-export const removeSessionCheckoutMutation = (options?: Partial<Options<RemoveSessionCheckoutData>>): UseMutationOptions<RemoveSessionCheckoutResponse, RemoveSessionCheckoutError, Options<RemoveSessionCheckoutData>> => {
-    const mutationOptions: UseMutationOptions<RemoveSessionCheckoutResponse, RemoveSessionCheckoutError, Options<RemoveSessionCheckoutData>> = {
+export const removeCheckoutMutation = (options?: Partial<Options<RemoveCheckoutData>>): UseMutationOptions<RemoveCheckoutResponse, RemoveCheckoutError, Options<RemoveCheckoutData>> => {
+    const mutationOptions: UseMutationOptions<RemoveCheckoutResponse, RemoveCheckoutError, Options<RemoveCheckoutData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await removeSessionCheckout({
+            const { data } = await removeCheckout({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -2451,16 +2451,16 @@ export const closeSessionMutation = (options?: Partial<Options<CloseSessionData>
     return mutationOptions;
 };
 
-export const getSessionQueryKey = (options: Options<GetSessionData>) => createQueryKey('getSession', options);
+export const findSessionQueryKey = (options: Options<FindSessionData>) => createQueryKey('findSession', options);
 
 /**
  * Read one session
  *
  * With its live checkouts. Retired checkouts are left out.
  */
-export const getSessionOptions = (options: Options<GetSessionData>) => queryOptions<GetSessionResponse, GetSessionError, GetSessionResponse, ReturnType<typeof getSessionQueryKey>>({
+export const findSessionOptions = (options: Options<FindSessionData>) => queryOptions<FindSessionResponse, FindSessionError, FindSessionResponse, ReturnType<typeof findSessionQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getSession({
+        const { data } = await findSession({
             ...options,
             ...queryKey[0],
             signal,
@@ -2468,7 +2468,7 @@ export const getSessionOptions = (options: Options<GetSessionData>) => queryOpti
         });
         return data;
     },
-    queryKey: getSessionQueryKey(options)
+    queryKey: findSessionQueryKey(options)
 });
 
 /**
@@ -2509,16 +2509,16 @@ export const moveSessionMutation = (options?: Partial<Options<MoveSessionData>>)
     return mutationOptions;
 };
 
-export const listAutomationsQueryKey = (options?: Options<ListAutomationsData>) => createQueryKey('listAutomations', options);
+export const findAutomationsQueryKey = (options?: Options<FindAutomationsData>) => createQueryKey('findAutomations', options);
 
 /**
  * List the workspace’s automations
  *
  * Oldest first, as the sidebar groups them by project. Each carries its status (running while a run is live), its next run, its run count over the last 30 days and its last six runs.
  */
-export const listAutomationsOptions = (options?: Options<ListAutomationsData>) => queryOptions<ListAutomationsResponse, ListAutomationsError, ListAutomationsResponse, ReturnType<typeof listAutomationsQueryKey>>({
+export const findAutomationsOptions = (options?: Options<FindAutomationsData>) => queryOptions<FindAutomationsResponse, FindAutomationsError, FindAutomationsResponse, ReturnType<typeof findAutomationsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listAutomations({
+        const { data } = await findAutomations({
             ...options,
             ...queryKey[0],
             signal,
@@ -2526,7 +2526,7 @@ export const listAutomationsOptions = (options?: Options<ListAutomationsData>) =
         });
         return data;
     },
-    queryKey: listAutomationsQueryKey(options)
+    queryKey: findAutomationsQueryKey(options)
 });
 
 /**
@@ -2553,10 +2553,10 @@ export const createAutomationMutation = (options?: Partial<Options<CreateAutomat
  *
  * “Would have run N times in the last 7 days”: the card, unsaved, matched against what the webhook actually received, with the two most recent matches. A POST because the card is a body, not because anything changes.
  */
-export const previewAutomationTriggerMutation = (options?: Partial<Options<PreviewAutomationTriggerData>>): UseMutationOptions<PreviewAutomationTriggerResponse, PreviewAutomationTriggerError, Options<PreviewAutomationTriggerData>> => {
-    const mutationOptions: UseMutationOptions<PreviewAutomationTriggerResponse, PreviewAutomationTriggerError, Options<PreviewAutomationTriggerData>> = {
+export const previewTriggerMutation = (options?: Partial<Options<PreviewTriggerData>>): UseMutationOptions<PreviewTriggerResponse, PreviewTriggerError, Options<PreviewTriggerData>> => {
+    const mutationOptions: UseMutationOptions<PreviewTriggerResponse, PreviewTriggerError, Options<PreviewTriggerData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await previewAutomationTrigger({
+            const { data } = await previewTrigger({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -2586,14 +2586,14 @@ export const deleteAutomationMutation = (options?: Partial<Options<DeleteAutomat
     return mutationOptions;
 };
 
-export const getAutomationQueryKey = (options: Options<GetAutomationData>) => createQueryKey('getAutomation', options);
+export const findAutomationQueryKey = (options: Options<FindAutomationData>) => createQueryKey('findAutomation', options);
 
 /**
  * Read one automation
  */
-export const getAutomationOptions = (options: Options<GetAutomationData>) => queryOptions<GetAutomationResponse, GetAutomationError, GetAutomationResponse, ReturnType<typeof getAutomationQueryKey>>({
+export const findAutomationOptions = (options: Options<FindAutomationData>) => queryOptions<FindAutomationResponse, FindAutomationError, FindAutomationResponse, ReturnType<typeof findAutomationQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getAutomation({
+        const { data } = await findAutomation({
             ...options,
             ...queryKey[0],
             signal,
@@ -2601,7 +2601,7 @@ export const getAutomationOptions = (options: Options<GetAutomationData>) => que
         });
         return data;
     },
-    queryKey: getAutomationQueryKey(options)
+    queryKey: findAutomationQueryKey(options)
 });
 
 /**
@@ -2699,16 +2699,16 @@ export const runAutomationMutation = (options?: Partial<Options<RunAutomationDat
     return mutationOptions;
 };
 
-export const listAutomationRunsQueryKey = (options?: Options<ListAutomationRunsData>) => createQueryKey('listAutomationRuns', options);
+export const findAutomationRunsQueryKey = (options?: Options<FindAutomationRunsData>) => createQueryKey('findAutomationRuns', options);
 
 /**
  * List automation runs
  *
  * The Runs tab, and one automation’s runs: newest first, a page of ten by default, with the total and the count per status tab under the same facets. Runs that never became a session (skipped, expired) are left out unless their status is asked for.
  */
-export const listAutomationRunsOptions = (options?: Options<ListAutomationRunsData>) => queryOptions<ListAutomationRunsResponse, ListAutomationRunsError, ListAutomationRunsResponse, ReturnType<typeof listAutomationRunsQueryKey>>({
+export const findAutomationRunsOptions = (options?: Options<FindAutomationRunsData>) => queryOptions<FindAutomationRunsResponse, FindAutomationRunsError, FindAutomationRunsResponse, ReturnType<typeof findAutomationRunsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listAutomationRuns({
+        const { data } = await findAutomationRuns({
             ...options,
             ...queryKey[0],
             signal,
@@ -2716,29 +2716,29 @@ export const listAutomationRunsOptions = (options?: Options<ListAutomationRunsDa
         });
         return data;
     },
-    queryKey: listAutomationRunsQueryKey(options)
+    queryKey: findAutomationRunsQueryKey(options)
 });
 
-export const listAutomationRunsInfiniteQueryKey = (options?: Options<ListAutomationRunsData>): QueryKey<Options<ListAutomationRunsData>> => createQueryKey('listAutomationRuns', options, true);
+export const findAutomationRunsInfiniteQueryKey = (options?: Options<FindAutomationRunsData>): QueryKey<Options<FindAutomationRunsData>> => createQueryKey('findAutomationRuns', options, true);
 
 /**
  * List automation runs
  *
  * The Runs tab, and one automation’s runs: newest first, a page of ten by default, with the total and the count per status tab under the same facets. Runs that never became a session (skipped, expired) are left out unless their status is asked for.
  */
-export const listAutomationRunsInfiniteOptions = (options?: Options<ListAutomationRunsData>) => {
-    const opts = infiniteQueryOptions<ListAutomationRunsResponse, ListAutomationRunsError, InfiniteData<ListAutomationRunsResponse>, QueryKey<Options<ListAutomationRunsData>>, number | Pick<QueryKey<Options<ListAutomationRunsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+export const findAutomationRunsInfiniteOptions = (options?: Options<FindAutomationRunsData>) => {
+    const opts = infiniteQueryOptions<FindAutomationRunsResponse, FindAutomationRunsError, InfiniteData<FindAutomationRunsResponse>, QueryKey<Options<FindAutomationRunsData>>, number | Pick<QueryKey<Options<FindAutomationRunsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
     // @ts-ignore
     {
         queryFn: async ({ pageParam, queryKey, signal }) => {
             // @ts-ignore
-            const page: Pick<QueryKey<Options<ListAutomationRunsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+            const page: Pick<QueryKey<Options<FindAutomationRunsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
                 query: {
                     page: pageParam
                 }
             };
             const params = createInfiniteParams(queryKey, page);
-            const { data } = await listAutomationRuns({
+            const { data } = await findAutomationRuns({
                 ...options,
                 ...params,
                 signal,
@@ -2746,21 +2746,21 @@ export const listAutomationRunsInfiniteOptions = (options?: Options<ListAutomati
             });
             return data;
         },
-        queryKey: listAutomationRunsInfiniteQueryKey(options)
+        queryKey: findAutomationRunsInfiniteQueryKey(options)
     });
     return opts as Omit<typeof opts, 'initialData'>;
 };
 
-export const getAutomationRunHistoryQueryKey = (options?: Options<GetAutomationRunHistoryData>) => createQueryKey('getAutomationRunHistory', options);
+export const findRunHistoryQueryKey = (options?: Options<FindRunHistoryData>) => createQueryKey('findRunHistory', options);
 
 /**
  * Run history by day
  *
  * One bucket per local day of the given zone, today last: runs that did not fail (running ones included) and runs that failed, under the same facets as the runs list.
  */
-export const getAutomationRunHistoryOptions = (options?: Options<GetAutomationRunHistoryData>) => queryOptions<GetAutomationRunHistoryResponse, GetAutomationRunHistoryError, GetAutomationRunHistoryResponse, ReturnType<typeof getAutomationRunHistoryQueryKey>>({
+export const findRunHistoryOptions = (options?: Options<FindRunHistoryData>) => queryOptions<FindRunHistoryResponse, FindRunHistoryError, FindRunHistoryResponse, ReturnType<typeof findRunHistoryQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getAutomationRunHistory({
+        const { data } = await findRunHistory({
             ...options,
             ...queryKey[0],
             signal,
@@ -2768,19 +2768,19 @@ export const getAutomationRunHistoryOptions = (options?: Options<GetAutomationRu
         });
         return data;
     },
-    queryKey: getAutomationRunHistoryQueryKey(options)
+    queryKey: findRunHistoryQueryKey(options)
 });
 
-export const getAutomationRunQueryKey = (options: Options<GetAutomationRunData>) => createQueryKey('getAutomationRun', options);
+export const findAutomationRunQueryKey = (options: Options<FindAutomationRunData>) => createQueryKey('findAutomationRun', options);
 
 /**
  * Read one automation run
  *
  * Why it ran, what the guards decided, the session it started and that session’s turn: the prompt the agent was given, the state, the result and the times.
  */
-export const getAutomationRunOptions = (options: Options<GetAutomationRunData>) => queryOptions<GetAutomationRunResponse, GetAutomationRunError, GetAutomationRunResponse, ReturnType<typeof getAutomationRunQueryKey>>({
+export const findAutomationRunOptions = (options: Options<FindAutomationRunData>) => queryOptions<FindAutomationRunResponse, FindAutomationRunError, FindAutomationRunResponse, ReturnType<typeof findAutomationRunQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getAutomationRun({
+        const { data } = await findAutomationRun({
             ...options,
             ...queryKey[0],
             signal,
@@ -2788,19 +2788,19 @@ export const getAutomationRunOptions = (options: Options<GetAutomationRunData>) 
         });
         return data;
     },
-    queryKey: getAutomationRunQueryKey(options)
+    queryKey: findAutomationRunQueryKey(options)
 });
 
-export const getAutomationSettingsQueryKey = (options?: Options<GetAutomationSettingsData>) => createQueryKey('getAutomationSettings', options);
+export const findAutomationSettingsQueryKey = (options?: Options<FindAutomationSettingsData>) => createQueryKey('findAutomationSettings', options);
 
 /**
  * The workspace’s automation limits
  *
  * Effective values: the workspace’s own where set, the platform’s defaults elsewhere, under the platform ceilings.
  */
-export const getAutomationSettingsOptions = (options?: Options<GetAutomationSettingsData>) => queryOptions<GetAutomationSettingsResponse, GetAutomationSettingsError, GetAutomationSettingsResponse, ReturnType<typeof getAutomationSettingsQueryKey>>({
+export const findAutomationSettingsOptions = (options?: Options<FindAutomationSettingsData>) => queryOptions<FindAutomationSettingsResponse, FindAutomationSettingsError, FindAutomationSettingsResponse, ReturnType<typeof findAutomationSettingsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getAutomationSettings({
+        const { data } = await findAutomationSettings({
             ...options,
             ...queryKey[0],
             signal,
@@ -2808,7 +2808,7 @@ export const getAutomationSettingsOptions = (options?: Options<GetAutomationSett
         });
         return data;
     },
-    queryKey: getAutomationSettingsQueryKey(options)
+    queryKey: findAutomationSettingsQueryKey(options)
 });
 
 /**

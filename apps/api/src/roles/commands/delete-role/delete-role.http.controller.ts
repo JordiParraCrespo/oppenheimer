@@ -23,7 +23,7 @@ export class DeleteRoleHttpController {
   @Version('1')
   @CheckPolicies({ action: 'delete', subject: 'Role' })
   @RequireScopes('roles:write')
-  @ApiOperation({ operationId: 'deleteRole', summary: 'Delete role' })
+  @ApiOperation({ summary: 'Delete role' })
   @ApiResponse({ status: 200 })
   @ApiProblemResponse({
     status: 403,

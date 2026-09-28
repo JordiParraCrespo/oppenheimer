@@ -32,7 +32,6 @@ export class FindHostsHttpController {
   @CheckPolicies({ action: 'read', subject: 'Host' })
   @RequireScopes('hosts:read')
   @ApiOperation({
-    operationId: 'listHosts',
     summary: 'List the hosts the caller can reach',
     description:
       'The machines the caller paired, plus any shared with them, each with its status and the sessions running on it. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock. Unpaired hosts are left out unless `include=unpaired`.',

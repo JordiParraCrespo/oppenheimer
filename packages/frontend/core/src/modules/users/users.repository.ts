@@ -56,7 +56,7 @@ export class UsersRepository {
 
   @MapApiError(UsersErrors.FETCH_FAILED)
   async me(): Promise<UserEntity> {
-    const data = await unwrapBody(heyApiSdk.me(), UsersErrors.FETCH_FAILED);
+    const data = await unwrapBody(heyApiSdk.getMe(), UsersErrors.FETCH_FAILED);
     return toEntity(data);
   }
 
@@ -67,20 +67,23 @@ export class UsersRepository {
    */
   @MapApiError(UsersErrors.FETCH_FAILED)
   async myPermissions(): Promise<PermissionDefinition[]> {
-    const data = await unwrapBody(heyApiSdk.findMyPermissions(), UsersErrors.FETCH_FAILED);
+    const data = await unwrapBody(heyApiSdk.getMyPermissions(), UsersErrors.FETCH_FAILED);
     return toPermissions(data.permissions);
   }
 
   @MapApiError(UsersErrors.FETCH_FAILED)
   async findById(id: string): Promise<UserEntity> {
-    const data = await unwrapBody(heyApiSdk.findUser({ path: { id } }), UsersErrors.FETCH_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.findUserById({ path: { id } }),
+      UsersErrors.FETCH_FAILED,
+    );
     return toEntity(data);
   }
 
   @MapApiError(UsersErrors.UPDATE_FAILED)
   async update(id: string, dto: UpdateUserDto): Promise<UserEntity> {
     const data = await unwrapBody(
-      heyApiSdk.patchUser({ path: { id }, body: dto }),
+      heyApiSdk.updateUser({ path: { id }, body: dto }),
       UsersErrors.UPDATE_FAILED,
     );
     return toEntity(data);

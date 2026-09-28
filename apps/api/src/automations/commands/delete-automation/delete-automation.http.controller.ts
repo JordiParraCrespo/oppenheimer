@@ -35,7 +35,6 @@ export class DeleteAutomationHttpController {
   @CheckPolicies({ action: 'delete', subject: 'Automation' })
   @RequireScopes('automations:write')
   @ApiOperation({
-    operationId: 'deleteAutomation',
     summary: 'Delete an automation',
     description: 'Its triggers stop now. Past runs are kept, and read “Deleted automation”.',
   })

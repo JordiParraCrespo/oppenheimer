@@ -28,7 +28,7 @@ export class FindUserByIdHttpController {
   @Version('1')
   @CheckPolicies({ action: 'read', subject: 'User' })
   @RequireScopes('users:read')
-  @ApiOperation({ operationId: 'findUser', summary: 'Get user by ID' })
+  @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({ status: 200, type: UserResponseDto })
   @ApiProblemResponse({
     status: 404,

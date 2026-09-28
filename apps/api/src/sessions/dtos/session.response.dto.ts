@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { nullableEnum } from '@oppenheimer/backend-core';
 import type { SessionEffortDto, SessionPermissionDto } from '@oppenheimer/shared';
 import {
   SESSION_EFFORTS,
@@ -85,16 +86,14 @@ export class SessionLaunchResponseDto {
   model!: string | null;
 
   @ApiProperty({
-    enum: SESSION_PERMISSIONS,
-    nullable: true,
+    ...nullableEnum(SESSION_PERMISSIONS),
     description:
       'What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default. Null for an agent with no approvals (the blank terminal).',
   })
   permission!: SessionPermissionDto | null;
 
   @ApiPropertyOptional({
-    enum: SESSION_EFFORTS,
-    nullable: true,
+    ...nullableEnum(SESSION_EFFORTS),
     description: 'How hard the agent may think. Null leaves the agent its own default.',
   })
   effort!: SessionEffortDto | null;

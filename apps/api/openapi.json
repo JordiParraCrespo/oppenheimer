@@ -4,7 +4,7 @@
     "/api/v1/profile/settings": {
       "get": {
         "description": "Answers with the defaults when the user has never saved any.",
-        "operationId": "getSettings",
+        "operationId": "getUserSettings",
         "parameters": [],
         "responses": {
           "200": {
@@ -48,7 +48,7 @@
       },
       "put": {
         "description": "Every preference is required — this is a replace, not a patch.",
-        "operationId": "updateSettings",
+        "operationId": "updateUserSettings",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -249,7 +249,7 @@
     "/api/v1/profile/sessions": {
       "get": {
         "description": "Devices signed in to this account. Internal sessions minted for API tokens and OAuth clients are not devices and are not listed — revoke those where they are managed. Session tokens are never returned — revoke by session id instead.",
-        "operationId": "findSessions",
+        "operationId": "findProfileSessions",
         "parameters": [],
         "responses": {
           "200": {
@@ -807,7 +807,7 @@
     },
     "/api/v1/users/me": {
       "get": {
-        "operationId": "me",
+        "operationId": "getMe",
         "parameters": [],
         "responses": {
           "200": {
@@ -853,7 +853,7 @@
     "/api/v1/users/me/permissions": {
       "get": {
         "description": "The union of every role assigned to the caller, as CASL rules. Drives which routes the web app shows in its sidebar.",
-        "operationId": "findMyPermissions",
+        "operationId": "getMyPermissions",
         "parameters": [],
         "responses": {
           "200": {
@@ -898,7 +898,7 @@
     },
     "/api/v1/users/{id}": {
       "get": {
-        "operationId": "findUser",
+        "operationId": "findUserById",
         "parameters": [
           {
             "name": "id",
@@ -960,7 +960,7 @@
         "tags": ["Users"]
       },
       "patch": {
-        "operationId": "patchUser",
+        "operationId": "updateUser",
         "parameters": [
           {
             "name": "id",
@@ -1090,7 +1090,7 @@
     "/api/v1/authz/catalog": {
       "get": {
         "description": "Drives the role builder. Resources are contributed by the modules that own them, so a new module appears here without editing a central catalog.",
-        "operationId": "catalog",
+        "operationId": "findAuthzCatalog",
         "parameters": [],
         "responses": {
           "200": {
@@ -1135,7 +1135,7 @@
     },
     "/api/v1/access-grants": {
       "get": {
-        "operationId": "listAccessGrants",
+        "operationId": "findAccessGrants",
         "parameters": [],
         "responses": {
           "200": {
@@ -1305,7 +1305,7 @@
     "/api/v1/me/credential": {
       "get": {
         "description": "Returns the credential kind, its granted scopes and what those scopes actually amount to once the owner’s roles are applied. The MCP server filters its tool list by `effectiveScopes`.",
-        "operationId": "current",
+        "operationId": "findCurrentCredential",
         "parameters": [],
         "responses": {
           "200": {
@@ -1351,7 +1351,7 @@
     "/api/v1/tokens": {
       "get": {
         "description": "Secrets are never returned — only the display prefix and metadata.",
-        "operationId": "listApiTokens",
+        "operationId": "findApiTokens",
         "parameters": [],
         "responses": {
           "200": {
@@ -1474,7 +1474,7 @@
     "/api/v1/tokens/permissions": {
       "get": {
         "description": "Drives the permission picker on the token-creation screen and the CLI’s --permissions validation.",
-        "operationId": "listGrantablePermissions",
+        "operationId": "findGrantablePermissions",
         "parameters": [],
         "responses": {
           "200": {
@@ -1577,7 +1577,7 @@
     },
     "/api/v1/roles": {
       "get": {
-        "operationId": "listRoles",
+        "operationId": "findRoles",
         "parameters": [
           {
             "name": "search",
@@ -1713,7 +1713,7 @@
     },
     "/api/v1/roles/{id}": {
       "get": {
-        "operationId": "getRole",
+        "operationId": "findRoleById",
         "parameters": [
           {
             "name": "id",
@@ -1904,7 +1904,7 @@
     },
     "/api/v1/roles/{id}/permissions": {
       "put": {
-        "operationId": "updatePermissions",
+        "operationId": "updateRolePermissions",
         "parameters": [
           {
             "name": "id",
@@ -2033,7 +2033,7 @@
         "tags": ["Roles"]
       },
       "put": {
-        "operationId": "assign",
+        "operationId": "assignUserRoles",
         "parameters": [
           {
             "name": "userId",
@@ -4600,7 +4600,7 @@
     "/api/v1/installations": {
       "get": {
         "description": "A read of the workspace’s own rows, not of GitHub. An empty list is what the console reads as “connect GitHub”, including on a deployment with no App configured.",
-        "operationId": "listInstallations",
+        "operationId": "findInstallations",
         "parameters": [],
         "responses": {
           "200": {
@@ -5061,7 +5061,7 @@
     "/api/v1/hosts": {
       "get": {
         "description": "The machines the caller paired, plus any shared with them, each with its status and the sessions running on it. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock. Unpaired hosts are left out unless `include=unpaired`.",
-        "operationId": "listHosts",
+        "operationId": "findHosts",
         "parameters": [
           {
             "name": "include",
@@ -5121,7 +5121,7 @@
     "/api/v1/hosts/pairing": {
       "get": {
         "description": "Both source addresses are here: where each token was minted and, once spent, where it was redeemed from. A mismatch is the interesting one.",
-        "operationId": "listPairingTokens",
+        "operationId": "findPairingTokens",
         "parameters": [],
         "responses": {
           "200": {
@@ -5168,7 +5168,7 @@
       },
       "post": {
         "description": "Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored. With `replaces`, the caller’s named token is revoked in the same write.",
-        "operationId": "mint",
+        "operationId": "mintPairingToken",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -5254,7 +5254,7 @@
     "/api/v1/hosts/pairing/{id}": {
       "get": {
         "description": "What Add host polls while it listens for a machine: `host` stays null until a runner spends the token, then carries the new host with its status and the tools it reported.",
-        "operationId": "getPairingToken",
+        "operationId": "findPairingToken",
         "parameters": [
           {
             "name": "id",
@@ -5375,7 +5375,7 @@
     "/api/v1/hosts/register": {
       "post": {
         "description": "Called by the runner from the install command. Redemption and host creation commit together, so a retry with the same key after a lost response returns the same host rather than pairing the machine twice.",
-        "operationId": "register",
+        "operationId": "registerHost",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -5436,7 +5436,7 @@
     "/api/v1/hosts/self": {
       "delete": {
         "description": "Called by the runner when it is uninstalled. Answers 204 whether or not the host was still paired: the machine cannot tell the two apart and neither side would do anything differently.",
-        "operationId": "uninstall",
+        "operationId": "uninstallHost",
         "parameters": [],
         "responses": {
           "204": {
@@ -5512,7 +5512,7 @@
     },
     "/api/v1/hosts/{id}": {
       "get": {
-        "operationId": "getHost",
+        "operationId": "findHost",
         "parameters": [
           {
             "name": "id",
@@ -5575,7 +5575,7 @@
       },
       "patch": {
         "description": "Display only — nothing on the machine is named after this.",
-        "operationId": "rename",
+        "operationId": "renameHost",
         "parameters": [
           {
             "name": "id",
@@ -5648,7 +5648,7 @@
       },
       "delete": {
         "description": "Stops this machine being given work. The record is kept so the pairing history survives; the runner on it learns it is gone the next time it connects.",
-        "operationId": "unpair",
+        "operationId": "unpairHost",
         "parameters": [
           {
             "name": "id",
@@ -5706,7 +5706,7 @@
     "/api/v1/hosts/{id}/timeline": {
       "get": {
         "description": "Paired, renamed, unpaired, what changed about the machine, the networks it moved between and its runner updates. Kept for 180 days.",
-        "operationId": "getHostTimeline",
+        "operationId": "findHostTimeline",
         "parameters": [
           {
             "name": "id",
@@ -6280,7 +6280,7 @@
         "tags": ["Admin"]
       },
       "patch": {
-        "operationId": "updateUser",
+        "operationId": "adminUpdateUser",
         "parameters": [
           {
             "name": "id",
@@ -7902,7 +7902,7 @@
     "/api/v1/projects": {
       "get": {
         "description": "Newest first. Archived projects are left out unless asked for.",
-        "operationId": "listProjects",
+        "operationId": "findProjects",
         "parameters": [
           {
             "name": "includeArchived",
@@ -8034,7 +8034,7 @@
     },
     "/api/v1/projects/{id}": {
       "get": {
-        "operationId": "getProject",
+        "operationId": "findProject",
         "parameters": [
           {
             "name": "id",
@@ -8275,7 +8275,7 @@
     "/api/v1/sessions": {
       "get": {
         "description": "Last activity first unless `sort` says otherwise. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.",
-        "operationId": "listSessions",
+        "operationId": "findSessions",
         "parameters": [
           {
             "name": "sort",
@@ -8498,7 +8498,7 @@
     "/api/v1/sessions/{id}/events": {
       "get": {
         "description": "The append-only log, which is the truth per session — the row is a fold of it. Paginated by `seq`, which is dense and assigned by the control plane.",
-        "operationId": "listSessionEvents",
+        "operationId": "findSessionEvents",
         "parameters": [
           {
             "name": "id",
@@ -8976,7 +8976,7 @@
     "/api/v1/sessions/{id}/checkouts": {
       "post": {
         "description": "The checkout takes the session’s own branch, created from the base given here or the repository’s default, and a directory name no checkout of this session has ever used.",
-        "operationId": "addSessionCheckout",
+        "operationId": "addCheckout",
         "parameters": [
           {
             "name": "id",
@@ -9061,7 +9061,7 @@
     "/api/v1/sessions/{id}/checkouts/{checkoutId}": {
       "delete": {
         "description": "Removes the worktree on the host with the same refuse-on-unpushed-work posture as closing a session, then retires the checkout. The row is kept: the directory name it used is never reissued inside this session.",
-        "operationId": "removeSessionCheckout",
+        "operationId": "removeCheckout",
         "parameters": [
           {
             "name": "id",
@@ -9134,7 +9134,7 @@
     "/api/v1/sessions/{id}": {
       "get": {
         "description": "With its live checkouts. Retired checkouts are left out.",
-        "operationId": "getSession",
+        "operationId": "findSession",
         "parameters": [
           {
             "name": "id",
@@ -9439,7 +9439,7 @@
     "/api/v1/automations": {
       "get": {
         "description": "Oldest first, as the sidebar groups them by project. Each carries its status (running while a run is live), its next run, its run count over the last 30 days and its last six runs.",
-        "operationId": "listAutomations",
+        "operationId": "findAutomations",
         "parameters": [
           {
             "name": "projectId",
@@ -9572,7 +9572,7 @@
     "/api/v1/automations/trigger-preview": {
       "post": {
         "description": "“Would have run N times in the last 7 days”: the card, unsaved, matched against what the webhook actually received, with the two most recent matches. A POST because the card is a body, not because anything changes.",
-        "operationId": "previewAutomationTrigger",
+        "operationId": "previewTrigger",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -9627,7 +9627,7 @@
     },
     "/api/v1/automations/{id}": {
       "get": {
-        "operationId": "getAutomation",
+        "operationId": "findAutomation",
         "parameters": [
           {
             "name": "id",
@@ -10108,7 +10108,7 @@
     "/api/v1/automation-runs": {
       "get": {
         "description": "The Runs tab, and one automation’s runs: newest first, a page of ten by default, with the total and the count per status tab under the same facets. Runs that never became a session (skipped, expired) are left out unless their status is asked for.",
-        "operationId": "listAutomationRuns",
+        "operationId": "findAutomationRuns",
         "parameters": [
           {
             "name": "limit",
@@ -10210,7 +10210,7 @@
     "/api/v1/automation-runs/history": {
       "get": {
         "description": "One bucket per local day of the given zone, today last: runs that did not fail (running ones included) and runs that failed, under the same facets as the runs list.",
-        "operationId": "getAutomationRunHistory",
+        "operationId": "findRunHistory",
         "parameters": [
           {
             "name": "timezone",
@@ -10293,7 +10293,7 @@
     "/api/v1/automation-runs/{id}": {
       "get": {
         "description": "Why it ran, what the guards decided, the session it started and that session’s turn: the prompt the agent was given, the state, the result and the times.",
-        "operationId": "getAutomationRun",
+        "operationId": "findAutomationRun",
         "parameters": [
           {
             "name": "id",
@@ -10358,7 +10358,7 @@
     "/api/v1/automation-settings": {
       "get": {
         "description": "Effective values: the workspace’s own where set, the platform’s defaults elsewhere, under the platform ceilings.",
-        "operationId": "getAutomationSettings",
+        "operationId": "findAutomationSettings",
         "parameters": [],
         "responses": {
           "200": {
@@ -14512,8 +14512,8 @@
           },
           "defaultAgent": {
             "type": "string",
-            "nullable": true,
             "enum": ["claude-code", "codex", "opencode", "grok", "shell", null],
+            "nullable": true,
             "description": "The agent a new session is offered, from the coding-agent catalog.",
             "example": "claude-code"
           },
@@ -14753,7 +14753,7 @@
           },
           "agent": {
             "type": "string",
-            "enum": ["claude-code", "codex", "opencode", "grok", "shell", null],
+            "enum": ["claude-code", "codex", "opencode", "grok", "shell"],
             "description": "The coding agent this session runs.",
             "example": "claude-code"
           },
@@ -14887,7 +14887,7 @@
           },
           "agent": {
             "type": "string",
-            "enum": ["claude-code", "codex", "opencode", "grok", "shell", null]
+            "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
           },
           "projectId": {
             "type": "string",
@@ -14938,11 +14938,11 @@
               },
               "permission": {
                 "type": "string",
-                "enum": ["ask", "auto", "full", null]
+                "enum": ["ask", "auto", "full"]
               },
               "effort": {
                 "type": "string",
-                "enum": ["minimal", "low", "medium", "high", "max", null]
+                "enum": ["minimal", "low", "medium", "high", "max"]
               }
             }
           },
@@ -15355,8 +15355,8 @@
           },
           "pausedReason": {
             "type": "string",
-            "nullable": true,
-            "enum": ["user", "project_archived", "host_unpaired", "owner_lost_access", null]
+            "enum": ["user", "project_archived", "host_unpaired", "owner_lost_access", null],
+            "nullable": true
           },
           "nextRunAt": {
             "format": "date-time",
@@ -15375,8 +15375,8 @@
           },
           "overlap": {
             "type": "string",
-            "nullable": true,
-            "enum": ["skip", "queue", null]
+            "enum": ["skip", "queue", null],
+            "nullable": true
           },
           "maxRunsPerHour": {
             "type": "number",
@@ -15596,7 +15596,7 @@
           },
           "agent": {
             "type": "string",
-            "enum": ["claude-code", "codex", "opencode", "grok", "shell", null]
+            "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
           },
           "launch": {
             "type": "object",
@@ -15613,7 +15613,7 @@
               },
               "effort": {
                 "type": "string",
-                "enum": ["minimal", "low", "medium", "high", "max", null]
+                "enum": ["minimal", "low", "medium", "high", "max"]
               }
             },
             "default": {
@@ -15934,7 +15934,7 @@
           },
           "agent": {
             "type": "string",
-            "enum": ["claude-code", "codex", "opencode", "grok", "shell", null]
+            "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
           },
           "launch": {
             "type": "object",
@@ -15951,7 +15951,7 @@
               },
               "effort": {
                 "type": "string",
-                "enum": ["minimal", "low", "medium", "high", "max", null]
+                "enum": ["minimal", "low", "medium", "high", "max"]
               }
             },
             "default": {
@@ -16086,7 +16086,6 @@
           },
           "skipReason": {
             "type": "string",
-            "nullable": true,
             "enum": [
               "paused",
               "deleted",
@@ -16098,7 +16097,8 @@
               "not_launchable",
               "agent_unavailable",
               null
-            ]
+            ],
+            "nullable": true
           },
           "cause": {
             "type": "string",

@@ -32,9 +32,6 @@ export class FindProjectsHttpController {
   @CheckPolicies({ action: 'read', subject: 'Project' })
   @RequireScopes('projects:read')
   @ApiOperation({
-    // Named explicitly: the generated client turns an operationId into a function
-    // name, and `list` would collide with every other resource's listing.
-    operationId: 'listProjects',
     summary: 'List the projects in the caller’s workspace',
     description: 'Newest first. Archived projects are left out unless asked for.',
   })

@@ -41,7 +41,6 @@ export class CreateApiTokenHttpController {
   // global rate limit.
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({
-    operationId: 'createApiToken',
     summary: 'Mint an API token',
     description:
       'Creates a scoped API token for the caller. The secret is returned once and cannot be retrieved again. Scopes may not exceed what the caller is themselves permitted to do.',

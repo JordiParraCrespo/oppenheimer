@@ -35,9 +35,11 @@ src/
 
 - To change the API surface, edit the **source of truth** — the controllers and
   Swagger decorators in `apps/api` (DTOs in `@oppenheimer/shared`) — then regenerate.
-- A controller method with a generic name (`list`, `revoke`) gets an explicit
-  `@ApiOperation({ operationId })`; a numbered SDK function (`list6`) means
-  one is missing.
+- An operation's name comes from one factory in
+  `apps/api/src/openapi-document.ts`: a slice's `<UseCase>HttpController` is
+  its use case (`findHosts`), any other controller's route is its method name.
+  No `operationId` by hand; when two handlers share a name, generation fails
+  and names both, and the fix is renaming one.
 - Only `configure.ts` is hand-written here.
 
 ## Commands

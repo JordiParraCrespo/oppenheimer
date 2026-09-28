@@ -72,9 +72,9 @@ export class OrganizationsController {
   @Version('1')
   @RequireScopes('organizations:write')
   @CheckPolicies({ action: 'create', subject: 'Organization' })
-  @ApiOperation({ operationId: 'createOrganization', summary: 'Create an organization' })
+  @ApiOperation({ summary: 'Create an organization' })
   @ApiResponse({ status: 201, type: OrganizationResponseDto })
-  create(
+  createOrganization(
     @Req() req: Request,
     @Body() body: CreateOrganizationRequest,
   ): Promise<OrganizationResponseDto> {
@@ -85,9 +85,9 @@ export class OrganizationsController {
   @Version('1')
   @RequireScopes('organizations:read')
   @CheckPolicies({ action: 'read', subject: 'Organization' })
-  @ApiOperation({ operationId: 'listOrganizations', summary: "List the caller's organizations" })
+  @ApiOperation({ summary: "List the caller's organizations" })
   @ApiResponse({ status: 200, type: [OrganizationResponseDto] })
-  async list(
+  async listOrganizations(
     @Req() req: Request,
     @CurrentScope() scope: ScopeContext | null,
   ): Promise<OrganizationResponseDto[]> {
@@ -134,9 +134,9 @@ export class OrganizationsController {
   @RequireScopes('organizations:write')
   @OrganizationScoped('id')
   @CheckPolicies({ action: 'update', subject: 'Organization' })
-  @ApiOperation({ operationId: 'updateOrganization', summary: 'Update an organization' })
+  @ApiOperation({ summary: 'Update an organization' })
   @ApiResponse({ status: 200, type: OrganizationResponseDto })
-  update(
+  updateOrganization(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateOrganizationRequest,
@@ -149,9 +149,9 @@ export class OrganizationsController {
   @RequireScopes('organizations:write')
   @OrganizationScoped('id')
   @CheckPolicies({ action: 'delete', subject: 'Organization' })
-  @ApiOperation({ operationId: 'deleteOrganization', summary: 'Delete an organization' })
+  @ApiOperation({ summary: 'Delete an organization' })
   @ApiResponse({ status: 200, type: OrganizationResponseDto })
-  remove(
+  deleteOrganization(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<OrganizationResponseDto> {
@@ -164,11 +164,10 @@ export class OrganizationsController {
   @OrganizationScoped('id')
   @NoPolicy('selects one of the caller’s own memberships; Better Auth verifies membership')
   @ApiOperation({
-    operationId: 'setActiveOrganization',
     summary: 'Set the active organization for the current session',
   })
   @ApiResponse({ status: 200, type: OrganizationResponseDto })
-  setActive(
+  setActiveOrganization(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<OrganizationResponseDto | null> {

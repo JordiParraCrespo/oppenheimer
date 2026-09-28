@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import type { HostEntity, HostPairing } from '../modules/hosts/host.entity';
-import { useCurrentPairing, useHosts, usePairingTokens, useReplacePairing } from './hosts.queries';
+import {
+  useCurrentPairing,
+  useHostList,
+  usePairingTokens,
+  useReplacePairing,
+} from './hosts.queries';
 import { LIVE_POLL } from './live-poll';
 
 /** The longest delay `setTimeout` honours; a later one fires at once. */
@@ -101,7 +106,7 @@ export function useHostPairing(hostName: string): HostPairingFlow {
 
   // The host row appears when the runner registers; its service may still be
   // starting, so the caller decides what `online` means for its primary action.
-  const { data: hosts } = useHosts({
+  const { data: hosts } = useHostList({
     enabled: Boolean(redeemedHostId),
     refetchInterval: (query) => {
       if (!redeemedHostId) return false;

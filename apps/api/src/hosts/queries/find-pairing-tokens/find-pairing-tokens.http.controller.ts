@@ -31,7 +31,6 @@ export class FindPairingTokensHttpController {
   @CheckPolicies({ action: 'read', subject: 'Host' })
   @RequireScopes('hosts:read')
   @ApiOperation({
-    operationId: 'listPairingTokens',
     summary: 'List the caller’s pairing tokens',
     description:
       'Both source addresses are here: where each token was minted and, once spent, where it was redeemed from. A mismatch is the interesting one.',

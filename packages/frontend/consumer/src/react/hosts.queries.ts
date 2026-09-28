@@ -9,6 +9,7 @@ import {
 } from '@tanstack/react-query';
 import type { HostEntity, HostPairing, HostPairingToken } from '../modules/hosts/host.entity';
 import { useConsumerApp } from './context';
+import { LIVE_POLL } from './live-poll';
 
 /**
  * Query key factory for the `hosts` feature, from the most generic (`all`) to
@@ -47,6 +48,29 @@ export const hostsKeys = {
  * subscribe at all: that is `useHostsSnapshot`.
  */
 export function useHosts<TData = HostEntity[]>(
+  options?: Omit<
+    UseQueryOptions<HostEntity[], Error, TData>,
+    'queryKey' | 'queryFn' | 'refetchInterval'
+  >,
+) {
+  return useHostList(options);
+}
+
+/**
+ * The hosts, for a view that shows whether each is online (Settings → Hosts).
+ * Presence is not streamed to the console yet, so the list polls for as long
+ * as such a view is mounted, on `LIVE_POLL.hostPresence`.
+ */
+export function useHostPresence() {
+  return useHostList({ refetchInterval: LIVE_POLL.hostPresence });
+}
+
+/**
+ * The one read of `GET /v1/hosts`, polling on whatever interval this package
+ * gives it. Not in the barrel: a feature reads `useHosts`, which never polls,
+ * or `useHostPresence`, and the pairing flow polls it on `LIVE_POLL.pairing`.
+ */
+export function useHostList<TData = HostEntity[]>(
   options?: Omit<UseQueryOptions<HostEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();

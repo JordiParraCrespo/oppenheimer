@@ -23,14 +23,14 @@ function toSettings(data: UserSettingsResponseDto): UserSettingsEntity {
 export class UserSettingsRepository {
   @MapApiError(UserSettingsErrors.FETCH_FAILED)
   async get(): Promise<UserSettingsEntity> {
-    const data = await unwrapBody(heyApiSdk.getSettings(), UserSettingsErrors.FETCH_FAILED);
+    const data = await unwrapBody(heyApiSdk.getUserSettings(), UserSettingsErrors.FETCH_FAILED);
     return toSettings(data);
   }
 
   @MapApiError(UserSettingsErrors.UPDATE_FAILED)
   async update(dto: UpdateUserSettingsDto): Promise<UserSettingsEntity> {
     const data = await unwrapBody(
-      heyApiSdk.updateSettings({ body: dto }),
+      heyApiSdk.updateUserSettings({ body: dto }),
       UserSettingsErrors.UPDATE_FAILED,
     );
     return toSettings(data);

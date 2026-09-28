@@ -18,11 +18,13 @@ and entity mapping stay in one place.
 
 Regenerate after any change to an API endpoint or its Swagger decorators.
 
-Every operation has a name the API chose: a controller method whose name is
-generic (`list`, `revoke`) carries an explicit `@ApiOperation({ operationId })`,
-so the SDK never numbers a collision (`list6`) and a caller never falls back to
-a hand-written URL. There is one client; `pnpm arch` fails on a path into this
-package's `src/`.
+Every operation is named by one factory in the API
+(`apps/api/src/openapi-document.ts`): a slice's controller,
+`<UseCase>HttpController`, gives its use case (`FindHostsHttpController` is
+`findHosts`), and any other controller its method name. Two handlers on one
+name fail the document's generation, so the SDK never numbers a collision and
+a caller never falls back to a hand-written URL. There is one client; `pnpm
+arch` fails on a path into this package's `src/`.
 
 ## What's inside
 

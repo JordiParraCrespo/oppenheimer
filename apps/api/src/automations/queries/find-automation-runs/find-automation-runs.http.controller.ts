@@ -33,7 +33,6 @@ export class FindAutomationRunsHttpController {
   @CheckPolicies({ action: 'read', subject: 'Automation' })
   @RequireScopes('automations:read')
   @ApiOperation({
-    operationId: 'listAutomationRuns',
     summary: 'List automation runs',
     description:
       'The Runs tab, and one automation’s runs: newest first, a page of ten by default, with the total and the count per status tab under the same facets. Runs that never became a session (skipped, expired) are left out unless their status is asked for.',

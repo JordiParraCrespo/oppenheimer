@@ -30,7 +30,7 @@ export class FindRolesHttpController {
   @Version('1')
   @CheckPolicies({ action: 'read', subject: 'Role' })
   @RequireScopes('roles:read')
-  @ApiOperation({ operationId: 'listRoles', summary: 'List all roles' })
+  @ApiOperation({ summary: 'List all roles' })
   @ApiQuery({
     name: 'page',
     required: false,

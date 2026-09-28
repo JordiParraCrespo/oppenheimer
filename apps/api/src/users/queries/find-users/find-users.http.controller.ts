@@ -35,7 +35,7 @@ export class FindUsersHttpController {
   // (`GET /v1/organizations/:orgId/members`), not the global user table.
   @CheckPolicies({ action: 'manage', subject: 'User' })
   @RequireScopes('users:read')
-  @ApiOperation({ operationId: 'findUsers', summary: 'List all users (admin)' })
+  @ApiOperation({ summary: 'List all users (admin)' })
   @ApiQuery({
     name: 'page',
     required: false,

@@ -44,7 +44,6 @@ export class CloseSessionHttpController {
   @CheckPolicies({ action: 'delete', subject: 'Session' })
   @RequireScopes('sessions:write')
   @ApiOperation({
-    operationId: 'closeSession',
     summary: 'Close a session',
     description:
       'Pushes each checkout’s branch, then removes the worktrees and prunes. The row is never deleted: its slug is the session’s directory name on the host and a retired name is never reissued, because the coding agents key their conversation state by working directory. Refuses when a checkout has unpushed work unless the loss is accepted.',

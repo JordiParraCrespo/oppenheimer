@@ -33,7 +33,7 @@ function toDate(value: string | null | undefined): Date | null {
 export class ApiTokensRepository {
   @MapApiError(ApiTokensErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<ApiTokenEntity[]> {
-    const result = await unwrapBody(heyApiSdk.listApiTokens(), ApiTokensErrors.FETCH_LIST_FAILED);
+    const result = await unwrapBody(heyApiSdk.findApiTokens(), ApiTokensErrors.FETCH_LIST_FAILED);
     return result.map(toEntity);
   }
 
@@ -59,7 +59,7 @@ export class ApiTokensRepository {
   @MapApiError(ApiTokensErrors.FETCH_PERMISSIONS_FAILED)
   async permissions(): Promise<PermissionCatalog> {
     const result = await unwrapBody(
-      heyApiSdk.listGrantablePermissions(),
+      heyApiSdk.findGrantablePermissions(),
       ApiTokensErrors.FETCH_PERMISSIONS_FAILED,
     );
 
@@ -68,7 +68,10 @@ export class ApiTokensRepository {
 
   @MapApiError(ApiTokensErrors.FETCH_CREDENTIAL_FAILED)
   async currentCredential(): Promise<CurrentCredential> {
-    const result = await unwrapBody(heyApiSdk.current(), ApiTokensErrors.FETCH_CREDENTIAL_FAILED);
+    const result = await unwrapBody(
+      heyApiSdk.findCurrentCredential(),
+      ApiTokensErrors.FETCH_CREDENTIAL_FAILED,
+    );
 
     return {
       kind: result.kind,

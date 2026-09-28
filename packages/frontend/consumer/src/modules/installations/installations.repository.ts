@@ -51,7 +51,7 @@ export class InstallationsRepository {
     // render "GitHub is not connected" over a request that never succeeded,
     // and send somebody to reinstall an App they already have.
     const data = await unwrapBody(
-      heyApiSdk.listInstallations(),
+      heyApiSdk.findInstallations(),
       InstallationsErrors.FETCH_LIST_FAILED,
     );
     return data.map(toEntity);

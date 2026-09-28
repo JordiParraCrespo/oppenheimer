@@ -20,7 +20,7 @@ export class DeleteUserHttpController {
   @Version('1')
   @CheckPolicies({ action: 'delete', subject: 'User' })
   @RequireScopes('users:write')
-  @ApiOperation({ operationId: 'deleteUser', summary: 'Delete user' })
+  @ApiOperation({ summary: 'Delete user' })
   @ApiResponse({ status: 200 })
   @ApiProblemResponse({ status: 404, description: 'User not found', code: 'USER_001' })
   async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {

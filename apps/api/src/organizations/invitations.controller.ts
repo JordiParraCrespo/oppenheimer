@@ -73,11 +73,10 @@ export class OrganizationInvitationsController {
   @OrganizationScoped('orgId')
   @CheckPolicies({ action: 'read', subject: 'Invitation' })
   @ApiOperation({
-    operationId: 'listOrganizationInvitations',
     summary: 'List pending invitations for an organization',
   })
   @ApiResponse({ status: 200, type: [InvitationResponseDto] })
-  list(
+  listOrganizationInvitations(
     @Req() req: Request,
     @Param('orgId', ParseUUIDPipe) orgId: string,
   ): Promise<InvitationResponseDto[]> {
@@ -125,11 +124,10 @@ export class InvitationsController {
   @Version('1')
   @RequireScopes('invitations:read')
   @ApiOperation({
-    operationId: 'listMyInvitations',
     summary: "List the caller's pending invitations",
   })
   @ApiResponse({ status: 200, type: [InvitationResponseDto] })
-  listMine(@Req() req: Request): Promise<InvitationResponseDto[]> {
+  listMyInvitations(@Req() req: Request): Promise<InvitationResponseDto[]> {
     return this.invitations.listForCaller(req.headers);
   }
 
@@ -137,9 +135,12 @@ export class InvitationsController {
   @NoPolicy('an invitation the caller was sent; Better Auth checks the recipient')
   @Version('1')
   @RequireScopes('invitations:read')
-  @ApiOperation({ operationId: 'getInvitation', summary: 'Get an invitation by id' })
+  @ApiOperation({ summary: 'Get an invitation by id' })
   @ApiResponse({ status: 200, type: InvitationResponseDto })
-  get(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<InvitationResponseDto> {
+  getInvitation(
+    @Req() req: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<InvitationResponseDto> {
     return this.invitations.get(req.headers, id);
   }
 

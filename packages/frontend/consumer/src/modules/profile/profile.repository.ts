@@ -98,7 +98,10 @@ export class ProfileRepository {
 
   @MapApiError(ProfileErrors.FETCH_SESSIONS_FAILED)
   async getSessions(): Promise<UserSessionEntity[]> {
-    const data = await unwrapBody(heyApiSdk.findSessions(), ProfileErrors.FETCH_SESSIONS_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.findProfileSessions(),
+      ProfileErrors.FETCH_SESSIONS_FAILED,
+    );
     return data.map(toSession);
   }
 

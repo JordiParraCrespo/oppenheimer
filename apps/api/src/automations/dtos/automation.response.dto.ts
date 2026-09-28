@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { nullableEnum } from '@oppenheimer/backend-core';
 import {
   AUTOMATION_PAUSED_REASONS,
   AUTOMATION_PERMISSIONS,
@@ -181,7 +182,7 @@ export class AutomationResponseDto {
   @ApiPropertyOptional({ nullable: true, type: Date })
   pausedAt!: Date | null;
 
-  @ApiPropertyOptional({ nullable: true, enum: AUTOMATION_PAUSED_REASONS })
+  @ApiPropertyOptional(nullableEnum(AUTOMATION_PAUSED_REASONS))
   pausedReason!: AutomationPausedReason | null;
 
   @ApiPropertyOptional({
@@ -197,7 +198,7 @@ export class AutomationResponseDto {
   @ApiProperty({ type: [AutomationTriggerResponseDto] })
   triggers!: AutomationTriggerResponseDto[];
 
-  @ApiPropertyOptional({ nullable: true, enum: ['skip', 'queue'] })
+  @ApiPropertyOptional(nullableEnum(['skip', 'queue']))
   overlap!: 'skip' | 'queue' | null;
 
   @ApiPropertyOptional({ nullable: true, type: Number })

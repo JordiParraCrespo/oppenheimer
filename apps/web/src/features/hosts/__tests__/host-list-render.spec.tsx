@@ -56,8 +56,7 @@ vi.mock('@oppenheimer/design-system-web', async (original) => ({
 }));
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
-  LIVE_POLL: { hostPresence: 15_000 },
-  useHosts: () => {
+  useHostPresence: () => {
     const data = useSyncExternalStore(world.subscribe, () => world.get().hosts);
     return { data, isPending: false, error: null };
   },

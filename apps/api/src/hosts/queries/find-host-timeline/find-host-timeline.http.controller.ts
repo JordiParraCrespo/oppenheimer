@@ -41,7 +41,6 @@ export class FindHostTimelineHttpController {
   @CheckPolicies({ action: 'read', subject: 'Host' })
   @RequireScopes('hosts:read')
   @ApiOperation({
-    operationId: 'getHostTimeline',
     summary: 'A host’s timeline, newest first',
     description:
       'Paired, renamed, unpaired, what changed about the machine, the networks it moved between and its runner updates. Kept for 180 days.',

@@ -440,20 +440,21 @@ for (const pkg of readdirSync(join(root, 'packages/frontend'))) {
   }
 }
 
-// One API client, every operation named. The generated SDK numbers a name two
-// controller methods share (`list6`, `revoke3`), and a numbered name renumbers
-// whenever another controller is added — which is how callers once fell back to
-// hand-written URLs. A method with a generic name carries an explicit
-// `@ApiOperation({ operationId })` instead.
-const SDK = join(root, 'packages/frontend/api-client/src/generated/sdk.gen.ts');
-if (existsSync(SDK)) {
-  const numbered = [...readFileSync(SDK, 'utf8').matchAll(/^export const (\w*[a-z]\d+) =/gm)].map(
-    (match) => match[1],
-  );
-  if (numbered.length > 0) {
-    fail(
-      `packages/frontend/api-client: numbered SDK operations (${numbered.join(', ')}) — give the colliding controller methods an explicit @ApiOperation({ operationId }) and regenerate`,
-    );
+// How often the console polls is one policy, `LIVE_POLL` in the product
+// package, read by its query hooks. An app that sets `refetchInterval` is a
+// second policy nobody finds: it asks the product package for the read that
+// polls (`useHostPresence`) instead.
+for (const { app } of APPS) {
+  const src = join(root, app, 'src');
+  if (!existsSync(src)) continue;
+  for (const file of walk(src)) {
+    if (!/\.tsx?$/.test(file) || /\.(spec|test)\.tsx?$/.test(file) || file.includes('/__tests__/'))
+      continue;
+    if (/\brefetchInterval\b/.test(readFileSync(file, 'utf8'))) {
+      fail(
+        `${relative(root, file)}: sets refetchInterval — polling is LIVE_POLL's, in the product package; use (or add) the query hook there that polls`,
+      );
+    }
   }
 }
 

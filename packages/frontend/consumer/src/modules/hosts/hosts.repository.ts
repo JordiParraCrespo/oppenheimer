@@ -39,7 +39,7 @@ export class HostsRepository {
   async findAll(): Promise<HostEntity[]> {
     // An absent body is a failed read, not an empty collection — returning `[]`
     // would render "no hosts" over a request that never succeeded.
-    const data = await unwrapBody(heyApiSdk.listHosts(), HostsErrors.FETCH_LIST_FAILED);
+    const data = await unwrapBody(heyApiSdk.findHosts(), HostsErrors.FETCH_LIST_FAILED);
     return data.map(toEntity);
   }
 
@@ -54,7 +54,7 @@ export class HostsRepository {
   @MapApiError(HostsErrors.PAIR_FAILED)
   async pair(name: string, replaces?: string): Promise<HostPairing> {
     const data = await unwrapBody(
-      heyApiSdk.mint({ body: replaces ? { name, replaces } : { name } }),
+      heyApiSdk.mintPairingToken({ body: replaces ? { name, replaces } : { name } }),
       HostsErrors.PAIR_FAILED,
     );
     return {
@@ -76,7 +76,7 @@ export class HostsRepository {
    */
   @MapApiError(HostsErrors.FETCH_LIST_FAILED)
   async pairings(): Promise<HostPairingToken[]> {
-    const data = await unwrapBody(heyApiSdk.listPairingTokens(), HostsErrors.FETCH_LIST_FAILED);
+    const data = await unwrapBody(heyApiSdk.findPairingTokens(), HostsErrors.FETCH_LIST_FAILED);
     return data.map((token) => ({
       id: token.id,
       expiresAt: new Date(token.expiresAt),
@@ -88,7 +88,7 @@ export class HostsRepository {
   @MapApiError(HostsErrors.RENAME_FAILED)
   async rename(id: string, name: string): Promise<HostEntity> {
     const data = await unwrapBody(
-      heyApiSdk.rename({ path: { id }, body: { name } }),
+      heyApiSdk.renameHost({ path: { id }, body: { name } }),
       HostsErrors.RENAME_FAILED,
     );
     return toEntity(data);
@@ -96,6 +96,6 @@ export class HostsRepository {
 
   @MapApiError(HostsErrors.REMOVE_FAILED)
   async remove(id: string): Promise<void> {
-    await unwrap(heyApiSdk.unpair({ path: { id } }), HostsErrors.REMOVE_FAILED);
+    await unwrap(heyApiSdk.unpairHost({ path: { id } }), HostsErrors.REMOVE_FAILED);
   }
 }

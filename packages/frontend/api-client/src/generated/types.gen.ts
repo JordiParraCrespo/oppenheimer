@@ -1964,14 +1964,14 @@ export type CapabilitiesResponseDto = {
     github_app_install_url: string | null;
 };
 
-export type GetSettingsData = {
+export type GetUserSettingsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/profile/settings';
 };
 
-export type GetSettingsErrors = {
+export type GetUserSettingsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -1982,22 +1982,22 @@ export type GetSettingsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type GetSettingsError = GetSettingsErrors[keyof GetSettingsErrors];
+export type GetUserSettingsError = GetUserSettingsErrors[keyof GetUserSettingsErrors];
 
-export type GetSettingsResponses = {
+export type GetUserSettingsResponses = {
     200: UserSettingsResponseDto;
 };
 
-export type GetSettingsResponse = GetSettingsResponses[keyof GetSettingsResponses];
+export type GetUserSettingsResponse = GetUserSettingsResponses[keyof GetUserSettingsResponses];
 
-export type UpdateSettingsData = {
+export type UpdateUserSettingsData = {
     body: UpdateUserSettingsRequest;
     path?: never;
     query?: never;
     url: '/api/v1/profile/settings';
 };
 
-export type UpdateSettingsErrors = {
+export type UpdateUserSettingsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2008,13 +2008,13 @@ export type UpdateSettingsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type UpdateSettingsError = UpdateSettingsErrors[keyof UpdateSettingsErrors];
+export type UpdateUserSettingsError = UpdateUserSettingsErrors[keyof UpdateUserSettingsErrors];
 
-export type UpdateSettingsResponses = {
+export type UpdateUserSettingsResponses = {
     200: UserSettingsResponseDto;
 };
 
-export type UpdateSettingsResponse = UpdateSettingsResponses[keyof UpdateSettingsResponses];
+export type UpdateUserSettingsResponse = UpdateUserSettingsResponses[keyof UpdateUserSettingsResponses];
 
 export type DeleteAvatarData = {
     body?: never;
@@ -2115,14 +2115,14 @@ export type RevokeOtherSessionsResponses = {
 
 export type RevokeOtherSessionsResponse = RevokeOtherSessionsResponses[keyof RevokeOtherSessionsResponses];
 
-export type FindSessionsData = {
+export type FindProfileSessionsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/profile/sessions';
 };
 
-export type FindSessionsErrors = {
+export type FindProfileSessionsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2133,13 +2133,13 @@ export type FindSessionsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type FindSessionsError = FindSessionsErrors[keyof FindSessionsErrors];
+export type FindProfileSessionsError = FindProfileSessionsErrors[keyof FindProfileSessionsErrors];
 
-export type FindSessionsResponses = {
+export type FindProfileSessionsResponses = {
     200: Array<UserSessionResponseDto>;
 };
 
-export type FindSessionsResponse = FindSessionsResponses[keyof FindSessionsResponses];
+export type FindProfileSessionsResponse = FindProfileSessionsResponses[keyof FindProfileSessionsResponses];
 
 export type RevokeProfileSessionData = {
     body?: never;
@@ -2394,14 +2394,14 @@ export type FindUsersResponses = {
 
 export type FindUsersResponse = FindUsersResponses[keyof FindUsersResponses];
 
-export type MeData = {
+export type GetMeData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/users/me';
 };
 
-export type MeErrors = {
+export type GetMeErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2412,22 +2412,22 @@ export type MeErrors = {
     403: ProblemDetailsDto;
 };
 
-export type MeError = MeErrors[keyof MeErrors];
+export type GetMeError = GetMeErrors[keyof GetMeErrors];
 
-export type MeResponses = {
+export type GetMeResponses = {
     200: UserResponseDto;
 };
 
-export type MeResponse = MeResponses[keyof MeResponses];
+export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
 
-export type FindMyPermissionsData = {
+export type GetMyPermissionsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/users/me/permissions';
 };
 
-export type FindMyPermissionsErrors = {
+export type GetMyPermissionsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2438,13 +2438,13 @@ export type FindMyPermissionsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type FindMyPermissionsError = FindMyPermissionsErrors[keyof FindMyPermissionsErrors];
+export type GetMyPermissionsError = GetMyPermissionsErrors[keyof GetMyPermissionsErrors];
 
-export type FindMyPermissionsResponses = {
+export type GetMyPermissionsResponses = {
     200: MyPermissionsResponseDto;
 };
 
-export type FindMyPermissionsResponse = FindMyPermissionsResponses[keyof FindMyPermissionsResponses];
+export type GetMyPermissionsResponse = GetMyPermissionsResponses[keyof GetMyPermissionsResponses];
 
 export type DeleteUserData = {
     body?: never;
@@ -2476,7 +2476,7 @@ export type DeleteUserResponses = {
     200: unknown;
 };
 
-export type FindUserData = {
+export type FindUserByIdData = {
     body?: never;
     path: {
         id: string;
@@ -2485,7 +2485,7 @@ export type FindUserData = {
     url: '/api/v1/users/{id}';
 };
 
-export type FindUserErrors = {
+export type FindUserByIdErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2500,15 +2500,15 @@ export type FindUserErrors = {
     404: ProblemDetailsDto;
 };
 
-export type FindUserError = FindUserErrors[keyof FindUserErrors];
+export type FindUserByIdError = FindUserByIdErrors[keyof FindUserByIdErrors];
 
-export type FindUserResponses = {
+export type FindUserByIdResponses = {
     200: UserResponseDto;
 };
 
-export type FindUserResponse = FindUserResponses[keyof FindUserResponses];
+export type FindUserByIdResponse = FindUserByIdResponses[keyof FindUserByIdResponses];
 
-export type PatchUserData = {
+export type UpdateUserData = {
     body: UpdateUserRequest;
     path: {
         id: string;
@@ -2517,7 +2517,7 @@ export type PatchUserData = {
     url: '/api/v1/users/{id}';
 };
 
-export type PatchUserErrors = {
+export type UpdateUserErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2532,22 +2532,22 @@ export type PatchUserErrors = {
     404: ProblemDetailsDto;
 };
 
-export type PatchUserError = PatchUserErrors[keyof PatchUserErrors];
+export type UpdateUserError = UpdateUserErrors[keyof UpdateUserErrors];
 
-export type PatchUserResponses = {
+export type UpdateUserResponses = {
     200: UserResponseDto;
 };
 
-export type PatchUserResponse = PatchUserResponses[keyof PatchUserResponses];
+export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
 
-export type CatalogData = {
+export type FindAuthzCatalogData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/authz/catalog';
 };
 
-export type CatalogErrors = {
+export type FindAuthzCatalogErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2558,22 +2558,22 @@ export type CatalogErrors = {
     403: ProblemDetailsDto;
 };
 
-export type CatalogError = CatalogErrors[keyof CatalogErrors];
+export type FindAuthzCatalogError = FindAuthzCatalogErrors[keyof FindAuthzCatalogErrors];
 
-export type CatalogResponses = {
+export type FindAuthzCatalogResponses = {
     200: AuthzCatalogResponseDto;
 };
 
-export type CatalogResponse = CatalogResponses[keyof CatalogResponses];
+export type FindAuthzCatalogResponse = FindAuthzCatalogResponses[keyof FindAuthzCatalogResponses];
 
-export type ListAccessGrantsData = {
+export type FindAccessGrantsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/access-grants';
 };
 
-export type ListAccessGrantsErrors = {
+export type FindAccessGrantsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2584,13 +2584,13 @@ export type ListAccessGrantsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListAccessGrantsError = ListAccessGrantsErrors[keyof ListAccessGrantsErrors];
+export type FindAccessGrantsError = FindAccessGrantsErrors[keyof FindAccessGrantsErrors];
 
-export type ListAccessGrantsResponses = {
+export type FindAccessGrantsResponses = {
     200: Array<AccessGrantResponseDto>;
 };
 
-export type ListAccessGrantsResponse = ListAccessGrantsResponses[keyof ListAccessGrantsResponses];
+export type FindAccessGrantsResponse = FindAccessGrantsResponses[keyof FindAccessGrantsResponses];
 
 export type CreateAccessGrantData = {
     body: CreateAccessGrantRequest;
@@ -2657,14 +2657,14 @@ export type RevokeAccessGrantResponses = {
 
 export type RevokeAccessGrantResponse = RevokeAccessGrantResponses[keyof RevokeAccessGrantResponses];
 
-export type CurrentData = {
+export type FindCurrentCredentialData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/me/credential';
 };
 
-export type CurrentErrors = {
+export type FindCurrentCredentialErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2675,22 +2675,22 @@ export type CurrentErrors = {
     403: ProblemDetailsDto;
 };
 
-export type CurrentError = CurrentErrors[keyof CurrentErrors];
+export type FindCurrentCredentialError = FindCurrentCredentialErrors[keyof FindCurrentCredentialErrors];
 
-export type CurrentResponses = {
+export type FindCurrentCredentialResponses = {
     200: CurrentCredentialResponseDto;
 };
 
-export type CurrentResponse = CurrentResponses[keyof CurrentResponses];
+export type FindCurrentCredentialResponse = FindCurrentCredentialResponses[keyof FindCurrentCredentialResponses];
 
-export type ListApiTokensData = {
+export type FindApiTokensData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/tokens';
 };
 
-export type ListApiTokensErrors = {
+export type FindApiTokensErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2701,13 +2701,13 @@ export type ListApiTokensErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListApiTokensError = ListApiTokensErrors[keyof ListApiTokensErrors];
+export type FindApiTokensError = FindApiTokensErrors[keyof FindApiTokensErrors];
 
-export type ListApiTokensResponses = {
+export type FindApiTokensResponses = {
     200: Array<ApiTokenResponseDto>;
 };
 
-export type ListApiTokensResponse = ListApiTokensResponses[keyof ListApiTokensResponses];
+export type FindApiTokensResponse = FindApiTokensResponses[keyof FindApiTokensResponses];
 
 export type CreateApiTokenData = {
     body: CreateApiTokenRequest;
@@ -2745,14 +2745,14 @@ export type CreateApiTokenResponses = {
 
 export type CreateApiTokenResponse = CreateApiTokenResponses[keyof CreateApiTokenResponses];
 
-export type ListGrantablePermissionsData = {
+export type FindGrantablePermissionsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/tokens/permissions';
 };
 
-export type ListGrantablePermissionsErrors = {
+export type FindGrantablePermissionsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2763,13 +2763,13 @@ export type ListGrantablePermissionsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListGrantablePermissionsError = ListGrantablePermissionsErrors[keyof ListGrantablePermissionsErrors];
+export type FindGrantablePermissionsError = FindGrantablePermissionsErrors[keyof FindGrantablePermissionsErrors];
 
-export type ListGrantablePermissionsResponses = {
+export type FindGrantablePermissionsResponses = {
     200: PermissionCatalogResponseDto;
 };
 
-export type ListGrantablePermissionsResponse = ListGrantablePermissionsResponses[keyof ListGrantablePermissionsResponses];
+export type FindGrantablePermissionsResponse = FindGrantablePermissionsResponses[keyof FindGrantablePermissionsResponses];
 
 export type RevokeApiTokenData = {
     body?: never;
@@ -2806,7 +2806,7 @@ export type RevokeApiTokenResponses = {
 
 export type RevokeApiTokenResponse = RevokeApiTokenResponses[keyof RevokeApiTokenResponses];
 
-export type ListRolesData = {
+export type FindRolesData = {
     body?: never;
     path?: never;
     query?: {
@@ -2826,7 +2826,7 @@ export type ListRolesData = {
     url: '/api/v1/roles';
 };
 
-export type ListRolesErrors = {
+export type FindRolesErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2837,13 +2837,13 @@ export type ListRolesErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListRolesError = ListRolesErrors[keyof ListRolesErrors];
+export type FindRolesError = FindRolesErrors[keyof FindRolesErrors];
 
-export type ListRolesResponses = {
+export type FindRolesResponses = {
     200: PaginatedRolesResponseDto;
 };
 
-export type ListRolesResponse = ListRolesResponses[keyof ListRolesResponses];
+export type FindRolesResponse = FindRolesResponses[keyof FindRolesResponses];
 
 export type CreateRoleData = {
     body: CreateRoleRequest;
@@ -2905,7 +2905,7 @@ export type DeleteRoleResponses = {
     200: unknown;
 };
 
-export type GetRoleData = {
+export type FindRoleByIdData = {
     body?: never;
     path: {
         id: string;
@@ -2914,7 +2914,7 @@ export type GetRoleData = {
     url: '/api/v1/roles/{id}';
 };
 
-export type GetRoleErrors = {
+export type FindRoleByIdErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2929,13 +2929,13 @@ export type GetRoleErrors = {
     404: ProblemDetailsDto;
 };
 
-export type GetRoleError = GetRoleErrors[keyof GetRoleErrors];
+export type FindRoleByIdError = FindRoleByIdErrors[keyof FindRoleByIdErrors];
 
-export type GetRoleResponses = {
+export type FindRoleByIdResponses = {
     200: RoleResponseDto;
 };
 
-export type GetRoleResponse = GetRoleResponses[keyof GetRoleResponses];
+export type FindRoleByIdResponse = FindRoleByIdResponses[keyof FindRoleByIdResponses];
 
 export type UpdateRoleData = {
     body: UpdateRoleRequest;
@@ -2969,7 +2969,7 @@ export type UpdateRoleResponses = {
 
 export type UpdateRoleResponse = UpdateRoleResponses[keyof UpdateRoleResponses];
 
-export type UpdatePermissionsData = {
+export type UpdateRolePermissionsData = {
     body: UpdateRolePermissionsRequest;
     path: {
         id: string;
@@ -2978,7 +2978,7 @@ export type UpdatePermissionsData = {
     url: '/api/v1/roles/{id}/permissions';
 };
 
-export type UpdatePermissionsErrors = {
+export type UpdateRolePermissionsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2993,13 +2993,13 @@ export type UpdatePermissionsErrors = {
     404: ProblemDetailsDto;
 };
 
-export type UpdatePermissionsError = UpdatePermissionsErrors[keyof UpdatePermissionsErrors];
+export type UpdateRolePermissionsError = UpdateRolePermissionsErrors[keyof UpdateRolePermissionsErrors];
 
-export type UpdatePermissionsResponses = {
+export type UpdateRolePermissionsResponses = {
     200: RoleResponseDto;
 };
 
-export type UpdatePermissionsResponse = UpdatePermissionsResponses[keyof UpdatePermissionsResponses];
+export type UpdateRolePermissionsResponse = UpdateRolePermissionsResponses[keyof UpdateRolePermissionsResponses];
 
 export type FindUserRolesData = {
     body?: never;
@@ -3029,7 +3029,7 @@ export type FindUserRolesResponses = {
 
 export type FindUserRolesResponse = FindUserRolesResponses[keyof FindUserRolesResponses];
 
-export type AssignData = {
+export type AssignUserRolesData = {
     body: AssignUserRolesRequest;
     path: {
         userId: string;
@@ -3038,7 +3038,7 @@ export type AssignData = {
     url: '/api/v1/users/{userId}/roles';
 };
 
-export type AssignErrors = {
+export type AssignUserRolesErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3053,13 +3053,13 @@ export type AssignErrors = {
     404: ProblemDetailsDto;
 };
 
-export type AssignError = AssignErrors[keyof AssignErrors];
+export type AssignUserRolesError = AssignUserRolesErrors[keyof AssignUserRolesErrors];
 
-export type AssignResponses = {
+export type AssignUserRolesResponses = {
     200: Array<RoleResponseDto>;
 };
 
-export type AssignResponse = AssignResponses[keyof AssignResponses];
+export type AssignUserRolesResponse = AssignUserRolesResponses[keyof AssignUserRolesResponses];
 
 export type ListOrganizationsData = {
     body?: never;
@@ -4271,14 +4271,14 @@ export type RemoveMemberResponses = {
 
 export type RemoveMemberResponse = RemoveMemberResponses[keyof RemoveMemberResponses];
 
-export type ListInstallationsData = {
+export type FindInstallationsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/installations';
 };
 
-export type ListInstallationsErrors = {
+export type FindInstallationsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4289,13 +4289,13 @@ export type ListInstallationsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListInstallationsError = ListInstallationsErrors[keyof ListInstallationsErrors];
+export type FindInstallationsError = FindInstallationsErrors[keyof FindInstallationsErrors];
 
-export type ListInstallationsResponses = {
+export type FindInstallationsResponses = {
     200: Array<InstallationResponseDto>;
 };
 
-export type ListInstallationsResponse = ListInstallationsResponses[keyof ListInstallationsResponses];
+export type FindInstallationsResponse = FindInstallationsResponses[keyof FindInstallationsResponses];
 
 export type ConnectInstallationData = {
     body: ConnectInstallationRequest;
@@ -4493,7 +4493,7 @@ export type DisconnectInstallationResponses = {
 
 export type DisconnectInstallationResponse = DisconnectInstallationResponses[keyof DisconnectInstallationResponses];
 
-export type ListHostsData = {
+export type FindHostsData = {
     body?: never;
     path?: never;
     query?: {
@@ -4505,7 +4505,7 @@ export type ListHostsData = {
     url: '/api/v1/hosts';
 };
 
-export type ListHostsErrors = {
+export type FindHostsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4516,22 +4516,22 @@ export type ListHostsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListHostsError = ListHostsErrors[keyof ListHostsErrors];
+export type FindHostsError = FindHostsErrors[keyof FindHostsErrors];
 
-export type ListHostsResponses = {
+export type FindHostsResponses = {
     200: Array<HostResponseDto>;
 };
 
-export type ListHostsResponse = ListHostsResponses[keyof ListHostsResponses];
+export type FindHostsResponse = FindHostsResponses[keyof FindHostsResponses];
 
-export type ListPairingTokensData = {
+export type FindPairingTokensData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/hosts/pairing';
 };
 
-export type ListPairingTokensErrors = {
+export type FindPairingTokensErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4542,22 +4542,22 @@ export type ListPairingTokensErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListPairingTokensError = ListPairingTokensErrors[keyof ListPairingTokensErrors];
+export type FindPairingTokensError = FindPairingTokensErrors[keyof FindPairingTokensErrors];
 
-export type ListPairingTokensResponses = {
+export type FindPairingTokensResponses = {
     200: Array<PairingTokenResponseDto>;
 };
 
-export type ListPairingTokensResponse = ListPairingTokensResponses[keyof ListPairingTokensResponses];
+export type FindPairingTokensResponse = FindPairingTokensResponses[keyof FindPairingTokensResponses];
 
-export type MintData = {
+export type MintPairingTokenData = {
     body: MintPairingTokenRequest;
     path?: never;
     query?: never;
     url: '/api/v1/hosts/pairing';
 };
 
-export type MintErrors = {
+export type MintPairingTokenErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4580,13 +4580,13 @@ export type MintErrors = {
     503: ProblemDetailsDto;
 };
 
-export type MintError = MintErrors[keyof MintErrors];
+export type MintPairingTokenError = MintPairingTokenErrors[keyof MintPairingTokenErrors];
 
-export type MintResponses = {
+export type MintPairingTokenResponses = {
     201: MintedPairingTokenResponseDto;
 };
 
-export type MintResponse = MintResponses[keyof MintResponses];
+export type MintPairingTokenResponse = MintPairingTokenResponses[keyof MintPairingTokenResponses];
 
 export type RevokePairingTokenData = {
     body?: never;
@@ -4623,7 +4623,7 @@ export type RevokePairingTokenResponses = {
 
 export type RevokePairingTokenResponse = RevokePairingTokenResponses[keyof RevokePairingTokenResponses];
 
-export type GetPairingTokenData = {
+export type FindPairingTokenData = {
     body?: never;
     path: {
         id: string;
@@ -4632,7 +4632,7 @@ export type GetPairingTokenData = {
     url: '/api/v1/hosts/pairing/{id}';
 };
 
-export type GetPairingTokenErrors = {
+export type FindPairingTokenErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4647,22 +4647,22 @@ export type GetPairingTokenErrors = {
     404: ProblemDetailsDto;
 };
 
-export type GetPairingTokenError = GetPairingTokenErrors[keyof GetPairingTokenErrors];
+export type FindPairingTokenError = FindPairingTokenErrors[keyof FindPairingTokenErrors];
 
-export type GetPairingTokenResponses = {
+export type FindPairingTokenResponses = {
     200: PairingTokenStatusResponseDto;
 };
 
-export type GetPairingTokenResponse = GetPairingTokenResponses[keyof GetPairingTokenResponses];
+export type FindPairingTokenResponse = FindPairingTokenResponses[keyof FindPairingTokenResponses];
 
-export type RegisterData = {
+export type RegisterHostData = {
     body: RegisterHostRequest;
     path?: never;
     query?: never;
     url: '/api/v1/hosts/register';
 };
 
-export type RegisterErrors = {
+export type RegisterHostErrors = {
     /**
      * HOSTS_003 — The registration token was rejected — used, expired, revoked or unknown
      */
@@ -4677,38 +4677,38 @@ export type RegisterErrors = {
     503: ProblemDetailsDto;
 };
 
-export type RegisterError = RegisterErrors[keyof RegisterErrors];
+export type RegisterHostError = RegisterHostErrors[keyof RegisterHostErrors];
 
-export type RegisterResponses = {
+export type RegisterHostResponses = {
     201: HostRegistrationResponseDto;
 };
 
-export type RegisterResponse = RegisterResponses[keyof RegisterResponses];
+export type RegisterHostResponse = RegisterHostResponses[keyof RegisterHostResponses];
 
-export type UninstallData = {
+export type UninstallHostData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/hosts/self';
 };
 
-export type UninstallErrors = {
+export type UninstallHostErrors = {
     /**
      * HOSTS_005 — No valid host assertion was presented
      */
     401: ProblemDetailsDto;
 };
 
-export type UninstallError = UninstallErrors[keyof UninstallErrors];
+export type UninstallHostError = UninstallHostErrors[keyof UninstallHostErrors];
 
-export type UninstallResponses = {
+export type UninstallHostResponses = {
     /**
      * The calling host is unpaired
      */
     204: void;
 };
 
-export type UninstallResponse = UninstallResponses[keyof UninstallResponses];
+export type UninstallHostResponse = UninstallHostResponses[keyof UninstallHostResponses];
 
 export type CollectSessionImageData = {
     body?: never;
@@ -4739,7 +4739,7 @@ export type CollectSessionImageResponses = {
     200: unknown;
 };
 
-export type UnpairData = {
+export type UnpairHostData = {
     body?: never;
     path: {
         id: string;
@@ -4748,7 +4748,7 @@ export type UnpairData = {
     url: '/api/v1/hosts/{id}';
 };
 
-export type UnpairErrors = {
+export type UnpairHostErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4763,18 +4763,18 @@ export type UnpairErrors = {
     404: ProblemDetailsDto;
 };
 
-export type UnpairError = UnpairErrors[keyof UnpairErrors];
+export type UnpairHostError = UnpairHostErrors[keyof UnpairHostErrors];
 
-export type UnpairResponses = {
+export type UnpairHostResponses = {
     /**
      * Host unpaired
      */
     204: void;
 };
 
-export type UnpairResponse = UnpairResponses[keyof UnpairResponses];
+export type UnpairHostResponse = UnpairHostResponses[keyof UnpairHostResponses];
 
-export type GetHostData = {
+export type FindHostData = {
     body?: never;
     path: {
         id: string;
@@ -4783,7 +4783,7 @@ export type GetHostData = {
     url: '/api/v1/hosts/{id}';
 };
 
-export type GetHostErrors = {
+export type FindHostErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4798,15 +4798,15 @@ export type GetHostErrors = {
     404: ProblemDetailsDto;
 };
 
-export type GetHostError = GetHostErrors[keyof GetHostErrors];
+export type FindHostError = FindHostErrors[keyof FindHostErrors];
 
-export type GetHostResponses = {
+export type FindHostResponses = {
     200: HostResponseDto;
 };
 
-export type GetHostResponse = GetHostResponses[keyof GetHostResponses];
+export type FindHostResponse = FindHostResponses[keyof FindHostResponses];
 
-export type RenameData = {
+export type RenameHostData = {
     body: RenameHostRequest;
     path: {
         id: string;
@@ -4815,7 +4815,7 @@ export type RenameData = {
     url: '/api/v1/hosts/{id}';
 };
 
-export type RenameErrors = {
+export type RenameHostErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4830,15 +4830,15 @@ export type RenameErrors = {
     404: ProblemDetailsDto;
 };
 
-export type RenameError = RenameErrors[keyof RenameErrors];
+export type RenameHostError = RenameHostErrors[keyof RenameHostErrors];
 
-export type RenameResponses = {
+export type RenameHostResponses = {
     200: HostResponseDto;
 };
 
-export type RenameResponse = RenameResponses[keyof RenameResponses];
+export type RenameHostResponse = RenameHostResponses[keyof RenameHostResponses];
 
-export type GetHostTimelineData = {
+export type FindHostTimelineData = {
     body?: never;
     path: {
         id: string;
@@ -4847,7 +4847,7 @@ export type GetHostTimelineData = {
     url: '/api/v1/hosts/{id}/timeline';
 };
 
-export type GetHostTimelineErrors = {
+export type FindHostTimelineErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4862,13 +4862,13 @@ export type GetHostTimelineErrors = {
     404: ProblemDetailsDto;
 };
 
-export type GetHostTimelineError = GetHostTimelineErrors[keyof GetHostTimelineErrors];
+export type FindHostTimelineError = FindHostTimelineErrors[keyof FindHostTimelineErrors];
 
-export type GetHostTimelineResponses = {
+export type FindHostTimelineResponses = {
     200: HostTimelinePageResponseDto;
 };
 
-export type GetHostTimelineResponse = GetHostTimelineResponses[keyof GetHostTimelineResponses];
+export type FindHostTimelineResponse = FindHostTimelineResponses[keyof FindHostTimelineResponses];
 
 export type ListUsersData = {
     body?: never;
@@ -5147,7 +5147,7 @@ export type GetUserResponses = {
 
 export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
 
-export type UpdateUserData = {
+export type AdminUpdateUserData = {
     body: AdminUpdateUserRequest;
     path: {
         id: string;
@@ -5156,7 +5156,7 @@ export type UpdateUserData = {
     url: '/api/v1/admin/users/{id}';
 };
 
-export type UpdateUserErrors = {
+export type AdminUpdateUserErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -5185,13 +5185,13 @@ export type UpdateUserErrors = {
     502: ProblemDetailsDto;
 };
 
-export type UpdateUserError = UpdateUserErrors[keyof UpdateUserErrors];
+export type AdminUpdateUserError = AdminUpdateUserErrors[keyof AdminUpdateUserErrors];
 
-export type UpdateUserResponses = {
+export type AdminUpdateUserResponses = {
     200: AdminUserResponseDto;
 };
 
-export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
+export type AdminUpdateUserResponse = AdminUpdateUserResponses[keyof AdminUpdateUserResponses];
 
 export type SetRoleData = {
     body: SetUserRoleRequest;
@@ -5863,7 +5863,7 @@ export type UpdateFeatureFlagResponses = {
 
 export type UpdateFeatureFlagResponse = UpdateFeatureFlagResponses[keyof UpdateFeatureFlagResponses];
 
-export type ListProjectsData = {
+export type FindProjectsData = {
     body?: never;
     path?: never;
     query?: {
@@ -5875,7 +5875,7 @@ export type ListProjectsData = {
     url: '/api/v1/projects';
 };
 
-export type ListProjectsErrors = {
+export type FindProjectsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -5886,13 +5886,13 @@ export type ListProjectsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListProjectsError = ListProjectsErrors[keyof ListProjectsErrors];
+export type FindProjectsError = FindProjectsErrors[keyof FindProjectsErrors];
 
-export type ListProjectsResponses = {
+export type FindProjectsResponses = {
     200: Array<ProjectResponseDto>;
 };
 
-export type ListProjectsResponse = ListProjectsResponses[keyof ListProjectsResponses];
+export type FindProjectsResponse = FindProjectsResponses[keyof FindProjectsResponses];
 
 export type CreateProjectData = {
     body: CreateProjectRequest;
@@ -5970,7 +5970,7 @@ export type ArchiveProjectResponses = {
 
 export type ArchiveProjectResponse = ArchiveProjectResponses[keyof ArchiveProjectResponses];
 
-export type GetProjectData = {
+export type FindProjectData = {
     body?: never;
     path: {
         id: string;
@@ -5979,7 +5979,7 @@ export type GetProjectData = {
     url: '/api/v1/projects/{id}';
 };
 
-export type GetProjectErrors = {
+export type FindProjectErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -5994,13 +5994,13 @@ export type GetProjectErrors = {
     404: ProblemDetailsDto;
 };
 
-export type GetProjectError = GetProjectErrors[keyof GetProjectErrors];
+export type FindProjectError = FindProjectErrors[keyof FindProjectErrors];
 
-export type GetProjectResponses = {
+export type FindProjectResponses = {
     200: ProjectResponseDto;
 };
 
-export type GetProjectResponse = GetProjectResponses[keyof GetProjectResponses];
+export type FindProjectResponse = FindProjectResponses[keyof FindProjectResponses];
 
 export type UpdateProjectData = {
     body: UpdateProjectRequest;
@@ -6042,7 +6042,7 @@ export type UpdateProjectResponses = {
 
 export type UpdateProjectResponse = UpdateProjectResponses[keyof UpdateProjectResponses];
 
-export type ListSessionsData = {
+export type FindSessionsData = {
     body?: never;
     path?: never;
     query?: {
@@ -6079,7 +6079,7 @@ export type ListSessionsData = {
     url: '/api/v1/sessions';
 };
 
-export type ListSessionsErrors = {
+export type FindSessionsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -6090,13 +6090,13 @@ export type ListSessionsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListSessionsError = ListSessionsErrors[keyof ListSessionsErrors];
+export type FindSessionsError = FindSessionsErrors[keyof FindSessionsErrors];
 
-export type ListSessionsResponses = {
+export type FindSessionsResponses = {
     200: PaginatedSessionsResponseDto;
 };
 
-export type ListSessionsResponse = ListSessionsResponses[keyof ListSessionsResponses];
+export type FindSessionsResponse = FindSessionsResponses[keyof FindSessionsResponses];
 
 export type CreateSessionData = {
     body: CreateSessionRequest;
@@ -6146,7 +6146,7 @@ export type CreateSessionResponses = {
 
 export type CreateSessionResponse = CreateSessionResponses[keyof CreateSessionResponses];
 
-export type ListSessionEventsData = {
+export type FindSessionEventsData = {
     body?: never;
     path: {
         id: string;
@@ -6164,7 +6164,7 @@ export type ListSessionEventsData = {
     url: '/api/v1/sessions/{id}/events';
 };
 
-export type ListSessionEventsErrors = {
+export type FindSessionEventsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -6179,13 +6179,13 @@ export type ListSessionEventsErrors = {
     404: ProblemDetailsDto;
 };
 
-export type ListSessionEventsError = ListSessionEventsErrors[keyof ListSessionEventsErrors];
+export type FindSessionEventsError = FindSessionEventsErrors[keyof FindSessionEventsErrors];
 
-export type ListSessionEventsResponses = {
+export type FindSessionEventsResponses = {
     200: SessionEventPageResponseDto;
 };
 
-export type ListSessionEventsResponse = ListSessionEventsResponses[keyof ListSessionEventsResponses];
+export type FindSessionEventsResponse = FindSessionEventsResponses[keyof FindSessionEventsResponses];
 
 export type IssueAttachTicketData = {
     body: IssueAttachTicketRequest;
@@ -6370,7 +6370,7 @@ export type RestartSessionResponses = {
 
 export type RestartSessionResponse = RestartSessionResponses[keyof RestartSessionResponses];
 
-export type AddSessionCheckoutData = {
+export type AddCheckoutData = {
     body: AddCheckoutRequest;
     path: {
         id: string;
@@ -6379,7 +6379,7 @@ export type AddSessionCheckoutData = {
     url: '/api/v1/sessions/{id}/checkouts';
 };
 
-export type AddSessionCheckoutErrors = {
+export type AddCheckoutErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -6404,15 +6404,15 @@ export type AddSessionCheckoutErrors = {
     409: ProblemDetailsDto;
 };
 
-export type AddSessionCheckoutError = AddSessionCheckoutErrors[keyof AddSessionCheckoutErrors];
+export type AddCheckoutError = AddCheckoutErrors[keyof AddCheckoutErrors];
 
-export type AddSessionCheckoutResponses = {
+export type AddCheckoutResponses = {
     201: SessionResponseDto;
 };
 
-export type AddSessionCheckoutResponse = AddSessionCheckoutResponses[keyof AddSessionCheckoutResponses];
+export type AddCheckoutResponse = AddCheckoutResponses[keyof AddCheckoutResponses];
 
-export type RemoveSessionCheckoutData = {
+export type RemoveCheckoutData = {
     body?: never;
     path: {
         id: string;
@@ -6422,7 +6422,7 @@ export type RemoveSessionCheckoutData = {
     url: '/api/v1/sessions/{id}/checkouts/{checkoutId}';
 };
 
-export type RemoveSessionCheckoutErrors = {
+export type RemoveCheckoutErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -6439,13 +6439,13 @@ export type RemoveSessionCheckoutErrors = {
     404: ProblemDetailsDto;
 };
 
-export type RemoveSessionCheckoutError = RemoveSessionCheckoutErrors[keyof RemoveSessionCheckoutErrors];
+export type RemoveCheckoutError = RemoveCheckoutErrors[keyof RemoveCheckoutErrors];
 
-export type RemoveSessionCheckoutResponses = {
+export type RemoveCheckoutResponses = {
     200: SessionResponseDto;
 };
 
-export type RemoveSessionCheckoutResponse = RemoveSessionCheckoutResponses[keyof RemoveSessionCheckoutResponses];
+export type RemoveCheckoutResponse = RemoveCheckoutResponses[keyof RemoveCheckoutResponses];
 
 export type CloseSessionData = {
     body?: never;
@@ -6484,7 +6484,7 @@ export type CloseSessionResponses = {
 
 export type CloseSessionResponse = CloseSessionResponses[keyof CloseSessionResponses];
 
-export type GetSessionData = {
+export type FindSessionData = {
     body?: never;
     path: {
         id: string;
@@ -6493,7 +6493,7 @@ export type GetSessionData = {
     url: '/api/v1/sessions/{id}';
 };
 
-export type GetSessionErrors = {
+export type FindSessionErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -6508,13 +6508,13 @@ export type GetSessionErrors = {
     404: ProblemDetailsDto;
 };
 
-export type GetSessionError = GetSessionErrors[keyof GetSessionErrors];
+export type FindSessionError = FindSessionErrors[keyof FindSessionErrors];
 
-export type GetSessionResponses = {
+export type FindSessionResponses = {
     200: SessionResponseDto;
 };
 
-export type GetSessionResponse = GetSessionResponses[keyof GetSessionResponses];
+export type FindSessionResponse = FindSessionResponses[keyof FindSessionResponses];
 
 export type RenameSessionData = {
     body: RenameSessionRequest;
@@ -6590,7 +6590,7 @@ export type MoveSessionResponses = {
 
 export type MoveSessionResponse = MoveSessionResponses[keyof MoveSessionResponses];
 
-export type ListAutomationsData = {
+export type FindAutomationsData = {
     body?: never;
     path?: never;
     query?: {
@@ -6602,7 +6602,7 @@ export type ListAutomationsData = {
     url: '/api/v1/automations';
 };
 
-export type ListAutomationsErrors = {
+export type FindAutomationsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -6613,13 +6613,13 @@ export type ListAutomationsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListAutomationsError = ListAutomationsErrors[keyof ListAutomationsErrors];
+export type FindAutomationsError = FindAutomationsErrors[keyof FindAutomationsErrors];
 
-export type ListAutomationsResponses = {
+export type FindAutomationsResponses = {
     200: Array<AutomationResponseDto>;
 };
 
-export type ListAutomationsResponse = ListAutomationsResponses[keyof ListAutomationsResponses];
+export type FindAutomationsResponse = FindAutomationsResponses[keyof FindAutomationsResponses];
 
 export type CreateAutomationData = {
     body: CreateAutomationRequest;
@@ -6659,14 +6659,14 @@ export type CreateAutomationResponses = {
 
 export type CreateAutomationResponse = CreateAutomationResponses[keyof CreateAutomationResponses];
 
-export type PreviewAutomationTriggerData = {
+export type PreviewTriggerData = {
     body: PreviewTriggerRequest;
     path?: never;
     query?: never;
     url: '/api/v1/automations/trigger-preview';
 };
 
-export type PreviewAutomationTriggerErrors = {
+export type PreviewTriggerErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -6677,13 +6677,13 @@ export type PreviewAutomationTriggerErrors = {
     403: ProblemDetailsDto;
 };
 
-export type PreviewAutomationTriggerError = PreviewAutomationTriggerErrors[keyof PreviewAutomationTriggerErrors];
+export type PreviewTriggerError = PreviewTriggerErrors[keyof PreviewTriggerErrors];
 
-export type PreviewAutomationTriggerResponses = {
+export type PreviewTriggerResponses = {
     200: TriggerPreviewResponseDto;
 };
 
-export type PreviewAutomationTriggerResponse = PreviewAutomationTriggerResponses[keyof PreviewAutomationTriggerResponses];
+export type PreviewTriggerResponse = PreviewTriggerResponses[keyof PreviewTriggerResponses];
 
 export type DeleteAutomationData = {
     body?: never;
@@ -6717,7 +6717,7 @@ export type DeleteAutomationResponses = {
 
 export type DeleteAutomationResponse = DeleteAutomationResponses[keyof DeleteAutomationResponses];
 
-export type GetAutomationData = {
+export type FindAutomationData = {
     body?: never;
     path: {
         id: string;
@@ -6726,7 +6726,7 @@ export type GetAutomationData = {
     url: '/api/v1/automations/{id}';
 };
 
-export type GetAutomationErrors = {
+export type FindAutomationErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -6741,13 +6741,13 @@ export type GetAutomationErrors = {
     404: ProblemDetailsDto;
 };
 
-export type GetAutomationError = GetAutomationErrors[keyof GetAutomationErrors];
+export type FindAutomationError = FindAutomationErrors[keyof FindAutomationErrors];
 
-export type GetAutomationResponses = {
+export type FindAutomationResponses = {
     200: AutomationResponseDto;
 };
 
-export type GetAutomationResponse = GetAutomationResponses[keyof GetAutomationResponses];
+export type FindAutomationResponse = FindAutomationResponses[keyof FindAutomationResponses];
 
 export type UpdateAutomationData = {
     body: UpdateAutomationRequest;
@@ -6919,7 +6919,7 @@ export type RunAutomationResponses = {
 
 export type RunAutomationResponse = RunAutomationResponses[keyof RunAutomationResponses];
 
-export type ListAutomationRunsData = {
+export type FindAutomationRunsData = {
     body?: never;
     path?: never;
     query?: {
@@ -6951,7 +6951,7 @@ export type ListAutomationRunsData = {
     url: '/api/v1/automation-runs';
 };
 
-export type ListAutomationRunsErrors = {
+export type FindAutomationRunsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -6962,15 +6962,15 @@ export type ListAutomationRunsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListAutomationRunsError = ListAutomationRunsErrors[keyof ListAutomationRunsErrors];
+export type FindAutomationRunsError = FindAutomationRunsErrors[keyof FindAutomationRunsErrors];
 
-export type ListAutomationRunsResponses = {
+export type FindAutomationRunsResponses = {
     200: AutomationRunPageResponseDto;
 };
 
-export type ListAutomationRunsResponse = ListAutomationRunsResponses[keyof ListAutomationRunsResponses];
+export type FindAutomationRunsResponse = FindAutomationRunsResponses[keyof FindAutomationRunsResponses];
 
-export type GetAutomationRunHistoryData = {
+export type FindRunHistoryData = {
     body?: never;
     path?: never;
     query?: {
@@ -6994,7 +6994,7 @@ export type GetAutomationRunHistoryData = {
     url: '/api/v1/automation-runs/history';
 };
 
-export type GetAutomationRunHistoryErrors = {
+export type FindRunHistoryErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -7005,15 +7005,15 @@ export type GetAutomationRunHistoryErrors = {
     403: ProblemDetailsDto;
 };
 
-export type GetAutomationRunHistoryError = GetAutomationRunHistoryErrors[keyof GetAutomationRunHistoryErrors];
+export type FindRunHistoryError = FindRunHistoryErrors[keyof FindRunHistoryErrors];
 
-export type GetAutomationRunHistoryResponses = {
+export type FindRunHistoryResponses = {
     200: RunHistoryResponseDto;
 };
 
-export type GetAutomationRunHistoryResponse = GetAutomationRunHistoryResponses[keyof GetAutomationRunHistoryResponses];
+export type FindRunHistoryResponse = FindRunHistoryResponses[keyof FindRunHistoryResponses];
 
-export type GetAutomationRunData = {
+export type FindAutomationRunData = {
     body?: never;
     path: {
         id: string;
@@ -7022,7 +7022,7 @@ export type GetAutomationRunData = {
     url: '/api/v1/automation-runs/{id}';
 };
 
-export type GetAutomationRunErrors = {
+export type FindAutomationRunErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -7037,22 +7037,22 @@ export type GetAutomationRunErrors = {
     404: ProblemDetailsDto;
 };
 
-export type GetAutomationRunError = GetAutomationRunErrors[keyof GetAutomationRunErrors];
+export type FindAutomationRunError = FindAutomationRunErrors[keyof FindAutomationRunErrors];
 
-export type GetAutomationRunResponses = {
+export type FindAutomationRunResponses = {
     200: AutomationRunResponseDto;
 };
 
-export type GetAutomationRunResponse = GetAutomationRunResponses[keyof GetAutomationRunResponses];
+export type FindAutomationRunResponse = FindAutomationRunResponses[keyof FindAutomationRunResponses];
 
-export type GetAutomationSettingsData = {
+export type FindAutomationSettingsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/automation-settings';
 };
 
-export type GetAutomationSettingsErrors = {
+export type FindAutomationSettingsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -7063,13 +7063,13 @@ export type GetAutomationSettingsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type GetAutomationSettingsError = GetAutomationSettingsErrors[keyof GetAutomationSettingsErrors];
+export type FindAutomationSettingsError = FindAutomationSettingsErrors[keyof FindAutomationSettingsErrors];
 
-export type GetAutomationSettingsResponses = {
+export type FindAutomationSettingsResponses = {
     200: AutomationSettingsResponseDto;
 };
 
-export type GetAutomationSettingsResponse = GetAutomationSettingsResponses[keyof GetAutomationSettingsResponses];
+export type FindAutomationSettingsResponse = FindAutomationSettingsResponses[keyof FindAutomationSettingsResponses];
 
 export type UpdateAutomationSettingsData = {
     body: UpdateAutomationSettingsRequest;

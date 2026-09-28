@@ -1,0 +1,14 @@
+diff --git a/dist/index.js b/dist/index.js
+index 4c113e97fb5f2036538686ea516fdf1679760d14..0585e54328d83e6b22d63e69f63ea47225956ba6 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -244,6 +244,9 @@ function zodToOpenAPI(zodType, visited = /* @__PURE__ */ new Set()) {
+     const { innerType } = zodType._def;
+     Object.assign(object, zodToOpenAPI(innerType, visited));
+     object.nullable = true;
++    if (Array.isArray(object.enum) && !object.enum.includes(null)) {
++      object.enum = [...object.enum, null];
++    }
+   }
+   if (is(zodType, z.z.ZodOptional)) {
+     const { innerType } = zodType._def;

@@ -169,14 +169,14 @@ function toUpdateRequest(input: UpdateAutomationInput): UpdateAutomationRequest 
 export class AutomationsRepository {
   @MapApiError(AutomationsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<AutomationEntity[]> {
-    const data = await unwrapBody(heyApiSdk.listAutomations(), AutomationsErrors.FETCH_LIST_FAILED);
+    const data = await unwrapBody(heyApiSdk.findAutomations(), AutomationsErrors.FETCH_LIST_FAILED);
     return data.map(toEntity);
   }
 
   @MapApiError(AutomationsErrors.FETCH_FAILED)
   async findById(id: string): Promise<AutomationEntity> {
     const data = await unwrapBody(
-      heyApiSdk.getAutomation({ path: { id } }),
+      heyApiSdk.findAutomation({ path: { id } }),
       AutomationsErrors.FETCH_FAILED,
     );
     return toEntity(data);
@@ -251,7 +251,7 @@ export class AutomationsRepository {
   @MapApiError(AutomationsErrors.FETCH_RUNS_FAILED)
   async findRuns(filter: RunsFilter): Promise<RunPage> {
     const data = await unwrapBody(
-      heyApiSdk.listAutomationRuns({
+      heyApiSdk.findAutomationRuns({
         query: {
           ...(filter.automationId ? { automationId: filter.automationId } : {}),
           ...(filter.projectId ? { projectId: filter.projectId } : {}),
@@ -269,7 +269,7 @@ export class AutomationsRepository {
   @MapApiError(AutomationsErrors.FETCH_RUNS_FAILED)
   async findRun(id: string): Promise<AutomationRunEntity> {
     const data = await unwrapBody(
-      heyApiSdk.getAutomationRun({ path: { id } }),
+      heyApiSdk.findAutomationRun({ path: { id } }),
       AutomationsErrors.FETCH_RUNS_FAILED,
     );
     return toRunEntity(data);
@@ -278,7 +278,7 @@ export class AutomationsRepository {
   @MapApiError(AutomationsErrors.FETCH_HISTORY_FAILED)
   async history(filter: RunHistoryFilter): Promise<RunHistory> {
     const data = await unwrapBody(
-      heyApiSdk.getAutomationRunHistory({
+      heyApiSdk.findRunHistory({
         query: {
           timezone: filter.timezone,
           ...(filter.automationId ? { automationId: filter.automationId } : {}),
@@ -297,7 +297,7 @@ export class AutomationsRepository {
     trigger: Extract<TriggerInput, { source: 'github' }>,
   ): Promise<TriggerPreview> {
     const data = await unwrapBody(
-      heyApiSdk.previewAutomationTrigger({
+      heyApiSdk.previewTrigger({
         body: {
           source: 'github',
           event: trigger.event,

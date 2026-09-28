@@ -4,6 +4,8 @@ RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 FROM base AS deps
 WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+# pnpm applies these on install; the lockfile records their hashes.
+COPY patches ./patches
 COPY apps/docs/package.json ./apps/docs/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 RUN pnpm install --frozen-lockfile --filter @oppenheimer/docs...

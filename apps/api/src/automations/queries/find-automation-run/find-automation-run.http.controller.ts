@@ -39,7 +39,6 @@ export class FindAutomationRunHttpController {
   @CheckPolicies({ action: 'read', subject: 'Automation' })
   @RequireScopes('automations:read')
   @ApiOperation({
-    operationId: 'getAutomationRun',
     summary: 'Read one automation run',
     description:
       'Why it ran, what the guards decided, the session it started and that session’s turn: the prompt the agent was given, the state, the result and the times.',

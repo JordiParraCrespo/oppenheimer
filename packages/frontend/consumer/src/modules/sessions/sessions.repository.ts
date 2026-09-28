@@ -119,7 +119,7 @@ export class SessionsRepository {
       // An absent body is a failed read, not an empty collection — returning
       // `[]` would render "no sessions" over a request that never succeeded.
       const data = await unwrapBody(
-        heyApiSdk.listSessions({ query: { page, limit: LIST_PAGE_LIMIT } }),
+        heyApiSdk.findSessions({ query: { page, limit: LIST_PAGE_LIMIT } }),
         SessionsErrors.FETCH_LIST_FAILED,
         (body) => Array.isArray(body.data),
       );
@@ -139,7 +139,7 @@ export class SessionsRepository {
   @MapApiError(SessionsErrors.FETCH_ONE_FAILED)
   async findById(id: string): Promise<SessionEntity> {
     const data = await unwrapBody(
-      heyApiSdk.getSession({ path: { id } }),
+      heyApiSdk.findSession({ path: { id } }),
       SessionsErrors.FETCH_ONE_FAILED,
     );
     return toEntity(data);
@@ -178,7 +178,7 @@ export class SessionsRepository {
     let afterSeq: number | undefined;
     for (let page = 0; page < MAX_START_LOG_PAGES; page += 1) {
       const data = await unwrapBody(
-        heyApiSdk.listSessionEvents({ path: { id }, query: { limit: START_LOG_PAGE, afterSeq } }),
+        heyApiSdk.findSessionEvents({ path: { id }, query: { limit: START_LOG_PAGE, afterSeq } }),
         SessionsErrors.FETCH_EVENTS_FAILED,
         (body) => Array.isArray(body.data),
       );
