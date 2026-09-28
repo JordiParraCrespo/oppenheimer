@@ -33,9 +33,7 @@ export function ProfileNameSection({
       isPending={update.isPending}
       saved={update.isSuccess}
       error={
-        update.isError
-          ? resolveError(update.error, t('settings.profile.saveFailed')).message
-          : undefined
+        update.isError ? resolveError(update.error, t('settings.profile.saveFailed')) : undefined
       }
       onSubmit={(values) => update.mutate(values)}
       onDiscard={() => update.reset()}

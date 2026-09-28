@@ -24,7 +24,8 @@
     "empty": "Todavía no hay automatizaciones. Una automatización inicia una sesión según un horario o cuando pasa algo en GitHub.",
     "runsEmpty": "Todavía no hay ejecuciones. Cada una aparece aquí con la sesión que inició.",
     "loadFailed": "No se han podido cargar las automatizaciones.",
-    "actionFailed": "No se ha podido completar."
+    "actionFailed": "No se ha podido completar.",
+    "actionFailedFor": "«{{name}}» no se ha actualizado"
   },
   "status": {
     "active": "Activa",

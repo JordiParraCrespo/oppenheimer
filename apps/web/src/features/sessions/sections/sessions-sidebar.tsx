@@ -1,6 +1,8 @@
 import {
   Alert,
+  AlertAction,
   AlertDescription,
+  Button,
   EmptyState,
   SessionList,
   Skeleton,
@@ -14,7 +16,7 @@ import {
   useRenameSession,
   useSessions,
 } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { useErrorMessage, useLastFailure } from '@oppenheimer/frontend-core/react';
 import { useConsoleDialog } from '@oppenheimer/frontend-web';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
@@ -121,8 +123,9 @@ export function SessionsSidebar() {
   const groups = groupByProject(projects.data ?? [], visible);
   const settled = sessions !== undefined && projects.data !== undefined;
   // The write that failed last, if one did: a menu closes on its pick, so the
-  // failure has to stay on screen somewhere the row is.
-  const failure = move.error ?? rename.error;
+  // failure has to stay on screen somewhere the row is. A later write that
+  // lands clears it, and so does Dismiss.
+  const failure = useLastFailure(move, rename);
 
   function commitRename() {
     if (!renaming) return;
@@ -170,11 +173,16 @@ export function SessionsSidebar() {
         }
       />
 
-      {failure ? (
+      {failure.error ? (
         <Alert variant="destructive" className="mx-3 mb-2">
           <AlertDescription>
-            {resolveError(failure, t('sessions.sidebar.writeFailed')).message}
+            {resolveError(failure.error, t('sessions.sidebar.writeFailed')).message}
           </AlertDescription>
+          <AlertAction>
+            <Button variant="ghost" size="sm" onClick={failure.dismiss}>
+              {t('common.dismiss')}
+            </Button>
+          </AlertAction>
         </Alert>
       ) : null}
 

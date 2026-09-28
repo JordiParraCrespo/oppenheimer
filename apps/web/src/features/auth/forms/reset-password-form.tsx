@@ -1,5 +1,11 @@
 import { Button, FieldGroup, PasswordInput } from '@oppenheimer/design-system-web';
-import { AuthField, AuthFormError, useZodResolver } from '@oppenheimer/frontend-web';
+import {
+  AuthField,
+  AuthFormError,
+  type ResolvedErrorMessage,
+  useServerFieldErrors,
+  useZodResolver,
+} from '@oppenheimer/frontend-web';
 import { resetPasswordSchema } from '@oppenheimer/shared/schemas/auth';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -31,12 +37,14 @@ export function ResetPasswordForm({
 }: {
   isPending: boolean;
   /** The resolved failure message, if the last attempt failed. */
-  error?: string;
+  error?: ResolvedErrorMessage;
   onSubmit: (values: NewPasswordValues) => void;
 }) {
   const { t } = useTranslation();
 
   const {
+    setError,
+    getValues,
     register,
     handleSubmit,
     formState: { errors },
@@ -44,11 +52,13 @@ export function ResetPasswordForm({
     resolver: useZodResolver(newPasswordSchema(t('auth.passwordsDoNotMatch'))),
     defaultValues: { password: '', confirmPassword: '' },
   });
+  // Fields the server refused are marked on the fields themselves.
+  useServerFieldErrors({ setError, getValues }, error);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <FieldGroup>
-        {error && <AuthFormError>{error}</AuthFormError>}
+        {error && <AuthFormError>{error.message}</AuthFormError>}
 
         <AuthField
           label={t('auth.resetPassword.newPassword')}

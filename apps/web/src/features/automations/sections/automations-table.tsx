@@ -1,6 +1,9 @@
 import {
   Alert,
+  AlertAction,
   AlertDescription,
+  AlertTitle,
+  Button,
   RoutineTable,
   RoutineTableEmpty,
   RoutineTableHead,
@@ -38,14 +41,24 @@ export function AutomationsTable() {
     onDuplicated: (id) =>
       navigate({ to: '/automations/$automationId', params: { automationId: id } }),
   });
+  // The list holds many automations, so its one alert says which one failed.
+  const failedName = automations.data?.find((row) => row.id === actions.failedId)?.name;
 
   return (
     <div className="flex flex-col gap-3">
       {actions.failure ? (
         <Alert variant="destructive">
+          {failedName ? (
+            <AlertTitle>{t('automations.page.actionFailedFor', { name: failedName })}</AlertTitle>
+          ) : null}
           <AlertDescription>
             {resolveError(actions.failure, t('automations.page.actionFailed')).message}
           </AlertDescription>
+          <AlertAction>
+            <Button variant="ghost" size="sm" onClick={actions.dismissFailure}>
+              {t('common.dismiss')}
+            </Button>
+          </AlertAction>
         </Alert>
       ) : null}
       {automations.isError ? (

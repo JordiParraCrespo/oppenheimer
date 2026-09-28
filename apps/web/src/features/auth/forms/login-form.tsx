@@ -1,5 +1,11 @@
 import { Button, FieldGroup, Input, PasswordInput } from '@oppenheimer/design-system-web';
-import { AuthField, AuthFormError, useZodResolver } from '@oppenheimer/frontend-web';
+import {
+  AuthField,
+  AuthFormError,
+  type ResolvedErrorMessage,
+  useServerFieldErrors,
+  useZodResolver,
+} from '@oppenheimer/frontend-web';
 import { type LoginDto, loginSchema } from '@oppenheimer/shared/schemas/auth';
 import type { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
@@ -15,7 +21,7 @@ export function LoginForm({
   defaultEmail?: string;
   isPending: boolean;
   /** The resolved failure message, if the last attempt failed. */
-  error?: string;
+  error?: ResolvedErrorMessage;
   /** The "Forgot password?" link, rendered beside the password label. */
   forgotPasswordLink: ReactNode;
   onSubmit: (values: LoginDto) => void;
@@ -23,6 +29,8 @@ export function LoginForm({
   const { t } = useTranslation();
 
   const {
+    setError,
+    getValues,
     register,
     handleSubmit,
     formState: { errors },
@@ -30,11 +38,13 @@ export function LoginForm({
     resolver: useZodResolver(loginSchema),
     defaultValues: { email: defaultEmail ?? '', password: '' },
   });
+  // Fields the server refused are marked on the fields themselves.
+  useServerFieldErrors({ setError, getValues }, error);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <FieldGroup>
-        {error && <AuthFormError>{error}</AuthFormError>}
+        {error && <AuthFormError>{error.message}</AuthFormError>}
 
         <AuthField label={t('auth.email')} htmlFor="email" error={errors.email}>
           <Input

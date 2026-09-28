@@ -6,5 +6,6 @@
   "maxLength": "Must be at most {{max}} characters",
   "minItems": "Select at least {{min}}",
   "maxItems": "Select at most {{max}}",
-  "url": "Enter a valid URL, including https://"
+  "url": "Enter a valid URL, including https://",
+  "invalid": "This value is not valid"
 }

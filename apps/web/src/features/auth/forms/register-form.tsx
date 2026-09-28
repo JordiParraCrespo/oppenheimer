@@ -1,5 +1,11 @@
 import { Button, FieldGroup, Input, PasswordInput } from '@oppenheimer/design-system-web';
-import { AuthField, AuthFormError, useZodResolver } from '@oppenheimer/frontend-web';
+import {
+  AuthField,
+  AuthFormError,
+  type ResolvedErrorMessage,
+  useServerFieldErrors,
+  useZodResolver,
+} from '@oppenheimer/frontend-web';
 import { type RegisterDto, registerSchema } from '@oppenheimer/shared/schemas/auth';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -16,12 +22,14 @@ export function RegisterForm({
 }: {
   isPending: boolean;
   /** The resolved failure message, if the last attempt failed. */
-  error?: string;
+  error?: ResolvedErrorMessage;
   onSubmit: (values: RegisterDto) => void;
 }) {
   const { t } = useTranslation();
 
   const {
+    setError,
+    getValues,
     register,
     handleSubmit,
     formState: { errors },
@@ -29,11 +37,13 @@ export function RegisterForm({
     resolver: useZodResolver(registerSchema),
     defaultValues: { firstName: '', lastName: '', email: '', password: '' },
   });
+  // Fields the server refused are marked on the fields themselves.
+  useServerFieldErrors({ setError, getValues }, error);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <FieldGroup>
-        {error && <AuthFormError>{error}</AuthFormError>}
+        {error && <AuthFormError>{error.message}</AuthFormError>}
 
         <div className="grid grid-cols-2 gap-3">
           <AuthField label={t('auth.firstName')} htmlFor="firstName" error={errors.firstName}>

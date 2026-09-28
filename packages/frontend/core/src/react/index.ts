@@ -34,6 +34,7 @@ export {
   useFeatureFlagValue,
 } from './feature-flags.queries';
 export { useAuthState } from './hooks';
+export { type LastFailure, type TrackedMutation, useLastFailure } from './last-failure';
 export { withCacheOnSuccess } from './mutations';
 export {
   cacheOwnerKey,

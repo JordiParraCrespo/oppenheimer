@@ -29,7 +29,8 @@
       "year": "{{count}}a"
     },
     "save": "Guardar",
-    "search": "Buscar"
+    "search": "Buscar",
+    "dismiss": "Descartar"
   },
   "validation": {
     "title": "Error de validación",
@@ -39,7 +40,8 @@
     "maxLength": "Debe tener como máximo {{max}} caracteres",
     "minItems": "Selecciona al menos {{min}}",
     "maxItems": "Selecciona como máximo {{max}}",
-    "url": "Introduce una URL válida, incluyendo https://"
+    "url": "Introduce una URL válida, incluyendo https://",
+    "invalid": "Este valor no es válido"
   },
   "errors": {
     "fallback": "Algo ha ido mal. Inténtalo de nuevo.",
@@ -602,7 +604,8 @@
       "empty": "Todavía no hay automatizaciones. Una automatización inicia una sesión según un horario o cuando pasa algo en GitHub.",
       "runsEmpty": "Todavía no hay ejecuciones. Cada una aparece aquí con la sesión que inició.",
       "loadFailed": "No se han podido cargar las automatizaciones.",
-      "actionFailed": "No se ha podido completar."
+      "actionFailed": "No se ha podido completar.",
+      "actionFailedFor": "«{{name}}» no se ha actualizado"
     },
     "status": {
       "active": "Activa",

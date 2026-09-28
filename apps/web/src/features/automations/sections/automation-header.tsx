@@ -1,5 +1,6 @@
 import {
   Alert,
+  AlertAction,
   AlertDescription,
   Button,
   DropdownMenu,
@@ -178,6 +179,11 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
           <AlertDescription>
             {resolveError(actions.failure, t('automations.page.actionFailed')).message}
           </AlertDescription>
+          <AlertAction>
+            <Button variant="ghost" size="sm" onClick={actions.dismissFailure}>
+              {t('common.dismiss')}
+            </Button>
+          </AlertAction>
         </Alert>
       ) : null}
     </PageHeader>

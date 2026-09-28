@@ -24,7 +24,8 @@
     "empty": "No automations yet. An automation starts a session on a schedule or when something happens on GitHub.",
     "runsEmpty": "No runs yet. Each run appears here with the session it started.",
     "loadFailed": "Automations could not be loaded.",
-    "actionFailed": "That did not go through."
+    "actionFailed": "That did not go through.",
+    "actionFailedFor": "“{{name}}” was not updated"
   },
   "status": {
     "active": "Active",

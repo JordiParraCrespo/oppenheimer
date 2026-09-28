@@ -75,7 +75,7 @@ export function ForgotPasswordScreen() {
 
       <ForgotPasswordForm
         isPending={isPending}
-        error={error ? resolveError(error, t('auth.forgotPassword.error')).message : undefined}
+        error={error ? resolveError(error, t('auth.forgotPassword.error')) : undefined}
         onSubmit={({ email }) => mutate(email, { onSuccess: () => setSentTo(email) })}
       />
 

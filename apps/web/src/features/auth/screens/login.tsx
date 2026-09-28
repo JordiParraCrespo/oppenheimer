@@ -66,7 +66,7 @@ export function LoginScreen({
       <LoginForm
         defaultEmail={email}
         isPending={isPending}
-        error={error ? resolveError(error, t('auth.login.invalidCredentials')).message : undefined}
+        error={error ? resolveError(error, t('auth.login.invalidCredentials')) : undefined}
         forgotPasswordLink={
           <AuthLink to="/forgot-password">{t('auth.login.forgotPassword')}</AuthLink>
         }

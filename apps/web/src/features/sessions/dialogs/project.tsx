@@ -38,8 +38,8 @@ import {
   useSessions,
   useUpdateProject,
 } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { useZodResolver } from '@oppenheimer/frontend-web';
+import { useErrorMessage, useLastFailure } from '@oppenheimer/frontend-core/react';
+import { useServerFieldErrors, useZodResolver } from '@oppenheimer/frontend-web';
 import { CODING_AGENT_IDS, CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import { createProjectSchema } from '@oppenheimer/shared/schemas/project';
 import { useState } from 'react';
@@ -191,17 +191,21 @@ function ProjectForm({
   const create = useCreateProject({ onSuccess: onSaved });
   const update = useUpdateProject({ onSuccess: onSaved });
   const pending = create.isPending || update.isPending;
-  const failure = create.error ?? update.error;
+  const failure = useLastFailure(create, update).error;
 
   const {
     register,
     handleSubmit,
     control,
+    setError,
+    getValues,
     formState: { errors },
   } = useForm<NameValues>({
     resolver: useZodResolver(nameSchema),
     defaultValues: { name: project?.name ?? '' },
   });
+  // A name the server refused is marked on the name field itself.
+  useServerFieldErrors({ setError, getValues }, failure);
   // The footer's Save reads the name as it is typed; this dialog is the lowest
   // component that shows the answer, so the subscription is here.
   const name = useWatch({ control, name: 'name' });
