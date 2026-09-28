@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createAuthStore } from '../../modules/auth/auth.state';
 import { AppError } from '../../modules/core/errors';
 import { createQueryClientConfig, shouldRetryQuery } from '../session-expiry';
+import { usersKeys } from '../users.queries';
 
 const FAILED = { code: 'X_CLIENT_001', message: 'Failed' };
 
@@ -28,7 +29,7 @@ describe('createQueryClientConfig', () => {
 
     await client
       .fetchQuery({
-        queryKey: ['hosts'],
+        queryKey: usersKeys.me(),
         queryFn: () => Promise.reject(new AppError(FAILED, { status: 401 })),
       })
       .catch(() => {});
@@ -55,7 +56,7 @@ describe('createQueryClientConfig', () => {
 
     await client
       .fetchQuery({
-        queryKey: ['hosts'],
+        queryKey: usersKeys.me(),
         queryFn: () => Promise.reject(new AppError(FAILED, { status: 403 })),
       })
       .catch(() => {});

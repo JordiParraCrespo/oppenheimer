@@ -515,6 +515,12 @@
         "hostOffline": "La imagen no se envió: el equipo está desconectado.",
         "failedTitle": "La imagen no llegó a la sesión",
         "dismiss": "Cerrar"
+      },
+      "retryNow": "Reintentar ahora",
+      "retry": "Intentar de nuevo",
+      "ended": {
+        "forbidden": "No tienes acceso al terminal de esta sesión.",
+        "refused": "El host se ha negado a abrir este terminal."
       }
     },
     "sidebar": {

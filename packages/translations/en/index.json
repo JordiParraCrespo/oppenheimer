@@ -515,6 +515,12 @@
         "hostOffline": "The image was not sent: the host is offline.",
         "failedTitle": "The image did not reach the session",
         "dismiss": "Dismiss"
+      },
+      "retryNow": "Retry now",
+      "retry": "Try again",
+      "ended": {
+        "forbidden": "You do not have access to this session's terminal.",
+        "refused": "The host refused to open this terminal."
       }
     },
     "sidebar": {

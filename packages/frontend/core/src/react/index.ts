@@ -12,6 +12,7 @@ export {
   authKeys,
   type SocialLoginVariables,
   useChangePassword,
+  useExpireSession,
   useForgotPassword,
   useLogin,
   useLogout,
