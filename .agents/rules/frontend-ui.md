@@ -151,10 +151,7 @@ look one up in — the nav row names the endpoint directly. Today both
 `apps/web` rows are ungated (`policies: []`), so the first gated row is still
 to be written.
 
-A screen the product picks for the reader (the dashboard `/` redirects to)
-checks its own policies through `useLandingRoute` and answers `null` rather
-than bouncing between errors. An org-less account goes to `/onboarding` from
-the `_authenticated` layout.
+An org-less account goes to `/onboarding` from the `_authenticated` layout.
 
 ## One colour vocabulary: the brand primitives
 

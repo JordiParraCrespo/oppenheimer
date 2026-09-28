@@ -282,7 +282,6 @@
     "save": "Save",
     "create": "Create automation",
     "saveFailed": "The automation could not be saved.",
-    "forProject": "For {{name}}.",
     "noMatch": "No match for “{{query}}”.",
     "chooseRepositories": "Choose repositories…",
     "chooseAgent": "Choose an agent…",

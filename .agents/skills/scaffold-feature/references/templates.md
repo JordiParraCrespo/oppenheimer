@@ -13,7 +13,7 @@ that file: the templates follow it, not the other way round.
 5. Screen and section (`features/hosts/screens/hosts-settings.tsx`, `sections/host-list.tsx`)
 6. A row that owns its menu's dialog, and the confirm dialog (`sections/host-row.tsx`, the kit's `ConfirmDialog`)
 7. Form (`features/hosts/forms/rename-host.tsx`)
-8. Leaf subscription (`packages/frontend/web/src/auth/components/password-requirements.tsx`)
+8. Leaf subscription (`apps/web/src/features/projects/components/project-save-button.tsx`)
 9. E2E spec (`e2e/tests/web/settings-hosts.spec.ts`)
 10. Render-budget spec (`features/sessions/__tests__/sessions-sidebar-render.spec.tsx`)
 

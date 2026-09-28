@@ -4,7 +4,7 @@ import type { PermissionDefinition } from '@oppenheimer/shared/permissions';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NavItem } from '../lib/nav';
-import { useAuthorizedNav, useLandingRoute } from './use-authorized-nav';
+import { useAuthorizedNav } from './use-authorized-nav';
 
 /** The consumer app's nav: every row is ungated, so every reader is offered all of them. */
 const NAV: readonly NavItem[] = [
@@ -47,7 +47,6 @@ function couldNotBeFetched() {
 }
 
 const routesOffered = () => renderHook(() => useAuthorizedNav(NAV)).result.current.map((e) => e.to);
-const landing = () => renderHook(() => useLandingRoute(NAV)).result.current;
 
 beforeEach(() => {
   vi.mocked(useMyPermissions).mockReset();
@@ -82,27 +81,5 @@ describe('useAuthorizedNav', () => {
     couldNotBeFetched();
 
     expect(routesOffered()).toEqual(['/sessions', '/sessions/new', '/settings']);
-  });
-});
-
-describe('useLandingRoute', () => {
-  it('is the sessions list for a role that can read it', () => {
-    signedInWith([{ action: 'manage', subject: 'all' }]);
-
-    expect(landing()).toBe('/sessions');
-  });
-
-  it('is the sessions list even for a reader holding nothing — the workspace is their own profile', () => {
-    signedInWith([]);
-
-    expect(landing()).toBe('/sessions');
-  });
-
-  it('remains the sessions list while permissions are loading or unavailable', () => {
-    stillLoading();
-    expect(landing()).toBe('/sessions');
-
-    couldNotBeFetched();
-    expect(landing()).toBe('/sessions');
   });
 });

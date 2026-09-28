@@ -5,13 +5,13 @@ import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { OrganizationEntity } from '../../modules/organizations';
-import { organizationsKeys, useCreateOrganization } from '../organizations.queries';
+import { organizationsKeys, useClaimPersonalWorkspace } from '../organizations.queries';
 import { fakeKernel } from './fake-kernel';
 
-const CREATED = { id: 'org-1', name: 'Acme', slug: 'acme', logo: null } as OrganizationEntity;
+const CLAIMED = { id: 'org-1', name: 'Acme', slug: 'acme', logo: null } as OrganizationEntity;
 
 function setup() {
-  const organizations = { create: vi.fn().mockResolvedValue(CREATED) };
+  const organizations = { claimPersonalWorkspace: vi.fn().mockResolvedValue(CLAIMED) };
   const app = fakeKernel({ [TOKENS.OrganizationsService]: organizations });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
@@ -24,22 +24,23 @@ function setup() {
     );
   }
 
-  return { wrapper, organizations, queryClient, invalidate };
+  return { wrapper, queryClient, invalidate };
 }
 
-describe('useCreateOrganization', () => {
-  it('seeds the organizations list with the reply before refetching', async () => {
+describe('useClaimPersonalWorkspace', () => {
+  it('seeds the list with a created workspace before refetching everything', async () => {
     // The shell redirects a settled empty list to onboarding. Seeding the list
     // means that even a failed refetch no longer says the caller belongs
     // nowhere.
-    const { wrapper, queryClient } = setup();
+    const { wrapper, queryClient, invalidate } = setup();
     queryClient.setQueryData(organizationsKeys.list(), []);
-    const { result } = renderHook(() => useCreateOrganization(), { wrapper });
+    const { result } = renderHook(() => useClaimPersonalWorkspace(), { wrapper });
 
-    result.current.mutate({ name: 'Acme' });
+    result.current.mutate({ existing: undefined, name: 'Acme', slug: 'acme' });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(queryClient.getQueryData(organizationsKeys.list())).toEqual([CREATED]);
+    expect(queryClient.getQueryData(organizationsKeys.list())).toEqual([CLAIMED]);
+    expect(invalidate).toHaveBeenCalledWith();
   });
 
   it('runs the caller-supplied onSuccess only once the refetch has settled', async () => {
@@ -47,14 +48,27 @@ describe('useCreateOrganization', () => {
     let released: () => void = () => {};
     invalidate.mockImplementation(() => new Promise<void>((resolve) => (released = resolve)));
     const onSuccess = vi.fn();
-    const { result } = renderHook(() => useCreateOrganization({ onSuccess }), { wrapper });
+    const { result } = renderHook(() => useClaimPersonalWorkspace({ onSuccess }), { wrapper });
 
-    result.current.mutate({ name: 'Acme' });
+    result.current.mutate({ existing: undefined, name: 'Acme', slug: 'acme' });
 
     await waitFor(() => expect(invalidate).toHaveBeenCalledWith());
     expect(onSuccess).not.toHaveBeenCalled();
 
     released();
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+  });
+
+  it('patches a named workspace into the list without refetching everything', async () => {
+    const { wrapper, queryClient, invalidate } = setup();
+    const provisioned = { ...CLAIMED, name: 'jordi', slug: 'jordi-1a2b3c4d' } as OrganizationEntity;
+    queryClient.setQueryData(organizationsKeys.list(), [provisioned]);
+    const { result } = renderHook(() => useClaimPersonalWorkspace(), { wrapper });
+
+    result.current.mutate({ existing: provisioned, name: 'Acme', slug: 'acme' });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(queryClient.getQueryData(organizationsKeys.list())).toEqual([CLAIMED]);
+    expect(invalidate).not.toHaveBeenCalled();
   });
 });

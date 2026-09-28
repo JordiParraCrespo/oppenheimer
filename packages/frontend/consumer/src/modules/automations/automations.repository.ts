@@ -266,15 +266,6 @@ export class AutomationsRepository {
     return { ...data, items: data.items.map(toRunEntity) };
   }
 
-  @MapApiError(AutomationsErrors.FETCH_RUNS_FAILED)
-  async findRun(id: string): Promise<AutomationRunEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.findAutomationRun({ path: { id } }),
-      AutomationsErrors.FETCH_RUNS_FAILED,
-    );
-    return toRunEntity(data);
-  }
-
   @MapApiError(AutomationsErrors.FETCH_HISTORY_FAILED)
   async history(filter: RunHistoryFilter): Promise<RunHistory> {
     const data = await unwrapBody(

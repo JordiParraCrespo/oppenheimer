@@ -31,7 +31,7 @@ const APPS = {
     features: 'src/features',
     product: 'consumer',
     // The same allowlist as `scripts/check-frontend-structure.mjs`.
-    allow: ['public', 'automations'],
+    allow: ['public'],
     platform: 'web',
   },
   // oppenheimer:end web

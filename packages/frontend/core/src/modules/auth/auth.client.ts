@@ -61,8 +61,6 @@ export interface IAuthClient {
   forgotPassword(email: string): Promise<void>;
   /** Complete a password reset using the token from the reset email. */
   resetPassword(token: string, newPassword: string): Promise<void>;
-  /** Change the password for the currently authenticated user. */
-  changePassword(currentPassword: string, newPassword: string): Promise<void>;
   /** Return the current session, or `null` if not authenticated. */
   getSession(): Promise<AuthSession | null>;
   /**

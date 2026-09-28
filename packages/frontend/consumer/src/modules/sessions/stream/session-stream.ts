@@ -80,7 +80,7 @@ export interface SessionStreamOptions {
 }
 
 /** The reconnect ladder, with jitter on top (`12-lessons-from-grok-bot.md`). */
-export const RECONNECT_LADDER_MS = [500, 1_000, 2_000, 5_000, 10_000, 30_000] as const;
+const RECONNECT_LADDER_MS = [500, 1_000, 2_000, 5_000, 10_000, 30_000] as const;
 
 /** Close codes after which reconnecting cannot help: the answer would be the same. */
 const FINAL_CLOSE_CODES = new Map<number, StreamEnd>([

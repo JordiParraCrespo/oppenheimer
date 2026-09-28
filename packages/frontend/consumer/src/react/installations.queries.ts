@@ -121,19 +121,6 @@ export function useConnectInstallation(
   });
 }
 
-export function useRemoveInstallation(options?: UseMutationOptions<void, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => app.installations.remove(id),
-    ...withCacheOnSuccess(options, (_, id) => {
-      queryClient.removeQueries({ queryKey: installationsKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: installationsKeys.lists() });
-    }),
-  });
-}
-
 /** The repositories one installation can reach: the picker, and the Ready summary's count. */
 export function useInstallationRepositories(
   installationId: string | undefined,
@@ -144,30 +131,6 @@ export function useInstallationRepositories(
   return useQuery({
     queryKey: installationsKeys.repositoryList(installationId),
     queryFn: installationId ? () => app.installations.repositories(installationId) : skipToken,
-    ...options,
-  });
-}
-
-/**
- * One repository's branches: the branch pane of New session's repository chip.
- *
- * Disabled until a repository is actually chosen, because the API answers this
- * from GitHub uncached — a call per row of a picker nobody has opened is a rate
- * limit spent on nothing.
- */
-export function useRepositoryBranches(
-  installationId: string | undefined,
-  githubRepoId: number | undefined,
-  options?: Omit<UseQueryOptions<BranchEntity[], Error>, 'queryKey' | 'queryFn'>,
-) {
-  const app = useConsumerApp();
-
-  return useQuery({
-    queryKey: installationsKeys.branches(installationId, githubRepoId),
-    queryFn:
-      installationId && githubRepoId
-        ? () => app.installations.branches(installationId, githubRepoId)
-        : skipToken,
     ...options,
   });
 }

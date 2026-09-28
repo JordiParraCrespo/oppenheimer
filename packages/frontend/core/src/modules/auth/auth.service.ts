@@ -105,10 +105,6 @@ export class AuthService {
     this.analytics.capture(ANALYTICS_EVENTS.PASSWORD_RESET_COMPLETED);
   }
 
-  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    return this.authRepository.changePassword(currentPassword, newPassword);
-  }
-
   async logout(): Promise<void> {
     await this.authRepository.logout();
     this.store.setState({ isAuthenticated: false });

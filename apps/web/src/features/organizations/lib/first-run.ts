@@ -61,7 +61,7 @@ export function walkFromState(raw: unknown): unknown {
  * walk rides as a prefix of it: `first-run.<nonce>`. The GitHub route reads
  * the walk off it and hands the rest on as the nonce.
  */
-export const WALK_STATE = 'first-run';
+const WALK_STATE = 'first-run';
 
 /** The prefix a walk puts in front of the nonce; a nonce is base64url, so never a `.`. */
 const WALK_PREFIX = `${WALK_STATE}.`;

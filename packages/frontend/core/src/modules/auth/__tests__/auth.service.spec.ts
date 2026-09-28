@@ -48,7 +48,6 @@ function setup(session: AuthSession | null = SESSION) {
     getSession: vi.fn().mockResolvedValue(session),
     forgotPassword: vi.fn().mockResolvedValue(undefined),
     resetPassword: vi.fn().mockResolvedValue(undefined),
-    changePassword: vi.fn().mockResolvedValue(undefined),
     logout: vi.fn().mockResolvedValue(undefined),
   } as unknown as AuthRepository;
 
