@@ -19,7 +19,9 @@
  *   integration  the API's suite (Testcontainers, so Docker)
  *   e2e          the API suite against `scripts/stack/stack.mjs up`
  *
- * A job stops at its first failed step; the other jobs still run. The report
+ * It runs on the commit checked out, so commit first; it refuses a tree with
+ * uncommitted changes to tracked files. A job stops at its first failed step;
+ * the other jobs still run. The report
  * (HEAD, base, one row per step) is printed and written to
  * `.ci-local/report.md` — paste it into the pull request. The exit code is
  * non-zero when any step failed.
@@ -165,8 +167,17 @@ function ensureImage(image) {
 
 // ----------------------------------------------------------------------- run
 
+// The report names a commit, and the selection diffs commits: uncommitted
+// changes would be run but not selected for, or selected for but not in the
+// commit the report names. Commit first.
+if (git('status', '--porcelain', '--untracked-files=no') !== '') {
+  console.error(
+    'ci:local: commit your changes first; the report is for a commit, and the selection reads commits.',
+  );
+  console.error(git('status', '--short', '--untracked-files=no'));
+  process.exit(2);
+}
 const head = git('rev-parse', 'HEAD');
-const dirty = git('status', '--porcelain') !== '';
 const { scope, packages, filters } = selection();
 const any = packages.length > 0;
 
@@ -329,7 +340,7 @@ const mark = (ok) => (ok === null ? '⏭️' : ok ? '✅' : '❌');
 const report = [
   `### Local CI ${failed.length ? '❌ failed' : '✅ passed'}`,
   '',
-  `\`pnpm ci:local${args.length ? ` ${args.join(' ')}` : ''}\` on \`${head.slice(0, 12)}\`${dirty ? ' (with uncommitted changes)' : ''}, ` +
+  `\`pnpm ci:local${args.length ? ` ${args.join(' ')}` : ''}\` on \`${head.slice(0, 12)}\`, ` +
     `${base ? `against \`${base}\`` : 'every package'}; scope **${scope}**, ${packages.length} package(s).`,
   '',
   '| Job | Step | Result | Time |',
