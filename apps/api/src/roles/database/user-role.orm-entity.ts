@@ -16,6 +16,12 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 
 @Entity('user_role')
 @Index(['userId'])
 @Index(['userId', 'organizationId'])
+// Behind FK_user_role_role and FK_user_role_organization
+// (1790890000000-IndexUnbackedForeignKeys).
+@Index('IDX_user_role_role', ['roleId'])
+@Index('IDX_user_role_organization', ['organizationId'], {
+  where: '"organizationId" IS NOT NULL',
+})
 export class UserRoleOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

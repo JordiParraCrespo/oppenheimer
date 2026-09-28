@@ -1,4 +1,4 @@
-import type { NavItem, NavTo } from '../lib/nav';
+import type { NavItem } from '../lib/nav';
 import { useAbilityState } from './use-ability';
 import { useShellConfig } from './use-shell';
 
@@ -34,17 +34,4 @@ export function useAuthorizedNav(nav?: readonly NavItem[]): NavItem[] {
     if (!ability) return false;
     return policies.every((policy) => ability.can(policy.action, policy.subject));
   });
-}
-
-/**
- * Where to send someone when the product, not the reader, picks the screen —
- * or `null` when there is nowhere honest to send them.
- *
- * The first nav row the reader's ability reaches. Ungated rows are reachable
- * while permissions are still loading, so an app whose first row is ungated
- * (the consumer sessions list is the reader's own workspace) always has a
- * landing. A gated first row waits for the answer rather than guessing.
- */
-export function useLandingRoute(nav?: readonly NavItem[]): NavTo | null {
-  return useAuthorizedNav(nav)[0]?.to ?? null;
 }

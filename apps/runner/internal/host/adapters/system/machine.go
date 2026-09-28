@@ -116,11 +116,3 @@ func timezone() string {
 	}
 	return strings.TrimSpace(string(raw))
 }
-
-func readTrimmed(path string) string {
-	raw, err := os.ReadFile(path) //nolint:gosec // fixed system paths
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(raw))
-}

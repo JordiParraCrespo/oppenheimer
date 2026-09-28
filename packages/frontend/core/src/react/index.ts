@@ -1,17 +1,13 @@
 export {
-  analyticsKeys,
   type CaptureEventVariables,
-  type CapturePageViewVariables,
-  useAnalytics,
+  /** @public The documented way to capture a product event (`apps/docs/docs/architecture/analytics.md`). */
   useCaptureEvent,
+  /** @public The documented way to capture a "was shown" event (`apps/docs/docs/architecture/analytics.md`). */
   useCaptureOnMount,
-  useCapturePageView,
   usePageView,
 } from './analytics.queries';
 export {
-  authKeys,
   type SocialLoginVariables,
-  useChangePassword,
   useExpireSession,
   useForgotPassword,
   useLogin,
@@ -20,51 +16,35 @@ export {
   useSessionRestore,
   useSocialLogin,
 } from './auth.queries';
-export {
-  capabilitiesKeys,
-  useDeploymentCapabilities,
-} from './capabilities.queries';
+export { useDeploymentCapabilities } from './capabilities.queries';
 export { OppenheimerProvider, useOppenheimerApp } from './context';
 export { type ResolvedErrorMessage, useErrorMessage } from './error-message';
 export {
   type FeatureFlagReadOptions,
-  featureFlagKeys,
-  featureFlagsQueryOptions,
+  /** @public The flags rule's client read (`.agents/rules/feature-flags.md`). */
   useFeatureFlag,
+  /** @public The flags rule's read that waits for the answer (`.agents/rules/feature-flags.md`). */
   useFeatureFlags,
+  /** @public The flags rule's read of a variant flag (`.agents/rules/feature-flags.md`). */
   useFeatureFlagValue,
 } from './feature-flags.queries';
 export { useAuthState } from './hooks';
 export { type LastFailure, lastFailure, type TrackedMutation } from './last-failure';
-export { withCacheOnSuccess } from './mutations';
+export { refetchEverythingForNewIdentity, withCacheOnSuccess } from './mutations';
 export {
-  cacheOwnerKey,
   createQueryPersistOptions,
   defaultQueryClientOptions,
-  KERNEL_NON_PERSISTED_FEATURES,
-  QUERY_PERSIST_GC_TIME,
-  QUERY_PERSIST_MAX_AGE,
   type QueryPersistConfig,
-  reconcileCacheOwner,
-  shouldDehydrateQuery,
 } from './persistence';
 export { useQueries, useQuery } from './query';
 export {
   createQueryClient,
-  expireSession,
-  isUnauthorized,
   type SessionExpiryTarget,
-  shouldRetryQuery,
 } from './query-client';
-export { MEMBER_LISTS_KEY, withFeaturePrefix } from './query-keys';
 export { shareEntities } from './share-entities';
-export { userSettingsKeys, useUpdateUserSettings, useUserSettings } from './user-settings.queries';
+export { useUserSettings } from './user-settings.queries';
 export {
-  useDeleteUser,
   useMyPermissions,
   useProfile,
   usersKeys,
-  useUpdateUser,
-  useUser,
-  useUsers,
 } from './users.queries';

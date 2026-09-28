@@ -51,7 +51,10 @@ import { FindSessionsHttpController } from '../../sessions/queries/find-sessions
 
 /** The handler each guarded endpoint's data actually comes from. */
 const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }> = {
-  'GET /organizations/:orgId/members': { controller: MembersController, handler: 'list' },
+  'GET /organizations/:orgId/members': {
+    controller: MembersController,
+    handler: 'listOrganizationMembers',
+  },
   'GET /roles': { controller: FindRolesHttpController, handler: 'findAll' },
   'GET /tokens': { controller: FindApiTokensHttpController, handler: 'findAll' },
   'GET /admin/users': { controller: AdminController, handler: 'listUsers' },

@@ -34,14 +34,6 @@
     },
     "details": "Detalles del host: {{detail}}"
   },
-  "group": {
-    "working": "Trabajando",
-    "waiting-on-you": "Te espera",
-    "ready-for-review": "Lista para revisar",
-    "landing": "Aterrizando",
-    "idle": "Inactiva",
-    "resolved": "Terminada"
-  },
   "closed": {
     "description": "Esta sesión se ha detenido. Su trabajo está en su rama.",
     "deleted": "Esta sesión se eliminó. Su worktree ya no está en el host; los commits ya enviados siguen en el remoto."
@@ -133,7 +125,6 @@
       "send": "Enviar",
       "stop": "Detener"
     },
-    "queued": "Tu primera tarea está en cola para este host.",
     "failed": "No se pudo crear la sesión."
   },
   "session": {
@@ -145,7 +136,6 @@
     },
     "image": {
       "sending": "Enviando imagen",
-      "hostOffline": "La imagen no se envió: el equipo está desconectado.",
       "failedTitle": "La imagen no llegó a la sesión"
     },
     "retryNow": "Reintentar ahora",
@@ -205,14 +195,5 @@
     "recent": "Última actividad",
     "oldest": "Más antiguas primero",
     "name": "Nombre"
-  },
-  "agents": {
-    "claude-code": "Claude Code",
-    "codex": "Codex"
-  },
-  "row": {
-    "actions": "Acciones de la sesión",
-    "move": "Mover a un proyecto…",
-    "moveTitle": "Mover a un proyecto"
   }
 }

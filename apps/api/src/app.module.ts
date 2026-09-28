@@ -1,7 +1,7 @@
 import { BullModule } from '@nestjs/bullmq';
-import { Module } from '@nestjs/common';
+import { type MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -11,7 +11,7 @@ import {
   AllExceptionsFilter,
   createAuthRouteLoggingMiddleware,
   LoggingModule,
-  RequestContextInterceptor,
+  RequestContextMiddleware,
 } from '@oppenheimer/backend-core';
 import { EmailModule } from '@oppenheimer/backend-email';
 import { I18nModule } from '@oppenheimer/backend-i18n';
@@ -22,11 +22,13 @@ import { StorageModule } from '@oppenheimer/backend-storage';
 import en from '@oppenheimer/translations/en/index.json';
 import es from '@oppenheimer/translations/es/index.json';
 import { AuthModule as BetterAuthModule } from '@thallesp/nestjs-better-auth';
+import type Redis from 'ioredis';
 import { AdminModule } from './admin/admin.module';
 import { ApiTokensModule } from './api-tokens/api-tokens.module';
 import { AuthModule } from './auth/auth.module';
 import { ScopesGuard } from './auth/guards/scopes.guard';
 import { auth } from './auth/infrastructure/better-auth.config';
+import { bindSessionStore } from './auth/infrastructure/better-auth-secondary-storage.adapter';
 import { AuthzModule } from './authz/authz.module';
 import { AutomationsModule } from './automations/automations.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
@@ -47,6 +49,7 @@ import {
 import { bootDataSourceFactory } from './config/boot-migrations';
 import { type DatabaseConfig, poolOptions } from './config/database.config';
 import { DEFAULT_JOB_OPTIONS } from './config/queue-options.config';
+import { type RedisConfig, redisConnectionOptions } from './config/redis.config';
 import { TypeOrmQueryLogger } from './config/typeorm-query.logger';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { GithubModule } from './github/github.module';
@@ -58,6 +61,8 @@ import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
 import { ProjectsModule } from './projects/projects.module';
 import { QueueModule } from './queue/queue.module';
+import { REDIS_CLIENT } from './redis/redis.di-tokens';
+import { RedisModule } from './redis/redis.module';
 import { RelayModule } from './relay/relay.module';
 import { RolesModule } from './roles/roles.module';
 import { SessionsModule } from './sessions/sessions.module';
@@ -140,6 +145,10 @@ import { UsersModule } from './users/user.module';
       // build (`manualInitialization`).
       dataSourceFactory: bootDataSourceFactory(),
     }),
+    // The one Redis command connection the cache, the rate limiter and the
+    // health probe share (`REDIS_CLIENT`), closed on shutdown. BullMQ opens its
+    // own from the same `redisConnectionOptions` below.
+    RedisModule,
     ThrottlerModule.forRootAsync({
       imports: [ThrottlingModule],
       inject: [RedisThrottlerStorage],
@@ -156,11 +165,7 @@ import { UsersModule } from './users/user.module';
     BullModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        connection: {
-          host: configService.get('redis.host'),
-          port: configService.get('redis.port'),
-          password: configService.get('redis.password'),
-        },
+        connection: redisConnectionOptions(configService.get('redis') as RedisConfig),
         // Every queue removes its finished jobs; a queue that needs retries
         // or a longer window sets its own in `QueueModule`.
         defaultJobOptions: DEFAULT_JOB_OPTIONS,
@@ -170,7 +175,12 @@ import { UsersModule } from './users/user.module';
     CapabilitiesModule,
     EmailModule.register(),
     StorageModule.register(),
-    CacheModule.register(),
+    // Over the shared client, every key under `cache:`, so the cache never
+    // mixes with BullMQ's `bull:*` or the throttler's `throttle:*`.
+    CacheModule.registerAsync({
+      inject: [REDIS_CLIENT],
+      useFactory: (client: Redis) => ({ client, keyPrefix: 'cache:' }),
+    }),
     // The deployment's LLM provider, for short best-effort calls (a session's
     // title). `none` by default; see `config/llm.config.ts`.
     LlmModule.forRootAsync({
@@ -247,7 +257,21 @@ import { UsersModule } from './users/user.module';
     // omission. Browser sessions pass straight through.
     { provide: APP_GUARD, useClass: ScopesGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
-    { provide: APP_INTERCEPTOR, useClass: RequestContextInterceptor },
+    // Better Auth's session cache runs on the shared Redis connection. `auth`
+    // is configured at module scope, so the connection is handed to it here,
+    // once the injector has one, and taken back before `RedisModule` closes it.
+    {
+      provide: 'BETTER_AUTH_SESSION_STORE',
+      inject: [REDIS_CLIENT],
+      useFactory: (client: Redis) => bindSessionStore(client),
+    },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  // The correlation id is opened in middleware, ahead of the guards above: a
+  // 401, 403 or 429 a guard throws carries the same id as the log line and
+  // the `x-correlation-id` response header. See `RequestContextMiddleware`.
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestContextMiddleware).forRoutes('*');
+  }
+}

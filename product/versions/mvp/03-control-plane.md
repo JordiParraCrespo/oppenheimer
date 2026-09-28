@@ -379,8 +379,16 @@ the rows do not know is logged and left alone.
 **The attach socket.** The ticket in the subprotocol is redeemed with a
 `GETDEL` (single use), and what it authorised is re-checked at redemption:
 the session through `SESSION_LOOKUP`, which answers `live`, `stopped` or
-`resolved` — three answers, because they end differently — and the
-person's membership through `organizations/`' `WORKSPACE_LOOKUP`. Every
+`resolved` — three answers, because they end differently — the
+person's membership through `organizations/`' `WORKSPACE_LOOKUP`, their
+account's standing (`CREDENTIAL_OWNER`), and whether they may still use the
+session's host (`HOST_ACCESS`, the own-or-granted predicate a create asks,
+never as a platform admin). The same judgement runs again every minute
+while the attachment is open, and a refusal closes it the same way: a
+revoked grant, a membership Better Auth removed, a ban or a stop reaches a
+terminal already streaming, on whichever replica holds it, without an event
+(2026-09-28; it used to be checked at redemption only). Minting the ticket
+and restarting the session check the host too, and answer `HOSTS_001`. Every
 refusal after the handshake is a `closed` control frame naming the reason
 and then a final close code on an **established** socket, never a refused
 upgrade: a browser's WebSocket cannot see the status of a refused

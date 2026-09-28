@@ -36,9 +36,12 @@ edit(
   'P1',
   api('users/commands/update-user/update-user.command-handler.ts'),
   `    await this.userRepository.save(user);
+    await this.sessionCache.refreshUser(user.id);
     return user.id;`,
-  `    // Return the saved user so the controller can skip the follow-up query.
-    return this.userRepository.save(user);`,
+  `    await this.userRepository.save(user);
+    await this.sessionCache.refreshUser(user.id);
+    // Return the saved user so the controller can skip the follow-up query.
+    return user;`,
 );
 edit(
   'P1',
@@ -93,12 +96,16 @@ edit(
   'P3',
   api('users/commands/delete-user/delete-user.command-handler.ts'),
   `    const user = found.unwrap();
-    user.delete();`,
+
+    if (
+      command.confirmation`,
   `    const user = found.unwrap();
     if (user.role === 'admin') {
       throw new ForbiddenException('Admins cannot be deleted through this endpoint');
     }
-    user.delete();`,
+
+    if (
+      command.confirmation`,
 );
 edit(
   'P3',
@@ -159,10 +166,10 @@ edit(
   'P7',
   api('users/commands/delete-user/delete-user.command-handler.ts'),
   `    private readonly userRepository: UserRepositoryPort,
-  ) {}`,
+    private readonly erasure: AccountErasureRegistry,`,
   `    private readonly userRepository: UserRepositoryPort,
     private readonly events: EventEmitter2,
-  ) {}`,
+    private readonly erasure: AccountErasureRegistry,`,
 );
 edit(
   'P7',

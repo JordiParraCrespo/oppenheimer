@@ -366,9 +366,10 @@ a **projection**, not a second truth:
   `<runId>:<n>`, where `runId` is a random id the runner mints at
   process start and `n` its own counter, so the key depends on nothing
   the control plane hands out and survives any reconnect; from the API
-  it is the command id. The append is one
-  `INSERT … ON CONFLICT (sessionId, idempotencyKey) DO NOTHING` per
-  row, with `seq` assigned to the rows that actually land, so a batch
+  it is the command id. The append is idempotent per key: a batch lands
+  in one `INSERT` that skips the keys already in the log (with
+  `ON CONFLICT (sessionId, idempotencyKey) DO NOTHING` as the backstop),
+  with `seq` assigned to the rows that actually land, so a batch
   replayed after a dropped ack, or half-applied before a crash, appends
   only what was not yet seen and the fold runs over exactly that.
 - `payload` is capped at 8 KB and **never carries pane text**. On the

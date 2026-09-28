@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import type { HostEntity } from '../domain/host.entity';
 import { HostMapper } from '../host.mapper';
 import { HostResource } from '../hosts.resource';
@@ -37,7 +37,6 @@ export class HostRepository
   constructor(
     @InjectRepository(HostOrmEntity)
     protected readonly repository: Repository<HostOrmEntity>,
-    private readonly dataSource: DataSource,
     private readonly mapper: HostMapper,
     private readonly outbox: OutboxService,
     private readonly metadata: HostMetadataRepository,
@@ -121,11 +120,12 @@ export class HostRepository
    * a lost host: the retry finds the token spent, matches the fingerprint it
    * presents, and is handed the host that already exists.
    *
-   * The transaction is opened here rather than through
-   * `OutboxService.writeWithEvents`, which skips the explicit transaction when an
-   * aggregate happens to carry no events. That is the right default for a single
+   * The transaction is `OutboxService.transaction` rather than
+   * `writeWithEvents`, which skips the explicit transaction when an aggregate
+   * happens to carry no events. That is the right default for a single
    * statement and the wrong one for these two, whose whole point is committing
-   * together — so the events are staged inside the transaction this method owns.
+   * together — so the events are staged inside the transaction this method
+   * owns, and the relay is woken after it commits.
    */
   async redeemAndRegister(input: RedeemAndRegisterInput): Promise<Option<HostEntity>> {
     // The id is minted before the statement runs because the burn writes it into
@@ -133,7 +133,7 @@ export class HostRepository
     // which is why that foreign key is deferred to commit.
     const hostId = randomUUID();
 
-    const registered = await this.dataSource.transaction(async (manager) => {
+    const registered = await this.outbox.transaction(async (manager) => {
       // TypeORM answers an `UPDATE … RETURNING` with `[rows, affectedCount]`,
       // not with the rows alone — reading it as an array of rows would make
       // every redemption look successful.
@@ -206,7 +206,6 @@ export class HostRepository
     if (!registered) return None;
 
     registered.clearEvents();
-    this.outbox.wake();
     return Some(registered);
   }
 

@@ -138,18 +138,3 @@ export function useResetPassword(
     ...options,
   });
 }
-
-export function useChangePassword(
-  options?: Omit<
-    UseMutationOptions<void, Error, { currentPassword: string; newPassword: string }>,
-    'mutationFn'
-  >,
-) {
-  const app = useOppenheimerApp();
-
-  return useMutation({
-    mutationFn: ({ currentPassword, newPassword }) =>
-      app.auth.changePassword(currentPassword, newPassword),
-    ...options,
-  });
-}

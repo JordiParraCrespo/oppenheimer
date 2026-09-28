@@ -4,6 +4,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   helloSchema,
+  LINK_MAX_FRAME_BYTES,
   PROTOCOL_VERSION,
   type ProtocolMessage,
   protocolMessageSchema,
@@ -19,6 +20,7 @@ import { LINK_REGISTRY } from '../../links/links.di-tokens';
 import { clientAddressOf } from './client-address.util';
 import { CredentialsProcessor } from './credentials.processor';
 import { decodeFrame } from './frame.util';
+import { type AppendQueueLimits, type AppendRun, LinkAppendQueue } from './link-append-queue.util';
 import { RelayEventsProcessor } from './relay-events.processor';
 import { SocketRunnerLink } from './socket-runner-link.adapter';
 import { refuseUpgrade } from './upgrade.util';
@@ -37,8 +39,49 @@ export const HELLO_TIMEOUT_MS = 10_000;
  */
 export const LINK_PING_INTERVAL_MS = 15_000;
 
-/** A control frame larger than this is not a control frame. */
-const MAX_CONTROL_FRAME_BYTES = 512 * 1024;
+/**
+ * The largest frame a runner may send, enforced by `ws` while it reads: a
+ * bigger one is refused with 1009 before it is buffered. A control frame larger
+ * than this is not a control frame, and a binary PTY frame is at most 32 KiB
+ * plus its header, so every legitimate frame fits. It is the protocol's
+ * `LINK_MAX_FRAME_BYTES`, which the runner is generated from and holds itself
+ * to when it sends.
+ */
+export const MAX_RUNNER_FRAME_BYTES = LINK_MAX_FRAME_BYTES;
+
+/**
+ * A link's `events.append` queue (`LinkAppendQueue`). The numbers are batches,
+ * and a batch is up to 256 events of up to 8 KB each, so the ceiling bounds a
+ * link's queued appends in memory as well as in latency.
+ */
+export const APPEND_QUEUE_LIMITS: AppendQueueLimits = {
+  /**
+   * Waiting batches at which the socket stops being read. Everything on the
+   * link pauses with it — heartbeats, PTY bytes, refusals — and that is the
+   * point: a link the database cannot keep up with is overloaded as a whole,
+   * and the runner's own bounded queue is where the rest should wait.
+   */
+  pauseAt: 64,
+  /** Waiting batches at which it is read again. */
+  resumeAt: 16,
+  /**
+   * The hard ceiling. Only frames the socket had already read before the pause
+   * can take the queue past `pauseAt`; reaching this closes the link with 1013.
+   */
+  closeAt: 256,
+  /**
+   * How long a pause may last before the link is closed with 1013. The runner
+   * redials and resends every unacked batch after its hello, so a database that
+   * is stuck costs a reconnect rather than a socket held open forever — and the
+   * keepalive, which cannot read a pong while paused, is not what ends it.
+   */
+  maxPauseMs: 10_000,
+  /** The protocol's own cap on one `events.append`, so a coalesced append is a batch the log already takes. */
+  maxEventsPerAppend: 256,
+};
+
+/** "Try again later": the link is overloaded, not broken. */
+const LINK_OVERLOADED = 1013;
 
 /**
  * Oldest protocol this control plane still speaks. The window is N-2 minor
@@ -68,11 +111,14 @@ export const MIN_SUPPORTED_PROTOCOL = PROTOCOL_VERSION;
  */
 @Injectable()
 export class RunnerLinkGateway {
-  /** Each link's `events.append` messages, applied in arrival order (see `onControl`). */
-  private readonly appendChains = new WeakMap<SocketRunnerLink, Promise<void>>();
+  /** Each link's `events.append` messages, applied in arrival order (see `LinkAppendQueue`). */
+  private readonly appendQueues = new WeakMap<SocketRunnerLink, LinkAppendQueue>();
 
   private readonly logger = new Logger(RunnerLinkGateway.name);
-  private readonly server = new WebSocketServer({ noServer: true, maxPayload: 16 * 1024 * 1024 });
+  private readonly server = new WebSocketServer({
+    noServer: true,
+    maxPayload: MAX_RUNNER_FRAME_BYTES,
+  });
 
   constructor(
     @Inject(HOST_ASSERTION)
@@ -183,6 +229,33 @@ export class RunnerLinkGateway {
       replaced.close(RUNNER_LINK_CLOSE_CODES.REPLACED, 'replaced by a newer link');
     }
 
+    let alive = true;
+    let pingSentAt = 0;
+    const appends = new LinkAppendQueue(
+      (run) => this.applyAppends(link, run),
+      {
+        pause: () => ws.pause(),
+        resume: () => {
+          // A pong that arrived while paused is read now; the next beat judges.
+          alive = true;
+          ws.resume();
+        },
+        overflow: (reason) => {
+          this.logger.warn({
+            message: 'runner link overloaded; closing so it resends later',
+            hostId,
+            reason,
+          });
+          // Read again so the close handshake can complete; the queue is already
+          // disposed, so nothing more is applied.
+          ws.resume();
+          link.close(LINK_OVERLOADED, 'append queue overloaded; try again later');
+        },
+      },
+      APPEND_QUEUE_LIMITS,
+    );
+    this.appendQueues.set(link, appends);
+
     ws.on('message', (data, isBinary) => {
       if (isBinary) {
         this.onBinary(link, data as Buffer);
@@ -190,14 +263,16 @@ export class RunnerLinkGateway {
       }
       void this.onControl(link, data as Buffer);
     });
-    let alive = true;
-    let pingSentAt = 0;
     ws.on('pong', () => {
       alive = true;
       // The keepalive's own ping, timed: the "echo 41 ms" a host row shows.
       if (pingSentAt) link.roundTripMillis = Date.now() - pingSentAt;
     });
     const keepAlive = setInterval(() => {
+      // A paused socket reads no pongs, so a missed one proves nothing while
+      // the pause is on purpose. The queue's own maximum pause ends a link that
+      // stays stuck.
+      if (appends.paused) return;
       if (!alive) {
         this.logger.warn({ message: 'runner link missed a pong; terminating', hostId });
         ws.terminate();
@@ -211,6 +286,7 @@ export class RunnerLinkGateway {
 
     ws.on('close', (code, reason) => {
       clearInterval(keepAlive);
+      appends.dispose();
       this.links.unregister(link);
       for (const sink of link.drainAttachments()) sink.closed('link_lost');
       this.logger.log({
@@ -252,10 +328,8 @@ export class RunnerLinkGateway {
   }
 
   private async onControl(link: SocketRunnerLink, data: Buffer): Promise<void> {
-    if (data.byteLength > MAX_CONTROL_FRAME_BYTES) {
-      link.close(1009, 'control frame too large');
-      return;
-    }
+    // No size check here: `maxPayload` has already refused anything larger than
+    // `MAX_RUNNER_FRAME_BYTES` with 1009, before buffering it.
     const parsed = protocolMessageSchema.safeParse(parseJson(data));
     if (!parsed.success) {
       this.logger.warn({ message: 'unparseable control frame from runner', hostId: link.hostId });
@@ -263,18 +337,28 @@ export class RunnerLinkGateway {
     }
     const message = parsed.data;
     if (message.type === 'events.append') {
-      // A session's log is ordered by the `seq` this control plane assigns on
-      // append, and a runner sends a start's steps as consecutive batches. Taken
-      // concurrently, two appends race for the row lock and `running` can land
-      // after `done`. So a link's appends are applied one after another, in the
-      // order they arrived; every other message still runs on its own, so a
-      // credential ask never queues behind the log.
-      const previous = this.appendChains.get(link) ?? Promise.resolve();
-      const next = previous.then(() => this.process(link, message));
-      this.appendChains.set(link, next);
-      return next;
+      // In arrival order, coalesced, and bounded: see `LinkAppendQueue`. Every
+      // other message still runs on its own, so a credential ask never queues
+      // behind the log.
+      this.appendQueues.get(link)?.push(message);
+      return;
     }
     return this.process(link, message);
+  }
+
+  /** One coalesced run of a link's batches; a failure is logged, never thrown. */
+  private async applyAppends(link: SocketRunnerLink, run: AppendRun): Promise<void> {
+    try {
+      await this.events.onEventsAppend(link, run);
+    } catch (error) {
+      this.logger.error({
+        message: 'a runner message could not be processed',
+        hostId: link.hostId,
+        type: 'events.append',
+        batches: run.length,
+        error: String(error),
+      });
+    }
   }
 
   /** Dispatch one message; a failure is logged, never thrown, so a chain keeps going. */
@@ -296,7 +380,8 @@ export class RunnerLinkGateway {
       case 'heartbeat':
         return this.events.onHeartbeat(link, message);
       case 'events.append':
-        return this.events.onEventsAppend(link, message);
+        // Queued in `onControl`; never dispatched one by one.
+        return;
       case 'command.failed': {
         // An attach's refusal is its browser's; any other is the session's.
         const sink = link.attachmentByCommand(message.commandId);

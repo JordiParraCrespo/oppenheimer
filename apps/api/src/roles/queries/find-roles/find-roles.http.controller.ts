@@ -1,7 +1,7 @@
 import { Controller, Get, Query, Req, UseGuards, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
+import { ApiAuthProblemResponses, toPageMeta } from '@oppenheimer/backend-core';
 import type { Paginated } from '@oppenheimer/backend-ddd';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
@@ -47,7 +47,8 @@ export class FindRolesHttpController {
     name: 'search',
     required: false,
     type: String,
-    description: 'Search by role name',
+    maxLength: 100,
+    description: 'Search by role name or description; `%` and `_` match literally',
   })
   @ApiResponse({ status: 200, type: PaginatedRolesResponseDto })
   async findAll(@Query() query: FindRolesRequest, @Req() request: ScopedRequest) {
@@ -57,12 +58,7 @@ export class FindRolesHttpController {
 
     return {
       data: result.data.map((role) => this.mapper.toResponse(role)),
-      meta: {
-        total: result.count,
-        page: result.page,
-        limit: result.limit,
-        totalPages: Math.ceil(result.count / result.limit),
-      },
+      meta: toPageMeta(result),
     };
   }
 }

@@ -89,11 +89,11 @@ func (c *conn) handle(ctx context.Context, p *auth.Principal, in Envelope, autho
 		c.reply(Envelope{Type: TypePong, ID: in.ID})
 	case TypeSubscribe:
 		if len(in.Topics) == 0 {
-			c.fail(in.ID, "RUNNER_001", "subscribe needs at least one topic")
+			c.fail(in.ID, problem.ErrValidation.Code, "subscribe needs at least one topic")
 			return
 		}
 		if len(c.topics)+len(in.Topics) > c.hub.opts.MaxTopics {
-			c.fail(in.ID, "RUNNER_001", "too many subscriptions")
+			c.fail(in.ID, problem.ErrValidation.Code, "too many subscriptions")
 			return
 		}
 		for _, topic := range in.Topics {
@@ -115,7 +115,7 @@ func (c *conn) handle(ctx context.Context, p *auth.Principal, in Envelope, autho
 		}
 		c.reply(Envelope{Type: TypeUnsubscribed, ID: in.ID, Topics: in.Topics})
 	default:
-		c.fail(in.ID, "RUNNER_001", "unknown message type "+in.Type)
+		c.fail(in.ID, problem.ErrValidation.Code, "unknown message type "+in.Type)
 	}
 }
 

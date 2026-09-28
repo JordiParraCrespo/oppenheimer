@@ -328,3 +328,16 @@ earlier note:
 - 05 put Project settings behind a cog. The version-1 export's settings
   glyph is two sliders, so both Settings controls in the console draw
   that, and 05 keeps one glyph per meaning (2026-09-28).
+- 03 checked an attach ticket at redemption only. An open attachment is now
+  judged again every minute (session state, membership, account standing,
+  host access), and minting a ticket or restarting a session checks the
+  host too, so a revoked grant ends a terminal already streaming
+  (2026-09-28).
+- 16 §Q6 de-duplicated deliveries by `(source, deliveryId)` alone. The
+  delivery id is an unsigned header, so the raw body's SHA-256 is unique
+  per source too, and GitHub `installation` events apply in the order of
+  GitHub's own timestamp rather than receipt (2026-09-28).
+- A host's credential ignored its owner's standing. A banned or deactivated
+  owner's runner is now refused at the link handshake and closed by a heartbeat
+  within a minute, and a session's git token is not minted for a creator who may
+  not act (2026-09-28).

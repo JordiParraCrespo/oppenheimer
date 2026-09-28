@@ -10,8 +10,10 @@ import {
   CREDENTIAL_VERIFIER,
   DELEGATED_SESSION,
   REQUEST_TENANT,
+  SESSION_CACHE,
 } from './auth.di-tokens';
 import { CompleteSignUpCommandHandler } from './commands/complete-sign-up/complete-sign-up.command-handler';
+import { RotateDelegatedSessionsCommandHandler } from './commands/rotate-delegated-sessions/rotate-delegated-sessions.command-handler';
 import { Account } from './database/account.orm-entity';
 import { OAuthAccessTokenOrmEntity } from './database/oauth-access-token.orm-entity';
 import { OAuthApplicationOrmEntity } from './database/oauth-application.orm-entity';
@@ -24,6 +26,7 @@ import { PoliciesGuard } from './guards/policies.guard';
 import { ScopesGuard } from './guards/scopes.guard';
 import { AuthCommandBusBridge } from './infrastructure/auth-command-bus.util';
 import { BetterAuthCredentialVerifierAdapter } from './infrastructure/better-auth-credential-verifier.adapter';
+import { BetterAuthSessionCacheAdapter } from './infrastructure/better-auth-session-cache.adapter';
 import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adapter';
 
 /**
@@ -91,6 +94,9 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     AuthCommandBusBridge,
     // The one handler that knows what sign-up owes a new account.
     CompleteSignUpCommandHandler,
+    // What a ban or unban made straight through Better Auth owes the account's
+    // cached delegated sessions (raised by the admin plugin's after-hook).
+    RotateDelegatedSessionsCommandHandler,
     PoliciesGuard,
     ApiAuthGuard,
     OptionalApiAuthGuard,
@@ -100,6 +106,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     { provide: CREDENTIAL_VERIFIER, useClass: BetterAuthCredentialVerifierAdapter },
     { provide: CREDENTIAL_SCOPE, useClass: CredentialScopeResolver },
     { provide: DELEGATED_SESSION, useClass: DelegatedSessionAdapter },
+    { provide: SESSION_CACHE, useClass: BetterAuthSessionCacheAdapter },
     // The one writer of `request.tenant`. The auth guards stamp through it;
     // they run in the injector of whichever module applies them, which is why
     // the token (never the class) is published below.
@@ -116,6 +123,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     CREDENTIAL_SCOPE,
     DELEGATED_SESSION,
     REQUEST_TENANT,
+    SESSION_CACHE,
     TypeOrmModule,
   ],
 })

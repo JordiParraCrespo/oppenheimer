@@ -54,7 +54,7 @@ function toEntity(data: SessionResponseDto): SessionEntity {
     data.hostId,
     data.name,
     data.slug,
-    data.agent as SessionEntity['agent'],
+    data.agent,
     {
       model: data.launch.model ?? null,
       permission: data.launch.permission ?? null,
@@ -101,31 +101,35 @@ function toRequest(input: CreateSessionInput): CreateSessionRequest {
 @injectable()
 export class SessionsRepository {
   /**
-   * The caller's sessions.
-   *
-   * `GET /sessions` answers the paginated envelope every list endpoint here
-   * uses — `{ data, meta }` — so the rows are read out of it rather than off
-   * the body.
-   */
-  @MapApiError(SessionsErrors.FETCH_LIST_FAILED)
-  /**
    * Every session in the workspace, whatever the endpoint's page size: the
    * sidebar groups, searches and filters the whole list in the browser, so a
-   * page would be a list that silently ends. Pages are walked at the largest
-   * size the API allows until the total the first page reports is in hand.
+   * page would be a list that silently ends.
+   *
+   * `GET /sessions` answers the paginated envelope every list endpoint here
+   * uses — `{ data, meta }` — so the rows are read out of it rather than off the
+   * body. The list is walked **by cursor**, at the largest page the API allows,
+   * until `meta.nextCursor` is null: no page pays for an offset or a count, and a
+   * session whose activity moves it up the list mid-walk is never read twice.
    */
+  @MapApiError(SessionsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<SessionEntity[]> {
     const sessions: SessionEntity[] = [];
-    for (let page = 1; ; page += 1) {
+    let cursor: string | undefined;
+    for (;;) {
       // An absent body is a failed read, not an empty collection — returning
       // `[]` would render "no sessions" over a request that never succeeded.
       const data = await unwrapBody(
-        heyApiSdk.listSessions({ query: { page, limit: LIST_PAGE_LIMIT } }),
+        heyApiSdk.findSessions({
+          query: { limit: LIST_PAGE_LIMIT, ...(cursor ? { cursor } : {}) },
+        }),
         SessionsErrors.FETCH_LIST_FAILED,
         (body) => Array.isArray(body.data),
       );
       sessions.push(...data.data.map(toEntity));
-      if (data.data.length === 0 || sessions.length >= data.meta.total) return sessions;
+      const next = data.meta.nextCursor;
+      // A cursor the walk already sent would loop for ever; stop instead.
+      if (!next || next === cursor) return sessions;
+      cursor = next;
     }
   }
 
@@ -140,7 +144,7 @@ export class SessionsRepository {
   @MapApiError(SessionsErrors.FETCH_ONE_FAILED)
   async findById(id: string): Promise<SessionEntity> {
     const data = await unwrapBody(
-      heyApiSdk.getSession({ path: { id } }),
+      heyApiSdk.findSession({ path: { id } }),
       SessionsErrors.FETCH_ONE_FAILED,
     );
     return toEntity(data);
@@ -179,7 +183,7 @@ export class SessionsRepository {
     let afterSeq: number | undefined;
     for (let page = 0; page < MAX_START_LOG_PAGES; page += 1) {
       const data = await unwrapBody(
-        heyApiSdk.listSessionEvents({ path: { id }, query: { limit: START_LOG_PAGE, afterSeq } }),
+        heyApiSdk.findSessionEvents({ path: { id }, query: { limit: START_LOG_PAGE, afterSeq } }),
         SessionsErrors.FETCH_EVENTS_FAILED,
         (body) => Array.isArray(body.data),
       );
@@ -193,15 +197,6 @@ export class SessionsRepository {
       afterSeq = data.nextSeq;
     }
     return entries;
-  }
-
-  @MapApiError(SessionsErrors.STOP_FAILED)
-  async stop(id: string): Promise<SessionEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.stopSession({ path: { id } }),
-      SessionsErrors.STOP_FAILED,
-    );
-    return toEntity(data);
   }
 
   /** Display only: the slug, the directory and the branch never change. */

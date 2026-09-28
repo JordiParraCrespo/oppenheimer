@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { OutboxService } from '@oppenheimer/backend-ddd';
+import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { AddProjectRolePermissions1789000100000 } from '../src/migrations/1789000100000-AddProjectRolePermissions';
@@ -25,6 +25,9 @@ describe('projects: the saved scope (integration)', () => {
   let pgContainer: StartedTestContainer;
   let dataSource: DataSource;
   let repository: ProjectRepository;
+  let outbox: OutboxService;
+  /** The drains the outbox has asked for, so a test can wait for the one it caused. */
+  let drains: Promise<void>[];
   let organizationId: string;
   let installationId: string;
 
@@ -70,19 +73,26 @@ describe('projects: the saved scope (integration)', () => {
       // No Nest container here on purpose: what is proved lives in the repository,
       // and booting the application would only add Redis and Better Auth to the
       // set of things that can make this suite red.
-      entities: [ProjectOrmEntity, ProjectRepositoryOrmEntity],
+      entities: [ProjectOrmEntity, ProjectRepositoryOrmEntity, OutboxMessageSchema],
       synchronize: false,
     });
     await dataSource.initialize();
 
-    // The archive stages its event; nothing here asserts on the outbox.
+    // A real outbox, so the archive's event lands as a row; the drainer stands
+    // in for the relay and marks what it claims processed.
+    outbox = new OutboxService(dataSource);
+    outbox.registerDrainer(() => {
+      const drain = (async () => {
+        const claimed = await outbox.claim('projects-integration');
+        await outbox.markProcessed(claimed.map((row) => row.id));
+      })();
+      drains.push(drain);
+      return drain;
+    });
     repository = new ProjectRepository(
       dataSource.getRepository(ProjectOrmEntity),
       new ProjectMapper(),
-      {
-        stageEvents: async () => undefined,
-        wake: async () => undefined,
-      } as unknown as OutboxService,
+      outbox,
     );
   }, 180000);
 
@@ -92,6 +102,7 @@ describe('projects: the saved scope (integration)', () => {
   });
 
   beforeEach(async () => {
+    drains = [];
     // A workspace per test: `project.organizationId` has a foreign key, and the
     // slug is unique per workspace.
     organizationId = randomUUID();
@@ -242,6 +253,38 @@ describe('projects: the saved scope (integration)', () => {
     if (archived.result !== 'not-found') {
       expect(archived.project.repositories.map((held) => held.githubRepoId)).toEqual(['63']);
     }
+  });
+
+  it('stages the archive’s event once, and wakes the relay after the commit', async () => {
+    const project = newProject('orion');
+    await repository.insert(project);
+
+    const archived = await repository.archiveIfUnused(scope(), project.id, async () => false);
+
+    expect(archived.result).toBe('archived');
+    // The wake came from the commit, not from the relay's poll: one drain was
+    // asked for, and once it ran the one row the archive owed is delivered.
+    expect(drains).toHaveLength(1);
+    await Promise.all(drains);
+    const rows: { eventName: string; status: string }[] = await dataSource.query(
+      `SELECT "eventName", "status" FROM "outbox_message" WHERE "aggregateId" = $1`,
+      [project.id],
+    );
+    expect(rows).toEqual([{ eventName: 'ProjectArchivedDomainEvent', status: 'processed' }]);
+  });
+
+  it('wakes nothing when the archive is refused', async () => {
+    const project = newProject('lyra');
+    await repository.insert(project);
+
+    const refused = await repository.archiveIfUnused(scope(), project.id, async () => true);
+
+    expect(refused.result).toBe('in-use');
+    expect(drains).toHaveLength(0);
+    const rows = await dataSource.query(`SELECT 1 FROM "outbox_message" WHERE "aggregateId" = $1`, [
+      project.id,
+    ]);
+    expect(rows).toHaveLength(0);
   });
 
   it('refuses a project holding another workspace’s installation, by constraint', async () => {

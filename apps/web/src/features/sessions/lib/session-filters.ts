@@ -57,11 +57,11 @@ export function projectOptions(
 }
 
 /** `owner/repo` is how a session names its repository; the menu wants `repo`. */
-export function repositoryLabel(repository: string): string {
+function repositoryLabel(repository: string): string {
   return repository.slice(repository.lastIndexOf('/') + 1) || repository;
 }
 
-function distinct(values: string[]): string[] {
+function distinct<T extends string>(values: T[]): T[] {
   return [...new Set(values)].sort((a, b) => a.localeCompare(b));
 }
 
@@ -91,7 +91,7 @@ export function repositoryOptions(sessions: SessionEntity[], allLabel: string): 
 export function agentOptions(
   sessions: SessionEntity[],
   allLabel: string,
-  label: (agent: string) => string,
+  label: (agent: SessionEntity['agent']) => string,
 ): FilterOption[] {
   return [
     { value: ALL, label: allLabel },

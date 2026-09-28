@@ -10,7 +10,6 @@ vi.mock('../../auth/infrastructure/better-auth.config', () => ({
       deleteOrganization: vi.fn(),
       setActiveOrganization: vi.fn(),
       listOrganizations: vi.fn(),
-      getSession: vi.fn(),
       getFullOrganization: vi.fn(),
       checkOrganizationSlug: vi.fn(),
       listMembers: vi.fn(),
@@ -106,6 +105,7 @@ describe('OrganizationsService', () => {
   const sessions = { update: vi.fn().mockResolvedValue({ affected: 1 }) };
   const accessGrants = { delete: vi.fn().mockResolvedValue({ affected: 0 }) };
   const events = { emitAsync: vi.fn().mockResolvedValue([]) };
+  const sessionCache = { refreshUser: vi.fn().mockResolvedValue(undefined) };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -137,19 +137,20 @@ describe('OrganizationsService', () => {
       sessions as never,
       accessGrants as never,
       events as never,
+      sessionCache as never,
     );
   });
 
   describe('create', () => {
     it('uses the provided slug', async () => {
       api.createOrganization.mockResolvedValue(orgRecord);
-      await service.create(headers, { name: 'Acme', slug: 'custom-slug' });
+      await service.create(headers, { name: 'Acme', slug: 'custom-slug' }, undefined);
       expect(api.createOrganization.mock.calls[0][0].body.slug).toBe('custom-slug');
     });
 
     it('generates a slug from the name when none is provided', async () => {
       api.createOrganization.mockResolvedValue(orgRecord);
-      await service.create(headers, { name: 'My Great Org!' });
+      await service.create(headers, { name: 'My Great Org!' }, undefined);
 
       const slug: string = api.createOrganization.mock.calls[0][0].body.slug;
       // slugified base + '-' + 8 hex chars
@@ -162,14 +163,14 @@ describe('OrganizationsService', () => {
     // fallback. "workspace" is what the console calls these.
     it('falls back to "workspace" when the name has no alphanumerics', async () => {
       api.createOrganization.mockResolvedValue(orgRecord);
-      await service.create(headers, { name: '***' });
+      await service.create(headers, { name: '***' }, undefined);
       const slug: string = api.createOrganization.mock.calls[0][0].body.slug;
       expect(slug).toMatch(/^workspace-[0-9a-f]{8}$/);
     });
 
     it('maps the created organization', async () => {
       api.createOrganization.mockResolvedValue(orgRecord);
-      const result = await service.create(headers, { name: 'Acme' });
+      const result = await service.create(headers, { name: 'Acme' }, undefined);
       expect(result.id).toBe('org1');
     });
 
@@ -177,8 +178,7 @@ describe('OrganizationsService', () => {
     // is, so the projects module gives it its Unassigned project.
     it('announces the workspace it provisioned', async () => {
       api.createOrganization.mockResolvedValue(orgRecord);
-      api.getSession.mockResolvedValue({ user: { id: 'u1' } });
-      await service.create(headers, { name: 'Acme' });
+      await service.create(headers, { name: 'Acme' }, 'u1');
       expect(events.emitAsync).toHaveBeenCalledWith(
         'PersonalWorkspaceProvisionedDomainEvent',
         expect.objectContaining({ aggregateId: 'org1' }),
@@ -192,10 +192,9 @@ describe('OrganizationsService', () => {
      */
     it('grants the creator the org-scoped role that opens the organization', async () => {
       api.createOrganization.mockResolvedValue(orgRecord);
-      api.getSession.mockResolvedValue({ user: { id: 'u1' } });
       api.createTeam.mockResolvedValue({ ...workspaceRecord });
 
-      await service.create(headers, { name: 'Acme' });
+      await service.create(headers, { name: 'Acme' }, 'u1');
 
       expect(roles.findOneByName).toHaveBeenCalledWith('owner', null);
       expect(userRoles.replaceMembershipRole).toHaveBeenCalledWith('u1', 'org1', 'system-role');
@@ -203,10 +202,9 @@ describe('OrganizationsService', () => {
 
     it('gives the organization a default workspace with its creator in it', async () => {
       api.createOrganization.mockResolvedValue(orgRecord);
-      api.getSession.mockResolvedValue({ user: { id: 'u1' } });
       api.createTeam.mockResolvedValue({ ...workspaceRecord });
 
-      await service.create(headers, { name: 'Acme' });
+      await service.create(headers, { name: 'Acme' }, 'u1');
 
       expect(api.createTeam.mock.calls[0][0].body).toEqual({
         name: 'General',
@@ -225,11 +223,10 @@ describe('OrganizationsService', () => {
      */
     it('discards the organization when the role that opens it cannot be written', async () => {
       api.createOrganization.mockResolvedValue(orgRecord);
-      api.getSession.mockResolvedValue({ user: { id: 'u1' } });
       const failure = new Error('role store unavailable');
       userRoles.replaceMembershipRole.mockRejectedValueOnce(failure);
 
-      await expect(service.create(headers, { name: 'Acme' })).rejects.toBe(failure);
+      await expect(service.create(headers, { name: 'Acme' }, 'u1')).rejects.toBe(failure);
 
       expect(api.deleteOrganization.mock.calls[0][0].body).toEqual({
         organizationId: 'org1',
@@ -240,14 +237,13 @@ describe('OrganizationsService', () => {
 
     it('reports the original failure even when the cleanup itself fails', async () => {
       api.createOrganization.mockResolvedValue(orgRecord);
-      api.getSession.mockResolvedValue({ user: { id: 'u1' } });
       const failure = new Error('role store unavailable');
       userRoles.replaceMembershipRole.mockRejectedValueOnce(failure);
       api.deleteOrganization.mockRejectedValueOnce(new Error('delete failed too'));
 
       // The caller needs the reason they could not create a workspace, not a
       // second-order error about tidying up after it.
-      await expect(service.create(headers, { name: 'Acme' })).rejects.toBe(failure);
+      await expect(service.create(headers, { name: 'Acme' }, 'u1')).rejects.toBe(failure);
     });
 
     /**
@@ -257,10 +253,9 @@ describe('OrganizationsService', () => {
      */
     it('still returns the organization when the default workspace cannot be made', async () => {
       api.createOrganization.mockResolvedValue(orgRecord);
-      api.getSession.mockResolvedValue({ user: { id: 'u1' } });
       api.createTeam.mockRejectedValue(new Error('teams are unavailable'));
 
-      const result = await service.create(headers, { name: 'Acme' });
+      const result = await service.create(headers, { name: 'Acme' }, 'u1');
 
       expect(result.id).toBe('org1');
       expect(userRoles.replaceMembershipRole).toHaveBeenCalledWith('u1', 'org1', 'system-role');
@@ -302,16 +297,14 @@ describe('OrganizationsService', () => {
 
   it('lists organizations', async () => {
     api.listOrganizations.mockResolvedValue([orgRecord]);
-    api.getSession.mockResolvedValue(null);
-    const result = await service.list(headers);
+    const result = await service.list(headers, null);
     expect(result).toHaveLength(1);
   });
 
   it('puts the session active organization first for organization-aware screens', async () => {
     api.listOrganizations.mockResolvedValue([orgRecord, otherOrgRecord]);
-    api.getSession.mockResolvedValue({ session: { activeOrganizationId: 'org2' } });
 
-    const result = await service.list(headers);
+    const result = await service.list(headers, 'org2');
 
     expect(result.map((organization) => organization.id)).toEqual(['org2', 'org1']);
   });
@@ -459,6 +452,12 @@ describe('OrganizationsService', () => {
       expect(sessions.update).toHaveBeenCalledWith(
         { userId: 'u1', activeOrganizationId: 'org1' },
         { activeOrganizationId: null, activeTeamId: null },
+      );
+      // The rows were written behind Better Auth's back; its cached copies of
+      // them must follow, or the removed member keeps the organization.
+      expect(sessionCache.refreshUser).toHaveBeenCalledWith('u1');
+      expect(sessionCache.refreshUser.mock.invocationCallOrder[0]).toBeGreaterThan(
+        sessions.update.mock.invocationCallOrder[0],
       );
     });
 

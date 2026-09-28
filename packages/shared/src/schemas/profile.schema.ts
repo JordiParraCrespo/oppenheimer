@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { changePasswordSchema } from './auth.schema';
+import { changePasswordSchema } from './auth.schema.js';
 
 /**
  * The caller's own account: the profile fields they may edit themselves.

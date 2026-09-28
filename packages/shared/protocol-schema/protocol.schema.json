@@ -1190,6 +1190,7 @@
     },
     "frameHeaderBytes": 4,
     "creditWindowBytes": 262144,
+    "maxFrameBytes": 524288,
     "capabilities": [
       "session.image"
     ],

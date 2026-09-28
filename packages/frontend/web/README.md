@@ -18,22 +18,21 @@ component that needs a product hook is a feature in an app, not kit.
 
 Everything is re-exported from the package root (`src/index.ts`):
 
-- **shell** — `AppShell`, `AppSidebar`, `TopBar`, `UserMenu`,
-  `CommandPalette`, `ShellProvider`, `useShell`, `useAbility`,
-  `useAbilityState`, `useAuthorizedNav`, `useLandingRoute`, `useHotkey`, and
-  the nav types `NavItem`, `NavLink`, `NavPolicy`, `NavTo`, `ShellWorkspace`.
-- **auth** — `AuthLayout`, `AuthArtPanel`, `BrandLogo`, `PasswordInput`,
+- **shell** — `AppShell` (its sidebar, top bar, user menu and command palette
+  stay inside it), `SettingsSidebar`, `createDialogSlot`, and the nav types
+  `NavItem`, `NavLink`, `NavPolicy`, `NavTo`, `ShellWorkspace`.
+- **auth** — `AuthLayout`, `BrandLogo`,
   `SocialLoginButtons`, `OAuthCallbackNotice`, the auth primitives, the
-  password-requirement helpers, the provider icons, `redirectSignedIn`.
-- **layout** — `PageHead`, the section primitives, `ConfirmDialog` (the
+  provider icons, `redirectSignedIn`.
+- **layout** — `RouteError`/`RouteNotFound`, `AppPending`, `ConfirmDialog` (the
   destructive confirm: `confirmLabel`, `pendingLabel`, `error`, `children`,
   `form`), `QueryState` (a read's failed / loading / empty / there, in that
   order, with `stale` naming what a later failure does to data on screen)
   and `combineQueries` (two reads as one source).
 - **forms** — `ErrorAlert` (an inline failure: a raw `error` it resolves into
   the locale, or a `message` already resolved; its correlation id; Dismiss or
-  the caller's own `action`), `useZodResolver`,
-  `useSearchDraft`, `useServerFieldErrors`, the `ResolvedErrorMessage`
+  the caller's own `action`), `useZodResolver`, `SidebarSearchField`,
+  `useServerFieldErrors`, the `ResolvedErrorMessage`
   type, and `notifySuccess(key, values?, action?)`: the success toast, which
   takes a `toasts.*` key so its copy cannot live anywhere else. Errors never
   go through it; they stay inline. When to toast is
@@ -41,15 +40,14 @@ Everything is re-exported from the package root (`src/index.ts`):
   `@oppenheimer/frontend-core/react`.
 - **pairing** — `PairingChrome` and its parts, the column that pairs a
   machine.
-- **theme** — `ThemeProvider`, `ThemeToggle`, `BrandGlyph`.
-- **i18n** — `i18n`, `i18nReady`, `LOCALE_STORAGE_KEY`, `LanguageSwitcher`,
+- **theme** — `ThemeProvider`, `ThemeToggle`.
+- **i18n** — `i18n`, `i18nReady`, `LanguageSwitcher`,
   `useLocale`, `useApplyUserSettings`, `RelativeTime` (a "2 hours ago" leaf
   that owns its clock), the date formatters (`formatMediumDate`,
   `formatAge`, …), the duration formatters (`formatCountdown`,
   `formatShortDuration`, `formatElapsed`) and the person-name helpers.
 - **analytics** — `PageViewTracker`, `createWebAnalyticsClient`.
 - **platform** — `LocalStorageService`, `sanitizeRedirect`.
-- **roles** — `RolePill`.
 
 `package.json` `sideEffects` names one file, `src/i18n/lib/i18n.ts`: it
 configures i18next at import.
@@ -86,5 +84,5 @@ pnpm --filter @oppenheimer/frontend-web typecheck   # tsc --noEmit; there is no 
 
 Depends on `@oppenheimer/design-system-web`, `@oppenheimer/frontend-core`,
 `@oppenheimer/shared` and `@oppenheimer/translations`; React, React Hook Form, i18next,
-nuqs and TanStack Query/Router are peer dependencies the app provides. Used
+Zod and TanStack Query/Router are peer dependencies the app provides. Used
 by `apps/web`.

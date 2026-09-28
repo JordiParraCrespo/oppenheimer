@@ -4,7 +4,7 @@ import type { ZodErrorMap, ZodIssueOptionalMessage } from 'zod';
  * Keys {@link createZodErrorMap} resolves. Every locale in `@oppenheimer/translations`
  * must define these, otherwise the apps' typed `t()` will reject the map.
  */
-export const VALIDATION_MESSAGE_KEYS = [
+const VALIDATION_MESSAGE_KEYS = [
   'validation.required',
   'validation.invalid',
   'validation.email',

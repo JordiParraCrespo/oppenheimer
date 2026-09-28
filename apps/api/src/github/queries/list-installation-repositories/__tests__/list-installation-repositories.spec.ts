@@ -1,5 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import type { CacheService } from '@oppenheimer/backend-cache';
+import { type CacheService, RedisCacheService } from '@oppenheimer/backend-cache';
+import type Redis from 'ioredis';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GithubInstallationRepositoryPort } from '../../../database/github-installation.repository.port';
@@ -47,18 +48,22 @@ function installation(): GithubInstallationEntity {
   });
 }
 
-/** A cache that behaves like Redis does for this handler, without Redis. */
+/**
+ * The real cache service over an in-memory stand-in for Redis, so the
+ * single-flight under test is the one production runs.
+ */
 function fakeCache() {
-  const store = new Map<string, unknown>();
-  return {
-    get: vi.fn(async (key: string) => store.get(key)),
-    set: vi.fn(async (key: string, value: unknown) => {
+  const store = new Map<string, string>();
+  const redis = {
+    get: vi.fn(async (key: string) => store.get(key) ?? null),
+    set: vi.fn(async (key: string, value: string) => {
       store.set(key, value);
+      return 'OK';
     }),
-    del: vi.fn(),
-    reset: vi.fn(),
-    ttls: [] as (number | undefined)[],
   };
+  const cache = new RedisCacheService(redis as unknown as Redis);
+  vi.spyOn(cache, 'getOrSet');
+  return cache;
 }
 
 function build(found: GithubInstallationEntity | null) {
@@ -99,6 +104,21 @@ describe('list installation repositories', () => {
     expect(subject.github.listInstallationRepositories).toHaveBeenCalledWith(45678901);
   });
 
+  it('shares one GitHub listing between concurrent requests', async () => {
+    // The picker queries on every keystroke: when the entry expires, the
+    // requests in flight must not each paginate the whole installation.
+    const subject = build(connected);
+    const query = new ListInstallationRepositoriesQuery({ scope, installationId: connected.id });
+
+    const results = await Promise.all([
+      subject.handler.execute(query),
+      subject.handler.execute(query),
+    ]);
+
+    expect(results).toEqual([REPOSITORIES, REPOSITORIES]);
+    expect(subject.github.listInstallationRepositories).toHaveBeenCalledTimes(1);
+  });
+
   it('caches under a key of its own per installation, for a minute', async () => {
     const subject = build(connected);
     await subject.handler.execute(
@@ -107,10 +127,10 @@ describe('list installation repositories', () => {
 
     // One key per installation: two workspaces' listings must never collide, and
     // the TTL is short enough that a repository created a minute ago is there.
-    expect(subject.cache.set).toHaveBeenCalledWith(
+    expect(subject.cache.getOrSet).toHaveBeenCalledWith(
       `github:repositories:${connected.id}`,
-      REPOSITORIES,
       60,
+      expect.any(Function),
     );
   });
 

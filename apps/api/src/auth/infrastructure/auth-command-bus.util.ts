@@ -37,15 +37,16 @@ let commandBus: CommandBus | undefined;
  */
 export async function dispatchFromAuthHook(
   command: CommandBase,
-  context: { description: string; email: string },
+  context: { description: string; email?: string; userId?: string },
 ): Promise<void> {
+  const account = { email: context.email, userId: context.userId };
   if (!commandBus) {
     // Not an error: the only processes that configure `auth` without building
     // the injector are scripts, and a script that signs someone up owes itself
     // these side effects (see `database/seed.ts`).
     logger.debug({
       message: `No command bus registered; the caller must ${context.description} itself`,
-      email: context.email,
+      ...account,
     });
     return;
   }
@@ -54,7 +55,7 @@ export async function dispatchFromAuthHook(
     await commandBus.execute(command);
   } catch (error) {
     logger.error(
-      { message: `Could not ${context.description}`, email: context.email },
+      { message: `Could not ${context.description}`, ...account },
       error instanceof Error ? error.stack : String(error),
     );
   }

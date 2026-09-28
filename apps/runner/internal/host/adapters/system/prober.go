@@ -16,6 +16,7 @@ import (
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/execx"
 )
 
 var _ app.Prober = (*Prober)(nil)
@@ -181,12 +182,13 @@ func version(ctx context.Context, path string) string {
 	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
 	defer cancel()
 	for _, flag := range []string{"--version", "-V"} {
-		//nolint:gosec // path came from exec.LookPath of a fixed tool name; the flag is a constant
-		out, err := exec.CommandContext(ctx, path, flag).Output()
+		// One budget for both flags, so the timeout is ctx's rather than each
+		// call's own. path came from exec.LookPath of a fixed tool name.
+		res, err := execx.Run(ctx, execx.Spec{Name: path, Args: []string{flag}, Output: execx.Stdout})
 		if err != nil {
 			continue
 		}
-		line, _, _ := strings.Cut(strings.TrimSpace(string(out)), "\n")
+		line, _, _ := strings.Cut(strings.TrimSpace(res.Out), "\n")
 		if line = strings.TrimSpace(line); line != "" {
 			return line
 		}
@@ -212,11 +214,11 @@ func (p *Prober) cachedMacOSVersion(ctx context.Context) string {
 }
 
 func macOSVersion(ctx context.Context) string {
-	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
-	defer cancel()
-	out, err := exec.CommandContext(ctx, "sw_vers", "-productVersion").Output()
+	res, err := execx.Run(ctx, execx.Spec{
+		Name: "sw_vers", Args: []string{"-productVersion"}, Timeout: probeTimeout, Output: execx.Stdout,
+	})
 	if err != nil {
 		return ""
 	}
-	return strings.TrimSpace(string(out))
+	return strings.TrimSpace(res.Out)
 }

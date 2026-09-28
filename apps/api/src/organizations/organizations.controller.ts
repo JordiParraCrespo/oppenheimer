@@ -17,8 +17,11 @@ import { isOrganizationAllowed } from '@oppenheimer/shared';
 import type { Request } from 'express';
 import { CheckPolicies, NoPolicy } from '../auth/decorators/check-policies.decorator';
 import { CurrentScope } from '../auth/decorators/current-scope.decorator';
+import { CurrentSession } from '../auth/decorators/current-session.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { OrganizationScoped } from '../auth/decorators/organization-scoped.decorator';
 import { RequireScopes } from '../auth/decorators/require-scopes.decorator';
+import { UsesBetterAuthSession } from '../auth/decorators/uses-better-auth-session.decorator';
 import type { ScopeContext } from '../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../auth/guards/policies.guard';
@@ -64,6 +67,7 @@ import { OrganizationsService } from './organizations.service';
   code: ['ORG_002', 'ORG_014'],
 })
 @UseGuards(ApiAuthGuard, PoliciesGuard)
+@UsesBetterAuthSession()
 @Controller('organizations')
 export class OrganizationsController {
   constructor(private readonly organizations: OrganizationsService) {}
@@ -74,11 +78,12 @@ export class OrganizationsController {
   @CheckPolicies({ action: 'create', subject: 'Organization' })
   @ApiOperation({ summary: 'Create an organization' })
   @ApiResponse({ status: 201, type: OrganizationResponseDto })
-  create(
+  createOrganization(
     @Req() req: Request,
     @Body() body: CreateOrganizationRequest,
+    @CurrentUser('id') creatorId: string | undefined,
   ): Promise<OrganizationResponseDto> {
-    return this.organizations.create(req.headers, body);
+    return this.organizations.create(req.headers, body, creatorId);
   }
 
   @Get()
@@ -87,11 +92,12 @@ export class OrganizationsController {
   @CheckPolicies({ action: 'read', subject: 'Organization' })
   @ApiOperation({ summary: "List the caller's organizations" })
   @ApiResponse({ status: 200, type: [OrganizationResponseDto] })
-  async list(
+  async listOrganizations(
     @Req() req: Request,
     @CurrentScope() scope: ScopeContext | null,
+    @CurrentSession('activeOrganizationId') activeOrganizationId: string | null | undefined,
   ): Promise<OrganizationResponseDto[]> {
-    const organizations = await this.organizations.list(req.headers);
+    const organizations = await this.organizations.list(req.headers, activeOrganizationId);
     // A collection route names no organization for `ScopesGuard` to check, so
     // a token pinned to one organization would otherwise see every one its
     // owner belongs to. Apply the credential's restriction row by row instead.
@@ -136,7 +142,7 @@ export class OrganizationsController {
   @CheckPolicies({ action: 'update', subject: 'Organization' })
   @ApiOperation({ summary: 'Update an organization' })
   @ApiResponse({ status: 200, type: OrganizationResponseDto })
-  update(
+  updateOrganization(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateOrganizationRequest,
@@ -151,7 +157,7 @@ export class OrganizationsController {
   @CheckPolicies({ action: 'delete', subject: 'Organization' })
   @ApiOperation({ summary: 'Delete an organization' })
   @ApiResponse({ status: 200, type: OrganizationResponseDto })
-  remove(
+  deleteOrganization(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<OrganizationResponseDto> {
@@ -167,7 +173,7 @@ export class OrganizationsController {
     summary: 'Set the active organization for the current session',
   })
   @ApiResponse({ status: 200, type: OrganizationResponseDto })
-  setActive(
+  setActiveOrganization(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<OrganizationResponseDto | null> {

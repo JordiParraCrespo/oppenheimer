@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { buildPinoHttpOptions } from '../pino-http-options';
 
 type SerializerFn = (value: Record<string, unknown>) => Record<string, unknown>;
@@ -68,6 +68,32 @@ describe('buildPinoHttpOptions', () => {
   it('passes the minimum level through, defaulting to pino defaults', () => {
     expect(buildPinoHttpOptions().level).toBeUndefined();
     expect(buildPinoHttpOptions({ level: 'debug' }).level).toBe('debug');
+  });
+
+  it('uses the correlation id as the request id and echoes it on the response', () => {
+    const genReqId = buildPinoHttpOptions().genReqId as unknown as (
+      req: Record<string, unknown>,
+      res: { setHeader: (name: string, value: string) => void },
+    ) => string;
+    const setHeader = vi.fn();
+
+    const id = genReqId({ headers: { 'x-correlation-id': 'client-id' } }, { setHeader });
+
+    expect(id).toBe('client-id');
+    expect(setHeader).toHaveBeenCalledWith('x-correlation-id', 'client-id');
+  });
+
+  it('replaces an invalid inbound correlation id with a fresh UUID', () => {
+    const genReqId = buildPinoHttpOptions().genReqId as unknown as (
+      req: Record<string, unknown>,
+      res: { setHeader: (name: string, value: string) => void },
+    ) => string;
+    const setHeader = vi.fn();
+
+    const id = genReqId({ headers: { 'x-correlation-id': 'x'.repeat(16_000) } }, { setHeader });
+
+    expect(id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(setHeader).toHaveBeenCalledWith('x-correlation-id', id);
   });
 
   it('only enables pretty transport when asked to', () => {

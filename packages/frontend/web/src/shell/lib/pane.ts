@@ -13,7 +13,7 @@
 export type ContentPane = 'measure' | 'full';
 
 /** Prose unless a route says otherwise: most screens are prose. */
-export const DEFAULT_CONTENT_PANE: ContentPane = 'measure';
+const DEFAULT_CONTENT_PANE: ContentPane = 'measure';
 
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {

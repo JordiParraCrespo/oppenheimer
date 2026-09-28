@@ -1,23 +1,12 @@
 {
   "common": {
     "appName": "Oppenheimer",
-    "back": "Back",
     "cancel": "Cancel",
     "close": "Close",
-    "confirm": "Confirm",
-    "controlAppName": "Oppenheimer Control",
     "copied": "Copied",
     "copy": "Copy",
-    "create": "Create",
-    "delete": "Delete",
-    "edit": "Edit",
-    "error": "Something went wrong",
-    "github": "GitHub",
-    "google": "Google",
     "loading": "Loading...",
-    "next": "Next",
     "or": "or",
-    "orContinueWith": "Or continue with",
     "product": "Console",
     "relative": {
       "day": "{{count}}d",
@@ -28,13 +17,10 @@
       "week": "{{count}}w",
       "year": "{{count}}y"
     },
-    "save": "Save",
-    "search": "Search",
     "dismiss": "Dismiss",
     "breadcrumb": "Breadcrumb"
   },
   "validation": {
-    "title": "Validation error",
     "required": "This field is required",
     "email": "Enter a valid email address",
     "minLength": "Must be at least {{min}} characters",
@@ -116,6 +102,7 @@
       "ROLE_005": "You cannot give a role more access than you have yourself.",
       "ROLE_006": "That role belongs to another organization.",
       "ROLE_007": "This deployment is missing a system role it needs. Run the database migrations.",
+      "ROLE_008": "Switch to an organization to create a role in it.",
       "AUTHZ_002": "Something is misconfigured on the server. Please try again later.",
       "AUTHZ_003": "That organization id is not valid.",
       "AUTHZ_004": "Something is misconfigured on the server. Please try again later.",
@@ -240,11 +227,8 @@
       "signUp": "Create one",
       "invalidCredentials": "Invalid email or password",
       "noSocialProviders": "Social sign-in is not configured on this deployment. Set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET or GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET on the API to enable it.",
-      "failedTitle": "Login failed",
-      "failedMessage": "Could not sign in.",
       "continueWithGithub": "Continue with GitHub",
       "continueWithGoogle": "Continue with Google",
-      "keepSignedIn": "Keep me signed in",
       "socialFailed": "Could not start social sign-in. Try again, or sign in with your email and password."
     },
     "register": {
@@ -256,8 +240,6 @@
       "hasAccount": "Already have an account?",
       "signIn": "Sign in",
       "failed": "Registration failed",
-      "successTitle": "Account created",
-      "successMessage": "You can now sign in.",
       "passwordHint": "Twelve characters minimum."
     },
     "forgotPassword": {
@@ -266,11 +248,9 @@
       "submit": "Send reset link",
       "submitting": "Sending...",
       "successTitle": "Check your email",
-      "successMessage": "If an account exists with that email, you will receive a reset link shortly.",
       "backToSignIn": "Back to sign in",
       "error": "Something went wrong",
       "legal": "Only members of this workspace can reset a password.",
-      "notReceived": "Didn't get it? Check your spam folder, or <retry>try another email</retry>.",
       "sentMessage": "We sent a password reset link to <address>{{email}}</address>. It expires in 30 minutes.",
       "emailLabel": "Work email",
       "resend": "Resend link",
@@ -289,7 +269,6 @@
       "requestNewLink": "Request a new link",
       "successTitle": "Password updated",
       "successMessage": "You can now sign in.",
-      "failedTitle": "Reset failed",
       "error": "Could not reset password",
       "confirmPassword": "Confirm password",
       "confirmPasswordPlaceholder": "Re-enter the password",
@@ -337,10 +316,6 @@
       "accountNotLinked": "That address already has an account with a password. Sign in with your password; once the address is verified, this button works too.",
       "failed": "That sign-in didn't complete. Try again, or use your email and password.",
       "noAccount": "There's no account here for that sign-in yet. Create one below — the provider buttons will do it in one step."
-    },
-    "passwordRules": {
-      "length": "At least 12 characters",
-      "match": "Both passwords match"
     },
     "showPassword": "Show password",
     "legal": "By continuing you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>.",
@@ -428,14 +403,6 @@
         "SESS_002": "This host makes sessions with one repository."
       },
       "details": "Details from the host: {{detail}}"
-    },
-    "group": {
-      "working": "Working",
-      "waiting-on-you": "Waiting on you",
-      "ready-for-review": "Ready for review",
-      "landing": "Landing",
-      "idle": "Idle",
-      "resolved": "Done"
     },
     "closed": {
       "description": "This session has stopped. Its work is on its branch.",
@@ -528,7 +495,6 @@
         "send": "Send",
         "stop": "Stop"
       },
-      "queued": "Your first task is queued for this host.",
       "failed": "The session could not be created."
     },
     "session": {
@@ -540,7 +506,6 @@
       },
       "image": {
         "sending": "Sending image",
-        "hostOffline": "The image was not sent: the host is offline.",
         "failedTitle": "The image did not reach the session"
       },
       "retryNow": "Retry now",
@@ -600,15 +565,6 @@
       "recent": "Last activity",
       "oldest": "Oldest first",
       "name": "Name"
-    },
-    "agents": {
-      "claude-code": "Claude Code",
-      "codex": "Codex"
-    },
-    "row": {
-      "actions": "Session actions",
-      "move": "Move to project…",
-      "moveTitle": "Move to project"
     }
   },
   "automations": {
@@ -895,7 +851,6 @@
       "save": "Save",
       "create": "Create automation",
       "saveFailed": "The automation could not be saved.",
-      "forProject": "For {{name}}.",
       "noMatch": "No match for “{{query}}”.",
       "chooseRepositories": "Choose repositories…",
       "chooseAgent": "Choose an agent…",
@@ -1072,8 +1027,6 @@
       "add": "Add host",
       "empty": "No hosts yet",
       "emptyHint": "Hosts you connect appear here with their live session count. Sessions cannot start until one is online.",
-      "online": "Online",
-      "offline": "Offline",
       "failed": "The hosts could not be loaded."
     }
   },
@@ -1122,20 +1075,8 @@
     "failed": "That did not go through. Try again."
   },
   "onboarding": {
-    "description": "Your account is ready. Name the workspace your sessions will live in.",
-    "eyebrow": "Almost there",
-    "signOut": "Sign out",
-    "title": "Create your workspace",
-    "create": {
-      "name": "Workspace name",
-      "namePlaceholder": "Acme Inc.",
-      "hint": "You can rename it later from Settings.",
-      "submit": "Create workspace",
-      "submitting": "Creating…"
-    },
     "flow": {
       "back": "Back",
-      "counter": "{{step}} of {{total}}",
       "continue": "Continue",
       "workspace": {
         "title": "Name your workspace",

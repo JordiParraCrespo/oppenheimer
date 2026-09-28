@@ -26,6 +26,12 @@ export class Translator {
   private readonly bundles: MessageBundles;
   private readonly defaultLocale: string;
   private readonly warned = new Set<string>();
+  /**
+   * One `Intl.PluralRules` per locale: building one costs microseconds and an
+   * allocation, on render paths that loop over items. `null` records a locale
+   * the runtime rejected, so it falls back without throwing every time.
+   */
+  private readonly pluralRules = new Map<string, Intl.PluralRules | null>();
   private readonly onMissingKey: (locale: string, key: string) => void;
 
   constructor(bundles: MessageBundles, options: TranslatorOptions = {}) {
@@ -119,18 +125,27 @@ export class Translator {
 
   /** `<key>_one` for the selected category, then `_other` as the safety net. */
   private pluralKeys(locale: string, key: string, count: number): string[] {
-    let category: string;
-    try {
-      category = new Intl.PluralRules(locale).select(count);
-    } catch {
-      category = count === 1 ? 'one' : 'other';
-    }
+    const rules = this.pluralRulesFor(locale);
+    const category = rules ? rules.select(count) : count === 1 ? 'one' : 'other';
 
     const ordered = [category, 'other'].filter((suffix) =>
       (PLURAL_SUFFIXES as readonly string[]).includes(suffix),
     );
 
     return [...new Set(ordered)].map((suffix) => `${key}_${suffix}`);
+  }
+
+  private pluralRulesFor(locale: string): Intl.PluralRules | null {
+    let rules = this.pluralRules.get(locale);
+    if (rules === undefined) {
+      try {
+        rules = new Intl.PluralRules(locale);
+      } catch {
+        rules = null;
+      }
+      this.pluralRules.set(locale, rules);
+    }
+    return rules;
   }
 
   private lookup(bundle: MessageBundle | undefined, key: string): MessageNode | undefined {

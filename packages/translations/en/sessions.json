@@ -34,14 +34,6 @@
     },
     "details": "Details from the host: {{detail}}"
   },
-  "group": {
-    "working": "Working",
-    "waiting-on-you": "Waiting on you",
-    "ready-for-review": "Ready for review",
-    "landing": "Landing",
-    "idle": "Idle",
-    "resolved": "Done"
-  },
   "closed": {
     "description": "This session has stopped. Its work is on its branch.",
     "deleted": "This session was deleted. Its worktree is gone from the host; commits already pushed stay on the remote."
@@ -133,7 +125,6 @@
       "send": "Send",
       "stop": "Stop"
     },
-    "queued": "Your first task is queued for this host.",
     "failed": "The session could not be created."
   },
   "session": {
@@ -145,7 +136,6 @@
     },
     "image": {
       "sending": "Sending image",
-      "hostOffline": "The image was not sent: the host is offline.",
       "failedTitle": "The image did not reach the session"
     },
     "retryNow": "Retry now",
@@ -205,14 +195,5 @@
     "recent": "Last activity",
     "oldest": "Oldest first",
     "name": "Name"
-  },
-  "agents": {
-    "claude-code": "Claude Code",
-    "codex": "Codex"
-  },
-  "row": {
-    "actions": "Session actions",
-    "move": "Move to project…",
-    "moveTitle": "Move to project"
   }
 }

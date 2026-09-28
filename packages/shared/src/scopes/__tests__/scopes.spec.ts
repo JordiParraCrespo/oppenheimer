@@ -4,7 +4,7 @@ import {
   KNOWN_ACTIONS,
   KNOWN_SUBJECTS,
   SYSTEM_ROLE_PERMISSIONS,
-} from '../../permissions';
+} from '../../permissions/index.js';
 import {
   DEFAULT_OAUTH_SCOPES,
   expandScopes,
@@ -30,7 +30,7 @@ import {
   stringifyScopes,
   toResourceScope,
   ungrantableScopes,
-} from '../index';
+} from '../index.js';
 
 describe('scope catalog', () => {
   it('exposes one group per resource, each with both access levels', () => {

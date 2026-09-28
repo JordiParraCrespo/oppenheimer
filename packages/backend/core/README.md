@@ -1,7 +1,7 @@
 # @oppenheimer/backend-core
 
 Cross-cutting NestJS primitives for the API: error model, exception filter,
-validation/sanitization pipes, request-context plumbing, and pagination request
+the sanitization pipe, request-context plumbing, and paginated response
 helpers. Depends on `@oppenheimer/backend-ddd`.
 
 See `.agents/rules/nestjs-architecture.md` and `api-config.md` for how these are
@@ -12,31 +12,36 @@ wired into the API.
 | Export                                                    | Purpose                                                                 |
 | --------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `AppError`, `ErrorDefinition`                             | Catalog error: code, stable title, per-occurrence detail                |
+| `requireFound`                                            | The value in an `Option` lookup, or the catalog error when it is empty  |
 | `AllExceptionsFilter`                                     | Global filter rendering every exception as an RFC 7807 problem document |
 | `ProblemDetails`, `buildProblemDetails`, `problemTypeFor` | The problem-document contract and its builders                          |
 | `ProblemDetailsDto`, `ApiProblemResponse`                 | Swagger model + decorator for documenting failures                      |
-| `ZodValidationPipe`                                       | Validates DTOs against Zod schemas (`nestjs-zod`)                       |
 | `SanitizePipe`                                            | Input sanitization pipe                                                 |
-| `RequestContextInterceptor` / `RequestContextService`     | Per-request context propagation                                         |
+| `RequestContextMiddleware`                                | Opens the per-request correlation id before guards run (backend-ddd's `RequestContextService`) |
+| `resolveCorrelationId`, `CORRELATION_HEADER`              | The validated `x-correlation-id` (≤64 of `[A-Za-z0-9._:-]`) or a fresh UUID |
 | `LoggingModule`, `buildPinoHttpOptions`                   | Hardened request logging (`nestjs-pino`): no headers/query/bodies       |
 | `UserContextInterceptor`                                  | Attaches `userId` + credential scopes to the request log context        |
 | `createAuthRouteLoggingMiddleware`                        | Request logging for Better Auth routes (its `middleware` option)        |
-| `PaginatedRequest`, `paginationSchema`                    | Standard pagination query request                                       |
+| `toPageMeta`, `PageMeta`                                  | A paginated response's `meta` from a repository's `Paginated` result    |
+| `PaginatedResponseDto(Item, Meta)`                        | Base class for a paginated response DTO's `data` / `meta`               |
+| `likeContains`                                            | An `ILIKE` contains-pattern with the term's `%`, `_` and `\` escaped     |
 | `requestMemo`                                             | One in-flight computation per key per request, shared by every caller   |
-| `Mapper`                                                  | Domain ↔ persistence/response mapper interface                          |
 
 ## Usage
 
 ```ts
-import {
-  AllExceptionsFilter,
-  AppError,
-  ZodValidationPipe,
-  PaginatedRequest,
-} from "@oppenheimer/backend-core";
+import { AppError, requireFound, toPageMeta } from "@oppenheimer/backend-core";
 
 // The catalog message titles the problem type; `detail` describes this request.
 throw new AppError(UserErrors.NOT_FOUND, { detail: `No user with id ${id}` });
+
+// The same error for an empty lookup, in one line.
+const user = requireFound(await repo.findOneById(id), UserErrors.NOT_FOUND, {
+  detail: `No user with id ${id}`,
+});
+
+// A list response's meta from the repository's page.
+return { data: page.data.map(toResponse), meta: toPageMeta(page) };
 ```
 
 Responses look like this (see the [error reference](https://oppenheimer.dev/errors)):

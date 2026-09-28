@@ -41,7 +41,6 @@ export class ArchiveProjectHttpController {
   @CheckPolicies({ action: 'update', subject: 'Project' })
   @RequireScopes('projects:write')
   @ApiOperation({
-    operationId: 'archiveProject',
     summary: 'Archive a project',
     description:
       'Retires the project so no new session can be started in it. The row is kept for ever: its slug is a directory name on every host that held it, and a retired name is never reissued. Refuses while the project still has sessions that are not closed.',

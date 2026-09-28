@@ -5,7 +5,7 @@ import {
   githubRepoIdSchema,
   gitRefSchema,
   installationIdSchema,
-} from './primitives';
+} from './primitives.js';
 
 /**
  * Project shapes.

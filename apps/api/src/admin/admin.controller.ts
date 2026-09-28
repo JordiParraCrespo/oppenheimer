@@ -18,6 +18,7 @@ import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backen
 import type { Request, Response } from 'express';
 import { CheckPolicies, NoPolicy } from '../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../auth/decorators/require-scopes.decorator';
+import { UsesBetterAuthSession } from '../auth/decorators/uses-better-auth-session.decorator';
 import { ApiAuthGuard } from '../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../auth/guards/policies.guard';
 import { AdminService } from './admin.service';
@@ -77,6 +78,7 @@ function forwardCookies(headers: Headers, res: Response): void {
   code: 'ADMIN_008',
 })
 @UseGuards(ApiAuthGuard, PoliciesGuard)
+@UsesBetterAuthSession()
 @Controller('admin')
 export class AdminController {
   constructor(private readonly admin: AdminService) {}
@@ -144,14 +146,16 @@ export class AdminController {
   @Version('1')
   @RequireScopes('admin:write')
   @CheckPolicies({ action: 'manage', subject: 'User' })
-  @ApiOperation({ summary: "Revoke one of a user's sessions by id" })
+  @ApiOperation({
+    summary: "Revoke one of a user's sessions by id",
+  })
   @ApiResponse({ status: 200, type: AdminSuccessResponseDto })
   @ApiProblemResponse({
     status: 404,
     description: 'Session not found',
     code: 'ADMIN_009',
   })
-  revokeSession(
+  revokeUserSession(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: RevokeSessionRequest,
@@ -178,7 +182,7 @@ export class AdminController {
   @CheckPolicies({ action: 'manage', subject: 'User' })
   @ApiOperation({ summary: "Update a user's profile fields" })
   @ApiResponse({ status: 200, type: AdminUserResponseDto })
-  updateUser(
+  adminUpdateUser(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: AdminUpdateUserRequest,
@@ -263,15 +267,10 @@ export class AdminController {
   @RequireScopes('admin:read')
   @CheckPolicies({ action: 'manage', subject: 'User' })
   @ApiOperation({
-    // Named explicitly because the default collides with the sessions module's
-    // own `listSessions`, and the generated client resolves a collision by
-    // suffixing a digit — which is how the console's work-session list ended up
-    // being called `listSessions2`. This one lists *a user's* sign-in sessions.
-    operationId: 'listUserSessions',
     summary: "List a user's sessions",
   })
   @ApiResponse({ status: 200, type: [AdminSessionResponseDto] })
-  listSessions(
+  listUserSessions(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<AdminSessionResponseDto[]> {

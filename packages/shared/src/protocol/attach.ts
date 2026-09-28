@@ -1,5 +1,5 @@
 import { z } from 'zod/v4';
-import { attachTicketHintSchema } from './hint';
+import { attachTicketHintSchema } from './hint.js';
 
 /**
  * The browser attach socket's control vocabulary — the second of the two

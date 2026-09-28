@@ -8,7 +8,7 @@ const organizationsList = ['organizations', 'list'] as const;
 import {
   cacheOwnerKey,
   createQueryPersistOptions,
-  QUERY_PERSIST_GC_TIME,
+  defaultQueryClientOptions,
   QUERY_PERSIST_MAX_AGE,
   reconcileCacheOwner,
   shouldDehydrateQuery,
@@ -28,7 +28,7 @@ function query(queryKey: QueryKey, status: QueryState['status'] = 'success'): Qu
 
 describe('shouldDehydrateQuery', () => {
   it('persists ordinary feature queries', () => {
-    expect(shouldDehydrateQuery(query(usersKeys.list()))).toBe(true);
+    expect(shouldDehydrateQuery(query(organizationsList))).toBe(true);
     expect(shouldDehydrateQuery(query(usersKeys.me()))).toBe(true);
     expect(shouldDehydrateQuery(query(organizationsList))).toBe(true);
   });
@@ -46,8 +46,8 @@ describe('shouldDehydrateQuery', () => {
   });
 
   it('only persists successful queries', () => {
-    expect(shouldDehydrateQuery(query(usersKeys.list(), 'error'))).toBe(false);
-    expect(shouldDehydrateQuery(query(usersKeys.list(), 'pending'))).toBe(false);
+    expect(shouldDehydrateQuery(query(organizationsList, 'error'))).toBe(false);
+    expect(shouldDehydrateQuery(query(organizationsList, 'pending'))).toBe(false);
   });
 
   it('ignores keys that do not start with a feature string', () => {
@@ -73,7 +73,9 @@ describe('createQueryPersistOptions', () => {
 
   it('keeps queries alive at least as long as they are persisted', () => {
     // A query collected before it is written would persist nothing.
-    expect(QUERY_PERSIST_GC_TIME).toBeGreaterThanOrEqual(QUERY_PERSIST_MAX_AGE);
+    expect(defaultQueryClientOptions(0).queries.gcTime).toBeGreaterThanOrEqual(
+      QUERY_PERSIST_MAX_AGE,
+    );
   });
 });
 

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SCOPES, type Scope } from '../scopes';
+import { SCOPES, type Scope } from '../scopes/index.js';
 
 /** Zod enum over the scope catalog, so DTOs reject anything unknown. */
 export const scopeSchema = z.enum(SCOPES as unknown as [Scope, ...Scope[]]);

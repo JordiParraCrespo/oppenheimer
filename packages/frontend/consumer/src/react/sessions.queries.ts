@@ -12,6 +12,7 @@ import {
 import type { CreateSessionInput, SessionEntity } from '../modules/sessions/session.entity';
 import type { SessionStartProgress } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
+import { CLOSE_WATCH_MS, type PollKeys, pollWhile } from './live-poll';
 
 /**
  * Query key factory for the `sessions` feature, from the most generic (`all`)
@@ -28,32 +29,17 @@ export const sessionsKeys = {
 };
 
 /**
- * How often a session that is still starting is asked about again.
- *
- * Nothing pushes a session's lifecycle to the console yet: the host builds the
- * worktree and opens the PTY, the control plane flips the row to `open`, and a
- * screen that read it as `starting` would sit on the provisioning pane until a
- * reload. So a query holding a starting session polls until it holds none — a
- * clone from GitHub takes seconds, and polling past that would be a request
- * every two seconds that can only answer "still open". When session events are
- * streamed to the console this goes.
- */
-const PROVISIONING_POLL_MS = 2000;
-
-/**
  * The sessions a console asked to close and has not yet seen resolve, each
  * with the timer that ends its watch — per `QueryClient`, so the watch lives
  * and dies with the cache it keeps polling, and two clients never share one.
  *
  * A close is answered by the host, not by the request, so the row stays `open`
- * for a beat after Delete — the same "not settled, and nothing pushes it" as a
- * starting session, and the list polls for it the same way. An id leaves when
- * its row leaves the list, or after {@link CLOSE_WATCH_MS} for a host that is
- * offline and will answer only when it is back.
+ * for a beat after Delete — "not settled, and nothing pushes it", like a
+ * starting session, and the list polls for it on `LIVE_POLL.sessionStarting`.
+ * An id leaves when its row leaves the list, or after {@link CLOSE_WATCH_MS}
+ * for a host that is offline and will answer only when it is back.
  */
 const closeWatches = new WeakMap<QueryClient, Map<string, ReturnType<typeof setTimeout>>>();
-
-const CLOSE_WATCH_MS = 60_000;
 
 function closesOf(queryClient: QueryClient): Map<string, ReturnType<typeof setTimeout>> {
   let watches = closeWatches.get(queryClient);
@@ -120,28 +106,28 @@ export function useSessions<TData = SessionEntity[]>(
       }
       return listed;
     },
-    // The query's own rows, before any caller's `select`.
-    refetchInterval: (query) =>
-      query.state.data?.some(
-        (session) => session.isProvisioning || closesOf(queryClient).has(session.id),
-      )
-        ? PROVISIONING_POLL_MS
-        : false,
     ...options,
+    // Over the query's own rows, before any caller's `select`.
+    ...pollWhile<SessionEntity[]>(
+      'sessionStarting',
+      (rows) =>
+        rows?.some((session) => session.isProvisioning || closesOf(queryClient).has(session.id)) ??
+        false,
+    ),
   });
 }
 
 export function useSession(
   id: string | undefined,
-  options?: Omit<UseQueryOptions<SessionEntity, Error>, 'queryKey' | 'queryFn'>,
+  options?: Omit<UseQueryOptions<SessionEntity, Error>, 'queryKey' | 'queryFn' | PollKeys>,
 ) {
   const app = useConsumerApp();
 
   return useQuery({
     queryKey: sessionsKeys.detail(id),
     queryFn: id ? () => app.sessions.findById(id) : skipToken,
-    refetchInterval: (query) => (query.state.data?.isProvisioning ? PROVISIONING_POLL_MS : false),
     ...options,
+    ...pollWhile<SessionEntity>('sessionStarting', (session) => session?.isProvisioning ?? false),
   });
 }
 
@@ -167,7 +153,7 @@ export function useInvalidateSession(id: string): () => void {
 export function useSessionStartProgress(
   id: string | undefined,
   { starting, failed }: { starting: boolean; failed: boolean },
-  options?: Omit<UseQueryOptions<SessionStartProgress, Error>, 'queryKey' | 'queryFn'>,
+  options?: Omit<UseQueryOptions<SessionStartProgress, Error>, 'queryKey' | 'queryFn' | PollKeys>,
 ) {
   const app = useConsumerApp();
 
@@ -175,8 +161,8 @@ export function useSessionStartProgress(
     queryKey: sessionsKeys.start(id, failed),
     queryFn:
       id && (starting || failed) ? () => app.sessions.startProgress(id, { failed }) : skipToken,
-    refetchInterval: (query) => (query.state.data?.settled ? false : PROVISIONING_POLL_MS),
     ...options,
+    ...pollWhile<SessionStartProgress>('sessionStarting', (progress) => !progress?.settled),
   });
 }
 
@@ -274,18 +260,6 @@ export function useCloseSession(
     ...withCacheOnSuccess(options, (session) => {
       watchClose(queryClient, session.id);
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-    }),
-  });
-}
-
-export function useStopSession(options?: UseMutationOptions<SessionEntity, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => app.sessions.stop(id),
-    ...withCacheOnSuccess(options, () => {
-      queryClient.invalidateQueries({ queryKey: sessionsKeys.all });
     }),
   });
 }

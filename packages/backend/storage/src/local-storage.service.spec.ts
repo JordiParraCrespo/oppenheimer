@@ -34,10 +34,16 @@ afterEach(async () => {
 
 describe('LocalStorageService', () => {
   describe('upload', () => {
-    it('writes the file and returns its public URL', async () => {
-      const url = await storage().upload(Buffer.from('hello'), 'avatars/user-1.png', 'image/png');
+    it('writes the file and returns its key, not a URL', async () => {
+      // The same contract as S3: callers persist the key and ask `getUrl` for a
+      // URL at read time.
+      const stored = await storage().upload(
+        Buffer.from('hello'),
+        'avatars/user-1.png',
+        'image/png',
+      );
 
-      expect(url).toBe('https://api.example.com/uploads/avatars/user-1.png');
+      expect(stored).toBe('avatars/user-1.png');
       await expect(readFile(join(uploadDir, 'avatars/user-1.png'), 'utf8')).resolves.toBe('hello');
     });
 
@@ -89,9 +95,9 @@ describe('LocalStorageService', () => {
 
     it('allows a traversal that stays inside the directory', async () => {
       // The rule is where the path lands, not whether it contains `..`.
-      await expect(
-        storage().upload(Buffer.from('x'), 'a/../b.txt', 'text/plain'),
-      ).resolves.toContain('/uploads/a/../b.txt');
+      await expect(storage().upload(Buffer.from('x'), 'a/../b.txt', 'text/plain')).resolves.toBe(
+        'a/../b.txt',
+      );
       await expect(readFile(join(uploadDir, 'b.txt'), 'utf8')).resolves.toBe('x');
     });
 
@@ -103,14 +109,14 @@ describe('LocalStorageService', () => {
       );
     });
 
-    it('does not guard getSignedUrl, which only builds a string', async () => {
-      // Deliberately different from upload/delete: `getSignedUrl` touches no
+    it('does not guard getUrl, which only builds a string', async () => {
+      // Deliberately different from upload/delete: `getUrl` touches no
       // filesystem, so there is no path to escape. It interpolates the key into
       // a URL, and the traversal is resolved by whatever serves `/uploads` —
       // `main.ts` mounts a static handler, which normalises the request path
       // itself. Pinned here so the asymmetry reads as deliberate rather than an
       // oversight someone "fixes" with a guard that would reject valid keys.
-      await expect(storage().getSignedUrl('../../secret')).resolves.toBe(
+      await expect(storage().getUrl('../../secret')).resolves.toBe(
         'https://api.example.com/uploads/../../secret',
       );
     });
@@ -133,25 +139,32 @@ describe('LocalStorageService', () => {
     });
   });
 
-  describe('public URLs', () => {
+  describe('getUrl', () => {
+    it('resolves a stored key to its public URL', async () => {
+      const subject = storage();
+      const key = await subject.upload(Buffer.from('x'), 'avatars/user-1.png', 'image/png');
+
+      await expect(subject.getUrl(key)).resolves.toBe(
+        'https://api.example.com/uploads/avatars/user-1.png',
+      );
+    });
+
     it('trims trailing slashes off the configured base', async () => {
       // Otherwise keys join as `https://api.example.com//uploads/…`, which some
       // proxies normalise and some serve as a different path.
-      await expect(storage('https://api.example.com///').getSignedUrl('k.png')).resolves.toBe(
+      await expect(storage('https://api.example.com///').getUrl('k.png')).resolves.toBe(
         'https://api.example.com/uploads/k.png',
       );
     });
 
     it('falls back to a root-relative URL when no base is configured', async () => {
-      await expect(storage('').getSignedUrl('k.png')).resolves.toBe('/uploads/k.png');
+      await expect(storage('').getUrl('k.png')).resolves.toBe('/uploads/k.png');
     });
 
     it('ignores the expiry argument — a local file has no signature to expire', async () => {
       const subject = storage();
 
-      await expect(subject.getSignedUrl('k.png', 60)).resolves.toBe(
-        await subject.getSignedUrl('k.png'),
-      );
+      await expect(subject.getUrl('k.png', 60)).resolves.toBe(await subject.getUrl('k.png'));
     });
   });
 });

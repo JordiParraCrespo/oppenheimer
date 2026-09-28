@@ -3,7 +3,6 @@ import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
-import type { Paginated } from '@oppenheimer/backend-ddd';
 import { codingAgentSchema, SESSION_SORTS, SESSION_STATES } from '@oppenheimer/shared';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
@@ -11,7 +10,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import type { WorkSessionEntity } from '../../domain/work-session.entity';
+import type { SessionListPage } from '../../database/work-session.repository.port';
 import { PaginatedSessionsResponseDto } from '../../dtos/session.response.dto';
 import { WorkSessionMapper } from '../../work-session.mapper';
 import { FindSessionsQuery } from './find-sessions.query';
@@ -34,9 +33,6 @@ export class FindSessionsHttpController {
   @CheckPolicies({ action: 'read', subject: 'Session' })
   @RequireScopes('sessions:read')
   @ApiOperation({
-    // Named explicitly: the generated client turns an operationId into a function
-    // name, and `list` would collide with every other resource's listing.
-    operationId: 'listSessions',
     summary: 'List the sessions in the caller’s workspace',
     description:
       'Last activity first unless `sort` says otherwise. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.',
@@ -45,7 +41,14 @@ export class FindSessionsHttpController {
     name: 'page',
     required: false,
     type: Number,
-    description: 'Page number (default: 1)',
+    description: 'Page number (default: 1). Ignored when `cursor` is sent.',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description:
+      'Opaque: the previous page’s `meta.nextCursor`, for the same `sort`. Walks without counting, and a session is never returned twice in one walk.',
   })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Sessions per page' })
   @ApiQuery({
@@ -74,18 +77,13 @@ export class FindSessionsHttpController {
     @CurrentAccessScope() scope: AccessScope,
     @Query() query: FindSessionsRequest,
   ): Promise<PaginatedSessionsResponseDto> {
-    const result = await this.queryBus.execute<FindSessionsQuery, Paginated<WorkSessionEntity>>(
+    const result = await this.queryBus.execute<FindSessionsQuery, SessionListPage>(
       new FindSessionsQuery({ scope, ...query }),
     );
     const now = new Date();
     return {
       data: result.data.map((session) => this.mapper.toResponse(session, { now })),
-      meta: {
-        total: result.count,
-        page: result.page,
-        limit: result.limit,
-        totalPages: Math.ceil(result.count / result.limit),
-      },
+      meta: this.mapper.toPageMeta(result),
     };
   }
 }

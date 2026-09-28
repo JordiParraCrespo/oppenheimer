@@ -167,7 +167,7 @@ when the ability is built.
 
 | Method & path                   | Purpose                                    |
 | ------------------------------- | ------------------------------------------ |
-| `POST /v1/roles`                | Create a custom role                       |
+| `POST /v1/roles`                | Create a custom role in the active organization; with none, a global role for a platform admin (`manage all`), `ROLE_008` for anyone else |
 | `GET /v1/roles`                 | List roles (paginated, `?search=`)         |
 | `GET /v1/roles/:id`             | Get a role                                 |
 | `PATCH /v1/roles/:id`           | Update description and/or permissions      |

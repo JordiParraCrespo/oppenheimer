@@ -6,6 +6,5 @@ export {
 } from './components/pairing-chrome';
 export {
   type PairingCommands,
-  PairingCopyButtons,
   PairingInstruction,
 } from './components/pairing-install';

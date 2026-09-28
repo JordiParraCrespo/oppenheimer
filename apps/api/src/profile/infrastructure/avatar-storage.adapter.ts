@@ -17,11 +17,9 @@ const EXTENSIONS: Record<AvatarMimeType, string> = {
  * Owns everything about where an avatar lives: what is accepted, the key it is
  * stored under, and how a stored value becomes a URL a browser can load.
  *
- * The **key** is what lands in `user.image`, not a URL. The two storage
- * back-ends disagree about what `upload()` returns — local hands back a path,
- * S3 hands back the key — and a private bucket has to be signed at read time
- * anyway, so persisting the key and resolving it per response is the only shape
- * that is correct for both.
+ * The **key** `upload()` returns is what lands in `user.image`, not a URL: a
+ * private bucket's URL is signed and expires, so the key is resolved per
+ * response with `getUrl()`.
  */
 @Injectable()
 export class AvatarStorageAdapter implements AvatarStoragePort {
@@ -57,8 +55,7 @@ export class AvatarStorageAdapter implements AvatarStoragePort {
     // upload, which is what stops a browser serving the previous image from
     // cache.
     const key = `avatars/${userId}/${randomUUID()}.${EXTENSIONS[mimeType]}`;
-    await this.storage.upload(file, key, mimeType);
-    return key;
+    return this.storage.upload(file, key, mimeType);
   }
 
   /**
@@ -81,7 +78,7 @@ export class AvatarStorageAdapter implements AvatarStoragePort {
   async resolveUrl(stored: string | null): Promise<string | null> {
     if (!stored) return null;
     if (isAbsoluteUrl(stored)) return stored;
-    return this.storage.getSignedUrl(stored);
+    return this.storage.getUrl(stored);
   }
 }
 

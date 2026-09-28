@@ -1,10 +1,13 @@
 import { type ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { ThrottlerGuard, type ThrottlerLimitDetail } from '@nestjs/throttler';
 import { AppError } from '@oppenheimer/backend-core';
+import type { AuthFailureLimiterPort } from '../../auth/application/auth-failure-limiter.port';
 import type { CredentialScopePort } from '../../auth/application/credential-scope.port';
-import { CREDENTIAL_SCOPE } from '../../auth/auth.di-tokens';
+import { AUTH_FAILURE_LIMITER, CREDENTIAL_SCOPE } from '../../auth/auth.di-tokens';
 import type { ScopedRequest } from '../../auth/domain/scope-context.types';
 import { ThrottlingErrors } from '../domain/throttling.errors';
+
+type HandleRequestProps = Parameters<ThrottlerGuard['handleRequest']>[0];
 
 /**
  * The application's `ThrottlerGuard`, keyed on **who is calling** rather than
@@ -16,16 +19,28 @@ import { ThrottlingErrors } from '../domain/throttling.errors';
  * websites, and they all reach us from that one Worker: an IP-keyed bucket
  * would be shared by the entire fleet, so a busy day on one site would throttle
  * the other thirty-two, and the per-route limit would describe nothing anybody
- * intended.
+ * intended. The same goes for everyone signed in behind one office NAT.
  *
- * **This guard resolves the credential itself, and must.** It is registered as
- * an `APP_GUARD`, and Nest runs global guards *before* controller-level ones —
- * so `ApiAuthGuard`, which is what normally populates `request.scopeContext`,
- * has not run yet. Reading that property here would find it undefined on every
- * request, silently fall through to the IP branch, and leave the fleet sharing
- * one bucket while looking like it did not. Resolution is memoized on the
- * request (`CredentialScopeResolver.resolve`), so asking here costs nothing:
- * `ApiAuthGuard` awaits the same promise moments later.
+ * **The bucket is derived from what the request presents, without verifying
+ * it.** This guard is an `APP_GUARD`, so it runs before `ApiAuthGuard` has
+ * resolved anything — and a limiter that resolved credentials itself would do
+ * its database work *before* deciding whether to shed the request, which is
+ * the one thing a limiter is for. So (see `CredentialScopePort.rateLimitKey`):
+ *
+ * - a bearer credential or `x-api-key` → `cred:<digest>`, one bucket per
+ *   secret and never the secret itself (a host's single-use assertion is the
+ *   exception, bucketed by the host it resolves to);
+ * - a session cookie whose signature verifies → `session:<digest>`, one
+ *   bucket per signed-in browser, not one per office;
+ * - otherwise the user id, when this guard runs after authentication, then
+ *   the IP.
+ *
+ * A digest bucket costs nothing to open, so a caller spraying made-up bearer
+ * strings would get a fresh one per request. The brake is the auth-failure
+ * budget (`AUTH_FAILURE_LIMITER`): every refused credential counts against its
+ * source address, and an address past that budget is refused here before any
+ * lookup — unless the credential it presents recently succeeded, so one broken
+ * client does not lock out the callers that share its address.
  */
 @Injectable()
 export class CredentialThrottlerGuard extends ThrottlerGuard {
@@ -37,11 +52,31 @@ export class CredentialThrottlerGuard extends ThrottlerGuard {
   @Inject(CREDENTIAL_SCOPE)
   private credentials!: CredentialScopePort;
 
+  @Inject(AUTH_FAILURE_LIMITER)
+  private failures!: AuthFailureLimiterPort;
+
+  protected async handleRequest(requestProps: HandleRequestProps): Promise<boolean> {
+    const request = requestProps.context.switchToHttp().getRequest<ScopedRequest>();
+    const credentialKey = await this.credentialKeyOf(request);
+
+    if (credentialKey?.startsWith('cred:') && this.failures) {
+      const retryAfter = await this.failures.retryAfter(request.ip ?? 'unknown', credentialKey);
+      if (retryAfter > 0) {
+        throw new AppError(ThrottlingErrors.TOO_MANY_REQUESTS, {
+          detail: `Too many refused credentials from this address; retry in ${retryAfter}s`,
+          extensions: { retryAfter },
+        });
+      }
+    }
+
+    return super.handleRequest(requestProps);
+  }
+
   protected async getTracker(req: Record<string, unknown>): Promise<string> {
     const request = req as unknown as ScopedRequest;
 
-    const credentialId = await this.credentialIdOf(request);
-    if (credentialId) return `cred:${credentialId}`;
+    const credentialKey = await this.credentialKeyOf(request);
+    if (credentialKey) return credentialKey;
 
     // Populated only when this guard is applied at route level, after
     // authentication. On the global path it is still undefined here.
@@ -68,22 +103,15 @@ export class CredentialThrottlerGuard extends ThrottlerGuard {
   }
 
   /**
-   * The calling credential's id, or `null` for a session or anonymous caller.
+   * The request's credential bucket, or `null` for an anonymous caller.
    *
-   * A credential that fails to resolve — revoked, expired, unknown — is treated
-   * as anonymous rather than allowed to throw. The rejection is `ApiAuthGuard`'s
-   * to make a moment later, with the catalog error and the opaque wording that
-   * keeps token ids from being probed; raising it from inside a rate limiter
-   * would change the failure a client sees depending on which guard happened to
-   * run first.
+   * Deriving it never fails the request: a credential that is refused — here,
+   * for a single-use kind that has to be resolved — is `ApiAuthGuard`'s to
+   * reject a moment later, with the catalog error and the opaque wording that
+   * keeps token ids from being probed.
    */
-  private async credentialIdOf(request: ScopedRequest): Promise<string | null> {
+  private async credentialKeyOf(request: ScopedRequest): Promise<string | null> {
     if (!this.credentials) return null;
-    try {
-      const scope = await this.credentials.resolve(request);
-      return scope?.credentialId ?? null;
-    } catch {
-      return null;
-    }
+    return this.credentials.rateLimitKey(request).catch(() => null);
   }
 }

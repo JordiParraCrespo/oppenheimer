@@ -11,13 +11,15 @@ package systemd
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/execx"
 )
 
 var _ app.Manager = (*Manager)(nil)
@@ -35,7 +37,7 @@ type Options struct {
 	Dir string
 	// User is whose lingering is enabled.
 	User string
-	// Commands runs systemctl and loginctl; defaults to os/exec.
+	// Commands runs systemctl and loginctl; defaults to execx.
 	Commands app.Commands
 }
 
@@ -162,10 +164,28 @@ func userHint() string {
 	return "<your user>"
 }
 
-// execCommands is the real process runner.
-type execCommands struct{}
+// commandTimeout bounds one systemctl or loginctl call. The unit is
+// Type=simple, so a start returns once the process is forked, and a stop is
+// bounded by the unit's TimeoutStopSec=30 before systemd kills it: a restart
+// that has not returned in a minute is a hung user bus, not a slow service,
+// and `runner install`, `update` and `uninstall` must not hang with it.
+const commandTimeout = 60 * time.Second
 
-func (execCommands) Run(ctx context.Context, name string, args ...string) (string, error) {
-	out, err := exec.CommandContext(ctx, name, args...).CombinedOutput()
-	return string(out), err
+// execCommands is the real process runner.
+type execCommands struct {
+	// timeout bounds each call; zero is commandTimeout.
+	timeout time.Duration
+}
+
+func (c execCommands) Run(ctx context.Context, name string, args ...string) (string, error) {
+	timeout := c.timeout
+	if timeout <= 0 {
+		timeout = commandTimeout
+	}
+	res, err := execx.Run(ctx, execx.Spec{Name: name, Args: args, Timeout: timeout, Output: execx.Combined})
+	var failed *execx.Error
+	if errors.As(err, &failed) && failed.TimedOut {
+		return res.Out, fmt.Errorf("%s timed out after %s: %w", name, timeout, execx.Cause(err))
+	}
+	return res.Out, execx.Cause(err)
 }

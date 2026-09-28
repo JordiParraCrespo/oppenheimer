@@ -13,13 +13,15 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import type { Request } from 'express';
 import { CheckPolicies, NoPolicy } from '../auth/decorators/check-policies.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { OrganizationScoped } from '../auth/decorators/organization-scoped.decorator';
 import { RequireScopes } from '../auth/decorators/require-scopes.decorator';
+import { UsesBetterAuthSession } from '../auth/decorators/uses-better-auth-session.decorator';
 import { ApiAuthGuard } from '../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../auth/guards/policies.guard';
 import { InviteMemberRequest } from './dtos/organization.request.dto';
 import { InvitationResponseDto } from './dtos/organization.response.dto';
-import { InvitationsService } from './invitations.service';
+import { type InvitationCaller, InvitationsService } from './invitations.service';
 
 /** Organization-scoped invitation management (requires `Invitation` policies). */
 @ApiTags('Organization invitations')
@@ -48,6 +50,7 @@ import { InvitationsService } from './invitations.service';
   code: 'ORG_001',
 })
 @UseGuards(ApiAuthGuard, PoliciesGuard)
+@UsesBetterAuthSession()
 @Controller('organizations')
 export class OrganizationInvitationsController {
   constructor(private readonly invitations: InvitationsService) {}
@@ -72,9 +75,11 @@ export class OrganizationInvitationsController {
   @RequireScopes('invitations:read')
   @OrganizationScoped('orgId')
   @CheckPolicies({ action: 'read', subject: 'Invitation' })
-  @ApiOperation({ summary: 'List pending invitations for an organization' })
+  @ApiOperation({
+    summary: 'List pending invitations for an organization',
+  })
   @ApiResponse({ status: 200, type: [InvitationResponseDto] })
-  list(
+  listOrganizationInvitations(
     @Req() req: Request,
     @Param('orgId', ParseUUIDPipe) orgId: string,
   ): Promise<InvitationResponseDto[]> {
@@ -113,6 +118,7 @@ export class OrganizationInvitationsController {
   code: 'ORG_008',
 })
 @UseGuards(ApiAuthGuard, PoliciesGuard)
+@UsesBetterAuthSession()
 @Controller('invitations')
 export class InvitationsController {
   constructor(private readonly invitations: InvitationsService) {}
@@ -121,9 +127,11 @@ export class InvitationsController {
   @NoPolicy('lists invitations addressed to the caller’s own email')
   @Version('1')
   @RequireScopes('invitations:read')
-  @ApiOperation({ summary: "List the caller's pending invitations" })
+  @ApiOperation({
+    summary: "List the caller's pending invitations",
+  })
   @ApiResponse({ status: 200, type: [InvitationResponseDto] })
-  listMine(@Req() req: Request): Promise<InvitationResponseDto[]> {
+  listMyInvitations(@Req() req: Request): Promise<InvitationResponseDto[]> {
     return this.invitations.listForCaller(req.headers);
   }
 
@@ -133,7 +141,10 @@ export class InvitationsController {
   @RequireScopes('invitations:read')
   @ApiOperation({ summary: 'Get an invitation by id' })
   @ApiResponse({ status: 200, type: InvitationResponseDto })
-  get(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<InvitationResponseDto> {
+  getInvitation(
+    @Req() req: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<InvitationResponseDto> {
     return this.invitations.get(req.headers, id);
   }
 
@@ -146,8 +157,9 @@ export class InvitationsController {
   accept(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() caller: InvitationCaller | null,
   ): Promise<InvitationResponseDto> {
-    return this.invitations.accept(req.headers, id);
+    return this.invitations.accept(req.headers, id, caller);
   }
 
   @Post(':id/reject')

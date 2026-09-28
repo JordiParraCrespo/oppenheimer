@@ -64,8 +64,12 @@ export interface TimelinePage {
 export interface HostMetadataRepositoryPort {
   /** Inventory, vitals, network and presence for each host; three primary-key reads in all. */
   findForHosts(hostIds: readonly string[]): Promise<Map<string, HostMetadata>>;
-  /** One narrow upsert per heartbeat. Values not reported keep what is on file. */
-  recordVitals(hostId: string, report: VitalsReport, at: Date): Promise<void>;
+  /**
+   * One narrow upsert per heartbeat, for a host that is still paired, in one
+   * statement. Values not reported keep what is on file. `false` when the host
+   * is unpaired or unknown, and then nothing was written.
+   */
+  recordVitalsIfPaired(hostId: string, report: VitalsReport, at: Date): Promise<boolean>;
   /**
    * Write the inventory only when it changed — the hash, or a newly reported
    * channel — and append what changed to the timeline in the same transaction.

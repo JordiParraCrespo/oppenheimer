@@ -104,8 +104,9 @@ describe('OutboxService', () => {
       await service.markFailed(record(2), 'boom');
 
       const [, params] = query.mock.calls[0];
-      // [id, status, error, delayMs] — attempt 2 backs off 1000 * 2^1.
-      expect(params).toEqual(['row-1', 'pending', 'boom', 2000]);
+      // [id, status, error, delayMs, attempts, lockedBy] — attempt 2 backs off
+      // 1000 * 2^1; the last two fence the update on the claim it came from.
+      expect(params).toEqual(['row-1', 'pending', 'boom', 2000, 2, null]);
     });
 
     it('parks the row as failed once attempts are exhausted', async () => {
@@ -183,6 +184,117 @@ describe('OutboxService', () => {
     });
   });
 
+  describe('transaction', () => {
+    /**
+     * A DataSource whose `transaction` hands the callback a fresh manager and
+     * logs `commit` once the callback resolves, so a wake can be shown to come
+     * after it. A rejected callback rejects without a commit, as TypeORM does.
+     */
+    const harness = () => {
+      const log: string[] = [];
+      const insert = vi.fn().mockResolvedValue(undefined);
+      const managers: EntityManager[] = [];
+      const transaction = vi.fn(async (cb: (m: EntityManager) => Promise<unknown>) => {
+        const manager = managerWith(insert);
+        managers.push(manager);
+        const value = await cb(manager);
+        log.push('commit');
+        return value;
+      });
+      const service = new OutboxService({ transaction } as unknown as DataSource);
+      const drainer = vi.fn(async () => {
+        log.push('drain');
+      });
+      service.registerDrainer(drainer);
+      return { service, drainer, transaction, insert, log, managers };
+    };
+    const event = () => new ThingDeletedDomainEvent({ aggregateId: 'agg-1', name: 'thing' });
+    const job = {
+      queue: 'email',
+      jobName: 'send',
+      payload: {},
+      reason: 'a test owes a job',
+    };
+
+    it('wakes once, after the commit, when events were staged', async () => {
+      const { service, drainer, transaction, log } = harness();
+
+      const result = await service.transaction(async (manager) => {
+        await service.stageEvents(manager, [event()]);
+        await service.stageEvents(manager, [event()]);
+        return 'done';
+      });
+
+      expect(result).toBe('done');
+      expect(transaction).toHaveBeenCalledTimes(1);
+      expect(drainer).toHaveBeenCalledTimes(1);
+      expect(log).toEqual(['commit', 'drain']);
+    });
+
+    it('does not wake when nothing was staged', async () => {
+      const { service, drainer } = harness();
+
+      await expect(service.transaction(async () => 'nothing owed')).resolves.toBe('nothing owed');
+
+      expect(drainer).not.toHaveBeenCalled();
+    });
+
+    it('does not wake when the work throws after staging, and the error propagates', async () => {
+      const { service, drainer, insert, log } = harness();
+
+      await expect(
+        service.transaction(async (manager) => {
+          await service.stageJob(manager, job);
+          throw new Error('lost the race');
+        }),
+      ).rejects.toThrow('lost the race');
+
+      // Staged, then rolled back: the row never landed, so there is nothing to deliver.
+      expect(insert).toHaveBeenCalledTimes(1);
+      expect(log).toEqual([]);
+      expect(drainer).not.toHaveBeenCalled();
+    });
+
+    it('counts a staged job as staged', async () => {
+      const { service, drainer } = harness();
+
+      await service.transaction((manager) => service.stageJob(manager, job));
+
+      expect(drainer).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not count an empty event list as staged', async () => {
+      const { service, drainer, insert } = harness();
+
+      await service.transaction((manager) => service.stageEvents(manager, []));
+
+      expect(insert).not.toHaveBeenCalled();
+      expect(drainer).not.toHaveBeenCalled();
+    });
+
+    it('forgets each transaction: a second one that stages nothing does not wake', async () => {
+      const { service, drainer } = harness();
+
+      await service.transaction((manager) => service.stageJob(manager, job));
+      await service.transaction(async () => undefined);
+
+      expect(drainer).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves a manager it did not open alone: staging on it neither throws nor wakes', async () => {
+      const { service, drainer } = harness();
+      const outside = managerWith(vi.fn().mockResolvedValue(undefined));
+
+      await service.transaction(async () => {
+        await service.stageEvents(outside, [event()]);
+        await service.stageJob(outside, job);
+      });
+      await service.stageEvents(outside, [event()]);
+
+      expect(drainer).not.toHaveBeenCalled();
+    });
+  });
+
   describe('writeWithEvents', () => {
     it('runs the write and the event staging in one transaction, then clears and wakes', async () => {
       const insert = vi.fn().mockResolvedValue(undefined);
@@ -218,13 +330,15 @@ describe('OutboxService', () => {
       expect(drainer).toHaveBeenCalledTimes(1);
     });
 
-    it('skips the explicit transaction when no events were collected', async () => {
+    it('skips the explicit transaction, and the wake, when no events were collected', async () => {
       const manager = managerWith(vi.fn());
       const transaction = vi.fn();
       const service = new OutboxService({
         transaction,
         manager,
       } as unknown as DataSource);
+      const drainer = vi.fn();
+      service.registerDrainer(drainer);
       const write = vi.fn().mockResolvedValue('written');
 
       const result = await service.writeWithEvents(
@@ -235,6 +349,7 @@ describe('OutboxService', () => {
       expect(result).toBe('written');
       expect(transaction).not.toHaveBeenCalled();
       expect(write).toHaveBeenCalledWith(manager);
+      expect(drainer).not.toHaveBeenCalled();
     });
 
     it('does not clear events or wake when the transaction fails', async () => {

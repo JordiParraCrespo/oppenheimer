@@ -8,7 +8,7 @@ import {
 } from '@oppenheimer/api-client';
 import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
-import type { GithubEventType, TriggerFilter } from '@oppenheimer/shared/automations';
+import type { TriggerFilter } from '@oppenheimer/shared/automations';
 import { injectable } from 'inversify';
 import {
   AutomationEntity,
@@ -38,13 +38,11 @@ function triggerOf(dto: AutomationTriggerResponseDto): AutomationTrigger | null 
     const { timezone, ...rule } = dto.schedule;
     return { source: 'schedule', id: dto.id, ...rule, timezone, nextFireAt: date(dto.nextFireAt) };
   }
-  if (dto.source === 'github') {
+  if (dto.source === 'github' && dto.event !== 'schedule') {
     return {
       source: 'github',
       id: dto.id,
-      // Typed as the catalog's, unchecked: the catalog is not worth a place on
-      // the first load, and an event a newer API sends reads by its raw name.
-      event: dto.event as GithubEventType,
+      event: dto.event,
       repositories: dto.repositories ?? [],
       filter: filterOf(dto.filter),
     };
@@ -171,14 +169,14 @@ function toUpdateRequest(input: UpdateAutomationInput): UpdateAutomationRequest 
 export class AutomationsRepository {
   @MapApiError(AutomationsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<AutomationEntity[]> {
-    const data = await unwrapBody(heyApiSdk.listAutomations(), AutomationsErrors.FETCH_LIST_FAILED);
+    const data = await unwrapBody(heyApiSdk.findAutomations(), AutomationsErrors.FETCH_LIST_FAILED);
     return data.map(toEntity);
   }
 
   @MapApiError(AutomationsErrors.FETCH_FAILED)
   async findById(id: string): Promise<AutomationEntity> {
     const data = await unwrapBody(
-      heyApiSdk.getAutomation({ path: { id } }),
+      heyApiSdk.findAutomation({ path: { id } }),
       AutomationsErrors.FETCH_FAILED,
     );
     return toEntity(data);
@@ -253,7 +251,7 @@ export class AutomationsRepository {
   @MapApiError(AutomationsErrors.FETCH_RUNS_FAILED)
   async findRuns(filter: RunsFilter): Promise<RunPage> {
     const data = await unwrapBody(
-      heyApiSdk.listAutomationRuns({
+      heyApiSdk.findAutomationRuns({
         query: {
           ...(filter.automationId ? { automationId: filter.automationId } : {}),
           ...(filter.projectId ? { projectId: filter.projectId } : {}),
@@ -268,19 +266,10 @@ export class AutomationsRepository {
     return { ...data, items: data.items.map(toRunEntity) };
   }
 
-  @MapApiError(AutomationsErrors.FETCH_RUNS_FAILED)
-  async findRun(id: string): Promise<AutomationRunEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.getAutomationRun({ path: { id } }),
-      AutomationsErrors.FETCH_RUNS_FAILED,
-    );
-    return toRunEntity(data);
-  }
-
   @MapApiError(AutomationsErrors.FETCH_HISTORY_FAILED)
   async history(filter: RunHistoryFilter): Promise<RunHistory> {
     const data = await unwrapBody(
-      heyApiSdk.getAutomationRunHistory({
+      heyApiSdk.findRunHistory({
         query: {
           timezone: filter.timezone,
           ...(filter.automationId ? { automationId: filter.automationId } : {}),
@@ -299,7 +288,7 @@ export class AutomationsRepository {
     trigger: Extract<TriggerInput, { source: 'github' }>,
   ): Promise<TriggerPreview> {
     const data = await unwrapBody(
-      heyApiSdk.previewAutomationTrigger({
+      heyApiSdk.previewTrigger({
         body: {
           source: 'github',
           event: trigger.event,

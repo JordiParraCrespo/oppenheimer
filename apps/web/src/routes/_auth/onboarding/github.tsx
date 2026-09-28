@@ -1,30 +1,16 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import {
-  type GithubInstallCallback,
-  parseInstallCallback,
-} from '@/features/installations/lib/github-install';
 import { OnboardingGithubScreen } from '@/features/installations/screens/onboarding-github';
-import {
-  type FirstRunWalk,
-  installUrlCarryingWalk,
-  isWalkState,
-  parseWalk,
-  stateWithoutWalk,
-} from '@/features/organizations/lib/first-run';
+import { installUrlCarryingWalk } from '@/features/organizations/lib/first-run';
+import { githubStepSearchSchema } from '@/features/organizations/lib/onboarding-search';
 
 /**
  * Step 3. GitHub returns here after an install with `installation_id`, `code`
  * and the `state` the API minted, parsed at the boundary and dropped once
- * exchanged (all one-shot). The walk rides as the prefix of `state`, the one
- * value GitHub echoes: the route reads it off, hands the screen the bare
- * nonce, pins it on the install URL on the way out and keeps it through the
- * rewrite.
+ * exchanged (all one-shot). The screen gets the bare nonce; the walk is pinned
+ * on the install URL on the way out and kept through the rewrite.
  */
 export const Route = createFileRoute('/_auth/onboarding/github')({
-  validateSearch: (search: Record<string, unknown>): GithubInstallCallback & FirstRunWalk => ({
-    ...parseInstallCallback({ ...search, state: stateWithoutWalk(search.state) }),
-    ...parseWalk(isWalkState(search.state) ? { walk: true } : search),
-  }),
+  validateSearch: githubStepSearchSchema,
   component: GithubStep,
 });
 

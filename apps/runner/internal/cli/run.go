@@ -137,7 +137,16 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 
 // listen opens the Unix socket 0600. A stale socket from a killed runner is
 // replaced: the lock above already proved no other runner is alive.
+//
+// Its directory, and the home above it, are made private first (see
+// privateDirectory): that is what closes the window between Listen and the
+// Chmod after it, which stays as defence in depth.
 func (a *App) listen(ctx context.Context) (net.Listener, error) {
+	for _, dir := range []string{a.Paths.Home, a.Paths.Run()} {
+		if err := privateDirectory(dir); err != nil {
+			return nil, err
+		}
+	}
 	socket := a.Paths.Socket()
 	if err := os.Remove(socket); err != nil && !os.IsNotExist(err) {
 		return nil, err

@@ -88,14 +88,14 @@ export function eventLabel(event: GithubEventType, t: TFunction): string {
   });
 }
 
-export function eventText(event: GithubEventType, t: TFunction): string {
+function eventText(event: GithubEventType, t: TFunction): string {
   const label = eventLabel(event, t);
   return t('automations.trigger.event', {
     event: label.charAt(0).toLocaleLowerCase() + label.slice(1),
   });
 }
 
-export function triggerText(trigger: AutomationTrigger, locale: string, t: TFunction): string {
+function triggerText(trigger: AutomationTrigger, locale: string, t: TFunction): string {
   return trigger.source === 'schedule'
     ? scheduleText(trigger, locale, t)
     : eventText(trigger.event, t);

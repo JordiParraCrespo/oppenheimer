@@ -1,8 +1,10 @@
 'use client';
 
-import type { UpdateOrganizationRequest } from '@oppenheimer/api-client';
-import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
-import type { CreateOrganizationDto } from '@oppenheimer/shared';
+import {
+  refetchEverythingForNewIdentity,
+  useQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import {
   skipToken,
   type UseMutationOptions,
@@ -69,38 +71,6 @@ export function useOrganizations(
   });
 }
 
-/**
- * Create the caller's workspace: the recovery path for an account that has
- * none.
- *
- * This drops the whole cache rather than one list: creating a workspace is
- * what puts the caller in one, and the shell, the nav's permission set and
- * every org-scoped list were all answers to "who are you and where" — a narrow
- * invalidation leaves the app reading a cached "you belong nowhere" and
- * bouncing them straight back to onboarding.
- *
- * The reply is the organization itself, so the list is seeded with it before
- * the refetch is awaited: even if that refetch fails, the cache no longer says
- * the caller belongs nowhere.
- */
-export function useCreateOrganization(
-  options?: UseMutationOptions<OrganizationEntity, Error, CreateOrganizationDto>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (dto: CreateOrganizationDto) => app.organizations.create(dto),
-    ...withCacheOnSuccess(options, async (organization) => {
-      queryClient.setQueryData<OrganizationEntity[]>(organizationsKeys.list(), (current) => [
-        ...(current ?? []),
-        organization,
-      ]);
-      await queryClient.invalidateQueries();
-    }),
-  });
-}
-
 /** What onboarding step 2 submits: the chosen name and address, over the row it read. */
 export interface ClaimPersonalWorkspaceVariables {
   existing: OrganizationEntity | undefined;
@@ -112,9 +82,13 @@ export interface ClaimPersonalWorkspaceVariables {
  * Claim the personal workspace — name the row sign-up provisioned, or create
  * one for the account that has none.
  *
- * Drops the whole cache for the same reason `useCreateOrganization` does: the
- * workspace's name and address are what the shell, the nav and every
- * org-scoped list were answers about.
+ * With no row to name, this creates the workspace, which changes where the
+ * caller stands: the shell, the nav's permission set and every org-scoped list
+ * were answers to "who are you and where", so every cached read is refetched —
+ * a narrow invalidation would leave the app reading a cached "you belong
+ * nowhere" and bounce the reader back to onboarding. The reply is seeded into
+ * the list first, so even a failed refetch no longer says that. Naming an
+ * existing row changes only that row, so it is patched into the list.
  */
 export function useClaimPersonalWorkspace(
   options?: UseMutationOptions<OrganizationEntity, Error, ClaimPersonalWorkspaceVariables>,
@@ -125,43 +99,13 @@ export function useClaimPersonalWorkspace(
   return useMutation({
     mutationFn: (variables: ClaimPersonalWorkspaceVariables) =>
       app.organizations.claimPersonalWorkspace(variables),
-    ...withCacheOnSuccess(options, (organization) => {
+    ...withCacheOnSuccess(options, async (organization, { existing }) => {
       queryClient.setQueryData<OrganizationEntity[]>(organizationsKeys.list(), (current) =>
         current?.some((row) => row.id === organization.id)
           ? current.map((row) => (row.id === organization.id ? organization : row))
           : [...(current ?? []), organization],
       );
-      queryClient.invalidateQueries({ queryKey: organizationsKeys.lists() });
-    }),
-  });
-}
-
-export interface UpdateOrganizationVariables {
-  id: string;
-  changes: UpdateOrganizationRequest;
-}
-
-/**
- * Rename the workspace or change its mark.
- *
- * The reply is one organization while the cache holds the caller's whole list,
- * so the updated record is patched into that list rather than replacing it —
- * refetching would drop the other organizations for as long as the request
- * takes.
- */
-export function useUpdateOrganization(
-  options?: UseMutationOptions<OrganizationEntity, Error, UpdateOrganizationVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, changes }: UpdateOrganizationVariables) =>
-      app.organizations.update(id, changes),
-    ...withCacheOnSuccess(options, (organization) => {
-      queryClient.setQueryData<OrganizationEntity[]>(organizationsKeys.list(), (current) =>
-        current?.map((entry) => (entry.id === organization.id ? organization : entry)),
-      );
+      if (!existing) await refetchEverythingForNewIdentity(queryClient);
     }),
   });
 }

@@ -36,9 +36,6 @@ export class ConnectInstallationHttpController {
   @CheckPolicies({ action: 'create', subject: 'Installation' })
   @RequireScopes('repositories:write')
   @ApiOperation({
-    // Named explicitly: the generated client turns an operationId into a function
-    // name, and the defaults (`list`, `connect`) would collide across resources.
-    operationId: 'connectInstallation',
     summary: 'Connect a GitHub App installation to the workspace',
     description:
       'Called with the `installation_id`, OAuth `code` and `state` GitHub puts on the install redirect. The `state` must be one `POST /installations/install-state` minted for this caller in this workspace; it is spent on the first attempt, before GitHub is called. The code is exchanged once to prove the caller can see the installation, then discarded — it is never stored. Re-posting the same installation, with a fresh state, refreshes what GitHub reports about it.',

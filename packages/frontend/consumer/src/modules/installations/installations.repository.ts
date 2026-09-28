@@ -1,11 +1,10 @@
 import {
-  heyApiClient,
   heyApiSdk,
   type InstallationResponseDto,
   type RepositoryBranchResponseDto,
   type RepositoryResponseDto,
 } from '@oppenheimer/api-client';
-import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { MapApiError, unwrapBody } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import {
   BranchEntity,
@@ -16,20 +15,9 @@ import {
 } from './installation.entity';
 import { InstallationsErrors } from './installations.errors';
 
-/**
- * The wire shapes come from the generated client: `pnpm generate:api-client`
- * writes them from the API's own OpenAPI, so a field the API renames cannot
- * stay right here and wrong there. They were hand-written once, which is how
- * `HostsRepository` read `state` for a field the API sends as `online`.
- *
- * Each is handed to the client as the status-keyed map it expects — see the
- * note in `hosts.repository.ts`: a bare DTO resolves to the union of its own
- * field types, not to the DTO.
- */
+/** The wire shapes are the generated client's, never mirrored here. */
 type InstallationDto = InstallationResponseDto;
 type RepositoryDto = RepositoryResponseDto;
-
-const INSTALLATIONS_URL = '/api/v1/installations';
 
 function toEntity(data: InstallationDto): InstallationEntity {
   return new InstallationEntity(
@@ -63,7 +51,7 @@ export class InstallationsRepository {
     // render "GitHub is not connected" over a request that never succeeded,
     // and send somebody to reinstall an App they already have.
     const data = await unwrapBody(
-      heyApiClient.get<{ 200: InstallationDto[] }>({ url: INSTALLATIONS_URL }),
+      heyApiSdk.findInstallations(),
       InstallationsErrors.FETCH_LIST_FAILED,
     );
     return data.map(toEntity);
@@ -94,30 +82,16 @@ export class InstallationsRepository {
   async connect(callback: InstallationCallback): Promise<InstallationEntity> {
     const { githubInstallationId, code, state } = callback;
     const data = await unwrapBody(
-      heyApiClient.post<{ 201: InstallationDto }>({
-        url: INSTALLATIONS_URL,
-        body: { githubInstallationId, code, state },
-      }),
+      heyApiSdk.connectInstallation({ body: { githubInstallationId, code, state } }),
       InstallationsErrors.CONNECT_FAILED,
     );
     return toEntity(data);
   }
 
-  @MapApiError(InstallationsErrors.REMOVE_FAILED)
-  async remove(id: string): Promise<void> {
-    await unwrap(
-      heyApiClient.delete({ url: `${INSTALLATIONS_URL}/{id}`, path: { id } }),
-      InstallationsErrors.REMOVE_FAILED,
-    );
-  }
-
   @MapApiError(InstallationsErrors.FETCH_REPOSITORIES_FAILED)
   async repositories(installationId: string): Promise<RepositoryEntity[]> {
     const data = await unwrapBody(
-      heyApiClient.get<{ 200: RepositoryDto[] }>({
-        url: `${INSTALLATIONS_URL}/{id}/repositories`,
-        path: { id: installationId },
-      }),
+      heyApiSdk.listInstallationRepositories({ path: { id: installationId } }),
       InstallationsErrors.FETCH_REPOSITORIES_FAILED,
     );
     return data.map(toRepository);

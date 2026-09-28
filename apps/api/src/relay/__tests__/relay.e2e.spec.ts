@@ -7,11 +7,14 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { Logger } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
+import type { ScopeResolverPort } from '@oppenheimer/backend-authz';
 import type { CacheService } from '@oppenheimer/backend-cache';
 import { Some } from 'oxide.ts';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
+import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
+import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import { HostAssertionResolver } from '../../hosts/application/host-assertion.resolver';
 import type { HostKeyPort } from '../../hosts/application/host-key.port';
 import type { HostPresencePort } from '../../hosts/application/host-presence.port';
@@ -165,7 +168,7 @@ async function boot(): Promise<World> {
     },
   };
   const presence: HostPresencePort = {
-    observe: vi.fn().mockResolvedValue(true),
+    observe: vi.fn().mockResolvedValue('recorded'),
     connectedFrom: vi.fn().mockResolvedValue(undefined),
   };
   const reconciliation: SessionReconciliationPort = {
@@ -183,7 +186,13 @@ async function boot(): Promise<World> {
   };
 
   const registry = new InProcessLinkRegistry(() => 0);
-  const assertions = new HostAssertionResolver(hosts, cache, config);
+  const owners: CredentialOwnerPort = {
+    findActiveOwner: vi.fn().mockResolvedValue({ id: USER }),
+    requireActiveOwner: vi.fn().mockResolvedValue({ id: USER }),
+  };
+  const assertions = new HostAssertionResolver(hosts, cache, config, owners, {
+    isBurned: async () => false,
+  });
   const runners = new RunnerLinkGateway(
     assertions,
     registry,
@@ -192,10 +201,20 @@ async function boot(): Promise<World> {
       lookup,
       { mintRepositoryToken: vi.fn() } as unknown as RepositoryAccessPort,
       { publicKeyOf: vi.fn() } as unknown as HostKeyPort,
+      owners,
     ),
     config,
   );
-  const browsers = new BrowserAttachGateway(cache, lookup, registry, workspaces_, config);
+  const browsers = new BrowserAttachGateway(
+    cache,
+    lookup,
+    registry,
+    workspaces_,
+    config,
+    { resolve: vi.fn().mockResolvedValue({}) } as unknown as ScopeResolverPort,
+    { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) } as HostAccessPort,
+    owners,
+  );
   new RelayUpgradeGateway({} as never, runners, browsers).mount(server);
 
   const log: string[] = [];

@@ -1,23 +1,12 @@
 {
   "common": {
     "appName": "Oppenheimer",
-    "back": "Volver",
     "cancel": "Cancelar",
     "close": "Cerrar",
-    "confirm": "Confirmar",
-    "controlAppName": "Oppenheimer Control",
     "copied": "Copiado",
     "copy": "Copiar",
-    "create": "Crear",
-    "delete": "Eliminar",
-    "edit": "Editar",
-    "error": "Algo salió mal",
-    "github": "GitHub",
-    "google": "Google",
     "loading": "Cargando...",
-    "next": "Siguiente",
     "or": "o",
-    "orContinueWith": "O continúa con",
     "product": "Consola",
     "relative": {
       "day": "{{count}}d",
@@ -28,13 +17,10 @@
       "week": "{{count}}sem",
       "year": "{{count}}a"
     },
-    "save": "Guardar",
-    "search": "Buscar",
     "dismiss": "Descartar",
     "breadcrumb": "Ruta de navegación"
   },
   "validation": {
-    "title": "Error de validación",
     "required": "Este campo es obligatorio",
     "email": "Introduce una dirección de correo válida",
     "minLength": "Debe tener al menos {{min}} caracteres",
@@ -116,6 +102,7 @@
       "ROLE_005": "No puedes dar a un rol más acceso del que tienes tú.",
       "ROLE_006": "Ese rol pertenece a otra organización.",
       "ROLE_007": "A esta instalación le falta un rol de sistema que necesita. Ejecuta las migraciones de la base de datos.",
+      "ROLE_008": "Cambia a una organización para crear un rol en ella.",
       "AUTHZ_002": "Hay un problema de configuración en el servidor. Inténtalo más tarde.",
       "AUTHZ_003": "El identificador de esa organización no es válido.",
       "AUTHZ_004": "Hay un problema de configuración en el servidor. Inténtalo más tarde.",
@@ -240,11 +227,8 @@
       "signUp": "Crea una",
       "invalidCredentials": "Correo electrónico o contraseña inválidos",
       "noSocialProviders": "El inicio de sesión social no está configurado en este despliegue. Define GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET o GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET en la API para activarlo.",
-      "failedTitle": "Error al iniciar sesión",
-      "failedMessage": "No se pudo iniciar sesión.",
       "continueWithGithub": "Continuar con GitHub",
       "continueWithGoogle": "Continuar con Google",
-      "keepSignedIn": "Mantener la sesión iniciada",
       "socialFailed": "No se pudo iniciar el acceso social. Inténtalo de nuevo o inicia sesión con tu correo y contraseña."
     },
     "register": {
@@ -256,8 +240,6 @@
       "hasAccount": "¿Ya tienes una cuenta?",
       "signIn": "Iniciar sesión",
       "failed": "Error en el registro",
-      "successTitle": "Cuenta creada",
-      "successMessage": "Ya puedes iniciar sesión.",
       "passwordHint": "Doce caracteres como mínimo."
     },
     "forgotPassword": {
@@ -266,11 +248,9 @@
       "submit": "Enviar enlace",
       "submitting": "Enviando...",
       "successTitle": "Revisa tu correo",
-      "successMessage": "Si existe una cuenta con ese correo, recibirás un enlace para restablecer tu contraseña en breve.",
       "backToSignIn": "Volver a iniciar sesión",
       "error": "Algo salió mal",
       "legal": "Solo los miembros de este espacio de trabajo pueden restablecer una contraseña.",
-      "notReceived": "¿No te ha llegado? Revisa tu carpeta de spam o <retry>prueba con otro correo</retry>.",
       "sentMessage": "Hemos enviado un enlace para restablecer tu contraseña a <address>{{email}}</address>. Caduca en 30 minutos.",
       "emailLabel": "Correo de trabajo",
       "resend": "Reenviar enlace",
@@ -289,7 +269,6 @@
       "requestNewLink": "Solicitar un nuevo enlace",
       "successTitle": "Contraseña actualizada",
       "successMessage": "Ya puedes iniciar sesión.",
-      "failedTitle": "Error al restablecer",
       "error": "No se pudo restablecer la contraseña",
       "confirmPassword": "Confirmar contraseña",
       "confirmPasswordPlaceholder": "Repite la contraseña",
@@ -337,10 +316,6 @@
       "accountNotLinked": "Esa dirección ya tiene una cuenta con contraseña. Inicia sesión con tu contraseña; cuando la dirección esté verificada, este botón también funcionará.",
       "failed": "Ese acceso no se completó. Inténtalo de nuevo o usa tu correo y contraseña.",
       "noAccount": "Todavía no hay ninguna cuenta con ese acceso. Crea una abajo: los botones de proveedor lo hacen en un solo paso."
-    },
-    "passwordRules": {
-      "length": "Al menos 12 caracteres",
-      "match": "Las dos contraseñas coinciden"
     },
     "showPassword": "Mostrar contraseña",
     "legal": "Al continuar aceptas nuestros <terms>Términos</terms> y la <privacy>Política de privacidad</privacy>.",
@@ -430,14 +405,6 @@
         "SESS_002": "Este host crea sesiones con un solo repositorio."
       },
       "details": "Detalles del host: {{detail}}"
-    },
-    "group": {
-      "working": "Trabajando",
-      "waiting-on-you": "Te espera",
-      "ready-for-review": "Lista para revisar",
-      "landing": "Aterrizando",
-      "idle": "Inactiva",
-      "resolved": "Terminada"
     },
     "closed": {
       "description": "Esta sesión se ha detenido. Su trabajo está en su rama.",
@@ -530,7 +497,6 @@
         "send": "Enviar",
         "stop": "Detener"
       },
-      "queued": "Tu primera tarea está en cola para este host.",
       "failed": "No se pudo crear la sesión."
     },
     "session": {
@@ -542,7 +508,6 @@
       },
       "image": {
         "sending": "Enviando imagen",
-        "hostOffline": "La imagen no se envió: el equipo está desconectado.",
         "failedTitle": "La imagen no llegó a la sesión"
       },
       "retryNow": "Reintentar ahora",
@@ -602,15 +567,6 @@
       "recent": "Última actividad",
       "oldest": "Más antiguas primero",
       "name": "Nombre"
-    },
-    "agents": {
-      "claude-code": "Claude Code",
-      "codex": "Codex"
-    },
-    "row": {
-      "actions": "Acciones de la sesión",
-      "move": "Mover a un proyecto…",
-      "moveTitle": "Mover a un proyecto"
     }
   },
   "automations": {
@@ -899,7 +855,6 @@
       "save": "Guardar",
       "create": "Crear automatización",
       "saveFailed": "No se ha podido guardar la automatización.",
-      "forProject": "Para {{name}}.",
       "noMatch": "Nada coincide con «{{query}}».",
       "chooseRepositories": "Elige repositorios…",
       "chooseAgent": "Elige un agente…",
@@ -1078,34 +1033,8 @@
       "add": "Añadir host",
       "empty": "Todavía no hay hosts",
       "emptyHint": "Los equipos que conectes aparecen aquí con sus sesiones en curso. Las sesiones no pueden empezar hasta que uno esté en línea.",
-      "online": "En línea",
-      "offline": "Sin conexión",
       "failed": "No se pudieron cargar los hosts."
     }
-  },
-  "home": {
-    "greeting": "Hola de nuevo, {{name}}",
-    "greetingFallback": "Hola de nuevo",
-    "subtitle": "Esto es lo que está pasando con tu cuenta.",
-    "overview": "Resumen",
-    "totalUsers": "Usuarios totales",
-    "activeSessions": "Sesiones activas",
-    "apiCalls": "Llamadas a la API",
-    "uptime": "Tiempo activo",
-    "account": "Cuenta",
-    "accountDescription": "Tu perfil y estado actual.",
-    "email": "Correo electrónico",
-    "role": "Rol",
-    "status": "Estado",
-    "active": "Activa",
-    "inactive": "Inactiva",
-    "memberSince": "Miembro desde",
-    "admin": "Administrador",
-    "accountUnavailable": "No pudimos cargar tu cuenta. Comprueba tu conexión e inténtalo de nuevo.",
-    "retry": "Reintentar",
-    "retrying": "Reintentando...",
-    "signOut": "Cerrar sesión",
-    "signingOut": "Cerrando sesión..."
   },
   "nav": {
     "menu": "Menú",
@@ -1131,260 +1060,6 @@
     "automations": "Automatizaciones",
     "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo."
   },
-  "control": {
-    "accessDeniedTitle": "Se necesita acceso al panel de control",
-    "accessDeniedDescription": "Este espacio está reservado a los administradores de la plataforma.",
-    "auth": {
-      "headline": "Gestiona tu producto desde un panel de control seguro.",
-      "body": "Accede con una cuenta administradora de la plataforma para gestionar todas tus aplicaciones.",
-      "noAccount": "Esta identidad no tiene una cuenta del panel de control. Pide a un administrador de la plataforma que la cree.",
-      "features": {
-        "users": "Crea y gestiona cuentas de usuario",
-        "roles": "Define roles de aplicación reutilizables",
-        "security": "Cierra sesiones y bloquea el acceso al instante"
-      }
-    },
-    "roles": {
-      "title": "Roles y permisos",
-      "description": "Define reglas de acceso reutilizables para las aplicaciones de consumo.",
-      "permissionCount_one": "{{count}} permiso",
-      "permissionCount_other": "{{count}} permisos",
-      "permissionCount_many": "{{count}} permisos"
-    },
-    "users": {
-      "title": "Usuarios",
-      "description": "Gestiona cuentas, roles de aplicación y acceso activo.",
-      "search": "Buscar usuarios…",
-      "add": "Añadir usuario",
-      "empty": "Todavía no hay usuarios",
-      "noMatches": "Ningún usuario coincide con la búsqueda",
-      "noRoles": "Sin roles",
-      "superAdmin": "Superadministrador",
-      "consumer": "Usuario",
-      "active": "Activo",
-      "banned": "Bloqueado",
-      "columns": {
-        "name": "Usuario",
-        "email": "Correo",
-        "roles": "Roles de app",
-        "access": "Acceso de plataforma",
-        "status": "Estado",
-        "joined": "Alta"
-      },
-      "actions": {
-        "roles": "Gestionar roles de app",
-        "password": "Cambiar contraseña",
-        "sessions": "Cerrar sesiones",
-        "ban": "Bloquear usuario",
-        "unban": "Desbloquear usuario",
-        "delete": "Eliminar usuario"
-      },
-      "create": {
-        "title": "Añadir usuario",
-        "description": "Crea una cuenta de consumo. Después podrás asignarle roles de aplicación.",
-        "password": "Contraseña temporal (opcional)",
-        "submit": "Crear usuario"
-      },
-      "roles": {
-        "title": "Roles de aplicación",
-        "description": "Elige los roles que {{name}} usa en las aplicaciones de consumo.",
-        "noDescription": "Sin descripción"
-      },
-      "password": {
-        "title": "Establecer una contraseña",
-        "description": "Sustituye la contraseña de acceso de {{name}}.",
-        "label": "Nueva contraseña",
-        "submit": "Cambiar contraseña"
-      },
-      "confirm": {
-        "ban": {
-          "title": "¿Bloquear este usuario?",
-          "description": "{{name}} perderá el acceso inmediatamente.",
-          "submit": "Bloquear usuario"
-        },
-        "unban": {
-          "title": "¿Desbloquear este usuario?",
-          "description": "{{name}} podrá volver a iniciar sesión.",
-          "submit": "Desbloquear usuario"
-        },
-        "sessions": {
-          "title": "¿Cerrar todas las sesiones?",
-          "description": "Se cerrará la sesión de {{name}} en todos los dispositivos.",
-          "submit": "Cerrar sesiones"
-        },
-        "delete": {
-          "title": "¿Eliminar este usuario?",
-          "description": "La cuenta de {{name}} y sus accesos se eliminarán permanentemente.",
-          "submit": "Eliminar usuario"
-        }
-      }
-    },
-    "flags": {
-      "title": "Indicadores de funcionalidad",
-      "description": "Lanza funcionalidades, ejecuta experimentos y activa interruptores de emergencia para todo este despliegue.",
-      "tabs": {
-        "flags": "Indicadores",
-        "segments": "Segmentos",
-        "history": "Historial"
-      },
-      "search": "Buscar indicadores",
-      "empty": "Ningún indicador coincide.",
-      "columns": {
-        "flag": "Indicador",
-        "kind": "Tipo",
-        "serving": "Sirve",
-        "enabled": "Activo"
-      },
-      "kinds": {
-        "release": "Lanzamiento",
-        "ops": "Operación",
-        "experiment": "Experimento"
-      },
-      "expired": "Caducado",
-      "expiredHint": "Pasó el {{date}}. Lánzalo y elimina el indicador del código.",
-      "expires": "Hasta el {{date}}",
-      "serving": {
-        "default": "Por defecto: {{value}}",
-        "off": "Apagado: {{value}} para todos",
-        "value": "{{value}} para el resto",
-        "split": "Reparto {{arms}}",
-        "rules_one": "{{count}} regla y después",
-        "rules_other": "{{count}} reglas y después",
-        "rules_many": "{{count}} reglas y después"
-      },
-      "actions": {
-        "edit": "Editar segmentación",
-        "explain": "Explicar",
-        "history": "Historial"
-      },
-      "toggle": {
-        "onTitle": "¿Activar {{key}}?",
-        "offTitle": "¿Apagar {{key}}?",
-        "onDescription": "Su segmentación se aplica a todo este despliegue de inmediato.",
-        "offDescription": "Todo este despliegue recibe {{value}} de inmediato. La segmentación se conserva para cuando lo vuelvas a activar.",
-        "comment": "Motivo",
-        "commentPlaceholder": "Incidencia, paso del despliegue, fin del experimento…",
-        "commentHint": "Queda en el historial con tu nombre.",
-        "confirmOn": "Activar",
-        "confirmOff": "Apagar",
-        "pending": "Cambiando…"
-      },
-      "targeting": {
-        "title": "Segmentación: {{key}}",
-        "description": "Las reglas se evalúan en orden y decide la primera cuyas condiciones se cumplen todas. El resto recibe el valor por defecto de la segmentación.",
-        "enabled": "Aplicar segmentación",
-        "enabledHint": "Apagado sirve {{value}} a todos, digan lo que digan las reglas.",
-        "rules": "Reglas",
-        "rule": "Regla {{number}}",
-        "addRule": "Añadir regla",
-        "removeRule": "Quitar regla",
-        "moveUp": "Subir",
-        "moveDown": "Bajar",
-        "ruleDescription": "Para qué es esta regla",
-        "noRules": "Sin reglas. Todos reciben el valor para el resto.",
-        "conditions": "Cuando",
-        "addCondition": "Añadir condición",
-        "removeCondition": "Quitar condición",
-        "noConditions": "Sin condiciones, así que esta regla aplica a todos.",
-        "attribute": "Atributo",
-        "operator": "Operador",
-        "values": "Valores",
-        "valuesHint": "Uno por línea.",
-        "serve": "Servir",
-        "fallthrough": "El resto",
-        "serveValue": "Un valor",
-        "serveSplit": "Reparto por porcentaje",
-        "addArm": "Añadir brazo",
-        "removeArm": "Quitar brazo",
-        "weight": "Porcentaje",
-        "splitTotal": "Total {{total}} %",
-        "comment": "Motivo",
-        "commentPlaceholder": "Para qué es este cambio",
-        "save": "Guardar segmentación",
-        "saving": "Guardando…"
-      },
-      "attributes": {
-        "userId": "ID de usuario",
-        "organizationId": "ID de organización",
-        "email": "Correo electrónico",
-        "platformRole": "Rol de plataforma",
-        "platform": "Plataforma",
-        "appVersion": "Versión de la app",
-        "segment": "Segmento"
-      },
-      "operators": {
-        "in": "es uno de",
-        "not_in": "no es uno de",
-        "ends_with": "termina en",
-        "semver_gte": "es al menos la versión",
-        "semver_lt": "es anterior a la versión"
-      },
-      "explain": {
-        "title": "Explicar: {{key}}",
-        "description": "Qué sirve este indicador a alguien y por qué. Describe todo lo que sepas de esa persona.",
-        "submit": "Explicar",
-        "result": "Sirve {{value}}",
-        "reasons": {
-          "DEFAULT": "Nada decidió, así que se sirvió el valor por defecto del catálogo.",
-          "DISABLED": "El indicador está apagado.",
-          "TARGETING_MATCH": "Coincidió la regla «{{rule}}».",
-          "SPLIT": "Asignado por un reparto por porcentaje.",
-          "FALLTHROUGH": "No coincidió ninguna regla; lo sirvió el valor para el resto.",
-          "ERROR": "La segmentación sirvió un valor que este indicador no admite, así que se sirvió el valor por defecto."
-        }
-      },
-      "segments": {
-        "search": "Buscar segmentos",
-        "empty": "Aún no hay segmentos. Un segmento es una audiencia con nombre, como el equipo o los clientes beta, a la que pueden apuntar las reglas de cualquier indicador.",
-        "new": "Nuevo segmento",
-        "edit": "Editar",
-        "delete": "Eliminar",
-        "columns": {
-          "segment": "Segmento",
-          "conditions": "Condiciones",
-          "usedBy": "Usado por"
-        },
-        "conditionCount_one": "{{count}} condición",
-        "conditionCount_other": "{{count}} condiciones",
-        "conditionCount_many": "{{count}} condiciones",
-        "unused": "Ningún indicador",
-        "newTitle": "Nuevo segmento",
-        "editTitle": "Editar segmento",
-        "formDescription": "Quien cumpla todas estas condiciones está en el segmento.",
-        "key": "Clave",
-        "keyHint": "Cómo se refieren a él las reglas. Minúsculas, dígitos, - y _. No se puede cambiar después.",
-        "name": "Nombre",
-        "details": "Descripción",
-        "create": "Crear segmento",
-        "save": "Guardar segmento",
-        "saving": "Guardando…",
-        "deleteTitle": "¿Eliminar este segmento?",
-        "deleteDescription": "Ningún indicador apunta a él, así que no cambia el indicador de nadie.",
-        "inUse": "Lo usa {{flags}}. Quítalo primero de sus reglas."
-      },
-      "history": {
-        "search": "Filtrar por clave de indicador o segmento",
-        "empty": "Aún no hay cambios.",
-        "columns": {
-          "when": "Cuándo",
-          "subject": "Indicador o segmento",
-          "change": "Cambio",
-          "by": "Quién",
-          "comment": "Motivo"
-        },
-        "actions": {
-          "targeting_updated": "Segmentación cambiada",
-          "toggled": "Cambio de estado",
-          "segment_created": "Segmento creado",
-          "segment_updated": "Segmento actualizado",
-          "segment_deleted": "Segmento eliminado"
-        },
-        "switchedOn": "Activado",
-        "switchedOff": "Apagado",
-        "unknownActor": "Desconocido"
-      }
-    }
-  },
   "language": {
     "label": "Idioma",
     "en": "English",
@@ -1406,20 +1081,8 @@
     "failed": "No se ha podido completar. Inténtalo de nuevo."
   },
   "onboarding": {
-    "description": "Tu cuenta está lista. Ponle nombre al espacio de trabajo donde vivirán tus sesiones.",
-    "eyebrow": "Casi listo",
-    "signOut": "Cerrar sesión",
-    "title": "Crea tu espacio de trabajo",
-    "create": {
-      "name": "Nombre del espacio de trabajo",
-      "namePlaceholder": "Acme S.L.",
-      "hint": "Podrás cambiarle el nombre más adelante desde Ajustes.",
-      "submit": "Crear espacio de trabajo",
-      "submitting": "Creando…"
-    },
     "flow": {
       "back": "Atrás",
-      "counter": "{{step}} de {{total}}",
       "continue": "Continuar",
       "workspace": {
         "title": "Nombra tu espacio de trabajo",
@@ -1476,140 +1139,6 @@
         "noHost": "Aún sin host",
         "doneLabel": "Listo",
         "failed": "No se ha podido cargar. Recarga la página para intentarlo de nuevo."
-      }
-    }
-  },
-  "pages": {
-    "profile": {
-      "description": "Gestiona tu cuenta personal en este espacio de trabajo.",
-      "title": "Mi perfil"
-    },
-    "team": {
-      "common": {
-        "cancel": "Cancelar",
-        "error": "Algo ha fallado. Inténtalo de nuevo.",
-        "loading": "Cargando…"
-      },
-      "confirm": {
-        "cancelDescription": "El enlace de invitación dejará de funcionar.",
-        "cancelTitle": "¿Cancelar esta invitación?",
-        "deleteRoleDescription": "Los miembros asignados perderán los permisos que concede.",
-        "deleteRoleTitle": "¿Eliminar este rol?",
-        "removeDescription": "Perderá el acceso a este espacio. Su cuenta no se eliminará.",
-        "removeTitle": "¿Eliminar este miembro?"
-      },
-      "description": "Gestiona quién puede acceder al espacio de trabajo {{workspace}} y qué le permite hacer su rol.",
-      "invite": {
-        "description": "Añade compañeros por correo. Su rol puede ajustarse después de que se unan.",
-        "emails": "Direcciones de email",
-        "emailsHint": "Separa varias direcciones con comas o saltos de línea.",
-        "emailsPlaceholder": "nombre@empresa.com, otra@empresa.com",
-        "role": "Acceso a la organización",
-        "roles": {
-          "admin": "Administrador",
-          "member": "Miembro",
-          "owner": "Propietario"
-        },
-        "send": "Enviar invitación",
-        "sendMany": "Enviar {{count}} invitaciones",
-        "sending": "Enviando…",
-        "title": "Invitar miembros"
-      },
-      "memberRole": {
-        "description": "Elige el rol de aplicación de {{name}}.",
-        "noRole": "Sin rol personalizado",
-        "role": "Rol",
-        "save": "Guardar rol",
-        "title": "Editar rol del miembro"
-      },
-      "members": {
-        "cancelInvite": "Cancelar invitación",
-        "columns": {
-          "email": "Correo electrónico",
-          "joined": "Alta",
-          "name": "Nombre",
-          "organizationRole": "Rol en la organización",
-          "role": "Rol",
-          "status": "Estado"
-        },
-        "editRole": "Editar rol",
-        "export": "Exportar CSV",
-        "invite": "Invitar",
-        "remove": "Eliminar miembro",
-        "search": "Buscar miembros",
-        "status": {
-          "active": "Activo",
-          "inactive": "Inactivo",
-          "invited": "Invitado"
-        },
-        "empty": "No se han encontrado miembros.",
-        "noMatches": "Ningún miembro coincide con los filtros."
-      },
-      "roleForm": {
-        "create": "Crear rol",
-        "description": "Ponle nombre al rol y elige qué puede hacer.",
-        "details": "Descripción",
-        "detailsPlaceholder": "¿Qué puede hacer este rol?",
-        "edit": "Editar",
-        "editTitle": "Editar rol",
-        "name": "Nombre del rol",
-        "namePlaceholder": "p. ej. Editor de contenido",
-        "newTitle": "Nuevo rol personalizado",
-        "noPermissionResults": "Ningún permiso coincide con la búsqueda.",
-        "none": "Ninguno",
-        "permissions": "Permisos",
-        "save": "Guardar cambios",
-        "saving": "Guardando…",
-        "searchPermissions": "Buscar permisos",
-        "view": "Ver"
-      },
-      "roles": {
-        "columns": {
-          "description": "Descripción",
-          "role": "Rol",
-          "type": "Tipo"
-        },
-        "custom": "Personalizado",
-        "delete": "Eliminar",
-        "duplicate": "Duplicar",
-        "edit": "Editar",
-        "empty": "No se han encontrado roles.",
-        "export": "Exportar CSV",
-        "new": "Nuevo rol",
-        "search": "Buscar roles",
-        "system": "Sistema"
-      },
-      "stats": {
-        "active": "Cuentas activas",
-        "members": "Miembros",
-        "pending": "Invitaciones pendientes"
-      },
-      "tabs": {
-        "members": "Miembros",
-        "roles": "Roles"
-      },
-      "title": "Equipo",
-      "permissionAreas": {
-        "team": {
-          "name": "Equipo",
-          "hint": "Miembros, invitaciones y roles"
-        },
-        "organization": {
-          "name": "Organización",
-          "hint": "Nombre, logotipo y espacios de trabajo"
-        },
-        "users": {
-          "name": "Usuarios",
-          "hint": "El directorio de usuarios"
-        },
-        "api": {
-          "name": "Claves de API",
-          "hint": "Tokens de API personales"
-        },
-        "audit": {
-          "name": "Registro de auditoría",
-          "hint": "Quién hizo qué, y cuándo"
-        }
       }
     }
   },

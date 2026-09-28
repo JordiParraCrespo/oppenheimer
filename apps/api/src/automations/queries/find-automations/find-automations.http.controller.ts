@@ -32,7 +32,6 @@ export class FindAutomationsHttpController {
   @CheckPolicies({ action: 'read', subject: 'Automation' })
   @RequireScopes('automations:read')
   @ApiOperation({
-    operationId: 'listAutomations',
     summary: 'List the workspace’s automations',
     description:
       'Oldest first, as the sidebar groups them by project. Each carries its status (running while a run is live), its next run, its run count over the last 30 days and its last six runs.',

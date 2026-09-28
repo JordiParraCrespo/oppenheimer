@@ -13,25 +13,23 @@ persistence policy, and the contracts a product builds on.
 
 ## What it exports
 
-`@oppenheimer/frontend-core` (`src/index.ts`) — `config`, `di` and `modules`:
+`@oppenheimer/frontend-core` (`src/index.ts`) — `di` and `modules`. The barrels
+export what an app imports; `pnpm check:unused` (knip) fails on an export
+nothing imports, and a documented contract with no caller yet carries
+`/** @public <why> */` on its line.
 
 - **di** — `OppenheimerApp`, `OppenheimerAppConfig`, `TOKENS`.
 - **modules/analytics** — `AnalyticsService`, `AnalyticsModule`,
-  `NoopAnalyticsClient`, `ANALYTICS_EVENTS`, `sanitizeUrlProperties`, the
-  `IAnalyticsClient` port.
-- **modules/auth** — `AuthService`, `AuthRepository`, `AuthModule`,
-  `AuthErrors`, `createAuthStore` (also at `./state`), the `IAuthClient` port.
-- **modules/capabilities** — `CapabilitiesService`, `CapabilitiesRepository`,
-  `CapabilitiesModule`, `CapabilitiesErrors`.
-- **modules/feature-flags** — `FeatureFlagsService`, `FeatureFlagsRepository`,
-  `FeatureFlagsModule`, `FeatureFlagsErrors`, `resolveFlagValue`,
-  `isFlagEnabled`, the `FeatureFlagsClientContext` an app passes to
+  `ANALYTICS_EVENTS`, `sanitizeUrlProperties`, the `IAnalyticsClient` port.
+- **modules/auth** — `AuthService`, `AuthModule`, the auth state types
+  (`createAuthStore` is at `./state`), the `IAuthClient` port.
+- **modules/capabilities** — `CapabilitiesService`, `CapabilitiesModule`.
+- **modules/feature-flags** — `FeatureFlagsService`, `FeatureFlagsModule`, the
+  `FeatureFlagsClientContext` an app passes to
   `OppenheimerApp.create({ featureFlags })`.
-- **modules/core** — `createCoreModule`, `AppError`, `toAppError`,
-  `MapApiError`, `createErrorMessageResolver`, the `IStorageService` port.
-- **modules/user-settings** / **modules/users** — `UserSettingsEntity`,
-  `UserEntity` and their service, repository, module and errors.
-- **config** (`./config`) — `ConfigManager`, `deepMerge`, `getAttribute`.
+- **modules/core** — `AppError`, `MapApiError`, `unwrap` / `unwrapBody`,
+  `createErrorMessageResolver`, the `IStorageService` port.
+- **modules/user-settings** / **modules/users** — their service and module.
 - **validation** (`./validation`) — `createZodErrorMap`,
   `ValidationMessageKey`.
 
@@ -39,19 +37,19 @@ persistence policy, and the contracts a product builds on.
 
 - `OppenheimerProvider`, `useOppenheimerApp`, `useAuthState`.
 - Session: `useLogin`, `useLogout`, `useSessionRestore`, `useSocialLogin`,
-  `useForgotPassword`, `useResetPassword`, `useChangePassword`, `authKeys`.
-- Users: `useProfile`, `useUser`, `useUsers`, `useUpdateUser`, `useDeleteUser`,
-  `useMyPermissions`, `usersKeys`.
-- Settings: `useUserSettings`, `useUpdateUserSettings`, `userSettingsKeys`.
-- Analytics: `useAnalytics`, `useCaptureEvent`, `usePageView`, `analyticsKeys`.
-- Feature flags: `useFeatureFlag`, `useFeatureFlagValue`, `useFeatureFlags`,
-  `featureFlagKeys`, `featureFlagsQueryOptions`. Values come from the API,
-  typed by the catalog in `@oppenheimer/shared/feature-flags`; see
-  `.agents/rules/feature-flags.md`.
-- Capabilities: `useDeploymentCapabilities`, `capabilitiesKeys`.
-- Cache policy: `defaultQueryClientOptions`, `createQueryPersistOptions`,
-  `shouldDehydrateQuery`, `KERNEL_NON_PERSISTED_FEATURES`, `cacheOwnerKey`.
-- Contracts a product builds on: `MEMBER_LISTS_KEY`, `withFeaturePrefix`.
+  `useForgotPassword`, `useResetPassword`, `useExpireSession`.
+- Users: `useProfile`, `useMyPermissions`, `usersKeys`.
+- Settings: `useUserSettings`.
+- Analytics: `usePageView`; `useCaptureEvent` and `useCaptureOnMount`, the
+  documented way to capture a product event.
+- Feature flags: `useFeatureFlag`, `useFeatureFlagValue`, `useFeatureFlags`.
+  Values come from the API, typed by the catalog in
+  `@oppenheimer/shared/feature-flags`; see `.agents/rules/feature-flags.md`.
+- Capabilities: `useDeploymentCapabilities`.
+- Queries and mutations: `useQuery` / `useQueries` (entities shared across
+  refetches), `withCacheOnSuccess`, `refetchEverythingForNewIdentity`.
+- Cache policy: `createQueryClient`, `defaultQueryClientOptions`,
+  `createQueryPersistOptions`.
 
 ## How to use it
 

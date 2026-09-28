@@ -53,10 +53,12 @@ import {
   HOST_REPOSITORY,
   HOST_VITALS,
   IP_GEOLOCATION,
+  LEGACY_REPLAY_MARKER,
 } from './hosts.di-tokens';
 import { HostResource } from './hosts.resource';
 import { DbipGeolocationAdapter } from './infrastructure/dbip-geolocation.adapter';
 import { HostRetentionProcessor } from './infrastructure/host-retention.processor';
+import { RedisLegacyReplayMarker } from './infrastructure/redis-legacy-replay-marker.adapter';
 import { RunnerReleaseConfig } from './infrastructure/runner-release.config';
 import { FindHostHttpController } from './queries/find-host/find-host.http.controller';
 import { FindHostQueryHandler } from './queries/find-host/find-host.query-handler';
@@ -118,6 +120,9 @@ const repositories: Provider[] = [
   { provide: HOST_METADATA_REPOSITORY, useExisting: HostMetadataRepository },
   // Offline: DB-IP Lite on disk. No database configured is an answer of all-null.
   { provide: IP_GEOLOCATION, useClass: DbipGeolocationAdapter },
+  // TODO(remove after #162 has been live once): replay markers burned before
+  // the cache prefixed its keys. See `LegacyReplayMarkerPort`.
+  { provide: LEGACY_REPLAY_MARKER, useClass: RedisLegacyReplayMarker },
 ];
 
 const resolvers: Provider[] = [

@@ -18,6 +18,7 @@ import type { Request } from 'express';
 import { CheckPolicies } from '../auth/decorators/check-policies.decorator';
 import { OrganizationScoped } from '../auth/decorators/organization-scoped.decorator';
 import { RequireScopes } from '../auth/decorators/require-scopes.decorator';
+import { UsesBetterAuthSession } from '../auth/decorators/uses-better-auth-session.decorator';
 import { ApiAuthGuard } from '../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../auth/guards/policies.guard';
 import {
@@ -53,6 +54,7 @@ import { OrganizationsService } from './organizations.service';
   code: ['ORG_006', 'ORG_007', 'ORG_014'],
 })
 @UseGuards(ApiAuthGuard, PoliciesGuard)
+@UsesBetterAuthSession()
 @Controller('organizations')
 export class MembersController {
   constructor(private readonly organizations: OrganizationsService) {}
@@ -62,7 +64,9 @@ export class MembersController {
   @RequireScopes('members:read')
   @OrganizationScoped('orgId')
   @CheckPolicies({ action: 'read', subject: 'Member' })
-  @ApiOperation({ summary: 'List members of an organization' })
+  @ApiOperation({
+    summary: 'List members of an organization',
+  })
   @ApiQuery({
     name: 'search',
     required: false,
@@ -79,7 +83,7 @@ export class MembersController {
       'Role facet: keep members holding any of these assigned roles; repeat the parameter to select several',
   })
   @ApiResponse({ status: 200, type: [MemberResponseDto] })
-  list(
+  listOrganizationMembers(
     @Req() req: Request,
     @Param('orgId', ParseUUIDPipe) orgId: string,
     @Query() query: ListMembersRequest,
@@ -112,7 +116,7 @@ export class MembersController {
   @CheckPolicies({ action: 'update', subject: 'Member' })
   @ApiOperation({ summary: "Change a member's organization role" })
   @ApiResponse({ status: 200, type: MemberResponseDto })
-  updateRole(
+  updateMemberRole(
     @Req() req: Request,
     @Param('orgId', ParseUUIDPipe) orgId: string,
     @Param('memberId', ParseUUIDPipe) memberId: string,
@@ -126,9 +130,11 @@ export class MembersController {
   @RequireScopes('members:write')
   @OrganizationScoped('orgId')
   @CheckPolicies({ action: 'delete', subject: 'Member' })
-  @ApiOperation({ summary: 'Remove a member from an organization' })
+  @ApiOperation({
+    summary: 'Remove a member from an organization',
+  })
   @ApiResponse({ status: 200, type: MemberResponseDto })
-  remove(
+  removeOrganizationMember(
     @Req() req: Request,
     @Param('orgId', ParseUUIDPipe) orgId: string,
     @Param('memberIdOrEmail') memberIdOrEmail: string,

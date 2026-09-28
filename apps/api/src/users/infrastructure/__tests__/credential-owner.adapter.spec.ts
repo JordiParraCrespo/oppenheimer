@@ -72,4 +72,20 @@ describe('UserCredentialOwnerAdapter', () => {
     withOwner(makeUser({ banned: true, banExpires: new Date(Date.now() - minute) }));
     await expect(adapter.findActiveOwner('user-uuid')).resolves.toMatchObject({ id: 'user-uuid' });
   });
+
+  describe('requireActiveOwner', () => {
+    it('answers the owner who may act', async () => {
+      withOwner(makeUser({}));
+      await expect(adapter.requireActiveOwner('user-uuid')).resolves.toMatchObject({
+        id: 'user-uuid',
+      });
+    });
+
+    it('refuses anyone else with the opaque credential error', async () => {
+      withOwner(makeUser({ isActive: false }));
+      await expect(adapter.requireActiveOwner('user-uuid')).rejects.toMatchObject({
+        code: 'TOKEN_003',
+      });
+    });
+  });
 });

@@ -43,7 +43,6 @@ export class PauseAutomationHttpController {
   @CheckPolicies({ action: 'update', subject: 'Automation' })
   @RequireScopes('automations:write')
   @ApiOperation({
-    operationId: 'pauseAutomation',
     summary: 'Pause an automation',
     description:
       'Triggers are ignored until it is resumed; Run now still works. Its schedule stops firing now.',

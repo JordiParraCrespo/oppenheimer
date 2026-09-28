@@ -227,7 +227,10 @@ export class AbilityFactory implements AbilityPort {
       versions.user,
     ].join(':');
 
-    // TODO(B3): getOrSet
+    // Not `CacheService.getOrSet`: it fails open silently, and this read must
+    // see a Redis failure to warn once per outage and say when it recovered.
+    // Its single-flight buys little here — the key is one caller's, and
+    // `requestMemo` already shares the answer within a request.
     const cached = await this.cacheGet(key);
     if (cached) return cached;
 

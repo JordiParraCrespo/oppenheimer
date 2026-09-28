@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import type { HostEntity, HostPairing } from '../modules/hosts/host.entity';
-import { useCurrentPairing, useHosts, usePairingTokens, useReplacePairing } from './hosts.queries';
-
-/** How often a pairing surface asks whether its token has been spent yet. */
-const POLL_MS = 3000;
+import {
+  useCurrentPairing,
+  useHostList,
+  usePairingTokens,
+  useReplacePairing,
+} from './hosts.queries';
+import { pollWhile } from './live-poll';
 
 /** The longest delay `setTimeout` honours; a later one fires at once. */
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
@@ -90,27 +93,25 @@ export function useHostPairing(hostName: string): HostPairingFlow {
   // Poll the token, not the host list. Stops once this token names a host, and
   // once it has expired: a dead token can pair nothing, so polling past that is
   // a request every three seconds that can only answer "no".
-  const { data: tokens } = usePairingTokens({
-    enabled: Boolean(pairing) && !expired,
-    refetchInterval: (query) => {
+  const { data: tokens } = usePairingTokens(
+    { enabled: Boolean(pairing) && !expired },
+    pollWhile('pairing', (rows) => {
       if (!pairing || expired) return false;
-      const mine = query.state.data?.find((token) => token.id === pairing.id);
-      return mine?.redeemedHostId ? false : POLL_MS;
-    },
-  });
+      return !rows?.find((token) => token.id === pairing.id)?.redeemedHostId;
+    }),
+  );
 
   const redeemedHostId = tokens?.find((token) => token.id === pairing?.id)?.redeemedHostId ?? null;
 
   // The host row appears when the runner registers; its service may still be
   // starting, so the caller decides what `online` means for its primary action.
-  const { data: hosts } = useHosts({
-    enabled: Boolean(redeemedHostId),
-    refetchInterval: (query) => {
+  const { data: hosts } = useHostList(
+    { enabled: Boolean(redeemedHostId) },
+    pollWhile('pairing', (rows) => {
       if (!redeemedHostId) return false;
-      const host = query.state.data?.find((row) => row.id === redeemedHostId);
-      return host?.online ? false : POLL_MS;
-    },
-  });
+      return !rows?.find((row) => row.id === redeemedHostId)?.online;
+    }),
+  );
 
   const host: HostEntity | null = redeemedHostId
     ? (hosts?.find((row) => row.id === redeemedHostId) ?? null)

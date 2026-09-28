@@ -1,5 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { CredentialsTokenMessage } from '@oppenheimer/shared/protocol';
+import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
+import { CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
 import { REPOSITORY_ACCESS } from '../../github/github.di-tokens';
 import type { HostKeyPort } from '../../hosts/application/host-key.port';
@@ -14,9 +16,10 @@ import { seal } from './seal.util';
  * installation token for one session's repository, on the link, because the
  * link is the only channel already authenticated per host (01).
  *
- * Three checks before anything is minted: the session and checkout exist and
- * are live, the session runs on **this** link's host, and the repository the
- * runner names is the checkout's. Then the token is minted live — never cached,
+ * Four checks before anything is minted: the session and checkout exist and
+ * are live, the session runs on **this** link's host, the repository the
+ * runner names is the checkout's, and the person who started the session may
+ * still act. Then the token is minted live — never cached,
  * so a repository removed from the installation stops on the next ask — and
  * sealed to the host's key, so the relay holds it in the clear for as long as
  * this function runs and no longer.
@@ -36,6 +39,8 @@ export class CredentialsProcessor {
     private readonly repositories: RepositoryAccessPort,
     @Inject(HOST_KEY)
     private readonly keys: HostKeyPort,
+    @Inject(CREDENTIAL_OWNER)
+    private readonly owners: CredentialOwnerPort,
   ) {}
 
   async onToken(link: RunnerLink, ask: CredentialsTokenMessage): Promise<void> {
@@ -46,6 +51,14 @@ export class CredentialsProcessor {
     }
     if (target.githubRepoId !== ask.githubRepoId) {
       this.refuse(link, ask, 'SESSIONS_001', "the repository is not this checkout's");
+      return;
+    }
+    // A token is minted for the person who started the session; a banned or
+    // deactivated one gets none, the same rule every credential of theirs
+    // follows. (The host's own owner is refused at the link: its handshake
+    // and every heartbeat ask.) Read per ask, never cached.
+    if (!(await this.owners.findActiveOwner(target.createdByUserId))) {
+      this.refuse(link, ask, 'TOKEN_003', 'the session owner may not act');
       return;
     }
     const publicKey = await this.keys.publicKeyOf(link.hostId);

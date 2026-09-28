@@ -18,18 +18,6 @@ import { useTranslation } from 'react-i18next';
  * blue.
  */
 
-/**
- * Legacy: the previous system pinned auth controls at 40px through these
- * classes. Controls now take `size="lg"`; the names stay so the screens not
- * yet rebuilt on the artboards (onboarding) keep compiling.
- */
-export const authControlClass = 'w-full';
-export const authInputClass = 'w-full';
-
-export function AuthEyebrow({ children }: { children: React.ReactNode }) {
-  return <p className="eyebrow figures mb-3">{children}</p>;
-}
-
 export function AuthTitle({ children, className }: React.ComponentProps<'h1'>) {
   return (
     <h1
@@ -61,15 +49,6 @@ export function AuthIconCircle({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** A pill naming the address a flow is scoped to. */
-export function AuthEmailChip({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-7 inline-flex items-center gap-2 self-start rounded-pill border border-border-subtle bg-surface-sunken px-3 py-2 text-sm text-fg [&>svg]:size-[15px] [&>svg]:text-fg-muted">
-      {children}
-    </div>
-  );
-}
-
 /** Hairline · OR · hairline, between the social buttons and the email form. */
 export function AuthDivider({ label }: { label?: string }) {
   const { t } = useTranslation();
@@ -85,18 +64,16 @@ export function AuthFooterNote({ children, className }: React.ComponentProps<'p'
 /** A router link in the auth screens' voice: the link blue, underline on hover. */
 export function AuthLink({
   to,
-  search,
   children,
   className,
 }: {
   to: string;
-  search?: Record<string, unknown>;
   /** Optional so `Trans` can pass the element and fill it from the catalog. */
   children?: React.ReactNode;
   className?: string;
 }) {
   return (
-    <TextLink className={className} render={<Link to={to} search={search as never} />}>
+    <TextLink className={className} render={<Link to={to} />}>
       {children}
     </TextLink>
   );

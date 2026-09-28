@@ -11,7 +11,7 @@ import { useQuery } from './query';
  * never handed to `useQuery` — a root that is also a leaf stops meaning
  * "everything" the day a second query joins it.
  */
-export const capabilitiesKeys = {
+const capabilitiesKeys = {
   all: ['capabilities'] as const,
   deployment: () => [...capabilitiesKeys.all, 'deployment'] as const,
 };

@@ -1,5 +1,9 @@
+import { OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
+import { GithubInstallationOrmEntity } from '../src/github/database/github-installation.orm-entity';
+import { GithubInstallationRepository } from '../src/github/database/github-installation.repository';
+import { GithubInstallationMapper } from '../src/github/github-installation.mapper';
 import { runAllMigrations } from './run-migrations';
 
 /**
@@ -40,6 +44,7 @@ describe('GitHub installations schema (integration)', () => {
       username: 'test',
       password: 'test',
       database: 'test',
+      entities: [GithubInstallationOrmEntity],
     });
     await dataSource.initialize();
   }, 180000);
@@ -108,6 +113,7 @@ describe('GitHub installations schema (integration)', () => {
         'installedByUserId',
         'organizationId',
         'repositorySelection',
+        'statusChangedAt',
         'suspendedAt',
         'updatedAt',
       ]);
@@ -224,6 +230,119 @@ describe('GitHub installations schema (integration)', () => {
       );
       expect(row.deletedAt).not.toBeNull();
       expect(row.suspendedAt).not.toBeNull();
+    });
+
+    describe("ordered by GitHub's time", () => {
+      const T1 = new Date('2026-09-01T09:00:00Z');
+      const T2 = new Date('2026-09-01T10:00:00Z');
+
+      function repository() {
+        return new GithubInstallationRepository(
+          dataSource.getRepository(GithubInstallationOrmEntity),
+          new GithubInstallationMapper(),
+          new OutboxService(dataSource),
+        );
+      }
+
+      async function statusOf(githubInstallationId: number) {
+        const [row] = await dataSource.query(
+          `SELECT "suspendedAt", "deletedAt", "statusChangedAt" FROM "github_installation"
+            WHERE "githubInstallationId" = $1`,
+          [githubInstallationId],
+        );
+        return row as { suspendedAt: Date | null; deletedAt: Date | null; statusChangedAt: Date };
+      }
+
+      it('ignores a late suspend older than the unsuspend already applied', async () => {
+        await connect(ORG_ONE, 10000010);
+        const installations = repository();
+
+        await expect(
+          installations.applyStatusChange({
+            githubInstallationId: 10000010,
+            occurredAt: T2,
+            suspendedAt: null,
+          }),
+        ).resolves.toBe('applied');
+        // Regression: the retry of the older suspend used to win, and the
+        // installation stayed suspended.
+        await expect(
+          installations.applyStatusChange({
+            githubInstallationId: 10000010,
+            occurredAt: T1,
+            suspendedAt: T1,
+          }),
+        ).resolves.toBe('stale');
+
+        const row = await statusOf(10000010);
+        expect(row.suspendedAt).toBeNull();
+        expect(row.statusChangedAt).toEqual(T2);
+      });
+
+      it('applies changes that arrive in order, with the time GitHub gave', async () => {
+        await connect(ORG_ONE, 10000011);
+        await connect(ORG_ONE, 10000012);
+        const installations = repository();
+
+        await installations.applyStatusChange({
+          githubInstallationId: 10000011,
+          occurredAt: T1,
+          suspendedAt: T1,
+        });
+        await installations.applyStatusChange({
+          githubInstallationId: 10000011,
+          occurredAt: T2,
+          suspendedAt: null,
+        });
+        expect((await statusOf(10000011)).suspendedAt).toBeNull();
+
+        await installations.applyStatusChange({
+          githubInstallationId: 10000012,
+          occurredAt: T1,
+          suspendedAt: null,
+        });
+        await installations.applyStatusChange({
+          githubInstallationId: 10000012,
+          occurredAt: T2,
+          suspendedAt: T2,
+        });
+        expect((await statusOf(10000012)).suspendedAt).toEqual(T2);
+      });
+
+      it('uninstalls whatever the last suspend said, and reports a missing row', async () => {
+        await connect(ORG_ONE, 10000013);
+        const installations = repository();
+        await installations.applyStatusChange({
+          githubInstallationId: 10000013,
+          occurredAt: T2,
+          suspendedAt: T2,
+        });
+
+        await expect(
+          installations.applyStatusChange({
+            githubInstallationId: 10000013,
+            occurredAt: T1,
+            deletedAt: new Date(),
+          }),
+        ).resolves.toBe('applied');
+        expect((await statusOf(10000013)).deletedAt).not.toBeNull();
+
+        // A disconnected row is history: nothing matches, and it says so.
+        await expect(
+          installations.applyStatusChange({
+            githubInstallationId: 10000013,
+            occurredAt: new Date('2026-09-02T00:00:00Z'),
+            suspendedAt: null,
+          }),
+        ).resolves.toBe('missing');
+        await expect(
+          installations.applyStatusChange({
+            githubInstallationId: 99999999,
+            occurredAt: T1,
+            suspendedAt: T1,
+          }),
+        ).resolves.toBe('missing');
+      });
     });
 
     it('goes away with the workspace that claimed it', async () => {

@@ -2,8 +2,8 @@ package ws
 
 import (
 	"context"
+	"errors"
 	"sync"
-	"time"
 
 	"github.com/coder/websocket"
 )
@@ -43,33 +43,18 @@ func (c *conn) enqueue(frame []byte) {
 }
 
 // writeLoop drains the send queue and keeps the connection alive with
-// pings until the connection is done.
+// pings until the connection is done. It is the one writer (PumpChan).
 func (c *conn) writeLoop(ctx context.Context) {
-	ticker := time.NewTicker(c.hub.opts.PingInterval)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-c.done:
-			return
-		case <-ctx.Done():
-			return
-		case frame := <-c.send:
-			wctx, cancel := context.WithTimeout(ctx, c.hub.opts.WriteTimeout)
-			err := c.ws.Write(wctx, websocket.MessageText, frame)
-			cancel()
-			if err != nil {
-				c.close(websocket.StatusAbnormalClosure, "write failed")
-				return
-			}
-		case <-ticker.C:
-			pctx, cancel := context.WithTimeout(ctx, c.hub.opts.WriteTimeout)
-			err := c.ws.Ping(pctx)
-			cancel()
-			if err != nil {
-				c.close(websocket.StatusAbnormalClosure, "ping failed")
-				return
-			}
-		}
+	err := PumpChan(ctx, c.ws, c.send, c.done, PumpOptions{
+		PingInterval: c.hub.opts.PingInterval,
+		PingTimeout:  c.hub.opts.WriteTimeout,
+		WriteTimeout: c.hub.opts.WriteTimeout,
+	})
+	switch {
+	case errors.Is(err, ErrWrite):
+		c.close(websocket.StatusAbnormalClosure, "write failed")
+	case errors.Is(err, ErrPing):
+		c.close(websocket.StatusAbnormalClosure, "ping failed")
 	}
 }
 

@@ -46,13 +46,13 @@ export class IssueAttachTicketHttpController {
   // other writes — but a loop minting tickets is still a loop.
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @ApiOperation({
-    operationId: 'issueAttachTicket',
     summary: 'Mint a ticket for a terminal on this session',
     description:
       'Single use, 60 seconds, one window. Present it as a WebSocket subprotocol, never in the query string. The relay re-checks at consume that the session is still live and the caller is still a member of the workspace, so authorization is not frozen at mint.',
   })
   @ApiResponse({ status: 201, type: AttachTicketResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Session not found', code: 'SESSIONS_001' })
+  @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
   @ApiProblemResponse({ status: 409, description: 'That session is closed', code: 'SESSIONS_005' })
   @ApiProblemResponse({
     status: 503,

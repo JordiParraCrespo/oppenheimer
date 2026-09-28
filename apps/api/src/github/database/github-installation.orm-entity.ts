@@ -26,6 +26,8 @@ import {
  */
 @Entity('github_installation')
 @Index(['organizationId'])
+// Behind FK_github_installation_installed_by (1790890000000-IndexUnbackedForeignKeys).
+@Index('IDX_github_installation_installed_by', ['installedByUserId'])
 @Unique('UQ_github_installation_organization_id', ['organizationId', 'id'])
 export class GithubInstallationOrmEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -54,6 +56,14 @@ export class GithubInstallationOrmEntity {
 
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   suspendedAt!: Date | null;
+
+  /**
+   * GitHub's own time of the last suspend or unsuspend this row applied, so a
+   * late or replayed delivery cannot undo a newer one. Null until the first.
+   * Written only by the webhook's conditional update, never by the mapper.
+   */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  statusChangedAt?: Date | null;
 
   /** Disconnected here, or uninstalled on GitHub. Never hard-deleted: the row
    *  is what lets the console say why repositories stopped resolving. */

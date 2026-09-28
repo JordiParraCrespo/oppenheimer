@@ -1,3 +1,3 @@
-export * from './catalog';
-export * from './resource-scope';
-export * from './scope';
+export * from './catalog.js';
+export * from './resource-scope.js';
+export * from './scope.js';

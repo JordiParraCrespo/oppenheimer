@@ -80,7 +80,7 @@ oppenheimer/
 │   │   ├── web/          # The web platform kit: shell, auth chrome, table, i18n… (@oppenheimer/frontend-web)
 │   │   └── design-system/
 │   │       └── web/      # shadcn/ui + Base UI + Tailwind v4 (@oppenheimer/design-system-web)
-│   ├── go/               # Shared Go modules (@oppenheimer/go-*): core, config, httpx, auth, health, ws, postgres, selfupdate
+│   ├── go/               # Shared Go modules (@oppenheimer/go-*): core, config, httpx, auth, health, ws, postgres, selfupdate, execx
 │   ├── shared/           # Zod schemas, types, CASL permissions
 │   └── translations/     # Shared i18n JSON files
 ├── docker/               # Docker Compose (dev + prod)
@@ -209,7 +209,7 @@ static binary, long-lived connections or process orchestration (runners, VMs,
 containers) — `apps/runner` is the template, and the API talks to it with an
 API key. The cross-cutting toolkit is `packages/go/*`, the Go counterpart of
 `packages/backend/*`: one Go module each (`core`, `config`, `httpx`, `auth`,
-`health`, `ws`, `postgres`, `selfupdate`), tied together by the root `go.work`, each also published to
+`health`, `ws`, `postgres`, `selfupdate`, `execx`), tied together by the root `go.work`, each also published to
 Turborepo as `@oppenheimer/go-<name>` so the task graph and `--affected` see them.
 `apps/runner` is more than the template now: it is the host agent. It pairs a
 macOS, Debian or Ubuntu machine with a workspace, installs itself as a launchd
@@ -242,8 +242,8 @@ The frontend is split twice, and the two splits answer different questions:
 
 - **By product** for logic. `core` is the kernel every app loads (session,
   users, user settings, capabilities, analytics, the InversifyJS container,
-  config, validation). `consumer` (`sessions`, `hosts`, `automations`, and the account chrome:
-  `organizations` as the personal workspace, `profile`, `api-tokens`) is the
+  validation). `consumer` (`sessions`, `hosts`, `automations`, and the account chrome:
+  `organizations` as the personal workspace, `profile`, `permissions`) is the
   product's domain (entities, repositories, services, TanStack Query hooks);
   the app loads it through `OppenheimerApp.create({ modules })`. The kernel
   never imports the product package.
@@ -313,7 +313,7 @@ packages/frontend/core        → used by every frontend package and web
 packages/frontend/consumer    → used by web
 packages/frontend/web         → used by web
 packages/go/core              → used by every other packages/go module and runner
-packages/go/{config,httpx,auth,health,ws,postgres,selfupdate} → used by runner (auth ← ws, httpx ← health, auth)
+packages/go/{config,httpx,auth,health,ws,postgres,selfupdate,execx} → used by runner (auth ← ws, httpx ← health, auth)
 ```
 
 ## Commands
@@ -328,6 +328,7 @@ pnpm arch               # Architecture boundaries (dependency-cruiser), API and 
 pnpm check:structure    # Frontend layout contract: feature names, kinds, route cap, docs
 pnpm check:flags        # Feature flags: none past expiry, none declared but unread
 pnpm check:compiler     # What the React Compiler leaves uncompiled, silently (oxc bailouts)
+pnpm check:unused       # Unused files, exports and dependencies in the frontend (knip)
 pnpm docker:dev         # Start Postgres + Redis
 # oppenheimer:begin e2e
 node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)
@@ -370,12 +371,14 @@ pnpm changeset          # Create a changeset for versioning
 - Sign-up creates the account and its personal workspace in one go. The
   `/onboarding` screen is only the recovery path for an account that ended up
   with no workspace. Only `/register` passes the social `sign-up` intent
-- `apps/web` must not import runtime values from the `@oppenheimer/shared` **root**:
-  its CJS build is not tree-shakeable, so the whole graph lands in the bundle.
-  Import a narrow subpath (`@oppenheimer/shared/schemas/auth`) or fetch from the API.
-  Anything newly imported this way needs adding to `optimizeDeps.include` in
-  `apps/web/vite.config.ts` for dev
-- The same applies to `@oppenheimer/translations`: `apps/web`
+- `@oppenheimer/shared` gives bundlers an ESM build and declares its side
+  effects, so `apps/web` tree-shakes it: an import from the root costs what it
+  uses and no more. Still prefer the narrowest subpath that has the value
+  (`@oppenheimer/shared/schemas/auth`) — it says what the code depends on — and
+  remember that what you *use* lands whole: a schema that reaches the scope
+  catalog brings the catalog. Every `src/<dir>/` and `src/schemas/<x>.schema.ts`
+  is a subpath by pattern; a new one needs no config
+- `@oppenheimer/translations` is imported by subpath only: `apps/web`
   imports metadata from `@oppenheimer/translations/locales` and catalogs from
   `@oppenheimer/translations/lazy`; only the default locale is bundled
 - The web app's critical path is budgeted: `pnpm check:bundle` fails past the

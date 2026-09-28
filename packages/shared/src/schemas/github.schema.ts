@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { githubInstallationIdSchema } from './primitives';
+import { githubInstallationIdSchema } from './primitives.js';
 
 /**
  * GitHub App installation shapes. There is no repository schema and no

@@ -144,6 +144,7 @@ cannot be used as a probing oracle.
 | `ROLE_005` <a id="role_005" /> | A role cannot be granted permissions its author does not hold               | 403  |
 | `ROLE_006` <a id="role_006" /> | A role belonging to another organization cannot be modified                 | 403  |
 | `ROLE_007` <a id="role_007" /> | A system role this deployment needs is not installed                        | 500  |
+| `ROLE_008` <a id="role_008" /> | A role is created inside an organization                                    | 400  |
 
 ## Authorization
 
@@ -562,6 +563,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `HOST_005` <a id="host_005" />         | Could not inspect the host                   | 500  |
 | `HOST_006` <a id="host_006" />         | This machine looks temporary                 | 412  |
 | `HOST_007` <a id="host_007" />         | The workspaces directory is not usable       | 400  |
+| `HOST_008` <a id="host_008" />         | The runner's own directory is not safe to use | 412 |
 | `PAIR_001` <a id="pair_001" />         | This host is not paired yet                  | 428  |
 | `PAIR_002` <a id="pair_002" />         | This host is already paired                  | 409  |
 | `PAIR_003` <a id="pair_003" />         | The registration token was rejected          | 401  |
@@ -594,6 +596,21 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `GIT_003` <a id="git_003" />           | The branch could not be pushed               | 409  |
 | `GIT_004` <a id="git_004" />           | The repository needs a credential the runner could not supply | 403 |
 | `GIT_005` <a id="git_005" />           | A git command was abandoned before it finished | 503 |
+
+`HOST_008` stops `runner run` before it opens its control socket, so the
+service keeps restarting into it. Its detail names the directory — the runner
+home (`~/.oppenheimer`, or `RUNNER_HOME`) or its `run/` — and why. A home that
+is a **symlink** (moved to another disk and linked back, say) was accepted by
+earlier runners and is refused now, because the runner keeps its key and the
+socket that hands out installation tokens only in a real directory it owns.
+Put the real directory back in its place — `target="$(readlink -f
+~/.oppenheimer)" && rm ~/.oppenheimer && mv "$target" ~/.oppenheimer` — or
+point `RUNNER_HOME` at the real path (the service unit carries the value
+`runner install` was run with, so install again with it set); then restart
+the service (`systemctl --user restart oppenheimer-runner` or
+`launchctl kickstart -k gui/$(id -u)/dev.oppenheimer.runner`). A directory
+another account owns is fixed with `chown`; a mode looser than `0700` is
+tightened by the runner itself.
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants

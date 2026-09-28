@@ -40,6 +40,7 @@ export class SessionLookupResolver implements SessionLookupPort {
       installationId: checkout.installationId,
       githubRepoId: Number(checkout.githubRepoId),
       live: !session.isResolved && !checkout.isRemoved,
+      createdByUserId: session.createdByUserId,
     };
   }
 }

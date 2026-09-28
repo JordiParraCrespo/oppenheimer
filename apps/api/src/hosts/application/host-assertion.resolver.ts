@@ -2,15 +2,18 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
+import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
+import { CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
 import type { HostRepositoryPort } from '../database/host.repository.port';
 import { HostErrors } from '../domain/hosts.errors';
-import { HOST_REPOSITORY } from '../hosts.di-tokens';
+import { HOST_REPOSITORY, LEGACY_REPLAY_MARKER } from '../hosts.di-tokens';
 import {
   assertionIsSignedBy,
   type DecodedHostAssertion,
   decodeHostAssertion,
   looksLikeHostAssertion,
 } from '../infrastructure/host-assertion.util';
+import type { LegacyReplayMarkerPort } from '../infrastructure/legacy-replay-marker.port';
 import type { HostAssertionPort, HostPrincipalIdentity } from './host-assertion.port';
 
 /**
@@ -57,6 +60,10 @@ export class HostAssertionResolver implements HostAssertionPort {
     private readonly hosts: HostRepositoryPort,
     private readonly cache: CacheService,
     private readonly configService: ConfigService,
+    @Inject(CREDENTIAL_OWNER)
+    private readonly owners: CredentialOwnerPort,
+    @Inject(LEGACY_REPLAY_MARKER)
+    private readonly legacyMarkers: LegacyReplayMarkerPort,
   ) {}
 
   recognises(bearer: string): boolean {
@@ -84,6 +91,14 @@ export class HostAssertionResolver implements HostAssertionPort {
     // carry a rotation (09 §3).
     if (!assertionIsSignedBy(decoded, [host.publicKey])) {
       throw this.rejected('not signed by this host');
+    }
+    // A host acts for the person who paired it, so it can do no more than they
+    // may: a banned or deactivated owner (`isAccessAllowed`, asked through the
+    // same port every other credential kind asks) takes the machine's
+    // credential down with theirs. Read per dial, never cached, so lifting
+    // the ban lets the runner's next dial through.
+    if (!(await this.owners.findActiveOwner(host.ownerUserId))) {
+      throw this.rejected('the owner may not act');
     }
 
     await this.burn(hostId, jti, expiresAt, now);
@@ -154,8 +169,17 @@ export class HostAssertionResolver implements HostAssertionPort {
    * Claim the `jti` for the rest of the token's life. Losing the race means the
    * assertion has already been used, which is a replay whether or not the first
    * use was legitimate.
+   *
+   * TODO(remove after #162 has been live once): the marker a replica wrote
+   * before the cache prefixed its keys sits at the unprefixed key, which
+   * `setIfAbsent` no longer sees, so an assertion used in the five and a half
+   * minutes before that deploy could otherwise be used once more after it.
+   * The legacy key is checked first and honoured. Every such marker has
+   * expired by the next release; remove this check and
+   * `LegacyReplayMarkerPort` then.
    */
   private async burn(hostId: string, jti: string, expiresAt: Date, now: Date): Promise<void> {
+    if (await this.legacyMarkers.isBurned(hostId, jti)) throw this.rejected('already used');
     const ttlSeconds = Math.max(
       1,
       Math.ceil((expiresAt.getTime() - now.getTime()) / 1000) + CLOCK_SKEW_SECONDS,

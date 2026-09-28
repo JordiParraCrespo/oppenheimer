@@ -1,18 +1,6 @@
 {
-  "description": "Tu cuenta está lista. Ponle nombre al espacio de trabajo donde vivirán tus sesiones.",
-  "eyebrow": "Casi listo",
-  "signOut": "Cerrar sesión",
-  "title": "Crea tu espacio de trabajo",
-  "create": {
-    "name": "Nombre del espacio de trabajo",
-    "namePlaceholder": "Acme S.L.",
-    "hint": "Podrás cambiarle el nombre más adelante desde Ajustes.",
-    "submit": "Crear espacio de trabajo",
-    "submitting": "Creando…"
-  },
   "flow": {
     "back": "Atrás",
-    "counter": "{{step}} de {{total}}",
     "continue": "Continuar",
     "workspace": {
       "title": "Nombra tu espacio de trabajo",

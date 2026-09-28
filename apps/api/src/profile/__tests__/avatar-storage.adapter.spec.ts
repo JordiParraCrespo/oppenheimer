@@ -8,23 +8,23 @@ describe('AvatarStorageAdapter', () => {
   let storage: {
     upload: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
-    getSignedUrl: ReturnType<typeof vi.fn>;
+    getUrl: ReturnType<typeof vi.fn>;
   };
   let avatars: AvatarStorageAdapter;
 
   beforeEach(() => {
     storage = {
-      upload: vi.fn().mockResolvedValue('/uploads/avatars/user-uuid.png'),
+      upload: vi.fn(async (_file: Buffer, key: string) => key),
       delete: vi.fn().mockResolvedValue(undefined),
-      getSignedUrl: vi.fn().mockResolvedValue('https://cdn.example.com/signed'),
+      getUrl: vi.fn().mockResolvedValue('https://cdn.example.com/signed'),
     };
     avatars = new AvatarStorageAdapter(storage as unknown as StorageService);
   });
 
   describe('store', () => {
-    it('returns the key, not whatever the back-end returned', async () => {
-      // Local storage answers with a path and S3 with a key; persisting the key
-      // is what keeps the two back-ends interchangeable.
+    it('returns the key the back-end stored the file under', async () => {
+      // Every back-end resolves `upload` to the key; the key is what is
+      // persisted, and `getUrl` turns it into a URL at read time.
       await expect(avatars.store('user-uuid', Buffer.from('x'), 'image/png', 1)).resolves.toMatch(
         /^avatars\/user-uuid\/[0-9a-f-]{36}\.png$/,
       );
@@ -111,14 +111,14 @@ describe('AvatarStorageAdapter', () => {
       await expect(avatars.resolveUrl('avatars/user-uuid.png')).resolves.toBe(
         'https://cdn.example.com/signed',
       );
-      expect(storage.getSignedUrl).toHaveBeenCalledWith('avatars/user-uuid.png');
+      expect(storage.getUrl).toHaveBeenCalledWith('avatars/user-uuid.png');
     });
 
     it('passes an absolute URL straight through', async () => {
       await expect(avatars.resolveUrl('https://lh3.googleusercontent.com/a/abc')).resolves.toBe(
         'https://lh3.googleusercontent.com/a/abc',
       );
-      expect(storage.getSignedUrl).not.toHaveBeenCalled();
+      expect(storage.getUrl).not.toHaveBeenCalled();
     });
 
     it('resolves nothing to null', async () => {

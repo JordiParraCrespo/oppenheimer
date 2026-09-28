@@ -21,6 +21,11 @@ implementations → factory in the module.
 import { StorageModule, StorageService } from '@oppenheimer/backend-storage';
 
 constructor(private readonly storage: StorageService) {}
+
+// Every back-end resolves `upload` to the key: persist the key, never a URL.
+const key = await this.storage.upload(file, 'avatars/u/1.png', 'image/png');
+// Resolve it per response (signed and expiring on S3, public on local).
+const url = await this.storage.getUrl(key);
 ```
 
 ## Scripts

@@ -13,7 +13,7 @@ that file: the templates follow it, not the other way round.
 5. Screen and section (`features/hosts/screens/hosts-settings.tsx`, `sections/host-list.tsx`)
 6. A row that owns its menu's dialog, and the confirm dialog (`sections/host-row.tsx`, the kit's `ConfirmDialog`)
 7. Form (`features/hosts/forms/rename-host.tsx`)
-8. Leaf subscription (`packages/frontend/web/src/auth/components/password-requirements.tsx`)
+8. Leaf subscription (`apps/web/src/features/projects/components/project-save-button.tsx`)
 9. E2E spec (`e2e/tests/web/settings-hosts.spec.ts`)
 10. Render-budget spec (`features/sessions/__tests__/sessions-sidebar-render.spec.tsx`)
 
@@ -82,11 +82,6 @@ export class ThingsRepository {
   }
 }
 ```
-
-Where the generated SDK names collide across controllers (`list6`,
-`revoke3`), call `heyApiClient.get<{ 200: ThingResponseDto[] }>({ url })`
-with the status-keyed map instead; `hosts.repository.ts` explains why the map
-is needed.
 
 ```ts
 // things.service.ts: the use cases; inject the repository by token
@@ -393,9 +388,9 @@ export function ThingForm({
 ```
 
 - `useZodResolver` comes from `@oppenheimer/frontend-web`; the schema from
-  `@oppenheimer/shared/schemas/<area>`, a subpath. In `apps/web` that is
-  required, and a new subpath also needs `optimizeDeps.include` in
-  `vite.config.ts` and an `exports` entry in `packages/shared/package.json`.
+  `@oppenheimer/shared/schemas/<area>`, a subpath rather than the root, so the
+  import names what it depends on. A new `src/schemas/<area>.schema.ts` is
+  that subpath with no `exports` or Vite config.
 - The section or dialog above resolves the failure:
   `error={mutation.error ? resolveError(mutation.error, t('common.error')).message : undefined}`,
   with `resolveError = useErrorMessage()`.

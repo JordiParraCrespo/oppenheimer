@@ -47,13 +47,9 @@ export {
   type OutboxRelayOptions,
 } from './outbox/outbox-relay';
 export { QueryBase } from './query.base';
-export {
-  type OrderBy,
-  Paginated,
-  type PaginatedQueryParams,
-  type RepositoryPort,
-} from './repository.port';
+export { Paginated, type RepositoryPort } from './repository.port';
 export { RequestContextService } from './request-context.service';
+export { TypeOrmRepositoryBase } from './typeorm-repository.base';
 export { convertPropsToObject } from './utils';
 export {
   type DomainPrimitive,

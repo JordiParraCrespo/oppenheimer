@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
-import { OutboxService, Paginated } from '@oppenheimer/backend-ddd';
+import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
@@ -10,10 +10,10 @@ import type { WorkSessionEntity } from '../domain/work-session.entity';
 import {
   payloadBytes,
   SESSION_EVENT_PAYLOAD_MAX_BYTES,
-  WorkSessionEventEntity,
+  type WorkSessionEventEntity,
 } from '../domain/work-session-event.entity';
 import { SessionResource } from '../sessions.resource';
-import { WorkSessionMapper } from '../work-session.mapper';
+import { type AppendedEventRow, WorkSessionMapper } from '../work-session.mapper';
 import { SessionCheckoutOrmEntity } from './session-checkout.orm-entity';
 import type { SessionTurnOrmEntity } from './session-turn.orm-entity';
 import { WorkSessionOrmEntity } from './work-session.orm-entity';
@@ -23,6 +23,8 @@ import type {
   SessionAppendOutcome,
   SessionEventPage,
   SessionFilters,
+  SessionListCursor,
+  SessionListPage,
   WorkSessionRepositoryPort,
 } from './work-session.repository.port';
 import { WorkSessionEventOrmEntity } from './work-session-event.orm-entity';
@@ -34,10 +36,10 @@ import { WorkSessionEventOrmEntity } from './work-session-event.orm-entity';
  *
  * **The append is one transaction, and `seq` is allocated under a row lock.**
  * Every appender takes `SELECT … FOR UPDATE` on the session row first, so they
- * serialise: the log cannot develop a gap, and it cannot regress. Keys already in
- * the log are read inside that lock and skipped, so a replayed batch appends only
- * what was not yet seen and the remaining rows still get consecutive numbers — the
- * per-row `ON CONFLICT DO NOTHING` stays as the backstop rather than as the
+ * serialise: the log cannot develop a gap, and it cannot regress. A batch then
+ * lands in **one** `INSERT`, which skips the keys already in the log and numbers
+ * the rest consecutively, so a replayed batch appends only what was not yet seen —
+ * the `ON CONFLICT DO NOTHING` stays as the backstop rather than as the
  * mechanism. The fold runs over exactly the rows that landed and the row update
  * commits with them, so the sidebar is never eventually-consistent with its own log.
  *
@@ -70,7 +72,7 @@ export class WorkSessionRepository
   ): Promise<{ session: WorkSessionEntity; created: boolean; projectArchived: boolean }> {
     const record = this.mapper.toPersistence(session);
 
-    const created = await this.dataSource.transaction(async (manager) => {
+    const created = await this.outbox.transaction(async (manager) => {
       // The project is locked **in this transaction**, before the insert, and the
       // archive command takes `FOR UPDATE` on the same row. That is what makes
       // "an archived project holds no unresolved session" true rather than
@@ -155,7 +157,6 @@ export class WorkSessionRepository
     }
 
     session.clearEvents();
-    this.outbox.wake();
     return { session, created: true, projectArchived: false };
   }
 
@@ -163,11 +164,40 @@ export class WorkSessionRepository
     session: WorkSessionEntity,
     events: NewSessionEvent[],
   ): Promise<SessionAppendOutcome> {
-    const outcome = await this.dataSource.transaction((manager) =>
+    const outcome = await this.outbox.transaction((manager) =>
       this.appendWithin(manager, session, events),
     );
-    await this.flushEvents(session);
+    session.clearEvents();
     return outcome;
+  }
+
+  async appendEventsForHost(
+    hostId: string,
+    sessionId: string,
+    events: NewSessionEvent[],
+  ): Promise<Option<{ session: WorkSessionEntity; outcome: SessionAppendOutcome }>> {
+    const appended = await this.outbox.transaction(async (manager) => {
+      const locked = await this.lock(manager, sessionId);
+      // Missing and somebody else's answer alike, so a host cannot probe for ids.
+      if (!locked || locked.hostId !== hostId) return null;
+      // The aggregate is built from the locked row, which is what the fold would
+      // re-seat onto anyway. Checkouts are loaded only when the batch retires one:
+      // the append never writes a checkout, `validate()` does not read them, and
+      // `session.checkout_removed` is the one entry whose fold touches them.
+      const retires = events.some((event) => event.kind === SESSION_EVENT_KINDS.CHECKOUT_REMOVED);
+      const checkouts = retires
+        ? await manager.getRepository(SessionCheckoutOrmEntity).find({
+            where: { sessionId },
+            order: { createdAt: 'ASC' },
+          })
+        : [];
+      const session = this.mapper.toDomain(locked, checkouts);
+      const outcome = await this.appendLocked(manager, session, events);
+      return { session, outcome };
+    });
+    if (!appended) return None;
+    appended.session.clearEvents();
+    return Some(appended);
   }
 
   async appendMove(
@@ -175,7 +205,7 @@ export class WorkSessionRepository
     targetProjectId: string,
     events: NewSessionEvent[],
   ): Promise<'moved' | 'project-archived'> {
-    const outcome = await this.dataSource.transaction(async (manager) => {
+    const outcome = await this.outbox.transaction(async (manager) => {
       const active: { id: string }[] = await manager.query(
         `SELECT "id" FROM "project"
           WHERE "id" = $1 AND "organizationId" = $2 AND "archivedAt" IS NULL
@@ -186,7 +216,7 @@ export class WorkSessionRepository
       await this.appendWithin(manager, session, events);
       return 'moved' as const;
     });
-    if (outcome === 'moved') await this.flushEvents(session);
+    if (outcome === 'moved') session.clearEvents();
     return outcome;
   }
 
@@ -195,13 +225,13 @@ export class WorkSessionRepository
     checkout: SessionCheckoutEntity,
     events: NewSessionEvent[],
   ): Promise<SessionAppendOutcome> {
-    const outcome = await this.dataSource.transaction(async (manager) => {
+    const outcome = await this.outbox.transaction(async (manager) => {
       await manager
         .getRepository(SessionCheckoutOrmEntity)
         .insert(this.mapper.checkoutToPersistence(checkout));
       return this.appendWithin(manager, session, events);
     });
-    await this.flushEvents(session);
+    session.clearEvents();
     return outcome;
   }
 
@@ -210,7 +240,7 @@ export class WorkSessionRepository
     checkout: SessionCheckoutEntity,
     events: NewSessionEvent[],
   ): Promise<SessionAppendOutcome> {
-    const outcome = await this.dataSource.transaction(async (manager) => {
+    const outcome = await this.outbox.transaction(async (manager) => {
       // The append runs first: folding `session.checkout_removed` is what marks the
       // child and steps the agent out of it, so `removedAt` below is written from
       // what the log said rather than from a value the caller set beside it.
@@ -220,14 +250,11 @@ export class WorkSessionRepository
         .update({ id: checkout.id }, { removedAt: checkout.removedAt ?? new Date() });
       return appended;
     });
-    await this.flushEvents(session);
+    session.clearEvents();
     return outcome;
   }
 
-  async findAllPaginated(
-    scope: AccessScope,
-    filters: SessionFilters,
-  ): Promise<Paginated<WorkSessionEntity>> {
+  async findAllPaginated(scope: AccessScope, filters: SessionFilters): Promise<SessionListPage> {
     const query = this.scopedQuery(scope);
     if (filters.projectId) query.andWhere('session.projectId = :projectId', filters);
     if (filters.hostId) query.andWhere('session.hostId = :hostId', filters);
@@ -244,20 +271,42 @@ export class WorkSessionRepository
         { githubRepoId: String(filters.githubRepoId) },
       );
     }
-    applySort(query, filters.sort ?? 'recent');
+    const sort = filters.sort ?? 'recent';
+    const key = SORT_KEYS[sort];
+    applySort(query, sort);
+    // The sort key as Postgres prints it, for the next cursor: text round-trips a
+    // `timestamptz` to the microsecond, which a JavaScript `Date` does not.
+    query.addSelect(`(${key.expression})::text`, 'sortKey');
 
-    const [records, count] = await query
-      .skip((filters.page - 1) * filters.limit)
-      .take(filters.limit)
-      .getManyAndCount();
+    if (filters.cursor) {
+      // A row comparison, so the walk resumes exactly after the last row it
+      // returned and never counts: `(key, id)` is unique and both halves sort in
+      // the same direction.
+      query.andWhere(
+        `(${key.expression}, "session"."id") ${key.after} (CAST(:cursorKey AS ${key.type}), CAST(:cursorId AS uuid))`,
+        { cursorKey: filters.cursor.key, cursorId: filters.cursor.id },
+      );
+      // One more than asked for, so "is there another page" needs no count.
+      const rows = await this.pageOf(query.limit(filters.limit + 1));
+      const page = rows.slice(0, filters.limit);
+      return {
+        data: await this.withCheckoutsAll(page.map((row) => row.record)),
+        limit: filters.limit,
+        nextCursor: rows.length > filters.limit ? cursorAfter(sort, page) : null,
+      };
+    }
 
-    const checkouts = await this.checkoutsFor(records.map((record) => record.id));
-    return new Paginated({
-      count,
-      page: filters.page,
+    const [total, rows] = await Promise.all([
+      query.clone().getCount(),
+      this.pageOf(query.offset((filters.page - 1) * filters.limit).limit(filters.limit)),
+    ]);
+    return {
+      data: await this.withCheckoutsAll(rows.map((row) => row.record)),
       limit: filters.limit,
-      data: records.map((record) => this.mapper.toDomain(record, checkouts.get(record.id) ?? [])),
-    });
+      total,
+      page: filters.page,
+      nextCursor: filters.page * filters.limit < total ? cursorAfter(sort, rows) : null,
+    };
   }
 
   async findOneById(scope: AccessScope, id: string): Promise<Option<WorkSessionEntity>> {
@@ -398,7 +447,7 @@ export class WorkSessionRepository
    * rows, the fold, the row update and the outbox entries the fold owes.
    *
    * `FOR UPDATE` on the session row is what serialises appenders. The keys already
-   * in the log are read under that lock, so the rows that are genuinely new get
+   * in the log are skipped under that lock, so the rows that are genuinely new get
    * consecutive `seq` values and the fold runs over exactly those.
    */
   private async appendWithin(
@@ -406,15 +455,8 @@ export class WorkSessionRepository
     session: WorkSessionEntity,
     events: NewSessionEvent[],
   ): Promise<SessionAppendOutcome> {
-    const accepted: string[] = [];
-    const rejected: SessionAppendOutcome['rejected'] = [];
-    const appended: WorkSessionEventEntity[] = [];
-
-    const locked: WorkSessionOrmEntity[] = await manager.query(
-      `SELECT * FROM "work_session" WHERE "id" = $1 FOR UPDATE`,
-      [session.id],
-    );
-    if (locked.length === 0) {
+    const locked = await this.lock(manager, session.id);
+    if (!locked) {
       throw new Error(`Session ${session.id} disappeared while appending to its log`);
     }
     // Fold onto what the **locked row** says, not onto the instance the caller
@@ -422,24 +464,40 @@ export class WorkSessionRepository
     // `resolved` while a stop waits here, and folding onto the stop's stale `open`
     // would write a projection the log does not support. The lock is what makes
     // this read final.
-    session.reseatFold(this.mapper.foldOf(locked[0]));
+    session.reseatFold(this.mapper.foldOf(locked));
+    return this.appendLocked(manager, session, events);
+  }
+
+  /** `SELECT … FOR UPDATE` on the session row; null when there is no such row. */
+  private async lock(
+    manager: EntityManager,
+    sessionId: string,
+  ): Promise<WorkSessionOrmEntity | null> {
+    const locked: WorkSessionOrmEntity[] = await manager.query(
+      `SELECT * FROM "work_session" WHERE "id" = $1 FOR UPDATE`,
+      [sessionId],
+    );
+    return locked[0] ?? null;
+  }
+
+  /**
+   * Everything after the lock, for an aggregate whose fold is the locked row's:
+   * the latest turn, the one `INSERT` for the batch, the fold over what landed,
+   * the row update, the turns and the outbox.
+   */
+  private async appendLocked(
+    manager: EntityManager,
+    session: WorkSessionEntity,
+    events: NewSessionEvent[],
+  ): Promise<SessionAppendOutcome> {
+    const rejected: SessionAppendOutcome['rejected'] = [];
+
     // The latest turn is folded like the row, so it is read under the same lock.
     const [latestTurn]: SessionTurnOrmEntity[] = await manager.query(
       `SELECT * FROM "session_turn" WHERE "sessionId" = $1 ORDER BY "seq" DESC LIMIT 1`,
       [session.id],
     );
     session.reseatLatestTurn(latestTurn ? this.mapper.turnToDomain(latestTurn) : null);
-
-    // A **second** statement, deliberately. Under READ COMMITTED a statement's
-    // snapshot is taken before it blocks on a row lock, so reading the maximum in
-    // the same statement as the `FOR UPDATE` returns the value from before the
-    // appender ahead of us committed — and every waiter would allocate the same
-    // numbers. Once the lock is held, a fresh statement sees their rows.
-    const [{ maxSeq }]: { maxSeq: number | null }[] = await manager.query(
-      `SELECT MAX("seq") AS "maxSeq" FROM "work_session_event" WHERE "sessionId" = $1`,
-      [session.id],
-    );
-    let seq = Number(maxSeq ?? 0);
 
     const candidates = events.filter((event) => {
       if (payloadBytes(event.payload) <= SESSION_EVENT_PAYLOAD_MAX_BYTES) return true;
@@ -449,50 +507,22 @@ export class WorkSessionRepository
       });
       return false;
     });
+    // A key twice in one batch lands once, as its first occurrence: the statement
+    // below must not conflict with itself, and the second copy is "already
+    // durable" to its writer like any replay.
+    const seen = new Set<string>();
+    const fresh = candidates.filter((event) => {
+      if (seen.has(event.idempotencyKey)) return false;
+      seen.add(event.idempotencyKey);
+      return true;
+    });
+    // Every key that was not refused is accepted: it landed now, or an earlier
+    // attempt landed it. `DO NOTHING` cannot tell those apart, and for the writer
+    // both mean the same thing: stop resending it.
+    const accepted = candidates.map((event) => event.idempotencyKey);
 
-    const present = await this.existingKeys(
-      manager,
-      session.id,
-      candidates.map((event) => event.idempotencyKey),
-    );
-
-    for (const event of candidates) {
-      if (present.has(event.idempotencyKey)) {
-        // Already durable from an earlier attempt. `DO NOTHING` cannot tell this
-        // apart from a row it just wrote, and for the writer both mean the same
-        // thing: stop resending it.
-        accepted.push(event.idempotencyKey);
-        continue;
-      }
-      seq += 1;
-      const entity = WorkSessionEventEntity.createNew({
-        sessionId: session.id,
-        seq,
-        idempotencyKey: event.idempotencyKey,
-        source: event.source,
-        kind: event.kind,
-        payload: event.payload,
-        occurredAt: event.occurredAt,
-      });
-      const events = manager.getRepository(WorkSessionEventOrmEntity);
-      const landed = await events
-        .createQueryBuilder()
-        .insert()
-        // Cast around TypeORM's `QueryDeepPartialEntity` recursion, which cannot
-        // represent the free-form `payload` jsonb.
-        .values(this.mapper.eventToPersistence(entity) as Parameters<typeof events.insert>[0])
-        .orIgnore(`("sessionId", "idempotencyKey")`)
-        .returning(['id'])
-        .execute();
-      if (landed.raw.length === 0) {
-        // Somebody appended this key between the read and the insert. Nothing
-        // landed, so the number is handed back rather than skipped.
-        seq -= 1;
-        accepted.push(event.idempotencyKey);
-        continue;
-      }
-      accepted.push(event.idempotencyKey);
-      appended.push(entity);
+    const appended = fresh.length > 0 ? await this.insertBatch(manager, session.id, fresh) : [];
+    for (const entity of appended) {
       session.recordEvent({
         seq: entity.seq,
         kind: entity.kind,
@@ -547,6 +577,72 @@ export class WorkSessionRepository
   }
 
   /**
+   * The batch in **one statement**: skip the keys already in the log, number the
+   * rest after the current maximum in the caller's order, insert them, and say
+   * which landed. Returns the new entries in `seq` order.
+   *
+   * It must be a statement of its own, issued **after** the `FOR UPDATE` one has
+   * returned — never folded into the locking statement. Under READ COMMITTED a
+   * statement's snapshot is taken before it blocks on a row lock, so a `MAX("seq")`
+   * read in the same statement as the `FOR UPDATE` returns the value from before
+   * the appender ahead of us committed — and every waiter would allocate the same
+   * numbers. This statement starts once the lock is held, so its snapshot sees
+   * every appender that went before, and its `MAX`, its "already present" check
+   * and its insert all read that one snapshot.
+   *
+   * Under the lock nobody else can insert this session's keys, and the batch has
+   * no duplicate of its own, so `ON CONFLICT` should never fire. If it did, a
+   * number would have been handed out and not used — a gap in `seq` — so a short
+   * count throws and the transaction rolls back instead of committing the gap.
+   */
+  private async insertBatch(
+    manager: EntityManager,
+    sessionId: string,
+    events: NewSessionEvent[],
+  ): Promise<WorkSessionEventEntity[]> {
+    const rows: AppendedEventRow[] = await manager.query(
+      `WITH input AS (
+         SELECT e."ord", e."idempotencyKey", e."source", e."kind", e."payload", e."occurredAt"
+           FROM jsonb_to_recordset($2::jsonb)
+             AS e("ord" integer, "idempotencyKey" text, "source" text, "kind" text,
+                  "payload" jsonb, "occurredAt" timestamptz)
+       ),
+       fresh AS (
+         SELECT i.* FROM input i
+          WHERE NOT EXISTS (SELECT 1 FROM "work_session_event" x
+                             WHERE x."sessionId" = $1 AND x."idempotencyKey" = i."idempotencyKey")
+       ),
+       base AS (
+         SELECT COALESCE(MAX("seq"), 0) AS "seq" FROM "work_session_event" WHERE "sessionId" = $1
+       ),
+       landed AS (
+         INSERT INTO "work_session_event"
+           ("sessionId", "seq", "idempotencyKey", "source", "kind", "payload", "occurredAt")
+         SELECT $1, base."seq" + row_number() OVER (ORDER BY f."ord"),
+                f."idempotencyKey", f."source", f."kind", f."payload", f."occurredAt"
+           FROM fresh f CROSS JOIN base
+         ON CONFLICT ("sessionId", "idempotencyKey") DO NOTHING
+         RETURNING "id", "seq", "idempotencyKey", "source", "kind", "payload",
+                   "occurredAt", "recordedAt"
+       )
+       -- One row even when nothing landed, so the count of what should have is
+       -- always there to check against.
+       SELECT (SELECT count(*) FROM fresh)::integer AS "expected", landed.*
+         FROM (SELECT 1) AS one LEFT JOIN landed ON true
+        ORDER BY landed."seq"`,
+      [sessionId, this.mapper.toAppendRecordset(events)],
+    );
+    const landed = rows.filter((row) => row.id !== null);
+    const expected = rows[0]?.expected ?? 0;
+    if (landed.length !== expected) {
+      throw new Error(
+        `Session ${sessionId}: ${expected} new log entries were numbered but ${landed.length} landed`,
+      );
+    }
+    return landed.map((row) => this.mapper.appendedToDomain(sessionId, row));
+  }
+
+  /**
    * Write back the turns this append's folds moved: an upsert on
    * `(sessionId, seq)`, because a fold both opens turns and moves them.
    */
@@ -590,25 +686,21 @@ export class WorkSessionRepository
     }
   }
 
-  private async existingKeys(
-    manager: EntityManager,
-    sessionId: string,
-    keys: string[],
-  ): Promise<Set<string>> {
-    if (keys.length === 0) return new Set();
-    const rows: { idempotencyKey: string }[] = await manager.query(
-      `SELECT "idempotencyKey" FROM "work_session_event"
-        WHERE "sessionId" = $1 AND "idempotencyKey" = ANY($2::text[])`,
-      [sessionId, keys],
-    );
-    return new Set(rows.map((row) => row.idempotencyKey));
+  /** A page of rows with the sort key each was selected with, in the query's order. */
+  private async pageOf(
+    query: SelectQueryBuilder<WorkSessionOrmEntity>,
+  ): Promise<{ record: WorkSessionOrmEntity; sortKey: string }[]> {
+    const { entities, raw } = await query.getRawAndEntities<{
+      session_id: string;
+      sortKey: string;
+    }>();
+    const keys = new Map(raw.map((row) => [row.session_id, row.sortKey]));
+    return entities.map((record) => ({ record, sortKey: keys.get(record.id) ?? '' }));
   }
 
-  /** The events staged inside the transaction are owed a wake once it commits. */
-  private async flushEvents(session: WorkSessionEntity): Promise<void> {
-    if (session.domainEvents.length === 0) return;
-    session.clearEvents();
-    this.outbox.wake();
+  private async withCheckoutsAll(records: WorkSessionOrmEntity[]): Promise<WorkSessionEntity[]> {
+    const checkouts = await this.checkoutsFor(records.map((record) => record.id));
+    return records.map((record) => this.mapper.toDomain(record, checkouts.get(record.id) ?? []));
   }
 
   private async withCheckouts(
@@ -665,18 +757,51 @@ export class WorkSessionRepository
 }
 
 /**
+ * Each order's sort key: the expression, the type its printed text casts back
+ * to, and which side of the cursor the next page is on. Both halves of `(key,
+ * id)` sort the same way, so one row comparison resumes a walk.
+ *
+ * No index serves these, deliberately. `lastEventAt` is rewritten by every fold,
+ * and an index on it would turn every append into a non-HOT update of
+ * `work_session`. A page is a top-N sort over one workspace's sessions, found by
+ * the organization prefix of `UQ_work_session_organization_slug`: a few thousand
+ * rows at the very most for a personal workspace, which Postgres sorts in memory
+ * in well under a millisecond per page.
+ */
+const SORT_KEYS: Record<
+  NonNullable<SessionFilters['sort']>,
+  { expression: string; type: 'timestamptz' | 'text'; after: '<' | '>' }
+> = {
+  recent: {
+    expression: 'COALESCE("session"."lastEventAt", "session"."createdAt")',
+    type: 'timestamptz',
+    after: '<',
+  },
+  oldest: { expression: '"session"."createdAt"', type: 'timestamptz', after: '>' },
+  name: { expression: 'LOWER("session"."name")', type: 'text', after: '>' },
+};
+
+/**
  * The list's order. `recent` is last activity first, with sessions nothing has
  * happened in yet by their creation; the id breaks every tie so a page boundary
- * is stable.
+ * is stable. The tie-break runs the same way as the key — descending for
+ * `recent`, ascending otherwise — because that is what lets one row comparison
+ * resume a cursor walk. It only ever orders sessions whose key is equal, so no
+ * caller depends on which way it runs.
  */
 function applySort(
   query: SelectQueryBuilder<WorkSessionOrmEntity>,
   sort: NonNullable<SessionFilters['sort']>,
 ): void {
-  if (sort === 'oldest') query.orderBy('session.createdAt', 'ASC');
-  else if (sort === 'name') query.orderBy('LOWER(session.name)', 'ASC');
-  else {
-    query.orderBy('COALESCE(session.lastEventAt, session.createdAt)', 'DESC');
-  }
-  query.addOrderBy('session.id', 'ASC');
+  const direction = SORT_KEYS[sort].after === '<' ? 'DESC' : 'ASC';
+  query.orderBy(SORT_KEYS[sort].expression, direction).addOrderBy('session.id', direction);
+}
+
+/** The cursor that resumes after the last row of a page; null for an empty one. */
+function cursorAfter(
+  sort: NonNullable<SessionFilters['sort']>,
+  rows: { record: WorkSessionOrmEntity; sortKey: string }[],
+): SessionListCursor | null {
+  const last = rows[rows.length - 1];
+  return last ? { sort, key: last.sortKey, id: last.record.id } : null;
 }

@@ -1,7 +1,7 @@
-import { Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { ThrottlerStorage } from '@nestjs/throttler';
-import Redis from 'ioredis';
+import type Redis from 'ioredis';
+import { REDIS_CLIENT } from '../../redis/redis.di-tokens';
 
 /**
  * The record `ThrottlerStorage.increment` must return.
@@ -11,6 +11,16 @@ import Redis from 'ioredis';
  * `dist/` would tie us to its build layout.
  */
 type ThrottlerStorageRecord = Awaited<ReturnType<ThrottlerStorage['increment']>>;
+
+/** The shared client once the increment script is registered on it as a command. */
+interface ThrottleRedis extends Redis {
+  throttleIncrement(
+    key: string,
+    ttlMs: number,
+    blockDurationMs: number,
+    limit: number,
+  ): Promise<[number, number, number, number]>;
+}
 
 /**
  * Rate-limit counters in Redis, so the limit means the same thing however many
@@ -25,11 +35,14 @@ type ThrottlerStorageRecord = Awaited<ReturnType<ThrottlerStorage['increment']>>
  * `CacheService` is deliberately not reused: it offers get/set, and a counter
  * built from a read followed by a write is exactly the race this class exists
  * to remove. The increment below is a single atomic round trip.
+ *
+ * It runs on the shared `REDIS_CLIENT`, which fails fast and is closed by
+ * `RedisModule`, so this class neither configures nor quits a connection. Its
+ * keys are `throttle:*`, outside the cache's `cache:` namespace.
  */
 @Injectable()
-export class RedisThrottlerStorage implements ThrottlerStorage, OnModuleDestroy {
+export class RedisThrottlerStorage implements ThrottlerStorage {
   private readonly logger = new Logger(RedisThrottlerStorage.name);
-  private readonly redis: Redis;
 
   /**
    * Increment the hit counter, set its expiry on first write, and report the
@@ -64,23 +77,22 @@ export class RedisThrottlerStorage implements ThrottlerStorage, OnModuleDestroy 
     return { hits, ttl, blocked, blockTtl }
   `;
 
-  constructor(private readonly configService: ConfigService) {
-    this.redis = new Redis({
-      host: this.configService.get('redis.host'),
-      port: this.configService.get('redis.port'),
-      password: this.configService.get<string>('redis.password') || undefined,
-      // Never let a rate limiter be the reason a request hangs. Failing fast
-      // here lands in the catch below, which fails open — see `increment`.
-      maxRetriesPerRequest: 1,
-      enableOfflineQueue: false,
-      lazyConnect: false,
-    });
-
-    // ioredis emits `error` on every reconnect attempt; without a listener Node
-    // treats it as an unhandled exception and takes the process down.
-    this.redis.on('error', (error: Error) => {
-      this.logger.warn({ message: 'Throttler Redis unavailable', error: error.message });
-    });
+  /**
+   * The shared client fails fast (`redisCommandClientOptions`), so a rate
+   * limiter is never the reason a request hangs: a Redis outage lands in the
+   * catch in `increment`, which fails open.
+   */
+  constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {
+    // Registered once per client: ioredis then sends `EVALSHA` with the
+    // script's 40-byte hash, and falls back to `EVAL` itself on `NOSCRIPT`
+    // (after a Redis restart or `SCRIPT FLUSH`), instead of shipping and
+    // parsing the whole script on every request.
+    if (!('throttleIncrement' in redis)) {
+      redis.defineCommand('throttleIncrement', {
+        numberOfKeys: 1,
+        lua: RedisThrottlerStorage.INCREMENT,
+      });
+    }
   }
 
   async increment(
@@ -93,14 +105,9 @@ export class RedisThrottlerStorage implements ThrottlerStorage, OnModuleDestroy 
     const storageKey = `throttle:${throttlerName}:${key}`;
 
     try {
-      const [hits, ttlMs, blocked, blockTtlMs] = (await this.redis.eval(
-        RedisThrottlerStorage.INCREMENT,
-        1,
-        storageKey,
-        ttl,
-        blockDuration,
-        limit,
-      )) as [number, number, number, number];
+      const [hits, ttlMs, blocked, blockTtlMs] = await (
+        this.redis as ThrottleRedis
+      ).throttleIncrement(storageKey, ttl, blockDuration, limit);
 
       return {
         totalHits: hits,
@@ -127,9 +134,5 @@ export class RedisThrottlerStorage implements ThrottlerStorage, OnModuleDestroy 
       );
       return { totalHits: 0, timeToExpire: 0, isBlocked: false, timeToBlockExpire: 0 };
     }
-  }
-
-  async onModuleDestroy(): Promise<void> {
-    await this.redis.quit().catch(() => this.redis.disconnect());
   }
 }

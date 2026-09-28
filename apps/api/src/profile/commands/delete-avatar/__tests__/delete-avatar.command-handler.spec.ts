@@ -31,6 +31,7 @@ function makeUser(avatarUrl: string | null): UserEntity {
 describe('DeleteAvatarCommandHandler', () => {
   let repo: Pick<UserRepositoryPort, 'findOneById' | 'save'>;
   let avatars: { remove: ReturnType<typeof vi.fn> };
+  const sessionCache = { refreshUser: vi.fn().mockResolvedValue(undefined) };
   let service: DeleteAvatarCommandHandler;
   let user: UserEntity;
 
@@ -44,7 +45,26 @@ describe('DeleteAvatarCommandHandler', () => {
     service = new DeleteAvatarCommandHandler(
       repo as UserRepositoryPort,
       avatars as unknown as AvatarStorageAdapter,
+      sessionCache as never,
     );
+  });
+
+  it('refreshes the cached sessions after the row is written', async () => {
+    // Better Auth caches each session with a copy of the user; the session path
+    // reads that copy, so a write behind its back must be followed by this.
+    const order: string[] = [];
+    vi.mocked(repo.save).mockImplementation(async (entity) => {
+      order.push('save');
+      return entity as never;
+    });
+    sessionCache.refreshUser.mockImplementation(async () => {
+      order.push('refresh');
+    });
+
+    await service.execute(new DeleteAvatarCommand({ userId: 'user-uuid' }));
+
+    expect(sessionCache.refreshUser).toHaveBeenCalledWith('user-uuid');
+    expect(order).toEqual(['save', 'refresh']);
   });
 
   it('clears the profile and removes the object', async () => {

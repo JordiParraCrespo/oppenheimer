@@ -127,9 +127,27 @@ Full context in [`.agents/rules/forms.md`](../../.agents/rules/forms.md).
 
 - Changing a schema/type may ripple into `apps/api`, `@oppenheimer/frontend`, and
   `@oppenheimer/api-client`. Check consumers before altering the public surface.
-- `apps/web` cannot import runtime values from the package root (CASL and the
-  scope catalog would land in the browser bundle). A schema the web app needs
-  wants a narrow `exports` subpath — `./schemas/auth` is the worked example.
+- The build is two outputs from one source: CommonJS plus the `.d.ts` in
+  `dist/` for `require` (the API, the backend packages, the `emit-*.cjs`
+  scripts), and ESM in `dist/esm/` for `import` (Vite, vitest, Next, and a
+  plain Node ESM `import`). Node's ESM loader takes no extensionless or
+  directory specifier, so **every relative import in `src/` is fully
+  specified**: `'./link.js'`, `'./constants/index.js'` (the `.js` resolves to
+  the `.ts` for tsc and vitest). The build's last step,
+  `scripts/check-esm-imports.mjs`, imports every ESM entry in plain Node and
+  fails on one that is not. `require` and `default` stay on CommonJS.
+- The export map is four patterns: `.`, `./schemas/*` →
+  `schemas/*.schema`, `./feature-flags/catalog`, and `./*` → `*/index`. Every
+  new `src/<dir>/index.ts` is therefore a public subpath, and a new
+  `src/schemas/<x>.schema.ts` is `./schemas/<x>`; nothing else to register.
+  `src/__tests__/exports.spec.ts` resolves every one after a build.
+- `sideEffects` lists the two modules that write to `z.globalRegistry` at load
+  (`protocol/messages.ts`, `protocol/primitives.ts`); everything else is
+  side-effect free, which is what lets `apps/web` tree-shake the package. A new
+  module-level statement that is not a declaration goes on that list, in both
+  its `dist/` and `dist/esm/` forms.
+- A web import from the root is tree-shaken, but what it uses lands whole:
+  prefer a narrow subpath, `./schemas/auth` is the worked example.
 - After schema changes that affect API DTOs, regenerate the client
   (`pnpm generate:api-client`).
 

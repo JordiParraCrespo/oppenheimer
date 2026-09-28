@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { type FirstRunWalk, parseWalk } from '@/features/organizations/lib/first-run';
+import { readySearchSchema } from '@/features/organizations/lib/onboarding-search';
 import { OnboardingReadyScreen } from '@/features/organizations/screens/onboarding-ready';
 
 /**
@@ -9,13 +9,7 @@ import { OnboardingReadyScreen } from '@/features/organizations/screens/onboardi
  * (`features/organizations/lib/first-run.ts`).
  */
 export const Route = createFileRoute('/_auth/onboarding/ready')({
-  validateSearch: (
-    search: Record<string, unknown>,
-  ): { installation?: string; host?: string } & FirstRunWalk => ({
-    installation: typeof search.installation === 'string' ? search.installation : undefined,
-    host: typeof search.host === 'string' ? search.host : undefined,
-    ...parseWalk(search),
-  }),
+  validateSearch: readySearchSchema,
   beforeLoad: ({ search }) => {
     if (!search.walk) throw redirect({ to: '/sessions/new', replace: true });
   },

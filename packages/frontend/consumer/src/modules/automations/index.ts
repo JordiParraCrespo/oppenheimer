@@ -22,7 +22,5 @@ export {
   type TriggerPreviewMatch,
   type UpdateAutomationInput,
 } from './automation.entity';
-export { AutomationsErrors } from './automations.errors';
 export { AutomationsModule } from './automations.module';
 export { AutomationsRepository } from './automations.repository';
-export { AutomationsService } from './automations.service';

@@ -2,6 +2,8 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { ROLES } from '@oppenheimer/shared';
+import type { SessionCachePort } from '../../../auth/application/session-cache.port';
+import { SESSION_CACHE } from '../../../auth/auth.di-tokens';
 import { missingSystemRole } from '../../../roles/application/missing-system-role.factory';
 import type { RoleRepositoryPort } from '../../../roles/database/role.repository.port';
 import { ROLE_REPOSITORY } from '../../../roles/roles.di-tokens';
@@ -34,6 +36,8 @@ export class ProvisionPersonalWorkspaceCommandHandler
     private readonly workspaces: PersonalWorkspaceRepositoryPort,
     @Inject(ROLE_REPOSITORY)
     private readonly roles: RoleRepositoryPort,
+    @Inject(SESSION_CACHE)
+    private readonly sessionCache: SessionCachePort,
   ) {}
 
   async execute(command: ProvisionPersonalWorkspaceCommand): Promise<AggregateID | null> {
@@ -49,6 +53,12 @@ export class ProvisionPersonalWorkspaceCommandHandler
       ownerRoleId: ownerRole.unwrap().id,
     });
 
-    return (await this.workspaces.provision(workspace)) ? workspace.id : null;
+    if (!(await this.workspaces.provision(workspace))) return null;
+
+    // The repository pointed the account's open sessions at the workspace in
+    // the database; the cached copies Better Auth reads were written at
+    // sign-in, before it existed, and still name no organization.
+    await this.sessionCache.refreshUser(command.userId);
+    return workspace.id;
   }
 }

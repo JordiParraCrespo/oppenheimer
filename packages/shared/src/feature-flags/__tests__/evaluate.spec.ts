@@ -6,8 +6,8 @@ import {
   FLAG_BUCKETS,
   flagBucket,
   murmur3,
-} from '../evaluate';
-import type { FlagConfig, FlagDefinition, FlagSegment } from '../types';
+} from '../evaluate.js';
+import type { FlagConfig, FlagDefinition, FlagSegment } from '../types.js';
 
 const booleanFlag: FlagDefinition = {
   description: 'test',

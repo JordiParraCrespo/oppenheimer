@@ -1,23 +1,12 @@
 {
   "common": {
     "appName": "Oppenheimer",
-    "back": "Back",
     "cancel": "Cancel",
     "close": "Close",
-    "confirm": "Confirm",
-    "controlAppName": "Oppenheimer Control",
     "copied": "Copied",
     "copy": "Copy",
-    "create": "Create",
-    "delete": "Delete",
-    "edit": "Edit",
-    "error": "Something went wrong",
-    "github": "GitHub",
-    "google": "Google",
     "loading": "Loading...",
-    "next": "Next",
     "or": "or",
-    "orContinueWith": "Or continue with",
     "product": "Console",
     "relative": {
       "day": "{{count}}d",
@@ -28,13 +17,10 @@
       "week": "{{count}}w",
       "year": "{{count}}y"
     },
-    "save": "Save",
-    "search": "Search",
     "dismiss": "Dismiss",
     "breadcrumb": "Breadcrumb"
   },
   "validation": {
-    "title": "Validation error",
     "required": "This field is required",
     "email": "Enter a valid email address",
     "minLength": "Must be at least {{min}} characters",
@@ -116,6 +102,7 @@
       "ROLE_005": "You cannot give a role more access than you have yourself.",
       "ROLE_006": "That role belongs to another organization.",
       "ROLE_007": "This deployment is missing a system role it needs. Run the database migrations.",
+      "ROLE_008": "Switch to an organization to create a role in it.",
       "AUTHZ_002": "Something is misconfigured on the server. Please try again later.",
       "AUTHZ_003": "That organization id is not valid.",
       "AUTHZ_004": "Something is misconfigured on the server. Please try again later.",
@@ -240,11 +227,8 @@
       "signUp": "Create one",
       "invalidCredentials": "Invalid email or password",
       "noSocialProviders": "Social sign-in is not configured on this deployment. Set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET or GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET on the API to enable it.",
-      "failedTitle": "Login failed",
-      "failedMessage": "Could not sign in.",
       "continueWithGithub": "Continue with GitHub",
       "continueWithGoogle": "Continue with Google",
-      "keepSignedIn": "Keep me signed in",
       "socialFailed": "Could not start social sign-in. Try again, or sign in with your email and password."
     },
     "register": {
@@ -256,8 +240,6 @@
       "hasAccount": "Already have an account?",
       "signIn": "Sign in",
       "failed": "Registration failed",
-      "successTitle": "Account created",
-      "successMessage": "You can now sign in.",
       "passwordHint": "Twelve characters minimum."
     },
     "forgotPassword": {
@@ -266,11 +248,9 @@
       "submit": "Send reset link",
       "submitting": "Sending...",
       "successTitle": "Check your email",
-      "successMessage": "If an account exists with that email, you will receive a reset link shortly.",
       "backToSignIn": "Back to sign in",
       "error": "Something went wrong",
       "legal": "Only members of this workspace can reset a password.",
-      "notReceived": "Didn't get it? Check your spam folder, or <retry>try another email</retry>.",
       "sentMessage": "We sent a password reset link to <address>{{email}}</address>. It expires in 30 minutes.",
       "emailLabel": "Work email",
       "resend": "Resend link",
@@ -289,7 +269,6 @@
       "requestNewLink": "Request a new link",
       "successTitle": "Password updated",
       "successMessage": "You can now sign in.",
-      "failedTitle": "Reset failed",
       "error": "Could not reset password",
       "confirmPassword": "Confirm password",
       "confirmPasswordPlaceholder": "Re-enter the password",
@@ -337,10 +316,6 @@
       "accountNotLinked": "That address already has an account with a password. Sign in with your password; once the address is verified, this button works too.",
       "failed": "That sign-in didn't complete. Try again, or use your email and password.",
       "noAccount": "There's no account here for that sign-in yet. Create one below — the provider buttons will do it in one step."
-    },
-    "passwordRules": {
-      "length": "At least 12 characters",
-      "match": "Both passwords match"
     },
     "showPassword": "Show password",
     "legal": "By continuing you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>.",
@@ -428,14 +403,6 @@
         "SESS_002": "This host makes sessions with one repository."
       },
       "details": "Details from the host: {{detail}}"
-    },
-    "group": {
-      "working": "Working",
-      "waiting-on-you": "Waiting on you",
-      "ready-for-review": "Ready for review",
-      "landing": "Landing",
-      "idle": "Idle",
-      "resolved": "Done"
     },
     "closed": {
       "description": "This session has stopped. Its work is on its branch.",
@@ -528,7 +495,6 @@
         "send": "Send",
         "stop": "Stop"
       },
-      "queued": "Your first task is queued for this host.",
       "failed": "The session could not be created."
     },
     "session": {
@@ -540,7 +506,6 @@
       },
       "image": {
         "sending": "Sending image",
-        "hostOffline": "The image was not sent: the host is offline.",
         "failedTitle": "The image did not reach the session"
       },
       "retryNow": "Retry now",
@@ -600,15 +565,6 @@
       "recent": "Last activity",
       "oldest": "Oldest first",
       "name": "Name"
-    },
-    "agents": {
-      "claude-code": "Claude Code",
-      "codex": "Codex"
-    },
-    "row": {
-      "actions": "Session actions",
-      "move": "Move to project…",
-      "moveTitle": "Move to project"
     }
   },
   "automations": {
@@ -895,7 +851,6 @@
       "save": "Save",
       "create": "Create automation",
       "saveFailed": "The automation could not be saved.",
-      "forProject": "For {{name}}.",
       "noMatch": "No match for “{{query}}”.",
       "chooseRepositories": "Choose repositories…",
       "chooseAgent": "Choose an agent…",
@@ -1072,34 +1027,8 @@
       "add": "Add host",
       "empty": "No hosts yet",
       "emptyHint": "Hosts you connect appear here with their live session count. Sessions cannot start until one is online.",
-      "online": "Online",
-      "offline": "Offline",
       "failed": "The hosts could not be loaded."
     }
-  },
-  "home": {
-    "greeting": "Welcome back, {{name}}",
-    "greetingFallback": "Welcome back",
-    "subtitle": "Here's what's happening with your account.",
-    "overview": "Overview",
-    "totalUsers": "Total Users",
-    "activeSessions": "Active Sessions",
-    "apiCalls": "API Calls",
-    "uptime": "Uptime",
-    "account": "Account",
-    "accountDescription": "Your profile and current status.",
-    "email": "Email",
-    "role": "Role",
-    "status": "Status",
-    "active": "Active",
-    "inactive": "Inactive",
-    "memberSince": "Member since",
-    "admin": "Admin",
-    "accountUnavailable": "We couldn't load your account. Check your connection and try again.",
-    "retry": "Try again",
-    "retrying": "Retrying...",
-    "signOut": "Sign out",
-    "signingOut": "Signing out..."
   },
   "nav": {
     "menu": "Menu",
@@ -1125,257 +1054,6 @@
     "automations": "Automations",
     "logOutFailed": "Could not log you out. Try again."
   },
-  "control": {
-    "accessDeniedTitle": "Control plane access required",
-    "accessDeniedDescription": "This workspace is reserved for platform administrators.",
-    "auth": {
-      "headline": "Run your product from one secure control plane.",
-      "body": "Sign in with a platform administrator account to manage access across your applications.",
-      "noAccount": "This identity has no control-plane account. Ask an existing platform administrator to provision it.",
-      "features": {
-        "users": "Create and manage consumer accounts",
-        "roles": "Define reusable application roles",
-        "security": "Revoke sessions and block access immediately"
-      }
-    },
-    "roles": {
-      "title": "Roles and permissions",
-      "description": "Define reusable access rules for the consumer applications.",
-      "permissionCount_one": "{{count}} permission",
-      "permissionCount_other": "{{count}} permissions"
-    },
-    "users": {
-      "title": "Users",
-      "description": "Manage consumer accounts, application roles and active access.",
-      "search": "Search users…",
-      "add": "Add user",
-      "empty": "No users yet",
-      "noMatches": "No users match this search",
-      "noRoles": "No roles",
-      "superAdmin": "Super admin",
-      "consumer": "Consumer",
-      "active": "Active",
-      "banned": "Banned",
-      "columns": {
-        "name": "User",
-        "email": "Email",
-        "roles": "App roles",
-        "access": "Platform access",
-        "status": "Status",
-        "joined": "Joined"
-      },
-      "actions": {
-        "roles": "Manage app roles",
-        "password": "Set password",
-        "sessions": "Revoke sessions",
-        "ban": "Ban user",
-        "unban": "Unban user",
-        "delete": "Delete user"
-      },
-      "create": {
-        "title": "Add a user",
-        "description": "Create a consumer account. You can assign application roles afterward.",
-        "password": "Temporary password (optional)",
-        "submit": "Create user"
-      },
-      "roles": {
-        "title": "Application roles",
-        "description": "Choose the roles {{name}} uses in consumer applications.",
-        "noDescription": "No description"
-      },
-      "password": {
-        "title": "Set a new password",
-        "description": "Replace the sign-in password for {{name}}.",
-        "label": "New password",
-        "submit": "Set password"
-      },
-      "confirm": {
-        "ban": {
-          "title": "Ban this user?",
-          "description": "{{name}} will immediately lose access.",
-          "submit": "Ban user"
-        },
-        "unban": {
-          "title": "Unban this user?",
-          "description": "{{name}} will be able to sign in again.",
-          "submit": "Unban user"
-        },
-        "sessions": {
-          "title": "Revoke all sessions?",
-          "description": "{{name}} will be signed out on every device.",
-          "submit": "Revoke sessions"
-        },
-        "delete": {
-          "title": "Delete this user?",
-          "description": "The account for {{name}} and its access will be permanently removed.",
-          "submit": "Delete user"
-        }
-      }
-    },
-    "flags": {
-      "title": "Feature flags",
-      "description": "Roll features out, run experiments and pull kill switches for everyone on this deployment.",
-      "tabs": {
-        "flags": "Flags",
-        "segments": "Segments",
-        "history": "History"
-      },
-      "search": "Search flags",
-      "empty": "No flags match.",
-      "columns": {
-        "flag": "Flag",
-        "kind": "Kind",
-        "serving": "Serving",
-        "enabled": "On"
-      },
-      "kinds": {
-        "release": "Release",
-        "ops": "Ops",
-        "experiment": "Experiment"
-      },
-      "expired": "Expired",
-      "expiredHint": "Past {{date}}. Ship it and remove the flag from the code.",
-      "expires": "Until {{date}}",
-      "serving": {
-        "default": "Default: {{value}}",
-        "off": "Off: {{value}} to everyone",
-        "value": "{{value}} to everyone else",
-        "split": "Split {{arms}}",
-        "rules_one": "{{count}} rule, then",
-        "rules_other": "{{count}} rules, then"
-      },
-      "actions": {
-        "edit": "Edit targeting",
-        "explain": "Explain",
-        "history": "History"
-      },
-      "toggle": {
-        "onTitle": "Switch {{key}} on?",
-        "offTitle": "Switch {{key}} off?",
-        "onDescription": "Its targeting takes effect for everyone on this deployment straight away.",
-        "offDescription": "Everyone on this deployment gets {{value}} straight away. Targeting is kept for when you switch it back on.",
-        "comment": "Why",
-        "commentPlaceholder": "Incident, rollout step, experiment ended…",
-        "commentHint": "Recorded on the history with your name.",
-        "confirmOn": "Switch on",
-        "confirmOff": "Switch off",
-        "pending": "Switching…"
-      },
-      "targeting": {
-        "title": "Targeting: {{key}}",
-        "description": "Rules are checked in order and the first whose conditions all hold decides. Everyone else gets the fallthrough.",
-        "enabled": "Serve targeting",
-        "enabledHint": "Off serves {{value}} to everyone, whatever the rules say.",
-        "rules": "Rules",
-        "rule": "Rule {{number}}",
-        "addRule": "Add rule",
-        "removeRule": "Remove rule",
-        "moveUp": "Move up",
-        "moveDown": "Move down",
-        "ruleDescription": "What this rule is for",
-        "noRules": "No rules. Everyone gets the fallthrough.",
-        "conditions": "When",
-        "addCondition": "Add condition",
-        "removeCondition": "Remove condition",
-        "noConditions": "No conditions, so this rule matches everyone.",
-        "attribute": "Attribute",
-        "operator": "Operator",
-        "values": "Values",
-        "valuesHint": "One per line.",
-        "serve": "Serve",
-        "fallthrough": "Everyone else",
-        "serveValue": "One value",
-        "serveSplit": "Percentage split",
-        "addArm": "Add arm",
-        "removeArm": "Remove arm",
-        "weight": "Percent",
-        "splitTotal": "Total {{total}}%",
-        "comment": "Why",
-        "commentPlaceholder": "What this change is for",
-        "save": "Save targeting",
-        "saving": "Saving…"
-      },
-      "attributes": {
-        "userId": "User ID",
-        "organizationId": "Organization ID",
-        "email": "Email",
-        "platformRole": "Platform role",
-        "platform": "Platform",
-        "appVersion": "App version",
-        "segment": "Segment"
-      },
-      "operators": {
-        "in": "is one of",
-        "not_in": "is not one of",
-        "ends_with": "ends with",
-        "semver_gte": "is at least version",
-        "semver_lt": "is below version"
-      },
-      "explain": {
-        "title": "Explain: {{key}}",
-        "description": "What this flag serves to someone, and why. Describe as much of them as you know.",
-        "submit": "Explain",
-        "result": "Serves {{value}}",
-        "reasons": {
-          "DEFAULT": "Nothing decided, so the catalog default was served.",
-          "DISABLED": "The flag is switched off.",
-          "TARGETING_MATCH": "Rule “{{rule}}” matched.",
-          "SPLIT": "Bucketed by a percentage split.",
-          "FALLTHROUGH": "No rule matched; the fallthrough served it.",
-          "ERROR": "Targeting served a value this flag does not take, so the default was served."
-        }
-      },
-      "segments": {
-        "search": "Search segments",
-        "empty": "No segments yet. A segment is a named audience, like staff or beta customers, that any flag's rules can target.",
-        "new": "New segment",
-        "edit": "Edit",
-        "delete": "Delete",
-        "columns": {
-          "segment": "Segment",
-          "conditions": "Conditions",
-          "usedBy": "Used by"
-        },
-        "conditionCount_one": "{{count}} condition",
-        "conditionCount_other": "{{count}} conditions",
-        "unused": "No flag",
-        "newTitle": "New segment",
-        "editTitle": "Edit segment",
-        "formDescription": "Everyone who meets all of these conditions is in the segment.",
-        "key": "Key",
-        "keyHint": "What rules refer to it by. Lowercase letters, digits, - and _. It cannot be changed later.",
-        "name": "Name",
-        "details": "Description",
-        "create": "Create segment",
-        "save": "Save segment",
-        "saving": "Saving…",
-        "deleteTitle": "Delete this segment?",
-        "deleteDescription": "No flag targets it, so nobody's flags change.",
-        "inUse": "Used by {{flags}}. Remove it from their rules first."
-      },
-      "history": {
-        "search": "Filter by flag or segment key",
-        "empty": "No changes yet.",
-        "columns": {
-          "when": "When",
-          "subject": "Flag or segment",
-          "change": "Change",
-          "by": "By",
-          "comment": "Why"
-        },
-        "actions": {
-          "targeting_updated": "Targeting changed",
-          "toggled": "Switched",
-          "segment_created": "Segment created",
-          "segment_updated": "Segment updated",
-          "segment_deleted": "Segment deleted"
-        },
-        "switchedOn": "Switched on",
-        "switchedOff": "Switched off",
-        "unknownActor": "Unknown"
-      }
-    }
-  },
   "language": {
     "label": "Language",
     "en": "English",
@@ -1397,20 +1075,8 @@
     "failed": "That did not go through. Try again."
   },
   "onboarding": {
-    "description": "Your account is ready. Name the workspace your sessions will live in.",
-    "eyebrow": "Almost there",
-    "signOut": "Sign out",
-    "title": "Create your workspace",
-    "create": {
-      "name": "Workspace name",
-      "namePlaceholder": "Acme Inc.",
-      "hint": "You can rename it later from Settings.",
-      "submit": "Create workspace",
-      "submitting": "Creating…"
-    },
     "flow": {
       "back": "Back",
-      "counter": "{{step}} of {{total}}",
       "continue": "Continue",
       "workspace": {
         "title": "Name your workspace",
@@ -1467,140 +1133,6 @@
         "noHost": "No host yet",
         "doneLabel": "Done",
         "failed": "Could not load this. Reload the page to try again."
-      }
-    }
-  },
-  "pages": {
-    "profile": {
-      "description": "Manage your personal account for this workspace.",
-      "title": "My profile"
-    },
-    "team": {
-      "common": {
-        "cancel": "Cancel",
-        "error": "Something went wrong. Please try again.",
-        "loading": "Loading…"
-      },
-      "confirm": {
-        "cancelDescription": "The invitation link will stop working.",
-        "cancelTitle": "Cancel this invitation?",
-        "deleteRoleDescription": "Members assigned to it will lose the permissions it grants.",
-        "deleteRoleTitle": "Delete this role?",
-        "removeDescription": "They will lose access to this workspace. Their account will not be deleted.",
-        "removeTitle": "Remove this member?"
-      },
-      "description": "Manage who can access the {{workspace}} workspace and what their role lets them do.",
-      "invite": {
-        "description": "Add teammates by email. Their role can be adjusted after they join.",
-        "emails": "Email addresses",
-        "emailsHint": "Separate multiple addresses with commas or new lines.",
-        "emailsPlaceholder": "name@company.com, another@company.com",
-        "role": "Organization access",
-        "roles": {
-          "admin": "Admin",
-          "member": "Member",
-          "owner": "Owner"
-        },
-        "send": "Send invite",
-        "sendMany": "Send {{count}} invites",
-        "sending": "Sending…",
-        "title": "Invite members"
-      },
-      "memberRole": {
-        "description": "Choose the application role for {{name}}.",
-        "noRole": "No custom role",
-        "role": "Role",
-        "save": "Save role",
-        "title": "Edit member role"
-      },
-      "members": {
-        "cancelInvite": "Cancel invitation",
-        "columns": {
-          "email": "Email",
-          "joined": "Joined",
-          "name": "Name",
-          "organizationRole": "Organization role",
-          "role": "Role",
-          "status": "Status"
-        },
-        "editRole": "Edit role",
-        "export": "Export CSV",
-        "invite": "Invite",
-        "remove": "Remove member",
-        "search": "Search members",
-        "status": {
-          "active": "Active",
-          "inactive": "Inactive",
-          "invited": "Invited"
-        },
-        "empty": "No members found.",
-        "noMatches": "No members match your filters."
-      },
-      "roleForm": {
-        "create": "Create role",
-        "description": "Name the role and choose what it can do.",
-        "details": "Description",
-        "detailsPlaceholder": "What can this role do?",
-        "edit": "Edit",
-        "editTitle": "Edit role",
-        "name": "Role name",
-        "namePlaceholder": "e.g. Content editor",
-        "newTitle": "New custom role",
-        "noPermissionResults": "No permissions match your search.",
-        "none": "None",
-        "permissions": "Permissions",
-        "save": "Save changes",
-        "saving": "Saving…",
-        "searchPermissions": "Search permissions",
-        "view": "View"
-      },
-      "roles": {
-        "columns": {
-          "description": "Description",
-          "role": "Role",
-          "type": "Type"
-        },
-        "custom": "Custom",
-        "delete": "Delete",
-        "duplicate": "Duplicate",
-        "edit": "Edit",
-        "empty": "No roles found.",
-        "export": "Export CSV",
-        "new": "New role",
-        "search": "Search roles",
-        "system": "System"
-      },
-      "stats": {
-        "active": "Active accounts",
-        "members": "Members",
-        "pending": "Pending invites"
-      },
-      "tabs": {
-        "members": "Members",
-        "roles": "Roles"
-      },
-      "title": "Team",
-      "permissionAreas": {
-        "team": {
-          "name": "Team",
-          "hint": "Members, invitations and roles"
-        },
-        "organization": {
-          "name": "Organization",
-          "hint": "Workspace name, mark and workspaces"
-        },
-        "users": {
-          "name": "Users",
-          "hint": "The user directory"
-        },
-        "api": {
-          "name": "API keys",
-          "hint": "Personal API tokens"
-        },
-        "audit": {
-          "name": "Audit log",
-          "hint": "Who did what, and when"
-        }
       }
     }
   },

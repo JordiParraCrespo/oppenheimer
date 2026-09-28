@@ -134,13 +134,12 @@ and fetch it again. The update goes through `withCacheOnSuccess` from
 whether it runs at all:
 
 ```typescript
-export function useUpdateUser(options?: UpdateUserOptions) {
+export function useRenameSession(options?: RenameSessionOptions) {
   return useMutation({
-    mutationFn: ({ id, dto }) => app.users.update(id, dto),
-    ...withCacheOnSuccess(options, (updated, { id }) => {
-      queryClient.setQueryData(usersKeys.detail(id), updated);
-      queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: usersKeys.me() });
+    mutationFn: ({ id, name }) => app.sessions.rename(id, name),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     }),
   });
 }
@@ -255,9 +254,10 @@ What that policy encodes:
   - `auth` is never persisted. The session query is `staleTime: Infinity`, so a
     restored entry would look fresh forever and `restoreSession()` would never
     run — the app would render as signed in with no session behind it.
-  - `apiTokens` is never persisted — the consumer product names it in
-    `CONSUMER_NON_PERSISTED_FEATURES`. Token prefixes, scopes and the
-    permission catalog are credential metadata, and `localStorage` is not encrypted at rest.
+  - The consumer's own records (`sessions`, `hosts`, `projects`, `profile`…)
+    are never persisted — the product names them in
+    `CONSUMER_NON_PERSISTED_FEATURES`. They name machines, repositories and
+    prompts, and `localStorage` is not encrypted at rest.
   - Only **successful** queries are written; restoring an error or a pending
     fetch would replay a failure the user has already moved past.
 

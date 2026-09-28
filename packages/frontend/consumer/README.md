@@ -5,9 +5,12 @@ with a terminal on a host), `projects` (the bodies of work sessions belong
 to, with the defaults New session is prefilled with) and `hosts` (the
 machines the user owns) are the product; `organizations` (the personal workspace only — no roster, no
 members, no invitations, see `product/versions/mvp/08-auth.md`), `profile`
-and `api-tokens` are the account chrome it keeps. Each module is an entity, an
-error catalog, a repository over `@oppenheimer/api-client`, a service and an
-InversifyJS `ContainerModule`; `src/react/` turns those services into
+and `permissions` (the catalog OAuth consent names scopes from) are the account
+chrome it keeps. Each module is an entity, an
+error catalog, a repository over `@oppenheimer/api-client` and an InversifyJS
+`ContainerModule`, plus a service where there is a use case to hold (sessions,
+organizations, profile); `src/react/` turns `app.<module>` — the service, or
+the repository when there is none — into
 TanStack Query hooks. Like the kernel it is platform-free: no DOM, no router,
 no platform kit.
 
@@ -18,41 +21,40 @@ An app becomes the consumer product by loading `consumerModules` into
 
 `@oppenheimer/frontend-consumer` (`src/index.ts`):
 
-- **di** — `ConsumerApp`, `consumerModules`, `TOKENS` (the kernel's `TOKENS`
-  spread, plus `HostsRepository`, `HostsService`, `ProjectsRepository`,
-  `ProjectsService`, `SessionsRepository`, `SessionsService`, `OrganizationsRepository`, `OrganizationsService`,
-  `ProfileRepository`, `ProfileService`, `ApiTokensRepository`,
-  `ApiTokensService`).
+The barrel exports what an app uses and nothing more — `pnpm check:unused`
+(knip) fails on an export nobody imports. Each module's error catalog and, where
+a service fronts it, its repository stay inside the package.
+
+- **di** — `consumerModules`, the container modules an app hands
+  `OppenheimerApp.create`.
 - **modules/hosts** — `HostEntity`, `HostPairing`, `HostState`,
-  `HostsService`, `HostsRepository`, `HostsModule`, `HostsErrors`.
+  `HostsRepository`, `HostsModule`.
 - **modules/projects** — `ProjectEntity`, `ProjectRepository`,
   `CreateProjectInput`, `UpdateProjectInput`, `ProjectRepositoryInput`,
-  `shortName`, `ProjectsService`, `ProjectsRepository`, `ProjectsModule`,
-  `ProjectsErrors`.
+  `shortName`, `ProjectsRepository`, `ProjectsModule`.
+- **modules/installations** and **modules/automations** — their entities,
+  `InstallationsRepository` / `AutomationsRepository` and modules.
 - **modules/sessions** — `SessionEntity`, `CreateSessionInput`,
-  `SessionAgent`, `SessionState`, `SessionsService`, `SessionsRepository`,
-  `SessionsModule`, `SessionsErrors`, `isSessionNotFound`. The terminal's
-  transport lives here too, with no platform in it:
-  `SessionsService.openStream(id, window)` returns a `SessionStream` (the
-  attach socket, its reconnect ladder, a fresh ticket per dial and the
-  byte credit). `createResizeCoalescer` and `FakeSessionStream` sit
-  beside it. The app only renders what the stream delivers.
+  `SessionAgent`, `SessionState`, `SessionsService`, `SessionsModule`,
+  `isSessionNotFound`. The terminal's transport lives here too, with no
+  platform in it: `SessionsService.openStream(id, window)` returns a
+  `SessionStream` (the attach socket, its reconnect ladder, a fresh ticket per
+  dial and the byte credit), and `createResizeCoalescer` sits beside it. The
+  app only renders what the stream delivers.
 - **modules/organizations** — `OrganizationEntity`, `OrganizationsService`,
-  `OrganizationsRepository`, `OrganizationsModule`, `OrganizationsErrors`.
+  `OrganizationsModule`, `isProvisionalSlug`.
 - **modules/profile** — `ProfileEntity`, `UserSessionEntity`,
-  `ProfileService`, `ProfileRepository`, `ProfileModule`, `ProfileErrors`.
-- **modules/api-tokens** — `ApiTokenEntity`, `CreatedApiToken`,
-  `CurrentCredential`, `PermissionCatalog`, `ApiTokensService`,
-  `ApiTokensRepository`, `ApiTokensModule`, `ApiTokensErrors`.
+  `ProfileService`, `ProfileModule`.
+- **modules/permissions** — `PermissionCatalog`, `PermissionsRepository`,
+  `PermissionsModule`: the permission catalog OAuth consent names scopes from.
 
 `@oppenheimer/frontend-consumer/react` (`src/react/index.ts`):
 
-The TanStack Query hooks and key factories for each module above — one
-`<module>.queries.ts` per module, a `use…` hook per read or write and a
-`<module>Keys` factory — plus `useConsumerApp`, the product's services off
-the kernel container, and `CONSUMER_NON_PERSISTED_FEATURES`, the prefixes an
-app keeps out of the persisted query cache. The barrel is the catalog; it is
-not repeated here.
+The named hooks the console imports — one `<module>.queries.ts` per module
+behind them, `usePermissionCatalog` among them for OAuth consent — and
+`CONSUMER_NON_PERSISTED_FEATURES`, the prefixes an app keeps out of the
+persisted query cache. Key factories stay in their files: nothing outside the
+package names a key. The barrel is the catalog; it is not repeated here.
 
 ## How to use it
 

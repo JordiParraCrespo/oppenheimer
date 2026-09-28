@@ -1,4 +1,4 @@
-import type { Actions, Subjects } from './abilities';
+import type { Actions, Subjects } from './abilities.js';
 
 /**
  * A CASL rule an endpoint demands — the same `{ action, subject }` shape the

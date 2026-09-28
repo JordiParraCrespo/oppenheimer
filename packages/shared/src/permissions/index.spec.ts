@@ -10,7 +10,7 @@ import {
   KNOWN_SUBJECTS,
   type PermissionDefinition,
   SYSTEM_ROLE_PERMISSIONS,
-} from './index';
+} from './index.js';
 
 describe('defineAbilitiesFromPermissions', () => {
   it('grants a simple action/subject permission', () => {

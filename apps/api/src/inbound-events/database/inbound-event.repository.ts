@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
@@ -26,6 +26,8 @@ export const PROCESS_DELIVERY_JOB = 'process';
  */
 @Injectable()
 export class InboundEventRepository implements InboundEventRepositoryPort {
+  private readonly logger = new Logger(InboundEventRepository.name);
+
   constructor(
     private readonly dataSource: DataSource,
     @InjectRepository(InboundEventOrmEntity)
@@ -35,13 +37,23 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
   ) {}
 
   async receive(delivery: NewDelivery): Promise<boolean> {
-    const received = await this.dataSource.transaction(async (manager) => {
+    const received = await this.outbox.transaction(async (manager) => {
+      // A bare ON CONFLICT covers both uniques: `(source, deliveryId)`, a
+      // provider's retry, and `(source, payloadDigest)`, the same signed bytes
+      // under a delivery id the provider never sent (a replay). Either is a no-op.
       const inserted: { id: string }[] = await manager.query(
-        `INSERT INTO "inbound_delivery" ("source", "deliveryId", "eventName", "payload")
-         VALUES ($1, $2, $3, $4)
-         ON CONFLICT ("source", "deliveryId") DO NOTHING
+        `INSERT INTO "inbound_delivery"
+           ("source", "deliveryId", "eventName", "payload", "payloadDigest")
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT DO NOTHING
          RETURNING "id"`,
-        [delivery.source, delivery.deliveryId, delivery.eventName, delivery.payload],
+        [
+          delivery.source,
+          delivery.deliveryId,
+          delivery.eventName,
+          delivery.payload,
+          delivery.payloadDigest,
+        ],
       );
       if (inserted.length === 0) return false;
       await this.outbox.stageJob(manager, {
@@ -53,8 +65,30 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
       });
       return true;
     });
-    if (received) this.outbox.wake();
+    if (!received) await this.reportReplay(delivery);
     return received;
+  }
+
+  /**
+   * Only on a refused insert, so the path every delivery takes is unchanged:
+   * a stored row with these bytes under another id means someone replayed a
+   * signed body, which a provider's own retry never does.
+   */
+  private async reportReplay(delivery: NewDelivery): Promise<void> {
+    const rows: { deliveryId: string }[] = await this.dataSource.query(
+      `SELECT "deliveryId" FROM "inbound_delivery"
+        WHERE "source" = $1 AND "payloadDigest" = $2 LIMIT 1`,
+      [delivery.source, delivery.payloadDigest],
+    );
+    const original = rows[0]?.deliveryId;
+    if (original && original !== delivery.deliveryId) {
+      this.logger.warn({
+        message: 'Dropped a replayed delivery: these signed bytes were already received',
+        source: delivery.source,
+        deliveryId: delivery.deliveryId,
+        originalDeliveryId: original,
+      });
+    }
   }
 
   async findDelivery(id: string): Promise<Option<InboundDelivery>> {
@@ -67,7 +101,7 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
     organizationIds: readonly string[],
     events: readonly ExternalEvent[],
   ): Promise<number> {
-    const stored = await this.dataSource.transaction(async (manager) => {
+    return this.outbox.transaction(async (manager) => {
       const notifications: ExternalEventReceivedDomainEvent[] = [];
       for (const organizationId of organizationIds) {
         for (const event of events) {
@@ -114,18 +148,21 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
           );
         }
       }
+      // The total stored for the delivery, not this run's inserts: a re-run
+      // inserts nothing and must not reset the count to 0. Served by
+      // IDX_inbound_event_delivery, in this transaction, so it sees this
+      // run's rows too.
       await manager.query(
-        `UPDATE "inbound_delivery"
+        `UPDATE "inbound_delivery" d
             SET "status" = 'processed', "processedAt" = now(), "lastError" = NULL,
-                "eventCount" = $2
-          WHERE "id" = $1`,
-        [delivery.id, notifications.length],
+                "eventCount" = (SELECT count(*) FROM "inbound_event" e
+                                 WHERE e."inboundDeliveryId" = d."id")
+          WHERE d."id" = $1`,
+        [delivery.id],
       );
       await this.outbox.stageEvents(manager, notifications);
       return notifications.length;
     });
-    if (stored > 0) this.outbox.wake();
-    return stored;
   }
 
   async markFailed(id: string, error: string): Promise<void> {
@@ -140,7 +177,7 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
     abandonBefore: Date,
     batch: number,
   ): Promise<{ restaged: number; abandoned: number }> {
-    const result = await this.dataSource.transaction(async (manager) => {
+    return this.outbox.transaction(async (manager) => {
       const abandoned: { id: string }[] = await manager.query(
         `UPDATE "inbound_delivery"
             SET "status" = 'failed', "lastError" = 'not processed after its retries and a day of sweeps'
@@ -171,8 +208,6 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
       }
       return { restaged: due.length, abandoned: abandoned.length };
     });
-    if (result.restaged > 0) this.outbox.wake();
-    return result;
   }
 
   async findOne(organizationId: string, id: string): Promise<Option<StoredExternalEvent>> {

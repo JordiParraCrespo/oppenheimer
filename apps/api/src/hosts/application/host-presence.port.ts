@@ -14,6 +14,9 @@ export interface PresenceReport {
   connectedAt?: Date;
 }
 
+/** What `observe` did with a report: recorded it, or why not. */
+export type PresenceOutcome = 'recorded' | 'unpaired' | 'owner_refused';
+
 /**
  * What the module that owns the runner link calls when a machine reports in.
  *
@@ -29,10 +32,13 @@ export interface HostPresencePort {
    * with the change on the host's timeline. `at` is when this process received
    * the report — never the runner's clock, which a skewed host would use to
    * take itself offline. An unknown or unpaired host is ignored rather than
-   * resurrected, and reported as `false` so the caller can close the link it
-   * arrived on.
+   * resurrected, and reported as `unpaired` so the caller can close the link
+   * it arrived on for good. A host whose owner may not act (banned or
+   * deactivated, `isAccessAllowed`) is ignored too and reported as
+   * `owner_refused`: its link is closed, but not as unpaired, because lifting
+   * the ban lets the same host back in.
    */
-  observe(hostId: string, report: PresenceReport, at?: Date): Promise<boolean>;
+  observe(hostId: string, report: PresenceReport, at?: Date): Promise<PresenceOutcome>;
 
   /**
    * Record the public address a link came from, as this process saw it —

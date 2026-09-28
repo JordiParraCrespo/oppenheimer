@@ -33,7 +33,7 @@ function statusOf(error: unknown): number | undefined {
 }
 
 /** An API answer saying the caller's session is no longer honoured. */
-export function isUnauthorized(error: unknown): boolean {
+function isUnauthorized(error: unknown): boolean {
   return statusOf(error) === 401;
 }
 

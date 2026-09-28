@@ -1,11 +1,15 @@
 import { AppError, type SdkResult, unwrapBody } from '@oppenheimer/frontend-core';
+import { searchText } from '@oppenheimer/frontend-web';
 import type { PermissionGroup, Scope } from '@oppenheimer/shared';
+import { z } from 'zod';
 
-export interface ConsentSearch {
-  consent_code?: string;
-  client_id?: string;
-  scope?: string;
-}
+/** What the authorization server hands the consent screen, in its own snake_case. */
+export const consentSearchSchema = z.object({
+  consent_code: searchText,
+  client_id: searchText,
+  scope: searchText,
+});
+export type ConsentSearch = z.infer<typeof consentSearchSchema>;
 
 /**
  * Match the requested scope string against the catalog. Anything the catalog
@@ -44,7 +48,7 @@ export function describeScopes(
  * Client-side fallbacks for the consent call. `NO_REDIRECT` has its own
  * `errors.byCode` entry; `FAILED` reads as the screen's own fallback.
  */
-export const ConsentErrors = {
+const ConsentErrors = {
   FAILED: { code: 'CONSENT_CLIENT_001', message: 'The consent could not be recorded' },
   NO_REDIRECT: { code: 'CONSENT_CLIENT_002', message: 'The consent answer carried no redirect' },
 } as const;

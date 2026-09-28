@@ -3,6 +3,7 @@ import type { ConfigService } from '@nestjs/config';
 import type { CacheService } from '@oppenheimer/backend-cache';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CredentialOwnerPort } from '../../../auth/application/credential-owner.port';
 import type { HostRepositoryPort } from '../../database/host.repository.port';
 import { HostEntity } from '../../domain/host.entity';
 import { keyFingerprint } from '../../infrastructure/host-assertion.util';
@@ -73,6 +74,8 @@ describe('HostAssertionResolver', () => {
   let hosts: Pick<HostRepositoryPort, 'findOneByIdForMachine'>;
   let cache: Pick<CacheService, 'setIfAbsent'>;
   let resolver: HostAssertionResolver;
+  let owners: { findActiveOwner: ReturnType<typeof vi.fn> };
+  let legacyMarkers: { isBurned: ReturnType<typeof vi.fn> };
   let current: ReturnType<typeof keypair>;
 
   beforeEach(() => {
@@ -94,10 +97,14 @@ describe('HostAssertionResolver', () => {
       get: (key: string) => (key === 'hosts.controlPlaneUrl' ? CONTROL_PLANE : undefined),
     } as unknown as ConfigService;
 
+    owners = { findActiveOwner: vi.fn().mockResolvedValue({ id: 'jordi' }) };
+    legacyMarkers = { isBurned: vi.fn().mockResolvedValue(false) };
     resolver = new HostAssertionResolver(
       hosts as HostRepositoryPort,
       cache as CacheService,
       configService,
+      owners as unknown as CredentialOwnerPort,
+      legacyMarkers,
     );
   });
 
@@ -135,6 +142,19 @@ describe('HostAssertionResolver', () => {
         code: 'HOSTS_005',
       },
     );
+  });
+
+  // TODO(remove after #162 has been live once): with the legacy check.
+  it('refuses a replay of a token burned before the cache prefixed its keys', async () => {
+    // The first use was on a replica that wrote the unprefixed marker; the
+    // prefixed key is free, so only the legacy check stands in the way.
+    legacyMarkers.isBurned.mockResolvedValue(true);
+
+    await expect(verify(assertion(current.privateKey, bootClaims('host-1')))).rejects.toMatchObject(
+      { code: 'HOSTS_005' },
+    );
+    expect(legacyMarkers.isBurned).toHaveBeenCalledWith('host-1', bootClaims('host-1').jti);
+    expect(cache.setIfAbsent).not.toHaveBeenCalled();
   });
 
   it('refuses an assertion signed by another key', async () => {
@@ -209,6 +229,18 @@ describe('HostAssertionResolver', () => {
         code: 'HOSTS_005',
       },
     );
+  });
+
+  it('refuses the host of an owner who may not act, with the one opaque answer', async () => {
+    // A banned or deactivated owner: `CREDENTIAL_OWNER` answers null. The
+    // machine they paired is refused like any other bad assertion, so the link
+    // handshake answers 401 and the runner keeps dialling until it is lifted.
+    owners.findActiveOwner.mockResolvedValue(null);
+
+    await expect(verify(assertion(current.privateKey, bootClaims('host-1')))).rejects.toMatchObject(
+      { code: 'HOSTS_005' },
+    );
+    expect(owners.findActiveOwner).toHaveBeenCalledWith('jordi');
   });
 
   it('refuses something that is not an assertion at all', async () => {

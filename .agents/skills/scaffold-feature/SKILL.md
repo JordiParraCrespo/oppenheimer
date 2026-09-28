@@ -1,6 +1,6 @@
 ---
 name: scaffold-feature
-description: Build a feature in the Oppenheimer web console (apps/web) the way a senior frontend engineer on this codebase would. It starts from the domain module in packages/frontend (sessions, hosts, projects, installations, organizations, profile, api-tokens, or the kernel's), writes down every query and mutation and which component draws each result, then places each piece in its kind directory, and it ends with the checks passing. Use it whenever the user asks for a new screen, page, section, dialog, form, list, settings page or UI flow in the console. Also use it when they describe something that needs UI ("show a host's activity", "let people revoke API tokens"), when a new API endpoint needs a screen, or when they ask to review, fix or refactor a frontend feature, even if they never say "feature" or "scaffold".
+description: Build a feature in the Oppenheimer web console (apps/web) the way a senior frontend engineer on this codebase would. It starts from the domain module in packages/frontend (sessions, hosts, projects, installations, automations, organizations, profile, or the kernel's), writes down every query and mutation and which component draws each result, then places each piece in its kind directory, and it ends with the checks passing. Use it whenever the user asks for a new screen, page, section, dialog, form, list, settings page or UI flow in the console. Also use it when they describe something that needs UI ("show a host's activity", "let people pause an automation from its row"), when a new API endpoint needs a screen, or when they ask to review, fix or refactor a frontend feature, even if they never say "feature" or "scaffold".
 ---
 
 # Build a console feature
@@ -44,9 +44,9 @@ new feature. Before creating anything, answer these:
   `packages/frontend/core` (`auth`, `users`, `user-settings`, `capabilities`,
   `analytics`, `feature-flags`) or of the product package
   `packages/frontend/consumer` (`sessions`, `hosts`, `projects`,
-  `installations`, `organizations`, `profile`, `api-tokens`), or is on the
-  app's allowlist (`public`, and `automations` until the API names that
-  entity). Never name it after a page (`settings`, `console`, `home`).
+  `installations`, `automations`, `organizations`, `profile`, `permissions`),
+  or is on the app's allowlist (`public`: pages that render no entity). Never
+  name it after a page (`settings`, `console`, `home`).
   `ls packages/frontend/*/src/modules` shows what exists.
   - `sessions` are the agent sessions (a worktree and a tmux terminal on a
     host). The browsers signed in to an account are `profile`
@@ -66,9 +66,9 @@ new feature. Before creating anything, answer these:
   and the generated client in `packages/frontend/api-client`. If it isn't
   there, the backend comes first (`/scaffold-module`, then
   `pnpm generate:api-client`), or the feature waits. Never fake data: see
-  "Never ship a placeholder number" in `frontend-ui.md`. The `automations`
-  pages are the example of a screen drawn ahead of its API; they keep their
-  primary action off rather than pretend.
+  "Never ship a placeholder number" in `frontend-ui.md`. A screen drawn ahead
+  of its API keeps its primary action off rather than pretend, as the
+  `automations` pages did before the API named the entity.
 - **What does the API allow and refuse?** Read the controller behind each
   endpoint, not only its path:
   - its `@CheckPolicies`, which is the permission each action needs;
@@ -102,19 +102,21 @@ it. The steps are the "Add a module to a product package" cookbook in
    placeholder (`HostDetails`).
 2. **Errors:** `THINGS_CLIENT_00n` fallbacks, used only when the API sent no
    problem document.
-3. **Repository:** calls `@oppenheimer/api-client` (`heyApiSdk`, or
-   `heyApiClient` with a status-keyed map where the generated names collide,
-   as `hosts.repository.ts` explains), maps DTOs to entities, puts
-   `@MapApiError` on every method, and throws `AppError` on an absent body.
-   An absent body is a failed read, never `[]`.
-4. **Service, module, tokens, `ConsumerApp` getter.**
+3. **Repository:** calls `heyApiSdk` from `@oppenheimer/api-client` through
+   `unwrap` / `unwrapBody` (the SDK function is the API slice's name:
+   `FindThingsHttpController` is `findThings`), maps DTOs to
+   entities, and puts `@MapApiError` on every method. An absent body is a
+   failed read, never `[]`.
+4. **Module, tokens, `ConsumerApp` getter** — and a **service only when a
+   method does more than call the repository**; otherwise the getter returns
+   the repository (`packages/frontend/ARCHITECTURE.md`, step 4).
 5. **Query hooks** in `src/react/<module>.queries.ts`:
    - A **key factory with one function per level**
      (`all → lists() → list(filters) → details() → detail(id)`, nested
      resources under their detail as in `installations.queries.ts`).
    - `skipToken` for a missing input, never `enabled` beside a `queryFn`.
-   - A query that returns entities passes `structuralSharing: shareEntities`
-     (from `@oppenheimer/frontend-core/react`). A list hook takes a narrowing
+   - `useQuery` / `useQueries` come from `@oppenheimer/frontend-core/react`,
+     which share entities across refetches. A list hook takes a narrowing
      `select`; a read that only happens in an event handler gets a
      `use…Snapshot()` instead of a subscription.
    - Mutation hooks take `options?: UseMutationOptions<…>` and write the cache
@@ -124,8 +126,12 @@ it. The steps are the "Add a module to a product package" cookbook in
      `invalidateQueries()`.
    - The Biome plugins in `biome-plugins/*.grit` enforce the key-factory,
      `skipToken` and `withCacheOnSuccess` rules; the guide is
-     `apps/docs/docs/architecture/query-keys.md`. A key for a generated
-     hey-api query goes through `withFeaturePrefix`.
+     `apps/docs/docs/architecture/query-keys.md`. The key factory stays in its
+     file; the barrel exports the hooks the app imports (`pnpm check:unused`).
+   - A poll is `LIVE_POLL` (`src/react/live-poll.ts`): the hook spreads
+     `pollWhile(kind, stillMoving)` after its options, and a feature asks for
+     the hook that already polls (`useHostPresence`) rather than setting
+     `refetchInterval`.
 6. If the data must never reach storage (secrets, a pairing token, personal
    data), add `thingsKeys.all[0]` to `CONSUMER_NON_PERSISTED_FEATURES` in
    `src/react/persistence.ts`.
@@ -158,8 +164,10 @@ from step 1.
 - **Actions:** each action is offered only where the server would allow it,
   and never where a business rule makes it a certain refusal. A workspace's
   owner holds every rule today, so the console's rows are ungated; a screen
-  whose endpoint does need a rule checks it with `useAbility()` from the kit
-  and hides the action rather than letting it end in a 403.
+  whose endpoint does need a rule reads the caller's ability from the kit's
+  `useAbilityState()` (`shell/hooks/use-ability.ts`, what the nav filters
+  with; export it from the shell barrel when the first screen needs it) and
+  hides the action rather than letting it end in a 403.
 - **Nav rows:** a gated row in `apps/web/src/lib/nav.ts` or a
   `SettingsSidebar` item takes `policies` from
   `ENDPOINT_POLICIES['<METHOD> <route>']` (`@oppenheimer/shared/permissions`),
@@ -252,19 +260,21 @@ pieces from your plan, following `references/templates.md`:
 - **Design system and kit first.** Read
   `packages/frontend/design-system/web/src/index.ts` in full (its exports are
   multi-line) and `packages/frontend/web/src/index.ts` before writing markup.
-  - Kit: `PageHead`, `ConfirmDialog`, `FieldRow`, `RouteError` /
-    `RouteNotFound`, `useErrorMessage`, `useZodResolver`, `useSearchDraft`,
-    `useLocale` and the date formatters, `useAbility`, `SettingsSidebar`.
+  - Kit: `ConfirmDialog`, `QueryState`, `ErrorAlert`, `RouteError` /
+    `RouteNotFound`, `useZodResolver`, `SidebarSearchField`, `useLocale` and
+    the date formatters, `SettingsSidebar`; `useErrorMessage` comes from the
+    kernel's React entry.
   - Design system: `SettingsTitle` / `SettingsGroup` / `SettingsRow` for a
     settings page, `HostCard`, `EmptyState`, `Skeleton`, `Alert`, `Callout`,
     `Badge` (lifecycle `active` / `paused` / `ended` / `draft`, `neutral` for
     metadata), `toast`, `Field*`, `DialogBody`, `EditorPage` and the
     `PageHeader` parts, `ChipSelect`, `DropdownMenu*`. The table in
     `frontend-ui.md` says which one answers which need.
-  - There is no data table in the kit yet, and no console screen pages or
-    searches a long list. The first one keeps search, filters and page in the
-    URL (nuqs) and sends them to the API (`frontend-ui.md`, "A list's query
-    lives in the URL"); build it in the feature and promote it on the second.
+  - There is no data table in the kit yet. A list that pages or filters keeps
+    search, filters and page in the URL, as its routes' search schema, and
+    sends them to the API (`frontend-ui.md`, "A list's query lives in the
+    URL"; the runs list is the example); build it in the feature and promote
+    it on the second.
 - **Colour:** the semantic tokens: `text-fg`, `text-fg-muted`,
   `text-fg-subtle`, `text-link`, `bg-canvas`, `bg-surface-*`, `bg-control-*`,
   `border-border`, `border-border-subtle`, `--accent-*`, `--status-*`. The
@@ -274,9 +284,9 @@ pieces from your plan, following `references/templates.md`:
   declare: check `globals.css`.
 - **Forms:** `useForm` with `useZodResolver(schema)` from
   `@oppenheimer/frontend-web`, the schema from
-  `@oppenheimer/shared/schemas/<area>` (never the package root in
-  `apps/web`; a new subpath also needs `optimizeDeps.include` in
-  `vite.config.ts`), `noValidate`, `Field` with `FieldLabel`,
+  `@oppenheimer/shared/schemas/<area>` (the schema's own subpath rather than
+  the package root; a new `<area>.schema.ts` is a subpath with no config),
+  `noValidate`, `Field` with `FieldLabel`,
   `FieldDescription` and `FieldError`, `data-invalid` and `aria-invalid`
   both set. A picker is a `Controller`. An edit form takes `values` (or a
   `key` on the record) so it resets on new data, with no effect. The form

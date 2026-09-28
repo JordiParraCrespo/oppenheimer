@@ -32,6 +32,7 @@ describe('UpdateProfileCommandHandler', () => {
   let service: UpdateProfileCommandHandler;
   let repo: Pick<UserRepositoryPort, 'findOneById' | 'save'>;
   let user: UserEntity;
+  const sessionCache = { refreshUser: vi.fn().mockResolvedValue(undefined) };
 
   beforeEach(() => {
     user = makeUser();
@@ -39,7 +40,25 @@ describe('UpdateProfileCommandHandler', () => {
       findOneById: vi.fn().mockResolvedValue(Some(user)),
       save: vi.fn().mockImplementation(async (entity) => entity),
     };
-    service = new UpdateProfileCommandHandler(repo as UserRepositoryPort);
+    service = new UpdateProfileCommandHandler(repo as UserRepositoryPort, sessionCache as never);
+  });
+
+  it('refreshes the cached sessions after the row is written', async () => {
+    // Better Auth caches each session with a copy of the user; the session path
+    // reads that copy, so a write behind its back must be followed by this.
+    const order: string[] = [];
+    vi.mocked(repo.save).mockImplementation(async (entity) => {
+      order.push('save');
+      return entity as never;
+    });
+    sessionCache.refreshUser.mockImplementation(async () => {
+      order.push('refresh');
+    });
+
+    await service.execute(new UpdateProfileCommand({ userId: 'user-uuid', firstName: 'Renamed' }));
+
+    expect(sessionCache.refreshUser).toHaveBeenCalledWith('user-uuid');
+    expect(order).toEqual(['save', 'refresh']);
   });
 
   it('applies the fields it was given', async () => {

@@ -109,6 +109,21 @@ Dispatches from a hook are best-effort and logged — Better Auth does not await
 failed request. Outside the API (the seed) there is no command bus, and the
 script owes itself those side effects by calling the handlers directly.
 
+**A write to Better Auth's `user` or `session` rows outside Better Auth goes
+through `SESSION_CACHE`.** Better Auth caches every session in Redis with a copy
+of its user (`secondaryStorage`), and the request pipeline reads that copy —
+`isActive`, `banned`, `activeOrganizationId` included. It keeps the copy
+current for its own writes; a repository save, a TypeORM `update` or raw SQL
+leaves it stale for as long as the session lives. So after such a write, call
+`SessionCachePort.refreshUser(userId)` (the `SESSION_CACHE` token, bound by the
+auth kernel), and before a write that removes session rows behind Better
+Auth's back (an account deletion's cascade) call `evictUser`. Deleting rows
+*through* Better Auth (`internalAdapter.deleteSession(s)`,
+`deleteUserSessions`) needs nothing: the `session.delete.before` hook drops the
+copy of every row it deletes. The handlers of `update-user`, `delete-user`,
+`update-profile`, the avatar slices, `provision-personal-workspace` and the
+member removal in `organizations.service.ts` are the worked examples.
+
 **Wrap every `auth.api.*` call in the module's own invoker** —
 `invokeOrganizationApi` (`organizations/organization-error.mapper.ts`) or
 `invokeAdminApi` (`admin/admin-error.mapper.ts`), both built with

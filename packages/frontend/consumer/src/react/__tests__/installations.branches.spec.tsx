@@ -19,7 +19,7 @@ function setup() {
   const service = {
     branches: vi.fn().mockResolvedValue([{ name: 'main', isDefault: true }]),
   };
-  const app = fakeKernel({ [TOKENS.InstallationsService]: service });
+  const app = fakeKernel({ [TOKENS.InstallationsRepository]: service });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   function wrapper({ children }: { children: ReactNode }) {
     return (

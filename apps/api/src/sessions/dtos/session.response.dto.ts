@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { nullableEnum, PaginatedResponseDto } from '@oppenheimer/backend-core';
 import type { SessionEffortDto, SessionPermissionDto } from '@oppenheimer/shared';
 import {
   SESSION_EFFORTS,
@@ -6,6 +7,7 @@ import {
   SESSION_PERMISSIONS,
   SESSION_STATES,
 } from '@oppenheimer/shared';
+import { CODING_AGENT_IDS, type CodingAgentId } from '@oppenheimer/shared/agents';
 
 /**
  * One repository checked out for this session.
@@ -84,16 +86,14 @@ export class SessionLaunchResponseDto {
   model!: string | null;
 
   @ApiProperty({
-    enum: SESSION_PERMISSIONS,
-    nullable: true,
+    ...nullableEnum(SESSION_PERMISSIONS),
     description:
       'What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default. Null for an agent with no approvals (the blank terminal).',
   })
   permission!: SessionPermissionDto | null;
 
   @ApiPropertyOptional({
-    enum: SESSION_EFFORTS,
-    nullable: true,
+    ...nullableEnum(SESSION_EFFORTS),
     description: 'How hard the agent may think. Null leaves the agent its own default.',
   })
   effort!: SessionEffortDto | null;
@@ -125,8 +125,12 @@ export class SessionResponseDto {
   })
   slug!: string;
 
-  @ApiProperty({ description: 'The coding agent this session runs.', example: 'claude-code' })
-  agent!: string;
+  @ApiProperty({
+    enum: CODING_AGENT_IDS,
+    description: 'The coding agent this session runs.',
+    example: 'claude-code',
+  })
+  agent!: CodingAgentId;
 
   @ApiProperty({ type: SessionLaunchResponseDto })
   launch!: SessionLaunchResponseDto;
@@ -186,28 +190,49 @@ export class SessionResponseDto {
   updatedAt!: Date;
 }
 
-/** Where the caller is in the result set. */
+/**
+ * Where the caller is in the result set. Page mode answers the counts; cursor
+ * mode answers only `limit` and `nextCursor`, because a cursor walk never counts.
+ */
 export class SessionPageMetaDto {
-  @ApiProperty({ description: 'Total matching sessions, across all pages.', example: 42 })
-  total!: number;
+  @ApiProperty({
+    required: false,
+    description:
+      'Total matching sessions, across all pages. Page mode only: absent when `cursor` was sent.',
+    example: 42,
+  })
+  total?: number;
 
-  @ApiProperty({ description: '1-based page number.', example: 1 })
-  page!: number;
+  @ApiProperty({
+    required: false,
+    description: '1-based page number. Page mode only: absent when `cursor` was sent.',
+    example: 1,
+  })
+  page?: number;
 
   @ApiProperty({ description: 'Sessions per page.', example: 20 })
   limit!: number;
 
-  @ApiProperty({ example: 3 })
-  totalPages!: number;
+  @ApiProperty({
+    required: false,
+    description: 'Page mode only: absent when `cursor` was sent.',
+    example: 3,
+  })
+  totalPages?: number;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Send it back as `cursor`, with the same `sort`, for the page after this one. Null on the last page. Present in both modes.',
+  })
+  nextCursor!: string | null;
 }
 
-export class PaginatedSessionsResponseDto {
-  @ApiProperty({ type: [SessionResponseDto] })
-  data!: SessionResponseDto[];
-
-  @ApiProperty({ type: SessionPageMetaDto })
-  meta!: SessionPageMetaDto;
-}
+export class PaginatedSessionsResponseDto extends PaginatedResponseDto(
+  SessionResponseDto,
+  SessionPageMetaDto,
+) {}
 
 /**
  * What `POST /sessions/{id}/attach-ticket` answers.

@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"runtime"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -286,6 +288,45 @@ func TestAResizeBeforeItsAttachIsAppliedAfterIt(t *testing.T) {
 		}
 		if time.Now().After(deadline) {
 			t.Fatalf("resizes = %+v, want the early resize applied once the attach opened", pty.resizes())
+		}
+		time.Sleep(time.Millisecond)
+	}
+}
+
+// inputPumps counts the goroutines writing an attachment's keystrokes.
+func inputPumps() int {
+	buf := make([]byte, 1<<20)
+	for {
+		n := runtime.Stack(buf, true)
+		if n < len(buf) {
+			return strings.Count(string(buf[:n]), "(*linkHandler).inputPump(")
+		}
+		buf = make([]byte, 2*len(buf))
+	}
+}
+
+// A PTY that ends on its own — the window closed, tmux went — takes its
+// input goroutine with it, not only its table entry.
+func TestAPTYEndingOnItsOwnStopsItsInputPump(t *testing.T) {
+	pty := newHeldPTY(false)
+	h, sent, _ := newAttachHarness(t, pty, nil)
+	before := inputPumps()
+	h.Message(context.Background(), attachMessage(t))
+	waitForAttachment(t, h)
+	if running := inputPumps(); running != before+1 {
+		t.Fatalf("%d input pumps after the attach, want %d", running, before+1)
+	}
+
+	_ = pty.Close() // Read now returns EOF: the PTY ended, not the host.
+	sent.waitFor(t, "attachment.closed", func(m any) bool {
+		c, ok := m.(link.AttachmentClosed)
+		return ok && c.AttachmentID == attachmentUnderTest && c.Reason == "pty closed"
+	})
+
+	deadline := time.Now().Add(2 * time.Second)
+	for inputPumps() != before {
+		if time.Now().After(deadline) {
+			t.Fatal("the input pump of an attachment whose PTY ended is still running")
 		}
 		time.Sleep(time.Millisecond)
 	}

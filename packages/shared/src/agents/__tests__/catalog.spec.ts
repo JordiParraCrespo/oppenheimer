@@ -6,8 +6,8 @@ import {
   isCodingAgentId,
   SESSION_EFFORTS,
   SESSION_PERMISSIONS,
-} from '../catalog';
-import { loginUrlPattern } from '../login';
+} from '../catalog.js';
+import { loginUrlPattern } from '../login.js';
 
 describe('coding agent catalog', () => {
   it('has an entry per id, keyed by it', () => {

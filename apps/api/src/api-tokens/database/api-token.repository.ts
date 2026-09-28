@@ -1,15 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  type AggregateID,
-  OutboxService,
-  Paginated,
-  type PaginatedQueryParams,
-} from '@oppenheimer/backend-ddd';
+import { type AggregateID, OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, IsNull, MoreThan, type Repository } from 'typeorm';
+import { IsNull, MoreThan, type Repository } from 'typeorm';
 import { ApiTokenMapper } from '../api-tokens.mapper';
-import type { ApiTokenEntity } from '../domain/api-token.entity';
+import { type ApiTokenEntity, LAST_USED_GRANULARITY_MS } from '../domain/api-token.entity';
 import { ApiTokenOrmEntity } from './api-token.orm-entity';
 import type { ApiTokenRepositoryPort } from './api-token.repository.port';
 
@@ -24,7 +19,6 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
   constructor(
     @InjectRepository(ApiTokenOrmEntity)
     private readonly repository: Repository<ApiTokenOrmEntity>,
-    private readonly dataSource: DataSource,
     private readonly mapper: ApiTokenMapper,
     private readonly outbox: OutboxService,
   ) {}
@@ -74,27 +68,21 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
     });
   }
 
+  /**
+   * A guarded raw update rather than `repository.update`: that would also bump
+   * `updatedAt` (it is an `@UpdateDateColumn`), which the token list reads as
+   * "when this token was changed", and it would write every time. The `WHERE`
+   * makes a stamp inside the granularity a no-op, so replicas racing on one
+   * busy token write it once between them.
+   */
   async touchLastUsedAt(id: string, at: Date): Promise<void> {
-    await this.repository.update({ id: id as AggregateID }, { lastUsedAt: at });
-  }
-
-  async findAll(): Promise<ApiTokenEntity[]> {
-    const records = await this.repository.find();
-    return records.map((record) => this.mapper.toDomain(record));
-  }
-
-  async findAllPaginated(params: PaginatedQueryParams): Promise<Paginated<ApiTokenEntity>> {
-    const [records, count] = await this.repository.findAndCount({
-      skip: params.offset,
-      take: params.limit,
-      order: { createdAt: params.orderBy.param === 'asc' ? 'ASC' : 'DESC' },
-    });
-    return new Paginated({
-      count,
-      limit: params.limit,
-      page: params.page,
-      data: records.map((record) => this.mapper.toDomain(record)),
-    });
+    await this.repository.query(
+      `UPDATE "api_token"
+          SET "lastUsedAt" = $2
+        WHERE "id" = $1
+          AND ("lastUsedAt" IS NULL OR "lastUsedAt" <= $2::timestamptz - $3::interval)`,
+      [id, at, `${LAST_USED_GRANULARITY_MS} milliseconds`],
+    );
   }
 
   async delete(entity: ApiTokenEntity): Promise<boolean> {
@@ -104,9 +92,5 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
       }),
     );
     return result.affected ? result.affected > 0 : false;
-  }
-
-  transaction<T>(handler: () => Promise<T>): Promise<T> {
-    return this.dataSource.transaction(() => handler());
   }
 }
