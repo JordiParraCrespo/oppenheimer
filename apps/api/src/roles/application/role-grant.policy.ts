@@ -103,4 +103,25 @@ export class RoleGrantPolicy {
         : 'That role belongs to another organization.',
     });
   }
+
+  /**
+   * Whether the actor may create a **global** role: one with no organization,
+   * which every tenant's ability reads. That is platform-wide reach, so it
+   * takes `manage all` in the platform scope (no active organization), not the
+   * tenant `owner`'s conditioned `manage Role`. No actor is an internal caller
+   * (a seed, a test fixture), trusted as `assertGrantable` trusts it.
+   */
+  async assertCanCreateGlobal(actor: RoleActor | undefined): Promise<void> {
+    if (!actor) return;
+
+    const ability = await this.abilityFactory.createForUser(
+      { id: actor.id, role: actor.role },
+      { organizationId: null },
+    );
+    if (ability.can('manage', 'all')) return;
+
+    throw new AppError(RoleErrors.PERMISSION_NOT_GRANTABLE, {
+      detail: 'Creating a global role takes "manage all" on the platform.',
+    });
+  }
 }

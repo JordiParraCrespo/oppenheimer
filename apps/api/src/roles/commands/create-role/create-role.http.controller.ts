@@ -40,6 +40,11 @@ export class CreateRoleHttpController {
     description: 'A role with this name already exists',
     code: 'ROLE_002',
   })
+  @ApiProblemResponse({
+    status: 400,
+    description: 'The caller has no active organization to create the role in',
+    code: 'ROLE_008',
+  })
   async create(
     @Body() body: CreateRoleRequest,
     @CurrentUser() actor: { id: string; role?: string },

@@ -63,6 +63,7 @@
     "ROLE_005": "You cannot give a role more access than you have yourself.",
     "ROLE_006": "That role belongs to another organization.",
     "ROLE_007": "This deployment is missing a system role it needs. Run the database migrations.",
+    "ROLE_008": "Switch to an organization to create a role in it.",
     "AUTHZ_002": "Something is misconfigured on the server. Please try again later.",
     "AUTHZ_003": "That organization id is not valid.",
     "AUTHZ_004": "Something is misconfigured on the server. Please try again later.",

@@ -378,6 +378,7 @@ describe('authorization cache (integration)', () => {
           name: `global-reader-${randomUUID().slice(0, 8)}`,
           permissions: readProjects as never,
           organizationId: null,
+          global: true,
         }),
       )) as string;
       const userRole = await permissionsOf('user');

@@ -20,28 +20,36 @@ export class CreateRoleCommandHandler implements ICommandHandler<CreateRoleComma
   ) {}
 
   async execute(command: CreateRoleCommand): Promise<AggregateID> {
+    const organizationId = command.organizationId ?? null;
+    const actor = command.actorId
+      ? { id: command.actorId, role: command.actorRole, organizationId }
+      : undefined;
+
+    // A role with no organization is global: every tenant's ability reads it.
+    // That is never what a missing tenant means, so it takes an explicit
+    // `global` and platform-wide `manage all`.
+    if (organizationId === null) {
+      if (!command.global) {
+        throw new AppError(RoleErrors.ORGANIZATION_REQUIRED, {
+          detail: 'Switch to an organization to create a role in it.',
+        });
+      }
+      await this.grantPolicy.assertCanCreateGlobal(actor);
+    }
+
     // No privilege escalation: the author must already hold everything they
     // are putting on the role.
-    await this.grantPolicy.assertGrantable(
-      command.actorId
-        ? {
-            id: command.actorId,
-            role: command.actorRole,
-            organizationId: command.organizationId,
-          }
-        : undefined,
-      command.permissions,
-    );
+    await this.grantPolicy.assertGrantable(actor, command.permissions);
 
-    const existing = await this.roleRepository.findOneByName(command.name, command.organizationId);
+    const existing = await this.roleRepository.findOneByName(command.name, organizationId);
     if (existing.isSome()) throw new AppError(RoleErrors.NAME_TAKEN);
 
     const role = RoleEntity.createNew({
       name: command.name,
       description: command.description,
       // A role created inside an organization belongs to it. Global roles are
-      // seeded, not created through the API.
-      organizationId: command.organizationId ?? null,
+      // seeded or created by internal callers, never through the API.
+      organizationId,
       permissions: command.permissions.map((permission) => Permission.fromDefinition(permission)),
     });
 

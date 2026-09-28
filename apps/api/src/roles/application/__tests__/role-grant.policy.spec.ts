@@ -179,4 +179,30 @@ describe('RoleGrantPolicy', () => {
 
     expect(abilityFactory.createForUser).not.toHaveBeenCalled();
   });
+
+  describe('assertCanCreateGlobal', () => {
+    it('allows an actor holding manage all, asked in the platform scope', async () => {
+      const { policy, abilityFactory } = policyInContext([{ action: 'manage', subject: 'all' }]);
+
+      await expect(policy.assertCanCreateGlobal(ACTOR)).resolves.toBeUndefined();
+      expect(abilityFactory.createForUser).toHaveBeenCalledWith(
+        { id: ACTOR.id, role: undefined },
+        { organizationId: null },
+      );
+    });
+
+    it("refuses a tenant owner's conditioned manage Role", async () => {
+      const policy = policyFor([
+        { action: 'manage', subject: 'Role', conditions: { organizationId: ORG } },
+      ]);
+
+      await expect(policy.assertCanCreateGlobal(ACTOR)).rejects.toMatchObject({
+        code: 'ROLE_005',
+      });
+    });
+
+    it('trusts an internal caller with no actor', async () => {
+      await expect(policyFor([]).assertCanCreateGlobal(undefined)).resolves.toBeUndefined();
+    });
+  });
 });
