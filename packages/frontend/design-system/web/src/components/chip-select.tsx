@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from 'lucide-react';
+import { ArrowUpRightIcon, CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -439,7 +439,8 @@ function ChipSelectList({
 }
 
 /**
- * The pinned band at the foot for "Add host…": a plus, the label, a chevron.
+ * The pinned band at the foot for "Add host…": a plus, the label, a chevron
+ * (an arrow out for an `href` action).
  *
  * It takes the whole action and dispatches it: `onClose` runs first either
  * way, then an `onSelect` action fires; an `href` action is a `Link` in a new
@@ -464,7 +465,12 @@ function ChipSelectActionRow({
         {action.icon ?? <PlusGlyph />}
       </span>
       <span className="min-w-0 flex-1 truncate">{action.label}</span>
-      <ChevronRightIcon className="size-3.5 shrink-0 text-fg-subtle" />
+      {/* A link leaves for a new tab, so it points out; an in-app action goes on. */}
+      {'href' in action ? (
+        <ArrowUpRightIcon className="size-3.5 shrink-0 text-fg-subtle" />
+      ) : (
+        <ChevronRightIcon className="size-3.5 shrink-0 text-fg-subtle" />
+      )}
     </>
   );
   return (

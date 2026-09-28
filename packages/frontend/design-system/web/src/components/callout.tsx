@@ -1,4 +1,4 @@
-import { CircleCheckIcon, CircleXIcon, InfoIcon, TriangleAlertIcon } from 'lucide-react';
+import { CircleAlertIcon, CircleCheckIcon, TriangleAlertIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -19,11 +19,11 @@ import { cn } from '../lib/utils';
 type CalloutTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 
 const TONES: Record<CalloutTone, { box: string; icon: string; text: string; glyph: React.ReactNode }> = {
-  neutral: { box: 'bg-hover-surface', icon: 'text-fg-subtle', text: 'text-fg-muted', glyph: <InfoIcon /> },
-  info: { box: 'bg-info-surface', icon: 'text-info', text: 'text-fg', glyph: <InfoIcon /> },
+  neutral: { box: 'bg-hover-surface', icon: 'text-fg-subtle', text: 'text-fg-muted', glyph: <CircleAlertIcon /> },
+  info: { box: 'bg-info-surface', icon: 'text-info', text: 'text-fg', glyph: <CircleAlertIcon /> },
   success: { box: 'bg-success-surface', icon: 'text-success', text: 'text-fg', glyph: <CircleCheckIcon /> },
   warning: { box: 'bg-warning-surface', icon: 'text-warning', text: 'text-fg', glyph: <TriangleAlertIcon /> },
-  danger: { box: 'bg-danger-surface', icon: 'text-danger', text: 'text-fg', glyph: <CircleXIcon /> },
+  danger: { box: 'bg-danger-surface', icon: 'text-danger', text: 'text-fg', glyph: <XIcon /> },
 };
 
 function Callout({

@@ -1,6 +1,6 @@
 'use client';
 
-import { InfoIcon } from 'lucide-react';
+import { CircleQuestionMarkIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -187,7 +187,7 @@ function EffortPicker({
           </span>
           <span className="flex-1" />
           <span className="flex text-fg-subtle" title={hint}>
-            <InfoIcon className="size-[15px]" aria-hidden />
+            <CircleQuestionMarkIcon className="size-[15px]" aria-hidden />
           </span>
         </div>
         <div className="flex flex-col gap-2">
