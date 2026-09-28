@@ -35,45 +35,12 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
-  optimizeDeps: {
-    // Workspace packages are linked, not installed, so dev has to be told to
-    // pre-bundle this CommonJS entrypoint into ESM.
-    include: [
-      '@oppenheimer/shared/schemas/auth',
-      '@oppenheimer/shared/schemas/host',
-      '@oppenheimer/shared/schemas/organization',
-      '@oppenheimer/shared/schemas/profile',
-      '@oppenheimer/shared/schemas/project',
-      '@oppenheimer/shared/schemas/role',
-      '@oppenheimer/shared/constants',
-      '@oppenheimer/shared/permissions',
-      // The flag catalog: `useFeatureFlag` reads each flag's safe default
-      // from it before the API has answered.
-      '@oppenheimer/shared/feature-flags/catalog',
-      // The coding-agent catalog: New session reads the models, the launch
-      // flags and the effort stops out of it.
-      '@oppenheimer/shared/agents',
-      '@oppenheimer/shared/schemas/session',
-      // Automations: the trigger catalog and schedule arithmetic the editor
-      // previews with, and the Task step's schema.
-      '@oppenheimer/shared/automations',
-      '@oppenheimer/shared/schemas/automation',
-      // The attach socket's control vocabulary and close codes.
-      '@oppenheimer/shared/protocol',
-    ],
-  },
   build: {
     rollupOptions: {
       // One chunk per library instead of one chunk for all of them, so a
       // release invalidates app code and leaves the dependencies cached. See
       // the note in `@oppenheimer/tsconfig/vite-chunks.mjs`.
       output: { manualChunks: vendorChunks },
-    },
-    commonjsOptions: {
-      // `@oppenheimer/shared` builds to CommonJS for the API's sake. Its `dist` sits
-      // outside `node_modules`, so the interop plugin skips it by default and
-      // Rollup cannot see the named exports.
-      include: [/node_modules/, /packages[\\/]shared[\\/]dist/],
     },
   },
   server: {

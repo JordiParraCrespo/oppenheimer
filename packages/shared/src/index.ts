@@ -1,13 +1,12 @@
 /**
  * The root barrel, and it is deliberately incomplete.
  *
- * `apps/web` cannot import runtime values from here — the CJS build is not
- * tree-shakeable, so whatever this re-exports lands in the browser bundle whole.
- * That is why `./agents`, `./protocol` and `./feature-flags` are **not**
- * re-exported: the coding-agent catalog, the runner link's wire vocabulary and
- * the feature-flag catalog and evaluator are reached through their own subpaths
- * (`@oppenheimer/shared/agents`, `@oppenheimer/shared/protocol`,
- * `@oppenheimer/shared/feature-flags`) by the code that actually needs them.
+ * The ESM build is tree-shaken, so a web import from here costs only what it
+ * uses. `./agents`, `./protocol`, `./feature-flags` and `./automations` still
+ * stay out: the coding-agent catalog, the runner link's wire vocabulary (whose
+ * modules register JSON-Schema ids at load, the package's only side effects),
+ * the feature-flag catalog and evaluator, and the automation catalog are
+ * reached through their own subpaths by the code that actually needs them.
  *
  * Adding a barrel export here is a bundle decision, not a convenience.
  */

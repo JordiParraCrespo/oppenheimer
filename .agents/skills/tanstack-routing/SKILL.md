@@ -62,9 +62,9 @@ is the worked example, and `__root.tsx` explains why nuqs depends on it.
 
 The wider TanStack advice is to write these as Zod schemas with defaults, which
 buys real type safety. Weigh it here against the bundle: `validateSearch` is
-critical-path code that `autoCodeSplitting` will not split out, and `apps/web`
-must not pull runtime values from the `@oppenheimer/shared` root. A narrow
-schema from a subpath is fine; a hand-rolled validator, as the routes use
+critical-path code that `autoCodeSplitting` will not split out, and whatever a
+schema reaches in `@oppenheimer/shared` lands on it (the package tree-shakes,
+but what is used is kept whole). A narrow schema from a subpath is fine; a hand-rolled validator, as the routes use
 today, is also fine. `pnpm check:bundle` is the arbiter.
 
 **`to` is a pathname, never a URL with a query.** `to: '/settings?section=security'`

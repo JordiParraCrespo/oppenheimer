@@ -21,9 +21,8 @@ export interface AbilityState {
  * agrees with what the API would allow — it lets the UI hide what it would only
  * be refused, rather than showing it and rendering the 403.
  *
- * Imported from the `@oppenheimer/shared/permissions` subpath, never the package
- * root — the root's CJS build is not tree-shakeable and would drag the whole
- * shared graph into the bundle (see the repo-root `AGENTS.md`).
+ * Imported from the `@oppenheimer/shared/permissions` subpath, which names the
+ * dependency: CASL, which lands in the bundle with it.
  */
 export function useAbilityState(): AbilityState {
   const { data: permissions, isError } = useMyPermissions();
