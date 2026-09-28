@@ -63,3 +63,13 @@ export const LINK_FRAME_HEADER_BYTES = 4;
  * the runner counts against it, but it is the window a browser's acks refill.
  */
 export const ATTACHMENT_CREDIT_WINDOW_BYTES = 256 * 1024;
+
+/**
+ * The largest frame a peer puts on the link, text or binary. The control plane
+ * refuses a bigger one from a runner with 1009 before buffering it (`ws`'s
+ * `maxPayload`), and the runner reads no bigger one and never sends one. A
+ * control frame this large is not a control frame, and a PTY frame is at most
+ * 32 KiB plus its header; the one message that grows with the host is the
+ * session list in `hello` and `heartbeat`, which the runner fits to it.
+ */
+export const LINK_MAX_FRAME_BYTES = 512 * 1024;

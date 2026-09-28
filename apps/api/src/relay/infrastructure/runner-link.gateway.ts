@@ -4,6 +4,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   helloSchema,
+  LINK_MAX_FRAME_BYTES,
   PROTOCOL_VERSION,
   type ProtocolMessage,
   protocolMessageSchema,
@@ -42,9 +43,11 @@ export const LINK_PING_INTERVAL_MS = 15_000;
  * The largest frame a runner may send, enforced by `ws` while it reads: a
  * bigger one is refused with 1009 before it is buffered. A control frame larger
  * than this is not a control frame, and a binary PTY frame is at most 32 KiB
- * plus its header, so every legitimate frame fits.
+ * plus its header, so every legitimate frame fits. It is the protocol's
+ * `LINK_MAX_FRAME_BYTES`, which the runner is generated from and holds itself
+ * to when it sends.
  */
-export const MAX_RUNNER_FRAME_BYTES = 512 * 1024;
+export const MAX_RUNNER_FRAME_BYTES = LINK_MAX_FRAME_BYTES;
 
 /**
  * A link's `events.append` queue (`LinkAppendQueue`). The numbers are batches,

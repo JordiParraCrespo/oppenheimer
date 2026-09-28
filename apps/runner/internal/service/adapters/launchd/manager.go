@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/domain"
@@ -147,12 +148,29 @@ func controlFailed(command, out string, err error) error {
 	return domain.ErrControlFailed.WithDetail("%s: %s", command, detail).WithCause(err)
 }
 
-// execCommands is the real process runner.
-type execCommands struct{}
+// commandTimeout bounds one launchctl call. `kickstart -k` waits for the old
+// process to exit, and launchd's default exit timeout is 20 seconds before it
+// sends SIGKILL: a call that has not returned in a minute is launchd wedged,
+// and `runner install`, `update` and `uninstall` must not hang with it.
+const commandTimeout = 60 * time.Second
 
-func (execCommands) Run(ctx context.Context, name string, args ...string) (string, error) {
-	res, err := execx.Run(ctx, execx.Spec{Name: name, Args: args, Output: execx.Combined})
-	if err != nil {
+// execCommands is the real process runner.
+type execCommands struct {
+	// timeout bounds each call; zero is commandTimeout.
+	timeout time.Duration
+}
+
+func (c execCommands) Run(ctx context.Context, name string, args ...string) (string, error) {
+	timeout := c.timeout
+	if timeout <= 0 {
+		timeout = commandTimeout
+	}
+	res, err := execx.Run(ctx, execx.Spec{Name: name, Args: args, Timeout: timeout, Output: execx.Combined})
+	var failed *execx.Error
+	switch {
+	case errors.As(err, &failed) && failed.TimedOut:
+		return res.Out, fmt.Errorf("%s timed out after %s: %w", name, timeout, execx.Cause(err))
+	case err != nil:
 		return res.Out, fmt.Errorf("%s: %w", name, execx.Cause(err))
 	}
 	return res.Out, nil

@@ -316,6 +316,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		Refusals             map[string]string `json:"refusals"`
 		FrameHeaderBytes     int               `json:"frameHeaderBytes"`
 		CreditWindowBytes    int               `json:"creditWindowBytes"`
+		MaxFrameBytes        int               `json:"maxFrameBytes"`
 		Capabilities         []string          `json:"capabilities"`
 		MaxEventPayloadBytes int               `json:"maxEventPayloadBytes"`
 	}
@@ -341,6 +342,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		"refusals.UNPAIRED":    {constants.Refusals["UNPAIRED"], link.RefusalUnpaired},
 		"frameHeaderBytes":     {constants.FrameHeaderBytes, link.FrameHeader},
 		"creditWindowBytes":    {constants.CreditWindowBytes, link.CreditWindow},
+		"maxFrameBytes":        {constants.MaxFrameBytes, link.MaxFrameBytes},
 		"maxEventPayloadBytes": {constants.MaxEventPayloadBytes, link.MaxEventPayloadBytes},
 	} {
 		if pair[0] != pair[1] {
