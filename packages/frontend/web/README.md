@@ -39,8 +39,8 @@ Everything is re-exported from the package root (`src/index.ts`):
   go through it; they stay inline. When to toast is
   `.agents/rules/frontend-ui.md`. `useErrorMessage` itself is imported from
   `@oppenheimer/frontend-core/react`.
-- **hosts** — `HostPairingChrome` and its parts, the pairing column the Add a
-  host surfaces share.
+- **pairing** — `PairingChrome` and its parts, the column that pairs a
+  machine.
 - **theme** — `ThemeProvider`, `ThemeToggle`, `BrandGlyph`.
 - **i18n** — `i18n`, `i18nReady`, `LOCALE_STORAGE_KEY`, `LanguageSwitcher`,
   `useLocale`, `useApplyUserSettings`, `RelativeTime` (a "2 hours ago" leaf

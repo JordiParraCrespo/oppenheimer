@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@oppenheimer/design-system-web';
-import { HostPairingChrome } from '@oppenheimer/frontend-web';
+import { PairingChrome } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { usePairing } from '../hooks/use-pairing';
 
@@ -54,7 +54,7 @@ export function AddHostDialog({
 
         <DialogBody>
           <div className="flex flex-col gap-4.5">
-            <HostPairingChrome
+            <PairingChrome
               pairing={pairing ?? null}
               expiresAt={expiresAt}
               expired={expired}

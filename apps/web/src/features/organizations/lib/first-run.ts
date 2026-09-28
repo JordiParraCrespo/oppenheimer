@@ -16,7 +16,8 @@
  * and two ids are cheaper than a first-run store to keep in sync. `walk` is
  * the third such fact.
  *
- * It is minted by step 2's claim, the only thing that opens a walk, and
+ * It is minted when step 2's claim lands (the workspace route) — the only
+ * thing that opens a walk — and
  * carried by the flow's own links. A reader New session sent here to pair a
  * second machine has no `walk`, so Continue takes them back to the console
  * rather than to a landing that congratulates them on first-run. Nothing has
@@ -52,6 +53,46 @@ export function parseWalk(search: Record<string, unknown>): FirstRunWalk {
  * leg and is turned away from Ready two clicks later.
  *
  * `state` is also the API's single-use nonce, which is its real job, so the
- * walk rides as a prefix of it: `first-run.<nonce>` (`github-install.ts`).
+ * walk rides as a prefix of it: `first-run.<nonce>`. The GitHub route reads
+ * the walk off it and hands the rest on as the nonce.
  */
 export const WALK_STATE = 'first-run';
+
+/** The prefix a walk puts in front of the nonce; a nonce is base64url, so never a `.`. */
+const WALK_PREFIX = `${WALK_STATE}.`;
+
+/**
+ * Whether the `state` GitHub echoed says this visit is the first-run walk.
+ *
+ * The bare `first-run` is still read, for an install started before the state
+ * became a nonce: it keeps the walk, and — carrying no nonce — posts nothing.
+ */
+export function isWalkState(raw: unknown): boolean {
+  return typeof raw === 'string' && (raw === WALK_STATE || raw.startsWith(WALK_PREFIX));
+}
+
+/** The echoed `state` with the walk's prefix off, which is what the API minted. */
+export function stateWithoutWalk(raw: unknown): unknown {
+  return typeof raw === 'string' && raw.startsWith(WALK_PREFIX)
+    ? raw.slice(WALK_PREFIX.length)
+    : raw;
+}
+
+/**
+ * The install URL the API minted, with the walk pinned where GitHub will
+ * return it: its `state` prefixed. `URL` rather than string concatenation,
+ * because the address may already have a query — and one it cannot parse, or
+ * one with no state, is handed back untouched: losing the walk costs the
+ * reader the landing, throwing here would cost them the step.
+ */
+export function installUrlCarryingWalk(installUrl: string): string {
+  try {
+    const url = new URL(installUrl);
+    const state = url.searchParams.get('state');
+    if (!state) return installUrl;
+    url.searchParams.set('state', `${WALK_PREFIX}${state}`);
+    return url.toString();
+  } catch {
+    return installUrl;
+  }
+}

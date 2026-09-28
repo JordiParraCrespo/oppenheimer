@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { OnboardingHostScreen } from '@/features/hosts/screens/onboarding-host';
 import { type FirstRunWalk, parseWalk } from '@/features/organizations/lib/first-run';
 
@@ -29,8 +29,17 @@ export const Route = createFileRoute('/_auth/onboarding/host')({
   staticData: { authWidth: 'panel' },
 });
 
+/** The walk's links: back to Connect GitHub, on to Ready with what this step paired. */
 function HostStep() {
   const { installation, walk } = Route.useSearch();
 
-  return <OnboardingHostScreen installationId={installation} walk={walk} />;
+  return (
+    <OnboardingHostScreen
+      step={4}
+      total={4}
+      back={<Link to="/onboarding/github" search={{ walk }} />}
+      next={(host) => <Link to="/onboarding/ready" search={{ installation, host, walk }} />}
+      skip={<Link to="/onboarding/ready" search={{ installation, walk }} />}
+    />
+  );
 }

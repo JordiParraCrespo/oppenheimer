@@ -1,11 +1,11 @@
-import { Button, StepHeader } from '@oppenheimer/design-system-web';
-import { AuthLink, HostPairingChrome } from '@oppenheimer/frontend-web';
-import { Link } from '@tanstack/react-router';
+import { Button, StepHeader, Link as TextLink } from '@oppenheimer/design-system-web';
+import { PairingChrome } from '@oppenheimer/frontend-web';
+import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePairing } from '../hooks/use-pairing';
 
 /**
- * Onboarding step 4: pair the first host (`design/version1/AddHost.dc.html`,
+ * Onboarding: pair the first host (`design/version1/AddHost.dc.html`,
  * the 2026-09-27 export). One sentence — run one command on the machine —
  * then the two copy buttons at the large size, the token line, the command
  * and the prompt folded behind Inspect command and prompt, a rule, and the
@@ -14,7 +14,7 @@ import { usePairing } from '../hooks/use-pairing';
  *
  * What is this step's is the header and that wait. The column under it —
  * the buttons, the token line, the fold, the status row — is the kit's
- * `HostPairingChrome`, which the console's Add a host dialog draws too at
+ * `PairingChrome`, which the console's Add a host dialog draws too at
  * its smaller size, and the flow under both is `usePairing`.
  *
  * Both forms come from the API with the secret already in them: it is shown
@@ -22,18 +22,21 @@ import { usePairing } from '../hooks/use-pairing';
  * assembled here.
  */
 export function OnboardingHostScreen({
-  installationId,
-  walk,
+  step,
+  total,
+  back,
+  next,
+  skip,
 }: {
-  /** What Connect GitHub connected, passed through so Ready can name it. */
-  installationId?: string;
-  /**
-   * Set when this visit is the first-run walk — which, since Add host pairs a
-   * machine from the console, is the only way to be on this step at all. It is
-   * handed on to Ready, which asks the same question
-   * (`organizations/lib/first-run.ts`).
-   */
-  walk?: true;
+  /** Where this step sits in the flow the route is part of. */
+  step: number;
+  total: number;
+  /** The link the header's back renders. */
+  back: ReactElement;
+  /** Continue's link, with the paired host's id. */
+  next: (hostId: string | undefined) => ReactElement;
+  /** Skip's link, for a deployment that cannot pair a machine yet. */
+  skip: ReactElement;
 }) {
   const { t } = useTranslation();
   // Online, not merely registered: the row appears when the runner registers,
@@ -46,16 +49,16 @@ export function OnboardingHostScreen({
   return (
     <div className="flex flex-col gap-5">
       <StepHeader
-        step={4}
-        total={4}
-        back={{ render: <Link to="/onboarding/github" /> }}
+        step={step}
+        total={total}
+        back={{ render: back }}
         backLabel={t('onboarding.flow.back')}
         title={t('onboarding.flow.host.title')}
       >
         {t('onboarding.flow.host.description')}
       </StepHeader>
 
-      <HostPairingChrome
+      <PairingChrome
         pairing={pairing ?? null}
         expiresAt={expiresAt}
         expired={expired}
@@ -67,16 +70,7 @@ export function OnboardingHostScreen({
       />
 
       <div className="flex flex-col items-start gap-3.5">
-        <Button
-          size="lg"
-          disabled={!done}
-          render={
-            <Link
-              to="/onboarding/ready"
-              search={{ installation: installationId, host: host?.id, walk }}
-            />
-          }
-        >
+        <Button size="lg" disabled={!done} render={next(host?.id)}>
           {t('onboarding.flow.continue')}
         </Button>
 
@@ -86,9 +80,7 @@ export function OnboardingHostScreen({
             sign-up now walks would have no exit. It is also what makes Ready's
             "no host yet" row reachable. */}
         <div className="flex flex-col items-start gap-1.5">
-          <AuthLink to="/onboarding/ready" search={{ installation: installationId, walk }}>
-            {t('onboarding.flow.host.skip')}
-          </AuthLink>
+          <TextLink render={skip}>{t('onboarding.flow.host.skip')}</TextLink>
           <p className="text-xs leading-normal text-fg-subtle">
             {t('onboarding.flow.host.skipNote')}
           </p>

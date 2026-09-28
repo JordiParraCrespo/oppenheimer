@@ -1,6 +1,5 @@
 import type { InstallationEntity } from '@oppenheimer/frontend-consumer';
 import { useConnectInstallation } from '@oppenheimer/frontend-consumer/react';
-import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 
 /**
@@ -22,12 +21,9 @@ import { useEffect, useRef } from 'react';
  * but a failed exchange still needs to say which attempt failed: dropping them
  * leaves the step reading "not connected" under a generic alert, with no way
  * to tell a refusal from never having tried. The guard already stops a refresh
- * from re-posting a dead code.
- *
- * Clearing them means writing the search, and the search is also where the
- * first-run walk lives, so `walk` is put back rather than swept away with the
- * spent code — otherwise installing the App mid-walk is the one path through
- * the flow that loses it, and Ready turns the reader away two clicks later.
+ * from re-posting a dead code. Clearing them is the route's (`onExchanged`):
+ * the search is its, and it knows what else the URL carries that must survive
+ * the rewrite.
  *
  * Returns the installation it connected, so the caller renders the row it just
  * wrote rather than guessing at the head of a list.
@@ -36,9 +32,8 @@ export function useConnectInstallationCallback(
   githubInstallationId?: number,
   code?: string,
   state?: string,
-  walk?: true,
+  onExchanged?: () => void,
 ) {
-  const navigate = useNavigate();
   const { mutate, data: connected, isPending, error } = useConnectInstallation();
   const exchanged = useRef<string | null>(null);
 
@@ -47,14 +42,8 @@ export function useConnectInstallationCallback(
     if (exchanged.current === state) return;
     exchanged.current = state;
 
-    mutate(
-      { githubInstallationId, code, state },
-      {
-        onSuccess: () =>
-          navigate({ to: '/onboarding/github', search: walk ? { walk } : {}, replace: true }),
-      },
-    );
-  }, [githubInstallationId, code, state, walk, mutate, navigate]);
+    mutate({ githubInstallationId, code, state }, { onSuccess: () => onExchanged?.() });
+  }, [githubInstallationId, code, state, onExchanged, mutate]);
 
   return {
     /** True while the code is being exchanged, so the step can hold its place. */

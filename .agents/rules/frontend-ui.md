@@ -48,7 +48,7 @@ multi-line, so a grep for `export` misses most of them.
 | Which repositories are in a project | `RepositoryAddField` | a `RepositorySelect` in a dialog, a table of checkboxes |
 | What each of a project's repositories does in a new session, and from which branch | `RepositoryRowList` | a second `RepositoryAddField`, a table |
 | A fold inside a dialog or a step (Defaults, Inspect command and prompt) | `Disclosure` | a chevron button over a `useState`, Base UI's Collapsible directly |
-| Pairing a host: the copy buttons, the token line, the instruction, the status | the kit's `HostPairingChrome`, or its parts with `HostPairingInstruction` in its `panel` layout | two `CodeBlock`s, a `CodeBlock` alone, a second status row |
+| Pairing a host: the copy buttons, the token line, the instruction, the status | the kit's `PairingChrome`, or its parts with `PairingInstruction` in its `panel` layout | two `CodeBlock`s, a `CodeBlock` alone, a second status row |
 | A menu row that opens a pane in place (Appearance, Move to project…) | `DropdownMenuPaneItem` + `DropdownMenuBack` | `DropdownMenuSub` for a two-level pick |
 | A note under a form, in any tone | `Callout` | `Alert`, a tinted `div` |
 | Views inside one page (Routines / Runs, categories, run status) | `PillTabs` with `count` | a tab strip, `SegmentedControl` |

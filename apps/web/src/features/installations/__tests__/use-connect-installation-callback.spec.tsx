@@ -1,6 +1,6 @@
 import { cleanup, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useConnectInstallationCallback } from '@/features/organizations/hooks/use-connect-installation-callback';
+import { useConnectInstallationCallback } from '@/features/installations/hooks/use-connect-installation-callback';
 
 /**
  * The console never posts a GitHub callback that carries no state it minted:
@@ -12,10 +12,6 @@ const mutate = vi.fn();
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useConnectInstallation: () => ({ mutate, data: undefined, isPending: false, error: null }),
-}));
-
-vi.mock('@tanstack/react-router', () => ({
-  useNavigate: () => vi.fn(),
 }));
 
 afterEach(() => {
@@ -35,7 +31,7 @@ describe('useConnectInstallationCallback', () => {
 
   it('posts the id, the code and the nonce once when the state is there', () => {
     const { result, rerender } = renderHook(() =>
-      useConnectInstallationCallback(4242, 'abc', NONCE, true),
+      useConnectInstallationCallback(4242, 'abc', NONCE),
     );
     rerender();
 

@@ -24,8 +24,15 @@ const ROUTER = ['node_modules/@tanstack/react-router/', 'node_modules/expo-route
  * @param {string} options.routes the route directory, `src/routes` or `app`
  * @param {string} options.features the feature directory, `src/features` or `features`
  * @param {'web' | 'mobile'} options.platform which kit the app builds on
+ * @param {string} [options.providers] the app's provider directory, `src/providers` by default
  */
-module.exports = function frontendApp({ product, routes, features, platform }) {
+module.exports = function frontendApp({
+  product,
+  routes,
+  features,
+  platform,
+  providers = 'src/providers',
+}) {
   const other = product === 'consumer' ? 'admin' : 'consumer';
   const kit = `packages/frontend/${platform}/src/`;
   const kitEntry =
@@ -75,6 +82,22 @@ module.exports = function frontendApp({ product, routes, features, platform }) {
         severity: 'error',
         from: { path: `^${features}/[^/]+/lib/` },
         to: { path: 'node_modules/react/', dependencyTypesNot: ['type-only'] },
+      },
+      {
+        name: 'providers-mount-dialogs',
+        comment:
+          'providers/ is app glue around the routes: it may mount a feature’s dialogs (the console’s dialog owner lazy-loads them), and reach the kit, the kernel and the product package. A screen, section or hook it wants belongs to a route.',
+        severity: 'error',
+        from: { path: `^${providers}/` },
+        to: { path: `^${features}/[^/]+/`, pathNot: `^${features}/[^/]+/dialogs/` },
+      },
+      {
+        name: 'features-query-through-the-product',
+        comment:
+          'A feature reads and writes through the product package’s hooks, never React Query directly: the query keys, the cache updates and the entity sharing live there. Tests may reach it to build a client.',
+        severity: 'error',
+        from: { path: `^${features}/`, pathNot: `^${features}/[^/]+/__tests__/` },
+        to: { path: 'node_modules/@tanstack/(react-query|query-core)/' },
       },
       {
         name: 'one-product-per-app',

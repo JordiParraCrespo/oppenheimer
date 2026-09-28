@@ -10,12 +10,12 @@ import {
   useInstallations,
 } from '@oppenheimer/frontend-consumer/react';
 import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
-import { AuthLink, ErrorAlert } from '@oppenheimer/frontend-web';
-import { Link } from '@tanstack/react-router';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
+import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
-import { InstallationCard } from '@/features/organizations/components/installation-card';
-import { useConnectInstallationCallback } from '@/features/organizations/hooks/use-connect-installation-callback';
-import { useStartGithubInstall } from '@/features/organizations/hooks/use-start-github-install';
+import { InstallationCard } from '@/features/installations/components/installation-card';
+import { useConnectInstallationCallback } from '@/features/installations/hooks/use-connect-installation-callback';
+import { useStartGithubInstall } from '@/features/installations/hooks/use-start-github-install';
 
 /**
  * Onboarding step 3: install the GitHub App. One primary button that sends the
@@ -33,7 +33,13 @@ export function OnboardingGithubScreen({
   githubInstallationId,
   code,
   state,
-  walk,
+  installUrlFor,
+  onExchanged,
+  step,
+  total,
+  back,
+  next,
+  skip,
 }: {
   /** GitHub's numeric installation id (not our row's UUID), present only on the return leg. */
   githubInstallationId?: number;
@@ -41,24 +47,39 @@ export function OnboardingGithubScreen({
   code?: string;
   /** The install state GitHub echoed, nonce only. */
   state?: string;
-  /** Set when this visit is the first-run walk, and handed on to the next step. */
-  walk?: true;
+  /**
+   * The minted install URL as this visit should use it. The route pins what
+   * must survive the round trip through github.com; this screen only sends the
+   * reader there.
+   */
+  installUrlFor: (installUrl: string) => string;
+  /** The code was exchanged: the route clears the spent callback from its URL. */
+  onExchanged: () => void;
+  /** Where this step sits in the flow the route is part of. */
+  step: number;
+  total: number;
+  /** The link the header's back renders. */
+  back: ReactElement;
+  /** Continue's link, with the connected installation's id. */
+  next: (installationId: string) => ReactElement;
+  /** Skip's link, for a reader who connects GitHub later. */
+  skip: ReactElement;
 }) {
   const { t } = useTranslation();
   // Whether there is an App to install, as the deployment reports it. An
   // unreachable read leaves it undefined, which renders a disabled offer
   // rather than a button to a page that may not exist. Where the browser goes
-  // is minted on click, with the state; a walk rides along as its prefix.
+  // is minted on click, with the state.
   const { data: deployment } = useDeploymentCapabilities();
   const canInstall = Boolean(deployment?.github_app_install_url);
-  const { start, isStarting, error: startError } = useStartGithubInstall(walk);
+  const { start, isStarting, error: startError } = useStartGithubInstall(installUrlFor);
 
   const {
     isExchanging,
     connected,
     unstarted,
     error: connectError,
-  } = useConnectInstallationCallback(githubInstallationId, code, state, walk);
+  } = useConnectInstallationCallback(githubInstallationId, code, state, onExchanged);
   const { data: installations, isPending, error: listError } = useInstallations();
 
   // The installation this visit connected, when there was one — the callback
@@ -82,9 +103,9 @@ export function OnboardingGithubScreen({
   return (
     <div className="flex flex-col gap-5">
       <StepHeader
-        step={3}
-        total={4}
-        back={{ render: <Link to="/onboarding/workspace" /> }}
+        step={step}
+        total={total}
+        back={{ render: back }}
         backLabel={t('onboarding.flow.back')}
         title={t('onboarding.flow.github.title')}
       >
@@ -105,11 +126,7 @@ export function OnboardingGithubScreen({
       ) : installation ? (
         <div className="flex flex-col gap-5">
           <InstallationCard installation={installation} repositoryCount={repositories?.length} />
-          <Button
-            size="lg"
-            block
-            render={<Link to="/onboarding/host" search={{ installation: installation.id, walk }} />}
-          >
+          <Button size="lg" block render={next(installation.id)}>
             {t('onboarding.flow.continue')}
           </Button>
           {canInstall && (
@@ -136,9 +153,7 @@ export function OnboardingGithubScreen({
             {t('onboarding.flow.github.connect')}
           </Button>
           <div className="flex flex-col items-start gap-1.5">
-            <AuthLink to="/onboarding/host" search={{ walk }}>
-              {t('onboarding.flow.github.skip')}
-            </AuthLink>
+            <TextLink render={skip}>{t('onboarding.flow.github.skip')}</TextLink>
             <p className="text-xs leading-normal text-fg-subtle">
               {t('onboarding.flow.github.skipNote')}
             </p>

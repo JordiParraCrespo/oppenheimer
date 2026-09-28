@@ -12,9 +12,9 @@ import {
 import { Cpu } from '@oppenheimer/design-system-web/icons';
 import {
   ErrorAlert,
-  HostPairingInstruction,
-  HostPairingStatus,
-  HostPairingToken,
+  PairingInstruction,
+  PairingStatus,
+  PairingToken,
 } from '@oppenheimer/frontend-web';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -92,9 +92,9 @@ export function AddHostScreen() {
           summary={t('hosts.add.install.done')}
         >
           <div className="flex flex-col gap-2">
-            <HostPairingInstruction pairing={pairing ?? null} layout="panel" />
+            <PairingInstruction pairing={pairing ?? null} layout="panel" />
 
-            <HostPairingToken
+            <PairingToken
               expiresAt={expiresAt}
               expired={expired}
               onRegenerate={regenerate}
@@ -112,7 +112,7 @@ export function AddHostScreen() {
           last
         >
           <div className="rounded-[14px] border border-border-subtle bg-card px-3.5">
-            <HostPairingStatus host={host} />
+            <PairingStatus host={host} />
           </div>
         </RoutineStep>
       </RoutineSteps>

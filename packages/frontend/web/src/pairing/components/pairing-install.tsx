@@ -24,7 +24,7 @@ const isFormat = (value: string): value is PairingFormat =>
  * already running on the machine. Both carry the token; neither is
  * assembled on this side.
  */
-export interface PairingInstruction {
+export interface PairingCommands {
   installCommand: string;
   agentPrompt: string;
   installScriptSha256?: string | null;
@@ -38,12 +38,12 @@ export interface PairingInstruction {
  * the onboarding step draws them large, the console's dialog at the medium
  * height.
  */
-export function HostPairingCopyButtons({
+export function PairingCopyButtons({
   pairing,
   size = 'md',
 }: {
   /** Absent while the token is being minted; the buttons wait, disabled. */
-  pairing: PairingInstruction | null;
+  pairing: PairingCommands | null;
   size?: 'md' | 'lg';
 }) {
   const { t } = useTranslation();
@@ -86,11 +86,11 @@ export function HostPairingCopyButtons({
  * step and the console's dialog: there the copy buttons are the way in and
  * the text is for the person who wants to see it first.
  */
-export function HostPairingInstruction({
+export function PairingInstruction({
   pairing,
   layout = 'fold',
 }: {
-  pairing: PairingInstruction | null;
+  pairing: PairingCommands | null;
   layout?: 'panel' | 'fold';
 }) {
   const { t } = useTranslation();

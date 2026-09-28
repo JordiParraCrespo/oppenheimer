@@ -1,7 +1,7 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { useSyncExternalStore } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { HostPairingChrome } from './pairing-chrome';
+import { PairingChrome } from './pairing-chrome';
 
 /**
  * The pairing chrome's render budget: a second passing moves the countdown
@@ -56,11 +56,11 @@ afterEach(cleanup);
 
 const START = Date.parse('2026-09-26T10:00:00Z');
 
-describe('HostPairingChrome', () => {
+describe('PairingChrome', () => {
   it('moves the countdown on a tick and renders nothing else', () => {
     clock.set(START);
     render(
-      <HostPairingChrome
+      <PairingChrome
         pairing={{ installCommand: 'curl …', agentPrompt: 'Install …' }}
         expiresAt={new Date(START + 10 * 60_000)}
         expired={false}
