@@ -271,6 +271,9 @@ importers:
       '@oppenheimer/go-core':
         specifier: workspace:*
         version: link:../../packages/go/core
+      '@oppenheimer/go-execx':
+        specifier: workspace:*
+        version: link:../../packages/go/execx
       '@oppenheimer/go-health':
         specifier: workspace:*
         version: link:../../packages/go/health
@@ -1119,6 +1122,8 @@ importers:
   packages/go/config: {}
 
   packages/go/core: {}
+
+  packages/go/execx: {}
 
   packages/go/health:
     devDependencies:

@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -26,6 +25,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/execx"
 )
 
 var _ app.Worktrees = (*Client)(nil)
@@ -309,8 +309,6 @@ type command struct {
 // doing work for (domain.WithSession) is handed to the credential helper.
 func (c *Client) run(ctx context.Context, how command, args ...string) (string, error) {
 	session := domain.SessionOf(ctx)
-	ctx, cancel := context.WithTimeout(ctx, how.timeout)
-	defer cancel()
 
 	full := []string{"-c", "advice.detachedHead=false"}
 	if c.credentialHelper != "" {
@@ -320,29 +318,40 @@ func (c *Client) run(ctx context.Context, how command, args ...string) (string, 
 	}
 	full = append(full, args...)
 
-	cmd := exec.CommandContext(ctx, c.binary, full...) //nolint:gosec // fixed binary, arguments built here
-	killGroupOnCancel(cmd)
-	// Whatever is still holding git's output once it has been killed is not
-	// waited for past this.
-	cmd.WaitDelay = waitDelay
-	cmd.Dir = how.dir
-	cmd.Env = append(os.Environ(),
-		"GIT_TERMINAL_PROMPT=0",
-		"GIT_ASKPASS=",
-		"GCM_INTERACTIVE=never",
-		// Always set, empty or not: the daemon's own environment must never
-		// lend a command a session it is not for.
-		SessionEnv+"="+session,
-	)
-	out, err := cmd.CombinedOutput()
-	text := strings.TrimRight(string(out), "\n")
+	res, err := execx.Run(ctx, execx.Spec{
+		Name: c.binary,
+		Args: full,
+		Dir:  how.dir,
+		Env: append(os.Environ(),
+			"GIT_TERMINAL_PROMPT=0",
+			"GIT_ASKPASS=",
+			"GCM_INTERACTIVE=never",
+			// Always set, empty or not: the daemon's own environment must never
+			// lend a command a session it is not for.
+			SessionEnv+"="+session,
+		),
+		Timeout: how.timeout,
+		// git hands the network to helpers (`git-remote-https`, `ssh`) that
+		// inherit its output: a cancel kills them with it, and whatever is
+		// still holding that output is not waited for past waitDelay.
+		KillGroup: true,
+		WaitDelay: waitDelay,
+		Output:    execx.Combined,
+	})
+	text := res.Out
 	if err != nil {
 		verb := strings.Join(args, " ")
+		// TimedOut and Canceled read the context git ran under, so a deadline
+		// the caller's context already had is reported as a timeout too.
+		var failed *execx.Error
+		timedOut := errors.As(err, &failed) && failed.TimedOut
+		canceled := failed != nil && failed.Canceled
+		err = execx.Cause(err)
 		switch {
-		case errors.Is(ctx.Err(), context.DeadlineExceeded):
+		case timedOut:
 			return text, domain.ErrGitCommand.WithDetail(
 				"git %s timed out after %s", verb, how.timeout).WithCause(err)
-		case errors.Is(ctx.Err(), context.Canceled):
+		case canceled:
 			// git did not fail: the runner stopped waiting for it. Whatever
 			// git printed last is not the reason — it may well be git saying
 			// it succeeded — so it is not quoted.
