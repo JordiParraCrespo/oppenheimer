@@ -58,7 +58,8 @@ export class FindUsersHttpController {
     name: 'search',
     required: false,
     type: String,
-    description: 'Search by name or email',
+    maxLength: 100,
+    description: 'Search by name or email; `%` and `_` match literally',
   })
   @ApiResponse({ status: 200, type: PaginatedUsersResponseDto })
   async findAll(@Query() query: FindUsersRequest): Promise<PaginatedUsersResponseDto> {

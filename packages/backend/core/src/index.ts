@@ -1,3 +1,4 @@
+export { likeContains } from './database/like-contains';
 export {
   ApiAuthProblemResponses,
   ApiProblemResponse,
@@ -23,11 +24,15 @@ export {
 } from './errors/problem-details';
 export { type Maybe, requireFound } from './errors/require-found';
 export { AllExceptionsFilter } from './filters/all-exceptions.filter';
-export { RequestContextInterceptor } from './interceptors/request-context.interceptor';
 export {
   type AuthRouteLoggingMiddleware,
   createAuthRouteLoggingMiddleware,
 } from './logging/auth-route-logging.middleware';
+export {
+  CORRELATION_HEADER,
+  isValidCorrelationId,
+  resolveCorrelationId,
+} from './logging/correlation-id';
 export {
   LoggingModule,
   type LoggingModuleAsyncOptions,
@@ -37,6 +42,7 @@ export {
   type LoggingOptions,
 } from './logging/pino-http-options';
 export { UserContextInterceptor } from './logging/user-context.interceptor';
+export { RequestContextMiddleware } from './middleware/request-context.middleware';
 export { SanitizePipe } from './pipes/sanitize.pipe';
 export { requestMemo } from './requests/request-memo';
 export { type PageMeta, toPageMeta } from './responses/page-meta';

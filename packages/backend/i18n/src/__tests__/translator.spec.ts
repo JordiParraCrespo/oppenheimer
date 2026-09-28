@@ -84,6 +84,35 @@ describe('Translator', () => {
     expect(subject.t('es', 'inbox.summary', { count: 4 })).toBe('4 notificaciones sin leer');
   });
 
+  it('builds the plural rules once per locale', () => {
+    const subject = translator();
+    const construct = vi.spyOn(Intl, 'PluralRules');
+    try {
+      subject.t('en', 'inbox.summary', { count: 1 });
+      subject.t('en', 'inbox.summary', { count: 2 });
+      subject.t('en', 'inbox.summary', { count: 3 });
+      expect(construct).toHaveBeenCalledTimes(1);
+
+      subject.t('es', 'inbox.summary', { count: 3 });
+      expect(construct).toHaveBeenCalledTimes(2);
+    } finally {
+      construct.mockRestore();
+    }
+  });
+
+  it('falls back to one/other for a locale the runtime rejects, without retrying it', () => {
+    const subject = translator();
+    const construct = vi.spyOn(Intl, 'PluralRules');
+    try {
+      // `x-!` is not a well-formed language tag, so the constructor throws.
+      expect(subject.t('x-!', 'inbox.summary', { count: 1 })).toBe('1 unread notification');
+      expect(subject.t('x-!', 'inbox.summary', { count: 4 })).toBe('4 unread notifications');
+      expect(construct).toHaveBeenCalledTimes(1);
+    } finally {
+      construct.mockRestore();
+    }
+  });
+
   it('renders an unknown placeholder as a gap, never as a raw token', () => {
     expect(translator().t('en', 'inbox.types.lead.created.title', {})).toBe('New lead from ');
   });

@@ -731,8 +731,9 @@
             "name": "search",
             "required": false,
             "in": "query",
-            "description": "Search by name or email",
+            "description": "Search by name or email; `%` and `_` match literally",
             "schema": {
+              "maxLength": 100,
               "type": "string"
             }
           },
@@ -1135,18 +1136,35 @@
     },
     "/api/v1/access-grants": {
       "get": {
+        "description": "Newest first, one page at a time (`page`, `limit` up to 100).",
         "operationId": "list",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page (default: 20, max: 100)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AccessGrantResponseDto"
-                  }
+                  "$ref": "#/components/schemas/PaginatedAccessGrantsResponseDto"
                 }
               }
             }
@@ -1583,8 +1601,9 @@
             "name": "search",
             "required": false,
             "in": "query",
-            "description": "Search by role name",
+            "description": "Search by role name or description; `%` and `_` match literally",
             "schema": {
+              "maxLength": 100,
               "type": "string"
             }
           },
@@ -11414,6 +11433,39 @@
           "grantedBy",
           "createdAt"
         ]
+      },
+      "AccessGrantPaginationMetaDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "totalPages": {
+            "type": "number"
+          }
+        },
+        "required": ["total", "page", "limit", "totalPages"]
+      },
+      "PaginatedAccessGrantsResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccessGrantResponseDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/AccessGrantPaginationMetaDto"
+          }
+        },
+        "required": ["data", "meta"]
       },
       "CreateAccessGrantRequest": {
         "type": "object",

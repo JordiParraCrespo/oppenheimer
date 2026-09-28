@@ -1,6 +1,14 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import type { Role } from '@oppenheimer/shared';
-import { Column, CreateDateColumn, Entity, PrimaryColumn, Unique, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryColumn,
+  Unique,
+  UpdateDateColumn,
+} from 'typeorm';
 
 /**
  * Persistence model for the Better Auth `user` table. This is infrastructure —
@@ -16,6 +24,9 @@ import { Column, CreateDateColumn, Entity, PrimaryColumn, Unique, UpdateDateColu
 // Named once, here and in the migration: the repository maps a violation of
 // exactly this constraint to USER_002.
 @Unique('UQ_user_username', ['username'])
+// A trigram GIN over firstName, lastName and email for the admin search
+// (1790880000000-AddUserSearchTrigramIndex); TypeORM cannot express GIN.
+@Index('IDX_user_search_trgm', { synchronize: false })
 export class UserOrmEntity {
   @PrimaryColumn({ type: 'uuid', primaryKeyConstraintName: 'PK_user' })
   id!: string;

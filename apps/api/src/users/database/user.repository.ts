@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, likeContains } from '@oppenheimer/backend-core';
 import { OutboxService, Paginated, TypeOrmRepositoryBase } from '@oppenheimer/backend-ddd';
 import type { Option } from 'oxide.ts';
 import { type FindOptionsWhere, ILike, type Repository } from 'typeorm';
@@ -58,12 +58,15 @@ export class UserRepository
     const baseWhere: FindOptionsWhere<UserOrmEntity> = {};
     if (role) baseWhere.role = role;
 
-    // Search matches name or email; applied as an OR across the columns.
-    const where: FindOptionsWhere<UserOrmEntity>[] | FindOptionsWhere<UserOrmEntity> = search
+    // Search matches name or email, as an OR across the columns, with the
+    // term's `%` and `_` matched literally. IDX_user_search_trgm serves it for
+    // terms of three characters or more.
+    const needle = search ? ILike(likeContains(search)) : undefined;
+    const where: FindOptionsWhere<UserOrmEntity>[] | FindOptionsWhere<UserOrmEntity> = needle
       ? [
-          { ...baseWhere, firstName: ILike(`%${search}%`) },
-          { ...baseWhere, lastName: ILike(`%${search}%`) },
-          { ...baseWhere, email: ILike(`%${search}%`) },
+          { ...baseWhere, firstName: needle },
+          { ...baseWhere, lastName: needle },
+          { ...baseWhere, email: needle },
         ]
       : baseWhere;
 

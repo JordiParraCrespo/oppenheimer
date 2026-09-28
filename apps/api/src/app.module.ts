@@ -1,7 +1,7 @@
 import { BullModule } from '@nestjs/bullmq';
-import { Module } from '@nestjs/common';
+import { type MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -11,7 +11,7 @@ import {
   AllExceptionsFilter,
   createAuthRouteLoggingMiddleware,
   LoggingModule,
-  RequestContextInterceptor,
+  RequestContextMiddleware,
 } from '@oppenheimer/backend-core';
 import { EmailModule } from '@oppenheimer/backend-email';
 import { I18nModule } from '@oppenheimer/backend-i18n';
@@ -257,7 +257,6 @@ import { UsersModule } from './users/user.module';
     // omission. Browser sessions pass straight through.
     { provide: APP_GUARD, useClass: ScopesGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
-    { provide: APP_INTERCEPTOR, useClass: RequestContextInterceptor },
     // Better Auth's session cache runs on the shared Redis connection. `auth`
     // is configured at module scope, so the connection is handed to it here,
     // once the injector has one, and taken back before `RedisModule` closes it.
@@ -268,4 +267,11 @@ import { UsersModule } from './users/user.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  // The correlation id is opened in middleware, ahead of the guards above: a
+  // 401, 403 or 429 a guard throws carries the same id as the log line and
+  // the `x-correlation-id` response header. See `RequestContextMiddleware`.
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestContextMiddleware).forRoutes('*');
+  }
+}

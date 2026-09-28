@@ -17,12 +17,14 @@ wired into the API.
 | `ProblemDetails`, `buildProblemDetails`, `problemTypeFor` | The problem-document contract and its builders                          |
 | `ProblemDetailsDto`, `ApiProblemResponse`                 | Swagger model + decorator for documenting failures                      |
 | `SanitizePipe`                                            | Input sanitization pipe                                                 |
-| `RequestContextInterceptor`                               | Per-request correlation id (`RequestContextService` is backend-ddd's)   |
+| `RequestContextMiddleware`                                | Opens the per-request correlation id before guards run (backend-ddd's `RequestContextService`) |
+| `resolveCorrelationId`, `CORRELATION_HEADER`              | The validated `x-correlation-id` (≤64 of `[A-Za-z0-9._:-]`) or a fresh UUID |
 | `LoggingModule`, `buildPinoHttpOptions`                   | Hardened request logging (`nestjs-pino`): no headers/query/bodies       |
 | `UserContextInterceptor`                                  | Attaches `userId` + credential scopes to the request log context        |
 | `createAuthRouteLoggingMiddleware`                        | Request logging for Better Auth routes (its `middleware` option)        |
 | `toPageMeta`, `PageMeta`                                  | A paginated response's `meta` from a repository's `Paginated` result    |
 | `PaginatedResponseDto(Item, Meta)`                        | Base class for a paginated response DTO's `data` / `meta`               |
+| `likeContains`                                            | An `ILIKE` contains-pattern with the term's `%`, `_` and `\` escaped     |
 | `requestMemo`                                             | One in-flight computation per key per request, shared by every caller   |
 
 ## Usage

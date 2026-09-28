@@ -21,6 +21,9 @@ src/
 - **Pluggable service pattern**: abstract `StorageService` → concrete
   implementations (local / S3) → chosen by the factory in `StorageModule`.
   Add a backend as another concrete class; keep the abstract contract stable.
+- **`upload` resolves to the key on every back-end**, and `getUrl` is the only
+  way to a URL. Callers persist keys; a URL (signed and expiring on S3) is
+  derived at read time.
 - Ships **CommonJS**.
 
 ## Commands
