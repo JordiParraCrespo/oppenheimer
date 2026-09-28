@@ -3,8 +3,10 @@ import type { INestApplication } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Test } from '@nestjs/testing';
 import { CacheService } from '@oppenheimer/backend-cache';
+import type Redis from 'ioredis';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
+import { REDIS_CLIENT } from '../src/redis/redis.di-tokens';
 import { runAllMigrations } from './run-migrations';
 
 /**
@@ -189,7 +191,11 @@ describe('authorization cache (integration)', () => {
   describe('queries per guarded request', () => {
     beforeAll(async () => {
       await actIn(user.workspaceId);
-      await app.get(CacheService).reset();
+      // Drop only the cached role sets: the cache has no flush, because its
+      // database also holds queued jobs and rate-limit counters.
+      const redis = app.get<Redis>(REDIS_CLIENT);
+      const cached = await redis.keys('cache:authz:roles:*');
+      if (cached.length > 0) await redis.unlink(...cached);
     });
 
     it('reads user_role once cold, and not at all warm', async () => {

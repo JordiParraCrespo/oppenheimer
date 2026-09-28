@@ -74,20 +74,37 @@ export class AppModule {}
 
 ## `@oppenheimer/backend-cache`
 
-Redis cache abstraction.
+Redis cache abstraction. Values are JSON, and every key is written under a
+prefix (`cache:` by default) so the cache never mixes with BullMQ's `bull:*` or
+the rate limiter's `throttle:*` in the same database.
 
-| Method  | Signature                                                    |
-| ------- | ------------------------------------------------------------ |
-| `get`   | `get<T>(key: string): Promise<T \| null>`                    |
-| `set`   | `set<T>(key: string, value: T, ttl?: number): Promise<void>` |
-| `del`   | `del(key: string): Promise<void>`                            |
-| `reset` | `reset(): Promise<void>`                                     |
+| Method        | Signature                                                                     |
+| ------------- | ----------------------------------------------------------------------------- |
+| `get`         | `get<T>(key: string): Promise<T \| undefined>`                                |
+| `mget`        | `mget<T>(keys: string[]): Promise<(T \| undefined)[]>`                        |
+| `set`         | `set<T>(key: string, value: T, ttl?: number): Promise<void>`                  |
+| `del`         | `del(key: string): Promise<void>`                                             |
+| `getOrSet`    | `getOrSet<T>(key: string, ttlSeconds: number, load: () => Promise<T>): Promise<T>` |
+| `setIfAbsent` | `setIfAbsent<T>(key: string, value: T, ttlSeconds: number): Promise<boolean>` |
+| `take`        | `take<T>(key: string): Promise<T \| undefined>`                               |
+
+`getOrSet` is single-flight per process: concurrent callers for one key share
+one `load`. There is no flush: the database also holds queued jobs and
+rate-limit counters.
+
+The module never owns a connection; it is handed the API's shared
+`REDIS_CLIENT` (`apps/api/src/redis/`), which is closed on shutdown:
 
 ```typescript
 import { CacheModule } from "@oppenheimer/backend-cache";
 
 @Module({
-  imports: [CacheModule.register()],
+  imports: [
+    CacheModule.registerAsync({
+      inject: [REDIS_CLIENT],
+      useFactory: (client: Redis) => ({ client, keyPrefix: "cache:" }),
+    }),
+  ],
 })
 export class AppModule {}
 ```

@@ -52,14 +52,11 @@ export class ListInstallationRepositoriesQueryHandler
       });
     }
 
-    const key = `github:repositories:${installation.id}`;
-    const cached = await this.cache.get<GithubRepository[]>(key);
-    if (cached) return cached;
-
-    const repositories = await this.github.listInstallationRepositories(
-      installation.githubInstallationId,
+    // Single-flight: when the entry expires under a picker's keystrokes, the
+    // requests in flight share one GitHub listing instead of each paginating
+    // the whole installation.
+    return this.cache.getOrSet(`github:repositories:${installation.id}`, CACHE_TTL_SECONDS, () =>
+      this.github.listInstallationRepositories(installation.githubInstallationId),
     );
-    await this.cache.set(key, repositories, CACHE_TTL_SECONDS);
-    return repositories;
   }
 }
