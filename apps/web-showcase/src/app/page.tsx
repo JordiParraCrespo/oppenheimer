@@ -214,8 +214,9 @@ export default function Page() {
         id="buttons"
         title="Button"
         meta="button.tsx"
-        desc="Anything you press is a pill, on the 28 / 34 / 42 ramp. One primary per view. Press is a scale to .975, never a hue change. Disabled keeps its shape at 40%. It acts; a Link navigates."
+        desc="Anything you press is a pill, on the 28 / 34 / 42 ramp. One primary per view. Press is a scale to .975, never a hue change. Disabled keeps its shape at 40%. Pending is disabled and aria-busy, and reads its verb in progress; no spinner. It acts; a Link navigates."
         code={`<Button size="lg" block>Sign in</Button>
+<Button variant="destructive" pending={remove.isPending} pendingLabel="Deleting…">Delete session</Button>
 <Button variant="social" size="lg" block><BrandGlyph name="google" /> Continue with Google</Button>
 <Button variant="secondary" size="sm"><CopyIcon /> Copy</Button>`}
       >
@@ -236,6 +237,16 @@ export default function Page() {
         </Swatch>
         <Swatch label="disabled">
           <Button disabled>Continue</Button>
+        </Swatch>
+        <Swatch label="pending · pendingLabel">
+          <Button pending pendingLabel="Signing in…">
+            Sign in
+          </Button>
+        </Swatch>
+        <Swatch label="pending · destructive">
+          <Button variant="destructive" pending pendingLabel="Deleting…">
+            Delete session
+          </Button>
         </Swatch>
         <Swatch label="sm · 28">
           <Button variant="secondary" size="sm">

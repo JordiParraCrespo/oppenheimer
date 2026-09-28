@@ -30,6 +30,11 @@ import { cn } from '../lib/utils';
  * the router's link. A `render` that navigates — an `<a>`, or any element given
  * `href` or `to` — keeps its link role: Base UI's button would stamp
  * `role="button"` on it, and a reader would hear a button where there is a link.
+ *
+ * `pending` is the state between a press and its answer: the button is
+ * disabled and `aria-busy`, and its label becomes `pendingLabel` when there is
+ * one ("Deleting…"), or stays as it is. No spinner: the MVP export draws none,
+ * and the verb in its progressive form already says the request is in flight.
  */
 const buttonVariants = cva(
   'group/button inline-flex shrink-0 items-center justify-center gap-1.5 rounded-pill border border-transparent bg-transparent font-medium whitespace-nowrap transition-[background-color,color,border-color,opacity,transform] duration-fast ease-standard outline-none select-none active:scale-[0.975] active:duration-instant disabled:pointer-events-none disabled:opacity-40 aria-disabled:pointer-events-none aria-disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',
@@ -75,7 +80,13 @@ const buttonVariants = cva(
   },
 );
 
-type ButtonProps = ButtonPrimitive.Props & VariantProps<typeof buttonVariants>;
+type ButtonProps = ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    /** A request this button started is in flight: disabled, `aria-busy`. */
+    pending?: boolean;
+    /** What the label reads while `pending` — the verb in progress. */
+    pendingLabel?: React.ReactNode;
+  };
 
 /** Whether a `render` element navigates, so the button drawn with it is a link. */
 function isLinkElement(render: ButtonProps['render']): render is React.ReactElement {
@@ -91,8 +102,14 @@ function Button({
   block,
   render,
   nativeButton,
+  pending = false,
+  pendingLabel,
+  disabled,
+  children,
   ...props
 }: ButtonProps) {
+  const busy = pending ? { 'aria-busy': true as const } : {};
+  const label = pending && pendingLabel !== undefined ? pendingLabel : children;
   if (isLinkElement(render)) {
     return (
       <LinkButton
@@ -100,8 +117,12 @@ function Button({
         className={cn(buttonVariants({ variant, size, block, className }))}
         variant={variant}
         size={size}
+        disabled={disabled || pending}
+        {...busy}
         {...props}
-      />
+      >
+        {label}
+      </LinkButton>
     );
   }
   return (
@@ -112,8 +133,12 @@ function Button({
       className={cn(buttonVariants({ variant, size, block, className }))}
       render={render}
       nativeButton={nativeButton ?? render === undefined}
+      disabled={disabled || pending}
+      {...busy}
       {...props}
-    />
+    >
+      {label}
+    </ButtonPrimitive>
   );
 }
 
