@@ -75,6 +75,7 @@ describe('HostAssertionResolver', () => {
   let cache: Pick<CacheService, 'setIfAbsent'>;
   let resolver: HostAssertionResolver;
   let owners: { findActiveOwner: ReturnType<typeof vi.fn> };
+  let legacyMarkers: { isBurned: ReturnType<typeof vi.fn> };
   let current: ReturnType<typeof keypair>;
 
   beforeEach(() => {
@@ -97,11 +98,13 @@ describe('HostAssertionResolver', () => {
     } as unknown as ConfigService;
 
     owners = { findActiveOwner: vi.fn().mockResolvedValue({ id: 'jordi' }) };
+    legacyMarkers = { isBurned: vi.fn().mockResolvedValue(false) };
     resolver = new HostAssertionResolver(
       hosts as HostRepositoryPort,
       cache as CacheService,
       configService,
       owners as unknown as CredentialOwnerPort,
+      legacyMarkers,
     );
   });
 
@@ -139,6 +142,19 @@ describe('HostAssertionResolver', () => {
         code: 'HOSTS_005',
       },
     );
+  });
+
+  // TODO(remove after #162 has been live once): with the legacy check.
+  it('refuses a replay of a token burned before the cache prefixed its keys', async () => {
+    // The first use was on a replica that wrote the unprefixed marker; the
+    // prefixed key is free, so only the legacy check stands in the way.
+    legacyMarkers.isBurned.mockResolvedValue(true);
+
+    await expect(verify(assertion(current.privateKey, bootClaims('host-1')))).rejects.toMatchObject(
+      { code: 'HOSTS_005' },
+    );
+    expect(legacyMarkers.isBurned).toHaveBeenCalledWith('host-1', bootClaims('host-1').jti);
+    expect(cache.setIfAbsent).not.toHaveBeenCalled();
   });
 
   it('refuses an assertion signed by another key', async () => {

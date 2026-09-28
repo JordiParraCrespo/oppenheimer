@@ -190,7 +190,9 @@ async function boot(): Promise<World> {
     findActiveOwner: vi.fn().mockResolvedValue({ id: USER }),
     requireActiveOwner: vi.fn().mockResolvedValue({ id: USER }),
   };
-  const assertions = new HostAssertionResolver(hosts, cache, config, owners);
+  const assertions = new HostAssertionResolver(hosts, cache, config, owners, {
+    isBurned: async () => false,
+  });
   const runners = new RunnerLinkGateway(
     assertions,
     registry,

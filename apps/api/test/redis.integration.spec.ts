@@ -4,6 +4,8 @@ import { CacheService } from '@oppenheimer/backend-cache';
 import type Redis from 'ioredis';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { RedisHealthIndicator } from '../src/health/infrastructure/redis-health.adapter';
+import { LEGACY_REPLAY_MARKER } from '../src/hosts/hosts.di-tokens';
+import type { LegacyReplayMarkerPort } from '../src/hosts/infrastructure/legacy-replay-marker.port';
 import { REDIS_CLIENT } from '../src/redis/redis.di-tokens';
 import { RedisThrottlerStorage } from '../src/throttling/infrastructure/redis-throttler.adapter';
 import { runAllMigrations } from './run-migrations';
@@ -109,6 +111,21 @@ describe('Redis (integration)', () => {
     // and ioredis would fall back to EVAL on its own.
     const [cached] = (await redis.script('EXISTS', sha1OfLoadedScript(redis))) as number[];
     expect(cached).toBe(1);
+  });
+
+  // TODO(remove after #162 has been live once): with `LegacyReplayMarkerPort`.
+  it('finds a host-assertion marker burned before the cache: prefix, and only that one', async () => {
+    const markers = app.get<LegacyReplayMarkerPort>(LEGACY_REPLAY_MARKER, { strict: false });
+    const cache = app.get(CacheService);
+
+    // Burned by the new code: under the prefix, which the legacy check ignores.
+    await cache.setIfAbsent('host-assertion:jti:host-1:new-jti', 'x', 60);
+    await expect(markers.isBurned('host-1', 'new-jti')).resolves.toBe(false);
+
+    // Burned by a replica that ran before the prefix: the raw key.
+    await redis.set('host-assertion:jti:host-1:old-jti', '"x"', 'EX', 60);
+    await expect(markers.isBurned('host-1', 'old-jti')).resolves.toBe(true);
+    await expect(markers.isBurned('host-2', 'old-jti')).resolves.toBe(false);
   });
 
   it('reports Redis healthy through the shared client', async () => {
