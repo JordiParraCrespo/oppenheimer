@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { AccessScope, ResolveScopeInput, ScopeResolverPort } from '@oppenheimer/backend-authz';
-import { In, type Repository } from 'typeorm';
+import type { Repository } from 'typeorm';
 import { TeamOrmEntity } from '../../organizations/database/team.orm-entity';
 import { TeamMemberOrmEntity } from '../../organizations/database/team-member.orm-entity';
 import type { UserRoleRepositoryPort } from '../../roles/database/user-role.repository.port';
@@ -22,7 +22,7 @@ import type { AccessGrantRepositoryPort } from '../database/access-grant.reposit
  * Composes two sources:
  *
  * 1. **Structural** — the teams the caller belongs to in that organization.
- *    No new tables: `teamMember` joined to `team`.
+ *    No new tables: `teamMember` joined to `team`, in one query.
  * 2. **Explicit** — unexpired `access_grant` rows in that organization
  *    addressed to the caller directly, to one of their teams or to a role they
  *    hold there (global, or scoped to that organization), read through the
@@ -32,17 +32,21 @@ import type { AccessGrantRepositoryPort } from '../database/access-grant.reposit
  * (`auth.api.addTeamMember` / `removeTeamMember`) outside any application
  * transaction, so it stages nothing on the outbox and there is no event to
  * invalidate on: a cached `teamIds` would keep granting a removed member that
- * team's rows. Two indexed lookups against rows already hot in the pool are
- * cheaper than that bug. Role *rules* are cached separately, keyed on
- * `organization.roleVersion`, because those the application does own.
+ * team's rows. Two indexed queries against rows already hot in the pool are
+ * cheaper than that bug. `access_grant` is read fresh too.
+ *
+ * The caller's **role ids** normally arrive in `input.roleIds`:
+ * `AccessScopeInterceptor` takes them from `AbilityFactory`, which resolved
+ * them for the ability — from its Redis cache, keyed on the organization's
+ * `roleVersion`, the global role catalog's version and the user's, all bumped
+ * in the same transaction as the writes the application owns. Without them
+ * (another caller of the port), `user_role` is read here.
  */
 @Injectable()
 export class ScopeResolver implements ScopeResolverPort {
   constructor(
     @InjectRepository(TeamMemberOrmEntity)
     private readonly teamMembers: Repository<TeamMemberOrmEntity>,
-    @InjectRepository(TeamOrmEntity)
-    private readonly teams: Repository<TeamOrmEntity>,
     @Inject(ACCESS_GRANT_REPOSITORY)
     private readonly grants: AccessGrantRepositoryPort,
     @Inject(USER_ROLE_REPOSITORY)
@@ -76,7 +80,7 @@ export class ScopeResolver implements ScopeResolverPort {
 
     const [teamIds, roleIds] = await Promise.all([
       this.teamIdsFor(input.userId, input.organizationId),
-      this.userRoles.findRoleIdsForUser(input.userId, input.organizationId),
+      input.roleIds ?? this.userRoles.findRoleIdsForUser(input.userId, input.organizationId),
     ]);
     const grants = await this.grantsFor(input.userId, teamIds, roleIds, input.organizationId);
 
@@ -89,24 +93,20 @@ export class ScopeResolver implements ScopeResolverPort {
     };
   }
 
-  /** Teams the user belongs to, narrowed to the organization. */
+  /**
+   * Teams the user belongs to, narrowed to the organization. `teamMember`
+   * carries no organization, so the tenant filter has to come from `team`:
+   * skipping the join would leak a team id across tenants.
+   */
   private async teamIdsFor(userId: string, organizationId: string): Promise<string[]> {
-    const memberships = await this.teamMembers.find({
-      where: { userId },
-      select: { teamId: true },
-    });
-    if (memberships.length === 0) return [];
-
-    // `teamMember` carries no organization, so the tenant filter has to come
-    // from `team`. Skipping this join would leak a team id across tenants.
-    const teams = await this.teams.find({
-      where: {
-        id: In(memberships.map((membership) => membership.teamId)),
-        organizationId,
-      },
-      select: { id: true },
-    });
-    return teams.map((team) => team.id);
+    const rows = await this.teamMembers
+      .createQueryBuilder('tm')
+      .innerJoin(TeamOrmEntity, 't', 't.id = tm.teamId')
+      .where('tm.userId = :userId', { userId })
+      .andWhere('t.organizationId = :organizationId', { organizationId })
+      .select('tm.teamId', 'teamId')
+      .getRawMany<{ teamId: string }>();
+    return rows.map((row) => row.teamId);
   }
 
   /**

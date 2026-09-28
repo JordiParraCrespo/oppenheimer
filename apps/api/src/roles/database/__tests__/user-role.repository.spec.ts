@@ -24,6 +24,7 @@ function repositoryWith() {
   const manager = {
     find: vi.fn().mockResolvedValue([{ id: 'owner-role' }, { id: 'user-role' }]),
     delete: vi.fn().mockResolvedValue({ affected: 1 }),
+    insert: vi.fn().mockResolvedValue(undefined),
     createQueryBuilder: () => insertBuilder,
     query: vi.fn().mockResolvedValue(undefined),
   };
@@ -82,5 +83,65 @@ describe('UserRoleRepository.replaceMembershipRole', () => {
 
     expect(manager.delete).not.toHaveBeenCalled();
     expect(inserted).toEqual([{ userId: 'u1', roleId: 'owner-role', organizationId: 'org1' }]);
+  });
+});
+
+describe('UserRoleRepository: version bumps', () => {
+  const orgBump = (organizationId: string) => [
+    expect.stringContaining('"roleVersion" + 1'),
+    [organizationId],
+  ];
+  const userBump = (userId: string) => [
+    expect.stringContaining('INSERT INTO "user_role_version"'),
+    [userId],
+  ];
+
+  it('a global grant bumps the user’s version, inside its own transaction', async () => {
+    const { repository, manager, userRoles, inserted } = repositoryWith();
+
+    await repository.assignRoleToUser('u1', 'user-role', null);
+
+    expect(userRoles.manager.transaction).toHaveBeenCalledTimes(1);
+    expect(inserted).toEqual([{ userId: 'u1', roleId: 'user-role', organizationId: null }]);
+    expect(manager.query.mock.calls).toEqual([userBump('u1')]);
+  });
+
+  it('a scoped grant bumps the organization’s version', async () => {
+    const { repository, manager } = repositoryWith();
+
+    await repository.assignRoleToUser('u1', 'owner-role', 'org1');
+
+    expect(manager.query.mock.calls).toEqual([orgBump('org1')]);
+  });
+
+  it('a grant enlisted in the caller’s transaction bumps on that manager', async () => {
+    const { repository, manager, userRoles } = repositoryWith();
+
+    await repository.assignRoleToUser('u1', 'user-role', null, manager as never);
+
+    expect(userRoles.manager.transaction).not.toHaveBeenCalled();
+    expect(manager.query.mock.calls).toEqual([userBump('u1')]);
+  });
+
+  it('a global replace bumps the user’s version in the same transaction', async () => {
+    const { repository, manager, userRoles } = repositoryWith();
+
+    await repository.setRolesForUser('u1', ['user-role'], null);
+
+    expect(userRoles.manager.transaction).toHaveBeenCalledTimes(1);
+    expect(manager.delete).toHaveBeenCalledWith(UserRoleOrmEntity, {
+      userId: 'u1',
+      organizationId: IsNull(),
+    });
+    expect(manager.query.mock.calls).toEqual([userBump('u1')]);
+  });
+
+  it('a scoped replace — a member removal included — bumps the organization', async () => {
+    const { repository, manager } = repositoryWith();
+
+    await repository.setRolesForUser('u1', [], 'org1');
+
+    expect(manager.insert).not.toHaveBeenCalled();
+    expect(manager.query.mock.calls).toEqual([orgBump('org1')]);
   });
 });

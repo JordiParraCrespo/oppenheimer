@@ -852,6 +852,12 @@ entry.**
 `authz:v{org.roleVersion}:{userId}:{orgId}`. Any role or assignment write bumps
 `organization.roleVersion` **in the same transaction as the write**.
 
+> **Implemented** (migration `AddAuthzVersions`), with a wider key: global roles
+> and global assignments need counters of their own (`role_catalog_version`,
+> `user_role_version`) beside `roleVersion`. What exists now is described in
+> `.agents/rules/rbac-roles.md`, "Caching and the version counters"; this part
+> is kept as the design it came from.
+
 Not via the outbox: `OutboxService.wake()` swallows delivery failures by design
 ("rows stay pending for the next poll",
 `packages/backend/ddd/src/outbox/outbox.service.ts:247`), which makes
