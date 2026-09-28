@@ -5,14 +5,13 @@ import {
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type { UserSettingsEntity } from '../modules/user-settings/user-settings.entity';
 import { useOppenheimerApp } from './context';
 import { withCacheOnSuccess } from './mutations';
+import { useQuery } from './query';
 import { userSettingsKeys } from './query-keys';
-import { shareEntities } from './share-entities';
 
 export { userSettingsKeys };
 
@@ -23,7 +22,6 @@ export function useUserSettings(
 
   return useQuery({
     queryKey: userSettingsKeys.me(),
-    structuralSharing: shareEntities,
     queryFn: () => app.userSettings.get(),
     ...options,
   });

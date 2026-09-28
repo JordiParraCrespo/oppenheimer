@@ -48,6 +48,7 @@ export {
   reconcileCacheOwner,
   shouldDehydrateQuery,
 } from './persistence';
+export { useQueries, useQuery } from './query';
 export {
   createQueryClient,
   expireSession,
@@ -56,7 +57,6 @@ export {
   shouldRetryQuery,
 } from './query-client';
 export { MEMBER_LISTS_KEY, withFeaturePrefix } from './query-keys';
-
 export { shareEntities } from './share-entities';
 export { userSettingsKeys, useUpdateUserSettings, useUserSettings } from './user-settings.queries';
 export {

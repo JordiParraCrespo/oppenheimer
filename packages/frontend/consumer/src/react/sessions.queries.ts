@@ -1,13 +1,12 @@
 'use client';
 
-import { shareEntities, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { shareEntities, useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   type QueryClient,
   skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type { CreateSessionInput, SessionEntity } from '../modules/sessions/session.entity';
@@ -121,9 +120,6 @@ export function useSessions<TData = SessionEntity[]>(
       }
       return listed;
     },
-    // Entities are classes: without this every poll is a new object per row,
-    // and the sidebar re-renders every row every two seconds.
-    structuralSharing: shareEntities,
     // The query's own rows, before any caller's `select`.
     refetchInterval: (query) =>
       query.state.data?.some(
@@ -145,7 +141,6 @@ export function useSession(
     queryKey: sessionsKeys.detail(id),
     queryFn: id ? () => app.sessions.findById(id) : skipToken,
     refetchInterval: (query) => (query.state.data?.isProvisioning ? PROVISIONING_POLL_MS : false),
-    structuralSharing: shareEntities,
     ...options,
   });
 }
@@ -178,7 +173,6 @@ export function useSessionStartProgress(
 
   return useQuery({
     queryKey: sessionsKeys.start(id, failed),
-    structuralSharing: shareEntities,
     queryFn:
       id && (starting || failed) ? () => app.sessions.startProgress(id, { failed }) : skipToken,
     refetchInterval: (query) => (query.state.data?.settled ? false : PROVISIONING_POLL_MS),

@@ -1,11 +1,10 @@
 'use client';
 
-import { shareEntities, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type { HostEntity, HostPairing, HostPairingToken } from '../modules/hosts/host.entity';
@@ -55,8 +54,6 @@ export function useHosts<TData = HostEntity[]>(
   return useQuery<HostEntity[], Error, TData>({
     queryKey: hostsKeys.list(),
     queryFn: () => app.hosts.findAll(),
-    // Entities are classes: without this every poll is a new object per host.
-    structuralSharing: shareEntities,
     ...options,
   });
 }
@@ -96,7 +93,6 @@ export function useCurrentPairing(
 
   return useQuery({
     queryKey: hostsKeys.pairingDetail(name),
-    structuralSharing: shareEntities,
     queryFn: () => app.hosts.pair(name),
     staleTime: 0,
     gcTime: 0,
@@ -136,7 +132,6 @@ export function usePairingTokens(
 
   return useQuery({
     queryKey: hostsKeys.pairingList(),
-    structuralSharing: shareEntities,
     queryFn: () => app.hosts.pairings(),
     ...options,
   });

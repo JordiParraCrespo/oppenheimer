@@ -1,12 +1,11 @@
 'use client';
 
-import { shareEntities, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import type { CreateApiTokenDto } from '@oppenheimer/shared';
 import {
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type {
@@ -37,7 +36,6 @@ export function useApiTokens(
 
   return useQuery({
     queryKey: apiTokensKeys.list(),
-    structuralSharing: shareEntities,
     queryFn: () => app.apiTokens.findAll(),
     ...options,
   });
@@ -54,7 +52,6 @@ export function usePermissionCatalog(
 
   return useQuery({
     queryKey: apiTokensKeys.permissions(),
-    structuralSharing: shareEntities,
     queryFn: () => app.apiTokens.permissions(),
     staleTime: 5 * 60 * 1000,
     ...options,
@@ -68,7 +65,6 @@ export function useCurrentCredential(
 
   return useQuery({
     queryKey: apiTokensKeys.credential(),
-    structuralSharing: shareEntities,
     queryFn: () => app.apiTokens.currentCredential(),
     ...options,
   });

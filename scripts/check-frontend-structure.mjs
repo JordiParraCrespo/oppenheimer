@@ -388,53 +388,28 @@ for (const { app, routes, features, product, allow, kit } of APPS) {
   }
 }
 
-// Every query a product package's React layer declares says how a refetch
-// shares with the last result. The entities are classes, which TanStack Query's
-// default structural sharing does not look into, so a query that forgets
-// `structuralSharing: shareEntities` hands every reader a new object per row on
-// every refetch and every memo keyed on them misses. Nothing about a query's
-// type says whether its result holds an entity (a page wraps them, a mapper
-// picks), so the rule is on every declaration: `shareEntities` is a superset of
-// the default for plain data, and a query that must opt out says so with
-// `structuralSharing: false`.
-/**
- * The object literal around `index`: the nearest `{` left of it that is not
- * closed before it, to its matching `}`. Strings and comments are not skipped;
- * a brace inside one would misplace the span, and none of these files has one.
- */
-function enclosingObject(source, index) {
-  let depth = 0;
-  let start = -1;
-  for (let i = index - 1; i >= 0; i--) {
-    if (source[i] === '}') depth++;
-    else if (source[i] === '{') {
-      if (depth === 0) {
-        start = i;
-        break;
-      }
-      depth--;
-    }
-  }
-  if (start < 0) return '';
-  depth = 0;
-  for (let i = start; i < source.length; i++) {
-    if (source[i] === '{') depth++;
-    else if (source[i] === '}' && --depth === 0) return source.slice(start, i + 1);
-  }
-  return source.slice(start);
-}
-
+// Every query a frontend package's React layer declares shares entities across
+// refetches. The entities are classes, which TanStack Query's default
+// structural sharing does not look into, so a query without `shareEntities`
+// hands every reader a new object per row on every refetch and every memo keyed
+// on them misses. The core's `useQuery` and `useQueries` apply it, so the fence
+// is on the import: TanStack's own two are not used here.
+const QUERY_HOOK_IMPORT = /import\s*\{([^}]*)\}\s*from\s*'@tanstack\/react-query'/g;
+const FENCED_HOOKS = ['useQuery', 'useQueries', 'useSuspenseQuery', 'useSuspenseQueries'];
 for (const pkg of readdirSync(join(root, 'packages/frontend'))) {
   const dir = join(root, 'packages/frontend', pkg, 'src/react');
   if (!existsSync(dir)) continue;
-  for (const name of readdirSync(dir).filter((n) => n.endsWith('.queries.ts'))) {
+  for (const name of readdirSync(dir)) {
+    // `query.ts` is the wrapper itself.
+    if (!/\.tsx?$/.test(name) || /\.(spec|test)\.tsx?$/.test(name) || name === 'query.ts') continue;
     const source = readFileSync(join(dir, name), 'utf8');
-    for (const match of source.matchAll(/\bqueryFn\s*:/g)) {
-      if (/\bstructuralSharing\s*:/.test(enclosingObject(source, match.index))) continue;
-      const line = source.slice(0, match.index).split('\n').length;
-      fail(
-        `packages/frontend/${pkg}/src/react/${name}:${line}: a query without structuralSharing — pass shareEntities (from @oppenheimer/frontend-core/react) so a refetch keeps the rows that did not change`,
-      );
+    for (const match of source.matchAll(QUERY_HOOK_IMPORT)) {
+      const names = match[1].split(',').map((part) => part.trim().replace(/^type\s+/, ''));
+      for (const hook of FENCED_HOOKS.filter((fenced) => names.includes(fenced))) {
+        fail(
+          `packages/frontend/${pkg}/src/react/${name}: imports ${hook} from @tanstack/react-query — use the one from @oppenheimer/frontend-core/react, which shares entities across refetches`,
+        );
+      }
     }
   }
 }

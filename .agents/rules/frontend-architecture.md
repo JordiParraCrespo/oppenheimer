@@ -226,18 +226,15 @@ name the jobs and split *those*.
   that draws it, and hand a one-second tick to a leaf of its own — the
   pairing countdown and the provisioning clock are elements in their parent's
   slot, so a tick re-renders a line of text and not the dialog around it.
-- **Entity queries opt into `shareEntities`.** The entities are classes, which
-  TanStack Query's default structural sharing does not look into, so without
-  it every refetch hands every reader a new object per row. A query hook that
-  returns entities passes `structuralSharing: shareEntities` (from
-  `@oppenheimer/frontend-core/react`); a list hook takes a narrowing `select`,
-  and a read that only happens in an event handler uses the module's
-  `use…Snapshot()` rather than subscribing.
-
-  `pnpm check:structure` holds it for every query a `src/react/*.queries.ts`
-  declares, entity or not: whether a result holds an entity is not in its type
-  (a page wraps them), and `shareEntities` is a superset of the default for
-  plain data. A query that must not share says `structuralSharing: false`.
+- **Queries share entities across refetches.** The entities are classes,
+  which TanStack Query's default structural sharing does not look into, so
+  without `shareEntities` every refetch hands every reader a new object per
+  row. A query hook in a frontend package's `src/react/` calls `useQuery` /
+  `useQueries` from `@oppenheimer/frontend-core/react`, which apply it (a query
+  that must not share passes `structuralSharing: false`); `pnpm
+  check:structure` fences TanStack's own two out of those files. A list hook
+  takes a narrowing `select`, and a read that only happens in an event handler
+  uses the module's `use…Snapshot()` rather than subscribing.
 
 ## Routing is its own skill
 

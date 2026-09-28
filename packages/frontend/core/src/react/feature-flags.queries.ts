@@ -6,13 +6,13 @@ import type {
   ClientFeatureFlags,
   FeatureFlagValueOf,
 } from '@oppenheimer/shared/feature-flags';
-import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
+import { type UseQueryOptions } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import type { OppenheimerApp } from '../di/oppenheimer-app';
 import { isFlagEnabled, resolveFlagValue } from '../modules/feature-flags/feature-flags';
 import { useOppenheimerApp } from './context';
 import { useAuthState } from './hooks';
-import { shareEntities } from './share-entities';
+import { useQuery } from './query';
 
 type FlagAudience = 'signed-in' | 'anonymous';
 
@@ -39,7 +39,6 @@ export const featureFlagKeys = {
 export function featureFlagsQueryOptions(app: OppenheimerApp, audience: FlagAudience) {
   return {
     queryKey: featureFlagKeys.evaluated(audience),
-    structuralSharing: shareEntities,
     queryFn: (): Promise<ClientFeatureFlags> => app.featureFlags.get(),
     // Short enough that a kill switch lands within a minute of the next focus,
     // long enough that navigating between screens does not refetch.

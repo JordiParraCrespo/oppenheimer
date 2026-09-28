@@ -1,6 +1,6 @@
 'use client';
 
-import { shareEntities, usersKeys, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, usersKeys, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import type {
   ChangeEmailDto,
   ChangeOwnPasswordDto,
@@ -11,7 +11,6 @@ import {
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type { ProfileEntity, UserSessionEntity } from '../modules/profile/profile.entity';
@@ -38,7 +37,6 @@ export function useMyProfile(
 
   return useQuery({
     queryKey: profileKeys.me(),
-    structuralSharing: shareEntities,
     queryFn: () => app.profile.get(),
     ...options,
   });
@@ -117,7 +115,6 @@ export function useProfileSessions(
 
   return useQuery({
     queryKey: profileKeys.sessions(),
-    structuralSharing: shareEntities,
     queryFn: () => app.profile.getSessions(),
     ...options,
   });
