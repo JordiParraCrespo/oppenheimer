@@ -198,6 +198,34 @@ func (t *Terminals) Capture(_ context.Context, target string) (app.Screen, error
 	return app.Screen{Body: t.Screens[target], Title: t.Titles[target]}, nil
 }
 
+// CaptureBody implements app.Terminals.
+func (t *Terminals) CaptureBody(_ context.Context, target string) (string, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.Screens[target], nil
+}
+
+// Panes implements app.Terminals: one pane per window, active, titled from
+// Titles.
+func (t *Terminals) Panes(context.Context) ([]app.Pane, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	var panes []app.Pane
+	for name, session := range t.sessions {
+		for _, w := range session.windows {
+			target := fmt.Sprintf("%s:%d", name, w.Index)
+			panes = append(panes, app.Pane{Session: name, Window: w.Index, Active: true, Title: t.Titles[target]})
+		}
+	}
+	sort.Slice(panes, func(i, j int) bool {
+		if panes[i].Session != panes[j].Session {
+			return panes[i].Session < panes[j].Session
+		}
+		return panes[i].Window < panes[j].Window
+	})
+	return panes, nil
+}
+
 // Windows implements app.Terminals.
 func (t *Terminals) Windows(_ context.Context, name string) ([]domain.Window, error) {
 	t.mu.Lock()

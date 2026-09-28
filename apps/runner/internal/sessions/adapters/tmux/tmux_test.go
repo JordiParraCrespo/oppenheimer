@@ -193,6 +193,66 @@ func TestAttachStreamsAndDetachingLeavesTheSessionRunning(t *testing.T) {
 	}
 }
 
+func TestPanesListsEverySessionWithItsTitleInOneCall(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	// A program that never touches the title, as a shell prompt might.
+	for _, name := range []string{"opp-abc", "opp-def"} {
+		if err := s.Create(ctx, name, t.TempDir(), "sleep 60", nil); err != nil {
+			t.Fatalf("create %s: %v", name, err)
+		}
+	}
+	socket := "opp-test-" + strings.ReplaceAll(t.Name(), "/", "-")
+	if out, err := exec.Command("tmux", "-L", socket, "select-pane", "-t", "opp-abc:0", "-T", "my  title with spaces").CombinedOutput(); err != nil {
+		t.Fatalf("set the title: %s: %v", out, err)
+	}
+
+	panes, err := s.Panes(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	byName := map[string]app.Pane{}
+	for _, pane := range panes {
+		byName[pane.Session] = pane
+	}
+	if len(panes) != 2 || len(byName) != 2 {
+		t.Fatalf("panes = %+v, want one per session", panes)
+	}
+	if abc := byName["opp-abc"]; abc.Window != 0 || !abc.Active || abc.Title != "my  title with spaces" {
+		t.Fatalf("opp-abc = %+v, want window 0, active, with its title whole", abc)
+	}
+}
+
+func TestPanesOnAHostWithNoServerIsEmptyNotAnError(t *testing.T) {
+	s := server(t)
+
+	panes, err := s.Panes(context.Background())
+
+	if err != nil || len(panes) != 0 {
+		t.Fatalf("panes = %v, err = %v, want none and no error", panes, err)
+	}
+}
+
+func TestParsePanesKeepsATitleWhole(t *testing.T) {
+	out := "opp-a\t0\t0\t1\t✳ Claude Code\twith a tab\n" +
+		"opp-a\t1\t0\t0\t\n" +
+		"garbage line\n" +
+		"opp-b\tx\t0\t1\ttitle\n"
+
+	panes := tmux.ParsePanes(out)
+
+	if len(panes) != 2 {
+		t.Fatalf("panes = %+v, want the two readable lines", panes)
+	}
+	if got := panes[0]; got.Session != "opp-a" || got.Window != 0 || !got.Active || got.Title != "✳ Claude Code\twith a tab" {
+		t.Fatalf("first = %+v", got)
+	}
+	if got := panes[1]; got.Window != 1 || got.Active || got.Title != "" {
+		t.Fatalf("second = %+v", got)
+	}
+}
+
 // waitFor polls capture-pane until the text shows up or the deadline passes.
 func waitFor(t *testing.T, s *tmux.Server, target, want string) string {
 	t.Helper()

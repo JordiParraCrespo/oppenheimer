@@ -177,14 +177,8 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 		return httpx.WriteJSON(w, http.StatusOK, payload)
 	})
 	router.HandleFunc("GET /v1/sessions", func(w http.ResponseWriter, r *http.Request) error {
-		sessions := a.Sessions.List()
-		for i, session := range sessions {
-			if session.State.Live() {
-				if refreshed, err := a.Sessions.Refresh(r.Context(), session.ID); err == nil {
-					sessions[i] = refreshed
-				}
-			}
-		}
+		// A session that could not be refreshed is listed as last seen.
+		sessions, _ := a.Sessions.RefreshAll(r.Context())
 		return httpx.WriteJSON(w, http.StatusOK, map[string]any{"sessions": sessions})
 	})
 	router.HandleFunc("GET /v1/sessions/{id}", func(w http.ResponseWriter, r *http.Request) error {
@@ -231,8 +225,10 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 
 // sessionLoop keeps every live session's state fresh. It polls slowly: with
 // no client attached nobody is watching a dot change, and `capture-pane` on a
-// busy host is not free. The link will make this adaptive — a second while a
-// browser is attached — when it lands.
+// busy host is not free. Each tick is one `list-panes` for the whole host plus
+// one `capture-pane` per live session, and writes the session map only when a
+// state changed. The link will make this adaptive — a second while a browser
+// is attached — when it lands.
 func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
@@ -242,14 +238,8 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 			return
 		case <-ticker.C:
 		}
-		for _, session := range a.Sessions.List() {
-			if !session.State.Live() {
-				continue
-			}
-			if _, err := a.Sessions.Refresh(ctx, session.ID); err != nil {
-				logger.Warn("could not refresh a session",
-					slog.String("session", session.ID), slog.Any("error", err))
-			}
+		if _, err := a.Sessions.RefreshAll(ctx); err != nil {
+			logger.Warn("could not refresh every session", slog.Any("error", err))
 		}
 	}
 }
