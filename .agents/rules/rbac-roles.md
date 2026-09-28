@@ -24,7 +24,12 @@ paths:
 >   are cached on `organization.roleVersion`, bumped in the same transaction as
 >   the write.
 > - **Nobody grants what they do not hold.** `RoleGrantPolicy` enforces it on
->   role writes; `canGrantScope` on access grants.
+>   role writes and assignments; `canGrantScope` on access grants. Role
+>   containment respects conditions: a rule someone holds only for their
+>   organization (`{ organizationId: '${activeOrganizationId}' }`) lets them
+>   grant that rule or a narrower one, never the unconditioned rule or another
+>   organization's id. A type-level `ability.can(action, subject)` is not a
+>   containment check.
 
 Authorization is **database-backed and admin-managed** (dynamic RBAC). Roles and
 their permissions live in the `role` table (not in code); a user's effective

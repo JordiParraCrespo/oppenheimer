@@ -148,7 +148,9 @@ export class AbilityFactory implements AbilityPort {
         .filter(Boolean);
 
       for (const roleName of platformRoles) {
-        const found = await this.roleRepository.findOneByName(roleName);
+        // Platform (Better Auth `user.role`) roles are global rows only; a tenant's
+        // role of the same name must never stand in for them.
+        const found = await this.roleRepository.findOneByName(roleName, null);
         permissions.push(
           ...(found.isSome()
             ? found.unwrap().permissions.map((permission) => permission.toDefinition())
