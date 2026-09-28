@@ -6,7 +6,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Zap } from '@oppenheimer/design-system-web/icons';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, useConsoleDialog, useLocale } from '@oppenheimer/frontend-web';
+import { ErrorAlert, QueryState, useConsoleDialog, useLocale } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { AutomationTableRow } from '../components/automation-table-row';
@@ -45,51 +45,59 @@ export function AutomationsTable() {
         title={failedName ? t('automations.page.actionFailedFor', { name: failedName }) : undefined}
         onDismiss={actions.dismissFailure}
       />
-      <ErrorAlert error={automations.error} fallback={t('automations.page.loadFailed')} />
       <RoutineTable>
-        {automations.isPending ? (
-          <div className="flex flex-col gap-1.5 p-1.5">
-            <Skeleton className="h-[54px] w-full" />
-            <Skeleton className="h-[54px] w-full" />
-          </div>
-        ) : automations.data?.length ? (
-          <>
-            <RoutineTableHead
-              columns={[
-                t('automations.table.automation'),
-                t('automations.table.trigger'),
-                t('automations.table.next'),
-                t('automations.table.status'),
-              ]}
-            />
-            {automations.data.map((automation) => (
-              <AutomationTableRow
-                key={automation.id}
-                automation={automation}
-                subline={automationSubline(automation, projectNames?.get(automation.projectId))}
-                trigger={automationTriggerText(automation, locale, t)}
-                onOpen={() =>
-                  navigate({
-                    to: '/automations/$automationId',
-                    params: { automationId: automation.id },
-                  })
-                }
-                onEdit={() => dialogs.open({ kind: 'automation', automationId: automation.id })}
-                onRunNow={() => actions.runNow(automation.id)}
-                onTogglePause={() => actions.setPaused(automation.id, !automation.isPaused)}
-                onDuplicate={() => actions.duplicate(automation.id)}
-                onDelete={() => actions.remove(automation.id)}
+        <QueryState
+          query={automations}
+          pending={
+            <div className="flex flex-col gap-1.5 p-1.5">
+              <Skeleton className="h-13.5 w-full" />
+              <Skeleton className="h-13.5 w-full" />
+            </div>
+          }
+          errorFallback={t('automations.page.loadFailed')}
+          errorClassName="m-1.5"
+          isEmpty={(rows) => rows.length === 0}
+          empty={
+            <RoutineTableEmpty>
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-hover-surface text-fg-muted [&_svg]:size-4">
+                <Zap />
+              </span>
+              <span>{t('automations.page.empty')}</span>
+            </RoutineTableEmpty>
+          }
+        >
+          {(rows) => (
+            <>
+              <RoutineTableHead
+                columns={[
+                  t('automations.table.automation'),
+                  t('automations.table.trigger'),
+                  t('automations.table.next'),
+                  t('automations.table.status'),
+                ]}
               />
-            ))}
-          </>
-        ) : (
-          <RoutineTableEmpty>
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-hover-surface text-fg-muted [&_svg]:size-4">
-              <Zap />
-            </span>
-            <span>{t('automations.page.empty')}</span>
-          </RoutineTableEmpty>
-        )}
+              {rows.map((automation) => (
+                <AutomationTableRow
+                  key={automation.id}
+                  automation={automation}
+                  subline={automationSubline(automation, projectNames?.get(automation.projectId))}
+                  trigger={automationTriggerText(automation, locale, t)}
+                  onOpen={() =>
+                    navigate({
+                      to: '/automations/$automationId',
+                      params: { automationId: automation.id },
+                    })
+                  }
+                  onEdit={() => dialogs.open({ kind: 'automation', automationId: automation.id })}
+                  onRunNow={() => actions.runNow(automation.id)}
+                  onTogglePause={() => actions.setPaused(automation.id, !automation.isPaused)}
+                  onDuplicate={() => actions.duplicate(automation.id)}
+                  onDelete={() => actions.remove(automation.id)}
+                />
+              ))}
+            </>
+          )}
+        </QueryState>
       </RoutineTable>
     </div>
   );

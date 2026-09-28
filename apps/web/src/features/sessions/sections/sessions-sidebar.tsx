@@ -8,7 +8,7 @@ import {
   useSessions,
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure } from '@oppenheimer/frontend-core/react';
-import { ErrorAlert, useConsoleDialog } from '@oppenheimer/frontend-web';
+import { ErrorAlert, QueryState, useConsoleDialog } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -68,7 +68,7 @@ const DeleteSessionDialog = lazy(() =>
 export function SessionsSidebar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: sessions, isPending, isError, error } = useSessions();
+  const { data: sessions, isPending, error } = useSessions();
   const projects = useProjects();
   // Named by the host list, because a session carries only the host's id and
   // an id is not a filter anyone can read. Selected down to plain pairs, which
@@ -172,57 +172,64 @@ export function SessionsSidebar() {
       />
 
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
-        {isError || projects.isError ? (
-          // A failed read is not an empty list and not a list still loading:
-          // without this branch the skeleton below spun for ever.
-          <ErrorAlert
-            error={error ?? projects.error}
-            fallback={t('sessions.sidebar.loadFailed')}
-            className="mx-3 mt-2"
-          />
-        ) : isPending || !settled ? (
-          <SessionList className="px-3 pt-2">
-            <Skeleton className="h-[30px] w-full rounded-sm" />
-            <Skeleton className="h-[30px] w-full rounded-sm" />
-            <Skeleton className="h-[30px] w-full rounded-sm" />
-          </SessionList>
-        ) : groups.length === 0 ? (
+        {/* The rows need both reads: a session's group is its project. A failed
+            read is not an empty list and not a list still loading. */}
+        <QueryState
+          query={{
+            isPending: isPending || !settled,
+            error: error ?? projects.error,
+            data: settled ? groups : undefined,
+          }}
+          pending={
+            <SessionList className="px-3 pt-2">
+              <Skeleton className="h-7.5 w-full rounded-sm" />
+              <Skeleton className="h-7.5 w-full rounded-sm" />
+              <Skeleton className="h-7.5 w-full rounded-sm" />
+            </SessionList>
+          }
+          errorFallback={t('sessions.sidebar.loadFailed')}
+          errorClassName="mx-3 mt-2"
+          isEmpty={(ready) => ready.length === 0}
           // No project at all: the way to one is the plus above and the chip
           // on New session, and the row says so rather than arguing with the
           // pane.
-          <div className="px-3 pt-2">
-            <EmptyState compact>
-              <EmptyState.Header>
-                <EmptyState.Description>{t('sessions.sidebar.empty')}</EmptyState.Description>
-              </EmptyState.Header>
-            </EmptyState>
-          </div>
-        ) : (
-          groups.map(({ project, sessions: members }) => {
-            const key = project?.id ?? 'unfiled';
-            return (
-              <ProjectGroup
-                key={key}
-                project={project}
-                sessions={members}
-                open={!closed.includes(key)}
-                onOpenChange={(next) =>
-                  setClosed((current) =>
-                    next ? current.filter((id) => id !== key) : [...current, key],
-                  )
-                }
-                narrowed={narrowed}
-                query={query}
-                now={now}
-                onNewSessionHere={(target) =>
-                  navigate({ to: '/sessions/new', search: { project: target.id } })
-                }
-                onSettings={(target) => dialogs.open({ kind: 'project', projectId: target.id })}
-                rows={rows}
-              />
-            );
-          })
-        )}
+          empty={
+            <div className="px-3 pt-2">
+              <EmptyState compact>
+                <EmptyState.Header>
+                  <EmptyState.Description>{t('sessions.sidebar.empty')}</EmptyState.Description>
+                </EmptyState.Header>
+              </EmptyState>
+            </div>
+          }
+        >
+          {(ready) =>
+            ready.map(({ project, sessions: members }) => {
+              const key = project?.id ?? 'unfiled';
+              return (
+                <ProjectGroup
+                  key={key}
+                  project={project}
+                  sessions={members}
+                  open={!closed.includes(key)}
+                  onOpenChange={(next) =>
+                    setClosed((current) =>
+                      next ? current.filter((id) => id !== key) : [...current, key],
+                    )
+                  }
+                  narrowed={narrowed}
+                  query={query}
+                  now={now}
+                  onNewSessionHere={(target) =>
+                    navigate({ to: '/sessions/new', search: { project: target.id } })
+                  }
+                  onSettings={(target) => dialogs.open({ kind: 'project', projectId: target.id })}
+                  rows={rows}
+                />
+              );
+            })
+          }
+        </QueryState>
       </div>
 
       <Suspense fallback={null}>

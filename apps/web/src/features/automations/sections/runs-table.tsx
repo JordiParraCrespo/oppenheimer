@@ -14,7 +14,7 @@ import {
   useAutomations,
   useProjects,
 } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
+import { QueryState, useLocale } from '@oppenheimer/frontend-web';
 import { RUN_WINDOWS } from '@oppenheimer/shared/automations';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -132,46 +132,51 @@ export function RunsTable({ automationId }: { automationId?: string }) {
         ]}
       />
 
-      {runs.isError && !page ? (
-        <ErrorAlert
-          error={runs.error}
-          fallback={t('automations.runs.loadFailed')}
-          className="mx-1.5 mb-1.5"
-        />
-      ) : runs.isPending ? (
-        <div className="flex flex-col gap-1 px-1.5">
-          <Skeleton className="h-11 w-full" />
-          <Skeleton className="h-11 w-full" />
-          <Skeleton className="h-11 w-full" />
-        </div>
-      ) : page?.items.length ? (
-        page.items.map((run) => (
-          <RunRow
-            key={run.id}
-            state={runState(run.status)}
-            title={runTitle(run, t)}
-            aria-label={`${runTitle(run, t)} · ${t(`automations.runStatus.${run.status}`)}`}
-            routine={run.automationDeleted ? t('automations.runs.deleted') : run.automationName}
-            date={monthDay(run.createdAt, locale)}
-            time={clock(run.createdAt)}
-            disabled={!run.sessionId}
-            onClick={() => {
-              if (run.sessionId) {
-                navigate({
-                  to: '/automations/$automationId/sessions/$sessionId',
-                  params: { automationId: run.automationId, sessionId: run.sessionId },
-                });
-              }
-            }}
-          />
-        ))
-      ) : (
-        <RunsListEmpty>
-          {counts?.all || filters.dirty
-            ? t('automations.runs.noMatch')
-            : t('automations.page.runsEmpty')}
-        </RunsListEmpty>
-      )}
+      {/* A refetch that fails keeps the page already drawn; only a first
+          read that failed says so. */}
+      <QueryState
+        query={{ isPending: runs.isPending, error: page ? null : runs.error, data: page }}
+        pending={
+          <div className="flex flex-col gap-1 px-1.5">
+            <Skeleton className="h-11 w-full" />
+            <Skeleton className="h-11 w-full" />
+            <Skeleton className="h-11 w-full" />
+          </div>
+        }
+        errorFallback={t('automations.runs.loadFailed')}
+        errorClassName="mx-1.5 mb-1.5"
+        isEmpty={(data) => data.items.length === 0}
+        empty={
+          <RunsListEmpty>
+            {counts?.all || filters.dirty
+              ? t('automations.runs.noMatch')
+              : t('automations.page.runsEmpty')}
+          </RunsListEmpty>
+        }
+      >
+        {(data) =>
+          data.items.map((run) => (
+            <RunRow
+              key={run.id}
+              state={runState(run.status)}
+              title={runTitle(run, t)}
+              aria-label={`${runTitle(run, t)} · ${t(`automations.runStatus.${run.status}`)}`}
+              routine={run.automationDeleted ? t('automations.runs.deleted') : run.automationName}
+              date={monthDay(run.createdAt, locale)}
+              time={clock(run.createdAt)}
+              disabled={!run.sessionId}
+              onClick={() => {
+                if (run.sessionId) {
+                  navigate({
+                    to: '/automations/$automationId/sessions/$sessionId',
+                    params: { automationId: run.automationId, sessionId: run.sessionId },
+                  });
+                }
+              }}
+            />
+          ))
+        }
+      </QueryState>
 
       {page?.total ? (
         <RunsListFoot

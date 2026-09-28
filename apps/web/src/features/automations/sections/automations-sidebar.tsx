@@ -17,7 +17,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Plus, Zap } from '@oppenheimer/design-system-web/icons';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, useConsoleDialog } from '@oppenheimer/frontend-web';
+import { QueryState, useConsoleDialog } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -108,126 +108,136 @@ export function AutomationsSidebar() {
           />
         </div>
 
-        {projects.isError || automations.isError ? (
-          // A failed read is not "no projects": say it failed.
-          <ErrorAlert
-            error={projects.error ?? automations.error}
-            fallback={t('automations.sidebar.loadFailed')}
-            className="mx-3 mt-2"
-          />
-        ) : projects.isPending || automations.isPending ? (
-          <div className="flex flex-col gap-2 px-3 pt-2">
-            <Skeleton className="h-7.5 w-full" />
-            <Skeleton className="h-7.5 w-full" />
-          </div>
-        ) : projects.data?.length ? (
-          shown.map(({ project, items }) => {
-            const open = Boolean(term) || !closed.includes(project.id);
-            return (
-              <SidebarProjectGroup key={project.id}>
-                <SidebarProjectHeader
-                  name={project.name}
-                  count={items.length}
-                  open={open}
-                  onOpenChange={(next) =>
-                    setClosed((current) =>
-                      next ? current.filter((id) => id !== project.id) : [...current, project.id],
-                    )
-                  }
-                  actions={
-                    <IconButton
-                      size="xs"
-                      variant="quiet"
-                      aria-label={t('automations.sidebar.newHere', { name: project.name })}
-                      onClick={() => dialogs.open({ kind: 'automation', projectId: project.id })}
-                    >
-                      <Plus />
-                    </IconButton>
-                  }
-                />
-                {open && items.length ? (
-                  <SessionList>
-                    {items.map((automation) => {
-                      const selected = automation.id === selectedId;
-                      return (
-                        <Fragment key={automation.id}>
-                          <RoutineItem
-                            name={automation.name}
-                            icon={<TriggerGlyph scheduled={automation.isScheduled} />}
-                            meta={sidebarMeta(automation, now, t)}
-                            running={automation.isRunning}
-                            paused={automation.isPaused}
-                            active={selected}
-                            render={
-                              <Link
-                                to="/automations/$automationId"
-                                params={{ automationId: automation.id }}
-                              />
-                            }
-                          />
-                          {selected ? (
-                            <RoutineRunList>
-                              {automation.lastRuns.length ? (
-                                automation.lastRuns.map((run) => (
-                                  <RoutineRun
-                                    key={run.id}
-                                    title={run.title}
-                                    ago={age(now - run.createdAt.getTime(), t)}
-                                    state={runState(run.status)}
-                                    disabled={!run.sessionId}
-                                    active={
-                                      Boolean(run.sessionId) && run.sessionId === openSessionId
-                                    }
-                                    render={
-                                      run.sessionId ? (
-                                        <Link
-                                          to="/automations/$automationId/sessions/$sessionId"
-                                          params={{
-                                            automationId: automation.id,
-                                            sessionId: run.sessionId,
-                                          }}
-                                        />
-                                      ) : undefined
-                                    }
-                                  />
-                                ))
-                              ) : (
-                                <RoutineRunsEmpty>
-                                  {t('automations.sidebar.noRuns')}
-                                </RoutineRunsEmpty>
-                              )}
-                            </RoutineRunList>
-                          ) : null}
-                        </Fragment>
-                      );
-                    })}
-                  </SessionList>
-                ) : null}
-                {open && !items.length && !term ? (
-                  <SidebarEmptyRow>
-                    {t('automations.sidebar.emptyProject')}{' '}
-                    <button
-                      type="button"
-                      onClick={() => dialogs.open({ kind: 'automation', projectId: project.id })}
-                    >
-                      {t('automations.sidebar.createOne')}
-                    </button>
-                  </SidebarEmptyRow>
-                ) : null}
-              </SidebarProjectGroup>
-            );
-          })
-        ) : (
-          <div className="px-3 pt-2">
-            <EmptyState compact>
-              <EmptyState.Header>
-                <EmptyState.Description>
-                  {t('automations.sidebar.noProjects')}
-                </EmptyState.Description>
-              </EmptyState.Header>
-            </EmptyState>
-          </div>
-        )}
+        {/* A failed read is not "no projects": say it failed. */}
+        <QueryState
+          query={{
+            isPending: projects.isPending || automations.isPending,
+            error: projects.error ?? automations.error,
+            data:
+              projects.data && automations.data
+                ? { count: projects.data.length, shown }
+                : undefined,
+          }}
+          pending={
+            <div className="flex flex-col gap-2 px-3 pt-2">
+              <Skeleton className="h-7.5 w-full" />
+              <Skeleton className="h-7.5 w-full" />
+            </div>
+          }
+          errorFallback={t('automations.sidebar.loadFailed')}
+          errorClassName="mx-3 mt-2"
+          isEmpty={(ready) => ready.count === 0}
+          empty={
+            <div className="px-3 pt-2">
+              <EmptyState compact>
+                <EmptyState.Header>
+                  <EmptyState.Description>
+                    {t('automations.sidebar.noProjects')}
+                  </EmptyState.Description>
+                </EmptyState.Header>
+              </EmptyState>
+            </div>
+          }
+        >
+          {(ready) =>
+            ready.shown.map(({ project, items }) => {
+              const open = Boolean(term) || !closed.includes(project.id);
+              return (
+                <SidebarProjectGroup key={project.id}>
+                  <SidebarProjectHeader
+                    name={project.name}
+                    count={items.length}
+                    open={open}
+                    onOpenChange={(next) =>
+                      setClosed((current) =>
+                        next ? current.filter((id) => id !== project.id) : [...current, project.id],
+                      )
+                    }
+                    actions={
+                      <IconButton
+                        size="xs"
+                        variant="quiet"
+                        aria-label={t('automations.sidebar.newHere', { name: project.name })}
+                        onClick={() => dialogs.open({ kind: 'automation', projectId: project.id })}
+                      >
+                        <Plus />
+                      </IconButton>
+                    }
+                  />
+                  {open && items.length ? (
+                    <SessionList>
+                      {items.map((automation) => {
+                        const selected = automation.id === selectedId;
+                        return (
+                          <Fragment key={automation.id}>
+                            <RoutineItem
+                              name={automation.name}
+                              icon={<TriggerGlyph scheduled={automation.isScheduled} />}
+                              meta={sidebarMeta(automation, now, t)}
+                              running={automation.isRunning}
+                              paused={automation.isPaused}
+                              active={selected}
+                              render={
+                                <Link
+                                  to="/automations/$automationId"
+                                  params={{ automationId: automation.id }}
+                                />
+                              }
+                            />
+                            {selected ? (
+                              <RoutineRunList>
+                                {automation.lastRuns.length ? (
+                                  automation.lastRuns.map((run) => (
+                                    <RoutineRun
+                                      key={run.id}
+                                      title={run.title}
+                                      ago={age(now - run.createdAt.getTime(), t)}
+                                      state={runState(run.status)}
+                                      disabled={!run.sessionId}
+                                      active={
+                                        Boolean(run.sessionId) && run.sessionId === openSessionId
+                                      }
+                                      render={
+                                        run.sessionId ? (
+                                          <Link
+                                            to="/automations/$automationId/sessions/$sessionId"
+                                            params={{
+                                              automationId: automation.id,
+                                              sessionId: run.sessionId,
+                                            }}
+                                          />
+                                        ) : undefined
+                                      }
+                                    />
+                                  ))
+                                ) : (
+                                  <RoutineRunsEmpty>
+                                    {t('automations.sidebar.noRuns')}
+                                  </RoutineRunsEmpty>
+                                )}
+                              </RoutineRunList>
+                            ) : null}
+                          </Fragment>
+                        );
+                      })}
+                    </SessionList>
+                  ) : null}
+                  {open && !items.length && !term ? (
+                    <SidebarEmptyRow>
+                      {t('automations.sidebar.emptyProject')}{' '}
+                      <button
+                        type="button"
+                        onClick={() => dialogs.open({ kind: 'automation', projectId: project.id })}
+                      >
+                        {t('automations.sidebar.createOne')}
+                      </button>
+                    </SidebarEmptyRow>
+                  ) : null}
+                </SidebarProjectGroup>
+              );
+            })
+          }
+        </QueryState>
       </div>
     </div>
   );
