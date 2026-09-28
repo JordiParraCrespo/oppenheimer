@@ -41,6 +41,7 @@ re-diagnose a check's failure by hand: quote its output.
 | `M-compiler` | `pnpm check:compiler` (lists what the React Compiler leaves uncompiled; report a file that is new to the list, and judge each one under `R10`) |
 | `M-render` | `pnpm --filter @oppenheimer/web test` and `pnpm --filter @oppenheimer/frontend-web test` (the `*-render.spec.tsx` budgets run in these) |
 | `M-bundle` | `pnpm --filter @oppenheimer/web build && pnpm check:bundle` (`full` and `routine` only) |
+| `M-evals` | `node scripts/evals/frontend-audit/run.mjs --validate` (`full` only, the routine's Monday run included): a fixture that no longer typechecks against the current code is a finding, since it means the eval has stopped testing this skill |
 
 If `node_modules` is missing, run `pnpm install --frozen-lockfile` first. A
 check that cannot run is a finding too (`M-<id>` with `"severity": "info"` and
