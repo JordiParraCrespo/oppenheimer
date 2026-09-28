@@ -2,6 +2,7 @@ import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { ExternalEventSourceRegistry } from '../../application/external-event-source.registry';
 import type { InboundEventRepositoryPort } from '../../database/inbound-event.repository.port';
+import { isBeyondReplayWindow } from '../../domain/delivery-retention.policy';
 import { INBOUND_EVENT_REPOSITORY } from '../../inbound-events.di-tokens';
 import { ProcessInboundDeliveryCommand } from './process-inbound-delivery.command';
 
@@ -53,7 +54,17 @@ export class ProcessInboundDeliveryCommandHandler
       });
       return 0;
     }
-    const tenants = events.length > 0 ? await source.resolveTenants(delivery) : [];
-    return this.store.recordProcessed(delivery, tenants, events);
+    // A body replayed after its delivery row was purged gets past the digest;
+    // an event whose own time is older than that window is dropped here.
+    const fresh = events.filter((event) => !isBeyondReplayWindow(event, delivery.receivedAt));
+    if (fresh.length < events.length) {
+      this.logger.warn({
+        message: 'Dropped events older than the replay window',
+        id: delivery.id,
+        dropped: events.length - fresh.length,
+      });
+    }
+    const tenants = fresh.length > 0 ? await source.resolveTenants(delivery) : [];
+    return this.store.recordProcessed(delivery, tenants, fresh);
   }
 }

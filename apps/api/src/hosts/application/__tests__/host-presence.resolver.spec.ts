@@ -1,11 +1,12 @@
 import type { HostFactsDto } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
+import type { CredentialOwnerPort } from '../../../auth/application/credential-owner.port';
 import type { HostRepositoryPort } from '../../database/host.repository.port';
 import type { HostMetadataRepositoryPort } from '../../database/host-metadata.repository.port';
 import type { HostEntity } from '../../domain/host.entity';
 import type { IpGeolocationPort } from '../../infrastructure/ip-geolocation.port';
-import { HostPresenceResolver } from '../host-presence.resolver';
+import { HostPresenceResolver, OWNER_RECHECK_MS } from '../host-presence.resolver';
 
 const facts = {
   platform: 'ubuntu',
@@ -40,11 +41,18 @@ function setup(host: Partial<HostEntity> | null) {
       asnOrg: null,
     }),
   };
+  const owners = { findActiveOwner: vi.fn().mockResolvedValue({ id: 'jordi' }) };
   return {
     hosts,
     metadata,
     geolocation,
-    resolver: new HostPresenceResolver(hosts, metadata, geolocation),
+    owners,
+    resolver: new HostPresenceResolver(
+      hosts,
+      metadata,
+      geolocation,
+      owners as unknown as CredentialOwnerPort,
+    ),
   };
 }
 
@@ -59,7 +67,7 @@ describe('HostPresenceResolver', () => {
         { facts, channel: 'stable', loadAverage: 1.5, roundTripMillis: 41 },
         at,
       ),
-    ).resolves.toBe(true);
+    ).resolves.toBe('recorded');
 
     expect(metadata.recordVitalsIfPaired).toHaveBeenCalledWith(
       'host-1',
@@ -73,23 +81,38 @@ describe('HostPresenceResolver', () => {
     );
   });
 
-  it('asks the one statement whether the host is paired, never the host row', async () => {
-    const { hosts, metadata, resolver } = setup({ isUnpaired: false });
-    await resolver.observe('host-1', { facts });
-    expect(metadata.recordVitalsIfPaired).toHaveBeenCalledTimes(1);
-    expect(hosts.findOneByIdForMachine).not.toHaveBeenCalled();
+  it('asks the one statement whether the host is paired, and the host row only for its owner, once', async () => {
+    const { hosts, metadata, owners, resolver } = setup({
+      isUnpaired: false,
+      ownerUserId: 'jordi',
+    });
+    const at = new Date('2026-09-26T10:00:00Z');
+    await resolver.observe('host-1', { facts }, at);
+    await resolver.observe('host-1', { facts }, new Date(at.getTime() + 15_000));
+    await resolver.observe('host-1', { facts }, new Date(at.getTime() + 30_000));
+    expect(metadata.recordVitalsIfPaired).toHaveBeenCalledTimes(3);
+    // A host never changes owner, and the owner's standing is trusted for a
+    // minute: the common beat stays one statement.
+    expect(hosts.findOneByIdForMachine).toHaveBeenCalledTimes(1);
+    expect(owners.findActiveOwner).toHaveBeenCalledTimes(1);
   });
 
   it('ignores an unpaired host rather than resurrecting it', async () => {
-    const { hosts, metadata, resolver } = setup({ isUnpaired: true });
-    await expect(resolver.observe('host-1', { facts })).resolves.toBe(false);
+    const { metadata, resolver } = setup({ isUnpaired: true });
+    await expect(resolver.observe('host-1', { facts })).resolves.toBe('unpaired');
     expect(metadata.recordInventory).not.toHaveBeenCalled();
-    expect(hosts.findOneByIdForMachine).not.toHaveBeenCalled();
+  });
+
+  it('answers unpaired from the statement once the owner is known', async () => {
+    const { metadata, resolver } = setup({ isUnpaired: false, ownerUserId: 'jordi' });
+    await resolver.observe('host-1', { facts });
+    vi.mocked(metadata.recordVitalsIfPaired).mockResolvedValue(false);
+    await expect(resolver.observe('host-1', { facts })).resolves.toBe('unpaired');
   });
 
   it('ignores a host it does not know', async () => {
     const { metadata, resolver } = setup(null);
-    await expect(resolver.observe('host-1', { facts })).resolves.toBe(false);
+    await expect(resolver.observe('host-1', { facts })).resolves.toBe('unpaired');
     expect(metadata.recordInventory).not.toHaveBeenCalled();
   });
 
@@ -117,6 +140,39 @@ describe('HostPresenceResolver', () => {
     await resolver.observe('host-1', { facts });
     await resolver.observe('host-1', { facts, connectedAt: new Date() });
     expect(metadata.recordInventory).toHaveBeenCalledTimes(2);
+  });
+
+  it('refuses, without recording, a host whose owner may not act', async () => {
+    // Banned or deactivated since the link opened: the caller closes the link,
+    // and not as unpaired, because the ban can be lifted.
+    const { metadata, owners, resolver } = setup({ isUnpaired: false, ownerUserId: 'jordi' });
+    owners.findActiveOwner.mockResolvedValue(null);
+
+    await expect(resolver.observe('host-1', { facts })).resolves.toBe('owner_refused');
+    expect(owners.findActiveOwner).toHaveBeenCalledWith('jordi');
+    expect(metadata.recordVitalsIfPaired).not.toHaveBeenCalled();
+  });
+
+  it('notices a ban on an open link within a minute of heartbeats, and on any hello', async () => {
+    const { owners, resolver } = setup({ isUnpaired: false, ownerUserId: 'jordi' });
+    const at = new Date('2026-09-26T10:00:00Z');
+    const later = (ms: number) => new Date(at.getTime() + ms);
+    await resolver.observe('host-1', { facts }, at);
+    owners.findActiveOwner.mockResolvedValue(null);
+
+    // Trusted for a minute…
+    await expect(resolver.observe('host-1', { facts }, later(30_000))).resolves.toBe('recorded');
+    // …then asked again.
+    await expect(resolver.observe('host-1', { facts }, later(OWNER_RECHECK_MS))).resolves.toBe(
+      'owner_refused',
+    );
+    // A hello always asks.
+    owners.findActiveOwner.mockResolvedValue({ id: 'jordi' });
+    await resolver.observe('host-1', { facts }, later(OWNER_RECHECK_MS + 1_000));
+    owners.findActiveOwner.mockResolvedValue(null);
+    await expect(
+      resolver.observe('host-1', { facts, connectedAt: later(OWNER_RECHECK_MS + 2_000) }),
+    ).resolves.toBe('owner_refused');
   });
 
   it('records the address with where the database places it', async () => {

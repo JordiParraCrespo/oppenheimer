@@ -3,6 +3,7 @@ import type { ConfigService } from '@nestjs/config';
 import type { CacheService } from '@oppenheimer/backend-cache';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CredentialOwnerPort } from '../../../auth/application/credential-owner.port';
 import type { HostRepositoryPort } from '../../database/host.repository.port';
 import { HostEntity } from '../../domain/host.entity';
 import { keyFingerprint } from '../../infrastructure/host-assertion.util';
@@ -73,6 +74,7 @@ describe('HostAssertionResolver', () => {
   let hosts: Pick<HostRepositoryPort, 'findOneByIdForMachine'>;
   let cache: Pick<CacheService, 'setIfAbsent'>;
   let resolver: HostAssertionResolver;
+  let owners: { findActiveOwner: ReturnType<typeof vi.fn> };
   let current: ReturnType<typeof keypair>;
 
   beforeEach(() => {
@@ -94,10 +96,12 @@ describe('HostAssertionResolver', () => {
       get: (key: string) => (key === 'hosts.controlPlaneUrl' ? CONTROL_PLANE : undefined),
     } as unknown as ConfigService;
 
+    owners = { findActiveOwner: vi.fn().mockResolvedValue({ id: 'jordi' }) };
     resolver = new HostAssertionResolver(
       hosts as HostRepositoryPort,
       cache as CacheService,
       configService,
+      owners as unknown as CredentialOwnerPort,
     );
   });
 
@@ -209,6 +213,18 @@ describe('HostAssertionResolver', () => {
         code: 'HOSTS_005',
       },
     );
+  });
+
+  it('refuses the host of an owner who may not act, with the one opaque answer', async () => {
+    // A banned or deactivated owner: `CREDENTIAL_OWNER` answers null. The
+    // machine they paired is refused like any other bad assertion, so the link
+    // handshake answers 401 and the runner keeps dialling until it is lifted.
+    owners.findActiveOwner.mockResolvedValue(null);
+
+    await expect(verify(assertion(current.privateKey, bootClaims('host-1')))).rejects.toMatchObject(
+      { code: 'HOSTS_005' },
+    );
+    expect(owners.findActiveOwner).toHaveBeenCalledWith('jordi');
   });
 
   it('refuses something that is not an assertion at all', async () => {

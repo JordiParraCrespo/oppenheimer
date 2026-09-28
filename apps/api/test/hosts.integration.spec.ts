@@ -695,13 +695,13 @@ describe('Hosts & pairing (integration)', () => {
           facts: { ...FACTS, diskFreeBytes: 100 },
           loadAverage: 1.5,
         }),
-      ).toBe(true);
+      ).toBe('recorded');
       expect(
         await presence.observe(hostId, {
           facts: { ...FACTS, diskFreeBytes: 99 },
           roundTripMillis: 12,
         }),
-      ).toBe(true);
+      ).toBe('recorded');
 
       expect(
         await rows(`SELECT 1 FROM "host_presence" WHERE "hostId" = $1`, [hostId]),
@@ -723,6 +723,21 @@ describe('Hosts & pairing (integration)', () => {
       ]);
       expect(after?.changedAt).toEqual(before?.changedAt);
       expect(await kinds()).toEqual(['paired']);
+    });
+
+    it('records nothing for a host whose owner is banned, and again once they are not', async () => {
+      // A hello always asks after the owner (a heartbeat trusts the last answer
+      // for a minute), so the ban is seen at once here.
+      const hello = () => presence.observe(hostId, { facts: FACTS, connectedAt: new Date() });
+      await dataSource.query(`UPDATE "user" SET "banned" = true WHERE "id" = $1`, [user.id]);
+      try {
+        // The link that reported this is closed, and not as unpaired: the ban
+        // can be lifted and the same host let back in.
+        expect(await hello()).toBe('owner_refused');
+      } finally {
+        await dataSource.query(`UPDATE "user" SET "banned" = false WHERE "id" = $1`, [user.id]);
+      }
+      expect(await hello()).toBe('recorded');
     });
 
     it('logs a changed fact with its diff, and a newly known one as nothing', async () => {
@@ -842,7 +857,7 @@ describe('Hosts & pairing (integration)', () => {
         expect(await metadata.recordVitalsIfPaired(hostId, { loadAverage: 9 }, new Date())).toBe(
           false,
         );
-        expect(await presence.observe(hostId, { facts: FACTS })).toBe(false);
+        expect(await presence.observe(hostId, { facts: FACTS })).toBe('unpaired');
         expect(await presenceOf()).toEqual([{ loadAverage: 0.5, roundTripMillis: 7 }]);
       } finally {
         await dataSource.query(`UPDATE "host" SET "unpairedAt" = NULL WHERE "id" = $1`, [hostId]);
@@ -854,7 +869,9 @@ describe('Hosts & pairing (integration)', () => {
       await presence.observe(hostId, { facts: FACTS });
       const spy = vi.spyOn(PostgresQueryRunner.prototype, 'query');
       try {
-        expect(await presence.observe(hostId, { facts: FACTS, loadAverage: 0.25 })).toBe(true);
+        expect(await presence.observe(hostId, { facts: FACTS, loadAverage: 0.25 })).toBe(
+          'recorded',
+        );
         // Only this host's statements: the app's own background work runs beside it.
         const mine = spy.mock.calls.filter(([, parameters]) => (parameters ?? []).includes(hostId));
         expect(mine).toHaveLength(1);

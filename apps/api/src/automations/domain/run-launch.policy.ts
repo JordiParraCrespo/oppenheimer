@@ -111,6 +111,13 @@ const PREAMBLE =
  * reference, title and link. When not even the reference and link fit beside
  * the instructions, there is no prompt — `null` — and the dispatcher refuses
  * the run rather than starting one that does not know why it exists.
+ *
+ * The envelope's content can never close it. The attributes are escaped as
+ * XML attribute values, and the JSON carries `<`, `>` and `&` as `\u` escapes,
+ * so a comment body holding `</untrusted_external_data>` reaches the agent as
+ * data that still parses to the same value, never as a closing tag followed by
+ * text that reads as outside the block. Escaping only lengthens the string and
+ * fitting measures the final string, so what fits still fits.
  */
 export function composeRunPrompt(
   instructions: string,
@@ -119,7 +126,7 @@ export function composeRunPrompt(
 ): string | null {
   if (!event) return instructions;
   const envelope = (context: Record<string, unknown>) =>
-    `${instructions}\n\n${PREAMBLE}\n<untrusted_external_data source="${event.source}" event="${event.type}" repository="${event.subjectName}">\n${JSON.stringify(context, null, 1)}\n</untrusted_external_data>`;
+    `${instructions}\n\n${PREAMBLE}\n<untrusted_external_data source="${escapeAttribute(event.source)}" event="${escapeAttribute(event.type)}" repository="${escapeAttribute(event.subjectName)}">\n${jsonForEnvelope(context)}\n</untrusted_external_data>`;
   const fits = (context: Record<string, unknown>) => {
     const prompt = envelope(context);
     return promptByteLength(prompt) <= maxBytes ? prompt : null;
@@ -140,6 +147,33 @@ export function composeRunPrompt(
     fits(pick(event.context, ['ref', 'url', 'title'])) ??
     fits(pick(event.context, ['ref', 'url']))
   );
+}
+
+/**
+ * An XML attribute value: the characters that could end the value or the tag
+ * become entities, and control characters (a newline among them) are dropped.
+ */
+function escapeAttribute(value: string): string {
+  return (
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: dropping them is the point.
+      .replace(/[\u0000-\u001f]/g, '')
+  );
+}
+
+/**
+ * The context as JSON that cannot contain a tag: still valid JSON that parses
+ * to the same value, with `<`, `>` and `&` written as `\u` escapes.
+ */
+function jsonForEnvelope(context: Record<string, unknown>): string {
+  return JSON.stringify(context, null, 1)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
 }
 
 /** The longest prefix of `body` whose prompt fits, by bisection on characters. */

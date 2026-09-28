@@ -28,6 +28,10 @@ export interface HostPrincipalIdentity {
  * separate question, and `HostAccessPort` is where it is asked — which is why an
  * unpaired host can still authenticate: its own uninstall call must be able to
  * say so twice and get the same answer.
+ *
+ * The one standing it does check is the owner's: a host acts for the person
+ * who paired it, so a banned or deactivated owner (`isAccessAllowed`) takes
+ * its credential down with every other one they hold, uninstall included.
  */
 export interface HostAssertionPort {
   /**

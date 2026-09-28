@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
+import { CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
 import type { HostRepositoryPort } from '../database/host.repository.port';
 import type { HostMetadataRepositoryPort } from '../database/host-metadata.repository.port';
 import { HostNetworkChangedDomainEvent } from '../domain/events/host-network-changed.domain-event';
@@ -7,7 +9,7 @@ import type { HostInventory, HostNetwork } from '../domain/host-metadata.types';
 import { networkMoveIsNotable } from '../domain/host-network.policy';
 import { HOST_METADATA_REPOSITORY, HOST_REPOSITORY, IP_GEOLOCATION } from '../hosts.di-tokens';
 import type { IpGeolocationPort } from '../infrastructure/ip-geolocation.port';
-import type { HostPresencePort, PresenceReport } from './host-presence.port';
+import type { HostPresencePort, PresenceOutcome, PresenceReport } from './host-presence.port';
 
 /**
  * How many hosts' last recorded inventory one process remembers. A process
@@ -15,6 +17,13 @@ import type { HostPresencePort, PresenceReport } from './host-presence.port';
  * working-set size; past it the oldest entry is forgotten and costs one read.
  */
 const INVENTORY_MEMO_MAX_HOSTS = 10_000;
+
+/**
+ * How long a heartbeat trusts the last "the owner may act". A ban reaches an
+ * open link within this, plus a beat; the attach socket re-checks on the same
+ * minute.
+ */
+export const OWNER_RECHECK_MS = 60_000;
 
 /** What this process last recorded as a host's inventory: the two things `unchanged` compares. */
 interface RecordedInventory {
@@ -34,6 +43,9 @@ export class HostPresenceResolver implements HostPresencePort {
    */
   private readonly recordedInventory = new Map<string, RecordedInventory>();
 
+  /** Each host's owner, and when this process last found they may act. */
+  private readonly ownerChecks = new Map<string, { ownerUserId: string; checkedAt: number }>();
+
   constructor(
     @Inject(HOST_REPOSITORY)
     private readonly hosts: HostRepositoryPort,
@@ -41,9 +53,21 @@ export class HostPresenceResolver implements HostPresencePort {
     private readonly metadata: HostMetadataRepositoryPort,
     @Inject(IP_GEOLOCATION)
     private readonly geolocation: IpGeolocationPort,
+    @Inject(CREDENTIAL_OWNER)
+    private readonly owners: CredentialOwnerPort,
   ) {}
 
-  async observe(hostId: string, report: PresenceReport, at: Date = new Date()): Promise<boolean> {
+  async observe(
+    hostId: string,
+    report: PresenceReport,
+    at: Date = new Date(),
+  ): Promise<PresenceOutcome> {
+    const hello = report.connectedAt !== undefined;
+    const standing = await this.ownerStanding(hostId, at, hello);
+    if (standing !== 'recorded') {
+      this.recordedInventory.delete(hostId);
+      return standing;
+    }
     // Presence first: it is the write every beat owes, and the one `online`
     // reads. The host row itself is not touched — a heartbeat is not a change
     // to the host (`product/versions/mvp/15-host-metadata.md`). Unscoped, by
@@ -63,13 +87,13 @@ export class HostPresenceResolver implements HostPresencePort {
     );
     if (!paired) {
       this.recordedInventory.delete(hostId);
-      return false;
+      this.ownerChecks.delete(hostId);
+      return 'unpaired';
     }
 
     const inventory = inventoryFromFacts(report.facts, report.channel ?? null);
     const recorded = this.recordedInventory.get(hostId);
-    const hello = report.connectedAt !== undefined;
-    if (!hello && recorded && sameInventory(recorded, inventory)) return true;
+    if (!hello && recorded && sameInventory(recorded, inventory)) return 'recorded';
 
     await this.metadata.recordInventory(hostId, inventory, at);
     this.rememberInventory(hostId, {
@@ -77,7 +101,40 @@ export class HostPresenceResolver implements HostPresencePort {
       // A beat that reports no channel keeps the one on file, as the write does.
       channel: inventory.channel ?? recorded?.channel ?? null,
     });
-    return true;
+    return 'recorded';
+  }
+
+  /**
+   * Whether the host's owner may still act (`isAccessAllowed`, through the
+   * port every credential kind asks). The handshake refuses a banned or
+   * deactivated owner's host; this is what closes a link that was already open
+   * when the ban landed, on whichever replica holds it. Asked on every hello
+   * and at most once per `OWNER_RECHECK_MS` on heartbeats, so the common beat
+   * stays the one statement it is; the owner id is remembered, because a host
+   * never changes owner.
+   */
+  private async ownerStanding(hostId: string, at: Date, hello: boolean): Promise<PresenceOutcome> {
+    const memo = this.ownerChecks.get(hostId);
+    if (!hello && memo && at.getTime() - memo.checkedAt < OWNER_RECHECK_MS) return 'recorded';
+    let ownerUserId = memo?.ownerUserId;
+    if (!ownerUserId) {
+      // Unscoped, by design: the machine proved who it is with a signature on
+      // the link, and there is no person on a heartbeat to scope by.
+      const found = await this.hosts.findOneByIdForMachine(hostId);
+      if (found.isNone() || found.unwrap().isUnpaired) return 'unpaired';
+      ownerUserId = found.unwrap().ownerUserId;
+    }
+    if (!(await this.owners.findActiveOwner(ownerUserId))) {
+      this.ownerChecks.delete(hostId);
+      return 'owner_refused';
+    }
+    this.ownerChecks.delete(hostId);
+    this.ownerChecks.set(hostId, { ownerUserId, checkedAt: at.getTime() });
+    if (this.ownerChecks.size > INVENTORY_MEMO_MAX_HOSTS) {
+      const oldest = this.ownerChecks.keys().next().value;
+      if (oldest !== undefined) this.ownerChecks.delete(oldest);
+    }
+    return 'recorded';
   }
 
   async connectedFrom(hostId: string, address: string, at: Date = new Date()): Promise<void> {

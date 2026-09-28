@@ -6,10 +6,9 @@ import type { Job, Queue } from 'bullmq';
 import { ProcessInboundDeliveryCommand } from '../commands/process-inbound-delivery/process-inbound-delivery.command';
 import { PROCESS_DELIVERY_JOB } from '../database/inbound-event.repository';
 import type { InboundEventRepositoryPort } from '../database/inbound-event.repository.port';
+import { DELIVERY_RETENTION_DAYS } from '../domain/delivery-retention.policy';
 import { INBOUND_EVENT_REPOSITORY } from '../inbound-events.di-tokens';
 
-/** Raw bodies: the replay window. */
-export const DELIVERY_RETENTION_DAYS = 7;
 /** Normalized events: the trigger preview's week, with room to debug a recent run. */
 export const EVENT_RETENTION_DAYS = 30;
 const RETENTION_BATCH = 5_000;

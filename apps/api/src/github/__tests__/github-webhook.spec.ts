@@ -71,6 +71,7 @@ describe('installation event parsing', () => {
       type: 'installation',
       action: 'suspend',
       githubInstallationId: 42,
+      occurredAt: null,
     });
     expect(parseInstallationEvent('installation', payload('unsuspend'))).toMatchObject({
       action: 'unsuspend',
@@ -104,5 +105,39 @@ describe('installation event parsing', () => {
       type: 'ignored',
     });
     expect(parseInstallationEvent('installation', 'not json at all')).toEqual({ type: 'ignored' });
+  });
+
+  it("reads GitHub's own time of the change, not ours", () => {
+    const at = (action: string, installation: Record<string, unknown>) =>
+      parseInstallationEvent('installation', JSON.stringify({ action, installation }));
+
+    expect(at('unsuspend', { id: 42, updated_at: '2026-09-01T10:00:00Z' })).toMatchObject({
+      occurredAt: new Date('2026-09-01T10:00:00Z'),
+    });
+    // A suspend names its own moment; `updated_at` is the fallback.
+    expect(
+      at('suspend', {
+        id: 42,
+        suspended_at: '2026-09-01T09:00:00Z',
+        updated_at: '2026-09-01T10:00:00Z',
+      }),
+    ).toMatchObject({ occurredAt: new Date('2026-09-01T09:00:00Z') });
+    expect(at('suspend', { id: 42, updated_at: '2026-09-01T10:00:00Z' })).toMatchObject({
+      occurredAt: new Date('2026-09-01T10:00:00Z'),
+    });
+    expect(at('deleted', { id: 42, updated_at: 1_788_000_000 })).toMatchObject({
+      occurredAt: new Date(1_788_000_000_000),
+    });
+  });
+
+  it('has no time for a payload whose timestamp is missing or unreadable', () => {
+    const at = (updated: unknown) =>
+      parseInstallationEvent(
+        'installation',
+        JSON.stringify({ action: 'unsuspend', installation: { id: 42, updated_at: updated } }),
+      );
+    expect(at(undefined)).toMatchObject({ occurredAt: null });
+    expect(at('yesterday-ish')).toMatchObject({ occurredAt: null });
+    expect(at({ nested: true })).toMatchObject({ occurredAt: null });
   });
 });

@@ -6,6 +6,10 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, Unique
 @Unique('UQ_inbound_delivery_source_delivery', ['source', 'deliveryId'])
 @Index('IDX_inbound_delivery_received_brin', { synchronize: false })
 @Index('IDX_inbound_delivery_unprocessed', ['receivedAt'], { where: `"status" = 'received'` })
+@Index('UQ_inbound_delivery_source_payload', ['source', 'payloadDigest'], {
+  unique: true,
+  where: '"payloadDigest" IS NOT NULL',
+})
 export class InboundDeliveryOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -21,6 +25,14 @@ export class InboundDeliveryOrmEntity {
 
   @Column({ type: 'jsonb' })
   payload!: Record<string, unknown>;
+
+  /**
+   * SHA-256 hex of the raw bytes the provider signed; unique per source, so a
+   * replay under a new delivery id is the delivery already stored
+   * (`1790860000000-HardenGithubWebhookIngest`). Null on rows from before it.
+   */
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  payloadDigest!: string | null;
 
   @Column({ type: 'varchar', length: 16, default: 'received' })
   status!: 'received' | 'processed' | 'failed';

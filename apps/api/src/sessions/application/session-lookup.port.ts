@@ -42,6 +42,8 @@ export interface SessionCredentialTarget {
   githubRepoId: number;
   /** `false` once the checkout was retired or the session resolved. */
   live: boolean;
+  /** Who started the session: the person a token minted for it acts for. */
+  createdByUserId: string;
 }
 
 export interface SessionLookupPort {

@@ -1,6 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
+import type { HostAccessPort } from '../../../hosts/application/host-access.port';
+import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import type { ProjectLookupPort } from '../../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../../projects/projects.di-tokens';
 import { requireActiveProject } from '../../application/require-active-project.policy';
@@ -37,6 +39,8 @@ export class RestartSessionCommandHandler
     private readonly sessions: WorkSessionRepositoryPort,
     @Inject(PROJECT_LOOKUP)
     private readonly projects: ProjectLookupPort,
+    @Inject(HOST_ACCESS)
+    private readonly hosts: HostAccessPort,
     @Inject(SESSION_DISPATCH)
     private readonly dispatch: SessionDispatchPort,
     private readonly launches: SessionLaunchSpecFactory,
@@ -56,8 +60,10 @@ export class RestartSessionCommandHandler
       });
     }
 
-    // Nothing restarts under a retired project.
+    // Nothing restarts under a retired project, or on a host the caller can no
+    // longer use (a grant revoked, the host unpaired).
     await requireActiveProject(this.projects, command.scope, session.projectId);
+    await this.hosts.assertUsable(command.scope, session.hostId);
 
     await this.sessions.appendEvents(session, [
       {

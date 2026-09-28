@@ -8643,7 +8643,7 @@
             }
           },
           "404": {
-            "description": "SESSIONS_001 — Session not found",
+            "description": "HOSTS_001 — Host not found\n\nSESSIONS_001 — Session not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8953,7 +8953,7 @@
             }
           },
           "404": {
-            "description": "SESSIONS_001 — Session not found",
+            "description": "HOSTS_001 — Host not found\n\nSESSIONS_001 — Session not found",
             "content": {
               "application/problem+json": {
                 "schema": {

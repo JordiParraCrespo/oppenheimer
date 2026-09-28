@@ -4,11 +4,14 @@ import { Logger } from '@nestjs/common';
 import { organizationSharedOptions, userAdditionalFields } from '@oppenheimer/auth';
 import { DEFAULT_OAUTH_SCOPES, PASSWORD_MIN_LENGTH, SCOPES } from '@oppenheimer/shared';
 import { betterAuth } from 'better-auth';
+import { createAuthMiddleware } from 'better-auth/api';
 import { admin, bearer, mcp, organization } from 'better-auth/plugins';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { Pool } from 'pg';
 import { databaseConfigFromEnv, poolOptions } from '../../config/database.config';
 import { CompleteSignUpCommand } from '../commands/complete-sign-up/complete-sign-up.command';
+import { RotateDelegatedSessionsCommand } from '../commands/rotate-delegated-sessions/rotate-delegated-sessions.command';
+import { standingChangeOf } from './admin-ban-hook.util';
 import { dispatchFromAuthHook } from './auth-command-bus.util';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue.util';
 import { buildInvitationUrl } from './invitation-url.util';
@@ -266,6 +269,24 @@ export const auth = betterAuth({
     // address never becomes the sign-in address, which is what
     // `requireLocalEmailVerified` above relies on.
     changeEmail: { enabled: true },
+  },
+  hooks: {
+    // A ban or unban made straight through the admin plugin
+    // (`/api/auth/admin/ban-user`) bypasses `AdminService`, which is what
+    // rotates the account's cached delegated sessions. Awaited by Better Auth,
+    // and best-effort like every dispatch from a hook.
+    after: createAuthMiddleware(async (ctx) => {
+      const userId = standingChangeOf({
+        path: ctx.path,
+        body: ctx.body,
+        returned: ctx.context.returned,
+      });
+      if (!userId) return;
+      await dispatchFromAuthHook(new RotateDelegatedSessionsCommand({ userId }), {
+        description: 'rotate the delegated sessions of an account banned or unbanned',
+        userId,
+      });
+    }),
   },
   databaseHooks: {
     user: {
