@@ -93,9 +93,9 @@ export function AutomationsSidebar() {
 
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
         {term && !shown.length ? (
-          <p className="m-0 px-3 pt-2 text-[13px] text-fg-muted">
+          <SidebarEmptyRow className="mt-2 ml-3.5">
             {t('automations.sidebar.noMatch', { query: query.trim() })}
-          </p>
+          </SidebarEmptyRow>
         ) : null}
         <div className="px-3 pt-2">
           <RoutineItem
