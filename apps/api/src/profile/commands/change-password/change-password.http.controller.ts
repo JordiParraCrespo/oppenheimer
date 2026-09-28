@@ -6,6 +6,7 @@ import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backen
 import type { Request, Response } from 'express';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
+import { UsesBetterAuthSession } from '../../../auth/decorators/uses-better-auth-session.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { ChangePasswordCommand } from './change-password.command';
 import { ChangePasswordRequest } from './change-password.request.dto';
@@ -14,6 +15,7 @@ import { ChangePasswordRequest } from './change-password.request.dto';
 @ApiBearerAuth()
 @ApiAuthProblemResponses()
 @UseGuards(ApiAuthGuard)
+@UsesBetterAuthSession()
 @Controller('profile')
 export class ChangePasswordHttpController {
   constructor(private readonly commandBus: CommandBus) {}

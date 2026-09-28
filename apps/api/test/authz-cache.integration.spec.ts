@@ -6,6 +6,8 @@ import { CacheService } from '@oppenheimer/backend-cache';
 import type Redis from 'ioredis';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
+import type { SessionCachePort } from '../src/auth/application/session-cache.port';
+import { SESSION_CACHE } from '../src/auth/auth.di-tokens';
 import { REDIS_CLIENT } from '../src/redis/redis.di-tokens';
 import { runAllMigrations } from './run-migrations';
 
@@ -134,6 +136,9 @@ describe('authorization cache (integration)', () => {
       organizationId,
       user.id,
     ]);
+    // Written behind Better Auth's back, so do what the application's own
+    // writers do: bring the cached copy of the session along.
+    await app.get<SessionCachePort>(SESSION_CACHE).refreshUser(user.id);
   }
 
   async function newOrganization(): Promise<string> {

@@ -15,4 +15,11 @@ import type { CredentialOwner } from '../domain/scope-context.types';
 export interface CredentialOwnerPort {
   /** The owner, or `null` if there is none that may still act. */
   findActiveOwner(userId: string): Promise<CredentialOwner | null>;
+
+  /**
+   * The owner, or the opaque `INVALID_CREDENTIAL` (`TOKEN_003`) — the same
+   * answer as an unknown token, so a missing, deactivated or banned owner is
+   * indistinguishable from outside. What every credential resolver asks.
+   */
+  requireActiveOwner(userId: string): Promise<CredentialOwner>;
 }

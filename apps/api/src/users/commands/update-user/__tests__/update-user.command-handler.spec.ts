@@ -31,13 +31,32 @@ function makeUser(): UserEntity {
 describe('UpdateUserCommandHandler', () => {
   let service: UpdateUserCommandHandler;
   let repo: Pick<UserRepositoryPort, 'findOneById' | 'save'>;
+  const sessionCache = { refreshUser: vi.fn().mockResolvedValue(undefined) };
 
   beforeEach(() => {
     repo = {
       findOneById: vi.fn().mockResolvedValue(Some(makeUser())),
       save: vi.fn().mockImplementation((user: UserEntity) => Promise.resolve(user)),
     };
-    service = new UpdateUserCommandHandler(repo as UserRepositoryPort);
+    service = new UpdateUserCommandHandler(repo as UserRepositoryPort, sessionCache as never);
+  });
+
+  it('refreshes the cached sessions, so a deactivation refuses the next request', async () => {
+    // Better Auth caches each session with a copy of the user; the session path
+    // reads that copy, so a write behind its back must be followed by this.
+    const order: string[] = [];
+    vi.mocked(repo.save).mockImplementation(async (entity) => {
+      order.push('save');
+      return entity as never;
+    });
+    sessionCache.refreshUser.mockImplementation(async () => {
+      order.push('refresh');
+    });
+
+    await service.execute(new UpdateUserCommand({ userId: 'user-uuid', isActive: false }));
+
+    expect(sessionCache.refreshUser).toHaveBeenCalledWith('user-uuid');
+    expect(order).toEqual(['save', 'refresh']);
   });
 
   it('applies the profile update through the aggregate and persists it', async () => {

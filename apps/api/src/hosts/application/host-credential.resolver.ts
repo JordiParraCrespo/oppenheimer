@@ -28,6 +28,13 @@ import type { HostAssertionPort } from './host-assertion.port';
 export class HostCredentialResolver implements CredentialResolverPort {
   readonly kind = 'host';
 
+  /**
+   * Every boot assertion carries a `jti` burned on first use, so a digest of
+   * one names a single request. The rate limiter buckets by the resolved
+   * `host:<id>` instead — the machine, however many assertions it mints.
+   */
+  readonly singleUse = true;
+
   constructor(
     @Inject(HOST_ASSERTION)
     private readonly assertions: HostAssertionPort,

@@ -33,8 +33,15 @@ export interface ProfileAuthPort {
    */
   revokeSession(headers: IncomingHttpHeaders, token: string): Promise<void>;
 
-  /** Revoke every session except the one this request was made with. */
-  revokeOtherSessions(headers: IncomingHttpHeaders, userId: string): Promise<void>;
+  /**
+   * Revoke every session except the one this request was made with, named by
+   * `currentSessionId` so the sweep of what the provider missed spares it.
+   */
+  revokeOtherSessions(
+    headers: IncomingHttpHeaders,
+    userId: string,
+    currentSessionId: string | undefined,
+  ): Promise<void>;
 
   /**
    * Send a link to `newEmail` that moves the caller's account there when it

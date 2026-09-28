@@ -169,11 +169,28 @@ hold across replicas. It is on in production and opt-in elsewhere
 (`AUTH_RATE_LIMIT_ENABLED`).
 
 **The tracker is keyed on the credential, not the IP.**
-`CredentialThrottlerGuard` (`src/throttling/`) is the app's `APP_GUARD`: it
-buckets by `credentialId`, falling back to the user id and only then to the
-IP. The default IP tracker is wrong for every machine caller — a relay forwards
+`CredentialThrottlerGuard` (`src/throttling/`) is the app's `APP_GUARD`. It
+derives the bucket from what the request presents, **without verifying it** —
+no database, no Better Auth — because a limiter that resolved credentials first
+would do its work before deciding whether to shed the request
+(`CredentialScopePort.rateLimitKey`):
+
+- a bearer or `x-api-key` → `cred:<sha256 prefix>`, one bucket per secret (a
+  host's single-use assertion is bucketed by the host it resolves to);
+- a Better Auth session cookie whose signature verifies → `session:<digest>`,
+  one bucket per signed-in browser rather than one per office NAT;
+- otherwise the user id (when applied after authentication), then the IP.
+
+The default IP tracker is wrong for every machine caller — a relay forwards
 many callers' traffic from one address, so an IP bucket is shared by all of
 them and the per-route number describes nothing anybody intended.
+
+A digest bucket costs nothing to open, so the brake on made-up credentials is
+the **auth-failure budget** (`AUTH_FAILURE_LIMITER`, bound in `throttling`):
+every refused credential (`TOKEN_003`) counts against its source IP, and past
+30 a minute that IP's bearer requests are refused with `RATE_001` for a minute
+before any lookup — except a credential that recently succeeded, so one broken
+client does not lock out the others behind its address.
 
 **Counters live in Redis** (`RedisThrottlerStorage`), because the in-memory
 default multiplies every limit by the replica count without saying so. It

@@ -179,6 +179,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
   };
   const owners: CredentialOwnerPort = {
     findActiveOwner: vi.fn().mockResolvedValue({ id: USER }),
+    requireActiveOwner: vi.fn().mockResolvedValue({ id: USER }),
   };
   const processor = new RelayEventsProcessor(events, presence, reconciliation);
   const credentials = new CredentialsProcessor(

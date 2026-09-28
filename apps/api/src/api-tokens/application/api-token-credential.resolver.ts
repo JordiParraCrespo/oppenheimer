@@ -1,14 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, describeError } from '@oppenheimer/backend-core';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import type { CredentialResolverPort } from '../../auth/application/credential-resolver.port';
 import { CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
 import { AuthErrors } from '../../auth/domain/auth.errors';
-import type {
-  CredentialOwner,
-  ScopeContext,
-  ScopedRequest,
-} from '../../auth/domain/scope-context.types';
+import type { ScopeContext, ScopedRequest } from '../../auth/domain/scope-context.types';
 import { API_TOKEN_REPOSITORY } from '../api-tokens.di-tokens';
 import type { ApiTokenRepositoryPort } from '../database/api-token.repository.port';
 import { ApiTokenErrors } from '../domain/api-token.errors';
@@ -58,32 +54,27 @@ export class ApiTokenCredentialResolver implements CredentialResolverPort {
     // would tell an attacker which of their guesses used to be real.
     if (rejection) throw new AppError(AuthErrors.INVALID_CREDENTIAL);
 
-    // Best-effort usage stamp — never let it fail the request.
-    void this.apiTokens
-      .touchLastUsedAt(token.id, new Date())
-      .catch((error) => this.logger.warn(`Could not record token usage: ${describe(error)}`));
+    // Best-effort usage stamp — never let it fail the request. The token is
+    // already loaded, so skipping a fresh stamp costs nothing to decide.
+    const now = new Date();
+    if (token.isLastUseStale(now)) {
+      void this.apiTokens
+        .touchLastUsedAt(token.id, now)
+        .catch((error) =>
+          this.logger.warn(`Could not record token usage: ${describeError(error)}`),
+        );
+    }
 
     return {
       kind: this.kind,
       credentialId: token.id,
       userId: token.userId,
-      owner: await this.loadOwner(token.userId),
+      owner: await this.owners.requireActiveOwner(token.userId),
       scopes: token.scopes,
       resourceScope: token.resourceScope,
       expiresAt: token.expiresAt,
       prefix: token.prefix,
     };
-  }
-
-  /**
-   * The token's owner, as they exist right now. A missing, deactivated or
-   * banned owner invalidates every credential they issued — the same opaque
-   * error as an unknown token, so the two are indistinguishable from outside.
-   */
-  private async loadOwner(userId: string): Promise<CredentialOwner> {
-    const owner = await this.owners.findActiveOwner(userId);
-    if (!owner) throw new AppError(AuthErrors.INVALID_CREDENTIAL);
-    return owner;
   }
 }
 
@@ -94,8 +85,4 @@ export class ApiTokenCredentialResolver implements CredentialResolverPort {
  */
 function sourceAddress(request: ScopedRequest): string | null {
   return request.ip ?? request.socket?.remoteAddress ?? null;
-}
-
-function describe(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

@@ -1,8 +1,10 @@
 import { Logger } from '@nestjs/common';
+import { AppError } from '@oppenheimer/backend-core';
 import { toResourceScope } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CredentialOwnerPort } from '../../../auth/application/credential-owner.port';
+import { AuthErrors } from '../../../auth/domain/auth.errors';
 import type { CredentialOwner, ScopedRequest } from '../../../auth/domain/scope-context.types';
 import type { ApiTokenRepositoryPort } from '../../database/api-token.repository.port';
 import { ApiTokenEntity } from '../../domain/api-token.entity';
@@ -32,7 +34,10 @@ describe('ApiTokenCredentialResolver', () => {
       findOneByHash: vi.fn(),
       touchLastUsedAt: vi.fn().mockResolvedValue(undefined),
     } as unknown as ApiTokenRepositoryPort;
-    owners = { findActiveOwner: vi.fn().mockResolvedValue(owner) };
+    owners = {
+      findActiveOwner: vi.fn(),
+      requireActiveOwner: vi.fn().mockResolvedValue(owner),
+    };
     resolver = new ApiTokenCredentialResolver(apiTokens, owners);
   });
 
@@ -86,6 +91,38 @@ describe('ApiTokenCredentialResolver', () => {
     expect(apiTokens.touchLastUsedAt).toHaveBeenCalledWith(token.id, expect.any(Date));
   });
 
+  describe('lastUsedAt', () => {
+    const second = 1000;
+
+    it('skips the stamp when the token was used moments ago', async () => {
+      // Regression: every request wrote the row, ten row versions a second for
+      // a token polled ten times a second.
+      const { token, secret } = stored();
+      token.markUsed(new Date(Date.now() - 10 * second));
+
+      await resolver.resolve(secret, request());
+
+      expect(apiTokens.touchLastUsedAt).not.toHaveBeenCalled();
+    });
+
+    it('stamps a token last used more than a minute ago', async () => {
+      const { token, secret } = stored();
+      token.markUsed(new Date(Date.now() - 2 * 60 * second));
+
+      await resolver.resolve(secret, request());
+
+      expect(apiTokens.touchLastUsedAt).toHaveBeenCalledWith(token.id, expect.any(Date));
+    });
+
+    it('stamps a token never used before', async () => {
+      const { token, secret } = stored();
+
+      await resolver.resolve(secret, request());
+
+      expect(apiTokens.touchLastUsedAt).toHaveBeenCalledWith(token.id, expect.any(Date));
+    });
+  });
+
   it('refuses an unknown digest with the opaque credential error', async () => {
     vi.mocked(apiTokens.findOneByHash).mockResolvedValue(None);
 
@@ -129,8 +166,11 @@ describe('ApiTokenCredentialResolver', () => {
 
   it('refuses a token whose owner can no longer act', async () => {
     const { secret } = stored();
-    vi.mocked(owners.findActiveOwner).mockResolvedValue(null);
+    vi.mocked(owners.requireActiveOwner).mockRejectedValue(
+      new AppError(AuthErrors.INVALID_CREDENTIAL),
+    );
 
     await expect(resolver.resolve(secret, request())).rejects.toMatchObject({ code: 'TOKEN_003' });
+    expect(owners.requireActiveOwner).toHaveBeenCalledWith(owner.id);
   });
 });

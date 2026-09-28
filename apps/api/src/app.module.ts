@@ -28,6 +28,7 @@ import { ApiTokensModule } from './api-tokens/api-tokens.module';
 import { AuthModule } from './auth/auth.module';
 import { ScopesGuard } from './auth/guards/scopes.guard';
 import { auth } from './auth/infrastructure/better-auth.config';
+import { bindSessionStore } from './auth/infrastructure/better-auth-secondary-storage.adapter';
 import { AuthzModule } from './authz/authz.module';
 import { AutomationsModule } from './automations/automations.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
@@ -257,6 +258,14 @@ import { UsersModule } from './users/user.module';
     { provide: APP_GUARD, useClass: ScopesGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
     { provide: APP_INTERCEPTOR, useClass: RequestContextInterceptor },
+    // Better Auth's session cache runs on the shared Redis connection. `auth`
+    // is configured at module scope, so the connection is handed to it here,
+    // once the injector has one, and taken back before `RedisModule` closes it.
+    {
+      provide: 'BETTER_AUTH_SESSION_STORE',
+      inject: [REDIS_CLIENT],
+      useFactory: (client: Redis) => bindSessionStore(client),
+    },
   ],
 })
 export class AppModule {}

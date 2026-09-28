@@ -10,6 +10,7 @@ import { OAuthConsentOrmEntity } from '../auth/database/oauth-consent.orm-entity
 import { Session } from '../auth/database/session.orm-entity';
 import { Verification } from '../auth/database/verification.orm-entity';
 import { auth, closeAuthConnections } from '../auth/infrastructure/better-auth.config';
+import { BetterAuthSessionCacheAdapter } from '../auth/infrastructure/better-auth-session-cache.adapter';
 import { AccessGrantOrmEntity } from '../authz/database/access-grant.orm-entity';
 import { AutomationOrmEntity } from '../automations/database/automation.orm-entity';
 import { AutomationRevisionOrmEntity } from '../automations/database/automation-revision.orm-entity';
@@ -208,6 +209,7 @@ async function seed() {
   const provisionPersonalWorkspace = new ProvisionPersonalWorkspaceCommandHandler(
     new PersonalWorkspaceRepository(dataSource, new OutboxService(dataSource), userRoleRepository),
     roleRepository,
+    new BetterAuthSessionCacheAdapter(),
   );
 
   for (const seedUser of seedUsers) {

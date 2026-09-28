@@ -13,6 +13,7 @@ import { CompleteSignUpCommand } from '../commands/complete-sign-up/complete-sig
 import { RotateDelegatedSessionsCommand } from '../commands/rotate-delegated-sessions/rotate-delegated-sessions.command';
 import { standingChangeOf } from './admin-ban-hook.util';
 import { dispatchFromAuthHook } from './auth-command-bus.util';
+import { betterAuthSecondaryStorage } from './better-auth-secondary-storage.adapter';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue.util';
 import { buildInvitationUrl } from './invitation-url.util';
 
@@ -99,6 +100,18 @@ export const auth = betterAuth({
   basePath: '/api/auth',
   secret: process.env.BETTER_AUTH_SECRET,
   database: pool,
+  // Sessions are cached in Redis in front of the `session` table, so an
+  // authenticated request costs one Redis GET rather than a session-and-user
+  // query on this pool. Postgres stays the record (`storeSessionInDatabase`
+  // below): the session list, the sign-in hook and the foreign keys read it,
+  // and a Redis miss or outage falls back to it. Keys are hashed, and every
+  // write the app makes to a user or session row outside Better Auth goes
+  // through `SESSION_CACHE` so the copy never outlives the row it mirrors.
+  //
+  // `session.cookieCache` is deliberately not enabled: a signed cookie cannot
+  // be revoked, so a ban, a deletion or "sign out other devices" would wait out
+  // its `maxAge`. See `product/versions/mvp/08-auth.md`.
+  secondaryStorage: betterAuthSecondaryStorage,
   trustedOrigins: [frontendUrl],
   // Brute-force protection on the auth surface. `/api/auth/*` is mounted on the
   // HTTP adapter before Nest binds middleware, so the NestJS ThrottlerGuard
@@ -133,6 +146,10 @@ export const auth = betterAuth({
     },
   },
   session: {
+    // Written to Postgres as well as Redis, and deleted from both on
+    // revocation (`preserveSessionInDatabase: false`, today's behaviour).
+    storeSessionInDatabase: true,
+    preserveSessionInDatabase: false,
     /**
      * Two columns on Better Auth's `session` table that say a row is not a
      * device.
@@ -168,6 +185,9 @@ export const auth = betterAuth({
       },
     },
   },
+  // Verification records stay in Postgres, where `HardenAuthTables` indexed
+  // them; the session store does not cache them either.
+  verification: { storeInDatabase: true },
   emailAndPassword: {
     enabled: true,
     // The same minimum the shared schemas hold the forms to. Better Auth
@@ -395,6 +415,20 @@ export const auth = betterAuth({
             // Organization tables not migrated yet — leave the session as-is.
             return;
           }
+        },
+      },
+      delete: {
+        // Every session row Better Auth deletes — one revocation, a bulk
+        // sign-out, a ban, a password reset — takes its cached copy with it.
+        // Better Auth deletes the copies it finds through its per-user index,
+        // but that index is itself a cache entry, rewritten on every sign-in: a
+        // session whose index entry was lost to a failed read or write would
+        // stay live in Redis after its row was gone. The row is the record, so its
+        // deletion is what clears the copy. A failure here aborts the delete,
+        // so a revocation that cannot reach Redis fails loudly instead of
+        // succeeding in Postgres alone.
+        before: async (session) => {
+          await betterAuthSecondaryStorage.delete(session.token);
         },
       },
     },

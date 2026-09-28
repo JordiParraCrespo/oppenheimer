@@ -17,6 +17,13 @@ import { generateApiTokenSecret } from './api-token-secret.factory';
 import { ApiTokenRevokedDomainEvent } from './events/api-token-revoked.domain-event';
 import { isIpAllowed } from './ip-allowlist.policy';
 
+/**
+ * The granularity of `lastUsedAt`. The column answers "is this token still in
+ * use?", which a minute answers as well as a millisecond — and a token polled
+ * ten times a second no longer costs ten row versions a second.
+ */
+export const LAST_USED_GRANULARITY_MS = 60_000;
+
 export interface ApiTokenProps {
   /** Owner. The token's reach is re-derived from this user on every request. */
   userId: string;
@@ -143,6 +150,12 @@ export class ApiTokenEntity extends AggregateRoot<ApiTokenProps> {
 
   get lastUsedAt(): Date | null {
     return this.props.lastUsedAt;
+  }
+
+  /** Whether a use at `now` is worth recording, at {@link LAST_USED_GRANULARITY_MS}. */
+  isLastUseStale(now: Date): boolean {
+    const last = this.props.lastUsedAt;
+    return !last || now.getTime() - last.getTime() >= LAST_USED_GRANULARITY_MS;
   }
 
   get revokedAt(): Date | null {

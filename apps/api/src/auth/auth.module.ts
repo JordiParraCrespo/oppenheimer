@@ -10,6 +10,7 @@ import {
   CREDENTIAL_VERIFIER,
   DELEGATED_SESSION,
   REQUEST_TENANT,
+  SESSION_CACHE,
 } from './auth.di-tokens';
 import { CompleteSignUpCommandHandler } from './commands/complete-sign-up/complete-sign-up.command-handler';
 import { RotateDelegatedSessionsCommandHandler } from './commands/rotate-delegated-sessions/rotate-delegated-sessions.command-handler';
@@ -25,6 +26,7 @@ import { PoliciesGuard } from './guards/policies.guard';
 import { ScopesGuard } from './guards/scopes.guard';
 import { AuthCommandBusBridge } from './infrastructure/auth-command-bus.util';
 import { BetterAuthCredentialVerifierAdapter } from './infrastructure/better-auth-credential-verifier.adapter';
+import { BetterAuthSessionCacheAdapter } from './infrastructure/better-auth-session-cache.adapter';
 import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adapter';
 
 /**
@@ -104,6 +106,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     { provide: CREDENTIAL_VERIFIER, useClass: BetterAuthCredentialVerifierAdapter },
     { provide: CREDENTIAL_SCOPE, useClass: CredentialScopeResolver },
     { provide: DELEGATED_SESSION, useClass: DelegatedSessionAdapter },
+    { provide: SESSION_CACHE, useClass: BetterAuthSessionCacheAdapter },
     // The one writer of `request.tenant`. The auth guards stamp through it;
     // they run in the injector of whichever module applies them, which is why
     // the token (never the class) is published below.
@@ -120,6 +123,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     CREDENTIAL_SCOPE,
     DELEGATED_SESSION,
     REQUEST_TENANT,
+    SESSION_CACHE,
     TypeOrmModule,
   ],
 })

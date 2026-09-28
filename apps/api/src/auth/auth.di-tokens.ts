@@ -23,3 +23,12 @@ export const ABILITY = Symbol('ABILITY');
 
 /** Stamps a request with the one organization it acts in (`request.tenant`). */
 export const REQUEST_TENANT = Symbol('REQUEST_TENANT');
+
+/** Keeps the cached copies of a person's sessions true to the database. */
+export const SESSION_CACHE = Symbol('SESSION_CACHE');
+
+/**
+ * Counts rejected credentials per source address, so a caller spraying
+ * made-up bearer strings is refused as one caller. Bound by `throttling`.
+ */
+export const AUTH_FAILURE_LIMITER = Symbol('AUTH_FAILURE_LIMITER');
