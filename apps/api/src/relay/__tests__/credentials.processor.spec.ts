@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { credentialsGrantSchema } from '@oppenheimer/shared/protocol';
 import { describe, expect, it, vi } from 'vitest';
+import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
 import type { HostKeyPort } from '../../hosts/application/host-key.port';
 import type { RunnerLink } from '../../links/application/link-registry.port';
@@ -8,6 +9,7 @@ import type { SessionLookupPort } from '../../sessions/application/session-looku
 import { CredentialsProcessor } from '../infrastructure/credentials.processor';
 
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';
+const USER = 'e1d7f5a3-4152-4d6e-9f70-8192a3b4c5d6';
 const ASK = {
   type: 'credentials.token' as const,
   requestId: 'c9b5d3e1-2f30-4b4c-9d5e-6f708192a3b4',
@@ -40,17 +42,30 @@ function harness(target: Awaited<ReturnType<SessionLookupPort['findCredentialTar
     }),
   } as unknown as RepositoryAccessPort;
   const keys = { publicKeyOf: vi.fn().mockResolvedValue(HOST_KEY) } as unknown as HostKeyPort;
+  const owners = { findActiveOwner: vi.fn().mockResolvedValue({ id: USER }) };
   return {
     link,
     repositories,
     keys,
-    processor: new CredentialsProcessor(sessions, repositories, keys),
+    owners,
+    processor: new CredentialsProcessor(
+      sessions,
+      repositories,
+      keys,
+      owners as unknown as CredentialOwnerPort,
+    ),
   };
 }
 
 describe('CredentialsProcessor', () => {
   it('mints live and answers a grant sealed to the host key', async () => {
-    const h = harness({ hostId: HOST, installationId: 'inst-1', githubRepoId: 42, live: true });
+    const h = harness({
+      hostId: HOST,
+      installationId: 'inst-1',
+      githubRepoId: 42,
+      live: true,
+      createdByUserId: USER,
+    });
     await h.processor.onToken(h.link, ASK);
     expect(h.repositories.mintRepositoryToken).toHaveBeenCalledWith('inst-1', 42);
     const [message] = vi.mocked(h.link.send).mock.calls[0];
@@ -61,7 +76,13 @@ describe('CredentialsProcessor', () => {
   });
 
   it('refuses a checkout on another host without minting', async () => {
-    const h = harness({ hostId: 'other', installationId: 'inst-1', githubRepoId: 42, live: true });
+    const h = harness({
+      hostId: 'other',
+      installationId: 'inst-1',
+      githubRepoId: 42,
+      live: true,
+      createdByUserId: USER,
+    });
     await h.processor.onToken(h.link, ASK);
     expect(h.repositories.mintRepositoryToken).not.toHaveBeenCalled();
     expect(h.link.send).toHaveBeenCalledWith(
@@ -69,14 +90,51 @@ describe('CredentialsProcessor', () => {
     );
   });
 
+  it('refuses, without minting, a session whose owner may not act', async () => {
+    // Banned or deactivated since the session started: the session's git
+    // credential goes the way of every other credential they hold.
+    const h = harness({
+      hostId: HOST,
+      installationId: 'inst-1',
+      githubRepoId: 42,
+      live: true,
+      createdByUserId: USER,
+    });
+    h.owners.findActiveOwner.mockResolvedValue(null);
+
+    await h.processor.onToken(h.link, ASK);
+
+    expect(h.owners.findActiveOwner).toHaveBeenCalledWith(USER);
+    expect(h.repositories.mintRepositoryToken).not.toHaveBeenCalled();
+    expect(h.link.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'command.failed',
+        commandId: ASK.requestId,
+        code: 'TOKEN_003',
+      }),
+    );
+  });
+
   it("refuses a repository that is not the checkout's", async () => {
-    const h = harness({ hostId: HOST, installationId: 'inst-1', githubRepoId: 43, live: true });
+    const h = harness({
+      hostId: HOST,
+      installationId: 'inst-1',
+      githubRepoId: 43,
+      live: true,
+      createdByUserId: USER,
+    });
     await h.processor.onToken(h.link, ASK);
     expect(h.repositories.mintRepositoryToken).not.toHaveBeenCalled();
   });
 
   it('turns a refused mint into a command.failed with the catalog code', async () => {
-    const h = harness({ hostId: HOST, installationId: 'inst-1', githubRepoId: 42, live: true });
+    const h = harness({
+      hostId: HOST,
+      installationId: 'inst-1',
+      githubRepoId: 42,
+      live: true,
+      createdByUserId: USER,
+    });
     vi.mocked(h.repositories.mintRepositoryToken).mockRejectedValueOnce(
       Object.assign(new Error('suspended'), { code: 'GITHUB_003' }),
     );

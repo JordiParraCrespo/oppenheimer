@@ -6217,6 +6217,8 @@ export type IssueAttachTicketErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * HOSTS_001 — Host not found
+     *
      * SESSIONS_001 — Session not found
      */
     404: ProblemDetailsDto;
@@ -6364,6 +6366,8 @@ export type RestartSessionErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * HOSTS_001 — Host not found
+     *
      * SESSIONS_001 — Session not found
      */
     404: ProblemDetailsDto;

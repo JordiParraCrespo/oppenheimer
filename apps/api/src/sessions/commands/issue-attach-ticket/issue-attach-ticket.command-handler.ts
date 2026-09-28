@@ -3,6 +3,8 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
+import type { HostAccessPort } from '../../../hosts/application/host-access.port';
+import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import { ATTACH_TICKET_PREFIX, type AttachTicket } from '../../application/session-lookup.port';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import { SessionErrors } from '../../domain/sessions.errors';
@@ -44,9 +46,10 @@ export interface IssuedAttachTicket {
  * read-and-delete is what makes it single use.
  *
  * Authorization is not frozen at mint. The consumer re-checks that the session is
- * still live and the person is still a member of the owning workspace — without
- * that, stopping the session or revoking the person's access inside the window
- * would still get them a PTY.
+ * still live, the person is still a member of the owning workspace and may still
+ * use the session's host — without that, stopping the session or revoking the
+ * person's access inside the window would still get them a PTY. The host is
+ * checked here too, so a caller who lost it gets the 404 rather than a ticket.
  */
 @CommandHandler(IssueAttachTicketCommand)
 export class IssueAttachTicketCommandHandler
@@ -55,6 +58,8 @@ export class IssueAttachTicketCommandHandler
   constructor(
     @Inject(WORK_SESSION_REPOSITORY)
     private readonly sessions: WorkSessionRepositoryPort,
+    @Inject(HOST_ACCESS)
+    private readonly hosts: HostAccessPort,
     private readonly cache: CacheService,
   ) {}
 
@@ -71,6 +76,9 @@ export class IssueAttachTicketCommandHandler
         detail: `Session ${session.slug} is closed`,
       });
     }
+    // The session being yours is not the machine being yours to use: a grant
+    // revoked, or a host unpaired, since the session was created ends the PTY.
+    await this.hosts.assertUsable(command.scope, session.hostId);
 
     // 32 bytes of `node:crypto`, base64url: unguessable, and URL-safe because it
     // travels as a subprotocol token.
