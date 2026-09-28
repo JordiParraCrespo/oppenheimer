@@ -218,8 +218,7 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
     at: Date,
     eventsFor?: (movedFrom: HostNetwork, network: HostNetwork) => DomainEvent[],
   ): Promise<RecordedNetwork> {
-    let staged = false;
-    const recorded = await this.dataSource.transaction(async (manager) => {
+    return this.outbox.transaction(async (manager) => {
       const [presence] = (await manager.query(
         `SELECT "currentNetworkId" FROM "host_presence" WHERE "hostId" = $1 FOR UPDATE`,
         [hostId],
@@ -277,16 +276,10 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
           ],
           at,
         );
-        const events = eventsFor?.(movedFrom, network) ?? [];
-        if (events.length > 0) {
-          await this.outbox.stageEvents(manager, events);
-          staged = true;
-        }
+        await this.outbox.stageEvents(manager, eventsFor?.(movedFrom, network) ?? []);
       }
       return { network, movedFrom };
     });
-    if (staged) this.outbox.wake();
-    return recorded;
   }
 
   /** Q6. Newest first, keyset on (occurredAt, id), one row over the page to know there is more. */

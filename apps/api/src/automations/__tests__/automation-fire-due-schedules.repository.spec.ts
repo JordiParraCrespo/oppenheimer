@@ -118,10 +118,14 @@ function harness() {
     getRepository: outside,
     createQueryBuilder: outside,
   } as unknown as DataSource;
+  // The outbox's transaction is the tick's: it opens the one the harness
+  // allows, and waking after commit is `OutboxService`'s own concern.
   const outbox = {
+    transaction: vi.fn((work: (m: typeof manager) => Promise<unknown>) =>
+      dataSource.transaction(work as never),
+    ),
     stageJob: vi.fn(async () => undefined),
-    wake: vi.fn(async () => undefined),
-  } as unknown as OutboxService;
+  };
   const mapper = {
     toDomain: (record: { id: string }) => automations.find((a) => a.id === record.id),
   } as unknown as AutomationMapper;
@@ -131,7 +135,7 @@ function harness() {
   const repository = new AutomationRepository(
     new Proxy({}, { get: outside }) as Repository<AutomationOrmEntity>,
     dataSource,
-    outbox,
+    outbox as unknown as OutboxService,
     mapper,
     runMapper,
   );
@@ -178,7 +182,9 @@ describe('AutomationRepository.fireDueSchedules', () => {
     });
     expect(contexts[1].recent).toEqual({ automation: 0, workspace: 3 });
     expect(queued.map((run) => run.automationId)).toEqual(automations.map((a) => a.id));
-    expect(outbox.wake).toHaveBeenCalledTimes(1);
+    // One transaction for the tick, and a dispatch staged in it per queued run.
+    expect(outbox.transaction).toHaveBeenCalledTimes(1);
+    expect(outbox.stageJob).toHaveBeenCalledTimes(2);
   });
 
   it('takes the firing locks before it counts', async () => {

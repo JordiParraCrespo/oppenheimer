@@ -71,6 +71,12 @@ export class OutboxService {
   private readonly maxRetryDelayMs: number;
   private readonly logger?: { warn(message: string): void };
   private drainer?: () => Promise<unknown>;
+  /**
+   * The managers of the transactions `transaction()` has open, each with
+   * whether anything was staged on it yet. A manager that is not a key (one a
+   * caller opened itself) is never recorded, so it behaves as it always did.
+   */
+  private readonly staged = new WeakMap<EntityManager, boolean>();
 
   constructor(
     private readonly dataSource: DataSource,
@@ -83,6 +89,44 @@ export class OutboxService {
   }
 
   /**
+   * Run `work` in one transaction and, **after it commits**, wake the relay
+   * if anything was staged on its manager (`stageEvents` with at least one
+   * event, or `stageJob`). A rollback never wakes, and neither does a commit
+   * that staged nothing. This is the one place the "stage, commit, then wake"
+   * bookkeeping lives: a repository that locks, asks and writes in its own
+   * statements does them all on `manager` and stages on it, and says nothing
+   * about waking.
+   *
+   * ```ts
+   * return this.outbox.transaction(async (manager) => {
+   *   await manager.query(`UPDATE …`, […]);
+   *   await this.outbox.stageEvents(manager, aggregate.domainEvents);
+   *   return outcome;
+   * });
+   * ```
+   *
+   * Clearing an aggregate's events stays with the caller: after this resolves,
+   * and only on success.
+   */
+  async transaction<T>(work: (manager: EntityManager) => Promise<T>): Promise<T> {
+    let staged = false;
+    const result = await this.dataSource.transaction(async (manager) => {
+      this.staged.set(manager, false);
+      try {
+        return await work(manager);
+      } finally {
+        staged = this.staged.get(manager) === true;
+        this.staged.delete(manager);
+      }
+    });
+    // Only reached once the transaction committed: a throw from `work` or
+    // from the commit itself rejects above, and nothing is woken for rows
+    // that never landed.
+    if (staged) this.wake();
+    return result;
+  }
+
+  /**
    * Run a repository write and stage the aggregates' collected domain events
    * **inside one transaction**, so the state change and the events it owes
    * commit or roll back together. After commit the relay is woken to deliver
@@ -90,7 +134,7 @@ export class OutboxService {
    * the relay's poll retries them. Writes with no events skip the explicit
    * transaction — a single statement is already atomic.
    *
-   * This is the one write path every repository adapter shares:
+   * This is the write path `TypeOrmRepositoryBase` is built on:
    *
    * ```ts
    * await this.outbox.writeWithEvents([entity], (manager) =>
@@ -104,13 +148,12 @@ export class OutboxService {
   ): Promise<T> {
     const events = entities.flatMap((e) => e.domainEvents);
     if (events.length === 0) return write(this.dataSource.manager);
-    const result = await this.dataSource.transaction(async (manager) => {
+    const result = await this.transaction(async (manager) => {
       const value = await write(manager);
       await this.stageEvents(manager, events);
       return value;
     });
     for (const entity of entities) entity.clearEvents();
-    this.wake();
     return result;
   }
 
@@ -140,6 +183,7 @@ export class OutboxService {
     // Cast around TypeORM's `QueryDeepPartialEntity` recursion, which cannot
     // represent the free-form `payload` jsonb (Record<string, unknown>).
     await repository.insert(rows as Parameters<typeof repository.insert>[0]);
+    this.markStaged(manager);
   }
 
   /**
@@ -161,6 +205,12 @@ export class OutboxService {
     });
     // Same `QueryDeepPartialEntity` cast as `stageEvents`.
     await repository.insert(row as Parameters<typeof repository.insert>[0]);
+    this.markStaged(manager);
+  }
+
+  /** Record a staged row on a `transaction()` manager; any other is left alone. */
+  private markStaged(manager: EntityManager): void {
+    if (this.staged.has(manager)) this.staged.set(manager, true);
   }
 
   /**
@@ -265,8 +315,9 @@ export class OutboxService {
   }
 
   /**
-   * Ask the relay to drain soon, if one is registered. Call after the staging
-   * transaction commits. Never waits for delivery and never throws: the rows
+   * Ask the relay to drain soon, if one is registered. `transaction()` and
+   * `writeWithEvents()` call it after their commit; call it yourself only
+   * after a transaction you opened some other way. Never waits for delivery and never throws: the rows
    * are durable and the relay's next poll retries them, so neither the
    * delivery backlog nor a delivery hiccup reaches the request whose state
    * change already committed. A caller does not know when its listeners run.
