@@ -695,13 +695,13 @@ describe('Hosts & pairing (integration)', () => {
           facts: { ...FACTS, diskFreeBytes: 100 },
           loadAverage: 1.5,
         }),
-      ).toBe(true);
+      ).toBe('recorded');
       expect(
         await presence.observe(hostId, {
           facts: { ...FACTS, diskFreeBytes: 99 },
           roundTripMillis: 12,
         }),
-      ).toBe(true);
+      ).toBe('recorded');
 
       expect(
         await rows(`SELECT 1 FROM "host_presence" WHERE "hostId" = $1`, [hostId]),
@@ -723,6 +723,18 @@ describe('Hosts & pairing (integration)', () => {
       ]);
       expect(after?.changedAt).toEqual(before?.changedAt);
       expect(await kinds()).toEqual(['paired']);
+    });
+
+    it('records nothing for a host whose owner is banned, and again once they are not', async () => {
+      await dataSource.query(`UPDATE "user" SET "banned" = true WHERE "id" = $1`, [user.id]);
+      try {
+        // The link that reported this is closed, and not as unpaired: the ban
+        // can be lifted and the same host let back in.
+        expect(await presence.observe(hostId, { facts: FACTS })).toBe('owner_refused');
+      } finally {
+        await dataSource.query(`UPDATE "user" SET "banned" = false WHERE "id" = $1`, [user.id]);
+      }
+      expect(await presence.observe(hostId, { facts: FACTS })).toBe('recorded');
     });
 
     it('logs a changed fact with its diff, and a newly known one as nothing', async () => {
