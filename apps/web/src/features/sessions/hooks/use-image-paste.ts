@@ -1,5 +1,5 @@
 import { usePasteSessionImage } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-web';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 
 /**
  * An image pasted or dropped onto a session's terminal, on its way to the

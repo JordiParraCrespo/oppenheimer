@@ -1,12 +1,6 @@
 import { Alert, AlertDescription, Button } from '@oppenheimer/design-system-web';
-import { useForgotPassword } from '@oppenheimer/frontend-core/react';
-import {
-  AuthBackLink,
-  AuthFooterNote,
-  AuthSubtitle,
-  AuthTitle,
-  useErrorMessage,
-} from '@oppenheimer/frontend-web';
+import { useErrorMessage, useForgotPassword } from '@oppenheimer/frontend-core/react';
+import { AuthBackLink, AuthFooterNote, AuthSubtitle, AuthTitle } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { ForgotPasswordForm } from '@/features/auth/forms/forgot-password-form';
