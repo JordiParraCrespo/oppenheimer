@@ -761,7 +761,8 @@
       "previous": "Página anterior",
       "next": "Página siguiente",
       "deleted": "Automatización eliminada",
-      "noSession": "Esta ejecución no inició ninguna sesión."
+      "noSession": "Esta ejecución no inició ninguna sesión.",
+      "loadFailed": "No se han podido cargar las ejecuciones."
     },
     "detail": {
       "back": "Atrás",

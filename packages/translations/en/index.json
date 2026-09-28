@@ -761,7 +761,8 @@
       "previous": "Previous page",
       "next": "Next page",
       "deleted": "Deleted automation",
-      "noSession": "This run did not start a session."
+      "noSession": "This run did not start a session.",
+      "loadFailed": "Runs could not be loaded."
     },
     "detail": {
       "back": "Back",

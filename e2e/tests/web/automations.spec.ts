@@ -98,6 +98,16 @@ test('an automation from the editor to deletion', async ({ page }) => {
   const run = page.getByRole('row').filter({ hasText: 'Nightly audit' }).last();
   await expect(run).toBeVisible({ timeout: 20_000 });
 
+  // A run opens the session it started, with the automations list kept
+  // beside it; Back returns to the automation's page.
+  const automationUrl = page.url();
+  await run.click();
+  await expect(page).toHaveURL(/\/automations\/[0-9a-f-]{36}\/sessions\/[0-9a-f-]{36}$/);
+  await expect(
+    page.getByRole('button', { name: 'New automation', exact: true }).first(),
+  ).toBeVisible();
+  await page.goto(automationUrl);
+
   // Pause says why and offers Resume; Resume takes it back.
   await page.getByRole('button', { name: 'More actions' }).click();
   await page.getByRole('menuitem', { name: 'Pause automation' }).click();

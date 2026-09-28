@@ -12,6 +12,7 @@ import type {
   ScheduleFrequency,
   TriggerFilter,
 } from '@oppenheimer/shared/automations';
+import type { TriggerInputDto } from '@oppenheimer/shared/schemas/automation';
 
 /**
  * What an automation is doing, as its row and page header say it: listening,
@@ -251,9 +252,11 @@ export interface TriggerPreview {
 }
 
 /** A trigger as the editor saves it: no id, no computed next fire. */
-export type TriggerInput =
-  | Omit<ScheduleTrigger, 'id' | 'nextFireAt'>
-  | (Omit<GithubTrigger, 'id' | 'repositories'> & { repositories: number[] });
+/**
+ * A trigger as the editor saves it: the shared schema's own input type, so
+ * the console and the API validate one vocabulary.
+ */
+export type TriggerInput = TriggerInputDto;
 
 export interface AutomationInput {
   projectId: string;

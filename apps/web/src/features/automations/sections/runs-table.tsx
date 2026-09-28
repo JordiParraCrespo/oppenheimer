@@ -1,4 +1,6 @@
 import {
+  Alert,
+  AlertDescription,
   PillTab,
   PillTabs,
   RunRow,
@@ -14,6 +16,7 @@ import {
   useAutomations,
   useProjects,
 } from '@oppenheimer/frontend-consumer/react';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useLocale } from '@oppenheimer/frontend-web';
 import { RUN_WINDOWS } from '@oppenheimer/shared/automations';
 import { useNavigate } from '@tanstack/react-router';
@@ -35,12 +38,14 @@ const ALL = '__all__';
  * The runs (`product/versions/mvp/13-automations.md`): the Runs tab across
  * the workspace, or one automation's on its page. Status pills with counts,
  * the facets on the right, a page of ten and the pager. A run opens the
- * session it started — the run view is that session's terminal.
+ * session it started in the run view, with the automations list kept beside
+ * it. A list that could not load says so, rather than reading as empty.
  */
 export function RunsTable({ automationId }: { automationId?: string }) {
   const { t } = useTranslation();
   const locale = useLocale();
   const navigate = useNavigate();
+  const resolveError = useErrorMessage();
   const filters = useRunsFilters({ automationId });
   const runs = useAutomationRuns(filters.filter);
   // The facets are the workspace-wide list's only; an automation's page has none.
@@ -130,7 +135,13 @@ export function RunsTable({ automationId }: { automationId?: string }) {
         ]}
       />
 
-      {runs.isPending ? (
+      {runs.isError && !page ? (
+        <Alert variant="destructive" className="mx-1.5 mb-1.5">
+          <AlertDescription>
+            {resolveError(runs.error, t('automations.runs.loadFailed')).message}
+          </AlertDescription>
+        </Alert>
+      ) : runs.isPending ? (
         <div className="flex flex-col gap-1 px-1.5">
           <Skeleton className="h-11 w-full" />
           <Skeleton className="h-11 w-full" />
@@ -149,7 +160,10 @@ export function RunsTable({ automationId }: { automationId?: string }) {
             disabled={!run.sessionId}
             onClick={() => {
               if (run.sessionId) {
-                navigate({ to: '/sessions/$sessionId', params: { sessionId: run.sessionId } });
+                navigate({
+                  to: '/automations/$automationId/sessions/$sessionId',
+                  params: { automationId: run.automationId, sessionId: run.sessionId },
+                });
               }
             }}
           />

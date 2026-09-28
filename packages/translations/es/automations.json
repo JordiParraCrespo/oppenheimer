@@ -57,12 +57,30 @@
     "owner_lost_access": "En pausa porque su propietario ya no puede ejecutarla."
   },
   "frequency": {
-    "once": { "label": "Una vez", "desc": "En una fecha y hora concretas" },
-    "hourly": { "label": "Cada hora", "desc": "Cada hora, en un minuto concreto" },
-    "daily": { "label": "Diaria", "desc": "Cada día a una hora concreta" },
-    "weekdays": { "label": "Días laborables", "desc": "De lunes a viernes a una hora concreta" },
-    "weekly": { "label": "Semanal", "desc": "Los días que elijas" },
-    "monthly": { "label": "Mensual", "desc": "Un día del mes" }
+    "once": {
+      "label": "Una vez",
+      "desc": "En una fecha y hora concretas"
+    },
+    "hourly": {
+      "label": "Cada hora",
+      "desc": "Cada hora, en un minuto concreto"
+    },
+    "daily": {
+      "label": "Diaria",
+      "desc": "Cada día a una hora concreta"
+    },
+    "weekdays": {
+      "label": "Días laborables",
+      "desc": "De lunes a viernes a una hora concreta"
+    },
+    "weekly": {
+      "label": "Semanal",
+      "desc": "Los días que elijas"
+    },
+    "monthly": {
+      "label": "Mensual",
+      "desc": "Un día del mes"
+    }
   },
   "event": {
     "pr_opened": {
@@ -77,9 +95,18 @@
       "label": "Push a una pull request",
       "desc": "Nuevos commits en una pull request abierta"
     },
-    "pr_merged": { "label": "Pull request fusionada", "desc": "Cuando la fusión se completa" },
-    "comment": { "label": "Comentario añadido", "desc": "En una pull request o incidencia" },
-    "push": { "label": "Push a una rama", "desc": "Una ejecución por push, no por commit" },
+    "pr_merged": {
+      "label": "Pull request fusionada",
+      "desc": "Cuando la fusión se completa"
+    },
+    "comment": {
+      "label": "Comentario añadido",
+      "desc": "En una pull request o incidencia"
+    },
+    "push": {
+      "label": "Push a una rama",
+      "desc": "Una ejecución por push, no por commit"
+    },
     "issue_labeled": {
       "label": "Etiqueta añadida",
       "desc": "En una pull request o incidencia, una vez por etiqueta"
@@ -96,7 +123,10 @@
       "label": "Mención a @oppenheimer",
       "desc": "En una incidencia, pull request o revisión"
     },
-    "release": { "label": "Release publicada", "desc": "Sin incluir pre-releases" }
+    "release": {
+      "label": "Release publicada",
+      "desc": "Sin incluir pre-releases"
+    }
   },
   "trigger": {
     "once": "Una vez, {{date}} a las {{time}}",
@@ -161,7 +191,8 @@
     "previous": "Página anterior",
     "next": "Página siguiente",
     "deleted": "Automatización eliminada",
-    "noSession": "Esta ejecución no inició ninguna sesión."
+    "noSession": "Esta ejecución no inició ninguna sesión.",
+    "loadFailed": "No se han podido cargar las ejecuciones."
   },
   "detail": {
     "back": "Atrás",

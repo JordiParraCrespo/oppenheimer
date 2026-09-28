@@ -28,7 +28,8 @@ import { age } from '../lib/time';
  * Projects line with its count, the search, then All automations and a
  * folding header per project — each with New automation in it — over the
  * project's automations. The selected automation expands its last six runs,
- * each opening the session it started.
+ * each opening the session it started in the run view — the pane, with this
+ * list kept beside it.
  *
  * The workspace's Unassigned project has no group: it holds the sessions
  * that name no project, and an automation is always set up for one.
@@ -43,8 +44,11 @@ export function AutomationsSidebar() {
   const dialogs = useConsoleDialog();
   const now = useNow(60_000);
 
+  // The selected automation is the page's, or the run's whose session is open.
   const detail = matchRoute({ to: '/automations/$automationId' });
-  const selectedId = detail ? detail.automationId : null;
+  const runView = matchRoute({ to: '/automations/$automationId/sessions/$sessionId' });
+  const selectedId = runView ? runView.automationId : detail ? detail.automationId : null;
+  const openSessionId = runView ? runView.sessionId : null;
   const all =
     Boolean(matchRoute({ to: '/automations' })) || Boolean(matchRoute({ to: '/automations/runs' }));
 
@@ -180,11 +184,17 @@ export function AutomationsSidebar() {
                                     ago={age(now - run.createdAt.getTime())}
                                     state={runState(run.status)}
                                     disabled={!run.sessionId}
+                                    active={
+                                      Boolean(run.sessionId) && run.sessionId === openSessionId
+                                    }
                                     render={
                                       run.sessionId ? (
                                         <Link
-                                          to="/sessions/$sessionId"
-                                          params={{ sessionId: run.sessionId }}
+                                          to="/automations/$automationId/sessions/$sessionId"
+                                          params={{
+                                            automationId: automation.id,
+                                            sessionId: run.sessionId,
+                                          }}
                                         />
                                       ) : undefined
                                     }

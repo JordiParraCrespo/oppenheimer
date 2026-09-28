@@ -57,34 +57,76 @@
     "owner_lost_access": "Paused because its owner can no longer run it."
   },
   "frequency": {
-    "once": { "label": "Once", "desc": "On a chosen date and time" },
-    "hourly": { "label": "Hourly", "desc": "Every hour, at a chosen minute" },
-    "daily": { "label": "Daily", "desc": "Every day at a chosen time" },
-    "weekdays": { "label": "Weekdays", "desc": "Monday to Friday at a chosen time" },
-    "weekly": { "label": "Weekly", "desc": "On the days you pick" },
-    "monthly": { "label": "Monthly", "desc": "On one day of the month" }
+    "once": {
+      "label": "Once",
+      "desc": "On a chosen date and time"
+    },
+    "hourly": {
+      "label": "Hourly",
+      "desc": "Every hour, at a chosen minute"
+    },
+    "daily": {
+      "label": "Daily",
+      "desc": "Every day at a chosen time"
+    },
+    "weekdays": {
+      "label": "Weekdays",
+      "desc": "Monday to Friday at a chosen time"
+    },
+    "weekly": {
+      "label": "Weekly",
+      "desc": "On the days you pick"
+    },
+    "monthly": {
+      "label": "Monthly",
+      "desc": "On one day of the month"
+    }
   },
   "event": {
     "pr_opened": {
       "label": "Pull request opened",
       "desc": "Opened, or a draft marked ready for review"
     },
-    "pr_draft": { "label": "Draft opened", "desc": "Opened as a draft, or converted to one" },
+    "pr_draft": {
+      "label": "Draft opened",
+      "desc": "Opened as a draft, or converted to one"
+    },
     "pr_sync": {
       "label": "Pull request pushed",
       "desc": "New commits pushed to an open pull request"
     },
-    "pr_merged": { "label": "Pull request merged", "desc": "After the merge lands" },
-    "comment": { "label": "Comment added", "desc": "On a pull request or issue" },
-    "push": { "label": "Push to branch", "desc": "One run per push, not per commit" },
+    "pr_merged": {
+      "label": "Pull request merged",
+      "desc": "After the merge lands"
+    },
+    "comment": {
+      "label": "Comment added",
+      "desc": "On a pull request or issue"
+    },
+    "push": {
+      "label": "Push to branch",
+      "desc": "One run per push, not per commit"
+    },
     "issue_labeled": {
       "label": "Label added",
       "desc": "On a pull request or issue, once per label"
     },
-    "check_failed": { "label": "Check failed", "desc": "Any Actions workflow or status check" },
-    "issue_opened": { "label": "Issue opened", "desc": "New issues only, not reopened ones" },
-    "mention": { "label": "Mentioned @oppenheimer", "desc": "In an issue, pull request or review" },
-    "release": { "label": "Release published", "desc": "Pre-releases excluded" }
+    "check_failed": {
+      "label": "Check failed",
+      "desc": "Any Actions workflow or status check"
+    },
+    "issue_opened": {
+      "label": "Issue opened",
+      "desc": "New issues only, not reopened ones"
+    },
+    "mention": {
+      "label": "Mentioned @oppenheimer",
+      "desc": "In an issue, pull request or review"
+    },
+    "release": {
+      "label": "Release published",
+      "desc": "Pre-releases excluded"
+    }
   },
   "trigger": {
     "once": "Once, {{date}} at {{time}}",
@@ -149,7 +191,8 @@
     "previous": "Previous page",
     "next": "Next page",
     "deleted": "Deleted automation",
-    "noSession": "This run did not start a session."
+    "noSession": "This run did not start a session.",
+    "loadFailed": "Runs could not be loaded."
   },
   "detail": {
     "back": "Back",
