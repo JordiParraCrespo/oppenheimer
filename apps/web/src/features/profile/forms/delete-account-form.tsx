@@ -1,4 +1,4 @@
-import { Button, Field, FieldError, FieldLabel, Input } from '@oppenheimer/design-system-web';
+import { Field, FieldError, FieldLabel, Input } from '@oppenheimer/design-system-web';
 import { useZodResolver } from '@oppenheimer/frontend-web';
 import { type DeleteAccountDto, deleteAccountSchema } from '@oppenheimer/shared/schemas/profile';
 import { useForm } from 'react-hook-form';
@@ -8,6 +8,9 @@ import { useTranslation } from 'react-i18next';
  * The confirmation: the account's email, typed out. The same comparison the
  * API makes — case and surrounding spaces aside — is made here first, so a
  * typo reads under the field instead of as a failed request.
+ *
+ * The form has no buttons of its own: the confirm dialog around it submits it
+ * by `id`.
  */
 function confirmationSchema(email: string, mismatch: string) {
   return deleteAccountSchema.refine(
@@ -17,15 +20,15 @@ function confirmationSchema(email: string, mismatch: string) {
 }
 
 export function DeleteAccountForm({
+  id,
   email,
   isPending,
   onSubmit,
-  onCancel,
 }: {
+  id: string;
   email: string;
   isPending: boolean;
   onSubmit: (dto: DeleteAccountDto) => void;
-  onCancel: () => void;
 }) {
   const { t } = useTranslation();
   const {
@@ -38,7 +41,7 @@ export function DeleteAccountForm({
   });
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
+    <form id={id} onSubmit={handleSubmit(onSubmit)} noValidate>
       <Field data-invalid={Boolean(errors.confirmation)}>
         <FieldLabel htmlFor="delete-confirmation">
           {t('settings.deleteAccount.confirmLabel', { email })}
@@ -54,14 +57,6 @@ export function DeleteAccountForm({
         />
         <FieldError errors={[errors.confirmation]} />
       </Field>
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={isPending}>
-          {t('common.cancel')}
-        </Button>
-        <Button type="submit" variant="destructive" disabled={isPending}>
-          {isPending ? t('settings.deleteAccount.deleting') : t('settings.deleteAccount.confirm')}
-        </Button>
-      </div>
     </form>
   );
 }
