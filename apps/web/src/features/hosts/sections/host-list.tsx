@@ -1,5 +1,6 @@
-import { Alert, AlertDescription } from '@oppenheimer/design-system-web';
+import { Skeleton } from '@oppenheimer/design-system-web';
 import { useHosts } from '@oppenheimer/frontend-consumer/react';
+import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { HostsEmpty } from '../components/hosts-empty';
 import { HostRow } from './host-row';
@@ -10,29 +11,31 @@ import { HostRow } from './host-row';
  * It subscribes because it draws the rows; a row gets its host by reference,
  * kept across a poll that did not change it (`shareEntities`).
  *
- * The frame draws the list and its empty card only; until the first answer
- * nothing is drawn, and a failed load stays on screen as an `Alert`.
+ * The frame draws the list and its empty card only; until the first answer a
+ * skeleton holds the card's place, and a failed load stays on screen as an
+ * `Alert` that says why.
  */
 export function HostList() {
   const { t } = useTranslation();
   const hosts = useHosts({ refetchInterval: 15_000 });
 
-  if (hosts.isPending) return null;
-  if (hosts.isError) {
-    return (
-      <Alert variant="destructive">
-        <AlertDescription>{t('settings.hosts.failed')}</AlertDescription>
-      </Alert>
-    );
-  }
-  if (hosts.data.length === 0) {
-    return <HostsEmpty title={t('settings.hosts.empty')} body={t('settings.hosts.emptyHint')} />;
-  }
   return (
-    <div className="flex flex-col gap-2.5">
-      {hosts.data.map((host) => (
-        <HostRow key={host.id} host={host} />
-      ))}
-    </div>
+    <QueryState
+      query={hosts}
+      pending={<Skeleton className="h-18 w-full" />}
+      errorFallback={t('settings.hosts.failed')}
+      empty={{
+        when: (rows) => rows.length === 0,
+        show: <HostsEmpty title={t('settings.hosts.empty')} body={t('settings.hosts.emptyHint')} />,
+      }}
+    >
+      {(rows) => (
+        <div className="flex flex-col gap-2.5">
+          {rows.map((host) => (
+            <HostRow key={host.id} host={host} />
+          ))}
+        </div>
+      )}
+    </QueryState>
   );
 }

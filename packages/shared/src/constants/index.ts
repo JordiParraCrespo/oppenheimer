@@ -50,6 +50,13 @@ export const ROLES = {
 export const SYSTEM_ROLES = [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.OWNER, ROLES.USER] as const;
 
 /**
+ * The system roles that stand for a membership: an organization's owners and
+ * admins hold `owner` scoped to it, every other member holds `user` there. A
+ * member holds exactly one of them in each organization they belong to.
+ */
+export const MEMBERSHIP_ROLES = [ROLES.OWNER, ROLES.USER] as const;
+
+/**
  * Organization-level roles from the Better Auth organization plugin. Unlike the
  * global {@link ROLES} above (which govern the app's own REST routes via CASL),
  * these gate organization/member/workspace management within a single org.
@@ -62,7 +69,6 @@ export const ORGANIZATION_ROLES = {
 
 export const QUEUE_NAMES = {
   EMAIL: 'email',
-  FILE_PROCESSING: 'file-processing',
   /** The daily purge of host networks and timeline past their retention. */
   HOST_RETENTION: 'host-retention',
   /** Normalise a stored webhook delivery and publish it to its consumers. */
@@ -73,4 +79,6 @@ export const QUEUE_NAMES = {
   AUTOMATION_SCHEDULES: 'automation-schedules',
   /** The nightly purge of inbound events and old automation runs. */
   AUTOMATION_RETENTION: 'automation-retention',
+  /** The daily purge of delivered outbox rows past their retention. */
+  OUTBOX_RETENTION: 'outbox-retention',
 } as const;

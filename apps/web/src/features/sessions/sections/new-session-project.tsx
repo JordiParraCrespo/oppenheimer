@@ -1,10 +1,11 @@
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useHostsSnapshot, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { useConsoleDialog } from '@oppenheimer/frontend-web';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { useConsoleDialog } from '@/lib/console';
 import { ProjectSelect } from '../components/project-select';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { useSearchPick } from '../hooks/use-search-pick';
@@ -33,6 +34,7 @@ export function NewSessionProject() {
   const [created, setCreated] = useState<string | undefined>();
 
   const search = useSearch({ from: '/_authenticated/sessions/new' });
+  const resolveError = useErrorMessage();
   const projects = useProjects();
   const hosts = useHostsSnapshot();
   // A boolean that flips once, so the settle re-renders this chip once and a
@@ -80,6 +82,11 @@ export function NewSessionProject() {
         dialogs.open({ kind: 'project', onSaved: (project) => setCreated(project.id) })
       }
       loading={projects.isPending}
+      failure={
+        projects.isError
+          ? resolveError(projects.error, t('sessions.new.project.failed')).message
+          : undefined
+      }
       variant="tab"
     />
   );

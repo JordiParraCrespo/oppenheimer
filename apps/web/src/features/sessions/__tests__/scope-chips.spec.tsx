@@ -25,8 +25,6 @@ vi.mock('react-i18next', () => ({
 
 afterEach(cleanup);
 
-const INSTALL_URL = 'https://github.com/apps/oppenheimer-stub/installations/new';
-
 function chip(name: string) {
   return screen.getByRole('button', { name }) as HTMLButtonElement;
 }
@@ -55,7 +53,7 @@ describe('the scope chips', () => {
         repositories={[]}
         value={[]}
         onValueChange={vi.fn()}
-        manageUrl={INSTALL_URL}
+        onManage={vi.fn()}
         loading
       />,
     );
@@ -66,36 +64,32 @@ describe('the scope chips', () => {
     expect(within(popup).queryByText('sessions.new.repository.empty')).toBeNull();
   });
 
-  it('leads to the install page in a new tab from the foot row', () => {
+  it('hands the foot row to the caller, which mints before it leaves for GitHub', () => {
+    // A button, not a link: the install URL carries a state minted on click, so
+    // there is no address to put in an `href` at render.
+    const onManage = vi.fn();
     render(
       <RepositoryBranchSelect
         repositories={[]}
         value={[]}
         onValueChange={vi.fn()}
-        manageUrl={INSTALL_URL}
+        onManage={onManage}
         loading
       />,
     );
 
     openChip('sessions.new.repository.label');
-    const manage = screen.getByRole('link', { name: 'sessions.new.repository.manage' });
-    expect(manage.getAttribute('href')).toBe(INSTALL_URL);
-    expect(manage.getAttribute('target')).toBe('_blank');
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.new.repository.manage' }));
+    expect(onManage).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('link')).toBeNull();
   });
 
   it('says there is no GitHub App, with no foot row, when the deployment has none', () => {
-    render(
-      <RepositoryBranchSelect
-        repositories={[]}
-        value={[]}
-        onValueChange={vi.fn()}
-        manageUrl={null}
-      />,
-    );
+    render(<RepositoryBranchSelect repositories={[]} value={[]} onValueChange={vi.fn()} />);
 
     const popup = openChip('sessions.new.repository.label');
     expect(within(popup).getByText('sessions.new.repository.noApp')).toBeDefined();
-    expect(screen.queryByRole('link')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'sessions.new.repository.manage' })).toBeNull();
   });
 
   it('says the branches are loading rather than that none match', () => {

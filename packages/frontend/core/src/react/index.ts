@@ -12,6 +12,7 @@ export {
   authKeys,
   type SocialLoginVariables,
   useChangePassword,
+  useExpireSession,
   useForgotPassword,
   useLogin,
   useLogout,
@@ -34,6 +35,7 @@ export {
   useFeatureFlagValue,
 } from './feature-flags.queries';
 export { useAuthState } from './hooks';
+export { type LastFailure, lastFailure, type TrackedMutation } from './last-failure';
 export { withCacheOnSuccess } from './mutations';
 export {
   cacheOwnerKey,
@@ -46,6 +48,14 @@ export {
   reconcileCacheOwner,
   shouldDehydrateQuery,
 } from './persistence';
+export { useQueries, useQuery } from './query';
+export {
+  createQueryClient,
+  expireSession,
+  isUnauthorized,
+  type SessionExpiryTarget,
+  shouldRetryQuery,
+} from './query-client';
 export { MEMBER_LISTS_KEY, withFeaturePrefix } from './query-keys';
 export { shareEntities } from './share-entities';
 export { userSettingsKeys, useUpdateUserSettings, useUserSettings } from './user-settings.queries';

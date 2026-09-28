@@ -41,9 +41,27 @@ export const AuthErrors = {
     httpStatus: 500,
   },
   /**
+   * An `@OrganizationScoped` route whose organization value is not a UUID,
+   * refused before anything is looked up.
+   */
+  ROUTE_ORGANIZATION_INVALID: {
+    code: 'AUTHZ_003',
+    message: 'The organization this request names is not a valid id',
+    httpStatus: 400,
+  },
+  /**
+   * A 500 for the same reason as `AUTHZ_002`: `@OrganizationScoped` names a
+   * parameter the route does not have, which no client request can cause.
+   */
+  ROUTE_ORGANIZATION_MISSING: {
+    code: 'AUTHZ_004',
+    message: 'This route names an organization parameter it does not declare',
+    httpStatus: 500,
+  },
+  /**
    * One opaque answer for every unusable credential — unknown, revoked,
-   * expired, or owned by an account that is gone or deactivated. Telling the
-   * caller which it was would hand them a probing oracle.
+   * expired, or owned by an account that is gone, deactivated or banned.
+   * Telling the caller which it was would hand them a probing oracle.
    */
   INVALID_CREDENTIAL: {
     code: 'TOKEN_003',

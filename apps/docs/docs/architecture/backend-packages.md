@@ -128,7 +128,7 @@ import { setupBullBoard } from "@oppenheimer/backend-queue";
 import { QUEUE_NAMES } from "@oppenheimer/shared";
 
 // In main.ts bootstrap
-setupBullBoard(app, [QUEUE_NAMES.EMAIL, QUEUE_NAMES.FILE_PROCESSING]);
+setupBullBoard(app, [QUEUE_NAMES.EMAIL, QUEUE_NAMES.INBOUND_EVENTS]);
 ```
 
 Bull Board UI is available at `/admin/queues`.

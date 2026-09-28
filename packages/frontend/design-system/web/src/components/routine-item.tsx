@@ -45,7 +45,17 @@ function RoutineItem({
       )}
       {...props}
     >
-      <span aria-hidden className={cn('flex shrink-0', running ? 'text-success' : 'text-fg-subtle')}>
+      {/* The clock sits subtle; GitHub's mark is drawn in ink, a little
+          softened, until a run turns the glyph green. */}
+      <span
+        aria-hidden
+        className={cn(
+          'flex shrink-0',
+          running
+            ? 'text-success'
+            : 'text-fg-subtle [&_[data-brand=github]]:text-fg [&_[data-brand=github]]:opacity-80',
+        )}
+      >
         {icon ?? <ClockIcon />}
       </span>
       <span
@@ -56,7 +66,7 @@ function RoutineItem({
       >
         {name}
       </span>
-      {meta ? <span className="figures shrink-0 text-[11px] text-fg-subtle">{meta}</span> : null}
+      {meta ? <span className="figures shrink-0 text-[11px] text-fg">{meta}</span> : null}
     </ButtonPrimitive>
   );
 }

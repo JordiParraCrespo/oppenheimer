@@ -110,6 +110,17 @@ history) to work on the MVP.
   refuses it is the answer, so a stale credential never falls back to a
   session. What a credential authorizes (`ScopeContext`) and what the
   guards do with it are unchanged.
+- **The organization a route names is the organization authorization
+  runs in.** A route scoped to an organization — in its path, or in the
+  query or body where a route takes one — is authorized in the
+  organization it names; any other route is authorized in the session's
+  organization. A malformed organization id is refused (`AUTHZ_003`),
+  never replaced by the session's. A caller who is not a member of that
+  organization holds no roles there and is refused by the policy check
+  (`AUTH_002`); a route's "not a member" error (`ORG_003`) is only for a
+  caller whose global roles pass that check but who has no membership
+  there. There is no header to act in another organization; it stays out
+  until a client needs it. (Decided 2026-09-27.)
 - **Credential writes are session-only.** Changing the password or the
   email, signing devices out and deleting the account carry no scope, so
   no API token or OAuth client reaches them: a leaked token that could do

@@ -9,7 +9,6 @@
   "invalidTitle": "This link has expired",
   "invalidDescription": "Start the connection again from the application that sent you here.",
   "backToSessions": "Back to sessions",
-  "noRedirect": "The server did not say where to send you next.",
   "sensitiveScope": "Sensitive",
   "unknownClient": "An application",
   "failed": "That did not go through. Try again."

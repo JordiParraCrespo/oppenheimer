@@ -254,8 +254,11 @@ the side effect. The row *is* the message: `aggregateId` is a plain column with
 no foreign key, so a queued event outlives the record it names.
 
 After commit the repository wakes the relay (`OutboxRelayService` in
-`apps/api/src/outbox/`); a background poll is the safety net for rows whose
-process died between commit and delivery. The relay claims due rows with
+`apps/api/src/outbox/`) with `this.outbox.wake()`, not awaited: a wake asks for
+a drain and returns, so the request never waits for delivery (the listeners
+have not necessarily run when it returns). At most one drain runs per process;
+wakes during it collapse into one more pass. A background poll is the safety
+net for rows whose process died between commit and delivery. The relay claims due rows with
 `FOR UPDATE SKIP LOCKED` — concurrent API replicas lease disjoint rows, which is
 what makes the pattern safe under horizontal scaling — and delivers them:
 
@@ -266,10 +269,18 @@ what makes the pattern safe under horizontal scaling — and delivers them:
 - `channel: 'queue'` rows (staged with `OutboxService.stageJob`) → added to the
   BullMQ queue named by `topic`.
 
+Delivery is at least once, so **listeners must be idempotent**: an event row
+is one delivery to every `@OnEvent` listener of that event, so when one
+listener throws, the retry runs all of them again; a listener slower than the
+30 s lease can be claimed and run a second time by another replica; and a
+process that dies after publishing a batch but before marking it processed
+redelivers that batch.
+
 Delivery failures retry with exponential backoff and park as `failed` after
 `maxAttempts` — kept for inspection, never dropped. Leases expire
 (`lockedUntil`), so rows owned by a dead process are reclaimed rather than
-stuck. Every row records a human-readable **reason** (pass `reason` when raising
+stuck. Delivered rows are purged after 7 days (`OutboxRetentionProcessor`);
+`failed` rows are kept. Every row records a human-readable **reason** (pass `reason` when raising
 the event) so the table is self-explaining at 2am.
 
 This does **not** replace BullMQ: BullMQ still owns retries, delayed jobs and

@@ -36,7 +36,9 @@ import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-ent
 import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { ProjectRepositoryOrmEntity } from '../projects/database/project-repository.orm-entity';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
+import { RoleCatalogVersionOrmEntity } from '../roles/database/role-catalog-version.orm-entity';
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
+import { UserRoleVersionOrmEntity } from '../roles/database/user-role-version.orm-entity';
 import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
 import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
@@ -91,6 +93,8 @@ export default new DataSource({
     AutomationRunOrmEntity,
     AutomationSettingsOrmEntity,
     UserRoleOrmEntity,
+    RoleCatalogVersionOrmEntity,
+    UserRoleVersionOrmEntity,
     OrganizationOrmEntity,
     MemberOrmEntity,
     InvitationOrmEntity,

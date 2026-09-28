@@ -50,9 +50,9 @@ the kernel or the kit imports it back.
 | `sections/` | a pane, a card group, a table | yes | yes | `sessions/sections/sessions-sidebar.tsx` |
 | `dialogs/` | one dialog per file, owning its mutation | yes | yes | — none yet in this app |
 | `forms/` | React Hook Form over a shared Zod schema; props in, `onSubmit` out | no | no | `auth/forms/login-form.tsx` |
-| `components/` | entity UI: a row, a badge, a hero, a checklist | no | no | `organizations/components/installation-card.tsx` |
+| `components/` | entity UI: a row, a badge, a hero, a checklist | no | no | `installations/components/installation-card.tsx` |
 | `hooks/` | `use-*.ts` over queries and UI state; the only home of an effect | yes | yes | `sessions/hooks/use-elapsed.ts` |
-| `lib/` | types, mappers, constants; no JSX | no | no | `sessions/lib/elapsed.ts` |
+| `lib/` | types, mappers, constants; no JSX | no | no | `sessions/lib/session-groups.ts` |
 | `__tests__/` | Vitest + Testing Library specs | — | — | — |
 
 `forms-and-components-stay-pure` is the cruiser rule behind the two "no"
@@ -184,7 +184,7 @@ Biome (`overrides` in `biome.json`) — no `useEffect` outside `hooks/`, no
 ## What is deliberately per-app
 
 `src/lib/` holds configuration, never helpers: `oppenheimer.ts`, `auth-client.ts`,
-`nav.ts`. A fourth file fails `check:structure`.
+`nav.ts`, `console.ts`. A fifth file fails `check:structure`.
 
 - **`oppenheimer.ts`** — `OppenheimerApp.create({ modules: consumerModules })` with the
   kit's `LocalStorageService` and `createWebAnalyticsClient()`. Loading the

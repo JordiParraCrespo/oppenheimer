@@ -557,6 +557,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   behind an Inspect fold, in the console and in onboarding; the
   automation editor holds its Task step alone until the API names a
   trigger (05, 13).
+- 2026-09-27: organization routes are authorized in the organization they name (08).
 - 2026-09-27: **automations move into the MVP** (00, 16). A run is a
   headless session for any agent in the catalog, translated in the API;
   `sessions/` owns execution (`session_turn`) and `automations/` only the
@@ -574,3 +575,18 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   fetching every branch. It is blobless with no working tree, a create
   fetches only the ref its worktree is made from, and each repository
   keeps one spare worktree checked out ahead of the next create (02).
+- 2026-09-28: **Settings is two sliders, not a cog** (05). The
+  version-1 export's `settings` glyph is lucide's `settings-2`, so the
+  account menu's link and a project header's action both draw it, and
+  05's "cog" is gone. 05 now keeps the glyph map: folder for a project,
+  an arrow out for a foot action that opens another site, `Callout` and
+  the Auto shield kept against the export, with the reasons.
+- 2026-09-28: **The GitHub App install redirect carries a console-minted
+  state** (03, 05). An addition, not a reversal: `POST /installations`
+  now requires the single-use `state` that `POST
+  /installations/install-state` minted for the caller in the workspace,
+  so a forwarded callback can no longer connect someone else's
+  installation (`GITHUB_011`). Both install entry points mint on click;
+  `github_app_install_url` stays as the capability that says an App
+  exists. The first-run walk rides as the state's prefix,
+  `first-run.<nonce>`.

@@ -84,6 +84,11 @@ shared ─► core ─► consumer ─► apps/web
   in.
 - The kernel never imports the product package, and the kit imports only the
   kernel. `pnpm arch` fails either way.
+- A feature never imports React Query outside its tests
+  (`features-query-through-the-product`); it reads and writes through the
+  product package's hooks.
+- `src/providers/` imports a feature's `dialogs/` and nothing else of a
+  feature (`providers-mount-dialogs`).
 - The kit is imported by its package name (`@oppenheimer/frontend-web`), never by a
   path into its `src/`.
 - An app never keeps a file the kit ships. `pnpm check:structure` compares
@@ -92,7 +97,9 @@ shared ─► core ─► consumer ─► apps/web
 ## The kit is concerns, not kinds, at its top level
 
 `packages/frontend/web/src/<concern>/<kind>/` — `shell`, `auth`,
-`layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`, `roles`. Each
+`layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`, `roles`,
+`pairing`. A concern is named after what it does, never after a product
+module. Each
 concern has an `index.ts`; a concern imports another only through it. The
 concerns are layered (leaves → middle → top) and `pnpm arch` holds the order.
 A concern that needs a product hook is a feature, not kit.
@@ -161,7 +168,10 @@ name the jobs and split *those*.
   two.
   The split that matters is by clock, not by length — a keystroke, a page, a
   tick. When you cannot name the second job, there isn't one.
-- **One component per file.** Biome's `noNestedComponentDefinitions` is on.
+- **One component per file** in an app. Biome's `noNestedComponentDefinitions`
+  catches one declared inside another; `pnpm check:structure` catches two
+  declared side by side, which Biome does not see. The kit is exempt: a
+  primitives file there exports a family meant to be read together.
 - **An effect synchronises with something outside React, and says what.**
   A DOM listener, a subscription, a timer, an imperative library, the URL.
   Never deriving state, resetting on a prop change, chaining updates or
@@ -226,13 +236,15 @@ name the jobs and split *those*.
   that draws it, and hand a one-second tick to a leaf of its own — the
   pairing countdown and the provisioning clock are elements in their parent's
   slot, so a tick re-renders a line of text and not the dialog around it.
-- **Entity queries opt into `shareEntities`.** The entities are classes, which
-  TanStack Query's default structural sharing does not look into, so without
-  it every refetch hands every reader a new object per row. A query hook that
-  returns entities passes `structuralSharing: shareEntities` (from
-  `@oppenheimer/frontend-core/react`); a list hook takes a narrowing `select`,
-  and a read that only happens in an event handler uses the module's
-  `use…Snapshot()` rather than subscribing.
+- **Queries share entities across refetches.** The entities are classes,
+  which TanStack Query's default structural sharing does not look into, so
+  without `shareEntities` every refetch hands every reader a new object per
+  row. A query hook in a frontend package's `src/react/` calls `useQuery` /
+  `useQueries` from `@oppenheimer/frontend-core/react`, which apply it (a query
+  that must not share passes `structuralSharing: false`); `pnpm
+  check:structure` fences TanStack's own two out of those files. A list hook
+  takes a narrowing `select`, and a read that only happens in an event handler
+  uses the module's `use…Snapshot()` rather than subscribing.
 
 ## Routing is its own skill
 

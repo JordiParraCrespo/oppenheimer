@@ -29,7 +29,9 @@
       "year": "{{count}}y"
     },
     "save": "Save",
-    "search": "Search"
+    "search": "Search",
+    "dismiss": "Dismiss",
+    "breadcrumb": "Breadcrumb"
   },
   "validation": {
     "title": "Validation error",
@@ -39,7 +41,15 @@
     "maxLength": "Must be at most {{max}} characters",
     "minItems": "Select at least {{min}}",
     "maxItems": "Select at most {{max}}",
-    "url": "Enter a valid URL, including https://"
+    "url": "Enter a valid URL, including https://",
+    "invalid": "This value is not valid",
+    "format": "This is not in the expected format",
+    "choice": "Choose one of the options",
+    "date": "Enter a valid date",
+    "min": "Must be at least {{min}}",
+    "max": "Must be at most {{max}}",
+    "multipleOf": "Must be a multiple of {{step}}",
+    "tooLong": "This is too long"
   },
   "errors": {
     "fallback": "Something went wrong. Please try again.",
@@ -106,8 +116,9 @@
       "ROLE_005": "You cannot give a role more access than you have yourself.",
       "ROLE_006": "That role belongs to another organization.",
       "ROLE_007": "This deployment is missing a system role it needs. Run the database migrations.",
-      "AUTHZ_001": "You are not a member of that organization.",
       "AUTHZ_002": "Something is misconfigured on the server. Please try again later.",
+      "AUTHZ_003": "That organization id is not valid.",
+      "AUTHZ_004": "Something is misconfigured on the server. Please try again later.",
       "GRANT_001": "That access grant could not be found.",
       "GRANT_002": "You cannot grant more access than you have yourself.",
       "GRANT_003": "That person or team is not part of this organization.",
@@ -123,6 +134,7 @@
       "GITHUB_008": "That GitHub installation is suspended or no longer installed.",
       "GITHUB_009": "GitHub did not answer. Try again in a moment.",
       "GITHUB_010": "That repository is not one this GitHub installation covers.",
+      "GITHUB_011": "That GitHub link was not started here. Connect GitHub again from this page.",
       "PROJECTS_001": "That project could not be found.",
       "PROJECTS_002": "Choose a workspace before working with projects.",
       "PROJECTS_003": "Projects cannot be archived right now. Try again in a moment.",
@@ -185,7 +197,20 @@
       "AUTOMATIONS_007": "That project can't hold automations.",
       "AUTOMATIONS_008": "That run doesn't exist.",
       "INBOUND_001": "That event source isn't known.",
-      "INBOUND_002": "The delivery carries no delivery id."
+      "INBOUND_002": "The delivery carries no delivery id.",
+      "SESS_001": "The host has no record of that session.",
+      "SESS_002": "The host could not start a session with those settings.",
+      "SESS_003": "That session is not running on its host.",
+      "SESS_004": "The host already has a session in that worktree.",
+      "SESS_005": "The host could not give that image to the session.",
+      "TMUX_001": "tmux is not installed on the host. Install it, then try again.",
+      "TMUX_002": "tmux on the host refused to start the session.",
+      "GIT_001": "The host could not prepare the worktree.",
+      "GIT_002": "A git command failed on the host.",
+      "GIT_003": "The branch could not be pushed.",
+      "GIT_004": "The host cannot reach that repository. Check that the GitHub App has access to it.",
+      "GIT_005": "A git command on the host took too long and was stopped.",
+      "CONSENT_CLIENT_002": "The server did not say where to send you next."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -195,7 +220,8 @@
     "unexpected": {
       "title": "This screen could not be drawn",
       "retry": "Try again"
-    }
+    },
+    "code": "Code: {{code}}"
   },
   "auth": {
     "email": "Email",
@@ -248,7 +274,8 @@
       "sentMessage": "We sent a password reset link to <address>{{email}}</address>. It expires in 30 minutes.",
       "emailLabel": "Work email",
       "resend": "Resend link",
-      "differentAddress": "Use a different address"
+      "differentAddress": "Use a different address",
+      "resendFailed": "Could not send the email again. Try again in a moment."
     },
     "resetPassword": {
       "title": "Set a new password",
@@ -354,7 +381,8 @@
       "deleteHint": "Delete this project",
       "deleteBlocked_one": "Move or delete its {{count}} session first",
       "deleteBlocked_other": "Move or delete its {{count}} sessions first",
-      "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted."
+      "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted.",
+      "loadFailed": "Could not load this project."
     },
     "deleteDialog": {
       "title": "Delete {{name}}?",
@@ -398,7 +426,8 @@
       "progressFailed": "Could not load how the start is going.",
       "codes": {
         "SESS_002": "This host makes sessions with one repository."
-      }
+      },
+      "details": "Details from the host: {{detail}}"
     },
     "group": {
       "working": "Working",
@@ -415,6 +444,10 @@
     "new": {
       "title": "New session",
       "subtitle": "Set the scope, then describe the work.",
+      "subtitleProject_one": "In {{name}} · cloning {{picked}} of {{count}} repository, each on its own opp/ branch.",
+      "subtitleProject_other": "In {{name}} · cloning {{picked}} of {{count}} repositories, each on its own opp/ branch.",
+      "subtitleCloning_one": "In {{name}} · cloning {{count}} repository, on its own opp/ branch.",
+      "subtitleCloning_other": "In {{name}} · cloning {{count}} repositories, each on its own opp/ branch.",
       "host": {
         "label": "Host",
         "placeholder": "Host",
@@ -422,7 +455,8 @@
         "empty": "No host matches.",
         "loading": "Loading hosts…",
         "add": "Add host…",
-        "offline": "Offline"
+        "offline": "Offline",
+        "failed": "Could not load your hosts."
       },
       "project": {
         "label": "Project",
@@ -431,7 +465,8 @@
         "empty": "No project matches.",
         "loading": "Loading projects…",
         "add": "New project…",
-        "noRepositories": "No repositories"
+        "noRepositories": "No repositories",
+        "failed": "Could not load your projects."
       },
       "repository": {
         "label": "Repositories",
@@ -444,8 +479,10 @@
         "branchPane": "Branch for {{name}}",
         "changeBranch": "Change branch",
         "manage": "Manage repository access",
+        "manageFailed": "Could not open GitHub. Try again in a moment.",
         "noApp": "This deployment has no GitHub App, so there are no repositories to pick.",
-        "archived": "Archived"
+        "archived": "Archived",
+        "failed": "Could not load your repositories."
       },
       "branch": {
         "label": "Branch",
@@ -504,8 +541,13 @@
       "image": {
         "sending": "Sending image",
         "hostOffline": "The image was not sent: the host is offline.",
-        "failedTitle": "The image did not reach the session",
-        "dismiss": "Dismiss"
+        "failedTitle": "The image did not reach the session"
+      },
+      "retryNow": "Retry now",
+      "retry": "Try again",
+      "ended": {
+        "forbidden": "You do not have access to this session's terminal.",
+        "refused": "The host refused to open this terminal."
       }
     },
     "sidebar": {
@@ -527,7 +569,8 @@
       "moveTitle": "Move to project",
       "moveNone": "No other project holds this session's repository.",
       "delete": "Delete",
-      "writeFailed": "That change did not land. Try again."
+      "writeFailed": "That change did not land. Try again.",
+      "loadFailed": "Could not load your sessions."
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",
@@ -582,7 +625,8 @@
       "noProjects": "No project yet. Make one from New session, and its automations gather here.",
       "noRuns": "No runs yet.",
       "running": "Running",
-      "paused": "Paused"
+      "paused": "Paused",
+      "loadFailed": "Could not load your automations."
     },
     "page": {
       "tabs": {
@@ -593,7 +637,8 @@
       "empty": "No automations yet. An automation starts a session on a schedule or when something happens on GitHub.",
       "runsEmpty": "No runs yet. Each run appears here with the session it started.",
       "loadFailed": "Automations could not be loaded.",
-      "actionFailed": "That did not go through."
+      "actionFailed": "That did not go through.",
+      "actionFailedFor": "“{{name}}” was not updated"
     },
     "status": {
       "active": "Active",
@@ -774,9 +819,6 @@
       "resume": "Resume automation",
       "duplicate": "Duplicate",
       "delete": "Delete automation",
-      "confirmDelete": "Delete this automation? Its triggers stop now. Past runs are kept.",
-      "cancel": "Cancel",
-      "confirm": "Delete",
       "resumeAction": "Resume",
       "notFound": "This automation does not exist, or was deleted."
     },
@@ -832,7 +874,8 @@
       "noRepositories": "No repositories",
       "repositories": "Repositories",
       "searchRepositories": "Search repositories",
-      "inProject": "In {{name}}",
+      "repoCount_one": "{{count}} repo",
+      "repoCount_other": "{{count}} repos",
       "runsOn": "Runs on",
       "host": "Host",
       "chooseHost": "Choose a host",
@@ -852,7 +895,20 @@
       "save": "Save",
       "create": "Create automation",
       "saveFailed": "The automation could not be saved.",
-      "forProject": "For {{name}}."
+      "forProject": "For {{name}}.",
+      "noMatch": "No match for “{{query}}”.",
+      "chooseRepositories": "Choose repositories…",
+      "chooseAgent": "Choose an agent…",
+      "chooseModel": "Choose a model…"
+    },
+    "skipReasonOther": "Skipped",
+    "pausedReasonOther": "Paused. Triggers are ignored until it is resumed.",
+    "deleteDialog": {
+      "title": "Delete “{{name}}”?",
+      "description": "Its triggers stop now. Past runs are kept.",
+      "confirm": "Delete",
+      "deleting": "Deleting…",
+      "failed": "The automation could not be deleted."
     }
   },
   "hosts": {
@@ -913,10 +969,13 @@
       "save": "Save",
       "cancel": "Cancel",
       "remove": "Remove host",
+      "removing": "Removing…",
       "removeTitle": "Remove {{name}}?",
       "removeRunning_one": "{{count}} session is running on {{name}}. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
       "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
-      "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused."
+      "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
+      "renameFailed": "Could not rename this host. Try again.",
+      "removeFailed": "Could not remove this host. Try again."
     }
   },
   "settings": {
@@ -978,7 +1037,6 @@
       "mismatch": "The passwords do not match.",
       "submit": "Change password",
       "submitting": "Changing…",
-      "done": "Password changed. Other devices are signed out.",
       "failed": "The password could not be changed."
     },
     "devices": {
@@ -988,7 +1046,9 @@
       "lastSeen": "Active {{when}}",
       "activeNow": "Active now",
       "signOut": "Sign out",
+      "signingOut": "Signing out…",
       "signOutOthers": "Sign out of all other devices",
+      "signingOutOthers": "Signing out of other devices…",
       "failed": "The devices could not be loaded.",
       "revokeFailed": "That device could not be signed out."
     },
@@ -1062,7 +1122,8 @@
     "sidebarTitle": "Navigation",
     "sidebarDescription": "Your sessions, your automations and your account.",
     "settings": "Settings",
-    "automations": "Automations"
+    "automations": "Automations",
+    "logOutFailed": "Could not log you out. Try again."
   },
   "control": {
     "accessDeniedTitle": "Control plane access required",
@@ -1331,7 +1392,6 @@
     "invalidTitle": "This link has expired",
     "invalidDescription": "Start the connection again from the application that sent you here.",
     "backToSessions": "Back to sessions",
-    "noRedirect": "The server did not say where to send you next.",
     "sensitiveScope": "Sensitive",
     "unknownClient": "An application",
     "failed": "That did not go through. Try again."
@@ -1377,11 +1437,13 @@
         "title": "Connect GitHub",
         "description": "This installs the Oppenheimer GitHub App on your account. You pick all repositories or selected ones on GitHub's own page.",
         "connect": "Connect GitHub",
+        "starting": "Opening GitHub…",
         "skip": "Skip for now",
         "skipNote": "You can add repositories later in Settings. The repo picker stays empty until you do.",
         "connected": "{{count}} repositories · read access",
         "change": "Change which repositories",
         "failed": "We could not connect that GitHub installation.",
+        "unstarted": "This GitHub link was not started here. Connect GitHub again.",
         "connectedAll": "Every repository on the account",
         "connectedPending": "Connected"
       },
@@ -1403,7 +1465,8 @@
         "noWorkspace": "No workspace yet",
         "noGithub": "Not connected",
         "noHost": "No host yet",
-        "doneLabel": "Done"
+        "doneLabel": "Done",
+        "failed": "Could not load this. Reload the page to try again."
       }
     }
   },
@@ -1701,10 +1764,26 @@
     "system": "Match system"
   },
   "toasts": {
-    "copied": "Copied to clipboard.",
-    "memberRemoved": "Member removed.",
-    "membersInvited": "Invitations sent.",
-    "passwordChanged": "Password updated. Your other devices have been signed out."
+    "automationCreated": "“{{name}}” created.",
+    "automationSaved": "“{{name}}” saved.",
+    "automationDeleted": "“{{name}}” deleted.",
+    "automationDuplicated": "Duplicated as “{{name}}”.",
+    "automationPaused": "“{{name}}” paused.",
+    "automationResumed": "“{{name}}” resumed.",
+    "runStarted": "Run of “{{name}}” started.",
+    "openRun": "Open",
+    "emailResent": "Email sent again.",
+    "sessionRenamed": "Renamed to “{{name}}”.",
+    "sessionMoved": "“{{name}}” moved to {{project}}.",
+    "sessionDeleteRequested": "Asked the host to delete “{{name}}”.",
+    "projectCreated": "“{{name}}” created.",
+    "projectSaved": "“{{name}}” saved.",
+    "projectDeleted": "“{{name}}” deleted.",
+    "hostRenamed": "Renamed to “{{name}}”.",
+    "hostRemoved": "“{{name}}” removed.",
+    "deviceSignedOut": "“{{name}}” signed out.",
+    "otherDevicesSignedOut": "Your other devices are signed out.",
+    "passwordChanged": "Password changed. Other devices are signed out."
   },
   "emails": {
     "common": {

@@ -1,16 +1,13 @@
 import {
-  Alert,
-  AlertDescription,
   Dialog,
   DialogBody,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  toast,
 } from '@oppenheimer/design-system-web';
 import { useChangeOwnPassword } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert, notifySuccess } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ChangePasswordForm } from '../forms/change-password-form';
 
@@ -22,10 +19,9 @@ import { ChangePasswordForm } from '../forms/change-password-form';
  */
 export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
   const change = useChangeOwnPassword({
     onSuccess: () => {
-      toast.success(t('settings.changePassword.done'));
+      notifySuccess('passwordChanged');
       onClose();
     },
   });
@@ -39,13 +35,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
         </DialogHeader>
         <DialogBody>
           <div className="flex flex-col gap-4 pb-7">
-            {change.isError ? (
-              <Alert variant="destructive">
-                <AlertDescription>
-                  {resolveError(change.error, t('settings.changePassword.failed')).message}
-                </AlertDescription>
-              </Alert>
-            ) : null}
+            <ErrorAlert error={change.error} fallback={t('settings.changePassword.failed')} />
             <ChangePasswordForm
               isPending={change.isPending}
               onSubmit={({ currentPassword, newPassword }) =>

@@ -6,5 +6,13 @@
   "maxLength": "Must be at most {{max}} characters",
   "minItems": "Select at least {{min}}",
   "maxItems": "Select at most {{max}}",
-  "url": "Enter a valid URL, including https://"
+  "url": "Enter a valid URL, including https://",
+  "invalid": "This value is not valid",
+  "format": "This is not in the expected format",
+  "choice": "Choose one of the options",
+  "date": "Enter a valid date",
+  "min": "Must be at least {{min}}",
+  "max": "Must be at most {{max}}",
+  "multipleOf": "Must be a multiple of {{step}}",
+  "tooLong": "This is too long"
 }

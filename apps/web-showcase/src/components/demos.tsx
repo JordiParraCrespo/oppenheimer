@@ -70,6 +70,8 @@ import {
 import { SessionItem, SessionList } from '@oppenheimer/design-system-web/session-item';
 import {
   SidebarEmptyRow,
+  SidebarListHead,
+  SidebarProjectGroup,
   SidebarProjectHeader,
   SidebarSearch,
 } from '@oppenheimer/design-system-web/sidebar';
@@ -93,7 +95,11 @@ import {
 } from '@oppenheimer/design-system-web/tooltip';
 import { Wordmark } from '@oppenheimer/design-system-web/wordmark';
 import { Callout } from '@oppenheimer/design-system-web/callout';
-import { FieldSelect } from '@oppenheimer/design-system-web/field-select';
+import {
+  FieldSelect,
+  FieldSelectGroup,
+  FieldSelectRow,
+} from '@oppenheimer/design-system-web/field-select';
 import { HostCard } from '@oppenheimer/design-system-web/host-card';
 import {
   AddRow,
@@ -171,6 +177,7 @@ import { Input } from '@oppenheimer/design-system-web/input';
 import { Checkbox } from '@oppenheimer/design-system-web/checkbox';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 import {
+  ArrowUpRightIcon,
   ChevronDownIcon,
   ClockIcon,
   CpuIcon,
@@ -185,9 +192,8 @@ import {
   PlusIcon,
   ServerIcon,
   Settings2Icon,
-  SettingsIcon,
   ShieldCheckIcon,
-  SlidersHorizontalIcon,
+  SlidersVerticalIcon,
   TerminalIcon,
   TriangleAlertIcon,
   UserIcon,
@@ -207,6 +213,14 @@ const PROMPT =
  * StatusDot line that resolves in place so nothing under it moves. The
  * product draws the same column from the kit's pairing parts.
  */
+
+/** The copy `FieldSelect` requires, in the showcase's one language. */
+const SELECT_COPY = {
+  placeholder: 'Choose…',
+  searchPlaceholder: 'Search…',
+  emptyText: (query: string) => `No match for “${query}”.`,
+};
+
 export function AddHostDialogDemo() {
   const [tab, setTab] = React.useState('cmd');
   const [registered, setRegistered] = React.useState(false);
@@ -314,7 +328,7 @@ export function FilterMenuDemo() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<IconButton aria-label="Filter sessions" size="xs" variant="quiet" />}>
-        <Settings2Icon />
+        <SlidersVerticalIcon />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="min-w-57.5">
         <DropdownMenuSub>
@@ -399,7 +413,7 @@ export function AccountMenuDemo() {
           <>
             <DropdownMenuHeader>jordiparra99@gmail.com</DropdownMenuHeader>
             <DropdownMenuItem>
-              <SlidersHorizontalIcon /> Settings
+              <Settings2Icon /> Settings
             </DropdownMenuItem>
             <DropdownMenuPaneItem value={themeLabel} onClick={() => setPane('theme')}>
               <MoonIcon /> Appearance
@@ -499,7 +513,7 @@ export function TooltipDemo() {
       <div className="flex items-center gap-2">
         <Tooltip>
           <TooltipTrigger render={<IconButton aria-label="Filter sessions" />}>
-            <Settings2Icon />
+            <SlidersVerticalIcon />
           </TooltipTrigger>
           <TooltipContent>Filter sessions</TooltipContent>
         </Tooltip>
@@ -596,6 +610,7 @@ export function ScopeChips({ variant }: { variant?: 'chip' | 'tab' }) {
         action={{
           label: 'Manage repository access',
           icon: <BrandGlyph name="github" size={15} />,
+          trailing: <ArrowUpRightIcon />,
           href: 'https://github.com/settings/installations',
         }}
       />
@@ -837,14 +852,12 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
             New session
           </Button>
         </div>
-        <div className="mt-4 flex h-[26px] items-center gap-2 pr-2.5 pl-5">
-          <span className="eyebrow">Projects</span>
-          <span className="figures ml-auto text-[11px] text-sidebar-muted">{projects.length}</span>
+        <SidebarListHead label="Projects" count={projects.length} className="mt-4">
           <IconButton aria-label="New project" size="xs" variant="quiet">
             <PlusIcon />
           </IconButton>
           <FilterMenuDemo />
-        </div>
+        </SidebarListHead>
         <SidebarSearch value={query} onValueChange={setQuery} placeholder="Search sessions" />
         {filters.length ? (
           <div className="flex flex-wrap gap-1 px-3 pb-2">
@@ -873,7 +886,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                 term ? (names[name] ?? name).toLowerCase().includes(term) : true,
               );
               return (
-                <div key={project.name} className="mt-1.5 flex flex-col">
+                <SidebarProjectGroup key={project.name}>
                   <SidebarProjectHeader
                     name={project.name}
                     count={project.sessions.length}
@@ -888,7 +901,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                           <PlusIcon />
                         </IconButton>
                         <IconButton aria-label={`${project.name} settings`} size="xs" variant="quiet">
-                          <SettingsIcon />
+                          <Settings2Icon />
                         </IconButton>
                       </>
                     }
@@ -899,7 +912,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                         No sessions yet. <button type="button">Start one</button>
                       </SidebarEmptyRow>
                     ) : (
-                      <SessionList className="px-3">
+                      <SessionList>
                         {rows.map(([name, age, state]) => (
                           <SessionItem
                             key={name}
@@ -935,7 +948,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                       </SessionList>
                     )
                   ) : null}
-                </div>
+                </SidebarProjectGroup>
               );
             })
           )}
@@ -1245,7 +1258,7 @@ export function EditorPageDemo() {
         <EditorPageBody>
         <EditorPageBack href="#editorpage">Back</EditorPageBack>
         <PageHeader className="mb-7">
-          <PageHeaderCrumbs>
+          <PageHeaderCrumbs aria-label="Breadcrumb">
             <button type="button">New session</button>
             <span>/</span>
             <PageHeaderHere>Add a host</PageHeaderHere>
@@ -1310,13 +1323,12 @@ export function PageHeaderDemo() {
   return (
     <div className="flex w-full flex-col gap-8">
       <PageHeader>
-        <PageHeaderCrumbs>
+        <PageHeaderCrumbs aria-label="Breadcrumb">
           <button type="button">Routines</button>
           <span>/</span>
           <PageHeaderHere>Nightly dependency audit</PageHeaderHere>
         </PageHeaderCrumbs>
         <PageHeaderRow
-          size="lg"
           icon={<ClockIcon />}
           title="Nightly dependency audit"
           actions={
@@ -1355,7 +1367,7 @@ export function PageHeaderDemo() {
         ) : null}
       </PageHeader>
       <PageHeader>
-        <PageHeaderCrumbs>
+        <PageHeaderCrumbs aria-label="Breadcrumb">
           <button type="button">Routines</button>
           <span>/</span>
           <PageHeaderHere>New routine</PageHeaderHere>
@@ -1594,6 +1606,44 @@ export function TimeTokenDemo() {
   );
 }
 
+/** Where it runs, as the editor draws it: pickers as the rows of one hairline card. */
+export function FieldSelectGroupDemo() {
+  const [host, setHost] = React.useState<string | null>('optimus');
+  const [agent, setAgent] = React.useState<string | null>('claude-code');
+  return (
+    <FieldSelectGroup className="w-full max-w-146">
+      <FieldSelectRow icon={<CpuIcon />} label="Host">
+        <FieldSelect
+          {...SELECT_COPY}
+          variant="quiet"
+          aria-label="Host"
+          value={host}
+          onValueChange={setHost}
+          searchPlaceholder="Search hosts"
+          options={[
+            { value: 'optimus', label: 'optimus', description: 'Ubuntu 24.04 · idle' },
+            { value: 'mac', label: 'jordis-mac-studio', description: 'macOS 15 · running' },
+          ]}
+        />
+      </FieldSelectRow>
+      <FieldSelectRow icon={<BotIcon />} label="Agent">
+        <FieldSelect
+          {...SELECT_COPY}
+          variant="quiet"
+          aria-label="Agent"
+          value={agent}
+          onValueChange={setAgent}
+          searchPlaceholder="Search agents"
+          options={[
+            { value: 'claude-code', label: 'Claude Code' },
+            { value: 'codex', label: 'Codex' },
+          ]}
+        />
+      </FieldSelectRow>
+    </FieldSelectGroup>
+  );
+}
+
 export function RoutineEditorDemo() {
   const [project, setProject] = React.useState<string | null>('xrp');
   const [repos, setRepos] = React.useState<string[]>(['xrp-mobile']);
@@ -1608,6 +1658,8 @@ export function RoutineEditorDemo() {
           <Field>
             <FieldLabel>Project</FieldLabel>
             <FieldSelect
+             {...SELECT_COPY}
+              {...SELECT_COPY}
               value={project}
               onValueChange={setProject}
               meta="1 repo"
@@ -1622,6 +1674,8 @@ export function RoutineEditorDemo() {
           <Field>
             <FieldLabel>Repositories</FieldLabel>
             <FieldSelect
+             {...SELECT_COPY}
+              {...SELECT_COPY}
               multiple
               value={repos}
               onValueChange={setRepos}
@@ -1636,6 +1690,8 @@ export function RoutineEditorDemo() {
           <Field>
             <FieldLabel>Host</FieldLabel>
             <FieldSelect
+             {...SELECT_COPY}
+              {...SELECT_COPY}
               value={host}
               onValueChange={setHost}
               meta="idle"
@@ -1725,11 +1781,11 @@ export function RoutineEditorDemo() {
         <RoutineStepFields>
           <Field>
             <FieldLabel>Agent</FieldLabel>
-            <FieldSelect value="claude" onValueChange={() => {}} options={[{ value: 'claude', label: 'Claude Code' }, { value: 'codex', label: 'Codex' }]} />
+            <FieldSelect {...SELECT_COPY} value="claude" onValueChange={() => {}} options={[{ value: 'claude', label: 'Claude Code' }, { value: 'codex', label: 'Codex' }]} />
           </Field>
           <Field>
             <FieldLabel>Model</FieldLabel>
-            <FieldSelect value="sonnet" onValueChange={() => {}} options={[{ value: 'sonnet', label: 'Claude Sonnet 4.6' }, { value: 'opus', label: 'Claude Opus 4.2' }]} />
+            <FieldSelect {...SELECT_COPY} value="sonnet" onValueChange={() => {}} options={[{ value: 'sonnet', label: 'Claude Sonnet 4.6' }, { value: 'opus', label: 'Claude Opus 4.2' }]} />
           </Field>
         </RoutineStepFields>
       </RoutineStep>

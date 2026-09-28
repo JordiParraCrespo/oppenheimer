@@ -1,12 +1,11 @@
 'use client';
 
-import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import type { CreateApiTokenDto } from '@oppenheimer/shared';
 import {
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type {

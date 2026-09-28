@@ -4,7 +4,7 @@ import {
   type MintedPairingTokenResponseDto,
   type PairingTokenResponseDto,
 } from '@oppenheimer/api-client';
-import { AppError, MapApiError } from '@oppenheimer/frontend-core';
+import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import { HostEntity, type HostPairing, type HostPairingToken } from './host.entity';
 import { HostsErrors } from './hosts.errors';
@@ -59,10 +59,12 @@ function toEntity(data: HostDto): HostEntity {
 export class HostsRepository {
   @MapApiError(HostsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<HostEntity[]> {
-    const { data, error } = await heyApiClient.get<{ 200: HostDto[] }>({ url: HOSTS_URL });
     // An absent body is a failed read, not an empty collection — returning `[]`
     // would render "no hosts" over a request that never succeeded.
-    if (error || !data) throw new AppError(HostsErrors.FETCH_LIST_FAILED);
+    const data = await unwrapBody(
+      heyApiClient.get<{ 200: HostDto[] }>({ url: HOSTS_URL }),
+      HostsErrors.FETCH_LIST_FAILED,
+    );
     return data.map(toEntity);
   }
 
@@ -76,11 +78,13 @@ export class HostsRepository {
    */
   @MapApiError(HostsErrors.PAIR_FAILED)
   async pair(name: string, replaces?: string): Promise<HostPairing> {
-    const { data, error } = await heyApiClient.post<{ 201: MintedPairingTokenDto }>({
-      url: `${HOSTS_URL}/pairing`,
-      body: replaces ? { name, replaces } : { name },
-    });
-    if (error || !data) throw new AppError(HostsErrors.PAIR_FAILED);
+    const data = await unwrapBody(
+      heyApiClient.post<{ 201: MintedPairingTokenDto }>({
+        url: `${HOSTS_URL}/pairing`,
+        body: replaces ? { name, replaces } : { name },
+      }),
+      HostsErrors.PAIR_FAILED,
+    );
     return {
       id: data.id,
       installCommand: data.installCommand,
@@ -100,10 +104,10 @@ export class HostsRepository {
    */
   @MapApiError(HostsErrors.FETCH_LIST_FAILED)
   async pairings(): Promise<HostPairingToken[]> {
-    const { data, error } = await heyApiClient.get<{ 200: PairingTokenDto[] }>({
-      url: `${HOSTS_URL}/pairing`,
-    });
-    if (error || !data) throw new AppError(HostsErrors.FETCH_LIST_FAILED);
+    const data = await unwrapBody(
+      heyApiClient.get<{ 200: PairingTokenDto[] }>({ url: `${HOSTS_URL}/pairing` }),
+      HostsErrors.FETCH_LIST_FAILED,
+    );
     return data.map((token) => ({
       id: token.id,
       expiresAt: new Date(token.expiresAt),
@@ -114,18 +118,22 @@ export class HostsRepository {
   /** Display only: nothing on any machine derives from a host's name. */
   @MapApiError(HostsErrors.RENAME_FAILED)
   async rename(id: string, name: string): Promise<HostEntity> {
-    const { data, error } = await heyApiClient.patch<{ 200: HostDto }>({
-      url: `${HOSTS_URL}/{id}`,
-      path: { id },
-      body: { name },
-    });
-    if (error || !data) throw new AppError(HostsErrors.RENAME_FAILED);
+    const data = await unwrapBody(
+      heyApiClient.patch<{ 200: HostDto }>({
+        url: `${HOSTS_URL}/{id}`,
+        path: { id },
+        body: { name },
+      }),
+      HostsErrors.RENAME_FAILED,
+    );
     return toEntity(data);
   }
 
   @MapApiError(HostsErrors.REMOVE_FAILED)
   async remove(id: string): Promise<void> {
-    const { error } = await heyApiClient.delete({ url: `${HOSTS_URL}/{id}`, path: { id } });
-    if (error) throw new AppError(HostsErrors.REMOVE_FAILED);
+    await unwrap(
+      heyApiClient.delete({ url: `${HOSTS_URL}/{id}`, path: { id } }),
+      HostsErrors.REMOVE_FAILED,
+    );
   }
 }

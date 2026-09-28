@@ -1,13 +1,12 @@
 'use client';
 
-import { shareEntities, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   keepPreviousData,
   skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type {
@@ -68,7 +67,6 @@ export function useAutomations<TData = AutomationEntity[]>(
   return useQuery<AutomationEntity[], Error, TData>({
     queryKey: automationsKeys.list(),
     queryFn: () => app.automations.findAll(),
-    structuralSharing: shareEntities,
     refetchInterval: (query) =>
       query.state.data?.some((automation) => automation.isRunning) ? LIVE_RUN_POLL_MS : false,
     ...options,
@@ -84,7 +82,6 @@ export function useAutomation(
   return useQuery<AutomationEntity, Error>({
     queryKey: automationsKeys.detail(id),
     queryFn: id ? () => app.automations.findById(id) : skipToken,
-    structuralSharing: shareEntities,
     refetchInterval: (query) => (query.state.data?.isRunning ? LIVE_RUN_POLL_MS : false),
     ...options,
   });
@@ -112,7 +109,6 @@ export function useAutomationRun(id: string | undefined) {
   return useQuery<AutomationRunEntity, Error>({
     queryKey: automationsKeys.run(id),
     queryFn: id ? () => app.automations.findRun(id) : skipToken,
-    structuralSharing: shareEntities,
     refetchInterval: (query) => (query.state.data?.isLive ? LIVE_RUN_POLL_MS : false),
   });
 }

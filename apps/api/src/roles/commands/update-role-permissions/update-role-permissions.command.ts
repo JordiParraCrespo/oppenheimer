@@ -7,7 +7,7 @@ export class UpdateRolePermissionsCommand extends CommandBase {
 
   readonly actorId?: string;
   readonly actorRole?: string;
-  readonly activeOrganizationId?: string | null;
+  readonly organizationId?: string | null;
 
   constructor(props: CommandProps<UpdateRolePermissionsCommand>) {
     super(props);
@@ -15,6 +15,6 @@ export class UpdateRolePermissionsCommand extends CommandBase {
     this.permissions = props.permissions;
     this.actorId = props.actorId;
     this.actorRole = props.actorRole;
-    this.activeOrganizationId = props.activeOrganizationId;
+    this.organizationId = props.organizationId;
   }
 }

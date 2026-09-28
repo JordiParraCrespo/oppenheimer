@@ -216,7 +216,7 @@ func (s *Server) Has(ctx context.Context, name string) (bool, error) {
 // get at it — `capture-pane` returns the grid, and the title was never part
 // of the grid.
 func (s *Server) Capture(ctx context.Context, target string) (app.Screen, error) {
-	body, err := s.command(ctx, "capture-pane", "-p", "-t", target)
+	body, err := s.CaptureBody(ctx, target)
 	if err != nil {
 		return app.Screen{}, err
 	}
@@ -227,6 +227,53 @@ func (s *Server) Capture(ctx context.Context, target string) (app.Screen, error)
 		return app.Screen{Body: body}, nil //nolint:nilerr // the body is still worth classifying
 	}
 	return app.Screen{Body: body, Title: strings.TrimSpace(title)}, nil
+}
+
+// CaptureBody returns a pane's visible text alone: `capture-pane`, without
+// the `display-message` that Capture adds for the title.
+func (s *Server) CaptureBody(ctx context.Context, target string) (string, error) {
+	return s.command(ctx, "capture-pane", "-p", "-t", target)
+}
+
+// paneFormat is one line per pane. The title comes last because it is the
+// one field a program chooses: it may hold spaces, or even a tab, and as the
+// last of a bounded split it arrives whole.
+const paneFormat = "#{session_name}\t#{window_index}\t#{pane_index}\t#{pane_active}\t#{pane_title}"
+
+// Panes lists every pane on the server in one `list-panes -a`: which
+// sessions still exist and the title each program set, for every session at
+// once. No server at all is an empty list, as in List.
+func (s *Server) Panes(ctx context.Context) ([]app.Pane, error) {
+	out, err := s.run(ctx, "list-panes", "-a", "-F", paneFormat)
+	if err != nil {
+		if noServer(out) {
+			return nil, nil
+		}
+		return nil, domain.ErrTmuxCommand.WithDetail("tmux list-panes: %s", firstLine(out, err)).WithCause(err)
+	}
+	return ParsePanes(out), nil
+}
+
+// ParsePanes reads list-panes output in paneFormat. Lines it cannot read are
+// skipped rather than failing the listing.
+func ParsePanes(out string) []app.Pane {
+	var panes []app.Pane
+	for _, line := range strings.Split(out, "\n") {
+		fields := strings.SplitN(line, "\t", 5)
+		if len(fields) != 5 || fields[0] == "" {
+			continue
+		}
+		window, werr := strconv.Atoi(fields[1])
+		pane, perr := strconv.Atoi(fields[2])
+		if werr != nil || perr != nil {
+			continue
+		}
+		panes = append(panes, app.Pane{
+			Session: fields[0], Window: window, Pane: pane,
+			Active: fields[3] == "1", Title: strings.TrimSpace(fields[4]),
+		})
+	}
+	return panes
 }
 
 // Windows lists a session's windows, marking window 0 as the agent's.

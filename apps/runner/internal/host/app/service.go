@@ -71,10 +71,11 @@ func (s *Service) Collect(ctx context.Context) (domain.Facts, error) {
 	return facts, nil
 }
 
-// Preflight collects the facts and reports the first blocking condition as a
-// problem, so the CLI, the installer and the control plane all describe a
-// broken host the same way.
+// Preflight collects the facts afresh, bypassing anything the prober cached,
+// and reports the first blocking condition as a problem, so the CLI, the
+// installer and the control plane all describe a broken host the same way.
 func (s *Service) Preflight(ctx context.Context) (domain.Facts, error) {
+	s.prober.Invalidate()
 	facts, err := s.Collect(ctx)
 	if err != nil {
 		return facts, err

@@ -486,7 +486,11 @@
     --chart-axis: var(--op-gray-500);
     --brand-glyph-filter: invert(1);
 
-    --term-bg: #1a1a1c;
+    /* The canvas, as in the design system's own `tokens` (`--term-bg:
+       var(--canvas)` in both themes). It was `#1a1a1c`, the card's lift,
+       which drew the terminal as a grey slab on a darker ground; the session
+       pane is one black surface, frame and page alike. */
+    --term-bg: var(--canvas);
     --term-fg: var(--op-gray-100);
     --term-dim: var(--op-gray-500);
     --term-border: #262629;

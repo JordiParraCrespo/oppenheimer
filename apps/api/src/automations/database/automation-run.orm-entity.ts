@@ -35,6 +35,9 @@ import {
   where: '"requestedByUserId" IS NOT NULL',
 })
 @Index('IDX_automation_run_pending', ['availableAt'], { where: `"outcome" = 'pending'` })
+@Index('IDX_automation_run_dispatched', ['dispatchedAt'], { where: `"outcome" = 'dispatched'` })
+// BRIN on "createdAt" for the retention purge (`1790810000000-AddHotPathIndexesAndDropRedundant`).
+@Index('IDX_automation_run_created_brin', { synchronize: false })
 export class AutomationRunOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

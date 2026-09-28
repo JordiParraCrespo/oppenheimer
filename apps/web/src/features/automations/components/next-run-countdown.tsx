@@ -1,5 +1,6 @@
 import { PageHeaderSep, useNow } from '@oppenheimer/design-system-web';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
+import { useLocale } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { nextRunCountdown } from '../lib/automation-view';
 
@@ -10,7 +11,8 @@ import { nextRunCountdown } from '../lib/automation-view';
 export function NextRunCountdown({ automation }: { automation: AutomationEntity }) {
   const { t } = useTranslation();
   const now = useNow(1000);
-  const relative = nextRunCountdown(automation, now);
+  const locale = useLocale();
+  const relative = nextRunCountdown(automation, now, locale);
   if (!relative) return null;
   return (
     <>

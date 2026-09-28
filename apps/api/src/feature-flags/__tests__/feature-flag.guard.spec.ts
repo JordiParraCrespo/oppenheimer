@@ -35,7 +35,7 @@ describe('FeatureFlagGuard', () => {
     const { guard, evaluator } = guardWith(true);
     const request = {
       user: { id: 'u1', email: 'ada@acme.com', role: 'user' },
-      session: { activeOrganizationId: 'org-1' },
+      tenant: { organizationId: 'org-1' },
     };
 
     expect(guard.canActivate(contextFor(gated, request))).toBe(true);

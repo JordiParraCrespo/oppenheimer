@@ -1,13 +1,12 @@
 'use client';
 
-import { shareEntities, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { shareEntities, useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   type QueryClient,
   skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type { CreateSessionInput, SessionEntity } from '../modules/sessions/session.entity';
@@ -121,9 +120,6 @@ export function useSessions<TData = SessionEntity[]>(
       }
       return listed;
     },
-    // Entities are classes: without this every poll is a new object per row,
-    // and the sidebar re-renders every row every two seconds.
-    structuralSharing: shareEntities,
     // The query's own rows, before any caller's `select`.
     refetchInterval: (query) =>
       query.state.data?.some(
@@ -145,9 +141,18 @@ export function useSession(
     queryKey: sessionsKeys.detail(id),
     queryFn: id ? () => app.sessions.findById(id) : skipToken,
     refetchInterval: (query) => (query.state.data?.isProvisioning ? PROVISIONING_POLL_MS : false),
-    structuralSharing: shareEntities,
     ...options,
   });
+}
+
+/**
+ * Refetch one session now. Its detail query has no polling of its own once it
+ * is live, so a screen that learns the row changed under it — a terminal
+ * whose stream ended — asks here rather than reaching into the query cache.
+ */
+export function useInvalidateSession(id: string): () => void {
+  const queryClient = useQueryClient();
+  return () => void queryClient.invalidateQueries({ queryKey: sessionsKeys.detail(id) });
 }
 
 /**

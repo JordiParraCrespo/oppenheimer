@@ -1,10 +1,13 @@
 import type { AppAbility } from '@oppenheimer/shared';
+import type { TenantRequest } from '../domain/request-tenant.types';
 
-/** The request members the ability builder reads and writes. */
-export interface AbilityRequest {
+/**
+ * The request members the ability builder reads and writes. The ability is
+ * built in the request's tenant (`TenantRequest`) and no other organization.
+ */
+export interface AbilityRequest extends TenantRequest {
   user?: Record<string, unknown>;
   session?: {
-    activeOrganizationId?: string | null;
     activeTeamId?: string | null;
   } | null;
   ability?: AppAbility;
@@ -21,11 +24,10 @@ export interface AbilityRequest {
  */
 export interface AbilityPort {
   /**
-   * The ability for this request, built once and memoized on the request.
-   *
-   * `organizationId` is the organization the route acts on, when it names one
-   * (`@OrganizationScoped`); it wins over the session's active organization.
-   * Omitted or `null`, the session's active organization decides.
+   * The ability for this request in its tenant (`request.tenant`), built once
+   * and memoized on the request. There is deliberately no organization
+   * argument: the request says which organization it acts in, so every caller
+   * gets the same answer.
    */
-  forRequest(request: AbilityRequest, organizationId?: string | null): Promise<AppAbility>;
+  forRequest(request: AbilityRequest): Promise<AppAbility>;
 }

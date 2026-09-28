@@ -1,9 +1,16 @@
 import type { RunState } from '@oppenheimer/design-system-web';
 import type { AutomationEntity, AutomationRunEntity } from '@oppenheimer/frontend-consumer';
+import { formatCountdown, formatShortDuration } from '@oppenheimer/frontend-web';
 import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
-import type { AutomationRunStatus } from '@oppenheimer/shared/automations';
+import {
+  AUTOMATION_PAUSED_REASONS,
+  AUTOMATION_SKIP_REASONS,
+  type AutomationPausedReason,
+  type AutomationRunStatus,
+  type AutomationSkipReason,
+} from '@oppenheimer/shared/automations';
 import type { TFunction } from 'i18next';
-import { clock, countdown, dayOffset, shortWait, viewerTimeZone, weekdayDate } from './time';
+import { clock, dayOffset, viewerTimeZone, weekdayDate } from './time';
 
 /**
  * Entities in, what a row prints out. Nothing here renders and nothing here
@@ -17,11 +24,37 @@ export function runState(status: AutomationRunStatus): RunState {
   return 'completed';
 }
 
+/**
+ * Reasons arrive from the API, which may learn a new one before this build
+ * does. A key built from a value this build has no copy for would render as
+ * its own path, so an unknown one reads as the generic line instead.
+ */
+function isKnownSkipReason(reason: string): reason is AutomationSkipReason {
+  return (AUTOMATION_SKIP_REASONS as readonly string[]).includes(reason);
+}
+
+function isKnownPausedReason(reason: string): reason is AutomationPausedReason {
+  return (AUTOMATION_PAUSED_REASONS as readonly string[]).includes(reason);
+}
+
+/** Why a run never started, in words. */
+export function skipReasonText(reason: string, t: TFunction): string {
+  return isKnownSkipReason(reason)
+    ? t(`automations.skipReason.${reason}`)
+    : t('automations.skipReasonOther');
+}
+
+/** Why an automation is paused, in words; the reader paused it when the API says nothing. */
+export function pausedReasonText(reason: string | null, t: TFunction): string {
+  if (reason === null) return t('automations.pausedReason.user');
+  return isKnownPausedReason(reason)
+    ? t(`automations.pausedReason.${reason}`)
+    : t('automations.pausedReasonOther');
+}
+
 /** A run's title with why it never started, when it did not. */
 export function runTitle(run: AutomationRunEntity, t: TFunction): string {
-  return run.skipReason
-    ? `${run.title} · ${t(`automations.skipReason.${run.skipReason}`)}`
-    : run.title;
+  return run.skipReason ? `${run.title} · ${skipReasonText(run.skipReason, t)}` : run.title;
 }
 
 /** The status dot's state for an automation: the design system's routine vocabulary. */
@@ -60,9 +93,13 @@ export function nextInstantText(next: Date, now: number, locale: string, t: TFun
 }
 
 /** The mono countdown under a next run, or nothing when there is none. */
-export function nextRunCountdown(automation: AutomationEntity, now: number): string | null {
+export function nextRunCountdown(
+  automation: AutomationEntity,
+  now: number,
+  locale: string,
+): string | null {
   if (automation.isPaused || !automation.nextRunAt) return null;
-  return countdown(automation.nextRunAt.getTime() - now);
+  return formatCountdown(automation.nextRunAt.getTime() - now, locale);
 }
 
 /**
@@ -73,7 +110,10 @@ export function sidebarMeta(automation: AutomationEntity, now: number, t: TFunct
   if (automation.isRunning) return t('automations.sidebar.running');
   if (automation.isPaused) return t('automations.sidebar.paused');
   if (automation.nextRunAt) {
-    return t('automations.next.in', { time: shortWait(automation.nextRunAt.getTime() - now) });
+    const wait = automation.nextRunAt.getTime() - now;
+    return t('automations.next.in', {
+      time: formatShortDuration(wait, t, 'wait'),
+    });
   }
   return automation.runCount ? String(automation.runCount) : '';
 }

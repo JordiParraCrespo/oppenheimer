@@ -36,9 +36,9 @@ export class AssignUserRolesCommandHandler
 
     const uniqueRoleIds = [...new Set(command.roleIds)];
     const roles =
-      command.activeOrganizationId === undefined
+      command.organizationId === undefined
         ? await this.roleRepository.findByIds(uniqueRoleIds)
-        : await this.roleRepository.findByIds(uniqueRoleIds, command.activeOrganizationId);
+        : await this.roleRepository.findByIds(uniqueRoleIds, command.organizationId);
     if (roles.length !== uniqueRoleIds.length) throw new AppError(RoleErrors.NOT_FOUND);
 
     // No privilege escalation: assigning a role grants its permissions to the
@@ -50,19 +50,19 @@ export class AssignUserRolesCommandHandler
         ? {
             id: command.actorId,
             role: command.actorRole,
-            activeOrganizationId: command.activeOrganizationId,
+            organizationId: command.organizationId,
           }
         : undefined,
       roles.flatMap((role) => role.permissions.map((permission) => permission.toDefinition())),
     );
 
-    if (command.activeOrganizationId === undefined) {
+    if (command.organizationId === undefined) {
       await this.userRoleRepository.setRolesForUser(command.userId, uniqueRoleIds);
     } else {
       await this.userRoleRepository.setRolesForUser(
         command.userId,
         uniqueRoleIds,
-        command.activeOrganizationId,
+        command.organizationId,
       );
     }
   }

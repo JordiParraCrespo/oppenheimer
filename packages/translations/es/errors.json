@@ -63,8 +63,9 @@
     "ROLE_005": "No puedes dar a un rol más acceso del que tienes tú.",
     "ROLE_006": "Ese rol pertenece a otra organización.",
     "ROLE_007": "A esta instalación le falta un rol de sistema que necesita. Ejecuta las migraciones de la base de datos.",
-    "AUTHZ_001": "No eres miembro de esa organización.",
     "AUTHZ_002": "Hay un problema de configuración en el servidor. Inténtalo más tarde.",
+    "AUTHZ_003": "El identificador de esa organización no es válido.",
+    "AUTHZ_004": "Hay un problema de configuración en el servidor. Inténtalo más tarde.",
     "GRANT_001": "No se ha encontrado esa concesión de acceso.",
     "GRANT_002": "No puedes conceder más acceso del que tienes tú.",
     "GRANT_003": "Esa persona o equipo no forma parte de esta organización.",
@@ -80,6 +81,7 @@
     "GITHUB_008": "Esa instalación de GitHub está suspendida o ya no está instalada.",
     "GITHUB_009": "GitHub no ha respondido. Inténtalo de nuevo en un momento.",
     "GITHUB_010": "Ese repositorio no está cubierto por esta instalación de GitHub.",
+    "GITHUB_011": "Ese enlace de GitHub no se inició aquí. Vuelve a conectar GitHub desde esta página.",
     "PROJECTS_001": "No se ha encontrado ese proyecto.",
     "PROJECTS_002": "Elige un espacio de trabajo antes de trabajar con proyectos.",
     "PROJECTS_003": "Ahora mismo no se pueden archivar proyectos. Inténtalo en un momento.",
@@ -142,7 +144,20 @@
     "AUTOMATIONS_007": "Ese proyecto no puede tener automatizaciones.",
     "AUTOMATIONS_008": "Esa ejecución no existe.",
     "INBOUND_001": "Esa fuente de eventos no se conoce.",
-    "INBOUND_002": "La entrega no incluye un identificador de entrega."
+    "INBOUND_002": "La entrega no incluye un identificador de entrega.",
+    "SESS_001": "El host no tiene constancia de esa sesión.",
+    "SESS_002": "El host no ha podido iniciar una sesión con esos ajustes.",
+    "SESS_003": "Esa sesión no se está ejecutando en su host.",
+    "SESS_004": "El host ya tiene una sesión en ese worktree.",
+    "SESS_005": "El host no ha podido pasar esa imagen a la sesión.",
+    "TMUX_001": "tmux no está instalado en el host. Instálalo y vuelve a intentarlo.",
+    "TMUX_002": "tmux se ha negado a iniciar la sesión en el host.",
+    "GIT_001": "El host no ha podido preparar el worktree.",
+    "GIT_002": "Ha fallado un comando de git en el host.",
+    "GIT_003": "No se ha podido subir la rama.",
+    "GIT_004": "El host no puede acceder a ese repositorio. Comprueba que la GitHub App tiene acceso.",
+    "GIT_005": "Un comando de git en el host ha tardado demasiado y se ha detenido.",
+    "CONSENT_CLIENT_002": "El servidor no ha indicado a dónde continuar."
   },
   "notFound": {
     "title": "Esta página no existe",
@@ -152,5 +167,6 @@
   "unexpected": {
     "title": "No se ha podido dibujar esta pantalla",
     "retry": "Reintentar"
-  }
+  },
+  "code": "Código: {{code}}"
 }

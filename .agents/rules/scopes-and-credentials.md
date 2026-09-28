@@ -57,7 +57,10 @@ throws `TOKEN_006` for any scoped credential. Forgetting the decorator makes an
 endpoint invisible to tokens — it never makes it accidentally reachable.
 
 Organization-bound routes must also declare which parameter carries the
-organization id, or a restricted token could reach another organization:
+organization id, or a restricted token could reach another organization. The
+same declaration names the request's tenant (`product/versions/mvp/08-auth.md`).
+A route that takes the organization in the query or body says so:
+`@OrganizationScoped('organizationId', 'query')`.
 
 ```ts
 @Get(':orgId/members')
@@ -77,9 +80,14 @@ identity or data already served to anonymous callers (currently
   prefix for exactly this reason), never add an endpoint that returns one after
   creation.
 - Authentication failures share one opaque error (`TOKEN_003`) whether the
-  token is unknown, revoked or expired — distinguishing them hands out a
-  probing oracle. Authorization failures are specific, because the caller
-  already proved who they are and needs to know what they are short of.
+  token is unknown, revoked or expired, or its owner is deactivated or banned —
+  distinguishing them hands out a probing oracle. Authorization failures are
+  specific, because the caller already proved who they are and needs to know
+  what they are short of.
+- Whether an account may act at all is one rule, `isAccessAllowed`
+  (`auth/domain/account-access.policy.ts`): deactivated never, banned until
+  the ban's expiry. The credential owner lookup and the session path in
+  `ApiAuthGuard` both ask it; do not write the check again anywhere else.
 - Someone else's token is reported as **not found**, not forbidden, so ids
   cannot be probed.
 - Revocation raises `ApiTokenRevokedDomainEvent`; a handler in the api-tokens

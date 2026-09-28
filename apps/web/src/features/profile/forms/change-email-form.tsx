@@ -53,8 +53,8 @@ export function ChangeEmailForm({
         <Button type="button" variant="secondary" onClick={onCancel} disabled={isPending}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? t('settings.changeEmail.sending') : t('settings.changeEmail.send')}
+        <Button type="submit" pending={isPending} pendingLabel={t('settings.changeEmail.sending')}>
+          {t('settings.changeEmail.send')}
         </Button>
       </div>
     </form>

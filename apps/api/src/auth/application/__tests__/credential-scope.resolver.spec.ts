@@ -116,7 +116,10 @@ describe('CredentialScopeResolver', () => {
     expect(scope?.expiresAt).toEqual(new Date('2026-01-01T00:00:00.000Z'));
   });
 
-  it('refuses an OAuth grant whose owner can no longer act', async () => {
+  it('refuses an OAuth grant whose owner is deactivated or banned', async () => {
+    // The owner port answers `null` for any account `isAccessAllowed` refuses
+    // (see `UserCredentialOwnerAdapter`); a banned owner's MCP client gets the
+    // same opaque TOKEN_003 as a deactivated one's.
     vi.mocked(credentials.verifyOAuthGrant).mockResolvedValue({
       userId: owner.id,
       accessToken: 'oauth-access-token',

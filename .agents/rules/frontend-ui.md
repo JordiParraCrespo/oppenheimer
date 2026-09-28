@@ -19,8 +19,15 @@ multi-line, so a grep for `export` misses most of them.
 
 | Need                                  | Use                           | Not                                                   |
 | ------------------------------------- | ----------------------------- | ----------------------------------------------------- |
-| Whole-form or whole-page failure      | `Alert variant="destructive"` | a styled `div`, a bare `<p class="text-destructive">` |
-| A success                             | `toast.success()`             | an `Alert`, an inline row                             |
+| Whole-form or whole-page failure      | the kit's `ErrorAlert`: `error` + `fallback` to resolve a raw failure, `message` for one a form already resolved, `onDismiss` or `action` for its one button | a hand-built destructive `Alert`, a styled `div`, a bare `<p class="text-destructive">` |
+| A refusal about one field (a name the server rejected) | `FieldError` under the field | an `ErrorAlert` above the form |
+| A section that draws a read's failed, loading, empty and loaded states | the kit's `QueryState` (`combineQueries` for two reads, `stale="keep"` to keep a drawn page beside a later failure, `renderError` for a 404 said as "not found") | a hand-written ternary ladder, a forged `{ isPending, error, data }` |
+| A picker chip whose loading and failure show inside its popup | its `loading` and `failure` props — the chip stays on screen in every state, so it is not a `QueryState` site | a skeleton in the chip's place |
+| "Are you sure?" before something that cannot be undone | the kit's `ConfirmDialog` | a hand-built `Dialog` with its own Cancel |
+| A button whose request is in flight | `Button pending pendingLabel`; `pending` locks that button only, so a sibling that must wait (the other provider, Deny beside Allow) takes `disabled` | `disabled={isPending}` and a ternary label |
+| One "2 hours ago" line that has to keep moving | the kit's `RelativeTime`, which owns its tick | `useNow` in the row around it |
+| A list whose rows all show an age | one `useNow` in the list, `now` handed to the rows, the words from `formatAge` / `common.relative` — one tick per list, not one timer per row | a `RelativeTime` per row |
+| A success (when it earns one, below)  | the kit's `notifySuccess()`   | an `Alert`, an inline row, `toast.success()` directly |
 | Field validation                      | `Field` + `FieldError`        | either of the above                                   |
 | "Nothing here" / "still loading"      | `EmptyState`, `Skeleton`      | a centred paragraph                                   |
 | Picking one value out of a list the workspace grows | `ChipSelect` (searchable) | a `<select>` over the first page of an endpoint |
@@ -41,24 +48,35 @@ multi-line, so a grep for `export` misses most of them.
 | Which repositories are in a project | `RepositoryAddField` | a `RepositorySelect` in a dialog, a table of checkboxes |
 | What each of a project's repositories does in a new session, and from which branch | `RepositoryRowList` | a second `RepositoryAddField`, a table |
 | A fold inside a dialog or a step (Defaults, Inspect command and prompt) | `Disclosure` | a chevron button over a `useState`, Base UI's Collapsible directly |
-| Pairing a host: the copy buttons, the token line, the instruction, the status | the kit's `HostPairingChrome`, or its parts with `HostPairingInstruction` in its `panel` layout | two `CodeBlock`s, a `CodeBlock` alone, a second status row |
+| Pairing a host: the copy buttons, the token line, the instruction, the status | the kit's `PairingChrome`, or its parts with `PairingInstruction` in its `panel` layout | two `CodeBlock`s, a `CodeBlock` alone, a second status row |
 | A menu row that opens a pane in place (Appearance, Move to project…) | `DropdownMenuPaneItem` + `DropdownMenuBack` | `DropdownMenuSub` for a two-level pick |
 | A note under a form, in any tone | `Callout` | `Alert`, a tinted `div` |
 | Views inside one page (Routines / Runs, categories, run status) | `PillTabs` with `count` | a tab strip, `SegmentedControl` |
 | How a routine page opens | `PageHeader` parts | a hand-built title row |
 | A labelled picker in the routine editor | `FieldSelect` | `ChipSelect`, a `<select>` |
+| Several labelled picks read as one card (the automation editor's Where it runs is one) | `FieldSelectGroup` + `FieldSelectRow` around a `FieldSelect variant="quiet"` | a stack of labelled `FieldSelect`s |
 | A trigger's variable parts | `InlineToken` in a `TokenSentence` | a form of pickers |
 | A time or weekday pick | `TimeGrid` in a popover | a `<select>` of hours |
 | Runs per day | `RunHistory` | a chart library |
 | The routines overview, the runs, the templates | `RoutineTable`, `RunsList`, `TemplateGrid` | a hand-built `<table>`, cards |
 | The automations overview, the one page over the main column | `EditorPage` from its layout route (`routes/_authenticated/automations.tsx`), `EditorPageTop` for its tabs; inside Settings, `PageHeader` parts + `RoutineSteps` | a `Card` of `Field`s, a hand-rolled scroll column, a new layout route |
-| A form over the console (New project, Add a host, the automation editor) | a `Dialog` at its `form` or `lg` size, opened through `useConsoleDialog` | a page under a layout route, a `useState` per surface, a width on the caller |
+| A form over the console (New project, Add a host, the automation editor) | a `Dialog` at its `form` or `lg` size, opened through `useConsoleDialog` (`apps/web/src/lib/console.ts`, over the kit's `createDialogSlot`) | a page under a layout route, a `useState` per surface, a width on the caller |
 | A settings page's rows | `SettingsGroup` + `SettingsRow` | a form of `Field`s in a `Card` |
 | A host on Settings | `HostCard` | a `Card`, a table row |
 
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, and empty and loading states in five while `EmptyState` was used by
 one.
+
+## A success toasts when the reader could miss it
+
+A failure stays inline, next to what the reader has to fix. A success toasts,
+through the kit's `notifySuccess('<toasts key>', values)`, only when its result
+is not where the reader is looking: out of sight, off the page, or easy to miss
+in a long list. When the screen navigates to the result, shows a "done" view,
+or changes the very control that was pressed, it says nothing more. A form
+whose save row already says "Saved" beside the button keeps that and does not
+also toast.
 
 ## A picker over a list the workspace grows is an autocomplete
 

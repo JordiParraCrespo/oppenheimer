@@ -1,13 +1,12 @@
 import { Button } from '@oppenheimer/design-system-web';
 import { ShieldAlert, ShieldCheck } from '@oppenheimer/design-system-web/icons';
-import { useResetPassword } from '@oppenheimer/frontend-core/react';
+import { useErrorMessage, useResetPassword } from '@oppenheimer/frontend-core/react';
 import {
   AuthBackLink,
   AuthIconCircle,
   AuthNote,
   AuthSubtitle,
   AuthTitle,
-  useErrorMessage,
 } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -70,7 +69,7 @@ export function ResetPasswordScreen({
 
       <ResetPasswordForm
         isPending={isPending}
-        error={error ? resolveError(error, t('auth.resetPassword.error')).message : undefined}
+        error={error ? resolveError(error, t('auth.resetPassword.error')) : undefined}
         onSubmit={(values) =>
           mutate({ token, password: values.password }, { onSuccess: () => setDone(true) })
         }

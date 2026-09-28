@@ -1,20 +1,20 @@
 'use client';
 
-import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQueries, useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
   type UseQueryResult,
   useMutation,
-  useQueries,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import type {
   BranchEntity,
+  InstallationCallback,
   InstallationEntity,
+  InstallationStart,
   RepositoryEntity,
 } from '../modules/installations/installation.entity';
 import { useConsumerApp } from './context';
@@ -82,10 +82,22 @@ export function useInstallations(
   });
 }
 
-/** What the connect step posts: the two values GitHub puts on its install redirect. */
-export interface ConnectInstallationVariables {
-  githubInstallationId: number;
-  code: string;
+/** What the connect step posts: the three values GitHub puts on its install redirect. */
+export type ConnectInstallationVariables = InstallationCallback;
+
+/**
+ * Start a GitHub App install: mint the single-use state and get the App's
+ * install URL carrying it. A mutation, fired from a click, because every call
+ * is a write — minting on render would put one in Redis for every paint of a
+ * button nobody pressed. Nothing is cached: the state is spent on the way back.
+ */
+export function useStartInstallation(options?: UseMutationOptions<InstallationStart, Error, void>) {
+  const app = useConsumerApp();
+
+  return useMutation({
+    ...options,
+    mutationFn: () => app.installations.startInstall(),
+  });
 }
 
 /**
@@ -102,8 +114,7 @@ export function useConnectInstallation(
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ githubInstallationId, code }: ConnectInstallationVariables) =>
-      app.installations.connect(githubInstallationId, code),
+    mutationFn: (callback: ConnectInstallationVariables) => app.installations.connect(callback),
     ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: installationsKeys.lists() });
     }),
@@ -241,6 +252,9 @@ export function useInstallationRepositoriesFor(installationIds: readonly string[
         return result.data.map((repository) => ({ repository, installationId }));
       }),
       isPending: results.some((result) => result.isPending),
+      // The first failure, so a picker can say the list did not load rather
+      // than show the repositories that did as if they were all of them.
+      error: results.find((result) => result.error)?.error ?? null,
     }),
   });
 }

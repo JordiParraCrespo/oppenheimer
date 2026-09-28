@@ -126,8 +126,9 @@ that does not exist, so session ids cannot be probed.
 | `TOKEN_008` <a id="token_008" /> | A token can only be scoped to organizations its creator belongs to | 403  |
 | `TOKEN_009` <a id="token_009" /> | The maximum number of active API tokens has been reached           | 409  |
 
-`TOKEN_003` is deliberately opaque: unknown, revoked and expired tokens share
-one code so the endpoint cannot be used as a probing oracle.
+`TOKEN_003` is deliberately opaque: unknown, revoked and expired tokens, and
+tokens whose owner is deactivated or banned, share one code so the endpoint
+cannot be used as a probing oracle.
 
 `TOKEN_002` and `TOKEN_005` carry the offending scopes as extension members
 (`ungrantableScopes` and `missingScopes`) as well as in `detail`.
@@ -146,15 +147,18 @@ one code so the endpoint cannot be used as a probing oracle.
 
 ## Authorization
 
-| Code                             | Title                                                  | HTTP |
-| -------------------------------- | ------------------------------------------------------ | ---- |
-| `AUTHZ_001` <a id="authz_001" /> | The active organization is not one of your memberships | 403  |
-| `AUTHZ_002` <a id="authz_002" /> | This route declares no authorization policy            | 500  |
+| Code                             | Title                                                          | HTTP |
+| -------------------------------- | -------------------------------------------------------------- | ---- |
+| `AUTHZ_002` <a id="authz_002" /> | This route declares no authorization policy                    | 500  |
+| `AUTHZ_003` <a id="authz_003" /> | The organization this request names is not a valid id          | 400  |
+| `AUTHZ_004` <a id="authz_004" /> | This route names an organization parameter it does not declare | 500  |
 
 `AUTHZ_002` is a 500 rather than a 403 on purpose. A route that reached
 production without declaring what it requires is a programming error, and
 reporting it as a permission problem would send whoever hits it looking in the
-wrong place.
+wrong place. `AUTHZ_004` is the same kind of fault: `@OrganizationScoped`
+names a path parameter the route does not have. Which organization a request
+is authorized in is `product/versions/mvp/08-auth.md`.
 
 ## Access grants
 
@@ -326,6 +330,7 @@ session asks.
 | `GITHUB_008` <a id="github_008" /> | That GitHub installation is suspended or no longer installed   | 409  |
 | `GITHUB_009` <a id="github_009" /> | GitHub could not be reached or rejected the request            | 502  |
 | `GITHUB_010` <a id="github_010" /> | That repository is not covered by this GitHub installation     | 404  |
+| `GITHUB_011` <a id="github_011" /> | The GitHub installation was not started from this workspace    | 400  |
 
 `GITHUB_001` is also returned for an installation that exists but belongs to
 another workspace; distinguishing the two would confirm the id.
@@ -340,6 +345,16 @@ exchanges the OAuth code GitHub attaches to the install redirect and asks GitHub
 which installations the authorizing account can see. Matching the installation's
 account login against a linked GitHub account instead would refuse every
 organization installation, where that login is the organization and not a user.
+
+`GITHUB_011` is the other half of that proof. The code binds a claim to *a*
+GitHub account, not to the console user whose browser posts it, so a callback
+URL someone stopped halfway through their own install would otherwise connect
+their installation to whoever opened it. An install therefore starts with
+`POST /installations/install-state`, which mints a single-use state bound to the
+caller and the workspace for 15 minutes; GitHub echoes it on the redirect, and
+`POST /installations` spends it before it calls GitHub. Missing, expired, already
+used, someone else's and another workspace's are one code, with no detail saying
+which: telling them apart would make the endpoint a probing oracle.
 
 `GITHUB_002` also covers a credential GitHub itself rejected: a `401` from the
 App's own JWT is a deployment problem, not a caller's, and reporting it as one

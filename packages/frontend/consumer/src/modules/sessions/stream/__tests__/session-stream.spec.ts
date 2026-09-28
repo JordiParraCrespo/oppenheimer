@@ -290,6 +290,52 @@ describe('AttachSessionStream', () => {
     expect(h.timers).toHaveLength(0);
   });
 
+  it('dials at once on reconnectNow, cancelling the wait and restarting the ladder', async () => {
+    const h = harness();
+    await h.flush();
+    // Walk a few rungs up the ladder.
+    for (let rung = 0; rung < 3; rung += 1) {
+      h.sockets.at(-1)?.open();
+      h.sockets.at(-1)?.drop(ATTACH_CLOSE_CODES.LINK_LOST);
+      if (rung < 2) {
+        h.timers[0].fn();
+        h.timers.splice(0, 1);
+        await h.flush();
+      }
+    }
+    expect(h.timers).toHaveLength(1);
+    expect(h.timers[0].ms).toBeGreaterThanOrEqual(1_600);
+
+    h.stream.reconnectNow();
+    await h.flush();
+
+    expect(h.timers).toHaveLength(0);
+    expect(h.sockets).toHaveLength(4);
+    h.sockets[3].drop(ATTACH_CLOSE_CODES.LINK_LOST);
+    expect(h.timers[0].ms).toBeLessThanOrEqual(600);
+  });
+
+  it('ignores reconnectNow while a dial is in flight, once live, and after an end', async () => {
+    const h = harness();
+    await h.flush();
+    h.stream.reconnectNow();
+    await h.flush();
+    expect(h.tickets).toHaveBeenCalledTimes(1);
+
+    const socket = h.sockets[0];
+    socket.open();
+    socket.text({ type: 'attached', window: 0 });
+    h.stream.reconnectNow();
+    await h.flush();
+    expect(h.tickets).toHaveBeenCalledTimes(1);
+
+    socket.text({ type: 'closed', reason: 'stopped' });
+    socket.drop(ATTACH_CLOSE_CODES.SESSION_STOPPED);
+    h.stream.reconnectNow();
+    await h.flush();
+    expect(h.tickets).toHaveBeenCalledTimes(1);
+  });
+
   it('closes the socket, cancels the retry and reports closed on dispose', async () => {
     const h = harness();
     await h.flush();

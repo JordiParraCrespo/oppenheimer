@@ -1,7 +1,7 @@
-import { ConsoleDialogProvider } from '@oppenheimer/frontend-web';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useSyncExternalStore } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ConsoleDialogProvider } from '@/lib/console';
 import { NewSessionForm } from '../sections/new-session-form';
 
 /**
@@ -73,9 +73,11 @@ const reads = vi.hoisted(() => {
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   // Each hook subscribes to its own slice, as a query observer subscribes to
   // its own key: settling the hosts must not look like a change to the projects.
-  useProjects: () => {
-    const projects = useSyncExternalStore(reads.subscribe, () => reads.get().projects);
-    return { data: projects, isPending: false };
+  useProjects: (options?: { select?: (projects: unknown[]) => unknown }) => {
+    const data = useSyncExternalStore(reads.subscribe, () =>
+      options?.select ? options.select(reads.get().projects) : reads.get().projects,
+    );
+    return { data, isPending: false };
   },
   useProjectsSnapshot: () => () => reads.get().projects,
   // Applies `select` inside the subscription, as a query observer does, so a
@@ -90,6 +92,8 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useInstallations: () => ({ data: [], isPending: false }),
   useInstallationRepositoriesFor: () => ({ repositories: [], isPending: false }),
   useRepositoryBranchesFor: () => ({ byRepository: new Map(), isPending: false }),
+  // "Manage repository access" mints on click; nothing here clicks it.
+  useStartInstallation: () => ({ mutate: vi.fn(), error: null, reset: vi.fn() }),
   // Called once per render of NewSessionSend, so it doubles as that section's count.
   useCreateSession: () => {
     renders.set('send', (renders.get('send') ?? 0) + 1);
@@ -206,6 +210,19 @@ describe('NewSessionForm', () => {
     fireEvent.change(textarea, { target: { value: 'F' } });
     fireEvent.change(textarea, { target: { value: 'Fix' } });
     expect(rendered()).toEqual([]);
+  });
+
+  /** The line under the title says what sending will do once a project is picked. */
+  it('summarises the picked project under the title', () => {
+    cleanup();
+    render(
+      <ConsoleDialogProvider>
+        <NewSessionForm heading={<h1>title</h1>} />
+      </ConsoleDialogProvider>,
+    );
+    expect(screen.getByText('sessions.new.subtitle')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'project' }));
+    expect(screen.getByText('sessions.new.subtitleProject')).toBeTruthy();
   });
 
   /** The send gate (05): a host still in the workspace and one repository the body can carry. */

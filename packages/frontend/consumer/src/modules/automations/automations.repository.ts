@@ -6,7 +6,7 @@ import {
   heyApiSdk,
   type UpdateAutomationRequest,
 } from '@oppenheimer/api-client';
-import { AppError, MapApiError } from '@oppenheimer/frontend-core';
+import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
 import type { GithubEventType, TriggerFilter } from '@oppenheimer/shared/automations';
 import { injectable } from 'inversify';
@@ -171,107 +171,125 @@ function toUpdateRequest(input: UpdateAutomationInput): UpdateAutomationRequest 
 export class AutomationsRepository {
   @MapApiError(AutomationsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<AutomationEntity[]> {
-    const { data, error } = await heyApiSdk.listAutomations();
-    if (error || !data) throw new AppError(AutomationsErrors.FETCH_LIST_FAILED);
+    const data = await unwrapBody(heyApiSdk.listAutomations(), AutomationsErrors.FETCH_LIST_FAILED);
     return data.map(toEntity);
   }
 
   @MapApiError(AutomationsErrors.FETCH_FAILED)
   async findById(id: string): Promise<AutomationEntity> {
-    const { data, error } = await heyApiSdk.getAutomation({ path: { id } });
-    if (error || !data) throw new AppError(AutomationsErrors.FETCH_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.getAutomation({ path: { id } }),
+      AutomationsErrors.FETCH_FAILED,
+    );
     return toEntity(data);
   }
 
   @MapApiError(AutomationsErrors.SAVE_FAILED)
   async create(input: AutomationInput): Promise<AutomationEntity> {
-    const { data, error } = await heyApiSdk.createAutomation({ body: toCreateRequest(input) });
-    if (error || !data) throw new AppError(AutomationsErrors.SAVE_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.createAutomation({ body: toCreateRequest(input) }),
+      AutomationsErrors.SAVE_FAILED,
+    );
     return toEntity(data);
   }
 
   @MapApiError(AutomationsErrors.SAVE_FAILED)
   async update(id: string, input: UpdateAutomationInput): Promise<AutomationEntity> {
-    const { data, error } = await heyApiSdk.updateAutomation({
-      path: { id },
-      body: toUpdateRequest(input),
-    });
-    if (error || !data) throw new AppError(AutomationsErrors.SAVE_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.updateAutomation({
+        path: { id },
+        body: toUpdateRequest(input),
+      }),
+      AutomationsErrors.SAVE_FAILED,
+    );
     return toEntity(data);
   }
 
   @MapApiError(AutomationsErrors.ACTION_FAILED)
   async pause(id: string): Promise<AutomationEntity> {
-    const { data, error } = await heyApiSdk.pauseAutomation({ path: { id } });
-    if (error || !data) throw new AppError(AutomationsErrors.ACTION_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.pauseAutomation({ path: { id } }),
+      AutomationsErrors.ACTION_FAILED,
+    );
     return toEntity(data);
   }
 
   @MapApiError(AutomationsErrors.ACTION_FAILED)
   async resume(id: string): Promise<AutomationEntity> {
-    const { data, error } = await heyApiSdk.resumeAutomation({ path: { id } });
-    if (error || !data) throw new AppError(AutomationsErrors.ACTION_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.resumeAutomation({ path: { id } }),
+      AutomationsErrors.ACTION_FAILED,
+    );
     return toEntity(data);
   }
 
   @MapApiError(AutomationsErrors.ACTION_FAILED)
   async duplicate(id: string): Promise<AutomationEntity> {
-    const { data, error } = await heyApiSdk.duplicateAutomation({ path: { id } });
-    if (error || !data) throw new AppError(AutomationsErrors.ACTION_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.duplicateAutomation({ path: { id } }),
+      AutomationsErrors.ACTION_FAILED,
+    );
     return toEntity(data);
   }
 
   @MapApiError(AutomationsErrors.DELETE_FAILED)
   async remove(id: string): Promise<void> {
-    const { error } = await heyApiSdk.deleteAutomation({ path: { id } });
-    if (error) throw new AppError(AutomationsErrors.DELETE_FAILED);
+    await unwrap(heyApiSdk.deleteAutomation({ path: { id } }), AutomationsErrors.DELETE_FAILED);
   }
 
   /** Run now. The key makes a retried click the same run. */
   @MapApiError(AutomationsErrors.RUN_FAILED)
   async run(id: string, idempotencyKey: string): Promise<AutomationRunEntity> {
-    const { data, error } = await heyApiSdk.runAutomation({
-      path: { id },
-      headers: { 'Idempotency-Key': idempotencyKey },
-    });
-    if (error || !data) throw new AppError(AutomationsErrors.RUN_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.runAutomation({
+        path: { id },
+        headers: { 'Idempotency-Key': idempotencyKey },
+      }),
+      AutomationsErrors.RUN_FAILED,
+    );
     return toRunEntity(data);
   }
 
   @MapApiError(AutomationsErrors.FETCH_RUNS_FAILED)
   async findRuns(filter: RunsFilter): Promise<RunPage> {
-    const { data, error } = await heyApiSdk.listAutomationRuns({
-      query: {
-        ...(filter.automationId ? { automationId: filter.automationId } : {}),
-        ...(filter.projectId ? { projectId: filter.projectId } : {}),
-        ...(filter.statuses?.length ? { status: filter.statuses.join(',') } : {}),
-        ...(filter.window ? { window: filter.window } : {}),
-        ...(filter.page ? { page: filter.page } : {}),
-        ...(filter.limit ? { limit: filter.limit } : {}),
-      },
-    });
-    if (error || !data) throw new AppError(AutomationsErrors.FETCH_RUNS_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.listAutomationRuns({
+        query: {
+          ...(filter.automationId ? { automationId: filter.automationId } : {}),
+          ...(filter.projectId ? { projectId: filter.projectId } : {}),
+          ...(filter.statuses?.length ? { status: filter.statuses.join(',') } : {}),
+          ...(filter.window ? { window: filter.window } : {}),
+          ...(filter.page ? { page: filter.page } : {}),
+          ...(filter.limit ? { limit: filter.limit } : {}),
+        },
+      }),
+      AutomationsErrors.FETCH_RUNS_FAILED,
+    );
     return { ...data, items: data.items.map(toRunEntity) };
   }
 
   @MapApiError(AutomationsErrors.FETCH_RUNS_FAILED)
   async findRun(id: string): Promise<AutomationRunEntity> {
-    const { data, error } = await heyApiSdk.getAutomationRun({ path: { id } });
-    if (error || !data) throw new AppError(AutomationsErrors.FETCH_RUNS_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.getAutomationRun({ path: { id } }),
+      AutomationsErrors.FETCH_RUNS_FAILED,
+    );
     return toRunEntity(data);
   }
 
   @MapApiError(AutomationsErrors.FETCH_HISTORY_FAILED)
   async history(filter: RunHistoryFilter): Promise<RunHistory> {
-    const { data, error } = await heyApiSdk.getAutomationRunHistory({
-      query: {
-        timezone: filter.timezone,
-        ...(filter.automationId ? { automationId: filter.automationId } : {}),
-        ...(filter.projectId ? { projectId: filter.projectId } : {}),
-        ...(filter.days ? { days: filter.days } : {}),
-      },
-    });
-    if (error || !data) throw new AppError(AutomationsErrors.FETCH_HISTORY_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.getAutomationRunHistory({
+        query: {
+          timezone: filter.timezone,
+          ...(filter.automationId ? { automationId: filter.automationId } : {}),
+          ...(filter.projectId ? { projectId: filter.projectId } : {}),
+          ...(filter.days ? { days: filter.days } : {}),
+        },
+      }),
+      AutomationsErrors.FETCH_HISTORY_FAILED,
+    );
     return data;
   }
 
@@ -280,15 +298,17 @@ export class AutomationsRepository {
   async previewTrigger(
     trigger: Extract<TriggerInput, { source: 'github' }>,
   ): Promise<TriggerPreview> {
-    const { data, error } = await heyApiSdk.previewAutomationTrigger({
-      body: {
-        source: 'github',
-        event: trigger.event,
-        repositories: trigger.repositories,
-        filter: trigger.filter,
-      },
-    });
-    if (error || !data) throw new AppError(AutomationsErrors.PREVIEW_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.previewAutomationTrigger({
+        body: {
+          source: 'github',
+          event: trigger.event,
+          repositories: trigger.repositories,
+          filter: trigger.filter,
+        },
+      }),
+      AutomationsErrors.PREVIEW_FAILED,
+    );
     return {
       ...data,
       matches: data.matches.map((match) => ({ ...match, occurredAt: new Date(match.occurredAt) })),

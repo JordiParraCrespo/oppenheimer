@@ -17,14 +17,14 @@ importing it configures i18next; everything else is pure and may be dropped.
 | --- | --- | --- |
 | `platform` | `LocalStorageService`, `sanitizeRedirect` — the browser, wrapped | leaf |
 | `theme` | `ThemeProvider`, `useTheme`, `ThemeToggle`, `BrandGlyph` | leaf |
-| `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, the date and person-name formatters | leaf |
+| `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, `RelativeTime`, the date, duration and person-name formatters | leaf |
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
-| `forms` | `useZodResolver`, `useSearchDraft` | leaf |
-| `hosts` | `HostPairingChrome`, and its two halves `HostPairingToken` and `HostPairingStatus` — the token clock and the status line that the onboarding step and the console's Add a host page both show | leaf |
-| `layout` | `PageHead`, `FieldRow`, `RouteError`/`RouteNotFound`, `ConfirmDialog` | middle |
+| `forms` | `ErrorAlert`, `useZodResolver`, `useSearchDraft`, `SidebarSearchField` (a sidebar search box on it), `useServerFieldErrors`, `notifySuccess` (what a write says when it lands) | leaf |
+| `pairing` | `PairingChrome`, the column that pairs a machine with a pairing it is handed: `PairingCopyButtons`, `PairingToken` (the token and its countdown), `PairingInstruction` (the command and the agent prompt) and `PairingStatus` (waiting, then the machine that registered); a refused mint shows through `ErrorAlert` | middle |
+| `layout` | `PageHead`, `FieldRow`, `RouteError`/`RouteNotFound`, `AppPending`, `ConfirmDialog`, `QueryState` | middle |
 | `roles` | `RolePill` | middle |
-| `shell` | `AppShell`, `AppSidebar`, `TopBar`, `UserMenu`, `CommandPalette`, `ShellProvider`/`useShell`, `useAbility`, `useAuthorizedNav`, the nav types | top |
-| `auth` | `AuthLayout`, `AuthArtPanel`, `BrandLogo`, the auth primitives, `PasswordInput`, `SocialLoginButtons`, `OAuthCallbackNotice`, `redirectSignedIn` | top |
+| `shell` | `AppShell`, `AppSidebar`, `TopBar`, `UserMenu`, `CommandPalette`, `SettingsSidebar`, `ShellProvider`/`useShell`, `createDialogSlot` (one dialog up at a time, its actions and its request on two contexts; the app names the requests), `useHotkey`, `useAbility`, `useAuthorizedNav`, the nav types | top |
+| `auth` | `AuthLayout`, `AuthArtPanel`, `BrandLogo`, the auth primitives, `PasswordInput`, `SocialLoginButtons`, `OAuthCallbackNotice`, `SessionRestoreError`, `redirectSignedIn` | top |
 
 The lists live in [`.dependency-cruiser.cjs`](.dependency-cruiser.cjs), which
 passes them to `packages/tsconfig/depcruise/frontend-kit.cjs`.
@@ -147,7 +147,7 @@ page. An app with only the sign-in half would call `redirectSignedIn` from its
 - `no-circular` — no import cycles, counting value imports only.
 - `leaves-stay-leaves` — `platform`, `theme`, `i18n`, `analytics`, `forms`
   never import a middle or top concern.
-- `middle-below-top` — `layout`, `roles` never import `shell` or
+- `middle-below-top` — `layout`, `roles`, `pairing` never import `shell` or
   `auth`.
 - `concerns-meet-at-their-index` — a concern reaches another only through
   that concern's `index.ts`.

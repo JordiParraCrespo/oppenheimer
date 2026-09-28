@@ -1,7 +1,7 @@
-import { Alert, AlertDescription, Stepper } from '@oppenheimer/design-system-web';
+import { Stepper } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessionStartProgress } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useTranslation } from 'react-i18next';
 import { ElapsedClock } from '../components/elapsed-clock';
@@ -18,8 +18,7 @@ import { failureReason, PENDING_START, provisioningSteps } from '../lib/provisio
  * pending, so nothing on this pane advances on its own.
  */
 export function SessionProvisioning({ session }: { session: SessionEntity }) {
-  const { t } = useTranslation();
-  const resolveError = useErrorMessage();
+  const { t, i18n } = useTranslation();
   const failed = session.lifecycle === 'failed';
   const progress = useSessionStartProgress(session.id, {
     starting: session.isProvisioning,
@@ -34,6 +33,10 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
   const host = hostName ?? t('sessions.provisioning.steps.host.fallback');
   const checkout = session.cwdCheckout;
 
+  const failure = failureReason(progress.data?.failure, t, (code) => {
+    const key = `errors.byCode.${code}`;
+    return i18n.exists(key) ? (i18n.t(key as never) as string) : undefined;
+  });
   const steps = provisioningSteps(
     progress.data?.steps ?? PENDING_START,
     {
@@ -42,13 +45,13 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
       repo: checkout?.repositoryName ?? session.slug,
       branch: checkout?.branch ?? session.slug,
       agent: CODING_AGENTS[session.agent].label,
-      failure: failureReason(progress.data?.failure, t),
+      failure: failure?.reason ?? null,
     },
     t,
   );
 
   return (
-    <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas">
+    <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas-recessed">
       {/* The export's provisioning pane: a 420px column centred in whatever
           room the shell gives it (`.op-provision__inner`). */}
       <div className="m-auto w-full max-w-[420px] p-8">
@@ -60,13 +63,11 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
           {failed ? t('sessions.provisioning.failedLead') : session.scopeLabel}
         </p>
 
-        {progress.error ? (
-          <Alert variant="destructive" className="mt-6.5">
-            <AlertDescription>
-              {resolveError(progress.error, t('sessions.provisioning.progressFailed')).message}
-            </AlertDescription>
-          </Alert>
-        ) : null}
+        <ErrorAlert
+          error={progress.error}
+          fallback={t('sessions.provisioning.progressFailed')}
+          className="mt-6.5"
+        />
 
         <Stepper
           className="mt-6.5"
@@ -76,6 +77,14 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
           elapsed={<ElapsedClock since={session.createdAt} ticking={!failed} />}
           status={t(failed ? 'sessions.provisioning.failed' : 'sessions.provisioning.working')}
         />
+
+        {/* The host's own words, English and for whoever reads its logs: a
+            secondary line under the translated reason, never the reason. */}
+        {failed && failure?.detail ? (
+          <p className="mt-4 text-xs break-words text-fg-subtle">
+            {t('sessions.provisioning.details', { detail: failure.detail })}
+          </p>
+        ) : null}
       </div>
     </div>
   );

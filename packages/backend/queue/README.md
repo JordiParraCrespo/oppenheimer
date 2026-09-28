@@ -6,19 +6,23 @@ dashboard for inspecting queues.
 
 ## What's inside
 
-- `QueueModule` — registers BullMQ with Redis connection config from
-  `@nestjs/config`. Queue names come from `QUEUE_NAMES` in `@oppenheimer/shared`.
-- `setupBullBoard` — mounts the Bull Board UI on the Express instance.
+- `setupBullBoard` — mounts the Bull Board UI on the Express instance, for the
+  queues named (from `QUEUE_NAMES` in `@oppenheimer/shared`), behind Basic auth.
+
+The BullMQ connection and the queues themselves are registered in `apps/api`
+(`BullModule.forRootAsync` in `app.module.ts`, each queue once in
+`src/queue/queue.module.ts`).
 
 ## Usage
 
 ```ts
-// module
-import { QueueModule } from "@oppenheimer/backend-queue";
-
 // main.ts — mount the dashboard
 import { setupBullBoard } from "@oppenheimer/backend-queue";
-setupBullBoard(app);
+import { QUEUE_NAMES } from "@oppenheimer/shared";
+
+setupBullBoard(app, [QUEUE_NAMES.EMAIL, QUEUE_NAMES.INBOUND_EVENTS], {
+  auth: { username, password },
+});
 ```
 
 ## Scripts

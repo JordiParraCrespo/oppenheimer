@@ -24,7 +24,7 @@ export class FindCurrentCredentialQueryHandler
   async execute(query: FindCurrentCredentialQuery): Promise<CurrentCredentialScopes> {
     const ability = await this.abilityFactory.createForUser(
       { id: query.userId, role: query.role },
-      { activeOrganizationId: query.activeOrganizationId ?? null },
+      { organizationId: query.organizationId ?? null },
     );
 
     const permitted = grantableScopes(ability);

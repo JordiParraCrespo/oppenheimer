@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { MEMBERSHIP_ROLES } from '@oppenheimer/shared';
 import { type EntityManager, In, IsNull, type Repository } from 'typeorm';
 import type { RoleEntity } from '../domain/role.entity';
 import { RoleMapper } from '../roles.mapper';
+import { bumpForAssignment, bumpRoleVersion } from './authz-version.repository';
 import { RoleOrmEntity } from './role.orm-entity';
 import { UserRoleOrmEntity } from './user-role.orm-entity';
 import type { UserRoleRepositoryPort } from './user-role.repository.port';
@@ -63,8 +65,17 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
     userId: string,
     roleId: string,
     organizationId: string | null = null,
-    manager: EntityManager = this.userRoleRepository.manager,
+    manager?: EntityManager,
   ): Promise<void> {
+    // The grant and its version bump commit together, in the caller's
+    // transaction or in one of our own: a grant whose bump was lost would stay
+    // invisible to a cached reader until the entry expired.
+    if (!manager) {
+      await this.userRoleRepository.manager.transaction((own) =>
+        this.assignRoleToUser(userId, roleId, organizationId, own),
+      );
+      return;
+    }
     // `ON CONFLICT DO NOTHING` against the migration's two partial unique
     // indexes (one per scope), so a repeat grant is silent rather than a
     // constraint violation the caller has to tell apart from a real failure.
@@ -75,7 +86,41 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
       .values({ userId, roleId, organizationId })
       .orIgnore()
       .execute();
-    if (organizationId) await bumpRoleVersion(manager, organizationId);
+    // The organization's version for a scoped grant, the user's for a global
+    // one (it applies in every organization).
+    await bumpForAssignment(manager, userId, organizationId);
+  }
+
+  async replaceMembershipRole(
+    userId: string,
+    organizationId: string,
+    roleId: string,
+  ): Promise<void> {
+    await this.userRoleRepository.manager.transaction(async (manager) => {
+      // The global system roles a membership maps onto, read in the same
+      // transaction as the swap: the rows it may remove. Anything else scoped
+      // to the organization is left alone.
+      const membershipRoles = await manager.find(RoleOrmEntity, {
+        where: { name: In([...MEMBERSHIP_ROLES]), organizationId: IsNull() },
+        select: { id: true },
+      });
+      const replaced = membershipRoles.map((role) => role.id).filter((id) => id !== roleId);
+      if (replaced.length > 0) {
+        await manager.delete(UserRoleOrmEntity, {
+          userId,
+          organizationId,
+          roleId: In(replaced),
+        });
+      }
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(UserRoleOrmEntity)
+        .values({ userId, roleId, organizationId })
+        .orIgnore()
+        .execute();
+      await bumpRoleVersion(manager, organizationId);
+    });
   }
 
   async setRolesForUser(
@@ -98,25 +143,7 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
           uniqueRoleIds.map((roleId) => ({ userId, roleId, organizationId })),
         );
       }
-      if (organizationId) await bumpRoleVersion(manager, organizationId);
+      await bumpForAssignment(manager, userId, organizationId);
     });
   }
-}
-
-/**
- * Invalidate every cached ability in an organization by bumping its version.
- *
- * Written inside the caller's transaction on purpose. Routing this through the
- * outbox would be eventually consistent — `OutboxService.wake()` swallows
- * delivery failures and leaves rows for the next poll — and permission
- * revocation is exactly the case that cannot tolerate that.
- */
-export async function bumpRoleVersion(
-  manager: { query: (sql: string, parameters?: unknown[]) => Promise<unknown> },
-  organizationId: string,
-): Promise<void> {
-  await manager.query(
-    'UPDATE "organization" SET "roleVersion" = "roleVersion" + 1 WHERE "id" = $1',
-    [organizationId],
-  );
 }

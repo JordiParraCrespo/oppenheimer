@@ -6,12 +6,13 @@ import type {
   ClientFeatureFlags,
   FeatureFlagValueOf,
 } from '@oppenheimer/shared/feature-flags';
-import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
+import { type UseQueryOptions } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import type { OppenheimerApp } from '../di/oppenheimer-app';
 import { isFlagEnabled, resolveFlagValue } from '../modules/feature-flags/feature-flags';
 import { useOppenheimerApp } from './context';
 import { useAuthState } from './hooks';
+import { useQuery } from './query';
 
 type FlagAudience = 'signed-in' | 'anonymous';
 

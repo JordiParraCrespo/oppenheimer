@@ -57,7 +57,6 @@
     "mismatch": "The passwords do not match.",
     "submit": "Change password",
     "submitting": "Changing…",
-    "done": "Password changed. Other devices are signed out.",
     "failed": "The password could not be changed."
   },
   "devices": {
@@ -67,7 +66,9 @@
     "lastSeen": "Active {{when}}",
     "activeNow": "Active now",
     "signOut": "Sign out",
+    "signingOut": "Signing out…",
     "signOutOthers": "Sign out of all other devices",
+    "signingOutOthers": "Signing out of other devices…",
     "failed": "The devices could not be loaded.",
     "revokeFailed": "That device could not be signed out."
   },

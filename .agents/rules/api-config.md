@@ -45,8 +45,10 @@ config**, and the code must work without it. Model absence honestly:
   `orUndefined` helper in `config/env.ts`, so `.url().optional()` and friends
   still boot. It uses whitespace to decide **blankness only** and never trims
   the value it returns — a credential may legitimately be padded, and a config
-  that quietly rewrote `DB_PASSWORD` would disagree with Better Auth's pool,
-  which reads `process.env` directly. Do not add a trim here or at a call site.
+  that quietly rewrote `DB_PASSWORD` would hand Postgres a password nobody set.
+  Do not add a trim here or at a call site. Better Auth's pool, configured at
+  module scope, reads the same parsed section through `databaseConfigFromEnv()`
+  rather than `process.env`.
 - Declare the feature in `resolveCapabilities()`
   (`src/capabilities/capabilities.module.ts`). The resolved set — currently
   `google_oauth`, `github_oauth`, `github_app`, `s3_storage`,

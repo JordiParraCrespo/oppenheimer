@@ -25,7 +25,8 @@
   ending on New session"; decided 2026-09-19 with the version-1 frames.)
 - Sidebar: sessions as a branch glyph coloured by state, name, age on
   hover; a session still provisioning joins the list at once with a
-  pulsing grey glyph; New session on top; a filter menu (project,
+  pulsing grey glyph; New session on top, the primary button while a
+  session is open and secondary on New session itself, where send is; a filter menu (project,
   repository, agent, host, sort) with the active filters as chips under
   the header; the account menu at the bottom with appearance, language
   and Settings. Since the 2026-09-26 export the
@@ -59,6 +60,20 @@
   sidebar beside the pane a session opens in.
   (Decided 2026-09-21 with the version-1 frames; the starter's Settings
   and Profile screens were deleted rather than left unnavigated.)
+- **Glyphs** are lucide's, one per meaning. Settings, wherever it
+  appears (the account menu's link, a project header's action), is two
+  sliders (`settings-2`), never the cog, since the version-1 export
+  draws it that way; filtering is the vertical sliders. A project
+  is a folder, on the composer's project chip as in the export. A foot
+  action that opens another site, Manage repository access, ends in an
+  arrow out; one that stays in the console ends in a chevron.
+  Two places keep their glyph against the export: `Callout` stays
+  info, check, triangle and crossed circle, because the alert circle
+  marks a finished run (the design system's notes) and a bare cross
+  reads as close; and the Auto permission level stays the shield with a
+  check, since the export draws two different shields for it. The
+  account menu's panes open on lucide's chevrons, where the export
+  sets the characters › and ‹. (Decided 2026-09-28.)
 - **Settings** is the one destination beside the console, since the
   2026-09-26 export drew it (`design/version1/Settings.dc.html`): the
   account menu's Settings link opens `/settings`, its own chrome — a
@@ -87,7 +102,11 @@
   email typed out. Full name is **two fields side by side**, not the
   export's one, because the account stores first and last name apart
   and splitting one string on its first space gets names wrong.
-- New session: chips for project, host, repository, branch, in the grey
+- New session: on the grey canvas, a line under the title that says what
+  sending will do once a project is picked ("In XRP Mobile · cloning 1 of
+  1 repository, each on its own opp/ branch."; "Set the scope, then
+  describe the work." until then); chips for project, host, repository,
+  branch, in the grey
   band fused to the top of the composer (the tabbed composer of the
   2026-09-26 export); a composer for the
   first task whose foot row reads scope of action, then engine: attach
@@ -107,7 +126,7 @@
   until there is a name, a repository and one cloned by default; it
   closes the dialog with the project picked in the chip, its defaults
   applied. The same dialog, editing, is Project settings behind a
-  header's cog in the sidebar, Delete project on its footer's left; a
+  header's settings glyph in the sidebar, Delete project on its footer's left; a
   new project made from the sidebar's plus lands on New session with it
   picked (`?project=`). Picking a
   project offers its defaults — its host, its agent, its first default
@@ -149,10 +168,14 @@
   line). The repository chip holds one repository in the MVP (00);
   picking another replaces it. The selected row carries its branch,
   which opens a branch pane for that repository. The repository chip's
-  foot row is **Manage repository access** with the GitHub mark: a link,
-  in a new tab, to the App's installation page (`github_app_install_url`
-  from the deployment's capabilities), because which repositories the App
-  sees is decided on GitHub and nowhere in the console. It no longer goes
+  foot row is **Manage repository access** with the GitHub mark: it
+  opens, in a new tab, the App's installation page, because which
+  repositories the App sees is decided on GitHub and nowhere in the
+  console. The address is minted on click (`POST
+  /installations/install-state`, which puts a single-use state on it, 03)
+  rather than read from `github_app_install_url`, which now only says
+  whether the deployment has an App; Connect GitHub on onboarding mints
+  the same way. It no longer goes
   back to the onboarding step (`/onboarding/github`). A deployment with no
   App has no such page: the chip says so in its empty line and has no
   foot row. The host chip's

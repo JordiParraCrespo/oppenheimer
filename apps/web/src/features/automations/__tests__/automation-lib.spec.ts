@@ -12,7 +12,7 @@ import {
   withFrequency,
 } from '../lib/automation-draft';
 import { nextRunText, runState, sidebarMeta } from '../lib/automation-view';
-import { age, countdown, dayOffset, localDate, shortWait } from '../lib/time';
+import { dayOffset, localDate } from '../lib/time';
 import { automationTriggerText, daysText, scheduleText } from '../lib/trigger-text';
 
 /**
@@ -78,16 +78,6 @@ function automation(
 }
 
 describe('time', () => {
-  it('counts down the way the frames do', () => {
-    expect(countdown(14 * 3_600_000 + 56 * 60_000 + 54_000)).toBe('14h 56m 54s');
-    expect(countdown(2 * 86_400_000 + 3 * 3_600_000 + 5 * 60_000)).toBe('2d 3h 05m');
-    expect(countdown(4 * 60_000 + 7_000)).toBe('4m 07s');
-    expect(shortWait(45 * 3_600_000)).toBe('45h');
-    expect(shortWait(3 * 86_400_000)).toBe('3d');
-    expect(age(30_000)).toBe('now');
-    expect(age(5 * 3_600_000)).toBe('5h');
-  });
-
   it('reads local days in a zone, across midnight', () => {
     // 23:30Z on the 27th is already the 28th in Madrid.
     const late = Date.UTC(2026, 8, 27, 23, 30);
@@ -158,7 +148,9 @@ describe('rows', () => {
     expect(sidebarMeta(automation({ status: 'running' }), NOW, t)).toBe(
       'automations.sidebar.running',
     );
-    expect(sidebarMeta(automation(), NOW, t)).toBe('automations.next.in{"time":"1h"}');
+    expect(sidebarMeta(automation(), NOW, t)).toBe(
+      'automations.next.in{"time":"common.relative.hour{\\"count\\":1}"}',
+    );
     expect(sidebarMeta(automation({ nextRunAt: null, runCount: 12 }), NOW, t)).toBe('12');
   });
 

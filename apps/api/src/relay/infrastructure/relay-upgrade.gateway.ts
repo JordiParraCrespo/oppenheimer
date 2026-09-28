@@ -47,7 +47,14 @@ export class RelayUpgradeGateway implements OnApplicationBootstrap {
   }
 
   async route(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
-    const pathname = new URL(request.url ?? '/', 'http://relay.invalid').pathname;
+    const pathname = pathnameOf(request.url);
+    // Node's HTTP server drops its own error listener when it hands a socket to
+    // an 'upgrade' listener, and `ws` only adds one inside `handleUpgrade`. A
+    // peer that resets while a gateway awaits (the runner's assertion) would
+    // otherwise raise an 'error' nobody hears, which takes the process down.
+    socket.on('error', (error) => {
+      this.logger.debug({ message: 'upgrade socket error', pathname, error: error.message });
+    });
     try {
       switch (pathname) {
         case RUNNER_LINK_PATH:
@@ -63,5 +70,14 @@ export class RelayUpgradeGateway implements OnApplicationBootstrap {
       this.logger.error({ message: 'upgrade failed', pathname, error: String(error) });
       refuseUpgrade(socket, 500, 'upgrade failed');
     }
+  }
+}
+
+/** A request target `URL` cannot parse (`http://[`) routes nowhere, rather than throwing. */
+function pathnameOf(url: string | undefined): string {
+  try {
+    return new URL(url ?? '/', 'http://relay.invalid').pathname;
+  } catch {
+    return '';
   }
 }

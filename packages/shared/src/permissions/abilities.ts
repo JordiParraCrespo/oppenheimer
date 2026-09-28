@@ -215,6 +215,23 @@ function interpolateConditions(
 }
 
 /**
+ * Interpolate a stored rule's `${...}` placeholders exactly the way
+ * {@link defineAbilitiesFromPermissions} does when it builds an ability.
+ *
+ * Returns `undefined` when the conditions collapse to "no restriction" (every
+ * branch resolved to an `'all'` scope grant). A placeholder the context cannot
+ * resolve becomes `undefined` in place, as it does in the ability. Role-grant
+ * containment uses this to compare a requested rule with the author's rules in
+ * the same context.
+ */
+export function interpolatePermissionConditions(
+  conditions: Record<string, unknown>,
+  context: AbilityContext = {},
+): Record<string, unknown> | undefined {
+  return interpolateConditions(conditions, context) as Record<string, unknown> | undefined;
+}
+
+/**
  * Order rules so every `cannot` is applied after every `can`.
  *
  * CASL is last-rule-wins. A user holding several roles has their permissions

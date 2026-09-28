@@ -67,7 +67,17 @@ src/
   a message means rebuilding and committing the artifact —
   `src/protocol/__tests__/` fails if you forget. The emitter
   (`src/protocol/json-schema.ts`) is build-only and deliberately not exported
-  from `src/protocol/index.ts`.
+  from `src/protocol/index.ts`, and so is `src/protocol/samples.ts`, one
+  message of every type. The build writes the samples to
+  `protocol-schema/samples.json`, and `scripts/emit-link-protocol.cjs` reads
+  the schema (with the link's constants under `x-constants`) and writes the
+  runner's `apps/runner/internal/link/protocol.gen.go`; the runner's
+  `protocol_test.go` decodes every sample strictly into it. A new integer on
+  the wire needs a Go width in that emitter's `INTEGER_TYPES`, which fails
+  the build rather than guess. Every `scripts/emit-*.cjs` writes only when
+  run, never on `require()`: the specs compare the committed file with
+  `render()`, and a require that rewrote it first would always pass.
+  `pnpm --filter @oppenheimer/shared check:generated` is the same check CI runs.
 
   **The protocol is temporarily on a second Zod entry point.** Only `zod/v4` can
   emit JSON Schema (`z.toJSONSchema`), so `src/protocol/` imports it while every
@@ -106,7 +116,7 @@ email: z.string().email('Invalid email address'),
 Zod ignores the error map it is handed whenever a check states its own message,
 so a hardcoded string silently pins every consumer to English. The apps' forms
 translate from the issue code instead (`createZodErrorMap` in
-`@oppenheimer/frontend/validation`), and that only works if the schema stays quiet.
+`@oppenheimer/frontend-core/validation`), and that only works if the schema stays quiet.
 
 A `refine` whose meaning cannot be recovered from the issue code — an IP-or-CIDR
 check, say — is the exception, and falls through untranslated by design.

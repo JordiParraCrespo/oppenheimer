@@ -7,8 +7,9 @@ import { cn } from '../lib/utils';
  * the only non-Lucide glyphs in the system and the one sanctioned exception to
  * colour rationing: a third party's colour is their identity, not our accent.
  *
- * - `github` is monochrome by the brand's own rule and flips for dark mode
- *   through `--brand-glyph-filter` (simple-icons, CC0).
+ * - `github` is monochrome by the brand's own rule and draws in `currentColor`,
+ *   so it takes the theme's ink and follows dark mode with it (simple-icons,
+ *   CC0).
  * - `google` is the full-colour four-colour G, rendered untouched (devicon, MIT).
  *
  * 18px by default: one step above the button label's cap height, so the mark is
@@ -19,16 +20,16 @@ type BrandGlyphName = 'github' | 'google';
 function BrandGlyph({
   name,
   size = 18,
-  flip = name === 'github',
+  flip = false,
   className,
   ...props
 }: Omit<React.ComponentProps<'svg'>, 'name'> & {
   name: BrandGlyphName;
   size?: number;
   /**
-   * Invert the mark on dark through `--brand-glyph-filter`, the monochrome
-   * brand's own rule. On by default for GitHub; pass `false` when the mark
-   * sits on a coloured fill and takes `currentColor` instead.
+   * Invert the mark on dark through `--brand-glyph-filter`. Only for a mark
+   * drawn in a fixed colour; the GitHub mark takes `currentColor`, which the
+   * theme already inverts, so flipping it as well turns it dark on dark.
    */
   flip?: boolean;
 }) {

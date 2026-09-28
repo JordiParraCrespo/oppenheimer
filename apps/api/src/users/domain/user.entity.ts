@@ -4,6 +4,8 @@ import {
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
 import type { Role } from '@oppenheimer/shared';
+import { isAccessAllowed } from '../../auth/domain/account-access.policy';
+import { UserDeactivatedDomainEvent } from './events/user-deactivated.domain-event';
 import { UserDeletedDomainEvent } from './events/user-deleted.domain-event';
 import { Email } from './value-objects/email.value-object';
 import { Username } from './value-objects/username.value-object';
@@ -19,6 +21,12 @@ export interface UserProps {
   role: Role;
   isActive: boolean;
   emailVerified: boolean;
+  /**
+   * The admin plugin's ban, read-only here: Better Auth writes it, and the
+   * aggregate carries it only so the access rule can be asked of it.
+   */
+  banned: boolean;
+  banExpires: Date | null;
 }
 
 /**
@@ -87,6 +95,19 @@ export class UserEntity extends AggregateRoot<UserProps> {
     return this.props.emailVerified;
   }
 
+  get banned(): boolean {
+    return this.props.banned;
+  }
+
+  get banExpires(): Date | null {
+    return this.props.banExpires;
+  }
+
+  /** Whether the account may authenticate right now (see `isAccessAllowed`). */
+  mayAct(now: Date): boolean {
+    return isAccessAllowed(this.props, now);
+  }
+
   /** Apply a partial profile update, ignoring fields left undefined. */
   updateProfile(props: UpdateUserProps): void {
     if (props.firstName !== undefined) this.props.firstName = props.firstName;
@@ -98,7 +119,17 @@ export class UserEntity extends AggregateRoot<UserProps> {
     }
     if (props.avatarUrl !== undefined) this.props.avatarUrl = props.avatarUrl;
     if (props.role !== undefined) this.props.role = props.role;
-    if (props.isActive !== undefined) this.props.isActive = props.isActive;
+    if (props.isActive !== undefined) {
+      if (props.isActive === false && this.props.isActive) {
+        this.addEvent(
+          new UserDeactivatedDomainEvent({
+            aggregateId: this.id,
+            reason: 'Account deactivated; its sessions and delegated sessions are revoked',
+          }),
+        );
+      }
+      this.props.isActive = props.isActive;
+    }
     this.setUpdatedAt(new Date());
     this.validate();
   }

@@ -56,9 +56,12 @@
     "save": "Save",
     "cancel": "Cancel",
     "remove": "Remove host",
+    "removing": "Removing…",
     "removeTitle": "Remove {{name}}?",
     "removeRunning_one": "{{count}} session is running on {{name}}. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
     "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
-    "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused."
+    "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
+    "renameFailed": "Could not rename this host. Try again.",
+    "removeFailed": "Could not remove this host. Try again."
   }
 }

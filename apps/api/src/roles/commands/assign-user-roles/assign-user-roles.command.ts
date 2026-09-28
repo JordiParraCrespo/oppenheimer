@@ -3,7 +3,7 @@ import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 export class AssignUserRolesCommand extends CommandBase {
   readonly userId: string;
   readonly roleIds: string[];
-  readonly activeOrganizationId?: string | null;
+  readonly organizationId?: string | null;
 
   readonly actorId?: string;
   readonly actorRole?: string;
@@ -12,7 +12,7 @@ export class AssignUserRolesCommand extends CommandBase {
     super(props);
     this.userId = props.userId;
     this.roleIds = props.roleIds;
-    this.activeOrganizationId = props.activeOrganizationId;
+    this.organizationId = props.organizationId;
     this.actorId = props.actorId;
     this.actorRole = props.actorRole;
   }

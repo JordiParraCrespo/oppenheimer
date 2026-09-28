@@ -2720,6 +2720,16 @@
               }
             }
           },
+          "400": {
+            "description": "AUTHZ_003 — The organization id is not a UUID",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "401": {
             "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
             "content": {
@@ -2731,37 +2741,7 @@
             }
           },
           "403": {
-            "description": "ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing members\n\nAUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "ORG_001 / ORG_005 — The organization or the member does not exist",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "ORG_006 / ORG_007 / ORG_014 — Already a member, the last owner cannot leave, or a membership limit was reached",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "ORG_016 — The organization service failed to handle the request",
+            "description": "ORG_003 — The caller is not a member of this organization\n\nAUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4666,7 +4646,7 @@
         "tags": ["GitHub installations"]
       },
       "post": {
-        "description": "Called with the `installation_id` and OAuth `code` GitHub puts on the install redirect. The code is exchanged once to prove the caller can see the installation, then discarded — it is never stored. Re-posting the same installation refreshes what GitHub reports about it.",
+        "description": "Called with the `installation_id`, OAuth `code` and `state` GitHub puts on the install redirect. The `state` must be one `POST /installations/install-state` minted for this caller in this workspace; it is spent on the first attempt, before GitHub is called. The code is exchanged once to prove the caller can see the installation, then discarded — it is never stored. Re-posting the same installation, with a fresh state, refreshes what GitHub reports about it.",
         "operationId": "connectInstallation",
         "parameters": [],
         "requestBody": {
@@ -4691,7 +4671,7 @@
             }
           },
           "400": {
-            "description": "GITHUB_005 / GITHUB_006 — The authorization code was expired or already used, or no organization is active",
+            "description": "GITHUB_005 / GITHUB_006 / GITHUB_011 — The install state was missing, expired, used or someone else’s; the authorization code was expired or already used; or no organization is active",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4747,6 +4727,72 @@
           }
         ],
         "summary": "Connect a GitHub App installation to the workspace",
+        "tags": ["GitHub installations"]
+      }
+    },
+    "/api/v1/installations/install-state": {
+      "post": {
+        "description": "Mints the `state` a GitHub App install must come back with: single use, 15 minutes, bound to the caller and the active workspace. Returns the App’s installation URL with that state on it; `POST /installations` requires the state GitHub echoes on the redirect, and refuses anything else with `GITHUB_011`. Mint when the person clicks, not when the button renders.",
+        "operationId": "startInstallation",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallStartResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "GITHUB_006 — No organization is active",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start a GitHub App installation",
         "tags": ["GitHub installations"]
       }
     },
@@ -12663,6 +12709,25 @@
           "updatedAt"
         ]
       },
+      "InstallStartResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The GitHub App’s installation page, with `state` already on it. Send the browser here.",
+            "example": "https://github.com/apps/oppenheimer/installations/new?state=kX9_mZq-4vR2tY7wB1nC3dE5fG8hJ0kLpQ6sU2xV4yA"
+          },
+          "state": {
+            "type": "string",
+            "description": "Single use, 15 minutes, bound to the caller and the workspace. GitHub echoes it on the install redirect; post it back as `state` on `POST /installations`."
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["url", "state", "expiresAt"]
+      },
       "ConnectInstallationRequest": {
         "type": "object",
         "properties": {
@@ -12674,9 +12739,15 @@
           "code": {
             "type": "string",
             "minLength": 1
+          },
+          "state": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_-]+$"
           }
         },
-        "required": ["githubInstallationId", "code"]
+        "required": ["githubInstallationId", "code", "state"]
       },
       "RepositoryResponseDto": {
         "type": "object",

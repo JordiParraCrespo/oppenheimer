@@ -14,7 +14,7 @@ import { AbilityFactory } from './ability.factory';
 export interface RoleActor {
   id: string;
   role?: string;
-  activeOrganizationId?: string | null;
+  organizationId?: string | null;
 }
 
 /**
@@ -40,16 +40,37 @@ export class RoleGrantPolicy {
     // that defines the system roles in the first place.
     if (!actor) return;
 
-    const ability = await this.abilityFactory.createForUser(
-      { id: actor.id, role: actor.role },
-      { activeOrganizationId: actor.activeOrganizationId ?? null },
-    );
+    const user = { id: actor.id, role: actor.role };
+    const organizationId = actor.organizationId ?? null;
+    const ability = await this.abilityFactory.createForUser(user, { organizationId });
 
-    const ungrantable = ungrantablePermissions(ability, permissions);
+    // Containment compares the request's conditions with the actor's rules, so
+    // its `${...}` placeholders must resolve exactly as they did when
+    // `createForUser` built the ability: same principal, same organization, no
+    // active team.
+    const ungrantable = ungrantablePermissions(ability, permissions, {
+      user,
+      activeOrganizationId: organizationId,
+      activeTeamId: null,
+    });
     if (ungrantable.length === 0) return;
 
+    // A type-level `can` is true when the actor holds the action on the
+    // subject anywhere, which is the case of holding it only under narrower
+    // conditions than the request asks for.
+    const lacking = ungrantable.filter((rule) => !ability.can(rule.action, rule.subject));
+    const narrower = ungrantable.filter((rule) => ability.can(rule.action, rule.subject));
+    const detail = [
+      lacking.length > 0 ? `You do not hold: ${lacking.map(describePermission).join(', ')}` : '',
+      narrower.length > 0
+        ? `You hold only narrower conditions than: ${narrower.map(describePermission).join(', ')}`
+        : '',
+    ]
+      .filter(Boolean)
+      .join('. ');
+
     throw new AppError(RoleErrors.PERMISSION_NOT_GRANTABLE, {
-      detail: `You do not hold: ${ungrantable.map(describePermission).join(', ')}`,
+      detail,
       extensions: { ungrantable },
     });
   }
@@ -70,7 +91,7 @@ export class RoleGrantPolicy {
 
     const ability = await this.abilityFactory.createForUser(
       { id: actor.id, role: actor.role },
-      { activeOrganizationId: actor.activeOrganizationId ?? null },
+      { organizationId: actor.organizationId ?? null },
     );
 
     const row = { id: role.id, organizationId: role.organizationId };

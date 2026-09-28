@@ -94,4 +94,16 @@ export const GithubErrors = {
     message: 'That repository is not covered by this GitHub installation',
     httpStatus: 404,
   },
+  /**
+   * The install redirect did not carry a state this console minted for this
+   * person in this workspace — missing, expired, already used, or someone
+   * else's. One code for all of them: telling them apart is a probing oracle.
+   * 400 rather than 403: the caller is authorized, the request is just not a
+   * continuation of an install they started.
+   */
+  INSTALL_STATE_REJECTED: {
+    code: 'GITHUB_011',
+    message: 'The GitHub installation was not started from this workspace',
+    httpStatus: 400,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

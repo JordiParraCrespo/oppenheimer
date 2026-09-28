@@ -10,7 +10,10 @@ export {
   AppError,
   type AppErrorOptions,
   type ErrorDefinition,
+  type SdkResult,
   toAppError,
+  unwrap,
+  unwrapBody,
 } from './errors';
 export { MapApiError } from './map-api-error.decorator';
 export {

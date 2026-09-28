@@ -17,5 +17,7 @@ export interface RoleRepositoryPort extends RepositoryPort<RoleEntity> {
   findOneById(id: string, organizationId?: string | null): Promise<Option<RoleEntity>>;
   findOneByName(name: string, organizationId?: string | null): Promise<Option<RoleEntity>>;
   findByIds(ids: string[], organizationId?: string | null): Promise<RoleEntity[]>;
+  /** Every global role (`organizationId IS NULL`): the platform and system roles. */
+  findGlobal(): Promise<RoleEntity[]>;
   findRoles(params: FindRolesParams): Promise<Paginated<RoleEntity>>;
 }

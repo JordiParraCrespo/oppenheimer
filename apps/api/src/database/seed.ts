@@ -42,8 +42,10 @@ import { AssignDefaultRoleCommand } from '../roles/commands/assign-default-role/
 import { AssignDefaultRoleCommandHandler } from '../roles/commands/assign-default-role/assign-default-role.command-handler';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
 import { RoleRepository } from '../roles/database/role.repository';
+import { RoleCatalogVersionOrmEntity } from '../roles/database/role-catalog-version.orm-entity';
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
 import { UserRoleRepository } from '../roles/database/user-role.repository';
+import { UserRoleVersionOrmEntity } from '../roles/database/user-role-version.orm-entity';
 import { RoleMapper } from '../roles/roles.mapper';
 import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
 import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
@@ -77,6 +79,8 @@ const dataSource = new DataSource({
     HostNetworkOrmEntity,
     HostEventOrmEntity,
     UserRoleOrmEntity,
+    RoleCatalogVersionOrmEntity,
+    UserRoleVersionOrmEntity,
     GithubInstallationOrmEntity,
     OrganizationOrmEntity,
     MemberOrmEntity,

@@ -49,6 +49,7 @@ export {
   useRemoveInstallation,
   useRepositoryBranches,
   useRepositoryBranchesFor,
+  useStartInstallation,
 } from './installations.queries';
 export {
   type ClaimPersonalWorkspaceVariables,
@@ -91,6 +92,7 @@ export {
   sessionsKeys,
   useCloseSession,
   useCreateSession,
+  useInvalidateSession,
   useMoveSession,
   usePasteSessionImage,
   useRenameSession,

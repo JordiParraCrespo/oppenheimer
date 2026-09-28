@@ -8,8 +8,7 @@ import { wallTimeAt } from '@oppenheimer/shared/automations';
  */
 
 const MINUTE = 60_000;
-const HOUR = 60 * MINUTE;
-const DAY = 24 * HOUR;
+const DAY = 24 * 60 * MINUTE;
 
 const pad2 = (value: number) => String(value).padStart(2, '0');
 
@@ -59,41 +58,4 @@ export function dayOffset(at: number, now: number, timeZone: string): number {
     return Date.UTC(wall.year, wall.month - 1, wall.day);
   };
   return Math.round((toUtcMidnight(at) - toUtcMidnight(now)) / DAY);
-}
-
-/** The countdown under a next run: "14h 56m 54s", "2d 3h 05m", "4m 07s". */
-export function countdown(ms: number): string {
-  const seconds = Math.max(0, Math.floor(ms / 1000));
-  const days = Math.floor(seconds / 86_400);
-  const hours = Math.floor((seconds % 86_400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const rest = seconds % 60;
-  if (days) return `${days}d ${hours}h ${pad2(minutes)}m`;
-  if (hours) return `${hours}h ${pad2(minutes)}m ${pad2(rest)}s`;
-  return `${minutes}m ${pad2(rest)}s`;
-}
-
-/** The sidebar's short form of a wait: "45m", "3h", "2d". */
-export function shortWait(ms: number): string {
-  const minutes = Math.max(1, Math.round(ms / MINUTE));
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.round(minutes / 60);
-  return hours < 48 ? `${hours}h` : `${Math.round(hours / 24)}d`;
-}
-
-/** An age: "now", "5m", "3h", "2d". */
-export function age(ms: number): string {
-  const minutes = ms / MINUTE;
-  if (minutes < 1) return 'now';
-  if (minutes < 60) return `${Math.round(minutes)}m`;
-  if (minutes < 1440) return `${Math.round(minutes / 60)}h`;
-  return `${Math.round(minutes / 1440)}d`;
-}
-
-/** "2h ago" for the trigger preview's matches, "5m ago" under an hour. */
-export function agoLong(ms: number): string {
-  const hours = ms / HOUR;
-  if (hours < 1) return `${Math.max(1, Math.round(hours * 60))}m`;
-  if (hours < 24) return `${Math.round(hours)}h`;
-  return `${Math.round(hours / 24)}d`;
 }

@@ -1,4 +1,5 @@
 import { useRegister } from '@oppenheimer/frontend-consumer/react';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import {
   AuthDivider,
   AuthFooterNote,
@@ -7,7 +8,6 @@ import {
   AuthTitle,
   OAuthCallbackNotice,
   SocialLoginButtons,
-  useErrorMessage,
 } from '@oppenheimer/frontend-web';
 import type { RegisterDto } from '@oppenheimer/shared/schemas/auth';
 import { useNavigate } from '@tanstack/react-router';
@@ -60,7 +60,7 @@ export function RegisterScreen({
 
       <RegisterForm
         isPending={isPending}
-        error={error ? resolveError(error, t('auth.register.failed')).message : undefined}
+        error={error ? resolveError(error, t('auth.register.failed')) : undefined}
         onSubmit={onSubmit}
       />
 

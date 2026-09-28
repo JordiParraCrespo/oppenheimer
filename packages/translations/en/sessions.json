@@ -31,7 +31,8 @@
     "progressFailed": "Could not load how the start is going.",
     "codes": {
       "SESS_002": "This host makes sessions with one repository."
-    }
+    },
+    "details": "Details from the host: {{detail}}"
   },
   "group": {
     "working": "Working",
@@ -48,6 +49,10 @@
   "new": {
     "title": "New session",
     "subtitle": "Set the scope, then describe the work.",
+    "subtitleProject_one": "In {{name}} · cloning {{picked}} of {{count}} repository, each on its own opp/ branch.",
+    "subtitleProject_other": "In {{name}} · cloning {{picked}} of {{count}} repositories, each on its own opp/ branch.",
+    "subtitleCloning_one": "In {{name}} · cloning {{count}} repository, on its own opp/ branch.",
+    "subtitleCloning_other": "In {{name}} · cloning {{count}} repositories, each on its own opp/ branch.",
     "host": {
       "label": "Host",
       "placeholder": "Host",
@@ -55,7 +60,8 @@
       "empty": "No host matches.",
       "loading": "Loading hosts…",
       "add": "Add host…",
-      "offline": "Offline"
+      "offline": "Offline",
+      "failed": "Could not load your hosts."
     },
     "project": {
       "label": "Project",
@@ -64,7 +70,8 @@
       "empty": "No project matches.",
       "loading": "Loading projects…",
       "add": "New project…",
-      "noRepositories": "No repositories"
+      "noRepositories": "No repositories",
+      "failed": "Could not load your projects."
     },
     "repository": {
       "label": "Repositories",
@@ -77,8 +84,10 @@
       "branchPane": "Branch for {{name}}",
       "changeBranch": "Change branch",
       "manage": "Manage repository access",
+      "manageFailed": "Could not open GitHub. Try again in a moment.",
       "noApp": "This deployment has no GitHub App, so there are no repositories to pick.",
-      "archived": "Archived"
+      "archived": "Archived",
+      "failed": "Could not load your repositories."
     },
     "branch": {
       "label": "Branch",
@@ -137,8 +146,13 @@
     "image": {
       "sending": "Sending image",
       "hostOffline": "The image was not sent: the host is offline.",
-      "failedTitle": "The image did not reach the session",
-      "dismiss": "Dismiss"
+      "failedTitle": "The image did not reach the session"
+    },
+    "retryNow": "Retry now",
+    "retry": "Try again",
+    "ended": {
+      "forbidden": "You do not have access to this session's terminal.",
+      "refused": "The host refused to open this terminal."
     }
   },
   "sidebar": {
@@ -160,7 +174,8 @@
     "moveTitle": "Move to project",
     "moveNone": "No other project holds this session's repository.",
     "delete": "Delete",
-    "writeFailed": "That change did not land. Try again."
+    "writeFailed": "That change did not land. Try again.",
+    "loadFailed": "Could not load your sessions."
   },
   "deleteSession": {
     "title": "Delete “{{name}}”?",

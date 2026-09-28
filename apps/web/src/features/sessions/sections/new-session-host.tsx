@@ -1,8 +1,9 @@
 import { useHosts } from '@oppenheimer/frontend-consumer/react';
-import { useConsoleDialog } from '@oppenheimer/frontend-web';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useSearch } from '@tanstack/react-router';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { useConsoleDialog } from '@/lib/console';
 import { HostSelect } from '../components/host-select';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { useSearchPick } from '../hooks/use-search-pick';
@@ -21,6 +22,7 @@ export function NewSessionHost() {
   const { control } = useNewSessionDraft();
   const { field } = useController({ control, name: 'hostId' });
 
+  const resolveError = useErrorMessage();
   const hosts = useHosts();
   useSearchPick(search.host, hosts.data, true, (host) => field.onChange(host.id));
 
@@ -33,6 +35,9 @@ export function NewSessionHost() {
       onValueChange={field.onChange}
       onAddHost={() => dialogs.open({ kind: 'add-host', onUseHost: field.onChange })}
       loading={hosts.isPending}
+      failure={
+        hosts.isError ? resolveError(hosts.error, t('sessions.new.host.failed')).message : undefined
+      }
       variant="tab"
     />
   );

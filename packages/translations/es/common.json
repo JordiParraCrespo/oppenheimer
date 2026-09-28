@@ -28,5 +28,7 @@
     "year": "{{count}}a"
   },
   "save": "Guardar",
-  "search": "Buscar"
+  "search": "Buscar",
+  "dismiss": "Descartar",
+  "breadcrumb": "Ruta de navegación"
 }

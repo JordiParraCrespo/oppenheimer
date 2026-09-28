@@ -39,7 +39,9 @@ const KINDS = [
 ];
 const ROUTE_LINE_CAP = 120;
 /** What an app keeps beside its routes and features: configuration, nothing else. */
-const APP_CONFIG_FILES = ['oppenheimer.ts', 'auth-client.ts', 'nav.ts', 'query.ts'];
+// `console.ts` names the console's dialogs and lists, which the kit's generic
+// dialog slot and every feature that opens one share.
+const APP_CONFIG_FILES = ['oppenheimer.ts', 'auth-client.ts', 'nav.ts', 'query.ts', 'console.ts'];
 
 const modulesOf = (pkg) => {
   const dir = join(root, 'packages/frontend', pkg, 'src/modules');
@@ -383,6 +385,58 @@ for (const { app, routes, features, product, allow, kit } of APPS) {
       fail(
         `${app}/${legacy}: components live in ${features}/<module>/<kind>/ or in the platform kit, not at the app root`,
       );
+  }
+}
+
+// One component per file, in an app. Biome's `noNestedComponentDefinitions`
+// only sees a component declared inside another; two declared side by side
+// pass it, and the second one is always the one nobody finds. A component is
+// a top-level `function Name`, `const Name = (…) =>` (typed or not) or
+// `const Name = memo(…)`/`forwardRef(…)` with a capital first letter. It is a
+// tripwire on those shapes, not a parser. The kit is exempt: a primitives file there exports a family meant to
+// be read together (`AuthLink`, `AuthBackLink`, …).
+const TOP_LEVEL_COMPONENT =
+  /^(?:export\s+)?(?:default\s+)?(?:function\s+([A-Z]\w*)|const\s+([A-Z]\w*)\s*(?::[^=]+)?=\s*(?:\([^)]*\)\s*(?::[^=]*)?=>|\w+\s*=>|(?:memo|forwardRef)\())/gm;
+for (const { app } of APPS) {
+  const src = join(root, app, 'src');
+  if (!existsSync(src)) continue;
+  for (const file of walk(src)) {
+    if (!file.endsWith('.tsx') || /\.(spec|test)\.tsx$/.test(file) || file.includes('/__tests__/'))
+      continue;
+    const names = [...readFileSync(file, 'utf8').matchAll(TOP_LEVEL_COMPONENT)].map(
+      (match) => match[1] ?? match[2],
+    );
+    if (names.length > 1) {
+      fail(
+        `${relative(root, file)}: ${names.length} components (${names.join(', ')}) — one component per file; give each its own file in the kind it belongs to`,
+      );
+    }
+  }
+}
+
+// Every query a frontend package's React layer declares shares entities across
+// refetches. The entities are classes, which TanStack Query's default
+// structural sharing does not look into, so a query without `shareEntities`
+// hands every reader a new object per row on every refetch and every memo keyed
+// on them misses. The core's `useQuery` and `useQueries` apply it, so the fence
+// is on the import: TanStack's own two are not used here.
+const QUERY_HOOK_IMPORT = /import\s*\{([^}]*)\}\s*from\s*'@tanstack\/react-query'/g;
+const FENCED_HOOKS = ['useQuery', 'useQueries', 'useSuspenseQuery', 'useSuspenseQueries'];
+for (const pkg of readdirSync(join(root, 'packages/frontend'))) {
+  const dir = join(root, 'packages/frontend', pkg, 'src/react');
+  if (!existsSync(dir)) continue;
+  for (const name of readdirSync(dir)) {
+    // `query.ts` is the wrapper itself.
+    if (!/\.tsx?$/.test(name) || /\.(spec|test)\.tsx?$/.test(name) || name === 'query.ts') continue;
+    const source = readFileSync(join(dir, name), 'utf8');
+    for (const match of source.matchAll(QUERY_HOOK_IMPORT)) {
+      const names = match[1].split(',').map((part) => part.trim().replace(/^type\s+/, ''));
+      for (const hook of FENCED_HOOKS.filter((fenced) => names.includes(fenced))) {
+        fail(
+          `packages/frontend/${pkg}/src/react/${name}: imports ${hook} from @tanstack/react-query — use the one from @oppenheimer/frontend-core/react, which shares entities across refetches`,
+        );
+      }
+    }
   }
 }
 

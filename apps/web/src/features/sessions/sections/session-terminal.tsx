@@ -1,7 +1,12 @@
-import { Terminal, TerminalStatusBar, TerminalStatusItem } from '@oppenheimer/design-system-web';
+import {
+  Button,
+  Terminal,
+  TerminalStatusBar,
+  TerminalStatusItem,
+} from '@oppenheimer/design-system-web';
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { ImagePasteAlert } from '../components/image-paste-alert';
 import { useImagePaste } from '../hooks/use-image-paste';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
@@ -42,7 +47,7 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
   const image = useImagePaste(sessionId, AGENT_WINDOW);
-  const { containerRef, status } = useTerminal(createStream, {
+  const { containerRef, status, ended, retryNow } = useTerminal(createStream, {
     onEnd: refresh,
     agentWindow: true,
     onImage: image.onImage,
@@ -58,9 +63,30 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
         <div ref={containerRef} className="size-full" />
       </div>
 
+      {/* An end the refetch will not explain: the session is still live, but
+          this reader was refused its terminal. Say why, and let them try
+          again rather than sit on "Disconnected". */}
+      {ended === 'forbidden' || ended === 'refused' ? (
+        <div className="px-5 pb-3">
+          <ErrorAlert
+            message={t(`sessions.session.ended.${ended}`)}
+            action={
+              <Button variant="ghost" size="sm" onClick={retryNow}>
+                {t('sessions.session.retry')}
+              </Button>
+            }
+          />
+        </div>
+      ) : null}
+
       {image.failure ? (
         <div className="px-5 pb-3">
-          <ImagePasteAlert message={image.failure} onDismiss={image.dismiss} />
+          <ErrorAlert
+            error={image.failure}
+            fallback={t('errors.fallback')}
+            title={t('sessions.session.image.failedTitle')}
+            onDismiss={image.dismiss}
+          />
         </div>
       ) : null}
 
@@ -72,6 +98,13 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
           />
           {t(`sessions.session.status.${status}`)}
         </TerminalStatusItem>
+        {/* Between reconnects the ladder may be waiting up to thirty seconds;
+            this skips the wait. */}
+        {status === 'connecting' || status === 'offline' ? (
+          <Button variant="ghost" size="xs" onClick={retryNow}>
+            {t('sessions.session.retryNow')}
+          </Button>
+        ) : null}
         {image.sending ? (
           <TerminalStatusItem>{t('sessions.session.image.sending')}</TerminalStatusItem>
         ) : null}

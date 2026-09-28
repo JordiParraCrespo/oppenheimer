@@ -1,10 +1,12 @@
+import { LINK_FRAME_HEADER_BYTES } from '@oppenheimer/shared/protocol';
+
 /**
  * The runner link's binary frame: a 4-byte big-endian attachment id, then the
  * PTY bytes (`product/versions/mvp/01-protocol.md`, "Framing"). No JSON, no
  * base64, and nothing else in the header — session ids and window indices never
- * appear in a binary frame.
+ * appear in a binary frame. The width is the protocol's, shared with the runner.
  */
-export const FRAME_HEADER_BYTES = 4;
+export const FRAME_HEADER_BYTES = LINK_FRAME_HEADER_BYTES;
 
 export const MAX_ATTACHMENT_ID = 0xffffffff;
 

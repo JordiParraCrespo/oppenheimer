@@ -18,6 +18,7 @@
     "@oppenheimer/go-httpx": "workspace:*",
     "@oppenheimer/go-postgres": "workspace:*",
     "@oppenheimer/go-selfupdate": "workspace:*",
-    "@oppenheimer/go-ws": "workspace:*"
+    "@oppenheimer/go-ws": "workspace:*",
+    "@oppenheimer/shared": "workspace:*"
   }
 }

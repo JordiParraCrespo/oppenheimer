@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { LegalPage, LegalSection } from '@/features/public/sections/public-site-layout';
+import { LegalSection } from '@/features/public/components/legal-section';
+import { LegalPage } from '@/features/public/sections/legal-page';
 
 export function TermsScreen() {
   const { t } = useTranslation();

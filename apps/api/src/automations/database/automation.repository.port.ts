@@ -2,6 +2,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
 import type { AutomationEntity } from '../domain/automation.entity';
 import type { AutomationTriggerProps } from '../domain/automation.types';
+import type { WorkspaceLimits } from '../domain/automation-limits.policy';
 import type { AutomationRunEntity } from '../domain/automation-run.entity';
 
 /** A trigger that matched an event, with the automation it belongs to. */
@@ -17,6 +18,14 @@ export interface TriggerCandidate {
 export interface DueScheduleDecision {
   run: AutomationRunEntity | null;
   nextFireAt: Date | null;
+}
+
+/** What a due trigger is weighed against, read inside the claim's transaction. */
+export interface FiringContext {
+  /** The workspace's saved limits (null columns inherit the platform's). */
+  workspace: WorkspaceLimits;
+  /** Pending and dispatched runs in the last hour, this batch's included. */
+  recent: { automation: number; workspace: number };
 }
 
 export interface AutomationRepositoryPort {
@@ -48,22 +57,33 @@ export interface AutomationRepositoryPort {
   ): Promise<TriggerCandidate[]>;
 
   /**
-   * Claim due schedule triggers (`FOR UPDATE SKIP LOCKED`, so replicas take
-   * disjoint rows), ask `decide` what each owes, then write the run it owes
-   * and the trigger's next slot, all in one transaction. Returns the runs that
+   * Claim due schedule triggers (`FOR NO KEY UPDATE SKIP LOCKED`, so replicas
+   * take disjoint rows), take their workspaces' firing locks, read their
+   * limits and the rate window's counts since `since`, ask `decide` what each
+   * owes, then write the run it owes and the trigger's next slot — all in one
+   * transaction, on its one connection. The counts include the runs this batch
+   * queued before, so a batch cannot fire past a cap. Returns the runs that
    * were queued.
    */
   fireDueSchedules(
     now: Date,
     batch: number,
-    decide: (candidate: TriggerCandidate, scheduledFor: Date) => Promise<DueScheduleDecision>,
+    since: Date,
+    decide: (
+      candidate: TriggerCandidate,
+      scheduledFor: Date,
+      context: FiringContext,
+    ) => DueScheduleDecision,
   ): Promise<AutomationRunEntity[]>;
 
   /** Live automations that run on a host, unscoped: the host's own lifecycle is asking. */
   findLiveOnHostForSystem(hostId: string): Promise<AutomationEntity[]>;
 
-  /** Live automations in a project, unscoped. */
-  findLiveInProjectForSystem(projectId: string): Promise<AutomationEntity[]>;
+  /** Live automations in a workspace's project, unscoped. */
+  findLiveInProjectForSystem(
+    organizationId: string,
+    projectId: string,
+  ): Promise<AutomationEntity[]>;
 
   /** Write a system change (pause) without a caller's version. */
   saveForSystem(entity: AutomationEntity): Promise<void>;

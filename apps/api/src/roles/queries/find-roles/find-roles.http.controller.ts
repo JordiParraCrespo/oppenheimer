@@ -5,10 +5,8 @@ import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import type { Paginated } from '@oppenheimer/backend-ddd';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
-import {
-  activeOrganizationIdOf,
-  type ScopedRequest,
-} from '../../../auth/domain/scope-context.types';
+import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
+import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import type { RoleEntity } from '../../domain/role.entity';
@@ -54,7 +52,7 @@ export class FindRolesHttpController {
   @ApiResponse({ status: 200, type: PaginatedRolesResponseDto })
   async findAll(@Query() query: FindRolesRequest, @Req() request: ScopedRequest) {
     const result = await this.queryBus.execute<FindRolesQuery, Paginated<RoleEntity>>(
-      new FindRolesQuery({ ...query, activeOrganizationId: activeOrganizationIdOf(request) }),
+      new FindRolesQuery({ ...query, organizationId: tenantOrganizationIdOf(request) }),
     );
 
     return {

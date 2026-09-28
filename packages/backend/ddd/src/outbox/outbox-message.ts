@@ -93,10 +93,13 @@ export const OutboxMessageSchema = new EntitySchema<OutboxMessageRecord>({
     processedAt: { type: TIMESTAMP_COLUMN_TYPE, nullable: true },
   },
   indices: [
-    // The relay's claim query filters on exactly this pair.
+    // The relay's claim: pending rows only, in the claim's order.
     {
-      name: 'IDX_outbox_message_status_available',
-      columns: ['status', 'availableAt'],
+      name: 'IDX_outbox_message_pending',
+      columns: ['createdAt'],
+      where: `"status" = 'pending'`,
     },
+    // Retention: BRIN, which EntitySchema cannot express. The migration owns it.
+    { name: 'IDX_outbox_message_created_brin', columns: ['createdAt'], synchronize: false },
   ],
 });

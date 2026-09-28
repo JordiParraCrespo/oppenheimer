@@ -1,5 +1,6 @@
 import type { IncomingHttpHeaders } from 'node:http';
 import type { ResourceScope, Scope } from '@oppenheimer/shared';
+import type { RequestTenant } from './request-tenant.types';
 
 /** The principal a credential acts on behalf of, as put on `request.user`. */
 export interface CredentialOwner {
@@ -112,10 +113,17 @@ export interface ScopedRequest {
   session?: Record<string, unknown> | null;
   ability?: unknown;
   scopeContext?: ScopeContext | null;
+  /** The organization the request acts in, stamped once by `ApiAuthGuard`. */
+  tenant?: RequestTenant;
 }
 
-/** The organization selected in the caller's session. */
-export function activeOrganizationIdOf(request: Pick<ScopedRequest, 'session'>): string | null {
-  const value = request.session?.activeOrganizationId;
-  return typeof value === 'string' ? value : null;
+/**
+ * The organization a scoped credential acts in when the route names none: the
+ * one it is restricted to, if it is restricted to exactly one. A host
+ * credential, or a credential restricted to several or none, has none.
+ */
+export function pinnedOrganizationIdOf(context: ScopeContext | null | undefined): string | null {
+  if (!context || isHostCredential(context)) return null;
+  const organizationIds = context.resourceScope.organizationIds;
+  return organizationIds?.length === 1 ? organizationIds[0] : null;
 }

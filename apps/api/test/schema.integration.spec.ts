@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { resolve } from 'node:path';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { loadMigrations } from './run-migrations';
@@ -14,6 +15,8 @@ import { loadMigrations } from './run-migrations';
  * already holds sessions pointing at rows that are gone and duplicate
  * accounts. `FK_session_user` and `FK_account_user` belong to the migration
  * before it (`CascadeSignInsWithTheirUser`) and stay through the revert.
+ * `AddHotPathIndexesAndDropRedundant` is reverted and re-applied the same way,
+ * and its large-table path is run with the ops scripts it points at.
  *
  * The suite starts its own Postgres 16 container. Where Docker is not
  * available, `SCHEMA_TEST_DATABASE_URL` points it at a database you started
@@ -325,4 +328,330 @@ describe('the migrated schema (integration)', () => {
       });
     });
   });
+
+  it('indexes the automation and session hot paths', async () => {
+    await expectHotPathIndexes();
+  });
+
+  // `.agents/rules/database-design.md`: every foreign key is backed by an index
+  // whose leading columns are the key's columns, or the reason it is not is
+  // written down. A partial index counts only when its predicate is
+  // `IS NOT NULL`, which every lookup the key makes satisfies.
+  it('backs every foreign key with an index', async () => {
+    const rows: { name: string }[] = await dataSource.query(
+      `SELECT c.conname AS name
+         FROM pg_constraint c
+        WHERE c.contype = 'f' AND c.connamespace = 'public'::regnamespace
+          AND NOT EXISTS (
+            SELECT 1 FROM pg_index i
+             WHERE i.indrelid = c.conrelid AND i.indisvalid
+               AND (i.indpred IS NULL OR pg_get_expr(i.indpred, i.indrelid) ~ 'IS NOT NULL')
+               AND (i.indkey::int2[])[0:cardinality(c.conkey) - 1] @> c.conkey
+               AND (i.indkey::int2[])[0:cardinality(c.conkey) - 1] <@ c.conkey)
+        ORDER BY 1`,
+    );
+    const unindexed = rows.map((row) => row.name);
+    expect(unindexed.filter((name) => !FOREIGN_KEYS_WITHOUT_THEIR_INDEX.has(name))).toEqual([]);
+    // An entry whose key has since been indexed (or dropped) comes off the list.
+    expect(
+      [...FOREIGN_KEYS_WITHOUT_THEIR_INDEX.keys()].filter((name) => !unindexed.includes(name)),
+    ).toEqual([]);
+  });
+
+  describe('reverting and re-applying AddHotPathIndexesAndDropRedundant', () => {
+    const HOT_PATH = 'AddHotPathIndexesAndDropRedundant1790810000000';
+    const ids = {
+      user: randomUUID(),
+      organization: randomUUID(),
+      host: randomUUID(),
+      project: randomUUID(),
+      installation: randomUUID(),
+      automation: randomUUID(),
+      revision: randomUUID(),
+      session: randomUUID(),
+    };
+
+    /** Undoes migrations, newest first, until `AddHotPathIndexesAndDropRedundant` is no longer applied. */
+    const revertThroughHotPath = async () => {
+      for (;;) {
+        const [applied] = await dataSource.query(`SELECT 1 FROM "migrations" WHERE "name" = $1`, [
+          HOT_PATH,
+        ]);
+        if (!applied) return;
+        await dataSource.undoLastMigration();
+      }
+    };
+
+    const rowCounts = async () => {
+      const [counts] = await dataSource.query(
+        `SELECT (SELECT count(*)::int FROM "automation_trigger" WHERE "automationId" = $1) AS triggers,
+                (SELECT count(*)::int FROM "automation_run" WHERE "automationId" = $1) AS runs,
+                (SELECT count(*)::int FROM "work_session_event" WHERE "sessionId" = $2) AS events,
+                (SELECT count(*)::int FROM "session_checkout" WHERE "sessionId" = $2) AS checkouts`,
+        [ids.automation, ids.session],
+      );
+      return counts;
+    };
+
+    beforeAll(async () => {
+      await dataSource.query(
+        `INSERT INTO "user" ("id", "name", "email", "firstName", "lastName")
+         VALUES ($1, 'Cy', 'cy@example.com', 'Cy', 'C')`,
+        [ids.user],
+      );
+      await dataSource.query(
+        `INSERT INTO "organization" ("id", "name", "slug") VALUES ($1, 'Hot', 'hot-path')`,
+        [ids.organization],
+      );
+      await dataSource.query(
+        `INSERT INTO "host" ("id", "ownerUserId", "name", "publicKey", "publicKeyFingerprint")
+         VALUES ($1, $2, 'box', 'key', 'fingerprint')`,
+        [ids.host, ids.user],
+      );
+      await dataSource.query(
+        `INSERT INTO "project" ("id", "organizationId", "name", "slug") VALUES ($1, $2, 'Web', 'web')`,
+        [ids.project, ids.organization],
+      );
+      await dataSource.query(
+        `INSERT INTO "github_installation" ("id", "organizationId", "githubInstallationId", "accountLogin",
+                                            "accountType", "repositorySelection", "installedByUserId")
+         VALUES ($1, $2, 4242, 'acme', 'Organization', 'all', $3)`,
+        [ids.installation, ids.organization, ids.user],
+      );
+      // `currentRevisionId` is a deferred key: the automation and its first
+      // revision are written in one transaction.
+      await dataSource.transaction(async (manager) => {
+        await manager.query(
+          `INSERT INTO "automation" ("id", "organizationId", "projectId", "ownerUserId", "name", "currentRevisionId")
+           VALUES ($1, $2, $3, $4, 'Nightly', $5)`,
+          [ids.automation, ids.organization, ids.project, ids.user, ids.revision],
+        );
+        await manager.query(
+          `INSERT INTO "automation_revision" ("id", "organizationId", "automationId", "number", "hostId",
+                                              "agent", "prompt", "repositories")
+           VALUES ($1, $2, $3, 1, $4, 'claude', 'Tidy up', '[{"githubRepoId": 1}]')`,
+          [ids.revision, ids.organization, ids.automation, ids.host],
+        );
+      });
+      await dataSource.query(
+        `INSERT INTO "automation_trigger" ("organizationId", "automationId", "source", "eventType", "config", "timezone")
+         VALUES ($1, $2, 'schedule', 'cron', '{}', 'UTC')`,
+        [ids.organization, ids.automation],
+      );
+      await dataSource.query(
+        `INSERT INTO "work_session" ("id", "organizationId", "projectId", "createdByUserId", "hostId",
+                                     "name", "slug", "agent")
+         VALUES ($1, $2, $3, $4, $5, 'Tidy', 'tidy', 'claude')`,
+        [ids.session, ids.organization, ids.project, ids.user, ids.host],
+      );
+      await dataSource.query(
+        `INSERT INTO "automation_run" ("organizationId", "automationId", "revisionId", "cause", "causeKey",
+                                       "outcome", "dispatchedAt", "sessionId")
+         VALUES ($1, $2, $3, 'schedule', 'first', 'dispatched', now(), $4),
+                ($1, $2, $3, 'schedule', 'second', 'pending', NULL, NULL)`,
+        [ids.organization, ids.automation, ids.revision, ids.session],
+      );
+      await dataSource.query(
+        `INSERT INTO "work_session_event" ("sessionId", "seq", "idempotencyKey", "source", "kind", "occurredAt")
+         VALUES ($1, 1, 'first', 'api', 'prompt.first', now()), ($1, 2, 'second', 'runner', 'agent.state', now())`,
+        [ids.session],
+      );
+      await dataSource.query(
+        `INSERT INTO "session_checkout" ("organizationId", "sessionId", "installationId", "githubRepoId",
+                                         "repositoryFullName", "directoryName", "baseBranch", "branch")
+         VALUES ($1, $2, $3, 1, 'acme/web', 'web', 'main', 'tidy')`,
+        [ids.organization, ids.session, ids.installation],
+      );
+    });
+
+    it('restores the original indexes, and re-applies over the same rows', async () => {
+      const before = await rowCounts();
+      expect(before).toEqual({ triggers: 1, runs: 2, events: 2, checkouts: 1 });
+
+      await revertThroughHotPath();
+      await expectIndexesBeforeHotPath();
+      expect(await rowCounts()).toEqual(before);
+
+      await dataSource.runMigrations();
+      await expectHotPathIndexes();
+      expect(await rowCounts()).toEqual(before);
+    });
+
+    // The large-table path runs the ops scripts with psql inside the container,
+    // so it needs the suite's own container.
+    it.skipIf(!!process.env.SCHEMA_TEST_DATABASE_URL)(
+      'on a large table, refuses at boot until the ops script has run, then creates nothing',
+      async () => {
+        const container = pgContainer as StartedTestContainer;
+        const psql = async (file: string) => {
+          const target = `/tmp/${file}`;
+          await container.copyFilesToContainer([
+            { source: resolve(__dirname, '../db/ops', file), target },
+          ]);
+          const result = await container.exec([
+            'psql',
+            '-v',
+            'ON_ERROR_STOP=1',
+            '-U',
+            'test',
+            '-d',
+            'test',
+            '-f',
+            target,
+          ]);
+          expect(result.exitCode, result.output).toBe(0);
+        };
+        // The indexes of the tables this migration and its ops scripts touch.
+        // Migrations after it are reverted and re-applied along with it, and
+        // the indexes they create come back with new oids; they are not what
+        // this compares.
+        const oids = () =>
+          byName<{ name: string; oid: number }>(
+            `SELECT c.relname AS name, c.oid::int AS oid
+               FROM pg_class c
+               JOIN pg_index i ON i.indexrelid = c.oid
+               JOIN pg_class t ON t.oid = i.indrelid
+              WHERE c.relkind = 'i' AND c.relnamespace = 'public'::regnamespace
+                AND t.relname IN ('automation_run', 'automation_trigger', 'session_checkout',
+                                  'work_session', 'work_session_event')`,
+          );
+
+        await revertThroughHotPath();
+        // Over the migration's 100k-row threshold once analyzed.
+        await dataSource.query(
+          `INSERT INTO "work_session_event" ("sessionId", "seq", "idempotencyKey", "source", "kind", "occurredAt")
+           SELECT $1, 100 + g, 'bulk-' || g, 'runner', 'agent.state', now()
+             FROM generate_series(1, 120000) g`,
+          [ids.session],
+        );
+        await dataSource.query(`ANALYZE "work_session_event"`);
+
+        await expect(dataSource.runMigrations()).rejects.toThrow(
+          /IDX_work_session_event_first_prompt is missing .*1790810000000-hot-path-indexes\.sql/,
+        );
+        await expectIndexesBeforeHotPath();
+
+        await psql('1790810000000-hot-path-indexes.sql');
+        await expectHotPathIndexes();
+        const built = await oids();
+        await dataSource.runMigrations();
+        await expectHotPathIndexes();
+        expect(await oids()).toEqual(built);
+
+        await psql('1790810000000-hot-path-indexes.rollback.sql');
+        await expectIndexesBeforeHotPath();
+        const restored = await oids();
+        await revertThroughHotPath();
+        expect(await oids()).toEqual(restored);
+
+        // Small again: the migration does it all itself.
+        await dataSource.query(
+          `DELETE FROM "work_session_event" WHERE "sessionId" = $1 AND "idempotencyKey" LIKE 'bulk-%'`,
+          [ids.session],
+        );
+        await dataSource.query(`VACUUM ANALYZE "work_session_event"`);
+        await dataSource.runMigrations();
+        await expectHotPathIndexes();
+      },
+      120000,
+    );
+  });
+
+  /** What `AddHotPathIndexesAndDropRedundant` creates, and what it drops. */
+  const HOT_PATH_CREATED = [
+    'IDX_automation_run_dispatched',
+    'IDX_automation_run_created_brin',
+    'IDX_automation_trigger_automation',
+    'IDX_work_session_event_first_prompt',
+    'IDX_work_session_created_by',
+    'IDX_session_checkout_installation',
+  ];
+  const HOT_PATH_DROPPED = ['IDX_session_checkout_session', 'IDX_work_session_organization_state'];
+
+  const indexDefinitions = () =>
+    byName<{ name: string; definition: string }>(
+      `SELECT c.relname AS name, pg_get_indexdef(i.indexrelid) AS definition
+         FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid
+        WHERE c.relnamespace = 'public'::regnamespace`,
+    );
+
+  const expectHotPathIndexes = async () => {
+    const index = await indexes();
+    for (const name of HOT_PATH_CREATED) {
+      expect(index.get(name), name).toMatchObject({ valid: true });
+    }
+    for (const name of HOT_PATH_DROPPED) {
+      expect(index.has(name), name).toBe(false);
+    }
+    const definition = await indexDefinitions();
+    expect(definition.get('IDX_automation_trigger_automation')?.definition).toMatch(
+      /USING btree \("automationId", "organizationId", "position"\)$/,
+    );
+    expect(definition.get('IDX_automation_run_dispatched')?.definition).toMatch(
+      /USING btree \("dispatchedAt"\) WHERE \(\(outcome\)::text = 'dispatched'::text\)$/,
+    );
+    expect(definition.get('IDX_work_session_event_first_prompt')?.definition).toMatch(
+      /USING btree \("sessionId"\) WHERE \(\(kind\)::text = 'prompt.first'::text\)$/,
+    );
+    expect(definition.get('IDX_automation_run_created_brin')?.definition).toMatch(
+      /USING brin \("createdAt"\)$/,
+    );
+  };
+
+  const expectIndexesBeforeHotPath = async () => {
+    const index = await indexes();
+    for (const name of HOT_PATH_CREATED.filter((n) => n !== 'IDX_automation_trigger_automation')) {
+      expect(index.has(name), name).toBe(false);
+    }
+    const definition = await indexDefinitions();
+    expect(definition.get('IDX_automation_trigger_automation')?.definition).toMatch(
+      /USING btree \("organizationId", "automationId", "position"\)$/,
+    );
+    expect(definition.get('IDX_session_checkout_session')?.definition).toMatch(
+      /USING btree \("sessionId"\)$/,
+    );
+    expect(definition.get('IDX_work_session_organization_state')?.definition).toMatch(
+      /USING btree \("organizationId", state, "createdAt" DESC\)$/,
+    );
+  };
 });
+
+/**
+ * Foreign keys with no index whose leading columns are exactly theirs, and why.
+ * "backs every foreign key with an index" fails on any key missing from here,
+ * and on any entry here that no longer needs to be.
+ */
+const FOREIGN_KEYS_WITHOUT_THEIR_INDEX = new Map<string, string>([
+  // Served by an index that leads with the key's uuid column, which is unique
+  // across workspaces, so `organizationId` would add nothing to the lookup
+  // (written down in 1790810000000-AddHotPathIndexesAndDropRedundant).
+  [
+    'FK_session_checkout_session',
+    '("organizationId", "sessionId") → UQ_session_checkout_session_id ("sessionId", "id")',
+  ],
+  [
+    'FK_work_session_project',
+    '("organizationId", "projectId") → IDX_work_session_project_state ("projectId", "state")',
+  ],
+  [
+    'FK_project_repository_project',
+    '("organizationId", "projectId") → UQ_project_repository_project_repo ("projectId", "githubRepoId")',
+  ],
+  // The key's first column is `work_session`'s own primary key.
+  ['FK_work_session_cwd_checkout', '("id", "cwdCheckoutId") → PK_work_session ("id")'],
+  // No index at all: a parent delete scans the child table. Out of scope for
+  // 1790810000000; each needs its own migration.
+  [
+    'FK_github_installation_installed_by',
+    'TODO(follow-up): "installedByUserId", RESTRICT from user',
+  ],
+  ['FK_host_pairing_token_host', 'TODO(follow-up): "redeemedHostId", SET NULL from host'],
+  [
+    'FK_user_role_organization',
+    'TODO(follow-up): "organizationId", CASCADE from organization; IDX_user_role_user_org leads with "userId"',
+  ],
+  [
+    'FK_user_role_role',
+    'TODO(follow-up): "roleId", CASCADE from role; UQ_user_role_* lead with "userId"',
+  ],
+]);

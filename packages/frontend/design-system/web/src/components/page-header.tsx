@@ -22,11 +22,17 @@ function PageHeader({ className, ...props }: React.ComponentProps<'header'>) {
   );
 }
 
-/** The crumbs: buttons or links for the parents, a muted span for here. */
-function PageHeaderCrumbs({ className, children, ...props }: React.ComponentProps<'nav'>) {
+/**
+ * The crumbs: buttons or links for the parents, a muted span for here. The
+ * landmark's name is the caller's to translate, so it is required.
+ */
+function PageHeaderCrumbs({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'nav'> & { 'aria-label': string }) {
   return (
     <nav
-      aria-label="Breadcrumb"
       data-slot="page-header-crumbs"
       className={cn(
         'flex min-h-5 flex-wrap items-center gap-1.5 text-[13px] text-fg-subtle [&_a]:text-fg-muted [&_a:hover]:text-fg [&_button]:text-fg-muted [&_button:hover]:text-fg',
@@ -117,14 +123,14 @@ function PageHeaderTitleInput({ className, ...props }: React.ComponentProps<'inp
 
 /**
  * The facts under the title: status, trigger, agent · model · project, separated
- * by dots — indented under the title, past the 36px icon and its gap
- * (`.op-ph__meta`).
+ * by dots — indented under the title, past the icon and its gap. A mono fact
+ * (`figures`, a countdown) sits a half step smaller than the words.
  */
 function PageHeaderMeta({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="page-header-meta"
-      className={cn('flex flex-wrap items-center gap-1.5 pl-12 text-[13px] text-fg-muted', className)}
+      className={cn('flex flex-wrap items-center gap-1.5 pl-12 text-sm text-fg-muted [&_.figures]:text-[12.5px]', className)}
       {...props}
     />
   );
@@ -149,7 +155,7 @@ function PageHeaderNote({
     <div
       data-slot="page-header-note"
       className={cn(
-        'mt-1 flex items-center gap-3 rounded-md bg-card py-2.5 pr-2.5 pl-3.5 text-[13px] text-fg-muted motion-safe:animate-label-in',
+        'mt-1 ml-12 flex items-center gap-3 rounded-md bg-card py-2.5 pr-2.5 pl-3.5 text-[13px] text-fg-muted motion-safe:animate-label-in',
         className,
       )}
       {...props}

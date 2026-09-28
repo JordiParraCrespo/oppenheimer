@@ -84,14 +84,30 @@ describe('provisioningSteps', () => {
 });
 
 describe('failureReason', () => {
+  const catalog = (code: string) => (code === 'GIT_004' ? 'errors.byCode.GIT_004' : undefined);
+
   it('says a code a person can act on in the console’s words', () => {
-    expect(failureReason({ code: 'SESS_002', detail: 'the frame carried 2' }, t)).toBe(
-      'sessions.provisioning.codes.SESS_002',
-    );
+    expect(failureReason({ code: 'SESS_002', detail: 'the frame carried 2' }, t, catalog)).toEqual({
+      reason: 'sessions.provisioning.codes.SESS_002',
+      detail: 'the frame carried 2',
+    });
   });
 
-  it('keeps the host’s own words for anything else', () => {
-    expect(failureReason({ code: 'SESS_004', detail: 'clone refused' }, t)).toBe('clone refused');
-    expect(failureReason(null, t)).toBeNull();
+  it('translates any other code through the shared catalog', () => {
+    expect(failureReason({ code: 'GIT_004', detail: 'auth failed' }, t, catalog)).toEqual({
+      reason: 'errors.byCode.GIT_004',
+      detail: 'auth failed',
+    });
+  });
+
+  it('never makes the host’s English the reason, only its detail', () => {
+    expect(failureReason({ code: 'RUNNER_012', detail: 'clone refused' }, t, catalog)).toEqual({
+      reason: 'sessions.provisioning.failed',
+      detail: 'clone refused',
+    });
+    expect(failureReason({ code: null, detail: 'boom' }, t, catalog)?.reason).toBe(
+      'sessions.provisioning.failed',
+    );
+    expect(failureReason(null, t, catalog)).toBeNull();
   });
 });

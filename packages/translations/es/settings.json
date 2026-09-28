@@ -57,7 +57,6 @@
     "mismatch": "Las contraseñas no coinciden.",
     "submit": "Cambiar contraseña",
     "submitting": "Cambiando…",
-    "done": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos.",
     "failed": "No se ha podido cambiar la contraseña."
   },
   "devices": {
@@ -67,7 +66,9 @@
     "lastSeen": "Activo {{when}}",
     "activeNow": "Activo ahora",
     "signOut": "Cerrar sesión",
+    "signingOut": "Cerrando sesión…",
     "signOutOthers": "Cerrar sesión en los demás dispositivos",
+    "signingOutOthers": "Cerrando las demás sesiones…",
     "failed": "No se han podido cargar los dispositivos.",
     "revokeFailed": "No se ha podido cerrar la sesión en ese dispositivo."
   },

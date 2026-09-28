@@ -1,8 +1,9 @@
 'use client';
 
 import type { ClientDeployment } from '@oppenheimer/shared';
-import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
+import { type UseQueryOptions } from '@tanstack/react-query';
 import { useOppenheimerApp } from './context';
+import { useQuery } from './query';
 
 /**
  * Query key factory for the `capabilities` feature. Same shape as the other

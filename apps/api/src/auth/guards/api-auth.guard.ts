@@ -1,16 +1,30 @@
-import { type CanActivate, type ExecutionContext, Inject, Injectable } from '@nestjs/common';
+import {
+  type CanActivate,
+  type ExecutionContext,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import type { CredentialScopePort } from '../application/credential-scope.port';
-import { CREDENTIAL_SCOPE, DELEGATED_SESSION } from '../auth.di-tokens';
+import type { RequestTenantPort } from '../application/request-tenant.port';
+import { CREDENTIAL_SCOPE, DELEGATED_SESSION, REQUEST_TENANT } from '../auth.di-tokens';
+import { isAccessAllowed } from '../domain/account-access.policy';
 import { AuthErrors } from '../domain/auth.errors';
-import { isHostCredential, type ScopedRequest } from '../domain/scope-context.types';
+import {
+  isHostCredential,
+  pinnedOrganizationIdOf,
+  type ScopedRequest,
+} from '../domain/scope-context.types';
 import { auth } from '../infrastructure/better-auth.config';
 import { betterAuthHeaders } from '../infrastructure/better-auth.util';
 import type { DelegatedSessionPort } from '../infrastructure/delegated-session.port';
 
 /**
  * Authenticates a request by any of the three supported credentials and
- * populates `request.user` / `request.session` / `request.scopeContext`.
+ * populates `request.user` / `request.session` / `request.scopeContext`, then
+ * stamps `request.tenant` — the one organization the request acts in (see
+ * the `REQUEST_TENANT` port) — before any guard or handler builds an ability.
  *
  * Replaces Better Auth's own `AuthGuard`, which only understands session
  * cookies. For a scoped credential this guard additionally mints a short-lived
@@ -24,15 +38,25 @@ import type { DelegatedSessionPort } from '../infrastructure/delegated-session.p
  */
 @Injectable()
 export class ApiAuthGuard implements CanActivate {
+  private readonly logger = new Logger(ApiAuthGuard.name);
+
   constructor(
     @Inject(CREDENTIAL_SCOPE)
     private readonly credentials: CredentialScopePort,
     @Inject(DELEGATED_SESSION)
     private readonly delegatedSessions: DelegatedSessionPort,
+    @Inject(REQUEST_TENANT)
+    protected readonly tenants: RequestTenantPort,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<ScopedRequest>();
+    await this.authenticate(request);
+    this.tenants.stamp(context, request);
+    return true;
+  }
+
+  private async authenticate(request: ScopedRequest): Promise<void> {
     const scopeContext = await this.credentials.resolve(request);
 
     if (!scopeContext) return this.authenticateSession(request);
@@ -49,10 +73,7 @@ export class ApiAuthGuard implements CanActivate {
 
     // A token restricted to exactly one organization acts inside it by
     // default, so organization-scoped routes resolve without an explicit id.
-    const pinnedOrganizationId =
-      scopeContext.resourceScope.organizationIds?.length === 1
-        ? scopeContext.resourceScope.organizationIds[0]
-        : null;
+    const pinnedOrganizationId = pinnedOrganizationIdOf(scopeContext);
 
     const sessionToken = await this.delegatedSessions.resolveSessionToken({
       credentialId: scopeContext.credentialId,
@@ -73,32 +94,39 @@ export class ApiAuthGuard implements CanActivate {
       activeOrganizationId: pinnedOrganizationId,
       activeTeamId: null,
     };
-
-    return true;
   }
 
   /**
    * Cookie-session path. Note that `request.session` is set to the session
    * itself (not Better Auth's `{ session, user }` envelope), which is the shape
-   * `PoliciesGuard` reads `activeOrganizationId` from.
+   * the `REQUEST_TENANT` port reads `activeOrganizationId` from.
    */
-  private async authenticateSession(request: ScopedRequest): Promise<boolean> {
+  private async authenticateSession(request: ScopedRequest): Promise<void> {
     const session = await auth.api.getSession({
       headers: betterAuthHeaders(request.headers),
     });
 
-    request.session = session?.session ?? null;
-    request.user = session?.user ?? null;
+    // A session outlives the account's standing: a deactivation deletes no
+    // session rows, and a ban expires on its own clock. So the rule the
+    // credential owner lookup applies is asked here too, on every request.
+    const refused = session !== null && !isAccessAllowed(session.user, new Date());
+    if (refused) {
+      this.logger.log({ message: 'session refused: account may not act', userId: session.user.id });
+    }
+
+    request.session = session && !refused ? session.session : null;
+    request.user = session && !refused ? session.user : null;
     request.scopeContext = null;
 
-    if (!session) {
+    if (!session || refused) {
       // The token paths report TOKEN_003 from `CredentialScopeResolver`; the
       // cookie path gets its own code rather than Nest's codeless 401, so every
-      // authentication failure is something a client can branch on.
+      // authentication failure is something a client can branch on. A refused
+      // account gets the same detail as no session at all, so the response
+      // does not say the account is banned.
       throw new AppError(AuthErrors.UNAUTHENTICATED, {
         detail: 'No valid session cookie or bearer credential was presented.',
       });
     }
-    return true;
   }
 }

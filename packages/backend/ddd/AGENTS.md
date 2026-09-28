@@ -21,8 +21,8 @@ src/
 ├── mapper.interface.ts         # domain <-> persistence mapper contract
 ├── outbox/
 │   ├── outbox-message.ts       # outbox row types + EntitySchema (outbox_message), TIMESTAMP_COLUMN_TYPE
-│   ├── outbox.service.ts       # transactional staging + SKIP LOCKED leasing
-│   └── outbox-relay.ts         # drain loop (wake + poll), publisher contract
+│   ├── outbox.service.ts       # transactional staging, SKIP LOCKED leasing, wake, retention delete
+│   └── outbox-relay.ts         # coalescing drain loop (wake + poll), publisher contract
 ├── request-context.service.ts  # request-scoped context
 ├── exceptions.ts               # domain exceptions
 ├── guard.ts                    # invariant guards
@@ -41,8 +41,12 @@ src/
   `OutboxService.stageEvents` / `stageJob` **inside the same TypeORM
   transaction** as the aggregate write; `OutboxRelay` (hosted by the app)
   claims rows with `FOR UPDATE SKIP LOCKED`, so replicas lease disjoint rows
-  and expired leases are reclaimed. The `outbox_message` table is created by a
-  migration in the consuming app, mirroring `OutboxMessageSchema`.
+  and expired leases are reclaimed. `wake()` is fire-and-forget: it asks the
+  relay for a drain and returns without waiting for delivery; at most one
+  drain runs, and wakes during it collapse into one more pass. Delivery is at
+  least once. `deleteProcessedBefore` is the retention delete the app
+  schedules. The `outbox_message` table is created by a migration in the
+  consuming app, mirroring `OutboxMessageSchema`.
 
 ## Commands
 

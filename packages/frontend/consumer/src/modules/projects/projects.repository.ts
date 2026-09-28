@@ -4,7 +4,7 @@ import {
   type ProjectResponseDto,
   type UpdateProjectRequest,
 } from '@oppenheimer/api-client';
-import { AppError, MapApiError } from '@oppenheimer/frontend-core';
+import { MapApiError, unwrapBody } from '@oppenheimer/frontend-core';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
 import { injectable } from 'inversify';
 import { repositoryKey } from '../installations/repository-key';
@@ -77,34 +77,39 @@ function toUpdateRequest(input: UpdateProjectInput): UpdateProjectRequest {
 export class ProjectsRepository {
   @MapApiError(ProjectsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<ProjectEntity[]> {
-    const { data, error } = await heyApiSdk.listProjects();
     // An absent body is a failed read, not an empty collection — returning `[]`
     // would render "no projects" over a request that never succeeded.
-    if (error || !data) throw new AppError(ProjectsErrors.FETCH_LIST_FAILED);
+    const data = await unwrapBody(heyApiSdk.listProjects(), ProjectsErrors.FETCH_LIST_FAILED);
     return data.map(toEntity);
   }
 
   @MapApiError(ProjectsErrors.CREATE_FAILED)
   async create(input: CreateProjectInput): Promise<ProjectEntity> {
-    const { data, error } = await heyApiSdk.createProject({ body: toCreateRequest(input) });
-    if (error || !data) throw new AppError(ProjectsErrors.CREATE_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.createProject({ body: toCreateRequest(input) }),
+      ProjectsErrors.CREATE_FAILED,
+    );
     return toEntity(data);
   }
 
   @MapApiError(ProjectsErrors.UPDATE_FAILED)
   async update(id: string, input: UpdateProjectInput): Promise<ProjectEntity> {
-    const { data, error } = await heyApiSdk.updateProject({
-      path: { id },
-      body: toUpdateRequest(input),
-    });
-    if (error || !data) throw new AppError(ProjectsErrors.UPDATE_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.updateProject({
+        path: { id },
+        body: toUpdateRequest(input),
+      }),
+      ProjectsErrors.UPDATE_FAILED,
+    );
     return toEntity(data);
   }
 
   @MapApiError(ProjectsErrors.ARCHIVE_FAILED)
   async archive(id: string): Promise<ProjectEntity> {
-    const { data, error } = await heyApiSdk.archiveProject({ path: { id } });
-    if (error || !data) throw new AppError(ProjectsErrors.ARCHIVE_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.archiveProject({ path: { id } }),
+      ProjectsErrors.ARCHIVE_FAILED,
+    );
     return toEntity(data);
   }
 }

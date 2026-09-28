@@ -34,7 +34,7 @@ test('a deleted session leaves the sidebar once its host has closed it', async (
   await row.hover();
   await row.getByRole('button', { name: 'Session actions' }).click();
   await page.getByRole('menuitem', { name: 'Delete' }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('alertdialog');
   await dialog.getByRole('checkbox').check();
   await dialog.getByRole('button', { name: 'Delete session' }).click();
   await expect(dialog).toBeHidden();

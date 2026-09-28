@@ -42,6 +42,7 @@ export {
   PaginatedRequest,
   paginationSchema,
 } from './requests/paginated.request';
+export { requestMemo } from './requests/request-memo';
 export {
   CapabilitiesService,
   type CapabilityMap,

@@ -2,11 +2,11 @@ import { QueryBase } from '@oppenheimer/backend-ddd';
 
 export class FindUserRolesQuery extends QueryBase {
   readonly userId: string;
-  readonly activeOrganizationId?: string | null;
+  readonly organizationId?: string | null;
 
-  constructor(userId: string, activeOrganizationId?: string | null) {
+  constructor(userId: string, organizationId?: string | null) {
     super();
     this.userId = userId;
-    this.activeOrganizationId = activeOrganizationId;
+    this.organizationId = organizationId;
   }
 }

@@ -4,7 +4,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import type { CredentialResolverPort } from './application/credential-resolver.port';
 import { CredentialResolverRegistry } from './application/credential-resolver.registry';
 import { CredentialScopeResolver } from './application/credential-scope.resolver';
-import { CREDENTIAL_SCOPE, CREDENTIAL_VERIFIER, DELEGATED_SESSION } from './auth.di-tokens';
+import { RequestTenantResolver } from './application/request-tenant.resolver';
+import {
+  CREDENTIAL_SCOPE,
+  CREDENTIAL_VERIFIER,
+  DELEGATED_SESSION,
+  REQUEST_TENANT,
+} from './auth.di-tokens';
 import { CompleteSignUpCommandHandler } from './commands/complete-sign-up/complete-sign-up.command-handler';
 import { Account } from './database/account.orm-entity';
 import { OAuthAccessTokenOrmEntity } from './database/oauth-access-token.orm-entity';
@@ -38,7 +44,9 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
  * that authenticate and authorize requests:
  *
  * - {@link ApiAuthGuard} — authenticates a session cookie, an API token or an
- *   OAuth access token, and populates `request.user` / `request.scopeContext`.
+ *   OAuth access token, populates `request.user` / `request.scopeContext`, and
+ *   stamps `request.tenant` through the `REQUEST_TENANT` port — the one
+ *   organization the request acts in (`product/versions/mvp/08-auth.md`).
  * - {@link PoliciesGuard} — CASL check against the caller's roles.
  * - {@link ScopesGuard} — registered globally in `AppModule`; narrows scoped
  *   credentials to the permissions and organizations they were granted.
@@ -92,6 +100,10 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     { provide: CREDENTIAL_VERIFIER, useClass: BetterAuthCredentialVerifierAdapter },
     { provide: CREDENTIAL_SCOPE, useClass: CredentialScopeResolver },
     { provide: DELEGATED_SESSION, useClass: DelegatedSessionAdapter },
+    // The one writer of `request.tenant`. The auth guards stamp through it;
+    // they run in the injector of whichever module applies them, which is why
+    // the token (never the class) is published below.
+    { provide: REQUEST_TENANT, useClass: RequestTenantResolver },
   ],
   // Guards are inbound adapters other modules apply with `@UseGuards`; the rest
   // is published as tokens, so nothing downstream names a concrete class.
@@ -103,6 +115,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     CredentialResolverRegistry,
     CREDENTIAL_SCOPE,
     DELEGATED_SESSION,
+    REQUEST_TENANT,
     TypeOrmModule,
   ],
 })

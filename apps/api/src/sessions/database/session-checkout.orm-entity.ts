@@ -22,7 +22,7 @@ import type { CheckoutMode } from '../domain/session-checkout.entity';
  * stranger's history.
  */
 @Entity('session_checkout')
-@Index('IDX_session_checkout_session', ['sessionId'])
+@Index('IDX_session_checkout_installation', ['organizationId', 'installationId'])
 @Index('UQ_session_checkout_session_repo', ['sessionId', 'githubRepoId'], {
   unique: true,
   where: '"removedAt" IS NULL',

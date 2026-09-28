@@ -20,16 +20,20 @@
 - A form → `src/features/<module>/forms/` (props in, `onSubmit` out; never fetches).
 - A dialog → `src/features/<module>/dialogs/`, one per file, owning its mutation.
 - A helper or component a second screen wants → `@oppenheimer/frontend-web`, not a
-  second copy and not `src/lib/` (that holds only `oppenheimer.ts`, `auth-client.ts`, `nav.ts`).
+  second copy and not `src/lib/` (that holds only configuration: `oppenheimer.ts`,
+  `auth-client.ts`, `nav.ts`, and `console.ts`, which names the console's dialogs
+  and lists for the kit's generic `createDialogSlot`; `pnpm check:structure` holds the list).
 - Logic — entities, repositories, query hooks → `@oppenheimer/frontend-consumer` or
   `@oppenheimer/frontend-core`.
 
 ## Telling the user something worked, or didn't
 
-- **A failure stays on screen**: `<Alert variant="destructive">` next to what
-  failed. Never a toast — a faded submission error cannot be re-read.
-- **A success is transient**: `toast.success()` imported from
-  `@oppenheimer/design-system-web` (not from `sonner`), copy under `toasts.*`.
+- **A failure stays on screen**: `<ErrorAlert>` from `@oppenheimer/frontend-web`
+  next to what failed. Never a toast — a faded submission error cannot be re-read.
+- **A success is transient**: `notifySuccess()` from `@oppenheimer/frontend-web`
+  (not `toast` directly, and never `sonner`), copy under `toasts.*`, and only
+  when the result is easy to miss. When to toast and when not to is
+  `.agents/rules/frontend-ui.md`.
 - Field validation is neither: `Field` + `FieldError`.
 - `<Toaster />` is mounted once in `src/app.tsx` and handed the app's own
   `theme`, because the design system's `Toaster` reads `next-themes` and this
@@ -56,7 +60,7 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
   inside the console and no settings pane in it: Settings is its own chrome
   beside the console (`routes/_authenticated/settings.tsx`), and its sections
   are features named after their modules (`profile`, `hosts`). The console
-  pairs a machine in a dialog, `sessions/dialogs/add-host.tsx`, from the
+  pairs a machine in a dialog, `hosts/dialogs/add-host.tsx`, from the
   composer's host chip; the one pairing page, `AddHostScreen`, is Settings'
   own at `/settings/hosts/new`. New project, Project settings and the
   automation editor are dialogs too, not pages

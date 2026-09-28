@@ -1,6 +1,4 @@
 import {
-  Alert,
-  AlertDescription,
   Button,
   Field,
   FieldDescription,
@@ -13,8 +11,9 @@ import {
 } from '@oppenheimer/design-system-web';
 import { isProvisionalSlug } from '@oppenheimer/frontend-consumer';
 import { useClaimPersonalWorkspace, useOrganizations } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage, useLogout, useProfile } from '@oppenheimer/frontend-core/react';
-import { useNavigate } from '@tanstack/react-router';
+import { useLogout, useProfile } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { Navigate, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAddressCheck } from '@/features/organizations/hooks/use-address-check';
@@ -34,10 +33,19 @@ import { workspaceAddressPrefix } from '@/features/organizations/lib/workspace-a
  * one. Creating is the fallback for the one account that has none: the sign-up
  * hook is best-effort, and this step is also the recovery path.
  */
-export function OnboardingWorkspaceScreen() {
+export function OnboardingWorkspaceScreen({
+  step,
+  total,
+  onClaimed,
+}: {
+  /** Where this step sits in the flow the route is part of. */
+  step: number;
+  total: number;
+  /** The address is claimed: the route takes the reader on. */
+  onClaimed: () => void;
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const resolveError = useErrorMessage();
   const { data: profile } = useProfile();
   // Back and "use a different account" both leave first-run for the sign-in
   // screen, which is only true if the session goes with them: a still-signed-in
@@ -56,6 +64,19 @@ export function OnboardingWorkspaceScreen() {
   // it permanent, and `check-slug` counts their own slug as taken, so a
   // revisit could not re-submit it even if the field let them try.
   const claimedAddress = existing && !isProvisionalSlug(existing.slug) ? existing.slug : null;
+
+  // The first-run gate (`08-auth.md`): an account whose address is already
+  // claimed belongs in the console, not in the step that names one. The test
+  // is the claimed address, not a workspace's existence — sign-up provisions
+  // one for everybody. Only a *settled, successful* read decides: an
+  // unanswered query says nothing, and guessing would bounce a reader out on a
+  // network blip. And it is decided once, on arrival, because submitting this
+  // step claims the address and writes it into the cache before navigating on
+  // to GitHub — a gate that kept reading would send the newcomer to the
+  // console, past the rest of the walk. Adjusting state during render is
+  // React's documented shape for "remember the first answer".
+  const [claimedOnArrival, setClaimedOnArrival] = useState<boolean | null>(null);
+  if (claimedOnArrival === null && workspacesRead) setClaimedOnArrival(claimedAddress !== null);
 
   // One nullable draft rather than a field each: `null` means "the reader has
   // not typed", so the fields show the provisioned row as soon as it arrives
@@ -78,21 +99,16 @@ export function OnboardingWorkspaceScreen() {
   const edit = (changes: Partial<{ name: string; address: string }>) =>
     setDraft({ name, address, ...changes });
 
-  // The claim is what opens a walk, so it is what mints `walk` — and it mints
-  // it on success, not on click, because a claim that failed has opened
-  // nothing. From here the flow's own links carry it to Ready, which is the
-  // step that turns away anyone who did not walk (`lib/first-run.ts`).
   const submit = () =>
-    claim.mutate(
-      { existing, name: name.trim(), slug: address },
-      { onSuccess: () => navigate({ to: '/onboarding/github', search: { walk: true } }) },
-    );
+    claim.mutate({ existing, name: name.trim(), slug: address }, { onSuccess: onClaimed });
+
+  if (claimedOnArrival) return <Navigate to="/sessions/new" replace />;
 
   return (
     <div className="flex flex-col gap-5">
       <StepHeader
-        step={2}
-        total={4}
+        step={step}
+        total={total}
         back={{ render: <button type="button" onClick={leave} /> }}
         backLabel={t('onboarding.flow.back')}
         title={t('onboarding.flow.workspace.title')}
@@ -168,13 +184,11 @@ export function OnboardingWorkspaceScreen() {
       {/* The create can fail after the address read as free — someone else may
           have taken it in between — so the failure belongs on this step, not
           on the one it would otherwise have navigated to. */}
-      {claim.error && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {resolveError(claim.error, t('onboarding.flow.workspace.claimFailed')).message}
-          </AlertDescription>
-        </Alert>
-      )}
+      <ErrorAlert error={claim.error} fallback={t('onboarding.flow.workspace.claimFailed')} />
+
+      {/* Leaving signs out first; a sign-out that failed leaves the reader here,
+          signed in, and says so rather than doing nothing. */}
+      <ErrorAlert error={logout.error} fallback={t('nav.logOutFailed')} />
 
       <Button
         size="lg"
@@ -183,10 +197,12 @@ export function OnboardingWorkspaceScreen() {
         // `workspacesRead` is the guard against creating a second workspace:
         // until the list has answered, this step does not know whether there
         // is a row to claim.
-        disabled={!workspacesRead || !addressReady || !name.trim() || claim.isPending}
+        disabled={!workspacesRead || !addressReady || !name.trim()}
         onClick={submit}
+        pending={claim.isPending}
+        pendingLabel={t('onboarding.flow.workspace.claiming')}
       >
-        {claim.isPending ? t('onboarding.flow.workspace.claiming') : t('onboarding.flow.continue')}
+        {t('onboarding.flow.continue')}
       </Button>
 
       <div className="flex flex-col items-center gap-1 text-sm text-fg-muted">

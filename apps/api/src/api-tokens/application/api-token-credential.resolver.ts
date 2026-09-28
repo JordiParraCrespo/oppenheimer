@@ -76,9 +76,9 @@ export class ApiTokenCredentialResolver implements CredentialResolverPort {
   }
 
   /**
-   * The token's owner, as they exist right now. A missing or deactivated owner
-   * invalidates every credential they issued — the same opaque error as an
-   * unknown token, so the two are indistinguishable from outside.
+   * The token's owner, as they exist right now. A missing, deactivated or
+   * banned owner invalidates every credential they issued — the same opaque
+   * error as an unknown token, so the two are indistinguishable from outside.
    */
   private async loadOwner(userId: string): Promise<CredentialOwner> {
     const owner = await this.owners.findActiveOwner(userId);

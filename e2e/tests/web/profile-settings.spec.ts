@@ -127,7 +127,7 @@ test('deleting the account asks for the email and ends on sign-in', async ({ pag
   await page.goto('/settings/profile');
 
   await page.getByRole('button', { name: 'Delete account' }).click();
-  const dialog = page.getByRole('dialog');
+  const dialog = page.getByRole('alertdialog');
   await dialog.getByLabel(/to confirm/).fill('someone-else@example.com');
   await dialog.getByRole('button', { name: 'Delete account' }).click();
   await expect(dialog.getByText('Type your email address exactly.')).toBeVisible();

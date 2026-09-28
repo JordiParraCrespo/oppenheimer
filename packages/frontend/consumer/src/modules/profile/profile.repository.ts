@@ -3,12 +3,7 @@ import {
   type ProfileResponseDto,
   type UserSessionResponseDto,
 } from '@oppenheimer/api-client';
-import {
-  AppError,
-  type ErrorDefinition,
-  MapApiError,
-  toAppError,
-} from '@oppenheimer/frontend-core';
+import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import type {
   ChangeEmailDto,
   ChangeOwnPasswordDto,
@@ -49,30 +44,6 @@ function toSession(data: UserSessionResponseDto): UserSessionEntity {
     new Date(data.updatedAt),
     new Date(data.expiresAt),
   );
-}
-
-/**
- * The generated SDK's answer, unwrapped: the body, or the problem document the
- * API sent as an `AppError` built on `fallback`. Every call in this repository
- * goes through it, so there is one mapping and one client.
- */
-async function unwrap<T>(
-  call: Promise<{ data?: T; error?: unknown; response?: Response }>,
-  fallback: ErrorDefinition,
-): Promise<T> {
-  const { data, error, response } = await call;
-  if (error !== undefined) throw toAppError({ status: response?.status, body: error }, fallback);
-  return data as T;
-}
-
-/** The same, for a call whose success is a body. An empty one is a failed read. */
-async function unwrapBody<T>(
-  call: Promise<{ data?: T; error?: unknown; response?: Response }>,
-  fallback: ErrorDefinition,
-): Promise<T> {
-  const data = await unwrap(call, fallback);
-  if (data === undefined || data === null) throw new AppError(fallback);
-  return data;
 }
 
 @injectable()

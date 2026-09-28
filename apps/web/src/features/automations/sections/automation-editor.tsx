@@ -1,14 +1,12 @@
-import {
-  Alert,
-  AlertDescription,
-  DialogBody,
-  DialogHeader,
-  DialogTitle,
-  useNow,
-} from '@oppenheimer/design-system-web';
+import { DialogBody, DialogHeader, DialogTitle, useNow } from '@oppenheimer/design-system-web';
 import { parseRepositoryKey } from '@oppenheimer/frontend-consumer';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
-import { useZodResolver } from '@oppenheimer/frontend-web';
+import {
+  ErrorAlert,
+  type ResolvedErrorMessage,
+  useServerFieldErrors,
+  useZodResolver,
+} from '@oppenheimer/frontend-web';
 import {
   type AutomationTaskDto,
   automationTaskSchema,
@@ -43,8 +41,8 @@ export function AutomationEditor({
   initialTask: AutomationTaskDto;
   editing: boolean;
   saving: boolean;
-  /** What the last save could not do, already in words. */
-  failure: string | null;
+  /** What the last save could not do, already in words, with the fields it names. */
+  failure: ResolvedErrorMessage | null;
   onCancel: () => void;
   onSubmit: (draft: AutomationDraft, task: AutomationTaskDto) => void;
 }) {
@@ -59,6 +57,8 @@ export function AutomationEditor({
     resolver: useZodResolver(automationTaskSchema),
     defaultValues: initialTask,
   });
+  // The task's fields the server refused are marked on the fields; the alert keeps the rest.
+  const { showAlert } = useServerFieldErrors(form, failure);
 
   const repoIds = draftRepoIds(draft);
   const repositories = repoIds.map((id) => ({
@@ -108,12 +108,15 @@ export function AutomationEditor({
         whereDone={whereDone}
         onStepChange={setStep}
       />
-      <DialogBody>
-        {failure ? (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{failure}</AlertDescription>
-          </Alert>
-        ) : null}
+      {/* A floor so the dialog keeps its height across steps, on a screen
+          tall enough for it; below that the body shrinks and scrolls, so the
+          footer's buttons stay reachable. */}
+      <DialogBody className="[@media(min-height:720px)]:min-h-75">
+        <ErrorAlert
+          message={showAlert ? failure?.message : null}
+          correlationId={failure?.correlationId}
+          className="mb-4"
+        />
         {step === 'task' ? (
           <AutomationTaskFields
             register={form.register}

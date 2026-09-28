@@ -39,11 +39,13 @@
       "title": "Connect GitHub",
       "description": "This installs the Oppenheimer GitHub App on your account. You pick all repositories or selected ones on GitHub's own page.",
       "connect": "Connect GitHub",
+      "starting": "Opening GitHub…",
       "skip": "Skip for now",
       "skipNote": "You can add repositories later in Settings. The repo picker stays empty until you do.",
       "connected": "{{count}} repositories · read access",
       "change": "Change which repositories",
       "failed": "We could not connect that GitHub installation.",
+      "unstarted": "This GitHub link was not started here. Connect GitHub again.",
       "connectedAll": "Every repository on the account",
       "connectedPending": "Connected"
     },
@@ -65,7 +67,8 @@
       "noWorkspace": "No workspace yet",
       "noGithub": "Not connected",
       "noHost": "No host yet",
-      "doneLabel": "Done"
+      "doneLabel": "Done",
+      "failed": "Could not load this. Reload the page to try again."
     }
   }
 }

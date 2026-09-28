@@ -12,7 +12,8 @@
     "noProjects": "No project yet. Make one from New session, and its automations gather here.",
     "noRuns": "No runs yet.",
     "running": "Running",
-    "paused": "Paused"
+    "paused": "Paused",
+    "loadFailed": "Could not load your automations."
   },
   "page": {
     "tabs": {
@@ -23,7 +24,8 @@
     "empty": "No automations yet. An automation starts a session on a schedule or when something happens on GitHub.",
     "runsEmpty": "No runs yet. Each run appears here with the session it started.",
     "loadFailed": "Automations could not be loaded.",
-    "actionFailed": "That did not go through."
+    "actionFailed": "That did not go through.",
+    "actionFailedFor": "“{{name}}” was not updated"
   },
   "status": {
     "active": "Active",
@@ -204,9 +206,6 @@
     "resume": "Resume automation",
     "duplicate": "Duplicate",
     "delete": "Delete automation",
-    "confirmDelete": "Delete this automation? Its triggers stop now. Past runs are kept.",
-    "cancel": "Cancel",
-    "confirm": "Delete",
     "resumeAction": "Resume",
     "notFound": "This automation does not exist, or was deleted."
   },
@@ -262,7 +261,8 @@
     "noRepositories": "No repositories",
     "repositories": "Repositories",
     "searchRepositories": "Search repositories",
-    "inProject": "In {{name}}",
+    "repoCount_one": "{{count}} repo",
+    "repoCount_other": "{{count}} repos",
     "runsOn": "Runs on",
     "host": "Host",
     "chooseHost": "Choose a host",
@@ -282,6 +282,19 @@
     "save": "Save",
     "create": "Create automation",
     "saveFailed": "The automation could not be saved.",
-    "forProject": "For {{name}}."
+    "forProject": "For {{name}}.",
+    "noMatch": "No match for “{{query}}”.",
+    "chooseRepositories": "Choose repositories…",
+    "chooseAgent": "Choose an agent…",
+    "chooseModel": "Choose a model…"
+  },
+  "skipReasonOther": "Skipped",
+  "pausedReasonOther": "Paused. Triggers are ignored until it is resumed.",
+  "deleteDialog": {
+    "title": "Delete “{{name}}”?",
+    "description": "Its triggers stop now. Past runs are kept.",
+    "confirm": "Delete",
+    "deleting": "Deleting…",
+    "failed": "The automation could not be deleted."
   }
 }

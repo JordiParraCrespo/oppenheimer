@@ -1,9 +1,9 @@
 import { Rail, RailItem, RailMark } from '@oppenheimer/design-system-web';
 import { Terminal, Zap } from '@oppenheimer/design-system-web/icons';
 import { useSessions } from '@oppenheimer/frontend-consumer/react';
-import { useConsoleList } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { useConsoleList } from '@/lib/console';
 
 /**
  * The console's rail: the strip left of the sidebar that switches between

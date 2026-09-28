@@ -29,6 +29,7 @@ export function HostSelect({
   onValueChange,
   onAddHost,
   loading,
+  failure,
   disabled,
   variant,
 }: {
@@ -37,6 +38,8 @@ export function HostSelect({
   onValueChange: (value: string) => void;
   onAddHost: () => void;
   loading?: boolean;
+  /** Why the list failed to load, shown where its rows would be. */
+  failure?: string;
   disabled?: boolean;
   /** `tab` inside the composer's scope band; `chip` on its own. */
   variant?: ChipSelectTriggerVariant;
@@ -56,7 +59,7 @@ export function HostSelect({
       aria-label={t('sessions.new.host.label')}
       placeholder={t('sessions.new.host.placeholder')}
       searchPlaceholder={t('sessions.new.host.search')}
-      emptyText={t('sessions.new.host.empty')}
+      emptyText={failure ?? t('sessions.new.host.empty')}
       action={{ label: t('sessions.new.host.add'), onSelect: onAddHost }}
     />
   );
