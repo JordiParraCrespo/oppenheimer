@@ -16,6 +16,7 @@ import { dispatchFromAuthHook } from './auth-command-bus.util';
 import { betterAuthSecondaryStorage } from './better-auth-secondary-storage.adapter';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue.util';
 import { buildInvitationUrl } from './invitation-url.util';
+import { sessionDeleteHooks } from './session-delete-hook.util';
 
 /**
  * Access-control roles for the admin plugin. Every name listed in `adminRoles`
@@ -94,6 +95,17 @@ function splitName(name?: string | null): {
   const [firstName, ...rest] = parts;
   return { firstName, lastName: rest.join(' ') };
 }
+
+/** The `session.delete` hooks; see `sessionDeleteHooks`. */
+const sessionDeletion = sessionDeleteHooks({
+  tokensOf: async (userId) =>
+    (
+      await pool.query<{ token: string }>(`SELECT "token" FROM "session" WHERE "userId" = $1`, [
+        userId,
+      ])
+    ).rows.map((row) => row.token),
+  evict: (token) => betterAuthSecondaryStorage.delete(token),
+});
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3001',
@@ -426,10 +438,11 @@ export const auth = betterAuth({
         // stay live in Redis after its row was gone. The row is the record, so its
         // deletion is what clears the copy. A failure here aborts the delete,
         // so a revocation that cannot reach Redis fails loudly instead of
-        // succeeding in Postgres alone.
-        before: async (session) => {
-          await betterAuthSecondaryStorage.delete(session.token);
-        },
+        // succeeding in Postgres alone. Better Auth hands the hook at most 100
+        // rows of a bulk delete; for a user holding more, the hook evicts the
+        // copy of every row they hold (`sessionDeleteHooks`).
+        before: (session) => sessionDeletion.before(session),
+        after: async (session) => sessionDeletion.after(session),
       },
     },
   },

@@ -349,6 +349,70 @@ describe('Session cache (integration)', () => {
     });
   });
 
+  describe('beyond what Better Auth reads before a bulk delete', () => {
+    it('signing a user with more than a hundred sessions out everywhere evicts every copy', async () => {
+      const admin = await signUpAdmin();
+      const owner = await signUp('many');
+      const { auth } = await import('../src/auth/infrastructure/better-auth.config');
+      const { sessionStoreKey } = await import(
+        '../src/auth/infrastructure/better-auth-secondary-storage.adapter'
+      );
+      const context = await auth.$context;
+      const tokens = [owner.rawToken];
+      for (let i = 0; i < 149; i++) {
+        tokens.push((await context.internalAdapter.createSession(owner.id)).token);
+      }
+      // Better Auth's own index is a cache entry too: without it, only the rows
+      // lead to the copies, and it hands the hook at most a hundred of them.
+      await redis.del(sessionStoreKey(`active-sessions-${owner.id}`));
+      const cached = async () =>
+        (await Promise.all(tokens.map((token) => redis.exists(sessionStoreKey(token))))).filter(
+          Boolean,
+        ).length;
+      expect(await cached()).toBe(150);
+
+      const revoked = await call(`/api/v1/admin/users/${owner.id}/revoke-sessions`, admin, {
+        method: 'POST',
+      });
+      expect(revoked.status).toBeLessThan(300);
+
+      expect(
+        await dataSource.query('SELECT 1 FROM "session" WHERE "userId" = $1', [owner.id]),
+      ).toHaveLength(0);
+      expect(await cached()).toBe(0);
+    }, 60_000);
+  });
+
+  describe('the admin session list', () => {
+    it('lists and revokes a session the cache never knew', async () => {
+      // Signed in before the cache existed: a row, no copy, no index entry.
+      const admin = await signUpAdmin();
+      const owner = await signUp('uncached');
+      const legacy = await signIn(owner.email);
+      const { sessionStoreKey } = await import(
+        '../src/auth/infrastructure/better-auth-secondary-storage.adapter'
+      );
+      await redis.del(sessionStoreKey(legacy.rawToken));
+      await redis.del(sessionStoreKey(`active-sessions-${owner.id}`));
+      const [row] = await dataSource.query('SELECT "id" FROM "session" WHERE "token" = $1', [
+        legacy.rawToken,
+      ]);
+
+      const listed = await call(`/api/v1/admin/users/${owner.id}/sessions`, admin);
+      expect(listed.status).toBe(200);
+      const ids = (listed.body as unknown as { id: string }[]).map((session) => session.id);
+      expect(ids).toContain(row.id);
+      expect(JSON.stringify(listed.body)).not.toContain(legacy.rawToken);
+
+      const revoked = await call(`/api/v1/admin/users/${owner.id}/sessions/revoke`, admin, {
+        method: 'POST',
+        body: { sessionId: row.id },
+      });
+      expect(revoked.status).toBeLessThan(300);
+      expect((await call('/api/v1/users/me', { cookie: legacy.cookie })).status).toBe(401);
+    });
+  });
+
   // --- writes behind Better Auth's back -------------------------------------
 
   describe('the cached copy follows the rows the application writes', () => {

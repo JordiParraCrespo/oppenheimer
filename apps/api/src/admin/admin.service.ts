@@ -4,7 +4,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { AdminCreateUserDto, AdminUpdateUserDto, ListUsersQuery } from '@oppenheimer/shared';
 import { DELEGATED_SESSION } from '../auth/auth.di-tokens';
 import { auth } from '../auth/infrastructure/better-auth.config';
-import { asRecord, betterAuthHeaders, unwrapArray } from '../auth/infrastructure/better-auth.util';
+import { asRecord, betterAuthHeaders } from '../auth/infrastructure/better-auth.util';
 import type { DelegatedSessionPort } from '../auth/infrastructure/delegated-session.port';
 import { mapSessionsFromResult, mapSuccess, mapUserFromResult, mapUserList } from './admin.mappers';
 import { invokeAdminApi } from './admin-error.mapper';
@@ -24,6 +24,9 @@ function asAdminRole(role: string | string[]): AdminRole | AdminRole[] {
   return role as AdminRole | AdminRole[];
 }
 
+/** The most session rows the admin list returns for one user. */
+const MAX_LISTED_SESSIONS = 1_000;
+
 /**
  * Delegating façade over the Better Auth **admin** plugin (`auth.api.*`).
  * Provides super-admin user management. Response normalization lives in
@@ -36,6 +39,24 @@ export class AdminService {
     @Inject(DELEGATED_SESSION)
     private readonly delegatedSessions: DelegatedSessionPort,
   ) {}
+
+  /**
+   * A user's unexpired session rows, newest first, straight from the table
+   * (Better Auth's database adapter, which never reads the Redis copy).
+   */
+  private async sessionRows(userId: string): Promise<Record<string, unknown>[]> {
+    const context = await auth.$context;
+    return context.adapter.findMany<Record<string, unknown>>({
+      model: 'session',
+      where: [
+        { field: 'userId', value: userId },
+        { field: 'expiresAt', value: new Date(), operator: 'gt' },
+      ],
+      sortBy: { field: 'createdAt', direction: 'desc' },
+      // Better Auth caps `findMany` at 100 unless told otherwise.
+      limit: MAX_LISTED_SESSIONS,
+    });
+  }
 
   private headers(headers: IncomingHttpHeaders): Headers {
     return betterAuthHeaders(headers);
@@ -159,14 +180,22 @@ export class AdminService {
     return mapSuccess(result);
   }
 
+  /**
+   * The user's live sessions, read from Postgres. Better Auth's
+   * `listUserSessions` is still called, for the admin plugin's own permission
+   * check, but its answer is not the list: with `secondaryStorage` it walks the
+   * Redis index of cached sessions, which misses every session signed in
+   * before the cache existed (they answer from Postgres until they expire) and
+   * any whose index entry was lost. The table is the record.
+   */
   async listSessions(headers: IncomingHttpHeaders, id: string): Promise<AdminSessionResponseDto[]> {
-    const result = await invokeAdminApi(() =>
+    await invokeAdminApi(() =>
       auth.api.listUserSessions({
         body: { userId: id },
         headers: this.headers(headers),
       }),
     );
-    return mapSessionsFromResult(result);
+    return mapSessionsFromResult(await this.sessionRows(id));
   }
 
   /**
@@ -182,10 +211,12 @@ export class AdminService {
     sessionId: string,
   ): Promise<{ success: boolean }> {
     const authHeaders = this.headers(headers);
-    const sessions = await invokeAdminApi(() =>
+    // The permission check, as in `listSessions`; the rows come from Postgres
+    // so a session the cache index never listed can be revoked too.
+    await invokeAdminApi(() =>
       auth.api.listUserSessions({ body: { userId }, headers: authHeaders }),
     );
-    const match = unwrapArray(sessions, 'sessions')
+    const match = (await this.sessionRows(userId))
       .map(asRecord)
       .find((session) => String(session.id) === sessionId);
     if (!match) throw new AppError(AdminErrors.SESSION_NOT_FOUND);
