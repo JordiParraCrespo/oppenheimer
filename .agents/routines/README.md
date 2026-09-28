@@ -12,11 +12,11 @@ you change what the routine does.
 
 Both run daily and write to one GitHub issue each; the schedule lives with
 the routine in claude.ai → Routines, not here. No issue on GitHub means the
-routine's session cannot write (it has no GitHub server), not that the code
-is clean. Create a routine from claude.ai → Routines with this repository
-attached: one created through a session's API call carries neither the
-repository nor the GitHub tools, and fires into a session that can do
-nothing.
+routine's run could not write, not that the code is clean: open the run's
+session from claude.ai → Routines and read why. Create a routine from
+claude.ai → Routines with this repository attached: one created through a
+session's API call carries neither the repository nor the GitHub tools, and
+fires into a session that can do nothing.
 
 Each routine has evals. The hexagon audit's are under `evals/<routine>/`; the
 frontend audit's are `scripts/evals/frontend-audit/`, whose `--validate` proves
