@@ -196,7 +196,8 @@
     "unexpected": {
       "title": "No se ha podido dibujar esta pantalla",
       "retry": "Reintentar"
-    }
+    },
+    "code": "Código: {{code}}"
   },
   "auth": {
     "email": "Correo electrónico",
@@ -249,7 +250,8 @@
       "sentMessage": "Hemos enviado un enlace para restablecer tu contraseña a <address>{{email}}</address>. Caduca en 30 minutos.",
       "emailLabel": "Correo de trabajo",
       "resend": "Reenviar enlace",
-      "differentAddress": "Usar otra dirección"
+      "differentAddress": "Usar otra dirección",
+      "resendFailed": "No se ha podido reenviar el correo. Inténtalo de nuevo en un momento."
     },
     "resetPassword": {
       "title": "Crea una nueva contraseña",
@@ -355,7 +357,8 @@
       "deleteHint": "Elimina este proyecto",
       "deleteBlocked_one": "Mueve o elimina su {{count}} sesión primero",
       "deleteBlocked_other": "Mueve o elimina sus {{count}} sesiones primero",
-      "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar."
+      "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar.",
+      "loadFailed": "No se ha podido cargar este proyecto."
     },
     "deleteDialog": {
       "title": "¿Eliminar {{name}}?",
@@ -423,7 +426,8 @@
         "empty": "Ningún host coincide.",
         "loading": "Cargando hosts…",
         "add": "Añadir host…",
-        "offline": "Desconectado"
+        "offline": "Desconectado",
+        "failed": "No se han podido cargar tus hosts."
       },
       "project": {
         "label": "Proyecto",
@@ -432,7 +436,8 @@
         "empty": "Ningún proyecto coincide.",
         "loading": "Cargando proyectos…",
         "add": "Nuevo proyecto…",
-        "noRepositories": "Sin repositorios"
+        "noRepositories": "Sin repositorios",
+        "failed": "No se han podido cargar tus proyectos."
       },
       "repository": {
         "label": "Repositorios",
@@ -446,7 +451,8 @@
         "changeBranch": "Cambiar de rama",
         "manage": "Gestionar el acceso a repositorios",
         "noApp": "Este despliegue no tiene la GitHub App, así que no hay repositorios que elegir.",
-        "archived": "Archivado"
+        "archived": "Archivado",
+        "failed": "No se han podido cargar tus repositorios."
       },
       "branch": {
         "label": "Rama",
@@ -528,7 +534,8 @@
       "moveTitle": "Mover a un proyecto",
       "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
       "delete": "Eliminar",
-      "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo."
+      "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
+      "loadFailed": "No se han podido cargar tus sesiones."
     },
     "deleteSession": {
       "title": "¿Eliminar “{{name}}”?",
@@ -583,7 +590,8 @@
       "noProjects": "Todavía no hay ningún proyecto. Crea uno desde Nueva sesión y sus automatizaciones se reunirán aquí.",
       "noRuns": "Todavía no hay ejecuciones.",
       "running": "En curso",
-      "paused": "En pausa"
+      "paused": "En pausa",
+      "loadFailed": "No se han podido cargar tus automatizaciones."
     },
     "page": {
       "tabs": {
@@ -917,7 +925,9 @@
       "removeTitle": "¿Eliminar {{name}}?",
       "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
       "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
-      "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan."
+      "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
+      "renameFailed": "No se ha podido renombrar este host. Inténtalo de nuevo.",
+      "removeFailed": "No se ha podido eliminar este host. Inténtalo de nuevo."
     }
   },
   "settings": {
@@ -1063,7 +1073,8 @@
     "sidebarTitle": "Navegación",
     "sidebarDescription": "Tus sesiones, tus automatizaciones y tu cuenta.",
     "settings": "Ajustes",
-    "automations": "Automatizaciones"
+    "automations": "Automatizaciones",
+    "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo."
   },
   "control": {
     "accessDeniedTitle": "Se necesita acceso al panel de control",
@@ -1404,7 +1415,8 @@
         "noWorkspace": "Aún sin espacio de trabajo",
         "noGithub": "Sin conectar",
         "noHost": "Aún sin host",
-        "doneLabel": "Listo"
+        "doneLabel": "Listo",
+        "failed": "No se ha podido cargar. Recarga la página para intentarlo de nuevo."
       }
     }
   },

@@ -153,5 +153,6 @@
   "unexpected": {
     "title": "No se ha podido dibujar esta pantalla",
     "retry": "Reintentar"
-  }
+  },
+  "code": "Código: {{code}}"
 }

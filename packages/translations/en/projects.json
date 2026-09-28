@@ -33,7 +33,8 @@
     "deleteHint": "Delete this project",
     "deleteBlocked_one": "Move or delete its {{count}} session first",
     "deleteBlocked_other": "Move or delete its {{count}} sessions first",
-    "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted."
+    "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted.",
+    "loadFailed": "Could not load this project."
   },
   "deleteDialog": {
     "title": "Delete {{name}}?",

@@ -45,7 +45,7 @@ export function RemoveHostDialog({ host, onClose }: { host: HostEntity; onClose:
         {remove.error ? (
           <Alert variant="destructive">
             <AlertDescription>
-              {resolveError(remove.error, t('common.error')).message}
+              {resolveError(remove.error, t('hosts.settings.removeFailed')).message}
             </AlertDescription>
           </Alert>
         ) : null}

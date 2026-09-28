@@ -12,7 +12,8 @@
     "noProjects": "No project yet. Make one from New session, and its automations gather here.",
     "noRuns": "No runs yet.",
     "running": "Running",
-    "paused": "Paused"
+    "paused": "Paused",
+    "loadFailed": "Could not load your automations."
   },
   "page": {
     "tabs": {

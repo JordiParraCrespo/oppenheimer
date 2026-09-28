@@ -59,6 +59,8 @@
     "removeTitle": "¿Eliminar {{name}}?",
     "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
     "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
-    "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan."
+    "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
+    "renameFailed": "No se ha podido renombrar este host. Inténtalo de nuevo.",
+    "removeFailed": "No se ha podido eliminar este host. Inténtalo de nuevo."
   }
 }

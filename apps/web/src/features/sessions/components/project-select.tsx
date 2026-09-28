@@ -22,6 +22,7 @@ export function ProjectSelect({
   onValueChange,
   onNewProject,
   loading,
+  failure,
   disabled,
   variant,
 }: {
@@ -30,6 +31,8 @@ export function ProjectSelect({
   onValueChange: (value: string) => void;
   onNewProject: () => void;
   loading?: boolean;
+  /** Why the list failed to load, shown where its rows would be. */
+  failure?: string;
   disabled?: boolean;
   variant?: ChipSelectTriggerVariant;
 }) {
@@ -48,7 +51,7 @@ export function ProjectSelect({
       aria-label={t('sessions.new.project.label')}
       placeholder={t('sessions.new.project.placeholder')}
       searchPlaceholder={t('sessions.new.project.search')}
-      emptyText={t('sessions.new.project.empty')}
+      emptyText={failure ?? t('sessions.new.project.empty')}
       action={{ label: t('sessions.new.project.add'), onSelect: onNewProject }}
     />
   );

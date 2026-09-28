@@ -241,6 +241,9 @@ export function useInstallationRepositoriesFor(installationIds: readonly string[
         return result.data.map((repository) => ({ repository, installationId }));
       }),
       isPending: results.some((result) => result.isPending),
+      // The first failure, so a picker can say the list did not load rather
+      // than show the repositories that did as if they were all of them.
+      error: results.find((result) => result.error)?.error ?? null,
     }),
   });
 }

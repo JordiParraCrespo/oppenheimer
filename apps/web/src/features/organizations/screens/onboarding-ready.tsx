@@ -40,9 +40,17 @@ export function OnboardingReadyScreen({
 }) {
   const { t } = useTranslation();
 
-  const { data: organizations, isPending: loadingWorkspace } = useOrganizations();
-  const { data: installations, isPending: loadingGithub } = useInstallations();
-  const { data: hosts, isPending: loadingHosts } = useHosts();
+  const {
+    data: organizations,
+    isPending: loadingWorkspace,
+    isError: workspaceFailed,
+  } = useOrganizations();
+  const {
+    data: installations,
+    isPending: loadingGithub,
+    isError: githubFailed,
+  } = useInstallations();
+  const { data: hosts, isPending: loadingHosts, isError: hostsFailed } = useHosts();
 
   // The workspace is genuinely the caller's only one — it is personal, and the
   // claim step wrote to that row.
@@ -52,7 +60,11 @@ export function OnboardingReadyScreen({
     : undefined;
   const host = hostId ? hosts?.find((row) => row.id === hostId) : undefined;
 
-  const { data: repositories, isPending: loadingRepositories } = useInstallationRepositories(
+  const {
+    data: repositories,
+    isPending: loadingRepositories,
+    isError: repositoriesFailed,
+  } = useInstallationRepositories(
     installation && !installation.coversEveryRepository ? installation.id : undefined,
   );
 
@@ -67,7 +79,11 @@ export function OnboardingReadyScreen({
 
       <SummaryCard>
         <SummaryRow label={t('onboarding.flow.ready.workspace')}>
-          {loadingWorkspace ? (
+          {/* A failed read says so: "no workspace" would be a claim about the
+              account, and it is only a claim about the request. */}
+          {workspaceFailed ? (
+            t('onboarding.flow.ready.failed')
+          ) : loadingWorkspace ? (
             <Skeleton className="h-3 w-40" />
           ) : workspace ? (
             workspaceAddress(workspace.slug)
@@ -76,15 +92,18 @@ export function OnboardingReadyScreen({
           )}
         </SummaryRow>
         <SummaryRow label={t('onboarding.flow.ready.code')}>
-          {installationId && loadingGithub ? (
+          {installationId && githubFailed ? (
+            t('onboarding.flow.ready.failed')
+          ) : installationId && loadingGithub ? (
             <Skeleton className="h-3 w-32" />
           ) : !installation ? (
             t('onboarding.flow.ready.noGithub')
           ) : installation.coversEveryRepository ? (
             installation.accountLogin
-          ) : loadingRepositories ? (
+          ) : loadingRepositories || repositoriesFailed ? (
             // The account is known before the count is. Showing it alone beats
-            // printing "0 repositories" at a reader who has just connected.
+            // printing "0 repositories" at a reader who has just connected, and
+            // it is what a failed count leaves true.
             installation.accountLogin
           ) : (
             t('onboarding.flow.ready.repos', {
@@ -94,7 +113,9 @@ export function OnboardingReadyScreen({
           )}
         </SummaryRow>
         <SummaryRow label={t('onboarding.flow.ready.host')}>
-          {hostId && loadingHosts ? (
+          {hostId && hostsFailed ? (
+            t('onboarding.flow.ready.failed')
+          ) : hostId && loadingHosts ? (
             <Skeleton className="h-3 w-36" />
           ) : host ? (
             host.summary

@@ -39,6 +39,7 @@ export function RepositoryBranchSelect({
   onValueChange,
   manageUrl,
   loading,
+  failure,
   branchesLoading,
   disabled,
   variant,
@@ -49,6 +50,8 @@ export function RepositoryBranchSelect({
   /** `github_app_install_url`; `null` when the deployment has no GitHub App. */
   manageUrl: string | null;
   loading?: boolean;
+  /** Why the list failed to load, shown where its rows would be. */
+  failure?: string;
   branchesLoading?: boolean;
   disabled?: boolean;
   /** `tab` inside the composer's scope band; `chip` on its own. */
@@ -71,7 +74,9 @@ export function RepositoryBranchSelect({
       aria-label={t('sessions.new.repository.label')}
       placeholder={t('sessions.new.repository.placeholder')}
       searchPlaceholder={t('sessions.new.repository.search')}
-      emptyText={t(manageUrl ? 'sessions.new.repository.empty' : 'sessions.new.repository.noApp')}
+      emptyText={
+        failure ?? t(manageUrl ? 'sessions.new.repository.empty' : 'sessions.new.repository.noApp')
+      }
       branchSearchPlaceholder={t('sessions.new.repository.branchSearch')}
       branchEmptyText={t('sessions.new.repository.branchEmpty')}
       branchPaneTitle={(name) => t('sessions.new.repository.branchPane', { name })}

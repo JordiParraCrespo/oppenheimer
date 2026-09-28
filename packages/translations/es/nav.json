@@ -19,5 +19,6 @@
   "sidebarTitle": "Navegación",
   "sidebarDescription": "Tus sesiones, tus automatizaciones y tu cuenta.",
   "settings": "Ajustes",
-  "automations": "Automatizaciones"
+  "automations": "Automatizaciones",
+  "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo."
 }

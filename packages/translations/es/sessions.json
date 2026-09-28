@@ -55,7 +55,8 @@
       "empty": "Ningún host coincide.",
       "loading": "Cargando hosts…",
       "add": "Añadir host…",
-      "offline": "Desconectado"
+      "offline": "Desconectado",
+      "failed": "No se han podido cargar tus hosts."
     },
     "project": {
       "label": "Proyecto",
@@ -64,7 +65,8 @@
       "empty": "Ningún proyecto coincide.",
       "loading": "Cargando proyectos…",
       "add": "Nuevo proyecto…",
-      "noRepositories": "Sin repositorios"
+      "noRepositories": "Sin repositorios",
+      "failed": "No se han podido cargar tus proyectos."
     },
     "repository": {
       "label": "Repositorios",
@@ -78,7 +80,8 @@
       "changeBranch": "Cambiar de rama",
       "manage": "Gestionar el acceso a repositorios",
       "noApp": "Este despliegue no tiene la GitHub App, así que no hay repositorios que elegir.",
-      "archived": "Archivado"
+      "archived": "Archivado",
+      "failed": "No se han podido cargar tus repositorios."
     },
     "branch": {
       "label": "Rama",
@@ -160,7 +163,8 @@
     "moveTitle": "Mover a un proyecto",
     "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
     "delete": "Eliminar",
-    "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo."
+    "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
+    "loadFailed": "No se han podido cargar tus sesiones."
   },
   "deleteSession": {
     "title": "¿Eliminar “{{name}}”?",

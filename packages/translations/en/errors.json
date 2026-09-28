@@ -153,5 +153,6 @@
   "unexpected": {
     "title": "This screen could not be drawn",
     "retry": "Try again"
-  }
+  },
+  "code": "Code: {{code}}"
 }

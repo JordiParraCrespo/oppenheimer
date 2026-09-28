@@ -94,6 +94,7 @@ export function ProjectDialog({
   onSaved: (project: ProjectEntity) => void;
 }) {
   const { t } = useTranslation();
+  const resolveError = useErrorMessage();
   const projects = useProjects();
   const project = projectId ? projects.data?.find((row) => row.id === projectId) : undefined;
 
@@ -108,6 +109,13 @@ export function ProjectDialog({
             <div className="pb-7">
               {projects.isPending ? (
                 <Skeleton className="h-30 w-full" />
+              ) : projects.isError ? (
+                // A failed read is not a deleted project.
+                <Alert variant="destructive">
+                  <AlertDescription>
+                    {resolveError(projects.error, t('projects.dialog.loadFailed')).message}
+                  </AlertDescription>
+                </Alert>
               ) : (
                 <FieldDescription>{t('projects.dialog.gone')}</FieldDescription>
               )}

@@ -65,7 +65,8 @@
       "noWorkspace": "Aún sin espacio de trabajo",
       "noGithub": "Sin conectar",
       "noHost": "Aún sin host",
-      "doneLabel": "Listo"
+      "doneLabel": "Listo",
+      "failed": "No se ha podido cargar. Recarga la página para intentarlo de nuevo."
     }
   }
 }

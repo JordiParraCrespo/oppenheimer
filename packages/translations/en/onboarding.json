@@ -65,7 +65,8 @@
       "noWorkspace": "No workspace yet",
       "noGithub": "Not connected",
       "noHost": "No host yet",
-      "doneLabel": "Done"
+      "doneLabel": "Done",
+      "failed": "Could not load this. Reload the page to try again."
     }
   }
 }

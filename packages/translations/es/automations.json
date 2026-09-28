@@ -12,7 +12,8 @@
     "noProjects": "Todavía no hay ningún proyecto. Crea uno desde Nueva sesión y sus automatizaciones se reunirán aquí.",
     "noRuns": "Todavía no hay ejecuciones.",
     "running": "En curso",
-    "paused": "En pausa"
+    "paused": "En pausa",
+    "loadFailed": "No se han podido cargar tus automatizaciones."
   },
   "page": {
     "tabs": {

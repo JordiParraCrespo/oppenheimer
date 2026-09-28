@@ -1,4 +1,6 @@
 import {
+  Alert,
+  AlertDescription,
   Button,
   EmptyState,
   IconButton,
@@ -14,6 +16,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Plus, Search, X, Zap } from '@oppenheimer/design-system-web/icons';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useConsoleDialog } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { Fragment, useState } from 'react';
@@ -43,6 +46,7 @@ export function AutomationsSidebar() {
   const [query, setQuery] = useState('');
   const dialogs = useConsoleDialog();
   const now = useNow(60_000);
+  const resolveError = useErrorMessage();
 
   // The selected automation is the page's, or the run's whose session is open.
   const detail = matchRoute({ to: '/automations/$automationId' });
@@ -124,7 +128,19 @@ export function AutomationsSidebar() {
           />
         </div>
 
-        {projects.isPending || automations.isPending ? (
+        {projects.isError || automations.isError ? (
+          // A failed read is not "no projects": say it failed.
+          <Alert variant="destructive" className="mx-3 mt-2">
+            <AlertDescription>
+              {
+                resolveError(
+                  projects.error ?? automations.error,
+                  t('automations.sidebar.loadFailed'),
+                ).message
+              }
+            </AlertDescription>
+          </Alert>
+        ) : projects.isPending || automations.isPending ? (
           <div className="flex flex-col gap-2 px-3 pt-2">
             <Skeleton className="h-7.5 w-full" />
             <Skeleton className="h-7.5 w-full" />

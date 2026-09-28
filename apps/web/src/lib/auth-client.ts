@@ -78,7 +78,10 @@ export const webAuthClient: IAuthClient = {
   },
 
   async signOut() {
-    await authClient.signOut();
+    // Unwrapped like every other call: a sign-out the server refused (or
+    // never heard) must reject, or the screen navigates to /login while the
+    // session is still live and is bounced straight back.
+    unwrap(await authClient.signOut());
   },
 
   async forgotPassword(email) {

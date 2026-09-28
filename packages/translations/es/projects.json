@@ -33,7 +33,8 @@
     "deleteHint": "Elimina este proyecto",
     "deleteBlocked_one": "Mueve o elimina su {{count}} sesión primero",
     "deleteBlocked_other": "Mueve o elimina sus {{count}} sesiones primero",
-    "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar."
+    "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar.",
+    "loadFailed": "No se ha podido cargar este proyecto."
   },
   "deleteDialog": {
     "title": "¿Eliminar {{name}}?",

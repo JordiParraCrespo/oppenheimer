@@ -75,7 +75,7 @@ export function SessionsSidebar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const resolveError = useErrorMessage();
-  const { data: sessions, isPending } = useSessions();
+  const { data: sessions, isPending, isError, error } = useSessions();
   const projects = useProjects();
   // Named by the host list, because a session carries only the host's id and
   // an id is not a filter anyone can read. Selected down to plain pairs, which
@@ -179,7 +179,15 @@ export function SessionsSidebar() {
       ) : null}
 
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
-        {isPending || !settled ? (
+        {isError || projects.isError ? (
+          // A failed read is not an empty list and not a list still loading:
+          // without this branch the skeleton below spun for ever.
+          <Alert variant="destructive" className="mx-3 mt-2">
+            <AlertDescription>
+              {resolveError(error ?? projects.error, t('sessions.sidebar.loadFailed')).message}
+            </AlertDescription>
+          </Alert>
+        ) : isPending || !settled ? (
           <SessionList className="px-3 pt-2">
             <Skeleton className="h-[30px] w-full rounded-sm" />
             <Skeleton className="h-[30px] w-full rounded-sm" />

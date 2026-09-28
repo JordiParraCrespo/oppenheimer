@@ -196,7 +196,8 @@
     "unexpected": {
       "title": "This screen could not be drawn",
       "retry": "Try again"
-    }
+    },
+    "code": "Code: {{code}}"
   },
   "auth": {
     "email": "Email",
@@ -249,7 +250,8 @@
       "sentMessage": "We sent a password reset link to <address>{{email}}</address>. It expires in 30 minutes.",
       "emailLabel": "Work email",
       "resend": "Resend link",
-      "differentAddress": "Use a different address"
+      "differentAddress": "Use a different address",
+      "resendFailed": "Could not send the email again. Try again in a moment."
     },
     "resetPassword": {
       "title": "Set a new password",
@@ -355,7 +357,8 @@
       "deleteHint": "Delete this project",
       "deleteBlocked_one": "Move or delete its {{count}} session first",
       "deleteBlocked_other": "Move or delete its {{count}} sessions first",
-      "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted."
+      "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted.",
+      "loadFailed": "Could not load this project."
     },
     "deleteDialog": {
       "title": "Delete {{name}}?",
@@ -423,7 +426,8 @@
         "empty": "No host matches.",
         "loading": "Loading hosts…",
         "add": "Add host…",
-        "offline": "Offline"
+        "offline": "Offline",
+        "failed": "Could not load your hosts."
       },
       "project": {
         "label": "Project",
@@ -432,7 +436,8 @@
         "empty": "No project matches.",
         "loading": "Loading projects…",
         "add": "New project…",
-        "noRepositories": "No repositories"
+        "noRepositories": "No repositories",
+        "failed": "Could not load your projects."
       },
       "repository": {
         "label": "Repositories",
@@ -446,7 +451,8 @@
         "changeBranch": "Change branch",
         "manage": "Manage repository access",
         "noApp": "This deployment has no GitHub App, so there are no repositories to pick.",
-        "archived": "Archived"
+        "archived": "Archived",
+        "failed": "Could not load your repositories."
       },
       "branch": {
         "label": "Branch",
@@ -528,7 +534,8 @@
       "moveTitle": "Move to project",
       "moveNone": "No other project holds this session's repository.",
       "delete": "Delete",
-      "writeFailed": "That change did not land. Try again."
+      "writeFailed": "That change did not land. Try again.",
+      "loadFailed": "Could not load your sessions."
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",
@@ -583,7 +590,8 @@
       "noProjects": "No project yet. Make one from New session, and its automations gather here.",
       "noRuns": "No runs yet.",
       "running": "Running",
-      "paused": "Paused"
+      "paused": "Paused",
+      "loadFailed": "Could not load your automations."
     },
     "page": {
       "tabs": {
@@ -917,7 +925,9 @@
       "removeTitle": "Remove {{name}}?",
       "removeRunning_one": "{{count}} session is running on {{name}}. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
       "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
-      "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused."
+      "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
+      "renameFailed": "Could not rename this host. Try again.",
+      "removeFailed": "Could not remove this host. Try again."
     }
   },
   "settings": {
@@ -1063,7 +1073,8 @@
     "sidebarTitle": "Navigation",
     "sidebarDescription": "Your sessions, your automations and your account.",
     "settings": "Settings",
-    "automations": "Automations"
+    "automations": "Automations",
+    "logOutFailed": "Could not log you out. Try again."
   },
   "control": {
     "accessDeniedTitle": "Control plane access required",
@@ -1404,7 +1415,8 @@
         "noWorkspace": "No workspace yet",
         "noGithub": "Not connected",
         "noHost": "No host yet",
-        "doneLabel": "Done"
+        "doneLabel": "Done",
+        "failed": "Could not load this. Reload the page to try again."
       }
     }
   },
