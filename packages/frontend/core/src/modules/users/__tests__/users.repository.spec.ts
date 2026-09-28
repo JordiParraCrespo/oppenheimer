@@ -4,12 +4,8 @@ import { AppError } from '../../core/errors';
 import { UserEntity } from '../user.entity';
 
 const api = vi.hoisted(() => ({
-  findUsers: vi.fn(),
   getMe: vi.fn(),
   getMyPermissions: vi.fn(),
-  findUserById: vi.fn(),
-  updateUser: vi.fn(),
-  deleteUser: vi.fn(),
 }));
 
 vi.mock('@oppenheimer/api-client', () => ({ heyApiSdk: api }));
@@ -93,48 +89,6 @@ describe('UsersRepository', () => {
     repository = new UsersRepository();
   });
 
-  describe('findAll', () => {
-    it('maps the page into entities and keeps the metadata', async () => {
-      api.findUsers.mockResolvedValue(
-        ok({
-          data: [dto()],
-          meta: { total: 1, page: 1, limit: 20, totalPages: 1 },
-        }),
-      );
-
-      const page = await repository.findAll();
-
-      expect(page.data[0]).toBeInstanceOf(UserEntity);
-      expect(page.data[0].createdAt).toEqual(new Date('2026-01-01T00:00:00.000Z'));
-      expect(page.meta).toEqual({
-        total: 1,
-        page: 1,
-        limit: 20,
-        totalPages: 1,
-      });
-    });
-
-    it('passes the query by name', async () => {
-      // The repository takes them as `(page, limit, search, role)`; a
-      // transposition here would filter by the wrong field rather than fail.
-      api.findUsers.mockResolvedValue(ok({ data: [], meta: {} }));
-
-      await repository.findAll(2, 50, 'ada', 'admin' as Role);
-
-      expect(api.findUsers).toHaveBeenCalledWith({
-        query: { search: 'ada', role: 'admin', limit: 50, page: 2 },
-      });
-    });
-
-    it('treats an absent body as a failed read, not an empty page', async () => {
-      api.findUsers.mockResolvedValue(ok(undefined));
-
-      const error = await repository.findAll().catch((thrown: AppError) => thrown);
-
-      expect(error).toBeInstanceOf(AppError);
-    });
-  });
-
   describe('me', () => {
     it('maps the signed-in user', async () => {
       api.getMe.mockResolvedValue(ok(dto()));
@@ -176,34 +130,6 @@ describe('UsersRepository', () => {
       api.getMyPermissions.mockResolvedValue(ok(undefined));
 
       await expect(repository.myPermissions()).rejects.toBeInstanceOf(AppError);
-    });
-  });
-
-  describe('findById', () => {
-    it('maps the user', async () => {
-      api.findUserById.mockResolvedValue(ok(dto({ id: 'user-9' })));
-
-      expect((await repository.findById('user-9')).id).toBe('user-9');
-    });
-
-    it('fails on an absent body', async () => {
-      api.findUserById.mockResolvedValue(ok(undefined));
-
-      await expect(repository.findById('user-9')).rejects.toBeInstanceOf(AppError);
-    });
-  });
-
-  describe('update', () => {
-    it('maps the saved user back', async () => {
-      api.updateUser.mockResolvedValue(ok(dto({ firstName: 'Grace' })));
-
-      const saved = await repository.update('user-1', { firstName: 'Grace' });
-
-      expect(saved.firstName).toBe('Grace');
-      expect(api.updateUser).toHaveBeenCalledWith({
-        path: { id: 'user-1' },
-        body: { firstName: 'Grace' },
-      });
     });
   });
 });

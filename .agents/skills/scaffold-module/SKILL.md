@@ -109,6 +109,12 @@ holds `update-user.command.ts`, not `command.ts`. A message and its handler
 come as a pair. A slice with only a controller is one that dispatches another
 slice's message — that is the only way to have a controller without a handler.
 
+The controller's class name is the operation's name in the OpenAPI document
+and the console client's function (`FindThingsHttpController` → `findThings`,
+by the factory in `apps/api/src/openapi-document.ts`), so it is unique across
+the API: `generate:openapi` refuses two handlers on one name. Never write an
+`operationId` by hand.
+
 ## A module that owns no aggregate
 
 When an external system owns the records, skip `domain/` and `database/`

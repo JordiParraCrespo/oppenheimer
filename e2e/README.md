@@ -15,19 +15,12 @@ CI runs the **`api` project** on every pull request, in the `End-to-End Tests
 started from its build, then `e2e:api`. No browser is involved, so that job
 needs none.
 
-The **`web` project does not run in CI yet, and does not pass.** On `main` it is
-15 failures out of 64, and they are not flakes — the suite drifted while nothing
-ran it:
-
-- six `team.spec.ts` specs, and the profile spec that opens the team page, drive
-  a `/team` route that `apps/web` no longer has. Organization surfaces now live
-  in `apps/web/src/features/organizations/` — the onboarding and
-  accept-invitation screens, and the general pane of `/settings` — and the
-  console has no roles or users screens at all. The specs did not follow
-- `nav-permissions.spec.ts` asserts a nav catalog that has the same problem
-- the rest — an avatar upload, a password change signing other devices out, a
-  wrong-password error, the language switch — are individually stale or broken
-  and need diagnosing one at a time
+The **`web` project does not run in CI yet, and does not pass.** Its failures
+are not flakes — the suite drifted while nothing ran it. The `/team` specs went
+with the route (the console has no roles or users screens); what is left — an
+avatar upload, a password change signing other devices out, a wrong-password
+error, the language switch — is individually stale or broken and needs
+diagnosing one at a time.
 
 Fixing that is its own piece of work: port or retire each spec against the
 surface the console has now, then add the `web` project to the e2e job in `scripts/ci/local.mjs`. Until then a green CI says

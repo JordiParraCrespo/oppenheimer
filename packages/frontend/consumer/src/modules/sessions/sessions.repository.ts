@@ -199,15 +199,6 @@ export class SessionsRepository {
     return entries;
   }
 
-  @MapApiError(SessionsErrors.STOP_FAILED)
-  async stop(id: string): Promise<SessionEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.stopSession({ path: { id } }),
-      SessionsErrors.STOP_FAILED,
-    );
-    return toEntity(data);
-  }
-
   /** Display only: the slug, the directory and the branch never change. */
   @MapApiError(SessionsErrors.RENAME_FAILED)
   async rename(id: string, name: string): Promise<SessionEntity> {

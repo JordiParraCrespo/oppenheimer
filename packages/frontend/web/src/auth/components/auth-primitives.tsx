@@ -18,18 +18,6 @@ import { useTranslation } from 'react-i18next';
  * blue.
  */
 
-/**
- * Legacy: the previous system pinned auth controls at 40px through these
- * classes. Controls now take `size="lg"`; the names stay so the screens not
- * yet rebuilt on the artboards (onboarding) keep compiling.
- */
-export const authControlClass = 'w-full';
-export const authInputClass = 'w-full';
-
-export function AuthEyebrow({ children }: { children: React.ReactNode }) {
-  return <p className="eyebrow figures mb-3">{children}</p>;
-}
-
 export function AuthTitle({ children, className }: React.ComponentProps<'h1'>) {
   return (
     <h1
@@ -56,15 +44,6 @@ export function AuthNote({ children, className }: React.ComponentProps<'p'>) {
 export function AuthIconCircle({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-5 flex size-13 items-center justify-center rounded-full border border-border-subtle bg-surface-sunken [&>svg]:size-6 [&>svg]:text-fg">
-      {children}
-    </div>
-  );
-}
-
-/** A pill naming the address a flow is scoped to. */
-export function AuthEmailChip({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-7 inline-flex items-center gap-2 self-start rounded-pill border border-border-subtle bg-surface-sunken px-3 py-2 text-sm text-fg [&>svg]:size-[15px] [&>svg]:text-fg-muted">
       {children}
     </div>
   );

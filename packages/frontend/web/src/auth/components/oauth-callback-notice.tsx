@@ -34,16 +34,7 @@ type OAuthErrorCode = keyof typeof NOTICES;
  * Renders the `?error=` a social sign-in left behind, or nothing when the
  * screen was reached any other way.
  */
-export function OAuthCallbackNotice({
-  code,
-  className,
-  noAccountKey = 'auth.oauth.noAccount',
-}: {
-  code?: string;
-  className?: string;
-  /** The guidance for a provider identity with no account here; an app may word it its own way. */
-  noAccountKey?: 'auth.oauth.noAccount' | 'control.auth.noAccount';
-}) {
+export function OAuthCallbackNotice({ code, className }: { code?: string; className?: string }) {
   const { t } = useTranslation();
 
   if (!code) return null;
@@ -60,7 +51,7 @@ export function OAuthCallbackNotice({
       className={className}
     >
       <AlertDescription>
-        {notice ? t(notice.key ?? noAccountKey) : t('auth.oauth.failed')}
+        {notice ? t(notice.key ?? 'auth.oauth.noAccount') : t('auth.oauth.failed')}
       </AlertDescription>
     </Alert>
   );

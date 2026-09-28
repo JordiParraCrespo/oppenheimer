@@ -19,6 +19,7 @@
     "check:api-structure": "node scripts/check-api-structure.mjs && node --test scripts/check-api-structure.test.mjs",
     "check:structure": "node scripts/check-frontend-structure.mjs && node --test scripts/check-frontend-structure.test.mjs",
     "check:compiler": "node scripts/check-react-compiler.mjs",
+    "check:unused": "knip --workspace apps/web --workspace packages/frontend/core --workspace packages/frontend/consumer --workspace packages/frontend/web",
     "check:flags": "node --no-warnings scripts/check-feature-flags.mjs && node --no-warnings --test scripts/check-feature-flags.test.mjs",
     "starter:prune": "node scripts/starter/prune.mjs",
     "starter:check": "node scripts/starter/prune.mjs --check && node --test scripts/starter/prune.test.mjs",
@@ -45,6 +46,7 @@
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
     "@shadcn/lint": "0.1.0",
+    "knip": "^6.38.0",
     "oxlint": "1.83.0",
     "turbo": "^2.10.7",
     "typescript": "^6.0.3"

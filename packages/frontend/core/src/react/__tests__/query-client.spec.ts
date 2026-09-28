@@ -7,6 +7,9 @@ import { usersKeys } from '../users.queries';
 
 const FAILED = { code: 'X_CLIENT_001', message: 'Failed' };
 
+/** A product list the previous account had on screen. */
+const SOMEONE_ELSES = ['organizations', 'list'] as const;
+
 function setup(isAuthenticated: boolean) {
   const store = createAuthStore();
   store.setState({ isAuthenticated });
@@ -21,7 +24,7 @@ function setup(isAuthenticated: boolean) {
   };
   const client = createQueryClient(app, 0);
   // What the previous account had on screen, and the record of the session.
-  client.setQueryData(usersKeys.list(), ['someone else']);
+  client.setQueryData(SOMEONE_ELSES, ['someone else']);
   client.setQueryData(authKeys.session(), 'user-1');
   return { store, client };
 }
@@ -35,7 +38,7 @@ describe('createQueryClient', () => {
     await client.fetchQuery({ queryKey: usersKeys.me(), queryFn: refuse(401) }).catch(() => {});
 
     expect(store.getState().isAuthenticated).toBe(false);
-    expect(client.getQueryData(usersKeys.list())).toBeUndefined();
+    expect(client.getQueryData(SOMEONE_ELSES)).toBeUndefined();
     expect(client.getQueryData(authKeys.session())).toBe('user-1');
   });
 
@@ -49,7 +52,7 @@ describe('createQueryClient', () => {
       .catch(() => {});
 
     expect(store.getState().isAuthenticated).toBe(false);
-    expect(client.getQueryData(usersKeys.list())).toBeUndefined();
+    expect(client.getQueryData(SOMEONE_ELSES)).toBeUndefined();
   });
 
   it('reads the status off any failure that carries one, not only an AppError', async () => {
@@ -70,7 +73,7 @@ describe('createQueryClient', () => {
 
     await client.fetchQuery({ queryKey: usersKeys.me(), queryFn: refuse(401) }).catch(() => {});
 
-    expect(client.getQueryData(usersKeys.list())).toEqual(['someone else']);
+    expect(client.getQueryData(SOMEONE_ELSES)).toEqual(['someone else']);
   });
 
   it('leaves the store alone for any other failure', async () => {

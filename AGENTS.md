@@ -252,8 +252,8 @@ The frontend is split twice, and the two splits answer different questions:
 
 - **By product** for logic. `core` is the kernel every app loads (session,
   users, user settings, capabilities, analytics, the InversifyJS container,
-  config, validation). `consumer` (`sessions`, `hosts`, `automations`, and the account chrome:
-  `organizations` as the personal workspace, `profile`, `api-tokens`) is the
+  validation). `consumer` (`sessions`, `hosts`, `automations`, and the account chrome:
+  `organizations` as the personal workspace, `profile`, `permissions`) is the
   product's domain (entities, repositories, services, TanStack Query hooks);
   the app loads it through `OppenheimerApp.create({ modules })`. The kernel
   never imports the product package.
@@ -337,6 +337,7 @@ pnpm arch               # Architecture boundaries (dependency-cruiser), API and 
 pnpm check:structure    # Frontend layout contract: feature names, kinds, route cap, docs
 pnpm check:flags        # Feature flags: none past expiry, none declared but unread
 pnpm check:compiler     # What the React Compiler leaves uncompiled, silently (oxc bailouts)
+pnpm check:unused       # Unused files, exports and dependencies in the frontend (knip)
 pnpm docker:dev         # Start Postgres + Redis
 pnpm ci:local           # CI, locally: what the branch touches (--all for everything)
 # oppenheimer:begin e2e

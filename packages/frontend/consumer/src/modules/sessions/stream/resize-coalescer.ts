@@ -7,7 +7,7 @@
  * The first size goes straight out — it is the viewport the attach is opened
  * with — and a size equal to the last one sent is not sent again.
  */
-export const RESIZE_SETTLE_MS = 50;
+const RESIZE_SETTLE_MS = 50;
 
 export interface ResizeCoalescer {
   request(cols: number, rows: number): void;

@@ -3,7 +3,6 @@
 export type { ResolvedErrorMessage } from '@oppenheimer/frontend-core/react';
 export { ErrorAlert } from './components/error-alert';
 export { SidebarSearchField } from './components/sidebar-search-field';
-export { SEARCH_DEBOUNCE_MS, useSearchDraft } from './hooks/use-search-draft';
 export {
   type ServerFieldErrorSource,
   type ServerFieldErrors,

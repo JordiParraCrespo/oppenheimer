@@ -148,24 +148,11 @@ const head = git('rev-parse', 'HEAD');
 const { scope, packages, filters } = selection();
 const any = packages.length > 0;
 
-/** The working tree as it stands, so a rewrite of any file shows. */
-const tree = () => `${git('status', '--porcelain')}\n${git('diff')}`;
-
-// lint — always, like the workflow's.
-const before = tree();
+// lint — always.
 job('lint', [
-  ['pnpm check', 'pnpm', ['check']],
-  // The workflow's `pnpm check` rewrites what it can fix and passes; here a
-  // rewrite is a failure, because the fix is not in the commit yet.
-  [
-    'Biome left nothing to commit',
-    () => {
-      if (tree() === before) return true;
-      console.log('Biome rewrote files; review and commit them:');
-      console.log(git('status', '--short'));
-      return false;
-    },
-  ],
+  // `pnpm check` is the contributor's command and writes the fixes it can; a
+  // drift Biome could fix would then pass. Check without writing.
+  ['Biome', 'pnpm', ['exec', 'biome', 'check', '.']],
   ['pnpm check:biome-plugins', 'pnpm', ['check:biome-plugins']],
   // oppenheimer:begin web|web-showcase
   ['Design-system lint (reports, never fails)', 'pnpm', ['lint:design']],
@@ -175,7 +162,24 @@ job('lint', [
   ['Feature flags', 'pnpm', ['check:flags']],
   // oppenheimer:begin web
   ['Frontend structure', 'pnpm', ['check:structure']],
+  // The React Compiler gives up silently on a function it cannot compile (the
+  // build prints nothing). The web tier is at zero bail-outs; keep it.
+  ['React Compiler bail-outs', 'pnpm', ['check:compiler', '--strict']],
+  // Unused exports, files and dependencies in the console and the frontend
+  // packages (knip, `knip.json`): an export nobody imports is deleted.
+  ['Unused code', 'pnpm', ['check:unused']],
   // oppenheimer:end web
+  // The hexagon audit's eval plants its violations by anchoring on exact
+  // lines of apps/api; a refactor that moves one silently retires the eval.
+  // Planting into a throwaway worktree proves every anchor still matches.
+  [
+    'Audit evals stay plantable',
+    'sh',
+    [
+      '-c',
+      'dir=$(mktemp -d) && git worktree add -q --detach "$dir/planted" HEAD && node .agents/routines/evals/hexagon-audit/plant.mjs "$dir/planted"; status=$?; git worktree remove --force "$dir/planted"; rm -rf "$dir"; exit $status',
+    ],
+  ],
   // oppenheimer:begin starter
   ['Starter manifest', 'pnpm', ['starter:check']],
   // oppenheimer:end starter

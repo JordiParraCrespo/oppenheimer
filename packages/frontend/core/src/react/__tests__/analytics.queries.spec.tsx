@@ -167,11 +167,11 @@ describe('usePageView', () => {
       initialProps: { path: '/dashboard' },
     });
 
-    await waitFor(() => expect(pageView).toHaveBeenCalledWith('/dashboard', undefined));
+    await waitFor(() => expect(pageView).toHaveBeenCalledWith('/dashboard'));
 
     rerender({ path: '/settings' });
 
-    await waitFor(() => expect(pageView).toHaveBeenCalledWith('/settings', undefined));
+    await waitFor(() => expect(pageView).toHaveBeenCalledWith('/settings'));
     expect(pageView).toHaveBeenCalledTimes(2);
   });
 

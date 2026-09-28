@@ -35,8 +35,3 @@ export function useAbilityState(): AbilityState {
     [permissions, isError],
   );
 }
-
-/** {@link useAbilityState} for callers that only need the ability itself. */
-export function useAbility(): AppAbility | undefined {
-  return useAbilityState().ability;
-}
