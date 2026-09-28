@@ -32,9 +32,9 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
  * a miss (`product/versions/mvp/03-control-plane.md`).
  */
 @Entity('work_session')
-@Index('IDX_work_session_organization_state', ['organizationId', 'state', 'createdAt'])
 @Index('IDX_work_session_project_state', ['projectId', 'state'])
 @Index('IDX_work_session_host_state', ['hostId', 'state'])
+@Index('IDX_work_session_created_by', ['createdByUserId'])
 @Unique('UQ_work_session_organization_slug', ['organizationId', 'slug'])
 @Unique('UQ_work_session_organization_id', ['organizationId', 'id'])
 export class WorkSessionOrmEntity {
