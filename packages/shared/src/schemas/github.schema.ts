@@ -10,6 +10,17 @@ import { githubInstallationIdSchema } from './primitives';
  */
 
 /**
+ * The nonce the API mints for one GitHub App install: base64url, so it rides a
+ * query string untouched and never contains the `.` the console's walk prefix
+ * is split on.
+ */
+export const installStateSchema = z
+  .string()
+  .min(16)
+  .max(128)
+  .regex(/^[A-Za-z0-9_-]+$/);
+
+/**
  * `POST /installations`.
  *
  * The field is `githubInstallationId`, not `installationId`: this is GitHub's
@@ -23,11 +34,19 @@ import { githubInstallationIdSchema } from './primitives';
  * one-hour tokens to another account's repositories, so the handler exchanges
  * the OAuth code, calls `GET /user/installations`, verifies, and discards it.
  * There is no fallback.
+ *
+ * `state` is the other half. The code proves which GitHub account can see the
+ * installation; the state proves this console user started this install. It
+ * is the nonce `POST /installations/install-state` minted, single use and
+ * bound to the caller and the workspace — without it, a callback URL someone
+ * else stopped halfway would connect their installation to whoever opened it.
  */
 export const connectInstallationSchema = z.object({
   githubInstallationId: githubInstallationIdSchema,
   /** The OAuth code GitHub attaches to the same redirect. Never stored. */
   code: z.string().min(1),
+  /** The install state, nonce only: the console strips its walk prefix first. */
+  state: installStateSchema,
 });
 
 export type ConnectInstallationDto = z.infer<typeof connectInstallationSchema>;

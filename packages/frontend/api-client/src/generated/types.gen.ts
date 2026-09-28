@@ -634,9 +634,22 @@ export type InstallationResponseDto = {
     updatedAt: string;
 };
 
+export type InstallStartResponseDto = {
+    /**
+     * The GitHub App’s installation page, with `state` already on it. Send the browser here.
+     */
+    url: string;
+    /**
+     * Single use, 15 minutes, bound to the caller and the workspace. GitHub echoes it on the install redirect; post it back as `state` on `POST /installations`.
+     */
+    state: string;
+    expiresAt: string;
+};
+
 export type ConnectInstallationRequest = {
     githubInstallationId: number;
     code: string;
+    state: string;
 };
 
 export type RepositoryResponseDto = {
@@ -4293,7 +4306,7 @@ export type ConnectInstallationData = {
 
 export type ConnectInstallationErrors = {
     /**
-     * GITHUB_005 / GITHUB_006 — The authorization code was expired or already used, or no organization is active
+     * GITHUB_005 / GITHUB_006 / GITHUB_011 — The install state was missing, expired, used or someone else’s; the authorization code was expired or already used; or no organization is active
      */
     400: ProblemDetailsDto;
     /**
@@ -4321,6 +4334,40 @@ export type ConnectInstallationResponses = {
 };
 
 export type ConnectInstallationResponse = ConnectInstallationResponses[keyof ConnectInstallationResponses];
+
+export type StartInstallationData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/installations/install-state';
+};
+
+export type StartInstallationErrors = {
+    /**
+     * GITHUB_006 — No organization is active
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type StartInstallationError = StartInstallationErrors[keyof StartInstallationErrors];
+
+export type StartInstallationResponses = {
+    201: InstallStartResponseDto;
+};
+
+export type StartInstallationResponse = StartInstallationResponses[keyof StartInstallationResponses];
 
 export type ListInstallationRepositoriesData = {
     body?: never;

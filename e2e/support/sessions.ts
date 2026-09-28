@@ -37,20 +37,34 @@ export const STUB_BRANCH = 'fix/wallet-empty-state';
 let installationCounter = 0;
 
 /**
+ * Start a GitHub App install as the caller: the single-use state
+ * `POST /installations` requires, minted for this person in this workspace.
+ * A browser gets it back from GitHub on the redirect; a test takes it straight.
+ */
+export async function mintInstallState(api: APIRequestContext): Promise<string> {
+  const response = await api.post('/api/v1/installations/install-state', {
+    failOnStatusCode: false,
+  });
+  expect(response.status(), await response.text()).toBe(201);
+  return ((await response.json()) as { state: string }).state;
+}
+
+/**
  * Connect a GitHub installation to the caller's workspace.
  *
  * Each call claims a **fresh** id from the stub: an installation belongs to one
  * workspace and a second claim is `GITHUB_003`, which is the product's rule and
- * not something a test should work around.
+ * not something a test should work around. And each mints a fresh state first,
+ * the way the console does on Connect: a state is spent by one attempt.
  */
 export async function connectInstallation(api: APIRequestContext): Promise<string> {
   installationCounter += 1;
   const githubInstallationId = 100_000 + process.pid * 100 + installationCounter;
   await claimInstallation(GITHUB_STUB_URL, githubInstallationId);
 
-  const response = await withoutTripping(() =>
+  const response = await withoutTripping(async () =>
     api.post('/api/v1/installations', {
-      data: { githubInstallationId, code: 'stub-oauth-code' },
+      data: { githubInstallationId, code: 'stub-oauth-code', state: await mintInstallState(api) },
       failOnStatusCode: false,
     }),
   );

@@ -49,6 +49,7 @@ export {
   useRemoveInstallation,
   useRepositoryBranches,
   useRepositoryBranchesFor,
+  useStartInstallation,
 } from './installations.queries';
 export {
   type ClaimPersonalWorkspaceVariables,

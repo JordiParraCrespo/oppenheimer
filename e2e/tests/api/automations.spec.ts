@@ -6,6 +6,7 @@ import { claimInstallation } from '../../support/github-stub';
 import {
   createProject,
   GITHUB_STUB_URL,
+  mintInstallState,
   pairHost,
   STUB_REPOSITORIES,
 } from '../../support/sessions';
@@ -36,7 +37,11 @@ async function connect(api: APIRequestContext): Promise<{ id: string; githubId: 
   const githubId = 900_000 + (process.pid % 1000) * 100 + installationCounter;
   await claimInstallation(GITHUB_STUB_URL, githubId);
   const response = await api.post('/api/v1/installations', {
-    data: { githubInstallationId: githubId, code: 'stub-oauth-code' },
+    data: {
+      githubInstallationId: githubId,
+      code: 'stub-oauth-code',
+      state: await mintInstallState(api),
+    },
     failOnStatusCode: false,
   });
   expect(response.status(), await response.text()).toBe(201);

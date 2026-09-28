@@ -37,7 +37,7 @@ export function RepositoryBranchSelect({
   repositories,
   value,
   onValueChange,
-  manageUrl,
+  onManage,
   loading,
   failure,
   branchesLoading,
@@ -47,8 +47,11 @@ export function RepositoryBranchSelect({
   repositories: RepositoryOption[];
   value: RepositoryScope[];
   onValueChange: (value: RepositoryScope[]) => void;
-  /** `github_app_install_url`; `null` when the deployment has no GitHub App. */
-  manageUrl: string | null;
+  /**
+   * Opens the App's install page to change what it covers; absent when the
+   * deployment has no GitHub App, which drops the foot row.
+   */
+  onManage?: () => void;
   loading?: boolean;
   /** Why the list failed to load, shown where its rows would be. */
   failure?: string;
@@ -75,21 +78,21 @@ export function RepositoryBranchSelect({
       placeholder={t('sessions.new.repository.placeholder')}
       searchPlaceholder={t('sessions.new.repository.search')}
       emptyText={
-        failure ?? t(manageUrl ? 'sessions.new.repository.empty' : 'sessions.new.repository.noApp')
+        failure ?? t(onManage ? 'sessions.new.repository.empty' : 'sessions.new.repository.noApp')
       }
       branchSearchPlaceholder={t('sessions.new.repository.branchSearch')}
       branchEmptyText={t('sessions.new.repository.branchEmpty')}
       branchPaneTitle={(name) => t('sessions.new.repository.branchPane', { name })}
       changeBranchLabel={t('sessions.new.repository.changeBranch')}
       action={
-        manageUrl === null
-          ? undefined
-          : {
+        onManage
+          ? {
               label: t('sessions.new.repository.manage'),
               icon: <BrandGlyph name="github" size={15} />,
               trailing: <ArrowUpRight />,
-              href: manageUrl,
+              onSelect: onManage,
             }
+          : undefined
       }
     />
   );

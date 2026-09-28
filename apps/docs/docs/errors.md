@@ -330,6 +330,7 @@ session asks.
 | `GITHUB_008` <a id="github_008" /> | That GitHub installation is suspended or no longer installed   | 409  |
 | `GITHUB_009` <a id="github_009" /> | GitHub could not be reached or rejected the request            | 502  |
 | `GITHUB_010` <a id="github_010" /> | That repository is not covered by this GitHub installation     | 404  |
+| `GITHUB_011` <a id="github_011" /> | The GitHub installation was not started from this workspace    | 400  |
 
 `GITHUB_001` is also returned for an installation that exists but belongs to
 another workspace; distinguishing the two would confirm the id.
@@ -344,6 +345,16 @@ exchanges the OAuth code GitHub attaches to the install redirect and asks GitHub
 which installations the authorizing account can see. Matching the installation's
 account login against a linked GitHub account instead would refuse every
 organization installation, where that login is the organization and not a user.
+
+`GITHUB_011` is the other half of that proof. The code binds a claim to *a*
+GitHub account, not to the console user whose browser posts it, so a callback
+URL someone stopped halfway through their own install would otherwise connect
+their installation to whoever opened it. An install therefore starts with
+`POST /installations/install-state`, which mints a single-use state bound to the
+caller and the workspace for 15 minutes; GitHub echoes it on the redirect, and
+`POST /installations` spends it before it calls GitHub. Missing, expired, already
+used, someone else's and another workspace's are one code, with no detail saying
+which: telling them apart would make the endpoint a probing oracle.
 
 `GITHUB_002` also covers a credential GitHub itself rejected: a `401` from the
 App's own JWT is a deployment problem, not a caller's, and reporting it as one
