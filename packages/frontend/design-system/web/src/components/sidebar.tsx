@@ -361,6 +361,55 @@ function SidebarSearch({
 }
 
 /**
+ * SidebarListHead — the line over a grouped list: the list's name as a muted
+ * uppercase label, its count in mono, then any actions (New project, the
+ * filter menu). Both of the console's lists open on one.
+ */
+function SidebarListHead({
+  label,
+  count,
+  className,
+  children,
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'children'> & {
+  label: React.ReactNode;
+  count?: React.ReactNode;
+  /** Icon buttons after the count. */
+  children?: React.ReactNode;
+}) {
+  return (
+    <div
+      data-slot="sidebar-list-head"
+      className={cn('flex items-center gap-2 px-3 pt-0.5 pb-1.5', className)}
+      {...props}
+    >
+      <span className="eyebrow min-w-0 flex-1 font-normal tracking-[0.04em] text-fg-muted">
+        {label}
+      </span>
+      {count !== undefined ? (
+        <span className="figures text-micro leading-(--leading-body) tracking-normal text-fg-muted">{count}</span>
+      ) : null}
+      {children}
+    </div>
+  );
+}
+
+/**
+ * SidebarProjectGroup — one project's block in the grouped list: its
+ * `SidebarProjectHeader`, then its rows or its `SidebarEmptyRow`. It owns the
+ * list's 12px inset, so a header and its rows line up in every sidebar.
+ */
+function SidebarProjectGroup({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="sidebar-project-group"
+      className={cn('mt-1.5 flex flex-col px-3', className)}
+      {...props}
+    />
+  );
+}
+
+/**
  * SidebarProjectHeader — a project's row in the grouped list: a chevron
  * that folds the group, the name, a mono count, and actions (new session,
  * project settings) that only appear on hover or focus. 28px on a 6px
@@ -404,7 +453,7 @@ function SidebarProjectHeader({
       >
         <ChevronDownIcon
           className={cn(
-            'size-3.5 shrink-0 transition-transform duration-base ease-standard',
+            'size-3.25 shrink-0 transition-transform duration-base ease-standard',
             !open && '-rotate-90',
           )}
           aria-hidden
@@ -819,6 +868,8 @@ export {
   SidebarMenuSubItem,
   SidebarProvider,
   SidebarEmptyRow,
+  SidebarListHead,
+  SidebarProjectGroup,
   SidebarProjectHeader,
   SidebarRail,
   SidebarSearch,

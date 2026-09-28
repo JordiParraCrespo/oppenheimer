@@ -133,7 +133,7 @@ export {
   FieldTitle,
 } from './components/field';
 export type { FieldSelectOption } from './components/field-select';
-export { FieldSelect } from './components/field-select';
+export { FieldSelect, FieldSelectGroup, FieldSelectRow } from './components/field-select';
 export type { HostCardStatus } from './components/host-card';
 export { HostCard } from './components/host-card';
 export type { IconButtonProps } from './components/icon-button';
@@ -251,6 +251,7 @@ export {
   SidebarHeader,
   SidebarInput,
   SidebarInset,
+  SidebarListHead,
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuBadge,
@@ -260,6 +261,7 @@ export {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarProjectGroup,
   SidebarProjectHeader,
   SidebarProvider,
   SidebarRail,

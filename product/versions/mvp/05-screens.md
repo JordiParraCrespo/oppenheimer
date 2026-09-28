@@ -25,7 +25,8 @@
   ending on New session"; decided 2026-09-19 with the version-1 frames.)
 - Sidebar: sessions as a branch glyph coloured by state, name, age on
   hover; a session still provisioning joins the list at once with a
-  pulsing grey glyph; New session on top; a filter menu (project,
+  pulsing grey glyph; New session on top, the primary button while a
+  session is open and secondary on New session itself, where send is; a filter menu (project,
   repository, agent, host, sort) with the active filters as chips under
   the header; the account menu at the bottom with appearance, language
   and Settings. Since the 2026-09-26 export the
@@ -87,7 +88,11 @@
   email typed out. Full name is **two fields side by side**, not the
   export's one, because the account stores first and last name apart
   and splitting one string on its first space gets names wrong.
-- New session: chips for project, host, repository, branch, in the grey
+- New session: on the grey canvas, a line under the title that says what
+  sending will do once a project is picked ("In XRP Mobile · cloning 1 of
+  1 repository, each on its own opp/ branch."; "Set the scope, then
+  describe the work." until then); chips for project, host, repository,
+  branch, in the grey
   band fused to the top of the composer (the tabbed composer of the
   2026-09-26 export); a composer for the
   first task whose foot row reads scope of action, then engine: attach

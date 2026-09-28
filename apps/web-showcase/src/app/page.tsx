@@ -77,6 +77,7 @@ import {
   RoutineTableDemo,
   RunsListDemo,
   TemplateGridDemo,
+  FieldSelectGroupDemo,
   RoutineEditorDemo,
   RoutineItemsDemo,
   SettingsNavDemo,
@@ -251,7 +252,7 @@ export default function Page() {
         </Swatch>
         <Swatch label="primary with glyph">
           <Button size="lg">
-            <BrandGlyph name="github" flip={false} className="text-white" /> Connect GitHub
+            <BrandGlyph name="github" className="text-white" /> Connect GitHub
           </Button>
         </Swatch>
         <div className="flex w-full max-w-[340px] flex-col gap-2.5">
@@ -852,10 +853,14 @@ export default function Page() {
         id="fieldselect"
         title="FieldSelect"
         meta="field-select.tsx"
-        desc="The routine editor's picker: a 42px labelled field whose value and a muted mono count sit on one line. It opens the same listbox as the chip select, with a search row, group eyebrows, and checkboxes when more than one can be picked."
-        code={`<Field><FieldLabel>Repositories</FieldLabel><FieldSelect multiple value={repos} onValueChange={setRepos} options={options} /></Field>`}
+        desc="A labelled picker whose value and a muted mono count sit on one line. It opens the same listbox as the chip select, with a search row, group eyebrows, and checkboxes when more than one can be picked. Two variants: the field, under a FieldLabel; and quiet, the value at the end of a FieldSelectRow, when several picks read as the rows of one FieldSelectGroup card."
+        code={`<Field><FieldLabel>Repositories</FieldLabel><FieldSelect multiple value={repos} onValueChange={setRepos} options={options} /></Field>
+<FieldSelectGroup><FieldSelectRow icon={<CpuIcon />} label="Host"><FieldSelect variant="quiet" value={host} onValueChange={setHost} options={hosts} /></FieldSelectRow></FieldSelectGroup>`}
       >
-        <RoutineEditorDemo />
+        <div className="flex w-full flex-col gap-6">
+          <RoutineEditorDemo />
+          <FieldSelectGroupDemo />
+        </div>
       </Spec>
 
       {/* ── Overlays ─────────────────────────────────────────────────────── */}
@@ -1001,8 +1006,8 @@ export default function Page() {
         id="pageheader"
         title="PageHeader"
         meta="page-header.tsx"
-        desc="Every routine page opens with one: a breadcrumb back, the name at 28px beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining."
-        code={`<PageHeader><PageHeaderCrumbs>…</PageHeaderCrumbs><PageHeaderRow size="lg" icon={<ClockIcon />} title="Nightly dependency audit" actions={…} /><PageHeaderMeta>…</PageHeaderMeta><PageHeaderNote action={<Button size="sm">Resume</Button>}>Paused.</PageHeaderNote></PageHeader>`}
+        desc="Every routine page opens with one: a breadcrumb back, the name beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining."
+        code={`<PageHeader><PageHeaderCrumbs>…</PageHeaderCrumbs><PageHeaderRow icon={<ClockIcon />} title="Nightly dependency audit" actions={…} /><PageHeaderMeta>…</PageHeaderMeta><PageHeaderNote action={<Button size="sm">Resume</Button>}>Paused.</PageHeaderNote></PageHeader>`}
       >
         <PageHeaderDemo />
       </Spec>

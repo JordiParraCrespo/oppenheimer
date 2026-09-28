@@ -54,6 +54,7 @@ function StatusDot({
   children,
   meta,
   pulse,
+  density = 'default',
   className,
   ...props
 }: React.ComponentProps<'span'> &
@@ -62,16 +63,35 @@ function StatusDot({
     meta?: React.ReactNode;
     /** Animate the dot for a live wait. */
     pulse?: boolean;
+    /**
+     * `compact` is a routine's status in a table row or a page's facts: a
+     * slightly larger dot set close to its word, no column for a check, and a
+     * paused routine's word muted.
+     */
+    density?: 'default' | 'compact';
   }) {
   const resolved = state ?? 'idle';
+  const compact = density === 'compact';
   return (
     <span
       data-slot="status-dot"
       data-state={resolved}
-      className={cn('inline-flex items-start gap-2.5 text-operate text-fg', className)}
+      data-density={density}
+      className={cn(
+        'inline-flex text-operate text-fg',
+        compact
+          ? 'items-center gap-1.75 text-sm data-[state=paused]:text-fg-muted'
+          : 'items-start gap-2.5',
+        className,
+      )}
       {...props}
     >
-      <span className="flex h-[1.4em] w-4 shrink-0 items-center justify-center">
+      <span
+        className={cn(
+          'flex shrink-0 items-center justify-center',
+          compact ? '[&>span]:size-1.75' : 'h-[1.4em] w-4',
+        )}
+      >
         {resolved === 'completed' ? (
           <CheckIcon className="size-3.5 text-success" strokeWidth={2.5} aria-hidden />
         ) : (
