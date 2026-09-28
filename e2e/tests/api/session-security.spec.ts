@@ -44,13 +44,26 @@ test.describe('session security', () => {
     );
   });
 
+  // Through the API rather than a `DELETE` on the table: sessions are cached in
+  // Redis in front of the `session` table, and it is the application's own
+  // deletion that takes the cached copies with the rows. A row removed behind
+  // its back would leave the copy answering (`apps/api/AGENTS.md`).
   test('a session belonging to a deleted user stops working', async () => {
-    const { api, userId } = await signedUpContext('deleted');
-    const { query } = await import('../../support/db');
+    const { api, user, userId } = await signedUpContext('deleted');
+    const elsewhere = await newContext();
+    expect((await signIn(elsewhere, user.email, user.password)).status()).toBe(200);
 
-    await query('DELETE FROM "session" WHERE "userId" = $1', [userId]);
+    const deleted = await api.delete('/api/v1/profile', {
+      data: { confirmation: user.email },
+      failOnStatusCode: false,
+    });
+    expect(deleted.status()).toBe(204);
 
+    expect(await findSessionsForUser(userId)).toHaveLength(0);
     expect((await api.get('/api/v1/users/me', { failOnStatusCode: false })).status()).toBe(401);
+    expect((await elsewhere.get('/api/v1/users/me', { failOnStatusCode: false })).status()).toBe(
+      401,
+    );
   });
 
   test('repeated wrong passwords never leak a session', async () => {
