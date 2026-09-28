@@ -1,6 +1,5 @@
 import { SettingsGroup, SettingsRow, Skeleton } from '@oppenheimer/design-system-web';
 import { useMyProfile } from '@oppenheimer/frontend-consumer/react';
-import { shareEntities } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ProfileEmailSection } from './profile-email';
@@ -15,7 +14,7 @@ import { ProfilePictureSection } from './profile-picture';
  */
 export function ProfileDetailsSection() {
   const { t } = useTranslation();
-  const profile = useMyProfile({ structuralSharing: shareEntities });
+  const profile = useMyProfile();
 
   if (profile.isError) {
     return <ErrorAlert error={profile.error} fallback={t('settings.profile.failed')} />;
