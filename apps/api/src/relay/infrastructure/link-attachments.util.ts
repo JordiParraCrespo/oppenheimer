@@ -13,20 +13,27 @@ import { MAX_ATTACHMENT_ID } from './frame.util';
 export class LinkAttachments {
   private readonly sinks = new Map<number, AttachmentSink>();
   private readonly byCommand = new Map<string, number>();
+  /** The reverse of `byCommand`, so closing an attachment never walks the table. */
+  private readonly commandByAttachment = new Map<number, string>();
   private next = 1;
 
   open(sink: AttachmentSink, commandId: string): number {
     const id = this.allocate();
     this.sinks.set(id, sink);
     this.byCommand.set(commandId, id);
+    this.commandByAttachment.set(id, commandId);
     return id;
   }
 
   close(id: number): AttachmentSink | undefined {
     const sink = this.sinks.get(id);
     this.sinks.delete(id);
-    for (const [commandId, attachmentId] of this.byCommand) {
-      if (attachmentId === id) this.byCommand.delete(commandId);
+    const commandId = this.commandByAttachment.get(id);
+    if (commandId !== undefined) {
+      this.commandByAttachment.delete(id);
+      // Only when the command still names this attachment: a command id is
+      // minted per attach, but a reused one must not lose its newer entry.
+      if (this.byCommand.get(commandId) === id) this.byCommand.delete(commandId);
     }
     return sink;
   }
@@ -49,6 +56,7 @@ export class LinkAttachments {
     const all = [...this.sinks.values()];
     this.sinks.clear();
     this.byCommand.clear();
+    this.commandByAttachment.clear();
     return all;
   }
 
