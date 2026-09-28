@@ -8343,10 +8343,19 @@
             }
           },
           {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque: the previous page’s `meta.nextCursor`, for the same `sort`. Walks without counting, and a session is never returned twice in one walk.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "page",
             "required": false,
             "in": "query",
-            "description": "Page number (default: 1)",
+            "description": "Page number (default: 1). Ignored when `cursor` is sent.",
             "schema": {
               "type": "number"
             }
@@ -14841,12 +14850,12 @@
         "properties": {
           "total": {
             "type": "number",
-            "description": "Total matching sessions, across all pages.",
+            "description": "Total matching sessions, across all pages. Page mode only: absent when `cursor` was sent.",
             "example": 42
           },
           "page": {
             "type": "number",
-            "description": "1-based page number.",
+            "description": "1-based page number. Page mode only: absent when `cursor` was sent.",
             "example": 1
           },
           "limit": {
@@ -14856,10 +14865,16 @@
           },
           "totalPages": {
             "type": "number",
+            "description": "Page mode only: absent when `cursor` was sent.",
             "example": 3
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Send it back as `cursor`, with the same `sort`, for the page after this one. Null on the last page. Present in both modes."
           }
         },
-        "required": ["total", "page", "limit", "totalPages"]
+        "required": ["limit", "nextCursor"]
       },
       "PaginatedSessionsResponseDto": {
         "type": "object",

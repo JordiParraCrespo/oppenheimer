@@ -186,19 +186,43 @@ export class SessionResponseDto {
   updatedAt!: Date;
 }
 
-/** Where the caller is in the result set. */
+/**
+ * Where the caller is in the result set. Page mode answers the counts; cursor
+ * mode answers only `limit` and `nextCursor`, because a cursor walk never counts.
+ */
 export class SessionPageMetaDto {
-  @ApiProperty({ description: 'Total matching sessions, across all pages.', example: 42 })
-  total!: number;
+  @ApiProperty({
+    required: false,
+    description:
+      'Total matching sessions, across all pages. Page mode only: absent when `cursor` was sent.',
+    example: 42,
+  })
+  total?: number;
 
-  @ApiProperty({ description: '1-based page number.', example: 1 })
-  page!: number;
+  @ApiProperty({
+    required: false,
+    description: '1-based page number. Page mode only: absent when `cursor` was sent.',
+    example: 1,
+  })
+  page?: number;
 
   @ApiProperty({ description: 'Sessions per page.', example: 20 })
   limit!: number;
 
-  @ApiProperty({ example: 3 })
-  totalPages!: number;
+  @ApiProperty({
+    required: false,
+    description: 'Page mode only: absent when `cursor` was sent.',
+    example: 3,
+  })
+  totalPages?: number;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Send it back as `cursor`, with the same `sort`, for the page after this one. Null on the last page. Present in both modes.',
+  })
+  nextCursor!: string | null;
 }
 
 export class PaginatedSessionsResponseDto {

@@ -101,31 +101,35 @@ function toRequest(input: CreateSessionInput): CreateSessionRequest {
 @injectable()
 export class SessionsRepository {
   /**
-   * The caller's sessions.
-   *
-   * `GET /sessions` answers the paginated envelope every list endpoint here
-   * uses — `{ data, meta }` — so the rows are read out of it rather than off
-   * the body.
-   */
-  @MapApiError(SessionsErrors.FETCH_LIST_FAILED)
-  /**
    * Every session in the workspace, whatever the endpoint's page size: the
    * sidebar groups, searches and filters the whole list in the browser, so a
-   * page would be a list that silently ends. Pages are walked at the largest
-   * size the API allows until the total the first page reports is in hand.
+   * page would be a list that silently ends.
+   *
+   * `GET /sessions` answers the paginated envelope every list endpoint here
+   * uses — `{ data, meta }` — so the rows are read out of it rather than off the
+   * body. The list is walked **by cursor**, at the largest page the API allows,
+   * until `meta.nextCursor` is null: no page pays for an offset or a count, and a
+   * session whose activity moves it up the list mid-walk is never read twice.
    */
+  @MapApiError(SessionsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<SessionEntity[]> {
     const sessions: SessionEntity[] = [];
-    for (let page = 1; ; page += 1) {
+    let cursor: string | undefined;
+    for (;;) {
       // An absent body is a failed read, not an empty collection — returning
       // `[]` would render "no sessions" over a request that never succeeded.
       const data = await unwrapBody(
-        heyApiSdk.listSessions({ query: { page, limit: LIST_PAGE_LIMIT } }),
+        heyApiSdk.listSessions({
+          query: { limit: LIST_PAGE_LIMIT, ...(cursor ? { cursor } : {}) },
+        }),
         SessionsErrors.FETCH_LIST_FAILED,
         (body) => Array.isArray(body.data),
       );
       sessions.push(...data.data.map(toEntity));
-      if (data.data.length === 0 || sessions.length >= data.meta.total) return sessions;
+      const next = data.meta.nextCursor;
+      // A cursor the walk already sent would loop for ever; stop instead.
+      if (!next || next === cursor) return sessions;
+      cursor = next;
     }
   }
 

@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import type { Mapper } from '@oppenheimer/backend-ddd';
-import type { CreateSessionDto } from '@oppenheimer/shared';
+import { ArgumentInvalidException, type Mapper } from '@oppenheimer/backend-ddd';
+import { type CreateSessionDto, SESSION_SORTS, type SessionSortDto } from '@oppenheimer/shared';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
-import type { NewSessionEvent } from './database/work-session.repository.port';
+import type {
+  NewSessionEvent,
+  SessionListCursor,
+  SessionListPage,
+} from './database/work-session.repository.port';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
 import { SessionCheckoutEntity } from './domain/session-checkout.entity';
 import {
@@ -25,8 +29,29 @@ import {
 } from './domain/session-turn.policy';
 import { WorkSessionEntity } from './domain/work-session.entity';
 import { WorkSessionEventEntity } from './domain/work-session-event.entity';
-import { SessionCheckoutResponseDto, SessionResponseDto } from './dtos/session.response.dto';
+import {
+  SessionCheckoutResponseDto,
+  SessionPageMetaDto,
+  SessionResponseDto,
+} from './dtos/session.response.dto';
 import { SessionEventResponseDto } from './dtos/session-event.response.dto';
+
+/**
+ * One row the batched append's `INSERT … RETURNING` answers, beside the count of
+ * rows it meant to insert. `id` is null on the single row that comes back when
+ * nothing landed at all.
+ */
+export interface AppendedEventRow {
+  expected: number;
+  id: string | null;
+  seq: number;
+  idempotencyKey: string;
+  source: WorkSessionEventOrmEntity['source'];
+  kind: string;
+  payload: unknown;
+  occurredAt: Date;
+  recordedAt: Date;
+}
 
 /**
  * Maps the work-session aggregate between its domain, persistence and response
@@ -323,6 +348,109 @@ export class WorkSessionMapper
     return record;
   }
 
+  /**
+   * A batch as the append's single `INSERT` reads it: a JSON array for
+   * `jsonb_to_recordset`, each entry numbered so the statement can keep the
+   * caller's order when it hands out `seq`. What `createNew` would default is
+   * defaulted here — an absent payload is `{}`, an absent `occurredAt` is now —
+   * so a row written in a batch is the row that would have been written alone.
+   */
+  toAppendRecordset(events: readonly NewSessionEvent[]): string {
+    const now = new Date();
+    return JSON.stringify(
+      events.map((event, ord) => ({
+        ord,
+        idempotencyKey: event.idempotencyKey,
+        source: event.source,
+        kind: event.kind,
+        payload: event.payload ?? {},
+        occurredAt: (event.occurredAt ?? now).toISOString(),
+      })),
+    );
+  }
+
+  /** A row the batched append landed, as the log entry the fold reads. */
+  appendedToDomain(sessionId: string, row: AppendedEventRow): WorkSessionEventEntity {
+    return WorkSessionEventEntity.create({
+      id: row.id ?? '',
+      createdAt: row.recordedAt,
+      updatedAt: row.recordedAt,
+      props: {
+        sessionId,
+        seq: row.seq,
+        idempotencyKey: row.idempotencyKey,
+        source: row.source,
+        kind: row.kind,
+        payload: row.payload,
+        occurredAt: row.occurredAt,
+        recordedAt: row.recordedAt,
+      },
+    });
+  }
+
+  /**
+   * The list's cursor as the client holds it: opaque, base64url JSON of the sort
+   * it was issued for, the last row's sort key and its id. The key is the text
+   * Postgres printed, never a JavaScript `Date`, because a `Date` keeps
+   * milliseconds and a `timestamptz` keeps microseconds — a truncated key would
+   * skip the rows that share its millisecond.
+   */
+  toListCursor(cursor: SessionListCursor): string {
+    return Buffer.from(
+      JSON.stringify({ s: cursor.sort, k: cursor.key, i: cursor.id }),
+      'utf8',
+    ).toString('base64url');
+  }
+
+  /**
+   * A cursor back from the client, for the sort it is now asking in. Anything
+   * that is not one this API issued for that sort is a 400: a cursor issued
+   * for `recent` compared against `name` keys would page through nonsense.
+   */
+  fromListCursor(text: string, sort: SessionSortDto): SessionListCursor {
+    const invalid = () =>
+      new ArgumentInvalidException('`cursor` is not a cursor this list issued for this sort');
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(Buffer.from(text, 'base64url').toString('utf8'));
+    } catch {
+      throw invalid();
+    }
+    if (typeof parsed !== 'object' || parsed === null) throw invalid();
+    const { s, k, i } = parsed as { s?: unknown; k?: unknown; i?: unknown };
+    if (
+      typeof s !== 'string' ||
+      !(SESSION_SORTS as readonly string[]).includes(s) ||
+      typeof k !== 'string' ||
+      typeof i !== 'string' ||
+      !UUID_PATTERN.test(i)
+    ) {
+      throw invalid();
+    }
+    if (s !== sort) {
+      throw new ArgumentInvalidException(
+        `\`cursor\` was issued for sort \`${s}\`; this request sorts by \`${sort}\``,
+      );
+    }
+    return { sort, key: k, id: i };
+  }
+
+  /**
+   * A page's `meta`. `nextCursor` is always there; the counts only in page mode,
+   * because a cursor walk never counts.
+   */
+  toPageMeta(page: SessionListPage): SessionPageMetaDto {
+    const meta = new SessionPageMetaDto();
+    meta.limit = page.limit;
+    meta.nextCursor = page.nextCursor ? this.toListCursor(page.nextCursor) : null;
+    if (page.total !== undefined && page.page !== undefined) {
+      meta.total = page.total;
+      meta.page = page.page;
+      meta.totalPages = Math.ceil(page.total / page.limit);
+    }
+    return meta;
+  }
+
   eventToDomain(record: WorkSessionEventOrmEntity): WorkSessionEventEntity {
     return WorkSessionEventEntity.create({
       id: record.id,
@@ -407,3 +535,6 @@ export class WorkSessionMapper
     return dto;
   }
 }
+
+/** What `fromListCursor` accepts as a session id, before Postgres casts it. */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

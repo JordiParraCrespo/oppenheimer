@@ -143,10 +143,10 @@ export type SessionEvent = z.infer<typeof sessionEventSchema>;
  * disconnect" from "never arrived". The handshake is therefore explicit: the
  * runner keeps a batch until an `events.ack` naming this `batchId` accounts for
  * every key in it, and resends the batch otherwise. A resend is harmless
- * because the append is one
- * `INSERT … ON CONFLICT (sessionId, idempotencyKey) DO NOTHING` per row, so a
- * batch replayed after a dropped ack, or half-applied before a crash, appends
- * only what was not yet seen and the fold runs over exactly that.
+ * because the append is idempotent per key — `(sessionId, idempotencyKey)` is
+ * unique, and keys already in the log are skipped — so a batch replayed after a
+ * dropped ack, or cut off by a crash before it committed, appends only what was
+ * not yet seen and the fold runs over exactly that.
  */
 export const eventsAppendSchema = z.object({
   type: z.literal('events.append'),

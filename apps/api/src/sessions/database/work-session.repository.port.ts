@@ -1,5 +1,4 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import type { Paginated } from '@oppenheimer/backend-ddd';
 import type { SessionSortDto, SessionState } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
@@ -33,9 +32,22 @@ export interface SessionAppendOutcome {
   appended: WorkSessionEventEntity[];
 }
 
+/**
+ * Where a keyset walk of the list stands: the sort it was issued for, the last
+ * row's sort key as Postgres printed it, and the last row's id.
+ */
+export interface SessionListCursor {
+  sort: SessionSortDto;
+  key: string;
+  id: string;
+}
+
 export interface SessionFilters {
+  /** Page mode: 1-based. Ignored when `cursor` is set. */
   page: number;
   limit: number;
+  /** Cursor mode: the rows after this one, in the same sort, with no count. */
+  cursor?: SessionListCursor;
   projectId?: string;
   hostId?: string;
   /** The stored lifecycle. The derived group is computed on read and cannot be filtered. */
@@ -45,6 +57,19 @@ export interface SessionFilters {
   agent?: string;
   /** Last activity first by default. */
   sort?: SessionSortDto;
+}
+
+/**
+ * One page of the list. `total` and `page` are page mode's alone: a cursor walk
+ * never counts. `nextCursor` is there in both modes, null on the last page, so a
+ * client can start with a page and carry on by cursor.
+ */
+export interface SessionListPage {
+  data: WorkSessionEntity[];
+  limit: number;
+  total?: number;
+  page?: number;
+  nextCursor: SessionListCursor | null;
 }
 
 export interface SessionEventPage {
@@ -60,8 +85,14 @@ export interface SessionEventPage {
  * authorized" is something the compiler asks for rather than something a handler
  * has to remember. The writes are different: they take the **aggregate**, which is
  * the proof that it was loaded under a scope in the first place — there is no
- * `appendEvents(sessionId, …)` a caller could reach with an id it never had
- * permission to read.
+ * `appendEvents(sessionId, …)` a person's request could reach with an id it never
+ * had permission to read.
+ *
+ * The **machine path** is the one exception, and it is named for it:
+ * `appendEventsForHost(hostId, sessionId, …)`. There the proof is the host's own
+ * credential, checked by the link, and the row lock enforces it — the session is
+ * appended to only when the locked row names that host — which is the same
+ * reasoning `findOneByIdForMachine` already rests on.
  *
  * The children have no scoped reads of their own. `session_checkout` and
  * `work_session_event` declare no resource and are only ever read through their
@@ -122,8 +153,8 @@ export interface WorkSessionRepositoryPort {
    * Append to the log and fold onto the row, in one transaction.
    *
    * `seq` is allocated under `SELECT … FOR UPDATE` on the session row, so
-   * concurrent appenders serialise and the log stays dense; the per-row
-   * `ON CONFLICT DO NOTHING` is what makes a replay idempotent. The append and
+   * concurrent appenders serialise and the log stays dense. The batch lands in one
+   * `INSERT` that skips keys already in the log, so a replay is idempotent per key. The append and
    * the fold commit together, so the sidebar is never eventually-consistent with
    * its own log.
    */
@@ -131,6 +162,25 @@ export interface WorkSessionRepositoryPort {
     session: WorkSessionEntity,
     events: NewSessionEvent[],
   ): Promise<SessionAppendOutcome>;
+
+  /**
+   * The runner's append: the host that proved who it is appends to a session it
+   * holds. The row lock checks the host, so there is no read before the
+   * transaction — the locked row is what the fold starts from anyway.
+   *
+   * The aggregate is built from the locked row. Its checkouts are loaded, inside
+   * the transaction, only when the batch holds a `session.checkout_removed`: the
+   * append never writes a checkout, `validate()` does not read them, and that is
+   * the one entry whose fold touches them. Every other batch gets none.
+   *
+   * `None` when the session is missing or on another host — answered alike, so a
+   * host cannot probe for ids — and then nothing was written.
+   */
+  appendEventsForHost(
+    hostId: string,
+    sessionId: string,
+    events: NewSessionEvent[],
+  ): Promise<Option<{ session: WorkSessionEntity; outcome: SessionAppendOutcome }>>;
 
   /**
    * Append a move and fold it, in one transaction with a share lock on the target
@@ -162,11 +212,11 @@ export interface WorkSessionRepositoryPort {
     events: NewSessionEvent[],
   ): Promise<SessionAppendOutcome>;
 
-  /** Sessions the caller can reach, newest first. */
-  findAllPaginated(
-    scope: AccessScope,
-    filters: SessionFilters,
-  ): Promise<Paginated<WorkSessionEntity>>;
+  /**
+   * Sessions the caller can reach, last activity first unless `sort` says
+   * otherwise: by page with a count, or by `cursor` without one.
+   */
+  findAllPaginated(scope: AccessScope, filters: SessionFilters): Promise<SessionListPage>;
 
   /** `None` both for a missing session and for one outside the caller's scope. */
   findOneById(scope: AccessScope, id: string): Promise<Option<WorkSessionEntity>>;
