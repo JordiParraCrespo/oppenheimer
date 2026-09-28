@@ -73,18 +73,22 @@ function render() {
   ].join('\n');
 }
 
-const output = render();
-if (process.argv.includes('--check')) {
-  const { readFileSync } = require('node:fs');
-  if (readFileSync(outputPath, 'utf8') !== output) {
-    console.error(
-      `${relative(process.cwd(), outputPath)} is stale; run pnpm --filter @oppenheimer/shared build`,
-    );
-    process.exit(1);
+// Only when run: `require()` must not rewrite the committed file, or the spec
+// that compares it with render() would compare a fresh render with itself.
+if (require.main === module) {
+  const output = render();
+  if (process.argv.includes('--check')) {
+    const { readFileSync } = require('node:fs');
+    if (readFileSync(outputPath, 'utf8') !== output) {
+      console.error(
+        `${relative(process.cwd(), outputPath)} is stale; run pnpm --filter @oppenheimer/shared build`,
+      );
+      process.exit(1);
+    }
+    process.exit(0);
   }
-  process.exit(0);
+  writeFileSync(outputPath, output, 'utf8');
+  console.log(`runner session.step vocabulary written to ${relative(process.cwd(), outputPath)}`);
 }
-writeFileSync(outputPath, output, 'utf8');
-console.log(`runner session.step vocabulary written to ${relative(process.cwd(), outputPath)}`);
 
 module.exports = { render, outputPath };
