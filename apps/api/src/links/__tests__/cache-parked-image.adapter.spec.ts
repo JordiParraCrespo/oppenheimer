@@ -15,7 +15,6 @@ function memoryCache(): CacheService {
     },
     del: async (key: string) => void store.delete(key),
     setIfAbsent: async () => true,
-    reset: async () => store.clear(),
   } as unknown as CacheService;
 }
 
