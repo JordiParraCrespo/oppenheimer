@@ -32,7 +32,7 @@ export function toProjectRepositoryRows(
  */
 export function toProjectRepositoryInputs(
   rows: readonly RepositoryRowValue[],
-  defaultBranches: ReadonlyMap<string, string>,
+  defaultBranches: ReadonlyMap<string, string> = new Map(),
 ): ProjectRepositoryInput[] {
   return rows.flatMap((row) => {
     const ref = parseRepositoryKey(row.id);

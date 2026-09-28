@@ -1,4 +1,20 @@
 import type { RepositoryRowValue } from '@oppenheimer/design-system-web';
+import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
+import { createProjectSchema } from '@oppenheimer/shared/schemas/project';
+import { z } from 'zod';
+
+/**
+ * The project dialog's form: the name the API validates, and what is picked
+ * rather than typed — the rows added, the default host, the default agent —
+ * as fields of the same form, so each picker binds its own field and the one
+ * that shows an answer is the one that subscribes to it.
+ */
+export const projectFormSchema = createProjectSchema.pick({ name: true }).extend({
+  rows: z.array(z.object({ id: z.string(), isDefault: z.boolean(), branch: z.string() })),
+  defaultHostId: z.string().nullable(),
+  defaultAgent: z.enum(CODING_AGENT_IDS).nullable(),
+});
+export type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
 /**
  * What the project dialog holds while it is being filled, apart from the
