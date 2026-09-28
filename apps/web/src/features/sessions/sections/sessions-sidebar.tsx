@@ -15,7 +15,7 @@ import {
   useSessions,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { useConsoleDialog } from '@oppenheimer/frontend-web';
+import { notifySuccess, useConsoleDialog } from '@oppenheimer/frontend-web';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -91,8 +91,22 @@ export function SessionsSidebar() {
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
   const dialogs = useConsoleDialog();
 
-  const rename = useRenameSession();
-  const move = useMoveSession();
+  // A renamed or moved row can land anywhere in a long, grouped list, so
+  // both say where it went.
+  const rename = useRenameSession({
+    onSuccess: (session) => notifySuccess(t('toasts.sessionRenamed', { name: session.name })),
+  });
+  const move = useMoveSession({
+    onSuccess: (session) => {
+      const project = projects.data?.find((candidate) => candidate.id === session.projectId);
+      notifySuccess(
+        t('toasts.sessionMoved', {
+          name: session.name,
+          project: !project || project.isUnassigned ? t('projects.unassigned') : project.name,
+        }),
+      );
+    },
+  });
   // One clock for every row's age, ticking once a minute. Every row redraws on
   // the tick, because every age may have moved; that is one render a minute,
   // where a clock read inside each row stopped the ages moving at all.

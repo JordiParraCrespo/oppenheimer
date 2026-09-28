@@ -12,7 +12,9 @@ import { useTranslation } from 'react-i18next';
 /**
  * A table row's ellipsis: Edit, Run now, Pause or Resume, Duplicate, Delete
  * (the frame's order). Props in, choice out: the mutations are the section's.
- * The trigger stops the click so opening the menu does not open the row.
+ * The trigger and the menu both stop the click: the menu is portaled, but a
+ * React event still bubbles to the row, which would open the automation's
+ * page under a pick (and unmount the table's delete confirm with it).
  */
 export function AutomationRowMenu({
   open,
@@ -48,7 +50,11 @@ export function AutomationRowMenu({
       >
         <Ellipsis />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-45">
+      <DropdownMenuContent
+        align="end"
+        className="min-w-45"
+        onClick={(event) => event.stopPropagation()}
+      >
         <DropdownMenuItem onClick={onEdit}>{t('automations.table.edit')}</DropdownMenuItem>
         <DropdownMenuItem onClick={onRunNow}>{t('automations.table.runNow')}</DropdownMenuItem>
         <DropdownMenuItem onClick={onTogglePause}>

@@ -160,7 +160,9 @@
     "pause": "Pause",
     "resume": "Resume",
     "duplicate": "Duplicate",
-    "delete": "Delete"
+    "delete": "Delete",
+    "confirmDeleteTitle": "Delete “{{name}}”?",
+    "confirmDelete": "Its triggers stop now. Past runs are kept."
   },
   "history": {
     "title": "Run history",

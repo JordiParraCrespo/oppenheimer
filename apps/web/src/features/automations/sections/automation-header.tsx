@@ -77,7 +77,7 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => actions.runNow(automation.id)}
+              onClick={() => actions.runNow(automation)}
               disabled={actions.running}
             >
               <Play />
@@ -114,7 +114,7 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
                         size="sm"
                         onClick={() => {
                           setMenu('closed');
-                          actions.remove(automation.id);
+                          actions.remove(automation);
                         }}
                       >
                         {t('automations.detail.confirm')}
@@ -124,13 +124,13 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
                 ) : (
                   <>
                     <DropdownMenuItem
-                      onClick={() => actions.setPaused(automation.id, !automation.isPaused)}
+                      onClick={() => actions.setPaused(automation, !automation.isPaused)}
                     >
                       {automation.isPaused
                         ? t('automations.detail.resume')
                         : t('automations.detail.pause')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => actions.duplicate(automation.id)}>
+                    <DropdownMenuItem onClick={() => actions.duplicate(automation)}>
                       {t('automations.detail.duplicate')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -164,7 +164,7 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => actions.setPaused(automation.id, false)}
+              onClick={() => actions.setPaused(automation, false)}
             >
               {t('automations.detail.resumeAction')}
             </Button>

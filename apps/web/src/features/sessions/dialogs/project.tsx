@@ -39,7 +39,7 @@ import {
   useUpdateProject,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { useZodResolver } from '@oppenheimer/frontend-web';
+import { notifySuccess, useZodResolver } from '@oppenheimer/frontend-web';
 import { CODING_AGENT_IDS, CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import { createProjectSchema } from '@oppenheimer/shared/schemas/project';
 import { useState } from 'react';
@@ -180,8 +180,20 @@ function ProjectForm({
     row.branch ? row : { ...row, branch: defaultBranches.get(row.id) ?? '' },
   );
 
-  const create = useCreateProject({ onSuccess: onSaved });
-  const update = useUpdateProject({ onSuccess: onSaved });
+  // The dialog closes on a save, and what it saved is a group in the sidebar
+  // or a chip on New session, so the save says so.
+  const create = useCreateProject({
+    onSuccess: (saved) => {
+      notifySuccess(t('toasts.projectCreated', { name: saved.name }));
+      onSaved(saved);
+    },
+  });
+  const update = useUpdateProject({
+    onSuccess: (saved) => {
+      notifySuccess(t('toasts.projectSaved', { name: saved.name }));
+      onSaved(saved);
+    },
+  });
   const pending = create.isPending || update.isPending;
   const failure = create.error ?? update.error;
 

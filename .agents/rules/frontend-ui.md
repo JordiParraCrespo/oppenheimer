@@ -20,7 +20,7 @@ multi-line, so a grep for `export` misses most of them.
 | Need                                  | Use                           | Not                                                   |
 | ------------------------------------- | ----------------------------- | ----------------------------------------------------- |
 | Whole-form or whole-page failure      | `Alert variant="destructive"` | a styled `div`, a bare `<p class="text-destructive">` |
-| A success                             | `toast.success()`             | an `Alert`, an inline row                             |
+| A success (when it earns one, below)  | the kit's `notifySuccess()`   | an `Alert`, an inline row, `toast.success()` directly |
 | Field validation                      | `Field` + `FieldError`        | either of the above                                   |
 | "Nothing here" / "still loading"      | `EmptyState`, `Skeleton`      | a centred paragraph                                   |
 | Picking one value out of a list the workspace grows | `ChipSelect` (searchable) | a `<select>` over the first page of an endpoint |
@@ -59,6 +59,36 @@ multi-line, so a grep for `export` misses most of them.
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, and empty and loading states in five while `EmptyState` was used by
 one.
+
+## A success toasts when the reader could miss it
+
+A failure stays inline, next to what the reader has to fix: an `Alert` in
+the dialog or above the list, never a toast. A success is the other way
+round. It goes through the kit's `notifySuccess(message, action?)`, a thin
+wrapper over the design system's sonner, and only when the result is not
+where the reader is looking:
+
+- **Toast** when the result is easy to miss or out of sight: a row that
+  changed somewhere in a long list (rename, move, pause, a device signed
+  out), something that left the list (delete, remove), a background action
+  (Run now, an image pasted into a session, Resend), or a write that closes
+  its dialog or navigates away from where it started (create or save a
+  project or an automation, duplicate, delete from an automation's page).
+- **No toast** when the screen navigates to the result or turns into a
+  "done" view: sign-in, register, social sign-in, the first forgot-password
+  send, reset password, change email, delete account, claiming a workspace,
+  the GitHub install callback, New session, regenerating a pairing token.
+- **An inline "Saved"** stays where a form's own save row already says it,
+  beside the button just pressed: the profile's name card. It does not also
+  toast.
+
+The copy lives under `toasts.*` in every locale and names the object where
+there is one (`“{{name}}” deleted.`). A toast that leads somewhere carries an
+action (Run now's Open). The `<Toaster />` is mounted once at the app root, so
+a toast fired before or after a `navigate` survives it. A mutation whose
+response carries the name toasts from the hook's own `onSuccess`, not from
+`mutate(…, { onSuccess })`: TanStack Query fires only the last call's
+callbacks, so two quick clicks would lose a toast.
 
 ## A picker over a list the workspace grows is an autocomplete
 

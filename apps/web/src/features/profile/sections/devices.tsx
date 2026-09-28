@@ -15,6 +15,7 @@ import {
   useRevokeProfileSession,
 } from '@oppenheimer/frontend-consumer/react';
 import { shareEntities, useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { notifySuccess } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { DeviceLastSeen } from '../components/device-last-seen';
 
@@ -29,8 +30,19 @@ export function DevicesSection() {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
   const devices = useProfileSessions({ structuralSharing: shareEntities });
-  const revoke = useRevokeProfileSession();
-  const revokeOthers = useRevokeOtherProfileSessions();
+  const revoke = useRevokeProfileSession({
+    onSuccess: (_, id) => {
+      const device = devices.data?.find((candidate) => candidate.id === id);
+      notifySuccess(
+        t('toasts.deviceSignedOut', {
+          name: device?.deviceLabel ?? t('settings.devices.unknown'),
+        }),
+      );
+    },
+  });
+  const revokeOthers = useRevokeOtherProfileSessions({
+    onSuccess: () => notifySuccess(t('toasts.otherDevicesSignedOut')),
+  });
   const failure = revoke.error ?? revokeOthers.error;
   // This device first: it is the one row with nothing to do.
   const sorted = [...(devices.data ?? [])].sort((a, b) => Number(b.current) - Number(a.current));

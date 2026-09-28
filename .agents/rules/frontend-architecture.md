@@ -92,7 +92,7 @@ shared ─► core ─► consumer ─► apps/web
 ## The kit is concerns, not kinds, at its top level
 
 `packages/frontend/web/src/<concern>/<kind>/` — `shell`, `auth`,
-`layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`, `roles`. Each
+`layout`, `forms`, `feedback`, `theme`, `i18n`, `analytics`, `platform`, `roles`. Each
 concern has an `index.ts`; a concern imports another only through it. The
 concerns are layered (leaves → middle → top) and `pnpm arch` holds the order.
 A concern that needs a product hook is a feature, not kit.

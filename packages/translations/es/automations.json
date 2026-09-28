@@ -160,7 +160,9 @@
     "pause": "Pausar",
     "resume": "Reanudar",
     "duplicate": "Duplicar",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "confirmDeleteTitle": "¿Eliminar «{{name}}»?",
+    "confirmDelete": "Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan."
   },
   "history": {
     "title": "Historial de ejecuciones",

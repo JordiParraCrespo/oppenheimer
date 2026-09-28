@@ -731,7 +731,9 @@
       "pause": "Pausar",
       "resume": "Reanudar",
       "duplicate": "Duplicar",
-      "delete": "Eliminar"
+      "delete": "Eliminar",
+      "confirmDeleteTitle": "¿Eliminar «{{name}}»?",
+      "confirmDelete": "Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan."
     },
     "history": {
       "title": "Historial de ejecuciones",
@@ -979,7 +981,6 @@
       "mismatch": "Las contraseñas no coinciden.",
       "submit": "Cambiar contraseña",
       "submitting": "Cambiando…",
-      "done": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos.",
       "failed": "No se ha podido cambiar la contraseña."
     },
     "devices": {
@@ -1702,10 +1703,29 @@
     "system": "Igual que el sistema"
   },
   "toasts": {
-    "copied": "Copiado al portapapeles.",
-    "memberRemoved": "Miembro eliminado.",
-    "membersInvited": "Invitaciones enviadas.",
-    "passwordChanged": "Contraseña actualizada. Se ha cerrado la sesión en tus otros dispositivos."
+    "automationCreated": "Se ha creado «{{name}}».",
+    "automationSaved": "Se ha guardado «{{name}}».",
+    "automationDeleted": "Se ha eliminado «{{name}}».",
+    "automationDuplicated": "Duplicada como «{{name}}».",
+    "automationPaused": "Se ha pausado «{{name}}».",
+    "automationResumed": "Se ha reanudado «{{name}}».",
+    "runStarted": "Se ha iniciado una ejecución de «{{name}}».",
+    "openRun": "Abrir",
+    "emailResent": "Correo enviado de nuevo.",
+    "imageSent": "Imagen enviada a la sesión.",
+    "sessionRenamed": "Renombrada a «{{name}}».",
+    "sessionMoved": "«{{name}}» se ha movido a {{project}}.",
+    "sessionDeleted": "Se ha eliminado «{{name}}».",
+    "projectCreated": "Se ha creado «{{name}}».",
+    "projectSaved": "Se ha guardado «{{name}}».",
+    "projectDeleted": "Se ha eliminado «{{name}}».",
+    "hostRenamed": "Renombrado a «{{name}}».",
+    "hostRemoved": "Se ha quitado «{{name}}».",
+    "deviceSignedOut": "Se ha cerrado la sesión en «{{name}}».",
+    "otherDevicesSignedOut": "Se ha cerrado la sesión en tus otros dispositivos.",
+    "pictureChanged": "Foto de perfil actualizada.",
+    "pictureRemoved": "Foto de perfil eliminada.",
+    "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos."
   },
   "emails": {
     "common": {
