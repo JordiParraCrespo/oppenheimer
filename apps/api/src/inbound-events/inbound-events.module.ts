@@ -57,21 +57,22 @@ export class InboundEventsModule {
    * that module's own ports (the installation lookup) without publishing them;
    * the only thing reached across is the registry. Same pattern as
    * `ProjectsModule.contributeUsage`.
+   *
+   * Each adapter registers under a token named for it, so the injector shows
+   * which sources the application has; the registry refuses a second adapter
+   * for a source id at boot.
    */
   static contributeSources(sources: Type<ExternalEventSourcePort>[]): Provider[] {
-    return [
-      ...sources,
+    return sources.flatMap((source) => [
+      source,
       {
-        provide: Symbol('EXTERNAL_EVENT_SOURCE_CONTRIBUTION'),
-        inject: [ExternalEventSourceRegistry, ...sources],
-        useFactory: (
-          registry: ExternalEventSourceRegistry,
-          ...contributed: ExternalEventSourcePort[]
-        ) => {
-          registry.registerAll(contributed);
-          return contributed;
+        provide: Symbol.for(`EXTERNAL_EVENT_SOURCE:${source.name}`),
+        inject: [ExternalEventSourceRegistry, source],
+        useFactory: (registry: ExternalEventSourceRegistry, adapter: ExternalEventSourcePort) => {
+          registry.registerAll([adapter]);
+          return adapter;
         },
       },
-    ];
+    ]);
   }
 }

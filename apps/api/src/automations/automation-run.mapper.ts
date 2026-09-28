@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { AppError } from '@oppenheimer/backend-core';
 import type { CreateSessionDto, SessionEffortDto } from '@oppenheimer/shared';
 import { SESSION_EFFORTS } from '@oppenheimer/shared';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
@@ -17,6 +18,7 @@ import type { AutomationRunOrmEntity } from './database/automation-run.orm-entit
 import type { AutomationEntity } from './domain/automation.entity';
 import type { RunReadModel } from './domain/automation-read.types';
 import { AutomationRunEntity, type RunCauseSummary } from './domain/automation-run.entity';
+import { AutomationErrors } from './domain/automations.errors';
 import type { RunCheckout, RunEventView } from './domain/run-launch.policy';
 import { AutomationRunSummaryResponseDto } from './dtos/automation.response.dto';
 import {
@@ -34,8 +36,14 @@ function asRecord(value: unknown): Json {
     : {};
 }
 
-function oneOf<T extends string>(values: readonly T[], value: unknown, fallback: T): T {
-  return (values as readonly unknown[]).includes(value) ? (value as T) : fallback;
+/**
+ * A stored value narrowed to its vocabulary, failing closed: the columns carry
+ * `CHECK` constraints, so an unknown value is schema drift, and inventing one —
+ * a `queued` the console would paint as live — would hide it.
+ */
+function known<T extends string>(values: readonly T[], value: unknown, what: string): T {
+  if ((values as readonly unknown[]).includes(value)) return value as T;
+  throw new Error(`An automation run has an unknown ${what}: ${String(value)}`);
 }
 
 function optionalText(value: unknown): string | undefined {
@@ -61,18 +69,14 @@ export class AutomationRunMapper {
         automationId: record.automationId,
         revisionId: record.revisionId,
         triggerId: record.triggerId,
-        cause: oneOf<AutomationRunCause>(AUTOMATION_RUN_CAUSES, record.cause, 'manual'),
+        cause: known<AutomationRunCause>(AUTOMATION_RUN_CAUSES, record.cause, 'cause'),
         causeKey: record.causeKey,
         causeSummary: this.causeSummaryOf(record.causeSummary),
         inboundEventId: record.inboundEventId,
         scheduledFor: date(record.scheduledFor),
-        outcome: oneOf<AutomationRunOutcome>(AUTOMATION_RUN_OUTCOMES, record.outcome, 'pending'),
+        outcome: known<AutomationRunOutcome>(AUTOMATION_RUN_OUTCOMES, record.outcome, 'outcome'),
         skipReason: record.skipReason
-          ? oneOf<AutomationSkipReason>(
-              AUTOMATION_SKIP_REASONS,
-              record.skipReason,
-              'not_launchable',
-            )
+          ? known<AutomationSkipReason>(AUTOMATION_SKIP_REASONS, record.skipReason, 'skip reason')
           : null,
         availableAt: new Date(record.availableAt),
         attempts: record.attempts,
@@ -117,7 +121,10 @@ export class AutomationRunMapper {
   ): CreateSessionDto {
     const revision = automation.revision;
     if (!isCodingAgentId(revision.agent)) {
-      throw new Error(`Automation ${automation.id} names an agent this build does not know`);
+      // A refusal the dispatcher records as a skip, not a fault to retry.
+      throw new AppError(AutomationErrors.AGENT_UNSUPPORTED, {
+        detail: `Automation ${automation.id} names an agent this build does not know`,
+      });
     }
     const effort = (SESSION_EFFORTS as readonly string[]).includes(revision.effort ?? '')
       ? (revision.effort as SessionEffortDto)
@@ -191,12 +198,12 @@ export class AutomationRunMapper {
       automationName: String(row.automationName ?? ''),
       automationDeleted: row.automationDeletedAt !== null && row.automationDeletedAt !== undefined,
       projectId: String(row.projectId),
-      status: oneOf<AutomationRunStatus>(AUTOMATION_RUN_STATUSES, row.status, 'queued'),
-      outcome: oneOf<AutomationRunOutcome>(AUTOMATION_RUN_OUTCOMES, row.outcome, 'pending'),
+      status: known<AutomationRunStatus>(AUTOMATION_RUN_STATUSES, row.status, 'status'),
+      outcome: known<AutomationRunOutcome>(AUTOMATION_RUN_OUTCOMES, row.outcome, 'outcome'),
       skipReason: row.skipReason
-        ? oneOf<AutomationSkipReason>(AUTOMATION_SKIP_REASONS, row.skipReason, 'not_launchable')
+        ? known<AutomationSkipReason>(AUTOMATION_SKIP_REASONS, row.skipReason, 'skip reason')
         : null,
-      cause: oneOf<AutomationRunCause>(AUTOMATION_RUN_CAUSES, row.cause, 'manual'),
+      cause: known<AutomationRunCause>(AUTOMATION_RUN_CAUSES, row.cause, 'cause'),
       causeSummary: this.causeSummaryOf(row.causeSummary),
       sessionId: optionalText(row.sessionId) ?? null,
       sessionName: optionalText(row.sessionName) ?? null,

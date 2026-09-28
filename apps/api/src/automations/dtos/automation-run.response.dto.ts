@@ -246,7 +246,7 @@ export class TriggerPreviewResponseDto {
 export class AutomationSettingsResponseDto {
   @ApiProperty() maxRunsPerAutomationHour!: number;
   @ApiProperty() maxRunsPerWorkspaceHour!: number;
-  @ApiProperty() headlessRunsPerHost!: number;
+  @ApiProperty() liveRunsPerHost!: number;
   @ApiProperty({ enum: ['skip', 'queue'] }) overlap!: 'skip' | 'queue';
   @ApiProperty() staleTtlSeconds!: number;
   @ApiProperty() missedGraceSeconds!: number;

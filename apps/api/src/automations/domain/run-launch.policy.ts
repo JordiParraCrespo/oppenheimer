@@ -105,27 +105,64 @@ const PREAMBLE =
  * that splices the event into the instructions.
  *
  * It must fit the first prompt a session carries (`FIELD_BOUNDS.prompt`,
- * bytes), so the context gives way first — the body, then everything but the
- * reference and link — and the instructions never do. Headless turns store
- * the prompt off the log and lift this ceiling.
+ * bytes). The envelope is always there for a run an event started, and the
+ * context gives way before the instructions do: the body is cut to what fits
+ * and says so (`bodyTruncated`), then dropped, then everything but the
+ * reference, title and link. When not even the reference and link fit beside
+ * the instructions, there is no prompt — `null` — and the dispatcher refuses
+ * the run rather than starting one that does not know why it exists.
  */
 export function composeRunPrompt(
   instructions: string,
   event: RunEventView | null,
   maxBytes: number = FIELD_BOUNDS.prompt.maxBytes,
-): string {
+): string | null {
   if (!event) return instructions;
   const envelope = (context: Record<string, unknown>) =>
     `${instructions}\n\n${PREAMBLE}\n<untrusted_external_data source="${event.source}" event="${event.type}" repository="${event.subjectName}">\n${JSON.stringify(context, null, 1)}\n</untrusted_external_data>`;
-  const attempts: Record<string, unknown>[] = [
-    event.context,
-    { ...event.context, body: undefined, bodyOmitted: event.context.body ? true : undefined },
-    { ref: event.context.ref, url: event.context.url, title: event.context.title },
-    { ref: event.context.ref, url: event.context.url },
-  ];
-  for (const context of attempts) {
-    const prompt = envelope(JSON.parse(JSON.stringify(context)));
-    if (promptByteLength(prompt) <= maxBytes) return prompt;
+  const fits = (context: Record<string, unknown>) => {
+    const prompt = envelope(context);
+    return promptByteLength(prompt) <= maxBytes ? prompt : null;
+  };
+
+  const whole = fits(event.context);
+  if (whole) return whole;
+  const body = text(event.context.body);
+  if (body) {
+    const truncated = fitBody(body, (cut) =>
+      fits({ ...event.context, body: cut, bodyTruncated: true }),
+    );
+    if (truncated) return truncated;
   }
-  return instructions;
+  const { body: _body, ...withoutBody } = event.context;
+  return (
+    fits({ ...withoutBody, ...(body ? { bodyOmitted: true } : {}) }) ??
+    fits(pick(event.context, ['ref', 'url', 'title'])) ??
+    fits(pick(event.context, ['ref', 'url']))
+  );
+}
+
+/** The longest prefix of `body` whose prompt fits, by bisection on characters. */
+function fitBody(body: string, attempt: (cut: string) => string | null): string | null {
+  let low = 0;
+  let high = body.length;
+  let best: string | null = null;
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    const prompt = attempt(`${body.slice(0, middle)}…`);
+    if (prompt) {
+      best = prompt;
+      low = middle;
+    } else {
+      high = middle - 1;
+    }
+  }
+  // Worth sending only if a meaningful part of the body survives.
+  return low >= 200 ? best : null;
+}
+
+function pick(context: Record<string, unknown>, keys: string[]): Record<string, unknown> {
+  return Object.fromEntries(
+    keys.flatMap((key) => (context[key] === undefined ? [] : [[key, context[key]]])),
+  );
 }

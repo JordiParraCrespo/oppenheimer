@@ -98,9 +98,21 @@ export function overlapGuard(
 /** The host already runs as many automation runs as it takes at once. */
 export function capacityGuard(
   liveOnHost: number,
-  limits: Pick<AutomationLimits, 'headlessRunsPerHost'>,
+  limits: Pick<AutomationLimits, 'liveRunsPerHost'>,
 ): GuardVerdict {
-  return liveOnHost >= limits.headlessRunsPerHost
+  return liveOnHost >= limits.liveRunsPerHost ? { kind: 'defer', delayMs: DEFER_DELAY_MS } : ALLOW;
+}
+
+/**
+ * A host that last reported less free disk than the floor waits: a worktree
+ * and an agent's build need room, and a run accepted onto a full disk fails
+ * after the fact. A host that never reported is not held back on a guess.
+ */
+export function diskGuard(
+  freeBytes: number | null,
+  limits: Pick<AutomationLimits, 'diskFloorBytes'>,
+): GuardVerdict {
+  return freeBytes !== null && freeBytes < limits.diskFloorBytes
     ? { kind: 'defer', delayMs: DEFER_DELAY_MS }
     : ALLOW;
 }

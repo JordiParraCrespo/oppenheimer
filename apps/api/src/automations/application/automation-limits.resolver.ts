@@ -9,6 +9,8 @@ import {
   resolveAutomationLimits,
 } from '../domain/automation-limits.policy';
 
+const DEFAULT_SCHEDULER_BATCH = 200;
+
 /** The effective limits for one automation: platform ∩ workspace ∩ automation. */
 @Injectable()
 export class AutomationLimitsResolver {
@@ -33,15 +35,20 @@ export class AutomationLimitsResolver {
   }
 
   get schedulerBatch(): number {
-    return this.config.get<number>('automations.schedulerBatch') ?? 200;
+    return this.config.get<number>('automations.schedulerBatch') ?? DEFAULT_SCHEDULER_BATCH;
   }
 
   private get platform(): PlatformLimits {
     const ceiling = (key: string, fallback: number) =>
       this.config.get<number>(`automations.${key}`) ?? fallback;
     const { ceilings } = DEFAULT_PLATFORM_LIMITS;
+    const { defaults } = DEFAULT_PLATFORM_LIMITS;
     return {
-      defaults: DEFAULT_PLATFORM_LIMITS.defaults,
+      defaults: {
+        ...defaults,
+        diskFloorBytes:
+          this.config.get<number>('automations.diskFloorBytes') ?? defaults.diskFloorBytes,
+      },
       ceilings: {
         maxRunsPerAutomationHour: ceiling(
           'maxRunsPerAutomationHour',
@@ -51,7 +58,7 @@ export class AutomationLimitsResolver {
           'maxRunsPerWorkspaceHour',
           ceilings.maxRunsPerWorkspaceHour,
         ),
-        headlessRunsPerHost: ceiling('headlessRunsPerHost', ceilings.headlessRunsPerHost),
+        liveRunsPerHost: ceiling('liveRunsPerHost', ceilings.liveRunsPerHost),
         staleTtlSeconds: ceiling('staleTtlSeconds', ceilings.staleTtlSeconds),
         maxRunSeconds: ceiling('maxRunSeconds', ceilings.maxRunSeconds),
       },

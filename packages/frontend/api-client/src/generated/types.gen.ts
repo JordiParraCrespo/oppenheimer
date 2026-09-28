@@ -1915,7 +1915,7 @@ export type RunHistoryResponseDto = {
 export type AutomationSettingsResponseDto = {
     maxRunsPerAutomationHour: number;
     maxRunsPerWorkspaceHour: number;
-    headlessRunsPerHost: number;
+    liveRunsPerHost: number;
     overlap: 'skip' | 'queue';
     staleTtlSeconds: number;
     missedGraceSeconds: number;
@@ -1925,7 +1925,7 @@ export type AutomationSettingsResponseDto = {
 export type UpdateAutomationSettingsRequest = {
     maxRunsPerAutomationHour?: number | null;
     maxRunsPerWorkspaceHour?: number | null;
-    headlessRunsPerHost?: number | null;
+    liveRunsPerHost?: number | null;
     overlap?: 'skip' | 'queue';
     staleTtlSeconds?: number | null;
     missedGraceSeconds?: number | null;

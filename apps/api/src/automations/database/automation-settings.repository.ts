@@ -18,7 +18,7 @@ export class AutomationSettingsRepository implements AutomationSettingsRepositor
     return {
       maxRunsPerAutomationHour: record.maxRunsPerAutomationHour,
       maxRunsPerWorkspaceHour: record.maxRunsPerWorkspaceHour,
-      headlessRunsPerHost: record.headlessRunsPerHost,
+      liveRunsPerHost: record.liveRunsPerHost,
       overlap: record.overlap === 'queue' || record.overlap === 'skip' ? record.overlap : null,
       staleTtlSeconds: record.staleTtlSeconds,
       missedGraceSeconds: record.missedGraceSeconds,

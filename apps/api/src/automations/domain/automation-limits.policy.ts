@@ -8,17 +8,19 @@ import type { AutomationOverlapPolicy } from '@oppenheimer/shared/automations';
 export interface AutomationLimits {
   maxRunsPerAutomationHour: number;
   maxRunsPerWorkspaceHour: number;
-  headlessRunsPerHost: number;
+  liveRunsPerHost: number;
   overlap: AutomationOverlapPolicy;
   staleTtlSeconds: number;
   missedGraceSeconds: number;
   maxRunSeconds: number;
+  /** A host reporting less free disk than this is not given a run: a worktree needs room. */
+  diskFloorBytes: number;
 }
 
 /** The platform's defaults (what a workspace gets) and ceilings (what nobody exceeds). */
 export interface PlatformLimits {
   defaults: AutomationLimits;
-  ceilings: Omit<AutomationLimits, 'overlap' | 'missedGraceSeconds'>;
+  ceilings: Omit<AutomationLimits, 'overlap' | 'missedGraceSeconds' | 'diskFloorBytes'>;
 }
 
 /** The workspace row: every field optional, null is the platform default. */
@@ -36,16 +38,17 @@ export const DEFAULT_PLATFORM_LIMITS: PlatformLimits = {
   defaults: {
     maxRunsPerAutomationHour: 10,
     maxRunsPerWorkspaceHour: 100,
-    headlessRunsPerHost: 2,
+    liveRunsPerHost: 2,
     overlap: 'skip',
     staleTtlSeconds: 60 * 60,
     missedGraceSeconds: 15 * 60,
     maxRunSeconds: 60 * 60,
+    diskFloorBytes: 5 * 1024 ** 3,
   },
   ceilings: {
     maxRunsPerAutomationHour: 60,
     maxRunsPerWorkspaceHour: 500,
-    headlessRunsPerHost: 20,
+    liveRunsPerHost: 20,
     staleTtlSeconds: 24 * 60 * 60,
     maxRunSeconds: 6 * 60 * 60,
   },
@@ -75,9 +78,9 @@ export function resolveAutomationLimits(
       ceilings.maxRunsPerWorkspaceHour,
       workspace.maxRunsPerWorkspaceHour ?? defaults.maxRunsPerWorkspaceHour,
     ),
-    headlessRunsPerHost: tightest(
-      ceilings.headlessRunsPerHost,
-      workspace.headlessRunsPerHost ?? defaults.headlessRunsPerHost,
+    liveRunsPerHost: tightest(
+      ceilings.liveRunsPerHost,
+      workspace.liveRunsPerHost ?? defaults.liveRunsPerHost,
     ),
     overlap: automation.overlap ?? workspace.overlap ?? defaults.overlap,
     staleTtlSeconds: tightest(
@@ -89,5 +92,7 @@ export function resolveAutomationLimits(
       ceilings.maxRunSeconds,
       workspace.maxRunSeconds ?? defaults.maxRunSeconds,
     ),
+    // The deployment's, not a workspace's: the machine's floor is not a preference.
+    diskFloorBytes: defaults.diskFloorBytes,
   };
 }

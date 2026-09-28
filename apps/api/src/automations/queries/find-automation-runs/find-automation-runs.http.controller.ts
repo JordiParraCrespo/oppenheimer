@@ -2,8 +2,8 @@ import { Controller, Get, Query, UseGuards, UseInterceptors, Version } from '@ne
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { AUTOMATION_RUN_STATUSES, RUN_WINDOWS } from '@oppenheimer/shared/automations';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
+import { AUTOMATION_RUN_STATUSES, RUN_WINDOWS } from '@oppenheimer/shared/automations';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';

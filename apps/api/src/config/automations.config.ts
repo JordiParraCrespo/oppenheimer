@@ -3,31 +3,27 @@ import { z } from 'zod';
 import { parseEnv } from './env';
 
 /**
- * The platform level of the automation limits
- * (`product/versions/mvp/16-automations-architecture.md` §Configuration):
- * the ceilings no workspace or automation setting may exceed. What a workspace
- * gets when it sets nothing is the domain's `DEFAULT_PLATFORM_LIMITS`; these
- * only ever tighten or loosen the roof over it.
+ * Deployment overrides of the automation limits
+ * (`product/versions/mvp/16-automations-architecture.md` §Configuration). The
+ * numbers themselves live in one place, the domain's `DEFAULT_PLATFORM_LIMITS`:
+ * each key here, when set, replaces the platform **ceiling** of the same name
+ * (the roof no workspace or automation setting exceeds), and `diskFloorBytes`
+ * the free disk a host must report before it is given a run.
  *
- * **Optional, all of it**, with the note's numbers as defaults: a deployment
- * that sets nothing runs with them, and nothing here can fail a boot.
+ * **Optional, all of it**, and none has a default here: a deployment that
+ * sets nothing runs on the domain's numbers, and nothing here can fail a boot.
  */
+const positive = z.coerce.number().int().positive().optional();
+
 const schema = z.object({
-  maxRunsPerAutomationHour: z.coerce.number().int().positive().default(60),
-  maxRunsPerWorkspaceHour: z.coerce.number().int().positive().default(500),
-  headlessRunsPerHost: z.coerce.number().int().positive().default(20),
-  staleTtlSeconds: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(24 * 60 * 60),
-  maxRunSeconds: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(6 * 60 * 60),
+  maxRunsPerAutomationHour: positive,
+  maxRunsPerWorkspaceHour: positive,
+  liveRunsPerHost: positive,
+  staleTtlSeconds: positive,
+  maxRunSeconds: positive,
+  diskFloorBytes: z.coerce.number().int().min(0).optional(),
   /** How many due triggers one scheduler tick claims. */
-  schedulerBatch: z.coerce.number().int().positive().default(200),
+  schedulerBatch: positive,
 });
 
 export type AutomationsConfig = z.infer<typeof schema>;
@@ -36,9 +32,10 @@ export const automationsConfig = registerAs('automations', () =>
   parseEnv('automations', schema, {
     maxRunsPerAutomationHour: 'AUTOMATIONS_MAX_RUNS_PER_AUTOMATION_HOUR',
     maxRunsPerWorkspaceHour: 'AUTOMATIONS_MAX_RUNS_PER_WORKSPACE_HOUR',
-    headlessRunsPerHost: 'AUTOMATIONS_MAX_RUNS_PER_HOST',
+    liveRunsPerHost: 'AUTOMATIONS_MAX_RUNS_PER_HOST',
     staleTtlSeconds: 'AUTOMATIONS_MAX_STALE_TTL_SECONDS',
     maxRunSeconds: 'AUTOMATIONS_MAX_RUN_SECONDS',
+    diskFloorBytes: 'AUTOMATIONS_HOST_DISK_FLOOR_BYTES',
     schedulerBatch: 'AUTOMATIONS_SCHEDULER_BATCH',
   }),
 );

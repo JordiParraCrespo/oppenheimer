@@ -241,7 +241,11 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     }
     if (next.repositories !== undefined) {
       const key = (list: RevisionInput['repositories']) =>
-        list.map((repository) => repository.githubRepoId).join(',');
+        // The pair a session's checkout sends: a rotated installation is a
+        // different checkout of the same repository.
+        list
+          .map((repository) => `${repository.installationId}:${repository.githubRepoId}`)
+          .join(',');
       if (key(next.repositories) !== key(current.repositories)) return true;
     }
     return false;

@@ -1,5 +1,5 @@
 import type { Option } from 'oxide.ts';
-import type { RecentEventsQuery } from '../application/inbound-event-lookup.port';
+import type { MatchingEvents, MatchingEventsQuery } from '../application/inbound-event-lookup.port';
 import type {
   ExternalEvent,
   InboundDelivery,
@@ -37,8 +37,20 @@ export interface InboundEventRepositoryPort {
 
   markFailed(deliveryId: string, error: string): Promise<void>;
 
+  /**
+   * The sweep: re-stage the processing of deliveries still `received` since
+   * before `staleBefore` (their job ran out of retries, or Redis lost it), at
+   * most once per `staleBefore` window each, and give up on those received
+   * before `abandonBefore` — marked failed, where a replay can find them.
+   */
+  restageUnprocessed(
+    staleBefore: Date,
+    abandonBefore: Date,
+    batch: number,
+  ): Promise<{ restaged: number; abandoned: number }>;
+
   findOne(organizationId: string, id: string): Promise<Option<StoredExternalEvent>>;
-  findRecent(query: RecentEventsQuery): Promise<StoredExternalEvent[]>;
+  findMatching(query: MatchingEventsQuery): Promise<MatchingEvents>;
 
   /** Retention: batched deletes by age, each returning how many rows went. */
   deleteDeliveriesBefore(cutoff: Date, batch: number): Promise<number>;

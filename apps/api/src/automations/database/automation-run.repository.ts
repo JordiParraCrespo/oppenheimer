@@ -16,12 +16,28 @@ import type {
 } from '../domain/automation-read.types';
 import type { AutomationRunEntity } from '../domain/automation-run.entity';
 import { AutomationRunOrmEntity } from './automation-run.orm-entity';
-import type { AutomationRunRepositoryPort, RunFilters } from './automation-run.repository.port';
+import type {
+  AutomationRunRepositoryPort,
+  LiveRun,
+  RunFilters,
+} from './automation-run.repository.port';
 
 /** The job name the runs worker dispatches a pending run under. */
 export const DISPATCH_RUN_JOB = 'dispatch';
 
 const LIVE_TURN = `('queued', 'in_progress', 'requires_action')`;
+
+/**
+ * A dispatched run is live while its session's first turn has not ended —
+ * the agent is still on the task it was given — or, before that turn is
+ * folded, while the session has not started or failed. A session left open
+ * after its agent finished is not a live run: it holds no place on the host.
+ */
+const LIVE_JOINS = `
+  LEFT JOIN "work_session" ws ON ws."id" = run."sessionId"
+  LEFT JOIN "session_turn" turn ON turn."sessionId" = run."sessionId" AND turn."seq" = 1`;
+const LIVE_WHERE = `(turn."state" IN ${LIVE_TURN}
+  OR (turn."state" IS NULL AND ws."state" IN ('starting', 'open')))`;
 
 /**
  * A run's status, derived once, here (§Q4): the firing's own outcome until it
@@ -154,6 +170,33 @@ export class AutomationRunRepository
     return { runId: existing[0]?.id ?? run.id, inserted };
   }
 
+  async restageStalled(staleBefore: Date, batch: number): Promise<number> {
+    const count = await this.dataSource.transaction(async (manager) => {
+      // IDX_automation_run_pending; SKIP LOCKED so replicas sweep disjoint rows.
+      const due: { id: string; automationId: string; cause: string }[] = await manager.query(
+        `UPDATE "automation_run" r SET "availableAt" = now(), "updatedAt" = now()
+           FROM (SELECT "id" FROM "automation_run"
+                  WHERE "outcome" = 'pending' AND "availableAt" < $1
+                  ORDER BY "availableAt" LIMIT $2 FOR UPDATE SKIP LOCKED) due
+          WHERE r."id" = due."id"
+          RETURNING r."id", r."automationId", r."cause"`,
+        [staleBefore, batch],
+      );
+      for (const row of due) {
+        await this.outbox.stageJob(manager, {
+          queue: QUEUE_NAMES.AUTOMATION_RUNS,
+          jobName: DISPATCH_RUN_JOB,
+          payload: { runId: row.id },
+          reason: `automation ${row.automationId}'s ${row.cause} run was still pending at the sweep`,
+          aggregateId: row.id,
+        });
+      }
+      return due.length;
+    });
+    if (count > 0) await this.outbox.wake();
+    return count;
+  }
+
   async findOneForSystem(id: string): Promise<Option<AutomationRunEntity>> {
     const record = await this.repository.findOneBy({ id });
     return record ? Some(this.mapper.toDomain(record)) : None;
@@ -199,12 +242,40 @@ export class AutomationRunRepository
     return { automation: Number(row.automation), workspace: Number(row.workspace) };
   }
 
-  async countLiveForAutomation(automationId: string, excludingRunId: string): Promise<number> {
-    return this.countLive(`run."automationId" = $1`, [automationId, excludingRunId]);
+  async countLiveForAutomation(
+    automationId: string,
+    excludingRunId: string,
+    since: Date,
+  ): Promise<number> {
+    return this.countLive(`run."automationId" = $1`, [automationId, excludingRunId, since]);
   }
 
-  async countLiveOnHost(hostId: string, excludingRunId: string): Promise<number> {
-    return this.countLive(`rev."hostId" = $1`, [hostId, excludingRunId]);
+  async countLiveOnHost(hostId: string, excludingRunId: string, since: Date): Promise<number> {
+    return this.countLive(`rev."hostId" = $1`, [hostId, excludingRunId, since]);
+  }
+
+  async findLiveDispatchedBefore(before: Date, batch: number): Promise<LiveRun[]> {
+    const rows: {
+      id: string;
+      organizationId: string;
+      automationId: string;
+      sessionId: string;
+      dispatchedAt: Date;
+    }[] = await this.dataSource.query(
+      `SELECT run."id", run."organizationId", run."automationId", run."sessionId", run."dispatchedAt"
+         FROM "automation_run" run
+         ${LIVE_JOINS}
+        WHERE run."outcome" = 'dispatched' AND run."dispatchedAt" < $1 AND ${LIVE_WHERE}
+        ORDER BY run."dispatchedAt" LIMIT $2`,
+      [before, batch],
+    );
+    return rows.map((row) => ({
+      runId: row.id,
+      organizationId: row.organizationId,
+      automationId: row.automationId,
+      sessionId: row.sessionId,
+      dispatchedAt: new Date(row.dispatchedAt),
+    }));
   }
 
   private async countLive(where: string, parameters: unknown[]): Promise<number> {
@@ -212,11 +283,9 @@ export class AutomationRunRepository
       `SELECT count(*) AS "count"
          FROM "automation_run" run
          JOIN "automation_revision" rev ON rev."id" = run."revisionId"
-         LEFT JOIN "work_session" ws ON ws."id" = run."sessionId"
-         LEFT JOIN "session_turn" turn ON turn."sessionId" = run."sessionId" AND turn."seq" = 1
+         ${LIVE_JOINS}
         WHERE ${where} AND run."id" <> $2 AND run."outcome" = 'dispatched'
-          AND (turn."state" IN ${LIVE_TURN}
-               OR (turn."state" IS NULL AND ws."state" IN ('starting', 'open')))`,
+          AND run."dispatchedAt" >= $3 AND ${LIVE_WHERE}`,
       parameters,
     );
     return Number(row.count);

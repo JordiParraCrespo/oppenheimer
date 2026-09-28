@@ -16,6 +16,7 @@ import { AutomationLimitsResolver } from './application/automation-limits.resolv
 import { AutomationPlanFactory } from './application/automation-plan.factory';
 import { ExternalEventReceivedDomainEventHandler } from './application/event-handlers/external-event-received.domain-event-handler';
 import { HostUnpairedPausesAutomationsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
+import { ProjectArchivedPausesAutomationsDomainEventHandler } from './application/event-handlers/project-archived.domain-event-handler';
 import { OwnerScopeResolver } from './application/owner-scope.resolver';
 import { RunDispatchResolver } from './application/run-dispatch.resolver';
 import { AutomationMapper } from './automation.mapper';
@@ -33,6 +34,7 @@ import { DeleteAutomationHttpController } from './commands/delete-automation/del
 import { DispatchAutomationRunCommandHandler } from './commands/dispatch-automation-run/dispatch-automation-run.command-handler';
 import { DuplicateAutomationCommandHandler } from './commands/duplicate-automation/duplicate-automation.command-handler';
 import { DuplicateAutomationHttpController } from './commands/duplicate-automation/duplicate-automation.http.controller';
+import { EnforceRunLimitsCommandHandler } from './commands/enforce-run-limits/enforce-run-limits.command-handler';
 import { FireDueSchedulesCommandHandler } from './commands/fire-due-schedules/fire-due-schedules.command-handler';
 import { FireEventTriggersCommandHandler } from './commands/fire-event-triggers/fire-event-triggers.command-handler';
 import { PauseAutomationCommandHandler } from './commands/pause-automation/pause-automation.command-handler';
@@ -103,6 +105,7 @@ const commandHandlers: Provider[] = [
   UpdateAutomationSettingsCommandHandler,
   FireEventTriggersCommandHandler,
   FireDueSchedulesCommandHandler,
+  EnforceRunLimitsCommandHandler,
   DispatchAutomationRunCommandHandler,
 ];
 
@@ -162,6 +165,7 @@ const queryHandlers: Provider[] = [
     RunDispatchResolver,
     ExternalEventReceivedDomainEventHandler,
     HostUnpairedPausesAutomationsDomainEventHandler,
+    ProjectArchivedPausesAutomationsDomainEventHandler,
     AutomationRunsProcessor,
     AutomationSchedulesProcessor,
     AutomationRetentionProcessor,

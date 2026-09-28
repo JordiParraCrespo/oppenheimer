@@ -14,7 +14,7 @@ export class AutomationSettingsOrmEntity {
   maxRunsPerWorkspaceHour!: number | null;
 
   @Column({ type: 'integer', nullable: true })
-  headlessRunsPerHost!: number | null;
+  liveRunsPerHost!: number | null;
 
   @Column({ type: 'varchar', length: 8, nullable: true })
   overlap!: string | null;

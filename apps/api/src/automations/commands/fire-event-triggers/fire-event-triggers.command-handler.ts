@@ -9,7 +9,7 @@ import { AUTOMATION_REPOSITORY, AUTOMATION_RUN_REPOSITORY } from '../../automati
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
 import type { AutomationRunRepositoryPort } from '../../database/automation-run.repository.port';
 import { AutomationRunEntity } from '../../domain/automation-run.entity';
-import { loopGuard, rateGuard } from '../../domain/fire-guard.policy';
+import { firstRefusal, loopGuard, rateGuard } from '../../domain/fire-guard.policy';
 import { eventCauseSummary } from '../../domain/run-launch.policy';
 import { FireEventTriggersCommand } from './fire-event-triggers.command';
 
@@ -18,9 +18,9 @@ const HOUR = 60 * 60 * 1000;
 /**
  * Match an event to the triggers watching its subject, apply each trigger's
  * filter, and queue one run per automation it fires — keyed by the event, so a
- * redelivery queues nothing twice. Paused automations ignore it; an event our
- * own App caused never fires anything (the loop guard); the hourly caps turn a
- * firing into a recorded skip rather than a silent drop.
+ * redelivery queues nothing twice. Paused automations ignore it. An event our
+ * own App caused (the loop guard) and one past the hourly caps become a
+ * recorded skip with its reason, never a silent drop.
  */
 @CommandHandler(FireEventTriggersCommand)
 export class FireEventTriggersCommandHandler
@@ -38,7 +38,6 @@ export class FireEventTriggersCommandHandler
   ) {}
 
   async execute(command: FireEventTriggersCommand): Promise<number> {
-    if (loopGuard(command.actorIsOwnApp).kind !== 'allow') return 0;
     const definition = externalEventDefinition(command.source, command.eventType);
     if (!definition) return 0;
     const candidates = await this.automations.findEventCandidates(
@@ -71,7 +70,12 @@ export class FireEventTriggersCommandHandler
         automation.id,
         new Date(now.getTime() - HOUR),
       );
-      const verdict = rateGuard(limits, recent, false);
+      // Our own App's event — a run's push, its comment — never starts another
+      // run, and is recorded as a skip so the Runs tab can say why.
+      const verdict = firstRefusal(
+        () => loopGuard(command.actorIsOwnApp),
+        () => rateGuard(limits, recent, false),
+      );
       const props = {
         organizationId: automation.organizationId,
         automationId: automation.id,

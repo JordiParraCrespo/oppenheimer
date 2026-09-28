@@ -4,7 +4,7 @@ import { OutboxService } from '@oppenheimer/backend-ddd';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, Repository } from 'typeorm';
-import type { RecentEventsQuery } from '../application/inbound-event-lookup.port';
+import type { MatchingEvents, MatchingEventsQuery } from '../application/inbound-event-lookup.port';
 import { ExternalEventReceivedDomainEvent } from '../domain/events/external-event-received.domain-event';
 import type {
   ExternalEvent,
@@ -135,26 +135,81 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
     );
   }
 
+  async restageUnprocessed(
+    staleBefore: Date,
+    abandonBefore: Date,
+    batch: number,
+  ): Promise<{ restaged: number; abandoned: number }> {
+    const result = await this.dataSource.transaction(async (manager) => {
+      const abandoned: { id: string }[] = await manager.query(
+        `UPDATE "inbound_delivery"
+            SET "status" = 'failed', "lastError" = 'not processed after its retries and a day of sweeps'
+          WHERE "status" = 'received' AND "receivedAt" < $1
+          RETURNING "id"`,
+        [abandonBefore],
+      );
+      // IDX_inbound_delivery_unprocessed; SKIP LOCKED so two replicas sweep
+      // disjoint rows.
+      const due: { id: string; source: string; deliveryId: string }[] = await manager.query(
+        `UPDATE "inbound_delivery" d SET "restagedAt" = now()
+           FROM (SELECT "id" FROM "inbound_delivery"
+                  WHERE "status" = 'received' AND "receivedAt" < $1
+                    AND ("restagedAt" IS NULL OR "restagedAt" < $1)
+                  ORDER BY "receivedAt" LIMIT $2 FOR UPDATE SKIP LOCKED) due
+          WHERE d."id" = due."id"
+          RETURNING d."id", d."source", d."deliveryId"`,
+        [staleBefore, batch],
+      );
+      for (const row of due) {
+        await this.outbox.stageJob(manager, {
+          queue: QUEUE_NAMES.INBOUND_EVENTS,
+          jobName: PROCESS_DELIVERY_JOB,
+          payload: { inboundDeliveryId: row.id },
+          reason: `${row.source} delivery ${row.deliveryId} was still unprocessed at the sweep`,
+          aggregateId: row.id,
+        });
+      }
+      return { restaged: due.length, abandoned: abandoned.length };
+    });
+    if (result.restaged > 0) await this.outbox.wake();
+    return result;
+  }
+
   async findOne(organizationId: string, id: string): Promise<Option<StoredExternalEvent>> {
     const record = await this.events.findOneBy({ organizationId, id });
     return record ? Some(this.mapper.eventToDomain(record)) : None;
   }
 
-  async findRecent(query: RecentEventsQuery): Promise<StoredExternalEvent[]> {
-    if (query.subjectRefs.length === 0) return [];
+  async findMatching(query: MatchingEventsQuery): Promise<MatchingEvents> {
+    if (query.subjectRefs.length === 0) return { count: 0, sample: [] };
     // IDX_inbound_event_preview: equality on the tenant, source and type, the
-    // subject set, then the time range.
-    const records = await this.events
-      .createQueryBuilder('event')
-      .where('event.organizationId = :organizationId', { organizationId: query.organizationId })
-      .andWhere('event.source = :source', { source: query.source })
-      .andWhere('event.eventType = :eventType', { eventType: query.eventType })
-      .andWhere('event.subjectRef IN (:...subjectRefs)', { subjectRefs: [...query.subjectRefs] })
-      .andWhere('event.occurredAt >= :since', { since: query.since })
-      .orderBy('event.occurredAt', 'DESC')
-      .limit(query.limit)
-      .getMany();
-    return records.map((record) => this.mapper.eventToDomain(record));
+    // subject set, then the time range; the filter and our own App's events
+    // are applied on those rows, in the database, so the count is exact.
+    const matching = () => {
+      const builder = this.events
+        .createQueryBuilder('event')
+        .where('event.organizationId = :organizationId', { organizationId: query.organizationId })
+        .andWhere('event.source = :source', { source: query.source })
+        .andWhere('event.eventType = :eventType', { eventType: query.eventType })
+        .andWhere('event.subjectRef IN (:...subjectRefs)', { subjectRefs: [...query.subjectRefs] })
+        .andWhere('event.occurredAt >= :since', { since: query.since })
+        .andWhere('event.actorIsOwnApp = false');
+      if (query.attribute) {
+        // `matchesTriggerFilter`'s rule: the value itself, or one of a list's.
+        builder.andWhere(
+          `(event.attributes ->> :field = :value
+            OR (jsonb_typeof(event.attributes -> :field) = 'array'
+                AND jsonb_exists(event.attributes -> :field, :value)))`,
+          { field: query.attribute.field, value: query.attribute.value },
+        );
+      }
+      return builder;
+    };
+    const [count, records] = await Promise.all([
+      matching().getCount(),
+      matching().orderBy('event.occurredAt', 'DESC').limit(query.sampleSize).getMany(),
+    ]);
+    return { count, sample: records.map((record) => this.mapper.eventToDomain(record)) };
   }
 
   async deleteDeliveriesBefore(cutoff: Date, batch: number): Promise<number> {

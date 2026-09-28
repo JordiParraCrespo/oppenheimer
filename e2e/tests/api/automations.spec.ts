@@ -96,8 +96,11 @@ interface Run {
   turn: { state: string; prompt: string | null } | null;
 }
 
-async function runsOf(api: APIRequestContext, automationId: string, status?: string) {
-  const query = new URLSearchParams({ automationId, ...(status ? { status } : {}) });
+async function runsOf(api: APIRequestContext, automationId?: string, status?: string) {
+  const query = new URLSearchParams({
+    ...(automationId ? { automationId } : {}),
+    ...(status ? { status } : {}),
+  });
   const response = await api.get(`/api/v1/automation-runs?${query}`);
   expect(response.status(), await response.text()).toBe(200);
   return (await response.json()) as {
@@ -162,6 +165,20 @@ test.describe('Automations', () => {
   test.beforeAll(async () => {
     test.setTimeout(180_000);
     shared = await setUp('automations');
+  });
+  // A dispatched run is live until its session's first turn ends, and with no
+  // runner on this host it never will. Each test stops the sessions it started,
+  // so the host's place is free for the next — the same end a run past its
+  // limit gets.
+  test.afterEach(async () => {
+    const runs = await runsOf(shared.api, undefined, 'queued,running');
+    for (const run of runs.items) {
+      if (!run.sessionId) continue;
+      const stopped = await shared.api.post(`/api/v1/sessions/${run.sessionId}/stop`, {
+        failOnStatusCode: false,
+      });
+      expect([200, 201, 409], await stopped.text()).toContain(stopped.status());
+    }
   });
   test('a GitHub event fires an automation, once, as a session of its owner', async () => {
     const setup = shared;
@@ -384,9 +401,7 @@ test.describe('Automations', () => {
 
   test('the scheduler fires a due slot within the minute', async () => {
     test.setTimeout(240_000);
-    // Its own host: the runs before it are live on the shared one (no runner
-    // starts their sessions), and a host takes two headless runs at a time.
-    const setup = await setUp('automationtick');
+    const setup = shared;
     const now = new Date(Date.now() + 60_000);
     const automation = await (
       await setup.api.post('/api/v1/automations', {

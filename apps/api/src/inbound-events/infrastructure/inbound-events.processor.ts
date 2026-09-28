@@ -15,12 +15,21 @@ export const EVENT_RETENTION_DAYS = 30;
 const RETENTION_BATCH = 5_000;
 const MAX_BATCHES = 200;
 const PURGE_JOB = 'purge';
+const SWEEP_JOB = 'sweep';
 const SCHEDULER_ID = 'inbound-events-retention-daily';
+const SWEEP_SCHEDULER_ID = 'inbound-events-sweep';
+const MINUTE = 60_000;
+/** A delivery unprocessed this long has outlived its job's retries. */
+const STALE_AFTER_MS = 15 * MINUTE;
+/** Past this it is not going to process; it is marked failed for a replay. */
+const ABANDON_AFTER_MS = 24 * 60 * MINUTE;
+const SWEEP_BATCH = 500;
 
 /**
  * The hub's worker: processes stored deliveries (staged on the outbox by the
- * receive path, so a job is never lost between a commit and Redis) and, once a
- * day, purges what retention says is not kept. One queue for both, because
+ * receive path, so a job is never lost between a commit and Redis), sweeps
+ * every five minutes for deliveries whose job ran out of retries, and once a
+ * day purges what retention says is not kept. One queue for both, because
  * both are the hub's own work on its own tables.
  */
 @Processor(QUEUE_NAMES.INBOUND_EVENTS)
@@ -44,6 +53,11 @@ export class InboundEventsProcessor extends WorkerHost implements OnApplicationB
       { pattern: '23 4 * * *', tz: 'UTC' },
       { name: PURGE_JOB },
     );
+    await this.queue.upsertJobScheduler(
+      SWEEP_SCHEDULER_ID,
+      { every: 5 * MINUTE },
+      { name: SWEEP_JOB },
+    );
   }
 
   async process(job: Job<{ inboundDeliveryId?: string }>): Promise<unknown> {
@@ -53,6 +67,14 @@ export class InboundEventsProcessor extends WorkerHost implements OnApplicationB
       );
     }
     if (job.name === PURGE_JOB) return this.purge();
+    if (job.name === SWEEP_JOB) {
+      const now = Date.now();
+      return this.store.restageUnprocessed(
+        new Date(now - STALE_AFTER_MS),
+        new Date(now - ABANDON_AFTER_MS),
+        SWEEP_BATCH,
+      );
+    }
     this.logger.warn({ message: 'Unknown inbound-events job', name: job.name });
     return null;
   }

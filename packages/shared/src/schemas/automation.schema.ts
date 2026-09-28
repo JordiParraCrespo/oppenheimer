@@ -258,7 +258,7 @@ export type TriggerPreviewDto = z.infer<typeof triggerPreviewSchema>;
 export const updateAutomationSettingsSchema = z.object({
   maxRunsPerAutomationHour: z.number().int().min(1).max(10_000).nullable().optional(),
   maxRunsPerWorkspaceHour: z.number().int().min(1).max(100_000).nullable().optional(),
-  headlessRunsPerHost: z.number().int().min(1).max(100).nullable().optional(),
+  liveRunsPerHost: z.number().int().min(1).max(100).nullable().optional(),
   overlap: z.enum(AUTOMATION_OVERLAP_POLICIES).nullable().optional(),
   staleTtlSeconds: z
     .number()

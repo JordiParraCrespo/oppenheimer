@@ -15,19 +15,18 @@ export class CreateSessionCommand extends CommandBase {
    */
   readonly idempotencyKey: string | null;
   /**
-   * Who asked for it. Absent is a person at the console; an automation's run
-   * dispatches this same command as the automation's owner and says so here.
+   * Who asked for it: a person at the console, or an automation's run, which
+   * dispatches this same command as the automation's owner. Required, so no
+   * caller can forget it and mint a session the runs list cannot join back.
    */
   readonly origin: SessionOrigin;
 
-  constructor(
-    props: Omit<CommandProps<CreateSessionCommand>, 'origin'> & { origin?: SessionOrigin },
-  ) {
+  constructor(props: CommandProps<CreateSessionCommand>) {
     super(props);
     this.scope = props.scope;
     this.userId = props.userId;
     this.input = props.input;
     this.idempotencyKey = props.idempotencyKey;
-    this.origin = props.origin ?? 'person';
+    this.origin = props.origin;
   }
 }
