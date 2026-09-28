@@ -15,6 +15,7 @@ import type { Request } from 'express';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentSession } from '../../../auth/decorators/current-session.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
+import { UsesBetterAuthSession } from '../../../auth/decorators/uses-better-auth-session.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { RevokeSessionCommand } from './revoke-session.command';
 
@@ -22,6 +23,7 @@ import { RevokeSessionCommand } from './revoke-session.command';
 @ApiBearerAuth()
 @ApiAuthProblemResponses()
 @UseGuards(ApiAuthGuard)
+@UsesBetterAuthSession()
 @Controller('profile')
 export class RevokeSessionHttpController {
   constructor(private readonly commandBus: CommandBus) {}

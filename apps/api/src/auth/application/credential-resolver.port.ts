@@ -36,4 +36,15 @@ export interface CredentialResolverPort {
    * kind of credential documents.
    */
   resolve(presented: string, request: ScopedRequest): Promise<ScopeContext>;
+
+  /**
+   * Set when every presented string is used once (a host's boot assertion
+   * carries a `jti`). The rate limiter normally buckets a credential by a
+   * digest of the string, unverified; for a single-use kind that would give
+   * every request a bucket of its own. The kernel then resolves the credential
+   * first — memoized, so the guard that authenticates the request reuses the
+   * answer rather than burning the string twice — and buckets by its
+   * `credentialId`.
+   */
+  readonly singleUse?: boolean;
 }

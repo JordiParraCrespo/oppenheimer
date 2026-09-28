@@ -1,6 +1,7 @@
 import type { IncomingHttpHeaders } from 'node:http';
 import { Inject, Injectable } from '@nestjs/common';
-import { DELEGATED_SESSION } from '../../auth/auth.di-tokens';
+import type { SessionCachePort } from '../../auth/application/session-cache.port';
+import { DELEGATED_SESSION, SESSION_CACHE } from '../../auth/auth.di-tokens';
 import { auth } from '../../auth/infrastructure/better-auth.config';
 import { betterAuthHeaders } from '../../auth/infrastructure/better-auth.util';
 import type { DelegatedSessionPort } from '../../auth/infrastructure/delegated-session.port';
@@ -28,6 +29,8 @@ export class ProfileAuthGateway implements ProfileAuthPort {
   constructor(
     @Inject(DELEGATED_SESSION)
     private readonly delegatedSessions: DelegatedSessionPort,
+    @Inject(SESSION_CACHE)
+    private readonly sessionCache: SessionCachePort,
   ) {}
 
   async changePassword(
@@ -76,13 +79,27 @@ export class ProfileAuthGateway implements ProfileAuthPort {
     );
   }
 
-  /** Revoke every session except the one this request was made with. */
-  async revokeOtherSessions(headers: IncomingHttpHeaders, userId: string): Promise<void> {
+  /**
+   * Revoke every session except the one this request was made with.
+   *
+   * Better Auth finds "the other sessions" through its session cache's own
+   * index, which knows nothing of a session signed in before the cache existed
+   * or one whose index entry was lost — and those still work, from Postgres.
+   * So the database is swept after it, sparing the current session by id.
+   */
+  async revokeOtherSessions(
+    headers: IncomingHttpHeaders,
+    userId: string,
+    currentSessionId: string | undefined,
+  ): Promise<void> {
     await invokeProfileApi(() =>
       auth.api.revokeOtherSessions({
         headers: betterAuthHeaders(headers),
       }),
     );
+    if (currentSessionId) {
+      await this.sessionCache.revokeOtherSessions(userId, currentSessionId);
+    }
 
     await this.delegatedSessions.invalidateForUser(userId);
   }

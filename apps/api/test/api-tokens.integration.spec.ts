@@ -2,6 +2,8 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
+import type { SessionCachePort } from '../src/auth/application/session-cache.port';
+import { SESSION_CACHE } from '../src/auth/auth.di-tokens';
 import { runAllMigrations } from './run-migrations';
 
 /**
@@ -628,6 +630,55 @@ describe('API tokens & scopes (integration)', () => {
       expect(rows[0].lastUsedAt).not.toBeNull();
     });
 
+    it('stamps a busy token once a minute, and never as an edit', async () => {
+      // Regression: every request wrote `lastUsedAt` and, through the
+      // `@UpdateDateColumn`, `updatedAt` — ten row versions a second for a
+      // token polled ten times a second.
+      const created = await mintToken({ name: 'busy', scopes: ['users:read'] });
+      const read = async () =>
+        (
+          await dataSource.query(
+            'SELECT "lastUsedAt", "updatedAt" FROM "api_token" WHERE id = $1',
+            [created.id],
+          )
+        )[0] as { lastUsedAt: Date | null; updatedAt: Date };
+      const minted = await read();
+
+      await call(`/api/v1/users/${user.id}`, { token: created.token });
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      const first = await read();
+
+      for (let i = 0; i < 20; i++) await call(`/api/v1/users/${user.id}`, { token: created.token });
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      const after = await read();
+
+      expect(first.lastUsedAt).not.toBeNull();
+      expect(after.lastUsedAt).toEqual(first.lastUsedAt);
+      expect(after.updatedAt).toEqual(minted.updatedAt);
+    });
+
+    it('lets concurrent stamps inside the granularity write once', async () => {
+      const created = await mintToken({ name: 'raced', scopes: ['users:read'] });
+      const { API_TOKEN_REPOSITORY } = await import('../src/api-tokens/api-tokens.di-tokens');
+      const repository = app.get<{ touchLastUsedAt(id: string, at: Date): Promise<void> }>(
+        API_TOKEN_REPOSITORY,
+      );
+      const at = new Date();
+
+      await repository.touchLastUsedAt(created.id, at);
+      await repository.touchLastUsedAt(created.id, new Date(at.getTime() + 30_000));
+      const [row] = await dataSource.query('SELECT "lastUsedAt" FROM "api_token" WHERE id = $1', [
+        created.id,
+      ]);
+      expect(new Date(row.lastUsedAt).getTime()).toBe(at.getTime());
+
+      await repository.touchLastUsedAt(created.id, new Date(at.getTime() + 61_000));
+      const [later] = await dataSource.query('SELECT "lastUsedAt" FROM "api_token" WHERE id = $1', [
+        created.id,
+      ]);
+      expect(new Date(later.lastUsedAt).getTime()).toBe(at.getTime() + 61_000);
+    });
+
     it('refuses a token used from outside its IP allowlist', async () => {
       const created = await mintToken({
         name: 'ip-locked',
@@ -675,8 +726,12 @@ describe('API tokens & scopes (integration)', () => {
       token = (created.body as { token: string }).token;
     });
 
-    const setStanding = (sql: string) =>
-      dataSource.query(`UPDATE "user" SET ${sql} WHERE "id" = $1`, [owner.id]);
+    // Written straight to the table, so do what the application's own writers
+    // do: bring Better Auth's cached copy of the owner's sessions along.
+    const setStanding = async (sql: string) => {
+      await dataSource.query(`UPDATE "user" SET ${sql} WHERE "id" = $1`, [owner.id]);
+      await app.get<SessionCachePort>(SESSION_CACHE).refreshUser(owner.id);
+    };
 
     it('accepts the token of an owner in good standing', async () => {
       expect((await call('/api/v1/me/credential', { token })).status).toBe(200);

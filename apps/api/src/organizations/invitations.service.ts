@@ -14,6 +14,12 @@ import type { InvitationResponseDto } from './dtos/organization.response.dto';
 import { mapInvitation, mapMember, mapPendingInvitations } from './organization.mappers';
 import { invokeOrganizationApi } from './organization-error.mapper';
 
+/** Who is accepting: the authenticated caller's id and email. */
+export interface InvitationCaller {
+  id: string;
+  email: string;
+}
+
 /** Delegating façade over the Better Auth organization plugin's invitation endpoints. */
 @Injectable()
 export class InvitationsService {
@@ -51,9 +57,16 @@ export class InvitationsService {
     return mapInvitation(result);
   }
 
-  async accept(headers: IncomingHttpHeaders, invitationId: string): Promise<InvitationResponseDto> {
+  /**
+   * `caller` is the account `ApiAuthGuard` authenticated (`request.user`).
+   */
+  async accept(
+    headers: IncomingHttpHeaders,
+    invitationId: string,
+    caller: InvitationCaller | null,
+  ): Promise<InvitationResponseDto> {
     const requestHeaders = this.headers(headers);
-    const accepted = await this.acceptedInvitationForCaller(requestHeaders, invitationId);
+    const accepted = await this.acceptedInvitationForCaller(caller, invitationId);
     if (accepted) {
       await invokeOrganizationApi(() =>
         auth.api.setActiveOrganization({
@@ -84,22 +97,20 @@ export class InvitationsService {
    * caller is replaying their own accepted invitation, not claiming another's.
    */
   private async acceptedInvitationForCaller(
-    headers: Headers,
+    caller: InvitationCaller | null,
     invitationId: string,
   ): Promise<{ invitation: InvitationResponseDto; userId: string } | null> {
     const invitation = await this.invitationRecords.findOne({ where: { id: invitationId } });
     if (invitation?.status !== 'accepted') return null;
 
-    const session = await auth.api.getSession({ headers });
-    if (!session || invitation.email.toLowerCase() !== session.user.email.toLowerCase())
-      return null;
+    if (!caller || invitation.email.toLowerCase() !== caller.email.toLowerCase()) return null;
 
     const isMember = await this.memberRecords.exists({
-      where: { organizationId: invitation.organizationId, userId: session.user.id },
+      where: { organizationId: invitation.organizationId, userId: caller.id },
     });
     if (!isMember) return null;
 
-    return { invitation: mapInvitation(invitation), userId: session.user.id };
+    return { invitation: mapInvitation(invitation), userId: caller.id };
   }
 
   private async assignApplicationRole(

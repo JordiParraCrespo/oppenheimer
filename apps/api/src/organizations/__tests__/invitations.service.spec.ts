@@ -10,7 +10,6 @@ vi.mock('../../auth/infrastructure/better-auth.config', () => ({
       rejectInvitation: vi.fn(),
       cancelInvitation: vi.fn(),
       getInvitation: vi.fn(),
-      getSession: vi.fn(),
       listInvitations: vi.fn(),
       listUserInvitations: vi.fn(),
       setActiveOrganization: vi.fn(),
@@ -75,7 +74,7 @@ describe('InvitationsService', () => {
 
   it('accepts an invitation unwrapping the `{ invitation }` envelope', async () => {
     api.acceptInvitation.mockResolvedValue({ invitation, member: { userId: 'u2' } });
-    const result = await service.accept(headers, 'inv1');
+    const result = await service.accept(headers, 'inv1', null);
     expect(result.id).toBe('inv1');
     expect(api.acceptInvitation).toHaveBeenCalledWith(
       expect.objectContaining({ body: { invitationId: 'inv1' } }),
@@ -90,7 +89,7 @@ describe('InvitationsService', () => {
       member: { userId: 'u2' },
     });
 
-    await service.accept(headers, 'inv1');
+    await service.accept(headers, 'inv1', null);
 
     expect(roles.findOneByName).toHaveBeenCalledWith('owner', null);
     expect(userRoles.replaceMembershipRole).toHaveBeenCalledWith('u2', 'org1', 'role1');
@@ -98,11 +97,10 @@ describe('InvitationsService', () => {
 
   it('repairs and returns an already-accepted invitation for the same member', async () => {
     invitationRecords.findOne.mockResolvedValueOnce({ ...invitation, status: 'accepted' });
-    api.getSession.mockResolvedValueOnce({ user: { id: 'u2', email: invitation.email } });
     memberRecords.exists.mockResolvedValueOnce(true);
     api.setActiveOrganization.mockResolvedValueOnce({ id: 'org1' });
 
-    const result = await service.accept(headers, 'inv1');
+    const result = await service.accept(headers, 'inv1', { id: 'u2', email: invitation.email });
 
     expect(result.status).toBe('accepted');
     expect(api.acceptInvitation).not.toHaveBeenCalled();
@@ -114,10 +112,9 @@ describe('InvitationsService', () => {
 
   it('does not recover an accepted invitation for a different account', async () => {
     invitationRecords.findOne.mockResolvedValueOnce({ ...invitation, status: 'accepted' });
-    api.getSession.mockResolvedValueOnce({ user: { id: 'u3', email: 'other@x.com' } });
     api.acceptInvitation.mockResolvedValueOnce({ invitation, member: { userId: 'u3' } });
 
-    await service.accept(headers, 'inv1');
+    await service.accept(headers, 'inv1', { id: 'u3', email: 'other@x.com' });
 
     expect(api.setActiveOrganization).not.toHaveBeenCalled();
     expect(api.acceptInvitation).toHaveBeenCalled();
@@ -127,7 +124,7 @@ describe('InvitationsService', () => {
     api.acceptInvitation.mockResolvedValue({ invitation, member: { userId: 'u2' } });
     roles.findOneByName.mockResolvedValueOnce(None);
 
-    await expect(service.accept(headers, 'inv1')).rejects.toThrow(
+    await expect(service.accept(headers, 'inv1', null)).rejects.toThrow(
       'Required system role "user" is missing',
     );
     expect(userRoles.replaceMembershipRole).not.toHaveBeenCalled();

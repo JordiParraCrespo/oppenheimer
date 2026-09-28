@@ -20,6 +20,7 @@ import { CheckPolicies } from '../auth/decorators/check-policies.decorator';
 import { CurrentScope } from '../auth/decorators/current-scope.decorator';
 import { OrganizationScoped } from '../auth/decorators/organization-scoped.decorator';
 import { RequireScopes } from '../auth/decorators/require-scopes.decorator';
+import { UsesBetterAuthSession } from '../auth/decorators/uses-better-auth-session.decorator';
 import { type TenantRequest, tenantOrganizationIdOf } from '../auth/domain/request-tenant.types';
 import type { ScopeContext } from '../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../auth/guards/api-auth.guard';
@@ -60,6 +61,7 @@ import { WorkspacesService } from './workspaces.service';
   code: ['ORG_013', 'ORG_014'],
 })
 @UseGuards(ApiAuthGuard, PoliciesGuard)
+@UsesBetterAuthSession()
 @Controller('workspaces')
 export class WorkspacesController {
   constructor(private readonly workspaces: WorkspacesService) {}

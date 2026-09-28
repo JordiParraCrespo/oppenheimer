@@ -33,6 +33,7 @@ describe('DeleteUserCommandHandler', () => {
   let service: DeleteUserCommandHandler;
   let repo: Pick<UserRepositoryPort, 'findOneById' | 'delete'>;
   let calls: string[];
+  let sessionCache: { evictUser: ReturnType<typeof vi.fn> };
 
   const contribution = (step: AccountErasurePort['step']): AccountErasurePort => ({
     step,
@@ -58,13 +59,40 @@ describe('DeleteUserCommandHandler', () => {
       contribution('hosts'),
       contribution('projects'),
     ]);
-    service = new DeleteUserCommandHandler(repo as UserRepositoryPort, registry);
+    sessionCache = {
+      evictUser: vi.fn(async () => {
+        calls.push('evict');
+      }),
+    };
+    service = new DeleteUserCommandHandler(
+      repo as UserRepositoryPort,
+      registry,
+      sessionCache as never,
+    );
   });
 
   it('erases what the account holds in step order, then the user', async () => {
     await service.execute(new DeleteUserCommand({ userId: 'user-uuid' }));
 
-    expect(calls).toEqual(['hosts', 'sessions', 'projects', 'workspace', 'user']);
+    expect(calls).toEqual(['evict', 'hosts', 'sessions', 'projects', 'workspace', 'user', 'evict']);
+  });
+
+  it('evicts the cached sessions the cascade would leave behind, before and after', async () => {
+    // The cascade removes the session rows but not Better Auth's cached copies,
+    // which would keep the deleted account's cookie working.
+    await service.execute(new DeleteUserCommand({ userId: 'user-uuid' }));
+
+    expect(sessionCache.evictUser).toHaveBeenCalledTimes(2);
+    expect(sessionCache.evictUser).toHaveBeenCalledWith('user-uuid');
+  });
+
+  it('deletes nothing when the cached sessions cannot be evicted', async () => {
+    sessionCache.evictUser.mockRejectedValueOnce(new Error('redis down'));
+
+    await expect(service.execute(new DeleteUserCommand({ userId: 'user-uuid' }))).rejects.toThrow(
+      'redis down',
+    );
+    expect(repo.delete).not.toHaveBeenCalled();
   });
 
   it('deletes the user and raises the deletion event on the aggregate', async () => {

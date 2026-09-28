@@ -2,6 +2,7 @@ import type { IncomingHttpHeaders } from 'node:http';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
+import { describeError } from '@oppenheimer/backend-core';
 import type {
   AddMemberDto,
   CreateOrganizationDto,
@@ -10,6 +11,8 @@ import type {
 } from '@oppenheimer/shared';
 import { APIError } from 'better-auth/api';
 import { In, Repository } from 'typeorm';
+import type { SessionCachePort } from '../auth/application/session-cache.port';
+import { SESSION_CACHE } from '../auth/auth.di-tokens';
 import { Session } from '../auth/database/session.orm-entity';
 import { auth } from '../auth/infrastructure/better-auth.config';
 import { betterAuthHeaders, unwrap, unwrapArray } from '../auth/infrastructure/better-auth.util';
@@ -79,6 +82,8 @@ export class OrganizationsService {
     @InjectRepository(AccessGrantOrmEntity)
     private readonly accessGrants: Repository<AccessGrantOrmEntity>,
     private readonly events: EventEmitter2,
+    @Inject(SESSION_CACHE)
+    private readonly sessionCache: SessionCachePort,
   ) {}
 
   private headers(headers: IncomingHttpHeaders): Headers {
@@ -114,6 +119,7 @@ export class OrganizationsService {
   async create(
     headers: IncomingHttpHeaders,
     dto: CreateOrganizationDto,
+    creatorId: string | undefined,
   ): Promise<OrganizationResponseDto> {
     const requestHeaders = this.headers(headers);
     const result = await invokeOrganizationApi(() =>
@@ -128,10 +134,8 @@ export class OrganizationsService {
     );
     const organization = mapOrganization(result);
 
-    const session = await auth.api.getSession({ headers: requestHeaders });
-    const creatorId = session?.user.id;
-    // No session means a delegated credential Better Auth resolved on its own;
-    // the membership is still correct, and the owner's roles are untouched.
+    // The caller `ApiAuthGuard` authenticated. Without one the membership
+    // Better Auth wrote is still correct, and nobody's roles are touched.
     if (creatorId) {
       try {
         await this.assignApplicationRole(creatorId, organization.id, 'owner');
@@ -242,7 +246,7 @@ export class OrganizationsService {
       this.logger.warn({
         message: 'Could not provision the default workspace for a new organization',
         organizationId,
-        reason: error instanceof Error ? error.message : String(error),
+        reason: describeError(error),
       });
     }
   }
@@ -287,14 +291,19 @@ export class OrganizationsService {
     return result ? mapOrganization(result) : null;
   }
 
-  async list(headers: IncomingHttpHeaders): Promise<OrganizationResponseDto[]> {
-    const requestHeaders = this.headers(headers);
-    const [result, session] = await Promise.all([
-      invokeOrganizationApi(() => auth.api.listOrganizations({ headers: requestHeaders })),
-      auth.api.getSession({ headers: requestHeaders }),
-    ]);
+  /**
+   * `activeOrganizationId` is the caller's session selection, as
+   * `ApiAuthGuard` left it on `request.session` — the session itself for a
+   * browser, the organization a scoped credential is pinned to otherwise.
+   */
+  async list(
+    headers: IncomingHttpHeaders,
+    activeOrganizationId: string | null | undefined,
+  ): Promise<OrganizationResponseDto[]> {
+    const result = await invokeOrganizationApi(() =>
+      auth.api.listOrganizations({ headers: this.headers(headers) }),
+    );
     const organizations = mapOrganizations(result);
-    const activeOrganizationId = session?.session.activeOrganizationId;
     if (!activeOrganizationId) return organizations;
 
     // Consumers that do not yet render an organization switcher use the first
@@ -544,6 +553,10 @@ export class OrganizationsService {
         activeTeamId: null,
       },
     );
+    // Written behind Better Auth's back, so its cached copies of these
+    // sessions still name the organization; without this the removed member
+    // keeps acting in it until the session expires.
+    await this.sessionCache.refreshUser(userId);
   }
 
   private toMemberUser(user: UserOrmEntity): MemberUserResponseDto {
