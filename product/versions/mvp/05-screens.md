@@ -60,6 +60,20 @@
   sidebar beside the pane a session opens in.
   (Decided 2026-09-21 with the version-1 frames; the starter's Settings
   and Profile screens were deleted rather than left unnavigated.)
+- **Glyphs** are lucide's, one per meaning. Settings, wherever it
+  appears (the account menu's link, a project header's action), is two
+  sliders (`settings-2`), never the cog, since the version-1 export
+  draws it that way; filtering is the vertical sliders. A project
+  is a folder, on the composer's project chip as in the export. A foot
+  action that opens another site, Manage repository access, ends in an
+  arrow out; one that stays in the console ends in a chevron.
+  Two places keep their glyph against the export: `Callout` stays
+  info, check, triangle and crossed circle, because the alert circle
+  marks a finished run (the design system's notes) and a bare cross
+  reads as close; and the Auto permission level stays the shield with a
+  check, since the export draws two different shields for it. The
+  account menu's panes open on lucide's chevrons, where the export
+  sets the characters › and ‹. (Decided 2026-09-28.)
 - **Settings** is the one destination beside the console, since the
   2026-09-26 export drew it (`design/version1/Settings.dc.html`): the
   account menu's Settings link opens `/settings`, its own chrome — a
@@ -112,7 +126,7 @@
   until there is a name, a repository and one cloned by default; it
   closes the dialog with the project picked in the chip, its defaults
   applied. The same dialog, editing, is Project settings behind a
-  header's cog in the sidebar, Delete project on its footer's left; a
+  header's settings glyph in the sidebar, Delete project on its footer's left; a
   new project made from the sidebar's plus lands on New session with it
   picked (`?project=`). Picking a
   project offers its defaults — its host, its agent, its first default

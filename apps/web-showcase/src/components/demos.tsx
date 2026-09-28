@@ -177,6 +177,7 @@ import { Input } from '@oppenheimer/design-system-web/input';
 import { Checkbox } from '@oppenheimer/design-system-web/checkbox';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 import {
+  ArrowUpRightIcon,
   ChevronDownIcon,
   ClockIcon,
   CpuIcon,
@@ -191,9 +192,8 @@ import {
   PlusIcon,
   ServerIcon,
   Settings2Icon,
-  SettingsIcon,
   ShieldCheckIcon,
-  SlidersHorizontalIcon,
+  SlidersVerticalIcon,
   TerminalIcon,
   TriangleAlertIcon,
   UserIcon,
@@ -328,7 +328,7 @@ export function FilterMenuDemo() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<IconButton aria-label="Filter sessions" size="xs" variant="quiet" />}>
-        <Settings2Icon />
+        <SlidersVerticalIcon />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="min-w-57.5">
         <DropdownMenuSub>
@@ -413,7 +413,7 @@ export function AccountMenuDemo() {
           <>
             <DropdownMenuHeader>jordiparra99@gmail.com</DropdownMenuHeader>
             <DropdownMenuItem>
-              <SlidersHorizontalIcon /> Settings
+              <Settings2Icon /> Settings
             </DropdownMenuItem>
             <DropdownMenuPaneItem value={themeLabel} onClick={() => setPane('theme')}>
               <MoonIcon /> Appearance
@@ -513,7 +513,7 @@ export function TooltipDemo() {
       <div className="flex items-center gap-2">
         <Tooltip>
           <TooltipTrigger render={<IconButton aria-label="Filter sessions" />}>
-            <Settings2Icon />
+            <SlidersVerticalIcon />
           </TooltipTrigger>
           <TooltipContent>Filter sessions</TooltipContent>
         </Tooltip>
@@ -610,6 +610,7 @@ export function ScopeChips({ variant }: { variant?: 'chip' | 'tab' }) {
         action={{
           label: 'Manage repository access',
           icon: <BrandGlyph name="github" size={15} />,
+          trailing: <ArrowUpRightIcon />,
           href: 'https://github.com/settings/installations',
         }}
       />
@@ -900,7 +901,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                           <PlusIcon />
                         </IconButton>
                         <IconButton aria-label={`${project.name} settings`} size="xs" variant="quiet">
-                          <SettingsIcon />
+                          <Settings2Icon />
                         </IconButton>
                       </>
                     }

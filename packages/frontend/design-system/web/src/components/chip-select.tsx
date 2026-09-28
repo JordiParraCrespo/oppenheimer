@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUpRightIcon, CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from 'lucide-react';
+import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -58,6 +58,8 @@ type ChipSelectAction = {
   label: string;
   /** Defaults to a plus. */
   icon?: React.ReactNode;
+  /** Defaults to a chevron. */
+  trailing?: React.ReactNode;
 } & ({ href: string } | { onSelect: () => void });
 
 /**
@@ -439,8 +441,7 @@ function ChipSelectList({
 }
 
 /**
- * The pinned band at the foot for "Add host…": a plus, the label, a chevron
- * (an arrow out for an `href` action).
+ * The pinned band at the foot for "Add host…": a plus, the label, a chevron.
  *
  * It takes the whole action and dispatches it: `onClose` runs first either
  * way, then an `onSelect` action fires; an `href` action is a `Link` in a new
@@ -465,12 +466,12 @@ function ChipSelectActionRow({
         {action.icon ?? <PlusGlyph />}
       </span>
       <span className="min-w-0 flex-1 truncate">{action.label}</span>
-      {/* A link leaves for a new tab, so it points out; an in-app action goes on. */}
-      {'href' in action ? (
-        <ArrowUpRightIcon className="size-3.5 shrink-0 text-fg-subtle" />
-      ) : (
-        <ChevronRightIcon className="size-3.5 shrink-0 text-fg-subtle" />
-      )}
+      <span
+        aria-hidden
+        className="flex shrink-0 text-fg-subtle [&_svg:not([class*=size-])]:size-3.5"
+      >
+        {action.trailing ?? <ChevronRightIcon />}
+      </span>
     </>
   );
   return (

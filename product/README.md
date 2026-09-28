@@ -281,3 +281,6 @@ earlier note:
 - The frames draw run history only once there is a run; the console now
   draws it always, thirty empty days on a new workspace, so the pages keep
   their shape from the first visit (2026-09-28).
+- 05 put Project settings behind a cog. The version-1 export's settings
+  glyph is two sliders, so both Settings controls in the console draw
+  that, and 05 keeps one glyph per meaning (2026-09-28).
