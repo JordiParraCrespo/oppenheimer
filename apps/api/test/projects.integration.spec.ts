@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { AddProjectRolePermissions1789000100000 } from '../src/migrations/1789000100000-AddProjectRolePermissions';
@@ -74,9 +75,14 @@ describe('projects: the saved scope (integration)', () => {
     });
     await dataSource.initialize();
 
+    // The archive stages its event; nothing here asserts on the outbox.
     repository = new ProjectRepository(
       dataSource.getRepository(ProjectOrmEntity),
       new ProjectMapper(),
+      {
+        stageEvents: async () => undefined,
+        wake: async () => undefined,
+      } as unknown as OutboxService,
     );
   }, 180000);
 
