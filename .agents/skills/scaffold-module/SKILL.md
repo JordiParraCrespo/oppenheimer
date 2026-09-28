@@ -14,9 +14,10 @@ pnpm check:api-structure          # where a file may live, what it may be called
 pnpm --filter @oppenheimer/api arch     # what it is then allowed to import
 ```
 
-`users/` is the reference module — read it when a shape is unclear. Do **not**
-copy `organizations/` or `admin/`, which are mid-migration to this contract and
-are ledgered as such.
+`users/` is the reference module — read it when a shape is unclear. A module
+that wraps an external system it does not own (Better Auth, here) follows the
+same contract with a port and gateway in `infrastructure/`: `admin/` is the
+small example, `profile/` and `organizations/` the larger ones.
 
 ## Before generating
 

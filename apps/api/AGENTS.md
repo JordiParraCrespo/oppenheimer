@@ -52,9 +52,10 @@ Shared shaping helpers (`asRecord`, `asArray`, `unwrap`, `unwrapArray`) live in
 
 **One mapper per aggregate, named for it** — `subscription.mapper.ts`, not a
 `*.mappers.ts` bag of loose functions. `pnpm check:api-structure` rejects the
-plural name; `admin.mappers.ts` and `organization.mappers.ts` are on its ledger
-precisely because they are that bag. Array and envelope mappers belong on the
-aggregate's mapper beside the scalar ones, as methods.
+plural name. Array and envelope mappers belong on the aggregate's mapper beside
+the scalar ones, as methods. Where Better Auth owns the record and there is no
+aggregate, the same holds: `admin-user.mapper.ts` and `organization.mapper.ts`
+are one class each, a static method per shape the plugin returns.
 
 ## Delegating façades (organizations, admin)
 
@@ -67,13 +68,20 @@ module (see [`ARCHITECTURE.md`](./ARCHITECTURE.md)), is: a port in
 `infrastructure/` describing what the application needs, a gateway beside it
 that speaks to `auth.api.*`, and one use-case slice per operation.
 
-> **Both modules are mid-migration.** They still carry a root-level
-> `*.service.ts` and multi-route `*.controller.ts` — the pre-contract layout.
-> `pnpm check:api-structure` reports each of those files, and
-> `.dependency-cruiser.cjs` carries a ledger entry for
-> `organizations.service.ts`. **Do not add a route to either module in the old
-> shape.** A new operation goes in as a slice; a route you touch is a chance to
-> move it. Neither module is an example to copy — `users/` and `profile/` are.
+- `admin/` has one port, `AdminAuthPort` (`infrastructure/admin-auth.port.ts`),
+  and a slice per route under `/v1/admin`.
+- `organizations/` has one per part of the plugin — `OrganizationAuthPort`
+  (organizations and members), `InvitationAuthPort` and `WorkspaceAuthPort`
+  (teams) — plus the repository ports for what it reads straight from
+  Postgres (members' accounts and roles, invitations, the access a removed
+  member loses).
+- The problem responses every route of a group documents are one decorator in
+  the module's `decorators/` (`AdminProblemResponses`,
+  `OrganizationProblemResponses`, …), so each use-case controller carries the
+  set without restating it.
+- The HTTP surface is what the generated client is built from: a controller's
+  method name is the operation id and a request DTO's class name is the schema
+  name. Moving a route between files must leave `openapi.json` unchanged.
 
 Use `betterAuthHeaders` from `src/auth/infrastructure/better-auth.util.ts`,
 and normalize every `auth.api` result through a mapper (see above). See
@@ -121,16 +129,14 @@ Auth's back (an account deletion's cascade) call `evictUser`. Deleting rows
 *through* Better Auth (`internalAdapter.deleteSession(s)`,
 `deleteUserSessions`) needs nothing: the `session.delete.before` hook drops the
 copy of every row it deletes. The handlers of `update-user`, `delete-user`,
-`update-profile`, the avatar slices, `provision-personal-workspace` and the
-member removal in `organizations.service.ts` are the worked examples.
+`update-profile`, the avatar slices, `provision-personal-workspace` and
+`MembershipAccessPolicy.revoke` (member removal, in `organizations/application/`)
+are the worked examples.
 
 **Wrap every `auth.api.*` call in the module's own invoker** —
-`invokeOrganizationApi` (`organizations/organization-error.mapper.ts`) or
-`invokeAdminApi` (`admin/admin-error.mapper.ts`), both built with
-`betterAuthInvoker`. Those two files sit at the module root today only because
-`*.mapper.ts` is on the root allowlist; once each module is cut into slices the
-error fold belongs beside its gateway in `infrastructure/`, not as a second
-mapper at the root. They fold Better Auth's `APIError` onto the module's error
+`invokeOrganizationApi` (`organizations/infrastructure/organization-error.util.ts`)
+or `invokeAdminApi` (`admin/infrastructure/admin-error.util.ts`), both built
+with `betterAuthInvoker` and kept beside the gateways that call them. They fold Better Auth's `APIError` onto the module's error
 catalog so the response is a proper problem document with an `ORG_*`/`ADMIN_*`
 code, keeping the upstream code as an `upstreamCode` extension. Throwing a bare
 `HttpException` here loses the code entirely — see "Structured errors" in

@@ -34,7 +34,7 @@ describe('MemberRepository.findMembership', () => {
   it('reads the member row in exactly that organization joined to its account, in one query', async () => {
     const { builder, calls } = builderAnswering(row);
     const members = { createQueryBuilder: vi.fn().mockReturnValue(builder) };
-    const repository = new MemberRepository(members as never);
+    const repository = new MemberRepository(members as never, {} as never, {} as never);
 
     const found = await repository.findMembership('org-b', 'u1');
 
@@ -68,10 +68,51 @@ describe('MemberRepository.findMembership', () => {
 
   it('answers None for someone who is not a member there', async () => {
     const { builder } = builderAnswering(undefined);
-    const repository = new MemberRepository({
-      createQueryBuilder: vi.fn().mockReturnValue(builder),
-    } as never);
+    const repository = new MemberRepository(
+      {
+        createQueryBuilder: vi.fn().mockReturnValue(builder),
+      } as never,
+      {} as never,
+      {} as never,
+    );
 
     expect((await repository.findMembership('org-b', 'u1')).isNone()).toBe(true);
+  });
+});
+
+describe('MemberRepository.findAssignedRoles', () => {
+  it('groups the role assignments by user', async () => {
+    const builder: Record<string, unknown> = {};
+    for (const method of ['innerJoin', 'select', 'addSelect', 'where', 'andWhere']) {
+      builder[method] = () => builder;
+    }
+    builder.getRawMany = vi.fn().mockResolvedValue([
+      { userId: 'u1', id: 'r-admin', name: 'admin' },
+      { userId: 'u1', id: 'r-user', name: 'user' },
+      { userId: 'u2', id: 'r-user', name: 'user' },
+    ]);
+    const repository = new MemberRepository(
+      {} as never,
+      {} as never,
+      {
+        createQueryBuilder: vi.fn().mockReturnValue(builder),
+      } as never,
+    );
+
+    const byUser = await repository.findAssignedRoles(['u1', 'u2'], 'org1');
+
+    expect(byUser.get('u1')).toEqual([
+      { id: 'r-admin', name: 'admin' },
+      { id: 'r-user', name: 'user' },
+    ]);
+    expect(byUser.get('u2')).toEqual([{ id: 'r-user', name: 'user' }]);
+  });
+
+  it('asks nothing for no users', async () => {
+    const userRoles = { createQueryBuilder: vi.fn() };
+    const repository = new MemberRepository({} as never, {} as never, userRoles as never);
+
+    expect((await repository.findAssignedRoles([], 'org1')).size).toBe(0);
+    expect(userRoles.createQueryBuilder).not.toHaveBeenCalled();
   });
 });
