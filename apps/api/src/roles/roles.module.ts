@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ABILITY } from '../auth/auth.di-tokens';
 import { UsersModule } from '../users/user.module';
 import { AbilityFactory } from './application/ability.factory';
+import { GlobalRoleRegistry } from './application/global-role.registry';
 import { RoleGrantPolicy } from './application/role-grant.policy';
 import { AssignDefaultRoleCommandHandler } from './commands/assign-default-role/assign-default-role.command-handler';
 import { AssignUserRolesCommandHandler } from './commands/assign-user-roles/assign-user-roles.command-handler';
@@ -16,17 +17,20 @@ import { UpdateRoleCommandHandler } from './commands/update-role/update-role.com
 import { UpdateRoleHttpController } from './commands/update-role/update-role.http.controller';
 import { UpdateRolePermissionsCommandHandler } from './commands/update-role-permissions/update-role-permissions.command-handler';
 import { UpdateRolePermissionsHttpController } from './commands/update-role-permissions/update-role-permissions.http.controller';
+import { AuthzVersionRepository } from './database/authz-version.repository';
 import { RoleOrmEntity } from './database/role.orm-entity';
 import { RoleRepository } from './database/role.repository';
+import { RoleCatalogVersionOrmEntity } from './database/role-catalog-version.orm-entity';
 import { UserRoleOrmEntity } from './database/user-role.orm-entity';
 import { UserRoleRepository } from './database/user-role.repository';
+import { UserRoleVersionOrmEntity } from './database/user-role-version.orm-entity';
 import { FindRoleByIdHttpController } from './queries/find-role-by-id/find-role-by-id.http.controller';
 import { FindRoleByIdQueryHandler } from './queries/find-role-by-id/find-role-by-id.query-handler';
 import { FindRolesHttpController } from './queries/find-roles/find-roles.http.controller';
 import { FindRolesQueryHandler } from './queries/find-roles/find-roles.query-handler';
 import { FindUserRolesHttpController } from './queries/find-user-roles/find-user-roles.http.controller';
 import { FindUserRolesQueryHandler } from './queries/find-user-roles/find-user-roles.query-handler';
-import { ROLE_REPOSITORY, USER_ROLE_REPOSITORY } from './roles.di-tokens';
+import { AUTHZ_VERSION_REPOSITORY, ROLE_REPOSITORY, USER_ROLE_REPOSITORY } from './roles.di-tokens';
 import { RoleMapper } from './roles.mapper';
 
 // Register list/static routes before parameterized ones.
@@ -61,6 +65,7 @@ const mappers: Provider[] = [RoleMapper];
 const repositories: Provider[] = [
   { provide: ROLE_REPOSITORY, useClass: RoleRepository },
   { provide: USER_ROLE_REPOSITORY, useClass: UserRoleRepository },
+  { provide: AUTHZ_VERSION_REPOSITORY, useClass: AuthzVersionRepository },
 ];
 
 /**
@@ -74,13 +79,23 @@ const repositories: Provider[] = [
  */
 @Global()
 @Module({
-  imports: [CqrsModule, TypeOrmModule.forFeature([RoleOrmEntity, UserRoleOrmEntity]), UsersModule],
+  imports: [
+    CqrsModule,
+    TypeOrmModule.forFeature([
+      RoleOrmEntity,
+      UserRoleOrmEntity,
+      RoleCatalogVersionOrmEntity,
+      UserRoleVersionOrmEntity,
+    ]),
+    UsersModule,
+  ],
   controllers: [...httpControllers],
   providers: [
     ...commandHandlers,
     ...queryHandlers,
     ...mappers,
     ...repositories,
+    GlobalRoleRegistry,
     AbilityFactory,
     { provide: ABILITY, useExisting: AbilityFactory },
     RoleGrantPolicy,

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requestMemo } from '@oppenheimer/backend-core';
 import { parseScopeString, toResourceScope } from '@oppenheimer/shared';
 import { CREDENTIAL_OWNER, CREDENTIAL_VERIFIER } from '../auth.di-tokens';
 import { AuthErrors } from '../domain/auth.errors';
@@ -12,12 +12,8 @@ import { CredentialResolverRegistry } from './credential-resolver.registry';
 /** Header carrying an API token, for clients that prefer it over `Authorization`. */
 const API_KEY_HEADER = 'x-api-key';
 
-/** Memoizes resolution so the guards can each ask without a second lookup. */
-const RESOLUTION = Symbol('oppenheimer.credentialResolution');
-
-interface WithResolution {
-  [RESOLUTION]?: Promise<ScopeContext | null>;
-}
+/** `requestMemo` key: the guards each ask, and share one resolution per request. */
+const CREDENTIAL_RESOLUTION = Symbol('oppenheimer.credentialResolution');
 
 /**
  * Turns the credential on a request into a {@link ScopeContext}.
@@ -53,9 +49,7 @@ export class CredentialScopeResolver {
 
   /** Resolve (once per request) the scoped credential, or `null` for a session. */
   resolve(request: ScopedRequest): Promise<ScopeContext | null> {
-    const carrier = request as ScopedRequest & WithResolution;
-    carrier[RESOLUTION] ??= this.doResolve(request);
-    return carrier[RESOLUTION];
+    return requestMemo(request, CREDENTIAL_RESOLUTION, () => this.doResolve(request));
   }
 
   private async doResolve(request: ScopedRequest): Promise<ScopeContext | null> {
