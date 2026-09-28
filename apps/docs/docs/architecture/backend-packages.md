@@ -10,17 +10,18 @@ The backend is split into reusable packages under `packages/backend/`. Each foll
 
 Cross-cutting concerns shared across all NestJS apps.
 
-| Export                                      | Purpose                                                                                                              |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `AppError`                                  | Catalog error — an `HttpException` carrying a `code`, a stable title and a per-occurrence `detail`                   |
-| `AllExceptionsFilter`                       | Global filter rendering every exception as an [RFC 7807 problem document](../errors.md) (`application/problem+json`) |
-| `ProblemDetailsDto` / `ApiProblemResponse`  | Swagger model + decorator for documenting error responses                                                            |
-| `RequestContextInterceptor`                 | Sets a correlation ID per request via `AsyncLocalStorage`                                                            |
-| `RequestContextService`                     | Static wrapper — `run()`, `getCorrelationId()`, `setCorrelationId()`                                                 |
-| `Mapper<Entity, ServiceModel, ResponseDto>` | 3-layer mapper interface with `toRepository`, `toService`, `toController`                                            |
-| `SanitizePipe`                              | Recursively strips HTML tags from all string inputs                                                                  |
-| `ZodValidationPipe`                         | Validates input against Zod schemas (reads `zodSchema` static property)                                              |
-| `PaginatedRequest`                          | Zod schema for `page` (int >= 1) and `limit` (int 1-100)                                                             |
+| Export                                     | Purpose                                                                                                              |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `AppError`                                 | Catalog error — an `HttpException` carrying a `code`, a stable title and a per-occurrence `detail`                   |
+| `requireFound`                             | The value in an `Option` lookup, or an `AppError` from the given catalog entry when there is none                    |
+| `AllExceptionsFilter`                      | Global filter rendering every exception as an [RFC 7807 problem document](../errors.md) (`application/problem+json`) |
+| `ProblemDetailsDto` / `ApiProblemResponse` | Swagger model + decorator for documenting error responses                                                            |
+| `RequestContextInterceptor`                | Sets a correlation ID per request via `AsyncLocalStorage` (`RequestContextService`, from `@oppenheimer/backend-ddd`) |
+| `SanitizePipe`                             | Recursively strips HTML tags from all string inputs                                                                  |
+| `toPageMeta`                               | A paginated response's `meta` (`total`, `page`, `limit`, `totalPages`) from a repository's `Paginated` result        |
+| `PaginatedResponseDto(Item, Meta)`         | Base class for a paginated response DTO's `data` / `meta` properties; the subclass keeps its own OpenAPI name        |
+
+The global validation pipe is `nestjs-zod`'s `ZodValidationPipe`, registered in `apps/api/src/main.ts`. The pagination query schema is `paginationSchema` from `@oppenheimer/shared`, and the mapper interface (`toPersistence` / `toDomain` / `toResponse`) is `@oppenheimer/backend-ddd`'s.
 
 ### Usage in `app.module.ts`
 

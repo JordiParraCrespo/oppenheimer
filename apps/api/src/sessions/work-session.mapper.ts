@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { toPageMeta } from '@oppenheimer/backend-core';
 import { ArgumentInvalidException, type Mapper } from '@oppenheimer/backend-ddd';
 import { type CreateSessionDto, SESSION_SORTS, type SessionSortDto } from '@oppenheimer/shared';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
@@ -444,9 +445,7 @@ export class WorkSessionMapper
     meta.limit = page.limit;
     meta.nextCursor = page.nextCursor ? this.toListCursor(page.nextCursor) : null;
     if (page.total !== undefined && page.page !== undefined) {
-      meta.total = page.total;
-      meta.page = page.page;
-      meta.totalPages = Math.ceil(page.total / page.limit);
+      Object.assign(meta, toPageMeta({ count: page.total, page: page.page, limit: page.limit }));
     }
     return meta;
   }

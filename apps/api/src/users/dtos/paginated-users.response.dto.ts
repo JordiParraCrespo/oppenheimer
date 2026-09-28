@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '@oppenheimer/backend-core';
 import { UserResponseDto } from './user.response.dto';
 
 /** Where the caller is in the result set. */
@@ -19,10 +20,7 @@ export class PaginationMetaDto {
   totalPages!: number;
 }
 
-export class PaginatedUsersResponseDto {
-  @ApiProperty({ type: [UserResponseDto] })
-  data!: UserResponseDto[];
-
-  @ApiProperty({ type: PaginationMetaDto })
-  meta!: PaginationMetaDto;
-}
+export class PaginatedUsersResponseDto extends PaginatedResponseDto(
+  UserResponseDto,
+  PaginationMetaDto,
+) {}

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '@oppenheimer/backend-core';
 
 export class FlagChangeResponseDto {
   @ApiProperty()
@@ -45,10 +46,7 @@ class FlagChangePaginationMetaDto {
   totalPages!: number;
 }
 
-export class PaginatedFlagChangesResponseDto {
-  @ApiProperty({ type: [FlagChangeResponseDto] })
-  data!: FlagChangeResponseDto[];
-
-  @ApiProperty({ type: FlagChangePaginationMetaDto })
-  meta!: FlagChangePaginationMetaDto;
-}
+export class PaginatedFlagChangesResponseDto extends PaginatedResponseDto(
+  FlagChangeResponseDto,
+  FlagChangePaginationMetaDto,
+) {}
