@@ -206,9 +206,6 @@
     "resume": "Resume automation",
     "duplicate": "Duplicate",
     "delete": "Delete automation",
-    "confirmDelete": "Delete this automation? Its triggers stop now. Past runs are kept.",
-    "cancel": "Cancel",
-    "confirm": "Delete",
     "resumeAction": "Resume",
     "notFound": "This automation does not exist, or was deleted."
   },
@@ -292,5 +289,10 @@
     "chooseModel": "Choose a model…"
   },
   "skipReasonOther": "Skipped",
-  "pausedReasonOther": "Paused. Triggers are ignored until it is resumed."
+  "pausedReasonOther": "Paused. Triggers are ignored until it is resumed.",
+  "deleteDialog": {
+    "title": "Delete “{{name}}”?",
+    "description": "Its triggers stop now. Past runs are kept.",
+    "confirm": "Delete"
+  }
 }

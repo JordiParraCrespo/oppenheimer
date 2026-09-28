@@ -26,9 +26,12 @@ Everything is re-exported from the package root (`src/index.ts`):
   `SocialLoginButtons`, `OAuthCallbackNotice`, the auth primitives, the
   password-requirement helpers, the provider icons, `redirectSignedIn`.
 - **layout** — `PageHead`, the section primitives, `ConfirmDialog`.
-- **forms** — `useZodResolver`, `useSearchDraft`;
-  `useErrorMessage` is owned by frontend core and
-  re-exported for compatibility.
+- **forms** — `useZodResolver`, `useSearchDraft`, and
+  `notifySuccess(key, values?, action?)`: the success toast, which takes a
+  `toasts.*` key so its copy cannot live anywhere else. Errors never go
+  through it; they stay inline. When to toast is
+  `.agents/rules/frontend-ui.md`. `useErrorMessage` is owned by frontend
+  core and re-exported for compatibility.
 - **theme** — `ThemeProvider`, `ThemeToggle`, `BrandGlyph`.
 - **i18n** — `i18n`, `i18nReady`, `LOCALE_STORAGE_KEY`, `LanguageSwitcher`,
   `useLocale`, `useApplyUserSettings`, the date formatters

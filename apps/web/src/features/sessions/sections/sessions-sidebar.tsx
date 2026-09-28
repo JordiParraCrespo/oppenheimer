@@ -17,7 +17,7 @@ import {
   useSessions,
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure, useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { useConsoleDialog } from '@oppenheimer/frontend-web';
+import { notifySuccess, useConsoleDialog } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -94,7 +94,11 @@ export function SessionsSidebar() {
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
   const dialogs = useConsoleDialog();
 
-  const rename = useRenameSession();
+  // A renamed or moved row can land anywhere in a long, grouped list, so
+  // both say where it went.
+  const rename = useRenameSession({
+    onSuccess: (session) => notifySuccess('sessionRenamed', { name: session.name }),
+  });
   const move = useMoveSession();
   // One clock for every row's age, ticking once a minute. Every row redraws on
   // the tick, because every age may have moved; that is one render a minute,
@@ -144,7 +148,17 @@ export function SessionsSidebar() {
     onRenameCommit: commitRename,
     onRenameCancel: () => setRenaming(null),
     onRename: (session) => setRenaming({ id: session.id, draft: session.name }),
-    onMove: (session, projectId) => move.mutate({ id: session.id, projectId }),
+    onMove: (session, projectId) => {
+      // The destination's name from the pane that was just picked from.
+      const target = projectsForMove(projects.data ?? [], session).find(
+        (project) => project.id === projectId,
+      );
+      const project = target?.isUnassigned ? t('projects.unassigned') : (target?.name ?? '');
+      move.mutate(
+        { id: session.id, projectId },
+        { onSuccess: (moved) => notifySuccess('sessionMoved', { name: moved.name, project }) },
+      );
+    },
     onDelete: (session) => setDeleting(session),
     moveTargets: (session) => projectsForMove(projects.data ?? [], session),
   };

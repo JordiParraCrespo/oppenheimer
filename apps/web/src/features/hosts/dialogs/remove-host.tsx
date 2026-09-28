@@ -12,6 +12,7 @@ import {
 import type { HostEntity } from '@oppenheimer/frontend-consumer';
 import { useRemoveHost } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { notifySuccess } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -26,7 +27,12 @@ import { useTranslation } from 'react-i18next';
 export function RemoveHostDialog({ host, onClose }: { host: HostEntity; onClose: () => void }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
-  const remove = useRemoveHost({ onSuccess: onClose });
+  const remove = useRemoveHost({
+    onSuccess: () => {
+      notifySuccess('hostRemoved', { name: host.name });
+      onClose();
+    },
+  });
   const count = host.details.runningSessionCount;
 
   return (

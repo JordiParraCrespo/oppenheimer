@@ -16,6 +16,7 @@ import {
   useRevokeProfileSession,
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure, shareEntities, useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { notifySuccess } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { DeviceLastSeen } from '../components/device-last-seen';
 
@@ -31,7 +32,9 @@ export function DevicesSection() {
   const resolveError = useErrorMessage();
   const devices = useProfileSessions({ structuralSharing: shareEntities });
   const revoke = useRevokeProfileSession();
-  const revokeOthers = useRevokeOtherProfileSessions();
+  const revokeOthers = useRevokeOtherProfileSessions({
+    onSuccess: () => notifySuccess('otherDevicesSignedOut'),
+  });
   const failure = lastFailure([revoke, revokeOthers]);
   // This device first: it is the one row with nothing to do.
   const sorted = [...(devices.data ?? [])].sort((a, b) => Number(b.current) - Number(a.current));
@@ -63,7 +66,14 @@ export function DevicesSection() {
                   variant="ghost"
                   size="sm"
                   disabled={revoke.isPending || revokeOthers.isPending}
-                  onClick={() => revoke.mutate(device.id)}
+                  onClick={() => {
+                    // The row's own label, from the click: the list drops it
+                    // the moment the write lands.
+                    const name = device.deviceLabel ?? t('settings.devices.unknown');
+                    revoke.mutate(device.id, {
+                      onSuccess: () => notifySuccess('deviceSignedOut', { name }),
+                    });
+                  }}
                 >
                   {t('settings.devices.signOut')}
                 </Button>

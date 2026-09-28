@@ -818,9 +818,6 @@
       "resume": "Resume automation",
       "duplicate": "Duplicate",
       "delete": "Delete automation",
-      "confirmDelete": "Delete this automation? Its triggers stop now. Past runs are kept.",
-      "cancel": "Cancel",
-      "confirm": "Delete",
       "resumeAction": "Resume",
       "notFound": "This automation does not exist, or was deleted."
     },
@@ -904,7 +901,12 @@
       "chooseModel": "Choose a model…"
     },
     "skipReasonOther": "Skipped",
-    "pausedReasonOther": "Paused. Triggers are ignored until it is resumed."
+    "pausedReasonOther": "Paused. Triggers are ignored until it is resumed.",
+    "deleteDialog": {
+      "title": "Delete “{{name}}”?",
+      "description": "Its triggers stop now. Past runs are kept.",
+      "confirm": "Delete"
+    }
   },
   "hosts": {
     "pairing": {
@@ -1031,7 +1033,6 @@
       "mismatch": "The passwords do not match.",
       "submit": "Change password",
       "submitting": "Changing…",
-      "done": "Password changed. Other devices are signed out.",
       "failed": "The password could not be changed."
     },
     "devices": {
@@ -1346,9 +1347,25 @@
     "system": "Match system"
   },
   "toasts": {
-    "copied": "Copied to clipboard.",
-    "memberRemoved": "Member removed.",
-    "membersInvited": "Invitations sent.",
-    "passwordChanged": "Password updated. Your other devices have been signed out."
+    "automationCreated": "“{{name}}” created.",
+    "automationSaved": "“{{name}}” saved.",
+    "automationDeleted": "“{{name}}” deleted.",
+    "automationDuplicated": "Duplicated as “{{name}}”.",
+    "automationPaused": "“{{name}}” paused.",
+    "automationResumed": "“{{name}}” resumed.",
+    "runStarted": "Run of “{{name}}” started.",
+    "openRun": "Open",
+    "emailResent": "Email sent again.",
+    "sessionRenamed": "Renamed to “{{name}}”.",
+    "sessionMoved": "“{{name}}” moved to {{project}}.",
+    "sessionDeleteRequested": "Asked the host to delete “{{name}}”.",
+    "projectCreated": "“{{name}}” created.",
+    "projectSaved": "“{{name}}” saved.",
+    "projectDeleted": "“{{name}}” deleted.",
+    "hostRenamed": "Renamed to “{{name}}”.",
+    "hostRemoved": "“{{name}}” removed.",
+    "deviceSignedOut": "“{{name}}” signed out.",
+    "otherDevicesSignedOut": "Your other devices are signed out.",
+    "passwordChanged": "Password changed. Other devices are signed out."
   }
 }

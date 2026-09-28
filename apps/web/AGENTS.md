@@ -28,8 +28,10 @@
 
 - **A failure stays on screen**: `<Alert variant="destructive">` next to what
   failed. Never a toast — a faded submission error cannot be re-read.
-- **A success is transient**: `toast.success()` imported from
-  `@oppenheimer/design-system-web` (not from `sonner`), copy under `toasts.*`.
+- **A success is transient**: `notifySuccess()` from `@oppenheimer/frontend-web`
+  (not `toast` directly, and never `sonner`), copy under `toasts.*`, and only
+  when the result is easy to miss. When to toast and when not to is
+  `.agents/rules/frontend-ui.md`.
 - Field validation is neither: `Field` + `FieldError`.
 - `<Toaster />` is mounted once in `src/app.tsx` and handed the app's own
   `theme`, because the design system's `Toaster` reads `next-themes` and this

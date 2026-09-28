@@ -10,14 +10,17 @@ import {
   Skeleton,
 } from '@oppenheimer/design-system-web';
 import { Zap } from '@oppenheimer/design-system-web/icons';
+import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { useConsoleDialog, useLocale } from '@oppenheimer/frontend-web';
+import { ConfirmDialog, useConsoleDialog, useLocale } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AutomationTableRow } from '../components/automation-table-row';
 import { useAutomationActions } from '../hooks/use-automation-actions';
 import { automationSubline } from '../lib/automation-view';
+import { runLocation } from '../lib/run-location';
 import { automationTriggerText } from '../lib/trigger-text';
 
 /**
@@ -26,6 +29,9 @@ import { automationTriggerText } from '../lib/trigger-text';
  * them. A row opens the automation's page; its menu edits, runs, pauses,
  * duplicates or deletes it in place. What an action could not do stays on
  * screen above the table.
+ *
+ * Delete asks first, like the automation's own page. The table owns which
+ * row's confirm is open, because a row's menu unmounts when it closes.
  */
 export function AutomationsTable() {
   const { t } = useTranslation();
@@ -37,9 +43,12 @@ export function AutomationsTable() {
   const { data: projectNames } = useProjects({
     select: (projects) => new Map(projects.map((project) => [project.id, project.name])),
   });
+  const [deleting, setDeleting] = useState<AutomationEntity | null>(null);
   const actions = useAutomationActions({
+    onOpenRun: (run) => navigate(runLocation(run)),
     onDuplicated: (id) =>
       navigate({ to: '/automations/$automationId', params: { automationId: id } }),
+    onDeleted: () => setDeleting(null),
   });
   // The list holds many automations, so its one alert says which one failed.
   const failedName = automations.data?.find((row) => row.id === actions.failedId)?.name;
@@ -100,7 +109,7 @@ export function AutomationsTable() {
                 onRunNow={() => actions.runNow(automation.id)}
                 onTogglePause={() => actions.setPaused(automation.id, !automation.isPaused)}
                 onDuplicate={() => actions.duplicate(automation.id)}
-                onDelete={() => actions.remove(automation.id)}
+                onDelete={() => setDeleting(automation)}
               />
             ))}
           </>
@@ -113,6 +122,20 @@ export function AutomationsTable() {
           </RoutineTableEmpty>
         )}
       </RoutineTable>
+      {deleting ? (
+        <ConfirmDialog
+          title={t('automations.deleteDialog.title', { name: deleting.name })}
+          description={t('automations.deleteDialog.description')}
+          confirmLabel={t('automations.deleteDialog.confirm')}
+          pending={actions.removing}
+          error={actions.removeFailure}
+          onClose={() => {
+            actions.resetRemove();
+            setDeleting(null);
+          }}
+          onConfirm={() => actions.remove(deleting.id, deleting.name)}
+        />
+      ) : null}
     </div>
   );
 }

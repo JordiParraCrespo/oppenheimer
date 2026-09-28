@@ -50,6 +50,10 @@ test('lists, renames and removes a host from Settings', async ({ page }) => {
   await card.getByRole('button', { name: 'Save' }).click();
   await expect(card).toContainText('build-03');
   await expect(input).toBeHidden();
+  // The card changes in place, somewhere in a list, so the rename says so too.
+  await expect(
+    page.locator('[data-sonner-toast]').filter({ hasText: 'Renamed to “build-03”.' }),
+  ).toBeVisible();
 
   // ── Remove, behind its confirm ───────────────────────────────────────────
   await card.getByRole('button', { name: 'build-03 actions' }).click();

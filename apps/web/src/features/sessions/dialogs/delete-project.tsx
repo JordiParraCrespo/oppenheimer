@@ -12,6 +12,7 @@ import {
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { useArchiveProject } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { notifySuccess } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -33,7 +34,12 @@ export function DeleteProjectDialog({
 }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
-  const archive = useArchiveProject({ onSuccess: onDeleted });
+  const archive = useArchiveProject({
+    onSuccess: () => {
+      notifySuccess('projectDeleted', { name: project.name });
+      onDeleted();
+    },
+  });
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>

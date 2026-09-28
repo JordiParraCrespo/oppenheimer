@@ -1,6 +1,22 @@
 {
-  "copied": "Copiado al portapapeles.",
-  "memberRemoved": "Miembro eliminado.",
-  "membersInvited": "Invitaciones enviadas.",
-  "passwordChanged": "Contraseña actualizada. Se ha cerrado la sesión en tus otros dispositivos."
+  "automationCreated": "Se ha creado «{{name}}».",
+  "automationSaved": "Se ha guardado «{{name}}».",
+  "automationDeleted": "Se ha eliminado «{{name}}».",
+  "automationDuplicated": "Duplicada como «{{name}}».",
+  "automationPaused": "Se ha pausado «{{name}}».",
+  "automationResumed": "Se ha reanudado «{{name}}».",
+  "runStarted": "Se ha iniciado una ejecución de «{{name}}».",
+  "openRun": "Abrir",
+  "emailResent": "Correo enviado de nuevo.",
+  "sessionRenamed": "Renombrada a «{{name}}».",
+  "sessionMoved": "«{{name}}» se ha movido a {{project}}.",
+  "sessionDeleteRequested": "Se ha pedido al host que elimine «{{name}}».",
+  "projectCreated": "Se ha creado «{{name}}».",
+  "projectSaved": "Se ha guardado «{{name}}».",
+  "projectDeleted": "Se ha eliminado «{{name}}».",
+  "hostRenamed": "Renombrado a «{{name}}».",
+  "hostRemoved": "Se ha quitado «{{name}}».",
+  "deviceSignedOut": "Se ha cerrado la sesión en «{{name}}».",
+  "otherDevicesSignedOut": "Se ha cerrado la sesión en tus otros dispositivos.",
+  "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos."
 }
