@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { workspaceLimitsOf } from '../automation.mapper';
 import type { WorkspaceLimits } from '../domain/automation-limits.policy';
 import { AutomationSettingsOrmEntity } from './automation-settings.orm-entity';
 import type { AutomationSettingsRepositoryPort } from './automation-settings.repository.port';
@@ -13,17 +14,7 @@ export class AutomationSettingsRepository implements AutomationSettingsRepositor
   ) {}
 
   async find(organizationId: string): Promise<WorkspaceLimits> {
-    const record = await this.repository.findOneBy({ organizationId });
-    if (!record) return {};
-    return {
-      maxRunsPerAutomationHour: record.maxRunsPerAutomationHour,
-      maxRunsPerWorkspaceHour: record.maxRunsPerWorkspaceHour,
-      liveRunsPerHost: record.liveRunsPerHost,
-      overlap: record.overlap === 'queue' || record.overlap === 'skip' ? record.overlap : null,
-      staleTtlSeconds: record.staleTtlSeconds,
-      missedGraceSeconds: record.missedGraceSeconds,
-      maxRunSeconds: record.maxRunSeconds,
-    };
+    return workspaceLimitsOf(await this.repository.findOneBy({ organizationId }));
   }
 
   async upsert(organizationId: string, limits: WorkspaceLimits): Promise<void> {

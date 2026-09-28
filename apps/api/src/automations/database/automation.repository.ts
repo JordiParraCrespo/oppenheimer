@@ -5,7 +5,7 @@ import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, In, Repository } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
-import { AutomationMapper } from '../automation.mapper';
+import { AutomationMapper, workspaceLimitsOf } from '../automation.mapper';
 import { AutomationRunMapper } from '../automation-run.mapper';
 import { AutomationResource } from '../automations.resource';
 import type { AutomationEntity } from '../domain/automation.entity';
@@ -14,10 +14,16 @@ import { AutomationOrmEntity } from './automation.orm-entity';
 import type {
   AutomationRepositoryPort,
   DueScheduleDecision,
+  FiringContext,
   TriggerCandidate,
 } from './automation.repository.port';
 import { AutomationRevisionOrmEntity } from './automation-revision.orm-entity';
-import { insertRunWithin } from './automation-run.repository';
+import {
+  countRecentByWorkspaceWithin,
+  insertRunWithin,
+  lockWorkspaceFiring,
+} from './automation-run.repository';
+import { AutomationSettingsOrmEntity } from './automation-settings.orm-entity';
 import { AutomationTriggerOrmEntity } from './automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from './automation-trigger-subject.orm-entity';
 
@@ -161,29 +167,51 @@ export class AutomationRepository
   async fireDueSchedules(
     now: Date,
     batch: number,
-    decide: (candidate: TriggerCandidate, scheduledFor: Date) => Promise<DueScheduleDecision>,
+    since: Date,
+    decide: (
+      candidate: TriggerCandidate,
+      scheduledFor: Date,
+      context: FiringContext,
+    ) => DueScheduleDecision,
   ): Promise<AutomationRunEntity[]> {
+    // Every statement of the tick runs on this transaction's connection: it
+    // borrows no other from the pool while it holds the claim, and its counts
+    // see the runs it has just inserted.
     const queued = await this.dataSource.transaction(async (manager) => {
       // IDX_automation_trigger_due. SKIP LOCKED: two replicas ticking in the
       // same minute claim disjoint triggers, and the firing key makes a slot
-      // one run even if a claim were ever repeated.
+      // one run even if a claim were ever repeated. NO KEY UPDATE, not UPDATE:
+      // the tick only rewrites `nextFireAt`, and FOR UPDATE would conflict with
+      // the KEY SHARE lock every run insert takes on its trigger through
+      // FK_automation_run_trigger — an event firing, holding its workspace's
+      // firing lock, would wait on this claim while the tick waits on that lock.
       const due: AutomationTriggerOrmEntity[] = await manager
         .getRepository(AutomationTriggerOrmEntity)
         .createQueryBuilder('trigger')
         .where('trigger.nextFireAt IS NOT NULL AND trigger.nextFireAt <= :now', { now })
         .orderBy('trigger.nextFireAt', 'ASC')
         .limit(batch)
-        .setLock('pessimistic_write')
+        .setLock('for_no_key_update')
         .setOnLocked('skip_locked')
         .getMany();
       if (due.length === 0) return [];
+      const organizationIds = [...new Set(due.map((trigger) => trigger.organizationId))].sort();
+      await lockWorkspaceFiring(manager, organizationIds);
       const automations = await this.assemble(
         manager,
         await manager.findBy(AutomationOrmEntity, {
           id: In([...new Set(due.map((trigger) => trigger.automationId))]),
         }),
       );
+      const settings = await manager.findBy(AutomationSettingsOrmEntity, {
+        organizationId: In(organizationIds),
+      });
+      // Counted after the locks: a firing that committed while we waited is in it.
+      const counts = await countRecentByWorkspaceWithin(manager, organizationIds, since);
       const byId = new Map(automations.map((automation) => [automation.id, automation]));
+      const limitsByWorkspace = new Map(
+        settings.map((record) => [record.organizationId, workspaceLimitsOf(record)]),
+      );
       const runs: AutomationRunEntity[] = [];
       for (const record of due) {
         const automation = byId.get(record.automationId);
@@ -191,13 +219,24 @@ export class AutomationRepository
         const scheduledFor = new Date(record.nextFireAt as Date);
         const decision: DueScheduleDecision =
           automation && trigger
-            ? await decide({ automation, trigger }, scheduledFor)
+            ? decide({ automation, trigger }, scheduledFor, {
+                workspace: limitsByWorkspace.get(automation.organizationId) ?? {},
+                recent: {
+                  automation: counts.byAutomation.get(automation.id) ?? 0,
+                  workspace: counts.byWorkspace.get(automation.organizationId) ?? 0,
+                },
+              })
             : { run: null, nextFireAt: null };
         if (
           decision.run &&
-          (await insertRunWithin(manager, this.outbox, this.runMapper, decision.run))
+          (await insertRunWithin(manager, this.outbox, this.runMapper, decision.run)) &&
+          decision.run.isPending
         ) {
-          if (decision.run.isPending) runs.push(decision.run);
+          // A queued run counts against the caps for the rest of the batch.
+          const { automationId, organizationId } = decision.run;
+          counts.byAutomation.set(automationId, (counts.byAutomation.get(automationId) ?? 0) + 1);
+          counts.byWorkspace.set(organizationId, (counts.byWorkspace.get(organizationId) ?? 0) + 1);
+          runs.push(decision.run);
         }
         await manager.query(
           `UPDATE "automation_trigger" SET "nextFireAt" = $2, "updatedAt" = now() WHERE "id" = $1`,
@@ -224,10 +263,15 @@ export class AutomationRepository
     return this.assemble(this.dataSource.manager, records);
   }
 
-  async findLiveInProjectForSystem(projectId: string): Promise<AutomationEntity[]> {
+  async findLiveInProjectForSystem(
+    organizationId: string,
+    projectId: string,
+  ): Promise<AutomationEntity[]> {
+    // IDX_automation_project ("organizationId", "projectId").
     const records = await this.repository
       .createQueryBuilder('automation')
-      .where('automation.projectId = :projectId', { projectId })
+      .where('automation.organizationId = :organizationId', { organizationId })
+      .andWhere('automation.projectId = :projectId', { projectId })
       .andWhere('automation.deletedAt IS NULL')
       .getMany();
     return this.assemble(this.dataSource.manager, records);

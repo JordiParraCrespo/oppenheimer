@@ -58,24 +58,16 @@ export class FireEventTriggersCommandHandler
     if (found.isNone()) return 0;
     const causeSummary = eventCauseSummary(this.mapper.eventViewOf(found.unwrap()));
     const now = new Date();
+    const since = new Date(now.getTime() - HOUR);
+    // Every candidate is of this workspace: its overrides are read once.
+    const workspace = await this.limits.workspace(command.organizationId);
     let queued = 0;
     // One run per automation, even when two of its triggers match the same event.
     const seen = new Set<string>();
     for (const { automation, trigger } of matching) {
       if (seen.has(automation.id)) continue;
       seen.add(automation.id);
-      const limits = await this.limits.resolve(automation.organizationId, automation);
-      const recent = await this.runs.countRecent(
-        automation.organizationId,
-        automation.id,
-        new Date(now.getTime() - HOUR),
-      );
-      // Our own App's event — a run's push, its comment — never starts another
-      // run, and is recorded as a skip so the Runs tab can say why.
-      const verdict = firstRefusal(
-        () => loopGuard(command.actorIsOwnApp),
-        () => rateGuard(limits, recent, false),
-      );
+      const limits = this.limits.resolveWith(workspace, automation);
       const props = {
         organizationId: automation.organizationId,
         automationId: automation.id,
@@ -88,11 +80,25 @@ export class FireEventTriggersCommandHandler
         scheduledFor: null,
         requestedByUserId: null,
       };
-      const run =
-        verdict.kind === 'skip'
-          ? AutomationRunEntity.skipped(props, verdict.reason, now)
-          : AutomationRunEntity.fire(props, now);
-      if ((await this.runs.insertFiring(run)).inserted && run.isPending) queued += 1;
+      // Counted and inserted under the workspace's firing lock, so concurrent
+      // events — and a tick — cannot all take the last slot.
+      const { run, inserted } = await this.runs.fireUnderCaps(
+        automation.organizationId,
+        automation.id,
+        since,
+        (recent) => {
+          // Our own App's event — a run's push, its comment — never starts
+          // another run, and is recorded as a skip so the Runs tab can say why.
+          const verdict = firstRefusal(
+            () => loopGuard(command.actorIsOwnApp),
+            () => rateGuard(limits, recent, false),
+          );
+          return verdict.kind === 'skip'
+            ? AutomationRunEntity.skipped(props, verdict.reason, now)
+            : AutomationRunEntity.fire(props, now);
+        },
+      );
+      if (inserted && run.isPending) queued += 1;
     }
     return queued;
   }

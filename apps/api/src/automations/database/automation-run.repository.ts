@@ -137,6 +137,95 @@ async function stageDispatch(
   });
 }
 
+/** What the hourly caps count: firings in the window that were not skipped or expired. */
+const COUNTED_OUTCOMES = `('pending', 'dispatched')`;
+
+/**
+ * Take the firing lock of each workspace, for the rest of the caller's
+ * transaction: every path that weighs a firing against the hourly caps — the
+ * scheduler's tick, an event — counts and inserts under it, so two of them
+ * cannot both read the same count and both take the last slot. One
+ * transaction-scoped advisory lock per workspace, taken in one fixed order so
+ * a tick holding several never deadlocks with another; the key is namespaced
+ * so it cannot meet another module's advisory lock by accident.
+ */
+export async function lockWorkspaceFiring(
+  manager: EntityManager,
+  organizationIds: readonly string[],
+): Promise<void> {
+  if (organizationIds.length === 0) return;
+  await manager.query(
+    `SELECT pg_advisory_xact_lock(hashtext('automation-firing:' || ordered."id"))
+       FROM (SELECT DISTINCT "id" FROM unnest($1::text[]) AS "id" ORDER BY "id") ordered`,
+    [[...organizationIds]],
+  );
+}
+
+/** The last hour's counted firings, for the rate guards — inside the caller's transaction. */
+export async function countRecentWithin(
+  manager: EntityManager,
+  organizationId: string,
+  automationId: string,
+  since: Date,
+): Promise<{ automation: number; workspace: number }> {
+  const [row]: { automation: string; workspace: string }[] = await manager.query(
+    `SELECT count(*) FILTER (WHERE "automationId" = $2) AS "automation", count(*) AS "workspace"
+       FROM "automation_run"
+      WHERE "organizationId" = $1 AND "createdAt" >= $3 AND "outcome" IN ${COUNTED_OUTCOMES}`,
+    [organizationId, automationId, since],
+  );
+  return { automation: Number(row.automation), workspace: Number(row.workspace) };
+}
+
+/**
+ * The last hour's counted firings of several workspaces in one statement, per
+ * automation and per workspace (IDX_automation_run_organization_created).
+ */
+export async function countRecentByWorkspaceWithin(
+  manager: EntityManager,
+  organizationIds: readonly string[],
+  since: Date,
+): Promise<{ byAutomation: Map<string, number>; byWorkspace: Map<string, number> }> {
+  const byAutomation = new Map<string, number>();
+  const byWorkspace = new Map<string, number>();
+  if (organizationIds.length === 0) return { byAutomation, byWorkspace };
+  const rows: { organizationId: string; automationId: string | null; count: string }[] =
+    await manager.query(
+      `SELECT "organizationId",
+              CASE WHEN GROUPING("automationId") = 0 THEN "automationId" END AS "automationId",
+              count(*) AS "count"
+         FROM "automation_run"
+        WHERE "organizationId" = ANY($1::uuid[]) AND "createdAt" >= $2
+          AND "outcome" IN ${COUNTED_OUTCOMES}
+        GROUP BY GROUPING SETS (("organizationId", "automationId"), ("organizationId"))`,
+      [[...organizationIds], since],
+    );
+  for (const row of rows) {
+    if (row.automationId === null) byWorkspace.set(row.organizationId, Number(row.count));
+    else byAutomation.set(row.automationId, Number(row.count));
+  }
+  return { byAutomation, byWorkspace };
+}
+
+/**
+ * The runs list's tenant clause, on `run."organizationId"` itself, so the
+ * planner bounds it by the window on IDX_automation_run_organization_created
+ * instead of semi-joining every run the workspace kept. It restates what
+ * `applyAccessScope` (packages/backend/authz/src/scope/apply-access-scope.ts)
+ * does for an organization-only resource — a bypass reaches every workspace
+ * (audited upstream), a scope with no organization reaches nothing — and is
+ * right only while `AutomationResource.scopes` is `['organization']`; a test
+ * pins that. `null` is no clause at all.
+ */
+export function runTenantPredicate(
+  scope: AccessScope,
+  parameterIndex: number,
+): { clause: string; values: unknown[] } | null {
+  if (scope.bypass) return null;
+  if (!scope.organizationId) return { clause: 'FALSE', values: [] };
+  return { clause: `run."organizationId" = $${parameterIndex}`, values: [scope.organizationId] };
+}
+
 @Injectable()
 export class AutomationRunRepository
   extends ScopedRepositoryBase<AutomationRunOrmEntity>
@@ -168,6 +257,43 @@ export class AutomationRunRepository
       [run.automationId, run.causeKey],
     );
     return { runId: existing[0]?.id ?? run.id, inserted };
+  }
+
+  /**
+   * Why an advisory lock, and not `SERIALIZABLE` or a counter row: serializable
+   * would turn the race into retry storms on a busy workspace and every firing
+   * path would need retry handling; a counter row per workspace-hour is a hot
+   * row and a second truth. The lock is held for one count and one insert,
+   * transaction-scoped, so it needs no cleanup.
+   */
+  async fireUnderCaps(
+    organizationId: string,
+    automationId: string,
+    since: Date,
+    decide: (recent: { automation: number; workspace: number }) => AutomationRunEntity,
+  ): Promise<{ run: AutomationRunEntity; runId: string; inserted: boolean }> {
+    const { run, inserted } = await this.dataSource.transaction(async (manager) => {
+      await lockWorkspaceFiring(manager, [organizationId]);
+      const decided = decide(await countRecentWithin(manager, organizationId, automationId, since));
+      return {
+        run: decided,
+        inserted: await insertRunWithin(manager, this.outbox, this.mapper, decided),
+      };
+    });
+    if (inserted) {
+      if (run.isPending) await this.outbox.wake();
+      return { run, runId: run.id, inserted };
+    }
+    return { run, runId: await this.firingOfCause(run), inserted };
+  }
+
+  /** The run a duplicate cause already made, so a retried request reads the same run. */
+  private async firingOfCause(run: AutomationRunEntity): Promise<string> {
+    const existing: { id: string }[] = await this.dataSource.query(
+      `SELECT "id" FROM "automation_run" WHERE "automationId" = $1 AND "causeKey" = $2`,
+      [run.automationId, run.causeKey],
+    );
+    return existing[0]?.id ?? run.id;
   }
 
   async restageStalled(staleBefore: Date, batch: number): Promise<number> {
@@ -227,21 +353,6 @@ export class AutomationRunRepository
     if (run.isPending) await this.outbox.wake();
   }
 
-  async countRecent(
-    organizationId: string,
-    automationId: string,
-    since: Date,
-  ): Promise<{ automation: number; workspace: number }> {
-    const [row]: { automation: string; workspace: string }[] = await this.dataSource.query(
-      `SELECT count(*) FILTER (WHERE "automationId" = $2) AS "automation", count(*) AS "workspace"
-         FROM "automation_run"
-        WHERE "organizationId" = $1 AND "createdAt" >= $3
-          AND "outcome" IN ('pending', 'dispatched')`,
-      [organizationId, automationId, since],
-    );
-    return { automation: Number(row.automation), workspace: Number(row.workspace) };
-  }
-
   async countLiveForAutomation(
     automationId: string,
     excludingRunId: string,
@@ -254,7 +365,7 @@ export class AutomationRunRepository
     return this.countLive(`rev."hostId" = $1`, [hostId, excludingRunId, since]);
   }
 
-  async findLiveDispatchedBefore(before: Date, batch: number): Promise<LiveRun[]> {
+  async findLiveDispatchedBefore(before: Date, notBefore: Date, batch: number): Promise<LiveRun[]> {
     const rows: {
       id: string;
       organizationId: string;
@@ -265,9 +376,10 @@ export class AutomationRunRepository
       `SELECT run."id", run."organizationId", run."automationId", run."sessionId", run."dispatchedAt"
          FROM "automation_run" run
          ${LIVE_JOINS}
-        WHERE run."outcome" = 'dispatched' AND run."dispatchedAt" < $1 AND ${LIVE_WHERE}
-        ORDER BY run."dispatchedAt" LIMIT $2`,
-      [before, batch],
+        WHERE run."outcome" = 'dispatched' AND run."dispatchedAt" < $1
+          AND run."dispatchedAt" >= $2 AND ${LIVE_WHERE}
+        ORDER BY run."dispatchedAt" LIMIT $3`,
+      [before, notBefore, batch],
     );
     return rows.map((row) => ({
       runId: row.id,
@@ -291,13 +403,19 @@ export class AutomationRunRepository
     return Number(row.count);
   }
 
-  /** The runs the caller can reach under the facets, as a CTE both the page and the counts read. */
+  /**
+   * The runs the caller can reach under the facets, as a CTE both the page and
+   * the counts read. The tenant clause and the window sit on the run itself,
+   * so the scan starts at the window, not at the workspace's first run.
+   */
   private scopedRuns(scope: AccessScope, filters: Omit<RunFilters, 'statuses'>) {
-    const [reachable, parameters] = this.scopedQuery(scope)
-      .select(`${this.alias}.id`)
-      .getQueryAndParameters();
-    const values: unknown[] = [...parameters, filters.since];
-    const where = [`run."id" IN (${reachable})`, `run."createdAt" >= $${values.length}`];
+    const values: unknown[] = [filters.since];
+    const where = [`run."createdAt" >= $1`];
+    const tenant = runTenantPredicate(scope, values.length + 1);
+    if (tenant) {
+      values.push(...tenant.values);
+      where.push(tenant.clause);
+    }
     if (filters.automationId) {
       values.push(filters.automationId);
       where.push(`run."automationId" = $${values.length}`);
@@ -309,6 +427,14 @@ export class AutomationRunRepository
     return { cte: `WITH runs AS (${READ_MODEL_SQL} WHERE ${where.join(' AND ')})`, values };
   }
 
+  /**
+   * One page of the window, and its counts: two statements, the second
+   * grouping every status once so the total (the requested statuses) and the
+   * tabs' counts (the listed ones) both come from it. Offset pagination,
+   * because the contract promises page numbers and a total; over one
+   * workspace's window (30 days at most) the offset is cheap. Keyset is the
+   * next step if the window ever grows.
+   */
   async page(
     scope: AccessScope,
     filters: RunFilters,
@@ -317,28 +443,24 @@ export class AutomationRunRepository
   ): Promise<RunPage> {
     const { cte, values } = this.scopedRuns(scope, filters);
     const statuses = [...(filters.statuses ?? LISTED_RUN_STATUSES)];
-    const statusParameter = `$${values.length + 1}`;
     const rows: Record<string, unknown>[] = await this.dataSource.query(
-      `${cte} SELECT * FROM runs WHERE "status" = ANY(${statusParameter})
+      `${cte} SELECT * FROM runs WHERE "status" = ANY($${values.length + 1})
         ORDER BY "createdAt" DESC, "id" DESC
         LIMIT $${values.length + 2} OFFSET $${values.length + 3}`,
       [...values, statuses, limit, (page - 1) * limit],
     );
-    const [{ total }]: { total: string }[] = await this.dataSource.query(
-      `${cte} SELECT count(*) AS "total" FROM runs WHERE "status" = ANY(${statusParameter})`,
-      [...values, statuses],
-    );
     const grouped: { status: string; count: string }[] = await this.dataSource.query(
-      `${cte} SELECT "status", count(*) AS "count" FROM runs
-        WHERE "status" = ANY(${statusParameter}) GROUP BY "status"`,
-      [...values, [...LISTED_RUN_STATUSES]],
+      `${cte} SELECT "status", count(*) AS "count" FROM runs GROUP BY "status"`,
+      values,
     );
     const counted = new Map(grouped.map((row) => [row.status, Number(row.count)]));
+    const sum = (of: readonly string[]) =>
+      of.reduce((total, status) => total + (counted.get(status) ?? 0), 0);
     return {
       items: rows.map((row) => this.mapper.readModelOf(row)),
-      total: Number(total),
+      total: sum([...new Set(statuses)]),
       counts: {
-        all: [...counted.values()].reduce((sum, count) => sum + count, 0),
+        all: sum(LISTED_RUN_STATUSES),
         completed: counted.get('completed') ?? 0,
         failed: counted.get('failed') ?? 0,
         running: (counted.get('running') ?? 0) + (counted.get('queued') ?? 0),
