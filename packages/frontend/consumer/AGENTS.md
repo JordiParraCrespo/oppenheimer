@@ -18,9 +18,10 @@ and the full "add a module" cookbook are
 ## Where things go
 
 - A new module `things` → `src/modules/things/` with `thing.entity.ts`,
-  `things.errors.ts`, `things.repository.ts`, `things.service.ts`,
-  `things.module.ts` and `index.ts`; then `export * from './things'` in
-  `src/modules/index.ts`, the two symbols in `src/di/tokens.ts`, and
+  `things.errors.ts`, `things.repository.ts`, `things.module.ts` and
+  `index.ts` — plus `things.service.ts` only when a method does more than call
+  the repository (`../ARCHITECTURE.md`, step 4); then `export * from './things'`
+  in `src/modules/index.ts`, the symbols in `src/di/tokens.ts`, and
   `ThingsModule` plus a `get things()` getter in `src/di/consumer-app.ts`.
   Only after that may `apps/web/src/features/things/` exist —
   `pnpm check:structure` allows a feature name a module carries.
