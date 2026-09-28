@@ -65,6 +65,8 @@ func newControlPlane(t *testing.T) *controlPlane {
 		if err != nil {
 			return
 		}
+		// The control plane's `maxPayload`: what the runner may send, and no more.
+		conn.SetReadLimit(link.MaxFrameBytes)
 		ctx := context.Background()
 		_, data, err := conn.Read(ctx)
 		if err != nil {

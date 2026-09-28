@@ -42,6 +42,11 @@ const FrameHeader = 4
 // link.
 const CreditWindow = 262144
 
+// MaxFrameBytes is the largest frame either peer puts on the link: the
+// control plane closes a link that sends a bigger one with 1009, so the
+// runner reads no bigger one and never sends one.
+const MaxFrameBytes = 524288
+
 // MaxEventPayloadBytes caps an event's JSON payload string, because an event
 // never carries pane text.
 const MaxEventPayloadBytes = 8192
