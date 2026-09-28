@@ -11,18 +11,26 @@ of duplicating them per app.
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@oppenheimer/shared`                | Re-exports `schemas`, `types`, `constants`, `permissions` and `scopes` — **not** `agents` or `protocol` (see below)                             |
 | `@oppenheimer/shared/schemas`        | Zod schemas — the source of truth for request/response DTOs — plus the shared primitives every schema is built from                             |
-| `@oppenheimer/shared/schemas/*`      | One narrow subpath per schema file (`auth`, `admin`, `profile`, `organization`, `role`, `host`, `project`, `session`, `github`)                  |
+| `@oppenheimer/shared/schemas/*`      | One narrow subpath per `src/schemas/<x>.schema.ts` (`auth`, `admin`, `profile`, `organization`, `role`, `host`, `project`, `session`, …)        |
 | `@oppenheimer/shared/types`          | `Role`, `PaginationParams`, `PaginatedResponse<T>`, the deployment/client capability catalogs and the RFC 7807 problem-details helpers           |
 | `@oppenheimer/shared/constants`      | `AUTH`, `PAGINATION`, `ROLES`, `SYSTEM_ROLES`, `SYSTEM_ROLE_PERMISSIONS`, `QUEUE_NAMES`                                                         |
 | `@oppenheimer/shared/permissions`    | CASL helpers — `defineAbilitiesFromPermissions` (DB-driven, source of truth), the legacy `defineAbilitiesFor` fallback, and `ENDPOINT_POLICIES`  |
 | `@oppenheimer/shared/scopes`         | The credential scope catalog: `SCOPE_RESOURCES`, `PERMISSION_GROUPS`, `SCOPES`, and the helpers that expand, sort, compare and grant them       |
 | `@oppenheimer/shared/agents`         | The closed coding-agent catalog: `CODING_AGENT_IDS`, `CODING_AGENTS`, `isCodingAgentId`                                                         |
 | `@oppenheimer/shared/protocol`       | The runner link's wire vocabulary as Zod: `protocolMessageSchema`, the per-message schemas, the hint sets, and `PROTOCOL_VERSION`               |
+| `@oppenheimer/shared/feature-flags`  | The flag catalog, the evaluator and the targeting schemas; `…/feature-flags/catalog` is the catalog alone, with no Zod                            |
+| `@oppenheimer/shared/automations`    | The automation trigger catalog and schedule arithmetic                                                                                          |
 
-`agents` and `protocol` are reachable **only** through their subpaths. The root
-barrel is not tree-shakeable in the CJS build, so everything it re-exports lands
-whole in the browser bundle; keeping the agent catalog and the wire protocol out
-of it is what stops `apps/web` paying for them.
+`agents`, `protocol`, `feature-flags` and `automations` are reachable **only**
+through their subpaths.
+
+The export map is patterns, not a list: `./schemas/<x>` is
+`src/schemas/<x>.schema.ts`, `./<dir>` is `src/<dir>/index.ts`, and
+`./feature-flags/catalog` is the one file-level subpath. Each resolves to
+CommonJS for `require` and to the ESM build in `dist/esm/` for `import`, and
+the package declares its side effects (the two protocol modules that register
+JSON-Schema ids), so a bundler drops whatever a web import does not use — from
+a subpath or from the root.
 
 ## Usage
 
@@ -51,8 +59,8 @@ import { PAGINATION } from "@oppenheimer/shared/constants";
 ## Scripts
 
 ```bash
-pnpm build   # tsc -> dist, then emit protocol-schema/protocol.schema.json
-pnpm dev     # tsc --watch
+pnpm build   # tsc -> dist (CJS + .d.ts) and dist/esm (ESM), then the emit-*.cjs generators
+pnpm dev     # both tsc builds in watch mode
 pnpm lint    # biome check src/
 ```
 

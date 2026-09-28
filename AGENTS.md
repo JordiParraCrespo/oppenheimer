@@ -368,12 +368,14 @@ pnpm changeset          # Create a changeset for versioning
 - Sign-up creates the account and its personal workspace in one go. The
   `/onboarding` screen is only the recovery path for an account that ended up
   with no workspace. Only `/register` passes the social `sign-up` intent
-- `apps/web` must not import runtime values from the `@oppenheimer/shared` **root**:
-  its CJS build is not tree-shakeable, so the whole graph lands in the bundle.
-  Import a narrow subpath (`@oppenheimer/shared/schemas/auth`) or fetch from the API.
-  Anything newly imported this way needs adding to `optimizeDeps.include` in
-  `apps/web/vite.config.ts` for dev
-- The same applies to `@oppenheimer/translations`: `apps/web`
+- `@oppenheimer/shared` gives bundlers an ESM build and declares its side
+  effects, so `apps/web` tree-shakes it: an import from the root costs what it
+  uses and no more. Still prefer the narrowest subpath that has the value
+  (`@oppenheimer/shared/schemas/auth`) — it says what the code depends on — and
+  remember that what you *use* lands whole: a schema that reaches the scope
+  catalog brings the catalog. Every `src/<dir>/` and `src/schemas/<x>.schema.ts`
+  is a subpath by pattern; a new one needs no config
+- `@oppenheimer/translations` is imported by subpath only: `apps/web`
   imports metadata from `@oppenheimer/translations/locales` and catalogs from
   `@oppenheimer/translations/lazy`; only the default locale is bundled
 - The web app's critical path is budgeted: `pnpm check:bundle` fails past the

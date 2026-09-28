@@ -1,7 +1,5 @@
-// The narrow subpath, not the package root: `@oppenheimer/shared`'s CJS build is not
-// tree-shakeable by Rollup, so importing these two runtime constants from the
-// root would pull CASL and the whole scope catalog into the web bundle. This
-// entry reaches nothing but Zod.
+// The narrow subpath, not the package root: it names what this service depends
+// on, and the entry reaches nothing but Zod.
 
 import { AppError } from '@oppenheimer/frontend-core';
 import {
