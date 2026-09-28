@@ -1,20 +1,17 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable } from '@nestjs/common';
 import { HealthCheckError, HealthIndicator, type HealthIndicatorResult } from '@nestjs/terminus';
-import Redis from 'ioredis';
+import type Redis from 'ioredis';
+import { REDIS_CLIENT } from '../../redis/redis.di-tokens';
 
+/**
+ * Pings the shared Redis command connection. That client fails fast, so with
+ * Redis down the probe answers "down" at once instead of after ioredis's
+ * retries, which is what a readiness probe wants.
+ */
 @Injectable()
 export class RedisHealthIndicator extends HealthIndicator {
-  private readonly redis: Redis;
-
-  constructor(configService: ConfigService) {
+  constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {
     super();
-    this.redis = new Redis({
-      host: configService.get('redis.host'),
-      port: configService.get('redis.port'),
-      password: configService.get<string>('redis.password') || undefined,
-      lazyConnect: true,
-    });
   }
 
   async isHealthy(key: string): Promise<HealthIndicatorResult> {

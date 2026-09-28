@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { Queue } from 'bullmq';
 import { EMAIL_JOB_OPTIONS } from '../../config/queue-options.config';
+import { redisConfigFromEnv, redisConnectionOptions } from '../../config/redis.config';
 
 /**
  * Standalone BullMQ queue used by the Better Auth instance to enqueue
@@ -17,11 +18,10 @@ import { EMAIL_JOB_OPTIONS } from '../../config/queue-options.config';
  * DI-registered one; the two must not drift.
  */
 export const emailQueue = new Queue(QUEUE_NAMES.EMAIL, {
-  connection: {
-    host: process.env.REDIS_HOST ?? 'localhost',
-    port: Number.parseInt(process.env.REDIS_PORT ?? '6379', 10),
-    password: process.env.REDIS_PASSWORD || undefined,
-  },
+  // Read from the environment rather than `ConfigService`, which does not exist
+  // yet at module scope; the same parse as the `redis` section, so the two
+  // cannot disagree about where Redis is.
+  connection: redisConnectionOptions(redisConfigFromEnv()),
   defaultJobOptions: EMAIL_JOB_OPTIONS,
 });
 
