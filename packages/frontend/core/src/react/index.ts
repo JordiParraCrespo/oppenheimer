@@ -36,7 +36,7 @@ export {
 } from './feature-flags.queries';
 export { useAuthState } from './hooks';
 export { type LastFailure, lastFailure, type TrackedMutation } from './last-failure';
-export { withCacheOnSuccess } from './mutations';
+export { refetchEverythingForNewIdentity, withCacheOnSuccess } from './mutations';
 export {
   cacheOwnerKey,
   createQueryPersistOptions,

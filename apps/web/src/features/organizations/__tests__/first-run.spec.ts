@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   installUrlCarryingWalk,
   isWalkState,
-  parseWalk,
   stateWithoutWalk,
+  walkFromState,
+  walkParam,
 } from '@/features/organizations/lib/first-run';
 
 /**
@@ -15,11 +16,27 @@ import {
 const NONCE = 'kX9_mZq-4vR2tY7wB1nC3dE5fG8hJ0kLpQ6sU2xV4yA';
 const MINTED = `https://github.com/apps/oppenheimer/installations/new?state=${NONCE}`;
 
-describe('parseWalk', () => {
+describe('walkParam', () => {
   it('reads the walk as the router parses it, and as a string', () => {
-    expect(parseWalk({ walk: true })).toEqual({ walk: true });
-    expect(parseWalk({ walk: 'true' })).toEqual({ walk: true });
-    expect(parseWalk({})).toEqual({});
+    expect(walkParam.parse(true)).toBe(true);
+    expect(walkParam.parse('true')).toBe(true);
+    expect(walkParam.parse(undefined)).toBeUndefined();
+    expect(walkParam.parse('nope')).toBeUndefined();
+  });
+});
+
+describe('walkFromState', () => {
+  it('turns a prefixed state into the walk and the bare nonce', () => {
+    expect(walkFromState({ state: `first-run.${NONCE}`, code: 'abc' })).toEqual({
+      state: NONCE,
+      code: 'abc',
+      walk: true,
+    });
+  });
+
+  it('leaves a search with no walk in its state alone', () => {
+    const search = { state: NONCE, walk: 'true' };
+    expect(walkFromState(search)).toBe(search);
   });
 });
 

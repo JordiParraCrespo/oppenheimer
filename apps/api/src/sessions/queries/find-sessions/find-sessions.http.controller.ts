@@ -33,9 +33,6 @@ export class FindSessionsHttpController {
   @CheckPolicies({ action: 'read', subject: 'Session' })
   @RequireScopes('sessions:read')
   @ApiOperation({
-    // Named explicitly: the generated client turns an operationId into a function
-    // name, and `list` would collide with every other resource's listing.
-    operationId: 'listSessions',
     summary: 'List the sessions in the caller’s workspace',
     description:
       'Last activity first unless `sort` says otherwise. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.',

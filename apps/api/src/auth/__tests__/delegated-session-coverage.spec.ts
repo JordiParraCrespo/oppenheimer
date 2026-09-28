@@ -13,7 +13,7 @@ import { WorkspacesController } from '../../organizations/workspaces.controller'
 import { ChangeEmailHttpController } from '../../profile/commands/change-email/change-email.http.controller';
 import { ChangePasswordHttpController } from '../../profile/commands/change-password/change-password.http.controller';
 import { RevokeOtherSessionsHttpController } from '../../profile/commands/revoke-other-sessions/revoke-other-sessions.http.controller';
-import { RevokeSessionHttpController } from '../../profile/commands/revoke-session/revoke-session.http.controller';
+import { RevokeProfileSessionHttpController } from '../../profile/commands/revoke-session/revoke-session.http.controller';
 import { USES_BETTER_AUTH_SESSION_KEY } from '../decorators/uses-better-auth-session.decorator';
 
 /**
@@ -40,7 +40,7 @@ const CALLERS: Record<string, readonly (abstract new (...args: never[]) => unkno
   'organizations/workspaces.service.ts': [WorkspacesController],
   'profile/infrastructure/profile-auth.gateway.ts': [
     ChangePasswordHttpController,
-    RevokeSessionHttpController,
+    RevokeProfileSessionHttpController,
     RevokeOtherSessionsHttpController,
     ChangeEmailHttpController,
   ],

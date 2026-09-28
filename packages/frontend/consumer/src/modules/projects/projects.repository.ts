@@ -65,11 +65,8 @@ function toUpdateRequest(input: UpdateProjectInput): UpdateProjectRequest {
       ? { repositories: toRepositoryRows(input.repositories) }
       : {}),
     ...(input.defaultHostId !== undefined ? { defaultHostId: input.defaultHostId } : {}),
-    // The generated type drops the schema's `null` for an enum; the API takes
-    // it, and null is how a default agent is cleared.
-    ...(input.defaultAgent !== undefined
-      ? { defaultAgent: input.defaultAgent as UpdateProjectRequest['defaultAgent'] }
-      : {}),
+    // null is how a default agent is cleared.
+    ...(input.defaultAgent !== undefined ? { defaultAgent: input.defaultAgent } : {}),
   };
 }
 
@@ -79,7 +76,7 @@ export class ProjectsRepository {
   async findAll(): Promise<ProjectEntity[]> {
     // An absent body is a failed read, not an empty collection — returning `[]`
     // would render "no projects" over a request that never succeeded.
-    const data = await unwrapBody(heyApiSdk.listProjects(), ProjectsErrors.FETCH_LIST_FAILED);
+    const data = await unwrapBody(heyApiSdk.findProjects(), ProjectsErrors.FETCH_LIST_FAILED);
     return data.map(toEntity);
   }
 

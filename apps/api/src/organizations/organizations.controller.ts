@@ -78,7 +78,7 @@ export class OrganizationsController {
   @CheckPolicies({ action: 'create', subject: 'Organization' })
   @ApiOperation({ summary: 'Create an organization' })
   @ApiResponse({ status: 201, type: OrganizationResponseDto })
-  create(
+  createOrganization(
     @Req() req: Request,
     @Body() body: CreateOrganizationRequest,
     @CurrentUser('id') creatorId: string | undefined,
@@ -92,7 +92,7 @@ export class OrganizationsController {
   @CheckPolicies({ action: 'read', subject: 'Organization' })
   @ApiOperation({ summary: "List the caller's organizations" })
   @ApiResponse({ status: 200, type: [OrganizationResponseDto] })
-  async list(
+  async listOrganizations(
     @Req() req: Request,
     @CurrentScope() scope: ScopeContext | null,
     @CurrentSession('activeOrganizationId') activeOrganizationId: string | null | undefined,
@@ -142,7 +142,7 @@ export class OrganizationsController {
   @CheckPolicies({ action: 'update', subject: 'Organization' })
   @ApiOperation({ summary: 'Update an organization' })
   @ApiResponse({ status: 200, type: OrganizationResponseDto })
-  update(
+  updateOrganization(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateOrganizationRequest,
@@ -157,7 +157,7 @@ export class OrganizationsController {
   @CheckPolicies({ action: 'delete', subject: 'Organization' })
   @ApiOperation({ summary: 'Delete an organization' })
   @ApiResponse({ status: 200, type: OrganizationResponseDto })
-  remove(
+  deleteOrganization(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<OrganizationResponseDto> {
@@ -173,7 +173,7 @@ export class OrganizationsController {
     summary: 'Set the active organization for the current session',
   })
   @ApiResponse({ status: 200, type: OrganizationResponseDto })
-  setActive(
+  setActiveOrganization(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<OrganizationResponseDto | null> {

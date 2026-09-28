@@ -14,7 +14,12 @@ import { CapabilitiesErrors } from '../capabilities.errors';
 
 const api = vi.hoisted(() => ({ deploymentCapabilities: vi.fn() }));
 
-vi.mock('@oppenheimer/api-client', () => ({ HealthApi: api }));
+vi.mock('@oppenheimer/api-client', () => ({ heyApiSdk: api }));
+
+/** A generated SDK call's result: the body, and no error. */
+function ok(data: unknown) {
+  return { data, error: undefined, response: new Response(null, { status: 200 }) };
+}
 
 const { CapabilitiesRepository } = await import('../capabilities.repository');
 const { CapabilitiesService } = await import('../capabilities.service');
@@ -28,10 +33,12 @@ describe('CapabilitiesRepository', () => {
   });
 
   it('returns the capability set the deployment reports', async () => {
-    api.deploymentCapabilities.mockResolvedValue({
-      google_oauth: true,
-      github_oauth: false,
-    });
+    api.deploymentCapabilities.mockResolvedValue(
+      ok({
+        google_oauth: true,
+        github_oauth: false,
+      }),
+    );
 
     await expect(repository.get()).resolves.toEqual({
       google_oauth: true,
@@ -42,7 +49,7 @@ describe('CapabilitiesRepository', () => {
   it('passes an empty set through as a real answer', async () => {
     // A deployment with no optional features configured genuinely reports
     // nothing, and that is different from the failure below.
-    api.deploymentCapabilities.mockResolvedValue({});
+    api.deploymentCapabilities.mockResolvedValue(ok({}));
 
     await expect(repository.get()).resolves.toEqual({});
   });
@@ -50,7 +57,7 @@ describe('CapabilitiesRepository', () => {
   it('fails rather than reporting an unreachable API as "nothing configured"', async () => {
     // The distinction this whole file exists for. Swallowing this into `{}`
     // renders a login page with every provider hidden.
-    api.deploymentCapabilities.mockResolvedValue(undefined);
+    api.deploymentCapabilities.mockResolvedValue(ok(undefined));
 
     const error = await repository.get().catch((thrown: AppError) => thrown);
 

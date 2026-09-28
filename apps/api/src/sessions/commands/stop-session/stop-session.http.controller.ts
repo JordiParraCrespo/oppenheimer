@@ -51,7 +51,6 @@ export class StopSessionHttpController {
   @CheckPolicies({ action: 'update', subject: 'Session' })
   @RequireScopes('sessions:write')
   @ApiOperation({
-    operationId: 'stopSession',
     summary: 'Stop a session',
     description:
       'Ends the agent and the tmux session and leaves every checkout on disk, so a restart recreates window 0 in the same worktrees. Stopping is not closing: the session is exactly as unfinished as it was.',

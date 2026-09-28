@@ -34,7 +34,6 @@ export class CreateAutomationHttpController {
   @CheckPolicies({ action: 'create', subject: 'Automation' })
   @RequireScopes('automations:write')
   @ApiOperation({
-    operationId: 'createAutomation',
     summary: 'Create an automation',
     description:
       'A saved prompt, where it runs and the triggers that start it. The caller becomes its owner: every run acts as them. It starts listening as soon as it is saved.',

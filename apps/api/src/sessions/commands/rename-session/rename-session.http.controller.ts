@@ -44,7 +44,6 @@ export class RenameSessionHttpController {
   @CheckPolicies({ action: 'update', subject: 'Session' })
   @RequireScopes('sessions:write')
   @ApiOperation({
-    operationId: 'renameSession',
     summary: 'Rename a session',
     description:
       'Display only. The slug is the session’s directory name and the last segment of its branch, and it never changes. A name typed here is never overwritten by the title derived from the first prompt.',

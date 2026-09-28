@@ -1,3 +1,5 @@
+import { searchFlag } from '@oppenheimer/frontend-web';
+
 /**
  * The first-run walk, as a fact the URL carries.
  *
@@ -24,22 +26,25 @@
  * to be cleaned up afterwards: the fact lives and dies with the URLs that
  * carry it, so there is no bit for a logout, a second tab or the next account
  * to inherit.
+ *
+ * `walk` as a search param, for a route's schema: on, or absent. The router
+ * parses `?walk=true` into a boolean while a re-serialised or hand-typed URL
+ * can still hand over the string, and a guard that answered differently to the
+ * two would be a guard nobody can reason about, so both read as on.
  */
-export interface FirstRunWalk {
-  /** Present only on a navigation that is the walk itself. */
-  walk?: true;
-}
+export const walkParam = searchFlag;
 
 /**
- * Read the walk off a router search object.
- *
- * Both shapes are accepted because the router parses `?walk=true` into a
- * boolean while a re-serialised or hand-typed URL can still hand over the
- * string, and a guard that answered differently to the two would be a guard
- * nobody can reason about.
+ * The echoed `state` read for the walk: `walk` from its prefix, and the prefix
+ * taken off what is left, so the callback's schema sees the nonce the API
+ * minted. For a route's `z.preprocess`.
  */
-export function parseWalk(search: Record<string, unknown>): FirstRunWalk {
-  return search.walk === true || search.walk === 'true' ? { walk: true } : {};
+export function walkFromState(raw: unknown): unknown {
+  if (typeof raw !== 'object' || raw === null) return raw;
+  const search = raw as Record<string, unknown>;
+  return isWalkState(search.state)
+    ? { ...search, walk: true, state: stateWithoutWalk(search.state) }
+    : search;
 }
 
 /**

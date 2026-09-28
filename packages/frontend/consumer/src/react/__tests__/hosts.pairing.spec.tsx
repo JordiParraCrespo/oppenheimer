@@ -56,7 +56,7 @@ function setup(tokens: HostPairingToken[], hosts: HostEntity[]) {
     pairings: vi.fn().mockResolvedValue(tokens),
     findAll: vi.fn().mockResolvedValue(hosts),
   };
-  const app = fakeKernel({ [TOKENS.HostsService]: service });
+  const app = fakeKernel({ [TOKENS.HostsRepository]: service });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
   function wrapper({ children }: { children: ReactNode }) {

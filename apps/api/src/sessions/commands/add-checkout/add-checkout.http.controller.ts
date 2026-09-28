@@ -44,7 +44,6 @@ export class AddCheckoutHttpController {
   @CheckPolicies({ action: 'update', subject: 'Session' })
   @RequireScopes('sessions:write')
   @ApiOperation({
-    operationId: 'addSessionCheckout',
     summary: 'Add a repository to a running session',
     description:
       'The checkout takes the session’s own branch, created from the base given here or the repository’s default, and a directory name no checkout of this session has ever used.',

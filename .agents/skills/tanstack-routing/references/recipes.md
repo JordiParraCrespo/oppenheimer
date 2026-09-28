@@ -68,24 +68,33 @@ changed URL.
 
 ## A search param that other routes must not delete
 
-`validateSearch` replaces the whole search, so a narrow validator deletes
-everything it does not return. Spread the rest through:
+A route's search is a Zod object from the feature's `lib/`; what it does not
+name is dropped:
 
-```tsx
-validateSearch: (search: Record<string, unknown>): Record<string, unknown> & { section?: Pane } => {
-  const { section: requested, ...rest } = search;
-  return PANES.includes(requested as Pane) ? { ...rest, section: requested as Pane } : rest;
-},
+```ts
+// features/automations/lib/runs-search.ts
+export const runsSearchSchema = z.object({
+  status: z.enum(RUN_STATUS_TABS).optional().catch(undefined),
+  project: searchText,
+  page: searchPage,
+});
+
+// routes/_authenticated/automations/runs.tsx
+export const Route = createFileRoute('/_authenticated/automations/runs')({
+  validateSearch: runsSearchSchema,
+  component: RunsOverviewScreen,
+});
 ```
 
-This is what keeps nuqs working (`__root.tsx` mounts `NuqsAdapter` inside the
-router for the same reason) and what keeps a table's page number alive while
-the reader switches settings panes.
+A hook that writes it merges into the current search and replaces the entry,
+so a filter is not a page Back returns to:
 
-When you *want* the opposite — a clean slate — say so at the call site, as
-`settings/index.tsx` does when changing pane: `navigate({ search: { section } })`
-replaces rather than merges, so a table's state does not follow the reader into
-a pane with no table.
+```ts
+navigate({ to: '.', search: (previous: RunsSearch) => ({ ...previous, ...patch }), replace: true });
+```
+
+When you want a clean slate instead, pass the whole object:
+`navigate({ search: { section } })` replaces rather than merges.
 
 ## Send a reader on after sign-in
 

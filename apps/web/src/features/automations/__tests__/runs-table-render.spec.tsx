@@ -74,7 +74,7 @@ vi.mock('../hooks/use-runs-filters', async (original) => ({
   }),
 }));
 
-vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }));
+vi.mock('@tanstack/react-router', () => ({ getRouteApi: () => ({}), useNavigate: () => vi.fn() }));
 vi.mock('../components/choice-token', () => ({ ChoiceToken: () => null }));
 
 const START = Date.parse('2026-09-26T10:00:00Z');

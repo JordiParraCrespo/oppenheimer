@@ -28,7 +28,6 @@ export class FindRunHistoryHttpController {
   @CheckPolicies({ action: 'read', subject: 'Automation' })
   @RequireScopes('automations:read')
   @ApiOperation({
-    operationId: 'getAutomationRunHistory',
     summary: 'Run history by day',
     description:
       'One bucket per local day of the given zone, today last: runs that did not fail (running ones included) and runs that failed, under the same facets as the runs list.',

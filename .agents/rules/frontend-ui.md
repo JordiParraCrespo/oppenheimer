@@ -114,11 +114,12 @@ card scroll instead; the two breakpoints are complements, leave them so.
 
 ## A list's query lives in the URL
 
-No console screen pages, searches or filters a long list yet. When the first
-one does, these hold:
+The runs list is the worked example (`features/automations/lib/runs-search.ts`,
+`hooks/use-runs-filters.ts`):
 
-- Search, filters, sort and page live in the URL (nuqs), never in
-  `useState`, and the list resets to page one when it narrows.
+- Search, filters, sort and page live in the URL, as the route's search schema
+  (the `/tanstack-routing` skill), never in `useState`; the list resets to page
+  one when it narrows, and a default is no key.
 - **Search and facets are the server's job.** Send the query and the facet
   ids in the request; never filter one page in the browser to answer a
   search box. A search matches everything the row shows: widen the endpoint
@@ -127,9 +128,8 @@ one does, these hold:
   and hands the list the settled value; nothing else debounces, and a live
   value never reaches the rows (the render rules in
   [`frontend-architecture.md`](./frontend-architecture.md)).
-- A route with `validateSearch` must carry unknown keys through, or it
-  deletes what the list wrote on the next navigation. `/login` does, and says
-  so in its own comment.
+- Every route that shows the list declares its schema; a key a route does
+  not name is dropped, so a filter lives on the routes that draw it.
 
 Build those pieces in the feature that needs them and promote them to the kit
 when a second list does.

@@ -15,6 +15,7 @@
     "arch": "depcruise src --config .dependency-cruiser.cjs"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
     "@oppenheimer/api-client": "workspace:*",
     "@oppenheimer/auth": "workspace:*",
     "@oppenheimer/design-system-web": "workspace:*",
@@ -23,7 +24,6 @@
     "@oppenheimer/frontend-web": "workspace:*",
     "@oppenheimer/shared": "workspace:*",
     "@oppenheimer/translations": "workspace:*",
-    "@hookform/resolvers": "^5.9.1",
     "@tanstack/query-async-storage-persister": "^5.102.8",
     "@tanstack/react-query": "^5.102.8",
     "@tanstack/react-query-persist-client": "^5.102.8",
@@ -35,7 +35,6 @@
     "better-auth": "^1.6.25",
     "i18next": "^26.4.2",
     "i18next-browser-languagedetector": "^8.2.1",
-    "nuqs": "^2.10.1",
     "posthog-js": "^1.432.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",

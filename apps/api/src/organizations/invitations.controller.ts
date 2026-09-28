@@ -75,9 +75,11 @@ export class OrganizationInvitationsController {
   @RequireScopes('invitations:read')
   @OrganizationScoped('orgId')
   @CheckPolicies({ action: 'read', subject: 'Invitation' })
-  @ApiOperation({ summary: 'List pending invitations for an organization' })
+  @ApiOperation({
+    summary: 'List pending invitations for an organization',
+  })
   @ApiResponse({ status: 200, type: [InvitationResponseDto] })
-  list(
+  listOrganizationInvitations(
     @Req() req: Request,
     @Param('orgId', ParseUUIDPipe) orgId: string,
   ): Promise<InvitationResponseDto[]> {
@@ -125,9 +127,11 @@ export class InvitationsController {
   @NoPolicy('lists invitations addressed to the caller’s own email')
   @Version('1')
   @RequireScopes('invitations:read')
-  @ApiOperation({ summary: "List the caller's pending invitations" })
+  @ApiOperation({
+    summary: "List the caller's pending invitations",
+  })
   @ApiResponse({ status: 200, type: [InvitationResponseDto] })
-  listMine(@Req() req: Request): Promise<InvitationResponseDto[]> {
+  listMyInvitations(@Req() req: Request): Promise<InvitationResponseDto[]> {
     return this.invitations.listForCaller(req.headers);
   }
 
@@ -137,7 +141,10 @@ export class InvitationsController {
   @RequireScopes('invitations:read')
   @ApiOperation({ summary: 'Get an invitation by id' })
   @ApiResponse({ status: 200, type: InvitationResponseDto })
-  get(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<InvitationResponseDto> {
+  getInvitation(
+    @Req() req: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<InvitationResponseDto> {
     return this.invitations.get(req.headers, id);
   }
 

@@ -6,8 +6,10 @@ to, with the defaults New session is prefilled with) and `hosts` (the
 machines the user owns) are the product; `organizations` (the personal workspace only — no roster, no
 members, no invitations, see `product/versions/mvp/08-auth.md`), `profile`
 and `api-tokens` are the account chrome it keeps. Each module is an entity, an
-error catalog, a repository over `@oppenheimer/api-client`, a service and an
-InversifyJS `ContainerModule`; `src/react/` turns those services into
+error catalog, a repository over `@oppenheimer/api-client` and an InversifyJS
+`ContainerModule`, plus a service where there is a use case to hold (sessions,
+organizations, profile); `src/react/` turns `app.<module>` — the service, or
+the repository when there is none — into
 TanStack Query hooks. Like the kernel it is platform-free: no DOM, no router,
 no platform kit.
 
@@ -19,16 +21,15 @@ An app becomes the consumer product by loading `consumerModules` into
 `@oppenheimer/frontend-consumer` (`src/index.ts`):
 
 - **di** — `ConsumerApp`, `consumerModules`, `TOKENS` (the kernel's `TOKENS`
-  spread, plus `HostsRepository`, `HostsService`, `ProjectsRepository`,
-  `ProjectsService`, `SessionsRepository`, `SessionsService`, `OrganizationsRepository`, `OrganizationsService`,
-  `ProfileRepository`, `ProfileService`, `ApiTokensRepository`,
-  `ApiTokensService`).
+  spread, plus a `<Module>Repository` per module and `SessionsService`,
+  `OrganizationsService`, `ProfileService`).
 - **modules/hosts** — `HostEntity`, `HostPairing`, `HostState`,
-  `HostsService`, `HostsRepository`, `HostsModule`, `HostsErrors`.
+  `HostsRepository`, `HostsModule`, `HostsErrors`.
 - **modules/projects** — `ProjectEntity`, `ProjectRepository`,
   `CreateProjectInput`, `UpdateProjectInput`, `ProjectRepositoryInput`,
-  `shortName`, `ProjectsService`, `ProjectsRepository`, `ProjectsModule`,
-  `ProjectsErrors`.
+  `shortName`, `ProjectsRepository`, `ProjectsModule`, `ProjectsErrors`.
+- **modules/installations** and **modules/automations** — their entities,
+  `InstallationsRepository` / `AutomationsRepository`, modules and errors.
 - **modules/sessions** — `SessionEntity`, `CreateSessionInput`,
   `SessionAgent`, `SessionState`, `SessionsService`, `SessionsRepository`,
   `SessionsModule`, `SessionsErrors`, `isSessionNotFound`. The terminal's
@@ -42,14 +43,14 @@ An app becomes the consumer product by loading `consumerModules` into
 - **modules/profile** — `ProfileEntity`, `UserSessionEntity`,
   `ProfileService`, `ProfileRepository`, `ProfileModule`, `ProfileErrors`.
 - **modules/api-tokens** — `ApiTokenEntity`, `CreatedApiToken`,
-  `CurrentCredential`, `PermissionCatalog`, `ApiTokensService`,
-  `ApiTokensRepository`, `ApiTokensModule`, `ApiTokensErrors`.
+  `CurrentCredential`, `PermissionCatalog`, `ApiTokensRepository`,
+  `ApiTokensModule`, `ApiTokensErrors`.
 
 `@oppenheimer/frontend-consumer/react` (`src/react/index.ts`):
 
 The TanStack Query hooks and key factories for each module above — one
 `<module>.queries.ts` per module, a `use…` hook per read or write and a
-`<module>Keys` factory — plus `useConsumerApp`, the product's services off
+`<module>Keys` factory — plus `useConsumerApp`, the product's modules off
 the kernel container, and `CONSUMER_NON_PERSISTED_FEATURES`, the prefixes an
 app keeps out of the persisted query cache. The barrel is the catalog; it is
 not repeated here.
