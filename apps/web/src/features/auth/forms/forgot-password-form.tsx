@@ -50,8 +50,14 @@ export function ForgotPasswordForm({
           />
         </AuthField>
 
-        <Button type="submit" size="lg" block disabled={isPending}>
-          {isPending ? t('auth.forgotPassword.submitting') : t('auth.forgotPassword.submit')}
+        <Button
+          type="submit"
+          size="lg"
+          block
+          pending={isPending}
+          pendingLabel={t('auth.forgotPassword.submitting')}
+        >
+          {t('auth.forgotPassword.submit')}
         </Button>
       </FieldGroup>
     </form>

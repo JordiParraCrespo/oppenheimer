@@ -42,10 +42,11 @@ export function ForgotPasswordScreen() {
           variant="secondary"
           size="lg"
           block
-          disabled={isPending}
           onClick={() => mutate(sentTo)}
+          pending={isPending}
+          pendingLabel={t('auth.forgotPassword.submitting')}
         >
-          {isPending ? t('auth.forgotPassword.submitting') : t('auth.forgotPassword.resend')}
+          {t('auth.forgotPassword.resend')}
         </Button>
 
         <AuthFooterNote>

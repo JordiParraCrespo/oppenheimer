@@ -108,11 +108,22 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
         </CardContent>
 
         <CardFooter className="flex justify-end gap-2">
-          <Button variant="outline" disabled={pending !== null} onClick={() => respond(false)}>
-            {pending === 'deny' ? t('common.loading') : t('consent.deny')}
+          <Button
+            variant="outline"
+            disabled={pending !== null}
+            onClick={() => respond(false)}
+            pending={pending === 'deny'}
+            pendingLabel={t('common.loading')}
+          >
+            {t('consent.deny')}
           </Button>
-          <Button disabled={pending !== null} onClick={() => respond(true)}>
-            {pending === 'accept' ? t('common.loading') : t('consent.approve')}
+          <Button
+            disabled={pending !== null}
+            onClick={() => respond(true)}
+            pending={pending === 'accept'}
+            pendingLabel={t('common.loading')}
+          >
+            {t('consent.approve')}
           </Button>
         </CardFooter>
       </Card>

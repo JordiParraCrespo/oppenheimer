@@ -136,10 +136,11 @@ function SessionRestoreError({
           variant="secondary"
           size="sm"
           onClick={onRetry}
-          disabled={isRetrying}
           className="mt-3.5 w-fit"
+          pending={isRetrying}
+          pendingLabel={t('auth.session.retrying')}
         >
-          {isRetrying ? t('auth.session.retrying') : t('auth.session.retry')}
+          {t('auth.session.retry')}
         </Button>
       </Alert>
     </div>

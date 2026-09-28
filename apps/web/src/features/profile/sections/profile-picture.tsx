@@ -70,8 +70,10 @@ export function ProfilePictureSection({ profile }: { profile: ProfileEntity }) {
           size="sm"
           disabled={busy}
           onClick={() => input.current?.click()}
+          pending={upload.isPending}
+          pendingLabel={t('settings.profile.uploading')}
         >
-          {upload.isPending ? t('settings.profile.uploading') : t('settings.profile.upload')}
+          {t('settings.profile.upload')}
         </Button>
       </SettingsRow>
       {failure ? (

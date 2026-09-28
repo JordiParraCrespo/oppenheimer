@@ -99,8 +99,14 @@ export function RegisterForm({
           />
         </AuthField>
 
-        <Button type="submit" size="lg" block disabled={isPending}>
-          {isPending ? t('auth.register.submitting') : t('auth.register.submit')}
+        <Button
+          type="submit"
+          size="lg"
+          block
+          pending={isPending}
+          pendingLabel={t('auth.register.submitting')}
+        >
+          {t('auth.register.submit')}
         </Button>
       </FieldGroup>
     </form>

@@ -181,8 +181,13 @@ export function ProfileForm({
           >
             {t('settings.profile.discard')}
           </Button>
-          <Button type="submit" size="sm" disabled={isPending}>
-            {isPending ? t('settings.profile.saving') : t('settings.profile.saveChanges')}
+          <Button
+            type="submit"
+            size="sm"
+            pending={isPending}
+            pendingLabel={t('settings.profile.saving')}
+          >
+            {t('settings.profile.saveChanges')}
           </Button>
         </SettingsSaveRow>
       ) : saved ? (

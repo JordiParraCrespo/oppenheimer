@@ -93,8 +93,14 @@ export function ResetPasswordForm({
           />
         </AuthField>
 
-        <Button type="submit" size="lg" block disabled={isPending}>
-          {isPending ? t('auth.resetPassword.submitting') : t('auth.resetPassword.submit')}
+        <Button
+          type="submit"
+          size="lg"
+          block
+          pending={isPending}
+          pendingLabel={t('auth.resetPassword.submitting')}
+        >
+          {t('auth.resetPassword.submit')}
         </Button>
       </FieldGroup>
     </form>

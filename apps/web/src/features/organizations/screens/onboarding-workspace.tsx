@@ -179,10 +179,12 @@ export function OnboardingWorkspaceScreen() {
         // `workspacesRead` is the guard against creating a second workspace:
         // until the list has answered, this step does not know whether there
         // is a row to claim.
-        disabled={!workspacesRead || !addressReady || !name.trim() || claim.isPending}
+        disabled={!workspacesRead || !addressReady || !name.trim()}
         onClick={submit}
+        pending={claim.isPending}
+        pendingLabel={t('onboarding.flow.workspace.claiming')}
       >
-        {claim.isPending ? t('onboarding.flow.workspace.claiming') : t('onboarding.flow.continue')}
+        {t('onboarding.flow.continue')}
       </Button>
 
       <div className="flex flex-col items-center gap-1 text-sm text-fg-muted">

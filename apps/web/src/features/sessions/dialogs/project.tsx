@@ -433,14 +433,13 @@ function ProjectForm({
               <Button type="button" variant="secondary" onClick={onClose} disabled={pending}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" disabled={pending || block !== null}>
-                {editing
-                  ? update.isPending
-                    ? t('projects.dialog.saving')
-                    : t('projects.dialog.save')
-                  : create.isPending
-                    ? t('projects.dialog.creating')
-                    : t('projects.dialog.create')}
+              <Button
+                type="submit"
+                disabled={block !== null}
+                pending={pending}
+                pendingLabel={editing ? t('projects.dialog.saving') : t('projects.dialog.creating')}
+              >
+                {editing ? t('projects.dialog.save') : t('projects.dialog.create')}
               </Button>
             </DialogFooter>
           </form>

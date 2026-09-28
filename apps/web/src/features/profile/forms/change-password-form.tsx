@@ -84,10 +84,12 @@ export function ChangePasswordForm({
         <Button type="button" variant="secondary" onClick={onCancel} disabled={isPending}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending
-            ? t('settings.changePassword.submitting')
-            : t('settings.changePassword.submit')}
+        <Button
+          type="submit"
+          pending={isPending}
+          pendingLabel={t('settings.changePassword.submitting')}
+        >
+          {t('settings.changePassword.submit')}
         </Button>
       </div>
     </form>
