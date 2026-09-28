@@ -123,11 +123,15 @@ short, best-effort calls such as naming a session. See the package README
 
 File storage abstraction with local filesystem and S3 implementations.
 
-| Method         | Signature                                                              |
-| -------------- | ---------------------------------------------------------------------- |
-| `upload`       | `upload(file: Buffer, key: string, mimeType: string): Promise<string>` |
-| `delete`       | `delete(key: string): Promise<void>`                                   |
-| `getSignedUrl` | `getSignedUrl(key: string, expiresIn?: number): Promise<string>`       |
+| Method   | Signature                                                              |
+| -------- | ---------------------------------------------------------------------- |
+| `upload` | `upload(file: Buffer, key: string, mimeType: string): Promise<string>` |
+| `delete` | `delete(key: string): Promise<void>`                                   |
+| `getUrl` | `getUrl(key: string, expiresIn?: number): Promise<string>`             |
+
+`upload` resolves to the key on every back-end. Persist the key, never a URL,
+and resolve it with `getUrl` when responding: S3 signs the URL for `expiresIn`
+seconds, the local back-end serves `<publicUrl>/uploads/<key>`.
 
 Set `STORAGE_PROVIDER` to `local` or `s3`.
 
