@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CREDENTIAL_OWNER } from '../auth/auth.di-tokens';
 import type { AccountErasurePort } from './application/account-erasure.port';
 import { AccountErasureRegistry } from './application/account-erasure.registry';
+import { UserDeactivatedDomainEventHandler } from './application/event-handlers/user-deactivated.domain-event-handler';
 import { UserDeletedDomainEventHandler } from './application/event-handlers/user-deleted.domain-event-handler';
 import { DeleteOwnAccountHttpController } from './commands/delete-own-account/delete-own-account.http.controller';
 import { DeleteUserCommandHandler } from './commands/delete-user/delete-user.command-handler';
@@ -12,6 +13,7 @@ import { UpdateUserCommandHandler } from './commands/update-user/update-user.com
 import { UpdateUserHttpController } from './commands/update-user/update-user.http.controller';
 import { UserOrmEntity } from './database/user.orm-entity';
 import { UserRepository } from './database/user.repository';
+import { AccountSessionsGateway } from './infrastructure/account-sessions.gateway';
 import { UserCredentialOwnerAdapter } from './infrastructure/credential-owner.adapter';
 import { FindUserByIdHttpController } from './queries/find-user-by-id/find-user-by-id.http.controller';
 import { FindUserByIdQueryHandler } from './queries/find-user-by-id/find-user-by-id.query-handler';
@@ -20,7 +22,7 @@ import { FindUsersQueryHandler } from './queries/find-users/find-users.query-han
 import { GetMeHttpController } from './queries/get-me/get-me.http.controller';
 import { GetMyPermissionsHttpController } from './queries/get-my-permissions/get-my-permissions.http.controller';
 import { GetMyPermissionsQueryHandler } from './queries/get-my-permissions/get-my-permissions.query-handler';
-import { USER_REPOSITORY } from './user.di-tokens';
+import { ACCOUNT_SESSIONS, USER_REPOSITORY } from './user.di-tokens';
 import { UserMapper } from './user.mapper';
 
 // Controller registration order matters: `me` must be matched before `:id`.
@@ -42,14 +44,23 @@ const queryHandlers: Provider[] = [
   GetMyPermissionsQueryHandler,
 ];
 
-const eventHandlers: Provider[] = [UserDeletedDomainEventHandler];
+const eventHandlers: Provider[] = [
+  UserDeletedDomainEventHandler,
+  UserDeactivatedDomainEventHandler,
+];
 
 const mappers: Provider[] = [UserMapper];
 
 const repositories: Provider[] = [{ provide: USER_REPOSITORY, useClass: UserRepository }];
 
-/** The auth kernel's question about a credential's owner, answered from here. */
-const ports: Provider[] = [{ provide: CREDENTIAL_OWNER, useClass: UserCredentialOwnerAdapter }];
+/**
+ * The auth kernel's question about a credential's owner, answered from here;
+ * and the revocation a deactivated account is owed, done through Better Auth.
+ */
+const ports: Provider[] = [
+  { provide: CREDENTIAL_OWNER, useClass: UserCredentialOwnerAdapter },
+  { provide: ACCOUNT_SESSIONS, useClass: AccountSessionsGateway },
+];
 
 /**
  * Marked `@Global` for one reason: the auth kernel resolves an OAuth grant

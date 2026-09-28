@@ -23,6 +23,8 @@ function makeUser(): UserEntity {
       role: 'user',
       isActive: true,
       emailVerified: true,
+      banned: false,
+      banExpires: null,
     },
   });
 }

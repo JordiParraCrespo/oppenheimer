@@ -1,6 +1,7 @@
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserRepositoryPort } from '../../../database/user.repository.port';
+import { UserDeactivatedDomainEvent } from '../../../domain/events/user-deactivated.domain-event';
 import { UserEntity } from '../../../domain/user.entity';
 import { UserErrors } from '../../../domain/user.errors';
 import { Email } from '../../../domain/value-objects/email.value-object';
@@ -21,6 +22,8 @@ function makeUser(): UserEntity {
       role: 'user',
       isActive: true,
       emailVerified: true,
+      banned: false,
+      banExpires: null,
     },
   });
 }
@@ -53,6 +56,35 @@ describe('UpdateUserCommandHandler', () => {
     expect(saved.isActive).toBe(false);
     // Unchanged fields are preserved.
     expect(saved.lastName).toBe('User');
+  });
+
+  it('stages one UserDeactivatedDomainEvent when an active account is deactivated', async () => {
+    await service.execute(new UpdateUserCommand({ userId: 'user-uuid', isActive: false }));
+
+    // The repository stages `domainEvents` on the outbox in the save transaction.
+    const saved = vi.mocked(repo.save).mock.calls[0][0] as UserEntity;
+    const events = saved.domainEvents.filter((e) => e instanceof UserDeactivatedDomainEvent);
+    expect(events).toHaveLength(1);
+    expect(events[0].aggregateId).toBe('user-uuid');
+  });
+
+  it('raises nothing when the account was already deactivated', async () => {
+    const inactive = makeUser();
+    inactive.updateProfile({ isActive: false });
+    inactive.clearEvents();
+    vi.mocked(repo.findOneById).mockResolvedValue(Some(inactive));
+
+    await service.execute(new UpdateUserCommand({ userId: 'user-uuid', isActive: false }));
+
+    const saved = vi.mocked(repo.save).mock.calls[0][0] as UserEntity;
+    expect(saved.domainEvents).toHaveLength(0);
+  });
+
+  it('raises nothing for a profile update that leaves the account active', async () => {
+    await service.execute(new UpdateUserCommand({ userId: 'user-uuid', firstName: 'Updated' }));
+
+    const saved = vi.mocked(repo.save).mock.calls[0][0] as UserEntity;
+    expect(saved.domainEvents).toHaveLength(0);
   });
 
   it('throws NOT_FOUND when the user does not exist', async () => {

@@ -126,8 +126,9 @@ that does not exist, so session ids cannot be probed.
 | `TOKEN_008` <a id="token_008" /> | A token can only be scoped to organizations its creator belongs to | 403  |
 | `TOKEN_009` <a id="token_009" /> | The maximum number of active API tokens has been reached           | 409  |
 
-`TOKEN_003` is deliberately opaque: unknown, revoked and expired tokens share
-one code so the endpoint cannot be used as a probing oracle.
+`TOKEN_003` is deliberately opaque: unknown, revoked and expired tokens, and
+tokens whose owner is deactivated or banned, share one code so the endpoint
+cannot be used as a probing oracle.
 
 `TOKEN_002` and `TOKEN_005` carry the offending scopes as extension members
 (`ungrantableScopes` and `missingScopes`) as well as in `detail`.

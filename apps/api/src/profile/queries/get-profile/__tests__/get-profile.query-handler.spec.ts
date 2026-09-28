@@ -20,6 +20,8 @@ const USER = UserEntity.create({
     role: 'user',
     isActive: true,
     emailVerified: true,
+    banned: false,
+    banExpires: null,
   },
 });
 
