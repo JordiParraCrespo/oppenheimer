@@ -1306,7 +1306,7 @@ export type ProjectResponseDto = {
     /**
      * The agent a new session is offered, from the coding-agent catalog.
      */
-    defaultAgent?: string | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | null;
     /**
      * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived, and it may hold no repository.
      */
@@ -1324,7 +1324,7 @@ export type CreateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | null;
 };
 
 export type UpdateProjectRequest = {
@@ -1336,7 +1336,7 @@ export type UpdateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | null;
 };
 
 export type SessionLaunchResponseDto = {
@@ -1347,11 +1347,11 @@ export type SessionLaunchResponseDto = {
     /**
      * What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default. Null for an agent with no approvals (the blank terminal).
      */
-    permission: 'ask' | 'auto' | 'full';
+    permission: 'ask' | 'auto' | 'full' | null;
     /**
      * How hard the agent may think. Null leaves the agent its own default.
      */
-    effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
+    effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max' | null;
 };
 
 export type SessionCheckoutResponseDto = {
@@ -1409,7 +1409,7 @@ export type SessionResponseDto = {
     /**
      * The coding agent this session runs.
      */
-    agent: string;
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
     launch: SessionLaunchResponseDto;
     /**
      * The derived group — what the sidebar dot shows, computed from the row and organised by what needs you: the session failed, the agent has been blocked for 30 s, or a launch has sat unready for 60 s. Two arms have no writer until the relay and the pull-request flow land: `landing`, and the fourth `waiting-on-you` source (the pane is gone with no report).
@@ -1624,7 +1624,7 @@ export type AutomationTriggerResponseDto = {
     /**
      * `schedule`, or the catalog event (`pr_opened`, `push`, …).
      */
-    event: string;
+    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
     schedule?: ScheduleResponseDto;
     /**
      * GitHub: the repositories it listens on.
@@ -1669,14 +1669,14 @@ export type AutomationResponseDto = {
      */
     status: 'active' | 'paused' | 'running';
     pausedAt?: string | null;
-    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access';
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | null;
     /**
      * The earliest next slot of its schedule triggers. Null when paused or event-only.
      */
     nextRunAt?: string | null;
     revision: AutomationRevisionResponseDto;
     triggers: Array<AutomationTriggerResponseDto>;
-    overlap?: 'skip' | 'queue';
+    overlap?: 'skip' | 'queue' | null;
     maxRunsPerHour?: number | null;
     /**
      * Send it back on a save; a stale one is refused (`AUTOMATIONS_003`).
@@ -1730,7 +1730,7 @@ export type CreateAutomationRequest = {
         effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
     };
     active?: boolean;
-    overlap?: 'skip' | 'queue';
+    overlap?: 'skip' | 'queue' | null;
     maxRunsPerHour?: number | null;
 };
 
@@ -1803,7 +1803,7 @@ export type UpdateAutomationRequest = {
         permission?: 'auto' | 'full';
         effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
     };
-    overlap?: 'skip' | 'queue';
+    overlap?: 'skip' | 'queue' | null;
     maxRunsPerHour?: number | null;
     version: number;
 };
@@ -1856,7 +1856,7 @@ export type AutomationRunResponseDto = {
      * What became of the firing before a session.
      */
     outcome: 'pending' | 'skipped' | 'expired' | 'dispatched';
-    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable';
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | null;
     cause: 'schedule' | 'event' | 'manual';
     causeSummary: RunCauseResponseDto;
     title: string;
@@ -1939,7 +1939,7 @@ export type UpdateAutomationSettingsRequest = {
     maxRunsPerAutomationHour?: number | null;
     maxRunsPerWorkspaceHour?: number | null;
     liveRunsPerHost?: number | null;
-    overlap?: 'skip' | 'queue';
+    overlap?: 'skip' | 'queue' | null;
     staleTtlSeconds?: number | null;
     missedGraceSeconds?: number | null;
     maxRunSeconds?: number | null;

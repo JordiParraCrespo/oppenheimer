@@ -15273,6 +15273,14 @@
           "defaultAgent": {
             "type": "string",
             "nullable": true,
+            "enum": [
+              "claude-code",
+              "codex",
+              "opencode",
+              "grok",
+              "shell",
+              null
+            ],
             "description": "The agent a new session is offered, from the coding-agent catalog.",
             "example": "claude-code"
           },
@@ -15353,7 +15361,8 @@
               "codex",
               "opencode",
               "grok",
-              "shell"
+              "shell",
+              null
             ],
             "nullable": true
           }
@@ -15416,7 +15425,8 @@
               "codex",
               "opencode",
               "grok",
-              "shell"
+              "shell",
+              null
             ],
             "nullable": true
           }
@@ -15436,7 +15446,8 @@
             "enum": [
               "ask",
               "auto",
-              "full"
+              "full",
+              null
             ],
             "nullable": true,
             "description": "What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default. Null for an agent with no approvals (the blank terminal)."
@@ -15448,7 +15459,8 @@
               "low",
               "medium",
               "high",
-              "max"
+              "max",
+              null
             ],
             "nullable": true,
             "description": "How hard the agent may think. Null leaves the agent its own default."
@@ -15552,6 +15564,14 @@
           },
           "agent": {
             "type": "string",
+            "enum": [
+              "claude-code",
+              "codex",
+              "opencode",
+              "grok",
+              "shell",
+              null
+            ],
             "description": "The coding agent this session runs.",
             "example": "claude-code"
           },
@@ -15703,7 +15723,8 @@
               "codex",
               "opencode",
               "grok",
-              "shell"
+              "shell",
+              null
             ]
           },
           "projectId": {
@@ -15761,7 +15782,8 @@
                 "enum": [
                   "ask",
                   "auto",
-                  "full"
+                  "full",
+                  null
                 ]
               },
               "effort": {
@@ -15771,7 +15793,8 @@
                   "low",
                   "medium",
                   "high",
-                  "max"
+                  "max",
+                  null
                 ]
               }
             }
@@ -16128,6 +16151,20 @@
           },
           "event": {
             "type": "string",
+            "enum": [
+              "schedule",
+              "pr_opened",
+              "pr_draft",
+              "pr_sync",
+              "pr_merged",
+              "comment",
+              "push",
+              "issue_labeled",
+              "check_failed",
+              "issue_opened",
+              "mention",
+              "release"
+            ],
             "description": "`schedule`, or the catalog event (`pr_opened`, `push`, …)."
           },
           "schedule": {
@@ -16248,7 +16285,8 @@
               "user",
               "project_archived",
               "host_unpaired",
-              "owner_lost_access"
+              "owner_lost_access",
+              null
             ]
           },
           "nextRunAt": {
@@ -16271,7 +16309,8 @@
             "nullable": true,
             "enum": [
               "skip",
-              "queue"
+              "queue",
+              null
             ]
           },
           "maxRunsPerHour": {
@@ -16531,7 +16570,8 @@
               "codex",
               "opencode",
               "grok",
-              "shell"
+              "shell",
+              null
             ]
           },
           "launch": {
@@ -16557,7 +16597,8 @@
                   "low",
                   "medium",
                   "high",
-                  "max"
+                  "max",
+                  null
                 ]
               }
             },
@@ -16573,7 +16614,8 @@
             "type": "string",
             "enum": [
               "skip",
-              "queue"
+              "queue",
+              null
             ],
             "nullable": true
           },
@@ -16952,7 +16994,8 @@
               "codex",
               "opencode",
               "grok",
-              "shell"
+              "shell",
+              null
             ]
           },
           "launch": {
@@ -16978,7 +17021,8 @@
                   "low",
                   "medium",
                   "high",
-                  "max"
+                  "max",
+                  null
                 ]
               }
             },
@@ -16990,7 +17034,8 @@
             "type": "string",
             "enum": [
               "skip",
-              "queue"
+              "queue",
+              null
             ],
             "nullable": true
           },
@@ -17149,7 +17194,8 @@
               "overlapping",
               "missed",
               "not_launchable",
-              "agent_unavailable"
+              "agent_unavailable",
+              null
             ]
           },
           "cause": {
@@ -17430,7 +17476,8 @@
             "type": "string",
             "enum": [
               "skip",
-              "queue"
+              "queue",
+              null
             ],
             "nullable": true
           },

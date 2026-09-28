@@ -13,6 +13,7 @@ import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { patchNestJsSwagger, ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './app.module';
+import { withNullableEnums } from './openapi-document';
 
 patchNestJsSwagger();
 
@@ -28,12 +29,14 @@ export function createSwaggerConfig() {
 export function createSwaggerDocument(
   app: ReturnType<typeof NestFactory.create> extends Promise<infer T> ? T : never,
 ) {
-  return SwaggerModule.createDocument(app, createSwaggerConfig(), {
-    operationIdFactory: (_controller, method) => method,
-    // Every error response references this schema (RFC 7807), so it must be in
-    // the document even if a route documents its failures loosely.
-    extraModels: [ProblemDetailsDto],
-  });
+  return withNullableEnums(
+    SwaggerModule.createDocument(app, createSwaggerConfig(), {
+      operationIdFactory: (_controller, method) => method,
+      // Every error response references this schema (RFC 7807), so it must be in
+      // the document even if a route documents its failures loosely.
+      extraModels: [ProblemDetailsDto],
+    }),
+  );
 }
 
 async function bootstrap() {

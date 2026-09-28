@@ -6,6 +6,7 @@ import {
   type AutomationPausedReason,
   type AutomationPermission,
   type AutomationRunStatus,
+  GITHUB_EVENT_TYPES,
   SCHEDULE_FREQUENCIES,
   type ScheduleFrequency,
   TRIGGER_SOURCES,
@@ -104,7 +105,12 @@ export class AutomationTriggerResponseDto {
   @ApiProperty({ enum: TRIGGER_SOURCES })
   source!: TriggerSource;
 
-  @ApiProperty({ description: '`schedule`, or the catalog event (`pr_opened`, `push`, …).' })
+  // The enum is the contract: a trigger is written only through the catalog
+  // (`externalEventDefinition`), so a stored event is always one of these.
+  @ApiProperty({
+    enum: ['schedule', ...GITHUB_EVENT_TYPES],
+    description: '`schedule`, or the catalog event (`pr_opened`, `push`, …).',
+  })
   event!: string;
 
   @ApiPropertyOptional({ type: ScheduleResponseDto })

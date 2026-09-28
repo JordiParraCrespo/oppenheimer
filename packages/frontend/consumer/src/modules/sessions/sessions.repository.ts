@@ -54,7 +54,7 @@ function toEntity(data: SessionResponseDto): SessionEntity {
     data.hostId,
     data.name,
     data.slug,
-    data.agent as SessionEntity['agent'],
+    data.agent,
     {
       model: data.launch.model ?? null,
       permission: data.launch.permission ?? null,
@@ -106,14 +106,13 @@ export class SessionsRepository {
    * `GET /sessions` answers the paginated envelope every list endpoint here
    * uses — `{ data, meta }` — so the rows are read out of it rather than off
    * the body.
-   */
-  @MapApiError(SessionsErrors.FETCH_LIST_FAILED)
-  /**
+   *
    * Every session in the workspace, whatever the endpoint's page size: the
    * sidebar groups, searches and filters the whole list in the browser, so a
    * page would be a list that silently ends. Pages are walked at the largest
    * size the API allows until the total the first page reports is in hand.
    */
+  @MapApiError(SessionsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<SessionEntity[]> {
     const sessions: SessionEntity[] = [];
     for (let page = 1; ; page += 1) {

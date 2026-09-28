@@ -65,11 +65,8 @@ function toUpdateRequest(input: UpdateProjectInput): UpdateProjectRequest {
       ? { repositories: toRepositoryRows(input.repositories) }
       : {}),
     ...(input.defaultHostId !== undefined ? { defaultHostId: input.defaultHostId } : {}),
-    // The generated type drops the schema's `null` for an enum; the API takes
-    // it, and null is how a default agent is cleared.
-    ...(input.defaultAgent !== undefined
-      ? { defaultAgent: input.defaultAgent as UpdateProjectRequest['defaultAgent'] }
-      : {}),
+    // null is how a default agent is cleared.
+    ...(input.defaultAgent !== undefined ? { defaultAgent: input.defaultAgent } : {}),
   };
 }
 

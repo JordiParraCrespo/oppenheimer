@@ -6,6 +6,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { patchNestJsSwagger } from 'nestjs-zod';
 import { AppModule } from './app.module';
+import { withNullableEnums } from './openapi-document';
 
 patchNestJsSwagger();
 
@@ -24,9 +25,11 @@ async function generate() {
     .addBearerAuth()
     .build();
 
-  const document = SwaggerModule.createDocument(app, config, {
-    operationIdFactory: (_controller, method) => method,
-  });
+  const document = withNullableEnums(
+    SwaggerModule.createDocument(app, config, {
+      operationIdFactory: (_controller, method) => method,
+    }),
+  );
   const outputPath = resolve(__dirname, '../openapi.json');
   writeFileSync(outputPath, JSON.stringify(document, null, 2));
   console.log(`OpenAPI spec written to ${outputPath}`);

@@ -6,6 +6,7 @@ import {
   SESSION_PERMISSIONS,
   SESSION_STATES,
 } from '@oppenheimer/shared';
+import { CODING_AGENT_IDS, type CodingAgentId } from '@oppenheimer/shared/agents';
 
 /**
  * One repository checked out for this session.
@@ -125,8 +126,12 @@ export class SessionResponseDto {
   })
   slug!: string;
 
-  @ApiProperty({ description: 'The coding agent this session runs.', example: 'claude-code' })
-  agent!: string;
+  @ApiProperty({
+    enum: CODING_AGENT_IDS,
+    description: 'The coding agent this session runs.',
+    example: 'claude-code',
+  })
+  agent!: CodingAgentId;
 
   @ApiProperty({ type: SessionLaunchResponseDto })
   launch!: SessionLaunchResponseDto;

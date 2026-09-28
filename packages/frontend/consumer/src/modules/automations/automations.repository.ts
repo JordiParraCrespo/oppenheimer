@@ -8,7 +8,7 @@ import {
 } from '@oppenheimer/api-client';
 import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
-import type { GithubEventType, TriggerFilter } from '@oppenheimer/shared/automations';
+import type { TriggerFilter } from '@oppenheimer/shared/automations';
 import { injectable } from 'inversify';
 import {
   AutomationEntity,
@@ -38,13 +38,11 @@ function triggerOf(dto: AutomationTriggerResponseDto): AutomationTrigger | null 
     const { timezone, ...rule } = dto.schedule;
     return { source: 'schedule', id: dto.id, ...rule, timezone, nextFireAt: date(dto.nextFireAt) };
   }
-  if (dto.source === 'github') {
+  if (dto.source === 'github' && dto.event !== 'schedule') {
     return {
       source: 'github',
       id: dto.id,
-      // Typed as the catalog's, unchecked: the catalog is not worth a place on
-      // the first load, and an event a newer API sends reads by its raw name.
-      event: dto.event as GithubEventType,
+      event: dto.event,
       repositories: dto.repositories ?? [],
       filter: filterOf(dto.filter),
     };
