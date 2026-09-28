@@ -240,6 +240,8 @@ export const findAuthzCatalog = <ThrowOnError extends boolean = false>(options?:
 
 /**
  * List the access grants in the active organization
+ *
+ * Newest first, one page at a time (`page`, `limit` up to 100).
  */
 export const findAccessGrants = <ThrowOnError extends boolean = false>(options?: Options<FindAccessGrantsData, ThrowOnError>): RequestResult<FindAccessGrantsResponses, FindAccessGrantsErrors, ThrowOnError> => (options?.client ?? client).get<FindAccessGrantsResponses, FindAccessGrantsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

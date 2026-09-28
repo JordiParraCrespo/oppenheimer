@@ -86,8 +86,8 @@ Three things the generator gets wrong most often:
 │   └── <module>.errors.ts             # AppError catalog: { code: '<MOD>_001', message, httpStatus }
 ├── database/
 │   ├── <module>.orm-entity.ts         # @Entity TypeORM persistence model
-│   ├── <module>.repository.port.ts    # extends RepositoryPort<Entity>; finds return Option<T>
-│   └── <module>.repository.ts         # @Injectable adapter: maps via mapper, stages events on the outbox
+│   ├── <module>.repository.port.ts    # extends RepositoryPort<Entity> (insert/save/findOneById/delete); finds return Option<T>
+│   └── <module>.repository.ts         # @Injectable adapter: extends TypeOrmRepositoryBase (non-tenant) or ScopedRepositoryBase (tenant); multi-statement writes use outbox.transaction
 ├── commands/<use-case>/
 │   ├── <use-case>.command.ts          # extends CommandBase
 │   ├── <use-case>.command-handler.ts  # @CommandHandler; returns AggregateID

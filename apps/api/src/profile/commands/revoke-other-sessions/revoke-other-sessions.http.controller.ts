@@ -4,7 +4,9 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import type { Request } from 'express';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
+import { CurrentSession } from '../../../auth/decorators/current-session.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
+import { UsesBetterAuthSession } from '../../../auth/decorators/uses-better-auth-session.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { RevokeOtherSessionsCommand } from './revoke-other-sessions.command';
 
@@ -12,6 +14,7 @@ import { RevokeOtherSessionsCommand } from './revoke-other-sessions.command';
 @ApiBearerAuth()
 @ApiAuthProblemResponses()
 @UseGuards(ApiAuthGuard)
+@UsesBetterAuthSession()
 @Controller('profile')
 export class RevokeOtherSessionsHttpController {
   constructor(private readonly commandBus: CommandBus) {}
@@ -29,9 +32,10 @@ export class RevokeOtherSessionsHttpController {
   async revokeOtherSessions(
     @Req() request: Request,
     @CurrentUser('id') userId: string,
+    @CurrentSession('id') sessionId: string | undefined,
   ): Promise<void> {
     await this.commandBus.execute(
-      new RevokeOtherSessionsCommand({ headers: request.headers, userId }),
+      new RevokeOtherSessionsCommand({ headers: request.headers, userId, sessionId }),
     );
   }
 }

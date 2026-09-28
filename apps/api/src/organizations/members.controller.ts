@@ -18,6 +18,7 @@ import type { Request } from 'express';
 import { CheckPolicies } from '../auth/decorators/check-policies.decorator';
 import { OrganizationScoped } from '../auth/decorators/organization-scoped.decorator';
 import { RequireScopes } from '../auth/decorators/require-scopes.decorator';
+import { UsesBetterAuthSession } from '../auth/decorators/uses-better-auth-session.decorator';
 import { ApiAuthGuard } from '../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../auth/guards/policies.guard';
 import {
@@ -53,6 +54,7 @@ import { OrganizationsService } from './organizations.service';
   code: ['ORG_006', 'ORG_007', 'ORG_014'],
 })
 @UseGuards(ApiAuthGuard, PoliciesGuard)
+@UsesBetterAuthSession()
 @Controller('organizations')
 export class MembersController {
   constructor(private readonly organizations: OrganizationsService) {}

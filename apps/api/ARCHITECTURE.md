@@ -192,8 +192,10 @@ background poll reclaiming rows whose process died first. See
 
 ### Repository port + adapter (`database/`)
 
-The port extends `RepositoryPort<Aggregate>`; lookups return `Option<T>` from
-`oxide.ts`, not `T | null`.
+The port extends `RepositoryPort<Aggregate>` (`insert`, `save`, `findOneById`,
+`delete`, nothing else); lookups return `Option<T>` from `oxide.ts`, not
+`T | null`. A list is not part of the base port: a port that needs one
+declares it, with the arguments that bound it.
 
 ```typescript
 // user.repository.port.ts
@@ -205,7 +207,27 @@ export interface UserRepositoryPort extends RepositoryPort<UserEntity> {
 
 The adapter (`user.repository.ts`) is the **only** place that touches both the
 ORM entity and the domain entity. It maps via the mapper and stages the
-aggregate's domain events on the outbox, atomically with the write.
+aggregate's domain events on the outbox, atomically with the write. Which base
+it extends depends on the aggregate:
+
+- **Non-tenant** (users, feature flags, user settings): extend
+  `TypeOrmRepositoryBase<Aggregate, Orm>` from `@oppenheimer/backend-ddd`. It
+  owns `insert`, `save`, `findOneById` and `delete` (map, write through
+  `OutboxService.writeWithEvents`, map back); the adapter injects the ORM
+  repository, the mapper and `OutboxService` as `protected readonly`
+  constructor parameters, keeps its own queries, and overrides what differs
+  (`UserRepository.save` turns the username constraint into
+  `USERNAME_TAKEN`; `UserSettingsRepository` sets `idColumn = 'userId'`).
+- **Tenant-scoped** (projects, sessions, hosts, automations): extend
+  `ScopedRepositoryBase` from `@oppenheimer/backend-authz`, whose reads all
+  take an `AccessScope`. The port does not extend `RepositoryPort`.
+
+A write that spans several statements (lock, check, write) runs them in one
+`this.outbox.transaction(async (manager) => …)` and stages on that `manager`
+with `stageEvents` / `stageJob`. The helper wakes the relay after commit when
+something was staged, and never after a rollback; the adapter keeps no
+`staged` flag and never calls `wake()` itself. Clearing the aggregate's events
+stays with the adapter, after the call returns.
 
 ### Command + handler (`commands/<use-case>/`)
 
@@ -312,8 +334,10 @@ the domain. Manual checklist:
 
 1. `domain/` — aggregate (+ value objects), events, `errors.ts`. Keep it pure.
 2. `database/` — `*.orm-entity.ts`, `*.repository.port.ts` (extends
-   `RepositoryPort`), `*.repository.ts` (implements port, maps, stages events
-   on the outbox).
+   `RepositoryPort`, or declares scoped methods for tenant data),
+   `*.repository.ts` (extends `TypeOrmRepositoryBase` for non-tenant data or
+   `ScopedRepositoryBase` for tenant data; multi-statement writes go through
+   `outbox.transaction`).
 3. One folder per use case under `commands/` and `queries/`.
 4. `*.mapper.ts`, `*.di-tokens.ts`, `dtos/*.response.dto.ts`.
 5. `*.module.ts` — import `CqrsModule` + `TypeOrmModule.forFeature([OrmEntity])`,

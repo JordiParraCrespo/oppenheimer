@@ -19,6 +19,6 @@ export class RevokeOtherSessionsCommandHandler
   ) {}
 
   async execute(command: RevokeOtherSessionsCommand): Promise<void> {
-    await this.profileAuth.revokeOtherSessions(command.headers, command.userId);
+    await this.profileAuth.revokeOtherSessions(command.headers, command.userId, command.sessionId);
   }
 }

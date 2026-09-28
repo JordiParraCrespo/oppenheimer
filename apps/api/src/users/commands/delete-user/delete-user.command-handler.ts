@@ -1,6 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
+import type { SessionCachePort } from '../../../auth/application/session-cache.port';
+import { SESSION_CACHE } from '../../../auth/auth.di-tokens';
 import { AccountErasureRegistry } from '../../application/account-erasure.registry';
 import type { UserRepositoryPort } from '../../database/user.repository.port';
 import { UserErrors } from '../../domain/user.errors';
@@ -19,6 +21,12 @@ import { DeleteUserCommand } from './delete-user.command';
  * exists with its sign-ins gone. Every step is idempotent, so a delete that
  * failed part way is simply asked again. The aggregate raises
  * `UserDeletedDomainEvent`, which the repository publishes after the delete.
+ *
+ * The cascade removes the session rows but not Better Auth's cached copies of
+ * them, which would keep the deleted account's cookie working until it
+ * expired. So the copies are evicted first — the sessions answer from the
+ * database meanwhile, and a failure here stops the deletion before anything is
+ * gone — and once more after the delete, for a sign-in that landed in between.
  */
 @CommandHandler(DeleteUserCommand)
 export class DeleteUserCommandHandler implements ICommandHandler<DeleteUserCommand, void> {
@@ -26,6 +34,8 @@ export class DeleteUserCommandHandler implements ICommandHandler<DeleteUserComma
     @Inject(USER_REPOSITORY)
     private readonly userRepository: UserRepositoryPort,
     private readonly erasure: AccountErasureRegistry,
+    @Inject(SESSION_CACHE)
+    private readonly sessionCache: SessionCachePort,
   ) {}
 
   async execute(command: DeleteUserCommand): Promise<void> {
@@ -40,8 +50,10 @@ export class DeleteUserCommandHandler implements ICommandHandler<DeleteUserComma
       throw new AppError(UserErrors.DELETE_CONFIRMATION_MISMATCH);
     }
 
+    await this.sessionCache.evictUser(user.id);
     await this.erasure.eraseFor(user.id);
     user.delete();
     await this.userRepository.delete(user);
+    await this.sessionCache.evictUser(user.id);
   }
 }

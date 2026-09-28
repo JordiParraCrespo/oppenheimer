@@ -47,7 +47,8 @@ export class FindRolesHttpController {
     name: 'search',
     required: false,
     type: String,
-    description: 'Search by role name',
+    maxLength: 100,
+    description: 'Search by role name or description; `%` and `_` match literally',
   })
   @ApiResponse({ status: 200, type: PaginatedRolesResponseDto })
   async findAll(@Query() query: FindRolesRequest, @Req() request: ScopedRequest) {

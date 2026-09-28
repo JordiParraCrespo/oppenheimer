@@ -18,6 +18,7 @@ import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backen
 import type { Request, Response } from 'express';
 import { CheckPolicies, NoPolicy } from '../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../auth/decorators/require-scopes.decorator';
+import { UsesBetterAuthSession } from '../auth/decorators/uses-better-auth-session.decorator';
 import { ApiAuthGuard } from '../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../auth/guards/policies.guard';
 import { AdminService } from './admin.service';
@@ -77,6 +78,7 @@ function forwardCookies(headers: Headers, res: Response): void {
   code: 'ADMIN_008',
 })
 @UseGuards(ApiAuthGuard, PoliciesGuard)
+@UsesBetterAuthSession()
 @Controller('admin')
 export class AdminController {
   constructor(private readonly admin: AdminService) {}

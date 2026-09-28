@@ -2,6 +2,8 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
+import type { SessionCachePort } from '../../../auth/application/session-cache.port';
+import { SESSION_CACHE } from '../../../auth/auth.di-tokens';
 import type { UserRepositoryPort } from '../../../users/database/user.repository.port';
 import { USER_REPOSITORY } from '../../../users/user.di-tokens';
 import { ProfileErrors } from '../../domain/profile.errors';
@@ -24,6 +26,8 @@ export class UpdateProfileCommandHandler
   constructor(
     @Inject(USER_REPOSITORY)
     private readonly userRepository: UserRepositoryPort,
+    @Inject(SESSION_CACHE)
+    private readonly sessionCache: SessionCachePort,
   ) {}
 
   async execute(command: UpdateProfileCommand): Promise<AggregateID> {
@@ -40,6 +44,9 @@ export class UpdateProfileCommandHandler
     });
 
     await this.userRepository.save(user);
+    // Better Auth caches each session with a copy of the user; bring the
+    // copies in line with the row just written.
+    await this.sessionCache.refreshUser(user.id);
     return user.id;
   }
 }

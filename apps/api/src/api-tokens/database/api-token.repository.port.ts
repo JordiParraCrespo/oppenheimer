@@ -18,7 +18,10 @@ export interface ApiTokenRepositoryPort extends RepositoryPort<ApiTokenEntity> {
 
   /**
    * Record a successful authentication without loading and saving the whole
-   * aggregate — this runs on every request, so it stays a single UPDATE.
+   * aggregate, and without touching `updatedAt`. `lastUsedAt` has a minute's
+   * granularity (`LAST_USED_GRANULARITY_MS`): a stamp less than that after the
+   * stored one is a no-op, decided in the `WHERE`, so concurrent callers and
+   * replicas write it at most once a minute.
    */
   touchLastUsedAt(id: string, at: Date): Promise<void>;
 }

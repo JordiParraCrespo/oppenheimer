@@ -5,10 +5,12 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { AppError } from '@oppenheimer/backend-core';
 import type { CredentialScopePort } from '../application/credential-scope.port';
 import type { RequestTenantPort } from '../application/request-tenant.port';
 import { CREDENTIAL_SCOPE, DELEGATED_SESSION, REQUEST_TENANT } from '../auth.di-tokens';
+import { USES_BETTER_AUTH_SESSION_KEY } from '../decorators/uses-better-auth-session.decorator';
 import { isAccessAllowed } from '../domain/account-access.policy';
 import { AuthErrors } from '../domain/auth.errors';
 import {
@@ -16,8 +18,6 @@ import {
   pinnedOrganizationIdOf,
   type ScopedRequest,
 } from '../domain/scope-context.types';
-import { auth } from '../infrastructure/better-auth.config';
-import { betterAuthHeaders } from '../infrastructure/better-auth.util';
 import type { DelegatedSessionPort } from '../infrastructure/delegated-session.port';
 
 /**
@@ -27,10 +27,15 @@ import type { DelegatedSessionPort } from '../infrastructure/delegated-session.p
  * the `REQUEST_TENANT` port) — before any guard or handler builds an ability.
  *
  * Replaces Better Auth's own `AuthGuard`, which only understands session
- * cookies. For a scoped credential this guard additionally mints a short-lived
- * delegated Better Auth session and rewrites the `Authorization` header to it,
- * so the façade modules that call `auth.api.*` with the incoming headers keep
- * working unchanged.
+ * cookies. On a route marked `@UsesBetterAuthSession()` — the façades that call
+ * `auth.api.*` with the incoming headers — a scoped credential additionally
+ * gets a short-lived delegated Better Auth session, and the `Authorization`
+ * header is rewritten to it. Other routes never need one and never pay for it.
+ *
+ * It verifies nothing itself: the credential, and the session for a session
+ * caller, come from `CREDENTIAL_SCOPE`, which resolves each once per request.
+ * A session token presented as a bearer was already verified there while
+ * ruling out an OAuth grant, and the cookie is verified on first ask.
  *
  * It does **not** decide what the credential may do: `PoliciesGuard` applies
  * the owner's roles and the global `ScopesGuard` applies the credential's
@@ -47,16 +52,17 @@ export class ApiAuthGuard implements CanActivate {
     private readonly delegatedSessions: DelegatedSessionPort,
     @Inject(REQUEST_TENANT)
     protected readonly tenants: RequestTenantPort,
+    private readonly reflector: Reflector,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<ScopedRequest>();
-    await this.authenticate(request);
+    await this.authenticate(context, request);
     this.tenants.stamp(context, request);
     return true;
   }
 
-  private async authenticate(request: ScopedRequest): Promise<void> {
+  private async authenticate(context: ExecutionContext, request: ScopedRequest): Promise<void> {
     const scopeContext = await this.credentials.resolve(request);
 
     if (!scopeContext) return this.authenticateSession(request);
@@ -75,17 +81,19 @@ export class ApiAuthGuard implements CanActivate {
     // default, so organization-scoped routes resolve without an explicit id.
     const pinnedOrganizationId = pinnedOrganizationIdOf(scopeContext);
 
-    const sessionToken = await this.delegatedSessions.resolveSessionToken({
-      credentialId: scopeContext.credentialId,
-      userId: scopeContext.owner.id,
-      label: `oppenheimer-${scopeContext.kind}/${scopeContext.prefix ?? scopeContext.credentialId}`,
-      activeOrganizationId: pinnedOrganizationId,
-    });
+    if (this.usesBetterAuthSession(context)) {
+      const sessionToken = await this.delegatedSessions.resolveSessionToken({
+        credentialId: scopeContext.credentialId,
+        userId: scopeContext.owner.id,
+        label: `oppenheimer-${scopeContext.kind}/${scopeContext.prefix ?? scopeContext.credentialId}`,
+        activeOrganizationId: pinnedOrganizationId,
+      });
 
-    if (sessionToken) {
-      // Present the delegated session to anything downstream that resolves the
-      // caller through Better Auth (the organization/admin façades).
-      request.headers.authorization = `Bearer ${sessionToken}`;
+      if (sessionToken) {
+        // Present the delegated session to the façade, which resolves the
+        // caller through Better Auth.
+        request.headers.authorization = `Bearer ${sessionToken}`;
+      }
     }
 
     request.scopeContext = scopeContext;
@@ -96,15 +104,24 @@ export class ApiAuthGuard implements CanActivate {
     };
   }
 
+  /** Whether this route calls Better Auth as the caller (`@UsesBetterAuthSession()`). */
+  private usesBetterAuthSession(context: ExecutionContext): boolean {
+    return (
+      this.reflector.getAllAndOverride<boolean>(USES_BETTER_AUTH_SESSION_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) === true
+    );
+  }
+
   /**
-   * Cookie-session path. Note that `request.session` is set to the session
-   * itself (not Better Auth's `{ session, user }` envelope), which is the shape
-   * the `REQUEST_TENANT` port reads `activeOrganizationId` from.
+   * Session path: a session cookie, or a session token presented as a bearer.
+   * Note that `request.session` is set to the session itself (not Better
+   * Auth's `{ session, user }` envelope), which is the shape the
+   * `REQUEST_TENANT` port reads `activeOrganizationId` from.
    */
   private async authenticateSession(request: ScopedRequest): Promise<void> {
-    const session = await auth.api.getSession({
-      headers: betterAuthHeaders(request.headers),
-    });
+    const session = await this.credentials.resolveSession(request);
 
     // A session outlives the account's standing: a deactivation deletes no
     // session rows, and a ban expires on its own clock. So the rule the

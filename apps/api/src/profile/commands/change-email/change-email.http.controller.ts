@@ -6,6 +6,7 @@ import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backen
 import type { Request } from 'express';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
+import { UsesBetterAuthSession } from '../../../auth/decorators/uses-better-auth-session.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { ChangeEmailCommand } from './change-email.command';
 import { ChangeEmailRequest } from './change-email.request.dto';
@@ -14,6 +15,7 @@ import { ChangeEmailRequest } from './change-email.request.dto';
 @ApiBearerAuth()
 @ApiAuthProblemResponses()
 @UseGuards(ApiAuthGuard)
+@UsesBetterAuthSession()
 @Controller('profile')
 export class ChangeEmailHttpController {
   constructor(private readonly commandBus: CommandBus) {}

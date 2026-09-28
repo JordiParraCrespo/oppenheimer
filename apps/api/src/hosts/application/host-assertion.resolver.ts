@@ -6,13 +6,14 @@ import type { CredentialOwnerPort } from '../../auth/application/credential-owne
 import { CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
 import type { HostRepositoryPort } from '../database/host.repository.port';
 import { HostErrors } from '../domain/hosts.errors';
-import { HOST_REPOSITORY } from '../hosts.di-tokens';
+import { HOST_REPOSITORY, LEGACY_REPLAY_MARKER } from '../hosts.di-tokens';
 import {
   assertionIsSignedBy,
   type DecodedHostAssertion,
   decodeHostAssertion,
   looksLikeHostAssertion,
 } from '../infrastructure/host-assertion.util';
+import type { LegacyReplayMarkerPort } from '../infrastructure/legacy-replay-marker.port';
 import type { HostAssertionPort, HostPrincipalIdentity } from './host-assertion.port';
 
 /**
@@ -61,6 +62,8 @@ export class HostAssertionResolver implements HostAssertionPort {
     private readonly configService: ConfigService,
     @Inject(CREDENTIAL_OWNER)
     private readonly owners: CredentialOwnerPort,
+    @Inject(LEGACY_REPLAY_MARKER)
+    private readonly legacyMarkers: LegacyReplayMarkerPort,
   ) {}
 
   recognises(bearer: string): boolean {
@@ -166,8 +169,17 @@ export class HostAssertionResolver implements HostAssertionPort {
    * Claim the `jti` for the rest of the token's life. Losing the race means the
    * assertion has already been used, which is a replay whether or not the first
    * use was legitimate.
+   *
+   * TODO(remove after #162 has been live once): the marker a replica wrote
+   * before the cache prefixed its keys sits at the unprefixed key, which
+   * `setIfAbsent` no longer sees, so an assertion used in the five and a half
+   * minutes before that deploy could otherwise be used once more after it.
+   * The legacy key is checked first and honoured. Every such marker has
+   * expired by the next release; remove this check and
+   * `LegacyReplayMarkerPort` then.
    */
   private async burn(hostId: string, jti: string, expiresAt: Date, now: Date): Promise<void> {
+    if (await this.legacyMarkers.isBurned(hostId, jti)) throw this.rejected('already used');
     const ttlSeconds = Math.max(
       1,
       Math.ceil((expiresAt.getTime() - now.getTime()) / 1000) + CLOCK_SKEW_SECONDS,

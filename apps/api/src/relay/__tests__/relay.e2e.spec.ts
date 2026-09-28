@@ -186,8 +186,13 @@ async function boot(): Promise<World> {
   };
 
   const registry = new InProcessLinkRegistry(() => 0);
-  const owners: CredentialOwnerPort = { findActiveOwner: vi.fn().mockResolvedValue({ id: USER }) };
-  const assertions = new HostAssertionResolver(hosts, cache, config, owners);
+  const owners: CredentialOwnerPort = {
+    findActiveOwner: vi.fn().mockResolvedValue({ id: USER }),
+    requireActiveOwner: vi.fn().mockResolvedValue({ id: USER }),
+  };
+  const assertions = new HostAssertionResolver(hosts, cache, config, owners, {
+    isBurned: async () => false,
+  });
   const runners = new RunnerLinkGateway(
     assertions,
     registry,

@@ -109,6 +109,11 @@ const CONSTANT_DOCS = {
     'before its PTY reads pause. A runaway build stalls its own pane, never the',
     'link.',
   ],
+  maxFrameBytes: [
+    'MaxFrameBytes is the largest frame either peer puts on the link: the',
+    'control plane closes a link that sends a bigger one with 1009, so the',
+    'runner reads no bigger one and never sends one.',
+  ],
   capabilities: [
     'The hello capabilities: commands a runner takes beyond its protocol',
     "version's baseline.",
@@ -350,6 +355,9 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
     '',
     ...comment(CONSTANT_DOCS.creditWindowBytes),
     `const CreditWindow = ${constants.creditWindowBytes}`,
+    '',
+    ...comment(CONSTANT_DOCS.maxFrameBytes),
+    `const MaxFrameBytes = ${constants.maxFrameBytes}`,
     '',
     ...comment(CONSTANT_DOCS.maxEventPayloadBytes),
     `const MaxEventPayloadBytes = ${constants.maxEventPayloadBytes}`,

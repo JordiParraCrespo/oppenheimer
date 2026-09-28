@@ -5,8 +5,6 @@ import { AuthErrors } from '../../domain/auth.errors';
 import { ApiAuthGuard } from '../api-auth.guard';
 import { OptionalApiAuthGuard } from '../optional-api-auth.guard';
 
-vi.mock('../../infrastructure/better-auth.config', () => ({ auth: { api: {} } }));
-
 function contextFor(request: object): ExecutionContext {
   return { switchToHttp: () => ({ getRequest: () => request }) } as unknown as ExecutionContext;
 }
@@ -17,7 +15,7 @@ describe('OptionalApiAuthGuard', () => {
   let guard: OptionalApiAuthGuard;
 
   beforeEach(() => {
-    guard = new OptionalApiAuthGuard({} as never, {} as never, tenants as never);
+    guard = new OptionalApiAuthGuard({} as never, {} as never, tenants as never, {} as never);
   });
 
   it('lets an anonymous caller through with no identity', async () => {

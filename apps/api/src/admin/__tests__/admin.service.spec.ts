@@ -3,8 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // `../auth/auth` opens a real Postgres pool at import time, so mock it before
 // the service pulls it in. Each `auth.api.*` method is a vi.fn we can assert on.
+const findMany = vi.hoisted(() => vi.fn());
+
 vi.mock('../../auth/infrastructure/better-auth.config', () => ({
   auth: {
+    // Better Auth's database adapter: the session rows, never the Redis copy.
+    $context: Promise.resolve({ adapter: { findMany } }),
     api: {
       listUsers: vi.fn(),
       getUser: vi.fn(),
@@ -192,29 +196,50 @@ describe('AdminService', () => {
     expect(result).toEqual({ success: true });
   });
 
-  it('lists user sessions', async () => {
-    api.listUserSessions.mockResolvedValue({
-      sessions: [
-        {
-          id: 's1',
-          userId: 'u1',
-          expiresAt: '2024-01-01T00:00:00.000Z',
-          createdAt: '2024-01-01T00:00:00.000Z',
-        },
-      ],
-    });
+  it('lists user sessions from Postgres, after the admin plugin allows it', async () => {
+    // The plugin's list walks the Redis index, which never saw a session
+    // signed in before the cache existed; the table has it.
+    api.listUserSessions.mockResolvedValue({ sessions: [] });
+    findMany.mockResolvedValue([
+      {
+        id: 's1',
+        userId: 'u1',
+        token: 'token-1',
+        expiresAt: '2024-01-01T00:00:00.000Z',
+        createdAt: '2024-01-01T00:00:00.000Z',
+      },
+    ]);
+
     const result = await service.listSessions(headers, 'u1');
+
+    expect(api.listUserSessions).toHaveBeenCalledWith(
+      expect.objectContaining({ body: { userId: 'u1' } }),
+    );
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: 'session',
+        where: expect.arrayContaining([{ field: 'userId', value: 'u1' }]),
+      }),
+    );
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('s1');
+    expect(result[0]).not.toHaveProperty('token');
+  });
+
+  it('does not read the rows when the admin plugin refuses the list', async () => {
+    api.listUserSessions.mockRejectedValue(new Error('forbidden'));
+    findMany.mockClear();
+
+    await expect(service.listSessions(headers, 'u1')).rejects.toBeDefined();
+    expect(findMany).not.toHaveBeenCalled();
   });
 
   it('revokes a single session by id, resolving its token server-side', async () => {
-    api.listUserSessions.mockResolvedValue({
-      sessions: [
-        { id: 's1', userId: 'u1', token: 'token-1' },
-        { id: 's2', userId: 'u1', token: 'token-2' },
-      ],
-    });
+    api.listUserSessions.mockResolvedValue({ sessions: [] });
+    findMany.mockResolvedValue([
+      { id: 's1', userId: 'u1', token: 'token-1' },
+      { id: 's2', userId: 'u1', token: 'token-2' },
+    ]);
     api.revokeUserSession.mockResolvedValue({ success: true });
 
     const result = await service.revokeSession(headers, 'u1', 's2');
@@ -230,9 +255,8 @@ describe('AdminService', () => {
   });
 
   it('throws SESSION_NOT_FOUND when the session id does not belong to the user', async () => {
-    api.listUserSessions.mockResolvedValue({
-      sessions: [{ id: 's1', userId: 'u1', token: 'token-1' }],
-    });
+    api.listUserSessions.mockResolvedValue({ sessions: [] });
+    findMany.mockResolvedValue([{ id: 's1', userId: 'u1', token: 'token-1' }]);
 
     await expect(service.revokeSession(headers, 'u1', 'missing')).rejects.toMatchObject({
       code: 'ADMIN_009',

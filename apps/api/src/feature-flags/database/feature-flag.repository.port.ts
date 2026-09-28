@@ -6,6 +6,11 @@ import type { FeatureFlagEntity } from '../domain/feature-flag.entity';
 export interface FeatureFlagRepositoryPort extends RepositoryPort<FeatureFlagEntity> {
   findOneByKey(key: string): Promise<Option<FeatureFlagEntity>>;
   /**
+   * Every row, in key order. Unbounded on purpose: the set is small (one row
+   * per configured flag or segment) and the snapshot resolver holds it whole.
+   */
+  findAll(): Promise<FeatureFlagEntity[]>;
+  /**
    * A cheap value that changes whenever any row is written or removed. Each
    * replica polls it to decide whether its in-memory snapshot is stale, so it
    * digests every row's content — two writes in the same millisecond, or a

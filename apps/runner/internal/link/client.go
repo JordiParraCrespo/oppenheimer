@@ -244,7 +244,9 @@ func (c *Client) dialAndServe(ctx context.Context) error {
 		}
 		return fmt.Errorf("dial: %w", err)
 	}
-	conn.SetReadLimit(16 << 20)
+	// The control plane holds itself to the same cap it holds the runner to:
+	// anything bigger is not a frame of this protocol.
+	conn.SetReadLimit(MaxFrameBytes)
 	defer conn.CloseNow() //nolint:errcheck // a closing link has nothing to report
 
 	linkCtx, stop := context.WithCancel(ctx)
@@ -256,6 +258,8 @@ func (c *Client) dialAndServe(ctx context.Context) error {
 	}
 	hello.Type = "hello"
 	hello.Protocol = Range{Min: ProtocolVersion, Max: ProtocolVersion}
+	hello, fit, held := fitHello(hello)
+	logHelloFit(c.logger, fit, len(hello.Sessions), held)
 	if err := writeJSON(linkCtx, conn, hello); err != nil {
 		return fmt.Errorf("send hello: %w", err)
 	}
@@ -407,6 +411,13 @@ func (c *Client) heartbeatLoop(ctx context.Context) error {
 				continue
 			}
 			beat.Type = "heartbeat"
+			// Fitted as hello is, but quietly: nothing reconciles on a
+			// heartbeat's list, and the hello already said so once per link.
+			beat, fit, held := fitHeartbeat(beat)
+			if fit == FitTruncated {
+				c.logger.Debug("heartbeat session list truncated to fit the frame cap",
+					slog.Int("sent", len(beat.Sessions)), slog.Int("sessions", held))
+			}
 			// A heartbeat that cannot be queued is skipped, not fatal: the next
 			// one says the same thing, and the ping loop is what decides the link
 			// is dead.
@@ -428,9 +439,14 @@ var ErrNotConnected = errors.New("link: not connected")
 // frame is not queued, the link stays up.
 var ErrBackpressure = errors.New("link: send queue full")
 
+// ErrFrameTooLarge is what Send and SendFrame answer for a frame over
+// MaxFrameBytes. It is not queued: the control plane would close the whole
+// link with 1009 on it, and every redial would send it again.
+var ErrFrameTooLarge = errors.New("link: frame over the protocol's size cap")
+
 // Send queues a JSON control frame. It never blocks.
 func (c *Client) Send(message any) error {
-	body, err := json.Marshal(message)
+	body, err := encodeControl(message)
 	if err != nil {
 		return err
 	}
@@ -452,6 +468,9 @@ func (c *Client) Send(message any) error {
 // answers ErrNotConnected when there is no link or the link goes while it
 // waits.
 func (c *Client) SendFrame(ctx context.Context, attachmentID uint32, bytes []byte) error {
+	if FrameHeader+len(bytes) > MaxFrameBytes {
+		return fmt.Errorf("%w: %d bytes for attachment %d", ErrFrameTooLarge, FrameHeader+len(bytes), attachmentID)
+	}
 	out := c.outbox()
 	if out == nil {
 		return ErrNotConnected
@@ -474,8 +493,22 @@ func (c *Client) outbox() *outbox {
 	return c.out
 }
 
+// encodeControl marshals a control frame and holds it to MaxFrameBytes.
+func encodeControl(message any) ([]byte, error) {
+	body, err := json.Marshal(message)
+	if err != nil {
+		return nil, err
+	}
+	if len(body) > MaxFrameBytes {
+		var env Envelope
+		_ = json.Unmarshal(body, &env)
+		return nil, fmt.Errorf("%w: %s is %d bytes", ErrFrameTooLarge, env.Type, len(body))
+	}
+	return body, nil
+}
+
 func writeJSON(ctx context.Context, conn *websocket.Conn, v any) error {
-	body, err := json.Marshal(v)
+	body, err := encodeControl(v)
 	if err != nil {
 		return err
 	}

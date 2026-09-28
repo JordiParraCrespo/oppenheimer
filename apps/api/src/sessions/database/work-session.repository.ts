@@ -72,7 +72,7 @@ export class WorkSessionRepository
   ): Promise<{ session: WorkSessionEntity; created: boolean; projectArchived: boolean }> {
     const record = this.mapper.toPersistence(session);
 
-    const created = await this.dataSource.transaction(async (manager) => {
+    const created = await this.outbox.transaction(async (manager) => {
       // The project is locked **in this transaction**, before the insert, and the
       // archive command takes `FOR UPDATE` on the same row. That is what makes
       // "an archived project holds no unresolved session" true rather than
@@ -157,7 +157,6 @@ export class WorkSessionRepository
     }
 
     session.clearEvents();
-    this.outbox.wake();
     return { session, created: true, projectArchived: false };
   }
 
@@ -165,10 +164,10 @@ export class WorkSessionRepository
     session: WorkSessionEntity,
     events: NewSessionEvent[],
   ): Promise<SessionAppendOutcome> {
-    const outcome = await this.dataSource.transaction((manager) =>
+    const outcome = await this.outbox.transaction((manager) =>
       this.appendWithin(manager, session, events),
     );
-    await this.flushEvents(session);
+    session.clearEvents();
     return outcome;
   }
 
@@ -177,7 +176,7 @@ export class WorkSessionRepository
     sessionId: string,
     events: NewSessionEvent[],
   ): Promise<Option<{ session: WorkSessionEntity; outcome: SessionAppendOutcome }>> {
-    const appended = await this.dataSource.transaction(async (manager) => {
+    const appended = await this.outbox.transaction(async (manager) => {
       const locked = await this.lock(manager, sessionId);
       // Missing and somebody else's answer alike, so a host cannot probe for ids.
       if (!locked || locked.hostId !== hostId) return null;
@@ -197,7 +196,7 @@ export class WorkSessionRepository
       return { session, outcome };
     });
     if (!appended) return None;
-    await this.flushEvents(appended.session);
+    appended.session.clearEvents();
     return Some(appended);
   }
 
@@ -206,7 +205,7 @@ export class WorkSessionRepository
     targetProjectId: string,
     events: NewSessionEvent[],
   ): Promise<'moved' | 'project-archived'> {
-    const outcome = await this.dataSource.transaction(async (manager) => {
+    const outcome = await this.outbox.transaction(async (manager) => {
       const active: { id: string }[] = await manager.query(
         `SELECT "id" FROM "project"
           WHERE "id" = $1 AND "organizationId" = $2 AND "archivedAt" IS NULL
@@ -217,7 +216,7 @@ export class WorkSessionRepository
       await this.appendWithin(manager, session, events);
       return 'moved' as const;
     });
-    if (outcome === 'moved') await this.flushEvents(session);
+    if (outcome === 'moved') session.clearEvents();
     return outcome;
   }
 
@@ -226,13 +225,13 @@ export class WorkSessionRepository
     checkout: SessionCheckoutEntity,
     events: NewSessionEvent[],
   ): Promise<SessionAppendOutcome> {
-    const outcome = await this.dataSource.transaction(async (manager) => {
+    const outcome = await this.outbox.transaction(async (manager) => {
       await manager
         .getRepository(SessionCheckoutOrmEntity)
         .insert(this.mapper.checkoutToPersistence(checkout));
       return this.appendWithin(manager, session, events);
     });
-    await this.flushEvents(session);
+    session.clearEvents();
     return outcome;
   }
 
@@ -241,7 +240,7 @@ export class WorkSessionRepository
     checkout: SessionCheckoutEntity,
     events: NewSessionEvent[],
   ): Promise<SessionAppendOutcome> {
-    const outcome = await this.dataSource.transaction(async (manager) => {
+    const outcome = await this.outbox.transaction(async (manager) => {
       // The append runs first: folding `session.checkout_removed` is what marks the
       // child and steps the agent out of it, so `removedAt` below is written from
       // what the log said rather than from a value the caller set beside it.
@@ -251,7 +250,7 @@ export class WorkSessionRepository
         .update({ id: checkout.id }, { removedAt: checkout.removedAt ?? new Date() });
       return appended;
     });
-    await this.flushEvents(session);
+    session.clearEvents();
     return outcome;
   }
 
@@ -685,13 +684,6 @@ export class WorkSessionRepository
         ],
       );
     }
-  }
-
-  /** The events staged inside the transaction are owed a wake once it commits. */
-  private async flushEvents(session: WorkSessionEntity): Promise<void> {
-    if (session.domainEvents.length === 0) return;
-    session.clearEvents();
-    this.outbox.wake();
   }
 
   /** A page of rows with the sort key each was selected with, in the query's order. */

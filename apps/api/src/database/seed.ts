@@ -10,6 +10,7 @@ import { OAuthConsentOrmEntity } from '../auth/database/oauth-consent.orm-entity
 import { Session } from '../auth/database/session.orm-entity';
 import { Verification } from '../auth/database/verification.orm-entity';
 import { auth, closeAuthConnections } from '../auth/infrastructure/better-auth.config';
+import { BetterAuthSessionCacheAdapter } from '../auth/infrastructure/better-auth-session-cache.adapter';
 import { AccessGrantOrmEntity } from '../authz/database/access-grant.orm-entity';
 import { AutomationOrmEntity } from '../automations/database/automation.orm-entity';
 import { AutomationRevisionOrmEntity } from '../automations/database/automation-revision.orm-entity';
@@ -202,17 +203,13 @@ async function seed() {
   // the hook to reach. That is also what repairs a database seeded before the
   // personal workspace existed: both handlers are idempotent.
   const roleMapper = new RoleMapper();
-  const roleRepository = new RoleRepository(
-    roleRepo,
-    dataSource,
-    roleMapper,
-    new OutboxService(dataSource),
-  );
+  const roleRepository = new RoleRepository(roleRepo, roleMapper, new OutboxService(dataSource));
   const userRoleRepository = new UserRoleRepository(userRoleRepo, roleRepo, roleMapper);
   const assignDefaultRole = new AssignDefaultRoleCommandHandler(roleRepository, userRoleRepository);
   const provisionPersonalWorkspace = new ProvisionPersonalWorkspaceCommandHandler(
     new PersonalWorkspaceRepository(dataSource, new OutboxService(dataSource), userRoleRepository),
     roleRepository,
+    new BetterAuthSessionCacheAdapter(),
   );
 
   for (const seedUser of seedUsers) {

@@ -44,6 +44,7 @@ describe('UploadAvatarCommandHandler', () => {
     remove: ReturnType<typeof vi.fn>;
   };
   let service: UploadAvatarCommandHandler;
+  const sessionCache = { refreshUser: vi.fn().mockResolvedValue(undefined) };
   let user: UserEntity;
 
   beforeEach(() => {
@@ -59,7 +60,26 @@ describe('UploadAvatarCommandHandler', () => {
     service = new UploadAvatarCommandHandler(
       repo as UserRepositoryPort,
       avatars as unknown as AvatarStorageAdapter,
+      sessionCache as never,
     );
+  });
+
+  it('refreshes the cached sessions after the row is written', async () => {
+    // Better Auth caches each session with a copy of the user; the session path
+    // reads that copy, so a write behind its back must be followed by this.
+    const order: string[] = [];
+    vi.mocked(repo.save).mockImplementation(async (entity) => {
+      order.push('save');
+      return entity as never;
+    });
+    sessionCache.refreshUser.mockImplementation(async () => {
+      order.push('refresh');
+    });
+
+    await service.execute(command());
+
+    expect(sessionCache.refreshUser).toHaveBeenCalledWith('user-uuid');
+    expect(order).toEqual(['save', 'refresh']);
   });
 
   it('points the profile at the new key', async () => {

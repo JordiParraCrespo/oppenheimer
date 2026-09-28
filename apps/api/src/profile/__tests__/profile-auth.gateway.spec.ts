@@ -21,6 +21,7 @@ vi.mock('../../auth/infrastructure/better-auth.config', () => ({
 
 describe('ProfileAuthGateway', () => {
   let delegatedSessions: { invalidateForUser: ReturnType<typeof vi.fn> };
+  let sessionCache: { revokeOtherSessions: ReturnType<typeof vi.fn> };
   let facade: ProfileAuthGateway;
 
   beforeEach(() => {
@@ -32,7 +33,11 @@ describe('ProfileAuthGateway', () => {
     delegatedSessions = {
       invalidateForUser: vi.fn().mockResolvedValue(undefined),
     };
-    facade = new ProfileAuthGateway(delegatedSessions as unknown as DelegatedSessionAdapter);
+    sessionCache = { revokeOtherSessions: vi.fn().mockResolvedValue(undefined) };
+    facade = new ProfileAuthGateway(
+      delegatedSessions as unknown as DelegatedSessionAdapter,
+      sessionCache as never,
+    );
   });
 
   describe('changePassword', () => {
@@ -100,9 +105,24 @@ describe('ProfileAuthGateway', () => {
 
   describe('revokeOtherSessions', () => {
     it('evicts the caller’s delegated sessions', async () => {
-      await facade.revokeOtherSessions({}, 'user-1');
+      await facade.revokeOtherSessions({}, 'user-1', 'session-1');
 
       expect(delegatedSessions.invalidateForUser).toHaveBeenCalledWith('user-1');
+    });
+
+    it('sweeps the sessions Better Auth’s cache index missed, sparing this one', async () => {
+      // Better Auth lists "the other sessions" from its cache's own index, which
+      // knows nothing of a session signed in before the cache existed.
+      await facade.revokeOtherSessions({}, 'user-1', 'session-1');
+
+      expect(revokeOtherSessions).toHaveBeenCalled();
+      expect(sessionCache.revokeOtherSessions).toHaveBeenCalledWith('user-1', 'session-1');
+    });
+
+    it('sweeps nothing when the current session is not known', async () => {
+      await facade.revokeOtherSessions({}, 'user-1', undefined);
+
+      expect(sessionCache.revokeOtherSessions).not.toHaveBeenCalled();
     });
   });
 

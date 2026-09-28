@@ -88,6 +88,7 @@ function fakeCache() {
   return {
     store,
     get: vi.fn(async (key: string) => store.get(key)),
+    mget: vi.fn(async (keys: string[]) => keys.map((key) => store.get(key))),
     set: vi.fn(async (key: string, value: unknown) => {
       store.set(key, value);
     }),
@@ -138,6 +139,32 @@ describe('DelegatedSessionAdapter', () => {
     expect(first).toBe('session-token-1');
     expect(second).toBe('session-token-1');
     expect(createSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('answers a cached session in one round trip', async () => {
+    // Regression: the user's generation, then the entry keyed by it — two
+    // sequential Redis reads on every scoped request.
+    await service.resolveSessionToken(OPTIONS);
+    vi.clearAllMocks();
+
+    expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-1');
+    expect(cache.mget).toHaveBeenCalledTimes(1);
+    expect(cache.mget).toHaveBeenCalledWith([
+      'delegated-session:cred-1',
+      'delegated-session-generation:user-1',
+    ]);
+    expect(cache.get).not.toHaveBeenCalled();
+  });
+
+  it('treats an entry minted under an older generation as a miss', async () => {
+    await service.resolveSessionToken(OPTIONS);
+    cache.store.set('delegated-session-generation:user-1', 'rotated-elsewhere');
+
+    expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-2');
+    expect(cache.store.get('delegated-session:cred-1')).toEqual({
+      token: 'session-token-2',
+      generation: 'rotated-elsewhere',
+    });
   });
 
   it('persists the ten-minute expiry instead of Better Auth’s day', async () => {
@@ -278,13 +305,13 @@ describe('DelegatedSessionAdapter', () => {
     // had already retired.
     await service.resolveSessionToken(OPTIONS);
     await service.invalidateForUser('user-1');
-    cache.get.mockRejectedValue(new Error('redis down'));
+    cache.mget.mockRejectedValue(new Error('redis down'));
 
     expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-2');
   });
 
   it('mints rather than failing when the cache is unavailable', async () => {
-    cache.get.mockRejectedValue(new Error('redis down'));
+    cache.mget.mockRejectedValue(new Error('redis down'));
     cache.set.mockRejectedValue(new Error('redis down'));
 
     await expect(service.resolveSessionToken(OPTIONS)).resolves.toBe('session-token-1');

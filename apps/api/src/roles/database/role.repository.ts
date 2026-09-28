@@ -1,13 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  type AggregateID,
-  OutboxService,
-  Paginated,
-  type PaginatedQueryParams,
-} from '@oppenheimer/backend-ddd';
+import { likeContains } from '@oppenheimer/backend-core';
+import { type AggregateID, OutboxService, Paginated } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, type FindOptionsWhere, ILike, In, IsNull, type Repository } from 'typeorm';
+import { type FindOptionsWhere, ILike, In, IsNull, type Repository } from 'typeorm';
 import type { RoleEntity } from '../domain/role.entity';
 import { RoleMapper } from '../roles.mapper';
 import { bumpForRole } from './authz-version.repository';
@@ -30,7 +26,6 @@ export class RoleRepository implements RoleRepositoryPort {
   constructor(
     @InjectRepository(RoleOrmEntity)
     private readonly repository: Repository<RoleOrmEntity>,
-    private readonly dataSource: DataSource,
     private readonly mapper: RoleMapper,
     private readonly outbox: OutboxService,
   ) {}
@@ -86,25 +81,6 @@ export class RoleRepository implements RoleRepositoryPort {
     return records.map((record) => this.mapper.toDomain(record));
   }
 
-  async findAll(): Promise<RoleEntity[]> {
-    const records = await this.repository.find();
-    return records.map((record) => this.mapper.toDomain(record));
-  }
-
-  async findAllPaginated(params: PaginatedQueryParams): Promise<Paginated<RoleEntity>> {
-    const [records, count] = await this.repository.findAndCount({
-      skip: params.offset,
-      take: params.limit,
-      order: { createdAt: params.orderBy.param === 'asc' ? 'ASC' : 'DESC' },
-    });
-    return new Paginated({
-      count,
-      limit: params.limit,
-      page: params.page,
-      data: records.map((record) => this.mapper.toDomain(record)),
-    });
-  }
-
   async findRoles(params: FindRolesParams): Promise<Paginated<RoleEntity>> {
     const { page, limit, search, organizationId } = params;
     const skip = (page - 1) * limit;
@@ -134,10 +110,6 @@ export class RoleRepository implements RoleRepositoryPort {
       });
     });
     return result.affected ? result.affected > 0 : false;
-  }
-
-  transaction<T>(handler: () => Promise<T>): Promise<T> {
-    return this.dataSource.transaction(() => handler());
   }
 }
 
@@ -174,7 +146,8 @@ function searchWhere(
 ): FindOptionsWhere<RoleOrmEntity> | FindOptionsWhere<RoleOrmEntity>[] {
   if (!search) return scopedWhere({}, organizationId);
 
-  const needle = ILike(`%${search}%`);
+  // The term's `%` and `_` match literally.
+  const needle = ILike(likeContains(search));
 
   return [{ name: needle }, { description: needle }].flatMap((match) => {
     const scoped = scopedWhere(match, organizationId);

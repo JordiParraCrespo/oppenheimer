@@ -6,6 +6,8 @@ import { CacheService } from '@oppenheimer/backend-cache';
 import type Redis from 'ioredis';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
+import type { SessionCachePort } from '../src/auth/application/session-cache.port';
+import { SESSION_CACHE } from '../src/auth/auth.di-tokens';
 import { REDIS_CLIENT } from '../src/redis/redis.di-tokens';
 import { runAllMigrations } from './run-migrations';
 
@@ -134,6 +136,9 @@ describe('authorization cache (integration)', () => {
       organizationId,
       user.id,
     ]);
+    // Written behind Better Auth's back, so do what the application's own
+    // writers do: bring the cached copy of the session along.
+    await app.get<SessionCachePort>(SESSION_CACHE).refreshUser(user.id);
   }
 
   async function newOrganization(): Promise<string> {
@@ -373,6 +378,7 @@ describe('authorization cache (integration)', () => {
           name: `global-reader-${randomUUID().slice(0, 8)}`,
           permissions: readProjects as never,
           organizationId: null,
+          global: true,
         }),
       )) as string;
       const userRole = await permissionsOf('user');
@@ -387,6 +393,77 @@ describe('authorization cache (integration)', () => {
         new AssignUserRolesCommand({ userId: user.id, roleIds: [userRole.id] }),
       );
       expect(await listProjects()).toBe(403);
+    });
+  });
+
+  describe('POST /v1/roles with no active organization', () => {
+    /** A fresh account whose session points at no organization. */
+    async function withoutTenant() {
+      const account = await signUp(`no-tenant-${randomUUID().slice(0, 8)}@example.com`);
+      await dataSource.query(
+        `UPDATE "session" SET "activeOrganizationId" = NULL WHERE "userId" = $1`,
+        [account.id],
+      );
+      await app.get<SessionCachePort>(SESSION_CACHE).refreshUser(account.id);
+      return account;
+    }
+
+    const createRole = (token: string, name: string) =>
+      fetch(`${baseUrl}/api/v1/roles`, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name, permissions: [] }),
+      });
+
+    it('creates a global role for a platform admin', async () => {
+      const admin = await withoutTenant();
+      await dataSource.query(`UPDATE "user" SET "role" = 'admin' WHERE "id" = $1`, [admin.id]);
+      await app.get<SessionCachePort>(SESSION_CACHE).refreshUser(admin.id);
+
+      const name = `platform-${randomUUID().slice(0, 8)}`;
+      const response = await createRole(admin.token, name);
+
+      expect(response.status).toBe(201);
+      const [row] = await dataSource.query(
+        `SELECT "organizationId" FROM "role" WHERE "name" = $1`,
+        [name],
+      );
+      expect(row).toEqual({ organizationId: null });
+    });
+
+    it('answers ROLE_008 to a role editor without manage all', async () => {
+      const editor = await withoutTenant();
+      const { CreateRoleCommand } = await import(
+        '../src/roles/commands/create-role/create-role.command'
+      );
+      const { AssignUserRolesCommand } = await import(
+        '../src/roles/commands/assign-user-roles/assign-user-roles.command'
+      );
+      const roleEditor = (await commandBus.execute(
+        new CreateRoleCommand({
+          name: `role-editor-${randomUUID().slice(0, 8)}`,
+          permissions: [{ action: 'create', subject: 'Role' }],
+          organizationId: null,
+          global: true,
+        }),
+      )) as string;
+      const userRole = await permissionsOf('user');
+      await commandBus.execute(
+        new AssignUserRolesCommand({ userId: editor.id, roleIds: [userRole.id, roleEditor] }),
+      );
+
+      const name = `tenantless-${randomUUID().slice(0, 8)}`;
+      const response = await createRole(editor.token, name);
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({ code: 'ROLE_008' });
+      expect(await dataSource.query(`SELECT 1 FROM "role" WHERE "name" = $1`, [name])).toHaveLength(
+        0,
+      );
     });
   });
 });

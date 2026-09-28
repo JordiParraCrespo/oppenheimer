@@ -248,6 +248,18 @@ export type AccessGrantResponseDto = {
     createdAt: string;
 };
 
+export type AccessGrantPaginationMetaDto = {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+};
+
+export type PaginatedAccessGrantsResponseDto = {
+    data: Array<AccessGrantResponseDto>;
+    meta: AccessGrantPaginationMetaDto;
+};
+
 export type CreateAccessGrantRequest = {
     principalType: 'user' | 'team' | 'role';
     principalId: string;
@@ -2363,7 +2375,7 @@ export type FindUsersData = {
     path?: never;
     query?: {
         /**
-         * Search by name or email
+         * Search by name or email; `%` and `_` match literally
          */
         search?: string;
         /**
@@ -2576,7 +2588,16 @@ export type FindAuthzCatalogResponse = FindAuthzCatalogResponses[keyof FindAuthz
 export type FindAccessGrantsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Items per page (default: 20, max: 100)
+         */
+        limit?: number;
+        /**
+         * Page number (default: 1)
+         */
+        page?: number;
+    };
     url: '/api/v1/access-grants';
 };
 
@@ -2594,7 +2615,7 @@ export type FindAccessGrantsErrors = {
 export type FindAccessGrantsError = FindAccessGrantsErrors[keyof FindAccessGrantsErrors];
 
 export type FindAccessGrantsResponses = {
-    200: Array<AccessGrantResponseDto>;
+    200: PaginatedAccessGrantsResponseDto;
 };
 
 export type FindAccessGrantsResponse = FindAccessGrantsResponses[keyof FindAccessGrantsResponses];
@@ -2818,7 +2839,7 @@ export type FindRolesData = {
     path?: never;
     query?: {
         /**
-         * Search by role name
+         * Search by role name or description; `%` and `_` match literally
          */
         search?: string;
         /**
@@ -2860,6 +2881,10 @@ export type CreateRoleData = {
 };
 
 export type CreateRoleErrors = {
+    /**
+     * ROLE_008 — No active organization, and the caller cannot create a global role
+     */
+    400: ProblemDetailsDto;
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */

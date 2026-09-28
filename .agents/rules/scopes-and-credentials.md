@@ -78,7 +78,13 @@ identity or data already served to anonymous callers (currently
 - Token secrets are **only** ever stored as a SHA-256 digest. Never log a
   secret, never put one in a cache key (`credentialId` for OAuth is a digest
   prefix for exactly this reason), never add an endpoint that returns one after
-  creation.
+  creation. The same goes for session tokens: Better Auth's session cache is
+  keyed `ba:<sha256>` (`better-auth-secondary-storage.adapter.ts`), and the
+  rate limiter buckets a presented credential by `cred:<digest>`.
+- Each credential is resolved **once per request**, through
+  `CREDENTIAL_SCOPE` (`resolve`, `resolveSession`), whoever asks; nothing
+  else calls `auth.api.getSession`. The owner lookup is
+  `CREDENTIAL_OWNER.requireActiveOwner`, never a private copy.
 - Authentication failures share one opaque error (`TOKEN_003`) whether the
   token is unknown, revoked or expired, or its owner is deactivated or banned —
   distinguishing them hands out a probing oracle. Authorization failures are
@@ -118,11 +124,18 @@ is your module's catalog.
 
 ## Delegated sessions
 
-Façade modules (organizations, members, invitations, workspaces, admin) call
+Façade modules (organizations, members, invitations, workspaces, admin, and
+the profile routes that change a password, an email or sessions) call
 `auth.api.*`, which resolves the caller from a Better Auth session. Scoped
-credentials have none, so `ApiAuthGuard` mints a short-lived session for the
-owner and rewrites `Authorization` to it (accepted thanks to the `bearer`
-plugin). It is cached per credential for ten minutes.
+credentials have none, so on a route marked **`@UsesBetterAuthSession()`**
+`ApiAuthGuard` mints a short-lived session for the owner and rewrites
+`Authorization` to it (accepted thanks to the `bearer` plugin). It is cached
+per credential for ten minutes, and a lookup is one Redis round trip. Every
+other route skips it: most of the API never calls Better Auth.
 
-If you add a façade that calls `auth.api.*` with the incoming headers, this
-already works. If you bypass the guard, it will not.
+**A new façade that calls `auth.api.*` with the incoming headers must carry
+`@UsesBetterAuthSession()`** on its controller (or handler), or it answers a
+scoped credential as if nobody were signed in.
+`auth/__tests__/delegated-session-coverage.spec.ts` lists every file that calls
+`auth.api.*` and the controllers that reach it, and fails on a new one until it
+is listed and marked. If you bypass the guard, none of this works.
