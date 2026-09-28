@@ -152,14 +152,13 @@ test('a feature named after a page is reported; a module or an allowlisted name 
   const { report } = check({
     'src/features/settings/screens/settings.tsx': 'export function SettingsScreen() {}\n',
     'src/features/users/screens/users.tsx': 'export function UsersScreen() {}\n',
-    'src/features/automations/screens/automations.tsx': 'export function AutomationsScreen() {}\n',
     'src/features/public/screens/about.tsx': 'export function AboutScreen() {}\n',
   });
   assert.match(
     report,
     /features\/settings: not a module of @oppenheimer\/frontend-core or @oppenheimer\/frontend-consumer/,
   );
-  assert.doesNotMatch(report, /features\/(users|automations|public): not a module/);
+  assert.doesNotMatch(report, /features\/(users|public): not a module/);
 });
 
 test('a feature holds only flat kind directories, with no barrel and no loose file', () => {
@@ -230,6 +229,30 @@ export const useOther = () => useQuery({ queryKey: ['other'], queryFn: () => [] 
   assert.match(report, /things\.queries\.ts: imports useQuery from @tanstack\/react-query/);
   assert.doesNotMatch(report, /other\.queries\.ts/);
 });
+test('a package poll decides refetchIntervalInBackground beside its interval', () => {
+  const { report } = check(
+    {},
+    {
+      'packages/frontend/consumer/src/react/starts.queries.ts': `import { useQuery } from '@oppenheimer/frontend-core/react';
+// A comment naming refetchIntervalInBackground: true does not count.
+export const useStart = () =>
+  useQuery({ queryKey: ['start'], queryFn: () => [], refetchInterval: 2000 });
+`,
+      'packages/frontend/consumer/src/react/presence.queries.ts': `import { useQuery } from '@oppenheimer/frontend-core/react';
+export const usePresence = () =>
+  useQuery({
+    queryKey: ['presence'],
+    queryFn: () => [],
+    refetchInterval: 15_000,
+    refetchIntervalInBackground: false,
+  });
+`,
+    },
+  );
+  assert.match(report, /starts\.queries\.ts: 1 refetchInterval but 0 refetchIntervalInBackground/);
+  assert.doesNotMatch(report, /presence\.queries\.ts/);
+});
+
 test('two components side by side in an app file are reported; one passes', () => {
   const { report } = check({
     'src/features/things/sections/two.tsx': `export function ThingList() {

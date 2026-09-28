@@ -100,6 +100,7 @@ export function useHostPairing(hostName: string): HostPairingFlow {
       const mine = query.state.data?.find((token) => token.id === pairing.id);
       return mine?.redeemedHostId ? false : LIVE_POLL.pairing;
     },
+    refetchIntervalInBackground: true,
   });
 
   const redeemedHostId = tokens?.find((token) => token.id === pairing?.id)?.redeemedHostId ?? null;
@@ -113,6 +114,7 @@ export function useHostPairing(hostName: string): HostPairingFlow {
       const host = query.state.data?.find((row) => row.id === redeemedHostId);
       return host?.online ? false : LIVE_POLL.pairing;
     },
+    refetchIntervalInBackground: true,
   });
 
   const host: HostEntity | null = redeemedHostId

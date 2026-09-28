@@ -6,6 +6,17 @@
  * view that shows it is mounted (`useHostPresence`). Each goes when the
  * console streams that fact instead.
  *
+ * A poll that watches something finish also runs while the tab is hidden
+ * (`refetchIntervalInBackground: true`): a session start takes the best part
+ * of a minute, and the tab it was launched from is the one a person leaves
+ * while it runs. Without the flag TanStack Query pauses the interval on a
+ * hidden document, and the pane came back frozen on a step that had finished
+ * (#111). Each of these polls stops on its own once the thing settles, so the
+ * flag buys a minute or two of requests and nothing after it. Presence is the
+ * one poll that never settles, so it stays foreground-only, and says so.
+ * `pnpm check:structure` fails a `refetchInterval` in this package's React
+ * layer that does not decide `refetchIntervalInBackground` beside it.
+ *
  * - `sessionStarting`: a session a host is still building. A clone from GitHub
  *   takes seconds; past that, a request every two seconds can only answer
  *   "still open".

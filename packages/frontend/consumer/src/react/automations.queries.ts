@@ -60,6 +60,7 @@ export function useAutomations<TData = AutomationEntity[]>(
     queryFn: () => app.automations.findAll(),
     refetchInterval: (query) =>
       query.state.data?.some((automation) => automation.isRunning) ? LIVE_POLL.liveRun : false,
+    refetchIntervalInBackground: true,
     ...options,
   });
 }
@@ -74,6 +75,7 @@ export function useAutomation(
     queryKey: automationsKeys.detail(id),
     queryFn: id ? () => app.automations.findById(id) : skipToken,
     refetchInterval: (query) => (query.state.data?.isRunning ? LIVE_POLL.liveRun : false),
+    refetchIntervalInBackground: true,
     ...options,
   });
 }
@@ -91,6 +93,7 @@ export function useAutomationRuns(filter: RunsFilter) {
     placeholderData: keepPreviousData,
     refetchInterval: (query) =>
       query.state.data?.items.some((run) => run.isLive) ? LIVE_POLL.liveRun : false,
+    refetchIntervalInBackground: true,
   });
 }
 
@@ -101,6 +104,7 @@ export function useAutomationRun(id: string | undefined) {
     queryKey: automationsKeys.run(id),
     queryFn: id ? () => app.automations.findRun(id) : skipToken,
     refetchInterval: (query) => (query.state.data?.isLive ? LIVE_POLL.liveRun : false),
+    refetchIntervalInBackground: true,
   });
 }
 

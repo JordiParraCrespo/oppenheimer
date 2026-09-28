@@ -59,10 +59,14 @@ export function useHosts<TData = HostEntity[]>(
 /**
  * The hosts, for a view that shows whether each is online (Settings → Hosts).
  * Presence is not streamed to the console yet, so the list polls for as long
- * as such a view is mounted, on `LIVE_POLL.hostPresence`.
+ * as such a view is mounted, on `LIVE_POLL.hostPresence`. It is the one poll
+ * that never settles, so a hidden tab pauses it: nobody is looking at the dot.
  */
 export function useHostPresence() {
-  return useHostList({ refetchInterval: LIVE_POLL.hostPresence });
+  return useHostList({
+    refetchInterval: LIVE_POLL.hostPresence,
+    refetchIntervalInBackground: false,
+  });
 }
 
 /**

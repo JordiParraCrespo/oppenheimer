@@ -60,9 +60,9 @@ const APPS = [
     routes: 'src/routes',
     features: 'src/features',
     product: 'consumer',
-    // `automations`: the console's second list, whose pages render no entity
-    // until the API names one (`product/versions/mvp/13-automations.md`).
-    allow: ['public', 'automations'],
+    // `public`: pages that render no entity. `automations` left this list
+    // when the consumer got its module.
+    allow: ['public'],
     kit: 'web',
   },
   // oppenheimer:end web
@@ -453,6 +453,31 @@ for (const { app } of APPS) {
     if (/\brefetchInterval\b/.test(readFileSync(file, 'utf8'))) {
       fail(
         `${relative(root, file)}: sets refetchInterval — polling is LIVE_POLL's, in the product package; use (or add) the query hook there that polls`,
+      );
+    }
+  }
+}
+
+// A poll in a frontend package's React layer says whether it goes on while
+// the tab is hidden. TanStack Query pauses `refetchInterval` on a hidden
+// document unless `refetchIntervalInBackground` says otherwise, and a poll
+// that watches something finish (a session start, a run) has to go on: the
+// tab it was launched from is the one the reader leaves, and the pane came
+// back frozen on a step that had finished (#111). So every `refetchInterval`
+// in `src/react/` carries `refetchIntervalInBackground` beside it, `true` or
+// an explicit `false` — counted per file with comments stripped, not parsed.
+const COMMENTS = /\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm;
+for (const pkg of readdirSync(join(root, 'packages/frontend'))) {
+  const dir = join(root, 'packages/frontend', pkg, 'src/react');
+  if (!existsSync(dir)) continue;
+  for (const name of readdirSync(dir)) {
+    if (!/\.tsx?$/.test(name) || /\.(spec|test)\.tsx?$/.test(name)) continue;
+    const source = readFileSync(join(dir, name), 'utf8').replace(COMMENTS, '');
+    const intervals = (source.match(/\brefetchInterval\s*:/g) ?? []).length;
+    const decided = (source.match(/\brefetchIntervalInBackground\s*:/g) ?? []).length;
+    if (intervals !== decided) {
+      fail(
+        `packages/frontend/${pkg}/src/react/${name}: ${intervals} refetchInterval but ${decided} refetchIntervalInBackground — every poll says whether it goes on while the tab is hidden: true for one that watches something finish, false for one that never settles. See LIVE_POLL in packages/frontend/consumer/src/react/live-poll.ts`,
       );
     }
   }

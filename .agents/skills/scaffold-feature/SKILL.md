@@ -1,6 +1,6 @@
 ---
 name: scaffold-feature
-description: Build a feature in the Oppenheimer web console (apps/web) the way a senior frontend engineer on this codebase would. It starts from the domain module in packages/frontend (sessions, hosts, projects, installations, organizations, profile, api-tokens, or the kernel's), writes down every query and mutation and which component draws each result, then places each piece in its kind directory, and it ends with the checks passing. Use it whenever the user asks for a new screen, page, section, dialog, form, list, settings page or UI flow in the console. Also use it when they describe something that needs UI ("show a host's activity", "let people revoke API tokens"), when a new API endpoint needs a screen, or when they ask to review, fix or refactor a frontend feature, even if they never say "feature" or "scaffold".
+description: Build a feature in the Oppenheimer web console (apps/web) the way a senior frontend engineer on this codebase would. It starts from the domain module in packages/frontend (sessions, hosts, projects, installations, automations, organizations, profile, api-tokens, or the kernel's), writes down every query and mutation and which component draws each result, then places each piece in its kind directory, and it ends with the checks passing. Use it whenever the user asks for a new screen, page, section, dialog, form, list, settings page or UI flow in the console. Also use it when they describe something that needs UI ("show a host's activity", "let people revoke API tokens"), when a new API endpoint needs a screen, or when they ask to review, fix or refactor a frontend feature, even if they never say "feature" or "scaffold".
 ---
 
 # Build a console feature
@@ -44,9 +44,9 @@ new feature. Before creating anything, answer these:
   `packages/frontend/core` (`auth`, `users`, `user-settings`, `capabilities`,
   `analytics`, `feature-flags`) or of the product package
   `packages/frontend/consumer` (`sessions`, `hosts`, `projects`,
-  `installations`, `organizations`, `profile`, `api-tokens`), or is on the
-  app's allowlist (`public`, and `automations` until the API names that
-  entity). Never name it after a page (`settings`, `console`, `home`).
+  `installations`, `automations`, `organizations`, `profile`, `api-tokens`),
+  or is on the app's allowlist (`public`: pages that render no entity). Never
+  name it after a page (`settings`, `console`, `home`).
   `ls packages/frontend/*/src/modules` shows what exists.
   - `sessions` are the agent sessions (a worktree and a tmux terminal on a
     host). The browsers signed in to an account are `profile`
@@ -66,9 +66,9 @@ new feature. Before creating anything, answer these:
   and the generated client in `packages/frontend/api-client`. If it isn't
   there, the backend comes first (`/scaffold-module`, then
   `pnpm generate:api-client`), or the feature waits. Never fake data: see
-  "Never ship a placeholder number" in `frontend-ui.md`. The `automations`
-  pages are the example of a screen drawn ahead of its API; they keep their
-  primary action off rather than pretend.
+  "Never ship a placeholder number" in `frontend-ui.md`. A screen drawn ahead
+  of its API keeps its primary action off rather than pretend, as the
+  `automations` pages did before the API named the entity.
 - **What does the API allow and refuse?** Read the controller behind each
   endpoint, not only its path:
   - its `@CheckPolicies`, which is the permission each action needs;
@@ -128,6 +128,12 @@ it. The steps are the "Add a module to a product package" cookbook in
      `skipToken` and `withCacheOnSuccess` rules; the guide is
      `apps/docs/docs/architecture/query-keys.md`. A key for a generated
      hey-api query goes through `withFeaturePrefix`.
+   - A poll is one of `LIVE_POLL`'s intervals (`src/react/live-poll.ts`), set
+     in the package's hook and never in a feature (`pnpm check:structure`
+     fails a `refetchInterval` in the app: the feature asks for the hook that
+     polls, as `useHostPresence`). Beside the interval the hook decides
+     `refetchIntervalInBackground`: `true` for a poll that watches something
+     finish, `false` for one that never settles. The check counts the two.
 6. If the data must never reach storage (secrets, a pairing token, personal
    data), add `thingsKeys.all[0]` to `CONSUMER_NON_PERSISTED_FEATURES` in
    `src/react/persistence.ts`.

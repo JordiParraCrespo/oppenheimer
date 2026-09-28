@@ -1,5 +1,5 @@
 import { defaultQueryClientOptions, OppenheimerProvider } from '@oppenheimer/frontend-core/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { focusManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -52,6 +52,27 @@ describe('useSession', () => {
     const reads = findById.mock.calls.length;
     await pause(2_500);
     expect(findById).toHaveBeenCalledTimes(reads);
+  }, 10_000);
+
+  /**
+   * TanStack Query pauses an interval while the document is hidden unless the
+   * poll says otherwise, and a start launched from a tab the reader then
+   * leaves is exactly the case: the pane came back frozen on a step that had
+   * finished a minute before (#111).
+   */
+  it('keeps reading a starting session while the tab is hidden', async () => {
+    focusManager.setFocused(false);
+    try {
+      const findById = vi.fn().mockResolvedValue(starting);
+      const { wrapper } = setup({ findById });
+      renderHook(() => useSession('s-1'), { wrapper });
+
+      await waitFor(() => expect(findById.mock.calls.length).toBeGreaterThanOrEqual(2), {
+        timeout: 5_000,
+      });
+    } finally {
+      focusManager.setFocused(undefined);
+    }
   }, 10_000);
 
   it('does not poll a session that was never starting', async () => {

@@ -113,6 +113,7 @@ export function useSessions<TData = SessionEntity[]>(
         : query.state.data?.some((session) => closesOf(queryClient).has(session.id))
           ? LIVE_POLL.sessionClosing
           : false,
+    refetchIntervalInBackground: true,
     ...options,
   });
 }
@@ -128,6 +129,7 @@ export function useSession(
     queryFn: id ? () => app.sessions.findById(id) : skipToken,
     refetchInterval: (query) =>
       query.state.data?.isProvisioning ? LIVE_POLL.sessionStarting : false,
+    refetchIntervalInBackground: true,
     ...options,
   });
 }
@@ -163,6 +165,7 @@ export function useSessionStartProgress(
     queryFn:
       id && (starting || failed) ? () => app.sessions.startProgress(id, { failed }) : skipToken,
     refetchInterval: (query) => (query.state.data?.settled ? false : LIVE_POLL.sessionStarting),
+    refetchIntervalInBackground: true,
     ...options,
   });
 }

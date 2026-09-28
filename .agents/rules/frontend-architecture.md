@@ -91,6 +91,11 @@ shared ─► core ─► consumer ─► apps/web
   feature (`providers-mount-dialogs`).
 - The kit is imported by its package name (`@oppenheimer/frontend-web`), never by a
   path into its `src/`.
+- The API is called through `@oppenheimer/api-client`'s root (`heyApiSdk`),
+  from a product package's repository, never a path into the client's `src/`
+  (`one-api-client`). A function is named after the API slice's use case
+  (`FindHostsHttpController` is `findHosts`); the API's operation-id factory
+  refuses two handlers on one name, so there is never a `list2` to guess at.
 - An app never keeps a file the kit ships. `pnpm check:structure` compares
   basenames; the fix is to import it.
 
@@ -245,6 +250,18 @@ name the jobs and split *those*.
   check:structure` fences TanStack's own two out of those files. A list hook
   takes a narrowing `select`, and a read that only happens in an event handler
   uses the module's `use…Snapshot()` rather than subscribing.
+
+- **Polling is one policy.** Every interval the console asks the API on is
+  `LIVE_POLL` in the product package (`src/react/live-poll.ts`), read by that
+  package's query hooks. A feature never sets `refetchInterval`
+  (`pnpm check:structure` fails it) and asks for the hook that polls
+  (`useHostPresence`). Beside the interval, the hook decides whether the poll
+  goes on while the tab is hidden, because TanStack Query pauses it there
+  unless told otherwise: `refetchIntervalInBackground: true` for a poll that
+  watches something finish (a session start, a run: the tab it was launched
+  from is the one the reader leaves, and the pane came back frozen on a step
+  that had finished, #111), `false` for the one poll that never settles
+  (presence). The check counts the two per file, so a new poll cannot forget.
 
 ## Routing is its own skill
 
