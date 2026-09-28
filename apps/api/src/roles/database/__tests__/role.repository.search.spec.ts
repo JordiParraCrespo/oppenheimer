@@ -4,11 +4,7 @@ import { RoleRepository } from '../role.repository';
 
 function repositoryWith() {
   const findAndCount = vi.fn().mockResolvedValue([[], 0]);
-  const repository = new RoleRepository(
-    { findAndCount } as never,
-    new RoleMapper(),
-    {} as never,
-  );
+  const repository = new RoleRepository({ findAndCount } as never, new RoleMapper(), {} as never);
   return { repository, findAndCount };
 }
 

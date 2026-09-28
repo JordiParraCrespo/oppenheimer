@@ -4,11 +4,7 @@ import { UserRepository } from '../user.repository';
 
 function repositoryWith() {
   const findAndCount = vi.fn().mockResolvedValue([[], 0]);
-  const repository = new UserRepository(
-    { findAndCount } as never,
-    new UserMapper(),
-    {} as never,
-  );
+  const repository = new UserRepository({ findAndCount } as never, new UserMapper(), {} as never);
   return { repository, findAndCount };
 }
 
