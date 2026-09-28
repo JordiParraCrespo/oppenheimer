@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
+	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	pairdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/domain"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
@@ -21,6 +22,31 @@ import (
 // ptyRead is the PTY read buffer, 02-runner §5's 32 KB: one read is one frame.
 const ptyRead = 32 * 1024
 
+// attachmentInput bounds the keystroke frames one attachment can have waiting
+// for its PTY. A PTY that has not taken 64 frames has a wedged client behind
+// it, and the attachment is closed rather than let it stall the read loop —
+// the same policy as a slow WebSocket consumer (packages/go/ws).
+const attachmentInput = 64
+
+// eventRetry is how often event batches the link refused while it stayed up —
+// a full control queue — are offered to it again.
+const eventRetry = 5 * time.Second
+
+// Host commands run off the read loop too, each on a lane of its own: a
+// preflight must not queue behind a download that can take minutes. A lane
+// key is otherwise a session id, a UUID, so these cannot collide with one.
+const (
+	laneHostUpdate    = "host:update"
+	laneHostPreflight = "host:preflight"
+)
+
+// linkSender is the slice of the link the handler writes through, so a test
+// can capture what it sends.
+type linkSender interface {
+	Send(message any) error
+	SendFrame(ctx context.Context, attachmentID uint32, bytes []byte) error
+}
+
 // linkHandler is what the link does to this host: the composition root's
 // mapping from 01's messages onto the session service. It owns the open
 // attachments — the PTYs behind the browser's terminals — because they are
@@ -30,7 +56,7 @@ type linkHandler struct {
 	app      *App
 	identity pairdomain.Identity
 	logger   *slog.Logger
-	client   *link.Client
+	client   linkSender
 	reporter *link.Reporter
 
 	credentials *credentialBroker
@@ -55,6 +81,10 @@ type linkHandler struct {
 	mu          sync.Mutex
 	attachments map[uint32]*attachment
 	epoch       uint64
+	// linkUp is whether epoch's link is still up. Disconnected clears it
+	// without a new epoch, so an attach finishing after the drop sees that
+	// the link it was for is gone.
+	linkUp bool
 	// decided holds the sessions whose stop the control plane ordered: the
 	// API already wrote that entry, so the observation it causes is not
 	// reported a second time. A stop the host sees on its own — tmux gone
@@ -69,6 +99,11 @@ type attachment struct {
 	pty       sessionsapp.Attachment
 	cancel    context.CancelFunc
 	flow      *flowWindow
+	// epoch is the link that allocated the id, for the log.
+	epoch uint64
+	// input is the keystrokes waiting for the PTY. inputPump writes them, so
+	// a PTY that stops taking them never blocks the read loop.
+	input chan []byte
 }
 
 // newRunID mints the id every event key of this process starts with.
@@ -121,6 +156,7 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 	// entries in the control plane's log.
 	a.Sessions.SetPublisher(handler)
 	a.Link = client
+	go handler.retryEvents(life)
 	// Run returns only when ctx ends or the host was unpaired. A lost or
 	// ended link leaves sessions running in tmux: ending someone's work is not
 	// a side effect of losing the control plane. Unpaired is the exception,
@@ -202,13 +238,18 @@ func (h *linkHandler) Heartbeat(ctx context.Context) (link.Heartbeat, error) {
 	if err != nil {
 		return link.Heartbeat{}, err
 	}
+	return h.heartbeatFrom(facts), nil
+}
+
+// heartbeatFrom is a heartbeat around facts already collected.
+func (h *linkHandler) heartbeatFrom(facts hostdomain.Facts) link.Heartbeat {
 	return link.Heartbeat{
 		SentAt:   time.Now().UTC(),
 		Channel:  string(h.identity.Channel),
 		Host:     facts,
 		Load:     link.Load{LoadAverage1m: loadAverage(), MemoryAvailableBytes: system.AvailableMemory()},
 		Sessions: h.snapshots(),
-	}, nil
+	}
 }
 
 // currentEpoch is the epoch of the link that is up, or of the last one.
@@ -218,9 +259,16 @@ func (h *linkHandler) currentEpoch() uint64 {
 	return h.epoch
 }
 
+// liveEpoch reports whether epoch's link is the one up.
+func (h *linkHandler) liveEpoch(epoch uint64) bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.linkUp && h.epoch == epoch
+}
+
 func (h *linkHandler) Connected(_ context.Context, epoch uint64) {
 	h.mu.Lock()
-	h.epoch = epoch
+	h.epoch, h.linkUp = epoch, true
 	h.mu.Unlock()
 	// Whatever was not acked before the drop is sent again; the keys make the
 	// resend free on the other side.
@@ -234,6 +282,7 @@ func (h *linkHandler) Disconnected(uint64) {
 	h.mu.Lock()
 	open := h.attachments
 	h.attachments = map[uint32]*attachment{}
+	h.linkUp = false
 	h.mu.Unlock()
 	for _, att := range open {
 		att.flow.close()
@@ -242,15 +291,35 @@ func (h *linkHandler) Disconnected(uint64) {
 	}
 }
 
+// Frame is a browser's keystrokes for an attachment. It runs on the read
+// loop, so it only queues them: the attachment's inputPump writes them to the
+// PTY, whose write blocks once the client behind it stops reading.
 func (h *linkHandler) Frame(_ context.Context, attachmentID uint32, bytes []byte) {
-	// Keystrokes ride `session.input` today; a binary frame towards the host
-	// is the symmetric path and is written straight to the PTY.
-	if att := h.attachmentByID(attachmentID); att != nil {
-		_, _ = att.pty.Write(bytes)
+	att := h.attachmentByID(attachmentID)
+	if att == nil {
+		return
+	}
+	// The frame may be a view into the read buffer, which is not ours to keep.
+	frame := append([]byte(nil), bytes...)
+	select {
+	case att.input <- frame:
+	default:
+		// The PTY has not drained a full queue: the client behind it is
+		// wedged. Close this attachment rather than stall every other one on
+		// the link; the browser reattaches.
+		if h.release(att) {
+			h.logger.Warn("attachment input stalled; closing it",
+				slog.String("attachment", att.String()), slog.Uint64("epoch", att.epoch))
+			go h.closeAttachment(att, "input stalled")
+		}
 	}
 }
 
-func (h *linkHandler) Message(ctx context.Context, msg link.Message) {
+// Message runs on the link's read loop and never waits: anything slower than
+// a map lookup or an ioctl goes to a lane, on the daemon's context. The read
+// loop is what takes the pongs, so a message handled here that blocked would
+// take the link down with it.
+func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 	switch msg.Type {
 	case "events.ack":
 		var ack link.EventsAck
@@ -281,11 +350,12 @@ func (h *linkHandler) Message(ctx context.Context, msg link.Message) {
 		if msg.Decode(&m) == nil {
 			// An attachment id belongs to the link that allocated it; one
 			// queued past that link's end is dropped, and the browser
-			// reattaches through the next.
+			// reattaches through the next. attach checks again once its PTY
+			// is open, since the link can drop while tmux attaches.
 			epoch := h.currentEpoch()
 			h.lanes.run(m.SessionID, func() {
-				if h.currentEpoch() == epoch {
-					h.attach(h.life, m)
+				if h.liveEpoch(epoch) {
+					h.attach(h.life, m, epoch)
 				}
 			})
 		}
@@ -302,7 +372,13 @@ func (h *linkHandler) Message(ctx context.Context, msg link.Message) {
 	case "session.resize":
 		var m link.SessionResize
 		if msg.Decode(&m) == nil {
-			h.lanes.run(m.SessionID, func() { h.resize(m) })
+			// An ioctl on an open PTY, done here like a credit, so a resize
+			// never waits behind an image paste in the session's lane. One
+			// for an attachment still being opened keeps its place behind
+			// the attach, in the lane.
+			if !h.resize(m) {
+				h.lanes.run(m.SessionID, func() { h.resize(m) })
+			}
 		}
 	case "session.detach":
 		var m link.SessionDetach
@@ -334,15 +410,34 @@ func (h *linkHandler) Message(ctx context.Context, msg link.Message) {
 	case "host.preflight":
 		var m link.SessionCommand
 		if msg.Decode(&m) == nil {
-			h.preflight(ctx, m.CommandID)
+			h.lanes.run(laneHostPreflight, func() { h.preflight(h.life, m.CommandID) })
 		}
 	case "host.update":
 		var m link.HostUpdate
 		if msg.Decode(&m) == nil {
-			h.update(ctx, m)
+			// On the daemon's context, not the link's: a download that
+			// outlives the link it was asked on still finishes. A failure goes
+			// out on whatever link is up when it returns; one that returns
+			// between links is only logged, as a create's is.
+			h.lanes.run(laneHostUpdate, func() { h.update(h.life, m) })
 		}
 	default:
 		h.logger.Warn("unknown message from the control plane", slog.String("type", msg.Type))
+	}
+}
+
+// retryEvents offers the link, for as long as the daemon lives, the event
+// batches it refused while it stayed up; a reconnect resends on its own.
+func (h *linkHandler) retryEvents(ctx context.Context) {
+	ticker := time.NewTicker(eventRetry)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			h.reporter.Retry()
+		}
 	}
 }
 

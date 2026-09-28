@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -70,10 +71,19 @@ func (s *Store) CurrentPath() string { return s.layout.CurrentPath() }
 
 // Stage downloads the artifact, checks its digest against the signed
 // manifest, and unpacks the binary. Nothing here is executed and nothing is
-// activated; a failure leaves the staging directory empty.
+// activated; a failure leaves nothing of its own in the staging directory.
+//
+// Every stage writes to names of its own. The daemon serialises its applies,
+// but `runner update` is another process: two stages of one version sharing a
+// file would truncate and interleave each other's download.
 func (s *Store) Stage(ctx context.Context, artifact domain.Artifact, version string) (string, error) {
-	archive := filepath.Join(s.layout.StagingDir(), "runner-"+sanitize(version)+".tar.gz")
-	err := selfupdate.Fetch(ctx, s.http, selfupdate.Artifact{
+	archive, err := s.stagingFile("runner-" + sanitize(version) + "-*.tar.gz")
+	if err != nil {
+		return "", domain.ErrArtifact.WithDetail("prepare the staging directory: %v", err).WithCause(err)
+	}
+	// The archive is only the way to the binary; it goes whatever happens.
+	defer os.Remove(archive) //nolint:errcheck // Prune clears staging anyway
+	err = selfupdate.Fetch(ctx, s.http, selfupdate.Artifact{
 		URL: artifact.URL, SHA256: artifact.SHA256, Size: artifact.Size,
 	}, archive)
 	switch {
@@ -84,11 +94,33 @@ func (s *Store) Stage(ctx context.Context, artifact domain.Artifact, version str
 		return "", domain.ErrArtifact.WithDetail("%s: %v", artifact.URL, err).WithCause(err)
 	}
 
-	staged := filepath.Join(s.layout.StagingDir(), "runner-"+sanitize(version))
+	staged, err := s.stagingFile("runner-" + sanitize(version) + "-*")
+	if err != nil {
+		return "", domain.ErrArtifact.WithDetail("prepare the staging directory: %v", err).WithCause(err)
+	}
 	if err := selfupdate.Unpack(archive, s.member, staged); err != nil {
+		_ = os.Remove(staged)
 		return "", domain.ErrArtifact.WithDetail("%v", err).WithCause(err)
 	}
 	return staged, nil
+}
+
+// stagingFile reserves a fresh, empty file in the staging directory, named
+// after pattern as os.CreateTemp names it.
+func (s *Store) stagingFile(pattern string) (string, error) {
+	if err := os.MkdirAll(s.layout.StagingDir(), 0o700); err != nil {
+		return "", err
+	}
+	f, err := os.CreateTemp(s.layout.StagingDir(), pattern)
+	if err != nil {
+		return "", err
+	}
+	name := f.Name()
+	if err := f.Close(); err != nil {
+		_ = os.Remove(name)
+		return "", err
+	}
+	return name, nil
 }
 
 // SelfCheck runs the staged binary's own `selfcheck`. This is the step that
