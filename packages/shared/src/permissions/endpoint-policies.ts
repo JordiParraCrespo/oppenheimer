@@ -69,6 +69,16 @@ export const ENDPOINT_POLICIES = {
   'DELETE /sessions/:id/checkouts/:checkoutId': [{ action: 'update', subject: 'Session' }],
   'POST /sessions/:id/attach-ticket': [{ action: 'update', subject: 'Session' }],
   'POST /sessions/:id/images': [{ action: 'update', subject: 'Session' }],
+
+  // Automations. Run now is `update Automation`; the session it starts is the
+  // owner's, created through the sessions module as the owner.
+  'GET /automations': [{ action: 'read', subject: 'Automation' }],
+  'GET /automations/:id': [{ action: 'read', subject: 'Automation' }],
+  'POST /automations': [{ action: 'create', subject: 'Automation' }],
+  'PATCH /automations/:id': [{ action: 'update', subject: 'Automation' }],
+  'DELETE /automations/:id': [{ action: 'delete', subject: 'Automation' }],
+  'POST /automations/:id/run': [{ action: 'update', subject: 'Automation' }],
+  'GET /automation-runs': [{ action: 'read', subject: 'Automation' }],
 } satisfies Record<string, readonly [EndpointPolicy, ...EndpointPolicy[]]>;
 
 /** An endpoint whose rules are declared in {@link ENDPOINT_POLICIES}. */

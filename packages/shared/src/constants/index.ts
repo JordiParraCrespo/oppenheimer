@@ -65,4 +65,12 @@ export const QUEUE_NAMES = {
   FILE_PROCESSING: 'file-processing',
   /** The daily purge of host networks and timeline past their retention. */
   HOST_RETENTION: 'host-retention',
+  /** Normalise a stored webhook delivery and publish it to its consumers. */
+  INBOUND_EVENTS: 'inbound-events',
+  /** Run the dispatch-time guards of an automation run and start its session. */
+  AUTOMATION_RUNS: 'automation-runs',
+  /** The one-minute tick that fires due schedule triggers. */
+  AUTOMATION_SCHEDULES: 'automation-schedules',
+  /** The nightly purge of inbound events and old automation runs. */
+  AUTOMATION_RETENTION: 'automation-retention',
 } as const;

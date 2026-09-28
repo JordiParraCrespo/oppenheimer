@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptErrors, AcceptResponses, AddData, AddErrors, AddMemberData, AddMemberErrors, AddMemberResponses, AddResponses, AddSessionCheckoutData, AddSessionCheckoutErrors, AddSessionCheckoutResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, AssignData, AssignErrors, AssignResponses, BanData, BanErrors, BanResponses, CancelData, CancelErrors, CancelResponses, CatalogData, CatalogErrors, CatalogResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckErrors, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, CloseSessionData, CloseSessionErrors, CloseSessionResponses, CollectSessionImageData, CollectSessionImageErrors, CollectSessionImageResponses, ConnectInstallationData, ConnectInstallationErrors, ConnectInstallationResponses, Create2Data, Create2Errors, Create2Responses, Create3Data, Create3Errors, Create3Responses, Create4Data, Create4Errors, Create4Responses, Create5Data, Create5Errors, Create5Responses, CreateData, CreateErrors, CreateFlagSegmentData, CreateFlagSegmentErrors, CreateFlagSegmentResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateResponses, CreateSessionData, CreateSessionErrors, CreateSessionResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CurrentData, CurrentErrors, CurrentResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteFlagSegmentData, DeleteFlagSegmentErrors, DeleteFlagSegmentResponses, DeleteOwnAccountData, DeleteOwnAccountErrors, DeleteOwnAccountResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, DisconnectInstallationData, DisconnectInstallationErrors, DisconnectInstallationResponses, EvaluateFeatureFlagData, EvaluateFeatureFlagErrors, EvaluateFeatureFlagResponses, FindAll2Data, FindAll2Errors, FindAll2Responses, FindAll3Data, FindAll3Errors, FindAll3Responses, FindAllData, FindAllErrors, FindAllResponses, FindFeatureFlagData, FindFeatureFlagErrors, FindFeatureFlagResponses, FindFeatureFlagsData, FindFeatureFlagsErrors, FindFeatureFlagsResponses, FindFlagChangesData, FindFlagChangesErrors, FindFlagChangesResponses, FindFlagSegmentsData, FindFlagSegmentsErrors, FindFlagSegmentsResponses, FindOne2Data, FindOne2Errors, FindOne2Responses, FindOneData, FindOneErrors, FindOneResponses, FindSessionsData, FindSessionsErrors, FindSessionsResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, Get2Data, Get2Errors, Get2Responses, GetClientFeatureFlagsData, GetClientFeatureFlagsResponses, GetData, GetErrors, GetFullData, GetFullErrors, GetFullResponses, GetHostTimelineData, GetHostTimelineErrors, GetHostTimelineResponses, GetMembershipData, GetMembershipErrors, GetMembershipResponses, GetPairingTokenData, GetPairingTokenErrors, GetPairingTokenResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetResponses, GetSessionData, GetSessionErrors, GetSessionResponses, GetSettingsData, GetSettingsErrors, GetSettingsResponses, GetUserData, GetUserErrors, GetUserResponses, ImpersonateData, ImpersonateErrors, ImpersonateResponses, InviteData, InviteErrors, InviteResponses, IssueAttachTicketData, IssueAttachTicketErrors, IssueAttachTicketResponses, LeaveData, LeaveErrors, LeaveResponses, List2Data, List2Errors, List2Responses, List3Data, List3Errors, List3Responses, List4Data, List4Errors, List4Responses, List5Data, List5Errors, List5Responses, List6Data, List6Errors, List6Responses, List7Data, List7Errors, List7Responses, ListData, ListErrors, ListInstallationRepositoriesData, ListInstallationRepositoriesErrors, ListInstallationRepositoriesResponses, ListInstallationsData, ListInstallationsErrors, ListInstallationsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListMine2Data, ListMine2Errors, ListMine2Responses, ListMineData, ListMineErrors, ListMineResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListResponses, ListSessionEventsData, ListSessionEventsErrors, ListSessionEventsResponses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListUsersData, ListUsersErrors, ListUserSessionsData, ListUserSessionsErrors, ListUserSessionsResponses, ListUsersResponses, MeData, MeErrors, MeResponses, MintData, MintErrors, MintResponses, MoveSessionData, MoveSessionErrors, MoveSessionResponses, PasteSessionImageData, PasteSessionImageErrors, PasteSessionImageResponses, Permissions2Data, Permissions2Errors, Permissions2Responses, PermissionsData, PermissionsErrors, PermissionsResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RegisterData, RegisterErrors, RegisterResponses, RejectData, RejectErrors, RejectResponses, Remove2Data, Remove2Errors, Remove2Responses, Remove3Data, Remove3Errors, Remove3Responses, Remove4Data, Remove4Errors, Remove4Responses, Remove5Data, Remove5Errors, Remove5Responses, RemoveData, RemoveErrors, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveResponses, RemoveSessionCheckoutData, RemoveSessionCheckoutErrors, RemoveSessionCheckoutResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, RenameData, RenameErrors, RenameResponses, RenameSessionData, RenameSessionErrors, RenameSessionResponses, RestartSessionData, RestartSessionErrors, RestartSessionResponses, Revoke2Data, Revoke2Errors, Revoke2Responses, Revoke3Data, Revoke3Errors, Revoke3Responses, RevokeData, RevokeErrors, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokeResponses, RevokeSession2Data, RevokeSession2Errors, RevokeSession2Responses, RevokeSessionData, RevokeSessionErrors, RevokeSessionResponses, RevokeSessionsData, RevokeSessionsErrors, RevokeSessionsResponses, SetActive2Data, SetActive2Errors, SetActive2Responses, SetActiveData, SetActiveErrors, SetActiveResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, SetRoleData, SetRoleErrors, SetRoleResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, StopSessionData, StopSessionErrors, StopSessionResponses, ToggleFeatureFlagData, ToggleFeatureFlagErrors, ToggleFeatureFlagResponses, UnbanData, UnbanErrors, UnbanResponses, UninstallData, UninstallErrors, UninstallResponses, UnpairData, UnpairErrors, UnpairResponses, Update2Data, Update2Errors, Update2Responses, Update3Data, Update3Errors, Update3Responses, Update4Data, Update4Errors, Update4Responses, UpdateData, UpdateErrors, UpdateFeatureFlagData, UpdateFeatureFlagErrors, UpdateFeatureFlagResponses, UpdateFlagSegmentData, UpdateFlagSegmentErrors, UpdateFlagSegmentResponses, UpdatePermissionsData, UpdatePermissionsErrors, UpdatePermissionsResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateResponses, UpdateRoleData, UpdateRoleErrors, UpdateRoleResponses, UpdateSettingsData, UpdateSettingsErrors, UpdateSettingsResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses } from './types.gen';
+import type { AcceptData, AcceptErrors, AcceptResponses, AddData, AddErrors, AddMemberData, AddMemberErrors, AddMemberResponses, AddResponses, AddSessionCheckoutData, AddSessionCheckoutErrors, AddSessionCheckoutResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, AssignData, AssignErrors, AssignResponses, BanData, BanErrors, BanResponses, CancelData, CancelErrors, CancelResponses, CatalogData, CatalogErrors, CatalogResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckErrors, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, CloseSessionData, CloseSessionErrors, CloseSessionResponses, CollectSessionImageData, CollectSessionImageErrors, CollectSessionImageResponses, ConnectInstallationData, ConnectInstallationErrors, ConnectInstallationResponses, Create2Data, Create2Errors, Create2Responses, Create3Data, Create3Errors, Create3Responses, Create4Data, Create4Errors, Create4Responses, Create5Data, Create5Errors, Create5Responses, CreateAutomationData, CreateAutomationErrors, CreateAutomationResponses, CreateData, CreateErrors, CreateFlagSegmentData, CreateFlagSegmentErrors, CreateFlagSegmentResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateResponses, CreateSessionData, CreateSessionErrors, CreateSessionResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CurrentData, CurrentErrors, CurrentResponses, DeleteAutomationData, DeleteAutomationErrors, DeleteAutomationResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteFlagSegmentData, DeleteFlagSegmentErrors, DeleteFlagSegmentResponses, DeleteOwnAccountData, DeleteOwnAccountErrors, DeleteOwnAccountResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, DisconnectInstallationData, DisconnectInstallationErrors, DisconnectInstallationResponses, DuplicateAutomationData, DuplicateAutomationErrors, DuplicateAutomationResponses, EvaluateFeatureFlagData, EvaluateFeatureFlagErrors, EvaluateFeatureFlagResponses, FindAll2Data, FindAll2Errors, FindAll2Responses, FindAll3Data, FindAll3Errors, FindAll3Responses, FindAllData, FindAllErrors, FindAllResponses, FindFeatureFlagData, FindFeatureFlagErrors, FindFeatureFlagResponses, FindFeatureFlagsData, FindFeatureFlagsErrors, FindFeatureFlagsResponses, FindFlagChangesData, FindFlagChangesErrors, FindFlagChangesResponses, FindFlagSegmentsData, FindFlagSegmentsErrors, FindFlagSegmentsResponses, FindOne2Data, FindOne2Errors, FindOne2Responses, FindOneData, FindOneErrors, FindOneResponses, FindSessionsData, FindSessionsErrors, FindSessionsResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, Get2Data, Get2Errors, Get2Responses, GetAutomationData, GetAutomationErrors, GetAutomationResponses, GetAutomationRunData, GetAutomationRunErrors, GetAutomationRunHistoryData, GetAutomationRunHistoryErrors, GetAutomationRunHistoryResponses, GetAutomationRunResponses, GetAutomationSettingsData, GetAutomationSettingsErrors, GetAutomationSettingsResponses, GetClientFeatureFlagsData, GetClientFeatureFlagsResponses, GetData, GetErrors, GetFullData, GetFullErrors, GetFullResponses, GetHostTimelineData, GetHostTimelineErrors, GetHostTimelineResponses, GetMembershipData, GetMembershipErrors, GetMembershipResponses, GetPairingTokenData, GetPairingTokenErrors, GetPairingTokenResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetResponses, GetSessionData, GetSessionErrors, GetSessionResponses, GetSettingsData, GetSettingsErrors, GetSettingsResponses, GetUserData, GetUserErrors, GetUserResponses, ImpersonateData, ImpersonateErrors, ImpersonateResponses, InviteData, InviteErrors, InviteResponses, IssueAttachTicketData, IssueAttachTicketErrors, IssueAttachTicketResponses, LeaveData, LeaveErrors, LeaveResponses, List2Data, List2Errors, List2Responses, List3Data, List3Errors, List3Responses, List4Data, List4Errors, List4Responses, List5Data, List5Errors, List5Responses, List6Data, List6Errors, List6Responses, List7Data, List7Errors, List7Responses, ListAutomationRunsData, ListAutomationRunsErrors, ListAutomationRunsResponses, ListAutomationsData, ListAutomationsErrors, ListAutomationsResponses, ListData, ListErrors, ListInstallationRepositoriesData, ListInstallationRepositoriesErrors, ListInstallationRepositoriesResponses, ListInstallationsData, ListInstallationsErrors, ListInstallationsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListMine2Data, ListMine2Errors, ListMine2Responses, ListMineData, ListMineErrors, ListMineResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListResponses, ListSessionEventsData, ListSessionEventsErrors, ListSessionEventsResponses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListUsersData, ListUsersErrors, ListUserSessionsData, ListUserSessionsErrors, ListUserSessionsResponses, ListUsersResponses, MeData, MeErrors, MeResponses, MintData, MintErrors, MintResponses, MoveSessionData, MoveSessionErrors, MoveSessionResponses, PasteSessionImageData, PasteSessionImageErrors, PasteSessionImageResponses, PauseAutomationData, PauseAutomationErrors, PauseAutomationResponses, Permissions2Data, Permissions2Errors, Permissions2Responses, PermissionsData, PermissionsErrors, PermissionsResponses, PreviewAutomationTriggerData, PreviewAutomationTriggerErrors, PreviewAutomationTriggerResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RegisterData, RegisterErrors, RegisterResponses, RejectData, RejectErrors, RejectResponses, Remove2Data, Remove2Errors, Remove2Responses, Remove3Data, Remove3Errors, Remove3Responses, Remove4Data, Remove4Errors, Remove4Responses, Remove5Data, Remove5Errors, Remove5Responses, RemoveData, RemoveErrors, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveResponses, RemoveSessionCheckoutData, RemoveSessionCheckoutErrors, RemoveSessionCheckoutResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, RenameData, RenameErrors, RenameResponses, RenameSessionData, RenameSessionErrors, RenameSessionResponses, RestartSessionData, RestartSessionErrors, RestartSessionResponses, ResumeAutomationData, ResumeAutomationErrors, ResumeAutomationResponses, Revoke2Data, Revoke2Errors, Revoke2Responses, Revoke3Data, Revoke3Errors, Revoke3Responses, RevokeData, RevokeErrors, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokeResponses, RevokeSession2Data, RevokeSession2Errors, RevokeSession2Responses, RevokeSessionData, RevokeSessionErrors, RevokeSessionResponses, RevokeSessionsData, RevokeSessionsErrors, RevokeSessionsResponses, RunAutomationData, RunAutomationErrors, RunAutomationResponses, SetActive2Data, SetActive2Errors, SetActive2Responses, SetActiveData, SetActiveErrors, SetActiveResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, SetRoleData, SetRoleErrors, SetRoleResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, StopSessionData, StopSessionErrors, StopSessionResponses, ToggleFeatureFlagData, ToggleFeatureFlagErrors, ToggleFeatureFlagResponses, UnbanData, UnbanErrors, UnbanResponses, UninstallData, UninstallErrors, UninstallResponses, UnpairData, UnpairErrors, UnpairResponses, Update2Data, Update2Errors, Update2Responses, Update3Data, Update3Errors, Update3Responses, Update4Data, Update4Errors, Update4Responses, UpdateAutomationData, UpdateAutomationErrors, UpdateAutomationResponses, UpdateAutomationSettingsData, UpdateAutomationSettingsErrors, UpdateAutomationSettingsResponses, UpdateData, UpdateErrors, UpdateFeatureFlagData, UpdateFeatureFlagErrors, UpdateFeatureFlagResponses, UpdateFlagSegmentData, UpdateFlagSegmentErrors, UpdateFlagSegmentResponses, UpdatePermissionsData, UpdatePermissionsErrors, UpdatePermissionsResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateResponses, UpdateRoleData, UpdateRoleErrors, UpdateRoleResponses, UpdateSettingsData, UpdateSettingsErrors, UpdateSettingsResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -1412,6 +1412,185 @@ export const renameSession = <ThrowOnError extends boolean = false>(options: Opt
 export const moveSession = <ThrowOnError extends boolean = false>(options: Options<MoveSessionData, ThrowOnError>): RequestResult<MoveSessionResponses, MoveSessionErrors, ThrowOnError> => (options.client ?? client).post<MoveSessionResponses, MoveSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/sessions/{id}/move',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List the workspace’s automations
+ *
+ * Oldest first, as the sidebar groups them by project. Each carries its status (running while a run is live), its next run, its run count over the last 30 days and its last six runs.
+ */
+export const listAutomations = <ThrowOnError extends boolean = false>(options?: Options<ListAutomationsData, ThrowOnError>): RequestResult<ListAutomationsResponses, ListAutomationsErrors, ThrowOnError> => (options?.client ?? client).get<ListAutomationsResponses, ListAutomationsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations',
+    ...options
+});
+
+/**
+ * Create an automation
+ *
+ * A saved prompt, where it runs and the triggers that start it. The caller becomes its owner: every run acts as them. It starts listening as soon as it is saved.
+ */
+export const createAutomation = <ThrowOnError extends boolean = false>(options: Options<CreateAutomationData, ThrowOnError>): RequestResult<CreateAutomationResponses, CreateAutomationErrors, ThrowOnError> => (options.client ?? client).post<CreateAutomationResponses, CreateAutomationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Replay a GitHub trigger against recent events
+ *
+ * “Would have run N times in the last 7 days”: the card, unsaved, matched against what the webhook actually received, with the two most recent matches. A POST because the card is a body, not because anything changes.
+ */
+export const previewAutomationTrigger = <ThrowOnError extends boolean = false>(options: Options<PreviewAutomationTriggerData, ThrowOnError>): RequestResult<PreviewAutomationTriggerResponses, PreviewAutomationTriggerErrors, ThrowOnError> => (options.client ?? client).post<PreviewAutomationTriggerResponses, PreviewAutomationTriggerErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/trigger-preview',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete an automation
+ *
+ * Its triggers stop now. Past runs are kept, and read “Deleted automation”.
+ */
+export const deleteAutomation = <ThrowOnError extends boolean = false>(options: Options<DeleteAutomationData, ThrowOnError>): RequestResult<DeleteAutomationResponses, DeleteAutomationErrors, ThrowOnError> => (options.client ?? client).delete<DeleteAutomationResponses, DeleteAutomationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/{id}',
+    ...options
+});
+
+/**
+ * Read one automation
+ */
+export const getAutomation = <ThrowOnError extends boolean = false>(options: Options<GetAutomationData, ThrowOnError>): RequestResult<GetAutomationResponses, GetAutomationErrors, ThrowOnError> => (options.client ?? client).get<GetAutomationResponses, GetAutomationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/{id}',
+    ...options
+});
+
+/**
+ * Save an automation
+ *
+ * What the editor changed, with the version it loaded. A change to what a run executes becomes the next revision; triggers, when sent, replace the set.
+ */
+export const updateAutomation = <ThrowOnError extends boolean = false>(options: Options<UpdateAutomationData, ThrowOnError>): RequestResult<UpdateAutomationResponses, UpdateAutomationErrors, ThrowOnError> => (options.client ?? client).patch<UpdateAutomationResponses, UpdateAutomationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Pause an automation
+ *
+ * Triggers are ignored until it is resumed; Run now still works. Its schedule stops firing now.
+ */
+export const pauseAutomation = <ThrowOnError extends boolean = false>(options: Options<PauseAutomationData, ThrowOnError>): RequestResult<PauseAutomationResponses, PauseAutomationErrors, ThrowOnError> => (options.client ?? client).post<PauseAutomationResponses, PauseAutomationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/{id}/pause',
+    ...options
+});
+
+/**
+ * Resume an automation
+ *
+ * Triggers listen again, and each schedule’s next slot is computed from now, so a paused week does not fire a burst of missed runs.
+ */
+export const resumeAutomation = <ThrowOnError extends boolean = false>(options: Options<ResumeAutomationData, ThrowOnError>): RequestResult<ResumeAutomationResponses, ResumeAutomationErrors, ThrowOnError> => (options.client ?? client).post<ResumeAutomationResponses, ResumeAutomationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/{id}/resume',
+    ...options
+});
+
+/**
+ * Duplicate an automation
+ *
+ * A copy named after the original, owned by the caller, with the same instructions, place and triggers and a first revision of its own.
+ */
+export const duplicateAutomation = <ThrowOnError extends boolean = false>(options: Options<DuplicateAutomationData, ThrowOnError>): RequestResult<DuplicateAutomationResponses, DuplicateAutomationErrors, ThrowOnError> => (options.client ?? client).post<DuplicateAutomationResponses, DuplicateAutomationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/{id}/duplicate',
+    ...options
+});
+
+/**
+ * Run an automation now
+ *
+ * Queues a run that starts a session as the automation’s owner, whether or not it is paused. The run comes back queued; its session follows within seconds.
+ */
+export const runAutomation = <ThrowOnError extends boolean = false>(options: Options<RunAutomationData, ThrowOnError>): RequestResult<RunAutomationResponses, RunAutomationErrors, ThrowOnError> => (options.client ?? client).post<RunAutomationResponses, RunAutomationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automations/{id}/run',
+    ...options
+});
+
+/**
+ * List automation runs
+ *
+ * The Runs tab, and one automation’s runs: newest first, a page of ten by default, with the total and the count per status tab under the same facets. Runs that never became a session (skipped, expired) are left out unless their status is asked for.
+ */
+export const listAutomationRuns = <ThrowOnError extends boolean = false>(options?: Options<ListAutomationRunsData, ThrowOnError>): RequestResult<ListAutomationRunsResponses, ListAutomationRunsErrors, ThrowOnError> => (options?.client ?? client).get<ListAutomationRunsResponses, ListAutomationRunsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automation-runs',
+    ...options
+});
+
+/**
+ * Run history by day
+ *
+ * One bucket per local day of the given zone, today last: runs that did not fail (running ones included) and runs that failed, under the same facets as the runs list.
+ */
+export const getAutomationRunHistory = <ThrowOnError extends boolean = false>(options?: Options<GetAutomationRunHistoryData, ThrowOnError>): RequestResult<GetAutomationRunHistoryResponses, GetAutomationRunHistoryErrors, ThrowOnError> => (options?.client ?? client).get<GetAutomationRunHistoryResponses, GetAutomationRunHistoryErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automation-runs/history',
+    ...options
+});
+
+/**
+ * Read one automation run
+ *
+ * Why it ran, what the guards decided, the session it started and that session’s turn: the prompt the agent was given, the state, the result and the times.
+ */
+export const getAutomationRun = <ThrowOnError extends boolean = false>(options: Options<GetAutomationRunData, ThrowOnError>): RequestResult<GetAutomationRunResponses, GetAutomationRunErrors, ThrowOnError> => (options.client ?? client).get<GetAutomationRunResponses, GetAutomationRunErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automation-runs/{id}',
+    ...options
+});
+
+/**
+ * The workspace’s automation limits
+ *
+ * Effective values: the workspace’s own where set, the platform’s defaults elsewhere, under the platform ceilings.
+ */
+export const getAutomationSettings = <ThrowOnError extends boolean = false>(options?: Options<GetAutomationSettingsData, ThrowOnError>): RequestResult<GetAutomationSettingsResponses, GetAutomationSettingsErrors, ThrowOnError> => (options?.client ?? client).get<GetAutomationSettingsResponses, GetAutomationSettingsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automation-settings',
+    ...options
+});
+
+/**
+ * Set the workspace’s automation limits
+ *
+ * Rate caps, runs at once per host, overlap, the stale TTL, the missed-slot grace and the longest run. Null clears a value back to the platform default; the platform ceilings still apply.
+ */
+export const updateAutomationSettings = <ThrowOnError extends boolean = false>(options: Options<UpdateAutomationSettingsData, ThrowOnError>): RequestResult<UpdateAutomationSettingsResponses, UpdateAutomationSettingsErrors, ThrowOnError> => (options.client ?? client).patch<UpdateAutomationSettingsResponses, UpdateAutomationSettingsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/automation-settings',
     ...options,
     headers: {
         'Content-Type': 'application/json',

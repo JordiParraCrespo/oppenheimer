@@ -5,6 +5,13 @@ import { ENDPOINT_POLICIES, type GuardedEndpoint } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
 import { AdminController } from '../../admin/admin.controller';
 import { FindApiTokensHttpController } from '../../api-tokens/queries/find-api-tokens/find-api-tokens.http.controller';
+import { CreateAutomationHttpController } from '../../automations/commands/create-automation/create-automation.http.controller';
+import { DeleteAutomationHttpController } from '../../automations/commands/delete-automation/delete-automation.http.controller';
+import { RunAutomationHttpController } from '../../automations/commands/run-automation/run-automation.http.controller';
+import { UpdateAutomationHttpController } from '../../automations/commands/update-automation/update-automation.http.controller';
+import { FindAutomationHttpController } from '../../automations/queries/find-automation/find-automation.http.controller';
+import { FindAutomationRunsHttpController } from '../../automations/queries/find-automation-runs/find-automation-runs.http.controller';
+import { FindAutomationsHttpController } from '../../automations/queries/find-automations/find-automations.http.controller';
 import { FindFeatureFlagsHttpController } from '../../feature-flags/queries/find-feature-flags/find-feature-flags.http.controller';
 import { MembersController } from '../../organizations/members.controller';
 import { ArchiveProjectHttpController } from '../../projects/commands/archive-project/archive-project.http.controller';
@@ -77,6 +84,13 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
     controller: PasteSessionImageHttpController,
     handler: 'paste',
   },
+  'GET /automations': { controller: FindAutomationsHttpController, handler: 'list' },
+  'GET /automations/:id': { controller: FindAutomationHttpController, handler: 'find' },
+  'POST /automations': { controller: CreateAutomationHttpController, handler: 'create' },
+  'PATCH /automations/:id': { controller: UpdateAutomationHttpController, handler: 'update' },
+  'DELETE /automations/:id': { controller: DeleteAutomationHttpController, handler: 'handle' },
+  'POST /automations/:id/run': { controller: RunAutomationHttpController, handler: 'run' },
+  'GET /automation-runs': { controller: FindAutomationRunsHttpController, handler: 'list' },
 };
 
 function methodOn(controller: object, handler: string): object {

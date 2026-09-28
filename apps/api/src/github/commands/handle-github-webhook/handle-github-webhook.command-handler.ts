@@ -1,7 +1,8 @@
 import { Inject, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { CommandBus, CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
+import { ReceiveInboundDeliveryCommand } from '../../../inbound-events/commands/receive-inbound-delivery/receive-inbound-delivery.command';
 import type {
   GithubInstallationRepositoryPort,
   InstallationStatusChange,
@@ -16,15 +17,16 @@ import {
 import { HandleGithubWebhookCommand } from './handle-github-webhook.command';
 
 /**
- * The `installation` webhook: suspend, unsuspend, uninstall.
+ * The App's one webhook endpoint, verified once, then split in two.
  *
- * Those are the three facts about an installation that change without us and
- * that a token mint has to respect, and they are the only reason this module
- * subscribes to anything. Nothing here mirrors the repository set, so there is
- * no `installation_repositories` subscription and nothing to resync.
+ * **`installation`** — suspend, unsuspend, uninstall — is this module's own:
+ * the three facts about an installation that change without us and that a
+ * token mint has to respect. Each is a status write and idempotent to repeat.
  *
- * Each delivery is a status write and is idempotent to repeat, which is why
- * there is no delivery table and no de-duplication key.
+ * **Every other event** is handed to the inbound-events hub
+ * (`product/versions/mvp/16-automations-architecture.md` §Q6), which stores it
+ * keyed by GitHub's delivery id and normalizes it for automations. One
+ * endpoint and one secret for the App, whatever consumes its events.
  *
  * It writes through a **conditional update rather than the aggregate**. Loading
  * the row, mutating it and saving it back would let a delivery that read the
@@ -41,6 +43,7 @@ export class HandleGithubWebhookCommandHandler
     @Inject(GITHUB_INSTALLATION_REPOSITORY)
     private readonly installations: GithubInstallationRepositoryPort,
     private readonly configService: ConfigService,
+    private readonly commandBus: CommandBus,
   ) {}
 
   async execute(command: HandleGithubWebhookCommand): Promise<void> {
@@ -51,6 +54,11 @@ export class HandleGithubWebhookCommandHandler
     }
     if (!verifyWebhookSignature(this.webhookSecret, command.payload, command.signature)) {
       throw new AppError(GithubErrors.WEBHOOK_SIGNATURE_INVALID);
+    }
+
+    if (command.event !== 'installation') {
+      await this.handToHub(command);
+      return;
     }
 
     const delivery = parseInstallationEvent(command.event, command.payload);
@@ -71,6 +79,27 @@ export class HandleGithubWebhookCommandHandler
         action: delivery.action,
       });
     }
+  }
+
+  /** A verified delivery the hub stores and normalizes. A body that is not JSON is dropped. */
+  private async handToHub(command: HandleGithubWebhookCommand): Promise<void> {
+    const text =
+      typeof command.payload === 'string' ? command.payload : command.payload.toString('utf8');
+    let body: unknown;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      return;
+    }
+    if (typeof body !== 'object' || body === null || Array.isArray(body)) return;
+    await this.commandBus.execute(
+      new ReceiveInboundDeliveryCommand({
+        source: 'github',
+        deliveryId: command.deliveryId,
+        eventName: command.event,
+        payload: body as Record<string, unknown>,
+      }),
+    );
   }
 
   private get webhookSecret(): string | undefined {

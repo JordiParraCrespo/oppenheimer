@@ -5,6 +5,7 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
+import { ProjectArchivedDomainEvent } from './events/project-archived.domain-event';
 import {
   type ProjectRepositoryProps,
   projectRepositoriesProblem,
@@ -176,8 +177,16 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
    */
   archive(at: Date): void {
     this.assertNotUnassigned('archived');
-    this.props.archivedAt = this.props.archivedAt ?? at;
+    if (this.props.archivedAt) return;
+    this.props.archivedAt = at;
     this.setUpdatedAt(new Date());
+    this.addEvent(
+      new ProjectArchivedDomainEvent({
+        aggregateId: this.id,
+        organizationId: this.props.organizationId,
+        reason: 'The project was retired; what starts work in it must stop',
+      }),
+    );
   }
 
   /** Rename the project. Display only: the slug stays as it is. */

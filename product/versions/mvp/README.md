@@ -24,9 +24,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
-| 13 | [Automations](13-automations.md) | The console's second list, ahead of its API: what the export draws, the routes and frames built, the open questions; automations themselves stay after the MVP (00) |
+| 13 | [Automations](13-automations.md) | The console: what the export draws and what is built — the overview, the runs, an automation's page, the run view and the editor |
 | 14 | [Hosts in Settings](14-hosts-settings.md) | The 2026-09-26 Settings frame read against `hosts/`: status and running count, what removing a host stops, the pairing poll, the CPU count |
 | 15 | [Host metadata](15-host-metadata.md) | Where a host's facts live, split by how often they change: inventory, presence, networks, events; access patterns, retention, measured cost |
+| 16 | [Automations: the architecture](16-automations-architecture.md) | How a run is fired, guarded and dispatched: the inbound-events hub, the schedule tick, triggers, revisions, guards, configuration, the data model; and the headless drive that runs take next, in its slices |
 
 ## Decision log
 
@@ -481,6 +482,19 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   behind an Inspect fold, in the console and in onboarding; the
   automation editor holds its Task step alone until the API names a
   trigger (05, 13).
+- 2026-09-27: **automations move into the MVP** (00, 16). A run is a
+  headless session for any agent in the catalog, translated in the API;
+  `sessions/` owns execution (`session_turn`) and `automations/` only the
+  firing (`automation_run`); a run acts as its owner; external events go
+  through a provider-neutral `inbound-events/` hub; schedules are rows
+  fired by a one-minute tick; guards and limits are configurable at three
+  levels. 13's open data-model question is closed.
+- 2026-09-28: **the per-host cap counts live runs, not headless turns**,
+  since runs are interactive sessions until the headless drive (slice 2);
+  a run whose first turn ended holds no place, one past the run limit is
+  stopped, and the disk floor defers. **A run opens at
+  `/automations/$automationId/sessions/$sessionId`**, the session pane
+  with the automations list kept (05, 13, 16).
 - 2026-09-28: 02 §5's store was a `git clone --bare` refreshed by
   fetching every branch. It is blobless with no working tree, a create
   fetches only the ref its worktree is made from, and each repository
