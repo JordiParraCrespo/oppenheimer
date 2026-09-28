@@ -1,14 +1,7 @@
-import { EmptyState, SessionList, Skeleton, useNow } from '@oppenheimer/design-system-web';
+import { EmptyState, SessionList, Skeleton } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
-import {
-  useHosts,
-  useMoveSession,
-  useProjects,
-  useRenameSession,
-  useSessions,
-} from '@oppenheimer/frontend-consumer/react';
-import { lastFailure } from '@oppenheimer/frontend-core/react';
-import { combineQueries, ErrorAlert, notifySuccess, QueryState } from '@oppenheimer/frontend-web';
+import { useHosts, useProjects, useSessions } from '@oppenheimer/frontend-consumer/react';
+import { combineQueries, ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,10 +19,9 @@ import {
   repositoryOptions,
   type SessionFilters,
 } from '../lib/session-filters';
-import { groupByProject, matchesQuery, projectsForMove } from '../lib/session-groups';
+import { groupByProject, matchesQuery } from '../lib/session-groups';
 import { NewSessionButton } from './new-session-button';
 import { ProjectGroup } from './project-group';
-import type { SessionRowActions } from './session-row';
 
 /**
  * The dialog loads when first opened: the sidebar is on every authenticated
@@ -50,21 +42,23 @@ const DeleteSessionDialog = lazy(() =>
  *
  * What lives here is the three reads — the sessions (the rows), the projects
  * (the groups, in the order the API lists them) and the hosts (a facet's
- * names) — the minute clock the ages are read against, the state two siblings
- * share (the filters, the query, the folded groups, which row's menu or rename
- * is open, which row's delete is up) and the two mutations a row cannot own:
- * a rename commits from the inline input, a move from the row menu's pane.
- * The head is a component that draws what it is handed; each group and each
- * row are sections, because the highlight is theirs to subscribe to; the
- * delete dialog owns its own mutation, and New project behind the plus and
- * Project settings behind a header's cog are the console's project dialog,
- * asked for through `useConsoleDialog`.
+ * names) — and only the state siblings share: the filters and the settled
+ * search (the head sets them, the list is what they narrow), the folded
+ * groups, the row whose delete is up (its dialog outlives the row) and the
+ * write that failed last (a menu closes on its pick, so the failure stays on
+ * screen above the list). Everything else is lower: the half-typed search is
+ * the search box's, a row's menu, rename and writes are the row's, and the
+ * minute clock is each group's. The head is a component that draws what it is
+ * handed; each group and each row are sections, because the highlight is
+ * theirs to subscribe to; New project behind the plus and Project settings
+ * behind a header's cog are the console's project dialog, asked for through
+ * `useConsoleDialog`.
  *
  * The filters live here rather than in the menu because this is what they
  * narrow, and in state rather than the URL because they are a view of the
  * navigation, not a destination: the console's URL is the session that is
  * open, and a filter must not change which one that is. The search box is the
- * same kind of thing, applied live — the list is already whole.
+ * same kind of thing, applied once typing settles — the list is already whole.
  */
 export function SessionsSidebar() {
   const { t } = useTranslation();
@@ -80,21 +74,11 @@ export function SessionsSidebar() {
   const [filters, setFilters] = useState<SessionFilters>(DEFAULT_FILTERS);
   const [query, setQuery] = useState('');
   const [closed, setClosed] = useState<string[]>([]);
-  const [menuFor, setMenuFor] = useState<string | null>(null);
-  const [renaming, setRenaming] = useState<{ id: string; draft: string } | null>(null);
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
+  // The row write that failed last, if one did. A later write that lands
+  // clears it, and so does Dismiss.
+  const [failure, setFailure] = useState<Error | null>(null);
   const dialogs = useConsoleDialog();
-
-  // A renamed or moved row can land anywhere in a long, grouped list, so
-  // both say where it went.
-  const rename = useRenameSession({
-    onSuccess: (session) => notifySuccess('sessionRenamed', { name: session.name }),
-  });
-  const move = useMoveSession();
-  // One clock for every row's age, ticking once a minute. Every row redraws on
-  // the tick, because every age may have moved; that is one render a minute,
-  // where a clock read inside each row stopped the ages moving at all.
-  const now = useNow(60_000);
 
   const all = sessions ?? [];
   const options = sessions
@@ -117,41 +101,6 @@ export function SessionsSidebar() {
   const dirty = isFiltered(filters);
   const narrowed = dirty || query.trim().length > 0;
   const groups = groupByProject(projects.data ?? [], visible);
-  // The write that failed last, if one did: a menu closes on its pick, so the
-  // failure has to stay on screen somewhere the row is. A later write that
-  // lands clears it, and so does Dismiss.
-  const failure = lastFailure([move, rename]);
-
-  function commitRename() {
-    if (!renaming) return;
-    const name = renaming.draft.trim();
-    const current = all.find((session) => session.id === renaming.id);
-    if (name && current && name !== current.name) rename.mutate({ id: renaming.id, name });
-    setRenaming(null);
-  }
-
-  const rows: SessionRowActions = {
-    menuFor,
-    onMenuOpenChange: (session, open) => setMenuFor(open ? session.id : null),
-    renaming,
-    onRenameDraft: (session, draft) => setRenaming({ id: session.id, draft }),
-    onRenameCommit: commitRename,
-    onRenameCancel: () => setRenaming(null),
-    onRename: (session) => setRenaming({ id: session.id, draft: session.name }),
-    onMove: (session, projectId) => {
-      // The destination's name from the pane that was just picked from.
-      const target = projectsForMove(projects.data ?? [], session).find(
-        (project) => project.id === projectId,
-      );
-      const project = target?.isUnassigned ? t('projects.unassigned') : (target?.name ?? '');
-      move.mutate(
-        { id: session.id, projectId },
-        { onSuccess: (moved) => notifySuccess('sessionMoved', { name: moved.name, project }) },
-      );
-    },
-    onDelete: (session) => setDeleting(session),
-    moveTargets: (session) => projectsForMove(projects.data ?? [], session),
-  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -162,7 +111,6 @@ export function SessionsSidebar() {
         options={options}
         dirty={dirty}
         chips={options ? activeFilters(filters, options) : []}
-        query={query}
         onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
         onFiltersClear={() => setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))}
         onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
@@ -179,9 +127,9 @@ export function SessionsSidebar() {
       />
 
       <ErrorAlert
-        error={failure.error}
+        error={failure}
         fallback={t('sessions.sidebar.writeFailed')}
-        onDismiss={failure.dismiss}
+        onDismiss={() => setFailure(null)}
         className="mx-3 mb-2"
       />
 
@@ -231,12 +179,12 @@ export function SessionsSidebar() {
                   }
                   narrowed={narrowed}
                   query={query}
-                  now={now}
                   onNewSessionHere={(target) =>
                     navigate({ to: '/sessions/new', search: { project: target.id } })
                   }
                   onSettings={(target) => dialogs.open({ kind: 'project', projectId: target.id })}
-                  rows={rows}
+                  onDelete={setDeleting}
+                  onWrite={setFailure}
                 />
               );
             })

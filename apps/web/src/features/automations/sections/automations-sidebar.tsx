@@ -1,29 +1,20 @@
 import {
   Button,
   EmptyState,
-  IconButton,
   RoutineItem,
-  RoutineRun,
-  RoutineRunList,
-  RoutineRunsEmpty,
-  SessionList,
   SidebarEmptyRow,
   SidebarListHead,
-  SidebarProjectGroup,
-  SidebarProjectHeader,
-  SidebarSearch,
   Skeleton,
-  useNow,
 } from '@oppenheimer/design-system-web';
-import { Plus, Zap } from '@oppenheimer/design-system-web/icons';
+import { Zap } from '@oppenheimer/design-system-web/icons';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { combineQueries, formatAge, QueryState } from '@oppenheimer/frontend-web';
-import { Link, useMatchRoute } from '@tanstack/react-router';
-import { Fragment, useState } from 'react';
+import { combineQueries, QueryState } from '@oppenheimer/frontend-web';
+import { Link, useRouterState } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
-import { TriggerGlyph } from '../components/trigger-glyph';
-import { runState, sidebarMeta } from '../lib/automation-view';
+import { AutomationsSearch } from '../components/automations-search';
+import { AutomationGroup } from './automation-group';
 
 /**
  * The console's sidebar body on its automations list
@@ -34,26 +25,27 @@ import { runState, sidebarMeta } from '../lib/automation-view';
  * each opening the session it started in the run view — the pane, with this
  * list kept beside it.
  *
+ * What lives here is the two reads and what the groups share: the settled
+ * search and the folded groups. The half-typed search is the search box's,
+ * the minute clock is each group's, and which automation is selected is each
+ * row's subscription to the route — so a keystroke, a tick or a navigation
+ * does not redraw the list.
+ *
  * The workspace's Unassigned project has no group: it holds the sessions
  * that name no project, and an automation is always set up for one.
  */
 export function AutomationsSidebar() {
   const { t } = useTranslation();
-  const matchRoute = useMatchRoute();
   const projects = useProjects({ select: (rows) => rows.filter((row) => !row.isUnassigned) });
   const automations = useAutomations();
   const [closed, setClosed] = useState<string[]>([]);
   const [query, setQuery] = useState('');
   const dialogs = useConsoleDialog();
-  const now = useNow(60_000);
-
-  // The selected automation is the page's, or the run's whose session is open.
-  const detail = matchRoute({ to: '/automations/$automationId' });
-  const runView = matchRoute({ to: '/automations/$automationId/sessions/$sessionId' });
-  const selectedId = runView ? runView.automationId : detail ? detail.automationId : null;
-  const openSessionId = runView ? runView.sessionId : null;
-  const all =
-    Boolean(matchRoute({ to: '/automations' })) || Boolean(matchRoute({ to: '/automations/runs' }));
+  // All automations is current on the overview and on the runs page.
+  const all = useRouterState({
+    select: (state) =>
+      state.location.pathname === '/automations' || state.location.pathname === '/automations/runs',
+  });
 
   const term = query.trim().toLowerCase();
   const groups = (projects.data ?? []).map((project) => ({
@@ -78,18 +70,7 @@ export function AutomationsSidebar() {
 
       <SidebarListHead label={t('automations.sidebar.projects')} count={projects.data?.length} />
 
-      {automations.data?.length ? (
-        <SidebarSearch
-          value={query}
-          onValueChange={setQuery}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') setQuery('');
-          }}
-          aria-label={t('automations.sidebar.search')}
-          placeholder={t('automations.sidebar.search')}
-          clearLabel={t('automations.sidebar.clearSearch')}
-        />
-      ) : null}
+      {automations.data?.length ? <AutomationsSearch onChange={setQuery} /> : null}
 
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
         {term && !shown.length ? (
@@ -138,102 +119,21 @@ export function AutomationsSidebar() {
           }}
         >
           {(ready) =>
-            ready.shown.map(({ project, items }) => {
-              const open = Boolean(term) || !closed.includes(project.id);
-              return (
-                <SidebarProjectGroup key={project.id}>
-                  <SidebarProjectHeader
-                    name={project.name}
-                    count={items.length}
-                    open={open}
-                    onOpenChange={(next) =>
-                      setClosed((current) =>
-                        next ? current.filter((id) => id !== project.id) : [...current, project.id],
-                      )
-                    }
-                    actions={
-                      <IconButton
-                        size="xs"
-                        variant="quiet"
-                        aria-label={t('automations.sidebar.newHere', { name: project.name })}
-                        onClick={() => dialogs.open({ kind: 'automation', projectId: project.id })}
-                      >
-                        <Plus />
-                      </IconButton>
-                    }
-                  />
-                  {open && items.length ? (
-                    <SessionList>
-                      {items.map((automation) => {
-                        const selected = automation.id === selectedId;
-                        return (
-                          <Fragment key={automation.id}>
-                            <RoutineItem
-                              name={automation.name}
-                              icon={<TriggerGlyph scheduled={automation.isScheduled} />}
-                              meta={sidebarMeta(automation, now, t)}
-                              running={automation.isRunning}
-                              paused={automation.isPaused}
-                              active={selected}
-                              render={
-                                <Link
-                                  to="/automations/$automationId"
-                                  params={{ automationId: automation.id }}
-                                />
-                              }
-                            />
-                            {selected ? (
-                              <RoutineRunList>
-                                {automation.lastRuns.length ? (
-                                  automation.lastRuns.map((run) => (
-                                    <RoutineRun
-                                      key={run.id}
-                                      title={run.title}
-                                      ago={formatAge(run.createdAt, now, t)}
-                                      state={runState(run.status)}
-                                      disabled={!run.sessionId}
-                                      active={
-                                        Boolean(run.sessionId) && run.sessionId === openSessionId
-                                      }
-                                      render={
-                                        run.sessionId ? (
-                                          <Link
-                                            to="/automations/$automationId/sessions/$sessionId"
-                                            params={{
-                                              automationId: automation.id,
-                                              sessionId: run.sessionId,
-                                            }}
-                                          />
-                                        ) : undefined
-                                      }
-                                    />
-                                  ))
-                                ) : (
-                                  <RoutineRunsEmpty>
-                                    {t('automations.sidebar.noRuns')}
-                                  </RoutineRunsEmpty>
-                                )}
-                              </RoutineRunList>
-                            ) : null}
-                          </Fragment>
-                        );
-                      })}
-                    </SessionList>
-                  ) : null}
-                  {open && !items.length && !term ? (
-                    <SidebarEmptyRow>
-                      {t('automations.sidebar.emptyProject')}{' '}
-                      <button
-                        type="button"
-                        onClick={() => dialogs.open({ kind: 'automation', projectId: project.id })}
-                      >
-                        {t('automations.sidebar.createOne')}
-                      </button>
-                    </SidebarEmptyRow>
-                  ) : null}
-                </SidebarProjectGroup>
-              );
-            })
+            ready.shown.map(({ project, items }) => (
+              <AutomationGroup
+                key={project.id}
+                project={project}
+                items={items}
+                open={Boolean(term) || !closed.includes(project.id)}
+                onOpenChange={(next) =>
+                  setClosed((current) =>
+                    next ? current.filter((id) => id !== project.id) : [...current, project.id],
+                  )
+                }
+                searching={Boolean(term)}
+                onNew={(target) => dialogs.open({ kind: 'automation', projectId: target.id })}
+              />
+            ))
           }
         </QueryState>
       </div>
