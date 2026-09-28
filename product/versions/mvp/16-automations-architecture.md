@@ -132,7 +132,9 @@ watch.
 ### Q6. An inbound-events hub, its own module
 
 - **`inbound-events/`** is provider-neutral: it stores each delivery
-  once, de-duplicates it by `(source, deliveryId)`, normalizes it through
+  once, de-duplicates it by `(source, deliveryId)` and by the SHA-256 of
+  the raw signed body (the delivery id is an unsigned header, so the same
+  bytes under a new id are a replay, 2026-09-28), normalizes it through
   the source's adapter and publishes `ExternalEventReceived`. It never
   imports automations. Automations is its first consumer; auto-fix
   subscriptions (note 05 §6) and waking a live session on a GitHub event
@@ -284,7 +286,7 @@ Every hop is idempotent, and the key is written down:
 
 | Hop | Key |
 |---|---|
-| Delivery → `inbound_event` | `(source, deliveryId)` |
+| Delivery → `inbound_event` | `(source, deliveryId)`, and `(source, payloadDigest)` against replays |
 | Firing → `automation_run` | `(automationId, causeKey)`: the delivery id, `schedule:<triggerId>:<scheduledFor>`, or `manual:<commandId>` |
 | Run → session | `work_session.idempotencyKey = automation-run:<runId>` |
 | Outbox row → BullMQ job | the outbox row id is the job id |
