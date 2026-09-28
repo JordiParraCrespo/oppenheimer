@@ -1,74 +1,96 @@
 import {
-  Alert,
-  AlertDescription,
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogHero,
-  DialogHeroPlate,
   DialogTitle,
 } from '@oppenheimer/design-system-web';
-import { TriangleAlert } from '@oppenheimer/design-system-web/icons';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ErrorAlert } from '../../forms';
 
 /**
- * The workspace's "are you sure?" — a hero-plated dialog whose confirm button
- * is destructive, for an action that cannot be undone.
+ * The console's "are you sure?", as the inventory draws it
+ * (`product/versions/mvp/design/version1/Components.dc.html`, "Dialog ·
+ * Destructive confirm"): the title names the thing, the description states the
+ * cost, and the destructive button repeats the verb — never "Confirm", which is
+ * why `confirmLabel` is required. Cancel is `secondary`, as it is on every
+ * dialog foot in the export.
  *
- * At the top of `components/` rather than inside `team/`, where it was written:
- * the inbox's bulk delete is the second feature to need it, and layout
- * vocabulary shared by two features does not live inside one of them.
+ * Each caller keeps its own mutation and hands over its state: `pending` locks
+ * both buttons and the dismissal, and swaps the verb for `pendingLabel`;
+ * `error` stays *in* the dialog, through `ErrorAlert`, because the reader has
+ * to act on it and the dialog is where they still are.
  *
- * The failure stays *in* the dialog as an `Alert` rather than becoming a toast,
- * because the reader has to act on it and the dialog is where they still are.
+ * `children` is what one confirm needs beyond the sentence — Delete session's
+ * box for unpushed work, Delete account's typed email. A child that is a form
+ * passes its id as `form`, and the destructive button submits it instead of
+ * calling `onConfirm`, so the form's own validation runs first.
+ *
+ * Smaller confirmations stay inside the menu that asked (the export's
+ * automation delete); this is for the ones that earn a dialog.
  */
 export function ConfirmDialog({
   title,
   description,
   confirmLabel,
+  pendingLabel,
   pending,
   error,
+  errorFallback,
   onClose,
   onConfirm,
+  form,
+  children,
 }: {
-  title: string;
-  description: string;
-  /** Names the deed — "Delete" — where the generic "Confirm" would not. */
-  confirmLabel?: string;
+  title: ReactNode;
+  description: ReactNode;
+  /** The verb — "Delete session" — never the generic "Confirm". */
+  confirmLabel: string;
+  /** The verb in progress — "Deleting…" — while `pending`. */
+  pendingLabel?: string;
   pending: boolean;
-  error: Error | null;
+  error: unknown;
+  /** Already translated: what the failure reads as when its code has no message. */
+  errorFallback: string;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm?: () => void;
+  /** The id of a form in `children` that the destructive button submits. */
+  form?: string;
+  children?: ReactNode;
 }) {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
+  const hasBody = Boolean(children) || (error !== null && error !== undefined);
+
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={t('common.close')}>
-        <DialogHero gradient="pinkCoral">
-          <DialogHeroPlate>
-            <TriangleAlert className="text-destructive" />
-          </DialogHeroPlate>
-        </DialogHero>
+    <Dialog open onOpenChange={(open) => !open && !pending && onClose()}>
+      <DialogContent role="alertdialog" closeLabel={t('common.close')}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{resolveError(error, t('common.error')).message}</AlertDescription>
-          </Alert>
-        )}
+        {hasBody ? (
+          <DialogBody className="flex flex-col gap-3">
+            {children}
+            <ErrorAlert error={error} fallback={errorFallback} />
+          </DialogBody>
+        ) : null}
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={pending}>
             {t('common.cancel')}
           </Button>
-          <Button type="button" variant="destructive" disabled={pending} onClick={onConfirm}>
-            {confirmLabel ?? t('common.confirm')}
+          <Button
+            type={form ? 'submit' : 'button'}
+            form={form}
+            variant="destructive"
+            pending={pending}
+            pendingLabel={pendingLabel}
+            onClick={form ? undefined : onConfirm}
+          >
+            {confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>
