@@ -466,13 +466,15 @@ for (const { app } of APPS) {
 // back frozen on a step that had finished (#111). So every `refetchInterval`
 // in `src/react/` carries `refetchIntervalInBackground` beside it, `true` or
 // an explicit `false` — counted per file with comments stripped, not parsed.
-const COMMENTS = /\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm;
+// A `//` comment is stripped wherever it starts on the line, except after a
+// `:` or a quote, so `https://` inside a string survives.
+const COMMENTS = /\/\*[\s\S]*?\*\/|(^|[^:'"`])\/\/.*$/gm;
 for (const pkg of readdirSync(join(root, 'packages/frontend'))) {
   const dir = join(root, 'packages/frontend', pkg, 'src/react');
   if (!existsSync(dir)) continue;
   for (const name of readdirSync(dir)) {
     if (!/\.tsx?$/.test(name) || /\.(spec|test)\.tsx?$/.test(name)) continue;
-    const source = readFileSync(join(dir, name), 'utf8').replace(COMMENTS, '');
+    const source = readFileSync(join(dir, name), 'utf8').replace(COMMENTS, '$1');
     const intervals = (source.match(/\brefetchInterval\s*:/g) ?? []).length;
     const decided = (source.match(/\brefetchIntervalInBackground\s*:/g) ?? []).length;
     if (intervals !== decided) {

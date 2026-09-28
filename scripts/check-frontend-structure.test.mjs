@@ -238,6 +238,11 @@ test('a package poll decides refetchIntervalInBackground beside its interval', (
 export const useStart = () =>
   useQuery({ queryKey: ['start'], queryFn: () => [], refetchInterval: 2000 });
 `,
+      'packages/frontend/consumer/src/react/runs.queries.ts': `import { useQuery } from '@oppenheimer/frontend-core/react';
+const DOCS = 'https://example.test/refetchIntervalInBackground';
+export const useRun = () =>
+  useQuery({ queryKey: [DOCS], queryFn: () => [], refetchInterval: 2000 }); // refetchIntervalInBackground: true
+`,
       'packages/frontend/consumer/src/react/presence.queries.ts': `import { useQuery } from '@oppenheimer/frontend-core/react';
 export const usePresence = () =>
   useQuery({
@@ -250,6 +255,7 @@ export const usePresence = () =>
     },
   );
   assert.match(report, /starts\.queries\.ts: 1 refetchInterval but 0 refetchIntervalInBackground/);
+  assert.match(report, /runs\.queries\.ts: 1 refetchInterval but 0 refetchIntervalInBackground/);
   assert.doesNotMatch(report, /presence\.queries\.ts/);
 });
 
