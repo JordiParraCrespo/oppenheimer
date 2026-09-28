@@ -11,7 +11,8 @@ export type EditorStep = (typeof EDITOR_STEPS)[number];
 /**
  * The editor's three steps as tabs: Task, Trigger, Where it runs. A step is
  * reachable once every step before it is complete; a complete step other
- * than the open one shows a tick where its number was.
+ * than the open one shows a tick where its number was, except the last,
+ * which is prefilled and done when saved.
  */
 export function EditorSteps({
   step,
@@ -41,7 +42,8 @@ export function EditorSteps({
       {EDITOR_STEPS.map((candidate, index) => {
         const on = candidate === step;
         const reachable = EDITOR_STEPS.slice(0, index).every((before) => done[before]);
-        const ticked = done[candidate] && !on;
+        // The last step is prefilled, so it never reads as done: saving is its tick.
+        const ticked = done[candidate] && !on && index < EDITOR_STEPS.length - 1;
         return (
           <button
             key={candidate}

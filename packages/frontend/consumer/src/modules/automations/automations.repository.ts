@@ -59,6 +59,7 @@ function toEntity(dto: AutomationResponseDto): AutomationEntity {
     dto.name,
     dto.ownedByMe,
     dto.status,
+    date(dto.pausedAt),
     dto.pausedReason ?? null,
     date(dto.nextRunAt),
     {

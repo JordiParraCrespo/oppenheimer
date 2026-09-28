@@ -63,7 +63,11 @@ export function EditorFooter({
         </Button>
       )}
       {index < EDITOR_STEPS.length - 1 ? (
+        // Keyed apart from the submit button below: in the same place, React
+        // would reuse one element, and a click on Next would turn it into a
+        // submit before the click's default action ran, saving from step two.
         <Button
+          key="next"
           type="button"
           disabled={!stepDone}
           onClick={() => onStepChange(EDITOR_STEPS[index + 1])}
@@ -71,7 +75,7 @@ export function EditorFooter({
           {t('automations.editor.next')}
         </Button>
       ) : (
-        <Button type="submit" disabled={!ready || saving}>
+        <Button key="save" type="submit" disabled={!ready || saving}>
           {editing ? t('automations.editor.save') : t('automations.editor.create')}
         </Button>
       )}

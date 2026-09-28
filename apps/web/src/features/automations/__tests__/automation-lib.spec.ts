@@ -41,6 +41,7 @@ function automation(
     'Nightly audit',
     true,
     overrides.status ?? 'active',
+    overrides.status === 'paused' ? new Date(NOW) : null,
     null,
     overrides.nextRunAt === undefined ? new Date(NOW + 3_600_000) : overrides.nextRunAt,
     {

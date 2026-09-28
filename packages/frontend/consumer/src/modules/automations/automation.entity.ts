@@ -90,7 +90,10 @@ export class AutomationEntity {
     public readonly projectId: string,
     public readonly name: string,
     public readonly ownedByMe: boolean,
+    /** What the row says: running wins over paused while a run is live. */
     public readonly status: AutomationStatus,
+    /** When it was paused: a fact of its own, since a paused automation can still have a live run. */
+    public readonly pausedAt: Date | null,
     public readonly pausedReason: AutomationPausedReason | null,
     public readonly nextRunAt: Date | null,
     public readonly revision: AutomationRevision,
@@ -108,7 +111,7 @@ export class AutomationEntity {
   ) {}
 
   get isPaused(): boolean {
-    return this.status === 'paused';
+    return this.pausedAt !== null;
   }
 
   get isRunning(): boolean {
