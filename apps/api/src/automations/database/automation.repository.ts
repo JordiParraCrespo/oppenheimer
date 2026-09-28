@@ -177,7 +177,7 @@ export class AutomationRepository
     // Every statement of the tick runs on this transaction's connection: it
     // borrows no other from the pool while it holds the claim, and its counts
     // see the runs it has just inserted.
-    const queued = await this.dataSource.transaction(async (manager) => {
+    return this.outbox.transaction(async (manager) => {
       // IDX_automation_trigger_due. SKIP LOCKED: two replicas ticking in the
       // same minute claim disjoint triggers, and the firing key makes a slot
       // one run even if a claim were ever repeated. NO KEY UPDATE, not UPDATE:
@@ -245,8 +245,6 @@ export class AutomationRepository
       }
       return runs;
     });
-    if (queued.length > 0) this.outbox.wake();
-    return queued;
   }
 
   async findLiveOnHostForSystem(hostId: string): Promise<AutomationEntity[]> {

@@ -52,12 +52,7 @@ function repositoryWith() {
     ),
   };
   const find = vi.fn().mockResolvedValue([]);
-  const repository = new RoleRepository(
-    { find } as never,
-    {} as never,
-    new RoleMapper(),
-    outbox as never,
-  );
+  const repository = new RoleRepository({ find } as never, new RoleMapper(), outbox as never);
   return { repository, manager, outbox, log, find };
 }
 

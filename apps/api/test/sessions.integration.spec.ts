@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { OutboxService } from '@oppenheimer/backend-ddd';
+import type { OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import { DataSource } from 'typeorm';
+import { DataSource, type EntityManager } from 'typeorm';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import { AddSessionRolePermissions1789100100000 } from '../src/migrations/1789100100000-AddSessionRolePermissions';
 import { ProjectOrmEntity } from '../src/projects/database/project.orm-entity';
@@ -53,11 +53,15 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
     bypass: false,
   });
 
-  /** The outbox is a real one; nothing here asserts on it, and a wake needs no queue. */
+  /**
+   * Nothing here asserts on the outbox: its transaction is the data source's
+   * own, staging writes nothing, and there is no relay to wake.
+   */
   const outbox = () =>
     ({
+      transaction: (work: (manager: EntityManager) => Promise<unknown>) =>
+        dataSource.transaction(work),
       stageEvents: async () => undefined,
-      wake: async () => undefined,
     }) as unknown as OutboxService;
 
   function session(overrides: Partial<{ idempotencyKey: string | null; slug: string }> = {}) {

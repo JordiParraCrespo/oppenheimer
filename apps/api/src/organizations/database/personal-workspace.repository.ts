@@ -27,10 +27,11 @@ import type { PersonalWorkspaceRepositoryPort } from './personal-workspace.repos
  * module; borrowing its transaction is what lets one writer keep owning it
  * while the three rows still share a unit of work.
  *
- * The transaction is opened here rather than through `writeWithEvents` because
- * this write may decide not to happen: that helper stages the aggregate's
- * events whatever the write returns, which would announce a workspace that was
- * never provisioned. Events are staged explicitly, on the branch that wrote.
+ * The transaction is `OutboxService.transaction` rather than `writeWithEvents`
+ * because this write may decide not to happen: that helper stages the
+ * aggregate's events whatever the write returns, which would announce a
+ * workspace that was never provisioned. Events are staged explicitly, on the
+ * branch that wrote, and the relay is woken after commit only when they were.
  *
  * The owner's open sessions are pointed at the new workspace in the same
  * transaction, because at sign-up they were written before it existed — see
@@ -53,7 +54,7 @@ export class PersonalWorkspaceRepository implements PersonalWorkspaceRepositoryP
   async provision(workspace: PersonalWorkspaceEntity): Promise<boolean> {
     const records = toPersonalWorkspaceRecords(workspace);
 
-    const provisioned = await this.dataSource.transaction(async (manager) => {
+    const provisioned = await this.outbox.transaction(async (manager) => {
       // Lock the account row, so two provisions for the same person serialize
       // here instead of both reading "no membership" and both writing one.
       // The account exists — sign-up just wrote it — which is what makes a row
@@ -105,9 +106,6 @@ export class PersonalWorkspaceRepository implements PersonalWorkspaceRepositoryP
 
     if (!provisioned) return false;
     workspace.clearEvents();
-    // Deliver now rather than at the relay's next poll; a failure here leaves
-    // the row for that poll to reclaim, which is the point of the outbox.
-    this.outbox.wake();
     return true;
   }
 }

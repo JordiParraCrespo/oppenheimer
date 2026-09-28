@@ -202,12 +202,7 @@ async function seed() {
   // the hook to reach. That is also what repairs a database seeded before the
   // personal workspace existed: both handlers are idempotent.
   const roleMapper = new RoleMapper();
-  const roleRepository = new RoleRepository(
-    roleRepo,
-    dataSource,
-    roleMapper,
-    new OutboxService(dataSource),
-  );
+  const roleRepository = new RoleRepository(roleRepo, roleMapper, new OutboxService(dataSource));
   const userRoleRepository = new UserRoleRepository(userRoleRepo, roleRepo, roleMapper);
   const assignDefaultRole = new AssignDefaultRoleCommandHandler(roleRepository, userRoleRepository);
   const provisionPersonalWorkspace = new ProvisionPersonalWorkspaceCommandHandler(

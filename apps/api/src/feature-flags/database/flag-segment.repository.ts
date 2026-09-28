@@ -1,13 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  type AggregateID,
-  OutboxService,
-  Paginated,
-  type PaginatedQueryParams,
-} from '@oppenheimer/backend-ddd';
-import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, type Repository } from 'typeorm';
+import { OutboxService, TypeOrmRepositoryBase } from '@oppenheimer/backend-ddd';
+import type { Option } from 'oxide.ts';
+import type { Repository } from 'typeorm';
 import type { FlagSegmentEntity } from '../domain/flag-segment.entity';
 import { FlagSegmentMapper } from '../flag-segment.mapper';
 import { FlagSegmentOrmEntity } from './flag-segment.orm-entity';
@@ -15,58 +10,26 @@ import type { FlagSegmentRepositoryPort } from './flag-segment.repository.port';
 
 /** TypeORM adapter for segments; stages change events on the outbox with the write. */
 @Injectable()
-export class FlagSegmentRepository implements FlagSegmentRepositoryPort {
+export class FlagSegmentRepository
+  extends TypeOrmRepositoryBase<FlagSegmentEntity, FlagSegmentOrmEntity>
+  implements FlagSegmentRepositoryPort
+{
   constructor(
     @InjectRepository(FlagSegmentOrmEntity)
-    private readonly repository: Repository<FlagSegmentOrmEntity>,
-    private readonly dataSource: DataSource,
-    private readonly mapper: FlagSegmentMapper,
-    private readonly outbox: OutboxService,
-  ) {}
-
-  async insert(entity: FlagSegmentEntity | FlagSegmentEntity[]): Promise<void> {
-    const entities = Array.isArray(entity) ? entity : [entity];
-    const records = entities.map((e) => this.mapper.toPersistence(e));
-    await this.outbox.writeWithEvents(entities, (manager) => {
-      const repository = manager.getRepository(FlagSegmentOrmEntity);
-      return repository.insert(records as Parameters<typeof repository.insert>[0]);
-    });
-  }
-
-  async save(entity: FlagSegmentEntity): Promise<FlagSegmentEntity> {
-    const record = await this.outbox.writeWithEvents([entity], (manager) =>
-      manager.getRepository(FlagSegmentOrmEntity).save(this.mapper.toPersistence(entity)),
-    );
-    return this.mapper.toDomain(record);
-  }
-
-  async findOneById(id: string): Promise<Option<FlagSegmentEntity>> {
-    const record = await this.repository.findOneBy({ id });
-    return record ? Some(this.mapper.toDomain(record)) : None;
+    protected readonly repository: Repository<FlagSegmentOrmEntity>,
+    protected readonly mapper: FlagSegmentMapper,
+    protected readonly outbox: OutboxService,
+  ) {
+    super();
   }
 
   async findOneByKey(key: string): Promise<Option<FlagSegmentEntity>> {
-    const record = await this.repository.findOneBy({ key });
-    return record ? Some(this.mapper.toDomain(record)) : None;
+    return this.toOption(await this.repository.findOneBy({ key }));
   }
 
   async findAll(): Promise<FlagSegmentEntity[]> {
     const records = await this.repository.find({ order: { key: 'ASC' } });
     return records.map((record) => this.mapper.toDomain(record));
-  }
-
-  async findAllPaginated(params: PaginatedQueryParams): Promise<Paginated<FlagSegmentEntity>> {
-    const [records, count] = await this.repository.findAndCount({
-      skip: params.offset,
-      take: params.limit,
-      order: { key: params.orderBy.param === 'desc' ? 'DESC' : 'ASC' },
-    });
-    return new Paginated({
-      count,
-      limit: params.limit,
-      page: params.page,
-      data: records.map((record) => this.mapper.toDomain(record)),
-    });
   }
 
   async fingerprint(): Promise<string> {
@@ -76,16 +39,5 @@ export class FlagSegmentRepository implements FlagSegmentRepositoryPort {
       `SELECT count(*)::text || ':' || coalesce(md5(string_agg(to_jsonb(t)::text, ',' ORDER BY t.key)), '') AS digest FROM feature_flag_segment t`,
     );
     return (row as { digest: string } | undefined)?.digest ?? '';
-  }
-
-  async delete(entity: FlagSegmentEntity): Promise<boolean> {
-    const result = await this.outbox.writeWithEvents([entity], (manager) =>
-      manager.getRepository(FlagSegmentOrmEntity).delete({ id: entity.id as AggregateID }),
-    );
-    return result.affected ? result.affected > 0 : false;
-  }
-
-  transaction<T>(handler: () => Promise<T>): Promise<T> {
-    return this.dataSource.transaction(() => handler());
   }
 }

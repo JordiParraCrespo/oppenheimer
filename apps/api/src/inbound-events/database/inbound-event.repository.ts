@@ -37,7 +37,7 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
   ) {}
 
   async receive(delivery: NewDelivery): Promise<boolean> {
-    const received = await this.dataSource.transaction(async (manager) => {
+    const received = await this.outbox.transaction(async (manager) => {
       // A bare ON CONFLICT covers both uniques: `(source, deliveryId)`, a
       // provider's retry, and `(source, payloadDigest)`, the same signed bytes
       // under a delivery id the provider never sent (a replay). Either is a no-op.
@@ -65,8 +65,7 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
       });
       return true;
     });
-    if (received) this.outbox.wake();
-    else await this.reportReplay(delivery);
+    if (!received) await this.reportReplay(delivery);
     return received;
   }
 
@@ -102,7 +101,7 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
     organizationIds: readonly string[],
     events: readonly ExternalEvent[],
   ): Promise<number> {
-    const stored = await this.dataSource.transaction(async (manager) => {
+    return this.outbox.transaction(async (manager) => {
       const notifications: ExternalEventReceivedDomainEvent[] = [];
       for (const organizationId of organizationIds) {
         for (const event of events) {
@@ -164,8 +163,6 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
       await this.outbox.stageEvents(manager, notifications);
       return notifications.length;
     });
-    if (stored > 0) this.outbox.wake();
-    return stored;
   }
 
   async markFailed(id: string, error: string): Promise<void> {
@@ -180,7 +177,7 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
     abandonBefore: Date,
     batch: number,
   ): Promise<{ restaged: number; abandoned: number }> {
-    const result = await this.dataSource.transaction(async (manager) => {
+    return this.outbox.transaction(async (manager) => {
       const abandoned: { id: string }[] = await manager.query(
         `UPDATE "inbound_delivery"
             SET "status" = 'failed', "lastError" = 'not processed after its retries and a day of sweeps'
@@ -211,8 +208,6 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
       }
       return { restaged: due.length, abandoned: abandoned.length };
     });
-    if (result.restaged > 0) this.outbox.wake();
-    return result;
   }
 
   async findOne(organizationId: string, id: string): Promise<Option<StoredExternalEvent>> {

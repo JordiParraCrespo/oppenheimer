@@ -245,13 +245,10 @@ export class AutomationRunRepository
   }
 
   async insertFiring(run: AutomationRunEntity): Promise<{ runId: string; inserted: boolean }> {
-    const inserted = await this.dataSource.transaction((manager) =>
+    const inserted = await this.outbox.transaction((manager) =>
       insertRunWithin(manager, this.outbox, this.mapper, run),
     );
-    if (inserted) {
-      if (run.isPending) this.outbox.wake();
-      return { runId: run.id, inserted };
-    }
+    if (inserted) return { runId: run.id, inserted };
     const existing: { id: string }[] = await this.dataSource.query(
       `SELECT "id" FROM "automation_run" WHERE "automationId" = $1 AND "causeKey" = $2`,
       [run.automationId, run.causeKey],
@@ -272,7 +269,7 @@ export class AutomationRunRepository
     since: Date,
     decide: (recent: { automation: number; workspace: number }) => AutomationRunEntity,
   ): Promise<{ run: AutomationRunEntity; runId: string; inserted: boolean }> {
-    const { run, inserted } = await this.dataSource.transaction(async (manager) => {
+    const { run, inserted } = await this.outbox.transaction(async (manager) => {
       await lockWorkspaceFiring(manager, [organizationId]);
       const decided = decide(await countRecentWithin(manager, organizationId, automationId, since));
       return {
@@ -280,10 +277,7 @@ export class AutomationRunRepository
         inserted: await insertRunWithin(manager, this.outbox, this.mapper, decided),
       };
     });
-    if (inserted) {
-      if (run.isPending) await this.outbox.wake();
-      return { run, runId: run.id, inserted };
-    }
+    if (inserted) return { run, runId: run.id, inserted };
     return { run, runId: await this.firingOfCause(run), inserted };
   }
 
@@ -297,7 +291,7 @@ export class AutomationRunRepository
   }
 
   async restageStalled(staleBefore: Date, batch: number): Promise<number> {
-    const count = await this.dataSource.transaction(async (manager) => {
+    return this.outbox.transaction(async (manager) => {
       // IDX_automation_run_pending; SKIP LOCKED so replicas sweep disjoint rows.
       const due: { id: string; automationId: string; cause: string }[] = await manager.query(
         `UPDATE "automation_run" r SET "availableAt" = now(), "updatedAt" = now()
@@ -319,8 +313,6 @@ export class AutomationRunRepository
       }
       return due.length;
     });
-    if (count > 0) this.outbox.wake();
-    return count;
   }
 
   async findOneForSystem(id: string): Promise<Option<AutomationRunEntity>> {
@@ -330,7 +322,7 @@ export class AutomationRunRepository
 
   async save(run: AutomationRunEntity): Promise<void> {
     const record = this.mapper.toRecord(run);
-    await this.dataSource.transaction(async (manager) => {
+    await this.outbox.transaction(async (manager) => {
       await manager.query(
         `UPDATE "automation_run"
             SET "outcome" = $2, "skipReason" = $3, "availableAt" = $4, "attempts" = $5,
@@ -350,7 +342,6 @@ export class AutomationRunRepository
       // A deferral owes another look later; the delay rides the outbox row.
       if (run.isPending) await stageDispatch(manager, this.outbox, run);
     });
-    if (run.isPending) this.outbox.wake();
   }
 
   async countLiveForAutomation(

@@ -4,7 +4,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { OutboxService } from '@oppenheimer/backend-ddd';
 import { Some } from 'oxide.ts';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import { DataSource } from 'typeorm';
+import { DataSource, type EntityManager } from 'typeorm';
 import { AutomationLimitsResolver } from '../src/automations/application/automation-limits.resolver';
 import { AutomationMapper } from '../src/automations/automation.mapper';
 import { AutomationRunMapper } from '../src/automations/automation-run.mapper';
@@ -55,11 +55,15 @@ describe('automations: firing under the caps, and the runs list (integration)', 
   let userId: string;
   let hostId: string;
 
-  /** No queue here: a staged dispatch inserts nothing, and a wake is a no-op. */
+  /**
+   * No queue here: the outbox's transaction is the data source's own, a staged
+   * dispatch inserts nothing, and there is no relay to wake.
+   */
   const outbox = {
+    transaction: (work: (manager: EntityManager) => Promise<unknown>) =>
+      dataSource.transaction(work),
     stageJob: async () => undefined,
     stageEvents: async () => undefined,
-    wake: async () => undefined,
   } as unknown as OutboxService;
 
   const scope = (overrides: Partial<AccessScope> = {}): AccessScope =>

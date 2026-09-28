@@ -1,13 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  type AggregateID,
-  OutboxService,
-  Paginated,
-  type PaginatedQueryParams,
-} from '@oppenheimer/backend-ddd';
+import { type AggregateID, OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, IsNull, MoreThan, type Repository } from 'typeorm';
+import { IsNull, MoreThan, type Repository } from 'typeorm';
 import { ApiTokenMapper } from '../api-tokens.mapper';
 import type { ApiTokenEntity } from '../domain/api-token.entity';
 import { ApiTokenOrmEntity } from './api-token.orm-entity';
@@ -24,7 +19,6 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
   constructor(
     @InjectRepository(ApiTokenOrmEntity)
     private readonly repository: Repository<ApiTokenOrmEntity>,
-    private readonly dataSource: DataSource,
     private readonly mapper: ApiTokenMapper,
     private readonly outbox: OutboxService,
   ) {}
@@ -78,25 +72,6 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
     await this.repository.update({ id: id as AggregateID }, { lastUsedAt: at });
   }
 
-  async findAll(): Promise<ApiTokenEntity[]> {
-    const records = await this.repository.find();
-    return records.map((record) => this.mapper.toDomain(record));
-  }
-
-  async findAllPaginated(params: PaginatedQueryParams): Promise<Paginated<ApiTokenEntity>> {
-    const [records, count] = await this.repository.findAndCount({
-      skip: params.offset,
-      take: params.limit,
-      order: { createdAt: params.orderBy.param === 'asc' ? 'ASC' : 'DESC' },
-    });
-    return new Paginated({
-      count,
-      limit: params.limit,
-      page: params.page,
-      data: records.map((record) => this.mapper.toDomain(record)),
-    });
-  }
-
   async delete(entity: ApiTokenEntity): Promise<boolean> {
     const result = await this.outbox.writeWithEvents([entity], (manager) =>
       manager.getRepository(ApiTokenOrmEntity).delete({
@@ -104,9 +79,5 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
       }),
     );
     return result.affected ? result.affected > 0 : false;
-  }
-
-  transaction<T>(handler: () => Promise<T>): Promise<T> {
-    return this.dataSource.transaction(() => handler());
   }
 }
