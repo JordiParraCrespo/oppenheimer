@@ -67,7 +67,9 @@ const BROWSER_MAX_BUFFERED_BYTES = 4 * 1024 * 1024;
  * ticket and comes from an origin this API serves, and the ticket is judged on
  * the socket, where `closed` names the reason and the code is final. Only a
  * request with no ticket at all, or from another origin, is refused before the
- * upgrade — neither is something a browser this app serves can send.
+ * upgrade — neither is something a browser this app serves can send. The
+ * socket is unauthenticated until its ticket is judged, so it gets an error
+ * listener before anything is awaited.
  *
  * Then the session's host either holds a link, and the attachment is opened on
  * it with the browser's own viewport, or it does not, and the socket is told
@@ -107,7 +109,21 @@ export class BrowserAttachGateway {
       refuseUpgrade(socket, 401, 'an attach ticket is presented as the subprotocol');
       return;
     }
-    this.server.handleUpgrade(request, socket, head, (ws) => void this.redeem(ws, ticket));
+    this.server.handleUpgrade(request, socket, head, (ws) => {
+      // `ws` emits 'error' for a frame it cannot accept (over maxPayload, bad
+      // UTF-8, unmasked…). An 'error' nobody listens for throws and takes the
+      // process with it, and this socket is not authenticated yet.
+      ws.on('error', (error) => {
+        this.logger.warn({ message: 'browser attach socket error', error: error.message });
+      });
+      void this.redeem(ws, ticket).catch((error: unknown) => {
+        this.logger.error({ message: 'attach ticket could not be judged', error: String(error) });
+        // No `closed` message: every reason it can carry is a final verdict,
+        // and a store that did not answer is not one. 1011 rather than
+        // SESSION_UNAVAILABLE, which the console takes as final: 1011 it retries.
+        if (ws.readyState === ws.OPEN) ws.close(1011, 'try again');
+      });
+    });
   }
 
   private async redeem(ws: WebSocket, ticket: string): Promise<void> {
@@ -125,6 +141,9 @@ export class BrowserAttachGateway {
       await this.judge(ws, ticket, early);
     } finally {
       ws.off('message', hold);
+      // An attachment took its own copy; on a refusal nothing did, and a slow
+      // close handshake must not keep the frames alive.
+      early.length = 0;
     }
   }
 
@@ -161,7 +180,7 @@ export class BrowserAttachGateway {
     // and its `close` has already fired: an attachment opened now would never
     // be detached.
     if (ws.readyState !== ws.OPEN) return;
-    new BrowserAttachment(ws, claim, link, this.logger).start(early);
+    new BrowserAttachment(ws, claim, link).start([...early]);
   }
 
   /** A final answer: the reason as a control frame, then the code. */
@@ -212,7 +231,6 @@ class BrowserAttachment implements AttachmentSink {
     private readonly ws: WebSocket,
     private readonly claim: AttachTicket,
     private readonly link: RunnerLink,
-    private readonly logger: Logger,
   ) {}
 
   /** `early` is what the browser sent while its ticket was redeemed, in order. */
@@ -220,9 +238,6 @@ class BrowserAttachment implements AttachmentSink {
     this.attachmentId = this.link.openAttachment(this, this.commandId);
     this.ws.on('message', (data, isBinary) => this.onBrowserMessage(data as Buffer, isBinary));
     this.ws.on('close', () => this.detach());
-    this.ws.on('error', (error) => {
-      this.logger.warn({ message: 'browser attach socket error', error: error.message });
-    });
     // The attach carries the viewport so the pane is not resized a frame later;
     // a browser that never says its size gets a classic 80x24.
     this.viewportTimer = setTimeout(() => this.attach(DEFAULT_VIEWPORT), VIEWPORT_TIMEOUT_MS);
