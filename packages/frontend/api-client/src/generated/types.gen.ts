@@ -2882,7 +2882,7 @@ export type Create3Data = {
 
 export type Create3Errors = {
     /**
-     * ROLE_008 — The caller has no active organization to create the role in
+     * ROLE_008 — No active organization, and the caller cannot create a global role
      */
     400: ProblemDetailsDto;
     /**

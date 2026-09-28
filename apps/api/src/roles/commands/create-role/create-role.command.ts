@@ -12,8 +12,8 @@ export class CreateRoleCommand extends CommandBase {
   /**
    * Create a global role (no organization) on purpose. Without it, a missing
    * `organizationId` is refused rather than read as "global"; with it, the
-   * actor must hold `manage all`. No route sets it: global roles are the
-   * platform's, created by seeds and internal callers.
+   * actor must hold `manage all`. `POST /v1/roles` sets it only for a caller
+   * with no active organization whose ability holds `manage all`.
    */
   readonly global?: boolean;
 

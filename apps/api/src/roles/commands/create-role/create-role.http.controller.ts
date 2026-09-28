@@ -10,6 +10,7 @@ import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.type
 import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import type { AbilityRequest } from '../../../roles/application/ability.factory';
 import type { RoleEntity } from '../../domain/role.entity';
 import { RoleResponseDto } from '../../dtos/role.response.dto';
 import { FindRoleByIdQuery } from '../../queries/find-role-by-id/find-role-by-id.query';
@@ -42,20 +43,25 @@ export class CreateRoleHttpController {
   })
   @ApiProblemResponse({
     status: 400,
-    description: 'The caller has no active organization to create the role in',
+    description: 'No active organization, and the caller cannot create a global role',
     code: 'ROLE_008',
   })
   async create(
     @Body() body: CreateRoleRequest,
     @CurrentUser() actor: { id: string; role?: string },
-    @Req() request: ScopedRequest,
+    @Req() request: ScopedRequest & AbilityRequest,
   ): Promise<RoleResponseDto> {
+    const organizationId = tenantOrganizationIdOf(request);
     const roleId = await this.commandBus.execute<CreateRoleCommand, AggregateID>(
       new CreateRoleCommand({
         ...body,
         actorId: actor.id,
         actorRole: actor.role,
-        organizationId: tenantOrganizationIdOf(request),
+        organizationId,
+        // With no active organization, a platform admin (`manage all`) creates
+        // a global role, as before; anyone else gets ROLE_008. The handler
+        // checks `manage all` again before writing it.
+        global: organizationId === null && request.ability?.can('manage', 'all') === true,
       }),
     );
     const role = await this.queryBus.execute<FindRoleByIdQuery, RoleEntity>(

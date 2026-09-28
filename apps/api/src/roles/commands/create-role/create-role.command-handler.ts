@@ -48,7 +48,7 @@ export class CreateRoleCommandHandler implements ICommandHandler<CreateRoleComma
       name: command.name,
       description: command.description,
       // A role created inside an organization belongs to it. Global roles are
-      // seeded or created by internal callers, never through the API.
+      // created only on purpose (`global`), by a platform admin or an internal caller.
       organizationId,
       permissions: command.permissions.map((permission) => Permission.fromDefinition(permission)),
     });

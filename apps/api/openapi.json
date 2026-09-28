@@ -1691,7 +1691,7 @@
             }
           },
           "400": {
-            "description": "ROLE_008 — The caller has no active organization to create the role in",
+            "description": "ROLE_008 — No active organization, and the caller cannot create a global role",
             "content": {
               "application/problem+json": {
                 "schema": {
