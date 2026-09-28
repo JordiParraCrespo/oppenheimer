@@ -23,7 +23,10 @@ import { projectPrefill, toProjectOptions } from '../lib/session-options';
  * made before it has would drop the project's default host as if it were
  * gone. New project… asks the console for its project dialog; what it
  * makes is picked here once the list holds it, its defaults applied, the
- * same way the sidebar's "New session here" names one in the address.
+ * same way the sidebar's "New session here" names one in the address. With
+ * nothing in the address, the project the screen starts on — remembered, or
+ * Unassigned — has its defaults applied too, so the draft a visit opens with
+ * is always the one its project describes.
  */
 export function NewSessionProject() {
   const { t } = useTranslation();
@@ -64,8 +67,9 @@ export function NewSessionProject() {
   }
 
   // The sidebar's "New session here" names the project in the address; the
-  // dialog names the one it made. Either is picked once the lists can.
-  useSearchPick(created ?? search.project, projects.data, hostsReady === true, pick);
+  // dialog names the one it made. Either is picked once the lists can, and
+  // with neither, the project the chip starts on is, on arrival.
+  useSearchPick(created ?? search.project, projects.data, hostsReady === true, pick, value);
 
   return (
     <ProjectSelect

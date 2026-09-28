@@ -132,6 +132,11 @@
   project offers its defaults — its host, its agent, its first default
   repository on its base — and the chips stay the person's to change: a
   repository outside the project is as good as one inside it (10). The
+  project the chip starts on offers them the same way, whichever way the
+  screen was reached: named in the address, remembered from the last
+  visit, or Unassigned — a visit never opens on a project with its
+  repository chip empty (fixed 2026-09-28; until then only a pick or an
+  address applied them). The
   agent lives in the engine button, not a chip: opening it
   lists the harnesses, choosing one slides to its models with a search,
   and a blank terminal is picked outright. Effort is a five-stop slider
