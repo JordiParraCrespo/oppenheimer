@@ -294,6 +294,6 @@ earlier note:
   per source too, and GitHub `installation` events apply in the order of
   GitHub's own timestamp rather than receipt (2026-09-28).
 - A host's credential ignored its owner's standing. A banned or deactivated
-  owner's runner is now refused at the link handshake and closed at its next
-  heartbeat, and a session's git token is not minted for a creator who may
+  owner's runner is now refused at the link handshake and closed by a heartbeat
+  within a minute, and a session's git token is not minted for a creator who may
   not act (2026-09-28).

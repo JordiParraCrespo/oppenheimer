@@ -25,7 +25,7 @@ Security hardening follow-ups.
 - Bull Board stays off with a password shorter than 16 characters, with a
   warning at boot.
 - A banned or deactivated owner's host is refused at the runner link
-  handshake and its open link is closed at the next heartbeat; a session's
+  handshake and its open link is closed by a heartbeat within a minute; a session's
   git token is not minted for a creator who may not act.
 - A ban or unban made straight through Better Auth
   (`/api/auth/admin/ban-user`, `/unban-user`) rotates the account's
