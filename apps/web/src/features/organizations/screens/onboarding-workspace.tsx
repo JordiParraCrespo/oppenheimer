@@ -13,7 +13,7 @@ import { isProvisionalSlug } from '@oppenheimer/frontend-consumer';
 import { useClaimPersonalWorkspace, useOrganizations } from '@oppenheimer/frontend-consumer/react';
 import { useLogout, useProfile } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { useNavigate } from '@tanstack/react-router';
+import { Navigate, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAddressCheck } from '@/features/organizations/hooks/use-address-check';
@@ -55,6 +55,19 @@ export function OnboardingWorkspaceScreen() {
   // revisit could not re-submit it even if the field let them try.
   const claimedAddress = existing && !isProvisionalSlug(existing.slug) ? existing.slug : null;
 
+  // The first-run gate (`08-auth.md`): an account whose address is already
+  // claimed belongs in the console, not in the step that names one. The test
+  // is the claimed address, not a workspace's existence — sign-up provisions
+  // one for everybody. Only a *settled, successful* read decides: an
+  // unanswered query says nothing, and guessing would bounce a reader out on a
+  // network blip. And it is decided once, on arrival, because submitting this
+  // step claims the address and writes it into the cache before navigating on
+  // to GitHub — a gate that kept reading would send the newcomer to the
+  // console, past the rest of the walk. Adjusting state during render is
+  // React's documented shape for "remember the first answer".
+  const [claimedOnArrival, setClaimedOnArrival] = useState<boolean | null>(null);
+  if (claimedOnArrival === null && workspacesRead) setClaimedOnArrival(claimedAddress !== null);
+
   // One nullable draft rather than a field each: `null` means "the reader has
   // not typed", so the fields show the provisioned row as soon as it arrives
   // and keep showing what was typed afterwards — no effect, and nothing to
@@ -79,12 +92,14 @@ export function OnboardingWorkspaceScreen() {
   // The claim is what opens a walk, so it is what mints `walk` — and it mints
   // it on success, not on click, because a claim that failed has opened
   // nothing. From here the flow's own links carry it to Ready, which is the
-  // step that turns away anyone who did not walk (`lib/first-run.ts`).
+  // step that turns away anyone who did not walk (the kit's `auth/lib/first-run.ts`).
   const submit = () =>
     claim.mutate(
       { existing, name: name.trim(), slug: address },
       { onSuccess: () => navigate({ to: '/onboarding/github', search: { walk: true } }) },
     );
+
+  if (claimedOnArrival) return <Navigate to="/sessions/new" replace />;
 
   return (
     <div className="flex flex-col gap-5">

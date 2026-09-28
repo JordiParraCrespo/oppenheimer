@@ -1,10 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { type FirstRunWalk, parseWalk, WALK_STATE } from '@/features/organizations/lib/first-run';
+import { type FirstRunWalk, parseWalk, WALK_STATE } from '@oppenheimer/frontend-web';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import {
   type GithubInstallCallback,
   parseInstallCallback,
-} from '@/features/organizations/lib/github-install';
-import { OnboardingGithubScreen } from '@/features/organizations/screens/onboarding-github';
+} from '@/features/installations/lib/github-install';
+import { OnboardingGithubScreen } from '@/features/installations/screens/onboarding-github';
 
 export const Route = createFileRoute('/_auth/onboarding/github')({
   // GitHub returns here after an install with `installation_id` and `code` on
@@ -29,6 +29,12 @@ function GithubStep() {
   const { installation_id: githubInstallationId, code, walk } = Route.useSearch();
 
   return (
-    <OnboardingGithubScreen githubInstallationId={githubInstallationId} code={code} walk={walk} />
+    <OnboardingGithubScreen
+      githubInstallationId={githubInstallationId}
+      code={code}
+      walk={walk}
+      back={<Link to="/onboarding/workspace" />}
+      next={(installation) => <Link to="/onboarding/host" search={{ installation, walk }} />}
+    />
   );
 }

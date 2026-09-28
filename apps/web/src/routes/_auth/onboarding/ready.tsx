@@ -1,5 +1,5 @@
+import { type FirstRunWalk, parseWalk } from '@oppenheimer/frontend-web';
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { type FirstRunWalk, parseWalk } from '@/features/organizations/lib/first-run';
 import { OnboardingReadyScreen } from '@/features/organizations/screens/onboarding-ready';
 
 /**
@@ -16,7 +16,7 @@ import { OnboardingReadyScreen } from '@/features/organizations/screens/onboardi
  * session's pair-a-machine and install-the-App screens, so they stay open.
  * Being finished cannot be the test here, because every legitimate arrival is
  * finished too: the address is claimed by the end of step 2. Having walked
- * here is (`lib/first-run.ts`).
+ * here is (the kit's `auth/lib/first-run.ts`).
  */
 export const Route = createFileRoute('/_auth/onboarding/ready')({
   validateSearch: (

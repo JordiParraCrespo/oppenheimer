@@ -1,6 +1,6 @@
-import { Button, StepHeader } from '@oppenheimer/design-system-web';
-import { AuthLink, HostPairingChrome } from '@oppenheimer/frontend-web';
-import { Link } from '@tanstack/react-router';
+import { Button, StepHeader, Link as TextLink } from '@oppenheimer/design-system-web';
+import { HostPairingChrome } from '@oppenheimer/frontend-web';
+import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePairing } from '../hooks/use-pairing';
 
@@ -22,18 +22,18 @@ import { usePairing } from '../hooks/use-pairing';
  * assembled here.
  */
 export function OnboardingHostScreen({
-  installationId,
-  walk,
+  back,
+  next,
 }: {
-  /** What Connect GitHub connected, passed through so Ready can name it. */
-  installationId?: string;
+  /** The previous step, as a link element the header's back renders. */
+  back: ReactElement;
   /**
-   * Set when this visit is the first-run walk — which, since Add host pairs a
-   * machine from the console, is the only way to be on this step at all. It is
-   * handed on to Ready, which asks the same question
-   * (`organizations/lib/first-run.ts`).
+   * The step after this one, as a link element: with the paired host's id once
+   * there is one (Continue), without it (Skip). The route builds it, because
+   * the route knows the flow — which step comes next and what the walk carries
+   * — and this screen only pairs a machine.
    */
-  walk?: true;
+  next: (hostId?: string) => ReactElement;
 }) {
   const { t } = useTranslation();
   // Online, not merely registered: the row appears when the runner registers,
@@ -48,7 +48,7 @@ export function OnboardingHostScreen({
       <StepHeader
         step={4}
         total={4}
-        back={{ render: <Link to="/onboarding/github" /> }}
+        back={{ render: back }}
         backLabel={t('onboarding.flow.back')}
         title={t('onboarding.flow.host.title')}
       >
@@ -67,16 +67,7 @@ export function OnboardingHostScreen({
       />
 
       <div className="flex flex-col items-start gap-3.5">
-        <Button
-          size="lg"
-          disabled={!done}
-          render={
-            <Link
-              to="/onboarding/ready"
-              search={{ installation: installationId, host: host?.id, walk }}
-            />
-          }
-        >
+        <Button size="lg" disabled={!done} render={next(host?.id)}>
           {t('onboarding.flow.continue')}
         </Button>
 
@@ -86,9 +77,7 @@ export function OnboardingHostScreen({
             sign-up now walks would have no exit. It is also what makes Ready's
             "no host yet" row reachable. */}
         <div className="flex flex-col items-start gap-1.5">
-          <AuthLink to="/onboarding/ready" search={{ installation: installationId, walk }}>
-            {t('onboarding.flow.host.skip')}
-          </AuthLink>
+          <TextLink render={next()}>{t('onboarding.flow.host.skip')}</TextLink>
           <p className="text-xs leading-normal text-fg-subtle">
             {t('onboarding.flow.host.skipNote')}
           </p>

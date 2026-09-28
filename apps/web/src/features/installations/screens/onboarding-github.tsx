@@ -10,12 +10,11 @@ import {
   useInstallations,
 } from '@oppenheimer/frontend-consumer/react';
 import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
-import { AuthLink, ErrorAlert } from '@oppenheimer/frontend-web';
-import { Link } from '@tanstack/react-router';
+import { ErrorAlert, installUrlCarryingWalk } from '@oppenheimer/frontend-web';
+import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
-import { InstallationCard } from '@/features/organizations/components/installation-card';
-import { useConnectInstallationCallback } from '@/features/organizations/hooks/use-connect-installation-callback';
-import { installUrlCarryingWalk } from '@/features/organizations/lib/first-run';
+import { InstallationCard } from '@/features/installations/components/installation-card';
+import { useConnectInstallationCallback } from '@/features/installations/hooks/use-connect-installation-callback';
 
 /**
  * Onboarding step 3: install the GitHub App. One primary button that sends the
@@ -31,13 +30,26 @@ export function OnboardingGithubScreen({
   githubInstallationId,
   code,
   walk,
+  back,
+  next,
 }: {
   /** GitHub's numeric installation id (not our row's UUID), present only on the return leg. */
   githubInstallationId?: number;
   /** The one-shot code from the same redirect. */
   code?: string;
-  /** Set when this visit is the first-run walk, and handed on to the next step. */
+  /**
+   * Set when this visit is the first-run walk: pinned on the install URL, so
+   * it survives the round trip through GitHub, and put back on the return leg.
+   */
   walk?: true;
+  /** The previous step, as a link element the header's back renders. */
+  back: ReactElement;
+  /**
+   * The step after this one, as a link element: with the connected
+   * installation's id (Continue), without it (Skip). The route builds it,
+   * because the route knows the flow.
+   */
+  next: (installationId?: string) => ReactElement;
 }) {
   const { t } = useTranslation();
   // Where the browser goes to install, as the deployment reports it. An
@@ -80,7 +92,7 @@ export function OnboardingGithubScreen({
       <StepHeader
         step={3}
         total={4}
-        back={{ render: <Link to="/onboarding/workspace" /> }}
+        back={{ render: back }}
         backLabel={t('onboarding.flow.back')}
         title={t('onboarding.flow.github.title')}
       >
@@ -100,11 +112,7 @@ export function OnboardingGithubScreen({
       ) : installation ? (
         <div className="flex flex-col gap-5">
           <InstallationCard installation={installation} repositoryCount={repositories?.length} />
-          <Button
-            size="lg"
-            block
-            render={<Link to="/onboarding/host" search={{ installation: installation.id, walk }} />}
-          >
+          <Button size="lg" block render={next(installation.id)}>
             {t('onboarding.flow.continue')}
           </Button>
           {installUrl && (
@@ -121,9 +129,7 @@ export function OnboardingGithubScreen({
             {t('onboarding.flow.github.connect')}
           </Button>
           <div className="flex flex-col items-start gap-1.5">
-            <AuthLink to="/onboarding/host" search={{ walk }}>
-              {t('onboarding.flow.github.skip')}
-            </AuthLink>
+            <TextLink render={next()}>{t('onboarding.flow.github.skip')}</TextLink>
             <p className="text-xs leading-normal text-fg-subtle">
               {t('onboarding.flow.github.skipNote')}
             </p>
