@@ -83,7 +83,7 @@ describe('BetterAuthSessionCacheAdapter', () => {
         user: { name: 'New Name', isActive: false },
       });
       // A TTL that runs out with the session.
-      const [, , ex, ttl] = redis.set.mock.calls[0];
+      const [, , ex, ttl] = redis.set.mock.calls[0] as unknown[];
       expect(ex).toBe('EX');
       expect(ttl).toBeGreaterThan(3500);
       expect(ttl).toBeLessThanOrEqual(3600);

@@ -5,6 +5,7 @@ import { toResourceScope } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuthFailureLimiterPort } from '../../auth/application/auth-failure-limiter.port';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
+import type { CredentialResolverPort } from '../../auth/application/credential-resolver.port';
 import { CredentialResolverRegistry } from '../../auth/application/credential-resolver.registry';
 import { CredentialScopeResolver } from '../../auth/application/credential-scope.resolver';
 import type { CredentialVerifierPort } from '../../auth/infrastructure/credential-verifier.port';
@@ -65,13 +66,13 @@ describe('CredentialThrottlerGuard', () => {
       {
         kind: 'api-token',
         recognises: (presented) => presented.startsWith('oppenheimer_pat_'),
-        resolve: apiTokenResolve,
+        resolve: apiTokenResolve as CredentialResolverPort['resolve'],
       },
       {
         kind: 'host',
         singleUse: true,
         recognises: (presented) => presented.startsWith('eyJ'),
-        resolve: hostResolve,
+        resolve: hostResolve as CredentialResolverPort['resolve'],
       },
     ]);
 
@@ -197,7 +198,10 @@ describe('CredentialThrottlerGuard', () => {
       ).handleRequest({ context: contextFor(request) });
 
     beforeEach(() => {
-      vi.spyOn(ThrottlerGuard.prototype as never, 'handleRequest').mockResolvedValue(true as never);
+      vi.spyOn(
+        ThrottlerGuard.prototype as unknown as { handleRequest(): Promise<boolean> },
+        'handleRequest',
+      ).mockResolvedValue(true);
     });
 
     it('refuses a bearer from an address past its budget with RATE_001, before any lookup', async () => {
