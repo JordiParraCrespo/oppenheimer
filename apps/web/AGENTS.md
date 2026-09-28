@@ -26,8 +26,8 @@
 
 ## Telling the user something worked, or didn't
 
-- **A failure stays on screen**: `<Alert variant="destructive">` next to what
-  failed. Never a toast — a faded submission error cannot be re-read.
+- **A failure stays on screen**: `<ErrorAlert>` from `@oppenheimer/frontend-web`
+  next to what failed. Never a toast — a faded submission error cannot be re-read.
 - **A success is transient**: `toast.success()` imported from
   `@oppenheimer/design-system-web` (not from `sonner`), copy under `toasts.*`.
 - Field validation is neither: `Field` + `FieldError`.

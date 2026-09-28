@@ -19,7 +19,11 @@ multi-line, so a grep for `export` misses most of them.
 
 | Need                                  | Use                           | Not                                                   |
 | ------------------------------------- | ----------------------------- | ----------------------------------------------------- |
-| Whole-form or whole-page failure      | `Alert variant="destructive"` | a styled `div`, a bare `<p class="text-destructive">` |
+| Whole-form or whole-page failure      | the kit's `ErrorAlert` (a destructive `Alert`, resolved and translated) | a hand-built `Alert` + `useErrorMessage`, a styled `div`, a bare `<p class="text-destructive">` |
+| A read's failed, loading and empty states | the kit's `QueryState` | a hand-written ternary ladder |
+| "Are you sure?" before something that cannot be undone | the kit's `ConfirmDialog` | a hand-built `Dialog` with its own Cancel |
+| A button whose request is in flight | `Button pending pendingLabel` | `disabled={isPending}` and a ternary label |
+| "2 hours ago" that has to keep moving | the kit's `RelativeTime` | `useNow` and `formatRelativeTime` in the row |
 | A success                             | `toast.success()`             | an `Alert`, an inline row                             |
 | Field validation                      | `Field` + `FieldError`        | either of the above                                   |
 | "Nothing here" / "still loading"      | `EmptyState`, `Skeleton`      | a centred paragraph                                   |

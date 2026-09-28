@@ -25,14 +25,23 @@ Everything is re-exported from the package root (`src/index.ts`):
 - **auth** — `AuthLayout`, `AuthArtPanel`, `BrandLogo`, `PasswordInput`,
   `SocialLoginButtons`, `OAuthCallbackNotice`, the auth primitives, the
   password-requirement helpers, the provider icons, `redirectSignedIn`.
-- **layout** — `PageHead`, the section primitives, `ConfirmDialog`.
-- **forms** — `useZodResolver`, `useSearchDraft`;
-  `useErrorMessage` is owned by frontend core and
-  re-exported for compatibility.
+- **layout** — `PageHead`, the section primitives, `ConfirmDialog` (the
+  destructive confirm: `confirmLabel`, `pendingLabel`, `error`, `children`,
+  `form`), `QueryState` (a read's failed / loading / empty / there, in that
+  order).
+- **forms** — `ErrorAlert` (an inline failure, resolved into the locale, with
+  its correlation id and an optional Dismiss), `useZodResolver`,
+  `useSearchDraft`, `useServerFieldErrors`, and the `ResolvedErrorMessage`
+  type. `useErrorMessage` itself is imported from
+  `@oppenheimer/frontend-core/react`.
+- **hosts** — `HostPairingChrome` and its parts, the pairing column the Add a
+  host surfaces share.
 - **theme** — `ThemeProvider`, `ThemeToggle`, `BrandGlyph`.
 - **i18n** — `i18n`, `i18nReady`, `LOCALE_STORAGE_KEY`, `LanguageSwitcher`,
-  `useLocale`, `useApplyUserSettings`, the date formatters
-  (`formatMediumDate`, …) and the person-name helpers.
+  `useLocale`, `useApplyUserSettings`, `RelativeTime` (a "2 hours ago" leaf
+  that owns its clock), the date formatters (`formatMediumDate`,
+  `formatAge`, …), the duration formatters (`formatCountdown`,
+  `formatShortDuration`, `formatElapsed`) and the person-name helpers.
 - **analytics** — `PageViewTracker`, `createWebAnalyticsClient`.
 - **platform** — `LocalStorageService`, `sanitizeRedirect`.
 - **roles** — `RolePill`.

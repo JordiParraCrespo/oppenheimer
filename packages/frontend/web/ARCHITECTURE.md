@@ -17,11 +17,11 @@ importing it configures i18next; everything else is pure and may be dropped.
 | --- | --- | --- |
 | `platform` | `LocalStorageService`, `sanitizeRedirect` — the browser, wrapped | leaf |
 | `theme` | `ThemeProvider`, `useTheme`, `ThemeToggle`, `BrandGlyph` | leaf |
-| `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, the date and person-name formatters | leaf |
+| `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, `RelativeTime`, the date, duration and person-name formatters | leaf |
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
-| `forms` | `useZodResolver`, `useSearchDraft` | leaf |
+| `forms` | `ErrorAlert`, `useZodResolver`, `useSearchDraft`, `useServerFieldErrors` | leaf |
 | `hosts` | `HostPairingChrome`, and its two halves `HostPairingToken` and `HostPairingStatus` — the token clock and the status line that the onboarding step, the console's Add a host dialog and the Settings page all show; the chrome shows a refused mint through `ErrorAlert` | middle |
-| `layout` | `PageHead`, `FieldRow`, `RouteError`/`RouteNotFound`, `ConfirmDialog` | middle |
+| `layout` | `PageHead`, `FieldRow`, `RouteError`/`RouteNotFound`, `ConfirmDialog`, `QueryState` | middle |
 | `roles` | `RolePill` | middle |
 | `shell` | `AppShell`, `AppSidebar`, `TopBar`, `UserMenu`, `CommandPalette`, `ShellProvider`/`useShell`, `useAbility`, `useAuthorizedNav`, the nav types | top |
 | `auth` | `AuthLayout`, `AuthArtPanel`, `BrandLogo`, the auth primitives, `PasswordInput`, `SocialLoginButtons`, `OAuthCallbackNotice`, `redirectSignedIn` | top |
