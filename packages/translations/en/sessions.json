@@ -49,6 +49,10 @@
   "new": {
     "title": "New session",
     "subtitle": "Set the scope, then describe the work.",
+    "subtitleProject_one": "In {{name}} · cloning {{picked}} of {{count}} repository, each on its own opp/ branch.",
+    "subtitleProject_other": "In {{name}} · cloning {{picked}} of {{count}} repositories, each on its own opp/ branch.",
+    "subtitleCloning_one": "In {{name}} · cloning {{count}} repository, on its own opp/ branch.",
+    "subtitleCloning_other": "In {{name}} · cloning {{count}} repositories, each on its own opp/ branch.",
     "host": {
       "label": "Host",
       "placeholder": "Host",

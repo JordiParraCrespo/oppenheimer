@@ -70,6 +70,8 @@ import {
 import { SessionItem, SessionList } from '@oppenheimer/design-system-web/session-item';
 import {
   SidebarEmptyRow,
+  SidebarListHead,
+  SidebarProjectGroup,
   SidebarProjectHeader,
   SidebarSearch,
 } from '@oppenheimer/design-system-web/sidebar';
@@ -93,7 +95,11 @@ import {
 } from '@oppenheimer/design-system-web/tooltip';
 import { Wordmark } from '@oppenheimer/design-system-web/wordmark';
 import { Callout } from '@oppenheimer/design-system-web/callout';
-import { FieldSelect } from '@oppenheimer/design-system-web/field-select';
+import {
+  FieldSelect,
+  FieldSelectGroup,
+  FieldSelectRow,
+} from '@oppenheimer/design-system-web/field-select';
 import { HostCard } from '@oppenheimer/design-system-web/host-card';
 import {
   AddRow,
@@ -845,14 +851,12 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
             New session
           </Button>
         </div>
-        <div className="mt-4 flex h-[26px] items-center gap-2 pr-2.5 pl-5">
-          <span className="eyebrow">Projects</span>
-          <span className="figures ml-auto text-[11px] text-sidebar-muted">{projects.length}</span>
+        <SidebarListHead label="Projects" count={projects.length} className="mt-4">
           <IconButton aria-label="New project" size="xs" variant="quiet">
             <PlusIcon />
           </IconButton>
           <FilterMenuDemo />
-        </div>
+        </SidebarListHead>
         <SidebarSearch value={query} onValueChange={setQuery} placeholder="Search sessions" />
         {filters.length ? (
           <div className="flex flex-wrap gap-1 px-3 pb-2">
@@ -881,7 +885,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                 term ? (names[name] ?? name).toLowerCase().includes(term) : true,
               );
               return (
-                <div key={project.name} className="mt-1.5 flex flex-col">
+                <SidebarProjectGroup key={project.name}>
                   <SidebarProjectHeader
                     name={project.name}
                     count={project.sessions.length}
@@ -907,7 +911,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                         No sessions yet. <button type="button">Start one</button>
                       </SidebarEmptyRow>
                     ) : (
-                      <SessionList className="px-3">
+                      <SessionList>
                         {rows.map(([name, age, state]) => (
                           <SessionItem
                             key={name}
@@ -943,7 +947,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                       </SessionList>
                     )
                   ) : null}
-                </div>
+                </SidebarProjectGroup>
               );
             })
           )}
@@ -1324,7 +1328,6 @@ export function PageHeaderDemo() {
           <PageHeaderHere>Nightly dependency audit</PageHeaderHere>
         </PageHeaderCrumbs>
         <PageHeaderRow
-          size="lg"
           icon={<ClockIcon />}
           title="Nightly dependency audit"
           actions={
@@ -1602,6 +1605,44 @@ export function TimeTokenDemo() {
   );
 }
 
+/** Where it runs, as the editor draws it: pickers as the rows of one hairline card. */
+export function FieldSelectGroupDemo() {
+  const [host, setHost] = React.useState<string | null>('optimus');
+  const [agent, setAgent] = React.useState<string | null>('claude-code');
+  return (
+    <FieldSelectGroup className="w-full max-w-146">
+      <FieldSelectRow icon={<CpuIcon />} label="Host">
+        <FieldSelect
+          {...SELECT_COPY}
+          variant="quiet"
+          aria-label="Host"
+          value={host}
+          onValueChange={setHost}
+          searchPlaceholder="Search hosts"
+          options={[
+            { value: 'optimus', label: 'optimus', description: 'Ubuntu 24.04 · idle' },
+            { value: 'mac', label: 'jordis-mac-studio', description: 'macOS 15 · running' },
+          ]}
+        />
+      </FieldSelectRow>
+      <FieldSelectRow icon={<BotIcon />} label="Agent">
+        <FieldSelect
+          {...SELECT_COPY}
+          variant="quiet"
+          aria-label="Agent"
+          value={agent}
+          onValueChange={setAgent}
+          searchPlaceholder="Search agents"
+          options={[
+            { value: 'claude-code', label: 'Claude Code' },
+            { value: 'codex', label: 'Codex' },
+          ]}
+        />
+      </FieldSelectRow>
+    </FieldSelectGroup>
+  );
+}
+
 export function RoutineEditorDemo() {
   const [project, setProject] = React.useState<string | null>('xrp');
   const [repos, setRepos] = React.useState<string[]>(['xrp-mobile']);
@@ -1616,6 +1657,7 @@ export function RoutineEditorDemo() {
           <Field>
             <FieldLabel>Project</FieldLabel>
             <FieldSelect
+             {...SELECT_COPY}
               {...SELECT_COPY}
               value={project}
               onValueChange={setProject}
@@ -1631,6 +1673,7 @@ export function RoutineEditorDemo() {
           <Field>
             <FieldLabel>Repositories</FieldLabel>
             <FieldSelect
+             {...SELECT_COPY}
               {...SELECT_COPY}
               multiple
               value={repos}
@@ -1646,6 +1689,7 @@ export function RoutineEditorDemo() {
           <Field>
             <FieldLabel>Host</FieldLabel>
             <FieldSelect
+             {...SELECT_COPY}
               {...SELECT_COPY}
               value={host}
               onValueChange={setHost}

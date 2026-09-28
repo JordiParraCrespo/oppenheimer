@@ -18,7 +18,7 @@ import {
   PageHeaderSep,
   StatusDot,
 } from '@oppenheimer/design-system-web';
-import { ChevronLeft, Ellipsis, Play } from '@oppenheimer/design-system-web/icons';
+import { Ellipsis, Play } from '@oppenheimer/design-system-web/icons';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
@@ -57,20 +57,12 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
 
   return (
     <PageHeader>
-      <Link
-        to="/automations"
-        className="-ml-1 inline-flex w-fit items-center gap-1 text-[13px] text-fg-muted hover:text-fg md:hidden"
-      >
-        <ChevronLeft className="size-3.5" />
-        {t('automations.detail.back')}
-      </Link>
       <PageHeaderCrumbs aria-label={t('common.breadcrumb')}>
         <Link to="/automations">{t('automations.detail.crumb')}</Link>
         <span>/</span>
         <PageHeaderHere>{automation.name}</PageHeaderHere>
       </PageHeaderCrumbs>
       <PageHeaderRow
-        size="lg"
         icon={<TriggerGlyph scheduled={automation.isScheduled} size={17} />}
         title={automation.name}
         actions={
@@ -150,7 +142,11 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
         }
       />
       <PageHeaderMeta>
-        <StatusDot state={automationDot(automation)} className="items-center text-[13px]">
+        <StatusDot
+          state={automationDot(automation)}
+          density="compact"
+          pulse={automation.status === 'running'}
+        >
           {t(`automations.status.${automation.status}`)}
         </StatusDot>
         <NextRunCountdown automation={automation} />

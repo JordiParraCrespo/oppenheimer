@@ -1,4 +1,4 @@
-import { Button, IconButton, SidebarSearch } from '@oppenheimer/design-system-web';
+import { IconButton, SidebarListHead, SidebarSearch } from '@oppenheimer/design-system-web';
 import { Plus } from '@oppenheimer/design-system-web/icons';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,7 +17,7 @@ import { SessionsFilterMenu } from './sessions-filter-menu';
  * "not yet known" — and the filter menu waits for the sessions the same way.
  */
 export function SessionsSidebarHead({
-  newSessionLink,
+  newSession,
   projectCount,
   filters,
   options,
@@ -30,8 +30,8 @@ export function SessionsSidebarHead({
   onQueryChange,
   onNewProject,
 }: {
-  /** The router's link to New session, made by the section: a component draws no route of its own. */
-  newSessionLink: ReactElement;
+  /** The New session button, a section of its own: a component reads no route. */
+  newSession: ReactElement;
   projectCount: number | undefined;
   filters: SessionFilters;
   options: Record<SessionFacet, FilterOption[]> | undefined;
@@ -48,17 +48,9 @@ export function SessionsSidebarHead({
 
   return (
     <>
-      <div className="px-3 pb-2.5">
-        <Button size="sm" block render={newSessionLink}>
-          {t('nav.newSession')}
-        </Button>
-      </div>
+      <div className="px-3 pb-2.5">{newSession}</div>
 
-      <div className="flex items-center gap-2 px-3 pt-0.5 pb-1.5">
-        <span className="eyebrow min-w-0 flex-1">{t('sessions.sidebar.projects')}</span>
-        {projectCount !== undefined ? (
-          <span className="figures text-xs text-fg-muted">{projectCount}</span>
-        ) : null}
+      <SidebarListHead label={t('sessions.sidebar.projects')} count={projectCount}>
         <IconButton
           size="xs"
           variant="quiet"
@@ -76,7 +68,7 @@ export function SessionsSidebarHead({
             onClear={onFiltersClear}
           />
         ) : null}
-      </div>
+      </SidebarListHead>
 
       <SidebarSearch
         value={query}

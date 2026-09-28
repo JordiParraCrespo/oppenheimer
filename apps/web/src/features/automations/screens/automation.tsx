@@ -1,14 +1,15 @@
-import { EmptyState, Skeleton } from '@oppenheimer/design-system-web';
+import { EditorPageBack, EmptyState, Skeleton } from '@oppenheimer/design-system-web';
 import { useAutomation } from '@oppenheimer/frontend-consumer/react';
 import { AppError } from '@oppenheimer/frontend-core';
 import { RouteError } from '@oppenheimer/frontend-web';
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { AutomationHeader } from '../sections/automation-header';
 import { RunHistoryCard } from '../sections/run-history-card';
 import { RunsTable } from '../sections/runs-table';
 
 /**
- * An automation's page (`product/versions/mvp/13-automations.md`): its
+ * An automation's page (`product/versions/mvp/13-automations.md`): Back, its
  * header, its run history and its runs. The screen reads the automation
  * because it branches on it — loading, failed, gone, or there — and the sections
  * under it read their own data by its id.
@@ -43,7 +44,10 @@ export function AutomationScreen({ automationId }: { automationId: string }) {
     );
   }
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className="flex flex-col gap-4">
+      <EditorPageBack render={<Link to="/automations" />}>
+        {t('automations.detail.back')}
+      </EditorPageBack>
       <AutomationHeader automation={automation.data} />
       <RunHistoryCard automationId={automationId} />
       <RunsTable automationId={automationId} />

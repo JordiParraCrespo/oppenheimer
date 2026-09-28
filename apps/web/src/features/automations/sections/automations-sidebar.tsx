@@ -10,11 +10,14 @@ import {
   RoutineRunsEmpty,
   SessionList,
   SidebarEmptyRow,
+  SidebarListHead,
+  SidebarProjectGroup,
   SidebarProjectHeader,
+  SidebarSearch,
   Skeleton,
   useNow,
 } from '@oppenheimer/design-system-web';
-import { Plus, Search, X, Zap } from '@oppenheimer/design-system-web/icons';
+import { Plus, Zap } from '@oppenheimer/design-system-web/icons';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useConsoleDialog } from '@oppenheimer/frontend-web';
@@ -77,38 +80,19 @@ export function AutomationsSidebar() {
         </Button>
       </div>
 
-      <div className="flex items-center gap-2 px-3 pt-0.5 pb-1.5">
-        <span className="eyebrow min-w-0 flex-1">{t('automations.sidebar.projects')}</span>
-        {projects.data ? (
-          <span className="figures text-xs text-fg-muted">{projects.data.length}</span>
-        ) : null}
-      </div>
+      <SidebarListHead label={t('automations.sidebar.projects')} count={projects.data?.length} />
 
       {automations.data?.length ? (
-        <div className="mx-3 mb-1.5 flex h-8 items-center gap-2 rounded-sm bg-hover-surface px-2.5 text-fg-subtle focus-within:ring-3 focus-within:ring-ring [&_svg]:size-3.5 [&_svg]:shrink-0">
-          <Search aria-hidden />
-          <input
-            type="text"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') setQuery('');
-            }}
-            aria-label={t('automations.sidebar.search')}
-            placeholder={t('automations.sidebar.search')}
-            className="min-w-0 flex-1 bg-transparent text-[13px] text-fg outline-none placeholder:text-fg-subtle"
-          />
-          {query ? (
-            <IconButton
-              size="xs"
-              variant="quiet"
-              aria-label={t('automations.sidebar.clearSearch')}
-              onClick={() => setQuery('')}
-            >
-              <X />
-            </IconButton>
-          ) : null}
-        </div>
+        <SidebarSearch
+          value={query}
+          onValueChange={setQuery}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setQuery('');
+          }}
+          aria-label={t('automations.sidebar.search')}
+          placeholder={t('automations.sidebar.search')}
+          clearLabel={t('automations.sidebar.clearSearch')}
+        />
       ) : null}
 
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
@@ -149,7 +133,7 @@ export function AutomationsSidebar() {
           shown.map(({ project, items }) => {
             const open = Boolean(term) || !closed.includes(project.id);
             return (
-              <div key={project.id} className="mt-1.5 flex flex-col">
+              <SidebarProjectGroup key={project.id}>
                 <SidebarProjectHeader
                   name={project.name}
                   count={items.length}
@@ -171,7 +155,7 @@ export function AutomationsSidebar() {
                   }
                 />
                 {open && items.length ? (
-                  <SessionList className="px-3">
+                  <SessionList>
                     {items.map((automation) => {
                       const selected = automation.id === selectedId;
                       return (
@@ -239,7 +223,7 @@ export function AutomationsSidebar() {
                     </button>
                   </SidebarEmptyRow>
                 ) : null}
-              </div>
+              </SidebarProjectGroup>
             );
           })
         ) : (

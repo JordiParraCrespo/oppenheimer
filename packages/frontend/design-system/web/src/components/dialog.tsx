@@ -82,11 +82,11 @@ function DialogContent({
               <IconButton
                 aria-label={closeLabel}
                 size="sm"
-                className="absolute top-5 right-5"
+                className="absolute top-6 right-5.5"
               />
             }
           >
-            <XIcon />
+            <XIcon className="size-4" />
           </DialogPrimitive.Close>
         ) : null}
       </DialogPrimitive.Popup>
@@ -108,7 +108,7 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn('text-h3 font-semibold text-fg', className)}
+      className={cn('text-h3 leading-(--leading-body) font-semibold text-fg', className)}
       {...props}
     />
   );
@@ -124,12 +124,16 @@ function DialogDescription({ className, ...props }: DialogPrimitive.Description.
   );
 }
 
-/** The only part of a tall dialog that scrolls; header and footer stay put. */
+/**
+ * The only part of a tall dialog that scrolls; header and footer stay put.
+ * 20px above and below, and the footer's own 12px on top (`op-dialog__body`,
+ * `op-dialog__foot`), so a body's last line sits 32px over the buttons.
+ */
 function DialogBody({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-body"
-      className={cn('min-h-0 flex-1 overflow-y-auto px-7 pt-5 text-operate text-fg', className)}
+      className={cn('min-h-0 flex-1 overflow-y-auto px-7 py-5 text-operate text-fg', className)}
       {...props}
     />
   );
@@ -140,7 +144,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="dialog-footer"
       className={cn(
-        'flex flex-col-reverse gap-2 px-7 pt-5 pb-7 sm:flex-row sm:justify-end',
+        'flex flex-col-reverse gap-2 px-7 pt-3 pb-7 sm:flex-row sm:justify-end',
         className,
       )}
       {...props}

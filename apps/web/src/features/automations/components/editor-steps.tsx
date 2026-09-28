@@ -37,7 +37,7 @@ export function EditorSteps({
     <div
       role="tablist"
       aria-label={t('automations.editor.steps.label')}
-      className="mx-6 flex gap-1 rounded-pill bg-hover-surface p-1"
+      className="mx-7 mt-[18px] flex gap-0.5 rounded-pill bg-hover-surface p-[3px]"
     >
       {EDITOR_STEPS.map((candidate, index) => {
         const on = candidate === step;
@@ -53,13 +53,13 @@ export function EditorSteps({
             disabled={!reachable}
             onClick={() => onStepChange(candidate)}
             className={cn(
-              'flex h-8 flex-1 items-center justify-center gap-2 rounded-pill text-[13px] transition-colors duration-fast disabled:opacity-50',
-              on ? 'bg-popover text-fg shadow-popover' : 'text-fg-muted hover:text-fg',
+              'flex h-[30px] flex-1 items-center justify-center gap-[7px] rounded-pill px-3 text-[13px] transition-colors duration-fast disabled:cursor-default',
+              on ? 'bg-popover text-fg' : 'text-fg-muted enabled:hover:text-fg',
             )}
           >
             <span
               className={cn(
-                'figures flex size-4.5 items-center justify-center rounded-pill text-[10.5px]',
+                'figures flex size-4 items-center justify-center rounded-pill text-[10.5px]',
                 ticked
                   ? 'bg-success text-popover'
                   : on
@@ -67,7 +67,7 @@ export function EditorSteps({
                     : 'bg-border-subtle text-fg-muted',
               )}
             >
-              {ticked ? <Check className="size-3" strokeWidth={3} /> : index + 1}
+              {ticked ? <Check className="size-[11px]" strokeWidth={3} /> : index + 1}
             </span>
             {t(`automations.editor.steps.${candidate}`)}
           </button>
