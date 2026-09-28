@@ -12,10 +12,11 @@ scheduled run is what catches a report that was wrong.
 
 ## Before every push
 
-1. Commit, then run `pnpm ci:local`. It refuses uncommitted changes, checks
-   what the branch touches against `origin/main`, and brings the local stack
-   up (Docker, Postgres, Redis, the API) when the integration or e2e suite is
-   selected. A change to a file no package owns (the workflow, the lockfile,
+1. Commit, then run `pnpm ci:local`. It refuses uncommitted changes and
+   untracked files, checks what the branch touches against `origin/main`, and
+   brings the local stack up (Docker, Postgres, Redis, the API built from this
+   commit) when the integration or e2e suite is selected. Stop your own dev
+   API first: it refuses an API on the port that the stack did not start. A change to a file no package owns (the workflow, the lockfile,
    `scripts/`) selects everything on its own.
 2. Push only on a green run. A red step is yours to fix. Never skip a job
    with `--skip` to get green; `--skip` exists for re-running a job you have

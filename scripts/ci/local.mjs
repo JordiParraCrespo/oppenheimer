@@ -135,12 +135,13 @@ const touches = (packages, name) => packages.includes(name);
 
 // The report names a commit, and the selection diffs commits: uncommitted
 // changes would be run but not selected for, or selected for but not in the
-// commit the report names. Commit first.
-if (git('status', '--porcelain', '--untracked-files=no') !== '') {
+// commit the report names. An untracked file counts: a build or a test can
+// read it, and it will not be pushed. Commit first, or ignore it.
+if (git('status', '--porcelain') !== '') {
   console.error(
-    'ci:local: commit your changes first; the report is for a commit, and the selection reads commits.',
+    'ci:local: commit your changes first (or ignore the file); the report is for a commit, and the selection reads commits.',
   );
-  console.error(git('status', '--short', '--untracked-files=no'));
+  console.error(git('status', '--short'));
   process.exit(2);
 }
 const head = git('rev-parse', 'HEAD');
@@ -258,7 +259,24 @@ for (const name of ['integration', 'e2e']) if (skip.has(name)) job(name, []);
 // Redis run outside Docker, Docker still has to be running.
 if (needsIntegration || needsE2e) {
   try {
-    if (step('services', 'stack up', 'node', ['scripts/stack/stack.mjs', 'up'])) {
+    // `up` leaves an API that is already answering alone, and that API may
+    // be an earlier build or someone's dev server: the suites would test it,
+    // not this commit. Stop what the stack started before, then insist the
+    // port is free, so the API the suites reach is the one built here.
+    if (
+      step('services', 'stack down (a stale API)', 'node', ['scripts/stack/stack.mjs', 'down']) &&
+      step('services', 'nothing else answers on the API port', () => {
+        const url = `${process.env.API_URL ?? 'http://localhost:3001'}/api/v1/health`;
+        const answered =
+          spawnSync('curl', ['-sf', '-o', '/dev/null', '--max-time', '2', url]).status === 0;
+        if (answered)
+          console.log(
+            `${url} answers, and the stack did not start it; stop that API and run this again.`,
+          );
+        return !answered;
+      }) &&
+      step('services', 'stack up', 'node', ['scripts/stack/stack.mjs', 'up'])
+    ) {
       if (needsIntegration) {
         job('integration', [
           ['build the API', 'pnpm', ['turbo', 'run', 'build', '--filter=@oppenheimer/api...']],
