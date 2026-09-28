@@ -22,7 +22,7 @@ import { ErrorAlert } from '../../forms';
  *
  * Each caller keeps its own mutation and hands over its state: `pending` locks
  * both buttons and the dismissal, and swaps the verb for `pendingLabel`;
- * `error` stays *in* the dialog, through `ErrorAlert`, because the reader has
+ * `error`, when the caller has one (with its `errorFallback`), stays *in* the dialog, through `ErrorAlert`, because the reader has
  * to act on it and the dialog is where they still are.
  *
  * `children` is what one confirm needs beyond the sentence — Delete session's
@@ -53,15 +53,20 @@ export function ConfirmDialog({
   /** The verb in progress — "Deleting…" — while `pending`. */
   pendingLabel?: string;
   pending: boolean;
-  error: unknown;
-  /** Already translated: what the failure reads as when its code has no message. */
-  errorFallback: string;
   onClose: () => void;
   onConfirm?: () => void;
   /** The id of a form in `children` that the destructive button submits. */
   form?: string;
   children?: ReactNode;
-}) {
+} & (
+  | {
+      /** The mutation's failure, kept in the dialog. */
+      error: unknown;
+      /** Already translated: what the failure reads as when its code has no message. */
+      errorFallback: string;
+    }
+  | { error?: undefined; errorFallback?: undefined }
+)) {
   const { t } = useTranslation();
   const hasBody = Boolean(children) || (error !== null && error !== undefined);
 
@@ -75,7 +80,7 @@ export function ConfirmDialog({
         {hasBody ? (
           <DialogBody className="flex flex-col gap-3">
             {children}
-            <ErrorAlert error={error} fallback={errorFallback} />
+            <ErrorAlert error={error} fallback={errorFallback ?? ''} />
           </DialogBody>
         ) : null}
         <DialogFooter>

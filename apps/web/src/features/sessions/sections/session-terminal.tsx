@@ -1,7 +1,4 @@
 import {
-  Alert,
-  AlertAction,
-  AlertDescription,
   Button,
   Terminal,
   TerminalStatusBar,
@@ -71,14 +68,14 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
           again rather than sit on "Disconnected". */}
       {ended === 'forbidden' || ended === 'refused' ? (
         <div className="px-5 pb-3">
-          <Alert variant="destructive">
-            <AlertDescription>{t(`sessions.session.ended.${ended}`)}</AlertDescription>
-            <AlertAction>
+          <ErrorAlert
+            message={t(`sessions.session.ended.${ended}`)}
+            action={
               <Button variant="ghost" size="sm" onClick={retryNow}>
                 {t('sessions.session.retry')}
               </Button>
-            </AlertAction>
-          </Alert>
+            }
+          />
         </div>
       ) : null}
 

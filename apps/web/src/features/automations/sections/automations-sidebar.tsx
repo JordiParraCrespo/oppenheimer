@@ -17,7 +17,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Plus, Zap } from '@oppenheimer/design-system-web/icons';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { formatAge, QueryState, useConsoleDialog, useLocale } from '@oppenheimer/frontend-web';
+import { combineQueries, formatAge, QueryState, useConsoleDialog } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -45,7 +45,6 @@ export function AutomationsSidebar() {
   const [query, setQuery] = useState('');
   const dialogs = useConsoleDialog();
   const now = useNow(60_000);
-  const locale = useLocale();
 
   // The selected automation is the page's, or the run's whose session is open.
   const detail = matchRoute({ to: '/automations/$automationId' });
@@ -97,6 +96,9 @@ export function AutomationsSidebar() {
             {t('automations.sidebar.noMatch', { query: query.trim() })}
           </SidebarEmptyRow>
         ) : null}
+        {/* All is navigation, like New automation above it: it stays in
+            every state, and its count shows only once the list has answered.
+            The read's states are the project groups' below. */}
         <div className="px-3 pt-2">
           <RoutineItem
             name={t('automations.sidebar.all')}
@@ -110,14 +112,7 @@ export function AutomationsSidebar() {
 
         {/* A failed read is not "no projects": say it failed. */}
         <QueryState
-          query={{
-            isPending: projects.isPending || automations.isPending,
-            error: projects.error ?? automations.error,
-            data:
-              projects.data && automations.data
-                ? { count: projects.data.length, shown }
-                : undefined,
-          }}
+          query={combineQueries(projects, automations, (rows) => ({ count: rows.length, shown }))}
           pending={
             <div className="flex flex-col gap-2 px-3 pt-2">
               <Skeleton className="h-7.5 w-full" />
@@ -126,18 +121,20 @@ export function AutomationsSidebar() {
           }
           errorFallback={t('automations.sidebar.loadFailed')}
           errorClassName="mx-3 mt-2"
-          isEmpty={(ready) => ready.count === 0}
-          empty={
-            <div className="px-3 pt-2">
-              <EmptyState compact>
-                <EmptyState.Header>
-                  <EmptyState.Description>
-                    {t('automations.sidebar.noProjects')}
-                  </EmptyState.Description>
-                </EmptyState.Header>
-              </EmptyState>
-            </div>
-          }
+          empty={{
+            when: (ready) => ready.count === 0,
+            show: (
+              <div className="px-3 pt-2">
+                <EmptyState compact>
+                  <EmptyState.Header>
+                    <EmptyState.Description>
+                      {t('automations.sidebar.noProjects')}
+                    </EmptyState.Description>
+                  </EmptyState.Header>
+                </EmptyState>
+              </div>
+            ),
+          }}
         >
           {(ready) =>
             ready.shown.map(({ project, items }) => {
@@ -173,7 +170,7 @@ export function AutomationsSidebar() {
                             <RoutineItem
                               name={automation.name}
                               icon={<TriggerGlyph scheduled={automation.isScheduled} />}
-                              meta={sidebarMeta(automation, now, locale, t)}
+                              meta={sidebarMeta(automation, now, t)}
                               running={automation.isRunning}
                               paused={automation.isPaused}
                               active={selected}

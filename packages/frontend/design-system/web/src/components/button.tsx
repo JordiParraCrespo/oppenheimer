@@ -35,6 +35,8 @@ import { cn } from '../lib/utils';
  * disabled and `aria-busy`, and its label becomes `pendingLabel` when there is
  * one ("Deleting…"), or stays as it is. No spinner: the MVP export draws none,
  * and the verb in its progressive form already says the request is in flight.
+ * It locks this button only: a sibling that must wait (the other sign-in
+ * provider, Deny beside Allow) takes `disabled` while this one is pending.
  */
 const buttonVariants = cva(
   'group/button inline-flex shrink-0 items-center justify-center gap-1.5 rounded-pill border border-transparent bg-transparent font-medium whitespace-nowrap transition-[background-color,color,border-color,opacity,transform] duration-fast ease-standard outline-none select-none active:scale-[0.975] active:duration-instant disabled:pointer-events-none disabled:opacity-40 aria-disabled:pointer-events-none aria-disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',

@@ -24,8 +24,10 @@ export function HostList() {
       query={hosts}
       pending={<Skeleton className="h-18 w-full" />}
       errorFallback={t('settings.hosts.failed')}
-      isEmpty={(rows) => rows.length === 0}
-      empty={<HostsEmpty title={t('settings.hosts.empty')} body={t('settings.hosts.emptyHint')} />}
+      empty={{
+        when: (rows) => rows.length === 0,
+        show: <HostsEmpty title={t('settings.hosts.empty')} body={t('settings.hosts.emptyHint')} />,
+      }}
     >
       {(rows) => (
         <div className="flex flex-col gap-2.5">

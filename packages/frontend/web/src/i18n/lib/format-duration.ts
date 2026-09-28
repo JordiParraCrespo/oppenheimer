@@ -1,9 +1,12 @@
+import type { TFunction } from 'i18next';
+
 /**
- * Durations, as the console's mono clocks print them. The units come from
- * `Intl.NumberFormat`'s narrow unit style, so the reader's locale decides how
- * a unit is written ("5m" in English, "5min" in Spanish) and no translation
- * key is needed. `Intl.DurationFormat` would do the joining too, but it is not
- * in every browser the console supports yet.
+ * Durations, as the console prints them. A countdown is a clock of several
+ * fields, and its units come from `Intl.NumberFormat`'s narrow unit style, so
+ * the reader's locale writes them ("5m" in English, "5min" in Spanish);
+ * `Intl.DurationFormat` would do the joining too, but it is not in every
+ * browser the console supports yet. A duration in one unit is an age or a
+ * wait, and goes through `common.relative.*` like every other age.
  */
 
 const MINUTE = 60_000;
@@ -58,20 +61,22 @@ export function formatCountdown(ms: number, locale: string): string {
 }
 
 /**
- * A duration in its one largest unit: "45m", "3h", "2d". At least a minute.
- * `daysFrom` is the hour count where it switches to days: 24 for an age
- * ("2d ago"), 48 for a wait the reader plans around ("in 45h").
+ * A duration in its one largest unit: "45m", "3h", "2d", at least a minute —
+ * in the `common.relative.*` words, the one place the console's compact ages
+ * are written, so a wait and an age read the same. `daysFrom` is the hour
+ * count where it switches to days: 24 for an age ("2d ago"), 48 for a wait the
+ * reader plans around ("in 45h").
  */
 export function formatShortDuration(
   ms: number,
-  locale: string,
+  t: TFunction,
   { daysFrom = 24 }: { daysFrom?: number } = {},
 ): string {
   const minutes = Math.max(1, Math.round(ms / MINUTE));
-  if (minutes < 60) return unit(locale, 'minute', minutes);
+  if (minutes < 60) return t('common.relative.minute', { count: minutes });
   const hours = Math.round(ms / HOUR);
-  if (hours < daysFrom) return unit(locale, 'hour', hours);
-  return unit(locale, 'day', Math.round(hours / 24));
+  if (hours < daysFrom) return t('common.relative.hour', { count: hours });
+  return t('common.relative.day', { count: Math.round(hours / 24) });
 }
 
 /**

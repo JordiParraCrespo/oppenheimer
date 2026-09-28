@@ -56,15 +56,17 @@ export function AutomationsTable() {
           }
           errorFallback={t('automations.page.loadFailed')}
           errorClassName="m-1.5"
-          isEmpty={(rows) => rows.length === 0}
-          empty={
-            <RoutineTableEmpty>
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-hover-surface text-fg-muted [&_svg]:size-4">
-                <Zap />
-              </span>
-              <span>{t('automations.page.empty')}</span>
-            </RoutineTableEmpty>
-          }
+          empty={{
+            when: (rows) => rows.length === 0,
+            show: (
+              <RoutineTableEmpty>
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-hover-surface text-fg-muted [&_svg]:size-4">
+                  <Zap />
+                </span>
+                <span>{t('automations.page.empty')}</span>
+              </RoutineTableEmpty>
+            ),
+          }}
         >
           {(rows) => (
             <>

@@ -6,7 +6,7 @@ import {
   useNow,
 } from '@oppenheimer/design-system-web';
 import { useTriggerPreview } from '@oppenheimer/frontend-consumer/react';
-import { formatShortDuration, useLocale } from '@oppenheimer/frontend-web';
+import { formatShortDuration } from '@oppenheimer/frontend-web';
 import {
   externalEventDefinition,
   GITHUB_EVENT_TYPES,
@@ -46,7 +46,6 @@ export function GithubTriggerCard({
 }) {
   const { t } = useTranslation();
   const now = useNow(60_000);
-  const locale = useLocale();
   const definition = externalEventDefinition('github', card.event);
   const { key: _key, ...trigger } = card;
   const preview = useTriggerPreview(card.repositories.length ? trigger : undefined);
@@ -92,7 +91,7 @@ export function GithubTriggerCard({
                 </span>
                 <span className="min-w-0 flex-1 truncate">{match.title}</span>
                 <span className="shrink-0 text-fg-subtle">
-                  {[match.actor, formatShortDuration(now - match.occurredAt.getTime(), locale)]
+                  {[match.actor, formatShortDuration(now - match.occurredAt.getTime(), t)]
                     .filter(Boolean)
                     .join(' · ')}
                 </span>

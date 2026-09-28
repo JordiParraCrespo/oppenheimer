@@ -1,4 +1,3 @@
-import type { HostEntity } from '@oppenheimer/frontend-consumer';
 import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
 
 /**
@@ -17,32 +16,11 @@ import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
 export type PairingDoneWhen = 'online' | 'registered';
 
 /**
- * One pairing surface's flow: the token, the host it paired, whether the
- * surface is done by its rule, and the props the kit's `HostPairingChrome`
- * takes, ready to spread. The onboarding step, the console's dialog and the
- * Settings page draw different frames around the same flow; this is the part
- * they share.
+ * `useHostPairing`, plus whether the surface is done by its rule. The flow's
+ * fields are passed on as they are; each surface draws what it needs of them.
  */
 export function usePairing(defaultName: string, doneWhen: PairingDoneWhen) {
-  const { pairing, expiresAt, expired, host, isPending, error, regenerate } =
-    useHostPairing(defaultName);
-
-  return {
-    host,
-    done: isDone(host, doneWhen),
-    chrome: {
-      pairing: pairing ?? null,
-      expiresAt,
-      expired,
-      onRegenerate: regenerate,
-      busy: isPending,
-      host,
-      error,
-    },
-  };
-}
-
-function isDone(host: HostEntity | null, doneWhen: PairingDoneWhen): boolean {
-  if (!host) return false;
-  return doneWhen === 'online' ? host.online : true;
+  const flow = useHostPairing(defaultName);
+  const done = doneWhen === 'online' ? Boolean(flow.host?.online) : flow.host !== null;
+  return { ...flow, done };
 }

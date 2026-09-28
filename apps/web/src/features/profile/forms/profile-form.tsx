@@ -1,6 +1,4 @@
 import {
-  Alert,
-  AlertDescription,
   Button,
   FieldError,
   Input,
@@ -9,6 +7,7 @@ import {
   SettingsSaveRow,
 } from '@oppenheimer/design-system-web';
 import {
+  ErrorAlert,
   type ResolvedErrorMessage,
   useServerFieldErrors,
   useZodResolver,
@@ -162,9 +161,7 @@ export function ProfileForm({
       </SettingsRow>
       {error && showAlert ? (
         <div className="border-t border-border-subtle px-5 py-3">
-          <Alert variant="destructive">
-            <AlertDescription>{error.message}</AlertDescription>
-          </Alert>
+          <ErrorAlert message={error.message} correlationId={error.correlationId} />
         </div>
       ) : null}
       {isDirty ? (

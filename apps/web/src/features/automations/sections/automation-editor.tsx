@@ -1,14 +1,8 @@
-import {
-  Alert,
-  AlertDescription,
-  DialogBody,
-  DialogHeader,
-  DialogTitle,
-  useNow,
-} from '@oppenheimer/design-system-web';
+import { DialogBody, DialogHeader, DialogTitle, useNow } from '@oppenheimer/design-system-web';
 import { parseRepositoryKey } from '@oppenheimer/frontend-consumer';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
 import {
+  ErrorAlert,
   type ResolvedErrorMessage,
   useServerFieldErrors,
   useZodResolver,
@@ -118,11 +112,11 @@ export function AutomationEditor({
           tall enough for it; below that the body shrinks and scrolls, so the
           footer's buttons stay reachable. */}
       <DialogBody className="[@media(min-height:720px)]:min-h-75">
-        {failure && showAlert ? (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{failure.message}</AlertDescription>
-          </Alert>
-        ) : null}
+        <ErrorAlert
+          message={showAlert ? failure?.message : null}
+          correlationId={failure?.correlationId}
+          className="mb-4"
+        />
         {step === 'task' ? (
           <AutomationTaskFields
             register={form.register}

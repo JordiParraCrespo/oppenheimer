@@ -1,4 +1,6 @@
+import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
+import { formatAge } from './format-date';
 import { formatCountdown, formatElapsed, formatShortDuration } from './format-duration';
 
 const MINUTE = 60_000;
@@ -21,17 +23,21 @@ describe('formatCountdown', () => {
   });
 });
 
+// `t` echoes the key and the count, so a test reads which word was chosen.
+const t = ((key: string, options?: { count?: number }) =>
+  `${key.replace('common.relative.', '')}:${options?.count}`) as unknown as TFunction;
+
 describe('formatShortDuration', () => {
-  it('keeps the largest unit', () => {
-    expect(formatShortDuration(30_000, 'en')).toBe('1m');
-    expect(formatShortDuration(45 * MINUTE, 'en')).toBe('45m');
-    expect(formatShortDuration(5 * HOUR, 'en')).toBe('5h');
-    expect(formatShortDuration(3 * DAY, 'en')).toBe('3d');
+  it('keeps the largest unit, in the common.relative words', () => {
+    expect(formatShortDuration(30_000, t)).toBe('minute:1');
+    expect(formatShortDuration(45 * MINUTE, t)).toBe('minute:45');
+    expect(formatShortDuration(5 * HOUR, t)).toBe('hour:5');
+    expect(formatShortDuration(3 * DAY, t)).toBe('day:3');
   });
 
   it('switches to days where the caller says', () => {
-    expect(formatShortDuration(45 * HOUR, 'en')).toBe('2d');
-    expect(formatShortDuration(45 * HOUR, 'en', { daysFrom: 48 })).toBe('45h');
+    expect(formatShortDuration(45 * HOUR, t)).toBe('day:2');
+    expect(formatShortDuration(45 * HOUR, t, { daysFrom: 48 })).toBe('hour:45');
   });
 });
 
@@ -54,5 +60,15 @@ describe('formatElapsed', () => {
 
   it('never runs backwards', () => {
     expect(formatElapsed(-5_000)).toBe('00:00');
+  });
+});
+
+describe('formatAge', () => {
+  const now = new Date('2026-09-28T12:00:00Z');
+  const ago = (ms: number) => new Date(now.getTime() - ms);
+
+  it('says now under a minute, then the compact age', () => {
+    expect(formatAge(ago(30_000), now, t)).toBe('now:undefined');
+    expect(formatAge(ago(5 * HOUR), now, t)).toBe('hour:5');
   });
 });

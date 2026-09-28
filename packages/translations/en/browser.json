@@ -963,6 +963,7 @@
       "save": "Save",
       "cancel": "Cancel",
       "remove": "Remove host",
+      "removing": "Removing…",
       "removeTitle": "Remove {{name}}?",
       "removeRunning_one": "{{count}} session is running on {{name}}. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
       "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
@@ -1040,7 +1041,9 @@
       "lastSeen": "Active {{when}}",
       "activeNow": "Active now",
       "signOut": "Sign out",
+      "signingOut": "Signing out…",
       "signOutOthers": "Sign out of all other devices",
+      "signingOutOthers": "Signing out of other devices…",
       "failed": "The devices could not be loaded.",
       "revokeFailed": "That device could not be signed out."
     },

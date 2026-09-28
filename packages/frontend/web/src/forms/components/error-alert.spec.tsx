@@ -53,3 +53,21 @@ describe('ErrorAlert', () => {
     expect(onDismiss).toHaveBeenCalledOnce();
   });
 });
+
+describe('ErrorAlert with a resolved message', () => {
+  it('draws a sentence a form already resolved, with its reference', () => {
+    render(<ErrorAlert message="That name is taken" correlationId="req-7" />);
+    expect(screen.getByRole('alert').textContent).toContain('That name is taken');
+    expect(screen.getByText('errors.correlationId req-7')).toBeTruthy();
+  });
+
+  it('renders nothing for an empty message', () => {
+    const { container } = render(<ErrorAlert message={null} />);
+    expect(container.innerHTML).toBe('');
+  });
+
+  it('takes the caller’s action instead of Dismiss', () => {
+    render(<ErrorAlert message="Refused" action={<button type="button">Retry</button>} />);
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
+  });
+});

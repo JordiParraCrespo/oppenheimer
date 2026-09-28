@@ -38,7 +38,10 @@ export function OnboardingHostScreen({
   const { t } = useTranslation();
   // Online, not merely registered: the row appears when the runner registers,
   // and its service may still be starting (`usePairing`'s rules).
-  const { host, done, chrome } = usePairing(t('onboarding.flow.host.defaultName'), 'online');
+  const { pairing, expiresAt, expired, host, isPending, error, regenerate, done } = usePairing(
+    t('onboarding.flow.host.defaultName'),
+    'online',
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -52,7 +55,16 @@ export function OnboardingHostScreen({
         {t('onboarding.flow.host.description')}
       </StepHeader>
 
-      <HostPairingChrome {...chrome} layout="step" />
+      <HostPairingChrome
+        pairing={pairing ?? null}
+        expiresAt={expiresAt}
+        expired={expired}
+        onRegenerate={regenerate}
+        busy={isPending}
+        host={host}
+        error={error}
+        layout="step"
+      />
 
       <div className="flex flex-col items-start gap-3.5">
         <Button

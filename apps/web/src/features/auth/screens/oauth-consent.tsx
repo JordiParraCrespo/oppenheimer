@@ -108,9 +108,10 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
         </CardContent>
 
         <CardFooter className="flex justify-end gap-2">
+          {/* The answer in flight is pending; the other is locked beside it. */}
           <Button
             variant="outline"
-            disabled={pending !== null}
+            disabled={pending === 'accept'}
             onClick={() => respond(false)}
             pending={pending === 'deny'}
             pendingLabel={t('common.loading')}
@@ -118,7 +119,7 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
             {t('consent.deny')}
           </Button>
           <Button
-            disabled={pending !== null}
+            disabled={pending === 'deny'}
             onClick={() => respond(true)}
             pending={pending === 'accept'}
             pendingLabel={t('common.loading')}

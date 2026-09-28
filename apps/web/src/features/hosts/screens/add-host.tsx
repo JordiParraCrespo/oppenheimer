@@ -47,7 +47,10 @@ export function AddHostScreen() {
   const { t } = useTranslation();
   const back = { to: '/settings/hosts' as const };
   const navigate = useNavigate();
-  const { host, done, chrome } = usePairing(t('hosts.add.defaultName'), 'registered');
+  const { pairing, expiresAt, expired, host, isPending, error, regenerate, done } = usePairing(
+    t('hosts.add.defaultName'),
+    'registered',
+  );
 
   return (
     <>
@@ -78,7 +81,7 @@ export function AddHostScreen() {
         </PageHeaderMeta>
       </PageHeader>
 
-      <ErrorAlert error={chrome.error} fallback={t('hosts.pairing.mintFailed')} className="mb-6" />
+      <ErrorAlert error={error} fallback={t('hosts.pairing.mintFailed')} className="mb-6" />
 
       <RoutineSteps>
         <RoutineStep
@@ -89,13 +92,13 @@ export function AddHostScreen() {
           summary={t('hosts.add.install.done')}
         >
           <div className="flex flex-col gap-2">
-            <HostPairingInstruction pairing={chrome.pairing} layout="panel" />
+            <HostPairingInstruction pairing={pairing ?? null} layout="panel" />
 
             <HostPairingToken
-              expiresAt={chrome.expiresAt}
-              expired={chrome.expired}
-              onRegenerate={chrome.onRegenerate}
-              busy={chrome.busy}
+              expiresAt={expiresAt}
+              expired={expired}
+              onRegenerate={regenerate}
+              busy={isPending}
             />
           </div>
         </RoutineStep>

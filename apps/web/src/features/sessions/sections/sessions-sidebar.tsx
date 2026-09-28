@@ -8,7 +8,12 @@ import {
   useSessions,
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure } from '@oppenheimer/frontend-core/react';
-import { ErrorAlert, QueryState, useConsoleDialog } from '@oppenheimer/frontend-web';
+import {
+  combineQueries,
+  ErrorAlert,
+  QueryState,
+  useConsoleDialog,
+} from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -112,7 +117,6 @@ export function SessionsSidebar() {
   const dirty = isFiltered(filters);
   const narrowed = dirty || query.trim().length > 0;
   const groups = groupByProject(projects.data ?? [], visible);
-  const settled = sessions !== undefined && projects.data !== undefined;
   // The write that failed last, if one did: a menu closes on its pick, so the
   // failure has to stay on screen somewhere the row is. A later write that
   // lands clears it, and so does Dismiss.
@@ -175,11 +179,7 @@ export function SessionsSidebar() {
         {/* The rows need both reads: a session's group is its project. A failed
             read is not an empty list and not a list still loading. */}
         <QueryState
-          query={{
-            isPending: isPending || !settled,
-            error: error ?? projects.error,
-            data: settled ? groups : undefined,
-          }}
+          query={combineQueries({ isPending, error, data: sessions }, projects, () => groups)}
           pending={
             <SessionList className="px-3 pt-2">
               <Skeleton className="h-7.5 w-full rounded-sm" />
@@ -189,19 +189,21 @@ export function SessionsSidebar() {
           }
           errorFallback={t('sessions.sidebar.loadFailed')}
           errorClassName="mx-3 mt-2"
-          isEmpty={(ready) => ready.length === 0}
           // No project at all: the way to one is the plus above and the chip
           // on New session, and the row says so rather than arguing with the
           // pane.
-          empty={
-            <div className="px-3 pt-2">
-              <EmptyState compact>
-                <EmptyState.Header>
-                  <EmptyState.Description>{t('sessions.sidebar.empty')}</EmptyState.Description>
-                </EmptyState.Header>
-              </EmptyState>
-            </div>
-          }
+          empty={{
+            when: (ready) => ready.length === 0,
+            show: (
+              <div className="px-3 pt-2">
+                <EmptyState compact>
+                  <EmptyState.Header>
+                    <EmptyState.Description>{t('sessions.sidebar.empty')}</EmptyState.Description>
+                  </EmptyState.Header>
+                </EmptyState>
+              </div>
+            ),
+          }}
         >
           {(ready) =>
             ready.map(({ project, sessions: members }) => {

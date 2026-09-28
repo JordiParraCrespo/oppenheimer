@@ -132,10 +132,11 @@ export function RunsTable({ automationId }: { automationId?: string }) {
         ]}
       />
 
-      {/* A refetch that fails keeps the page already drawn; only a first
-          read that failed says so. */}
+      {/* A refetch that fails keeps the page already drawn, with the
+          failure above it. */}
       <QueryState
-        query={{ isPending: runs.isPending, error: page ? null : runs.error, data: page }}
+        query={runs}
+        stale="keep"
         pending={
           <div className="flex flex-col gap-1 px-1.5">
             <Skeleton className="h-11 w-full" />
@@ -145,14 +146,16 @@ export function RunsTable({ automationId }: { automationId?: string }) {
         }
         errorFallback={t('automations.runs.loadFailed')}
         errorClassName="mx-1.5 mb-1.5"
-        isEmpty={(data) => data.items.length === 0}
-        empty={
-          <RunsListEmpty>
-            {counts?.all || filters.dirty
-              ? t('automations.runs.noMatch')
-              : t('automations.page.runsEmpty')}
-          </RunsListEmpty>
-        }
+        empty={{
+          when: (data) => data.items.length === 0,
+          show: (
+            <RunsListEmpty>
+              {counts?.all || filters.dirty
+                ? t('automations.runs.noMatch')
+                : t('automations.page.runsEmpty')}
+            </RunsListEmpty>
+          ),
+        }}
       >
         {(data) =>
           data.items.map((run) => (

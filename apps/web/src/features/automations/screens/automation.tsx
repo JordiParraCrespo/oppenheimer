@@ -18,16 +18,6 @@ export function AutomationScreen({ automationId }: { automationId: string }) {
   const { t } = useTranslation();
   const automation = useAutomation(automationId);
 
-  // Only a 404 is "not found"; any other failure is a failure, and says so.
-  if (automation.error instanceof AppError && automation.error.status === 404) {
-    return (
-      <EmptyState>
-        <EmptyState.Header>
-          <EmptyState.Description>{t('automations.detail.notFound')}</EmptyState.Description>
-        </EmptyState.Header>
-      </EmptyState>
-    );
-  }
   return (
     <QueryState
       query={automation}
@@ -39,7 +29,18 @@ export function AutomationScreen({ automationId }: { automationId: string }) {
         </div>
       }
       errorFallback={t('errors.fallback')}
-      renderError={(error) => <RouteError error={error} />}
+      // Only a 404 is "not found"; any other failure is a failure, and says so.
+      renderError={(error) =>
+        error instanceof AppError && error.status === 404 ? (
+          <EmptyState>
+            <EmptyState.Header>
+              <EmptyState.Description>{t('automations.detail.notFound')}</EmptyState.Description>
+            </EmptyState.Header>
+          </EmptyState>
+        ) : (
+          <RouteError error={error} />
+        )
+      }
     >
       {(data) => (
         <div className="flex flex-col gap-4">

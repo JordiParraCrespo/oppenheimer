@@ -39,7 +39,10 @@ export function AddHostDialog({
   onUseHost: (hostId: string) => void;
 }) {
   const { t } = useTranslation();
-  const { host, done, chrome } = usePairing(t('hosts.add.defaultName'), 'registered');
+  const { pairing, expiresAt, expired, host, isPending, error, regenerate, done } = usePairing(
+    t('hosts.add.defaultName'),
+    'registered',
+  );
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -51,7 +54,15 @@ export function AddHostDialog({
 
         <DialogBody>
           <div className="flex flex-col gap-4.5">
-            <HostPairingChrome {...chrome} />
+            <HostPairingChrome
+              pairing={pairing ?? null}
+              expiresAt={expiresAt}
+              expired={expired}
+              onRegenerate={regenerate}
+              busy={isPending}
+              host={host}
+              error={error}
+            />
           </div>
         </DialogBody>
 

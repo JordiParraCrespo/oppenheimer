@@ -106,18 +106,13 @@ export function nextRunCountdown(
  * The sidebar row's mono meta: Running, Paused, the wait until the next slot
  * ("in 45h"), else how many runs it has made.
  */
-export function sidebarMeta(
-  automation: AutomationEntity,
-  now: number,
-  locale: string,
-  t: TFunction,
-): string {
+export function sidebarMeta(automation: AutomationEntity, now: number, t: TFunction): string {
   if (automation.isRunning) return t('automations.sidebar.running');
   if (automation.isPaused) return t('automations.sidebar.paused');
   if (automation.nextRunAt) {
     const wait = automation.nextRunAt.getTime() - now;
     return t('automations.next.in', {
-      time: formatShortDuration(wait, locale, { daysFrom: 48 }),
+      time: formatShortDuration(wait, t, { daysFrom: 48 }),
     });
   }
   return automation.runCount ? String(automation.runCount) : '';

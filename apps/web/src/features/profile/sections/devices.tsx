@@ -29,6 +29,8 @@ export function DevicesSection() {
   const revoke = useRevokeProfileSession();
   const revokeOthers = useRevokeOtherProfileSessions();
   const failure = lastFailure([revoke, revokeOthers]);
+  // One sign-out at a time: the row in flight is pending, and the rest wait.
+  const busy = revoke.isPending || revokeOthers.isPending;
 
   return (
     <section className="flex flex-col gap-3">
@@ -65,7 +67,9 @@ export function DevicesSection() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      disabled={revoke.isPending || revokeOthers.isPending}
+                      pending={revoke.isPending && revoke.variables === device.id}
+                      pendingLabel={t('settings.devices.signingOut')}
+                      disabled={busy}
                       onClick={() => revoke.mutate(device.id)}
                     >
                       {t('settings.devices.signOut')}
@@ -88,7 +92,9 @@ export function DevicesSection() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    disabled={revoke.isPending || revokeOthers.isPending}
+                    pending={revokeOthers.isPending}
+                    pendingLabel={t('settings.devices.signingOutOthers')}
+                    disabled={revoke.isPending}
                     onClick={() => revokeOthers.mutate()}
                   >
                     {t('settings.devices.signOutOthers')}

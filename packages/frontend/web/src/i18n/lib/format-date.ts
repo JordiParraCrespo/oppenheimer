@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import { formatShortDuration } from './format-duration';
 
 /**
  * Date formatting shared by the workspace screens. Everything goes through
@@ -96,12 +97,13 @@ export function compactAge(
 }
 
 /**
- * "5m", "3h", "2d" — an age in the reader's language, through the
- * `common.relative.*` words — and `common.relative.now` under a minute.
+ * "5m", "3h", "2d" — how long ago, in the `common.relative.*` words that every
+ * compact age uses (`formatShortDuration`) — and `common.relative.now` under a
+ * minute.
  */
 export function formatAge(date: Date, now: Date | number, t: TFunction): string {
-  const age = compactAge(date, now);
-  return age ? t(`common.relative.${age.unit}`, { count: age.count }) : t('common.relative.now');
+  const ms = (typeof now === 'number' ? now : now.getTime()) - date.getTime();
+  return ms < 60_000 ? t('common.relative.now') : formatShortDuration(ms, t);
 }
 
 /**

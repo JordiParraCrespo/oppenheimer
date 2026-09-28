@@ -28,9 +28,11 @@ Everything is re-exported from the package root (`src/index.ts`):
 - **layout** — `PageHead`, the section primitives, `ConfirmDialog` (the
   destructive confirm: `confirmLabel`, `pendingLabel`, `error`, `children`,
   `form`), `QueryState` (a read's failed / loading / empty / there, in that
-  order).
-- **forms** — `ErrorAlert` (an inline failure, resolved into the locale, with
-  its correlation id and an optional Dismiss), `useZodResolver`,
+  order, with `stale` naming what a later failure does to data on screen)
+  and `combineQueries` (two reads as one source).
+- **forms** — `ErrorAlert` (an inline failure: a raw `error` it resolves into
+  the locale, or a `message` already resolved; its correlation id; Dismiss or
+  the caller's own `action`), `useZodResolver`,
   `useSearchDraft`, `useServerFieldErrors`, and the `ResolvedErrorMessage`
   type. `useErrorMessage` itself is imported from
   `@oppenheimer/frontend-core/react`.
@@ -55,7 +57,7 @@ configures i18next at import.
 kit:
 
 ```tsx
-import { AuthField, AuthFormError, useZodResolver } from '@oppenheimer/frontend-web';
+import { AuthField, AuthFormFailure, useZodResolver } from '@oppenheimer/frontend-web';
 
 const form = useForm<LoginDto>({
   resolver: useZodResolver(loginSchema),

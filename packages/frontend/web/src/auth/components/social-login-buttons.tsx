@@ -52,19 +52,24 @@ export function SocialLoginButtons({
     );
   }
 
+  const busyWith = social.isPending ? social.variables?.provider : undefined;
+
   return (
     <div className="flex flex-col gap-2.5">
       {/* Starting the round-trip can fail before the redirect ever happens —
           the API unreachable, the provider rejected server-side. It used to
           fail silently: the button simply stopped spinning. */}
       <ErrorAlert error={social.error} fallback={t('auth.login.socialFailed')} />
+      {/* The provider in flight is pending; the other is locked beside it,
+          since one sign-in at a time is all a redirect can carry. */}
       {google && (
         <Button
           variant="social"
           size="lg"
           block
           type="button"
-          disabled={disabled || social.isPending}
+          pending={busyWith === 'google'}
+          disabled={disabled || busyWith === 'github'}
           onClick={() => social.mutate({ provider: 'google', intent })}
         >
           <BrandGlyph name="google" />
@@ -77,7 +82,8 @@ export function SocialLoginButtons({
           size="lg"
           block
           type="button"
-          disabled={disabled || social.isPending}
+          pending={busyWith === 'github'}
+          disabled={disabled || busyWith === 'google'}
           onClick={() => social.mutate({ provider: 'github', intent })}
         >
           <BrandGlyph name="github" />

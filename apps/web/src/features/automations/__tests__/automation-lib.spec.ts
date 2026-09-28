@@ -145,11 +145,13 @@ describe('rows', () => {
   });
 
   it('gives the sidebar its one word', () => {
-    expect(sidebarMeta(automation({ status: 'running' }), NOW, 'en', t)).toBe(
+    expect(sidebarMeta(automation({ status: 'running' }), NOW, t)).toBe(
       'automations.sidebar.running',
     );
-    expect(sidebarMeta(automation(), NOW, 'en', t)).toBe('automations.next.in{"time":"1h"}');
-    expect(sidebarMeta(automation({ nextRunAt: null, runCount: 12 }), NOW, 'en', t)).toBe('12');
+    expect(sidebarMeta(automation(), NOW, t)).toBe(
+      'automations.next.in{"time":"common.relative.hour{\\"count\\":1}"}',
+    );
+    expect(sidebarMeta(automation({ nextRunAt: null, runCount: 12 }), NOW, t)).toBe('12');
   });
 
   it('draws a run with the three glyphs it has', () => {
