@@ -266,3 +266,9 @@ earlier note:
   prefix are not in the frames and are not built; the frames' one filter
   value per trigger and the event-dependent starting branch are
   (2026-09-27).
+- The automations architecture capped **headless** runs per host; runs
+  are interactive sessions until the headless drive lands, so the cap
+  counts **live** runs of either drive — a run whose agent finished holds
+  no place — and a run past the run limit is stopped. A run opens in the
+  session pane under `/automations`, keeping the automations list beside
+  it (2026-09-28).

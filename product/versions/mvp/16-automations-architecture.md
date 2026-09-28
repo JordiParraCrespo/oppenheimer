@@ -1,9 +1,12 @@
 # 16 — Automations: the architecture
 
-13 built the console's side of automations ahead of their API and left
-the data model open. This note closes it. It records the design agreed on
-2026-09-27 in one long review, question by question, and what the first
-slice builds. The frames (`design/version1/Routines.dc.html`, drawn inside
+This note is how a run is fired, guarded and dispatched. It records the
+design agreed on 2026-09-27 in one long review, question by question, and
+the slices that build it (§5). **Built so far: slices 1 and 3** — the
+control plane's pipeline and the console (13). A run is still an ordinary
+session that takes its prompt as a person's does; **the headless drive of
+§Q2–Q3 is the next slice**, and each point below that depends on it says
+so. The tables and modules are listed in 10; the console is 13. The frames (`design/version1/Routines.dc.html`, drawn inside
 `SessionsConsole.dc.html`) are the source of truth for what an automation
 *is*; this note decides how the control plane, the runner and the other
 modules make it true.
@@ -46,7 +49,12 @@ Automations are in the MVP. 00 is updated: the scheduler, the GitHub
 trigger and the runs move from the out-list to the in-list, delivered in
 the slices of §5.
 
-### Q2–Q3. A run is a headless session, for any agent
+### Q2–Q3. A run's drive is headless, for any agent (slice 2, next)
+
+Decided, not yet built. Until it is, `CreateSessionCommand` has no
+`drive`, a run's session is interactive with the composed prompt as its
+first message, and its first turn is folded from the session's own events
+(§Q4).
 
 - A run executes **headless**: the agent's non-interactive mode with
   structured output (`claude -p --output-format stream-json`, `codex exec
@@ -79,6 +87,15 @@ The shape matches OpenAI's Thread → Run → Run Steps, and Anthropic's
 routines, where a trigger creates a session and the session is what you
 watch.
 
+- **Today** `session_turn` is written by one writer — the sessions
+  repository, in the same transaction as the event it folds — from the
+  session's own log: the first prompt opens turn 1, the agent observed
+  working moves it to `in_progress`, observed idle after working ends it
+  `completed`, a failure `failed`, a stop or close `cancelled`. A person
+  typing into the same session later does not change turn 1, which is the
+  only turn a run reads. With the headless drive the runner reports
+  `turn.started` and `turn.ended` itself and the fold takes those instead;
+  the table and the runs list do not change.
 - **`sessions/` owns execution for any headless session**, whoever
   started it: `session_turn` (one row per headless prompt turn: seq,
   origin `automation | person | follow_up`, state, exit code, agent
@@ -242,13 +259,15 @@ shows exactly what the agent saw, and it travels as one argv element.
 
 ### Q16. Host capacity
 
-A **headless cap per host** (default 2, a field on the host: "Automation
-runs at once"), counting running headless turns only; interactive
-sessions stay uncapped, so a person is never blocked by automations. A
-firing over the cap, or on a host under the **disk floor** (5 GB free,
-from `host_presence`), is **deferred** — it stays `pending` and retries
-with backoff — and becomes `expired` after the stale TTL. Deferred runs
-start oldest first.
+A **cap of live runs per host** (default 2), counting automation runs
+whose first turn has not ended — a run whose agent finished holds no
+place, even while its session stays open for resuming — and never a
+person's own sessions, so a person is never blocked by automations. A run
+live past the run limit is stopped (below) and holds no place either. A
+firing over the cap, or on a host under the **disk floor** (5 GB free, the
+host's last report), is **deferred** — it stays `pending` and retries —
+and becomes `expired` after the stale TTL. (2026-09-28: the cap was
+written for headless turns; it counts live runs of either drive.)
 
 ## 3. The pipeline
 
@@ -300,14 +319,15 @@ its run with the reason, so nothing disappears silently.
 | Rate | firing | per automation and per workspace per hour |
 | Overlap | dispatch | `skip` (default) or `queue` while a run of the same automation is live |
 | Launchable | dispatch | owner still a member, host paired and usable by the owner, agent probed and headless-capable, project active |
-| Capacity | dispatch | host headless cap and disk floor; defers |
+| Capacity | dispatch | live runs on the host and the disk floor; defers |
 | Staleness | dispatch | a run pending past its TTL expires |
 
 ### Configuration
 
 Three levels, the tightest wins: `effective = min(platform ceiling,
-workspace setting, automation setting)`. Platform values are env,
-validated at boot; workspace values are an `automation_settings` row per
+workspace setting, automation setting)`. The numbers live once, in the
+domain's `DEFAULT_PLATFORM_LIMITS`; env only overrides a ceiling, validated
+at boot; workspace values are an `automation_settings` row per
 workspace; automation values are nullable columns (null inherits). One
 pure resolver, `AutomationPolicy.resolve`, is what the guards read.
 
@@ -315,12 +335,12 @@ pure resolver, `AutomationPolicy.resolve`, is what the guards read.
 |---|---|---|
 | Runs per automation per hour | 10 | 60 |
 | Runs per workspace per hour | 100 | 500 |
-| Headless runs per host | 2 | 20 |
+| Live runs per host | 2 | 20 |
 | Overlap | `skip` | — |
 | Stale TTL | 1 h | 24 h |
 | Missed-slot grace | 15 min | — |
-| Maximum run duration | 1 h | 6 h |
-| Worktree kept after a run | 7 days | 30 days |
+| Maximum run duration (past it, the run's session is stopped) | 1 h | 6 h |
+| Worktree kept after a run (slice 4) | 7 days | 30 days |
 | Disk floor | 5 GB | — |
 | Inbound events | 30 days normalized, 7 days raw | — |
 
@@ -359,7 +379,7 @@ closed, its branch pushed, and the run reads "Archived".
 
 ## 5. Slices
 
-1. **The control plane's pipeline** (this note's first PR): the shared
+1. **The control plane's pipeline** — built: the shared
    trigger catalog and schemas, `inbound-events/` with the GitHub source,
    `automations/` with its tables, CRUD, pause/resume/duplicate/delete,
    Run now, the schedule tick, matching, the firing-time guards, dispatch
@@ -367,12 +387,15 @@ closed, its branch pushed, and the run reads "Archived".
    Until the headless drive exists, a dispatched run starts an
    **interactive** session with the prompt as its first message, which is
    what sessions do today; the run is `dispatched` and links its session.
-2. **Headless**: the catalog `headless` blocks, `drive` on
-   `session.create`, `runner headless` and the tailing reader,
-   `session_turn`, output storage, the Claude Code and Codex adapters, the
-   capacity guard's headless count, the version gate.
-3. **The console**: the overview, the editor's four steps, one
-   automation, the runs list and the run view, reading the API from
+   Queued work retries with backoff, and a sweep re-stages what outlived
+   its retries.
+2. **Headless** — next: the catalog `headless` blocks, `drive` on
+   `session.create` (required on the command, as `origin` is), `runner
+   headless` and the tailing reader, `turn.started` / `turn.ended` from the
+   runner feeding `session_turn`, output storage, the Claude Code and
+   Codex adapters, the version gate.
+3. **The console** — built (13): the overview, the editor's three steps,
+   one automation, the runs list and the run view, reading the API from
    `packages/frontend/consumer`.
 4. **Resume and results**: Continue this run, Open in terminal, the
    worktree retention, results linked from our App's events, the push log.
