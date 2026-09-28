@@ -19,6 +19,8 @@ export class FindSessionsQuery extends QueryBase {
   readonly githubRepoId?: number;
   readonly agent?: string;
   readonly sort?: SessionSortDto;
+  /** Opaque, from the previous page's `meta.nextCursor`. Switches off `page` and the count. */
+  readonly cursor?: string;
 
   constructor(props: {
     scope: AccessScope;
@@ -30,6 +32,7 @@ export class FindSessionsQuery extends QueryBase {
     githubRepoId?: number;
     agent?: string;
     sort?: SessionSortDto;
+    cursor?: string;
   }) {
     super();
     this.scope = props.scope;
@@ -41,5 +44,6 @@ export class FindSessionsQuery extends QueryBase {
     this.githubRepoId = props.githubRepoId;
     this.agent = props.agent;
     this.sort = props.sort;
+    this.cursor = props.cursor;
   }
 }

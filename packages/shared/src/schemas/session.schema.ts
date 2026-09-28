@@ -302,6 +302,11 @@ export type SessionSortDto = z.infer<typeof sessionSortSchema>;
  * provisional with the rest of how sessions are organized (05): `recent` is last
  * activity first and is the default, `oldest` is creation order, `name` is
  * alphabetical.
+ *
+ * `cursor` is the previous page's `meta.nextCursor`, opaque, for the same
+ * `sort`. With it the list is walked by key instead of by page: no count, and a
+ * session is never returned twice in one walk however the list moves under it.
+ * Without it, `page` works as it always has.
  */
 export const listSessionsQuerySchema = paginationSchema.extend({
   projectId: z.string().uuid().optional(),
@@ -310,6 +315,7 @@ export const listSessionsQuerySchema = paginationSchema.extend({
   githubRepoId: z.coerce.number().int().positive().optional(),
   agent: codingAgentSchema.optional(),
   sort: sessionSortSchema.optional(),
+  cursor: z.string().min(1).max(512).optional(),
 });
 
 export type ListSessionsQueryDto = z.infer<typeof listSessionsQuerySchema>;

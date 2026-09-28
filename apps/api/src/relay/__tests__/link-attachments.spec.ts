@@ -34,6 +34,17 @@ describe('LinkAttachments', () => {
     expect(table.get(id)).toBeUndefined();
   });
 
+  it('closes one of many and still routes the others by command', () => {
+    const table = new LinkAttachments();
+    const sinks = [sink(), sink(), sink()];
+    const ids = sinks.map((each, index) => table.open(each, `cmd-${index}`));
+    table.close(ids[1]);
+    expect(table.byCommandId('cmd-1')).toBeUndefined();
+    expect(table.byCommandId('cmd-0')).toBe(sinks[0]);
+    expect(table.byCommandId('cmd-2')).toBe(sinks[2]);
+    expect(table.size).toBe(2);
+  });
+
   it('drains everything when the link goes', () => {
     const table = new LinkAttachments();
     const first = sink();

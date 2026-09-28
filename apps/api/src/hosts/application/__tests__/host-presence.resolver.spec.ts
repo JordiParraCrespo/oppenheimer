@@ -25,7 +25,9 @@ function setup(host: Partial<HostEntity> | null) {
     findOneByIdForMachine: vi.fn().mockResolvedValue(host ? Some(host) : None),
   } as unknown as HostRepositoryPort;
   const metadata = {
-    recordVitals: vi.fn().mockResolvedValue(undefined),
+    // The statement answers the pairing check: a host the row belongs to and
+    // that is still paired is the only one it writes for.
+    recordVitalsIfPaired: vi.fn().mockResolvedValue(host !== null && host.isUnpaired !== true),
     recordInventory: vi.fn().mockResolvedValue([]),
     recordNetwork: vi.fn().mockResolvedValue({ network: {}, movedFrom: null }),
   } as unknown as HostMetadataRepositoryPort;
@@ -59,7 +61,7 @@ describe('HostPresenceResolver', () => {
       ),
     ).resolves.toBe(true);
 
-    expect(metadata.recordVitals).toHaveBeenCalledWith(
+    expect(metadata.recordVitalsIfPaired).toHaveBeenCalledWith(
       'host-1',
       expect.objectContaining({ loadAverage: 1.5, roundTripMillis: 41, diskFreeBytes: 42 }),
       at,
@@ -71,16 +73,50 @@ describe('HostPresenceResolver', () => {
     );
   });
 
+  it('asks the one statement whether the host is paired, never the host row', async () => {
+    const { hosts, metadata, resolver } = setup({ isUnpaired: false });
+    await resolver.observe('host-1', { facts });
+    expect(metadata.recordVitalsIfPaired).toHaveBeenCalledTimes(1);
+    expect(hosts.findOneByIdForMachine).not.toHaveBeenCalled();
+  });
+
   it('ignores an unpaired host rather than resurrecting it', async () => {
-    const { metadata, resolver } = setup({ isUnpaired: true });
+    const { hosts, metadata, resolver } = setup({ isUnpaired: true });
     await expect(resolver.observe('host-1', { facts })).resolves.toBe(false);
-    expect(metadata.recordVitals).not.toHaveBeenCalled();
+    expect(metadata.recordInventory).not.toHaveBeenCalled();
+    expect(hosts.findOneByIdForMachine).not.toHaveBeenCalled();
   });
 
   it('ignores a host it does not know', async () => {
     const { metadata, resolver } = setup(null);
     await expect(resolver.observe('host-1', { facts })).resolves.toBe(false);
     expect(metadata.recordInventory).not.toHaveBeenCalled();
+  });
+
+  it('skips the inventory on a heartbeat that reports what this process last recorded', async () => {
+    const { metadata, resolver } = setup({ isUnpaired: false });
+    await resolver.observe('host-1', { facts, channel: 'stable' });
+    await resolver.observe('host-1', { facts, channel: 'stable' });
+    // A beat that names no channel keeps the one on file, so it is unchanged too.
+    await resolver.observe('host-1', { facts });
+    expect(metadata.recordVitalsIfPaired).toHaveBeenCalledTimes(3);
+    expect(metadata.recordInventory).toHaveBeenCalledTimes(1);
+  });
+
+  it('records the inventory again when the facts or the channel move', async () => {
+    const { metadata, resolver } = setup({ isUnpaired: false });
+    await resolver.observe('host-1', { facts, channel: 'stable' });
+    await resolver.observe('host-1', { facts, channel: 'beta' });
+    await resolver.observe('host-1', { facts: { ...facts, runnerVersion: '0.15.0' } });
+    expect(metadata.recordInventory).toHaveBeenCalledTimes(3);
+  });
+
+  it('always reads the inventory on a hello, whatever this process remembers', async () => {
+    // The link may have lived on another replica since, which wrote its own.
+    const { metadata, resolver } = setup({ isUnpaired: false });
+    await resolver.observe('host-1', { facts });
+    await resolver.observe('host-1', { facts, connectedAt: new Date() });
+    expect(metadata.recordInventory).toHaveBeenCalledTimes(2);
   });
 
   it('records the address with where the database places it', async () => {

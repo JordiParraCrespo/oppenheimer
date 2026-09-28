@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { EventEmitter } from 'node:events';
 import { createServer, type Server } from 'node:http';
 import { type AddressInfo, connect, type Socket } from 'node:net';
 import { Logger } from '@nestjs/common';
@@ -7,6 +8,7 @@ import type { HttpAdapterHost } from '@nestjs/core';
 import type { CacheService } from '@oppenheimer/backend-cache';
 import {
   ATTACH_CLOSE_CODES,
+  helloSchema,
   PROTOCOL_VERSION,
   RUNNER_LINK_CLOSE_CODES,
 } from '@oppenheimer/shared/protocol';
@@ -31,7 +33,12 @@ import { BrowserAttachGateway } from '../infrastructure/browser-attach.gateway';
 import { CredentialsProcessor } from '../infrastructure/credentials.processor';
 import { RelayEventsProcessor } from '../infrastructure/relay-events.processor';
 import { RelayUpgradeGateway } from '../infrastructure/relay-upgrade.gateway';
-import { MIN_SUPPORTED_PROTOCOL, RunnerLinkGateway } from '../infrastructure/runner-link.gateway';
+import {
+  APPEND_QUEUE_LIMITS,
+  LINK_PING_INTERVAL_MS,
+  MIN_SUPPORTED_PROTOCOL,
+  RunnerLinkGateway,
+} from '../infrastructure/runner-link.gateway';
 
 /**
  * The two sockets, end to end, minus Postgres and Redis: a runner that dials
@@ -445,6 +452,195 @@ describe('runner link', () => {
     await nextMessage(runner);
     await nextMessage(runner);
     expect(finished).toEqual(['b1', 'b2']);
+  });
+
+  it('applies the batches queued behind one for the same session as one append, acked per batch', async () => {
+    // A runner sends one event per batch, so this is what makes the batched
+    // insert pay off: whatever queued while an append ran lands in the next one.
+    vi.mocked(h.events.record).mockImplementation(async (batch: RunnerEventBatch) => {
+      if (batch.batchId === 'b1') await new Promise((resolve) => setTimeout(resolve, 50));
+      return {
+        batchId: batch.batchId,
+        accepted: batch.events
+          .map((event) => event.idempotencyKey)
+          .filter((key) => key !== 'run-1:3'),
+        rejected: [{ idempotencyKey: 'run-1:3', reason: 'payload is over 8192 bytes' }],
+      };
+    });
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    const acks: unknown[] = [];
+    runner.on('message', (data) => acks.push(JSON.parse(String(data))));
+    for (const [batchId, n] of [
+      ['b1', 1],
+      ['b2', 2],
+      ['b3', 3],
+      ['b4', 4],
+    ] as const) {
+      runner.send(
+        JSON.stringify({
+          type: 'events.append',
+          batchId,
+          sessionId: SESSION,
+          events: [
+            {
+              idempotencyKey: `run-1:${n}`,
+              kind: 'agent.observed',
+              payload: '{}',
+              occurredAt: new Date().toISOString(),
+            },
+          ],
+        }),
+      );
+    }
+    await vi.waitFor(() => expect(acks).toHaveLength(4));
+    expect(vi.mocked(h.events.record).mock.calls.map(([batch]) => batch.events.length)).toEqual([
+      1, 3,
+    ]);
+    expect(acks).toEqual([
+      { type: 'events.ack', batchId: 'b1', accepted: ['run-1:1'] },
+      { type: 'events.ack', batchId: 'b2', accepted: ['run-1:2'] },
+      {
+        type: 'events.ack',
+        batchId: 'b3',
+        accepted: [],
+        rejected: [{ idempotencyKey: 'run-1:3', reason: 'payload is over 8192 bytes' }],
+      },
+      { type: 'events.ack', batchId: 'b4', accepted: ['run-1:4'] },
+    ]);
+  });
+
+  it('refuses a frame over the cap with 1009 while reading it, not after buffering it', async () => {
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    const gone = closed(runner);
+    runner.send(JSON.stringify({ type: 'heartbeat', padding: 'x'.repeat(600 * 1024) }));
+    await expect(gone).resolves.toMatchObject({ code: 1009 });
+    await vi.waitFor(() => expect(h.registry.find(HOST)).toBeUndefined());
+  });
+
+  describe('when the log cannot keep up', () => {
+    /** A socket the gateway drives, so the test can hold the database and the clock. */
+    class FakeSocket extends EventEmitter {
+      readonly OPEN = 1;
+      readonly CONNECTING = 0;
+      readyState = 1;
+      bufferedAmount = 0;
+      readonly send = vi.fn();
+      readonly close = vi.fn();
+      readonly ping = vi.fn();
+      readonly pause = vi.fn();
+      readonly resume = vi.fn();
+      readonly terminate = vi.fn();
+    }
+
+    const gates: (() => void)[] = [];
+
+    async function linkUp(): Promise<FakeSocket> {
+      const events: RecordSessionEventsPort = {
+        // The database is slow: nothing is answered until the test says so.
+        record: vi.fn(async (batch: RunnerEventBatch) => {
+          await new Promise<void>((resolve) => gates.push(resolve));
+          return {
+            batchId: batch.batchId,
+            accepted: batch.events.map((event) => event.idempotencyKey),
+            rejected: [],
+          };
+        }),
+      };
+      const processor = new RelayEventsProcessor(events, h.presence, h.reconciliation);
+      const gateway = new RunnerLinkGateway(
+        {} as HostAssertionPort,
+        new InProcessLinkRegistry(() => 0),
+        processor,
+        {} as CredentialsProcessor,
+        { get: () => FINGERPRINT } as unknown as ConfigService,
+      );
+      const socket = new FakeSocket();
+      await (
+        gateway as unknown as {
+          open(ws: unknown, hostId: string, hello: unknown, address: null): Promise<void>;
+        }
+      ).open(socket, HOST, helloSchema.parse(JSON.parse(hello())), null);
+      return socket;
+    }
+
+    /** `count` batches, each for its own session so none coalesce. */
+    function flood(socket: FakeSocket, count: number, from = 0): void {
+      for (let n = from; n < from + count; n += 1) {
+        socket.emit(
+          'message',
+          Buffer.from(
+            JSON.stringify({
+              type: 'events.append',
+              batchId: `b${n}`,
+              sessionId: `c9b5d3e1-2f30-4b4c-9d5e-${String(n).padStart(12, '0')}`,
+              events: [
+                {
+                  idempotencyKey: `run-1:${n}`,
+                  kind: 'agent.observed',
+                  payload: '{}',
+                  occurredAt: new Date().toISOString(),
+                },
+              ],
+            }),
+          ),
+          false,
+        );
+      }
+    }
+
+    afterEach(() => {
+      gates.splice(0);
+      vi.useRealTimers();
+    });
+
+    it('pauses the socket at the high-water mark and reads again at the low one', async () => {
+      const socket = await linkUp();
+      // One in flight, `pauseAt - 1` waiting: still reading.
+      flood(socket, APPEND_QUEUE_LIMITS.pauseAt);
+      expect(socket.pause).not.toHaveBeenCalled();
+      flood(socket, 1, APPEND_QUEUE_LIMITS.pauseAt);
+      expect(socket.pause).toHaveBeenCalledTimes(1);
+
+      // One append in flight at a time: answer each as it arrives.
+      await vi.waitFor(
+        () => {
+          for (const release of gates.splice(0)) release();
+          expect(socket.resume).toHaveBeenCalledTimes(1);
+        },
+        { timeout: 5_000, interval: 1 },
+      );
+      expect(socket.close).not.toHaveBeenCalled();
+    });
+
+    it('closes with 1013 at the ceiling, from frames read before the pause took hold', async () => {
+      const socket = await linkUp();
+      flood(socket, APPEND_QUEUE_LIMITS.closeAt + 1);
+      expect(socket.close).toHaveBeenCalledWith(1013, 'append queue overloaded; try again later');
+    });
+
+    it('does not terminate a paused link for a missed pong, and closes it with 1013 after the maximum pause', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+      const socket = await linkUp();
+      // The keepalive pings; its pong is not read before the socket pauses.
+      vi.advanceTimersByTime(LINK_PING_INTERVAL_MS);
+      expect(socket.ping).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(LINK_PING_INTERVAL_MS - APPEND_QUEUE_LIMITS.maxPauseMs + 1_000);
+      flood(socket, APPEND_QUEUE_LIMITS.pauseAt + 1);
+      expect(socket.pause).toHaveBeenCalledTimes(1);
+
+      // The next beat finds no pong, and must not take that as a dead link.
+      vi.advanceTimersByTime(APPEND_QUEUE_LIMITS.maxPauseMs - 1_000);
+      expect(socket.terminate).not.toHaveBeenCalled();
+      expect(socket.close).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(1_000);
+      expect(socket.terminate).not.toHaveBeenCalled();
+      // Read again first, so the close handshake can finish.
+      expect(socket.resume).toHaveBeenCalled();
+      expect(socket.close).toHaveBeenCalledWith(1013, 'append queue overloaded; try again later');
+    });
   });
 
   it('records a refused session.create as the session failing, with the runner’s code and detail', async () => {

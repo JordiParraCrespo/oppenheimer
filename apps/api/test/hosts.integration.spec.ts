@@ -6,6 +6,7 @@ import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Queue } from 'bullmq';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
+import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import type { HostPresencePort } from '../src/hosts/application/host-presence.port';
 import type { HostMetadataRepositoryPort } from '../src/hosts/database/host-metadata.repository.port';
 import { HOST_METADATA_REPOSITORY, HOST_PRESENCE } from '../src/hosts/hosts.di-tokens';
@@ -808,6 +809,59 @@ describe('Hosts & pairing (integration)', () => {
         1,
       );
       expect(await kinds()).not.toContain('network_changed');
+    });
+
+    it('writes presence only for a paired host, in one statement that is also the check', async () => {
+      const presenceOf = () =>
+        rows(
+          `SELECT "loadAverage"::float8 AS "loadAverage", "roundTripMillis" FROM "host_presence" WHERE "hostId" = $1`,
+          [hostId],
+        );
+      await dataSource.query(`DELETE FROM "host_presence" WHERE "hostId" = $1`, [hostId]);
+
+      // Inserts, then updates, keeping what a later report leaves out.
+      expect(await metadata.recordVitalsIfPaired(hostId, { loadAverage: 0.5 }, new Date())).toBe(
+        true,
+      );
+      expect(await presenceOf()).toEqual([{ loadAverage: 0.5, roundTripMillis: null }]);
+      expect(await metadata.recordVitalsIfPaired(hostId, { roundTripMillis: 7 }, new Date())).toBe(
+        true,
+      );
+      expect(await presenceOf()).toEqual([{ loadAverage: 0.5, roundTripMillis: 7 }]);
+
+      // A host nobody paired, and one unpaired since: nothing is written.
+      expect(
+        await metadata.recordVitalsIfPaired(
+          'e0e0e0e0-0000-4000-8000-000000000000',
+          { loadAverage: 9 },
+          new Date(),
+        ),
+      ).toBe(false);
+      await dataSource.query(`UPDATE "host" SET "unpairedAt" = now() WHERE "id" = $1`, [hostId]);
+      try {
+        expect(await metadata.recordVitalsIfPaired(hostId, { loadAverage: 9 }, new Date())).toBe(
+          false,
+        );
+        expect(await presence.observe(hostId, { facts: FACTS })).toBe(false);
+        expect(await presenceOf()).toEqual([{ loadAverage: 0.5, roundTripMillis: 7 }]);
+      } finally {
+        await dataSource.query(`UPDATE "host" SET "unpairedAt" = NULL WHERE "id" = $1`, [hostId]);
+      }
+    });
+
+    it('answers a heartbeat whose inventory is unchanged with one statement', async () => {
+      // The first beat after the hello records what this process last saw.
+      await presence.observe(hostId, { facts: FACTS });
+      const spy = vi.spyOn(PostgresQueryRunner.prototype, 'query');
+      try {
+        expect(await presence.observe(hostId, { facts: FACTS, loadAverage: 0.25 })).toBe(true);
+        // Only this host's statements: the app's own background work runs beside it.
+        const mine = spy.mock.calls.filter(([, parameters]) => (parameters ?? []).includes(hostId));
+        expect(mine).toHaveLength(1);
+        expect(String(mine[0]?.[0])).toMatch(/INSERT INTO "host_presence"/);
+      } finally {
+        spy.mockRestore();
+      }
     });
   });
 

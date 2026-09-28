@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
+import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import { AddSessionRolePermissions1789100100000 } from '../src/migrations/1789100100000-AddSessionRolePermissions';
 import { ProjectOrmEntity } from '../src/projects/database/project.orm-entity';
 import { ProjectRepository } from '../src/projects/database/project.repository';
@@ -210,6 +211,24 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         WHERE "sessionId" = $1 ORDER BY "seq"`,
       [sessionId],
     ) as Promise<{ seq: number; kind: string; idempotencyKey: string; source: string }[]>;
+
+  /** Every statement `run` sends to Postgres, in order. */
+  async function statementsOf(run: () => Promise<unknown>): Promise<string[]> {
+    const spy = vi.spyOn(PostgresQueryRunner.prototype, 'query');
+    try {
+      await run();
+      return spy.mock.calls.map(([sql]) => String(sql).replace(/\s+/g, ' ').trim());
+    } finally {
+      spy.mockRestore();
+    }
+  }
+
+  const observed = (key: string) => ({
+    idempotencyKey: key,
+    source: 'runner' as const,
+    kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+    payload: { state: 'working' },
+  });
 
   describe('creating a session', () => {
     it('writes the row, its checkouts and the first entry of its log together', async () => {
@@ -514,6 +533,130 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       // And the seq stays dense over what did land.
       expect((await events(work.id)).map((entry) => entry.seq)).toEqual([1, 2]);
     });
+
+    it('appends a batch in one insert, and reads nothing outside the transaction', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+      const batch = Array.from({ length: 10 }, (_, n) => observed(`run-1:${n}`));
+
+      const sql = await statementsOf(() => repository.appendEventsForHost(hostId, work.id, batch));
+
+      expect(
+        sql.filter((statement) => statement.includes('INSERT INTO "work_session_event"')),
+      ).toHaveLength(1);
+      // The transaction is the whole of it: lock, latest turn, the insert, the
+      // row, then only the turns the fold moved — no read before it, and no
+      // statement per event.
+      expect(sql[0]).toMatch(/^START TRANSACTION/);
+      expect(sql.at(-1)).toBe('COMMIT');
+      const inside = sql.slice(1, -1);
+      expect(inside[0]).toMatch(/^SELECT \* FROM "work_session" WHERE "id" = \$1 FOR UPDATE$/);
+      expect(inside[1]).toMatch(/^SELECT \* FROM "session_turn"/);
+      expect(inside[2]).toMatch(/INSERT INTO "work_session_event"/);
+      expect(inside[3]).toMatch(/^UPDATE "work_session"/);
+      expect(
+        inside.slice(4).every((statement) => statement.startsWith('INSERT INTO "session_turn"')),
+      ).toBe(true);
+      expect(inside.length).toBeLessThanOrEqual(5);
+      expect((await events(work.id)).map((entry) => entry.seq)).toEqual(
+        Array.from({ length: 11 }, (_, index) => index + 1),
+      );
+    });
+
+    it('lands an in-batch duplicate key once, with no gap', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+
+      const outcome = await repository.appendEvents(work, [
+        observed('run-1:1'),
+        { ...observed('run-1:2'), payload: { state: 'idle' } },
+        { ...observed('run-1:1'), payload: { state: 'second copy' } },
+        observed('run-1:3'),
+      ]);
+
+      expect(outcome.accepted).toEqual(['run-1:1', 'run-1:2', 'run-1:1', 'run-1:3']);
+      expect(outcome.appended.map((entry) => [entry.seq, entry.idempotencyKey])).toEqual([
+        [2, 'run-1:1'],
+        [3, 'run-1:2'],
+        [4, 'run-1:3'],
+      ]);
+      const log = await events(work.id);
+      expect(log.map((entry) => entry.seq)).toEqual([1, 2, 3, 4]);
+      // The first occurrence is the one that landed.
+      const [first] = await dataSource.query(
+        `SELECT "payload" FROM "work_session_event" WHERE "sessionId" = $1 AND "idempotencyKey" = 'run-1:1'`,
+        [work.id],
+      );
+      expect(first.payload).toEqual({ state: 'working' });
+    });
+
+    it('rejects every key for a session on another host, and for a missing one, alike', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+
+      const elsewhere = await repository.appendEventsForHost(randomUUID(), work.id, [
+        observed('run-1:1'),
+      ]);
+      const missing = await repository.appendEventsForHost(hostId, randomUUID(), [
+        observed('run-1:1'),
+      ]);
+
+      expect(elsewhere.isNone()).toBe(true);
+      expect(missing.isNone()).toBe(true);
+      expect(await events(work.id)).toHaveLength(1);
+    });
+
+    it('folds a host append onto the locked row, and hands back the session it built', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+
+      const appended = await repository.appendEventsForHost(hostId, work.id, [
+        {
+          idempotencyKey: 'run-1:1',
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.STARTED,
+          payload: { agentSessionId: 'agent-9' },
+        },
+      ]);
+
+      const { session: folded, outcome } = appended.unwrap();
+      expect(folded.id).toBe(work.id);
+      expect(folded.state).toBe('open');
+      expect(outcome.appended.map((entry) => entry.seq)).toEqual([2]);
+      const [row] = await dataSource.query(`SELECT * FROM "work_session" WHERE "id" = $1`, [
+        work.id,
+      ]);
+      expect(row.state).toBe('open');
+      expect(row.agentSessionId).toBe('agent-9');
+    });
+
+    it('keeps seq dense when two coalesced appends race a third', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+
+      // What the link sends when it coalesces: several batches' events in one
+      // append, raced here against a lone batch and against a replay of the first.
+      const coalesced = (run: string) =>
+        [1, 2, 3].map((n) => observed(`${run}:${n}`)) as ReturnType<typeof observed>[];
+      const outcomes = await Promise.all([
+        repository.appendEventsForHost(hostId, work.id, coalesced('run-a')),
+        repository.appendEventsForHost(hostId, work.id, coalesced('run-b')),
+        repository.appendEventsForHost(hostId, work.id, [observed('run-c:1')]),
+        repository.appendEventsForHost(hostId, work.id, coalesced('run-a')),
+      ]);
+
+      expect(outcomes.every((outcome) => outcome.isSome())).toBe(true);
+      const log = await events(work.id);
+      expect(log.map((entry) => entry.seq)).toEqual(
+        Array.from({ length: 8 }, (_, index) => index + 1),
+      );
+      expect(new Set(log.map((entry) => entry.idempotencyKey)).size).toBe(8);
+      // Each append's own events are consecutive: a batch is numbered as one.
+      for (const run of ['run-a', 'run-b']) {
+        const seqs = log.filter((entry) => entry.idempotencyKey.startsWith(run)).map((e) => e.seq);
+        expect(seqs).toEqual([seqs[0], seqs[0] + 1, seqs[0] + 2]);
+      }
+    });
   });
 
   describe('nothing is ever hard-deleted', () => {
@@ -663,6 +806,91 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       const last = await repository.findEvents(work, 3, 10);
       expect(last.events.map((event) => event.seq)).toEqual([4, 5]);
       expect(last.nextSeq).toBeNull();
+    });
+
+    describe('the session list', () => {
+      const mapper = new WorkSessionMapper();
+
+      async function sessions(count: number): Promise<WorkSessionEntity[]> {
+        const made: WorkSessionEntity[] = [];
+        for (let n = 0; n < count; n += 1) {
+          const work = session();
+          await repository.createIfUnclaimed(work, requested());
+          made.push(work);
+        }
+        return made;
+      }
+
+      /** Every page by cursor, the way the console walks it, calling `between` after each. */
+      async function walk(
+        sort: 'recent' | 'oldest' | 'name',
+        between: (page: number) => Promise<void> = async () => undefined,
+      ): Promise<string[]> {
+        const seen: string[] = [];
+        let cursor: string | undefined;
+        for (let page = 1; page < 50; page += 1) {
+          const result = await repository.findAllPaginated(scope(), {
+            page: 1,
+            limit: 100,
+            sort,
+            cursor: cursor ? mapper.fromListCursor(cursor, sort) : undefined,
+          });
+          // The first page is a page; every one after it is a cursor's, uncounted.
+          if (cursor) expect(result.total).toBeUndefined();
+          seen.push(...result.data.map((work) => work.id));
+          if (!result.nextCursor) return seen;
+          // Through the wire format, so the encoding round-trips too.
+          cursor = mapper.toListCursor(result.nextCursor);
+          await between(page);
+        }
+        throw new Error('the walk did not end');
+      }
+
+      it('walks 250 sessions by cursor, each exactly once, in every order', async () => {
+        const made = await sessions(250);
+        const ids = made.map((work) => work.id).sort();
+        for (const sort of ['recent', 'oldest', 'name'] as const) {
+          const seen = await walk(sort);
+          expect(seen).toHaveLength(250);
+          expect([...seen].sort()).toEqual(ids);
+        }
+      }, 120_000);
+
+      it('never returns a session twice while sessions move to the top between pages', async () => {
+        const made = await sessions(250);
+        const seen = await walk('recent', async (page) => {
+          // Activity on sessions already returned — and on some not yet — moves
+          // them above the cursor while the walk is under way.
+          await Promise.all(
+            made
+              .filter((_, index) => index % 10 === page)
+              .map((work, index) =>
+                repository.appendEvents(work, [observed(`move-${page}-${index}`)]),
+              ),
+          );
+        });
+        expect(new Set(seen).size).toBe(seen.length);
+      }, 120_000);
+
+      it('still pages by number, with the count', async () => {
+        await sessions(5);
+        const first = await repository.findAllPaginated(scope(), { page: 1, limit: 2 });
+        expect(first).toMatchObject({ total: 5, page: 1, limit: 2 });
+        expect(first.data).toHaveLength(2);
+        expect(first.nextCursor).not.toBeNull();
+        const last = await repository.findAllPaginated(scope(), { page: 3, limit: 2 });
+        expect(last.data).toHaveLength(1);
+        expect(last.nextCursor).toBeNull();
+
+        // A page's cursor carries on from where the page ended.
+        const next = await repository.findAllPaginated(scope(), {
+          page: 1,
+          limit: 2,
+          cursor: first.nextCursor ?? undefined,
+        });
+        const second = await repository.findAllPaginated(scope(), { page: 2, limit: 2 });
+        expect(next.data.map((work) => work.id)).toEqual(second.data.map((work) => work.id));
+      });
     });
   });
 
