@@ -168,10 +168,14 @@
   line). The repository chip holds one repository in the MVP (00);
   picking another replaces it. The selected row carries its branch,
   which opens a branch pane for that repository. The repository chip's
-  foot row is **Manage repository access** with the GitHub mark: a link,
-  in a new tab, to the App's installation page (`github_app_install_url`
-  from the deployment's capabilities), because which repositories the App
-  sees is decided on GitHub and nowhere in the console. It no longer goes
+  foot row is **Manage repository access** with the GitHub mark: it
+  opens, in a new tab, the App's installation page, because which
+  repositories the App sees is decided on GitHub and nowhere in the
+  console. The address is minted on click (`POST
+  /installations/install-state`, which puts a single-use state on it, 03)
+  rather than read from `github_app_install_url`, which now only says
+  whether the deployment has an App; Connect GitHub on onboarding mints
+  the same way. It no longer goes
   back to the onboarding step (`/onboarding/github`). A deployment with no
   App has no such page: the chip says so in its empty line and has no
   foot row. The host chip's

@@ -2,6 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
+import { InstallStateResolver } from '../../application/install-state.resolver';
 import type { GithubInstallationRepositoryPort } from '../../database/github-installation.repository.port';
 import { GithubErrors } from '../../domain/github.errors';
 import { GithubInstallationEntity } from '../../domain/github-installation.entity';
@@ -13,14 +14,13 @@ import { ConnectInstallationCommand } from './connect-installation.command';
 /**
  * Claims a GitHub App installation for the caller's workspace.
  *
- * Most of this handler is the proof. Connect GitHub is a step of its own, after
- * sign-in, and the redirect it comes back on carries an OAuth `code` beside the
- * installation id; exchanging it and asking GitHub which installations that
- * account can see is the only thing that stops a forged id handing out one-hour
- * tokens to another account's repositories
- * (`product/versions/mvp/00-scope.md`). There is no fallback: matching the
- * installation's account login against the caller's linked GitHub account fails
- * for organization installations, where that login is the org and not a user.
+ * Most of this handler is the proof, in two halves. The install `state` proves
+ * this console user started this install, in this workspace: without it, a
+ * callback URL someone stopped halfway would connect their installation to
+ * whoever opened it. The OAuth `code` proves which GitHub account can see the
+ * installation: exchanging it and asking GitHub is the only thing that stops a
+ * forged id handing out one-hour tokens to another account's repositories
+ * (`product/versions/mvp/00-scope.md`). There is no fallback for either.
  *
  * The rest is which row the claim lands on. A claim is something a workspace
  * *holds*: a live row elsewhere is a conflict, this workspace's own disconnected
@@ -37,9 +37,12 @@ export class ConnectInstallationCommandHandler
     @Inject(GITHUB_APP)
     private readonly github: GithubAppPort,
     private readonly mapper: GithubInstallationMapper,
+    private readonly installState: InstallStateResolver,
   ) {}
 
   async execute(command: ConnectInstallationCommand): Promise<AggregateID> {
+    // First, and spent even if GitHub then fails: one state buys one attempt.
+    await this.installState.redeem(command.state, command.userId, command.organizationId);
     const claim = await this.proveClaim(command);
 
     const live = await this.installations.findLiveByGithubInstallationId(
@@ -47,8 +50,7 @@ export class ConnectInstallationCommandHandler
     );
     if (live.isSome()) {
       const installation = live.unwrap();
-      // A live claim, held up by the partial unique index. The insert below
-      // reports the same thing when two workspaces race this check.
+      // A live claim, held by the partial unique index (the insert reports a race).
       if (installation.organizationId !== command.organizationId) {
         throw new AppError(GithubErrors.INSTALLATION_ALREADY_CONNECTED, {
           detail: 'Disconnect it from the workspace that holds it, or uninstall the App on GitHub.',
@@ -109,9 +111,8 @@ export class ConnectInstallationCommandHandler
       });
     }
 
-    // Read once visibility is proven, with the App's own JWT: the account name,
-    // the repository selection and — the part a redirect cannot be trusted for —
-    // whether GitHub has the installation suspended right now.
+    // Read with the App's own JWT once visibility is proven: the name, the
+    // selection and — what a redirect cannot be trusted for — the suspension.
     return this.github.readInstallation(command.githubInstallationId);
   }
 }

@@ -122,6 +122,7 @@ export type {
   HostTimelinePageResponseDto,
   HostVitalsResponseDto,
   InstallationResponseDto,
+  InstallStartResponseDto,
   IssueAttachTicketRequest,
   MintedPairingTokenResponseDto,
   MintPairingTokenRequest,

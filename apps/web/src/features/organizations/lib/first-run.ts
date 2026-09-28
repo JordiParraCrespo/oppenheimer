@@ -50,23 +50,8 @@ export function parseWalk(search: Record<string, unknown>): FirstRunWalk {
  * GitHub echoes back untouched, which is what it is for. Without this, a
  * reader who actually installs the App mid-walk loses the walk on the return
  * leg and is turned away from Ready two clicks later.
+ *
+ * `state` is also the API's single-use nonce, which is its real job, so the
+ * walk rides as a prefix of it: `first-run.<nonce>` (`github-install.ts`).
  */
 export const WALK_STATE = 'first-run';
-
-/**
- * The deployment's install URL with the walk pinned where GitHub will return it.
- *
- * `URL` rather than string concatenation, because the deployment serves this
- * address and may already have put a query on it — and an address it cannot
- * parse is handed back untouched. Losing the walk costs the reader the
- * landing; throwing here would cost them the step.
- */
-export function installUrlCarryingWalk(installUrl: string): string {
-  try {
-    const url = new URL(installUrl);
-    url.searchParams.set('state', WALK_STATE);
-    return url.toString();
-  } catch {
-    return installUrl;
-  }
-}

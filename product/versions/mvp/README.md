@@ -506,3 +506,12 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   05's "cog" is gone. 05 now keeps the glyph map: folder for a project,
   an arrow out for a foot action that opens another site, `Callout` and
   the Auto shield kept against the export, with the reasons.
+- 2026-09-28: **The GitHub App install redirect carries a console-minted
+  state** (03, 05). An addition, not a reversal: `POST /installations`
+  now requires the single-use `state` that `POST
+  /installations/install-state` minted for the caller in the workspace,
+  so a forwarded callback can no longer connect someone else's
+  installation (`GITHUB_011`). Both install entry points mint on click;
+  `github_app_install_url` stays as the capability that says an App
+  exists. The first-run walk rides as the state's prefix,
+  `first-run.<nonce>`.

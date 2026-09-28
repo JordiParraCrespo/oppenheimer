@@ -1,7 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { newUser } from '../../support/auth';
 import { findOrganizationsForUser, findUserByEmail, query } from '../../support/db';
-import { claimWorkspaceThroughUi, registerThroughUi } from '../../support/web';
+import { claimInstallation } from '../../support/github-stub';
+import { GITHUB_STUB_URL, STUB_INSTALL_URL } from '../../support/sessions';
+import {
+  claimWorkspaceThroughUi,
+  provisionedUser,
+  registerThroughUi,
+  signInAs,
+} from '../../support/web';
 
 /**
  * The walk a new account actually takes: register → name the workspace →
@@ -143,4 +150,74 @@ test('a finished account cannot walk back into the flow', async ({ page }) => {
   // drives that path.
   await page.goto('/onboarding/github');
   await expect(page).toHaveURL(/\/onboarding\/github/, { timeout: 30_000 });
+});
+
+/**
+ * A GitHub callback this console did not start is never posted.
+ *
+ * The install redirect's `code` binds a claim to a GitHub account, not to the
+ * reader whose browser opens it — so a callback URL someone stopped halfway
+ * through their own install, forwarded to a signed-in reader, used to connect
+ * the sender's installation to the reader's workspace the moment it loaded.
+ * Without a state minted here, the step says so and posts nothing.
+ */
+test('a GitHub callback without a state is refused on screen, not posted', async ({ page }) => {
+  const owner = await provisionedUser('ghunstarted');
+  await signInAs(page, owner.user);
+
+  const posts: string[] = [];
+  page.on('request', (request) => {
+    if (
+      request.method() === 'POST' &&
+      new URL(request.url()).pathname === '/api/v1/installations'
+    ) {
+      posts.push(request.url());
+    }
+  });
+
+  await page.goto(
+    '/onboarding/github?installation_id=4242&code=stub-oauth-code&setup_action=install',
+  );
+  await expect(page.getByText(/this github link was not started here/i)).toBeVisible();
+  // The legacy walk marker carries no nonce either, so it keeps the walk and
+  // still posts nothing.
+  await page.goto('/onboarding/github?installation_id=4242&code=stub-oauth-code&state=first-run');
+  await expect(page.getByText(/this github link was not started here/i)).toBeVisible();
+  expect(posts).toEqual([]);
+
+  await owner.api.dispose();
+});
+
+/**
+ * The round trip Connect GitHub makes: mint a state on click, leave for the
+ * App's install page with it, come back with GitHub's `installation_id`,
+ * `code` and that same `state`, and land connected. GitHub is answered here;
+ * the stub lists the installation for the code, as GitHub would.
+ */
+test('Connect GitHub carries a minted state through the install round trip', async ({ page }) => {
+  const owner = await provisionedUser('ghroundtrip');
+  await signInAs(page, owner.user);
+  const githubInstallationId = await claimInstallation(
+    GITHUB_STUB_URL,
+    800_000 + (process.pid % 1000) * 100 + 1,
+  );
+
+  await page.route('https://github.com/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/html', body: '<p>GitHub</p>' }),
+  );
+  await page.goto('/onboarding/github');
+  await page.getByRole('button', { name: /connect github/i }).click();
+  await page.waitForURL((url) => url.href.startsWith(`${STUB_INSTALL_URL}?state=`));
+  const state = new URL(page.url()).searchParams.get('state') ?? '';
+  expect(state).toMatch(/^[A-Za-z0-9_-]{43}$/);
+
+  await page.goto(
+    `/onboarding/github?installation_id=${githubInstallationId}&code=stub-oauth-code&setup_action=install&state=${state}`,
+  );
+  // Connected: the spent parameters are dropped from the address on success.
+  await expect(page).toHaveURL(/\/onboarding\/github$/, { timeout: 30_000 });
+  await expect(page.getByText(/this github link was not started here/i)).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /continue/i })).toBeVisible();
+
+  await owner.api.dispose();
 });
