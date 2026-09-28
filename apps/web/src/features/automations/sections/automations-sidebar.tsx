@@ -8,12 +8,11 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Zap } from '@oppenheimer/design-system-web/icons';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { combineQueries, QueryState } from '@oppenheimer/frontend-web';
+import { combineQueries, QueryState, SidebarSearchField } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
-import { AutomationsSearch } from '../components/automations-search';
 import { AutomationGroup } from './automation-group';
 
 /**
@@ -70,7 +69,13 @@ export function AutomationsSidebar() {
 
       <SidebarListHead label={t('automations.sidebar.projects')} count={projects.data?.length} />
 
-      {automations.data?.length ? <AutomationsSearch onChange={setQuery} /> : null}
+      {automations.data?.length ? (
+        <SidebarSearchField
+          onChange={setQuery}
+          label={t('automations.sidebar.search')}
+          clearLabel={t('automations.sidebar.clearSearch')}
+        />
+      ) : null}
 
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
         {term && !shown.length ? (

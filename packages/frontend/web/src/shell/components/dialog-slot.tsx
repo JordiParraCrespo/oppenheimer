@@ -28,7 +28,8 @@ export interface DialogSlot<TRequest> {
  */
 export function createDialogSlot<TRequest>(name: string): DialogSlot<TRequest> {
   const ActionsContext = createContext<DialogSlotActions<TRequest> | null>(null);
-  const RequestContext = createContext<TRequest | null>(null);
+  // `undefined` is outside the provider; `null` is the provider saying no dialog is up.
+  const RequestContext = createContext<TRequest | null | undefined>(undefined);
 
   function DialogSlotProvider({ children }: { children: ReactNode }) {
     const [request, setRequest] = useState<TRequest | null>(null);
@@ -53,7 +54,11 @@ export function createDialogSlot<TRequest>(name: string): DialogSlot<TRequest> {
       return actions;
     },
     useDialogRequest() {
-      return useContext(RequestContext);
+      const request = useContext(RequestContext);
+      // Thrown, not read as "none is up": a mis-mounted owner would otherwise
+      // render no dialog and say nothing.
+      if (request === undefined) throw new Error(`${name}: used outside its DialogSlotProvider`);
+      return request;
     },
   };
 }

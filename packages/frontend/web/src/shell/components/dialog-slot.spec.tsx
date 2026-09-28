@@ -38,12 +38,17 @@ describe('createDialogSlot', () => {
     expect(actions).toBe(first);
   });
 
-  it('names itself when used outside its provider', () => {
+  it('names itself when either half is read outside its provider', () => {
     const slot = createDialogSlot<Request>('useTestDialog');
     function Asker() {
       slot.useDialogActions();
       return null;
     }
+    function Owner() {
+      slot.useDialogRequest();
+      return null;
+    }
     expect(() => render(<Asker />)).toThrow(/useTestDialog/);
+    expect(() => render(<Owner />)).toThrow(/useTestDialog/);
   });
 });

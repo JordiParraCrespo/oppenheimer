@@ -1,11 +1,11 @@
 import { IconButton, SidebarListHead } from '@oppenheimer/design-system-web';
 import { Plus } from '@oppenheimer/design-system-web/icons';
+import { SidebarSearchField } from '@oppenheimer/frontend-web';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FilterOption, SessionFacet, SessionFilters } from '../lib/session-filters';
 import { SessionFilterChips } from './session-filter-chips';
 import { SessionsFilterMenu } from './sessions-filter-menu';
-import { SessionsSearch } from './sessions-search';
 
 /**
  * The sidebar's head: New session, the Projects line (count, New project,
@@ -71,7 +71,11 @@ export function SessionsSidebarHead({
         ) : null}
       </SidebarListHead>
 
-      <SessionsSearch onChange={onQueryChange} />
+      <SidebarSearchField
+        onChange={onQueryChange}
+        label={t('sessions.sidebar.search')}
+        clearLabel={t('sessions.sidebar.clearSearch')}
+      />
 
       {dirty ? <SessionFilterChips chips={chips} onClear={onFacetClear} /> : null}
     </>
