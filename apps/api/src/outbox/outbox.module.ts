@@ -1,25 +1,36 @@
-import { Global, Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
+import { Global, Logger, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
+import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { DataSource } from 'typeorm';
 import { QueueModule } from '../queue/queue.module';
 import { OutboxRelayService } from './infrastructure/outbox-relay.adapter';
+import { OutboxRetentionProcessor } from './infrastructure/outbox-retention.processor';
 
 /**
  * Transactional outbox wiring. Global because every repository stages its
  * aggregate's domain events through `OutboxService` — inside the same TypeORM
  * transaction as the aggregate write — instead of emitting them directly.
+ * `OutboxRetentionProcessor` purges delivered rows daily.
  */
 @Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([OutboxMessageSchema]), QueueModule],
+  imports: [
+    TypeOrmModule.forFeature([OutboxMessageSchema]),
+    QueueModule,
+    BullModule.registerQueue({ name: QUEUE_NAMES.OUTBOX_RETENTION }),
+  ],
   providers: [
     {
       provide: OutboxService,
-      useFactory: (dataSource: DataSource) => new OutboxService(dataSource),
+      // A failed post-commit drain reaches no caller; the log is where it shows.
+      useFactory: (dataSource: DataSource) =>
+        new OutboxService(dataSource, { logger: new Logger(OutboxService.name) }),
       inject: [DataSource],
     },
     OutboxRelayService,
+    OutboxRetentionProcessor,
   ],
   exports: [OutboxService],
 })

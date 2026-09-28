@@ -558,25 +558,27 @@ describe('API tokens & scopes (integration)', () => {
       });
 
       // The event row was written in the same transaction as the revocation
-      // and drained by the relay before the request returned: processed, with
-      // a lease trail and a human-readable reason.
-      const rows: {
-        status: string;
-        reason: string;
-        attempts: number;
-        lockedBy: string | null;
-        processedAt: Date | null;
-      }[] = await dataSource.query(
-        `SELECT "status", "reason", "attempts", "lockedBy", "processedAt"
-         FROM "outbox_message"
-         WHERE "eventName" = 'ApiTokenRevokedDomainEvent' AND "aggregateId" = $1`,
-        [created.id],
-      );
-      expect(rows).toHaveLength(1);
-      expect(rows[0].status).toBe('processed');
-      expect(rows[0].reason).toContain('revoked');
-      expect(rows[0].attempts).toBeGreaterThanOrEqual(1);
-      expect(rows[0].processedAt).not.toBeNull();
+      // and is drained by the relay right after it, without the request
+      // waiting for it: processed, with a lease trail and a human-readable reason.
+      await vi.waitFor(async () => {
+        const rows: {
+          status: string;
+          reason: string;
+          attempts: number;
+          lockedBy: string | null;
+          processedAt: Date | null;
+        }[] = await dataSource.query(
+          `SELECT "status", "reason", "attempts", "lockedBy", "processedAt"
+           FROM "outbox_message"
+           WHERE "eventName" = 'ApiTokenRevokedDomainEvent' AND "aggregateId" = $1`,
+          [created.id],
+        );
+        expect(rows).toHaveLength(1);
+        expect(rows[0].status).toBe('processed');
+        expect(rows[0].reason).toContain('revoked');
+        expect(rows[0].attempts).toBeGreaterThanOrEqual(1);
+        expect(rows[0].processedAt).not.toBeNull();
+      });
     });
 
     it('refuses an expired token', async () => {

@@ -206,7 +206,7 @@ export class HostRepository
     if (!registered) return None;
 
     registered.clearEvents();
-    await this.outbox.wake();
+    this.outbox.wake();
     return Some(registered);
   }
 

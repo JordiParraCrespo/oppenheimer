@@ -249,7 +249,7 @@ export class AutomationRunRepository
       insertRunWithin(manager, this.outbox, this.mapper, run),
     );
     if (inserted) {
-      if (run.isPending) await this.outbox.wake();
+      if (run.isPending) this.outbox.wake();
       return { runId: run.id, inserted };
     }
     const existing: { id: string }[] = await this.dataSource.query(
@@ -319,7 +319,7 @@ export class AutomationRunRepository
       }
       return due.length;
     });
-    if (count > 0) await this.outbox.wake();
+    if (count > 0) this.outbox.wake();
     return count;
   }
 
@@ -350,7 +350,7 @@ export class AutomationRunRepository
       // A deferral owes another look later; the delay rides the outbox row.
       if (run.isPending) await stageDispatch(manager, this.outbox, run);
     });
-    if (run.isPending) await this.outbox.wake();
+    if (run.isPending) this.outbox.wake();
   }
 
   async countLiveForAutomation(
