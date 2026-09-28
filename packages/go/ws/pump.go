@@ -77,15 +77,28 @@ func pump(ctx context.Context, conn *websocket.Conn, src source, opts PumpOption
 		defer ticker.Stop()
 		tick = ticker.C
 	}
+	// A write or ping that ctx cuts short closes the socket, and the library
+	// can report that close ("use of closed network connection") rather than
+	// ctx's error; when ctx is done, that is the error to return.
+	failed := func(kind, err error) error {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return ctxErr
+		}
+		return fmt.Errorf("%w: %w", kind, err)
+	}
 	ping := func() error {
 		pingCtx, cancel := context.WithTimeout(ctx, opts.PingTimeout)
 		defer cancel()
 		if err := conn.Ping(pingCtx); err != nil {
-			return fmt.Errorf("%w: %w", ErrPing, err)
+			return failed(ErrPing, err)
 		}
 		return nil
 	}
 	for {
+		// A busy source never waits, so this is where it sees ctx end.
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		frame, ok, err := src.poll()
 		if err != nil {
 			return err
@@ -122,7 +135,7 @@ func pump(ctx context.Context, conn *websocket.Conn, src source, opts PumpOption
 		err = conn.Write(writeCtx, kind, frame.Data)
 		cancel()
 		if err != nil {
-			return fmt.Errorf("%w: %w", ErrWrite, err)
+			return failed(ErrWrite, err)
 		}
 	}
 }

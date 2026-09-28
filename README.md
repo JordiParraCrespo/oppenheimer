@@ -133,8 +133,9 @@ Run the product apps together with `pnpm dev:mvp`.
 - **Tooling:** pnpm, Turborepo, Biome, Vitest, Testcontainers, Playwright
 - **Deployment:** Docker Compose and GitHub Actions
 
-The monorepo runs affected packages in CI rather than rebuilding everything
-for every pull request.
+CI runs where the change is made: `pnpm ci:local` checks the packages a branch
+affects before it is pushed, and GitHub Actions runs everything on `main` every
+eight hours as the safety net.
 
 ## Product thinking, in the open
 

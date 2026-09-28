@@ -1,14 +1,19 @@
 name: CI
 
+# Pull requests get no run here: each agent runs `pnpm ci:local` (the same
+# jobs, scripts/ci/local.mjs) before it pushes, because a run queued for a
+# shared runner took most of an hour for a few minutes of work. This is the
+# safety net: everything, on main, every eight hours, and on demand. A red run
+# opens a `main-red` issue, and the next green run closes it.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  schedule:
+    - cron: '17 */8 * * *'
+  workflow_dispatch:
 
+# A scheduled run is never cancelled by the next one; it waits.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   changes:
@@ -399,3 +404,65 @@ jobs:
             ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.app }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Says what the run found where someone will see it: a red run opens (or
+  # comments on) the one open `main-red` issue, a green run closes it.
+  report:
+    name: Report on main
+    runs-on: gha-vm
+    needs:
+      - changes
+      - lint
+      - test
+      - test-integration
+      # oppenheimer:begin e2e
+      - test-e2e
+      # oppenheimer:end e2e
+      # oppenheimer:begin runner
+      - go
+      # oppenheimer:end runner
+      - build-images
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Open or close the main-red issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RESULTS: ${{ toJSON(needs) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node --input-type=module <<'JS'
+          const api = `${process.env.GITHUB_API_URL}/repos/${process.env.GITHUB_REPOSITORY}`;
+          const headers = {
+            authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+            accept: 'application/vnd.github+json',
+          };
+          const call = async (path, init = {}) => {
+            const res = await fetch(`${api}${path}`, { ...init, headers });
+            if (!res.ok) throw new Error(`${init.method ?? 'GET'} ${path}: ${res.status} ${await res.text()}`);
+            return res.json();
+          };
+          const needs = JSON.parse(process.env.RESULTS);
+          const failed = Object.entries(needs).filter(([, job]) => job.result === 'failure').map(([name]) => name);
+          const sha = process.env.GITHUB_SHA.slice(0, 12);
+          const [open] = await call('/issues?state=open&labels=main-red&per_page=1');
+          if (failed.length) {
+            const body = `CI failed on \`main\` at \`${sha}\`: ${failed.join(', ')}.\n\n${process.env.RUN_URL}\n\nReproduce with \`pnpm ci:local --all\` on that commit.`;
+            if (open) await call(`/issues/${open.number}/comments`, { method: 'POST', body: JSON.stringify({ body }) });
+            else await call('/issues', { method: 'POST', body: JSON.stringify({ title: 'main is red', labels: ['main-red'], body }) });
+            console.log(`main is red: ${failed.join(', ')}`);
+            process.exit(1);
+          }
+          if (open) {
+            await call(`/issues/${open.number}/comments`, {
+              method: 'POST',
+              body: JSON.stringify({ body: `Green again at \`${sha}\`: ${process.env.RUN_URL}` }),
+            });
+            await call(`/issues/${open.number}`, { method: 'PATCH', body: JSON.stringify({ state: 'closed', state_reason: 'completed' }) });
+          }
+          console.log('main is green');
+          JS

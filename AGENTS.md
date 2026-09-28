@@ -118,15 +118,26 @@ When you add a file that mentions an optional app (CI, compose,
   already covers — see `.agents/rules/frontend-ui.md`
 - Conventional commits enforced via commitlint
 - Independent versioning per package via Changesets
-- No git hooks — CI enforces quality
-- CI runs what a pull request touches, not the whole pipeline:
-  `scripts/ci/affected.mjs` asks Turborepo which packages the diff affects
-  (a change in `packages/shared` reaches every app that imports it), and the
-  jobs build, test and package only those. A push to `main`, or a change to a
-  file no package owns (the workflow, the lockfile, `docker/`, `scripts/`),
-  runs everything. A new Docker image is a row in that script's `IMAGES`; a
-  new root-level file every package relies on is a pattern in its
-  `GLOBAL_PATHS`
+- No git hooks, and no CI on pull requests: **CI is local**. Before you push,
+  run `pnpm ci:local` (`scripts/ci/local.mjs`). It runs the workflow's jobs
+  (lint, Go, build and test, the API's integration suite, the API e2e suite
+  against the local stack) on what the branch touches against `origin/main`,
+  starting Docker when it needs to. Push only on a green run, and paste its
+  report (`.ci-local/report.md`) into the pull request. The report is the
+  merge gate: a pull request without a green one for its head is not ready
+- `.github/workflows/ci.yml` is the safety net. It runs everything on `main`
+  every eight hours, and on demand (`workflow_dispatch`). A red run opens a
+  `main-red` issue with the run's link, and the next green run closes it. An
+  open `main-red` issue comes before new work: reproduce it with
+  `pnpm ci:local --all` on that commit, and fix it in its own pull request
+- Both choose what to run the same way: `scripts/ci/affected.mjs` asks
+  Turborepo which packages the diff affects (a change in `packages/shared`
+  reaches every app that imports it), and the jobs build, test and package
+  only those. `--all`, the scheduled run, or a change to a file no package
+  owns (the workflow, the lockfile, `docker/`, `scripts/`) runs everything.
+  A new Docker image is a row in that script's `IMAGES`; a new root-level
+  file every package relies on is a pattern in its `GLOBAL_PATHS`. A new CI
+  step goes in both the workflow and `local.mjs`
 
 ### Backend (`apps/api` + `packages/backend/*`)
 
@@ -327,6 +338,7 @@ pnpm check:structure    # Frontend layout contract: feature names, kinds, route 
 pnpm check:flags        # Feature flags: none past expiry, none declared but unread
 pnpm check:compiler     # What the React Compiler leaves uncompiled, silently (oxc bailouts)
 pnpm docker:dev         # Start Postgres + Redis
+pnpm ci:local           # CI, locally: what the branch touches (--all for everything)
 # oppenheimer:begin e2e
 node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)
 # oppenheimer:end e2e
@@ -337,7 +349,7 @@ pnpm changeset          # Create a changeset for versioning
 ## Deployment
 
 - **Tier 1 (~€4/mo)**: Hetzner VPS + Docker Compose for API/DB/Redis, free hosting for web/docs
-- Docker images built in CI (GitHub Actions), pushed to GHCR
+- Docker images built by the scheduled CI run on `main` (GitHub Actions), pushed to GHCR when it is green
 
 ## When modifying code
 

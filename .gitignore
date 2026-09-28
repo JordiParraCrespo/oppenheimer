@@ -55,6 +55,9 @@ dump.rdb
 # Claude Code agent worktrees (isolated checkouts, never repo content)
 .claude/worktrees/
 
+# pnpm ci:local's report and the dockerd log it may start
+.ci-local/
+
 # The local stack (scripts/stack/stack.mjs): pids, logs, the host account
 .stack/
 
