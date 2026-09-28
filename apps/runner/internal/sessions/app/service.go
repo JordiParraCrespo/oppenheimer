@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -41,7 +42,16 @@ type Service struct {
 	// answers from it, so the session is there — `creating`, with its
 	// checkout — for the credential helper its own clone calls; and a second
 	// create for the same id joins the first instead of racing it.
-	creating   map[string]*creation
+	creating map[string]*creation
+	// revs counts the writes to each session, and busy the commands still
+	// working on one, both under mu. A refresh reads a session, spends a few
+	// tmux calls looking at it and only then writes what it saw: it keeps
+	// that write only if the revision it read is still current and no
+	// command is in flight, so a Stop or a Close that landed in between is
+	// never overwritten by a live state read before it. Neither is
+	// persisted: they only order writes within this process.
+	revs       map[string]uint64
+	busy       map[string]int
 	terminals  Terminals
 	worktrees  Worktrees
 	classifier Classifier
@@ -69,6 +79,7 @@ func New(opts Options) (*Service, error) {
 	}
 	s := &Service{
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
+		revs: map[string]uint64{}, busy: map[string]int{},
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
 		images: opts.Images, layout: opts.Layout, env: env, now: now,
@@ -276,7 +287,7 @@ func (s *Service) begin(session domain.Session) (c *creation, first bool, existi
 // goes, so Get never finds neither.
 func (s *Service) end(c *creation, session domain.Session, err error) {
 	if err == nil {
-		s.put(session)
+		s.record(session)
 	}
 	s.mu.Lock()
 	delete(s.creating, c.session.ID)
@@ -326,19 +337,31 @@ func (s *Service) Get(id string) (domain.Session, error) {
 // has landed. A session still being created has no tmux session and maybe no
 // worktree to act on yet.
 func (s *Service) recorded(id string) (domain.Session, error) {
+	session, _, err := s.recordedAt(id)
+	return session, err
+}
+
+// recordedAt is recorded plus the revision the copy was taken at, which is
+// what observe compares against.
+func (s *Service) recordedAt(id string) (domain.Session, uint64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if session, ok := s.sessions[id]; ok {
-		return session.Clone(), nil
+		return session.Clone(), s.revs[id], nil
 	}
 	if _, creating := s.creating[id]; creating {
-		return domain.Session{}, domain.ErrNotRunning.WithDetail("session %q is still being created", id)
+		return domain.Session{}, 0, domain.ErrNotRunning.WithDetail("session %q is still being created", id)
 	}
-	return domain.Session{}, domain.ErrNotFound.WithDetail("no session %q on this host", id)
+	return domain.Session{}, 0, domain.ErrNotFound.WithDetail("no session %q on this host", id)
 }
 
 // OpenWindow adds a tab: a plain shell in the same worktree.
+//
+// It writes through the same revision-bumping path as every command, and a
+// refresh applies what it saw to the stored record rather than to its own
+// copy, so a window opened while a refresh was looking is kept.
 func (s *Service) OpenWindow(ctx context.Context, id string) (domain.Window, error) {
+	defer s.hold(id)()
 	session, err := s.recorded(id)
 	if err != nil {
 		return domain.Window{}, err
@@ -353,13 +376,14 @@ func (s *Service) OpenWindow(ctx context.Context, id string) (domain.Window, err
 	window := domain.Window{Index: index, Name: "shell"}
 	session.Windows = append(session.Windows, window)
 	session.Updated = s.now().UTC()
-	s.put(session)
+	s.record(session)
 	return window, nil
 }
 
 // CloseWindow closes a tab. Window 0 is the agent and is closed by closing
 // the session, not by closing a tab.
 func (s *Service) CloseWindow(ctx context.Context, id string, index int) error {
+	defer s.hold(id)()
 	session, err := s.recorded(id)
 	if err != nil {
 		return err
@@ -381,7 +405,7 @@ func (s *Service) CloseWindow(ctx context.Context, id string, index int) error {
 	}
 	session.Windows = kept
 	session.Updated = s.now().UTC()
-	s.put(session)
+	s.record(session)
 	return nil
 }
 
@@ -454,11 +478,15 @@ func (s *Service) PasteImage(ctx context.Context, id string, window int, command
 	return path, nil
 }
 
-// Refresh re-reads window 0 and updates the state and the login URL. It is
-// what the poll loop calls: every second while a client is attached, every
-// ten when none is.
+// Refresh re-reads window 0 of one session and updates the state and the
+// login URL. It is what a single-session read calls; the poll loop uses
+// RefreshAll, which lists the tmux server once for every session.
+//
+// What it sees is an observation, not a decision: it is dropped if a command
+// wrote the session meanwhile, and it never moves a session out of
+// `stopped` or `closed`.
 func (s *Service) Refresh(ctx context.Context, id string) (domain.Session, error) {
-	session, err := s.recorded(id)
+	session, rev, err := s.recordedAt(id)
 	if err != nil {
 		return domain.Session{}, err
 	}
@@ -472,19 +500,76 @@ func (s *Service) Refresh(ctx context.Context, id string) (domain.Session, error
 	if !alive {
 		// The tmux session is gone — a host reboot, or someone killed it.
 		// The worktree is intact, so this is `stopped`, not `closed`.
-		return s.transition(session, domain.StateStopped, ""), nil
+		return s.observe(session, rev, domain.StateStopped, ""), nil
 	}
 	screen, err := s.terminals.Capture(ctx, session.Target(0))
 	if err != nil {
 		return session, err
 	}
 	state, loginURL := s.classifier.Classify(screen, session.Agent)
-	return s.transition(session, state, loginURL), nil
+	return s.observe(session, rev, state, loginURL), nil
+}
+
+// RefreshAll refreshes every live session and returns the whole list, newest
+// first. It is the poll loop's pass: one `list-panes` for the host, which
+// says which tmux sessions are still there and what title each agent set,
+// then one `capture-pane` per session that is. A session missing from the
+// listing is `stopped`. When the listing itself fails nothing is marked
+// stopped: not being able to ask is not an answer.
+func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
+	type seen struct {
+		session domain.Session
+		rev     uint64
+	}
+	s.mu.Lock()
+	var live []seen
+	for id, session := range s.sessions {
+		if session.State.Live() {
+			live = append(live, seen{session: session.Clone(), rev: s.revs[id]})
+		}
+	}
+	s.mu.Unlock()
+	if len(live) == 0 {
+		return s.List(), nil
+	}
+
+	panes, err := s.terminals.Panes(ctx)
+	if err != nil {
+		return s.List(), err
+	}
+	present := map[string]bool{}
+	titles := map[string]string{}
+	for _, pane := range panes {
+		present[pane.Session] = true
+		// `<name>:0` addresses window 0's active pane.
+		if pane.Window == 0 && (pane.Active || titles[pane.Session] == "") {
+			titles[pane.Session] = pane.Title
+		}
+	}
+
+	var errs []error
+	for _, item := range live {
+		session := item.session
+		name := session.TmuxName()
+		if !present[name] {
+			s.observe(session, item.rev, domain.StateStopped, "")
+			continue
+		}
+		body, err := s.terminals.CaptureBody(ctx, session.Target(0))
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		state, loginURL := s.classifier.Classify(Screen{Body: body, Title: titles[name]}, session.Agent)
+		s.observe(session, item.rev, state, loginURL)
+	}
+	return s.List(), errors.Join(errs...)
 }
 
 // Restart recreates window 0 in the same worktree. It is the Restart button
 // on a session that stopped when the host rebooted.
 func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error) {
+	defer s.hold(id)()
 	session, err := s.recorded(id)
 	if err != nil {
 		return domain.Session{}, err
@@ -502,13 +587,14 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 		return domain.Session{}, err
 	}
 	session.Windows = []domain.Window{{Index: 0, Name: string(session.Agent), Agent: true}}
-	return s.transition(session, domain.StateStarting, ""), nil
+	return s.decide(session, domain.StateStarting, ""), nil
 }
 
 // Stop ends the agent and the tmux session and leaves every checkout on disk,
 // which is what Restart needs afterwards. It is not Close: nothing is pushed
 // and nothing is removed (02-runner §5, "Stop is not close").
 func (s *Service) Stop(ctx context.Context, id string) (domain.Session, error) {
+	defer s.hold(id)()
 	session, err := s.recorded(id)
 	if err != nil {
 		return domain.Session{}, err
@@ -519,7 +605,7 @@ func (s *Service) Stop(ctx context.Context, id string) (domain.Session, error) {
 	if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
 		return domain.Session{}, err
 	}
-	return s.transition(session, domain.StateStopped, ""), nil
+	return s.decide(session, domain.StateStopped, ""), nil
 }
 
 // CloseInput tunes what closing does.
@@ -535,6 +621,7 @@ type CloseInput struct {
 // remove the worktree. A dirty worktree is not a reason to refuse — it is
 // reported, and the worktree is kept unless Force says otherwise.
 func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.Session, error) {
+	defer s.hold(id)()
 	session, err := s.recorded(id)
 	if err != nil {
 		return domain.Session{}, err
@@ -556,7 +643,7 @@ func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.S
 		}
 	}
 	if session.Dirty && !in.Force {
-		session = s.transition(session, domain.StateStopped, "")
+		session = s.decide(session, domain.StateStopped, "")
 		detail := "the worktree has uncommitted changes and was kept at " + session.Worktree
 		if pushErr != nil {
 			detail = "the branch could not be pushed, so the worktree was kept at " + session.Worktree
@@ -566,7 +653,7 @@ func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.S
 	if err := s.worktrees.Remove(ctx, session.Repo, session.Worktree, in.Force); err != nil {
 		return session, err
 	}
-	return s.transition(session, domain.StateClosed, ""), nil
+	return s.decide(session, domain.StateClosed, ""), nil
 }
 
 // Adopt reconciles with the tmux server after a restart: sessions whose tmux
@@ -593,13 +680,13 @@ func (s *Service) Adopt(ctx context.Context) ([]domain.Session, error) {
 			continue
 		}
 		if !running[session.TmuxName()] {
-			s.transition(session, domain.StateStopped, "")
+			s.decide(session, domain.StateStopped, "")
 			continue
 		}
 		if windows, err := s.terminals.Windows(ctx, session.TmuxName()); err == nil && len(windows) > 0 {
 			session.Windows = windows
 		}
-		adopted = append(adopted, s.transition(session, domain.StateUnknown, session.LoginURL))
+		adopted = append(adopted, s.decide(session, domain.StateUnknown, session.LoginURL))
 	}
 	return adopted, nil
 }
@@ -668,61 +755,158 @@ func (s *Service) EndAll(ctx context.Context) ([]string, error) {
 		}
 		ended = append(ended, name)
 		if session, ok := byTmux[name]; ok && session.State != domain.StateClosed {
-			s.transition(session, domain.StateStopped, "")
+			s.decide(session, domain.StateStopped, "")
 		}
 	}
 	return ended, errors.Join(errs...)
 }
 
-func (s *Service) transition(session domain.Session, state domain.State, loginURL string) domain.Session {
-	changed := session.State != state || session.LoginURL != loginURL
-	session.State = state
-	if loginURL != "" {
-		session.LoginURL = loginURL
-	}
-	if changed {
-		session.Updated = s.now().UTC()
-	}
-	s.put(session)
-	// Pasted images were for the agent in the tmux session; once it is gone
-	// — stopped, closed, lost to a reboot — nothing will read them. Every way
-	// a session stops comes through here, so this is the one place they go.
-	if !state.Live() && s.images != nil {
-		_ = s.images.Discard(session.ID)
-	}
-	if changed {
+// hold marks a command as working on a session until the returned release
+// runs. Observations are dropped while one is, and taking the hold moves the
+// revision on, so a refresh that read the session before the command started
+// cannot write after it either, even when the command ends up writing
+// nothing.
+func (s *Service) hold(id string) (release func()) {
+	s.mu.Lock()
+	s.busy[id]++
+	s.revs[id]++
+	s.mu.Unlock()
+	return func() {
 		s.mu.Lock()
-		publisher := s.publisher
-		s.mu.Unlock()
-		publisher.SessionChanged(session)
+		defer s.mu.Unlock()
+		if s.busy[id]--; s.busy[id] <= 0 {
+			delete(s.busy, id)
+			if _, known := s.sessions[id]; !known {
+				delete(s.revs, id)
+			}
+		}
 	}
-	return session
 }
 
-// put stores a session and persists the map. A failed save is not worth
-// failing a live session for: the map is a cache, and the control plane and
-// tmux both still know the truth.
-func (s *Service) put(session domain.Session) {
-	if s.store == nil {
-		s.mu.Lock()
-		s.sessions[session.ID] = session.Clone()
-		s.mu.Unlock()
-		return
+// decide applies a command's outcome: Stop, Close, Restart, Adopt, EndAll. A
+// command is authoritative, so its copy is what is stored. It is announced
+// when the state or the login URL differs from what was stored before it, so
+// a stop that a refresh already saw is not announced twice.
+func (s *Service) decide(session domain.Session, state domain.State, loginURL string) domain.Session {
+	var announce, ended bool
+	next, _, publisher := s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
+		before := session
+		if known {
+			before = cur
+		}
+		announce = before.State != state || (loginURL != "" && before.LoginURL != loginURL)
+		ended = before.State.Live() && !state.Live()
+		next := session.Clone()
+		next.State = state
+		if loginURL != "" {
+			next.LoginURL = loginURL
+		}
+		if announce {
+			next.Updated = s.now().UTC()
+		}
+		return next, !known || !reflect.DeepEqual(next, cur)
+	})
+	if ended {
+		s.discardImages(next.ID)
 	}
+	if announce {
+		publisher.SessionChanged(next)
+	}
+	return next
+}
+
+// observe applies what a refresh saw, as a compare-and-set against the record
+// it read at revision seen. It writes nothing (no store, no revision, no
+// `Updated`) when the session was written since, when a command is working
+// on it, when it is already stopped or closed, or when what was seen is what
+// is stored. Otherwise the change is applied to the current record, not to
+// the refresh's copy, so a window opened meanwhile is kept, and announced.
+func (s *Service) observe(session domain.Session, seen uint64, state domain.State, loginURL string) domain.Session {
+	next, changed, publisher := s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
+		switch {
+		case !known:
+			return session, false
+		case !cur.State.Live(), s.revs[session.ID] != seen, s.busy[session.ID] > 0:
+			return cur, false
+		case cur.State == state && (loginURL == "" || cur.LoginURL == loginURL):
+			return cur, false
+		}
+		cur.State = state
+		if loginURL != "" {
+			cur.LoginURL = loginURL
+		}
+		cur.Updated = s.now().UTC()
+		return cur, true
+	})
+	if !changed {
+		return next
+	}
+	// Only a live session is ever observed, so a non-live state here is
+	// the moment it ended.
+	if !state.Live() {
+		s.discardImages(next.ID)
+	}
+	publisher.SessionChanged(next)
+	return next
+}
+
+// discardImages drops a session's pasted images. They were for the agent in
+// the tmux session; once it is gone (stopped, closed, lost to a reboot)
+// nothing will read them. decide and observe call it as a session stops,
+// and only then.
+func (s *Service) discardImages(id string) {
+	if s.images != nil {
+		_ = s.images.Discard(id)
+	}
+}
+
+// record stores what a command built (a new session, a changed list of
+// windows) without announcing it.
+func (s *Service) record(session domain.Session) {
+	s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
+		return session, !known || !reflect.DeepEqual(session, cur)
+	})
+}
+
+// commit is the one write path into the map. apply sees the current record
+// under mu and returns what to store and whether to store it at all; a write
+// bumps the session's revision and persists the map, a no-op touches
+// neither. It returns the record as it now stands, whether it was written,
+// and the publisher to announce it to once the locks are released.
+//
+// A failed save is not worth failing a live session for: the map is a cache,
+// and the control plane and tmux both still know the truth.
+func (s *Service) commit(id string, apply func(cur domain.Session, known bool) (domain.Session, bool)) (domain.Session, bool, Publisher) {
 	// The save lock is taken first and held across both the snapshot and the
 	// write, so snapshots reach the disk in the order they were taken.
-	s.save.Lock()
-	defer s.save.Unlock()
-
+	if s.store != nil {
+		s.save.Lock()
+		defer s.save.Unlock()
+	}
 	s.mu.Lock()
-	s.sessions[session.ID] = session.Clone()
-	snapshot := make([]domain.Session, 0, len(s.sessions))
-	for _, item := range s.sessions {
-		snapshot = append(snapshot, item.Clone())
+	cur, known := s.sessions[id]
+	next, write := apply(cur.Clone(), known)
+	next = next.Clone()
+	publisher := s.publisher
+	if !write {
+		s.mu.Unlock()
+		return next, false, publisher
+	}
+	s.sessions[id] = next.Clone()
+	s.revs[id]++
+	var snapshot []domain.Session
+	if s.store != nil {
+		snapshot = make([]domain.Session, 0, len(s.sessions))
+		for _, item := range s.sessions {
+			snapshot = append(snapshot, item.Clone())
+		}
 	}
 	s.mu.Unlock()
 
-	_ = s.store.Save(snapshot)
+	if s.store != nil {
+		_ = s.store.Save(snapshot)
+	}
+	return next, true, publisher
 }
 
 func nameOr(name, fallback string) string {

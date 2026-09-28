@@ -79,4 +79,6 @@ export const QUEUE_NAMES = {
   AUTOMATION_SCHEDULES: 'automation-schedules',
   /** The nightly purge of inbound events and old automation runs. */
   AUTOMATION_RETENTION: 'automation-retention',
+  /** The daily purge of delivered outbox rows past their retention. */
+  OUTBOX_RETENTION: 'outbox-retention',
 } as const;

@@ -1,14 +1,13 @@
 'use client';
 
 import type { UpdateOrganizationRequest } from '@oppenheimer/api-client';
-import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import type { CreateOrganizationDto } from '@oppenheimer/shared';
 import {
   skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type { OrganizationEntity } from '../modules/organizations/organization.entity';

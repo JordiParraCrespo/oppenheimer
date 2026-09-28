@@ -1,5 +1,6 @@
-import { IconButton, SidebarListHead, SidebarSearch } from '@oppenheimer/design-system-web';
+import { IconButton, SidebarListHead } from '@oppenheimer/design-system-web';
 import { Plus } from '@oppenheimer/design-system-web/icons';
+import { SidebarSearchField } from '@oppenheimer/frontend-web';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FilterOption, SessionFacet, SessionFilters } from '../lib/session-filters';
@@ -10,8 +11,9 @@ import { SessionsFilterMenu } from './sessions-filter-menu';
  * The sidebar's head: New session, the Projects line (count, New project,
  * the filter menu), the live search and the active-filter chips.
  *
- * Props in, choice out: the filters and the query are the section's state,
- * because the list under the head is what they narrow. `projectCount` is
+ * Props in, choice out: the filters and the settled query are the section's
+ * state, because the list under the head is what they narrow; the half-typed
+ * query is the search box's own. `projectCount` is
  * absent until the projects have settled — a zero under a request that has
  * not answered reads as "you have none", which is a different thing from
  * "not yet known" — and the filter menu waits for the sessions the same way.
@@ -23,7 +25,6 @@ export function SessionsSidebarHead({
   options,
   dirty,
   chips,
-  query,
   onFiltersChange,
   onFiltersClear,
   onFacetClear,
@@ -37,10 +38,10 @@ export function SessionsSidebarHead({
   options: Record<SessionFacet, FilterOption[]> | undefined;
   dirty: boolean;
   chips: { key: SessionFacet; label: string }[];
-  query: string;
   onFiltersChange: (patch: Partial<SessionFilters>) => void;
   onFiltersClear: () => void;
   onFacetClear: (key: SessionFacet) => void;
+  /** The settled search, once per burst of typing. */
   onQueryChange: (query: string) => void;
   onNewProject: () => void;
 }) {
@@ -70,11 +71,9 @@ export function SessionsSidebarHead({
         ) : null}
       </SidebarListHead>
 
-      <SidebarSearch
-        value={query}
-        onValueChange={onQueryChange}
-        placeholder={t('sessions.sidebar.search')}
-        aria-label={t('sessions.sidebar.search')}
+      <SidebarSearchField
+        onChange={onQueryChange}
+        label={t('sessions.sidebar.search')}
         clearLabel={t('sessions.sidebar.clearSearch')}
       />
 

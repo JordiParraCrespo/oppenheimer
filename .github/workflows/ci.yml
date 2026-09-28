@@ -167,6 +167,18 @@ jobs:
       # The filters name the affected packages; `dependsOn: ["^build"]` still
       # builds what they import. Empty on main, where everything runs.
       - run: pnpm turbo run build ${{ needs.changes.outputs.filters }}
+      # oppenheimer:begin runner
+      # The shared build writes the protocol schema, its samples and every
+      # `*.gen.go` the runner compiles. Each emitter's `--check` compares the
+      # committed copy with a fresh render (whether or not the build above was
+      # a cache hit), and the diff fails when the build rewrote one: either way
+      # the committed file was stale, and release-runner.yml builds from it.
+      - name: Generated files are committed
+        if: contains(needs.changes.outputs.packages, '"@oppenheimer/shared"') || contains(needs.changes.outputs.packages, '"@oppenheimer/runner"')
+        run: |
+          pnpm --filter @oppenheimer/shared run check:generated
+          git diff --exit-code -- packages/shared/protocol-schema apps/runner/internal
+      # oppenheimer:end runner
       - run: pnpm turbo run test ${{ needs.changes.outputs.filters }}
       # oppenheimer:begin web
       # What a first-time visitor downloads before anything renders, against a

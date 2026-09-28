@@ -24,6 +24,9 @@ type Prober struct {
 	Total        uint64
 	MachineFacts domain.Machine
 	PlatformErr  error
+	// Calls records "invalidate" and "tool:<name>" in order, so a test can
+	// tell a fresh probe from a cached one.
+	Calls []string
 }
 
 // New returns a healthy Ubuntu host with git and tmux present.
@@ -46,7 +49,13 @@ func (p *Prober) Platform(context.Context) (domain.Platform, string, error) {
 }
 
 // Tool implements app.Prober.
-func (p *Prober) Tool(_ context.Context, name string) domain.Tool { return p.Tools[name] }
+func (p *Prober) Tool(_ context.Context, name string) domain.Tool {
+	p.Calls = append(p.Calls, "tool:"+name)
+	return p.Tools[name]
+}
+
+// Invalidate implements app.Prober.
+func (p *Prober) Invalidate() { p.Calls = append(p.Calls, "invalidate") }
 
 // Identity implements app.Prober.
 func (p *Prober) Identity() (string, string, string, bool) {

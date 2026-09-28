@@ -7,7 +7,7 @@ import { betterAuth } from 'better-auth';
 import { admin, bearer, mcp, organization } from 'better-auth/plugins';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { Pool } from 'pg';
-import { orUndefined } from '../../config/env';
+import { databaseConfigFromEnv, poolOptions } from '../../config/database.config';
 import { CompleteSignUpCommand } from '../commands/complete-sign-up/complete-sign-up.command';
 import { dispatchFromAuthHook } from './auth-command-bus.util';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue.util';
@@ -40,16 +40,18 @@ const OAUTH_SCOPES_SUPPORTED = ['openid', 'profile', 'email', 'offline_access', 
 
 const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
 
-// Read through `orUndefined` so a blank `DB_X=` means "unset" here exactly as
-// it does in `database.config.ts`. Better Auth owns its own pool rather than
-// TypeORM's, and two connections that disagree about the credentials would
-// leave half the API unable to reach the database.
+// Parsed by the same schema as TypeORM's `database` config. Better Auth owns
+// its own pool rather than TypeORM's, and two pools that disagreed about the
+// credentials would leave half the API unable to reach the database. Its size
+// is `DB_AUTH_POOL_MAX`; the timeouts are the same as the API pool's.
+const database = databaseConfigFromEnv();
 const pool = new Pool({
-  host: orUndefined(process.env.DB_HOST) ?? 'localhost',
-  port: Number.parseInt(orUndefined(process.env.DB_PORT) ?? '5432', 10),
-  user: orUndefined(process.env.DB_USERNAME) ?? 'oppenheimer',
-  password: orUndefined(process.env.DB_PASSWORD) ?? 'oppenheimer',
-  database: orUndefined(process.env.DB_DATABASE) ?? 'oppenheimer',
+  host: database.host,
+  port: database.port,
+  user: database.username,
+  password: database.password,
+  database: database.database,
+  ...poolOptions(database, 'api-auth'),
 });
 
 // `pg` emits `error` on the pool when an *idle* client's connection drops — a

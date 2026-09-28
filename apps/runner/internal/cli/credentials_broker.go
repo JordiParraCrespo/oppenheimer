@@ -35,11 +35,22 @@ type credentialBroker struct {
 	mu      sync.Mutex
 	tokens  map[string]cachedToken     // session id → token
 	waiting map[string]chan grantReply // request id → the ask waiting on it
+	asking  map[string]*inflight       // session id → the ask every concurrent caller joins
 }
 
 // sender is the link, as far as the broker needs it.
 type sender interface {
 	Send(message any) error
+}
+
+// inflight is one ask on the link that every caller for the same session
+// waits on: git calls the helper concurrently for remotes, submodules and
+// LFS, and each would otherwise have the control plane mint its own
+// installation token.
+type inflight struct {
+	done  chan struct{}
+	token string
+	err   error
 }
 
 type cachedToken struct {
@@ -59,6 +70,7 @@ func newCredentialBroker(client sender, unseal func([]byte) ([]byte, error), ses
 	return &credentialBroker{
 		client: client, unseal: unseal, sessions: sessions, now: time.Now,
 		tokens: map[string]cachedToken{}, waiting: map[string]chan grantReply{},
+		asking: map[string]*inflight{},
 	}
 }
 
@@ -66,16 +78,48 @@ func newCredentialBroker(client sender, unseal func([]byte) ([]byte, error), ses
 // otherwise one asked for on the link and unsealed here. A session whose
 // create is still running is one the session service already answers for,
 // so its clone gets a token like any git inside a session does.
+//
+// Concurrent callers for one session share a single ask. It runs on a
+// context of its own, bounded by askTimeout, so the caller that started it
+// going away does not fail the others; each caller stops waiting when its
+// own context ends.
 func (b *credentialBroker) Get(ctx context.Context, sessionID string) (string, error) {
 	if sessionID == "" {
 		return "", errNoCredential
 	}
 	b.mu.Lock()
 	cached, ok := b.tokens[sessionID]
-	b.mu.Unlock()
 	if ok && b.now().Add(tokenRefreshMargin).Before(cached.expiresAt) {
+		b.mu.Unlock()
 		return cached.token, nil
 	}
+	call, joined := b.asking[sessionID]
+	if !joined {
+		call = &inflight{done: make(chan struct{})}
+		b.asking[sessionID] = call
+	}
+	b.mu.Unlock()
+
+	if !joined {
+		go func() {
+			call.token, call.err = b.ask(context.WithoutCancel(ctx), sessionID)
+			b.mu.Lock()
+			delete(b.asking, sessionID)
+			b.mu.Unlock()
+			close(call.done)
+		}()
+	}
+	select {
+	case <-ctx.Done():
+		return "", errNoCredential
+	case <-call.done:
+		return call.token, call.err
+	}
+}
+
+// ask sends one `credentials.token` and waits for its grant, caching the
+// token it unseals.
+func (b *credentialBroker) ask(ctx context.Context, sessionID string) (string, error) {
 	session, err := b.sessions(sessionID)
 	if err != nil || session.CheckoutID == "" {
 		return "", errNoCredential

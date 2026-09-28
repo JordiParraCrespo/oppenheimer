@@ -20,9 +20,14 @@ export class ProjectArchivedPausesAutomationsDomainEventHandler {
   ) {}
 
   @OnEvent(ProjectArchivedDomainEvent.name)
-  async handle(event: Pick<ProjectArchivedDomainEvent, 'aggregateId'>): Promise<void> {
+  async handle(
+    event: Pick<ProjectArchivedDomainEvent, 'aggregateId' | 'organizationId'>,
+  ): Promise<void> {
     const now = new Date();
-    const affected = await this.automations.findLiveInProjectForSystem(event.aggregateId);
+    const affected = await this.automations.findLiveInProjectForSystem(
+      event.organizationId,
+      event.aggregateId,
+    );
     let paused = 0;
     for (const automation of affected) {
       if (automation.isPaused) continue;

@@ -156,7 +156,7 @@ export class ProjectRepository
         project: this.mapper.toDomain(updated[0], repositories.get(projectId)),
       };
     });
-    if (staged) await this.outbox.wake();
+    if (staged) this.outbox.wake();
     return outcome;
   }
 

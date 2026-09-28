@@ -1,14 +1,12 @@
 'use client';
 
-import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQueries, useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
   type UseQueryResult,
   useMutation,
-  useQueries,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import { useCallback } from 'react';

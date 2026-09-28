@@ -1,6 +1,6 @@
 'use client';
 
-import { usersKeys, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, usersKeys, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import type {
   ChangeEmailDto,
   ChangeOwnPasswordDto,
@@ -11,7 +11,6 @@ import {
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type { ProfileEntity, UserSessionEntity } from '../modules/profile/profile.entity';

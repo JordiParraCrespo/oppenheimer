@@ -42,7 +42,7 @@ src/
 ├── routes/               # Route + a mount, under 120 lines each
 ├── features/             # <module>/{screens,sections,dialogs,forms,components,hooks,lib,__tests__}
 ├── providers/            # oppenheimer-provider.tsx, query-provider.tsx
-├── lib/                  # configuration only: oppenheimer.ts, auth-client.ts, nav.ts
+├── lib/                  # configuration only: oppenheimer.ts, auth-client.ts, nav.ts, console.ts
 ├── styles/
 └── types/
 public/

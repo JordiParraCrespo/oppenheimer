@@ -61,7 +61,50 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 	})
 }
 
-func (h *linkHandler) lifecycle(ctx context.Context, m link.SessionCommand) {
+// lifecycleCommand is what lifecycle reads of stop, restart, close,
+// window.open and window.close: each is its own message on the wire, and
+// this is the union of the fields the handler acts on.
+type lifecycleCommand struct {
+	Type               string
+	CommandID          string
+	SessionID          string
+	Window             int
+	AcceptUnpushedWork bool
+}
+
+// decodeLifecycle decodes a lifecycle message into its own generated struct
+// and keeps what lifecycle reads. ok is false for a body that does not decode.
+func decodeLifecycle(msg link.Message) (lifecycleCommand, bool) {
+	m := lifecycleCommand{Type: msg.Type}
+	var err error
+	switch msg.Type {
+	case link.TypeSessionStop:
+		var body link.SessionStop
+		err = msg.Decode(&body)
+		m.CommandID, m.SessionID = body.CommandID, body.SessionID
+	case link.TypeSessionRestart:
+		var body link.SessionRestart
+		err = msg.Decode(&body)
+		m.CommandID, m.SessionID = body.CommandID, body.SessionID
+	case link.TypeSessionClose:
+		var body link.SessionClose
+		err = msg.Decode(&body)
+		m.CommandID, m.SessionID, m.AcceptUnpushedWork = body.CommandID, body.SessionID, body.AcceptUnpushedWork
+	case link.TypeSessionWindowOpen:
+		var body link.SessionWindowOpen
+		err = msg.Decode(&body)
+		m.CommandID, m.SessionID = body.CommandID, body.SessionID
+	case link.TypeSessionWindowClose:
+		var body link.SessionWindowClose
+		err = msg.Decode(&body)
+		m.CommandID, m.SessionID, m.Window = body.CommandID, body.SessionID, body.Window
+	default:
+		return lifecycleCommand{}, false
+	}
+	return m, err == nil
+}
+
+func (h *linkHandler) lifecycle(ctx context.Context, m lifecycleCommand) {
 	var err error
 	switch m.Type {
 	case "session.stop":
@@ -92,16 +135,17 @@ func (h *linkHandler) lifecycle(ctx context.Context, m link.SessionCommand) {
 }
 
 // preflight re-collects the host facts and reports them at once, as a
-// heartbeat, which is the shape the control plane already reads them in.
+// heartbeat, which is the shape the control plane already reads them in. The
+// facts are collected once: a failed check still reports what it found.
 func (h *linkHandler) preflight(ctx context.Context, commandID string) {
-	if _, err := h.app.Host.Preflight(ctx); err != nil {
-		h.fail(commandID, err)
-	}
-	beat, err := h.Heartbeat(ctx)
+	facts, err := h.app.Host.Preflight(ctx)
 	if err != nil {
 		h.fail(commandID, err)
-		return
+		if facts.Platform == "" {
+			return // the collection itself failed: there is nothing to report
+		}
 	}
+	beat := h.heartbeatFrom(facts)
 	beat.Type = "heartbeat"
 	_ = h.client.Send(beat)
 }

@@ -1,9 +1,11 @@
 import type { IncomingHttpHeaders } from 'node:http';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AdminCreateUserDto, AdminUpdateUserDto, ListUsersQuery } from '@oppenheimer/shared';
+import { DELEGATED_SESSION } from '../auth/auth.di-tokens';
 import { auth } from '../auth/infrastructure/better-auth.config';
 import { asRecord, betterAuthHeaders, unwrapArray } from '../auth/infrastructure/better-auth.util';
+import type { DelegatedSessionPort } from '../auth/infrastructure/delegated-session.port';
 import { mapSessionsFromResult, mapSuccess, mapUserFromResult, mapUserList } from './admin.mappers';
 import { invokeAdminApi } from './admin-error.mapper';
 import { AdminErrors } from './domain/admin.errors';
@@ -30,6 +32,11 @@ function asAdminRole(role: string | string[]): AdminRole | AdminRole[] {
  */
 @Injectable()
 export class AdminService {
+  constructor(
+    @Inject(DELEGATED_SESSION)
+    private readonly delegatedSessions: DelegatedSessionPort,
+  ) {}
+
   private headers(headers: IncomingHttpHeaders): Headers {
     return betterAuthHeaders(headers);
   }
@@ -122,6 +129,9 @@ export class AdminService {
         headers: this.headers(headers),
       }),
     );
+    // The ban deleted the user's session rows, delegated ones included, but
+    // not the tokens cached for their credentials. Move them onto fresh keys.
+    await this.delegatedSessions.invalidateForUser(id);
     return mapUserFromResult(result);
   }
 
@@ -132,6 +142,10 @@ export class AdminService {
         headers: this.headers(headers),
       }),
     );
+    // Anything cached since the ban points at a row the ban deleted; without
+    // this, every façade call through the user's credentials would fail until
+    // the entry expired.
+    await this.delegatedSessions.invalidateForUser(id);
     return mapUserFromResult(result);
   }
 

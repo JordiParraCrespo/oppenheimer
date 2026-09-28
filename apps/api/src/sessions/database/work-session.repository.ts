@@ -155,7 +155,7 @@ export class WorkSessionRepository
     }
 
     session.clearEvents();
-    await this.outbox.wake();
+    this.outbox.wake();
     return { session, created: true, projectArchived: false };
   }
 
@@ -608,7 +608,7 @@ export class WorkSessionRepository
   private async flushEvents(session: WorkSessionEntity): Promise<void> {
     if (session.domainEvents.length === 0) return;
     session.clearEvents();
-    await this.outbox.wake();
+    this.outbox.wake();
   }
 
   private async withCheckouts(

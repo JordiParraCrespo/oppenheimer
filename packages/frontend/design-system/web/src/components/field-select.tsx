@@ -81,6 +81,9 @@ function FieldSelect(props: FieldSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const trigger = React.useRef<HTMLButtonElement>(null);
+  // The trigger's width, measured as the popup opens: read in the event, not
+  // in render, where a ref read makes the React Compiler skip the component.
+  const [triggerWidth, setTriggerWidth] = React.useState<number | null>(null);
   const term = query.trim().toLowerCase();
   const picked = new Set(props.multiple ? props.value : props.value ? [props.value] : []);
   const shown = options.filter((option) =>
@@ -106,6 +109,7 @@ function FieldSelect(props: FieldSelectProps) {
     <Popover
       open={open}
       onOpenChange={(next) => {
+        if (next) setTriggerWidth(trigger.current?.offsetWidth ?? null);
         setOpen(next);
         if (!next) setQuery('');
       }}
@@ -138,8 +142,8 @@ function FieldSelect(props: FieldSelectProps) {
         width={
           width ??
           (variant === 'quiet'
-            ? Math.max(QUIET_POPUP_MIN_WIDTH, trigger.current?.offsetWidth ?? 0)
-            : (trigger.current?.offsetWidth ?? 260))
+            ? Math.max(QUIET_POPUP_MIN_WIDTH, triggerWidth ?? 0)
+            : (triggerWidth ?? 260))
         }
         maxHeight={320}
         side="bottom"

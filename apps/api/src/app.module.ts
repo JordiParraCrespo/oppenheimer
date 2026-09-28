@@ -44,6 +44,8 @@ import {
   sessionsConfig,
   storageConfig,
 } from './config';
+import { bootDataSourceFactory } from './config/boot-migrations';
+import { type DatabaseConfig, poolOptions } from './config/database.config';
 import { DEFAULT_JOB_OPTIONS } from './config/queue-options.config';
 import { TypeOrmQueryLogger } from './config/typeorm-query.logger';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
@@ -113,11 +115,16 @@ import { UsersModule } from './users/user.module';
           username: configService.get('database.username'),
           password: configService.get('database.password'),
           database: configService.get('database.database'),
+          // Pool size, connection wait and the statement, lock and
+          // idle-in-transaction timeouts, tagged `api` in `pg_stat_activity`.
+          extra: poolOptions(configService.get('database') as DatabaseConfig, 'api'),
           autoLoadEntities: true,
           // Schema is managed through versioned migrations, never auto-sync.
           synchronize: false,
           migrations: isTest ? [] : [`${__dirname}/migrations/*{.ts,.js}`],
-          migrationsRun: !isTest,
+          // Never on this DataSource: its pool carries the request timeouts.
+          // `bootDataSourceFactory` runs them on a connection of their own.
+          migrationsRun: false,
           // Opt-in query logging (`DB_LOG_QUERIES=true`), off by default. The
           // custom logger drops bound parameters — they carry user data.
           ...(configService.get('database.logQueries')
@@ -128,6 +135,10 @@ import { UsersModule } from './users/user.module';
             : {}),
         };
       },
+      // Runs pending migrations first, on a single connection without the
+      // timeouts above; skipped under test (no migrations) and for the OpenAPI
+      // build (`manualInitialization`).
+      dataSourceFactory: bootDataSourceFactory(),
     }),
     ThrottlerModule.forRootAsync({
       imports: [ThrottlingModule],

@@ -7,16 +7,11 @@ import {
 import { Zap } from '@oppenheimer/design-system-web/icons';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
-import {
-  ConfirmDialog,
-  ErrorAlert,
-  QueryState,
-  useConsoleDialog,
-  useLocale,
-} from '@oppenheimer/frontend-web';
+import { ConfirmDialog, ErrorAlert, QueryState, useLocale } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useConsoleDialog } from '@/lib/console';
 import { AutomationTableRow } from '../components/automation-table-row';
 import { useAutomationActions } from '../hooks/use-automation-actions';
 import { automationSubline } from '../lib/automation-view';

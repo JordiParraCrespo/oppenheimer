@@ -17,12 +17,10 @@
  *
  * It only walks records. A `Map`, a `Set`, a typed array or a `Blob` holds its
  * contents where an own-key walk cannot see them, so two different ones would
- * compare equal; those are always taken as changed. Opt in per query, on data
- * that is entities, not as the client's default.
+ * compare equal; those are always taken as changed, as the default takes them.
  *
- * ```ts
- * useQuery({ queryKey, queryFn, structuralSharing: shareEntities });
- * ```
+ * The query hooks do not pass it themselves: `useQuery` and `useQueries` from
+ * `./query` apply it to every query they declare.
  */
 export function shareEntities<T>(previous: unknown, next: T): T {
   return share(previous, next) as T;

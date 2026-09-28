@@ -10,7 +10,8 @@ import { useEffect, useRef } from 'react';
  * effect lives, so components stay free of them.
  *
  * The subscription is made once. `handler` and `matches` are read through a
- * ref the render keeps current, because a caller passes an inline
+ * ref an effect keeps current (not the render: a ref written during render
+ * makes the React Compiler skip the hook), because a caller passes an inline
  * `() => setOpen(true)` — a new function every render — and an effect that
  * depended on it would tear the document listener down and put it back on
  * every render of the shell. The effect's job is "a document keydown listener
@@ -23,7 +24,9 @@ export function useHotkey(
   matches: (event: KeyboardEvent) => boolean = isCommandK,
 ): void {
   const latest = useRef({ handler, matches });
-  latest.current = { handler, matches };
+  useEffect(() => {
+    latest.current = { handler, matches };
+  });
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

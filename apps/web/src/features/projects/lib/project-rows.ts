@@ -1,8 +1,6 @@
-import type { RepositoryRowOption, RepositoryRowValue } from '@oppenheimer/design-system-web';
+import type { RepositoryRowOption } from '@oppenheimer/design-system-web';
 import {
   type BranchEntity,
-  type ProjectRepositoryInput,
-  parseRepositoryKey,
   type RepositoryEntity,
   repositoryKey,
 } from '@oppenheimer/frontend-consumer';
@@ -24,22 +22,4 @@ export function toProjectRepositoryRows(
       value: branch.name,
     })),
   }));
-}
-
-/**
- * The dialog's rows as `POST /projects` takes them. A row whose id no longer
- * parses is dropped rather than sent, for the same reason a checkout is.
- */
-export function toProjectRepositoryInputs(
-  rows: readonly RepositoryRowValue[],
-  defaultBranches: ReadonlyMap<string, string>,
-): ProjectRepositoryInput[] {
-  return rows.flatMap((row) => {
-    const ref = parseRepositoryKey(row.id);
-    if (!ref) return [];
-    // Every row carries its base: the one picked, else the repository's own
-    // default, which is what the row's pill shows until someone picks another.
-    const baseBranch = row.branch || defaultBranches.get(row.id) || '';
-    return [{ ...ref, isDefault: row.isDefault, baseBranch }];
-  });
 }

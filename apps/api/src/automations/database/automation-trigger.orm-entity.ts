@@ -10,7 +10,7 @@ import {
 
 /** One trigger of an automation (`1790600000000-AddAutomations`). */
 @Entity('automation_trigger')
-@Index('IDX_automation_trigger_automation', ['organizationId', 'automationId', 'position'])
+@Index('IDX_automation_trigger_automation', ['automationId', 'organizationId', 'position'])
 @Index('IDX_automation_trigger_match', ['organizationId', 'source', 'eventType'])
 @Index('IDX_automation_trigger_due', ['nextFireAt'], { where: '"nextFireAt" IS NOT NULL' })
 export class AutomationTriggerOrmEntity {

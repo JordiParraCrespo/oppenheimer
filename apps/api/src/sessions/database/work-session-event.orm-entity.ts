@@ -17,10 +17,13 @@ import type { SessionEventSource } from '../domain/work-session-event.entity';
  * There is no `organizationId` here, and that is deliberate: every read is by
  * session, through a session the caller has already been scoped to. It is the one
  * of the new tables that is not workspace-owned, because it has no life of its own.
- * No other index either, for the same reason.
+ * The one other index is partial, on the at most one `prompt.first` row per
+ * session, which a runner's hello reads for every unresolved session on its host
+ * (`1790810000000-AddHotPathIndexesAndDropRedundant`).
  */
 @Entity('work_session_event')
 @Index('IDX_work_session_event_session_seq', ['sessionId', 'seq'], { unique: true })
+@Index('IDX_work_session_event_first_prompt', ['sessionId'], { where: `"kind" = 'prompt.first'` })
 @Unique('UQ_work_session_event_session_key', ['sessionId', 'idempotencyKey'])
 export class WorkSessionEventOrmEntity {
   @PrimaryGeneratedColumn('uuid')

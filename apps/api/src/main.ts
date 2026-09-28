@@ -115,6 +115,7 @@ async function bootstrap() {
       QUEUE_NAMES.AUTOMATION_RUNS,
       QUEUE_NAMES.AUTOMATION_SCHEDULES,
       QUEUE_NAMES.AUTOMATION_RETENTION,
+      QUEUE_NAMES.OUTBOX_RETENTION,
     ],
     bullBoardUsername && bullBoardPassword
       ? { auth: { username: bullBoardUsername, password: bullBoardPassword } }

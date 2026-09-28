@@ -40,4 +40,19 @@ describe('RelativeTime', () => {
     });
     expect(container.textContent).toBe('2 minutes ago');
   });
+
+  it('shares one timer between every line on the same interval', () => {
+    const setInterval = vi.spyOn(globalThis, 'setInterval');
+    const date = new Date(NOW.getTime() - 5 * 60_000);
+    const { container } = render(
+      <>
+        <RelativeTime date={date} />|<RelativeTime date={date} />|<RelativeTime date={date} />
+      </>,
+    );
+    expect(setInterval).toHaveBeenCalledTimes(1);
+
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(container.textContent).toBe('6 minutes ago|6 minutes ago|6 minutes ago');
+    setInterval.mockRestore();
+  });
 });

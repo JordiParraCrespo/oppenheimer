@@ -5,7 +5,6 @@ import {
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type { SocialAuthIntent, SocialProvider } from '../modules/auth/auth.client';
@@ -13,6 +12,7 @@ import { useOppenheimerApp } from './context';
 import { featureFlagsQueryOptions } from './feature-flags.queries';
 import { withCacheOnSuccess } from './mutations';
 import { reconcileCacheOwner } from './persistence';
+import { useQuery } from './query';
 import { expireSession } from './query-client';
 import { authKeys } from './query-keys';
 import { usersKeys } from './users.queries';

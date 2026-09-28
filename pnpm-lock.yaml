@@ -286,6 +286,9 @@ importers:
       '@oppenheimer/go-ws':
         specifier: workspace:*
         version: link:../../packages/go/ws
+      '@oppenheimer/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
 
   apps/web:
     dependencies:

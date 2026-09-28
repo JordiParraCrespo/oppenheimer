@@ -21,6 +21,8 @@ function makeUser(overrides: { phone?: string | null; avatarUrl?: string | null 
       role: 'owner',
       isActive: true,
       emailVerified: true,
+      banned: false,
+      banExpires: null,
     },
   });
 }

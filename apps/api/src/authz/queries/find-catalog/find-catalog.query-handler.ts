@@ -15,11 +15,16 @@ export class FindAuthzCatalogQueryHandler
   ) {}
 
   async execute(query: FindAuthzCatalogQuery): Promise<AuthzCatalogResponseDto> {
-    const ability = await this.abilityFactory.createForUser(
-      { id: query.userId, role: query.role },
-      { organizationId: query.organizationId ?? null },
-    );
+    const user = { id: query.userId, role: query.role };
+    const organizationId = query.organizationId ?? null;
+    const ability = await this.abilityFactory.createForUser(user, { organizationId });
 
-    return toCatalogResponse(this.registry, ability);
+    // The context `createForUser` built the ability with, so grant containment
+    // interpolates placeholders the same way.
+    return toCatalogResponse(this.registry, ability, {
+      user,
+      activeOrganizationId: organizationId,
+      activeTeamId: null,
+    });
   }
 }

@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { createServer, type Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
+import { type AddressInfo, connect, type Socket } from 'node:net';
 import { Logger } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { HttpAdapterHost } from '@nestjs/core';
@@ -96,6 +96,10 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
         return { hostId: HOST, expiresAt: new Date(Date.now() + 60_000), unpaired: false };
       if (bearer === 'valid.unpaired')
         return { hostId: HOST, expiresAt: new Date(Date.now() + 60_000), unpaired: true };
+      if (bearer === 'valid.slow') {
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        return { hostId: HOST, expiresAt: new Date(Date.now() + 60_000), unpaired: false };
+      }
       throw new Error('rejected');
     },
   };
@@ -221,6 +225,30 @@ async function runnerUp(h: Harness): Promise<WebSocket> {
   return runner;
 }
 
+/** A lookup that answers after `ms`, so a frame can land while a ticket is judged. */
+function slowly<T>(value: T, ms = 150): () => Promise<T> {
+  return () => new Promise((resolve) => setTimeout(() => resolve(value), ms));
+}
+
+/** A text frame with no mask: a protocol violation from a client (RFC 6455 §5.1). */
+const UNMASKED_FRAME = Buffer.from([0x81, 0x01, 0x41]);
+
+/** The TCP socket under a client, to write what `ws` itself would never send. */
+function rawSocket(socket: WebSocket): Socket {
+  return (socket as unknown as { _socket: Socket })._socket;
+}
+
+/** The server is still up: a fresh ticket attaches on a live runner. */
+async function stillServing(): Promise<void> {
+  const runner = await runnerUp(h);
+  sockets.push(runner);
+  const browser = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
+  sockets.push(browser);
+  await opened(browser);
+  browser.send(JSON.stringify({ type: 'resize', cols: 80, rows: 24 }));
+  expect((await nextMessage(runner)).text).toMatchObject({ type: 'session.attach' });
+}
+
 function issueTicket(h: Harness, window = 0): string {
   const ticket = `t-${Math.random().toString(36).slice(2)}`;
   h.tickets.set(`attach:${ticket}`, {
@@ -241,6 +269,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   for (const socket of sockets.splice(0)) socket.terminate();
+  vi.restoreAllMocks();
   await h.close();
 });
 
@@ -526,6 +555,42 @@ describe('runner link', () => {
     await closed(second);
     await vi.waitFor(() => expect(h.registry.find(HOST)).toBeUndefined());
   });
+
+  it('survives a runner that resets its connection while its assertion is verified', async () => {
+    const raw = connect(Number(new URL(h.origin).port), '127.0.0.1');
+    raw.on('error', () => {});
+    await new Promise((resolve) => raw.once('connect', resolve));
+    raw.write(
+      'GET /api/v1/relay/runner HTTP/1.1\r\n' +
+        'Host: 127.0.0.1\r\n' +
+        'Upgrade: websocket\r\n' +
+        'Connection: Upgrade\r\n' +
+        'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n' +
+        'Sec-WebSocket-Version: 13\r\n' +
+        'Authorization: Bearer valid.slow\r\n\r\n',
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    raw.resetAndDestroy();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    expect(h.registry.find(HOST)).toBeDefined();
+  });
+
+  it('refuses an upgrade whose request target is not a URL, rather than crashing', async () => {
+    const raw = connect(Number(new URL(h.origin).port), '127.0.0.1');
+    raw.on('error', () => {});
+    await new Promise((resolve) => raw.once('connect', resolve));
+    const answer = new Promise<string>((resolve) =>
+      raw.once('data', (data) => resolve(String(data))),
+    );
+    raw.write(
+      'GET http://[ HTTP/1.1\r\nHost: 127.0.0.1\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n',
+    );
+    expect(await answer).toMatch(/^HTTP\/1\.1 404 /);
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+  });
 });
 
 describe('browser attach socket', () => {
@@ -778,5 +843,100 @@ describe('browser attach socket', () => {
     runner.terminate();
     expect((await hint).text).toEqual({ type: 'hint', kind: 'host_offline' });
     await expect(closed(browser)).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.LINK_LOST });
+  });
+
+  it('survives a frame over maxPayload while its ticket is judged', async () => {
+    const warn = vi.spyOn(Logger.prototype, 'warn');
+    vi.mocked(h.workspaces.isMember).mockImplementationOnce(slowly(true));
+    const ticket = issueTicket(h);
+    const browser = ws(h.origin, '/api/v1/relay/attach', {}, [ticket]);
+    sockets.push(browser);
+    browser.on('error', () => {});
+    const gone = closed(browser);
+    await opened(browser);
+    browser.send(Buffer.alloc(65 * 1024));
+    await expect(gone).resolves.toMatchObject({ code: 1009 });
+    expect(warn).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'browser attach socket error' }),
+    );
+    expect(JSON.stringify(warn.mock.calls)).not.toContain(ticket);
+    await stillServing();
+  });
+
+  it('survives an unmasked frame before the ticket resolves', async () => {
+    vi.mocked(h.lookup.findAttachTarget).mockImplementationOnce(
+      slowly({ id: SESSION, organizationId: ORG, hostId: HOST, state: 'live' as const }),
+    );
+    const browser = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
+    sockets.push(browser);
+    browser.on('error', () => {});
+    const gone = closed(browser);
+    await opened(browser);
+    rawSocket(browser).write(UNMASKED_FRAME);
+    await expect(gone).resolves.toMatchObject({ code: 1002 });
+    await stillServing();
+  });
+
+  it('survives a bad frame after an unauthorized refusal', async () => {
+    const browser = ws(h.origin, '/api/v1/relay/attach', {}, ['not-a-ticket']);
+    sockets.push(browser);
+    browser.on('error', () => {});
+    const gone = closed(browser);
+    // Written from inside the listener, before the client answers the close.
+    const why = new Promise<unknown>((resolve) =>
+      browser.once('message', (data) => {
+        rawSocket(browser).write(UNMASKED_FRAME);
+        resolve(JSON.parse(String(data)));
+      }),
+    );
+    await opened(browser);
+    expect(await why).toEqual({ type: 'closed', reason: 'unauthorized' });
+    await gone;
+    await stillServing();
+  });
+
+  it('survives a bad frame after a host_offline hint', async () => {
+    const browser = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
+    sockets.push(browser);
+    browser.on('error', () => {});
+    const gone = closed(browser);
+    const hint = new Promise<unknown>((resolve) =>
+      browser.once('message', (data) => {
+        rawSocket(browser).write(UNMASKED_FRAME);
+        resolve(JSON.parse(String(data)));
+      }),
+    );
+    await opened(browser);
+    expect(await hint).toEqual({ type: 'hint', kind: 'host_offline' });
+    await gone;
+    await stillServing();
+  });
+
+  it('closes with 1011, rather than crashing, when a lookup throws', async () => {
+    const error = vi.spyOn(Logger.prototype, 'error');
+    const unhandled = vi.fn();
+    process.on('unhandledRejection', unhandled);
+    try {
+      vi.mocked(h.lookup.findAttachTarget).mockRejectedValueOnce(new Error('db down'));
+      const ticket = issueTicket(h);
+      const browser = ws(h.origin, '/api/v1/relay/attach', {}, [ticket]);
+      sockets.push(browser);
+      const messages: unknown[] = [];
+      browser.on('message', (data) => messages.push(JSON.parse(String(data))));
+      const gone = closed(browser);
+      await opened(browser);
+      // 1011 is not a final code for the console: it retries, as it should
+      // for a store that is down rather than a session that is gone.
+      await expect(gone).resolves.toMatchObject({ code: 1011 });
+      expect(messages).toEqual([]);
+      expect(error).toHaveBeenCalledTimes(1);
+      expect(error).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'attach ticket could not be judged' }),
+      );
+      expect(JSON.stringify(error.mock.calls)).not.toContain(ticket);
+      expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+      process.off('unhandledRejection', unhandled);
+    }
   });
 });

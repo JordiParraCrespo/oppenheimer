@@ -25,6 +25,7 @@ vi.mock('../../auth/infrastructure/better-auth.config', () => ({
 }));
 
 import { auth } from '../../auth/infrastructure/better-auth.config';
+import type { DelegatedSessionPort } from '../../auth/infrastructure/delegated-session.port';
 import { AdminService } from '../admin.service';
 
 const api = auth.api as unknown as Record<string, ReturnType<typeof vi.fn>>;
@@ -44,10 +45,16 @@ const userRecord = {
 
 describe('AdminService', () => {
   let service: AdminService;
+  let delegatedSessions: DelegatedSessionPort;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new AdminService();
+    delegatedSessions = {
+      resolveSessionToken: vi.fn(),
+      invalidate: vi.fn(),
+      invalidateForUser: vi.fn().mockResolvedValue(undefined),
+    };
+    service = new AdminService(delegatedSessions);
   });
 
   it('lists users forwarding query params and mapping the envelope', async () => {
@@ -151,6 +158,32 @@ describe('AdminService', () => {
     api.unbanUser.mockResolvedValue(userRecord);
     await service.unban(headers, 'u1');
     expect(api.unbanUser).toHaveBeenCalledWith(expect.objectContaining({ body: { userId: 'u1' } }));
+  });
+
+  it('rotates the delegated-session generation after a ban', async () => {
+    // The ban deletes the delegated rows; without the rotation a credential
+    // keeps presenting the cached token of a deleted row after an unban.
+    api.banUser.mockResolvedValue(userRecord);
+    await service.ban(headers, 'u1', {});
+    expect(delegatedSessions.invalidateForUser).toHaveBeenCalledExactlyOnceWith('u1');
+  });
+
+  it('rotates the delegated-session generation after an unban', async () => {
+    api.unbanUser.mockResolvedValue(userRecord);
+    await service.unban(headers, 'u1');
+    expect(delegatedSessions.invalidateForUser).toHaveBeenCalledExactlyOnceWith('u1');
+  });
+
+  it('leaves the delegated sessions alone when the ban fails', async () => {
+    api.banUser.mockRejectedValue(new Error('upstream down'));
+    await expect(service.ban(headers, 'u1', {})).rejects.toBeDefined();
+    expect(delegatedSessions.invalidateForUser).not.toHaveBeenCalled();
+  });
+
+  it('leaves the delegated sessions alone when the unban fails', async () => {
+    api.unbanUser.mockRejectedValue(new Error('upstream down'));
+    await expect(service.unban(headers, 'u1')).rejects.toBeDefined();
+    expect(delegatedSessions.invalidateForUser).not.toHaveBeenCalled();
   });
 
   it('removes a user and reports success', async () => {
