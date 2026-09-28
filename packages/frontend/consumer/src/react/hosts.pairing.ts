@@ -8,7 +8,7 @@ import {
   usePairingTokens,
   useReplacePairing,
 } from './hosts.queries';
-import { LIVE_POLL } from './live-poll';
+import { pollWhile } from './live-poll';
 
 /** The longest delay `setTimeout` honours; a later one fires at once. */
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
@@ -93,27 +93,25 @@ export function useHostPairing(hostName: string): HostPairingFlow {
   // Poll the token, not the host list. Stops once this token names a host, and
   // once it has expired: a dead token can pair nothing, so polling past that is
   // a request every three seconds that can only answer "no".
-  const { data: tokens } = usePairingTokens({
-    enabled: Boolean(pairing) && !expired,
-    refetchInterval: (query) => {
+  const { data: tokens } = usePairingTokens(
+    { enabled: Boolean(pairing) && !expired },
+    pollWhile('pairing', (rows) => {
       if (!pairing || expired) return false;
-      const mine = query.state.data?.find((token) => token.id === pairing.id);
-      return mine?.redeemedHostId ? false : LIVE_POLL.pairing;
-    },
-  });
+      return !rows?.find((token) => token.id === pairing.id)?.redeemedHostId;
+    }),
+  );
 
   const redeemedHostId = tokens?.find((token) => token.id === pairing?.id)?.redeemedHostId ?? null;
 
   // The host row appears when the runner registers; its service may still be
   // starting, so the caller decides what `online` means for its primary action.
-  const { data: hosts } = useHostList({
-    enabled: Boolean(redeemedHostId),
-    refetchInterval: (query) => {
+  const { data: hosts } = useHostList(
+    { enabled: Boolean(redeemedHostId) },
+    pollWhile('pairing', (rows) => {
       if (!redeemedHostId) return false;
-      const host = query.state.data?.find((row) => row.id === redeemedHostId);
-      return host?.online ? false : LIVE_POLL.pairing;
-    },
-  });
+      return !rows?.find((row) => row.id === redeemedHostId)?.online;
+    }),
+  );
 
   const host: HostEntity | null = redeemedHostId
     ? (hosts?.find((row) => row.id === redeemedHostId) ?? null)

@@ -45,7 +45,8 @@ new feature. Before creating anything, answer these:
   `analytics`, `feature-flags`) or of the product package
   `packages/frontend/consumer` (`sessions`, `hosts`, `projects`,
   `installations`, `automations`, `organizations`, `profile`, `permissions`),
-  or is on the app's allowlist (`public`). Never name it after a page (`settings`, `console`, `home`).
+  or is on the app's allowlist (`public`: pages that render no entity). Never
+  name it after a page (`settings`, `console`, `home`).
   `ls packages/frontend/*/src/modules` shows what exists.
   - `sessions` are the agent sessions (a worktree and a tmux terminal on a
     host). The browsers signed in to an account are `profile`
@@ -65,9 +66,9 @@ new feature. Before creating anything, answer these:
   and the generated client in `packages/frontend/api-client`. If it isn't
   there, the backend comes first (`/scaffold-module`, then
   `pnpm generate:api-client`), or the feature waits. Never fake data: see
-  "Never ship a placeholder number" in `frontend-ui.md`. The `automations`
-  pages are the example of a screen drawn ahead of its API; they keep their
-  primary action off rather than pretend.
+  "Never ship a placeholder number" in `frontend-ui.md`. A screen drawn ahead
+  of its API keeps its primary action off rather than pretend, as the
+  `automations` pages did before the API named the entity.
 - **What does the API allow and refuse?** Read the controller behind each
   endpoint, not only its path:
   - its `@CheckPolicies`, which is the permission each action needs;
@@ -127,6 +128,10 @@ it. The steps are the "Add a module to a product package" cookbook in
      `skipToken` and `withCacheOnSuccess` rules; the guide is
      `apps/docs/docs/architecture/query-keys.md`. The key factory stays in its
      file; the barrel exports the hooks the app imports (`pnpm check:unused`).
+   - A poll is `LIVE_POLL` (`src/react/live-poll.ts`): the hook spreads
+     `pollWhile(kind, stillMoving)` after its options, and a feature asks for
+     the hook that already polls (`useHostPresence`) rather than setting
+     `refetchInterval`.
 6. If the data must never reach storage (secrets, a pairing token, personal
    data), add `thingsKeys.all[0]` to `CONSUMER_NON_PERSISTED_FEATURES` in
    `src/react/persistence.ts`.
