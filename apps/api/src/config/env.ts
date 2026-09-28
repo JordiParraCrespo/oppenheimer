@@ -9,10 +9,9 @@ import type { z } from 'zod';
  * Whitespace decides *blankness only* — a value that survives is returned
  * verbatim, never trimmed. A credential may legitimately carry leading or
  * trailing whitespace (`DB_PASSWORD`, `S3_SECRET_ACCESS_KEY`, `RESEND_API_KEY`),
- * and silently altering it would hand different credentials to different
- * consumers: TypeORM reads the parsed config while Better Auth's pool reads
- * `process.env` directly, so a trim here would let one connect and the other
- * fail with no visible cause.
+ * and silently altering it would hand the database or provider a credential
+ * nobody set. Both Postgres pools (TypeORM's and Better Auth's) read the same
+ * parsed `database` config, so neither may rewrite it on the way.
  */
 export const orUndefined = (value: string | undefined): string | undefined =>
   value?.trim() ? value : undefined;
