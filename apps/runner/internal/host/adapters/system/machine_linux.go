@@ -130,3 +130,13 @@ func inContainer() bool {
 func AvailableMemory() uint64 {
 	return MeminfoBytes(readTrimmed("/proc/meminfo"), "MemAvailable")
 }
+
+// readTrimmed reads one /proc, /sys or /etc file; only Linux reads the
+// machine from files, so it lives beside the one caller.
+func readTrimmed(path string) string {
+	raw, err := os.ReadFile(path) //nolint:gosec // fixed system paths
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(raw))
+}
