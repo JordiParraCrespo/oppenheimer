@@ -57,9 +57,16 @@ function generateRootIndex() {
   console.log(`📄  Created ${path.relative(process.cwd(), rootIndexPath)}`);
 }
 
+/**
+ * Bring every generated file to what `pnpm check` accepts, so a regeneration
+ * with no API change leaves git clean. `check --write`, not `format --write`:
+ * the committed files are also import-sorted (Biome's organize-imports
+ * assist), and formatting alone leaves that as a diff.
+ */
 function formatFiles() {
   try {
-    execSync(`npx biome format --write "${rootIndexPath}"`, { stdio: 'inherit' });
+    const generatedDir = path.resolve(__dirname, '../src/generated');
+    execSync(`npx biome check --write "${generatedDir}" "${rootIndexPath}"`, { stdio: 'inherit' });
   } catch (e) {
     console.warn('Formatting skipped (biome not available):', e.message);
   }

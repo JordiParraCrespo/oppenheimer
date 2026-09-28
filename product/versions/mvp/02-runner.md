@@ -166,7 +166,11 @@ What belongs here is what the runner does with it:
   one on the link. Event batches the link refuses while it stays up (a
   full control queue) are offered again every few seconds, in order, and
   at most 4096 wait: past that the oldest is dropped with a warning, and
-  the next hello's snapshot reconciles.
+  the next hello's snapshot reconciles. A batch the link took but that
+  has had no ack for a minute — an ack lost on the control plane's side,
+  a batch it dropped — is sent again on the same ticker, with every
+  batch made after it, in order (01, "events.append and events.ack"),
+  rather than waiting pending until the link happens to drop.
 - **Except when the control plane says the host was unpaired**: an HTTP
   `410` at the handshake or a `4410` close (01). That is not a drop but a
   verdict, so the link stops redialling, the revocation is written to

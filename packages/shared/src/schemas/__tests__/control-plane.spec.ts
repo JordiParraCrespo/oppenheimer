@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { connectInstallationSchema } from '../github.schema';
-import { mintPairingTokenSchema, registerHostSchema, renameHostSchema } from '../host.schema';
-import { updateProjectSchema } from '../project.schema';
+import { connectInstallationSchema } from '../github.schema.js';
+import { mintPairingTokenSchema, registerHostSchema, renameHostSchema } from '../host.schema.js';
+import { updateProjectSchema } from '../project.schema.js';
 import {
   addCheckoutSchema,
   createSessionSchema,
   renameSessionSchema,
   sessionGroupSchema,
   sessionStateSchema,
-} from '../session.schema';
+} from '../session.schema.js';
 
 const uuid = '3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40';
 const otherUuid = 'a1f2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d';

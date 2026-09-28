@@ -53,7 +53,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig.esm.json && node scripts/write-esm-package-json.cjs && node scripts/emit-protocol-schema.cjs && node scripts/emit-link-protocol.cjs && node scripts/emit-agent-catalog.cjs && node scripts/emit-session-step.cjs && node scripts/emit-session-image.cjs",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.esm.json && node scripts/write-esm-package-json.cjs && node scripts/emit-protocol-schema.cjs && node scripts/emit-link-protocol.cjs && node scripts/emit-agent-catalog.cjs && node scripts/emit-session-step.cjs && node scripts/emit-session-image.cjs && node scripts/check-esm-imports.mjs",
     "check:generated": "node scripts/emit-protocol-schema.cjs --check && node scripts/emit-link-protocol.cjs --check && node scripts/emit-agent-catalog.cjs --check && node scripts/emit-session-step.cjs --check && node scripts/emit-session-image.cjs --check",
     "dev": "node scripts/write-esm-package-json.cjs && pnpm run \"/^dev:/\"",
     "dev:cjs": "tsc -p tsconfig.json --watch --preserveWatchOutput",

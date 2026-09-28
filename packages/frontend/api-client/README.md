@@ -16,6 +16,11 @@ the repositories and query hooks of `@oppenheimer/frontend-core` and
 `-consumer`, so persist policy and entity mapping stay in one place.
 
 Regenerate after any change to an API endpoint or its Swagger decorators.
+It needs no database, Redis or `.env`: the API boots its module graph without
+connecting and stands in a placeholder `BETTER_AUTH_SECRET` when none is set
+(`apps/api/src/openapi-env.ts`). Both halves end with `biome check --write`
+on what they wrote, so a regeneration with no API change leaves git clean — a
+diff after one is a real change to commit.
 
 Every operation is named by one factory in the API
 (`apps/api/src/openapi-document.ts`): a slice's controller,

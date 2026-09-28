@@ -282,6 +282,12 @@ function slowly<T>(value: T, ms = 150): () => Promise<T> {
 /** A text frame with no mask: a protocol violation from a client (RFC 6455 §5.1). */
 const UNMASKED_FRAME = Buffer.from([0x81, 0x01, 0x41]);
 
+/**
+ * A masked text frame whose one byte, 0xFF, is never valid UTF-8 (RFC 6455
+ * §8.1). The zero mask leaves the payload as written.
+ */
+const INVALID_UTF8_FRAME = Buffer.from([0x81, 0x81, 0x00, 0x00, 0x00, 0x00, 0xff]);
+
 /** The TCP socket under a client, to write what `ws` itself would never send. */
 function rawSocket(socket: WebSocket): Socket {
   return (socket as unknown as { _socket: Socket })._socket;
@@ -1132,6 +1138,22 @@ describe('browser attach socket', () => {
     await opened(browser);
     rawSocket(browser).write(UNMASKED_FRAME);
     await expect(gone).resolves.toMatchObject({ code: 1002 });
+    await stillServing();
+  });
+
+  it('survives a text frame that is not UTF-8 while its ticket is judged', async () => {
+    const warn = vi.spyOn(Logger.prototype, 'warn');
+    vi.mocked(h.workspaces.isMember).mockImplementationOnce(slowly(true));
+    const browser = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
+    sockets.push(browser);
+    browser.on('error', () => {});
+    const gone = closed(browser);
+    await opened(browser);
+    rawSocket(browser).write(INVALID_UTF8_FRAME);
+    await expect(gone).resolves.toMatchObject({ code: 1007 });
+    expect(warn).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'browser attach socket error' }),
+    );
     await stillServing();
   });
 

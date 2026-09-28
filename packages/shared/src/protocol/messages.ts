@@ -1,5 +1,5 @@
 import { z } from 'zod/v4';
-import { hintSchema } from './hint';
+import { hintSchema } from './hint.js';
 import {
   attachmentIdSchema,
   checkoutIdSchema,
@@ -14,8 +14,8 @@ import {
   sessionIdSchema,
   sessionSnapshotSchema,
   windowIndexSchema,
-} from './primitives';
-import { SESSION_IMAGE_MEDIA_TYPES } from './session-image';
+} from './primitives.js';
+import { SESSION_IMAGE_MEDIA_TYPES } from './session-image.js';
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON

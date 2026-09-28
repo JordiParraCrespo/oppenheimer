@@ -28,11 +28,11 @@ export {
   DEPLOYMENT_CAPABILITIES,
   type DeploymentCapabilities,
   type DeploymentCapability,
-} from './deployment-capabilities';
+} from './deployment-capabilities.js';
 export {
   DEFAULT_PROBLEM_TYPE,
   type InvalidParam,
   isProblemDetails,
   PROBLEM_JSON_CONTENT_TYPE,
   type ProblemDetails,
-} from './problem-details';
+} from './problem-details.js';

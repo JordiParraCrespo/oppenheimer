@@ -1,4 +1,4 @@
-import type { AppAbility } from '../permissions';
+import type { AppAbility } from '../permissions/index.js';
 import {
   PERMISSION_GROUPS,
   SCOPE_ACCESS_LEVELS,
@@ -7,7 +7,7 @@ import {
   type ScopeAccessLevel,
   type ScopePolicy,
   type ScopeResource,
-} from './catalog';
+} from './catalog.js';
 
 const SCOPE_SET = new Set<string>(SCOPES);
 

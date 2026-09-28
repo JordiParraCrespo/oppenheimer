@@ -1,4 +1,4 @@
-import type { FlagDefinition, FlagValue } from './types';
+import type { FlagDefinition, FlagValue } from './types.js';
 
 /**
  * The feature-flag catalog — every flag the code may read, and the only place

@@ -8,9 +8,9 @@ import {
   getFlagDefinition,
   isFeatureFlagKey,
   isValidFlagValue,
-} from '../catalog';
-import { updateFeatureFlagSchema } from '../schema';
-import type { FlagDefinition } from '../types';
+} from '../catalog.js';
+import { updateFeatureFlagSchema } from '../schema.js';
+import type { FlagDefinition } from '../types.js';
 
 describe('the feature-flag catalog', () => {
   it.each(FEATURE_FLAG_KEYS)('%s is well-formed', (key) => {

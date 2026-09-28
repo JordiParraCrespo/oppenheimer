@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ORGANIZATION_ROLES } from '../constants';
+import { ORGANIZATION_ROLES } from '../constants/index.js';
 
 /**
  * Request contracts for the organization / members / invitations / workspaces

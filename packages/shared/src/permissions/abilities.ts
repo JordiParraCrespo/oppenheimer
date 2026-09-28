@@ -6,7 +6,7 @@ import {
   type MongoQuery,
   subject as tagSubject,
 } from '@casl/ability';
-import type { Role } from '../types';
+import type { Role } from '../types/index.js';
 
 /**
  * Instance-level permission check: does `ability` allow `action` on this

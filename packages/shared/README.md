@@ -59,7 +59,7 @@ import { PAGINATION } from "@oppenheimer/shared/constants";
 ## Scripts
 
 ```bash
-pnpm build   # tsc -> dist (CJS + .d.ts) and dist/esm (ESM), then the emit-*.cjs generators
+pnpm build   # tsc -> dist (CJS + .d.ts) and dist/esm (ESM), the emit-*.cjs generators, then a Node ESM load check
 pnpm dev     # both tsc builds in watch mode
 pnpm lint    # biome check src/
 ```

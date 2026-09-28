@@ -1,2 +1,2 @@
-export * from './abilities';
-export * from './endpoint-policies';
+export * from './abilities.js';
+export * from './endpoint-policies.js';

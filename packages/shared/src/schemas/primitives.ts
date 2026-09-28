@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CODING_AGENT_IDS } from '../agents/catalog';
+import { CODING_AGENT_IDS } from '../agents/catalog.js';
 
 /**
  * The nouns more than one schema spells, defined once.
