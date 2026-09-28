@@ -15,7 +15,7 @@ import {
   useRevokeOtherProfileSessions,
   useRevokeProfileSession,
 } from '@oppenheimer/frontend-consumer/react';
-import { shareEntities, useErrorMessage, useLastFailure } from '@oppenheimer/frontend-core/react';
+import { lastFailure, shareEntities, useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useTranslation } from 'react-i18next';
 import { DeviceLastSeen } from '../components/device-last-seen';
 
@@ -32,7 +32,7 @@ export function DevicesSection() {
   const devices = useProfileSessions({ structuralSharing: shareEntities });
   const revoke = useRevokeProfileSession();
   const revokeOthers = useRevokeOtherProfileSessions();
-  const failure = useLastFailure(revoke, revokeOthers);
+  const failure = lastFailure([revoke, revokeOthers]);
   // This device first: it is the one row with nothing to do.
   const sorted = [...(devices.data ?? [])].sort((a, b) => Number(b.current) - Number(a.current));
 

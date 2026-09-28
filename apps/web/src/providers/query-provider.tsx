@@ -1,16 +1,12 @@
 import { CONSUMER_NON_PERSISTED_FEATURES } from '@oppenheimer/frontend-consumer/react';
-import {
-  createQueryClientConfig,
-  createQueryPersistOptions,
-} from '@oppenheimer/frontend-core/react';
+import type { OppenheimerApp } from '@oppenheimer/frontend-core';
+import { createQueryClient, createQueryPersistOptions } from '@oppenheimer/frontend-core/react';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import { QueryClient } from '@tanstack/react-query';
 import {
   PersistQueryClientProvider,
   removeOldestQuery,
 } from '@tanstack/react-query-persist-client';
 import { useState } from 'react';
-import { app } from '@/lib/oppenheimer';
 
 /**
  * `localStorage`, or `undefined` where it isn't usable — Safari private mode
@@ -44,10 +40,17 @@ const persistOptions = {
   }),
 };
 
-export function QueryProvider({ children }: { children: React.ReactNode }) {
-  // A 401 anywhere expires the session in the auth store, which sends the
+export function QueryProvider({
+  app,
+  children,
+}: {
+  /** The app whose session a 401 expires: the same one `OppenheimerAppProvider` provides. */
+  app: OppenheimerApp;
+  children: React.ReactNode;
+}) {
+  // A 401 anywhere expires the session and forgets its cache, which sends the
   // router to /login; a 4xx is never retried.
-  const [queryClient] = useState(() => new QueryClient(createQueryClientConfig(app, 60_000)));
+  const [queryClient] = useState(() => createQueryClient(app, 60_000));
 
   return (
     <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>

@@ -44,18 +44,19 @@ export function RouteNotFound({ children }: { children?: ReactNode }) {
  * `errorComponent` without a cast.
  *
  * The message shown is never the error's own: what a bundler throws is not a
- * sentence anyone can act on. A failure that names a code — the API's, or a
- * repository's fallback — is resolved like any other, into the reader's
- * language, and its code and correlation id are shown so a bug report can
- * quote them. Anything else gets the fallback sentence: a render error has no
- * status either, and the resolver would otherwise blame the connection for it.
+ * sentence anyone can act on. A failure from a request — one carrying the
+ * status the server answered, or the code a repository names it by — is
+ * resolved like any other, so an answered failure reads by its code and an
+ * unanswered one as "could not reach the server"; its code and correlation id
+ * are shown so a bug report can quote them. A plain render throw carries
+ * neither and gets the fallback sentence: the resolver would otherwise read
+ * its missing status as the connection's fault.
  */
 export function RouteError({ error }: { error: unknown }) {
   const { t } = useTranslation();
   const router = useRouter();
   const resolveError = useErrorMessage();
-  const resolution = resolveError(error);
-  const resolved = resolution.code ? resolution : undefined;
+  const resolved = isRequestFailure(error) ? resolveError(error) : undefined;
 
   return (
     <EmptyState className="my-auto">
@@ -85,8 +86,26 @@ export function RouteError({ error }: { error: unknown }) {
       </EmptyState.Content>
       {/* Not shown, but in the DOM for a bug report to carry. */}
       <p hidden data-slot="route-error-message">
-        {error instanceof Error ? error.message : String(error)}
+        {describeThrow(error)}
       </p>
     </EmptyState>
   );
+}
+
+/** Whether a throw came from a request: it carries an HTTP status or a named code. */
+function isRequestFailure(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const { status, code } = error as { status?: unknown; code?: unknown };
+  return typeof status === 'number' || (typeof code === 'string' && code !== '');
+}
+
+/** The throw as text for a bug report: a message, or the object itself — never `[object Object]`. */
+function describeThrow(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error !== 'object' || error === null) return String(error);
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
 }

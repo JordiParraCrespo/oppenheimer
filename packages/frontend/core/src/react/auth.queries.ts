@@ -13,6 +13,7 @@ import { useOppenheimerApp } from './context';
 import { featureFlagsQueryOptions } from './feature-flags.queries';
 import { withCacheOnSuccess } from './mutations';
 import { reconcileCacheOwner } from './persistence';
+import { expireSession } from './query-client';
 import { authKeys } from './query-keys';
 import { usersKeys } from './users.queries';
 
@@ -109,7 +110,8 @@ export function useLogout(options?: Omit<UseMutationOptions<void, Error, void>, 
  */
 export function useExpireSession(): () => void {
   const app = useOppenheimerApp();
-  return () => void app.auth.expireSession();
+  const queryClient = useQueryClient();
+  return () => expireSession(app, queryClient);
 }
 
 export function useForgotPassword(

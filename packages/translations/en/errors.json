@@ -155,7 +155,8 @@
     "GIT_002": "A git command failed on the host.",
     "GIT_003": "The branch could not be pushed.",
     "GIT_004": "The host cannot reach that repository. Check that the GitHub App has access to it.",
-    "GIT_005": "A git command on the host took too long and was stopped."
+    "GIT_005": "A git command on the host took too long and was stopped.",
+    "CONSENT_CLIENT_002": "The server did not say where to send you next."
   },
   "notFound": {
     "title": "That page does not exist",

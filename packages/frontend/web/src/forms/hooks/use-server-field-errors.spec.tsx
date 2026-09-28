@@ -15,12 +15,20 @@ const refused = (invalidParams: { name: string; reason: string }[]) =>
     },
   );
 
+interface Values {
+  username: string;
+  nickname?: string;
+  address: { city: string };
+}
+
 function setup(initial: ServerFieldErrorSource) {
   return renderHook(
     ({ source }) => {
-      const form = useForm({ defaultValues: { username: '', firstName: '' } });
-      const leftover = useServerFieldErrors(form, source);
-      return { form, leftover };
+      const form = useForm<Values>({
+        defaultValues: { username: '', nickname: undefined, address: { city: '' } },
+      });
+      const result = useServerFieldErrors(form, source);
+      return { form, result };
     },
     { initialProps: { source: initial } },
   );
@@ -31,24 +39,30 @@ describe('useServerFieldErrors', () => {
     const { result } = setup(refused([{ name: 'username', reason: 'must match /^[a-z]+$/' }]));
 
     expect(result.current.form.getFieldState('username').error?.message).toBe('validation.invalid');
-    expect(result.current.leftover).toEqual([]);
+    expect(result.current.result).toEqual({ unplaced: [], showAlert: false });
   });
 
-  it('reads a resolved message as well as the error', () => {
-    const { result } = setup({ fieldErrors: { firstName: 'too long' } });
+  it('finds a field whose value is undefined, and a nested one', () => {
+    const { result } = setup({ fieldErrors: { nickname: 'taken', 'address.city': 'unknown' } });
 
-    expect(result.current.form.getFieldState('firstName').invalid).toBe(true);
+    expect(result.current.form.getFieldState('nickname').invalid).toBe(true);
+    expect(result.current.form.getFieldState('address.city').invalid).toBe(true);
+    expect(result.current.result.showAlert).toBe(false);
   });
 
-  it('hands back a field the form does not have', () => {
+  it('keeps the alert for a name the form does not have', () => {
     const { result } = setup(refused([{ name: 'organizationId', reason: 'unknown' }]));
 
-    expect(result.current.leftover).toEqual(['organizationId']);
+    expect(result.current.result).toEqual({ unplaced: ['organizationId'], showAlert: true });
+  });
+
+  it('keeps the alert for a failure that names no field, and hides it with no failure', () => {
+    expect(setup({ fieldErrors: {} }).result.current.result.showAlert).toBe(true);
+    expect(setup(null).result.current.result.showAlert).toBe(false);
   });
 
   it('does not re-mark a field the reader cleared while the same failure shows', () => {
-    const failure = { fieldErrors: { username: 'taken' } };
-    const { result, rerender } = setup(failure);
+    const { result, rerender } = setup({ fieldErrors: { username: 'taken' } });
     result.current.form.clearErrors('username');
 
     rerender({ source: { fieldErrors: { username: 'taken' } } });

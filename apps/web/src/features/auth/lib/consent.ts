@@ -1,4 +1,4 @@
-import { AppError, toAppError } from '@oppenheimer/frontend-core';
+import { AppError, type SdkResult, unwrapBody } from '@oppenheimer/frontend-core';
 import type { PermissionGroup, Scope } from '@oppenheimer/shared';
 
 export interface ConsentSearch {
@@ -40,42 +40,51 @@ export function describeScopes(
   return { scopes: matched, unknown: [...requested] };
 }
 
-/** Client-side fallbacks for the consent call; the screen words them. */
+/**
+ * Client-side fallbacks for the consent call. `NO_REDIRECT` has its own
+ * `errors.byCode` entry; `FAILED` reads as the screen's own fallback.
+ */
 export const ConsentErrors = {
   FAILED: { code: 'CONSENT_CLIENT_001', message: 'The consent could not be recorded' },
   NO_REDIRECT: { code: 'CONSENT_CLIENT_002', message: 'The consent answer carried no redirect' },
 } as const;
 
-/**
- * Post the reader's answer and return where the OAuth client wants them next.
- *
- * Every failure rejects as an `AppError`, the way a repository's would, so the
- * screen resolves it into the reader's language by its code — never the
- * server's English `message`, and never a `TypeError`'s "Failed to fetch". A
- * request that got no answer keeps no status, which is what lets the resolver
- * say "could not reach the server" for exactly that case.
- */
-export async function submitConsent(accept: boolean, consentCode: string): Promise<string> {
-  let response: Response;
+/** The consent endpoint's answer, in the shape the generated SDK gives: it never throws. */
+async function postConsent(
+  accept: boolean,
+  consentCode: string,
+): Promise<SdkResult<{ redirectURI?: string }>> {
   try {
-    response = await fetch('/api/auth/oauth2/consent', {
+    const response = await fetch('/api/auth/oauth2/consent', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ accept, consent_code: consentCode }),
     });
-  } catch (cause) {
-    throw toAppError(cause, ConsentErrors.FAILED);
+    const body: unknown = await response.json().catch(() => undefined);
+    return response.ok
+      ? { data: body as { redirectURI?: string }, response }
+      : { error: body ?? response.statusText, response };
+  } catch (error) {
+    return { error };
   }
+}
 
-  const body = (await response.json().catch(() => undefined)) as
-    | { redirectURI?: string; code?: unknown }
-    | undefined;
-  if (!response.ok) {
-    throw toAppError({ status: response.status, body, code: body?.code }, ConsentErrors.FAILED);
-  }
-  if (!body?.redirectURI) {
-    throw new AppError(ConsentErrors.NO_REDIRECT, { status: response.status });
+/**
+ * Post the reader's answer and return where the OAuth client wants them next.
+ *
+ * Better Auth's plugin endpoint is not on the generated client, so the call is
+ * made here — and then unwrapped by the same `unwrapBody` every repository
+ * uses, so its failures are `AppError`s the screen resolves by code: never the
+ * server's English `message`, never a `TypeError`'s "Failed to fetch". A
+ * request that got no answer keeps no status, which is what lets the resolver
+ * say "could not reach the server" for exactly that case.
+ */
+export async function submitConsent(accept: boolean, consentCode: string): Promise<string> {
+  const result = await postConsent(accept, consentCode);
+  const body = await unwrapBody(result, ConsentErrors.FAILED);
+  if (!body.redirectURI) {
+    throw new AppError(ConsentErrors.NO_REDIRECT, { status: result.response?.status });
   }
   return body.redirectURI;
 }

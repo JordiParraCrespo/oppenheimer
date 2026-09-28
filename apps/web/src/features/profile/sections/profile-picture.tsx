@@ -9,7 +9,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import type { ProfileEntity } from '@oppenheimer/frontend-consumer';
 import { useDeleteAvatar, useUploadAvatar } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage, useLastFailure } from '@oppenheimer/frontend-core/react';
+import { lastFailure, useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { AVATAR_MIME_TYPES } from '@oppenheimer/shared/schemas/profile';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,7 +27,7 @@ export function ProfilePictureSection({ profile }: { profile: ProfileEntity }) {
   const upload = useUploadAvatar();
   const remove = useDeleteAvatar();
   const busy = upload.isPending || remove.isPending;
-  const failure = useLastFailure(upload, remove).error;
+  const failure = lastFailure([upload, remove]).error;
 
   return (
     <>

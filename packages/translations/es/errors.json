@@ -155,7 +155,8 @@
     "GIT_002": "Ha fallado un comando de git en el host.",
     "GIT_003": "No se ha podido subir la rama.",
     "GIT_004": "El host no puede acceder a ese repositorio. Comprueba que la GitHub App tiene acceso.",
-    "GIT_005": "Un comando de git en el host ha tardado demasiado y se ha detenido."
+    "GIT_005": "Un comando de git en el host ha tardado demasiado y se ha detenido.",
+    "CONSENT_CLIENT_002": "El servidor no ha indicado a dónde continuar."
   },
   "notFound": {
     "title": "Esta página no existe",

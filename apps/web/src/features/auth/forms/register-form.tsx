@@ -1,9 +1,8 @@
 import { Button, FieldGroup, Input, PasswordInput } from '@oppenheimer/design-system-web';
 import {
   AuthField,
-  AuthFormError,
+  AuthFormFailure,
   type ResolvedErrorMessage,
-  useServerFieldErrors,
   useZodResolver,
 } from '@oppenheimer/frontend-web';
 import { type RegisterDto, registerSchema } from '@oppenheimer/shared/schemas/auth';
@@ -37,13 +36,11 @@ export function RegisterForm({
     resolver: useZodResolver(registerSchema),
     defaultValues: { firstName: '', lastName: '', email: '', password: '' },
   });
-  // Fields the server refused are marked on the fields themselves.
-  useServerFieldErrors({ setError, getValues }, error);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <FieldGroup>
-        {error && <AuthFormError>{error.message}</AuthFormError>}
+        <AuthFormFailure form={{ setError, getValues }} error={error} />
 
         <div className="grid grid-cols-2 gap-3">
           <AuthField label={t('auth.firstName')} htmlFor="firstName" error={errors.firstName}>

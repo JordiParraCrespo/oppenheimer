@@ -63,8 +63,8 @@ export function AutomationEditor({
     resolver: useZodResolver(automationTaskSchema),
     defaultValues: initialTask,
   });
-  // The task's fields the server refused are marked on the fields themselves.
-  useServerFieldErrors(form, failure);
+  // The task's fields the server refused are marked on the fields; the alert keeps the rest.
+  const { showAlert } = useServerFieldErrors(form, failure);
 
   const repoIds = draftRepoIds(draft);
   const repositories = repoIds.map((id) => ({
@@ -118,7 +118,7 @@ export function AutomationEditor({
           tall enough for it; below that the body shrinks and scrolls, so the
           footer's buttons stay reachable. */}
       <DialogBody className="[@media(min-height:720px)]:min-h-75">
-        {failure ? (
+        {failure && showAlert ? (
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>{failure.message}</AlertDescription>
           </Alert>

@@ -11,6 +11,7 @@ copy in the recipient's locale).
 en/{area}.json        # English, one file per product area (source of truth)
 es/{area}.json        # Spanish, same keys
 en/index.json         # assembled merge (`pnpm --filter @oppenheimer/translations assemble`)
+en/browser.json       # the same without the namespaces no browser reads, assembled too
 locales.ts            # locale list, default, namespace, Messages type — no catalogs
 lazy.ts               # one dynamic import per catalog, for the browsers
 index.ts              # the eager barrel: every catalog, for the API
@@ -25,6 +26,9 @@ So:
 - metadata (`locales`, `defaultLocale`, `defaultNS`, `Locale`, `Messages`) →
   `@oppenheimer/translations/locales`
 - a catalog, on demand, in a browser → `@oppenheimer/translations/lazy`
+- the default locale, bundled, in a browser → `@oppenheimer/translations/en/browser.json`
+  (generated; `NOT_IN_BROWSER` in `scripts/assemble.mjs` lists what it leaves
+  out — a screen that starts reading one of those takes it off the list)
 - every catalog at once → `@oppenheimer/translations`
 
 Adding a locale means a directory, an entry in `locales.ts`, and a line in
@@ -41,7 +45,7 @@ template-string import.
 - The console and the API's email templates consume the same bundles, so keys
   must stay platform-neutral.
 - The `validation.*` keys back form validation: `createZodErrorMap` in
-  `@oppenheimer/frontend/validation` resolves a Zod issue code to one of them. Adding
+  `@oppenheimer/frontend-core/validation` (`packages/frontend/core/src/validation/`) resolves a Zod issue code to one of them. Adding
   a case there means adding the key here, in every locale — the apps type `t()`
   against this catalog, so a missing entry fails the build rather than shipping
   a raw key. See [`.agents/rules/forms.md`](../../.agents/rules/forms.md).

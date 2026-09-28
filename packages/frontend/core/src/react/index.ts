@@ -35,7 +35,7 @@ export {
   useFeatureFlagValue,
 } from './feature-flags.queries';
 export { useAuthState } from './hooks';
-export { type LastFailure, type TrackedMutation, useLastFailure } from './last-failure';
+export { type LastFailure, lastFailure, type TrackedMutation } from './last-failure';
 export { withCacheOnSuccess } from './mutations';
 export {
   cacheOwnerKey,
@@ -48,13 +48,15 @@ export {
   reconcileCacheOwner,
   shouldDehydrateQuery,
 } from './persistence';
-export { MEMBER_LISTS_KEY, withFeaturePrefix } from './query-keys';
 export {
-  createQueryClientConfig,
+  createQueryClient,
+  expireSession,
   isUnauthorized,
   type SessionExpiryTarget,
   shouldRetryQuery,
-} from './session-expiry';
+} from './query-client';
+export { MEMBER_LISTS_KEY, withFeaturePrefix } from './query-keys';
+
 export { shareEntities } from './share-entities';
 export { userSettingsKeys, useUpdateUserSettings, useUserSettings } from './user-settings.queries';
 export {

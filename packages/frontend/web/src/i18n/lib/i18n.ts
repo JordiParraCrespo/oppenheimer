@@ -1,4 +1,4 @@
-import en from '@oppenheimer/translations/en/browser';
+import en from '@oppenheimer/translations/en/browser.json';
 import { loadLocaleMessages } from '@oppenheimer/translations/lazy';
 import { defaultLocale, defaultNS, locales } from '@oppenheimer/translations/locales';
 import i18n, { type BackendModule } from 'i18next';

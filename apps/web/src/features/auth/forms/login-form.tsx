@@ -1,9 +1,8 @@
 import { Button, FieldGroup, Input, PasswordInput } from '@oppenheimer/design-system-web';
 import {
   AuthField,
-  AuthFormError,
+  AuthFormFailure,
   type ResolvedErrorMessage,
-  useServerFieldErrors,
   useZodResolver,
 } from '@oppenheimer/frontend-web';
 import { type LoginDto, loginSchema } from '@oppenheimer/shared/schemas/auth';
@@ -38,13 +37,11 @@ export function LoginForm({
     resolver: useZodResolver(loginSchema),
     defaultValues: { email: defaultEmail ?? '', password: '' },
   });
-  // Fields the server refused are marked on the fields themselves.
-  useServerFieldErrors({ setError, getValues }, error);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <FieldGroup>
-        {error && <AuthFormError>{error.message}</AuthFormError>}
+        <AuthFormFailure form={{ setError, getValues }} error={error} />
 
         <AuthField label={t('auth.email')} htmlFor="email" error={errors.email}>
           <Input

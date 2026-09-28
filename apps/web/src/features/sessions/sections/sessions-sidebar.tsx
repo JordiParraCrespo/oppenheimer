@@ -16,7 +16,7 @@ import {
   useRenameSession,
   useSessions,
 } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage, useLastFailure } from '@oppenheimer/frontend-core/react';
+import { lastFailure, useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useConsoleDialog } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
@@ -126,7 +126,7 @@ export function SessionsSidebar() {
   // The write that failed last, if one did: a menu closes on its pick, so the
   // failure has to stay on screen somewhere the row is. A later write that
   // lands clears it, and so does Dismiss.
-  const failure = useLastFailure(move, rename);
+  const failure = lastFailure([move, rename]);
 
   function commitRename() {
     if (!renaming) return;

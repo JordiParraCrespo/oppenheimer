@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { type TrackedMutation, useLastFailure } from '../last-failure';
+import { lastFailure, type TrackedMutation } from '../last-failure';
 
 const mutation = (submittedAt: number, error: Error | null = null): TrackedMutation => ({
   error,
@@ -7,30 +7,40 @@ const mutation = (submittedAt: number, error: Error | null = null): TrackedMutat
   reset: vi.fn(),
 });
 
-describe('useLastFailure', () => {
+describe('lastFailure', () => {
   it('is empty before anything was submitted', () => {
-    expect(useLastFailure(mutation(0), mutation(0)).error).toBeNull();
+    expect(lastFailure([mutation(0), mutation(0)])).toMatchObject({ error: null, index: -1 });
   });
 
-  it('shows the failure of the mutation submitted last', () => {
+  it('shows the failure of the mutation submitted last, and says which', () => {
     const early = mutation(1, new Error('early'));
     const late = mutation(2, new Error('late'));
 
-    expect(useLastFailure(early, late).error?.message).toBe('late');
-    expect(useLastFailure(late, early).error?.message).toBe('late');
+    expect(lastFailure([early, late])).toMatchObject({ index: 1 });
+    expect(lastFailure([late, early])).toMatchObject({ index: 0 });
+    expect(lastFailure([early, late]).error?.message).toBe('late');
   });
 
   it('clears an earlier failure once a later mutation succeeds', () => {
-    expect(useLastFailure(mutation(1, new Error('early')), mutation(2)).error).toBeNull();
+    expect(lastFailure([mutation(1, new Error('early')), mutation(2)])).toMatchObject({
+      error: null,
+      index: -1,
+    });
   });
 
-  it('dismisses by resetting the mutation it shows', () => {
-    const early = mutation(1);
-    const late = mutation(2, new Error('late'));
+  it('resolves a tie to the one later in the list', () => {
+    expect(lastFailure([mutation(5, new Error('a')), mutation(5, new Error('b'))]).index).toBe(1);
+  });
 
-    useLastFailure(early, late).dismiss();
+  it('dismisses every failure, so an older one does not take its place', () => {
+    const older = mutation(1, new Error('older'));
+    const newer = mutation(2, new Error('newer'));
+    const fine = mutation(3);
 
-    expect(late.reset).toHaveBeenCalledOnce();
-    expect(early.reset).not.toHaveBeenCalled();
+    lastFailure([older, newer, fine]).dismiss();
+
+    expect(older.reset).toHaveBeenCalledOnce();
+    expect(newer.reset).toHaveBeenCalledOnce();
+    expect(fine.reset).not.toHaveBeenCalled();
   });
 });

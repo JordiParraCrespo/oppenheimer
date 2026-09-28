@@ -4,7 +4,7 @@ import {
   useRunAutomation,
   useSetAutomationPaused,
 } from '@oppenheimer/frontend-consumer/react';
-import { useLastFailure } from '@oppenheimer/frontend-core/react';
+import { lastFailure } from '@oppenheimer/frontend-core/react';
 
 /**
  * What a row menu and a page header do to an automation: Run now, pause or
@@ -27,18 +27,12 @@ export function useAutomationActions(options?: {
   });
   const remove = useDeleteAutomation({ onSuccess: () => options?.onDeleted?.() });
 
-  const failure = useLastFailure(run, pause, duplicate, remove);
-  // The id the failed action was for, read off the mutation that failed.
-  const failedId =
-    failure.error === null
-      ? undefined
-      : failure.error === run.error
-        ? run.variables?.id
-        : failure.error === pause.error
-          ? pause.variables?.id
-          : failure.error === duplicate.error
-            ? duplicate.variables
-            : remove.variables;
+  const failure = lastFailure([run, pause, duplicate, remove]);
+  // The automation the failed action was for: each mutation's own variables,
+  // in the order the list above names them.
+  const failedId = [run.variables?.id, pause.variables?.id, duplicate.variables, remove.variables][
+    failure.index
+  ];
 
   return {
     runNow: (id: string) => run.mutate({ id, idempotencyKey: crypto.randomUUID() }),

@@ -98,7 +98,15 @@ export function toAppError(error: unknown, fallback: ErrorDefinition): AppError 
     });
   }
 
-  const code = typeof candidate?.code === 'string' ? candidate.code : undefined;
+  // Better Auth answers with `{ code, message }` rather than a problem
+  // document; its code is still the one thing the resolver can translate.
+  const bodyCode = (body as { code?: unknown } | undefined)?.code;
+  const code =
+    typeof candidate?.code === 'string'
+      ? candidate.code
+      : typeof bodyCode === 'string'
+        ? bodyCode
+        : undefined;
 
   return new AppError(code ? { ...fallback, code } : fallback, {
     status: candidate?.status,
@@ -137,12 +145,21 @@ export async function unwrap<T>(
  * {@link unwrap}, for a call whose success is a body. An empty one is a failed
  * read, not an empty result: returning `[]` or `{}` would render "nothing here"
  * over a request that never succeeded.
+ *
+ * `isComplete` states what else the body must hold — a paginated envelope's
+ * `data`, say — so a repository does not check it again and throw a second,
+ * status-less error of its own. Either way the failure keeps the response's
+ * status: the server answered, so it is not "could not reach the server".
  */
 export async function unwrapBody<T>(
   call: Promise<SdkResult<T>> | SdkResult<T>,
   fallback: ErrorDefinition,
+  isComplete: (body: NonNullable<T>) => boolean = () => true,
 ): Promise<NonNullable<T>> {
-  const data = await unwrap(call, fallback);
-  if (data === undefined || data === null) throw new AppError(fallback);
+  const { data, error, response } = await call;
+  if (error !== undefined) throw toAppError({ status: response?.status, body: error }, fallback);
+  if (data === undefined || data === null || !isComplete(data as NonNullable<T>)) {
+    throw new AppError(fallback, { status: response?.status });
+  }
   return data as NonNullable<T>;
 }

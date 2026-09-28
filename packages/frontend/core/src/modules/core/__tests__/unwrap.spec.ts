@@ -77,10 +77,20 @@ describe('unwrap', () => {
 });
 
 describe('unwrapBody', () => {
-  it('treats an empty body as a failed read', async () => {
+  it('treats an empty body as a failed read the server still answered', async () => {
     const error = await rejection(unwrapBody(answered(200, { data: undefined }), CREATE_FAILED));
 
     expect(error.code).toBe(CREATE_FAILED.code);
+    expect(error.status).toBe(200);
+  });
+
+  it('treats a body missing what the caller requires as a failed read, with its status', async () => {
+    const page = answered(200, { data: { meta: { total: 0 } } as { data?: unknown[] } });
+    const error = await rejection(
+      unwrapBody(page, CREATE_FAILED, (body) => Array.isArray(body.data)),
+    );
+
+    expect(error.status).toBe(200);
   });
 
   it('passes a failure through with its status', async () => {

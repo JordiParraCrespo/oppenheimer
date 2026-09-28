@@ -1,19 +1,34 @@
+import type { ResolvedErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useEffect } from 'react';
 import type { FieldPath, FieldValues, UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 /**
- * A failure that may name fields: a resolved message, an `AppError` (both carry
- * `fieldErrors`), or anything else a mutation rejected with, which names none.
+ * A failure that may name fields: what `useErrorMessage()` resolves, or an
+ * `AppError` itself — both carry `fieldErrors` keyed by the `invalidParams`
+ * name. `null` or `undefined` while nothing has failed.
  */
-export type ServerFieldErrorSource = unknown;
+export type ServerFieldErrorSource = Pick<ResolvedErrorMessage, 'fieldErrors'> | null | undefined;
 
-function fieldErrorsOf(source: ServerFieldErrorSource): Record<string, string> {
-  if (typeof source !== 'object' || source === null || !('fieldErrors' in source)) return {};
-  const { fieldErrors } = source as { fieldErrors: unknown };
-  return typeof fieldErrors === 'object' && fieldErrors !== null
-    ? (fieldErrors as Record<string, string>)
-    : {};
+export interface ServerFieldErrors {
+  /** Names the refusal gave that are not fields of this form. */
+  unplaced: string[];
+  /**
+   * Whether the caller's top-level alert still has something to say: the
+   * failure named no field, or named one the form does not have. When every
+   * named field is marked, the fields say it and the alert would repeat it.
+   */
+  showAlert: boolean;
+}
+
+/** Whether a dotted path (`address.city`) exists in the form's values, set or not. */
+function hasPath(values: unknown, path: string): boolean {
+  let current: unknown = values;
+  for (const segment of path.split('.')) {
+    if (typeof current !== 'object' || current === null || !(segment in current)) return false;
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return true;
 }
 
 /**
@@ -21,29 +36,29 @@ function fieldErrorsOf(source: ServerFieldErrorSource): Record<string, string> {
  *
  * The API's problem document lists rejected fields in `invalidParams`, and
  * nothing read them: a form showed one alert over the whole thing and left
- * the reader to guess which field it meant. This marks each named field that
- * exists in the form as invalid, so it gets the field's own styling and
- * message.
+ * the reader to guess which field it meant. This marks each named field the
+ * form holds — by path, so a field whose value is `undefined` still counts
+ * and a nested name (`address.city`) is found — and tells the caller whether
+ * its alert is still needed.
  *
  * The message is ours, not the server's: `invalidParams[].reason` is English,
  * written for API clients, and carries no code a locale could key on. So a
  * field is marked with the translated `validation.invalid`, never the raw
- * reason. A named field the form does not have is returned, for the caller to
- * leave in its top-level alert.
+ * reason.
  */
 export function useServerFieldErrors<TValues extends FieldValues>(
   form: Pick<UseFormReturn<TValues>, 'setError' | 'getValues'>,
   source: ServerFieldErrorSource,
-): string[] {
+): ServerFieldErrors {
   const { t } = useTranslation();
-  const fieldErrors = fieldErrorsOf(source);
-  const names = Object.keys(fieldErrors);
-  const known = names.filter((name) => form.getValues(name as FieldPath<TValues>) !== undefined);
+  const names = Object.keys(source?.fieldErrors ?? {});
+  const values = form.getValues();
+  const placed = names.filter((name) => hasPath(values, name));
   const message = t('validation.invalid');
   // What the effect is keyed on: the names, not the object carrying them. A
   // resolved message is a new object on every render, and re-marking a field
   // each render would undo the reader's fix before they could make it.
-  const key = known.join('\n');
+  const key = placed.join('\n');
 
   // Synchronises React Hook Form's error store with the last refusal: it runs
   // when a different set of fields is refused (a retry clears the failure
@@ -61,5 +76,6 @@ export function useServerFieldErrors<TValues extends FieldValues>(
     }
   }, [key]);
 
-  return names.filter((name) => !known.includes(name));
+  const unplaced = names.filter((name) => !placed.includes(name));
+  return { unplaced, showAlert: Boolean(source) && (names.length === 0 || unplaced.length > 0) };
 }

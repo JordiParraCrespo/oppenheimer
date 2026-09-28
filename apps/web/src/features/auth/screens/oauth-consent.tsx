@@ -11,17 +11,11 @@ import {
   CardTitle,
 } from '@oppenheimer/design-system-web';
 import { usePermissionCatalog } from '@oppenheimer/frontend-consumer/react';
-import { AppError } from '@oppenheimer/frontend-core';
 import { useErrorMessage, useProfile } from '@oppenheimer/frontend-core/react';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ConsentErrors,
-  type ConsentSearch,
-  describeScopes,
-  submitConsent,
-} from '@/features/auth/lib/consent';
+import { type ConsentSearch, describeScopes, submitConsent } from '@/features/auth/lib/consent';
 
 /**
  * OAuth consent screen.
@@ -87,14 +81,7 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
           {error ? (
             <Alert variant="destructive">
               <AlertDescription>
-                {
-                  resolveError(
-                    error,
-                    error instanceof AppError && error.code === ConsentErrors.NO_REDIRECT.code
-                      ? t('consent.noRedirect')
-                      : t('consent.failed'),
-                  ).message
-                }
+                {resolveError(error, t('consent.failed')).message}
               </AlertDescription>
             </Alert>
           ) : null}

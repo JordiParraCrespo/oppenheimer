@@ -38,7 +38,7 @@ import {
   useSessions,
   useUpdateProject,
 } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage, useLastFailure } from '@oppenheimer/frontend-core/react';
+import { lastFailure, useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useServerFieldErrors, useZodResolver } from '@oppenheimer/frontend-web';
 import { CODING_AGENT_IDS, CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import { createProjectSchema } from '@oppenheimer/shared/schemas/project';
@@ -191,7 +191,13 @@ function ProjectForm({
   const create = useCreateProject({ onSuccess: onSaved });
   const update = useUpdateProject({ onSuccess: onSaved });
   const pending = create.isPending || update.isPending;
-  const failure = useLastFailure(create, update).error;
+  const saveFailure = lastFailure([create, update]).error;
+  const failure = saveFailure
+    ? resolveError(
+        saveFailure,
+        t(editing ? 'projects.dialog.saveFailed' : 'projects.dialog.failed'),
+      )
+    : null;
 
   const {
     register,
@@ -204,8 +210,9 @@ function ProjectForm({
     resolver: useZodResolver(nameSchema),
     defaultValues: { name: project?.name ?? '' },
   });
-  // A name the server refused is marked on the name field itself.
-  useServerFieldErrors({ setError, getValues }, failure);
+  // A name the server refused is marked on the name field itself, and the
+  // alert stays only for what the fields cannot say.
+  const { showAlert } = useServerFieldErrors({ setError, getValues }, failure);
   // The footer's Save reads the name as it is typed; this dialog is the lowest
   // component that shows the answer, so the subscription is here.
   const name = useWatch({ control, name: 'name' });
@@ -285,16 +292,9 @@ function ProjectForm({
 
             <DialogBody>
               <div className="flex flex-col gap-5.5">
-                {failure ? (
+                {failure && showAlert ? (
                   <Alert variant="destructive">
-                    <AlertDescription>
-                      {
-                        resolveError(
-                          failure,
-                          t(editing ? 'projects.dialog.saveFailed' : 'projects.dialog.failed'),
-                        ).message
-                      }
-                    </AlertDescription>
+                    <AlertDescription>{failure.message}</AlertDescription>
                   </Alert>
                 ) : null}
 

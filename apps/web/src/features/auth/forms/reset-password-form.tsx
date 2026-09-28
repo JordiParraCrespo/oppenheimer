@@ -1,9 +1,8 @@
 import { Button, FieldGroup, PasswordInput } from '@oppenheimer/design-system-web';
 import {
   AuthField,
-  AuthFormError,
+  AuthFormFailure,
   type ResolvedErrorMessage,
-  useServerFieldErrors,
   useZodResolver,
 } from '@oppenheimer/frontend-web';
 import { resetPasswordSchema } from '@oppenheimer/shared/schemas/auth';
@@ -52,13 +51,11 @@ export function ResetPasswordForm({
     resolver: useZodResolver(newPasswordSchema(t('auth.passwordsDoNotMatch'))),
     defaultValues: { password: '', confirmPassword: '' },
   });
-  // Fields the server refused are marked on the fields themselves.
-  useServerFieldErrors({ setError, getValues }, error);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <FieldGroup>
-        {error && <AuthFormError>{error.message}</AuthFormError>}
+        <AuthFormFailure form={{ setError, getValues }} error={error} />
 
         <AuthField
           label={t('auth.resetPassword.newPassword')}

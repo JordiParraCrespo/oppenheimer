@@ -1,6 +1,4 @@
-'use client';
-
-/** The part of a `useMutation` result {@link useLastFailure} reads. */
+/** The part of a `useMutation` result {@link lastFailure} reads. */
 export interface TrackedMutation {
   error: Error | null;
   /** When the last `mutate` was called; `0` for one never called. */
@@ -11,7 +9,13 @@ export interface TrackedMutation {
 export interface LastFailure {
   /** The failure of the mutation submitted last, or `null` if it did not fail. */
   error: Error | null;
-  /** Forget it: resets the mutation it came from. */
+  /**
+   * Which of the mutations it was, by its position in the list — so a caller
+   * can read that mutation's own `variables` (which automation, which row)
+   * without comparing errors. `-1` when nothing failed.
+   */
+  index: number;
+  /** Clear the alert: resets every mutation in the list that holds a failure. */
   dismiss: () => void;
 }
 
@@ -21,15 +25,30 @@ export interface LastFailure {
  * `a.error ?? b.error` keeps showing `a`'s failure after `b` succeeds, and
  * nothing can clear it. This answers the mutation that was submitted **last**
  * instead: its error if it failed, nothing if it succeeded or is still
- * running. So a later success clears an earlier failure, a later failure
- * replaces it, and `dismiss` resets whichever one is showing.
+ * running. So a later success clears an earlier failure and a later failure
+ * replaces it. Two submitted in the same millisecond resolve to the one later
+ * in the list.
+ *
+ * Dismiss resets every failed mutation, not only the one showing: resetting
+ * that one alone would hand "last submitted" to an older failure, and the alert
+ * the reader just closed would come back with it.
+ *
+ * A plain function, not a hook: it reads the mutation results a component
+ * already holds and calls no React API.
  */
-export function useLastFailure(...mutations: TrackedMutation[]): LastFailure {
-  let latest: TrackedMutation | undefined;
-  for (const mutation of mutations) {
-    if (mutation.submittedAt > 0 && (!latest || mutation.submittedAt >= latest.submittedAt)) {
-      latest = mutation;
-    }
-  }
-  return { error: latest?.error ?? null, dismiss: () => latest?.reset() };
+export function lastFailure(mutations: readonly TrackedMutation[]): LastFailure {
+  let index = -1;
+  mutations.forEach((mutation, position) => {
+    if (mutation.submittedAt === 0) return;
+    const latest = mutations[index];
+    if (!latest || mutation.submittedAt >= latest.submittedAt) index = position;
+  });
+  const error = mutations[index]?.error ?? null;
+  return {
+    error,
+    index: error ? index : -1,
+    dismiss: () => {
+      for (const mutation of mutations) if (mutation.error) mutation.reset();
+    },
+  };
 }

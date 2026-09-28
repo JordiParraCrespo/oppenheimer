@@ -98,7 +98,7 @@ never asks the map about it.
 
 ## Adding a message
 
-`createZodErrorMap` (in `@oppenheimer/frontend/validation`) maps a Zod issue code onto
+`createZodErrorMap` (in `@oppenheimer/frontend-core/validation` (`packages/frontend/core/src/validation/`)) maps a Zod issue code onto
 a `validation.*` translation key. To cover a new issue code:
 
 1. Add the case to `createZodErrorMap`.

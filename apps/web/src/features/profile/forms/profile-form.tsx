@@ -82,8 +82,8 @@ export function ProfileForm({
     resolver: useZodResolver(profileFormSchema),
     values,
   });
-  // Fields the server refused are marked on the fields themselves.
-  useServerFieldErrors({ setError, getValues }, error);
+  // Fields the server refused are marked on the fields; the alert keeps the rest.
+  const { showAlert } = useServerFieldErrors({ setError, getValues }, error);
 
   const submit = handleSubmit((form) => {
     const parsed = profileFormSchema.parse(form);
@@ -160,7 +160,7 @@ export function ProfileForm({
           )}
         />
       </SettingsRow>
-      {error ? (
+      {error && showAlert ? (
         <div className="border-t border-border-subtle px-5 py-3">
           <Alert variant="destructive">
             <AlertDescription>{error.message}</AlertDescription>

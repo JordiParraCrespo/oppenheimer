@@ -106,7 +106,7 @@ email: z.string().email('Invalid email address'),
 Zod ignores the error map it is handed whenever a check states its own message,
 so a hardcoded string silently pins every consumer to English. The apps' forms
 translate from the issue code instead (`createZodErrorMap` in
-`@oppenheimer/frontend/validation`), and that only works if the schema stays quiet.
+`@oppenheimer/frontend-core/validation`), and that only works if the schema stays quiet.
 
 A `refine` whose meaning cannot be recovered from the issue code — an IP-or-CIDR
 check, say — is the exception, and falls through untranslated by design.

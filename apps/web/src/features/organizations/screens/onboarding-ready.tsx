@@ -100,10 +100,13 @@ export function OnboardingReadyScreen({
             t('onboarding.flow.ready.noGithub')
           ) : installation.coversEveryRepository ? (
             installation.accountLogin
-          ) : loadingRepositories || repositoriesFailed ? (
+          ) : repositoriesFailed ? (
+            // A failed count is a failed read, not a connected account minus a
+            // number: say so, like the other rows.
+            t('onboarding.flow.ready.failed')
+          ) : loadingRepositories ? (
             // The account is known before the count is. Showing it alone beats
-            // printing "0 repositories" at a reader who has just connected, and
-            // it is what a failed count leaves true.
+            // printing "0 repositories" at a reader who has just connected.
             installation.accountLogin
           ) : (
             t('onboarding.flow.ready.repos', {
