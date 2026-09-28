@@ -37,7 +37,7 @@ describe('formatShortDuration', () => {
 
   it('switches to days where the caller says', () => {
     expect(formatShortDuration(45 * HOUR, t)).toBe('day:2');
-    expect(formatShortDuration(45 * HOUR, t, { daysFrom: 48 })).toBe('hour:45');
+    expect(formatShortDuration(45 * HOUR, t, 'wait')).toBe('hour:45');
   });
 });
 

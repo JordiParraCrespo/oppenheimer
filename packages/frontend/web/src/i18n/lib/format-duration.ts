@@ -61,17 +61,23 @@ export function formatCountdown(ms: number, locale: string): string {
 }
 
 /**
+ * Where a compact duration switches from hours to days, by what it measures:
+ * an age turns into days after a day ("2d ago"); a wait the reader plans
+ * around keeps its hours for two ("in 45h", the automations sidebar's frame).
+ */
+const DAYS_FROM_HOURS = { age: 24, wait: 48 } as const;
+
+/**
  * A duration in its one largest unit: "45m", "3h", "2d", at least a minute —
  * in the `common.relative.*` words, the one place the console's compact ages
- * are written, so a wait and an age read the same. `daysFrom` is the hour
- * count where it switches to days: 24 for an age ("2d ago"), 48 for a wait the
- * reader plans around ("in 45h").
+ * are written, so a wait and an age read the same.
  */
 export function formatShortDuration(
   ms: number,
   t: TFunction,
-  { daysFrom = 24 }: { daysFrom?: number } = {},
+  kind: keyof typeof DAYS_FROM_HOURS = 'age',
 ): string {
+  const daysFrom = DAYS_FROM_HOURS[kind];
   const minutes = Math.max(1, Math.round(ms / MINUTE));
   if (minutes < 60) return t('common.relative.minute', { count: minutes });
   const hours = Math.round(ms / HOUR);

@@ -60,62 +60,65 @@ export function AutomationsTable() {
         title={failedName ? t('automations.page.actionFailedFor', { name: failedName }) : undefined}
         onDismiss={actions.dismissFailure}
       />
-      <RoutineTable>
-        <QueryState
-          query={automations}
-          pending={
+      {/* A failed load is the page's to say, beside a failed action — not a
+          row of the table. */}
+      <QueryState
+        query={automations}
+        pending={
+          <RoutineTable>
             <div className="flex flex-col gap-1.5 p-1.5">
               <Skeleton className="h-13.5 w-full" />
               <Skeleton className="h-13.5 w-full" />
             </div>
-          }
-          errorFallback={t('automations.page.loadFailed')}
-          errorClassName="m-1.5"
-          empty={{
-            when: (rows) => rows.length === 0,
-            show: (
+          </RoutineTable>
+        }
+        errorFallback={t('automations.page.loadFailed')}
+        empty={{
+          when: (rows) => rows.length === 0,
+          show: (
+            <RoutineTable>
               <RoutineTableEmpty>
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-hover-surface text-fg-muted [&_svg]:size-4">
                   <Zap />
                 </span>
                 <span>{t('automations.page.empty')}</span>
               </RoutineTableEmpty>
-            ),
-          }}
-        >
-          {(rows) => (
-            <>
-              <RoutineTableHead
-                columns={[
-                  t('automations.table.automation'),
-                  t('automations.table.trigger'),
-                  t('automations.table.next'),
-                  t('automations.table.status'),
-                ]}
+            </RoutineTable>
+          ),
+        }}
+      >
+        {(rows) => (
+          <RoutineTable>
+            <RoutineTableHead
+              columns={[
+                t('automations.table.automation'),
+                t('automations.table.trigger'),
+                t('automations.table.next'),
+                t('automations.table.status'),
+              ]}
+            />
+            {rows.map((automation) => (
+              <AutomationTableRow
+                key={automation.id}
+                automation={automation}
+                subline={automationSubline(automation, projectNames?.get(automation.projectId))}
+                trigger={automationTriggerText(automation, locale, t)}
+                onOpen={() =>
+                  navigate({
+                    to: '/automations/$automationId',
+                    params: { automationId: automation.id },
+                  })
+                }
+                onEdit={() => dialogs.open({ kind: 'automation', automationId: automation.id })}
+                onRunNow={() => actions.runNow(automation.id)}
+                onTogglePause={() => actions.setPaused(automation.id, !automation.isPaused)}
+                onDuplicate={() => actions.duplicate(automation.id)}
+                onDelete={() => setDeleting(automation)}
               />
-              {rows.map((automation) => (
-                <AutomationTableRow
-                  key={automation.id}
-                  automation={automation}
-                  subline={automationSubline(automation, projectNames?.get(automation.projectId))}
-                  trigger={automationTriggerText(automation, locale, t)}
-                  onOpen={() =>
-                    navigate({
-                      to: '/automations/$automationId',
-                      params: { automationId: automation.id },
-                    })
-                  }
-                  onEdit={() => dialogs.open({ kind: 'automation', automationId: automation.id })}
-                  onRunNow={() => actions.runNow(automation.id)}
-                  onTogglePause={() => actions.setPaused(automation.id, !automation.isPaused)}
-                  onDuplicate={() => actions.duplicate(automation.id)}
-                  onDelete={() => setDeleting(automation)}
-                />
-              ))}
-            </>
-          )}
-        </QueryState>
-      </RoutineTable>
+            ))}
+          </RoutineTable>
+        )}
+      </QueryState>
       {deleting ? (
         <ConfirmDialog
           title={t('automations.deleteDialog.title', { name: deleting.name })}

@@ -248,6 +248,16 @@ export default function Page() {
             Delete session
           </Button>
         </Swatch>
+        <Swatch label="pending locks its own button; a sibling that waits is disabled">
+          <div className="flex gap-2">
+            <Button variant="outline" disabled>
+              Deny
+            </Button>
+            <Button pending pendingLabel="Allowing…">
+              Allow
+            </Button>
+          </div>
+        </Swatch>
         <Swatch label="sm · 28">
           <Button variant="secondary" size="sm">
             <CopyIcon /> Copy

@@ -112,7 +112,7 @@ export function sidebarMeta(automation: AutomationEntity, now: number, t: TFunct
   if (automation.nextRunAt) {
     const wait = automation.nextRunAt.getTime() - now;
     return t('automations.next.in', {
-      time: formatShortDuration(wait, t, { daysFrom: 48 }),
+      time: formatShortDuration(wait, t, 'wait'),
     });
   }
   return automation.runCount ? String(automation.runCount) : '';
