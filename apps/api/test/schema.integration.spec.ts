@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
+import { likeContains } from '@oppenheimer/backend-core';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { loadMigrations } from './run-migrations';
@@ -16,7 +17,8 @@ import { loadMigrations } from './run-migrations';
  * accounts. `FK_session_user` and `FK_account_user` belong to the migration
  * before it (`CascadeSignInsWithTheirUser`) and stay through the revert.
  * `AddHotPathIndexesAndDropRedundant` is reverted and re-applied the same way,
- * and its large-table path is run with the ops scripts it points at.
+ * and its large-table path is run with the ops scripts it points at, as are
+ * `AddUserSearchTrigramIndex` and `IndexUnbackedForeignKeys`.
  *
  * The suite starts its own Postgres 16 container. Where Docker is not
  * available, `SCHEMA_TEST_DATABASE_URL` points it at a database you started
@@ -557,6 +559,199 @@ describe('the migrated schema (integration)', () => {
     );
   });
 
+  describe('AddUserSearchTrigramIndex and IndexUnbackedForeignKeys', () => {
+    const TRIGRAM = 'AddUserSearchTrigramIndex1790880000000';
+    const FK_INDEXES = 'IndexUnbackedForeignKeys1790890000000';
+
+    /** Every index the two migrations create, with what `pg_get_indexdef` ends with. */
+    const EXPECTED: [string, RegExp][] = [
+      [
+        'IDX_user_search_trgm',
+        /USING gin \("firstName" gin_trgm_ops, "lastName" gin_trgm_ops, email gin_trgm_ops\)$/,
+      ],
+      ['IDX_github_installation_installed_by', /USING btree \("installedByUserId"\)$/],
+      [
+        'IDX_host_pairing_token_redeemed_host',
+        /USING btree \("redeemedHostId"\) WHERE \("redeemedHostId" IS NOT NULL\)$/,
+      ],
+      [
+        'IDX_user_role_organization',
+        /USING btree \("organizationId"\) WHERE \("organizationId" IS NOT NULL\)$/,
+      ],
+      ['IDX_user_role_role', /USING btree \("roleId"\)$/],
+    ];
+    const ALL = EXPECTED.map(([name]) => name);
+
+    const expectIndexes = async (present: string[]) => {
+      const index = await indexes();
+      const definition = await indexDefinitions();
+      for (const [name, pattern] of EXPECTED) {
+        if (present.includes(name)) {
+          expect(index.get(name), name).toMatchObject({ valid: true });
+          expect(definition.get(name)?.definition, name).toMatch(pattern);
+        } else {
+          expect(index.has(name), name).toBe(false);
+        }
+      }
+    };
+
+    /** Undoes migrations, newest first, until `name` is no longer applied. */
+    const revertThrough = async (name: string) => {
+      for (;;) {
+        const [applied] = await dataSource.query(`SELECT 1 FROM "migrations" WHERE "name" = $1`, [
+          name,
+        ]);
+        if (!applied) return;
+        await dataSource.undoLastMigration();
+      }
+    };
+
+    /** The admin search as `UserRepository.findUsers` issues it. */
+    const search = (term: string) =>
+      dataSource.query(
+        `SELECT "email" FROM "user"
+          WHERE "firstName" ILIKE $1 OR "lastName" ILIKE $1 OR "email" ILIKE $1
+          ORDER BY "email"`,
+        [likeContains(term)],
+      );
+
+    beforeAll(async () => {
+      await dataSource.query(
+        `INSERT INTO "user" ("id", "name", "email", "firstName", "lastName")
+         VALUES ($1, 'Axb', 'axb@search.test', 'Axb', 'Plain'),
+                ($2, 'A_b', 'a_b@search.test', 'A_b', 'Underscore'),
+                ($3, 'Pct', 'pct@search.test', 'Fifty%', 'Percent')`,
+        [randomUUID(), randomUUID(), randomUUID()],
+      );
+    });
+
+    it('builds the user search index and backs the four foreign keys', async () => {
+      await expectIndexes(ALL);
+    });
+
+    it('matches `_` and `%` literally, and serves the search from the trigram index', async () => {
+      expect(await search('a_b')).toEqual([{ email: 'a_b@search.test' }]);
+      expect(await search('%')).toEqual([{ email: 'pct@search.test' }]);
+      expect(await search('axb')).toEqual([{ email: 'axb@search.test' }]);
+
+      // The planner prefers a sequential scan on a table this small; with it
+      // off, the plan shows the one index serving all three conditions.
+      const plan: { 'QUERY PLAN': string }[] = await dataSource.transaction(async (manager) => {
+        await manager.query('SET LOCAL enable_seqscan = off');
+        return manager.query(
+          `EXPLAIN SELECT "email" FROM "user"
+            WHERE "firstName" ILIKE $1 OR "lastName" ILIKE $1 OR "email" ILIKE $1`,
+          [likeContains('ada')],
+        );
+      });
+      const text = plan.map((row) => row['QUERY PLAN']).join('\n');
+      expect(text).toContain('BitmapOr');
+      expect(text.match(/Bitmap Index Scan on "IDX_user_search_trgm"/g)).toHaveLength(3);
+    });
+
+    it('reverts and re-applies both over the same rows', async () => {
+      await revertThrough(FK_INDEXES);
+      await expectIndexes(['IDX_user_search_trgm']);
+      await revertThrough(TRIGRAM);
+      await expectIndexes([]);
+      expect(await search('a_b')).toEqual([{ email: 'a_b@search.test' }]);
+
+      await dataSource.runMigrations();
+      await expectIndexes(ALL);
+    });
+
+    // The large-table path runs the ops scripts with psql inside the container,
+    // so it needs the suite's own container.
+    it.skipIf(!!process.env.SCHEMA_TEST_DATABASE_URL)(
+      'on large tables, refuses at boot until the ops scripts have run, then creates nothing',
+      async () => {
+        const container = pgContainer as StartedTestContainer;
+        const psql = async (file: string) => {
+          const target = `/tmp/${file}`;
+          await container.copyFilesToContainer([
+            { source: resolve(__dirname, '../db/ops', file), target },
+          ]);
+          const result = await container.exec([
+            'psql',
+            '-v',
+            'ON_ERROR_STOP=1',
+            '-U',
+            'test',
+            '-d',
+            'test',
+            '-f',
+            target,
+          ]);
+          expect(result.exitCode, result.output).toBe(0);
+        };
+        const oids = async () =>
+          new Map(
+            (
+              (await dataSource.query(
+                `SELECT c.relname AS name, c.oid::int AS oid FROM pg_class c
+                  WHERE c.relkind = 'i' AND c.relnamespace = 'public'::regnamespace
+                    AND c.relname = ANY($1)`,
+                [ALL],
+              )) as { name: string; oid: number }[]
+            ).map((row) => [row.name, row.oid]),
+          );
+
+        await revertThrough(TRIGRAM);
+        // Over the migrations' 100k-row threshold once analyzed: `user`, and
+        // `user_role` through one global assignment per bulk user.
+        await dataSource.query(
+          `INSERT INTO "user" ("id", "name", "email", "firstName", "lastName")
+           SELECT gen_random_uuid(), 'Bulk ' || g, 'bulk-' || g || '@search.test', 'Bulk', 'User ' || g
+             FROM generate_series(1, 110000) g`,
+        );
+        await dataSource.query(
+          `INSERT INTO "user_role" ("userId", "roleId")
+           SELECT u."id", r."id" FROM "user" u
+             JOIN "role" r ON r."name" = 'user' AND r."organizationId" IS NULL
+            WHERE u."email" LIKE 'bulk-%'`,
+        );
+        await dataSource.query(`ANALYZE "user"`);
+        await dataSource.query(`ANALYZE "user_role"`);
+
+        await expect(dataSource.runMigrations()).rejects.toThrow(
+          /IDX_user_search_trgm is missing .*1790880000000-user-search-trigram-index\.sql/,
+        );
+        await expectIndexes([]);
+
+        await psql('1790880000000-user-search-trigram-index.sql');
+        await expect(dataSource.runMigrations()).rejects.toThrow(
+          /IDX_user_role_organization is missing .*1790890000000-foreign-key-indexes\.sql/,
+        );
+        await expectIndexes(['IDX_user_search_trgm']);
+
+        await psql('1790890000000-foreign-key-indexes.sql');
+        await expectIndexes(ALL);
+        const built = await oids();
+        await dataSource.runMigrations();
+        await expectIndexes(ALL);
+        expect(await oids()).toEqual(built);
+
+        // Reverting refuses too, until the rollback scripts have dropped them.
+        await expect(dataSource.undoLastMigration()).rejects.toThrow(
+          /IDX_user_role_role is still there .*1790890000000-foreign-key-indexes\.rollback\.sql/,
+        );
+        await psql('1790890000000-foreign-key-indexes.rollback.sql');
+        await revertThrough(FK_INDEXES);
+        await expectIndexes(['IDX_user_search_trgm']);
+        await psql('1790880000000-user-search-trigram-index.rollback.sql');
+        await revertThrough(TRIGRAM);
+        await expectIndexes([]);
+
+        // Small again: the migrations do it all themselves.
+        await dataSource.query(`DELETE FROM "user" WHERE "email" LIKE 'bulk-%'`);
+        await dataSource.query(`VACUUM ANALYZE "user"`);
+        await dataSource.query(`VACUUM ANALYZE "user_role"`);
+        await dataSource.runMigrations();
+        await expectIndexes(ALL);
+      },
+      180000,
+    );
+  });
   /** What `AddHotPathIndexesAndDropRedundant` creates, and what it drops. */
   const HOT_PATH_CREATED = [
     'IDX_automation_run_dispatched',
@@ -639,19 +834,4 @@ const FOREIGN_KEYS_WITHOUT_THEIR_INDEX = new Map<string, string>([
   ],
   // The key's first column is `work_session`'s own primary key.
   ['FK_work_session_cwd_checkout', '("id", "cwdCheckoutId") → PK_work_session ("id")'],
-  // No index at all: a parent delete scans the child table. Out of scope for
-  // 1790810000000; each needs its own migration.
-  [
-    'FK_github_installation_installed_by',
-    'TODO(follow-up): "installedByUserId", RESTRICT from user',
-  ],
-  ['FK_host_pairing_token_host', 'TODO(follow-up): "redeemedHostId", SET NULL from host'],
-  [
-    'FK_user_role_organization',
-    'TODO(follow-up): "organizationId", CASCADE from organization; IDX_user_role_user_org leads with "userId"',
-  ],
-  [
-    'FK_user_role_role',
-    'TODO(follow-up): "roleId", CASCADE from role; UQ_user_role_* lead with "userId"',
-  ],
 ]);
