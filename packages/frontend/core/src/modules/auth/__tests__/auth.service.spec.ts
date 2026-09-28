@@ -199,4 +199,14 @@ describe('AuthService analytics', () => {
 
     expect(order).toEqual(['capture', 'reset']);
   });
+
+  it('expires a live session once, and leaves a signed-out store alone', async () => {
+    const { service, analytics } = setup();
+    await service.restoreSession();
+
+    expect(service.expireSession()).toBe(true);
+    expect(service.store.getState().isAuthenticated).toBe(false);
+    expect(service.expireSession()).toBe(false);
+    expect(analytics.reset).not.toHaveBeenCalled();
+  });
 });

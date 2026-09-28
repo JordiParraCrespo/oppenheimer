@@ -84,8 +84,8 @@ describe('time', () => {
     expect(countdown(4 * 60_000 + 7_000)).toBe('4m 07s');
     expect(shortWait(45 * 3_600_000)).toBe('45h');
     expect(shortWait(3 * 86_400_000)).toBe('3d');
-    expect(age(30_000)).toBe('now');
-    expect(age(5 * 3_600_000)).toBe('5h');
+    expect(age(30_000, t)).toBe('common.relative.now');
+    expect(age(5 * 3_600_000, t)).toBe('common.relative.hour{"count":5}');
   });
 
   it('reads local days in a zone, across midnight', () => {

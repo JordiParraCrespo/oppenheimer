@@ -1,4 +1,4 @@
-import { Button } from '@oppenheimer/design-system-web';
+import { Alert, AlertDescription, Button } from '@oppenheimer/design-system-web';
 import { useForgotPassword } from '@oppenheimer/frontend-core/react';
 import {
   AuthBackLink,
@@ -35,6 +35,15 @@ export function ForgotPasswordScreen() {
           />
         </AuthSubtitle>
 
+        {/* A failed Resend stays on this view: the form it came from is gone. */}
+        {error ? (
+          <Alert variant="destructive">
+            <AlertDescription>
+              {resolveError(error, t('auth.forgotPassword.resendFailed')).message}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
         <Button
           variant="secondary"
           size="lg"
@@ -66,7 +75,7 @@ export function ForgotPasswordScreen() {
 
       <ForgotPasswordForm
         isPending={isPending}
-        error={error ? resolveError(error, t('auth.forgotPassword.error')).message : undefined}
+        error={error ? resolveError(error, t('auth.forgotPassword.error')) : undefined}
         onSubmit={({ email }) => mutate(email, { onSuccess: () => setSentTo(email) })}
       />
 

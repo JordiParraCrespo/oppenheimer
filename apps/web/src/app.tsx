@@ -6,7 +6,7 @@ import {
   Toaster,
 } from '@oppenheimer/design-system-web';
 import { useAuthState, useSessionRestore } from '@oppenheimer/frontend-core/react';
-import { useTheme } from '@oppenheimer/frontend-web';
+import { RouteError, useTheme } from '@oppenheimer/frontend-web';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { app } from '@/lib/oppenheimer';
@@ -32,6 +32,11 @@ const router = createRouter({
   // not through a route loader. Leaving the router's own preload cache at 30s
   // would give a second, disagreeing staleness rule the day a loader appears.
   defaultPreloadStaleTime: 0,
+  // Every route catches its own render errors unless it names a boundary of
+  // its own. A route without one would let the error climb to the nearest
+  // ancestor that has one, and `_authenticated`'s boundary wraps the shell
+  // itself — so a pane that threw took the sidebar down with it.
+  defaultErrorComponent: RouteError,
 });
 
 declare module '@tanstack/react-router' {

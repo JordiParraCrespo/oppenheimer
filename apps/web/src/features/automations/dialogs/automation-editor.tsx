@@ -13,7 +13,7 @@ import {
   useProjects,
   useUpdateAutomation,
 } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { lastFailure, useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useTranslation } from 'react-i18next';
 import { draftOf, emptyDraft, toCreateInput, toUpdateInput } from '../lib/automation-draft';
 import { AutomationEditor } from '../sections/automation-editor';
@@ -49,7 +49,7 @@ export function AutomationEditorDialog({
   const create = useCreateAutomation({ onSuccess: onSaved });
   const update = useUpdateAutomation({ onSuccess: onSaved });
   const editing = Boolean(automationId);
-  const failure = create.error ?? update.error;
+  const failure = lastFailure([create, update]).error;
 
   const ready = editing ? Boolean(existing.data) : Boolean(projects.data && hosts.data);
 
@@ -70,9 +70,7 @@ export function AutomationEditorDialog({
             }
             editing={editing}
             saving={create.isPending || update.isPending}
-            failure={
-              failure ? resolveError(failure, t('automations.editor.saveFailed')).message : null
-            }
+            failure={failure ? resolveError(failure, t('automations.editor.saveFailed')) : null}
             onCancel={onClose}
             onSubmit={(draft, task) => {
               if (existing.data) {

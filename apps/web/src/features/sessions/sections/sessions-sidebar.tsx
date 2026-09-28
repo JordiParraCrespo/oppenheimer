@@ -1,6 +1,8 @@
 import {
   Alert,
+  AlertAction,
   AlertDescription,
+  Button,
   EmptyState,
   SessionList,
   Skeleton,
@@ -14,7 +16,7 @@ import {
   useRenameSession,
   useSessions,
 } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { lastFailure, useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useConsoleDialog } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
@@ -76,7 +78,7 @@ export function SessionsSidebar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const resolveError = useErrorMessage();
-  const { data: sessions, isPending } = useSessions();
+  const { data: sessions, isPending, isError, error } = useSessions();
   const projects = useProjects();
   // Named by the host list, because a session carries only the host's id and
   // an id is not a filter anyone can read. Selected down to plain pairs, which
@@ -122,8 +124,9 @@ export function SessionsSidebar() {
   const groups = groupByProject(projects.data ?? [], visible);
   const settled = sessions !== undefined && projects.data !== undefined;
   // The write that failed last, if one did: a menu closes on its pick, so the
-  // failure has to stay on screen somewhere the row is.
-  const failure = move.error ?? rename.error;
+  // failure has to stay on screen somewhere the row is. A later write that
+  // lands clears it, and so does Dismiss.
+  const failure = lastFailure([move, rename]);
 
   function commitRename() {
     if (!renaming) return;
@@ -171,16 +174,29 @@ export function SessionsSidebar() {
         }
       />
 
-      {failure ? (
+      {failure.error ? (
         <Alert variant="destructive" className="mx-3 mb-2">
           <AlertDescription>
-            {resolveError(failure, t('sessions.sidebar.writeFailed')).message}
+            {resolveError(failure.error, t('sessions.sidebar.writeFailed')).message}
           </AlertDescription>
+          <AlertAction>
+            <Button variant="ghost" size="sm" onClick={failure.dismiss}>
+              {t('common.dismiss')}
+            </Button>
+          </AlertAction>
         </Alert>
       ) : null}
 
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
-        {isPending || !settled ? (
+        {isError || projects.isError ? (
+          // A failed read is not an empty list and not a list still loading:
+          // without this branch the skeleton below spun for ever.
+          <Alert variant="destructive" className="mx-3 mt-2">
+            <AlertDescription>
+              {resolveError(error ?? projects.error, t('sessions.sidebar.loadFailed')).message}
+            </AlertDescription>
+          </Alert>
+        ) : isPending || !settled ? (
           <SessionList className="px-3 pt-2">
             <Skeleton className="h-[30px] w-full rounded-sm" />
             <Skeleton className="h-[30px] w-full rounded-sm" />

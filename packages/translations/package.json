@@ -9,6 +9,8 @@
     "./locales": "./locales.ts",
     "./lazy": "./lazy.ts",
     "./en": "./en.ts",
+    "./en/browser.json": "./en/browser.json",
+    "./es/browser.json": "./es/browser.json",
     "./es": "./es.ts",
     "./en/index.json": "./en/index.json",
     "./es/index.json": "./es/index.json",

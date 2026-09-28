@@ -1,6 +1,7 @@
 import { i18nReady, ThemeProvider } from '@oppenheimer/frontend-web';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
+import { app } from '@/lib/oppenheimer';
 import { OppenheimerAppProvider } from '@/providers/oppenheimer-provider';
 import { QueryProvider } from '@/providers/query-provider';
 import { App } from './app';
@@ -11,7 +12,7 @@ const root = ReactDOM.createRoot(document.getElementById('root')!);
 const tree = (
   <StrictMode>
     <ThemeProvider>
-      <QueryProvider>
+      <QueryProvider app={app}>
         <OppenheimerAppProvider>
           <App />
         </OppenheimerAppProvider>

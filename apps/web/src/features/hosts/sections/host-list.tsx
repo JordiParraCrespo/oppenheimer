@@ -1,5 +1,6 @@
-import { Alert, AlertDescription } from '@oppenheimer/design-system-web';
+import { Alert, AlertDescription, Skeleton } from '@oppenheimer/design-system-web';
 import { useHosts } from '@oppenheimer/frontend-consumer/react';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useTranslation } from 'react-i18next';
 import { HostsEmpty } from '../components/hosts-empty';
 import { HostRow } from './host-row';
@@ -10,18 +11,22 @@ import { HostRow } from './host-row';
  * It subscribes because it draws the rows; a row gets its host by reference,
  * kept across a poll that did not change it (`shareEntities`).
  *
- * The frame draws the list and its empty card only; until the first answer
- * nothing is drawn, and a failed load stays on screen as an `Alert`.
+ * The frame draws the list and its empty card only; until the first answer a
+ * skeleton holds the card's place, and a failed load stays on screen as an
+ * `Alert` that says why.
  */
 export function HostList() {
   const { t } = useTranslation();
+  const resolveError = useErrorMessage();
   const hosts = useHosts({ refetchInterval: 15_000 });
 
-  if (hosts.isPending) return null;
+  if (hosts.isPending) return <Skeleton className="h-18 w-full" />;
   if (hosts.isError) {
     return (
       <Alert variant="destructive">
-        <AlertDescription>{t('settings.hosts.failed')}</AlertDescription>
+        <AlertDescription>
+          {resolveError(hosts.error, t('settings.hosts.failed')).message}
+        </AlertDescription>
       </Alert>
     );
   }

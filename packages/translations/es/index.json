@@ -29,7 +29,9 @@
       "year": "{{count}}a"
     },
     "save": "Guardar",
-    "search": "Buscar"
+    "search": "Buscar",
+    "dismiss": "Descartar",
+    "breadcrumb": "Ruta de navegación"
   },
   "validation": {
     "title": "Error de validación",
@@ -39,7 +41,15 @@
     "maxLength": "Debe tener como máximo {{max}} caracteres",
     "minItems": "Selecciona al menos {{min}}",
     "maxItems": "Selecciona como máximo {{max}}",
-    "url": "Introduce una URL válida, incluyendo https://"
+    "url": "Introduce una URL válida, incluyendo https://",
+    "invalid": "Este valor no es válido",
+    "format": "El formato no es válido",
+    "choice": "Elige una de las opciones",
+    "date": "Introduce una fecha válida",
+    "min": "Debe ser como mínimo {{min}}",
+    "max": "Debe ser como máximo {{max}}",
+    "multipleOf": "Debe ser múltiplo de {{step}}",
+    "tooLong": "Es demasiado largo"
   },
   "errors": {
     "fallback": "Algo ha ido mal. Inténtalo de nuevo.",
@@ -186,7 +196,20 @@
       "AUTOMATIONS_007": "Ese proyecto no puede tener automatizaciones.",
       "AUTOMATIONS_008": "Esa ejecución no existe.",
       "INBOUND_001": "Esa fuente de eventos no se conoce.",
-      "INBOUND_002": "La entrega no incluye un identificador de entrega."
+      "INBOUND_002": "La entrega no incluye un identificador de entrega.",
+      "SESS_001": "El host no tiene constancia de esa sesión.",
+      "SESS_002": "El host no ha podido iniciar una sesión con esos ajustes.",
+      "SESS_003": "Esa sesión no se está ejecutando en su host.",
+      "SESS_004": "El host ya tiene una sesión en ese worktree.",
+      "SESS_005": "El host no ha podido pasar esa imagen a la sesión.",
+      "TMUX_001": "tmux no está instalado en el host. Instálalo y vuelve a intentarlo.",
+      "TMUX_002": "tmux se ha negado a iniciar la sesión en el host.",
+      "GIT_001": "El host no ha podido preparar el worktree.",
+      "GIT_002": "Ha fallado un comando de git en el host.",
+      "GIT_003": "No se ha podido subir la rama.",
+      "GIT_004": "El host no puede acceder a ese repositorio. Comprueba que la GitHub App tiene acceso.",
+      "GIT_005": "Un comando de git en el host ha tardado demasiado y se ha detenido.",
+      "CONSENT_CLIENT_002": "El servidor no ha indicado a dónde continuar."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -196,7 +219,8 @@
     "unexpected": {
       "title": "No se ha podido dibujar esta pantalla",
       "retry": "Reintentar"
-    }
+    },
+    "code": "Código: {{code}}"
   },
   "auth": {
     "email": "Correo electrónico",
@@ -249,7 +273,8 @@
       "sentMessage": "Hemos enviado un enlace para restablecer tu contraseña a <address>{{email}}</address>. Caduca en 30 minutos.",
       "emailLabel": "Correo de trabajo",
       "resend": "Reenviar enlace",
-      "differentAddress": "Usar otra dirección"
+      "differentAddress": "Usar otra dirección",
+      "resendFailed": "No se ha podido reenviar el correo. Inténtalo de nuevo en un momento."
     },
     "resetPassword": {
       "title": "Crea una nueva contraseña",
@@ -344,6 +369,7 @@
       "selectFirst": "Elige repositorios arriba primero.",
       "clonedCount_one": "{{count}} clonado",
       "clonedCount_other": "{{count}} clonados",
+      "clonedCount_many": "{{count}} clonados",
       "branchEmpty": "No hay ninguna rama llamada “{{query}}”",
       "create": "Crear proyecto",
       "creating": "Creando…",
@@ -355,7 +381,9 @@
       "deleteHint": "Elimina este proyecto",
       "deleteBlocked_one": "Mueve o elimina su {{count}} sesión primero",
       "deleteBlocked_other": "Mueve o elimina sus {{count}} sesiones primero",
-      "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar."
+      "deleteBlocked_many": "Mueve o elimina sus {{count}} sesiones primero",
+      "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar.",
+      "loadFailed": "No se ha podido cargar este proyecto."
     },
     "deleteDialog": {
       "title": "¿Eliminar {{name}}?",
@@ -399,7 +427,8 @@
       "progressFailed": "No se pudo cargar el progreso del inicio.",
       "codes": {
         "SESS_002": "Este host crea sesiones con un solo repositorio."
-      }
+      },
+      "details": "Detalles del host: {{detail}}"
     },
     "group": {
       "working": "Trabajando",
@@ -427,7 +456,8 @@
         "empty": "Ningún host coincide.",
         "loading": "Cargando hosts…",
         "add": "Añadir host…",
-        "offline": "Desconectado"
+        "offline": "Desconectado",
+        "failed": "No se han podido cargar tus hosts."
       },
       "project": {
         "label": "Proyecto",
@@ -436,7 +466,8 @@
         "empty": "Ningún proyecto coincide.",
         "loading": "Cargando proyectos…",
         "add": "Nuevo proyecto…",
-        "noRepositories": "Sin repositorios"
+        "noRepositories": "Sin repositorios",
+        "failed": "No se han podido cargar tus proyectos."
       },
       "repository": {
         "label": "Repositorios",
@@ -450,7 +481,8 @@
         "changeBranch": "Cambiar de rama",
         "manage": "Gestionar el acceso a repositorios",
         "noApp": "Este despliegue no tiene la GitHub App, así que no hay repositorios que elegir.",
-        "archived": "Archivado"
+        "archived": "Archivado",
+        "failed": "No se han podido cargar tus repositorios."
       },
       "branch": {
         "label": "Rama",
@@ -511,6 +543,12 @@
         "hostOffline": "La imagen no se envió: el equipo está desconectado.",
         "failedTitle": "La imagen no llegó a la sesión",
         "dismiss": "Cerrar"
+      },
+      "retryNow": "Reintentar ahora",
+      "retry": "Intentar de nuevo",
+      "ended": {
+        "forbidden": "No tienes acceso al terminal de esta sesión.",
+        "refused": "El host se ha negado a abrir este terminal."
       }
     },
     "sidebar": {
@@ -532,7 +570,8 @@
       "moveTitle": "Mover a un proyecto",
       "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
       "delete": "Eliminar",
-      "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo."
+      "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
+      "loadFailed": "No se han podido cargar tus sesiones."
     },
     "deleteSession": {
       "title": "¿Eliminar “{{name}}”?",
@@ -587,7 +626,8 @@
       "noProjects": "Todavía no hay ningún proyecto. Crea uno desde Nueva sesión y sus automatizaciones se reunirán aquí.",
       "noRuns": "Todavía no hay ejecuciones.",
       "running": "En curso",
-      "paused": "En pausa"
+      "paused": "En pausa",
+      "loadFailed": "No se han podido cargar tus automatizaciones."
     },
     "page": {
       "tabs": {
@@ -598,7 +638,8 @@
       "empty": "Todavía no hay automatizaciones. Una automatización inicia una sesión según un horario o cuando pasa algo en GitHub.",
       "runsEmpty": "Todavía no hay ejecuciones. Cada una aparece aquí con la sesión que inició.",
       "loadFailed": "No se han podido cargar las automatizaciones.",
-      "actionFailed": "No se ha podido completar."
+      "actionFailed": "No se ha podido completar.",
+      "actionFailedFor": "«{{name}}» no se ha actualizado"
     },
     "status": {
       "active": "Activa",
@@ -743,7 +784,8 @@
       "succeeded": "Correctas",
       "failed": "Fallidas",
       "runs_one": "{{count}} ejecución",
-      "runs_other": "{{count}} ejecuciones"
+      "runs_other": "{{count}} ejecuciones",
+      "runs_many": "{{count}} ejecuciones"
     },
     "runs": {
       "all": "Todas",
@@ -829,6 +871,7 @@
       "passed": "Esa hora ya ha pasado. Elige una posterior.",
       "listening_one": "Escuchando en {{repos}} · se habría ejecutado una vez en los últimos 7 días",
       "listening_other": "Escuchando en {{repos}} · se habría ejecutado {{count}} veces en los últimos 7 días",
+      "listening_many": "Escuchando en {{repos}} · se habría ejecutado {{count}} veces en los últimos 7 días",
       "listeningNone": "Escuchando en {{repos}} · nada coincidió en los últimos 7 días",
       "code": "Código",
       "project": "Proyecto",
@@ -858,8 +901,14 @@
       "save": "Guardar",
       "create": "Crear automatización",
       "saveFailed": "No se ha podido guardar la automatización.",
-      "forProject": "Para {{name}}."
-    }
+      "forProject": "Para {{name}}.",
+      "noMatch": "Nada coincide con «{{query}}».",
+      "chooseRepositories": "Elige repositorios…",
+      "chooseAgent": "Elige un agente…",
+      "chooseModel": "Elige un modelo…"
+    },
+    "skipReasonOther": "Omitida",
+    "pausedReasonOther": "En pausa. Los disparadores se ignoran hasta que se reanude."
   },
   "hosts": {
     "pairing": {
@@ -901,6 +950,7 @@
       "state": {
         "running_one": "En marcha · {{count}} sesión",
         "running_other": "En marcha · {{count}} sesiones",
+        "running_many": "En marcha · {{count}} sesiones",
         "idle": "Inactivo",
         "offline": "Desconectado"
       },
@@ -922,7 +972,10 @@
       "removeTitle": "¿Eliminar {{name}}?",
       "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
       "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
-      "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan."
+      "removeRunning_many": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
+      "renameFailed": "No se ha podido renombrar este host. Inténtalo de nuevo.",
+      "removeFailed": "No se ha podido eliminar este host. Inténtalo de nuevo."
     }
   },
   "settings": {
@@ -1059,7 +1112,7 @@
     "team": "Equipo",
     "users": "Usuarios",
     "roles": "Roles",
-    "featureFlags": "Feature flags",
+    "featureFlags": "Indicadores de funcionalidad",
     "toggleSidebar": "Mostrar u ocultar el menú",
     "sessions": "Sesiones",
     "newSession": "Nueva sesión",
@@ -1068,7 +1121,8 @@
     "sidebarTitle": "Navegación",
     "sidebarDescription": "Tus sesiones, tus automatizaciones y tu cuenta.",
     "settings": "Ajustes",
-    "automations": "Automatizaciones"
+    "automations": "Automatizaciones",
+    "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo."
   },
   "control": {
     "accessDeniedTitle": "Se necesita acceso al panel de control",
@@ -1087,7 +1141,8 @@
       "title": "Roles y permisos",
       "description": "Define reglas de acceso reutilizables para las aplicaciones de consumo.",
       "permissionCount_one": "{{count}} permiso",
-      "permissionCount_other": "{{count}} permisos"
+      "permissionCount_other": "{{count}} permisos",
+      "permissionCount_many": "{{count}} permisos"
     },
     "users": {
       "title": "Usuarios",
@@ -1158,17 +1213,17 @@
       }
     },
     "flags": {
-      "title": "Feature flags",
+      "title": "Indicadores de funcionalidad",
       "description": "Lanza funcionalidades, ejecuta experimentos y activa interruptores de emergencia para todo este despliegue.",
       "tabs": {
-        "flags": "Flags",
+        "flags": "Indicadores",
         "segments": "Segmentos",
         "history": "Historial"
       },
-      "search": "Buscar flags",
-      "empty": "Ningún flag coincide.",
+      "search": "Buscar indicadores",
+      "empty": "Ningún indicador coincide.",
       "columns": {
-        "flag": "Flag",
+        "flag": "Indicador",
         "kind": "Tipo",
         "serving": "Sirve",
         "enabled": "Activo"
@@ -1179,7 +1234,7 @@
         "experiment": "Experimento"
       },
       "expired": "Caducado",
-      "expiredHint": "Pasó el {{date}}. Lánzalo y elimina el flag del código.",
+      "expiredHint": "Pasó el {{date}}. Lánzalo y elimina el indicador del código.",
       "expires": "Hasta el {{date}}",
       "serving": {
         "default": "Por defecto: {{value}}",
@@ -1187,7 +1242,8 @@
         "value": "{{value}} para el resto",
         "split": "Reparto {{arms}}",
         "rules_one": "{{count}} regla y después",
-        "rules_other": "{{count}} reglas y después"
+        "rules_other": "{{count}} reglas y después",
+        "rules_many": "{{count}} reglas y después"
       },
       "actions": {
         "edit": "Editar segmentación",
@@ -1243,7 +1299,7 @@
       "attributes": {
         "userId": "ID de usuario",
         "organizationId": "ID de organización",
-        "email": "Email",
+        "email": "Correo electrónico",
         "platformRole": "Rol de plataforma",
         "platform": "Plataforma",
         "appVersion": "Versión de la app",
@@ -1258,21 +1314,21 @@
       },
       "explain": {
         "title": "Explicar: {{key}}",
-        "description": "Qué sirve este flag a alguien y por qué. Describe todo lo que sepas de esa persona.",
+        "description": "Qué sirve este indicador a alguien y por qué. Describe todo lo que sepas de esa persona.",
         "submit": "Explicar",
         "result": "Sirve {{value}}",
         "reasons": {
           "DEFAULT": "Nada decidió, así que se sirvió el valor por defecto del catálogo.",
-          "DISABLED": "El flag está apagado.",
+          "DISABLED": "El indicador está apagado.",
           "TARGETING_MATCH": "Coincidió la regla «{{rule}}».",
           "SPLIT": "Asignado por un reparto por porcentaje.",
           "FALLTHROUGH": "No coincidió ninguna regla; lo sirvió el valor para el resto.",
-          "ERROR": "La segmentación sirvió un valor que este flag no admite, así que se sirvió el valor por defecto."
+          "ERROR": "La segmentación sirvió un valor que este indicador no admite, así que se sirvió el valor por defecto."
         }
       },
       "segments": {
         "search": "Buscar segmentos",
-        "empty": "Aún no hay segmentos. Un segmento es una audiencia con nombre, como el equipo o los clientes beta, a la que pueden apuntar las reglas de cualquier flag.",
+        "empty": "Aún no hay segmentos. Un segmento es una audiencia con nombre, como el equipo o los clientes beta, a la que pueden apuntar las reglas de cualquier indicador.",
         "new": "Nuevo segmento",
         "edit": "Editar",
         "delete": "Eliminar",
@@ -1283,7 +1339,8 @@
         },
         "conditionCount_one": "{{count}} condición",
         "conditionCount_other": "{{count}} condiciones",
-        "unused": "Ningún flag",
+        "conditionCount_many": "{{count}} condiciones",
+        "unused": "Ningún indicador",
         "newTitle": "Nuevo segmento",
         "editTitle": "Editar segmento",
         "formDescription": "Quien cumpla todas estas condiciones está en el segmento.",
@@ -1295,15 +1352,15 @@
         "save": "Guardar segmento",
         "saving": "Guardando…",
         "deleteTitle": "¿Eliminar este segmento?",
-        "deleteDescription": "Ningún flag apunta a él, así que no cambia el flag de nadie.",
+        "deleteDescription": "Ningún indicador apunta a él, así que no cambia el indicador de nadie.",
         "inUse": "Lo usa {{flags}}. Quítalo primero de sus reglas."
       },
       "history": {
-        "search": "Filtrar por clave de flag o segmento",
+        "search": "Filtrar por clave de indicador o segmento",
         "empty": "Aún no hay cambios.",
         "columns": {
           "when": "Cuándo",
-          "subject": "Flag o segmento",
+          "subject": "Indicador o segmento",
           "change": "Cambio",
           "by": "Quién",
           "comment": "Motivo"
@@ -1337,7 +1394,6 @@
     "invalidTitle": "Este enlace ha caducado",
     "invalidDescription": "Vuelve a iniciar la conexión desde la aplicación que te ha traído aquí.",
     "backToSessions": "Volver a las sesiones",
-    "noRedirect": "El servidor no ha indicado a dónde continuar.",
     "sensitiveScope": "Sensible",
     "unknownClient": "Una aplicación",
     "failed": "No se ha podido completar. Inténtalo de nuevo."
@@ -1409,7 +1465,8 @@
         "noWorkspace": "Aún sin espacio de trabajo",
         "noGithub": "Sin conectar",
         "noHost": "Aún sin host",
-        "doneLabel": "Listo"
+        "doneLabel": "Listo",
+        "failed": "No se ha podido cargar. Recarga la página para intentarlo de nuevo."
       }
     }
   },
@@ -1459,7 +1516,7 @@
       "members": {
         "cancelInvite": "Cancelar invitación",
         "columns": {
-          "email": "Email",
+          "email": "Correo electrónico",
           "joined": "Alta",
           "name": "Nombre",
           "organizationRole": "Rol en la organización",

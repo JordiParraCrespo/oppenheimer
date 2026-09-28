@@ -18,7 +18,7 @@ import {
   SidebarMenuButton,
 } from '@oppenheimer/design-system-web';
 import { ChevronDown, Globe, LogOut, Moon } from '@oppenheimer/design-system-web/icons';
-import { useLogout, useProfile } from '@oppenheimer/frontend-core/react';
+import { useErrorMessage, useLogout, useProfile } from '@oppenheimer/frontend-core/react';
 import { type Locale, locales } from '@oppenheimer/translations/locales';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -51,6 +51,7 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
   const { data: user } = useProfile();
   const navigate = useNavigate();
   const logout = useLogout({ onSuccess: () => navigate({ to: '/login' }) });
+  const resolveError = useErrorMessage();
 
   // Narrowed to `Locale` because the menu *names* it (`language.en`), not just
   // compares it: `t()` is typed over the catalog, and a bare `string` in the
@@ -61,7 +62,9 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
   const initials = user ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}` : '';
 
   return (
-    <DropdownMenu>
+    // A failed log out is shown inside the menu, which stays open for it; closing
+    // the menu forgets it, so the next open starts clean.
+    <DropdownMenu onOpenChange={(open) => !open && logout.reset()}>
       {trigger === 'avatar' ? (
         <DropdownMenuTrigger
           render={
@@ -162,10 +165,20 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
-          <DropdownMenuItem variant="destructive" onClick={() => logout.mutate()}>
+          <DropdownMenuItem
+            variant="destructive"
+            closeOnClick={false}
+            disabled={logout.isPending}
+            onClick={() => logout.mutate()}
+          >
             <LogOut />
             {t('nav.logOut')}
           </DropdownMenuItem>
+          {logout.error ? (
+            <p role="alert" className="m-0 px-2.5 pt-1 pb-1.5 text-xs text-danger">
+              {resolveError(logout.error, t('nav.logOutFailed')).message}
+            </p>
+          ) : null}
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

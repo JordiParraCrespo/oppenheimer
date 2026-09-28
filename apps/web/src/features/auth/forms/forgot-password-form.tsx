@@ -1,5 +1,10 @@
 import { Button, FieldGroup, Input } from '@oppenheimer/design-system-web';
-import { AuthField, AuthFormError, useZodResolver } from '@oppenheimer/frontend-web';
+import {
+  AuthField,
+  AuthFormFailure,
+  type ResolvedErrorMessage,
+  useZodResolver,
+} from '@oppenheimer/frontend-web';
 import { type ForgotPasswordDto, forgotPasswordSchema } from '@oppenheimer/shared/schemas/auth';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -11,12 +16,14 @@ export function ForgotPasswordForm({
 }: {
   isPending: boolean;
   /** The resolved failure message, if the last attempt failed. */
-  error?: string;
+  error?: ResolvedErrorMessage;
   onSubmit: (values: ForgotPasswordDto) => void;
 }) {
   const { t } = useTranslation();
 
   const {
+    setError,
+    getValues,
     register,
     handleSubmit,
     formState: { errors },
@@ -28,7 +35,7 @@ export function ForgotPasswordForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <FieldGroup>
-        {error && <AuthFormError>{error}</AuthFormError>}
+        <AuthFormFailure form={{ setError, getValues }} error={error} />
 
         <AuthField label={t('auth.forgotPassword.emailLabel')} htmlFor="email" error={errors.email}>
           <Input

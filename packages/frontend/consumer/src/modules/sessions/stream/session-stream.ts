@@ -50,6 +50,13 @@ export interface SessionStream {
   send(data: string): void;
   /** The grid changed shape; the PTY needs to know. */
   resize(cols: number, rows: number): void;
+  /**
+   * Skip the rest of the wait before the next reconnect and dial now: the
+   * reader pressed Retry, the browser came back online, or the tab became
+   * visible again. Does nothing while a dial is already in flight, once the
+   * stream is live, or once it has ended.
+   */
+  reconnectNow(): void;
   dispose(): void;
 }
 
@@ -146,6 +153,8 @@ export class AttachSessionStream implements SessionStream {
   private attached = false;
   private attempt = 0;
   private cancelRetry: (() => void) | null = null;
+  /** Between a failed dial and the next one, the one time `reconnectNow` may act. */
+  private waiting = false;
   private viewport: { cols: number; rows: number } | null = null;
   /** The reason a `closed` control frame named, read back when the close follows. */
   private closedReason: StreamEnd | null = null;
@@ -191,6 +200,16 @@ export class AttachSessionStream implements SessionStream {
     this.tell({ type: 'resize', cols, rows });
   }
 
+  reconnectNow(): void {
+    if (this.disposed || !this.waiting) return;
+    this.cancelRetry?.();
+    this.waiting = false;
+    // A fresh start: the reader or the network said now, so the next failure
+    // waits the ladder's first step rather than its thirty seconds.
+    this.attempt = 0;
+    void this.connect();
+  }
+
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
@@ -216,6 +235,7 @@ export class AttachSessionStream implements SessionStream {
   /** Over for good: say why, then say closed, and never dial again. */
   private end(reason: StreamEnd): void {
     this.cancelRetry?.();
+    this.waiting = false;
     for (const listener of this.endListeners) listener(reason);
     this.setStatus('closed');
   }
@@ -230,8 +250,12 @@ export class AttachSessionStream implements SessionStream {
     const base = RECONNECT_LADDER_MS[Math.min(this.attempt, RECONNECT_LADDER_MS.length - 1)];
     this.attempt += 1;
     const jitter = base * (Math.random() * 0.4 - 0.2);
+    this.waiting = true;
     this.cancelRetry = this.schedule(
-      () => void this.connect(),
+      () => {
+        this.waiting = false;
+        void this.connect();
+      },
       Math.max(0, Math.round(base + jitter)),
     );
   }

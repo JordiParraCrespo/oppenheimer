@@ -60,7 +60,7 @@ export function RegisterScreen({
 
       <RegisterForm
         isPending={isPending}
-        error={error ? resolveError(error, t('auth.register.failed')).message : undefined}
+        error={error ? resolveError(error, t('auth.register.failed')) : undefined}
         onSubmit={onSubmit}
       />
 

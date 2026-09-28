@@ -44,7 +44,7 @@
     "members": {
       "cancelInvite": "Cancelar invitación",
       "columns": {
-        "email": "Email",
+        "email": "Correo electrónico",
         "joined": "Alta",
         "name": "Nombre",
         "organizationRole": "Rol en la organización",

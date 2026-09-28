@@ -213,6 +213,14 @@ const PROMPT =
  * StatusDot line that resolves in place so nothing under it moves. The
  * product draws the same column from the kit's pairing parts.
  */
+
+/** The copy `FieldSelect` requires, in the showcase's one language. */
+const SELECT_COPY = {
+  placeholder: 'Choose…',
+  searchPlaceholder: 'Search…',
+  emptyText: (query: string) => `No match for “${query}”.`,
+};
+
 export function AddHostDialogDemo() {
   const [tab, setTab] = React.useState('cmd');
   const [registered, setRegistered] = React.useState(false);
@@ -1249,7 +1257,7 @@ export function EditorPageDemo() {
         <EditorPageBody>
         <EditorPageBack href="#editorpage">Back</EditorPageBack>
         <PageHeader className="mb-7">
-          <PageHeaderCrumbs>
+          <PageHeaderCrumbs aria-label="Breadcrumb">
             <button type="button">New session</button>
             <span>/</span>
             <PageHeaderHere>Add a host</PageHeaderHere>
@@ -1314,7 +1322,7 @@ export function PageHeaderDemo() {
   return (
     <div className="flex w-full flex-col gap-8">
       <PageHeader>
-        <PageHeaderCrumbs>
+        <PageHeaderCrumbs aria-label="Breadcrumb">
           <button type="button">Routines</button>
           <span>/</span>
           <PageHeaderHere>Nightly dependency audit</PageHeaderHere>
@@ -1358,7 +1366,7 @@ export function PageHeaderDemo() {
         ) : null}
       </PageHeader>
       <PageHeader>
-        <PageHeaderCrumbs>
+        <PageHeaderCrumbs aria-label="Breadcrumb">
           <button type="button">Routines</button>
           <span>/</span>
           <PageHeaderHere>New routine</PageHeaderHere>
@@ -1605,6 +1613,7 @@ export function FieldSelectGroupDemo() {
     <FieldSelectGroup className="w-full max-w-146">
       <FieldSelectRow icon={<CpuIcon />} label="Host">
         <FieldSelect
+          {...SELECT_COPY}
           variant="quiet"
           aria-label="Host"
           value={host}
@@ -1618,6 +1627,7 @@ export function FieldSelectGroupDemo() {
       </FieldSelectRow>
       <FieldSelectRow icon={<BotIcon />} label="Agent">
         <FieldSelect
+          {...SELECT_COPY}
           variant="quiet"
           aria-label="Agent"
           value={agent}
@@ -1647,6 +1657,8 @@ export function RoutineEditorDemo() {
           <Field>
             <FieldLabel>Project</FieldLabel>
             <FieldSelect
+             {...SELECT_COPY}
+              {...SELECT_COPY}
               value={project}
               onValueChange={setProject}
               meta="1 repo"
@@ -1661,6 +1673,8 @@ export function RoutineEditorDemo() {
           <Field>
             <FieldLabel>Repositories</FieldLabel>
             <FieldSelect
+             {...SELECT_COPY}
+              {...SELECT_COPY}
               multiple
               value={repos}
               onValueChange={setRepos}
@@ -1675,6 +1689,8 @@ export function RoutineEditorDemo() {
           <Field>
             <FieldLabel>Host</FieldLabel>
             <FieldSelect
+             {...SELECT_COPY}
+              {...SELECT_COPY}
               value={host}
               onValueChange={setHost}
               meta="idle"
@@ -1764,11 +1780,11 @@ export function RoutineEditorDemo() {
         <RoutineStepFields>
           <Field>
             <FieldLabel>Agent</FieldLabel>
-            <FieldSelect value="claude" onValueChange={() => {}} options={[{ value: 'claude', label: 'Claude Code' }, { value: 'codex', label: 'Codex' }]} />
+            <FieldSelect {...SELECT_COPY} value="claude" onValueChange={() => {}} options={[{ value: 'claude', label: 'Claude Code' }, { value: 'codex', label: 'Codex' }]} />
           </Field>
           <Field>
             <FieldLabel>Model</FieldLabel>
-            <FieldSelect value="sonnet" onValueChange={() => {}} options={[{ value: 'sonnet', label: 'Claude Sonnet 4.6' }, { value: 'opus', label: 'Claude Opus 4.2' }]} />
+            <FieldSelect {...SELECT_COPY} value="sonnet" onValueChange={() => {}} options={[{ value: 'sonnet', label: 'Claude Sonnet 4.6' }, { value: 'opus', label: 'Claude Opus 4.2' }]} />
           </Field>
         </RoutineStepFields>
       </RoutineStep>

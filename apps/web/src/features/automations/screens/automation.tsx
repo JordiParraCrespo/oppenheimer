@@ -1,5 +1,7 @@
 import { EditorPageBack, EmptyState, Skeleton } from '@oppenheimer/design-system-web';
 import { useAutomation } from '@oppenheimer/frontend-consumer/react';
+import { AppError } from '@oppenheimer/frontend-core';
+import { RouteError } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { AutomationHeader } from '../sections/automation-header';
@@ -9,7 +11,7 @@ import { RunsTable } from '../sections/runs-table';
 /**
  * An automation's page (`product/versions/mvp/13-automations.md`): Back, its
  * header, its run history and its runs. The screen reads the automation
- * because it branches on it — loading, gone, or there — and the sections
+ * because it branches on it — loading, failed, gone, or there — and the sections
  * under it read their own data by its id.
  */
 export function AutomationScreen({ automationId }: { automationId: string }) {
@@ -24,6 +26,13 @@ export function AutomationScreen({ automationId }: { automationId: string }) {
         <Skeleton className="h-32 w-full" />
       </div>
     );
+  }
+  // Only a 404 is "not found"; any other failure is a failure, and says so.
+  if (
+    automation.isError &&
+    !(automation.error instanceof AppError && automation.error.status === 404)
+  ) {
+    return <RouteError error={automation.error} />;
   }
   if (!automation.data) {
     return (

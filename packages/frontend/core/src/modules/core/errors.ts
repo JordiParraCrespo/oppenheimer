@@ -98,10 +98,68 @@ export function toAppError(error: unknown, fallback: ErrorDefinition): AppError 
     });
   }
 
-  const code = typeof candidate?.code === 'string' ? candidate.code : undefined;
+  // Better Auth answers with `{ code, message }` rather than a problem
+  // document; its code is still the one thing the resolver can translate.
+  const bodyCode = (body as { code?: unknown } | undefined)?.code;
+  const code =
+    typeof candidate?.code === 'string'
+      ? candidate.code
+      : typeof bodyCode === 'string'
+        ? bodyCode
+        : undefined;
 
   return new AppError(code ? { ...fallback, code } : fallback, {
     status: candidate?.status,
     cause: error,
   });
+}
+
+/** What a generated hey-api SDK call resolves to: it never throws. */
+export interface SdkResult<T> {
+  data?: T;
+  error?: unknown;
+  response?: Response;
+}
+
+/**
+ * A generated SDK call's answer, unwrapped: the body, or the failure as an
+ * {@link AppError} built on `fallback` that keeps the problem document the API
+ * sent and the response's status.
+ *
+ * Throwing `new AppError(fallback)` instead drops both, and a failure with no
+ * status reads to the error resolver as a request that never reached the
+ * server — so every refusal the API explains ("that host is offline") would
+ * render as "check your connection". A network failure has no response, and so
+ * keeps no status, which is the one case that sentence is right for.
+ */
+export async function unwrap<T>(
+  call: Promise<SdkResult<T>> | SdkResult<T>,
+  fallback: ErrorDefinition,
+): Promise<T> {
+  const { data, error, response } = await call;
+  if (error !== undefined) throw toAppError({ status: response?.status, body: error }, fallback);
+  return data as T;
+}
+
+/**
+ * {@link unwrap}, for a call whose success is a body. An empty one is a failed
+ * read, not an empty result: returning `[]` or `{}` would render "nothing here"
+ * over a request that never succeeded.
+ *
+ * `isComplete` states what else the body must hold — a paginated envelope's
+ * `data`, say — so a repository does not check it again and throw a second,
+ * status-less error of its own. Either way the failure keeps the response's
+ * status: the server answered, so it is not "could not reach the server".
+ */
+export async function unwrapBody<T>(
+  call: Promise<SdkResult<T>> | SdkResult<T>,
+  fallback: ErrorDefinition,
+  isComplete: (body: NonNullable<T>) => boolean = () => true,
+): Promise<NonNullable<T>> {
+  const { data, error, response } = await call;
+  if (error !== undefined) throw toAppError({ status: response?.status, body: error }, fallback);
+  if (data === undefined || data === null || !isComplete(data as NonNullable<T>)) {
+    throw new AppError(fallback, { status: response?.status });
+  }
+  return data as NonNullable<T>;
 }
