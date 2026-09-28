@@ -1,5 +1,6 @@
 import { cn, Separator, StatusDot, Link as TextLink } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
+import { ErrorAlert } from '../../forms';
 import {
   HostPairingCopyButtons,
   HostPairingInstruction,
@@ -47,6 +48,7 @@ export function HostPairingChrome({
   onRegenerate,
   busy,
   host,
+  error = null,
   layout = 'dialog',
 }: {
   /** Absent while the token is being minted. */
@@ -62,12 +64,16 @@ export function HostPairingChrome({
   busy?: boolean;
   /** The machine this token paired, once one has spent it. */
   host: PairingHost | null;
+  /** A mint that was refused. The last token, if any, stays on screen and spendable. */
+  error?: unknown;
   /** `step`: onboarding's sizes. `dialog`: Add a host's. */
   layout?: 'step' | 'dialog';
 }) {
+  const { t } = useTranslation();
   const step = layout === 'step';
   return (
     <>
+      <ErrorAlert error={error} fallback={t('hosts.pairing.mintFailed')} />
       <div className="flex flex-col gap-2.5">
         <HostPairingCopyButtons pairing={pairing} size={step ? 'lg' : 'md'} />
         <HostPairingToken
