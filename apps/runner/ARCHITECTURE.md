@@ -14,8 +14,9 @@ packages/go/                  shared toolkit, one Go module each (see its README
   httpx/                      router, middleware, JSON, server lifecycle
   auth/ auth/scope            Principal, bearer middleware, scope grammar + guard, JWT
   health/                     /healthz /readyz /health/capabilities
-  ws/                         hub, connection, envelope, upgrade handler
+  ws/                         hub, connection, envelope, upgrade handler, the one writer pump
   selfupdate/                 signed manifests, verified downloads, atomic binary swaps
+  execx/                      every run-and-collect subprocess: timeout, output, group kill
 
 apps/runner/
 cmd/runner/main.go            signals, flags, subcommand dispatch — no wiring

@@ -2,13 +2,13 @@ package system
 
 import (
 	"context"
-	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/execx"
 )
 
 // readMachine asks sysctl and sw_vers. It runs once per machineTTL, so the
@@ -52,23 +52,20 @@ func DarwinBootTime(raw string) (time.Time, bool) {
 }
 
 func sysctl(ctx context.Context, name string) string {
-	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
-	defer cancel()
-	out, err := exec.CommandContext(ctx, "sysctl", "-n", name).Output() //nolint:gosec // fixed names
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(out))
+	return probe(ctx, "sysctl", "-n", name)
 }
 
 func swVers(ctx context.Context, flag string) string {
-	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
-	defer cancel()
-	out, err := exec.CommandContext(ctx, "sw_vers", flag).Output() //nolint:gosec // fixed flags
+	return probe(ctx, "sw_vers", flag)
+}
+
+// probe runs one fixed command for its stdout; a failure is an unknown value.
+func probe(ctx context.Context, name string, args ...string) string {
+	res, err := execx.Run(ctx, execx.Spec{Name: name, Args: args, Timeout: probeTimeout, Output: execx.Stdout})
 	if err != nil {
 		return ""
 	}
-	return strings.TrimSpace(string(out))
+	return strings.TrimSpace(res.Out)
 }
 
 // AvailableMemory is not read on macOS: vm_stat's page counts do not add up

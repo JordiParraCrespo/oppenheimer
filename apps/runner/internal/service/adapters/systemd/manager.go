@@ -12,12 +12,12 @@ import (
 	"context"
 	"errors"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/execx"
 )
 
 var _ app.Manager = (*Manager)(nil)
@@ -35,7 +35,7 @@ type Options struct {
 	Dir string
 	// User is whose lingering is enabled.
 	User string
-	// Commands runs systemctl and loginctl; defaults to os/exec.
+	// Commands runs systemctl and loginctl; defaults to execx.
 	Commands app.Commands
 }
 
@@ -166,6 +166,6 @@ func userHint() string {
 type execCommands struct{}
 
 func (execCommands) Run(ctx context.Context, name string, args ...string) (string, error) {
-	out, err := exec.CommandContext(ctx, name, args...).CombinedOutput()
-	return string(out), err
+	res, err := execx.Run(ctx, execx.Spec{Name: name, Args: args, Output: execx.Combined})
+	return res.Out, execx.Cause(err)
 }

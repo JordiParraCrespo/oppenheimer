@@ -10,13 +10,13 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/execx"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/selfupdate"
 )
 
@@ -127,13 +127,13 @@ func (s *Store) stagingFile(pattern string) (string, error) {
 // catches a wrong-arch or truncated build while the old binary is still the
 // service — the difference between a failed update and a dead host.
 func (s *Store) SelfCheck(ctx context.Context, path string) error {
-	ctx, cancel := context.WithTimeout(ctx, s.timeout)
-	defer cancel()
-	out, err := exec.CommandContext(ctx, path, "selfcheck").CombinedOutput()
+	res, err := execx.Run(ctx, execx.Spec{
+		Name: path, Args: []string{"selfcheck"}, Timeout: s.timeout, Output: execx.Combined,
+	})
 	if err != nil {
-		detail := strings.TrimSpace(string(out))
+		detail := strings.TrimSpace(res.Out)
 		if detail == "" {
-			detail = err.Error()
+			detail = execx.Cause(err).Error()
 		}
 		return fmt.Errorf("%s selfcheck: %s", filepath.Base(path), detail)
 	}
