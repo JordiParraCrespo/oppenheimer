@@ -47,12 +47,21 @@ export interface AutomationRunRepositoryPort {
   /** Write the outcome; a deferred run re-stages its dispatch for `availableAt`. */
   save(run: AutomationRunEntity): Promise<void>;
 
-  /** Firings in the last hour, for the rate guards. Skipped ones do not count. */
-  countRecent(
+  /**
+   * Fire under the workspace's rate caps: in one transaction, take the
+   * workspace's firing lock, count the last hour's firings (skipped ones do
+   * not count), let `decide` build the run from that count, and insert it —
+   * with its dispatch staged when pending. Serialised with every other firing
+   * in the workspace, the scheduler's included, so two events cannot both
+   * take the last slot. A duplicate cause inserts nothing and answers with the
+   * run that cause already made, as {@link insertFiring} does.
+   */
+  fireUnderCaps(
     organizationId: string,
     automationId: string,
     since: Date,
-  ): Promise<{ automation: number; workspace: number }>;
+    decide: (recent: { automation: number; workspace: number }) => AutomationRunEntity,
+  ): Promise<{ run: AutomationRunEntity; runId: string; inserted: boolean }>;
 
   /**
    * Other runs of this automation that are still live — their session's
@@ -69,10 +78,12 @@ export interface AutomationRunRepositoryPort {
   countLiveOnHost(hostId: string, excludingRunId: string, since: Date): Promise<number>;
 
   /**
-   * Runs still live that were dispatched before `before`, oldest first: the
-   * candidates the run-limit sweep weighs against each workspace's limit.
+   * Runs still live that were dispatched between `notBefore` and `before`,
+   * oldest first: the candidates the run-limit sweep weighs against each
+   * workspace's limit. A run live since before `notBefore` is one the stop
+   * could not end; it is not retried for ever, so it cannot take every slot.
    */
-  findLiveDispatchedBefore(before: Date, batch: number): Promise<LiveRun[]>;
+  findLiveDispatchedBefore(before: Date, notBefore: Date, batch: number): Promise<LiveRun[]>;
 
   page(scope: AccessScope, filters: RunFilters, page: number, limit: number): Promise<RunPage>;
 
