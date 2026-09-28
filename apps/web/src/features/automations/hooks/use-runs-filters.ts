@@ -1,10 +1,11 @@
 import type { RunsFilter } from '@oppenheimer/frontend-consumer';
-import { type AutomationRunStatus, RUN_WINDOWS } from '@oppenheimer/shared/automations';
-import { parseAsInteger, parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
-
-/** The Runs tab's status pills, in the frames' order. */
-export const RUN_STATUS_TABS = ['all', 'completed', 'failed', 'running'] as const;
-export type RunStatusTab = (typeof RUN_STATUS_TABS)[number];
+import {
+  type AutomationRunStatus,
+  RUN_WINDOWS,
+  type RunWindow,
+} from '@oppenheimer/shared/automations';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { type RunStatusTab, type RunsSearch } from '../lib/runs-search';
 
 /** What each pill asks the API for; `all` is the listed statuses, the API's default. */
 const TAB_STATUSES: Record<RunStatusTab, readonly AutomationRunStatus[] | undefined> = {
@@ -14,24 +15,36 @@ const TAB_STATUSES: Record<RunStatusTab, readonly AutomationRunStatus[] | undefi
   running: ['queued', 'running'],
 };
 
-const PARSERS = {
-  status: parseAsStringLiteral(RUN_STATUS_TABS).withDefault('all'),
-  automation: parseAsString,
-  project: parseAsString,
-  window: parseAsStringLiteral(RUN_WINDOWS).withDefault('30d'),
-  page: parseAsInteger.withDefault(1),
-};
+const DEFAULT_WINDOW: RunWindow = '30d';
 
 /** Pages of ten, as the foot reads "1–10 of 65". */
 export const RUNS_PAGE_SIZE = 10;
 
 /**
- * The runs list's facets and page, in the URL (`.agents/rules/frontend-ui.md`):
- * a filtered list is a link someone can send, and Back undoes a filter.
- * Narrowing any facet goes back to page one.
+ * The runs list's facets and page, in the URL (`runsSearchSchema`, declared on
+ * each route that shows the list): a filtered list is a link someone can send,
+ * and Back undoes a filter. A default is written as no key, so an unfiltered
+ * list is a clean URL, and narrowing any facet goes back to page one.
  */
 export function useRunsFilters(scope: { automationId?: string }) {
-  const [state, setState] = useQueryStates(PARSERS, { history: 'replace' });
+  const search: RunsSearch = useSearch({ strict: false });
+  const navigate = useNavigate();
+
+  const state = {
+    status: search.status ?? 'all',
+    automation: search.automation ?? null,
+    project: search.project ?? null,
+    window: RUN_WINDOWS.find((window) => window === search.window) ?? DEFAULT_WINDOW,
+    page: search.page ?? 1,
+  };
+
+  // The URL's own history entry, replaced: a filter is not a page to go Back to.
+  const write = (patch: Partial<RunsSearch>) =>
+    navigate({
+      to: '.',
+      search: (previous: RunsSearch) => ({ ...previous, ...patch }),
+      replace: true,
+    });
 
   const filter: RunsFilter = {
     automationId: scope.automationId ?? state.automation ?? undefined,
@@ -44,19 +57,29 @@ export function useRunsFilters(scope: { automationId?: string }) {
 
   const dirty =
     state.status !== 'all' ||
-    state.window !== '30d' ||
+    state.window !== DEFAULT_WINDOW ||
     (!scope.automationId && (state.automation !== null || state.project !== null));
 
   return {
     state,
     filter,
     dirty,
-    setStatus: (status: RunStatusTab) => setState({ status, page: 1 }),
-    setAutomation: (automation: string | null) => setState({ automation, page: 1 }),
-    setProject: (project: string | null) => setState({ project, page: 1 }),
-    setWindow: (window: (typeof RUN_WINDOWS)[number]) => setState({ window, page: 1 }),
-    setPage: (page: number) => setState({ page }),
+    setStatus: (status: RunStatusTab) =>
+      write({ status: status === 'all' ? undefined : status, page: undefined }),
+    setAutomation: (automation: string | null) =>
+      write({ automation: automation ?? undefined, page: undefined }),
+    setProject: (project: string | null) =>
+      write({ project: project ?? undefined, page: undefined }),
+    setWindow: (window: RunWindow) =>
+      write({ window: window === DEFAULT_WINDOW ? undefined : window, page: undefined }),
+    setPage: (page: number) => write({ page: page === 1 ? undefined : page }),
     clear: () =>
-      setState({ status: null, automation: null, project: null, window: null, page: null }),
+      write({
+        status: undefined,
+        automation: undefined,
+        project: undefined,
+        window: undefined,
+        page: undefined,
+      }),
   };
 }

@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { newSessionSearchSchema } from '@/features/sessions/lib/new-session-search';
 import { NewSessionScreen } from '@/features/sessions/screens/new-session';
 
 /**
@@ -9,14 +10,10 @@ import { NewSessionScreen } from '@/features/sessions/screens/new-session';
  * lands with: the project chip starts on that project and its defaults
  * prefill the rest (`product/versions/mvp/05-screens.md`).
  * `?host=` is what Add a host lands with: the host chip starts on the
- * machine it paired. Unknown keys are carried through, as `__root.tsx` asks.
+ * machine it paired (`newSessionSearchSchema`).
  */
 export const Route = createFileRoute('/_authenticated/sessions/new')({
   component: NewSessionScreen,
   staticData: { pane: 'full' },
-  validateSearch: (search: Record<string, unknown>): { project?: string; host?: string } => ({
-    ...search,
-    project: typeof search.project === 'string' ? search.project : undefined,
-    host: typeof search.host === 'string' ? search.host : undefined,
-  }),
+  validateSearch: newSessionSearchSchema,
 });

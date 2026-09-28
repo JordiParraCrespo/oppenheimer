@@ -1,15 +1,11 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import {
-  type GithubInstallCallback,
-  parseInstallCallback,
-} from '@/features/installations/lib/github-install';
+import { z } from 'zod';
+import { githubCallbackSearchSchema } from '@/features/installations/lib/github-install';
 import { OnboardingGithubScreen } from '@/features/installations/screens/onboarding-github';
 import {
-  type FirstRunWalk,
   installUrlCarryingWalk,
-  isWalkState,
-  parseWalk,
-  stateWithoutWalk,
+  walkFromState,
+  walkParam,
 } from '@/features/organizations/lib/first-run';
 
 /**
@@ -21,10 +17,10 @@ import {
  * rewrite.
  */
 export const Route = createFileRoute('/_auth/onboarding/github')({
-  validateSearch: (search: Record<string, unknown>): GithubInstallCallback & FirstRunWalk => ({
-    ...parseInstallCallback({ ...search, state: stateWithoutWalk(search.state) }),
-    ...parseWalk(isWalkState(search.state) ? { walk: true } : search),
-  }),
+  validateSearch: z.preprocess(
+    walkFromState,
+    githubCallbackSearchSchema.extend({ walk: walkParam }),
+  ),
   component: GithubStep,
 });
 

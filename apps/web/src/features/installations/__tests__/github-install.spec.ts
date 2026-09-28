@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { parseInstallCallback } from '@/features/installations/lib/github-install';
+import { githubCallbackSearchSchema } from '@/features/installations/lib/github-install';
+
+const parseInstallCallback = (search: Record<string, unknown>) =>
+  githubCallbackSearchSchema.parse(search);
 
 /**
  * The install state is what ties GitHub's redirect to an install this console
@@ -9,7 +12,7 @@ import { parseInstallCallback } from '@/features/installations/lib/github-instal
 
 const NONCE = 'kX9_mZq-4vR2tY7wB1nC3dE5fG8hJ0kLpQ6sU2xV4yA';
 
-describe('parseInstallCallback', () => {
+describe('githubCallbackSearchSchema', () => {
   it('keeps a nonce', () => {
     expect(parseInstallCallback({ installation_id: '42', code: 'abc', state: NONCE })).toEqual({
       installation_id: 42,

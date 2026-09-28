@@ -261,10 +261,11 @@ pieces from your plan, following `references/templates.md`:
     metadata), `toast`, `Field*`, `DialogBody`, `EditorPage` and the
     `PageHeader` parts, `ChipSelect`, `DropdownMenu*`. The table in
     `frontend-ui.md` says which one answers which need.
-  - There is no data table in the kit yet, and no console screen pages or
-    searches a long list. The first one keeps search, filters and page in the
-    URL (nuqs) and sends them to the API (`frontend-ui.md`, "A list's query
-    lives in the URL"); build it in the feature and promote it on the second.
+  - There is no data table in the kit yet. A list that pages or filters keeps
+    search, filters and page in the URL, as its routes' search schema, and
+    sends them to the API (`frontend-ui.md`, "A list's query lives in the
+    URL"; the runs list is the example); build it in the feature and promote
+    it on the second.
 - **Colour:** the semantic tokens: `text-fg`, `text-fg-muted`,
   `text-fg-subtle`, `text-link`, `bg-canvas`, `bg-surface-*`, `bg-control-*`,
   `border-border`, `border-border-subtle`, `--accent-*`, `--status-*`. The

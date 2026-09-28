@@ -86,5 +86,5 @@ pnpm --filter @oppenheimer/frontend-web typecheck   # tsc --noEmit; there is no 
 
 Depends on `@oppenheimer/design-system-web`, `@oppenheimer/frontend-core`,
 `@oppenheimer/shared` and `@oppenheimer/translations`; React, React Hook Form, i18next,
-nuqs and TanStack Query/Router are peer dependencies the app provides. Used
+Zod and TanStack Query/Router are peer dependencies the app provides. Used
 by `apps/web`.
