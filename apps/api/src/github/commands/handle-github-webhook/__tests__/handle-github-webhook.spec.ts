@@ -1,8 +1,12 @@
-import { createHmac } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
+import { Logger } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { CommandBus } from '@nestjs/cqrs';
 import { describe, expect, it, vi } from 'vitest';
-import type { GithubInstallationRepositoryPort } from '../../../database/github-installation.repository.port';
+import type {
+  GithubInstallationRepositoryPort,
+  InstallationStatusChangeResult,
+} from '../../../database/github-installation.repository.port';
 import { HandleGithubWebhookCommand } from '../handle-github-webhook.command';
 import { HandleGithubWebhookCommandHandler } from '../handle-github-webhook.command-handler';
 
@@ -22,9 +26,9 @@ function sign(payload: string): string {
   return `sha256=${createHmac('sha256', SECRET).update(payload).digest('hex')}`;
 }
 
-function build(applied = true) {
+function build(result: InstallationStatusChangeResult = 'applied') {
   const installations = {
-    applyStatusChange: vi.fn().mockResolvedValue(applied),
+    applyStatusChange: vi.fn().mockResolvedValue(result),
   } satisfies Pick<GithubInstallationRepositoryPort, 'applyStatusChange'>;
 
   const configService = {
@@ -73,8 +77,60 @@ describe('installation webhook', () => {
 
     expect(subject.installations.applyStatusChange).toHaveBeenCalledWith({
       githubInstallationId: 45678901,
+      occurredAt: expect.any(Date),
       suspendedAt: null,
     });
+  });
+
+  it("orders the write by GitHub's time, and suspends at that time rather than ours", async () => {
+    const subject = build();
+    const payload = JSON.stringify({
+      action: 'suspend',
+      installation: { id: 45678901, suspended_at: '2026-09-01T09:00:00Z' },
+    });
+
+    await subject.handler.execute(
+      new HandleGithubWebhookCommand({
+        payload,
+        signature: sign(payload),
+        event: 'installation',
+        deliveryId: 'd-4',
+      }),
+    );
+
+    expect(subject.installations.applyStatusChange).toHaveBeenCalledWith({
+      githubInstallationId: 45678901,
+      occurredAt: new Date('2026-09-01T09:00:00Z'),
+      suspendedAt: new Date('2026-09-01T09:00:00Z'),
+    });
+  });
+
+  it('applies a payload with no time at receipt time, and says so', async () => {
+    const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
+    const subject = build();
+    const before = Date.now();
+
+    await subject.handler.execute(delivery('suspend'));
+
+    const [change] = subject.installations.applyStatusChange.mock.calls[0];
+    expect(change.occurredAt.getTime()).toBeGreaterThanOrEqual(before);
+    expect(change.suspendedAt).toEqual(change.occurredAt);
+    expect(warn).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('no time') }),
+    );
+    warn.mockRestore();
+  });
+
+  it('logs an out-of-order delivery apart from one no workspace holds', async () => {
+    const log = vi.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
+    const subject = build('stale');
+
+    await expect(subject.handler.execute(delivery('suspend'))).resolves.toBeUndefined();
+
+    expect(log).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Ignoring an out-of-order installation webhook' }),
+    );
+    log.mockRestore();
   });
 
   it('records an uninstall without touching the suspension', async () => {
@@ -124,6 +180,31 @@ describe('installation webhook', () => {
     });
   });
 
+  it('digests the raw bytes it was sent, not the JSON they parse to', async () => {
+    // Whitespace JSON.parse would drop: a digest of the parsed object would
+    // miss that these are exactly the bytes GitHub signed.
+    const subject = build();
+    const payload = '{ "action" :  "opened",\n  "number": 7 }\n';
+    const raw = Buffer.from(payload, 'utf8');
+
+    await subject.handler.execute(
+      new HandleGithubWebhookCommand({
+        payload: raw,
+        signature: sign(payload),
+        event: 'pull_request',
+        deliveryId: 'd-5',
+      }),
+    );
+
+    const [command] = subject.commandBus.execute.mock.calls[0];
+    expect(command.payloadDigest).toBe(createHash('sha256').update(raw).digest('hex'));
+    expect(command.payloadDigest).not.toBe(
+      createHash('sha256')
+        .update(JSON.stringify(JSON.parse(payload)))
+        .digest('hex'),
+    );
+  });
+
   it('hands nothing to the hub when the signature is forged', async () => {
     const subject = build();
     const forged = new HandleGithubWebhookCommand({
@@ -140,7 +221,7 @@ describe('installation webhook', () => {
   it('is quiet when no live installation matches', async () => {
     // A delivery for an installation no workspace holds is a fact about somebody
     // else's account. It is logged and dropped, never retried.
-    const subject = build(false);
+    const subject = build('missing');
 
     await expect(subject.handler.execute(delivery('suspend'))).resolves.toBeUndefined();
   });

@@ -9,7 +9,20 @@ export interface InstallationStatusChange {
   suspendedAt?: Date | null;
   /** Set when GitHub says the App was uninstalled. */
   deletedAt?: Date;
+  /**
+   * GitHub's own time of the change. A suspend or unsuspend applies only when
+   * it is at least as new as the last one the row took (`statusChangedAt`), so
+   * a late retry or a replayed older body cannot undo a newer one. An uninstall
+   * is terminal for its installation id and applies whatever the order.
+   */
+  occurredAt: Date;
 }
+
+/**
+ * What a status change did: `applied`; `stale`, a live row holds a newer
+ * suspend or unsuspend; or `missing`, no workspace holds a live row for it.
+ */
+export type InstallationStatusChangeResult = 'applied' | 'stale' | 'missing';
 
 /**
  * Port for persisting and querying the installation aggregate.
@@ -67,7 +80,7 @@ export interface GithubInstallationRepositoryPort {
    * Deliberately not a load-mutate-save of the aggregate: a delivery that read
    * the row just before a disconnect committed would write the whole aggregate
    * back, `deletedAt` included, and resurrect a claim the workspace had given
-   * up. Returns whether a row matched.
+   * up. Ordered by `occurredAt` (see {@link InstallationStatusChange}).
    */
-  applyStatusChange(change: InstallationStatusChange): Promise<boolean>;
+  applyStatusChange(change: InstallationStatusChange): Promise<InstallationStatusChangeResult>;
 }
