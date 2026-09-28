@@ -35,6 +35,7 @@ export class RevokePairingTokenHttpController {
   @CheckPolicies({ action: 'delete', subject: 'Host' })
   @RequireScopes('hosts:write')
   @ApiOperation({
+    operationId: 'revokePairingToken',
     summary: 'Revoke a pairing token',
     description:
       'Takes effect immediately: a revoked token cannot pair a machine even if someone still holds the secret. The record is kept so the pairing history survives.',

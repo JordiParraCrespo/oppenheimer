@@ -62,7 +62,10 @@ export class MembersController {
   @RequireScopes('members:read')
   @OrganizationScoped('orgId')
   @CheckPolicies({ action: 'read', subject: 'Member' })
-  @ApiOperation({ summary: 'List members of an organization' })
+  @ApiOperation({
+    operationId: 'listOrganizationMembers',
+    summary: 'List members of an organization',
+  })
   @ApiQuery({
     name: 'search',
     required: false,
@@ -110,7 +113,7 @@ export class MembersController {
   @RequireScopes('members:write')
   @OrganizationScoped('orgId')
   @CheckPolicies({ action: 'update', subject: 'Member' })
-  @ApiOperation({ summary: "Change a member's organization role" })
+  @ApiOperation({ operationId: 'updateMemberRole', summary: "Change a member's organization role" })
   @ApiResponse({ status: 200, type: MemberResponseDto })
   updateRole(
     @Req() req: Request,
@@ -126,7 +129,10 @@ export class MembersController {
   @RequireScopes('members:write')
   @OrganizationScoped('orgId')
   @CheckPolicies({ action: 'delete', subject: 'Member' })
-  @ApiOperation({ summary: 'Remove a member from an organization' })
+  @ApiOperation({
+    operationId: 'removeOrganizationMember',
+    summary: 'Remove a member from an organization',
+  })
   @ApiResponse({ status: 200, type: MemberResponseDto })
   remove(
     @Req() req: Request,

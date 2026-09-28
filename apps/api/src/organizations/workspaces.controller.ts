@@ -68,7 +68,7 @@ export class WorkspacesController {
   @Version('1')
   @RequireScopes('workspaces:read')
   @CheckPolicies({ action: 'read', subject: 'Workspace' })
-  @ApiOperation({ summary: "List the caller's workspaces" })
+  @ApiOperation({ operationId: 'listMyWorkspaces', summary: "List the caller's workspaces" })
   @ApiResponse({ status: 200, type: [WorkspaceResponseDto] })
   async listMine(
     @Req() req: Request,
@@ -88,6 +88,7 @@ export class WorkspacesController {
   @OrganizationScoped('organizationId', 'query')
   @CheckPolicies({ action: 'read', subject: 'Workspace' })
   @ApiOperation({
+    operationId: 'listWorkspaces',
     summary: "List an organization's workspaces (defaults to the active org)",
   })
   @ApiQuery({ name: 'organizationId', required: false, type: String })
@@ -106,7 +107,7 @@ export class WorkspacesController {
   @RequireScopes('workspaces:write')
   @OrganizationScoped('organizationId', 'body')
   @CheckPolicies({ action: 'create', subject: 'Workspace' })
-  @ApiOperation({ summary: 'Create a workspace' })
+  @ApiOperation({ operationId: 'createWorkspace', summary: 'Create a workspace' })
   @ApiResponse({ status: 201, type: WorkspaceResponseDto })
   create(
     @Req() req: Request & TenantRequest,
@@ -122,7 +123,7 @@ export class WorkspacesController {
   @Version('1')
   @RequireScopes('workspaces:write')
   @CheckPolicies({ action: 'update', subject: 'Workspace' })
-  @ApiOperation({ summary: 'Rename a workspace' })
+  @ApiOperation({ operationId: 'updateWorkspace', summary: 'Rename a workspace' })
   @ApiResponse({ status: 200, type: WorkspaceResponseDto })
   update(
     @Req() req: Request,
@@ -137,7 +138,7 @@ export class WorkspacesController {
   @RequireScopes('workspaces:write')
   @HttpCode(204)
   @CheckPolicies({ action: 'delete', subject: 'Workspace' })
-  @ApiOperation({ summary: 'Delete a workspace' })
+  @ApiOperation({ operationId: 'deleteWorkspace', summary: 'Delete a workspace' })
   @ApiResponse({ status: 204 })
   remove(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.workspaces.remove(req.headers, id);
@@ -147,7 +148,10 @@ export class WorkspacesController {
   @Version('1')
   @RequireScopes('workspaces:read')
   @CheckPolicies({ action: 'read', subject: 'Workspace' })
-  @ApiOperation({ summary: 'Set the active workspace for the current session' })
+  @ApiOperation({
+    operationId: 'setActiveWorkspace',
+    summary: 'Set the active workspace for the current session',
+  })
   @ApiResponse({ status: 200, type: WorkspaceResponseDto })
   setActive(
     @Req() req: Request,

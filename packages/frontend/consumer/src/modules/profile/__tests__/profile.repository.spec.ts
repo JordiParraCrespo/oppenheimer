@@ -13,7 +13,7 @@ vi.mock('@oppenheimer/api-client', () => ({
     changeEmail: vi.fn(),
     deleteOwnAccount: vi.fn(),
     findSessions: vi.fn(),
-    revokeSession: vi.fn(),
+    revokeProfileSession: vi.fn(),
     revokeOtherSessions: vi.fn(),
   },
 }));

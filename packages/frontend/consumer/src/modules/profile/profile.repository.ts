@@ -105,7 +105,7 @@ export class ProfileRepository {
   @MapApiError(ProfileErrors.REVOKE_SESSION_FAILED)
   async revokeSession(sessionId: string): Promise<void> {
     await unwrap(
-      heyApiSdk.revokeSession({ path: { id: sessionId } }),
+      heyApiSdk.revokeProfileSession({ path: { id: sessionId } }),
       ProfileErrors.REVOKE_SESSION_FAILED,
     );
   }

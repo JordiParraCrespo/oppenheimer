@@ -35,6 +35,7 @@ export class CreateAccessGrantHttpController {
   @CheckPolicies({ action: 'update', subject: 'Role' })
   @RequireScopes('roles:write')
   @ApiOperation({
+    operationId: 'createAccessGrant',
     summary: 'Grant access to specific records',
     description:
       'The grant may not exceed the granter’s own access. Omitting resourceId grants every resource of that type, which requires already holding all of them.',

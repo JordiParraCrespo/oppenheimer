@@ -33,7 +33,7 @@ export class CreateRoleHttpController {
   @Version('1')
   @CheckPolicies({ action: 'create', subject: 'Role' })
   @RequireScopes('roles:write')
-  @ApiOperation({ summary: 'Create role' })
+  @ApiOperation({ operationId: 'createRole', summary: 'Create role' })
   @ApiResponse({ status: 201, type: RoleResponseDto })
   @ApiProblemResponse({
     status: 409,

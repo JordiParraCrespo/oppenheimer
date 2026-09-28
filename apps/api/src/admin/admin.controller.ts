@@ -144,7 +144,10 @@ export class AdminController {
   @Version('1')
   @RequireScopes('admin:write')
   @CheckPolicies({ action: 'manage', subject: 'User' })
-  @ApiOperation({ summary: "Revoke one of a user's sessions by id" })
+  @ApiOperation({
+    operationId: 'revokeUserSession',
+    summary: "Revoke one of a user's sessions by id",
+  })
   @ApiResponse({ status: 200, type: AdminSuccessResponseDto })
   @ApiProblemResponse({
     status: 404,

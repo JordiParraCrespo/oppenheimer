@@ -1,4 +1,4 @@
-import { applyApiClientConfig, OpenAPI, rememberHeaders } from '@oppenheimer/api-client';
+import { applyApiClientConfig } from '@oppenheimer/api-client';
 import { ContainerModule } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import type { IAnalyticsClient } from '../analytics/analytics.client';
@@ -30,11 +30,6 @@ export function createCoreModule(config: CoreModuleConfig): ContainerModule {
     // cookie automatically (credentials: include). Whatever the auth client
     // returns from `getAuthHeaders()` is attached to every generated API
     // request as well, for a client that cannot rely on a cookie jar.
-    OpenAPI.BASE = config.apiBaseUrl;
-    OpenAPI.WITH_CREDENTIALS = true;
-    OpenAPI.CREDENTIALS = 'include';
-    OpenAPI.HEADERS = () => config.authClient.getAuthHeaders();
-    rememberHeaders(() => config.authClient.getAuthHeaders());
     void applyApiClientConfig({
       baseUrl: config.apiBaseUrl,
       credentials: 'include',

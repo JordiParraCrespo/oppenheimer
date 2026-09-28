@@ -7,8 +7,8 @@ Consumed by `@oppenheimer/frontend-core` and `@oppenheimer/frontend-consumer`.
 
 ## Important: generated code
 
-Most of `src/data-access/api/openapi/` is **generated — do not hand-edit it**.
-It is regenerated from `apps/api`'s OpenAPI spec:
+`src/generated/` and `src/index.ts` are **generated — do not hand-edit them**.
+They are regenerated from `apps/api`'s OpenAPI spec:
 
 ```bash
 # from repo root, after API controller/DTO changes:
@@ -17,24 +17,28 @@ pnpm generate:api-client
 pnpm --filter @oppenheimer/api-client generate
 ```
 
-The `generate` script runs `openapi` against `apps/api/openapi.json`, then a
-post-processing step (`scripts/openapi-postprocess.mjs`). Uses union types and
-`Api`-postfixed services.
+The `generate` script runs `openapi-ts` against `apps/api/openapi.json`, then
+`scripts/openapi-postprocess.mjs`, which writes the root barrel. A repository
+calls `heyApiSdk.<operation>` through `unwrap` / `unwrapBody` from
+`@oppenheimer/frontend-core`; there is no second client.
 
 ## Layout
 
 ```
 src/
-├── data-access/     # generated client (models + services)
-├── common/          # hand-written wrappers/config that survive regeneration
-└── index.ts
+├── generated/       # openapi-ts output: SDK, types, TanStack Query helpers
+├── configure.ts     # hand-written: base URL, credentials, auth headers
+└── index.ts         # generated barrel
 ```
 
 ## When modifying
 
 - To change the API surface, edit the **source of truth** — the controllers and
   Swagger decorators in `apps/api` (DTOs in `@oppenheimer/shared`) — then regenerate.
-- Only hand-written helpers (e.g. under `common/`) should be edited here.
+- A controller method with a generic name (`list`, `revoke`) gets an explicit
+  `@ApiOperation({ operationId })`; a numbered SDK function (`list6`) means
+  one is missing.
+- Only `configure.ts` is hand-written here.
 
 ## Commands
 

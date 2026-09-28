@@ -1,7 +1,7 @@
-import { ProfileApi, type UserSettingsResponseDto } from '@oppenheimer/api-client';
+import { heyApiSdk, type UserSettingsResponseDto } from '@oppenheimer/api-client';
 import type { UpdateUserSettingsDto } from '@oppenheimer/shared/schemas/profile';
 import { injectable } from 'inversify';
-import { AppError } from '../core/errors';
+import { unwrapBody } from '../core/errors';
 import { MapApiError } from '../core/map-api-error.decorator';
 import { UserSettingsEntity } from './user-settings.entity';
 import { UserSettingsErrors } from './user-settings.errors';
@@ -23,15 +23,16 @@ function toSettings(data: UserSettingsResponseDto): UserSettingsEntity {
 export class UserSettingsRepository {
   @MapApiError(UserSettingsErrors.FETCH_FAILED)
   async get(): Promise<UserSettingsEntity> {
-    const data = await ProfileApi.getSettings();
-    if (!data) throw new AppError(UserSettingsErrors.FETCH_FAILED);
+    const data = await unwrapBody(heyApiSdk.getSettings(), UserSettingsErrors.FETCH_FAILED);
     return toSettings(data);
   }
 
   @MapApiError(UserSettingsErrors.UPDATE_FAILED)
   async update(dto: UpdateUserSettingsDto): Promise<UserSettingsEntity> {
-    const data = await ProfileApi.updateSettings(dto);
-    if (!data) throw new AppError(UserSettingsErrors.UPDATE_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.updateSettings({ body: dto }),
+      UserSettingsErrors.UPDATE_FAILED,
+    );
     return toSettings(data);
   }
 }

@@ -25,6 +25,7 @@ export class FindGrantablePermissionsHttpController {
   @Version('1')
   @RequireScopes('tokens:read')
   @ApiOperation({
+    operationId: 'listGrantablePermissions',
     summary: 'List the permission catalog and what the caller may grant',
     description:
       'Drives the permission picker on the token-creation screen and the CLI’s --permissions validation.',

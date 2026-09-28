@@ -38,7 +38,7 @@ export class FindHostHttpController {
   @Version('1')
   @CheckPolicies({ action: 'read', subject: 'Host' })
   @RequireScopes('hosts:read')
-  @ApiOperation({ summary: 'Get one host' })
+  @ApiOperation({ operationId: 'getHost', summary: 'Get one host' })
   @ApiResponse({ status: 200, type: HostResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
   async get(

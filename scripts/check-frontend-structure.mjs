@@ -440,6 +440,23 @@ for (const pkg of readdirSync(join(root, 'packages/frontend'))) {
   }
 }
 
+// One API client, every operation named. The generated SDK numbers a name two
+// controller methods share (`list6`, `revoke3`), and a numbered name renumbers
+// whenever another controller is added — which is how callers once fell back to
+// hand-written URLs. A method with a generic name carries an explicit
+// `@ApiOperation({ operationId })` instead.
+const SDK = join(root, 'packages/frontend/api-client/src/generated/sdk.gen.ts');
+if (existsSync(SDK)) {
+  const numbered = [...readFileSync(SDK, 'utf8').matchAll(/^export const (\w*[a-z]\d+) =/gm)].map(
+    (match) => match[1],
+  );
+  if (numbered.length > 0) {
+    fail(
+      `packages/frontend/api-client: numbered SDK operations (${numbered.join(', ')}) — give the colliding controller methods an explicit @ApiOperation({ operationId }) and regenerate`,
+    );
+  }
+}
+
 // docs: every workspace package documented, frontend surfaces with an ARCHITECTURE.md
 const workspacePackages = [];
 const PACKAGE_ROOTS = [

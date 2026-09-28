@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, add, addMember, addSessionCheckout, archiveProject, assign, ban, cancel, catalog, changeEmail, changePassword, check, checkSlug, closeSession, collectSessionImage, connectInstallation, create, create2, create3, create4, create5, createAutomation, createFlagSegment, createProject, createSession, createUser, current, deleteAutomation, deleteAvatar, deleteFlagSegment, deleteOwnAccount, deploymentCapabilities, disconnectInstallation, duplicateAutomation, evaluateFeatureFlag, findAll, findAll2, findAll3, findFeatureFlag, findFeatureFlags, findFlagChanges, findFlagSegments, findOne, findOne2, findSessions, findUserRoles, get, get2, getAutomation, getAutomationRun, getAutomationRunHistory, getAutomationSettings, getClientFeatureFlags, getFull, getHostTimeline, getMembership, getPairingToken, getProfile, getProject, getSession, getSettings, getUser, impersonate, invite, issueAttachTicket, leave, list, list2, list3, list4, list5, list6, list7, listAutomationRuns, listAutomations, listInstallationRepositories, listInstallations, listMembers, listMine, listMine2, listProjects, listRepositoryBranches, listSessionEvents, listSessions, listUsers, listUserSessions, me, mint, moveSession, type Options, pasteSessionImage, pauseAutomation, permissions, permissions2, previewAutomationTrigger, readiness, register, reject, remove, remove2, remove3, remove4, remove5, removeMember, removeSessionCheckout, removeUser, rename, renameSession, restartSession, resumeAutomation, revoke, revoke2, revoke3, revokeOtherSessions, revokeSession, revokeSession2, revokeSessions, runAutomation, setActive, setActive2, setPassword, setRole, startInstallation, stopImpersonating, stopSession, toggleFeatureFlag, unban, uninstall, unpair, update, update2, update3, update4, updateAutomation, updateAutomationSettings, updateFeatureFlag, updateFlagSegment, updatePermissions, updateProfile, updateProject, updateRole, updateSettings, updateUser, uploadAvatar } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AddSessionCheckoutData, AddSessionCheckoutError, AddSessionCheckoutResponse, ArchiveProjectData, ArchiveProjectError, ArchiveProjectResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangeEmailData, ChangeEmailError, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, CloseSessionData, CloseSessionError, CloseSessionResponse, CollectSessionImageData, CollectSessionImageError, ConnectInstallationData, ConnectInstallationError, ConnectInstallationResponse, Create2Data, Create2Error, Create2Response, Create3Data, Create3Error, Create3Response, Create4Data, Create4Error, Create4Response, Create5Data, Create5Error, Create5Response, CreateAutomationData, CreateAutomationError, CreateAutomationResponse, CreateData, CreateError, CreateFlagSegmentData, CreateFlagSegmentError, CreateFlagSegmentResponse, CreateProjectData, CreateProjectError, CreateProjectResponse, CreateResponse, CreateSessionData, CreateSessionError, CreateSessionResponse, CreateUserData, CreateUserError, CreateUserResponse, CurrentData, CurrentError, CurrentResponse, DeleteAutomationData, DeleteAutomationError, DeleteAutomationResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteFlagSegmentData, DeleteFlagSegmentError, DeleteFlagSegmentResponse, DeleteOwnAccountData, DeleteOwnAccountError, DeleteOwnAccountResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, DisconnectInstallationData, DisconnectInstallationError, DisconnectInstallationResponse, DuplicateAutomationData, DuplicateAutomationError, DuplicateAutomationResponse, EvaluateFeatureFlagData, EvaluateFeatureFlagError, EvaluateFeatureFlagResponse, FindAll2Data, FindAll2Error, FindAll2Response, FindAll3Data, FindAll3Error, FindAll3Response, FindAllData, FindAllError, FindAllResponse, FindFeatureFlagData, FindFeatureFlagError, FindFeatureFlagResponse, FindFeatureFlagsData, FindFeatureFlagsError, FindFeatureFlagsResponse, FindFlagChangesData, FindFlagChangesError, FindFlagChangesResponse, FindFlagSegmentsData, FindFlagSegmentsError, FindFlagSegmentsResponse, FindOne2Data, FindOne2Error, FindOne2Response, FindOneData, FindOneError, FindOneResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, Get2Data, Get2Error, Get2Response, GetAutomationData, GetAutomationError, GetAutomationResponse, GetAutomationRunData, GetAutomationRunError, GetAutomationRunHistoryData, GetAutomationRunHistoryError, GetAutomationRunHistoryResponse, GetAutomationRunResponse, GetAutomationSettingsData, GetAutomationSettingsError, GetAutomationSettingsResponse, GetClientFeatureFlagsData, GetClientFeatureFlagsResponse, GetData, GetError, GetFullData, GetFullError, GetFullResponse, GetHostTimelineData, GetHostTimelineError, GetHostTimelineResponse, GetMembershipData, GetMembershipError, GetMembershipResponse, GetPairingTokenData, GetPairingTokenError, GetPairingTokenResponse, GetProfileData, GetProfileError, GetProfileResponse, GetProjectData, GetProjectError, GetProjectResponse, GetResponse, GetSessionData, GetSessionError, GetSessionResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, IssueAttachTicketData, IssueAttachTicketError, IssueAttachTicketResponse, LeaveData, LeaveError, LeaveResponse, List2Data, List2Error, List2Response, List3Data, List3Error, List3Response, List4Data, List4Error, List4Response, List5Data, List5Error, List5Response, List6Data, List6Error, List6Response, List7Data, List7Error, List7Response, ListAutomationRunsData, ListAutomationRunsError, ListAutomationRunsResponse, ListAutomationsData, ListAutomationsError, ListAutomationsResponse, ListData, ListError, ListInstallationRepositoriesData, ListInstallationRepositoriesError, ListInstallationRepositoriesResponse, ListInstallationsData, ListInstallationsError, ListInstallationsResponse, ListMembersData, ListMembersError, ListMembersResponse, ListMine2Data, ListMine2Error, ListMine2Response, ListMineData, ListMineError, ListMineResponse, ListProjectsData, ListProjectsError, ListProjectsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListResponse, ListSessionEventsData, ListSessionEventsError, ListSessionEventsResponse, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUserSessionsData, ListUserSessionsError, ListUserSessionsResponse, ListUsersResponse, MeData, MeError, MeResponse, MintData, MintError, MintResponse, MoveSessionData, MoveSessionError, MoveSessionResponse, PasteSessionImageData, PasteSessionImageError, PauseAutomationData, PauseAutomationError, PauseAutomationResponse, Permissions2Data, Permissions2Error, Permissions2Response, PermissionsData, PermissionsError, PermissionsResponse, PreviewAutomationTriggerData, PreviewAutomationTriggerError, PreviewAutomationTriggerResponse, ReadinessData, ReadinessError, ReadinessResponse, RegisterData, RegisterError, RegisterResponse, RejectData, RejectError, RejectResponse, Remove2Data, Remove2Error, Remove3Data, Remove3Error, Remove3Response, Remove4Data, Remove4Error, Remove4Response, Remove5Data, Remove5Error, Remove5Response, RemoveData, RemoveError, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveSessionCheckoutData, RemoveSessionCheckoutError, RemoveSessionCheckoutResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, RenameData, RenameError, RenameResponse, RenameSessionData, RenameSessionError, RenameSessionResponse, RestartSessionData, RestartSessionError, RestartSessionResponse, ResumeAutomationData, ResumeAutomationError, ResumeAutomationResponse, Revoke2Data, Revoke2Error, Revoke2Response, Revoke3Data, Revoke3Error, Revoke3Response, RevokeData, RevokeError, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokeResponse, RevokeSession2Data, RevokeSession2Error, RevokeSession2Response, RevokeSessionData, RevokeSessionError, RevokeSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, RunAutomationData, RunAutomationError, RunAutomationResponse, SetActive2Data, SetActive2Error, SetActive2Response, SetActiveData, SetActiveError, SetActiveResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StartInstallationData, StartInstallationError, StartInstallationResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, StopSessionData, StopSessionError, StopSessionResponse, ToggleFeatureFlagData, ToggleFeatureFlagError, ToggleFeatureFlagResponse, UnbanData, UnbanError, UnbanResponse, UninstallData, UninstallError, UninstallResponse, UnpairData, UnpairError, UnpairResponse, Update2Data, Update2Error, Update2Response, Update3Data, Update3Error, Update3Response, Update4Data, Update4Error, Update4Response, UpdateAutomationData, UpdateAutomationError, UpdateAutomationResponse, UpdateAutomationSettingsData, UpdateAutomationSettingsError, UpdateAutomationSettingsResponse, UpdateData, UpdateError, UpdateFeatureFlagData, UpdateFeatureFlagError, UpdateFeatureFlagResponse, UpdateFlagSegmentData, UpdateFlagSegmentError, UpdateFlagSegmentResponse, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateProjectData, UpdateProjectError, UpdateProjectResponse, UpdateResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
+import { accept, add, addMember, addSessionCheckout, archiveProject, assign, ban, cancel, catalog, changeEmail, changePassword, check, checkSlug, closeSession, collectSessionImage, connectInstallation, createAccessGrant, createApiToken, createAutomation, createFlagSegment, createOrganization, createProject, createRole, createSession, createUser, createWorkspace, current, deleteAutomation, deleteAvatar, deleteFlagSegment, deleteOrganization, deleteOwnAccount, deleteRole, deleteUser, deleteWorkspace, deploymentCapabilities, disconnectInstallation, duplicateAutomation, evaluateFeatureFlag, findFeatureFlag, findFeatureFlags, findFlagChanges, findFlagSegments, findMyPermissions, findSessions, findUser, findUserRoles, findUsers, getAutomation, getAutomationRun, getAutomationRunHistory, getAutomationSettings, getClientFeatureFlags, getFull, getHost, getHostTimeline, getInvitation, getMembership, getPairingToken, getProfile, getProject, getRole, getSession, getSettings, getUser, impersonate, invite, issueAttachTicket, leave, listAccessGrants, listApiTokens, listAutomationRuns, listAutomations, listGrantablePermissions, listHosts, listInstallationRepositories, listInstallations, listMembers, listMyInvitations, listMyWorkspaces, listOrganizationInvitations, listOrganizationMembers, listOrganizations, listPairingTokens, listProjects, listRepositoryBranches, listRoles, listSessionEvents, listSessions, listUsers, listUserSessions, listWorkspaces, me, mint, moveSession, type Options, pasteSessionImage, patchUser, pauseAutomation, previewAutomationTrigger, readiness, register, reject, removeMember, removeOrganizationMember, removeSessionCheckout, removeUser, rename, renameSession, restartSession, resumeAutomation, revokeAccessGrant, revokeApiToken, revokeOtherSessions, revokePairingToken, revokeProfileSession, revokeSessions, revokeUserSession, runAutomation, setActiveOrganization, setActiveWorkspace, setPassword, setRole, startInstallation, stopImpersonating, stopSession, toggleFeatureFlag, unban, uninstall, unpair, updateAutomation, updateAutomationSettings, updateFeatureFlag, updateFlagSegment, updateMemberRole, updateOrganization, updatePermissions, updateProfile, updateProject, updateRole, updateSettings, updateUser, updateWorkspace, uploadAvatar } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AddSessionCheckoutData, AddSessionCheckoutError, AddSessionCheckoutResponse, ArchiveProjectData, ArchiveProjectError, ArchiveProjectResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangeEmailData, ChangeEmailError, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, CloseSessionData, CloseSessionError, CloseSessionResponse, CollectSessionImageData, CollectSessionImageError, ConnectInstallationData, ConnectInstallationError, ConnectInstallationResponse, CreateAccessGrantData, CreateAccessGrantError, CreateAccessGrantResponse, CreateApiTokenData, CreateApiTokenError, CreateApiTokenResponse, CreateAutomationData, CreateAutomationError, CreateAutomationResponse, CreateFlagSegmentData, CreateFlagSegmentError, CreateFlagSegmentResponse, CreateOrganizationData, CreateOrganizationError, CreateOrganizationResponse, CreateProjectData, CreateProjectError, CreateProjectResponse, CreateRoleData, CreateRoleError, CreateRoleResponse, CreateSessionData, CreateSessionError, CreateSessionResponse, CreateUserData, CreateUserError, CreateUserResponse, CreateWorkspaceData, CreateWorkspaceError, CreateWorkspaceResponse, CurrentData, CurrentError, CurrentResponse, DeleteAutomationData, DeleteAutomationError, DeleteAutomationResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteFlagSegmentData, DeleteFlagSegmentError, DeleteFlagSegmentResponse, DeleteOrganizationData, DeleteOrganizationError, DeleteOrganizationResponse, DeleteOwnAccountData, DeleteOwnAccountError, DeleteOwnAccountResponse, DeleteRoleData, DeleteRoleError, DeleteUserData, DeleteUserError, DeleteWorkspaceData, DeleteWorkspaceError, DeleteWorkspaceResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, DisconnectInstallationData, DisconnectInstallationError, DisconnectInstallationResponse, DuplicateAutomationData, DuplicateAutomationError, DuplicateAutomationResponse, EvaluateFeatureFlagData, EvaluateFeatureFlagError, EvaluateFeatureFlagResponse, FindFeatureFlagData, FindFeatureFlagError, FindFeatureFlagResponse, FindFeatureFlagsData, FindFeatureFlagsError, FindFeatureFlagsResponse, FindFlagChangesData, FindFlagChangesError, FindFlagChangesResponse, FindFlagSegmentsData, FindFlagSegmentsError, FindFlagSegmentsResponse, FindMyPermissionsData, FindMyPermissionsError, FindMyPermissionsResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserData, FindUserError, FindUserResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, FindUsersData, FindUsersError, FindUsersResponse, GetAutomationData, GetAutomationError, GetAutomationResponse, GetAutomationRunData, GetAutomationRunError, GetAutomationRunHistoryData, GetAutomationRunHistoryError, GetAutomationRunHistoryResponse, GetAutomationRunResponse, GetAutomationSettingsData, GetAutomationSettingsError, GetAutomationSettingsResponse, GetClientFeatureFlagsData, GetClientFeatureFlagsResponse, GetFullData, GetFullError, GetFullResponse, GetHostData, GetHostError, GetHostResponse, GetHostTimelineData, GetHostTimelineError, GetHostTimelineResponse, GetInvitationData, GetInvitationError, GetInvitationResponse, GetMembershipData, GetMembershipError, GetMembershipResponse, GetPairingTokenData, GetPairingTokenError, GetPairingTokenResponse, GetProfileData, GetProfileError, GetProfileResponse, GetProjectData, GetProjectError, GetProjectResponse, GetRoleData, GetRoleError, GetRoleResponse, GetSessionData, GetSessionError, GetSessionResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, IssueAttachTicketData, IssueAttachTicketError, IssueAttachTicketResponse, LeaveData, LeaveError, LeaveResponse, ListAccessGrantsData, ListAccessGrantsError, ListAccessGrantsResponse, ListApiTokensData, ListApiTokensError, ListApiTokensResponse, ListAutomationRunsData, ListAutomationRunsError, ListAutomationRunsResponse, ListAutomationsData, ListAutomationsError, ListAutomationsResponse, ListGrantablePermissionsData, ListGrantablePermissionsError, ListGrantablePermissionsResponse, ListHostsData, ListHostsError, ListHostsResponse, ListInstallationRepositoriesData, ListInstallationRepositoriesError, ListInstallationRepositoriesResponse, ListInstallationsData, ListInstallationsError, ListInstallationsResponse, ListMembersData, ListMembersError, ListMembersResponse, ListMyInvitationsData, ListMyInvitationsError, ListMyInvitationsResponse, ListMyWorkspacesData, ListMyWorkspacesError, ListMyWorkspacesResponse, ListOrganizationInvitationsData, ListOrganizationInvitationsError, ListOrganizationInvitationsResponse, ListOrganizationMembersData, ListOrganizationMembersError, ListOrganizationMembersResponse, ListOrganizationsData, ListOrganizationsError, ListOrganizationsResponse, ListPairingTokensData, ListPairingTokensError, ListPairingTokensResponse, ListProjectsData, ListProjectsError, ListProjectsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListRolesData, ListRolesError, ListRolesResponse, ListSessionEventsData, ListSessionEventsError, ListSessionEventsResponse, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUserSessionsData, ListUserSessionsError, ListUserSessionsResponse, ListUsersResponse, ListWorkspacesData, ListWorkspacesError, ListWorkspacesResponse, MeData, MeError, MeResponse, MintData, MintError, MintResponse, MoveSessionData, MoveSessionError, MoveSessionResponse, PasteSessionImageData, PasteSessionImageError, PatchUserData, PatchUserError, PatchUserResponse, PauseAutomationData, PauseAutomationError, PauseAutomationResponse, PreviewAutomationTriggerData, PreviewAutomationTriggerError, PreviewAutomationTriggerResponse, ReadinessData, ReadinessError, ReadinessResponse, RegisterData, RegisterError, RegisterResponse, RejectData, RejectError, RejectResponse, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveOrganizationMemberData, RemoveOrganizationMemberError, RemoveOrganizationMemberResponse, RemoveSessionCheckoutData, RemoveSessionCheckoutError, RemoveSessionCheckoutResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, RenameData, RenameError, RenameResponse, RenameSessionData, RenameSessionError, RenameSessionResponse, RestartSessionData, RestartSessionError, RestartSessionResponse, ResumeAutomationData, ResumeAutomationError, ResumeAutomationResponse, RevokeAccessGrantData, RevokeAccessGrantError, RevokeAccessGrantResponse, RevokeApiTokenData, RevokeApiTokenError, RevokeApiTokenResponse, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokePairingTokenData, RevokePairingTokenError, RevokePairingTokenResponse, RevokeProfileSessionData, RevokeProfileSessionError, RevokeProfileSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, RevokeUserSessionData, RevokeUserSessionError, RevokeUserSessionResponse, RunAutomationData, RunAutomationError, RunAutomationResponse, SetActiveOrganizationData, SetActiveOrganizationError, SetActiveOrganizationResponse, SetActiveWorkspaceData, SetActiveWorkspaceError, SetActiveWorkspaceResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StartInstallationData, StartInstallationError, StartInstallationResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, StopSessionData, StopSessionError, StopSessionResponse, ToggleFeatureFlagData, ToggleFeatureFlagError, ToggleFeatureFlagResponse, UnbanData, UnbanError, UnbanResponse, UninstallData, UninstallError, UninstallResponse, UnpairData, UnpairError, UnpairResponse, UpdateAutomationData, UpdateAutomationError, UpdateAutomationResponse, UpdateAutomationSettingsData, UpdateAutomationSettingsError, UpdateAutomationSettingsResponse, UpdateFeatureFlagData, UpdateFeatureFlagError, UpdateFeatureFlagResponse, UpdateFlagSegmentData, UpdateFlagSegmentError, UpdateFlagSegmentResponse, UpdateMemberRoleData, UpdateMemberRoleError, UpdateMemberRoleResponse, UpdateOrganizationData, UpdateOrganizationError, UpdateOrganizationResponse, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateProjectData, UpdateProjectError, UpdateProjectResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UpdateWorkspaceData, UpdateWorkspaceError, UpdateWorkspaceResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -156,10 +156,10 @@ export const findSessionsOptions = (options?: Options<FindSessionsData>) => quer
  *
  * Session-authenticated only. The session in use cannot revoke itself.
  */
-export const revokeSessionMutation = (options?: Partial<Options<RevokeSessionData>>): UseMutationOptions<RevokeSessionResponse, RevokeSessionError, Options<RevokeSessionData>> => {
-    const mutationOptions: UseMutationOptions<RevokeSessionResponse, RevokeSessionError, Options<RevokeSessionData>> = {
+export const revokeProfileSessionMutation = (options?: Partial<Options<RevokeProfileSessionData>>): UseMutationOptions<RevokeProfileSessionResponse, RevokeProfileSessionError, Options<RevokeProfileSessionData>> => {
+    const mutationOptions: UseMutationOptions<RevokeProfileSessionResponse, RevokeProfileSessionError, Options<RevokeProfileSessionData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await revokeSession({
+            const { data } = await revokeProfileSession({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -262,14 +262,14 @@ export const updateProfileMutation = (options?: Partial<Options<UpdateProfileDat
     return mutationOptions;
 };
 
-export const findAllQueryKey = (options?: Options<FindAllData>) => createQueryKey('findAll', options);
+export const findUsersQueryKey = (options?: Options<FindUsersData>) => createQueryKey('findUsers', options);
 
 /**
  * List all users (admin)
  */
-export const findAllOptions = (options?: Options<FindAllData>) => queryOptions<FindAllResponse, FindAllError, FindAllResponse, ReturnType<typeof findAllQueryKey>>({
+export const findUsersOptions = (options?: Options<FindUsersData>) => queryOptions<FindUsersResponse, FindUsersError, FindUsersResponse, ReturnType<typeof findUsersQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await findAll({
+        const { data } = await findUsers({
             ...options,
             ...queryKey[0],
             signal,
@@ -277,7 +277,7 @@ export const findAllOptions = (options?: Options<FindAllData>) => queryOptions<F
         });
         return data;
     },
-    queryKey: findAllQueryKey(options)
+    queryKey: findUsersQueryKey(options)
 });
 
 const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
@@ -309,24 +309,24 @@ const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'hea
     return params as unknown as typeof page;
 };
 
-export const findAllInfiniteQueryKey = (options?: Options<FindAllData>): QueryKey<Options<FindAllData>> => createQueryKey('findAll', options, true);
+export const findUsersInfiniteQueryKey = (options?: Options<FindUsersData>): QueryKey<Options<FindUsersData>> => createQueryKey('findUsers', options, true);
 
 /**
  * List all users (admin)
  */
-export const findAllInfiniteOptions = (options?: Options<FindAllData>) => {
-    const opts = infiniteQueryOptions<FindAllResponse, FindAllError, InfiniteData<FindAllResponse>, QueryKey<Options<FindAllData>>, number | Pick<QueryKey<Options<FindAllData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+export const findUsersInfiniteOptions = (options?: Options<FindUsersData>) => {
+    const opts = infiniteQueryOptions<FindUsersResponse, FindUsersError, InfiniteData<FindUsersResponse>, QueryKey<Options<FindUsersData>>, number | Pick<QueryKey<Options<FindUsersData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
     // @ts-ignore
     {
         queryFn: async ({ pageParam, queryKey, signal }) => {
             // @ts-ignore
-            const page: Pick<QueryKey<Options<FindAllData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+            const page: Pick<QueryKey<Options<FindUsersData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
                 query: {
                     page: pageParam
                 }
             };
             const params = createInfiniteParams(queryKey, page);
-            const { data } = await findAll({
+            const { data } = await findUsers({
                 ...options,
                 ...params,
                 signal,
@@ -334,7 +334,7 @@ export const findAllInfiniteOptions = (options?: Options<FindAllData>) => {
             });
             return data;
         },
-        queryKey: findAllInfiniteQueryKey(options)
+        queryKey: findUsersInfiniteQueryKey(options)
     });
     return opts as Omit<typeof opts, 'initialData'>;
 };
@@ -357,16 +357,16 @@ export const meOptions = (options?: Options<MeData>) => queryOptions<MeResponse,
     queryKey: meQueryKey(options)
 });
 
-export const permissionsQueryKey = (options?: Options<PermissionsData>) => createQueryKey('permissions', options);
+export const findMyPermissionsQueryKey = (options?: Options<FindMyPermissionsData>) => createQueryKey('findMyPermissions', options);
 
 /**
  * Get the current user’s effective permissions
  *
  * The union of every role assigned to the caller, as CASL rules. Drives which routes the web app shows in its sidebar.
  */
-export const permissionsOptions = (options?: Options<PermissionsData>) => queryOptions<PermissionsResponse, PermissionsError, PermissionsResponse, ReturnType<typeof permissionsQueryKey>>({
+export const findMyPermissionsOptions = (options?: Options<FindMyPermissionsData>) => queryOptions<FindMyPermissionsResponse, FindMyPermissionsError, FindMyPermissionsResponse, ReturnType<typeof findMyPermissionsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await permissions({
+        const { data } = await findMyPermissions({
             ...options,
             ...queryKey[0],
             signal,
@@ -374,16 +374,16 @@ export const permissionsOptions = (options?: Options<PermissionsData>) => queryO
         });
         return data;
     },
-    queryKey: permissionsQueryKey(options)
+    queryKey: findMyPermissionsQueryKey(options)
 });
 
 /**
  * Delete user
  */
-export const removeMutation = (options?: Partial<Options<RemoveData>>): UseMutationOptions<unknown, RemoveError, Options<RemoveData>> => {
-    const mutationOptions: UseMutationOptions<unknown, RemoveError, Options<RemoveData>> = {
+export const deleteUserMutation = (options?: Partial<Options<DeleteUserData>>): UseMutationOptions<unknown, DeleteUserError, Options<DeleteUserData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DeleteUserError, Options<DeleteUserData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await remove({
+            const { data } = await deleteUser({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -394,14 +394,14 @@ export const removeMutation = (options?: Partial<Options<RemoveData>>): UseMutat
     return mutationOptions;
 };
 
-export const findOneQueryKey = (options: Options<FindOneData>) => createQueryKey('findOne', options);
+export const findUserQueryKey = (options: Options<FindUserData>) => createQueryKey('findUser', options);
 
 /**
  * Get user by ID
  */
-export const findOneOptions = (options: Options<FindOneData>) => queryOptions<FindOneResponse, FindOneError, FindOneResponse, ReturnType<typeof findOneQueryKey>>({
+export const findUserOptions = (options: Options<FindUserData>) => queryOptions<FindUserResponse, FindUserError, FindUserResponse, ReturnType<typeof findUserQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await findOne({
+        const { data } = await findUser({
             ...options,
             ...queryKey[0],
             signal,
@@ -409,16 +409,16 @@ export const findOneOptions = (options: Options<FindOneData>) => queryOptions<Fi
         });
         return data;
     },
-    queryKey: findOneQueryKey(options)
+    queryKey: findUserQueryKey(options)
 });
 
 /**
  * Update user
  */
-export const updateMutation = (options?: Partial<Options<UpdateData>>): UseMutationOptions<UpdateResponse, UpdateError, Options<UpdateData>> => {
-    const mutationOptions: UseMutationOptions<UpdateResponse, UpdateError, Options<UpdateData>> = {
+export const patchUserMutation = (options?: Partial<Options<PatchUserData>>): UseMutationOptions<PatchUserResponse, PatchUserError, Options<PatchUserData>> => {
+    const mutationOptions: UseMutationOptions<PatchUserResponse, PatchUserError, Options<PatchUserData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await update({
+            const { data } = await patchUser({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -449,14 +449,14 @@ export const catalogOptions = (options?: Options<CatalogData>) => queryOptions<C
     queryKey: catalogQueryKey(options)
 });
 
-export const listQueryKey = (options?: Options<ListData>) => createQueryKey('list', options);
+export const listAccessGrantsQueryKey = (options?: Options<ListAccessGrantsData>) => createQueryKey('listAccessGrants', options);
 
 /**
  * List the access grants in the active organization
  */
-export const listOptions = (options?: Options<ListData>) => queryOptions<ListResponse, ListError, ListResponse, ReturnType<typeof listQueryKey>>({
+export const listAccessGrantsOptions = (options?: Options<ListAccessGrantsData>) => queryOptions<ListAccessGrantsResponse, ListAccessGrantsError, ListAccessGrantsResponse, ReturnType<typeof listAccessGrantsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await list({
+        const { data } = await listAccessGrants({
             ...options,
             ...queryKey[0],
             signal,
@@ -464,7 +464,7 @@ export const listOptions = (options?: Options<ListData>) => queryOptions<ListRes
         });
         return data;
     },
-    queryKey: listQueryKey(options)
+    queryKey: listAccessGrantsQueryKey(options)
 });
 
 /**
@@ -472,10 +472,10 @@ export const listOptions = (options?: Options<ListData>) => queryOptions<ListRes
  *
  * The grant may not exceed the granter’s own access. Omitting resourceId grants every resource of that type, which requires already holding all of them.
  */
-export const createMutation = (options?: Partial<Options<CreateData>>): UseMutationOptions<CreateResponse, CreateError, Options<CreateData>> => {
-    const mutationOptions: UseMutationOptions<CreateResponse, CreateError, Options<CreateData>> = {
+export const createAccessGrantMutation = (options?: Partial<Options<CreateAccessGrantData>>): UseMutationOptions<CreateAccessGrantResponse, CreateAccessGrantError, Options<CreateAccessGrantData>> => {
+    const mutationOptions: UseMutationOptions<CreateAccessGrantResponse, CreateAccessGrantError, Options<CreateAccessGrantData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await create({
+            const { data } = await createAccessGrant({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -489,10 +489,10 @@ export const createMutation = (options?: Partial<Options<CreateData>>): UseMutat
 /**
  * Revoke an access grant
  */
-export const revokeMutation = (options?: Partial<Options<RevokeData>>): UseMutationOptions<RevokeResponse, RevokeError, Options<RevokeData>> => {
-    const mutationOptions: UseMutationOptions<RevokeResponse, RevokeError, Options<RevokeData>> = {
+export const revokeAccessGrantMutation = (options?: Partial<Options<RevokeAccessGrantData>>): UseMutationOptions<RevokeAccessGrantResponse, RevokeAccessGrantError, Options<RevokeAccessGrantData>> => {
+    const mutationOptions: UseMutationOptions<RevokeAccessGrantResponse, RevokeAccessGrantError, Options<RevokeAccessGrantData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await revoke({
+            const { data } = await revokeAccessGrant({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -523,16 +523,16 @@ export const currentOptions = (options?: Options<CurrentData>) => queryOptions<C
     queryKey: currentQueryKey(options)
 });
 
-export const findAll2QueryKey = (options?: Options<FindAll2Data>) => createQueryKey('findAll2', options);
+export const listApiTokensQueryKey = (options?: Options<ListApiTokensData>) => createQueryKey('listApiTokens', options);
 
 /**
  * List the caller’s API tokens
  *
  * Secrets are never returned — only the display prefix and metadata.
  */
-export const findAll2Options = (options?: Options<FindAll2Data>) => queryOptions<FindAll2Response, FindAll2Error, FindAll2Response, ReturnType<typeof findAll2QueryKey>>({
+export const listApiTokensOptions = (options?: Options<ListApiTokensData>) => queryOptions<ListApiTokensResponse, ListApiTokensError, ListApiTokensResponse, ReturnType<typeof listApiTokensQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await findAll2({
+        const { data } = await listApiTokens({
             ...options,
             ...queryKey[0],
             signal,
@@ -540,7 +540,7 @@ export const findAll2Options = (options?: Options<FindAll2Data>) => queryOptions
         });
         return data;
     },
-    queryKey: findAll2QueryKey(options)
+    queryKey: listApiTokensQueryKey(options)
 });
 
 /**
@@ -548,10 +548,10 @@ export const findAll2Options = (options?: Options<FindAll2Data>) => queryOptions
  *
  * Creates a scoped API token for the caller. The secret is returned once and cannot be retrieved again. Scopes may not exceed what the caller is themselves permitted to do.
  */
-export const create2Mutation = (options?: Partial<Options<Create2Data>>): UseMutationOptions<Create2Response, Create2Error, Options<Create2Data>> => {
-    const mutationOptions: UseMutationOptions<Create2Response, Create2Error, Options<Create2Data>> = {
+export const createApiTokenMutation = (options?: Partial<Options<CreateApiTokenData>>): UseMutationOptions<CreateApiTokenResponse, CreateApiTokenError, Options<CreateApiTokenData>> => {
+    const mutationOptions: UseMutationOptions<CreateApiTokenResponse, CreateApiTokenError, Options<CreateApiTokenData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await create2({
+            const { data } = await createApiToken({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -562,16 +562,16 @@ export const create2Mutation = (options?: Partial<Options<Create2Data>>): UseMut
     return mutationOptions;
 };
 
-export const permissions2QueryKey = (options?: Options<Permissions2Data>) => createQueryKey('permissions2', options);
+export const listGrantablePermissionsQueryKey = (options?: Options<ListGrantablePermissionsData>) => createQueryKey('listGrantablePermissions', options);
 
 /**
  * List the permission catalog and what the caller may grant
  *
  * Drives the permission picker on the token-creation screen and the CLI’s --permissions validation.
  */
-export const permissions2Options = (options?: Options<Permissions2Data>) => queryOptions<Permissions2Response, Permissions2Error, Permissions2Response, ReturnType<typeof permissions2QueryKey>>({
+export const listGrantablePermissionsOptions = (options?: Options<ListGrantablePermissionsData>) => queryOptions<ListGrantablePermissionsResponse, ListGrantablePermissionsError, ListGrantablePermissionsResponse, ReturnType<typeof listGrantablePermissionsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await permissions2({
+        const { data } = await listGrantablePermissions({
             ...options,
             ...queryKey[0],
             signal,
@@ -579,7 +579,7 @@ export const permissions2Options = (options?: Options<Permissions2Data>) => quer
         });
         return data;
     },
-    queryKey: permissions2QueryKey(options)
+    queryKey: listGrantablePermissionsQueryKey(options)
 });
 
 /**
@@ -587,10 +587,10 @@ export const permissions2Options = (options?: Options<Permissions2Data>) => quer
  *
  * Takes effect immediately. The record is kept so the audit trail survives; the secret stops working.
  */
-export const revoke2Mutation = (options?: Partial<Options<Revoke2Data>>): UseMutationOptions<Revoke2Response, Revoke2Error, Options<Revoke2Data>> => {
-    const mutationOptions: UseMutationOptions<Revoke2Response, Revoke2Error, Options<Revoke2Data>> = {
+export const revokeApiTokenMutation = (options?: Partial<Options<RevokeApiTokenData>>): UseMutationOptions<RevokeApiTokenResponse, RevokeApiTokenError, Options<RevokeApiTokenData>> => {
+    const mutationOptions: UseMutationOptions<RevokeApiTokenResponse, RevokeApiTokenError, Options<RevokeApiTokenData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await revoke2({
+            const { data } = await revokeApiToken({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -601,14 +601,14 @@ export const revoke2Mutation = (options?: Partial<Options<Revoke2Data>>): UseMut
     return mutationOptions;
 };
 
-export const findAll3QueryKey = (options?: Options<FindAll3Data>) => createQueryKey('findAll3', options);
+export const listRolesQueryKey = (options?: Options<ListRolesData>) => createQueryKey('listRoles', options);
 
 /**
  * List all roles
  */
-export const findAll3Options = (options?: Options<FindAll3Data>) => queryOptions<FindAll3Response, FindAll3Error, FindAll3Response, ReturnType<typeof findAll3QueryKey>>({
+export const listRolesOptions = (options?: Options<ListRolesData>) => queryOptions<ListRolesResponse, ListRolesError, ListRolesResponse, ReturnType<typeof listRolesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await findAll3({
+        const { data } = await listRoles({
             ...options,
             ...queryKey[0],
             signal,
@@ -616,27 +616,27 @@ export const findAll3Options = (options?: Options<FindAll3Data>) => queryOptions
         });
         return data;
     },
-    queryKey: findAll3QueryKey(options)
+    queryKey: listRolesQueryKey(options)
 });
 
-export const findAll3InfiniteQueryKey = (options?: Options<FindAll3Data>): QueryKey<Options<FindAll3Data>> => createQueryKey('findAll3', options, true);
+export const listRolesInfiniteQueryKey = (options?: Options<ListRolesData>): QueryKey<Options<ListRolesData>> => createQueryKey('listRoles', options, true);
 
 /**
  * List all roles
  */
-export const findAll3InfiniteOptions = (options?: Options<FindAll3Data>) => {
-    const opts = infiniteQueryOptions<FindAll3Response, FindAll3Error, InfiniteData<FindAll3Response>, QueryKey<Options<FindAll3Data>>, number | Pick<QueryKey<Options<FindAll3Data>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+export const listRolesInfiniteOptions = (options?: Options<ListRolesData>) => {
+    const opts = infiniteQueryOptions<ListRolesResponse, ListRolesError, InfiniteData<ListRolesResponse>, QueryKey<Options<ListRolesData>>, number | Pick<QueryKey<Options<ListRolesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
     // @ts-ignore
     {
         queryFn: async ({ pageParam, queryKey, signal }) => {
             // @ts-ignore
-            const page: Pick<QueryKey<Options<FindAll3Data>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+            const page: Pick<QueryKey<Options<ListRolesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
                 query: {
                     page: pageParam
                 }
             };
             const params = createInfiniteParams(queryKey, page);
-            const { data } = await findAll3({
+            const { data } = await listRoles({
                 ...options,
                 ...params,
                 signal,
@@ -644,7 +644,7 @@ export const findAll3InfiniteOptions = (options?: Options<FindAll3Data>) => {
             });
             return data;
         },
-        queryKey: findAll3InfiniteQueryKey(options)
+        queryKey: listRolesInfiniteQueryKey(options)
     });
     return opts as Omit<typeof opts, 'initialData'>;
 };
@@ -652,10 +652,10 @@ export const findAll3InfiniteOptions = (options?: Options<FindAll3Data>) => {
 /**
  * Create role
  */
-export const create3Mutation = (options?: Partial<Options<Create3Data>>): UseMutationOptions<Create3Response, Create3Error, Options<Create3Data>> => {
-    const mutationOptions: UseMutationOptions<Create3Response, Create3Error, Options<Create3Data>> = {
+export const createRoleMutation = (options?: Partial<Options<CreateRoleData>>): UseMutationOptions<CreateRoleResponse, CreateRoleError, Options<CreateRoleData>> => {
+    const mutationOptions: UseMutationOptions<CreateRoleResponse, CreateRoleError, Options<CreateRoleData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await create3({
+            const { data } = await createRole({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -669,10 +669,10 @@ export const create3Mutation = (options?: Partial<Options<Create3Data>>): UseMut
 /**
  * Delete role
  */
-export const remove2Mutation = (options?: Partial<Options<Remove2Data>>): UseMutationOptions<unknown, Remove2Error, Options<Remove2Data>> => {
-    const mutationOptions: UseMutationOptions<unknown, Remove2Error, Options<Remove2Data>> = {
+export const deleteRoleMutation = (options?: Partial<Options<DeleteRoleData>>): UseMutationOptions<unknown, DeleteRoleError, Options<DeleteRoleData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DeleteRoleError, Options<DeleteRoleData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await remove2({
+            const { data } = await deleteRole({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -683,14 +683,14 @@ export const remove2Mutation = (options?: Partial<Options<Remove2Data>>): UseMut
     return mutationOptions;
 };
 
-export const findOne2QueryKey = (options: Options<FindOne2Data>) => createQueryKey('findOne2', options);
+export const getRoleQueryKey = (options: Options<GetRoleData>) => createQueryKey('getRole', options);
 
 /**
  * Get role by ID
  */
-export const findOne2Options = (options: Options<FindOne2Data>) => queryOptions<FindOne2Response, FindOne2Error, FindOne2Response, ReturnType<typeof findOne2QueryKey>>({
+export const getRoleOptions = (options: Options<GetRoleData>) => queryOptions<GetRoleResponse, GetRoleError, GetRoleResponse, ReturnType<typeof getRoleQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await findOne2({
+        const { data } = await getRole({
             ...options,
             ...queryKey[0],
             signal,
@@ -698,16 +698,16 @@ export const findOne2Options = (options: Options<FindOne2Data>) => queryOptions<
         });
         return data;
     },
-    queryKey: findOne2QueryKey(options)
+    queryKey: getRoleQueryKey(options)
 });
 
 /**
  * Update a role (description and/or permissions)
  */
-export const update2Mutation = (options?: Partial<Options<Update2Data>>): UseMutationOptions<Update2Response, Update2Error, Options<Update2Data>> => {
-    const mutationOptions: UseMutationOptions<Update2Response, Update2Error, Options<Update2Data>> = {
+export const updateRoleMutation = (options?: Partial<Options<UpdateRoleData>>): UseMutationOptions<UpdateRoleResponse, UpdateRoleError, Options<UpdateRoleData>> => {
+    const mutationOptions: UseMutationOptions<UpdateRoleResponse, UpdateRoleError, Options<UpdateRoleData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await update2({
+            const { data } = await updateRole({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -770,14 +770,14 @@ export const assignMutation = (options?: Partial<Options<AssignData>>): UseMutat
     return mutationOptions;
 };
 
-export const list2QueryKey = (options?: Options<List2Data>) => createQueryKey('list2', options);
+export const listOrganizationsQueryKey = (options?: Options<ListOrganizationsData>) => createQueryKey('listOrganizations', options);
 
 /**
  * List the caller's organizations
  */
-export const list2Options = (options?: Options<List2Data>) => queryOptions<List2Response, List2Error, List2Response, ReturnType<typeof list2QueryKey>>({
+export const listOrganizationsOptions = (options?: Options<ListOrganizationsData>) => queryOptions<ListOrganizationsResponse, ListOrganizationsError, ListOrganizationsResponse, ReturnType<typeof listOrganizationsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await list2({
+        const { data } = await listOrganizations({
             ...options,
             ...queryKey[0],
             signal,
@@ -785,16 +785,16 @@ export const list2Options = (options?: Options<List2Data>) => queryOptions<List2
         });
         return data;
     },
-    queryKey: list2QueryKey(options)
+    queryKey: listOrganizationsQueryKey(options)
 });
 
 /**
  * Create an organization
  */
-export const create4Mutation = (options?: Partial<Options<Create4Data>>): UseMutationOptions<Create4Response, Create4Error, Options<Create4Data>> => {
-    const mutationOptions: UseMutationOptions<Create4Response, Create4Error, Options<Create4Data>> = {
+export const createOrganizationMutation = (options?: Partial<Options<CreateOrganizationData>>): UseMutationOptions<CreateOrganizationResponse, CreateOrganizationError, Options<CreateOrganizationData>> => {
+    const mutationOptions: UseMutationOptions<CreateOrganizationResponse, CreateOrganizationError, Options<CreateOrganizationData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await create4({
+            const { data } = await createOrganization({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -825,10 +825,10 @@ export const checkSlugMutation = (options?: Partial<Options<CheckSlugData>>): Us
 /**
  * Delete an organization
  */
-export const remove3Mutation = (options?: Partial<Options<Remove3Data>>): UseMutationOptions<Remove3Response, Remove3Error, Options<Remove3Data>> => {
-    const mutationOptions: UseMutationOptions<Remove3Response, Remove3Error, Options<Remove3Data>> = {
+export const deleteOrganizationMutation = (options?: Partial<Options<DeleteOrganizationData>>): UseMutationOptions<DeleteOrganizationResponse, DeleteOrganizationError, Options<DeleteOrganizationData>> => {
+    const mutationOptions: UseMutationOptions<DeleteOrganizationResponse, DeleteOrganizationError, Options<DeleteOrganizationData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await remove3({
+            const { data } = await deleteOrganization({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -860,10 +860,10 @@ export const getFullOptions = (options: Options<GetFullData>) => queryOptions<Ge
 /**
  * Update an organization
  */
-export const update3Mutation = (options?: Partial<Options<Update3Data>>): UseMutationOptions<Update3Response, Update3Error, Options<Update3Data>> => {
-    const mutationOptions: UseMutationOptions<Update3Response, Update3Error, Options<Update3Data>> = {
+export const updateOrganizationMutation = (options?: Partial<Options<UpdateOrganizationData>>): UseMutationOptions<UpdateOrganizationResponse, UpdateOrganizationError, Options<UpdateOrganizationData>> => {
+    const mutationOptions: UseMutationOptions<UpdateOrganizationResponse, UpdateOrganizationError, Options<UpdateOrganizationData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await update3({
+            const { data } = await updateOrganization({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -877,10 +877,10 @@ export const update3Mutation = (options?: Partial<Options<Update3Data>>): UseMut
 /**
  * Set the active organization for the current session
  */
-export const setActiveMutation = (options?: Partial<Options<SetActiveData>>): UseMutationOptions<SetActiveResponse, SetActiveError, Options<SetActiveData>> => {
-    const mutationOptions: UseMutationOptions<SetActiveResponse, SetActiveError, Options<SetActiveData>> = {
+export const setActiveOrganizationMutation = (options?: Partial<Options<SetActiveOrganizationData>>): UseMutationOptions<SetActiveOrganizationResponse, SetActiveOrganizationError, Options<SetActiveOrganizationData>> => {
+    const mutationOptions: UseMutationOptions<SetActiveOrganizationResponse, SetActiveOrganizationError, Options<SetActiveOrganizationData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await setActive({
+            const { data } = await setActiveOrganization({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -909,14 +909,14 @@ export const getMembershipOptions = (options: Options<GetMembershipData>) => que
     queryKey: getMembershipQueryKey(options)
 });
 
-export const list3QueryKey = (options: Options<List3Data>) => createQueryKey('list3', options);
+export const listOrganizationMembersQueryKey = (options: Options<ListOrganizationMembersData>) => createQueryKey('listOrganizationMembers', options);
 
 /**
  * List members of an organization
  */
-export const list3Options = (options: Options<List3Data>) => queryOptions<List3Response, List3Error, List3Response, ReturnType<typeof list3QueryKey>>({
+export const listOrganizationMembersOptions = (options: Options<ListOrganizationMembersData>) => queryOptions<ListOrganizationMembersResponse, ListOrganizationMembersError, ListOrganizationMembersResponse, ReturnType<typeof listOrganizationMembersQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await list3({
+        const { data } = await listOrganizationMembers({
             ...options,
             ...queryKey[0],
             signal,
@@ -924,7 +924,7 @@ export const list3Options = (options: Options<List3Data>) => queryOptions<List3R
         });
         return data;
     },
-    queryKey: list3QueryKey(options)
+    queryKey: listOrganizationMembersQueryKey(options)
 });
 
 /**
@@ -947,10 +947,10 @@ export const addMutation = (options?: Partial<Options<AddData>>): UseMutationOpt
 /**
  * Change a member's organization role
  */
-export const updateRoleMutation = (options?: Partial<Options<UpdateRoleData>>): UseMutationOptions<UpdateRoleResponse, UpdateRoleError, Options<UpdateRoleData>> => {
-    const mutationOptions: UseMutationOptions<UpdateRoleResponse, UpdateRoleError, Options<UpdateRoleData>> = {
+export const updateMemberRoleMutation = (options?: Partial<Options<UpdateMemberRoleData>>): UseMutationOptions<UpdateMemberRoleResponse, UpdateMemberRoleError, Options<UpdateMemberRoleData>> => {
+    const mutationOptions: UseMutationOptions<UpdateMemberRoleResponse, UpdateMemberRoleError, Options<UpdateMemberRoleData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await updateRole({
+            const { data } = await updateMemberRole({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -964,10 +964,10 @@ export const updateRoleMutation = (options?: Partial<Options<UpdateRoleData>>): 
 /**
  * Remove a member from an organization
  */
-export const remove4Mutation = (options?: Partial<Options<Remove4Data>>): UseMutationOptions<Remove4Response, Remove4Error, Options<Remove4Data>> => {
-    const mutationOptions: UseMutationOptions<Remove4Response, Remove4Error, Options<Remove4Data>> = {
+export const removeOrganizationMemberMutation = (options?: Partial<Options<RemoveOrganizationMemberData>>): UseMutationOptions<RemoveOrganizationMemberResponse, RemoveOrganizationMemberError, Options<RemoveOrganizationMemberData>> => {
+    const mutationOptions: UseMutationOptions<RemoveOrganizationMemberResponse, RemoveOrganizationMemberError, Options<RemoveOrganizationMemberData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await remove4({
+            const { data } = await removeOrganizationMember({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -995,14 +995,14 @@ export const leaveMutation = (options?: Partial<Options<LeaveData>>): UseMutatio
     return mutationOptions;
 };
 
-export const list4QueryKey = (options: Options<List4Data>) => createQueryKey('list4', options);
+export const listOrganizationInvitationsQueryKey = (options: Options<ListOrganizationInvitationsData>) => createQueryKey('listOrganizationInvitations', options);
 
 /**
  * List pending invitations for an organization
  */
-export const list4Options = (options: Options<List4Data>) => queryOptions<List4Response, List4Error, List4Response, ReturnType<typeof list4QueryKey>>({
+export const listOrganizationInvitationsOptions = (options: Options<ListOrganizationInvitationsData>) => queryOptions<ListOrganizationInvitationsResponse, ListOrganizationInvitationsError, ListOrganizationInvitationsResponse, ReturnType<typeof listOrganizationInvitationsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await list4({
+        const { data } = await listOrganizationInvitations({
             ...options,
             ...queryKey[0],
             signal,
@@ -1010,7 +1010,7 @@ export const list4Options = (options: Options<List4Data>) => queryOptions<List4R
         });
         return data;
     },
-    queryKey: list4QueryKey(options)
+    queryKey: listOrganizationInvitationsQueryKey(options)
 });
 
 /**
@@ -1030,14 +1030,14 @@ export const inviteMutation = (options?: Partial<Options<InviteData>>): UseMutat
     return mutationOptions;
 };
 
-export const listMineQueryKey = (options?: Options<ListMineData>) => createQueryKey('listMine', options);
+export const listMyInvitationsQueryKey = (options?: Options<ListMyInvitationsData>) => createQueryKey('listMyInvitations', options);
 
 /**
  * List the caller's pending invitations
  */
-export const listMineOptions = (options?: Options<ListMineData>) => queryOptions<ListMineResponse, ListMineError, ListMineResponse, ReturnType<typeof listMineQueryKey>>({
+export const listMyInvitationsOptions = (options?: Options<ListMyInvitationsData>) => queryOptions<ListMyInvitationsResponse, ListMyInvitationsError, ListMyInvitationsResponse, ReturnType<typeof listMyInvitationsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listMine({
+        const { data } = await listMyInvitations({
             ...options,
             ...queryKey[0],
             signal,
@@ -1045,17 +1045,17 @@ export const listMineOptions = (options?: Options<ListMineData>) => queryOptions
         });
         return data;
     },
-    queryKey: listMineQueryKey(options)
+    queryKey: listMyInvitationsQueryKey(options)
 });
 
-export const getQueryKey = (options: Options<GetData>) => createQueryKey('get', options);
+export const getInvitationQueryKey = (options: Options<GetInvitationData>) => createQueryKey('getInvitation', options);
 
 /**
  * Get an invitation by id
  */
-export const getOptions = (options: Options<GetData>) => queryOptions<GetResponse, GetError, GetResponse, ReturnType<typeof getQueryKey>>({
+export const getInvitationOptions = (options: Options<GetInvitationData>) => queryOptions<GetInvitationResponse, GetInvitationError, GetInvitationResponse, ReturnType<typeof getInvitationQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await get({
+        const { data } = await getInvitation({
             ...options,
             ...queryKey[0],
             signal,
@@ -1063,7 +1063,7 @@ export const getOptions = (options: Options<GetData>) => queryOptions<GetRespons
         });
         return data;
     },
-    queryKey: getQueryKey(options)
+    queryKey: getInvitationQueryKey(options)
 });
 
 /**
@@ -1117,14 +1117,14 @@ export const cancelMutation = (options?: Partial<Options<CancelData>>): UseMutat
     return mutationOptions;
 };
 
-export const listMine2QueryKey = (options?: Options<ListMine2Data>) => createQueryKey('listMine2', options);
+export const listMyWorkspacesQueryKey = (options?: Options<ListMyWorkspacesData>) => createQueryKey('listMyWorkspaces', options);
 
 /**
  * List the caller's workspaces
  */
-export const listMine2Options = (options?: Options<ListMine2Data>) => queryOptions<ListMine2Response, ListMine2Error, ListMine2Response, ReturnType<typeof listMine2QueryKey>>({
+export const listMyWorkspacesOptions = (options?: Options<ListMyWorkspacesData>) => queryOptions<ListMyWorkspacesResponse, ListMyWorkspacesError, ListMyWorkspacesResponse, ReturnType<typeof listMyWorkspacesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listMine2({
+        const { data } = await listMyWorkspaces({
             ...options,
             ...queryKey[0],
             signal,
@@ -1132,17 +1132,17 @@ export const listMine2Options = (options?: Options<ListMine2Data>) => queryOptio
         });
         return data;
     },
-    queryKey: listMine2QueryKey(options)
+    queryKey: listMyWorkspacesQueryKey(options)
 });
 
-export const list5QueryKey = (options?: Options<List5Data>) => createQueryKey('list5', options);
+export const listWorkspacesQueryKey = (options?: Options<ListWorkspacesData>) => createQueryKey('listWorkspaces', options);
 
 /**
  * List an organization's workspaces (defaults to the active org)
  */
-export const list5Options = (options?: Options<List5Data>) => queryOptions<List5Response, List5Error, List5Response, ReturnType<typeof list5QueryKey>>({
+export const listWorkspacesOptions = (options?: Options<ListWorkspacesData>) => queryOptions<ListWorkspacesResponse, ListWorkspacesError, ListWorkspacesResponse, ReturnType<typeof listWorkspacesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await list5({
+        const { data } = await listWorkspaces({
             ...options,
             ...queryKey[0],
             signal,
@@ -1150,16 +1150,16 @@ export const list5Options = (options?: Options<List5Data>) => queryOptions<List5
         });
         return data;
     },
-    queryKey: list5QueryKey(options)
+    queryKey: listWorkspacesQueryKey(options)
 });
 
 /**
  * Create a workspace
  */
-export const create5Mutation = (options?: Partial<Options<Create5Data>>): UseMutationOptions<Create5Response, Create5Error, Options<Create5Data>> => {
-    const mutationOptions: UseMutationOptions<Create5Response, Create5Error, Options<Create5Data>> = {
+export const createWorkspaceMutation = (options?: Partial<Options<CreateWorkspaceData>>): UseMutationOptions<CreateWorkspaceResponse, CreateWorkspaceError, Options<CreateWorkspaceData>> => {
+    const mutationOptions: UseMutationOptions<CreateWorkspaceResponse, CreateWorkspaceError, Options<CreateWorkspaceData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await create5({
+            const { data } = await createWorkspace({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1173,10 +1173,10 @@ export const create5Mutation = (options?: Partial<Options<Create5Data>>): UseMut
 /**
  * Delete a workspace
  */
-export const remove5Mutation = (options?: Partial<Options<Remove5Data>>): UseMutationOptions<Remove5Response, Remove5Error, Options<Remove5Data>> => {
-    const mutationOptions: UseMutationOptions<Remove5Response, Remove5Error, Options<Remove5Data>> = {
+export const deleteWorkspaceMutation = (options?: Partial<Options<DeleteWorkspaceData>>): UseMutationOptions<DeleteWorkspaceResponse, DeleteWorkspaceError, Options<DeleteWorkspaceData>> => {
+    const mutationOptions: UseMutationOptions<DeleteWorkspaceResponse, DeleteWorkspaceError, Options<DeleteWorkspaceData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await remove5({
+            const { data } = await deleteWorkspace({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1190,10 +1190,10 @@ export const remove5Mutation = (options?: Partial<Options<Remove5Data>>): UseMut
 /**
  * Rename a workspace
  */
-export const update4Mutation = (options?: Partial<Options<Update4Data>>): UseMutationOptions<Update4Response, Update4Error, Options<Update4Data>> => {
-    const mutationOptions: UseMutationOptions<Update4Response, Update4Error, Options<Update4Data>> = {
+export const updateWorkspaceMutation = (options?: Partial<Options<UpdateWorkspaceData>>): UseMutationOptions<UpdateWorkspaceResponse, UpdateWorkspaceError, Options<UpdateWorkspaceData>> => {
+    const mutationOptions: UseMutationOptions<UpdateWorkspaceResponse, UpdateWorkspaceError, Options<UpdateWorkspaceData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await update4({
+            const { data } = await updateWorkspace({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1207,10 +1207,10 @@ export const update4Mutation = (options?: Partial<Options<Update4Data>>): UseMut
 /**
  * Set the active workspace for the current session
  */
-export const setActive2Mutation = (options?: Partial<Options<SetActive2Data>>): UseMutationOptions<SetActive2Response, SetActive2Error, Options<SetActive2Data>> => {
-    const mutationOptions: UseMutationOptions<SetActive2Response, SetActive2Error, Options<SetActive2Data>> = {
+export const setActiveWorkspaceMutation = (options?: Partial<Options<SetActiveWorkspaceData>>): UseMutationOptions<SetActiveWorkspaceResponse, SetActiveWorkspaceError, Options<SetActiveWorkspaceData>> => {
+    const mutationOptions: UseMutationOptions<SetActiveWorkspaceResponse, SetActiveWorkspaceError, Options<SetActiveWorkspaceData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await setActive2({
+            const { data } = await setActiveWorkspace({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1390,16 +1390,16 @@ export const disconnectInstallationMutation = (options?: Partial<Options<Disconn
     return mutationOptions;
 };
 
-export const list6QueryKey = (options?: Options<List6Data>) => createQueryKey('list6', options);
+export const listHostsQueryKey = (options?: Options<ListHostsData>) => createQueryKey('listHosts', options);
 
 /**
  * List the hosts the caller can reach
  *
  * The machines the caller paired, plus any shared with them, each with its status and the sessions running on it. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock. Unpaired hosts are left out unless `include=unpaired`.
  */
-export const list6Options = (options?: Options<List6Data>) => queryOptions<List6Response, List6Error, List6Response, ReturnType<typeof list6QueryKey>>({
+export const listHostsOptions = (options?: Options<ListHostsData>) => queryOptions<ListHostsResponse, ListHostsError, ListHostsResponse, ReturnType<typeof listHostsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await list6({
+        const { data } = await listHosts({
             ...options,
             ...queryKey[0],
             signal,
@@ -1407,19 +1407,19 @@ export const list6Options = (options?: Options<List6Data>) => queryOptions<List6
         });
         return data;
     },
-    queryKey: list6QueryKey(options)
+    queryKey: listHostsQueryKey(options)
 });
 
-export const list7QueryKey = (options?: Options<List7Data>) => createQueryKey('list7', options);
+export const listPairingTokensQueryKey = (options?: Options<ListPairingTokensData>) => createQueryKey('listPairingTokens', options);
 
 /**
  * List the caller’s pairing tokens
  *
  * Both source addresses are here: where each token was minted and, once spent, where it was redeemed from. A mismatch is the interesting one.
  */
-export const list7Options = (options?: Options<List7Data>) => queryOptions<List7Response, List7Error, List7Response, ReturnType<typeof list7QueryKey>>({
+export const listPairingTokensOptions = (options?: Options<ListPairingTokensData>) => queryOptions<ListPairingTokensResponse, ListPairingTokensError, ListPairingTokensResponse, ReturnType<typeof listPairingTokensQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await list7({
+        const { data } = await listPairingTokens({
             ...options,
             ...queryKey[0],
             signal,
@@ -1427,7 +1427,7 @@ export const list7Options = (options?: Options<List7Data>) => queryOptions<List7
         });
         return data;
     },
-    queryKey: list7QueryKey(options)
+    queryKey: listPairingTokensQueryKey(options)
 });
 
 /**
@@ -1454,10 +1454,10 @@ export const mintMutation = (options?: Partial<Options<MintData>>): UseMutationO
  *
  * Takes effect immediately: a revoked token cannot pair a machine even if someone still holds the secret. The record is kept so the pairing history survives.
  */
-export const revoke3Mutation = (options?: Partial<Options<Revoke3Data>>): UseMutationOptions<Revoke3Response, Revoke3Error, Options<Revoke3Data>> => {
-    const mutationOptions: UseMutationOptions<Revoke3Response, Revoke3Error, Options<Revoke3Data>> = {
+export const revokePairingTokenMutation = (options?: Partial<Options<RevokePairingTokenData>>): UseMutationOptions<RevokePairingTokenResponse, RevokePairingTokenError, Options<RevokePairingTokenData>> => {
+    const mutationOptions: UseMutationOptions<RevokePairingTokenResponse, RevokePairingTokenError, Options<RevokePairingTokenData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await revoke3({
+            const { data } = await revokePairingToken({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1565,14 +1565,14 @@ export const unpairMutation = (options?: Partial<Options<UnpairData>>): UseMutat
     return mutationOptions;
 };
 
-export const get2QueryKey = (options: Options<Get2Data>) => createQueryKey('get2', options);
+export const getHostQueryKey = (options: Options<GetHostData>) => createQueryKey('getHost', options);
 
 /**
  * Get one host
  */
-export const get2Options = (options: Options<Get2Data>) => queryOptions<Get2Response, Get2Error, Get2Response, ReturnType<typeof get2QueryKey>>({
+export const getHostOptions = (options: Options<GetHostData>) => queryOptions<GetHostResponse, GetHostError, GetHostResponse, ReturnType<typeof getHostQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await get2({
+        const { data } = await getHost({
             ...options,
             ...queryKey[0],
             signal,
@@ -1580,7 +1580,7 @@ export const get2Options = (options: Options<Get2Data>) => queryOptions<Get2Resp
         });
         return data;
     },
-    queryKey: get2QueryKey(options)
+    queryKey: getHostQueryKey(options)
 });
 
 /**
@@ -1707,10 +1707,10 @@ export const stopImpersonatingMutation = (options?: Partial<Options<StopImperson
 /**
  * Revoke one of a user's sessions by id
  */
-export const revokeSession2Mutation = (options?: Partial<Options<RevokeSession2Data>>): UseMutationOptions<RevokeSession2Response, RevokeSession2Error, Options<RevokeSession2Data>> => {
-    const mutationOptions: UseMutationOptions<RevokeSession2Response, RevokeSession2Error, Options<RevokeSession2Data>> = {
+export const revokeUserSessionMutation = (options?: Partial<Options<RevokeUserSessionData>>): UseMutationOptions<RevokeUserSessionResponse, RevokeUserSessionError, Options<RevokeUserSessionData>> => {
+    const mutationOptions: UseMutationOptions<RevokeUserSessionResponse, RevokeUserSessionError, Options<RevokeUserSessionData>> = {
         mutationFn: async (fnOptions) => {
-            const { data } = await revokeSession2({
+            const { data } = await revokeUserSession({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

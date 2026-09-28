@@ -28,6 +28,7 @@ export class FindApiTokensHttpController {
   @CheckPolicies({ action: 'read', subject: 'ApiToken' })
   @RequireScopes('tokens:read')
   @ApiOperation({
+    operationId: 'listApiTokens',
     summary: 'List the caller’s API tokens',
     description: 'Secrets are never returned — only the display prefix and metadata.',
   })

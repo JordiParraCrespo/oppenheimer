@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptErrors, AcceptResponses, AddData, AddErrors, AddMemberData, AddMemberErrors, AddMemberResponses, AddResponses, AddSessionCheckoutData, AddSessionCheckoutErrors, AddSessionCheckoutResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, AssignData, AssignErrors, AssignResponses, BanData, BanErrors, BanResponses, CancelData, CancelErrors, CancelResponses, CatalogData, CatalogErrors, CatalogResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckErrors, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, CloseSessionData, CloseSessionErrors, CloseSessionResponses, CollectSessionImageData, CollectSessionImageErrors, CollectSessionImageResponses, ConnectInstallationData, ConnectInstallationErrors, ConnectInstallationResponses, Create2Data, Create2Errors, Create2Responses, Create3Data, Create3Errors, Create3Responses, Create4Data, Create4Errors, Create4Responses, Create5Data, Create5Errors, Create5Responses, CreateAutomationData, CreateAutomationErrors, CreateAutomationResponses, CreateData, CreateErrors, CreateFlagSegmentData, CreateFlagSegmentErrors, CreateFlagSegmentResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateResponses, CreateSessionData, CreateSessionErrors, CreateSessionResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CurrentData, CurrentErrors, CurrentResponses, DeleteAutomationData, DeleteAutomationErrors, DeleteAutomationResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteFlagSegmentData, DeleteFlagSegmentErrors, DeleteFlagSegmentResponses, DeleteOwnAccountData, DeleteOwnAccountErrors, DeleteOwnAccountResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, DisconnectInstallationData, DisconnectInstallationErrors, DisconnectInstallationResponses, DuplicateAutomationData, DuplicateAutomationErrors, DuplicateAutomationResponses, EvaluateFeatureFlagData, EvaluateFeatureFlagErrors, EvaluateFeatureFlagResponses, FindAll2Data, FindAll2Errors, FindAll2Responses, FindAll3Data, FindAll3Errors, FindAll3Responses, FindAllData, FindAllErrors, FindAllResponses, FindFeatureFlagData, FindFeatureFlagErrors, FindFeatureFlagResponses, FindFeatureFlagsData, FindFeatureFlagsErrors, FindFeatureFlagsResponses, FindFlagChangesData, FindFlagChangesErrors, FindFlagChangesResponses, FindFlagSegmentsData, FindFlagSegmentsErrors, FindFlagSegmentsResponses, FindOne2Data, FindOne2Errors, FindOne2Responses, FindOneData, FindOneErrors, FindOneResponses, FindSessionsData, FindSessionsErrors, FindSessionsResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, Get2Data, Get2Errors, Get2Responses, GetAutomationData, GetAutomationErrors, GetAutomationResponses, GetAutomationRunData, GetAutomationRunErrors, GetAutomationRunHistoryData, GetAutomationRunHistoryErrors, GetAutomationRunHistoryResponses, GetAutomationRunResponses, GetAutomationSettingsData, GetAutomationSettingsErrors, GetAutomationSettingsResponses, GetClientFeatureFlagsData, GetClientFeatureFlagsResponses, GetData, GetErrors, GetFullData, GetFullErrors, GetFullResponses, GetHostTimelineData, GetHostTimelineErrors, GetHostTimelineResponses, GetMembershipData, GetMembershipErrors, GetMembershipResponses, GetPairingTokenData, GetPairingTokenErrors, GetPairingTokenResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetResponses, GetSessionData, GetSessionErrors, GetSessionResponses, GetSettingsData, GetSettingsErrors, GetSettingsResponses, GetUserData, GetUserErrors, GetUserResponses, ImpersonateData, ImpersonateErrors, ImpersonateResponses, InviteData, InviteErrors, InviteResponses, IssueAttachTicketData, IssueAttachTicketErrors, IssueAttachTicketResponses, LeaveData, LeaveErrors, LeaveResponses, List2Data, List2Errors, List2Responses, List3Data, List3Errors, List3Responses, List4Data, List4Errors, List4Responses, List5Data, List5Errors, List5Responses, List6Data, List6Errors, List6Responses, List7Data, List7Errors, List7Responses, ListAutomationRunsData, ListAutomationRunsErrors, ListAutomationRunsResponses, ListAutomationsData, ListAutomationsErrors, ListAutomationsResponses, ListData, ListErrors, ListInstallationRepositoriesData, ListInstallationRepositoriesErrors, ListInstallationRepositoriesResponses, ListInstallationsData, ListInstallationsErrors, ListInstallationsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListMine2Data, ListMine2Errors, ListMine2Responses, ListMineData, ListMineErrors, ListMineResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListResponses, ListSessionEventsData, ListSessionEventsErrors, ListSessionEventsResponses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListUsersData, ListUsersErrors, ListUserSessionsData, ListUserSessionsErrors, ListUserSessionsResponses, ListUsersResponses, MeData, MeErrors, MeResponses, MintData, MintErrors, MintResponses, MoveSessionData, MoveSessionErrors, MoveSessionResponses, PasteSessionImageData, PasteSessionImageErrors, PasteSessionImageResponses, PauseAutomationData, PauseAutomationErrors, PauseAutomationResponses, Permissions2Data, Permissions2Errors, Permissions2Responses, PermissionsData, PermissionsErrors, PermissionsResponses, PreviewAutomationTriggerData, PreviewAutomationTriggerErrors, PreviewAutomationTriggerResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RegisterData, RegisterErrors, RegisterResponses, RejectData, RejectErrors, RejectResponses, Remove2Data, Remove2Errors, Remove2Responses, Remove3Data, Remove3Errors, Remove3Responses, Remove4Data, Remove4Errors, Remove4Responses, Remove5Data, Remove5Errors, Remove5Responses, RemoveData, RemoveErrors, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveResponses, RemoveSessionCheckoutData, RemoveSessionCheckoutErrors, RemoveSessionCheckoutResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, RenameData, RenameErrors, RenameResponses, RenameSessionData, RenameSessionErrors, RenameSessionResponses, RestartSessionData, RestartSessionErrors, RestartSessionResponses, ResumeAutomationData, ResumeAutomationErrors, ResumeAutomationResponses, Revoke2Data, Revoke2Errors, Revoke2Responses, Revoke3Data, Revoke3Errors, Revoke3Responses, RevokeData, RevokeErrors, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokeResponses, RevokeSession2Data, RevokeSession2Errors, RevokeSession2Responses, RevokeSessionData, RevokeSessionErrors, RevokeSessionResponses, RevokeSessionsData, RevokeSessionsErrors, RevokeSessionsResponses, RunAutomationData, RunAutomationErrors, RunAutomationResponses, SetActive2Data, SetActive2Errors, SetActive2Responses, SetActiveData, SetActiveErrors, SetActiveResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, SetRoleData, SetRoleErrors, SetRoleResponses, StartInstallationData, StartInstallationErrors, StartInstallationResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, StopSessionData, StopSessionErrors, StopSessionResponses, ToggleFeatureFlagData, ToggleFeatureFlagErrors, ToggleFeatureFlagResponses, UnbanData, UnbanErrors, UnbanResponses, UninstallData, UninstallErrors, UninstallResponses, UnpairData, UnpairErrors, UnpairResponses, Update2Data, Update2Errors, Update2Responses, Update3Data, Update3Errors, Update3Responses, Update4Data, Update4Errors, Update4Responses, UpdateAutomationData, UpdateAutomationErrors, UpdateAutomationResponses, UpdateAutomationSettingsData, UpdateAutomationSettingsErrors, UpdateAutomationSettingsResponses, UpdateData, UpdateErrors, UpdateFeatureFlagData, UpdateFeatureFlagErrors, UpdateFeatureFlagResponses, UpdateFlagSegmentData, UpdateFlagSegmentErrors, UpdateFlagSegmentResponses, UpdatePermissionsData, UpdatePermissionsErrors, UpdatePermissionsResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateResponses, UpdateRoleData, UpdateRoleErrors, UpdateRoleResponses, UpdateSettingsData, UpdateSettingsErrors, UpdateSettingsResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses } from './types.gen';
+import type { AcceptData, AcceptErrors, AcceptResponses, AddData, AddErrors, AddMemberData, AddMemberErrors, AddMemberResponses, AddResponses, AddSessionCheckoutData, AddSessionCheckoutErrors, AddSessionCheckoutResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, AssignData, AssignErrors, AssignResponses, BanData, BanErrors, BanResponses, CancelData, CancelErrors, CancelResponses, CatalogData, CatalogErrors, CatalogResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckErrors, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, CloseSessionData, CloseSessionErrors, CloseSessionResponses, CollectSessionImageData, CollectSessionImageErrors, CollectSessionImageResponses, ConnectInstallationData, ConnectInstallationErrors, ConnectInstallationResponses, CreateAccessGrantData, CreateAccessGrantErrors, CreateAccessGrantResponses, CreateApiTokenData, CreateApiTokenErrors, CreateApiTokenResponses, CreateAutomationData, CreateAutomationErrors, CreateAutomationResponses, CreateFlagSegmentData, CreateFlagSegmentErrors, CreateFlagSegmentResponses, CreateOrganizationData, CreateOrganizationErrors, CreateOrganizationResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateRoleData, CreateRoleErrors, CreateRoleResponses, CreateSessionData, CreateSessionErrors, CreateSessionResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CreateWorkspaceData, CreateWorkspaceErrors, CreateWorkspaceResponses, CurrentData, CurrentErrors, CurrentResponses, DeleteAutomationData, DeleteAutomationErrors, DeleteAutomationResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteFlagSegmentData, DeleteFlagSegmentErrors, DeleteFlagSegmentResponses, DeleteOrganizationData, DeleteOrganizationErrors, DeleteOrganizationResponses, DeleteOwnAccountData, DeleteOwnAccountErrors, DeleteOwnAccountResponses, DeleteRoleData, DeleteRoleErrors, DeleteRoleResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, DeleteWorkspaceData, DeleteWorkspaceErrors, DeleteWorkspaceResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, DisconnectInstallationData, DisconnectInstallationErrors, DisconnectInstallationResponses, DuplicateAutomationData, DuplicateAutomationErrors, DuplicateAutomationResponses, EvaluateFeatureFlagData, EvaluateFeatureFlagErrors, EvaluateFeatureFlagResponses, FindFeatureFlagData, FindFeatureFlagErrors, FindFeatureFlagResponses, FindFeatureFlagsData, FindFeatureFlagsErrors, FindFeatureFlagsResponses, FindFlagChangesData, FindFlagChangesErrors, FindFlagChangesResponses, FindFlagSegmentsData, FindFlagSegmentsErrors, FindFlagSegmentsResponses, FindMyPermissionsData, FindMyPermissionsErrors, FindMyPermissionsResponses, FindSessionsData, FindSessionsErrors, FindSessionsResponses, FindUserData, FindUserErrors, FindUserResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, FindUsersData, FindUsersErrors, FindUsersResponses, GetAutomationData, GetAutomationErrors, GetAutomationResponses, GetAutomationRunData, GetAutomationRunErrors, GetAutomationRunHistoryData, GetAutomationRunHistoryErrors, GetAutomationRunHistoryResponses, GetAutomationRunResponses, GetAutomationSettingsData, GetAutomationSettingsErrors, GetAutomationSettingsResponses, GetClientFeatureFlagsData, GetClientFeatureFlagsResponses, GetFullData, GetFullErrors, GetFullResponses, GetHostData, GetHostErrors, GetHostResponses, GetHostTimelineData, GetHostTimelineErrors, GetHostTimelineResponses, GetInvitationData, GetInvitationErrors, GetInvitationResponses, GetMembershipData, GetMembershipErrors, GetMembershipResponses, GetPairingTokenData, GetPairingTokenErrors, GetPairingTokenResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetRoleData, GetRoleErrors, GetRoleResponses, GetSessionData, GetSessionErrors, GetSessionResponses, GetSettingsData, GetSettingsErrors, GetSettingsResponses, GetUserData, GetUserErrors, GetUserResponses, ImpersonateData, ImpersonateErrors, ImpersonateResponses, InviteData, InviteErrors, InviteResponses, IssueAttachTicketData, IssueAttachTicketErrors, IssueAttachTicketResponses, LeaveData, LeaveErrors, LeaveResponses, ListAccessGrantsData, ListAccessGrantsErrors, ListAccessGrantsResponses, ListApiTokensData, ListApiTokensErrors, ListApiTokensResponses, ListAutomationRunsData, ListAutomationRunsErrors, ListAutomationRunsResponses, ListAutomationsData, ListAutomationsErrors, ListAutomationsResponses, ListGrantablePermissionsData, ListGrantablePermissionsErrors, ListGrantablePermissionsResponses, ListHostsData, ListHostsErrors, ListHostsResponses, ListInstallationRepositoriesData, ListInstallationRepositoriesErrors, ListInstallationRepositoriesResponses, ListInstallationsData, ListInstallationsErrors, ListInstallationsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListMyInvitationsData, ListMyInvitationsErrors, ListMyInvitationsResponses, ListMyWorkspacesData, ListMyWorkspacesErrors, ListMyWorkspacesResponses, ListOrganizationInvitationsData, ListOrganizationInvitationsErrors, ListOrganizationInvitationsResponses, ListOrganizationMembersData, ListOrganizationMembersErrors, ListOrganizationMembersResponses, ListOrganizationsData, ListOrganizationsErrors, ListOrganizationsResponses, ListPairingTokensData, ListPairingTokensErrors, ListPairingTokensResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListRolesData, ListRolesErrors, ListRolesResponses, ListSessionEventsData, ListSessionEventsErrors, ListSessionEventsResponses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListUsersData, ListUsersErrors, ListUserSessionsData, ListUserSessionsErrors, ListUserSessionsResponses, ListUsersResponses, ListWorkspacesData, ListWorkspacesErrors, ListWorkspacesResponses, MeData, MeErrors, MeResponses, MintData, MintErrors, MintResponses, MoveSessionData, MoveSessionErrors, MoveSessionResponses, PasteSessionImageData, PasteSessionImageErrors, PasteSessionImageResponses, PatchUserData, PatchUserErrors, PatchUserResponses, PauseAutomationData, PauseAutomationErrors, PauseAutomationResponses, PreviewAutomationTriggerData, PreviewAutomationTriggerErrors, PreviewAutomationTriggerResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RegisterData, RegisterErrors, RegisterResponses, RejectData, RejectErrors, RejectResponses, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveOrganizationMemberData, RemoveOrganizationMemberErrors, RemoveOrganizationMemberResponses, RemoveSessionCheckoutData, RemoveSessionCheckoutErrors, RemoveSessionCheckoutResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, RenameData, RenameErrors, RenameResponses, RenameSessionData, RenameSessionErrors, RenameSessionResponses, RestartSessionData, RestartSessionErrors, RestartSessionResponses, ResumeAutomationData, ResumeAutomationErrors, ResumeAutomationResponses, RevokeAccessGrantData, RevokeAccessGrantErrors, RevokeAccessGrantResponses, RevokeApiTokenData, RevokeApiTokenErrors, RevokeApiTokenResponses, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokePairingTokenData, RevokePairingTokenErrors, RevokePairingTokenResponses, RevokeProfileSessionData, RevokeProfileSessionErrors, RevokeProfileSessionResponses, RevokeSessionsData, RevokeSessionsErrors, RevokeSessionsResponses, RevokeUserSessionData, RevokeUserSessionErrors, RevokeUserSessionResponses, RunAutomationData, RunAutomationErrors, RunAutomationResponses, SetActiveOrganizationData, SetActiveOrganizationErrors, SetActiveOrganizationResponses, SetActiveWorkspaceData, SetActiveWorkspaceErrors, SetActiveWorkspaceResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, SetRoleData, SetRoleErrors, SetRoleResponses, StartInstallationData, StartInstallationErrors, StartInstallationResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, StopSessionData, StopSessionErrors, StopSessionResponses, ToggleFeatureFlagData, ToggleFeatureFlagErrors, ToggleFeatureFlagResponses, UnbanData, UnbanErrors, UnbanResponses, UninstallData, UninstallErrors, UninstallResponses, UnpairData, UnpairErrors, UnpairResponses, UpdateAutomationData, UpdateAutomationErrors, UpdateAutomationResponses, UpdateAutomationSettingsData, UpdateAutomationSettingsErrors, UpdateAutomationSettingsResponses, UpdateFeatureFlagData, UpdateFeatureFlagErrors, UpdateFeatureFlagResponses, UpdateFlagSegmentData, UpdateFlagSegmentErrors, UpdateFlagSegmentResponses, UpdateMemberRoleData, UpdateMemberRoleErrors, UpdateMemberRoleResponses, UpdateOrganizationData, UpdateOrganizationErrors, UpdateOrganizationResponses, UpdatePermissionsData, UpdatePermissionsErrors, UpdatePermissionsResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateRoleData, UpdateRoleErrors, UpdateRoleResponses, UpdateSettingsData, UpdateSettingsErrors, UpdateSettingsResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UpdateWorkspaceData, UpdateWorkspaceErrors, UpdateWorkspaceResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -94,7 +94,7 @@ export const findSessions = <ThrowOnError extends boolean = false>(options?: Opt
  *
  * Session-authenticated only. The session in use cannot revoke itself.
  */
-export const revokeSession = <ThrowOnError extends boolean = false>(options: Options<RevokeSessionData, ThrowOnError>): RequestResult<RevokeSessionResponses, RevokeSessionErrors, ThrowOnError> => (options.client ?? client).delete<RevokeSessionResponses, RevokeSessionErrors, ThrowOnError>({
+export const revokeProfileSession = <ThrowOnError extends boolean = false>(options: Options<RevokeProfileSessionData, ThrowOnError>): RequestResult<RevokeProfileSessionResponses, RevokeProfileSessionErrors, ThrowOnError> => (options.client ?? client).delete<RevokeProfileSessionResponses, RevokeProfileSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/profile/sessions/{id}',
     ...options
@@ -170,7 +170,7 @@ export const updateProfile = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * List all users (admin)
  */
-export const findAll = <ThrowOnError extends boolean = false>(options?: Options<FindAllData, ThrowOnError>): RequestResult<FindAllResponses, FindAllErrors, ThrowOnError> => (options?.client ?? client).get<FindAllResponses, FindAllErrors, ThrowOnError>({
+export const findUsers = <ThrowOnError extends boolean = false>(options?: Options<FindUsersData, ThrowOnError>): RequestResult<FindUsersResponses, FindUsersErrors, ThrowOnError> => (options?.client ?? client).get<FindUsersResponses, FindUsersErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/users',
     ...options
@@ -190,7 +190,7 @@ export const me = <ThrowOnError extends boolean = false>(options?: Options<MeDat
  *
  * The union of every role assigned to the caller, as CASL rules. Drives which routes the web app shows in its sidebar.
  */
-export const permissions = <ThrowOnError extends boolean = false>(options?: Options<PermissionsData, ThrowOnError>): RequestResult<PermissionsResponses, PermissionsErrors, ThrowOnError> => (options?.client ?? client).get<PermissionsResponses, PermissionsErrors, ThrowOnError>({
+export const findMyPermissions = <ThrowOnError extends boolean = false>(options?: Options<FindMyPermissionsData, ThrowOnError>): RequestResult<FindMyPermissionsResponses, FindMyPermissionsErrors, ThrowOnError> => (options?.client ?? client).get<FindMyPermissionsResponses, FindMyPermissionsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/users/me/permissions',
     ...options
@@ -199,7 +199,7 @@ export const permissions = <ThrowOnError extends boolean = false>(options?: Opti
 /**
  * Delete user
  */
-export const remove = <ThrowOnError extends boolean = false>(options: Options<RemoveData, ThrowOnError>): RequestResult<RemoveResponses, RemoveErrors, ThrowOnError> => (options.client ?? client).delete<RemoveResponses, RemoveErrors, ThrowOnError>({
+export const deleteUser = <ThrowOnError extends boolean = false>(options: Options<DeleteUserData, ThrowOnError>): RequestResult<DeleteUserResponses, DeleteUserErrors, ThrowOnError> => (options.client ?? client).delete<DeleteUserResponses, DeleteUserErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/users/{id}',
     ...options
@@ -208,7 +208,7 @@ export const remove = <ThrowOnError extends boolean = false>(options: Options<Re
 /**
  * Get user by ID
  */
-export const findOne = <ThrowOnError extends boolean = false>(options: Options<FindOneData, ThrowOnError>): RequestResult<FindOneResponses, FindOneErrors, ThrowOnError> => (options.client ?? client).get<FindOneResponses, FindOneErrors, ThrowOnError>({
+export const findUser = <ThrowOnError extends boolean = false>(options: Options<FindUserData, ThrowOnError>): RequestResult<FindUserResponses, FindUserErrors, ThrowOnError> => (options.client ?? client).get<FindUserResponses, FindUserErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/users/{id}',
     ...options
@@ -217,7 +217,7 @@ export const findOne = <ThrowOnError extends boolean = false>(options: Options<F
 /**
  * Update user
  */
-export const update = <ThrowOnError extends boolean = false>(options: Options<UpdateData, ThrowOnError>): RequestResult<UpdateResponses, UpdateErrors, ThrowOnError> => (options.client ?? client).patch<UpdateResponses, UpdateErrors, ThrowOnError>({
+export const patchUser = <ThrowOnError extends boolean = false>(options: Options<PatchUserData, ThrowOnError>): RequestResult<PatchUserResponses, PatchUserErrors, ThrowOnError> => (options.client ?? client).patch<PatchUserResponses, PatchUserErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/users/{id}',
     ...options,
@@ -241,7 +241,7 @@ export const catalog = <ThrowOnError extends boolean = false>(options?: Options<
 /**
  * List the access grants in the active organization
  */
-export const list = <ThrowOnError extends boolean = false>(options?: Options<ListData, ThrowOnError>): RequestResult<ListResponses, ListErrors, ThrowOnError> => (options?.client ?? client).get<ListResponses, ListErrors, ThrowOnError>({
+export const listAccessGrants = <ThrowOnError extends boolean = false>(options?: Options<ListAccessGrantsData, ThrowOnError>): RequestResult<ListAccessGrantsResponses, ListAccessGrantsErrors, ThrowOnError> => (options?.client ?? client).get<ListAccessGrantsResponses, ListAccessGrantsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/access-grants',
     ...options
@@ -252,7 +252,7 @@ export const list = <ThrowOnError extends boolean = false>(options?: Options<Lis
  *
  * The grant may not exceed the granter’s own access. Omitting resourceId grants every resource of that type, which requires already holding all of them.
  */
-export const create = <ThrowOnError extends boolean = false>(options: Options<CreateData, ThrowOnError>): RequestResult<CreateResponses, CreateErrors, ThrowOnError> => (options.client ?? client).post<CreateResponses, CreateErrors, ThrowOnError>({
+export const createAccessGrant = <ThrowOnError extends boolean = false>(options: Options<CreateAccessGrantData, ThrowOnError>): RequestResult<CreateAccessGrantResponses, CreateAccessGrantErrors, ThrowOnError> => (options.client ?? client).post<CreateAccessGrantResponses, CreateAccessGrantErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/access-grants',
     ...options,
@@ -265,7 +265,7 @@ export const create = <ThrowOnError extends boolean = false>(options: Options<Cr
 /**
  * Revoke an access grant
  */
-export const revoke = <ThrowOnError extends boolean = false>(options: Options<RevokeData, ThrowOnError>): RequestResult<RevokeResponses, RevokeErrors, ThrowOnError> => (options.client ?? client).delete<RevokeResponses, RevokeErrors, ThrowOnError>({
+export const revokeAccessGrant = <ThrowOnError extends boolean = false>(options: Options<RevokeAccessGrantData, ThrowOnError>): RequestResult<RevokeAccessGrantResponses, RevokeAccessGrantErrors, ThrowOnError> => (options.client ?? client).delete<RevokeAccessGrantResponses, RevokeAccessGrantErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/access-grants/{id}',
     ...options
@@ -287,7 +287,7 @@ export const current = <ThrowOnError extends boolean = false>(options?: Options<
  *
  * Secrets are never returned — only the display prefix and metadata.
  */
-export const findAll2 = <ThrowOnError extends boolean = false>(options?: Options<FindAll2Data, ThrowOnError>): RequestResult<FindAll2Responses, FindAll2Errors, ThrowOnError> => (options?.client ?? client).get<FindAll2Responses, FindAll2Errors, ThrowOnError>({
+export const listApiTokens = <ThrowOnError extends boolean = false>(options?: Options<ListApiTokensData, ThrowOnError>): RequestResult<ListApiTokensResponses, ListApiTokensErrors, ThrowOnError> => (options?.client ?? client).get<ListApiTokensResponses, ListApiTokensErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/tokens',
     ...options
@@ -298,7 +298,7 @@ export const findAll2 = <ThrowOnError extends boolean = false>(options?: Options
  *
  * Creates a scoped API token for the caller. The secret is returned once and cannot be retrieved again. Scopes may not exceed what the caller is themselves permitted to do.
  */
-export const create2 = <ThrowOnError extends boolean = false>(options: Options<Create2Data, ThrowOnError>): RequestResult<Create2Responses, Create2Errors, ThrowOnError> => (options.client ?? client).post<Create2Responses, Create2Errors, ThrowOnError>({
+export const createApiToken = <ThrowOnError extends boolean = false>(options: Options<CreateApiTokenData, ThrowOnError>): RequestResult<CreateApiTokenResponses, CreateApiTokenErrors, ThrowOnError> => (options.client ?? client).post<CreateApiTokenResponses, CreateApiTokenErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/tokens',
     ...options,
@@ -313,7 +313,7 @@ export const create2 = <ThrowOnError extends boolean = false>(options: Options<C
  *
  * Drives the permission picker on the token-creation screen and the CLI’s --permissions validation.
  */
-export const permissions2 = <ThrowOnError extends boolean = false>(options?: Options<Permissions2Data, ThrowOnError>): RequestResult<Permissions2Responses, Permissions2Errors, ThrowOnError> => (options?.client ?? client).get<Permissions2Responses, Permissions2Errors, ThrowOnError>({
+export const listGrantablePermissions = <ThrowOnError extends boolean = false>(options?: Options<ListGrantablePermissionsData, ThrowOnError>): RequestResult<ListGrantablePermissionsResponses, ListGrantablePermissionsErrors, ThrowOnError> => (options?.client ?? client).get<ListGrantablePermissionsResponses, ListGrantablePermissionsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/tokens/permissions',
     ...options
@@ -324,7 +324,7 @@ export const permissions2 = <ThrowOnError extends boolean = false>(options?: Opt
  *
  * Takes effect immediately. The record is kept so the audit trail survives; the secret stops working.
  */
-export const revoke2 = <ThrowOnError extends boolean = false>(options: Options<Revoke2Data, ThrowOnError>): RequestResult<Revoke2Responses, Revoke2Errors, ThrowOnError> => (options.client ?? client).delete<Revoke2Responses, Revoke2Errors, ThrowOnError>({
+export const revokeApiToken = <ThrowOnError extends boolean = false>(options: Options<RevokeApiTokenData, ThrowOnError>): RequestResult<RevokeApiTokenResponses, RevokeApiTokenErrors, ThrowOnError> => (options.client ?? client).delete<RevokeApiTokenResponses, RevokeApiTokenErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/tokens/{id}',
     ...options
@@ -333,7 +333,7 @@ export const revoke2 = <ThrowOnError extends boolean = false>(options: Options<R
 /**
  * List all roles
  */
-export const findAll3 = <ThrowOnError extends boolean = false>(options?: Options<FindAll3Data, ThrowOnError>): RequestResult<FindAll3Responses, FindAll3Errors, ThrowOnError> => (options?.client ?? client).get<FindAll3Responses, FindAll3Errors, ThrowOnError>({
+export const listRoles = <ThrowOnError extends boolean = false>(options?: Options<ListRolesData, ThrowOnError>): RequestResult<ListRolesResponses, ListRolesErrors, ThrowOnError> => (options?.client ?? client).get<ListRolesResponses, ListRolesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/roles',
     ...options
@@ -342,7 +342,7 @@ export const findAll3 = <ThrowOnError extends boolean = false>(options?: Options
 /**
  * Create role
  */
-export const create3 = <ThrowOnError extends boolean = false>(options: Options<Create3Data, ThrowOnError>): RequestResult<Create3Responses, Create3Errors, ThrowOnError> => (options.client ?? client).post<Create3Responses, Create3Errors, ThrowOnError>({
+export const createRole = <ThrowOnError extends boolean = false>(options: Options<CreateRoleData, ThrowOnError>): RequestResult<CreateRoleResponses, CreateRoleErrors, ThrowOnError> => (options.client ?? client).post<CreateRoleResponses, CreateRoleErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/roles',
     ...options,
@@ -355,7 +355,7 @@ export const create3 = <ThrowOnError extends boolean = false>(options: Options<C
 /**
  * Delete role
  */
-export const remove2 = <ThrowOnError extends boolean = false>(options: Options<Remove2Data, ThrowOnError>): RequestResult<Remove2Responses, Remove2Errors, ThrowOnError> => (options.client ?? client).delete<Remove2Responses, Remove2Errors, ThrowOnError>({
+export const deleteRole = <ThrowOnError extends boolean = false>(options: Options<DeleteRoleData, ThrowOnError>): RequestResult<DeleteRoleResponses, DeleteRoleErrors, ThrowOnError> => (options.client ?? client).delete<DeleteRoleResponses, DeleteRoleErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/roles/{id}',
     ...options
@@ -364,7 +364,7 @@ export const remove2 = <ThrowOnError extends boolean = false>(options: Options<R
 /**
  * Get role by ID
  */
-export const findOne2 = <ThrowOnError extends boolean = false>(options: Options<FindOne2Data, ThrowOnError>): RequestResult<FindOne2Responses, FindOne2Errors, ThrowOnError> => (options.client ?? client).get<FindOne2Responses, FindOne2Errors, ThrowOnError>({
+export const getRole = <ThrowOnError extends boolean = false>(options: Options<GetRoleData, ThrowOnError>): RequestResult<GetRoleResponses, GetRoleErrors, ThrowOnError> => (options.client ?? client).get<GetRoleResponses, GetRoleErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/roles/{id}',
     ...options
@@ -373,7 +373,7 @@ export const findOne2 = <ThrowOnError extends boolean = false>(options: Options<
 /**
  * Update a role (description and/or permissions)
  */
-export const update2 = <ThrowOnError extends boolean = false>(options: Options<Update2Data, ThrowOnError>): RequestResult<Update2Responses, Update2Errors, ThrowOnError> => (options.client ?? client).patch<Update2Responses, Update2Errors, ThrowOnError>({
+export const updateRole = <ThrowOnError extends boolean = false>(options: Options<UpdateRoleData, ThrowOnError>): RequestResult<UpdateRoleResponses, UpdateRoleErrors, ThrowOnError> => (options.client ?? client).patch<UpdateRoleResponses, UpdateRoleErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/roles/{id}',
     ...options,
@@ -421,7 +421,7 @@ export const assign = <ThrowOnError extends boolean = false>(options: Options<As
 /**
  * List the caller's organizations
  */
-export const list2 = <ThrowOnError extends boolean = false>(options?: Options<List2Data, ThrowOnError>): RequestResult<List2Responses, List2Errors, ThrowOnError> => (options?.client ?? client).get<List2Responses, List2Errors, ThrowOnError>({
+export const listOrganizations = <ThrowOnError extends boolean = false>(options?: Options<ListOrganizationsData, ThrowOnError>): RequestResult<ListOrganizationsResponses, ListOrganizationsErrors, ThrowOnError> => (options?.client ?? client).get<ListOrganizationsResponses, ListOrganizationsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/organizations',
     ...options
@@ -430,7 +430,7 @@ export const list2 = <ThrowOnError extends boolean = false>(options?: Options<Li
 /**
  * Create an organization
  */
-export const create4 = <ThrowOnError extends boolean = false>(options: Options<Create4Data, ThrowOnError>): RequestResult<Create4Responses, Create4Errors, ThrowOnError> => (options.client ?? client).post<Create4Responses, Create4Errors, ThrowOnError>({
+export const createOrganization = <ThrowOnError extends boolean = false>(options: Options<CreateOrganizationData, ThrowOnError>): RequestResult<CreateOrganizationResponses, CreateOrganizationErrors, ThrowOnError> => (options.client ?? client).post<CreateOrganizationResponses, CreateOrganizationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/organizations',
     ...options,
@@ -456,7 +456,7 @@ export const checkSlug = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Delete an organization
  */
-export const remove3 = <ThrowOnError extends boolean = false>(options: Options<Remove3Data, ThrowOnError>): RequestResult<Remove3Responses, Remove3Errors, ThrowOnError> => (options.client ?? client).delete<Remove3Responses, Remove3Errors, ThrowOnError>({
+export const deleteOrganization = <ThrowOnError extends boolean = false>(options: Options<DeleteOrganizationData, ThrowOnError>): RequestResult<DeleteOrganizationResponses, DeleteOrganizationErrors, ThrowOnError> => (options.client ?? client).delete<DeleteOrganizationResponses, DeleteOrganizationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/organizations/{id}',
     ...options
@@ -474,7 +474,7 @@ export const getFull = <ThrowOnError extends boolean = false>(options: Options<G
 /**
  * Update an organization
  */
-export const update3 = <ThrowOnError extends boolean = false>(options: Options<Update3Data, ThrowOnError>): RequestResult<Update3Responses, Update3Errors, ThrowOnError> => (options.client ?? client).patch<Update3Responses, Update3Errors, ThrowOnError>({
+export const updateOrganization = <ThrowOnError extends boolean = false>(options: Options<UpdateOrganizationData, ThrowOnError>): RequestResult<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError> => (options.client ?? client).patch<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/organizations/{id}',
     ...options,
@@ -487,7 +487,7 @@ export const update3 = <ThrowOnError extends boolean = false>(options: Options<U
 /**
  * Set the active organization for the current session
  */
-export const setActive = <ThrowOnError extends boolean = false>(options: Options<SetActiveData, ThrowOnError>): RequestResult<SetActiveResponses, SetActiveErrors, ThrowOnError> => (options.client ?? client).post<SetActiveResponses, SetActiveErrors, ThrowOnError>({
+export const setActiveOrganization = <ThrowOnError extends boolean = false>(options: Options<SetActiveOrganizationData, ThrowOnError>): RequestResult<SetActiveOrganizationResponses, SetActiveOrganizationErrors, ThrowOnError> => (options.client ?? client).post<SetActiveOrganizationResponses, SetActiveOrganizationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/organizations/{id}/set-active',
     ...options
@@ -505,7 +505,7 @@ export const getMembership = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * List members of an organization
  */
-export const list3 = <ThrowOnError extends boolean = false>(options: Options<List3Data, ThrowOnError>): RequestResult<List3Responses, List3Errors, ThrowOnError> => (options.client ?? client).get<List3Responses, List3Errors, ThrowOnError>({
+export const listOrganizationMembers = <ThrowOnError extends boolean = false>(options: Options<ListOrganizationMembersData, ThrowOnError>): RequestResult<ListOrganizationMembersResponses, ListOrganizationMembersErrors, ThrowOnError> => (options.client ?? client).get<ListOrganizationMembersResponses, ListOrganizationMembersErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/organizations/{orgId}/members',
     ...options
@@ -527,7 +527,7 @@ export const add = <ThrowOnError extends boolean = false>(options: Options<AddDa
 /**
  * Change a member's organization role
  */
-export const updateRole = <ThrowOnError extends boolean = false>(options: Options<UpdateRoleData, ThrowOnError>): RequestResult<UpdateRoleResponses, UpdateRoleErrors, ThrowOnError> => (options.client ?? client).patch<UpdateRoleResponses, UpdateRoleErrors, ThrowOnError>({
+export const updateMemberRole = <ThrowOnError extends boolean = false>(options: Options<UpdateMemberRoleData, ThrowOnError>): RequestResult<UpdateMemberRoleResponses, UpdateMemberRoleErrors, ThrowOnError> => (options.client ?? client).patch<UpdateMemberRoleResponses, UpdateMemberRoleErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/organizations/{orgId}/members/{memberId}',
     ...options,
@@ -540,7 +540,7 @@ export const updateRole = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Remove a member from an organization
  */
-export const remove4 = <ThrowOnError extends boolean = false>(options: Options<Remove4Data, ThrowOnError>): RequestResult<Remove4Responses, Remove4Errors, ThrowOnError> => (options.client ?? client).delete<Remove4Responses, Remove4Errors, ThrowOnError>({
+export const removeOrganizationMember = <ThrowOnError extends boolean = false>(options: Options<RemoveOrganizationMemberData, ThrowOnError>): RequestResult<RemoveOrganizationMemberResponses, RemoveOrganizationMemberErrors, ThrowOnError> => (options.client ?? client).delete<RemoveOrganizationMemberResponses, RemoveOrganizationMemberErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/organizations/{orgId}/members/{memberIdOrEmail}',
     ...options
@@ -558,7 +558,7 @@ export const leave = <ThrowOnError extends boolean = false>(options: Options<Lea
 /**
  * List pending invitations for an organization
  */
-export const list4 = <ThrowOnError extends boolean = false>(options: Options<List4Data, ThrowOnError>): RequestResult<List4Responses, List4Errors, ThrowOnError> => (options.client ?? client).get<List4Responses, List4Errors, ThrowOnError>({
+export const listOrganizationInvitations = <ThrowOnError extends boolean = false>(options: Options<ListOrganizationInvitationsData, ThrowOnError>): RequestResult<ListOrganizationInvitationsResponses, ListOrganizationInvitationsErrors, ThrowOnError> => (options.client ?? client).get<ListOrganizationInvitationsResponses, ListOrganizationInvitationsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/organizations/{orgId}/invitations',
     ...options
@@ -580,7 +580,7 @@ export const invite = <ThrowOnError extends boolean = false>(options: Options<In
 /**
  * List the caller's pending invitations
  */
-export const listMine = <ThrowOnError extends boolean = false>(options?: Options<ListMineData, ThrowOnError>): RequestResult<ListMineResponses, ListMineErrors, ThrowOnError> => (options?.client ?? client).get<ListMineResponses, ListMineErrors, ThrowOnError>({
+export const listMyInvitations = <ThrowOnError extends boolean = false>(options?: Options<ListMyInvitationsData, ThrowOnError>): RequestResult<ListMyInvitationsResponses, ListMyInvitationsErrors, ThrowOnError> => (options?.client ?? client).get<ListMyInvitationsResponses, ListMyInvitationsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/invitations',
     ...options
@@ -589,7 +589,7 @@ export const listMine = <ThrowOnError extends boolean = false>(options?: Options
 /**
  * Get an invitation by id
  */
-export const get = <ThrowOnError extends boolean = false>(options: Options<GetData, ThrowOnError>): RequestResult<GetResponses, GetErrors, ThrowOnError> => (options.client ?? client).get<GetResponses, GetErrors, ThrowOnError>({
+export const getInvitation = <ThrowOnError extends boolean = false>(options: Options<GetInvitationData, ThrowOnError>): RequestResult<GetInvitationResponses, GetInvitationErrors, ThrowOnError> => (options.client ?? client).get<GetInvitationResponses, GetInvitationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/invitations/{id}',
     ...options
@@ -625,7 +625,7 @@ export const cancel = <ThrowOnError extends boolean = false>(options: Options<Ca
 /**
  * List the caller's workspaces
  */
-export const listMine2 = <ThrowOnError extends boolean = false>(options?: Options<ListMine2Data, ThrowOnError>): RequestResult<ListMine2Responses, ListMine2Errors, ThrowOnError> => (options?.client ?? client).get<ListMine2Responses, ListMine2Errors, ThrowOnError>({
+export const listMyWorkspaces = <ThrowOnError extends boolean = false>(options?: Options<ListMyWorkspacesData, ThrowOnError>): RequestResult<ListMyWorkspacesResponses, ListMyWorkspacesErrors, ThrowOnError> => (options?.client ?? client).get<ListMyWorkspacesResponses, ListMyWorkspacesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/workspaces/mine',
     ...options
@@ -634,7 +634,7 @@ export const listMine2 = <ThrowOnError extends boolean = false>(options?: Option
 /**
  * List an organization's workspaces (defaults to the active org)
  */
-export const list5 = <ThrowOnError extends boolean = false>(options?: Options<List5Data, ThrowOnError>): RequestResult<List5Responses, List5Errors, ThrowOnError> => (options?.client ?? client).get<List5Responses, List5Errors, ThrowOnError>({
+export const listWorkspaces = <ThrowOnError extends boolean = false>(options?: Options<ListWorkspacesData, ThrowOnError>): RequestResult<ListWorkspacesResponses, ListWorkspacesErrors, ThrowOnError> => (options?.client ?? client).get<ListWorkspacesResponses, ListWorkspacesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/workspaces',
     ...options
@@ -643,7 +643,7 @@ export const list5 = <ThrowOnError extends boolean = false>(options?: Options<Li
 /**
  * Create a workspace
  */
-export const create5 = <ThrowOnError extends boolean = false>(options: Options<Create5Data, ThrowOnError>): RequestResult<Create5Responses, Create5Errors, ThrowOnError> => (options.client ?? client).post<Create5Responses, Create5Errors, ThrowOnError>({
+export const createWorkspace = <ThrowOnError extends boolean = false>(options: Options<CreateWorkspaceData, ThrowOnError>): RequestResult<CreateWorkspaceResponses, CreateWorkspaceErrors, ThrowOnError> => (options.client ?? client).post<CreateWorkspaceResponses, CreateWorkspaceErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/workspaces',
     ...options,
@@ -656,7 +656,7 @@ export const create5 = <ThrowOnError extends boolean = false>(options: Options<C
 /**
  * Delete a workspace
  */
-export const remove5 = <ThrowOnError extends boolean = false>(options: Options<Remove5Data, ThrowOnError>): RequestResult<Remove5Responses, Remove5Errors, ThrowOnError> => (options.client ?? client).delete<Remove5Responses, Remove5Errors, ThrowOnError>({
+export const deleteWorkspace = <ThrowOnError extends boolean = false>(options: Options<DeleteWorkspaceData, ThrowOnError>): RequestResult<DeleteWorkspaceResponses, DeleteWorkspaceErrors, ThrowOnError> => (options.client ?? client).delete<DeleteWorkspaceResponses, DeleteWorkspaceErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/workspaces/{id}',
     ...options
@@ -665,7 +665,7 @@ export const remove5 = <ThrowOnError extends boolean = false>(options: Options<R
 /**
  * Rename a workspace
  */
-export const update4 = <ThrowOnError extends boolean = false>(options: Options<Update4Data, ThrowOnError>): RequestResult<Update4Responses, Update4Errors, ThrowOnError> => (options.client ?? client).patch<Update4Responses, Update4Errors, ThrowOnError>({
+export const updateWorkspace = <ThrowOnError extends boolean = false>(options: Options<UpdateWorkspaceData, ThrowOnError>): RequestResult<UpdateWorkspaceResponses, UpdateWorkspaceErrors, ThrowOnError> => (options.client ?? client).patch<UpdateWorkspaceResponses, UpdateWorkspaceErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/workspaces/{id}',
     ...options,
@@ -678,7 +678,7 @@ export const update4 = <ThrowOnError extends boolean = false>(options: Options<U
 /**
  * Set the active workspace for the current session
  */
-export const setActive2 = <ThrowOnError extends boolean = false>(options: Options<SetActive2Data, ThrowOnError>): RequestResult<SetActive2Responses, SetActive2Errors, ThrowOnError> => (options.client ?? client).post<SetActive2Responses, SetActive2Errors, ThrowOnError>({
+export const setActiveWorkspace = <ThrowOnError extends boolean = false>(options: Options<SetActiveWorkspaceData, ThrowOnError>): RequestResult<SetActiveWorkspaceResponses, SetActiveWorkspaceErrors, ThrowOnError> => (options.client ?? client).post<SetActiveWorkspaceResponses, SetActiveWorkspaceErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/workspaces/{id}/set-active',
     ...options
@@ -790,7 +790,7 @@ export const disconnectInstallation = <ThrowOnError extends boolean = false>(opt
  *
  * The machines the caller paired, plus any shared with them, each with its status and the sessions running on it. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock. Unpaired hosts are left out unless `include=unpaired`.
  */
-export const list6 = <ThrowOnError extends boolean = false>(options?: Options<List6Data, ThrowOnError>): RequestResult<List6Responses, List6Errors, ThrowOnError> => (options?.client ?? client).get<List6Responses, List6Errors, ThrowOnError>({
+export const listHosts = <ThrowOnError extends boolean = false>(options?: Options<ListHostsData, ThrowOnError>): RequestResult<ListHostsResponses, ListHostsErrors, ThrowOnError> => (options?.client ?? client).get<ListHostsResponses, ListHostsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/hosts',
     ...options
@@ -801,7 +801,7 @@ export const list6 = <ThrowOnError extends boolean = false>(options?: Options<Li
  *
  * Both source addresses are here: where each token was minted and, once spent, where it was redeemed from. A mismatch is the interesting one.
  */
-export const list7 = <ThrowOnError extends boolean = false>(options?: Options<List7Data, ThrowOnError>): RequestResult<List7Responses, List7Errors, ThrowOnError> => (options?.client ?? client).get<List7Responses, List7Errors, ThrowOnError>({
+export const listPairingTokens = <ThrowOnError extends boolean = false>(options?: Options<ListPairingTokensData, ThrowOnError>): RequestResult<ListPairingTokensResponses, ListPairingTokensErrors, ThrowOnError> => (options?.client ?? client).get<ListPairingTokensResponses, ListPairingTokensErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/hosts/pairing',
     ...options
@@ -827,7 +827,7 @@ export const mint = <ThrowOnError extends boolean = false>(options: Options<Mint
  *
  * Takes effect immediately: a revoked token cannot pair a machine even if someone still holds the secret. The record is kept so the pairing history survives.
  */
-export const revoke3 = <ThrowOnError extends boolean = false>(options: Options<Revoke3Data, ThrowOnError>): RequestResult<Revoke3Responses, Revoke3Errors, ThrowOnError> => (options.client ?? client).delete<Revoke3Responses, Revoke3Errors, ThrowOnError>({
+export const revokePairingToken = <ThrowOnError extends boolean = false>(options: Options<RevokePairingTokenData, ThrowOnError>): RequestResult<RevokePairingTokenResponses, RevokePairingTokenErrors, ThrowOnError> => (options.client ?? client).delete<RevokePairingTokenResponses, RevokePairingTokenErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/hosts/pairing/{id}',
     ...options
@@ -894,7 +894,7 @@ export const unpair = <ThrowOnError extends boolean = false>(options: Options<Un
 /**
  * Get one host
  */
-export const get2 = <ThrowOnError extends boolean = false>(options: Options<Get2Data, ThrowOnError>): RequestResult<Get2Responses, Get2Errors, ThrowOnError> => (options.client ?? client).get<Get2Responses, Get2Errors, ThrowOnError>({
+export const getHost = <ThrowOnError extends boolean = false>(options: Options<GetHostData, ThrowOnError>): RequestResult<GetHostResponses, GetHostErrors, ThrowOnError> => (options.client ?? client).get<GetHostResponses, GetHostErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/hosts/{id}',
     ...options
@@ -960,7 +960,7 @@ export const stopImpersonating = <ThrowOnError extends boolean = false>(options?
 /**
  * Revoke one of a user's sessions by id
  */
-export const revokeSession2 = <ThrowOnError extends boolean = false>(options: Options<RevokeSession2Data, ThrowOnError>): RequestResult<RevokeSession2Responses, RevokeSession2Errors, ThrowOnError> => (options.client ?? client).post<RevokeSession2Responses, RevokeSession2Errors, ThrowOnError>({
+export const revokeUserSession = <ThrowOnError extends boolean = false>(options: Options<RevokeUserSessionData, ThrowOnError>): RequestResult<RevokeUserSessionResponses, RevokeUserSessionErrors, ThrowOnError> => (options.client ?? client).post<RevokeUserSessionResponses, RevokeUserSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/users/{id}/sessions/revoke',
     ...options,

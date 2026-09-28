@@ -35,7 +35,7 @@ export class RevokeAccessGrantHttpController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @CheckPolicies({ action: 'update', subject: 'Role' })
   @RequireScopes('roles:write')
-  @ApiOperation({ summary: 'Revoke an access grant' })
+  @ApiOperation({ operationId: 'revokeAccessGrant', summary: 'Revoke an access grant' })
   @ApiResponse({ status: 204, description: 'Revoked' })
   @ApiProblemResponse({ status: 404, description: 'Access grant not found', code: 'GRANT_001' })
   async revoke(

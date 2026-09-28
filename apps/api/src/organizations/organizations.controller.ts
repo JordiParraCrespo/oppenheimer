@@ -72,7 +72,7 @@ export class OrganizationsController {
   @Version('1')
   @RequireScopes('organizations:write')
   @CheckPolicies({ action: 'create', subject: 'Organization' })
-  @ApiOperation({ summary: 'Create an organization' })
+  @ApiOperation({ operationId: 'createOrganization', summary: 'Create an organization' })
   @ApiResponse({ status: 201, type: OrganizationResponseDto })
   create(
     @Req() req: Request,
@@ -85,7 +85,7 @@ export class OrganizationsController {
   @Version('1')
   @RequireScopes('organizations:read')
   @CheckPolicies({ action: 'read', subject: 'Organization' })
-  @ApiOperation({ summary: "List the caller's organizations" })
+  @ApiOperation({ operationId: 'listOrganizations', summary: "List the caller's organizations" })
   @ApiResponse({ status: 200, type: [OrganizationResponseDto] })
   async list(
     @Req() req: Request,
@@ -134,7 +134,7 @@ export class OrganizationsController {
   @RequireScopes('organizations:write')
   @OrganizationScoped('id')
   @CheckPolicies({ action: 'update', subject: 'Organization' })
-  @ApiOperation({ summary: 'Update an organization' })
+  @ApiOperation({ operationId: 'updateOrganization', summary: 'Update an organization' })
   @ApiResponse({ status: 200, type: OrganizationResponseDto })
   update(
     @Req() req: Request,
@@ -149,7 +149,7 @@ export class OrganizationsController {
   @RequireScopes('organizations:write')
   @OrganizationScoped('id')
   @CheckPolicies({ action: 'delete', subject: 'Organization' })
-  @ApiOperation({ summary: 'Delete an organization' })
+  @ApiOperation({ operationId: 'deleteOrganization', summary: 'Delete an organization' })
   @ApiResponse({ status: 200, type: OrganizationResponseDto })
   remove(
     @Req() req: Request,
@@ -164,6 +164,7 @@ export class OrganizationsController {
   @OrganizationScoped('id')
   @NoPolicy('selects one of the caller’s own memberships; Better Auth verifies membership')
   @ApiOperation({
+    operationId: 'setActiveOrganization',
     summary: 'Set the active organization for the current session',
   })
   @ApiResponse({ status: 200, type: OrganizationResponseDto })

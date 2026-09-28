@@ -18,19 +18,20 @@ and entity mapping stay in one place.
 
 Regenerate after any change to an API endpoint or its Swagger decorators.
 
-The legacy class clients under `src/data-access/api/openapi` (`*Api`) are not
-regenerated — the post-processing step only rebuilds their index files — and
-are kept only for the call sites that still use them. Do not add new callers:
-use the SDK in `src/generated/`. When a class's last caller moves to the SDK,
-delete the class.
+Every operation has a name the API chose: a controller method whose name is
+generic (`list`, `revoke`) carries an explicit `@ApiOperation({ operationId })`,
+so the SDK never numbers a collision (`list6`) and a caller never falls back to
+a hand-written URL. There is one client; `pnpm arch` fails on a path into this
+package's `src/`.
 
 ## What's inside
 
-| Export path                        | Contents                                                 |
-| ---------------------------------- | -------------------------------------------------------- |
-| `@oppenheimer/api-client`          | Client entry point                                       |
-| `@oppenheimer/api-client/models`   | Generated request/response models                        |
-| `@oppenheimer/api-client/services` | Legacy per-tag service classes (`*Api`), not regenerated |
+| Export                          | Contents                                                     |
+| ------------------------------- | ------------------------------------------------------------ |
+| `heyApiSdk`                     | One function per operation, returning `{ data, error, response }` |
+| `heyApiQuery`, `heyApiClient`   | The generated TanStack Query helpers and the fetch client    |
+| `applyApiClientConfig`          | Base URL, credentials and auth headers, set once at boot     |
+| `*ResponseDto`, `*Request`      | Every wire type the API names                                |
 
 ## One runtime dependency — by design
 

@@ -35,7 +35,10 @@ export class FindAccessGrantsHttpController {
   @Version('1')
   @CheckPolicies({ action: 'read', subject: 'Role' })
   @RequireScopes('roles:read')
-  @ApiOperation({ summary: 'List the access grants in the active organization' })
+  @ApiOperation({
+    operationId: 'listAccessGrants',
+    summary: 'List the access grants in the active organization',
+  })
   @ApiResponse({ status: 200, type: [AccessGrantResponseDto] })
   async list(@CurrentAccessScope() scope: AccessScope): Promise<AccessGrantResponseDto[]> {
     const grants = await this.queryBus.execute<FindAccessGrantsQuery, AccessGrantEntity[]>(

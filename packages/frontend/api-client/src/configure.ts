@@ -23,7 +23,15 @@ export function rememberHeaders(headers: () => AuthHeaders): void {
   headersFn = headers;
 }
 
-/** Apply base URL + auth headers to both the legacy OpenAPI client and hey-api. */
+let headersInterceptor: ((request: Request) => Promise<Request>) | undefined;
+
+/**
+ * Apply the base URL and the auth headers to the generated client. The cookie
+ * rides on `credentials: 'include'`; whatever the auth client returns from
+ * `getAuthHeaders()` is set on every request too, for a client that cannot
+ * rely on a cookie jar. The interceptor is registered once, and reads the
+ * remembered headers function on each request.
+ */
 export async function applyApiClientConfig(config: ApiClientConfig): Promise<void> {
   rememberHeaders(config.headers ?? (() => ({})));
   const { client } = await import('./generated/client.gen');
@@ -31,4 +39,13 @@ export async function applyApiClientConfig(config: ApiClientConfig): Promise<voi
     baseUrl: config.baseUrl,
     credentials: config.credentials ?? 'include',
   });
+  if (!headersInterceptor) {
+    headersInterceptor = async (request) => {
+      for (const [name, value] of Object.entries(await getAuthHeaders())) {
+        request.headers.set(name, value);
+      }
+      return request;
+    };
+    client.interceptors.request.use(headersInterceptor);
+  }
 }

@@ -4,15 +4,20 @@ import { AppError } from '../../core/errors';
 import { UserEntity } from '../user.entity';
 
 const api = vi.hoisted(() => ({
-  findAll: vi.fn(),
+  findUsers: vi.fn(),
   me: vi.fn(),
-  permissions: vi.fn(),
-  findOne: vi.fn(),
-  update: vi.fn(),
-  remove: vi.fn(),
+  findMyPermissions: vi.fn(),
+  findUser: vi.fn(),
+  patchUser: vi.fn(),
+  deleteUser: vi.fn(),
 }));
 
-vi.mock('@oppenheimer/api-client', () => ({ UsersApi: api }));
+vi.mock('@oppenheimer/api-client', () => ({ heyApiSdk: api }));
+
+/** A generated SDK call's result: the body, and no error. */
+function ok(data: unknown) {
+  return { data, error: undefined, response: new Response(null, { status: 200 }) };
+}
 
 const { UsersRepository } = await import('../users.repository');
 
@@ -90,10 +95,12 @@ describe('UsersRepository', () => {
 
   describe('findAll', () => {
     it('maps the page into entities and keeps the metadata', async () => {
-      api.findAll.mockResolvedValue({
-        data: [dto()],
-        meta: { total: 1, page: 1, limit: 20, totalPages: 1 },
-      });
+      api.findUsers.mockResolvedValue(
+        ok({
+          data: [dto()],
+          meta: { total: 1, page: 1, limit: 20, totalPages: 1 },
+        }),
+      );
 
       const page = await repository.findAll();
 
@@ -107,19 +114,20 @@ describe('UsersRepository', () => {
       });
     });
 
-    it('passes the query in the generated signature’s order', async () => {
-      // `(search, role, limit, page)` — the reverse of how the repository method
-      // takes them. A transposition here filters by the wrong field rather than
-      // failing.
-      api.findAll.mockResolvedValue({ data: [], meta: {} });
+    it('passes the query by name', async () => {
+      // The repository takes them as `(page, limit, search, role)`; a
+      // transposition here would filter by the wrong field rather than fail.
+      api.findUsers.mockResolvedValue(ok({ data: [], meta: {} }));
 
       await repository.findAll(2, 50, 'ada', 'admin' as Role);
 
-      expect(api.findAll).toHaveBeenCalledWith('ada', 'admin', 50, 2);
+      expect(api.findUsers).toHaveBeenCalledWith({
+        query: { search: 'ada', role: 'admin', limit: 50, page: 2 },
+      });
     });
 
     it('treats an absent body as a failed read, not an empty page', async () => {
-      api.findAll.mockResolvedValue(undefined);
+      api.findUsers.mockResolvedValue(ok(undefined));
 
       const error = await repository.findAll().catch((thrown: AppError) => thrown);
 
@@ -129,13 +137,13 @@ describe('UsersRepository', () => {
 
   describe('me', () => {
     it('maps the signed-in user', async () => {
-      api.me.mockResolvedValue(dto());
+      api.me.mockResolvedValue(ok(dto()));
 
       expect((await repository.me()).email).toBe('ada@example.com');
     });
 
     it('fails on an absent body', async () => {
-      api.me.mockResolvedValue(undefined);
+      api.me.mockResolvedValue(ok(undefined));
 
       await expect(repository.me()).rejects.toBeInstanceOf(AppError);
     });
@@ -145,9 +153,11 @@ describe('UsersRepository', () => {
     it('returns the raw CASL rules, not an entity', async () => {
       // The app rebuilds an ability from these with
       // `defineAbilitiesFromPermissions`, so they have to arrive unshaped.
-      api.permissions.mockResolvedValue({
-        permissions: [{ action: 'read', subject: 'Project' }],
-      });
+      api.findMyPermissions.mockResolvedValue(
+        ok({
+          permissions: [{ action: 'read', subject: 'Project' }],
+        }),
+      );
 
       await expect(repository.myPermissions()).resolves.toEqual([
         { action: 'read', subject: 'Project' },
@@ -157,13 +167,13 @@ describe('UsersRepository', () => {
     it('returns an empty rule set as itself', async () => {
       // A user with no permissions is a real state — the sidebar shows nothing
       // rather than everything — so `[]` must not be read as a failure.
-      api.permissions.mockResolvedValue({ permissions: [] });
+      api.findMyPermissions.mockResolvedValue(ok({ permissions: [] }));
 
       await expect(repository.myPermissions()).resolves.toEqual([]);
     });
 
     it('fails on an absent body rather than granting nothing silently', async () => {
-      api.permissions.mockResolvedValue(undefined);
+      api.findMyPermissions.mockResolvedValue(ok(undefined));
 
       await expect(repository.myPermissions()).rejects.toBeInstanceOf(AppError);
     });
@@ -171,13 +181,13 @@ describe('UsersRepository', () => {
 
   describe('findById', () => {
     it('maps the user', async () => {
-      api.findOne.mockResolvedValue(dto({ id: 'user-9' }));
+      api.findUser.mockResolvedValue(ok(dto({ id: 'user-9' })));
 
       expect((await repository.findById('user-9')).id).toBe('user-9');
     });
 
     it('fails on an absent body', async () => {
-      api.findOne.mockResolvedValue(undefined);
+      api.findUser.mockResolvedValue(ok(undefined));
 
       await expect(repository.findById('user-9')).rejects.toBeInstanceOf(AppError);
     });
@@ -185,12 +195,15 @@ describe('UsersRepository', () => {
 
   describe('update', () => {
     it('maps the saved user back', async () => {
-      api.update.mockResolvedValue(dto({ firstName: 'Grace' }));
+      api.patchUser.mockResolvedValue(ok(dto({ firstName: 'Grace' })));
 
       const saved = await repository.update('user-1', { firstName: 'Grace' });
 
       expect(saved.firstName).toBe('Grace');
-      expect(api.update).toHaveBeenCalledWith('user-1', { firstName: 'Grace' });
+      expect(api.patchUser).toHaveBeenCalledWith({
+        path: { id: 'user-1' },
+        body: { firstName: 'Grace' },
+      });
     });
   });
 });

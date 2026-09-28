@@ -25,6 +25,7 @@ export class GetMyPermissionsHttpController {
   @Version('1')
   @RequireScopes('profile:read')
   @ApiOperation({
+    operationId: 'findMyPermissions',
     summary: 'Get the current user’s effective permissions',
     description:
       'The union of every role assigned to the caller, as CASL rules. Drives which routes the web app shows in its sidebar.',

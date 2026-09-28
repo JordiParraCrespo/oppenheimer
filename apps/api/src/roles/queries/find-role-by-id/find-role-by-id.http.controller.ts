@@ -28,7 +28,7 @@ export class FindRoleByIdHttpController {
   @Version('1')
   @CheckPolicies({ action: 'read', subject: 'Role' })
   @RequireScopes('roles:read')
-  @ApiOperation({ summary: 'Get role by ID' })
+  @ApiOperation({ operationId: 'getRole', summary: 'Get role by ID' })
   @ApiResponse({ status: 200, type: RoleResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Role not found', code: 'ROLE_001' })
   async findOne(
