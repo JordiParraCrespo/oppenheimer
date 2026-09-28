@@ -136,6 +136,11 @@ history) to work on the MVP.
   deletion or "sign out other devices" would wait out its lifetime.
   Sessions signed in before the cache existed keep answering from
   Postgres until they are refreshed or expire. (Decided 2026-09-28.)
+  Anything that lists a user's sessions reads the table, not the cache:
+  Better Auth's own list walks its Redis index, which never saw those
+  sessions, so the admin list (and revoking one by id) reads the rows. A
+  delete of more rows than Better Auth hands its hook (100) evicts the
+  copy of every row the user holds. (Added 2026-09-28.)
 - **Credential writes are session-only.** Changing the password or the
   email, signing devices out and deleting the account carry no scope, so
   no API token or OAuth client reaches them: a leaked token that could do

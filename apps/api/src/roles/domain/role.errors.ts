@@ -56,4 +56,15 @@ export const RoleErrors = {
     message: 'A system role this deployment needs is not installed',
     httpStatus: 500,
   },
+  /**
+   * A role is created inside the request's organization. A caller with no
+   * active organization would otherwise create a *global* role — one every
+   * tenant reads — by omission; creating one of those is a deliberate,
+   * platform-level act (`CreateRoleCommand.global`), never a default.
+   */
+  ORGANIZATION_REQUIRED: {
+    code: 'ROLE_008',
+    message: 'A role is created inside an organization',
+    httpStatus: 400,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

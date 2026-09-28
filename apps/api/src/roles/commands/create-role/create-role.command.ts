@@ -9,6 +9,13 @@ export class CreateRoleCommand extends CommandBase {
   readonly actorId?: string;
   readonly actorRole?: string;
   readonly organizationId?: string | null;
+  /**
+   * Create a global role (no organization) on purpose. Without it, a missing
+   * `organizationId` is refused rather than read as "global"; with it, the
+   * actor must hold `manage all`. `POST /v1/roles` sets it only for a caller
+   * with no active organization whose ability holds `manage all`.
+   */
+  readonly global?: boolean;
 
   constructor(props: CommandProps<CreateRoleCommand>) {
     super(props);
@@ -18,5 +25,6 @@ export class CreateRoleCommand extends CommandBase {
     this.actorId = props.actorId;
     this.actorRole = props.actorRole;
     this.organizationId = props.organizationId;
+    this.global = props.global;
   }
 }

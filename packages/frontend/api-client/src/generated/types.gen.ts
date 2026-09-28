@@ -2882,6 +2882,10 @@ export type Create3Data = {
 
 export type Create3Errors = {
     /**
+     * ROLE_008 — No active organization, and the caller cannot create a global role
+     */
+    400: ProblemDetailsDto;
+    /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
     401: ProblemDetailsDto;

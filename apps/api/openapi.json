@@ -1690,6 +1690,16 @@
               }
             }
           },
+          "400": {
+            "description": "ROLE_008 — No active organization, and the caller cannot create a global role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "401": {
             "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
             "content": {
