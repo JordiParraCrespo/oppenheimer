@@ -7,7 +7,7 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ProblemDetailsDto, SanitizePipe } from '@oppenheimer/backend-core';
-import { setupBullBoard } from '@oppenheimer/backend-queue';
+import { BULL_BOARD_MIN_PASSWORD_LENGTH, setupBullBoard } from '@oppenheimer/backend-queue';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
@@ -121,11 +121,22 @@ async function bootstrap() {
       ? { auth: { username: bullBoardUsername, password: bullBoardPassword } }
       : {},
   );
-  logger.log({
-    message: bullBoardMounted
-      ? 'Bull Board dashboard mounted at /admin/queues (Basic auth)'
-      : 'Bull Board dashboard disabled (set BULL_BOARD_USERNAME and BULL_BOARD_PASSWORD to enable)',
-  });
+  if (
+    !bullBoardMounted &&
+    bullBoardUsername &&
+    bullBoardPassword &&
+    bullBoardPassword.length < BULL_BOARD_MIN_PASSWORD_LENGTH
+  ) {
+    logger.warn({
+      message: `Bull Board dashboard disabled: BULL_BOARD_PASSWORD must be at least ${BULL_BOARD_MIN_PASSWORD_LENGTH} characters`,
+    });
+  } else {
+    logger.log({
+      message: bullBoardMounted
+        ? 'Bull Board dashboard mounted at /admin/queues (Basic auth)'
+        : 'Bull Board dashboard disabled (set BULL_BOARD_USERNAME and BULL_BOARD_PASSWORD to enable)',
+    });
+  }
 
   const port = configService.get('app.port');
   await app.listen(port);
