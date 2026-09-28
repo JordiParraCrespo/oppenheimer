@@ -230,4 +230,23 @@ export const useOther = () => useQuery({ queryKey: ['other'], queryFn: () => [] 
   assert.match(report, /things\.queries\.ts: imports useQuery from @tanstack\/react-query/);
   assert.doesNotMatch(report, /other\.queries\.ts/);
 });
+test('two components side by side in an app file are reported; one passes', () => {
+  const { report } = check({
+    'src/features/things/sections/two.tsx': `export function ThingList() {
+  return null;
+}
+
+function ThingRow() {
+  return null;
+}
+`,
+    'src/features/things/sections/one.tsx': `const LIMIT = 3;
+export function ThingCount() {
+  return LIMIT;
+}
+`,
+  });
+  assert.match(report, /sections\/two\.tsx: 2 components \(ThingList, ThingRow\)/);
+  assert.doesNotMatch(report, /sections\/one\.tsx/);
+});
 // oppenheimer:end web

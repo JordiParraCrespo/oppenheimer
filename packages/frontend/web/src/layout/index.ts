@@ -1,3 +1,4 @@
+export { AppPending } from './components/app-pending';
 export { FieldRow } from './components/field-row';
 export { PageHead } from './components/page-head';
 export { combineQueries, QueryState, type QueryStateSource } from './components/query-state';

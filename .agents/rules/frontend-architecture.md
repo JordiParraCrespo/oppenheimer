@@ -84,6 +84,12 @@ shared ─► core ─► consumer ─► apps/web
   in.
 - The kernel never imports the product package, and the kit imports only the
   kernel. `pnpm arch` fails either way.
+- A feature never imports React Query (`features-query-through-the-product`):
+  the query keys, the cache writes and the entity sharing are the product
+  package's, and a feature reads and writes through its hooks. Tests may.
+- `src/providers/` is app glue around the routes, and may import a feature's
+  `dialogs/` only (`providers-mount-dialogs`) — the console's dialog owner
+  lazy-loads them — besides the kit, the kernel and the product package.
 - The kit is imported by its package name (`@oppenheimer/frontend-web`), never by a
   path into its `src/`.
 - An app never keeps a file the kit ships. `pnpm check:structure` compares
@@ -164,7 +170,10 @@ name the jobs and split *those*.
   two.
   The split that matters is by clock, not by length — a keystroke, a page, a
   tick. When you cannot name the second job, there isn't one.
-- **One component per file.** Biome's `noNestedComponentDefinitions` is on.
+- **One component per file** in an app. Biome's `noNestedComponentDefinitions`
+  catches one declared inside another; `pnpm check:structure` catches two
+  declared side by side, which Biome does not see. The kit is exempt: a
+  primitives file there exports a family meant to be read together.
 - **An effect synchronises with something outside React, and says what.**
   A DOM listener, a subscription, a timer, an imperative library, the URL.
   Never deriving state, resetting on a prop change, chaining updates or

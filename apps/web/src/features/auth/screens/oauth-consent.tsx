@@ -15,6 +15,7 @@ import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ConsentSearch, describeScopes, submitConsent } from '@/features/auth/lib/consent';
+import { CenteredCard } from '../components/centered-card';
 
 /**
  * OAuth consent screen.
@@ -127,28 +128,6 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
             {t('consent.approve')}
           </Button>
         </CardFooter>
-      </Card>
-    </div>
-  );
-}
-
-function CenteredCard({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="mx-auto flex min-h-svh w-full max-w-md items-center p-6">
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardFooter>{children}</CardFooter>
       </Card>
     </div>
   );

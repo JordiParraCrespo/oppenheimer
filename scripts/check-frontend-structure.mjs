@@ -388,6 +388,31 @@ for (const { app, routes, features, product, allow, kit } of APPS) {
   }
 }
 
+// One component per file, in an app. Biome's `noNestedComponentDefinitions`
+// only sees a component declared inside another; two declared side by side
+// pass it, and the second one is always the one nobody finds. A component is
+// a top-level `function Name` or `const Name = (…) =>` with a capital first
+// letter. The kit is exempt: a primitives file there exports a family meant to
+// be read together (`AuthLink`, `AuthBackLink`, …).
+const TOP_LEVEL_COMPONENT =
+  /^(?:export\s+)?(?:default\s+)?(?:function\s+([A-Z]\w*)|const\s+([A-Z]\w*)\s*=\s*(?:\([^)]*\)|\w+)\s*=>)/gm;
+for (const { app } of APPS) {
+  const src = join(root, app, 'src');
+  if (!existsSync(src)) continue;
+  for (const file of walk(src)) {
+    if (!file.endsWith('.tsx') || /\.(spec|test)\.tsx$/.test(file) || file.includes('/__tests__/'))
+      continue;
+    const names = [...readFileSync(file, 'utf8').matchAll(TOP_LEVEL_COMPONENT)].map(
+      (match) => match[1] ?? match[2],
+    );
+    if (names.length > 1) {
+      fail(
+        `${relative(root, file)}: ${names.length} components (${names.join(', ')}) — one component per file; give each its own file in the kind it belongs to`,
+      );
+    }
+  }
+}
+
 // Every query a frontend package's React layer declares shares entities across
 // refetches. The entities are classes, which TanStack Query's default
 // structural sharing does not look into, so a query without `shareEntities`

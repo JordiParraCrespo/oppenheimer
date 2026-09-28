@@ -1,10 +1,11 @@
-import { Button, EmptyState, Skeleton } from '@oppenheimer/design-system-web';
-import { CircleOff, Terminal } from '@oppenheimer/design-system-web/icons';
+import { Button } from '@oppenheimer/design-system-web';
 import { isSessionNotFound } from '@oppenheimer/frontend-consumer';
 import { useSession } from '@oppenheimer/frontend-consumer/react';
 import { RouteError, RouteNotFound } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { SessionSkeleton } from '../components/session-skeleton';
+import { SessionClosed } from '../sections/session-closed';
 import { SessionProvisioning } from '../sections/session-provisioning';
 import { SessionTerminal } from '../sections/session-terminal';
 
@@ -79,47 +80,5 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
         <SessionTerminal sessionId={session.id} />
       </div>
     </div>
-  );
-}
-
-/** The pane's shape while the session is being read, at the size it will be. */
-function SessionSkeleton() {
-  return (
-    <div className="flex min-h-0 flex-1 flex-col p-3.5">
-      <Skeleton className="mx-auto min-h-0 w-full max-w-[1040px] flex-1 rounded-none" />
-    </div>
-  );
-}
-
-/**
- * A session whose terminal is gone: stopped or deleted. There is no reattaching
- * to a tmux session that has exited; the caller says which sentence explains
- * why.
- */
-function SessionClosed({
-  name,
-  copy,
-}: {
-  name: string;
-  copy: 'sessions.closed.description' | 'sessions.closed.deleted';
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <EmptyState className="my-auto">
-      <EmptyState.Header>
-        <EmptyState.Media variant="icon">
-          <CircleOff />
-        </EmptyState.Media>
-        <EmptyState.Title>{name}</EmptyState.Title>
-        <EmptyState.Description>{t(copy)}</EmptyState.Description>
-      </EmptyState.Header>
-      <EmptyState.Content>
-        <Button variant="secondary" render={<Link to="/sessions/new" />}>
-          <Terminal />
-          {t('nav.newSession')}
-        </Button>
-      </EmptyState.Content>
-    </EmptyState>
   );
 }
