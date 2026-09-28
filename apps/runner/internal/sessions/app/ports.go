@@ -31,6 +31,13 @@ type Terminals interface {
 	// Capture returns what the classifier reads: the visible text of a
 	// window and the terminal title the program in it has set.
 	Capture(ctx context.Context, target string) (Screen, error)
+	// CaptureBody is Capture without the title, for a caller that already
+	// has it from Panes.
+	CaptureBody(ctx context.Context, target string) (string, error)
+	// Panes lists every pane on this server with the fields a refresh
+	// needs: one process for the whole host instead of one per session.
+	// No server at all is an empty list.
+	Panes(ctx context.Context) ([]Pane, error)
 	// Windows lists a session's windows.
 	Windows(ctx context.Context, name string) ([]domain.Window, error)
 	// SendKeys types into a window.
@@ -43,6 +50,18 @@ type Terminals interface {
 	// Attach runs `tmux attach` on a PTY and returns it. Closing the
 	// returned Attachment detaches without touching the session.
 	Attach(ctx context.Context, target string, size Size) (Attachment, error)
+}
+
+// Pane is one pane of the tmux server, as the poll loop sees it.
+type Pane struct {
+	// Session is the tmux session name.
+	Session string
+	Window  int
+	Pane    int
+	// Active marks the pane a `<session>:<window>` target addresses.
+	Active bool
+	// Title is what the program in the pane set through an OSC sequence.
+	Title string
 }
 
 // Size is a terminal's dimensions.

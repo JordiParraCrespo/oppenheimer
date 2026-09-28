@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -64,4 +65,112 @@ func TestTheBrokerAnswersForASessionWhileItsCloneRuns(t *testing.T) {
 	}
 	close(git.release)
 	waitForState(t, svc, sessionsdomain.StateStarting)
+}
+
+// recordingLink collects the asks the broker sends, in place of the link.
+type recordingLink struct {
+	mu   sync.Mutex
+	asks []link.CredentialsToken
+	sent chan link.CredentialsToken
+}
+
+func (r *recordingLink) Send(message any) error {
+	ask := message.(link.CredentialsToken)
+	r.mu.Lock()
+	r.asks = append(r.asks, ask)
+	r.mu.Unlock()
+	r.sent <- ask
+	return nil
+}
+
+func (r *recordingLink) count() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.asks)
+}
+
+func newTestBroker() (*credentialBroker, *recordingLink) {
+	sender := &recordingLink{sent: make(chan link.CredentialsToken, 16)}
+	broker := newCredentialBroker(sender,
+		func(sealed []byte) ([]byte, error) { return sealed, nil },
+		func(id string) (sessionsdomain.Session, error) {
+			return sessionsdomain.Session{ID: id, CheckoutID: "checkout-1", GithubRepoID: 42}, nil
+		})
+	return broker, sender
+}
+
+func grant(b *credentialBroker, ask link.CredentialsToken, token string) {
+	b.Grant(link.CredentialsGrant{
+		Type: "credentials.grant", RequestID: ask.RequestID, SessionID: ask.SessionID,
+		Sealed: base64.StdEncoding.EncodeToString([]byte(token)), ExpiresAt: time.Now().Add(time.Hour),
+	})
+}
+
+type answer struct {
+	token string
+	err   error
+}
+
+func TestConcurrentAsksForOneSessionShareOneRequest(t *testing.T) {
+	broker, sender := newTestBroker()
+
+	const callers = 10
+	answers := make(chan answer, callers)
+	for range callers {
+		go func() {
+			token, err := broker.Get(context.Background(), "session-1")
+			answers <- answer{token, err}
+		}()
+	}
+	ask := <-sender.sent
+	// Give every caller time to reach the broker before the grant lands, so
+	// they are all waiting on an ask rather than reading the cache.
+	time.Sleep(50 * time.Millisecond)
+	grant(broker, ask, "ghs_token")
+
+	for range callers {
+		got := <-answers
+		if got.err != nil || got.token != "ghs_token" {
+			t.Fatalf("answer = %+v, want the granted token", got)
+		}
+	}
+	if n := sender.count(); n != 1 {
+		t.Fatalf("credentials.token sent %d times, want 1", n)
+	}
+	// And the next caller is answered from the cache.
+	if token, err := broker.Get(context.Background(), "session-1"); err != nil || token != "ghs_token" || sender.count() != 1 {
+		t.Fatalf("cached = %q, %v; asks = %d", token, err, sender.count())
+	}
+}
+
+func TestACancelledCallerDoesNotFailTheOthers(t *testing.T) {
+	broker, sender := newTestBroker()
+
+	first, cancelFirst := context.WithCancel(context.Background())
+	firstDone := make(chan answer, 1)
+	go func() {
+		token, err := broker.Get(first, "session-1")
+		firstDone <- answer{token, err}
+	}()
+	ask := <-sender.sent
+
+	secondDone := make(chan answer, 1)
+	go func() {
+		token, err := broker.Get(context.Background(), "session-1")
+		secondDone <- answer{token, err}
+	}()
+	time.Sleep(50 * time.Millisecond) // let the second caller join the ask
+	// The one that started the ask gives up; the ask carries on.
+	cancelFirst()
+	if got := <-firstDone; got.err == nil {
+		t.Fatalf("the cancelled caller got %+v, want an error", got)
+	}
+	grant(broker, ask, "ghs_token")
+
+	if got := <-secondDone; got.err != nil || got.token != "ghs_token" {
+		t.Fatalf("the other caller got %+v, want the token", got)
+	}
+	if n := sender.count(); n != 1 {
+		t.Fatalf("credentials.token sent %d times, want 1", n)
+	}
 }
