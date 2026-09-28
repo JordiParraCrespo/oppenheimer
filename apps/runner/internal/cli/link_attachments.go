@@ -104,6 +104,9 @@ func (h *linkHandler) pump(ctx context.Context, att *attachment) {
 		delete(h.attachments, att.id)
 	}
 	h.mu.Unlock()
+	// Its context ends with it, or inputPump, waiting on it, never returns.
+	att.flow.close()
+	att.cancel()
 	_ = att.pty.Close()
 	_ = h.client.Send(link.AttachmentClosed{Type: "attachment.closed", AttachmentID: att.id, Reason: "pty closed"})
 }
