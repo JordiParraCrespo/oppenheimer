@@ -50,8 +50,7 @@ export const Route = createFileRoute('/_authenticated')({
   beforeLoad: ({ context, location }) => {
     if (!context.auth.isAuthenticated) {
       // `href`, not `pathname`: a deep link's search params are part of where
-      // the reader was going, and dropping them lands them somewhere else
-      // after they sign in.
+      // the reader was going; dropping them lands them elsewhere after sign-in.
       throw redirect({ to: '/login', search: { redirect: location.href } });
     }
   },
@@ -91,8 +90,7 @@ function AuthenticatedShell() {
   const ownShell = useMatches({
     select: (matches) => matches.some((match) => match.staticData.shell === 'own'),
   });
-  // The list beside the rail is the address's: the same answer the rail
-  // lights, so the two never disagree.
+  // The list beside the rail is the address's, as the rail lights it: never at odds.
   const list = useConsoleList();
 
   const settledEmpty =
@@ -108,9 +106,8 @@ function AuthenticatedShell() {
         userMenuLinks={USER_MENU}
         rail={<ConsoleRail />}
         sidebar={SIDEBARS[list]}
-        // The brand row names the product, not the workspace — version 1 has one
-        // workspace per account. `chrome={false}` is the bar, the palette and
-        // the foot's hairline; `AppShell` and `use-shell.ts` say why.
+        // The brand row names the product, not the workspace (one per account in
+        // version 1). `chrome={false}` drops the bar, palette and foot hairline.
         brand={<Wordmark size={18} product={t('common.product')} />}
         chrome={false}
       >
