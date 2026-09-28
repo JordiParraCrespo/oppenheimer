@@ -1,5 +1,9 @@
 import { AppError } from '@oppenheimer/backend-core';
-import { defineAbilitiesFromPermissions, type PermissionDefinition } from '@oppenheimer/shared';
+import {
+  defineAbilitiesFromPermissions,
+  type PermissionDefinition,
+  SYSTEM_ROLE_PERMISSIONS,
+} from '@oppenheimer/shared';
 import { describe, expect, it, vi } from 'vitest';
 import type { AbilityFactory } from '../ability.factory';
 import { RoleGrantPolicy } from '../role-grant.policy';
@@ -12,6 +16,28 @@ function policyFor(actorPermissions: PermissionDefinition[]): RoleGrantPolicy {
 }
 
 const ACTOR = { id: 'admin-1', organizationId: 'org-1' };
+
+/**
+ * A policy whose actor ability is built the way `AbilityFactory.createForUser`
+ * builds it for `ACTOR`: the given rules interpolated in `ACTOR`'s context.
+ */
+function policyInContext(actorPermissions: PermissionDefinition[]): {
+  policy: RoleGrantPolicy;
+  abilityFactory: AbilityFactory;
+} {
+  const ability = defineAbilitiesFromPermissions(actorPermissions, {
+    user: { id: ACTOR.id },
+    activeOrganizationId: ACTOR.organizationId,
+    activeTeamId: null,
+  });
+  const abilityFactory = {
+    createForUser: vi.fn().mockResolvedValue(ability),
+  } as unknown as AbilityFactory;
+  return { policy: new RoleGrantPolicy(abilityFactory), abilityFactory };
+}
+
+// biome-ignore lint/suspicious/noTemplateCurlyInString: a condition placeholder, not a template literal
+const ORG = '${activeOrganizationId}';
 
 describe('RoleGrantPolicy', () => {
   it('allows granting what the actor already holds', async () => {
@@ -53,6 +79,83 @@ describe('RoleGrantPolicy', () => {
         { action: 'export', subject: 'Project' },
         { action: 'manage', subject: 'all' },
       ]),
+    ).resolves.toBeUndefined();
+  });
+
+  describe('with conditioned actor rules (the tenant owner)', () => {
+    it('rejects an unconditioned rule the owner holds only for its organization', async () => {
+      const { policy } = policyInContext(SYSTEM_ROLE_PERMISSIONS.owner);
+
+      const error = await policy
+        .assertGrantable(ACTOR, [{ action: 'manage', subject: 'Session' }])
+        .catch((thrown: AppError) => thrown);
+
+      expect(error).toBeInstanceOf(AppError);
+      expect((error as AppError).code).toBe('ROLE_005');
+      expect((error as AppError).detail).toContain('narrower conditions');
+      expect((error as AppError).detail).toContain('manage Session');
+    });
+
+    it('accepts the rule scoped to the active organization, as placeholder or literal', async () => {
+      const { policy } = policyInContext(SYSTEM_ROLE_PERMISSIONS.owner);
+
+      await expect(
+        policy.assertGrantable(ACTOR, [
+          { action: 'read', subject: 'Session', conditions: { organizationId: ORG } },
+          { action: 'read', subject: 'Session', conditions: { organizationId: 'org-1' } },
+        ]),
+      ).resolves.toBeUndefined();
+    });
+
+    it('rejects a rule pointed at another organization', async () => {
+      const { policy } = policyInContext(SYSTEM_ROLE_PERMISSIONS.owner);
+
+      await expect(
+        policy.assertGrantable(ACTOR, [
+          { action: 'manage', subject: 'Project', conditions: { organizationId: 'org-2' } },
+        ]),
+      ).rejects.toMatchObject({ code: 'ROLE_005' });
+    });
+
+    it('lists exactly the offending rules', async () => {
+      const { policy } = policyInContext(SYSTEM_ROLE_PERMISSIONS.owner);
+      const offending: PermissionDefinition[] = [
+        { action: 'manage', subject: 'Session' },
+        { action: 'manage', subject: 'Project', conditions: { organizationId: 'org-2' } },
+        { action: 'manage', subject: 'User' },
+      ];
+
+      const error = await policy
+        .assertGrantable(ACTOR, [
+          { action: 'read', subject: 'Session', conditions: { organizationId: ORG } },
+          ...offending,
+        ])
+        .catch((thrown: AppError) => thrown);
+
+      expect((error as AppError).extensions).toEqual({ ungrantable: offending });
+      // `User` is not held at all; the other two are held more narrowly.
+      expect((error as AppError).detail).toContain('You do not hold: manage User');
+    });
+
+    it('builds the ability in the actor organization', async () => {
+      const { policy, abilityFactory } = policyInContext(SYSTEM_ROLE_PERMISSIONS.owner);
+
+      await policy.assertGrantable(ACTOR, [
+        { action: 'read', subject: 'Session', conditions: { organizationId: ORG } },
+      ]);
+
+      expect(abilityFactory.createForUser).toHaveBeenCalledWith(
+        { id: ACTOR.id, role: undefined },
+        { organizationId: 'org-1' },
+      );
+    });
+  });
+
+  it('lets `manage all` grant the conditioned owner role', async () => {
+    const { policy } = policyInContext([{ action: 'manage', subject: 'all' }]);
+
+    await expect(
+      policy.assertGrantable(ACTOR, SYSTEM_ROLE_PERMISSIONS.owner),
     ).resolves.toBeUndefined();
   });
 

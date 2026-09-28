@@ -121,7 +121,7 @@ describe('AbilityFactory', () => {
     });
 
     expect(ability.can('delete', 'Role')).toBe(true);
-    expect(roleRepo.findOneByName).toHaveBeenCalledWith('admin');
+    expect(roleRepo.findOneByName).toHaveBeenCalledWith('admin', null);
   });
 
   it('unions the Better Auth `user.role` column with the assigned join roles', async () => {
@@ -162,8 +162,39 @@ describe('AbilityFactory', () => {
     const ability = await factory.createForUser({ id: 'user-1', role: 'user, admin' });
 
     expect(ability.can('delete', 'Role')).toBe(true);
-    expect(roleRepo.findOneByName).toHaveBeenNthCalledWith(1, 'user');
-    expect(roleRepo.findOneByName).toHaveBeenNthCalledWith(2, 'admin');
+    expect(roleRepo.findOneByName).toHaveBeenNthCalledWith(1, 'user', null);
+    expect(roleRepo.findOneByName).toHaveBeenNthCalledWith(2, 'admin', null);
+  });
+
+  it('resolves a platform role from the global row only, never a tenant role of that name', async () => {
+    // The repository with no organization matches a role of that name in any
+    // tenant. Model it faithfully: a tenant's `admin` exists and would be
+    // returned to an unscoped lookup; only `null` (globals only) gets the
+    // platform's row.
+    vi.mocked(roleRepo.findOneByName).mockImplementation(async (name, organizationId) => {
+      if (name !== 'admin') return None;
+      if (organizationId === null) {
+        return Some(
+          makeRole(
+            'admin',
+            [Permission.fromDefinition({ action: 'manage', subject: 'all' })],
+            true,
+          ),
+        );
+      }
+      return Some(
+        makeRole('admin', [Permission.fromDefinition({ action: 'read', subject: 'Session' })]),
+      );
+    });
+
+    const ability = await factory.createForUser(
+      { id: 'user-1', role: 'admin' },
+      { organizationId: 'org-1' },
+    );
+
+    expect(roleRepo.findOneByName).toHaveBeenCalledTimes(1);
+    expect(roleRepo.findOneByName).toHaveBeenCalledWith('admin', null);
+    expect(ability.can('manage', 'all')).toBe(true);
   });
 
   it('falls back to the seeded system-role permissions when the role is not in the DB', async () => {
