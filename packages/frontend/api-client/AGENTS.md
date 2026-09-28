@@ -26,7 +26,7 @@ calls `heyApiSdk.<operation>` through `unwrap` / `unwrapBody` from
 
 ```
 src/
-├── generated/       # openapi-ts output: SDK, types, TanStack Query helpers
+├── generated/       # openapi-ts output: SDK and types
 ├── configure.ts     # hand-written: base URL, credentials, auth headers
 └── index.ts         # generated barrel
 ```

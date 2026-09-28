@@ -30,7 +30,7 @@ export function createCoreModule(config: CoreModuleConfig): ContainerModule {
     // cookie automatically (credentials: include). Whatever the auth client
     // returns from `getAuthHeaders()` is attached to every generated API
     // request as well, for a client that cannot rely on a cookie jar.
-    void applyApiClientConfig({
+    applyApiClientConfig({
       baseUrl: config.apiBaseUrl,
       credentials: 'include',
       headers: () => config.authClient.getAuthHeaders(),

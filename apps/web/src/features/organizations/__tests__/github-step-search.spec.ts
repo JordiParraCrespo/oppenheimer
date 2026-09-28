@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { githubCallbackSearchSchema } from '@/features/installations/lib/github-install';
+import { githubCallbackSearchSchema } from '../lib/onboarding-search';
 
 const parseInstallCallback = (search: Record<string, unknown>) =>
   githubCallbackSearchSchema.parse(search);

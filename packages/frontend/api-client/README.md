@@ -1,7 +1,7 @@
 # @oppenheimer/api-client
 
 Typed HTTP client for `apps/api`, **generated** from the API's OpenAPI schema.
-The generated client is `src/generated/` (SDK, types, TanStack Query options);
+The generated client is `src/generated/` (the SDK and its types);
 it is overwritten on every regeneration, so never edit it by hand.
 
 ## Regenerating
@@ -11,10 +11,9 @@ pnpm generate:api-client   # from the repo root
 ```
 
 This runs `@hey-api/openapi-ts` against `apps/api/openapi.json` (config in
-`openapi-ts.config.ts`). Output lands in `src/generated/` (SDK, types, TanStack
-Query `queryOptions` / `queryKeys`). Screens still go through
-`@oppenheimer/frontend-core`, `-consumer` and `-admin` wrappers so persist policy
-and entity mapping stay in one place.
+`openapi-ts.config.ts`). Output lands in `src/generated/`. Screens go through
+the repositories and query hooks of `@oppenheimer/frontend-core` and
+`-consumer`, so persist policy and entity mapping stay in one place.
 
 Regenerate after any change to an API endpoint or its Swagger decorators.
 
@@ -23,15 +22,15 @@ Every operation is named by one factory in the API
 `<UseCase>HttpController`, gives its use case (`FindHostsHttpController` is
 `findHosts`), and any other controller its method name. Two handlers on one
 name fail the document's generation, so the SDK never numbers a collision and
-a caller never falls back to a hand-written URL. There is one client; `pnpm
-arch` fails on a path into this package's `src/`.
+a caller never falls back to a hand-written URL. There is one client: the
+package exports the SDK and nothing that would call the API around it, and
+`pnpm arch` fails on a path into its `src/`.
 
 ## What's inside
 
 | Export                          | Contents                                                     |
 | ------------------------------- | ------------------------------------------------------------ |
 | `heyApiSdk`                     | One function per operation, returning `{ data, error, response }` |
-| `heyApiQuery`, `heyApiClient`   | The generated TanStack Query helpers and the fetch client    |
 | `applyApiClientConfig`          | Base URL, credentials and auth headers, set once at boot     |
 | `*ResponseDto`, `*Request`      | Every wire type the API names                                |
 

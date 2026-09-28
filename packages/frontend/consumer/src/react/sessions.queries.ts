@@ -12,7 +12,7 @@ import {
 import type { CreateSessionInput, SessionEntity } from '../modules/sessions/session.entity';
 import type { SessionStartProgress } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
-import { LIVE_POLL } from './live-poll';
+import { CLOSE_WATCH_MS, LIVE_POLL } from './live-poll';
 
 /**
  * Query key factory for the `sessions` feature, from the most generic (`all`)
@@ -34,14 +34,12 @@ export const sessionsKeys = {
  * and dies with the cache it keeps polling, and two clients never share one.
  *
  * A close is answered by the host, not by the request, so the row stays `open`
- * for a beat after Delete — the same "not settled, and nothing pushes it" as a
- * starting session, and the list polls for it the same way. An id leaves when
- * its row leaves the list, or after {@link CLOSE_WATCH_MS} for a host that is
- * offline and will answer only when it is back.
+ * for a beat after Delete — "not settled, and nothing pushes it", like a
+ * starting session, and the list polls for it on `LIVE_POLL.sessionClosing`.
+ * An id leaves when its row leaves the list, or after {@link CLOSE_WATCH_MS}
+ * for a host that is offline and will answer only when it is back.
  */
 const closeWatches = new WeakMap<QueryClient, Map<string, ReturnType<typeof setTimeout>>>();
-
-const CLOSE_WATCH_MS = 60_000;
 
 function closesOf(queryClient: QueryClient): Map<string, ReturnType<typeof setTimeout>> {
   let watches = closeWatches.get(queryClient);
@@ -110,11 +108,11 @@ export function useSessions<TData = SessionEntity[]>(
     },
     // The query's own rows, before any caller's `select`.
     refetchInterval: (query) =>
-      query.state.data?.some(
-        (session) => session.isProvisioning || closesOf(queryClient).has(session.id),
-      )
+      query.state.data?.some((session) => session.isProvisioning)
         ? LIVE_POLL.sessionStarting
-        : false,
+        : query.state.data?.some((session) => closesOf(queryClient).has(session.id))
+          ? LIVE_POLL.sessionClosing
+          : false,
     ...options,
   });
 }

@@ -1,9 +1,8 @@
+import { client } from './generated/client.gen';
+
 /**
- * Runtime config for the generated hey-api client.
- * Wired from `@oppenheimer/frontend` at app boot (base URL + auth headers).
- *
- * The generated module is created by `pnpm generate:api-client`. Until then
- * this file only types the seam.
+ * Runtime config for the generated client, applied by the kernel at app boot
+ * (base URL + auth headers).
  */
 export type AuthHeaders = Record<string, string> | Promise<Record<string, string>>;
 
@@ -15,12 +14,8 @@ export type ApiClientConfig = {
 
 let headersFn: (() => AuthHeaders) | undefined;
 
-export function getAuthHeaders(): AuthHeaders {
+function getAuthHeaders(): AuthHeaders {
   return headersFn?.() ?? {};
-}
-
-export function rememberHeaders(headers: () => AuthHeaders): void {
-  headersFn = headers;
 }
 
 let headersInterceptor: ((request: Request) => Promise<Request>) | undefined;
@@ -28,13 +23,13 @@ let headersInterceptor: ((request: Request) => Promise<Request>) | undefined;
 /**
  * Apply the base URL and the auth headers to the generated client. The cookie
  * rides on `credentials: 'include'`; whatever the auth client returns from
- * `getAuthHeaders()` is set on every request too, for a client that cannot
- * rely on a cookie jar. The interceptor is registered once, and reads the
- * remembered headers function on each request.
+ * `headers` is set on every request too, for a client that cannot rely on a
+ * cookie jar. The interceptor is registered once, and reads the remembered
+ * headers function on each request. Synchronous, so a repository called right
+ * after the app is created already sends both.
  */
-export async function applyApiClientConfig(config: ApiClientConfig): Promise<void> {
-  rememberHeaders(config.headers ?? (() => ({})));
-  const { client } = await import('./generated/client.gen');
+export function applyApiClientConfig(config: ApiClientConfig): void {
+  headersFn = config.headers;
   client.setConfig({
     baseUrl: config.baseUrl,
     credentials: config.credentials ?? 'include',

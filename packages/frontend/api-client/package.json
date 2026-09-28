@@ -23,7 +23,6 @@
     "@oppenheimer/tsconfig": "workspace:^",
     "@hey-api/client-fetch": "^0.13.1",
     "@hey-api/openapi-ts": "^0.99.0",
-    "@tanstack/react-query": "^5.102.8",
     "typescript": "^6.0.3"
   }
 }

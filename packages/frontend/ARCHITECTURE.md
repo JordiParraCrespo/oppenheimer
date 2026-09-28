@@ -228,6 +228,10 @@ in `packages/tsconfig/depcruise/`.
   package; a meeting point is a kernel contract.
 - `domain-knows-no-platform` — nothing imports a kit, `react-dom` or
   `@tanstack/react-router`.
+- `one-api-client` — the API is called through `@oppenheimer/api-client`'s
+  root, which exports `heyApiSdk` and nothing else that calls it; never a
+  path into its `src/`. The SDK's function names come from the API's
+  operation-id factory (`apps/api/src/openapi-document.ts`).
 
 `frontend-kit.cjs` (`web`):
 
