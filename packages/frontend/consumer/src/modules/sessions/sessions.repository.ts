@@ -4,7 +4,7 @@ import {
   type SessionCheckoutResponseDto,
   type SessionResponseDto,
 } from '@oppenheimer/api-client';
-import { AppError, MapApiError, toAppError } from '@oppenheimer/frontend-core';
+import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import { SESSION_IMAGE_MAX_BYTES } from '@oppenheimer/shared/protocol';
 import { injectable } from 'inversify';
 import {
@@ -117,12 +117,13 @@ export class SessionsRepository {
   async findAll(): Promise<SessionEntity[]> {
     const sessions: SessionEntity[] = [];
     for (let page = 1; ; page += 1) {
-      const { data, error } = await heyApiSdk.listSessions({
-        query: { page, limit: LIST_PAGE_LIMIT },
-      });
+      const data = await unwrapBody(
+        heyApiSdk.listSessions({ query: { page, limit: LIST_PAGE_LIMIT } }),
+        SessionsErrors.FETCH_LIST_FAILED,
+      );
       // An absent body is a failed read, not an empty collection — returning
       // `[]` would render "no sessions" over a request that never succeeded.
-      if (error || !data?.data) throw new AppError(SessionsErrors.FETCH_LIST_FAILED);
+      if (!data.data) throw new AppError(SessionsErrors.FETCH_LIST_FAILED);
       sessions.push(...data.data.map(toEntity));
       if (data.data.length === 0 || sessions.length >= data.meta.total) return sessions;
     }
@@ -131,19 +132,17 @@ export class SessionsRepository {
   /**
    * One session.
    *
-   * The failure keeps the response's status, which the other reads here do not
-   * need and this one does: the console's session route has to tell a mistyped
-   * or closed session id — a 404, and a destination that will never exist —
-   * from a read that failed and is worth retrying. `toAppError` is the same
-   * normaliser `MapApiError` uses, so a problem document the API sent still
-   * reaches the screen.
+   * The failure keeps the response's status, as every call here does, and this
+   * read leans on it: the console's session route has to tell a mistyped or
+   * closed session id — a 404, and a destination that will never exist — from
+   * a read that failed and is worth retrying.
    */
   @MapApiError(SessionsErrors.FETCH_ONE_FAILED)
   async findById(id: string): Promise<SessionEntity> {
-    const { data, error, response } = await heyApiSdk.getSession({ path: { id } });
-    if (error || !data) {
-      throw toAppError({ status: response?.status, body: error }, SessionsErrors.FETCH_ONE_FAILED);
-    }
+    const data = await unwrapBody(
+      heyApiSdk.getSession({ path: { id } }),
+      SessionsErrors.FETCH_ONE_FAILED,
+    );
     return toEntity(data);
   }
 
@@ -158,11 +157,13 @@ export class SessionsRepository {
    */
   @MapApiError(SessionsErrors.CREATE_FAILED)
   async create(input: CreateSessionInput, idempotencyKey: string): Promise<SessionEntity> {
-    const { data, error } = await heyApiSdk.createSession({
-      body: toRequest(input),
-      headers: { 'Idempotency-Key': idempotencyKey },
-    });
-    if (error || !data) throw new AppError(SessionsErrors.CREATE_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.createSession({
+        body: toRequest(input),
+        headers: { 'Idempotency-Key': idempotencyKey },
+      }),
+      SessionsErrors.CREATE_FAILED,
+    );
     return toEntity(data);
   }
 
@@ -177,11 +178,11 @@ export class SessionsRepository {
     const entries: SessionStartEntry[] = [];
     let afterSeq: number | undefined;
     for (let page = 0; page < MAX_START_LOG_PAGES; page += 1) {
-      const { data, error } = await heyApiSdk.listSessionEvents({
-        path: { id },
-        query: { limit: START_LOG_PAGE, afterSeq },
-      });
-      if (error || !data?.data) throw new AppError(SessionsErrors.FETCH_EVENTS_FAILED);
+      const data = await unwrapBody(
+        heyApiSdk.listSessionEvents({ path: { id }, query: { limit: START_LOG_PAGE, afterSeq } }),
+        SessionsErrors.FETCH_EVENTS_FAILED,
+      );
+      if (!data.data) throw new AppError(SessionsErrors.FETCH_EVENTS_FAILED);
       for (const raw of data.data) {
         const entry = toStartEntry(raw);
         if (!entry) continue;
@@ -196,24 +197,30 @@ export class SessionsRepository {
 
   @MapApiError(SessionsErrors.STOP_FAILED)
   async stop(id: string): Promise<SessionEntity> {
-    const { data, error } = await heyApiSdk.stopSession({ path: { id } });
-    if (error || !data) throw new AppError(SessionsErrors.STOP_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.stopSession({ path: { id } }),
+      SessionsErrors.STOP_FAILED,
+    );
     return toEntity(data);
   }
 
   /** Display only: the slug, the directory and the branch never change. */
   @MapApiError(SessionsErrors.RENAME_FAILED)
   async rename(id: string, name: string): Promise<SessionEntity> {
-    const { data, error } = await heyApiSdk.renameSession({ path: { id }, body: { name } });
-    if (error || !data) throw new AppError(SessionsErrors.RENAME_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.renameSession({ path: { id }, body: { name } }),
+      SessionsErrors.RENAME_FAILED,
+    );
     return toEntity(data);
   }
 
   /** To a project that holds the session's repository; nothing on the host moves. */
   @MapApiError(SessionsErrors.MOVE_FAILED)
   async move(id: string, projectId: string): Promise<SessionEntity> {
-    const { data, error } = await heyApiSdk.moveSession({ path: { id }, body: { projectId } });
-    if (error || !data) throw new AppError(SessionsErrors.MOVE_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.moveSession({ path: { id }, body: { projectId } }),
+      SessionsErrors.MOVE_FAILED,
+    );
     return toEntity(data);
   }
 
@@ -224,11 +231,13 @@ export class SessionsRepository {
    */
   @MapApiError(SessionsErrors.CLOSE_FAILED)
   async close(id: string, acceptUnpushedWork = false): Promise<SessionEntity> {
-    const { data, error } = await heyApiSdk.closeSession({
-      path: { id },
-      query: acceptUnpushedWork ? { acceptUnpushedWork } : undefined,
-    });
-    if (error || !data) throw new AppError(SessionsErrors.CLOSE_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.closeSession({
+        path: { id },
+        query: acceptUnpushedWork ? { acceptUnpushedWork } : undefined,
+      }),
+      SessionsErrors.CLOSE_FAILED,
+    );
     return toEntity(data);
   }
 
@@ -241,16 +250,10 @@ export class SessionsRepository {
    */
   @MapApiError(SessionsErrors.ATTACH_TICKET_FAILED)
   async issueAttachTicket(id: string, window = 0): Promise<AttachTicket> {
-    const { data, error, response } = await heyApiSdk.issueAttachTicket({
-      path: { id },
-      body: { window },
-    });
-    if (error || !data) {
-      throw toAppError(
-        { status: response?.status, body: error },
-        SessionsErrors.ATTACH_TICKET_FAILED,
-      );
-    }
+    const data = await unwrapBody(
+      heyApiSdk.issueAttachTicket({ path: { id }, body: { window } }),
+      SessionsErrors.ATTACH_TICKET_FAILED,
+    );
     return {
       ticket: data.ticket,
       url: data.url,
@@ -269,15 +272,9 @@ export class SessionsRepository {
   @MapApiError(SessionsErrors.PASTE_IMAGE_FAILED)
   async pasteImage(id: string, image: Blob, window = 0): Promise<void> {
     if (image.size > SESSION_IMAGE_MAX_BYTES) throw new AppError(SessionsErrors.IMAGE_TOO_LARGE);
-    const { error, response } = await heyApiSdk.pasteSessionImage({
-      path: { id },
-      body: { file: image, window },
-    });
-    if (error) {
-      throw toAppError(
-        { status: response?.status, body: error },
-        SessionsErrors.PASTE_IMAGE_FAILED,
-      );
-    }
+    await unwrap(
+      heyApiSdk.pasteSessionImage({ path: { id }, body: { file: image, window } }),
+      SessionsErrors.PASTE_IMAGE_FAILED,
+    );
   }
 }

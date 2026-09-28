@@ -1,7 +1,7 @@
 import { heyApiSdk } from '@oppenheimer/api-client';
 import type { ClientFeatureFlags } from '@oppenheimer/shared/feature-flags';
 import { injectable } from 'inversify';
-import { toAppError } from '../core/errors';
+import { unwrapBody } from '../core/errors';
 import type { FeatureFlagsClientContext } from './feature-flags.client';
 import { FeatureFlagsErrors } from './feature-flags.errors';
 
@@ -15,10 +15,9 @@ import { FeatureFlagsErrors } from './feature-flags.errors';
 @injectable()
 export class FeatureFlagsRepository {
   async get(context: FeatureFlagsClientContext): Promise<ClientFeatureFlags> {
-    const { data, error, response } = await heyApiSdk.getClientFeatureFlags({ query: context });
-    if (error !== undefined || !data) {
-      throw toAppError({ status: response?.status, body: error }, FeatureFlagsErrors.FETCH_FAILED);
-    }
-    return data;
+    return unwrapBody(
+      heyApiSdk.getClientFeatureFlags({ query: context }),
+      FeatureFlagsErrors.FETCH_FAILED,
+    );
   }
 }

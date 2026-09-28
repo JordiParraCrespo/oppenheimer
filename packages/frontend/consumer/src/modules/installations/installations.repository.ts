@@ -5,7 +5,7 @@ import {
   type RepositoryBranchResponseDto,
   type RepositoryResponseDto,
 } from '@oppenheimer/api-client';
-import { AppError, MapApiError } from '@oppenheimer/frontend-core';
+import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import { BranchEntity, InstallationEntity, RepositoryEntity } from './installation.entity';
 import { InstallationsErrors } from './installations.errors';
@@ -53,13 +53,13 @@ function toRepository(data: RepositoryDto): RepositoryEntity {
 export class InstallationsRepository {
   @MapApiError(InstallationsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<InstallationEntity[]> {
-    const { data, error } = await heyApiClient.get<{ 200: InstallationDto[] }>({
-      url: INSTALLATIONS_URL,
-    });
     // An absent body is a failed read, not an empty list — returning `[]` would
     // render "GitHub is not connected" over a request that never succeeded,
     // and send somebody to reinstall an App they already have.
-    if (error || !data) throw new AppError(InstallationsErrors.FETCH_LIST_FAILED);
+    const data = await unwrapBody(
+      heyApiClient.get<{ 200: InstallationDto[] }>({ url: INSTALLATIONS_URL }),
+      InstallationsErrors.FETCH_LIST_FAILED,
+    );
     return data.map(toEntity);
   }
 
@@ -73,30 +73,33 @@ export class InstallationsRepository {
    */
   @MapApiError(InstallationsErrors.CONNECT_FAILED)
   async connect(githubInstallationId: number, code: string): Promise<InstallationEntity> {
-    const { data, error } = await heyApiClient.post<{ 201: InstallationDto }>({
-      url: INSTALLATIONS_URL,
-      body: { githubInstallationId, code },
-    });
-    if (error || !data) throw new AppError(InstallationsErrors.CONNECT_FAILED);
+    const data = await unwrapBody(
+      heyApiClient.post<{ 201: InstallationDto }>({
+        url: INSTALLATIONS_URL,
+        body: { githubInstallationId, code },
+      }),
+      InstallationsErrors.CONNECT_FAILED,
+    );
     return toEntity(data);
   }
 
   @MapApiError(InstallationsErrors.REMOVE_FAILED)
   async remove(id: string): Promise<void> {
-    const { error } = await heyApiClient.delete({
-      url: `${INSTALLATIONS_URL}/{id}`,
-      path: { id },
-    });
-    if (error) throw new AppError(InstallationsErrors.REMOVE_FAILED);
+    await unwrap(
+      heyApiClient.delete({ url: `${INSTALLATIONS_URL}/{id}`, path: { id } }),
+      InstallationsErrors.REMOVE_FAILED,
+    );
   }
 
   @MapApiError(InstallationsErrors.FETCH_REPOSITORIES_FAILED)
   async repositories(installationId: string): Promise<RepositoryEntity[]> {
-    const { data, error } = await heyApiClient.get<{ 200: RepositoryDto[] }>({
-      url: `${INSTALLATIONS_URL}/{id}/repositories`,
-      path: { id: installationId },
-    });
-    if (error || !data) throw new AppError(InstallationsErrors.FETCH_REPOSITORIES_FAILED);
+    const data = await unwrapBody(
+      heyApiClient.get<{ 200: RepositoryDto[] }>({
+        url: `${INSTALLATIONS_URL}/{id}/repositories`,
+        path: { id: installationId },
+      }),
+      InstallationsErrors.FETCH_REPOSITORIES_FAILED,
+    );
     return data.map(toRepository);
   }
 
@@ -109,10 +112,10 @@ export class InstallationsRepository {
    */
   @MapApiError(InstallationsErrors.FETCH_BRANCHES_FAILED)
   async branches(installationId: string, githubRepoId: number): Promise<BranchEntity[]> {
-    const { data, error } = await heyApiSdk.listRepositoryBranches({
-      path: { id: installationId, githubRepoId },
-    });
-    if (error || !data) throw new AppError(InstallationsErrors.FETCH_BRANCHES_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.listRepositoryBranches({ path: { id: installationId, githubRepoId } }),
+      InstallationsErrors.FETCH_BRANCHES_FAILED,
+    );
     return data.map(toBranch);
   }
 }

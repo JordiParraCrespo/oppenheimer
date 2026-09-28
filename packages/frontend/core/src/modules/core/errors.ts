@@ -105,3 +105,44 @@ export function toAppError(error: unknown, fallback: ErrorDefinition): AppError 
     cause: error,
   });
 }
+
+/** What a generated hey-api SDK call resolves to: it never throws. */
+export interface SdkResult<T> {
+  data?: T;
+  error?: unknown;
+  response?: Response;
+}
+
+/**
+ * A generated SDK call's answer, unwrapped: the body, or the failure as an
+ * {@link AppError} built on `fallback` that keeps the problem document the API
+ * sent and the response's status.
+ *
+ * Throwing `new AppError(fallback)` instead drops both, and a failure with no
+ * status reads to the error resolver as a request that never reached the
+ * server — so every refusal the API explains ("that host is offline") would
+ * render as "check your connection". A network failure has no response, and so
+ * keeps no status, which is the one case that sentence is right for.
+ */
+export async function unwrap<T>(
+  call: Promise<SdkResult<T>> | SdkResult<T>,
+  fallback: ErrorDefinition,
+): Promise<T> {
+  const { data, error, response } = await call;
+  if (error !== undefined) throw toAppError({ status: response?.status, body: error }, fallback);
+  return data as T;
+}
+
+/**
+ * {@link unwrap}, for a call whose success is a body. An empty one is a failed
+ * read, not an empty result: returning `[]` or `{}` would render "nothing here"
+ * over a request that never succeeded.
+ */
+export async function unwrapBody<T>(
+  call: Promise<SdkResult<T>> | SdkResult<T>,
+  fallback: ErrorDefinition,
+): Promise<NonNullable<T>> {
+  const data = await unwrap(call, fallback);
+  if (data === undefined || data === null) throw new AppError(fallback);
+  return data as NonNullable<T>;
+}
