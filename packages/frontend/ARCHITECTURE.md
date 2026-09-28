@@ -255,7 +255,10 @@ in `packages/tsconfig/depcruise/`.
 
 `pnpm check:structure` (`scripts/check-frontend-structure.mjs`) checks the
 shapes the cruiser cannot: feature names against the module lists, kind
-directories, the route line cap, app files the kit already ships, and that
+directories, the route line cap, app files the kit already ships, a query a
+screen holds for one child, two components in one app file, TanStack's own
+`useQuery` in a package's React layer (the core's shares entities), a
+`refetchInterval` anywhere but the product package's `live-poll.ts`, and that
 every package here carries a `README.md`, an `AGENTS.md` linking a rule file,
 and — for the tier and the kits — an `ARCHITECTURE.md`.
 
