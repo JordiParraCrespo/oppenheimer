@@ -9,7 +9,6 @@ import { HostsModule } from '../hosts/hosts.module';
 import { InboundEventsModule } from '../inbound-events/inbound-events.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { ProjectsModule } from '../projects/projects.module';
-import { SessionsModule } from '../sessions/sessions.module';
 import { UsersModule } from '../users/user.module';
 import { AutomationAccountErasure } from './application/automation-account-erasure.resolver';
 import { AutomationLimitsResolver } from './application/automation-limits.resolver';
@@ -151,7 +150,9 @@ const queryHandlers: Provider[] = [
     GithubModule,
     OrganizationsModule,
     InboundEventsModule,
-    SessionsModule,
+    // Sessions are started and stopped by dispatching their own commands on
+    // the bus (`CreateSessionCommand`, `StopSessionCommand`); nothing of the
+    // sessions module is injected here, so it is not imported.
   ],
   controllers: [...httpControllers],
   providers: [
