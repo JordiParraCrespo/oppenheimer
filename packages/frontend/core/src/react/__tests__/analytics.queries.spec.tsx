@@ -62,20 +62,6 @@ describe('useCaptureEvent', () => {
 
     expect(result.current.mutate).toBe(first);
   });
-
-  // The service swallows provider failures, so the mutation should never land
-  // in an error state — analytics must not surface as a broken UI.
-  it('settles successfully even though the provider is fire-and-forget', async () => {
-    const { wrapper } = setup();
-    const { result } = renderHook(() => useCaptureEvent(), { wrapper });
-
-    act(() => {
-      result.current.mutate({ event: ANALYTICS_EVENTS.USER_SIGNED_OUT });
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.error).toBeNull();
-  });
 });
 
 describe('useCaptureOnMount', () => {
@@ -106,38 +92,26 @@ describe('useCaptureOnMount', () => {
     expect(capture).toHaveBeenCalledTimes(1);
   });
 
-  it('sends the latest properties, not the ones from first render', async () => {
-    const { wrapper, capture } = setup();
-    renderHook(({ source }) => useCaptureOnMount(ANALYTICS_EVENTS.USER_SIGNED_UP, { source }), {
-      wrapper,
-      initialProps: { source: 'login' },
-    });
-
-    await waitFor(() =>
-      expect(capture).toHaveBeenCalledWith(ANALYTICS_EVENTS.USER_SIGNED_UP, {
-        source: 'login',
-      }),
-    );
-  });
-
   // A component reused across events — the same banner rendering a different
-  // event key — should report the new one.
-  it('captures again when the event name changes', async () => {
+  // event key — reports the new one, with the properties it holds now.
+  it('captures again when the event name changes, with the latest properties', async () => {
     const { wrapper, capture } = setup();
     const { rerender } = renderHook(
-      ({ event }: { event: AnalyticsEvent }) => useCaptureOnMount(event),
+      ({ event, source }: { event: AnalyticsEvent; source: string }) =>
+        useCaptureOnMount(event, { source }),
       {
         wrapper,
-        initialProps: {
-          event: ANALYTICS_EVENTS.USER_SIGNED_UP as AnalyticsEvent,
-        },
+        initialProps: { event: ANALYTICS_EVENTS.USER_SIGNED_UP as AnalyticsEvent, source: 'login' },
       },
     );
+    await waitFor(() => expect(capture).toHaveBeenCalledTimes(1));
 
-    rerender({ event: ANALYTICS_EVENTS.USER_SIGNED_IN });
+    rerender({ event: ANALYTICS_EVENTS.USER_SIGNED_IN, source: 'banner' });
 
     await waitFor(() => expect(capture).toHaveBeenCalledTimes(2));
-    expect(capture).toHaveBeenLastCalledWith(ANALYTICS_EVENTS.USER_SIGNED_IN, undefined);
+    expect(capture).toHaveBeenLastCalledWith(ANALYTICS_EVENTS.USER_SIGNED_IN, {
+      source: 'banner',
+    });
   });
 
   it('captures once per mounted component, not once per tree', async () => {

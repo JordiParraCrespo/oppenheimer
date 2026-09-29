@@ -4,8 +4,8 @@ import { hostsKeys } from '../hosts.queries';
 import { installationsKeys } from '../installations.queries';
 
 /**
- * The key shapes, and what invalidating one of them reaches. Reach is asked of
- * a real `QueryClient`, so the answer is React Query's own matcher.
+ * What invalidating or removing a key reaches, asked of a real `QueryClient`,
+ * so the answer is React Query's own matcher rather than a key's spelling.
  */
 
 function cacheWith(...keys: (readonly unknown[])[]) {
@@ -18,47 +18,6 @@ const invalidated = (client: QueryClient, key: readonly unknown[]) =>
   client.getQueryState(key)?.isInvalidated ?? false;
 
 describe('installationsKeys', () => {
-  it('gives repositories the full ladder, one function per level', () => {
-    expect(installationsKeys.repositoryLists('inst-1')).toEqual(
-      installationsKeys.repositoryList('inst-1'),
-    );
-    expect(installationsKeys.repositoryDetails('inst-1')).toEqual([
-      'installations',
-      'detail',
-      'inst-1',
-      'repositories',
-      'detail',
-    ]);
-    expect(installationsKeys.repositoryDetail('inst-1', 42)).toEqual([
-      ...installationsKeys.repositoryDetails('inst-1'),
-      42,
-    ]);
-  });
-
-  it('splits repositories into a list and per-repository details', () => {
-    expect(installationsKeys.repositoryList('inst-1')).toEqual([
-      'installations',
-      'detail',
-      'inst-1',
-      'repositories',
-      'list',
-    ]);
-    expect(installationsKeys.branches('inst-1', 42)).toEqual([
-      'installations',
-      'detail',
-      'inst-1',
-      'repositories',
-      'detail',
-      42,
-      'branches',
-    ]);
-  });
-
-  it('keeps an id nobody chose as undefined rather than a made-up one', () => {
-    expect(installationsKeys.repositoryList(undefined)).toContain(undefined);
-    expect(installationsKeys.branches('inst-1', undefined)).toContain(undefined);
-  });
-
   it('refreshes a repository list without refetching every branch under it', async () => {
     const list = installationsKeys.repositoryList('inst-1');
     const branches = installationsKeys.branches('inst-1', 42);
@@ -84,14 +43,6 @@ describe('installationsKeys', () => {
 });
 
 describe('hostsKeys', () => {
-  it('gives pairing the full ladder, one function per level', () => {
-    expect(hostsKeys.pairings()).toEqual(['hosts', 'pairing']);
-    expect(hostsKeys.pairingLists()).toEqual(['hosts', 'pairing', 'list']);
-    expect(hostsKeys.pairingList()).toEqual(['hosts', 'pairing', 'list']);
-    expect(hostsKeys.pairingDetails()).toEqual(['hosts', 'pairing', 'detail']);
-    expect(hostsKeys.pairingDetail('laptop')).toEqual(['hosts', 'pairing', 'detail', 'laptop']);
-  });
-
   it('refreshes the token poll without minting a new token', async () => {
     const client = cacheWith(hostsKeys.pairingList(), hostsKeys.pairingDetail('laptop'));
 

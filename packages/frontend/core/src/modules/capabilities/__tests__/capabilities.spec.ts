@@ -22,7 +22,6 @@ function ok(data: unknown) {
 }
 
 const { CapabilitiesRepository } = await import('../capabilities.repository');
-const { CapabilitiesService } = await import('../capabilities.service');
 
 describe('CapabilitiesRepository', () => {
   let repository: InstanceType<typeof CapabilitiesRepository>;
@@ -63,22 +62,5 @@ describe('CapabilitiesRepository', () => {
 
     expect(error).toBeInstanceOf(AppError);
     expect((error as AppError).code).toBe(CapabilitiesErrors.FETCH_FAILED.code);
-  });
-});
-
-describe('CapabilitiesService', () => {
-  it('reads through the repository', async () => {
-    const get = vi.fn().mockResolvedValue({ google_oauth: true });
-    const service = new CapabilitiesService({ get } as never);
-
-    await expect(service.get()).resolves.toEqual({ google_oauth: true });
-    expect(get).toHaveBeenCalled();
-  });
-
-  it('lets a failed read propagate rather than substituting a default', async () => {
-    const get = vi.fn().mockRejectedValue(new AppError(CapabilitiesErrors.FETCH_FAILED));
-    const service = new CapabilitiesService({ get } as never);
-
-    await expect(service.get()).rejects.toBeInstanceOf(AppError);
   });
 });

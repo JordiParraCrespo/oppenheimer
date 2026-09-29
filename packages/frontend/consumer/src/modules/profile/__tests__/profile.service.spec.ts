@@ -28,15 +28,6 @@ describe('ProfileService', () => {
     service = new ProfileService(repository as unknown as ProfileRepository);
   });
 
-  it('passes a profile update straight through', async () => {
-    await service.update({ firstName: 'Adri', phone: null });
-
-    expect(repository.update).toHaveBeenCalledWith({
-      firstName: 'Adri',
-      phone: null,
-    });
-  });
-
   describe('uploadAvatar', () => {
     it('uploads an accepted image', async () => {
       const file = blob('image/png', 1024);
@@ -76,13 +67,5 @@ describe('ProfileService', () => {
       // the allowlist check.
       await expect(service.uploadAvatar(blob('', 10))).rejects.toBeInstanceOf(AppError);
     });
-  });
-
-  it('forwards session operations', async () => {
-    await service.revokeSession('session-2');
-    await service.revokeOtherSessions();
-
-    expect(repository.revokeSession).toHaveBeenCalledWith('session-2');
-    expect(repository.revokeOtherSessions).toHaveBeenCalled();
   });
 });

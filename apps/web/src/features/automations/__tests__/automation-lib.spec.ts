@@ -1,4 +1,9 @@
-import { AutomationEntity, type AutomationTrigger } from '@oppenheimer/frontend-consumer';
+import {
+  AutomationEntity,
+  type AutomationTrigger,
+  type HostEntity,
+  ProjectEntity,
+} from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
 import {
@@ -200,6 +205,40 @@ describe('the draft', () => {
   });
 
   it('prefills a new automation from the project it was opened for', () => {
+    const project = (id: string, hostId: string | null) =>
+      new ProjectEntity(
+        id,
+        id,
+        id,
+        false,
+        hostId,
+        'codex',
+        [
+          {
+            id: `${id}-r`,
+            installationId: 'i-1',
+            githubRepoId: '101',
+            fullName: 'acme/mobile',
+            isDefault: true,
+            baseBranch: 'main',
+          },
+        ],
+        new Date(NOW),
+        new Date(NOW),
+      );
+    const hosts = [{ id: 'h-9' }] as unknown as HostEntity[];
+
+    expect(emptyDraft([project('p-1', null), project('p-2', 'h-2')], hosts, 'p-2')).toMatchObject({
+      projectId: 'p-2',
+      hostId: 'h-2',
+      agent: 'codex',
+      repositoryKeys: ['i-1:101'],
+    });
+    // A project with no default host takes the first host there is.
+    expect(emptyDraft([project('p-1', null)], hosts, 'p-1').hostId).toBe('h-9');
+  });
+
+  it('opens with nothing to send when there is no project', () => {
     const empty = emptyDraft([], [], undefined);
     expect(empty).toMatchObject({ projectId: null, hostId: null, agent: 'claude-code' });
     expect(toCreateInput(empty, { name: 'x', prompt: 'y' })).toBeNull();

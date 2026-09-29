@@ -30,7 +30,6 @@ describe('shouldDehydrateQuery', () => {
   it('persists ordinary feature queries', () => {
     expect(shouldDehydrateQuery(query(organizationsList))).toBe(true);
     expect(shouldDehydrateQuery(query(usersKeys.me()))).toBe(true);
-    expect(shouldDehydrateQuery(query(organizationsList))).toBe(true);
   });
 
   it('never persists the auth session or credential data', () => {

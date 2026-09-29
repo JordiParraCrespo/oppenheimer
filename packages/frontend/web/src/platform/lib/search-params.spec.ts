@@ -14,6 +14,21 @@ describe('search params', () => {
     expect(schema.parse({ on: true, page: 3 })).toEqual({ on: true, page: 3 });
   });
 
+  // A link writes `1` or `true`; the router hands back `true`. Nothing else is on.
+  it.each([
+    ['1', true],
+    [1, true],
+    ['true', true],
+    [true, true],
+    ['0', undefined],
+    ['false', undefined],
+    [false, undefined],
+    ['yes', undefined],
+    [undefined, undefined],
+  ])('reads the flag %j as %j', (on, expected) => {
+    expect(schema.parse({ on }).on).toBe(expected);
+  });
+
   it('reads anything else as absent', () => {
     expect(schema.parse({ q: '', on: 'yes', page: '0' })).toEqual({});
     expect(schema.parse({ q: 42, on: 0, page: 'two' })).toEqual({});

@@ -11,8 +11,7 @@ import { CONSUMER_CONFIG } from '../../../config';
  * `product/versions/mvp/01-protocol.md` decides the wire: PTY bytes as binary
  * WebSocket frames, control messages as JSON on the same socket, the browser
  * acking consumed bytes. This interface is that shape with the socket left
- * out, so the screen holds a stream and never a socket — and so the replay in
- * `fake-session-stream.ts` and the real transport below are interchangeable.
+ * out, so the screen holds a stream and never a socket.
  */
 
 /**

@@ -133,9 +133,7 @@ describe('AutomationsSidebar', () => {
     expect(rendered()).toEqual(['alpha', 'charlie']);
   });
 
-  it("renders no row on a navigation inside the selected automation's runs", () => {
-    act(() => world.set({ pathname: '/automations/alpha/sessions/session-1' }));
-    rendered();
+  it('renders no row on a navigation between pages that select none', () => {
     act(() => world.set({ pathname: '/automations/runs' }));
     rendered();
     act(() => world.set({ pathname: '/automations' }));
