@@ -17,59 +17,107 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * - Grok's stops were its levels of the same names, and OpenCode took none, so
  *   neither has a row to change.
  *
- * Both columns are free text, so no constraint changes. Automation revisions
- * are immutable history, but a revision is also what the next run launches
- * from, so it is rewritten like a session: the run it starts thinks as hard as
- * the last one did.
+ * Three places hold a launch's effort, and all three are rewritten: the
+ * session's projection (`work_session.launchEffort`), the `session.requested`
+ * entry it is folded from (a replay of the log must land on the same level),
+ * and the automation revision the next run launches from. Revisions are
+ * immutable history, but a run started from one thinks as hard as the last.
+ *
+ * `down()` restores every rewritten value exactly. The mapping alone could not:
+ * Codex's `minimal` and `low` both become `low`. So `up()` keeps each original
+ * in `effort_level_backup`, keyed by the table and the row it came from, and
+ * `down()` puts them back and drops it. A value written after this migration
+ * is already in the new vocabulary and is left alone. The table is dropped by
+ * the first migration that no longer needs to roll back past this one.
  */
 export class EffortsAsCliLevels1791000000000 implements MigrationInterface {
   name = 'EffortsAsCliLevels1791000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await remap(queryRunner, UP);
+    await queryRunner.query(
+      `CREATE TABLE effort_level_backup (
+        source character varying(32) NOT NULL,
+        id uuid NOT NULL,
+        effort character varying(16) NOT NULL,
+        CONSTRAINT "PK_effort_level_backup" PRIMARY KEY (source, id)
+      )`,
+    );
+    const agents = Object.keys(REMAP);
+    for (const { source, value, agent, rows } of PLACES) {
+      await queryRunner.query(
+        `INSERT INTO effort_level_backup (source, id, effort)
+         SELECT '${source}', id, ${value} FROM "${source}"
+         WHERE ${rows} AND ${agent} = ANY($1) AND ${value} IS NOT NULL`,
+        [agents],
+      );
+    }
+    for (const [agent, levels] of Object.entries(REMAP)) {
+      const params: string[] = [agent];
+      const cases = Object.entries(levels).map(([from, to]) => {
+        params.push(from, to);
+        return `WHEN $${params.length - 1}::text THEN $${params.length}::text`;
+      });
+      for (const { source, value, agent: agentOf, rows, set } of PLACES) {
+        await queryRunner.query(
+          `UPDATE "${source}" SET ${set(`CASE ${value} ${cases.join(' ')} ELSE ${value} END`)}
+           WHERE ${rows} AND ${agentOf} = $1 AND ${value} IS NOT NULL`,
+          params,
+        );
+      }
+    }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await remap(queryRunner, DOWN);
+    for (const { source, set } of PLACES) {
+      await queryRunner.query(
+        `UPDATE "${source}" AS target SET ${set('backup.effort')}
+         FROM effort_level_backup AS backup
+         WHERE backup.source = '${source}' AND backup.id = target.id`,
+      );
+    }
+    await queryRunner.query('DROP TABLE effort_level_backup');
   }
 }
 
-type Remap = Record<string, Record<string, string>>;
-
-const UP: Remap = {
+/** Each old stop, per agent, as the level it ran at. */
+const REMAP: Record<string, Record<string, string>> = {
   'claude-code': { minimal: 'low', low: 'medium', medium: 'high', high: 'xhigh', max: 'max' },
   codex: { minimal: 'low', max: 'xhigh' },
 };
 
-// Back to the stops, through the same mapping read the other way. A level the
-// stops had no way to ask for (Claude's `max` apart, Codex's `ultra`) goes to
-// the nearest stop; Codex's `minimal` does not come back, because it never ran.
-const DOWN: Remap = {
-  'claude-code': { low: 'minimal', medium: 'low', high: 'medium', xhigh: 'high', max: 'max' },
-  codex: { xhigh: 'max', max: 'max', ultra: 'max' },
-};
-
 /**
- * One `UPDATE` per table, every value at once through a `CASE`, so a value
- * rewritten into another's old name (Claude's `low` becoming `medium`) is not
- * rewritten a second time.
+ * Where a launch's effort is stored: the expression that reads it, the one that
+ * reads the row's agent, which rows of the table carry a launch at all, and the
+ * assignment that writes it. The log keeps both inside the `session.requested`
+ * payload.
  */
-async function remap(queryRunner: QueryRunner, mapping: Remap): Promise<void> {
-  for (const [table, column] of [
-    ['work_session', 'launchEffort'],
-    ['automation_revision', 'effort'],
-  ] as const) {
-    for (const [agent, levels] of Object.entries(mapping)) {
-      const params: string[] = [agent];
-      const cases = Object.entries(levels).map(([from, to]) => {
-        params.push(from, to);
-        return `WHEN $${params.length - 1} THEN $${params.length}`;
-      });
-      await queryRunner.query(
-        `UPDATE "${table}" SET "${column}" = CASE "${column}" ${cases.join(' ')} ELSE "${column}" END
-         WHERE agent = $1 AND "${column}" IS NOT NULL`,
-        params,
-      );
-    }
-  }
-}
+const PLACES: {
+  source: string;
+  value: string;
+  agent: string;
+  rows: string;
+  set: (expression: string) => string;
+}[] = [
+  {
+    source: 'work_session',
+    value: '"launchEffort"',
+    agent: 'agent',
+    rows: 'TRUE',
+    set: (expression) => `"launchEffort" = ${expression}`,
+  },
+  {
+    source: 'automation_revision',
+    value: 'effort',
+    agent: 'agent',
+    rows: 'TRUE',
+    set: (expression) => `effort = ${expression}`,
+  },
+  {
+    source: 'work_session_event',
+    value: "(payload->'launch'->>'effort')",
+    agent: "(payload->>'agent')",
+    rows: "kind = 'session.requested'",
+    set: (expression) =>
+      `payload = jsonb_set(payload, '{launch,effort}', to_jsonb((${expression})::text))`,
+  },
+];

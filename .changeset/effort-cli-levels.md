@@ -24,10 +24,13 @@ Effort is each CLI's own levels, per model, instead of five product stops.
 - **Runner:** the generated launch table's effort is keyed by model and then
   level, with each agent's default model, and a level's environment is merged
   with the permission level's.
-- **API:** a session records only a level its model offers. A migration
-  rewrites stored efforts to the level each session and automation revision
-  already ran at (Claude Code's stops were shifted one level up; Codex's Max
-  ran `xhigh`).
+- **API:** a session and an automation revision record only a level their
+  model offers (a revision is judged whole, so a model switch drops a level
+  the new model lacks). A migration rewrites stored efforts — the session
+  projection, its `session.requested` entry and automation revisions — to
+  the level each already ran at (Claude Code's stops were shifted one level
+  up; Codex's Max ran `xhigh`), keeping the originals so `down()` restores
+  them exactly.
 - **Console:** the slider draws the model's levels, starts on its default and
   sends nothing until moved; a pick is remembered per agent, and one the model
   lacks lands on the nearest level below.

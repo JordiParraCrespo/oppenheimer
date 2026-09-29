@@ -10,6 +10,7 @@ import type {
   AutomationPausedReason,
 } from '@oppenheimer/shared/automations';
 import type { AutomationRevisionProps, AutomationTriggerProps } from './automation.types';
+import { automationEffortFor } from './automation-agent.policy';
 import { nextFireOf } from './trigger-config.policy';
 
 export interface AutomationProps {
@@ -94,7 +95,17 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
         projectId: props.projectId,
         ownerUserId: props.ownerUserId,
         name: props.name.trim(),
-        revision: { ...props.revision, id: randomUUID(), number: 1, createdAt: props.now },
+        revision: {
+          ...props.revision,
+          effort: automationEffortFor(
+            props.revision.agent,
+            props.revision.model,
+            props.revision.effort,
+          ),
+          id: randomUUID(),
+          number: 1,
+          createdAt: props.now,
+        },
         triggers: props.triggers,
         pausedAt: props.active ? null : props.now,
         pausedReason: props.active ? null : 'user',
@@ -170,9 +181,10 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     if (changes.maxRunsPerHour !== undefined) this.props.maxRunsPerHour = changes.maxRunsPerHour;
     if (changes.revision && this.revisionDiffers(changes.revision)) {
       const current = this.props.revision;
+      const next = { ...current, ...changes.revision };
       this.props.revision = {
-        ...current,
-        ...changes.revision,
+        ...next,
+        effort: automationEffortFor(next.agent, next.model, next.effort),
         id: randomUUID(),
         number: current.number + 1,
         createdByUserId: by,
