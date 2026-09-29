@@ -147,6 +147,10 @@
     "ended": {
       "forbidden": "No tienes acceso al terminal de esta sesión.",
       "refused": "El host se ha negado a abrir este terminal."
+    },
+    "starting": {
+      "title": "Esperando al agente",
+      "description": "La sesión está en marcha. El agente dibuja su primera pantalla en cuanto termina de arrancar."
     }
   },
   "sidebar": {
