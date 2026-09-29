@@ -203,3 +203,37 @@ func TestPumpChanWritesTextAndStopsOnDone(t *testing.T) {
 		t.Fatal("PumpChan did not stop when done closed")
 	}
 }
+
+func TestFailedWriteReportsCtxOnceItIsDone(t *testing.T) {
+	cause := errors.New("use of closed network connection")
+	cancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+	expired, cancelExpired := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancelExpired()
+
+	for _, tc := range []struct {
+		name   string
+		ctx    context.Context
+		kind   error
+		want   error
+		prefix string
+	}{
+		{"live ctx, ping", context.Background(), ErrPing, ErrPing, "ping: "},
+		{"live ctx, write", context.Background(), ErrWrite, ErrWrite, "write: "},
+		{"cancelled ctx", cancelled, ErrPing, context.Canceled, ""},
+		{"expired ctx", expired, ErrWrite, context.DeadlineExceeded, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := failedWrite(tc.ctx, cause, tc.kind)
+			if !errors.Is(err, tc.want) {
+				t.Fatalf("failedWrite = %v, want %v", err, tc.want)
+			}
+			if tc.prefix != "" && (!errors.Is(err, cause) || !strings.HasPrefix(err.Error(), tc.prefix)) {
+				t.Fatalf("failedWrite = %q, want %q wrapping the cause", err, tc.prefix)
+			}
+			if tc.prefix == "" && (errors.Is(err, ErrPing) || errors.Is(err, ErrWrite)) {
+				t.Fatalf("failedWrite = %v, want ctx's error alone", err)
+			}
+		})
+	}
+}
