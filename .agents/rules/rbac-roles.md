@@ -261,9 +261,10 @@ calls them through the `adminClient()` / `organizationClient()` client plugins,
   org-scoped application role — the tenant `owner` system role for a Better
   Auth owner/admin, `user` for a member in the same breath —
   `ProvisionPersonalWorkspaceCommandHandler` for the workspace sign-up gives,
-  `InvitationsService.accept` for a workspace someone joins, and
-  `OrganizationsService.create` for one the caller makes (which also
-  provisions the "General" workspace) — so "you are a member" and "you may work
+  the `accept-invitation` handler for a workspace someone joins, and the
+  `create-organization` handler for one the caller makes (which also
+  provisions the "General" workspace), all through `MembershipAccessPolicy`
+  (`organizations/application/membership-access.policy.ts`) — so "you are a member" and "you may work
   here" are never set separately. `owner` grants organization resources only
   (Organization/Member/Invitation/Workspace/Role, conditioned on
   `${activeOrganizationId}`) and never `manage all` or `User`: assigned
@@ -283,14 +284,14 @@ calls them through the `adminClient()` / `organizationClient()` client plugins,
   CASL-guarded endpoints (`/v1/organizations`, `/v1/organizations/:id/members`,
   `/v1/organizations/:id/invitations` + `/v1/invitations`, `/v1/workspaces`,
   `/v1/admin/users`) so they land in the generated `@oppenheimer/api-client`. These are
-  **delegating façades**: the controllers/services call `auth.api.*` (via
-  `auth/infrastructure/better-auth.util.ts` — `betterAuthHeaders` + `invokeBetterAuth`) rather
-  than writing the tables, so Better Auth stays the single source of truth.
-  There is no app-owned aggregate, but the module contract still applies: the
-  target is a port plus a gateway in `infrastructure/` and one use-case slice
-  per operation. Both modules still carry the pre-contract
-  controller → service → `auth.api` layout and are being migrated — add a new
-  operation as a slice, never to the old service (see `apps/api/AGENTS.md`).
+  **delegating façades**: their gateways call `auth.api.*` (via
+  `auth/infrastructure/better-auth.util.ts` — `betterAuthHeaders` + the
+  module's `betterAuthInvoker`) rather than writing the tables, so Better Auth
+  stays the single source of truth. There is no app-owned aggregate, but the
+  module contract still applies: a port plus a gateway in `infrastructure/`
+  (`admin-auth`, and `organization-auth`, `invitation-auth`, `workspace-auth`)
+  and one use-case slice per operation. A new operation is a new slice (see
+  `apps/api/AGENTS.md`).
   Impersonation forwards Better Auth's `Set-Cookie` to the client.
 - **Workspaces = teams** — modelled on the org plugin's teams feature
   (`team` / `teamMember`).

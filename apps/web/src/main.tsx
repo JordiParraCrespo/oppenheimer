@@ -8,7 +8,7 @@ import { App } from './app';
 import './styles/globals.css';
 
 const container = document.getElementById('root');
-if (!container) throw new Error('index.html has no #root element to mount the app into');
+if (!container) throw new Error('Missing #root element');
 const root = ReactDOM.createRoot(container);
 
 const tree = (

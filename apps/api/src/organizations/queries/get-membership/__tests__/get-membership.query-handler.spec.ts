@@ -1,4 +1,4 @@
-import { None, Some } from 'oxide.ts';
+import { None, type Option, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
 import type { Membership } from '../../../domain/membership.types';
 import { GetMembershipQuery } from '../get-membership.query';
@@ -22,9 +22,19 @@ const membership: Membership = {
   },
 };
 
+/** A member repository that answers `findMembership` and nothing else. */
+function membersAnswering(found: Option<Membership>) {
+  return {
+    findMembership: vi.fn().mockResolvedValue(found),
+    findMembershipById: vi.fn(),
+    findMembers: vi.fn(),
+    findAccounts: vi.fn(),
+  };
+}
+
 describe('GetMembershipQueryHandler', () => {
   it("reads the caller's membership in the organization the query names", async () => {
-    const members = { findMembership: vi.fn().mockResolvedValue(Some(membership)) };
+    const members = membersAnswering(Some(membership));
     const handler = new GetMembershipQueryHandler(members);
 
     const result = await handler.execute(
@@ -36,9 +46,7 @@ describe('GetMembershipQueryHandler', () => {
   });
 
   it('answers ORG_003 when the caller holds no membership there', async () => {
-    const handler = new GetMembershipQueryHandler({
-      findMembership: vi.fn().mockResolvedValue(None),
-    });
+    const handler = new GetMembershipQueryHandler(membersAnswering(None));
 
     await expect(
       handler.execute(new GetMembershipQuery({ organizationId: 'org-b', userId: 'u1' })),

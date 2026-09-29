@@ -8,7 +8,8 @@ import { NewSessionScreen } from '@/features/sessions/screens/new-session';
  *
  * `?project=` is the sidebar's "New session here" and what a new project
  * lands with: the project chip starts on that project and its defaults
- * prefill the rest (`product/versions/mvp/05-screens.md`).
+ * prefill the rest (`product/versions/mvp/05-screens.md`); with none, the
+ * project the chip starts on prefills them the same way.
  * `?host=` is what Add a host lands with: the host chip starts on the
  * machine it paired (`newSessionSearchSchema`).
  */

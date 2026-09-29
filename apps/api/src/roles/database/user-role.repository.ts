@@ -127,23 +127,26 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
     userId: string,
     roleIds: string[],
     organizationId: string | null = null,
+    manager?: EntityManager,
   ): Promise<void> {
     // Replace the full set for this scope atomically. Assignments in other
     // organizations are left alone: replacing a user's roles in one tenant must
     // not silently revoke them in another.
     const uniqueRoleIds = [...new Set(roleIds)];
-    await this.userRoleRepository.manager.transaction(async (manager) => {
-      await manager.delete(UserRoleOrmEntity, {
+    const replace = async (tx: EntityManager) => {
+      await tx.delete(UserRoleOrmEntity, {
         userId,
         organizationId: organizationId ?? IsNull(),
       });
       if (uniqueRoleIds.length > 0) {
-        await manager.insert(
+        await tx.insert(
           UserRoleOrmEntity,
           uniqueRoleIds.map((roleId) => ({ userId, roleId, organizationId })),
         );
       }
-      await bumpForAssignment(manager, userId, organizationId);
-    });
+      await bumpForAssignment(tx, userId, organizationId);
+    };
+    if (manager) await replace(manager);
+    else await this.userRoleRepository.manager.transaction(replace);
   }
 }

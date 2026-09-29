@@ -10,7 +10,7 @@ import { RoleErrors } from '../domain/role.errors';
  *
  * Three paths need one: sign-up's default `user` grant, the org-scoped `owner`
  * grant the personal workspace writes, and the same grant on the hand-create
- * path in `OrganizationsService`. They used to answer three different things —
+ * path (`organizations/application/membership-access.policy.ts`). They used to answer three different things —
  * a silent `catch {}`, a problem document, and a bare `Error` with no code —
  * for one fault, which is the duplicated-rule problem in the failure path.
  *

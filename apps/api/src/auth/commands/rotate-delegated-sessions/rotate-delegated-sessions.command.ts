@@ -3,7 +3,7 @@ import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 /**
  * An account's standing changed outside the application: banned or unbanned
  * straight through Better Auth's admin plugin (`/api/auth/admin/ban-user`,
- * `/unban-user`) rather than through `AdminService`. Whatever delegated
+ * `/unban-user`) rather than through the admin module. Whatever delegated
  * sessions its credentials had cached point at session rows the ban deleted,
  * so they are moved onto fresh keys.
  */
