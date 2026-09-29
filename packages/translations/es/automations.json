@@ -181,8 +181,8 @@
     "run": "Ejecución",
     "automation": "Automatización",
     "time": "Hora",
-    "allAutomations": "Todas las automatizaciones",
-    "allProjects": "Todos los proyectos",
+    "allAutomations": "Automatizaciones",
+    "allProjects": "Proyectos",
     "window": {
       "24h": "Últimas 24 horas",
       "7d": "Últimos 7 días",
