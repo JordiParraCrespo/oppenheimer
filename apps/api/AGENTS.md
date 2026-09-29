@@ -169,6 +169,12 @@ the client-facing subset (`CLIENT_CAPABILITIES`) is served by `GET /health/capab
 own explicit `entities` arrays: **register every new ORM entity in both**, plus
 the module's `TypeOrmModule.forFeature`.
 
+Integration suites sit beside the module they exercise, as
+`src/<module>/__tests__/<name>.integration.spec.ts`; the few that span modules
+(the schema, correlation ids) are in `src/__tests__/`, with the helper that
+builds the test schema, `src/__tests__/run-migrations.ts`. `pnpm test` skips
+them; `pnpm test:integration` runs only them.
+
 ## Commands
 
 ```bash
