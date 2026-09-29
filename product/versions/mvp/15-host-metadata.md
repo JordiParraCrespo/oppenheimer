@@ -4,7 +4,8 @@
 is, how it is doing. This note is where that data lives. The rule behind
 it is the one a large fleet teaches: **store each fact by how often it
 changes and who reads it**, never by which noun it happens to describe.
-The schema is `apps/api/src/migrations/1789900000000-AddHostInventoryAndPresence.ts`.
+The schema is the four side tables `host_inventory`, `host_presence`,
+`host_network` and `host_event`.
 
 ## The problem with one row
 
@@ -116,7 +117,8 @@ These are the defaults. A deployment overrides them with
 `RETENTION_BATCH_SIZE` (the API's `retention` config section).
 
 Both deletes run from one scheduled job. Neither table is near the volume
-where partitioning pays; the header says when it would.
+where partitioning pays: `host_event` becomes a candidate only far past the
+volumes host changes produce.
 
 ## Deliberately not here
 

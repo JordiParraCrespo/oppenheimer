@@ -207,9 +207,7 @@ transactions; a new writer of `role` or `user_role` must do the same. **A
 migration** that edits role permissions bumps the counter for the rows it
 touches: a global role (almost always — the system roles are global rows)
 needs `UPDATE "role_catalog_version" SET "version" = "version" + 1`; an
-organization's role needs its `roleVersion`. Migrations before
-`AddAuthzVersions` bumped only `roleVersion`, which was enough when nothing was
-cached.
+organization's role needs its `roleVersion`.
 
 ## Wiring notes
 

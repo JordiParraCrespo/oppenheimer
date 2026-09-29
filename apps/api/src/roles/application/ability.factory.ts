@@ -175,7 +175,7 @@ export class AbilityFactory implements AbilityPort {
     // Pass the principal and the organization so resource-scoping conditions
     // (e.g. `${user.id}`, `${activeOrganizationId}`) can be interpolated when
     // the ability is built. The placeholder keeps its name because role rows
-    // store it (the `owner` role's migrations); what it resolves to is the
+    // store it (the `owner` role's seed in `InitialSchema`); what it resolves to is the
     // organization this ability is built in.
     return defineAbilitiesFromPermissions(permissions, {
       user,
