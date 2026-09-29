@@ -19,7 +19,7 @@ type Updater struct{}
 // own, so an updater that spawns a package manager takes it down with it on
 // timeout, and with nothing on stdin. The error names the reason: the
 // updater's last line of output, which is where every one of them prints it.
-func (Updater) Update(ctx context.Context, path string, args []string) error {
+func (Updater) Update(ctx context.Context, _, path string, args []string) error {
 	_, err := execx.Run(ctx, execx.Spec{
 		Name:      path,
 		Args:      args,

@@ -142,3 +142,12 @@ type NopPublisher struct{}
 
 // SessionChanged implements Publisher.
 func (NopPublisher) SessionChanged(domain.Session) {}
+
+// LaunchGate holds an agent's launch while something is replacing that
+// agent's executable, so a session never starts a CLI halfway through its
+// update. Hold returns once the command may be started, and the release to
+// call once it has; it never fails, because a launch late is better than a
+// launch refused.
+type LaunchGate interface {
+	Hold(ctx context.Context, command string) (release func())
+}

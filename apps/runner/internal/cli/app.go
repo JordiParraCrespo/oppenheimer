@@ -96,7 +96,8 @@ func New(version string) (*App, error) {
 	}
 
 	hostSvc := hostapp.New(hostapp.Options{
-		Prober: system.New(), Updater: system.Updater{}, WorkspaceRoot: paths.Workspaces, Version: version,
+		Prober: system.New(), Updater: lockedUpdater{paths: paths, next: system.Updater{}},
+		WorkspaceRoot: paths.Workspaces, Version: version,
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
 		Store:        store,
@@ -150,6 +151,8 @@ func New(version string) (*App, error) {
 			}
 			return env
 		},
+		// A session never starts an agent CLI its updater is replacing.
+		Gate: agentGate{paths: paths},
 	})
 	if err != nil {
 		return nil, err

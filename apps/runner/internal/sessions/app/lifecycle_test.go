@@ -536,3 +536,44 @@ func TestRunningOnAHostWithoutTmuxIsEmpty(t *testing.T) {
 		t.Fatalf("running = %v, err = %v", running, err)
 	}
 }
+
+// gateRecorder is a LaunchGate that records what it held and whether each
+// hold was released before the next began.
+type gateRecorder struct {
+	held     []string
+	released int
+}
+
+func (g *gateRecorder) Hold(_ context.Context, command string) func() {
+	g.held = append(g.held, command)
+	return func() { g.released++ }
+}
+
+func TestCreateAndRestartWaitOnTheAgentsUpdate(t *testing.T) {
+	h := newFakeHarness(t)
+	gate := &gateRecorder{}
+	svc, err := app.New(app.Options{
+		Terminals: h.terminals, Worktrees: h.worktrees, Classifier: manifest.New(manifest.Options{}),
+		Store: &memoryStore{}, Publisher: h.events, Images: h.images,
+		Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"}, Gate: gate,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, err := svc.Create(context.Background(), app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		BaseBranch: "main", Agent: domain.AgentClaude,
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if err := h.terminals.Kill(context.Background(), session.TmuxName()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Restart(context.Background(), session.ID); err != nil {
+		t.Fatalf("restart: %v", err)
+	}
+	if len(gate.held) != 2 || gate.held[0] != "claude" || gate.held[1] != "claude" || gate.released != 2 {
+		t.Fatalf("held %v, released %d; want claude held and released for the create and the restart", gate.held, gate.released)
+	}
+}

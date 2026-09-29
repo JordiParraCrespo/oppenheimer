@@ -18,7 +18,7 @@ type Updater struct {
 }
 
 // Update implements app.Updater.
-func (u *Updater) Update(_ context.Context, path string, args []string) error {
+func (u *Updater) Update(_ context.Context, _, path string, args []string) error {
 	call := path
 	for _, arg := range args {
 		call += " " + arg

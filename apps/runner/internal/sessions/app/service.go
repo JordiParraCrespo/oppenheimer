@@ -27,7 +27,10 @@ type Options struct {
 	// window: the session id and the runner's socket, so the git credential
 	// helper called from that shell can ask who it is answering for.
 	Env func(session domain.Session) map[string]string
-	Now func() time.Time
+	// Gate holds a launch while its agent is being updated; nil launches
+	// at once.
+	Gate LaunchGate
+	Now  func() time.Time
 }
 
 // Service is the session lifecycle.
@@ -60,6 +63,7 @@ type Service struct {
 	images     Images
 	layout     domain.Layout
 	env        func(domain.Session) map[string]string
+	gate       LaunchGate
 	now        func() time.Time
 }
 
@@ -82,7 +86,7 @@ func New(opts Options) (*Service, error) {
 		revs: map[string]uint64{}, busy: map[string]int{},
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
-		images: opts.Images, layout: opts.Layout, env: env, now: now,
+		images: opts.Images, layout: opts.Layout, env: env, gate: opts.Gate, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -248,6 +252,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 	}
 	session.State = domain.StateStarting
 	if err := run(domain.StageAgent, func() error {
+		defer s.holdLaunch(ctx, session.Agent)()
 		return s.terminals.Create(ctx, session.TmuxName(), session.Worktree, in.Launch.CommandLine(session.Agent), s.env(session))
 	}); err != nil {
 		// Leave the worktree: it is on disk, it is the user's, and a
@@ -583,7 +588,10 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	} else if alive {
 		return session, nil
 	}
-	if err := s.terminals.Create(ctx, session.TmuxName(), session.Worktree, session.Launch.CommandLine(session.Agent), s.env(session)); err != nil {
+	release := s.holdLaunch(ctx, session.Agent)
+	err = s.terminals.Create(ctx, session.TmuxName(), session.Worktree, session.Launch.CommandLine(session.Agent), s.env(session))
+	release()
+	if err != nil {
 		return domain.Session{}, err
 	}
 	session.Windows = []domain.Window{{Index: 0, Name: string(session.Agent), Agent: true}}
@@ -915,4 +923,14 @@ func nameOr(name, fallback string) string {
 		return name
 	}
 	return fallback
+}
+
+// holdLaunch waits, through the gate, until nothing is replacing the agent's
+// executable. The blank terminal launches nothing and never waits.
+func (s *Service) holdLaunch(ctx context.Context, agent domain.Agent) (release func()) {
+	command := agent.Command()
+	if s.gate == nil || command == "" {
+		return func() {}
+	}
+	return s.gate.Hold(ctx, command)
 }
