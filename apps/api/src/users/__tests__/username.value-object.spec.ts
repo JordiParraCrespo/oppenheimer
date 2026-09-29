@@ -1,6 +1,6 @@
 import { USERNAME_PATTERN } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
-import { USERNAME_CHECK } from '../../migrations/1790100000000-AddUserUsername';
+import { USERNAME_CHECK } from '../../migrations/1790900000000-InitialSchema';
 import { Username } from '../domain/value-objects/username.value-object';
 
 describe('Username', () => {

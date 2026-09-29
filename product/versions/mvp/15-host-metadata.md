@@ -4,7 +4,9 @@
 is, how it is doing. This note is where that data lives. The rule behind
 it is the one a large fleet teaches: **store each fact by how often it
 changes and who reads it**, never by which noun it happens to describe.
-The schema is `apps/api/src/migrations/1789900000000-AddHostInventoryAndPresence.ts`.
+The schema is the four `host_*` side tables in
+`apps/api/src/migrations/1790900000000-InitialSchema.ts`, the baseline the
+migrations were squashed into before the first deployment.
 
 ## The problem with one row
 

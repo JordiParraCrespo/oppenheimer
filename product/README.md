@@ -297,3 +297,10 @@ earlier note:
   owner's runner is now refused at the link handshake and closed by a heartbeat
   within a minute, and a session's git token is not minted for a creator who may
   not act (2026-09-28).
+- The API's schema grew as 51 migrations, and the large-table ones came with
+  hand-run `CONCURRENTLY` scripts and rollbacks in `apps/api/db/ops/`. Nothing
+  had been deployed, so the migrations are squashed into one baseline,
+  `InitialSchema`, producing the same schema, and `db/ops/` is gone. Until a
+  deployment holds data, a migration simply makes its change; hand-run ops
+  scripts and the lock-safe large-table path come back only then
+  (`.agents/rules/database-design.md`, 2026-09-29).

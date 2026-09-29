@@ -70,7 +70,7 @@ holding only the file names that layer admits:
 | `decorators/`                 | `*.decorator.ts`                                                                           |
 | `interceptors/`               | `*.interceptor.ts`                                                                         |
 | `probes/`                     | `*.probe.controller.ts`, `*.indicator.ts`                                                  |
-| `__tests__/`                  | `*.spec.ts` — and each layer may have its own                                              |
+| `__tests__/`                  | `*.spec.ts` (`*.integration.spec.ts` needs Docker) — and each layer may have its own        |
 
 Four rules follow from the table and are worth stating on their own, because
 they are the ones that decay first:

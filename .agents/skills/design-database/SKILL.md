@@ -11,11 +11,15 @@ off on. The standard those tables are held to is
 keys, index rules and the review checklist. This skill is the process that
 gets there, so the rules are applied because of the queries, not recited.
 
-The existing migrations in `apps/api/src/migrations/` are the house style. The
-ones worth reading before writing a new one: `1781300000000-AddOutbox.ts`,
-`1781400000000-AddOrgScopedRoles.ts`, `1781500000000-AddAccessGrants.ts`,
-`1788600000000-AddUserSettings.ts`. Do not copy the older ones' `TIMESTAMP`
-(no time zone) or unnamed constraints.
+The schema so far is one baseline,
+`apps/api/src/migrations/1790900000000-InitialSchema.ts`, squashed from the
+migrations written before the first deployment; a new migration comes after
+it. The tables worth reading in it before designing a new one are
+`outbox_message`, `user_role`, `access_grant` and `user_settings`, with their
+ORM entities. The baseline has no per-table headers: for the reasoning and
+the header style, read the pre-squash migrations in git history
+(`git log -- apps/api/src/migrations`), and do not copy the oldest ones'
+`TIMESTAMP` (no time zone) or unnamed constraints.
 
 ## 1. Understand the data before drawing tables
 
@@ -125,7 +129,10 @@ item by item. Then check it as the person who will run it in production:
 - For each rule "X may not be deleted while it has Y": is the foreign key
   `NO ACTION`, so the database enforces it even if the app forgets?
 - Which locks does the migration take on tables that already have rows, and
-  for how long, given all boot migrations share one transaction?
+  for how long, given all boot migrations share one transaction? While nothing
+  is deployed the migration just makes the change (no `CONCURRENTLY`, no
+  hand-run ops script); the lock-safe steps in `database-design.md` apply
+  once a deployment holds data.
 - Does every `CHECK`, unique and partial predicate in the SQL appear on the
   entity?
 
