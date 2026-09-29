@@ -502,7 +502,8 @@ write, not an error after (note 12).
 one's own unattended updater, the catalog's `update`
 (`packages/shared/src/agents/catalog.ts`), shortly after boot and on a
 schedule after, one at a time and never beside the runner's own update
-check. A CLI one release behind is refused by its vendor the day a model
+check or another round, and a session starting that agent meanwhile
+waits for its update. A CLI one release behind is refused by its vendor the day a model
 ships that needs the newer one, and the person would find out in the
 session's terminal. A running session keeps the binary it started with;
 the next session starts the new one. An agent that is not installed is
