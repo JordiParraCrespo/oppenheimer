@@ -287,8 +287,8 @@ describe('launch mapping', () => {
     // label and the two go out of step on the host, with nothing on screen
     // saying so.
     expect(CODING_AGENTS['claude-code'].models.map((model) => [model.id, model.label])).toEqual([
-      ['claude-fable-5-1', 'Claude Fable 5.1'],
       ['claude-opus-5-5', 'Claude Opus 5.5'],
+      ['claude-fable-5-1', 'Claude Fable 5.1'],
       ['claude-sonnet-5-5', 'Claude Sonnet 5.5'],
       ['claude-haiku-4-5', 'Claude Haiku 4.5'],
     ]);
@@ -305,8 +305,8 @@ describe('launch mapping', () => {
     );
     // OpenCode offers the same family under its `anthropic/` provider.
     expect(CODING_AGENTS.opencode.models.map((model) => model.id)).toEqual([
-      'anthropic/claude-fable-5-1',
       'anthropic/claude-opus-5-5',
+      'anthropic/claude-fable-5-1',
       'anthropic/claude-sonnet-5-5',
       'anthropic/claude-haiku-4-5',
       'openai/gpt-5.6-sol',

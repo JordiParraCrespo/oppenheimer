@@ -244,14 +244,12 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // names and that CLI does not fails in the session's own terminal, where
     // the person can see it.
     //
-    // The current family, newest of each line, as Synara's model table and
-    // Orca's pricing table both list it: Opus 5.5 replaced Opus 5 as the Opus
-    // the `opus` alias names, Sonnet 5.5 replaced Sonnet 5 the same way, and
-    // Opus 5.5 stays the default because it is the
-    // everyday model of the four.
+    // The current family, newest of each line, in the order Claude's own model
+    // picker lists it: Opus 5.5 first and the default, the everyday model of
+    // the four, then Fable 5.1, Sonnet 5.5 and Haiku 4.5.
     models: Object.freeze([
-      Object.freeze({ id: 'claude-fable-5-1', label: 'Claude Fable 5.1' }),
       Object.freeze({ id: 'claude-opus-5-5', label: 'Claude Opus 5.5', default: true as const }),
+      Object.freeze({ id: 'claude-fable-5-1', label: 'Claude Fable 5.1' }),
       Object.freeze({ id: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5' }),
       Object.freeze({ id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' }),
     ]),
@@ -397,12 +395,12 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // provider, plus OpenAI's Codex default. A row the host's OpenCode has
     // no provider for fails in the session's own terminal, as for the others.
     models: Object.freeze([
-      Object.freeze({ id: 'anthropic/claude-fable-5-1', label: 'Claude Fable 5.1' }),
       Object.freeze({
         id: 'anthropic/claude-opus-5-5',
         label: 'Claude Opus 5.5',
         default: true as const,
       }),
+      Object.freeze({ id: 'anthropic/claude-fable-5-1', label: 'Claude Fable 5.1' }),
       Object.freeze({ id: 'anthropic/claude-sonnet-5-5', label: 'Claude Sonnet 5.5' }),
       Object.freeze({ id: 'anthropic/claude-haiku-4-5', label: 'Claude Haiku 4.5' }),
       Object.freeze({ id: 'openai/gpt-5.6-sol', label: 'GPT-5.6 Sol' }),
