@@ -11,7 +11,7 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColum
  */
 @Entity('host_pairing_token')
 @Index(['ownerUserId'])
-// Behind FK_host_pairing_token_host (1790890000000-IndexUnbackedForeignKeys).
+// Backs FK_host_pairing_token_host.
 @Index('IDX_host_pairing_token_redeemed_host', ['redeemedHostId'], {
   where: '"redeemedHostId" IS NOT NULL',
 })

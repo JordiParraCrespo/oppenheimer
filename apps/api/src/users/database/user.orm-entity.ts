@@ -25,7 +25,7 @@ import {
 // exactly this constraint to USER_002.
 @Unique('UQ_user_username', ['username'])
 // A trigram GIN over firstName, lastName and email for the admin search
-// (1790880000000-AddUserSearchTrigramIndex); TypeORM cannot express GIN.
+// (created in InitialSchema); TypeORM cannot express GIN.
 @Index('IDX_user_search_trgm', { synchronize: false })
 export class UserOrmEntity {
   @PrimaryColumn({ type: 'uuid', primaryKeyConstraintName: 'PK_user' })

@@ -18,8 +18,7 @@ import type { SessionEventSource } from '../domain/work-session-event.entity';
  * session, through a session the caller has already been scoped to. It is the one
  * of the new tables that is not workspace-owned, because it has no life of its own.
  * The one other index is partial, on the at most one `prompt.first` row per
- * session, which a runner's hello reads for every unresolved session on its host
- * (`1790810000000-AddHotPathIndexesAndDropRedundant`).
+ * session, which a runner's hello reads for every unresolved session on its host.
  */
 @Entity('work_session_event')
 @Index('IDX_work_session_event_session_seq', ['sessionId', 'seq'], { unique: true })
