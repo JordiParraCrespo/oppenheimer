@@ -35,7 +35,7 @@ export function RunHistoryCard({
     days: RUN_HISTORY_DAYS,
     timezone: viewerTimeZone(),
   });
-  if (!data) return <Skeleton className="h-[190px] w-full rounded-lg" />;
+  if (!data) return <Skeleton shape="lg" className="h-47.5 w-full" />;
 
   return (
     <RunHistory

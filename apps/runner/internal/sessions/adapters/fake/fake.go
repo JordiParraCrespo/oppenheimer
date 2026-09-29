@@ -339,6 +339,9 @@ type Worktrees struct {
 	EnsureErr error
 	// Pushed records the branches that reached the remote.
 	Pushed []string
+	// PushedFor records the session each push was done for (domain.SessionOf),
+	// which is whose token the credential helper asks for.
+	PushedFor []string
 	// Fetched records the ref each Ensure was asked to fetch, in order.
 	Fetched []string
 }
@@ -400,13 +403,14 @@ func (w *Worktrees) Dirty(_ context.Context, path string) (bool, error) {
 }
 
 // Push implements app.Worktrees.
-func (w *Worktrees) Push(_ context.Context, _, branch string) (bool, error) {
+func (w *Worktrees) Push(ctx context.Context, _, branch string) (bool, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if w.PushErr != nil {
 		return false, w.PushErr
 	}
 	w.Pushed = append(w.Pushed, branch)
+	w.PushedFor = append(w.PushedFor, domain.SessionOf(ctx))
 	return true, nil
 }
 

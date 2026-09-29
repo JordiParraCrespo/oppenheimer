@@ -111,7 +111,7 @@ export function AddHostScreen() {
           summary={host ? [host.name, host.os].filter(Boolean).join(' · ') : undefined}
           last
         >
-          <div className="rounded-[14px] border border-border-subtle bg-card px-3.5">
+          <div className="rounded-md border border-border-subtle bg-card px-3.5">
             <PairingStatus host={host} />
           </div>
         </RoutineStep>

@@ -26,7 +26,7 @@ built from this starter.
 | Question | Answer | Goes in |
 | --- | --- | --- |
 | Is it logic (an entity, a repository, a service, a query hook)? | kernel: session, users, settings, anything any app needs | `packages/frontend/core` |
-| | the product's domain: sessions, hosts, the account chrome | `packages/frontend/consumer` |
+| | the product's domain and its account chrome | `packages/frontend/consumer` |
 | Is it UI or platform glue below the routes that needs no product hook? | | `packages/frontend/web` |
 | Is it a design-system primitive? | | `packages/frontend/design-system/web` |
 | Everything else | | `apps/web/src/features/<module>/<kind>/` |

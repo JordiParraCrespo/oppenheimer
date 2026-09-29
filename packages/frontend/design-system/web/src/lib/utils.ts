@@ -13,6 +13,9 @@ import { extendTailwindMerge } from 'tailwind-merge';
  * inheriting the 15px read size where the artboards draw 14, 17 or 32.
  * Declaring the names here is what keeps a size and a colour in one class list
  * from being treated as one group.
+ *
+ * `@shadcn/lint` has the same blind spot, so `oxlint.design.json` lists the
+ * ladder's names as allowed under `no-raw-colors`: keep the two in step.
  */
 const FONT_SIZES = [
   'micro',

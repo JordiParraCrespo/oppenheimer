@@ -418,6 +418,10 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
   on for want of a credential fails with `GIT_004`, saying which
   repository and session had no token — never git's "could not read
   Username", which points at a prompt nobody was shown.
+  Close marks its whole run with the session, as create does, and a
+  push for no session is refused with `GIT_004` before it reaches the
+  network: a push always needs the token, and GitHub's refusal would
+  read as work that could not be pushed.
 - The runner **pulls** a fresh token from the control plane before
   expiry — it is the side that knows when the token is about to be used
   — and the control plane may push `credentials.revoke` to drop it early

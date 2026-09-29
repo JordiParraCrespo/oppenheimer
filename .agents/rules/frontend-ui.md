@@ -189,7 +189,10 @@ Biome owns correctness; oxlint's own categories are off.
 Rules sit at `warn` while inherited findings are worked off. Promote a rule to
 `error` in `oxlint.design.json` once its count reaches zero; never lower one
 back to `warn` to land a change. Known false positive before promoting
-`no-raw-colors`: `shadow-panel` is read as a colour.
+`no-raw-colors`: `shadow-panel` is read as a colour. The linter's grammar reads every font
+size the theme adds (`text-operate`, `text-h2`, `text-micro`…) as a colour
+too; those are an `allow` list on `no-raw-colors` in `oxlint.design.json`,
+kept in step with `FONT_SIZES` in the design system's `cn()`.
 
 ## The design system is its folder
 

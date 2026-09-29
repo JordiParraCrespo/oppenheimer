@@ -43,7 +43,7 @@ export function TopBar() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-(--control-h-md) min-w-0 flex-1 items-center gap-2.5 rounded-pill border border-field-border bg-field px-3.5 text-operate transition-colors duration-fast hover:border-border-strong sm:absolute sm:left-1/2 sm:w-[380px] sm:max-w-[38vw] sm:flex-none sm:-translate-x-1/2"
+        className="inline-flex h-(--control-h-md) min-w-0 flex-1 items-center gap-2.5 rounded-pill border border-field-border bg-field px-3.5 text-operate transition-colors duration-fast hover:border-border-strong sm:absolute sm:left-1/2 sm:w-60 md:w-72 lg:w-95 sm:flex-none sm:-translate-x-1/2"
       >
         <SearchIcon className="size-4 shrink-0 text-fg-subtle" />
         <span className="flex-1 text-left text-field-placeholder">Search the system</span>

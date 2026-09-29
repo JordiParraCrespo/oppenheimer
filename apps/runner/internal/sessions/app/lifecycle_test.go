@@ -220,6 +220,25 @@ func TestCloseKeepsUnsavedWorkAndForceMeansIt(t *testing.T) {
 	}
 }
 
+func TestClosePushesForTheSession(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+
+	closed, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Push: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if closed.State != domain.StateClosed {
+		t.Fatalf("state = %q, want closed", closed.State)
+	}
+	if _, ok := h.worktrees.Paths[session.Worktree]; ok {
+		t.Fatal("a closed session's worktree is removed")
+	}
+	if len(h.worktrees.PushedFor) != 1 || h.worktrees.PushedFor[0] != session.ID {
+		t.Fatalf("pushed for %q, want [%q]", h.worktrees.PushedFor, session.ID)
+	}
+}
+
 func TestCloseIsIdempotentEnoughToRetry(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)

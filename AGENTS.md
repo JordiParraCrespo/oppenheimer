@@ -74,7 +74,7 @@ oppenheimer/
 │   ├── env/              # Root .env loader (@oppenheimer/env)
 │   ├── frontend/         # The React tier: logic split by product, glue split by platform
 │   │   ├── core/         # Kernel every app loads: session, users, settings, DI (@oppenheimer/frontend-core)
-│   │   ├── consumer/     # The console's domain: sessions, hosts, plus the account chrome (@oppenheimer/frontend-consumer)
+│   │   ├── consumer/     # The console's domain and account chrome, one module per src/modules/ dir (@oppenheimer/frontend-consumer)
 │   │   ├── api-client/   # Auto-generated typed client from Swagger (@oppenheimer/api-client)
 │   │   ├── web/          # The web platform kit: shell, auth chrome, table, i18n… (@oppenheimer/frontend-web)
 │   │   └── design-system/
@@ -241,14 +241,15 @@ The frontend is split twice, and the two splits answer different questions:
 
 - **By product** for logic. `core` is the kernel every app loads (session,
   users, user settings, capabilities, analytics, the InversifyJS container,
-  validation). `consumer` (`sessions`, `hosts`, `automations`, and the account chrome:
-  `organizations` as the personal workspace, `profile`, `permissions`) is the
-  product's domain (entities, repositories, services, TanStack Query hooks);
+  validation). `consumer` is the
+  product's domain — one module per directory under its `src/modules/`,
+  among them the account chrome: `organizations` as the personal workspace,
+  `profile`, `permissions` — (entities, repositories, services, TanStack Query hooks);
   the app loads it through `OppenheimerApp.create({ modules })`. The kernel
   never imports the product package.
 - **By platform** for UI and glue. `web` is the platform kit: what sits below
-  the routes, organised by concern (`shell`, `auth`, `table`, `layout`,
-  `forms`, `theme`, `i18n`, `analytics`, `platform`, …), each concern with the
+  the routes, organised by concern (`shell`, `auth`, `layout`, `pairing`, `forms`, …; the
+  kit's `.dependency-cruiser.cjs` holds the list and its layers), each concern with the
   same kind directories a feature has. The kit imports the kernel only; a
   component that needs a product hook is a feature.
 - **In the app**: routes compose, features contain. `features/<module>/`

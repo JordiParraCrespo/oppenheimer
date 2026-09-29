@@ -13,7 +13,25 @@
   },
   "rules": {
     "shadcn/no-restyle": ["warn", { "allow": ["layout"] }],
-    "shadcn/no-raw-colors": "warn",
+    "shadcn/no-raw-colors": [
+      "warn",
+      {
+        "allow": [
+          "text-micro",
+          "text-operate",
+          "text-compose",
+          "text-body",
+          "text-body-lg",
+          "text-metric",
+          "text-display",
+          "text-display-sm",
+          "text-h1",
+          "text-h2",
+          "text-h3",
+          "text-h4"
+        ]
+      }
+    ],
     "shadcn/no-unknown-classes": "warn",
     "shadcn/no-arbitrary-values": "warn",
     "shadcn/no-inline-styles": "warn",

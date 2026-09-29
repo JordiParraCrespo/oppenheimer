@@ -76,39 +76,41 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="flex flex-col gap-4">
-          <ErrorAlert error={error} fallback={t('consent.failed')} />
+        <CardContent>
+          <div className="flex flex-col gap-4">
+            <ErrorAlert error={error} fallback={t('consent.failed')} />
 
-          <div className="divide-y rounded-md border">
-            {scopes.length === 0 && (
-              <p className="p-4 text-sm text-ink-600">{t('consent.noPermissions')}</p>
-            )}
-            {scopes.map(({ group, level }) => (
-              <div key={`${group.resource}:${level}`} className="flex items-start gap-3 p-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{group.label}</span>
-                    <Badge variant="neutral">{group.levels[level].label}</Badge>
-                    {group.sensitive && (
-                      <Badge variant="paused">{t('consent.sensitiveScope')}</Badge>
-                    )}
+            <div className="divide-y rounded-md border">
+              {scopes.length === 0 && (
+                <p className="p-4 text-sm text-ink-600">{t('consent.noPermissions')}</p>
+              )}
+              {scopes.map(({ group, level }) => (
+                <div key={`${group.resource}:${level}`} className="flex items-start gap-3 p-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{group.label}</span>
+                      <Badge variant="neutral">{group.levels[level].label}</Badge>
+                      {group.sensitive && (
+                        <Badge variant="paused">{t('consent.sensitiveScope')}</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-ink-600">{group.levels[level].description}</p>
                   </div>
-                  <p className="text-sm text-ink-600">{group.levels[level].description}</p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            {unknown.length > 0 && (
+              <p className="text-sm text-ink-600">
+                {t('consent.unknownScopes', { scopes: unknown.join(', ') })}
+              </p>
+            )}
+
+            <p className="text-sm text-ink-600">{t('consent.effectiveNote')}</p>
           </div>
-
-          {unknown.length > 0 && (
-            <p className="text-sm text-ink-600">
-              {t('consent.unknownScopes', { scopes: unknown.join(', ') })}
-            </p>
-          )}
-
-          <p className="text-sm text-ink-600">{t('consent.effectiveNote')}</p>
         </CardContent>
 
-        <CardFooter className="flex justify-end gap-2">
+        <CardFooter className="justify-end">
           {/* The answer in flight is pending; the other is locked beside it. */}
           <Button
             variant="outline"
