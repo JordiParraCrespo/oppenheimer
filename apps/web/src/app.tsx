@@ -67,7 +67,7 @@ export function App() {
   // `prefers-color-scheme` while the rest of the product follows the toggle.
   const { resolvedTheme } = useTheme();
   const { isAuthenticated } = useAuthState();
-  // Rehydrate a persisted session (tokens in localStorage) before the router's
+  // Rehydrate the persisted session query (the credential is a cookie) before the router's
   // route guards run, so a returning/refreshing authenticated user isn't bounced
   // to /login. `isPending`, not `isLoading`: under `PersistQueryClientProvider`
   // a query sits idle while the persisted cache is restored, and `isLoading`

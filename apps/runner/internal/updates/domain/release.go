@@ -63,8 +63,8 @@ type Release struct {
 }
 
 // Activity is what the host is doing right now, and the only input to the
-// safe window. It comes from the sessions context once that exists; until
-// then an idle host is the honest answer, because there are no sessions.
+// safe window. Nothing feeds it from the sessions context yet, so every host
+// reads as idle and an update does not wait for a working session.
 type Activity struct {
 	WorkingSessions int
 	AttachedClients int

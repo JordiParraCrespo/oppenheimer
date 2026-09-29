@@ -116,11 +116,11 @@ const adapters: Provider[] = [
  * Sessions: the row, its checkouts, its append-only log and the fold of that log.
  *
  * It is the module the other three feed into. `projects/` answers which body of work
- * a session belongs to (and creates one on a repository's first session), `hosts/`
+ * a session belongs to (Unassigned when the request names none), `hosts/`
  * answers whether the caller may put work on a machine, and `github/` answers what a
  * repository is called and mints the token to check it out.
  *
- * Two ports go the other way, for the module that will own the runner link:
+ * Two ports go the other way, for `links/`, which owns the runner link:
  * `SESSION_DISPATCH` to send a session's work to a host, and
  * `RECORD_SESSION_EVENTS` to write what the host reports back. They are the whole
  * published surface — the repository stays inside.
@@ -171,7 +171,7 @@ const adapters: Provider[] = [
     HostUnpairedStopsSessionsDomainEventHandler,
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },
   ],
-  // The two application ports, and nothing else. The repository is this module's
+  // The three application ports, and nothing else. The repository is this module's
   // persistence adapter: publishing it would let the next slice read and append
   // past `RECORD_SESSION_EVENTS`, which is the door that checks the host.
   exports: [RECORD_SESSION_EVENTS, SESSION_LOOKUP, SESSION_RECONCILIATION],

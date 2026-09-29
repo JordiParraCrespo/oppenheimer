@@ -44,8 +44,8 @@ export function sessionBranchName(sessionSlug: string): string {
  * name, then `<owner>--<repo>-<githubRepoId>`.
  *
  * Deterministic, like the project's own candidates: every one is derived from the
- * repository, so the directory can always be read back to what created it, and
- * the list cannot be exhausted because the last candidate carries GitHub's id. A
+ * repository, so the directory can always be read back to what created it. The
+ * list runs out only when this session has used all three names already. A
  * name is never reused inside a session — `uq (sessionId, directoryName)` is the
  * tombstone — because the coding agents key their conversation state by working
  * directory, so a new checkout landing on a retired name would inherit a

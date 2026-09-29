@@ -1,3 +1,7 @@
+/**
+ * Application code injects each port through its token, so it depends on
+ * `UserSettingsRepositoryPort`, never on the TypeORM adapter behind it.
+ */
 export const USER_SETTINGS_REPOSITORY = Symbol('USER_SETTINGS_REPOSITORY');
 
 /** Read-only view of Better Auth's `session` table (`SessionReaderPort`). */

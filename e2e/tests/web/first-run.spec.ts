@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { newUser } from '../../support/auth';
 import { findOrganizationsForUser, findUserByEmail, query } from '../../support/db';
@@ -199,7 +200,7 @@ test('Connect GitHub carries a minted state through the install round trip', asy
   await signInAs(page, owner.user);
   const githubInstallationId = await claimInstallation(
     GITHUB_STUB_URL,
-    800_000 + (process.pid % 1000) * 100 + 1,
+    randomInt(1_000_000, 2 ** 40),
   );
 
   await page.route('https://github.com/**', (route) =>

@@ -84,7 +84,7 @@ export type SessionLaunchDto = z.infer<typeof sessionLaunchSchema>;
  *
  * `baseBranch` is what the session's branch is created *from*, defaulting to the
  * repository's default branch when absent. There is no branch field: the working
- * branch is always `oppenheimer/<project.slug>/<work_session.slug>`, never the
+ * branch is always `oppenheimer/<work_session.slug>`, never the
  * base itself — git refuses a worktree on a branch another worktree already
  * holds, so two sessions "on main" would fail at the second.
  *

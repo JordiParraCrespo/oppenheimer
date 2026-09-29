@@ -10,10 +10,10 @@ import { defineResource } from '@oppenheimer/backend-authz';
  * query is not narrowed further. Adding a dimension later means adding a column,
  * which is the point of declaring the mapping here rather than in each query.
  *
- * Three actions. A person creates projects (`POST /projects`), and the API also
- * creates one for a repository when a session names no project
- * (`product/versions/mvp/10-api-modules-and-data-model.md`). Archiving is `update`, because nothing
- * is deleted: the row outlives the project so its slug is never reissued.
+ * Three actions. A person creates projects (`POST /projects`); a session that
+ * names none lands in the workspace's Unassigned project, and nothing derives a
+ * project from a repository. Archiving is `update`, because nothing is deleted:
+ * the row outlives the project so its slug is never reissued.
  */
 export const ProjectResource = defineResource({
   subject: 'Project',

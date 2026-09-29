@@ -9,8 +9,9 @@ import { RevokeApiTokenCommand } from './revoke-api-token.command';
 
 /**
  * The record is kept (revoked, not deleted) so the audit trail
- * survives. Revoking raises `ApiTokenRevokedDomainEvent`, which the auth layer
- * handles by dropping the credential's cached delegated session — so revocation
+ * survives. Revoking raises `ApiTokenRevokedDomainEvent`, which this module's
+ * `ApiTokenRevokedDomainEventHandler` handles by dropping the credential's cached
+ * delegated session — so revocation
  * takes effect immediately rather than at the end of that window.
  */
 @CommandHandler(RevokeApiTokenCommand)

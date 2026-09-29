@@ -212,7 +212,7 @@ import { UsersModule } from './users/user.module';
       }),
     }),
     OutboxModule,
-    // The bundles are the same JSON the web and mobile apps load, so a string
+    // The bundles are the same JSON the web app loads, so a string
     // is written once and a translator edits one file — and an email, which
     // has no request to negotiate a language from, renders from the
     // recipient's stored preference instead.

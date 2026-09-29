@@ -133,9 +133,9 @@ const TERMINAL_FONT_STACK = [
   'Consolas',
   '"DejaVu Sans Mono"',
   '"Liberation Mono"',
-  // Bundled, so it is the one fallback that is always there. It claims only
-  // the private-use ranges (`@font-face` in the design system), so it never
-  // wins a character a real font should draw.
+  // Bundled, so it is the one fallback that is always there. Its `@font-face`
+  // in the design system claims only the symbol blocks and the private-use
+  // planes, so it never wins a letter or a digit a real font should draw.
   "'Oppenheimer Symbols'",
   '"Symbols Nerd Font Mono"',
   '"MesloLGS Nerd Font"',

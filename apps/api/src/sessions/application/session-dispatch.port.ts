@@ -78,9 +78,7 @@ export interface SessionImageSpec {
  * **An implementation never writes the log.** One user action is one entry,
  * appended by the command handler in the same transaction as the row change it
  * implies. A dispatcher that also appended would make a click two entries in two
- * transactions. Until the relay exists this is bound to an adapter that answers
- * `{ delivered: false, hints: ['host_offline'] }` and does nothing else, which is
- * why every method returns the same small outcome rather than a job id.
+ * transactions.
  */
 export interface SessionDispatchPort {
   /** Make the directories, the checkouts and window 0, then launch the agent. */

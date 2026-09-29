@@ -63,7 +63,7 @@ export async function findUserByEmail(email: string): Promise<UserRow | undefine
 /**
  * The reset token as Better Auth stores it: the `verification` row's identifier
  * is `reset-password:<token>` and its value is the user id. Returns the newest
- * unexpired token for the user, which is what the email would have carried.
+ * token for the user, expired or not: what the latest email carried.
  */
 export async function findResetToken(email: string): Promise<string | undefined> {
   const rows = await query<{ identifier: string }>(

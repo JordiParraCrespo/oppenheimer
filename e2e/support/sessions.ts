@@ -1,4 +1,4 @@
-import { createHash, generateKeyPairSync } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomInt } from 'node:crypto';
 import { type APIRequestContext, type APIResponse, expect } from '@playwright/test';
 import { newContext } from './auth';
 import githubApp from './github-app.json' with { type: 'json' };
@@ -33,8 +33,6 @@ export const STUB_INSTALL_URL = `https://github.com/apps/${githubApp.slug}/insta
 /** A branch of `xrp-mobile` that is not its default, so picking one is visible. */
 export const STUB_BRANCH = 'fix/wallet-empty-state';
 
-let installationCounter = 0;
-
 /**
  * Start a GitHub App install as the caller: the single-use state
  * `POST /installations` requires, minted for this person in this workspace.
@@ -57,8 +55,9 @@ export async function mintInstallState(api: APIRequestContext): Promise<string> 
  * the way the console does on Connect: a state is spent by one attempt.
  */
 export async function connectInstallation(api: APIRequestContext): Promise<string> {
-  installationCounter += 1;
-  const githubInstallationId = 100_000 + process.pid * 100 + installationCounter;
+  // Random over 2^40, not derived from the pid: parallel workers and earlier
+  // runs against the same database must never draw an id already claimed.
+  const githubInstallationId = randomInt(1_000_000, 2 ** 40);
   await claimInstallation(GITHUB_STUB_URL, githubInstallationId);
 
   const response = await withoutTripping(async () =>

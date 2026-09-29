@@ -26,7 +26,7 @@ import { CloseSessionCommand } from './close-session.command';
  * `acceptUnpushedWork` rides in the payload because the runner is its reader: it is
  * what tells a host it may remove a dirty worktree.
  *
- * Until the relay exists, that means a close leaves the session `open` with a
+ * With the host offline, that means a close leaves the session `open` with a
  * request on its log. That is the honest state — nothing has been pushed or
  * removed — and it is what the `host_offline` hint on the response says.
  *

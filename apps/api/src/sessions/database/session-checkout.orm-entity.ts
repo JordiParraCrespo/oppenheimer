@@ -71,7 +71,10 @@ export class SessionCheckoutOrmEntity {
   @Column({ type: 'varchar' })
   baseBranch!: string;
 
-  /** Always `oppenheimer/<project.slug>/<work_session.slug>`. */
+  /**
+   * `oppenheimer/<work_session.slug>`; a session created before that rule keeps
+   * the `oppenheimer/<project>/<session>` it recorded.
+   */
   @Column({ type: 'varchar' })
   branch!: string;
 

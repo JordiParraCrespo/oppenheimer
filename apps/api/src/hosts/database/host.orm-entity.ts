@@ -43,7 +43,10 @@ export class HostOrmEntity {
   @Column({ type: 'varchar', length: 64 })
   publicKeyFingerprint!: string;
 
-  /** Last heartbeat. `online` is derived from it in the read query. */
+  /**
+   * Null from registration on: presence lives in `host_presence.lastSeenAt`,
+   * which the mapper reads instead whenever the host has a presence row.
+   */
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   lastSeenAt!: Date | null;
 
