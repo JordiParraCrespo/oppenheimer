@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"slices"
 	"sort"
 	"strings"
 )
@@ -12,6 +13,12 @@ type Launch struct {
 	Model      string `json:"model,omitempty"`
 	Permission string `json:"permission,omitempty"`
 	Effort     string `json:"effort,omitempty"`
+	// EffortIsLevel marks Effort as the CLI's own level name. A launch saved
+	// before effort was per model has it unset, and its Effort is one of the
+	// old product stops ("medium" was Claude Code's `--effort high`); read
+	// with the levels' meaning it would restart at a level nobody chose, so it
+	// is not sent and the CLI runs at its own default.
+	EffortIsLevel bool `json:"effortIsLevel,omitempty"`
 	// Prompt is the first task, appended as the trailing positional so it is
 	// in the process's arguments before it starts (02-runner §5). It is kept
 	// for restart only and never logged.
@@ -29,13 +36,17 @@ type launchMap struct {
 	command string
 	model   []string
 	// defaultModel is the model a launch that names none runs, which is the
-	// row its effort is read from.
+	// one whose effort levels apply.
 	defaultModel string
 	permission   map[string]launchLevel
-	// effort is keyed by model and then by level, because the levels are the
-	// model's: Codex's Luna has no `ultra`, Claude's Haiku has no effort.
-	effort map[string]map[string]launchLevel
-	prompt []string
+	// effort is how this agent spells any level: argv and environment with
+	// `<effort>` and `<model>` replaced inside each word. effortLevels says
+	// which levels each model offers, and a level outside its model's list is
+	// never spelled; effortUnset is the level that is the CLI left alone.
+	effort       launchLevel
+	effortUnset  string
+	effortLevels map[string][]string
+	prompt       []string
 }
 
 // launchLevel is one permission or effort level: the argv appended to the
@@ -83,19 +94,37 @@ func (l Launch) Args(agent Agent) []string {
 	return args
 }
 
-// effortLevel is the chosen effort level of the model this launch runs, or
-// the zero level when that model offers no such level — dropped, as Args says.
+// effortLevel is the chosen effort level, spelled for the model this launch
+// runs, or the zero level when there is nothing to send: a level the model
+// does not offer, the level that is the CLI left alone, or an effort saved
+// before it was a level (EffortIsLevel). The model's id is spliced in only
+// once the catalog lists it, so it is catalog data and never a caller's.
 func (l Launch) effortLevel(m launchMap) launchLevel {
 	model := l.Model
 	if model == "" {
 		model = m.defaultModel
 	}
-	return m.effort[model][l.Effort]
+	if !l.EffortIsLevel || l.Effort == m.effortUnset || !slices.Contains(m.effortLevels[model], l.Effort) {
+		return launchLevel{}
+	}
+	fill := strings.NewReplacer("<effort>", l.Effort, "<model>", model)
+	level := launchLevel{argv: make([]string, len(m.effort.argv))}
+	for i, word := range m.effort.argv {
+		level.argv[i] = fill.Replace(word)
+	}
+	if len(m.effort.env) > 0 {
+		level.env = make(map[string]string, len(m.effort.env))
+		for name, value := range m.effort.env {
+			level.env[name] = fill.Replace(value)
+		}
+	}
+	return level
 }
 
 // Env is the environment the chosen permission and effort levels set on the
-// agent's process, or nil. The two never name the same variable: a catalog
-// that made them would be setting one level through the other.
+// agent's process, or nil. The catalog spec holds that the two never name the
+// same variable; if they ever did, the permission level wins, because an
+// effort must not be able to loosen what the agent may do.
 func (l Launch) Env(agent Agent) map[string]string {
 	m := launchCatalog[agent.CatalogID()]
 	permission, effort := m.permission[l.Permission].env, l.effortLevel(m).env
@@ -103,10 +132,10 @@ func (l Launch) Env(agent Agent) map[string]string {
 		return permission
 	}
 	env := make(map[string]string, len(permission)+len(effort))
-	for name, value := range permission {
+	for name, value := range effort {
 		env[name] = value
 	}
-	for name, value := range effort {
+	for name, value := range permission {
 		env[name] = value
 	}
 	return env

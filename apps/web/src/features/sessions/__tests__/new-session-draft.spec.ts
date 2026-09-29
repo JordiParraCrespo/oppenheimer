@@ -50,10 +50,12 @@ describe('initialDraft', () => {
     });
   });
 
-  it('drops an effort that is no level, an agent it does not know, and the old single stop', () => {
-    store({ effort: 'medium', efforts: { codex: 'infinite', 'gone-agent': 'high', grok: 'max' } });
+  it('keeps each known agent’s pick as left, and drops the old single stop', () => {
+    // Whether a pick is one of the model's levels is decided when the slider
+    // is drawn, not when storage is read.
+    store({ effort: 'medium', efforts: { codex: 'infinite', 'gone-agent': 'high', grok: 7 } });
 
-    expect(initialDraft().efforts).toEqual({ grok: 'max' });
+    expect(initialDraft().efforts).toEqual({ codex: 'infinite' });
   });
 
   it('never restores a permission level or a scope, whatever storage holds', () => {

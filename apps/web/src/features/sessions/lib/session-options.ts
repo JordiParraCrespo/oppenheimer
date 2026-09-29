@@ -21,7 +21,6 @@ import {
   CODING_AGENTS,
   type CodingAgentId,
   effortFor,
-  SESSION_EFFORTS,
   type SessionEffort,
   type SessionPermission,
 } from '@oppenheimer/shared/agents';
@@ -137,18 +136,23 @@ export function launchControlsFor(agent: CodingAgentId): LaunchControls {
   return { permission: CODING_AGENTS[agent].launch.permission !== undefined };
 }
 
-/** The effort level somebody picked, per agent, since each agent's levels are its own. */
-export type EffortPicks = Partial<Record<CodingAgentId, SessionEffort>>;
+/**
+ * The effort level somebody last moved the slider to, per agent, as they left
+ * it: each agent's levels are its own, and whether a pick applies depends on
+ * the model, which is `effortChoiceFor`'s to decide at display time.
+ */
+export type EffortPicks = Partial<Record<CodingAgentId, string>>;
 
 /**
  * What the effort slider draws for a draft, and whether it is sent.
  *
- * `levels` are the model's, lowest first. `value` is the level picked for this
- * agent when the model offers it; the nearest one below it when the model does
- * not (a pick of `ultra` on Sol, then a switch to Luna, lands on `max`); and
- * the model's own default when nothing was picked. Only the first two are
- * `chosen`: an untouched slider sends nothing, and the CLI runs exactly as it
- * would unasked. Null when the model takes no effort, and the slider is hidden.
+ * `levels` are the model's, in its own order. `value` is the pick for this
+ * agent when the model offers it, and `chosen` says it is sent. Otherwise —
+ * nothing picked, or a pick this model does not have (`ultra` on Sol, then a
+ * switch to Luna) — the knob shows the model's own default and nothing is
+ * sent: the CLI runs as it would unasked, and the pick stays as it was for a
+ * model that has it. Null when the model takes no effort, and the slider is
+ * hidden.
  */
 export interface EffortChoice {
   levels: readonly SessionEffort[];
@@ -159,16 +163,14 @@ export interface EffortChoice {
 export function effortChoiceFor(
   agent: CodingAgentId,
   model: string | null,
-  picked: SessionEffort | undefined,
+  picked: string | undefined,
 ): EffortChoice | null {
   const effort = effortFor(agent, model);
   if (!effort) return null;
-  const levels = effort.levels.map((level) => level.id);
-  if (!picked) return { levels, value: effort.default, chosen: false };
-  if (levels.includes(picked)) return { levels, value: picked, chosen: true };
-  const rank = SESSION_EFFORTS.indexOf(picked);
-  const below = levels.filter((level) => SESSION_EFFORTS.indexOf(level) < rank).at(-1);
-  return { levels, value: below ?? levels[0] ?? effort.default, chosen: true };
+  const offered = effort.levels.find((level) => level === picked);
+  return offered
+    ? { levels: effort.levels, value: offered, chosen: true }
+    : { levels: effort.levels, value: effort.default, chosen: false };
 }
 
 /**
@@ -196,7 +198,7 @@ export function toLaunchInput(draft: {
 export function toEffortStops(
   levels: readonly SessionEffort[],
   labels: Record<SessionEffort, string>,
-): EffortStop[] {
+): EffortStop<SessionEffort>[] {
   return levels.map((level) => ({ value: level, label: labels[level] }));
 }
 

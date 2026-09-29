@@ -48,17 +48,20 @@ describe('agent options', () => {
     expect(effortChoiceFor('shell', null, 'high')).toBeNull();
   });
 
-  it('keeps a pick the model offers, and lands a pick it lacks on the nearest level below', () => {
+  it('keeps a pick the model offers; one it lacks shows the default and sends nothing', () => {
     expect(effortChoiceFor('codex', 'gpt-5.6-sol', 'ultra')).toMatchObject({
       value: 'ultra',
       chosen: true,
     });
+    // Luna has no `ultra`: no level is invented for it, the CLI runs its own.
     expect(effortChoiceFor('codex', 'gpt-5.6-luna', 'ultra')).toMatchObject({
-      value: 'max',
-      chosen: true,
+      value: 'medium',
+      chosen: false,
     });
-    // Nothing below `minimal` on Claude Code: the lowest level it has.
-    expect(effortChoiceFor('claude-code', null, 'minimal')?.value).toBe('low');
+    expect(effortChoiceFor('claude-code', null, 'minimal')).toMatchObject({
+      value: 'medium',
+      chosen: false,
+    });
   });
 
   it('sends only the controls the agent has, never a level left over from the last one', () => {

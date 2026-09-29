@@ -32,7 +32,7 @@ export function EffortSelect({
   return (
     <EffortPicker
       value={value}
-      onValueChange={(next) => onValueChange(next as SessionEffort)}
+      onValueChange={onValueChange}
       disabled={disabled}
       label={t('sessions.new.effort.label')}
       fasterLabel={t('sessions.new.effort.faster')}

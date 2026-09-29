@@ -3,9 +3,10 @@
 
 package domain
 
-// launchCatalog is each agent's `launch` entry of the catalog, and its models'
-// effort levels: the argument vectors a structured launch becomes. `<model>`
-// and `<prompt>` are the two placeholders, substituted whole.
+// launchCatalog is each agent's `launch` entry of the catalog, and the effort
+// levels its models offer: the argument vectors a structured launch becomes.
+// `<model>` and `<prompt>` are substituted whole; an effort spelling has
+// `<effort>` and `<model>` replaced inside each word.
 var launchCatalog = map[string]launchMap{
 	"claude-code": {
 		command:      "claude",
@@ -16,28 +17,11 @@ var launchCatalog = map[string]launchMap{
 			"auto": {argv: []string{"--permission-mode", "acceptEdits"}},
 			"full": {argv: []string{"--permission-mode", "bypassPermissions"}},
 		},
-		effort: map[string]map[string]launchLevel{
-			"claude-opus-5-5": {
-				"low":    {argv: []string{"--effort", "low"}},
-				"medium": {argv: []string{"--effort", "medium"}},
-				"high":   {argv: []string{"--effort", "high"}},
-				"xhigh":  {argv: []string{"--effort", "xhigh"}},
-				"max":    {argv: []string{"--effort", "max"}},
-			},
-			"claude-fable-5-1": {
-				"low":    {argv: []string{"--effort", "low"}},
-				"medium": {argv: []string{"--effort", "medium"}},
-				"high":   {argv: []string{"--effort", "high"}},
-				"xhigh":  {argv: []string{"--effort", "xhigh"}},
-				"max":    {argv: []string{"--effort", "max"}},
-			},
-			"claude-sonnet-5-5": {
-				"low":    {argv: []string{"--effort", "low"}},
-				"medium": {argv: []string{"--effort", "medium"}},
-				"high":   {argv: []string{"--effort", "high"}},
-				"xhigh":  {argv: []string{"--effort", "xhigh"}},
-				"max":    {argv: []string{"--effort", "max"}},
-			},
+		effort: launchLevel{argv: []string{"--effort", "<effort>"}},
+		effortLevels: map[string][]string{
+			"claude-opus-5-5":   {"low", "medium", "high", "xhigh", "max"},
+			"claude-fable-5-1":  {"low", "medium", "high", "xhigh", "max"},
+			"claude-sonnet-5-5": {"low", "medium", "high", "xhigh", "max"},
 		},
 		prompt: []string{"<prompt>"},
 	},
@@ -50,38 +34,12 @@ var launchCatalog = map[string]launchMap{
 			"auto": {argv: []string{"--approve-for-me"}},
 			"full": {argv: []string{"--dangerously-bypass-approvals-and-sandbox"}},
 		},
-		effort: map[string]map[string]launchLevel{
-			"gpt-6-astra": {
-				"low":    {argv: []string{"-c", "model_reasoning_effort=low"}},
-				"medium": {argv: []string{"-c", "model_reasoning_effort=medium"}},
-				"high":   {argv: []string{"-c", "model_reasoning_effort=high"}},
-				"xhigh":  {argv: []string{"-c", "model_reasoning_effort=xhigh"}},
-				"max":    {argv: []string{"-c", "model_reasoning_effort=max"}},
-				"ultra":  {argv: []string{"-c", "model_reasoning_effort=ultra"}},
-			},
-			"gpt-5.6-sol": {
-				"low":    {argv: []string{"-c", "model_reasoning_effort=low"}},
-				"medium": {argv: []string{"-c", "model_reasoning_effort=medium"}},
-				"high":   {argv: []string{"-c", "model_reasoning_effort=high"}},
-				"xhigh":  {argv: []string{"-c", "model_reasoning_effort=xhigh"}},
-				"max":    {argv: []string{"-c", "model_reasoning_effort=max"}},
-				"ultra":  {argv: []string{"-c", "model_reasoning_effort=ultra"}},
-			},
-			"gpt-5.6-terra": {
-				"low":    {argv: []string{"-c", "model_reasoning_effort=low"}},
-				"medium": {argv: []string{"-c", "model_reasoning_effort=medium"}},
-				"high":   {argv: []string{"-c", "model_reasoning_effort=high"}},
-				"xhigh":  {argv: []string{"-c", "model_reasoning_effort=xhigh"}},
-				"max":    {argv: []string{"-c", "model_reasoning_effort=max"}},
-				"ultra":  {argv: []string{"-c", "model_reasoning_effort=ultra"}},
-			},
-			"gpt-5.6-luna": {
-				"low":    {argv: []string{"-c", "model_reasoning_effort=low"}},
-				"medium": {argv: []string{"-c", "model_reasoning_effort=medium"}},
-				"high":   {argv: []string{"-c", "model_reasoning_effort=high"}},
-				"xhigh":  {argv: []string{"-c", "model_reasoning_effort=xhigh"}},
-				"max":    {argv: []string{"-c", "model_reasoning_effort=max"}},
-			},
+		effort: launchLevel{argv: []string{"-c", "model_reasoning_effort=<effort>"}},
+		effortLevels: map[string][]string{
+			"gpt-6-astra":   {"low", "medium", "high", "xhigh", "max", "ultra"},
+			"gpt-5.6-sol":   {"low", "medium", "high", "xhigh", "max", "ultra"},
+			"gpt-5.6-terra": {"low", "medium", "high", "xhigh", "max", "ultra"},
+			"gpt-5.6-luna":  {"low", "medium", "high", "xhigh", "max"},
 		},
 		prompt: []string{"<prompt>"},
 	},
@@ -94,40 +52,14 @@ var launchCatalog = map[string]launchMap{
 			"auto": {env: map[string]string{"OPENCODE_PERMISSION": "{\"edit\":\"allow\",\"bash\":\"ask\",\"webfetch\":\"ask\",\"websearch\":\"ask\",\"codesearch\":\"ask\"}"}},
 			"full": {argv: []string{"--auto"}},
 		},
-		effort: map[string]map[string]launchLevel{
-			"anthropic/claude-opus-5-5": {
-				"low":    {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-opus-5-5\",\"variant\":\"low\"}}}"}},
-				"medium": {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-opus-5-5\",\"variant\":\"medium\"}}}"}},
-				"high":   {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-opus-5-5\",\"variant\":\"high\"}}}"}},
-				"xhigh":  {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-opus-5-5\",\"variant\":\"xhigh\"}}}"}},
-				"max":    {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-opus-5-5\",\"variant\":\"max\"}}}"}},
-			},
-			"anthropic/claude-fable-5-1": {
-				"low":    {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-fable-5-1\",\"variant\":\"low\"}}}"}},
-				"medium": {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-fable-5-1\",\"variant\":\"medium\"}}}"}},
-				"high":   {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-fable-5-1\",\"variant\":\"high\"}}}"}},
-				"xhigh":  {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-fable-5-1\",\"variant\":\"xhigh\"}}}"}},
-				"max":    {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-fable-5-1\",\"variant\":\"max\"}}}"}},
-			},
-			"anthropic/claude-sonnet-5-5": {
-				"low":    {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-sonnet-5-5\",\"variant\":\"low\"}}}"}},
-				"medium": {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-sonnet-5-5\",\"variant\":\"medium\"}}}"}},
-				"high":   {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-sonnet-5-5\",\"variant\":\"high\"}}}"}},
-				"xhigh":  {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-sonnet-5-5\",\"variant\":\"xhigh\"}}}"}},
-				"max":    {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-sonnet-5-5\",\"variant\":\"max\"}}}"}},
-			},
-			"anthropic/claude-haiku-4-5": {
-				"none": {},
-				"high": {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-haiku-4-5\",\"variant\":\"high\"}}}"}},
-				"max":  {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"anthropic/claude-haiku-4-5\",\"variant\":\"max\"}}}"}},
-			},
-			"openai/gpt-5.6-sol": {
-				"low":    {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"openai/gpt-5.6-sol\",\"variant\":\"low\"}}}"}},
-				"medium": {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"openai/gpt-5.6-sol\",\"variant\":\"medium\"}}}"}},
-				"high":   {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"openai/gpt-5.6-sol\",\"variant\":\"high\"}}}"}},
-				"xhigh":  {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"openai/gpt-5.6-sol\",\"variant\":\"xhigh\"}}}"}},
-				"max":    {env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"openai/gpt-5.6-sol\",\"variant\":\"max\"}}}"}},
-			},
+		effort:      launchLevel{env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"<model>\",\"variant\":\"<effort>\"}}}"}},
+		effortUnset: "none",
+		effortLevels: map[string][]string{
+			"anthropic/claude-opus-5-5":   {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-fable-5-1":  {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-sonnet-5-5": {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-haiku-4-5":  {"none", "high", "max"},
+			"openai/gpt-5.6-sol":          {"low", "medium", "high", "xhigh", "max"},
 		},
 		prompt: []string{"--prompt", "<prompt>"},
 	},
@@ -140,23 +72,10 @@ var launchCatalog = map[string]launchMap{
 			"auto": {argv: []string{"--permission-mode", "acceptEdits"}},
 			"full": {argv: []string{"--permission-mode", "bypassPermissions"}},
 		},
-		effort: map[string]map[string]launchLevel{
-			"grok-4.7": {
-				"minimal": {argv: []string{"--reasoning-effort", "minimal"}},
-				"low":     {argv: []string{"--reasoning-effort", "low"}},
-				"medium":  {argv: []string{"--reasoning-effort", "medium"}},
-				"high":    {argv: []string{"--reasoning-effort", "high"}},
-				"xhigh":   {argv: []string{"--reasoning-effort", "xhigh"}},
-				"max":     {argv: []string{"--reasoning-effort", "max"}},
-			},
-			"grok-4.6": {
-				"minimal": {argv: []string{"--reasoning-effort", "minimal"}},
-				"low":     {argv: []string{"--reasoning-effort", "low"}},
-				"medium":  {argv: []string{"--reasoning-effort", "medium"}},
-				"high":    {argv: []string{"--reasoning-effort", "high"}},
-				"xhigh":   {argv: []string{"--reasoning-effort", "xhigh"}},
-				"max":     {argv: []string{"--reasoning-effort", "max"}},
-			},
+		effort: launchLevel{argv: []string{"--reasoning-effort", "<effort>"}},
+		effortLevels: map[string][]string{
+			"grok-4.7": {"minimal", "low", "medium", "high", "xhigh", "max"},
+			"grok-4.6": {"minimal", "low", "medium", "high", "xhigh", "max"},
 		},
 		prompt: []string{"<prompt>"},
 	},

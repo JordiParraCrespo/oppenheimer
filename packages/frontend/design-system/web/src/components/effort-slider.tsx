@@ -9,41 +9,37 @@ import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
 /**
  * EffortSlider — how long the agent may think, as a stepped track rather
- * than a list: one stop per level the caller passes (five from Minimal to
- * Max when it passes none), a 30px knob in full ink, the
- * used part of the track in the control-hover wash, a dot at every stop
+ * than a list: one stop per level the caller passes, a 30px knob in full ink,
+ * the used part of the track in the control-hover wash, a dot at every stop
  * the knob is not on. 28px tall at the 10px radius. Pointer picks and drags;
  * arrows, Home and End step. Picking stays put: the reader is comparing,
  * not confirming.
+ *
+ * The stops are always the caller's: which levels exist and what they are
+ * called is the product's vocabulary, not the design system's, so there is no
+ * default set to fall back on. The value type follows the stops, so a caller
+ * gets back its own union.
  *
  * `EffortPicker` is the composer's form of it: a muted tool button reading
  * the current stop, opening a 268px popover with the "Effort · Medium"
  * header, an info glyph explaining the trade, "Faster" and "Smarter" at the
  * ends, and the slider.
  */
-type EffortStop = { value: string; label: string };
-
-const DEFAULT_STOPS: EffortStop[] = [
-  { value: 'minimal', label: 'Minimal' },
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
-  { value: 'max', label: 'Max' },
-];
+type EffortStop<V extends string = string> = { value: V; label: string };
 
 const KNOB = 30;
 
-function EffortSlider({
-  stops = DEFAULT_STOPS,
+function EffortSlider<V extends string>({
+  stops,
   value,
   onValueChange,
   className,
   'aria-label': ariaLabel = 'Effort',
   ...props
 }: Omit<React.ComponentProps<'div'>, 'onChange'> & {
-  stops?: EffortStop[];
-  value: string;
-  onValueChange: (value: string) => void;
+  stops: readonly EffortStop<V>[];
+  value: V;
+  onValueChange: (value: V) => void;
 }) {
   const track = React.useRef<HTMLDivElement>(null);
   const index = Math.max(
@@ -143,8 +139,8 @@ function EffortSlider({
   );
 }
 
-function EffortPicker({
-  stops = DEFAULT_STOPS,
+function EffortPicker<V extends string>({
+  stops,
   value,
   onValueChange,
   label = 'Effort',
@@ -154,9 +150,9 @@ function EffortPicker({
   disabled,
   className,
 }: {
-  stops?: EffortStop[];
-  value: string;
-  onValueChange: (value: string) => void;
+  stops: readonly EffortStop<V>[];
+  value: V;
+  onValueChange: (value: V) => void;
   label?: string;
   fasterLabel?: string;
   smarterLabel?: string;
@@ -214,5 +210,5 @@ function EffortPicker({
   );
 }
 
-export { DEFAULT_STOPS as EFFORT_STOPS, EffortPicker, EffortSlider };
+export { EffortPicker, EffortSlider };
 export type { EffortStop };

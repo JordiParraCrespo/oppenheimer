@@ -86,21 +86,16 @@ function goLevels(record) {
 }
 
 /**
- * Each model's effort levels, keyed by model id and then by level: the same
- * argv-and-env pair a permission level is. A model with no effort has no row,
- * so the runner drops a level asked of it.
+ * The effort levels each model offers, keyed by model id: which names a
+ * launch on that model may carry. A model with no effort has no row, so the
+ * runner drops a level asked of it. How a level is spelled is the agent's one
+ * `effort` level, beside this.
  */
-function goEfforts(models) {
+function goEffortLevels(models) {
   const rows = models
     .filter((model) => model.effort)
-    .map((model) => {
-      const entries = model.effort.levels.map((level) => [
-        JSON.stringify(level.id),
-        goLevel(level),
-      ]);
-      return `\t\t\t${JSON.stringify(model.id)}: {\n${aligned(entries, '\t\t\t\t').join('\n')}\n\t\t\t},`;
-    });
-  return `map[string]map[string]launchLevel{\n${rows.join('\n')}\n\t\t}`;
+    .map((model) => [JSON.stringify(model.id), goElided(model.effort.levels)]);
+  return `map[string][]string{\n${aligned(rows, '\t\t\t').join('\n')}\n\t\t}`;
 }
 
 /** One login target: a host, and a path prefix when there is one. */
@@ -117,9 +112,10 @@ function render() {
     '',
     'package domain',
     '',
-    "// launchCatalog is each agent's `launch` entry of the catalog, and its models'",
-    '// effort levels: the argument vectors a structured launch becomes. `<model>`',
-    '// and `<prompt>` are the two placeholders, substituted whole.',
+    "// launchCatalog is each agent's `launch` entry of the catalog, and the effort",
+    '// levels its models offer: the argument vectors a structured launch becomes.',
+    '// `<model>` and `<prompt>` are substituted whole; an effort spelling has',
+    '// `<effort>` and `<model>` replaced inside each word.',
     'var launchCatalog = map[string]launchMap{',
   ];
   for (const id of CODING_AGENT_IDS) {
@@ -133,8 +129,11 @@ function render() {
     if (defaultModel) head.push(['defaultModel', JSON.stringify(defaultModel.id)]);
     lines.push(...aligned(head, '\t\t'));
     if (launch.permission) lines.push(`\t\tpermission: ${goLevels(launch.permission)},`);
-    if (agent.models.some((model) => model.effort)) {
-      lines.push(`\t\teffort: ${goEfforts(agent.models)},`);
+    if (launch.effort) {
+      const spelling = [['effort', `launchLevel${goLevel(launch.effort)}`]];
+      if (launch.effort.unset) spelling.push(['effortUnset', JSON.stringify(launch.effort.unset)]);
+      lines.push(...aligned(spelling, '\t\t'));
+      lines.push(`\t\teffortLevels: ${goEffortLevels(agent.models)},`);
     }
     if (launch.prompt) lines.push(`\t\tprompt: ${goStrings(launch.prompt)},`);
     lines.push('\t},');

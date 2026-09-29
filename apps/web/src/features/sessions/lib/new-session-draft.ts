@@ -3,8 +3,6 @@ import {
   CODING_AGENTS,
   type CodingAgentId,
   isCodingAgentId,
-  SESSION_EFFORTS,
-  type SessionEffort,
   type SessionPermission,
 } from '@oppenheimer/shared/agents';
 import { defaultModelFor, type EffortPicks } from './session-options';
@@ -116,18 +114,17 @@ function remembered(): Partial<RememberedChoices> {
 }
 
 /**
- * The per-agent picks a stored draft holds, keeping only an agent this build
- * knows and a level in the union. A draft saved before effort was per agent
- * held one `effort` stop for all of them; it is not read back, because the
- * same word now names a different level for Claude Code.
+ * The per-agent picks a stored draft holds, as they were left: a string for an
+ * agent this build knows. Whether a pick is one of the model's levels is decided
+ * when the slider is drawn (`effortChoiceFor`), not here. A draft saved before
+ * effort was per agent held one `effort` for all of them; it is not read back,
+ * because the same word now names a different level for Claude Code.
  */
 function effortPicks(stored: unknown): EffortPicks | undefined {
   if (typeof stored !== 'object' || stored === null) return undefined;
   const picks: EffortPicks = {};
   for (const [agent, level] of Object.entries(stored)) {
-    if (isCodingAgentId(agent) && SESSION_EFFORTS.includes(level as SessionEffort)) {
-      picks[agent] = level as SessionEffort;
-    }
+    if (isCodingAgentId(agent) && typeof level === 'string') picks[agent] = level;
   }
   return picks;
 }

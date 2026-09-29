@@ -822,7 +822,7 @@ export default function Page() {
         code={`<Composer value={v} onValueChange={setV} onSubmit={start} onAttach={pick}
   scope={<><ChipSelect variant="tab" … /><RepositorySelect variant="tab" … /></>}
   tools={<PermissionMenu options={levels} value={level} onValueChange={setLevel} />}
-  engine={<><AgentModelSelect agents={harnesses} value={engine} onValueChange={setEngine} /><EffortPicker value={effort} onValueChange={setEffort} /></>} />`}
+  engine={<><AgentModelSelect agents={harnesses} value={engine} onValueChange={setEngine} /><EffortPicker stops={levels} value={effort} onValueChange={setEffort} /></>} />`}
       >
         <ComposerDemo />
         <ComposerDemo full />
@@ -842,9 +842,9 @@ export default function Page() {
         id="effort"
         title="EffortSlider · EffortPicker"
         meta="effort-slider.tsx"
-        desc="How long the agent may think, as a stepped track: five stops from Minimal to Max, a 30px knob in full ink, the used part of the track in the control wash, a dot at every stop the knob is not on. Pointer picks and drags, arrows step. EffortPicker is the composer's form: a muted tool button opening a 268px popover with the Effort header, the info glyph and Faster / Smarter at the ends. Picking stays in the popover; you are comparing, not confirming."
-        code={`<EffortPicker value={effort} onValueChange={setEffort} />
-<EffortSlider value={effort} onValueChange={setEffort} />`}
+        desc="How long the agent may think, as a stepped track: one stop per level the caller passes (a model's own levels in the console), a 30px knob in full ink, the used part of the track in the control wash, a dot at every stop the knob is not on. Pointer picks and drags, arrows step. EffortPicker is the composer's form: a muted tool button opening a 268px popover with the Effort header, the info glyph and Faster / Smarter at the ends. Picking stays in the popover; you are comparing, not confirming."
+        code={`<EffortPicker stops={levels} value={effort} onValueChange={setEffort} />
+<EffortSlider stops={levels} value={effort} onValueChange={setEffort} />`}
       >
         <Swatch label="picker">
           <EffortDemo />

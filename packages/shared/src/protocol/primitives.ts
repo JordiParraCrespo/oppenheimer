@@ -66,6 +66,12 @@ export const protocolAgentSchema = z.enum(CODING_AGENT_IDS);
 export const launchOptionsSchema = z.object({
   model: z.string().min(1).max(128).optional(),
   permission: z.enum(SESSION_PERMISSIONS).optional(),
+  /**
+   * A name from the union of every level any CLI takes, which is a vocabulary
+   * and not a list of what is legal here: only a level the session's model
+   * offers is spelled, and the runner drops any other rather than forward it
+   * (01). Absent is the CLI's own default.
+   */
   effort: z.enum(SESSION_EFFORTS).optional(),
 });
 

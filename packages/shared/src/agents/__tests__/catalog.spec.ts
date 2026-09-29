@@ -4,6 +4,7 @@ import {
   CODING_AGENTS,
   type CodingAgentId,
   effortFor,
+  effortLevelFor,
   isCodingAgentId,
   SESSION_EFFORTS,
   SESSION_PERMISSIONS,
@@ -40,24 +41,18 @@ describe('coding agent catalog', () => {
 
   it('asks Grok for its levels by their own names, and Ask onto its `default` mode', () => {
     // Pinned so a later `--help` pass cannot slide them: grok refuses a level
-    // it does not know at launch, so every level is one of its names verbatim;
-    // and Ask is `default`, not Grok's own `auto`, which approves on its own.
-    for (const model of CODING_AGENTS.grok.models) {
-      for (const level of model.effort?.levels ?? []) {
-        expect(level.argv).toEqual(['--reasoning-effort', level.id]);
-      }
-      expect(model.effort?.default).toBe('high');
-    }
-    const { permission } = CODING_AGENTS.grok.launch;
+    // it does not know at launch, so the level is its own name, verbatim; and
+    // Ask is `default`, not Grok's own `auto`, which approves on its own.
+    const { effort, permission } = CODING_AGENTS.grok.launch;
+    expect(effort?.argv).toEqual(['--reasoning-effort', '<effort>']);
+    for (const model of CODING_AGENTS.grok.models) expect(model.effort?.default).toBe('high');
     expect(permission?.ask.argv).toEqual(['--permission-mode', 'default']);
     expect(permission?.full.argv).toEqual(['--permission-mode', 'bypassPermissions']);
   });
 
   it('gives each model the effort levels and default its own CLI reports', () => {
-    // Read off the CLIs themselves: claude's request with no `--effort`,
-    // `codex debug models`, `opencode models --verbose`.
     const levelsOf = (agent: CodingAgentId, model: string | null) =>
-      effortFor(agent, model)?.levels.map((level) => level.id);
+      effortFor(agent, model)?.levels;
     expect(levelsOf('claude-code', null)).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
     expect(effortFor('claude-code', 'claude-opus-5-5')?.default).toBe('medium');
     expect(effortFor('claude-code', 'claude-fable-5-1')?.default).toBe('high');
@@ -80,28 +75,35 @@ describe('coding agent catalog', () => {
     expect(effortFor('codex', 'gpt-4o')).toBeUndefined();
   });
 
+  it('records only a level the model offers, one rule for every writer', () => {
+    expect(effortLevelFor('codex', 'gpt-5.6-sol', 'ultra')).toBe('ultra');
+    expect(effortLevelFor('codex', 'gpt-5.6-luna', 'ultra')).toBeNull();
+    expect(effortLevelFor('claude-code', 'claude-haiku-4-5', 'high')).toBeNull();
+    expect(effortLevelFor('claude-code', 'opus', 'high')).toBeNull();
+    expect(effortLevelFor('claude-code', null, 'infinite')).toBeNull();
+    expect(effortLevelFor('shell', null, 'high')).toBeNull();
+    // An agent this build does not know keeps a name from the union.
+    expect(effortLevelFor('newer-agent', 'x', 'high')).toBe('high');
+  });
+
   it('never offers `minimal` to Codex, whose models take none', () => {
     for (const model of CODING_AGENTS.codex.models) {
-      expect(model.effort?.levels.map((level) => level.id)).not.toContain('minimal');
+      expect(model.effort?.levels).not.toContain('minimal');
     }
   });
 
-  it('sets an OpenCode level as the variant of the model it is listed under', () => {
-    for (const model of CODING_AGENTS.opencode.models) {
-      for (const level of model.effort?.levels ?? []) {
-        expect(level.argv).toEqual([]);
-        const config = level.env.OPENCODE_CONFIG_CONTENT;
-        if (level.id === 'none') {
-          expect(config).toBeUndefined();
-          continue;
-        }
-        // The variant applies only while the agent runs its own configured
-        // model, so the model is named again, and it must be this row's.
-        expect(JSON.parse(config ?? '')).toEqual({
-          agent: { build: { model: model.id, variant: level.id } },
-        });
-      }
-    }
+  it('spells an OpenCode level as the variant of the model it runs', () => {
+    const effort = CODING_AGENTS.opencode.launch.effort;
+    expect(effort?.argv).toEqual([]);
+    expect(effort?.unset).toBe('none');
+    // The variant applies only while the agent runs its own configured model,
+    // so the model is named again.
+    const config = (effort?.env.OPENCODE_CONFIG_CONTENT ?? '')
+      .replaceAll('<model>', 'anthropic/claude-opus-5-5')
+      .replaceAll('<effort>', 'xhigh');
+    expect(JSON.parse(config)).toEqual({
+      agent: { build: { model: 'anthropic/claude-opus-5-5', variant: 'xhigh' } },
+    });
   });
 
   it('offers the plain terminal as an entry with nothing to launch', () => {
@@ -280,19 +282,30 @@ describe('launch mapping', () => {
     }
   });
 
-  it('lists each model’s levels lowest first, once each, with its default among them', () => {
+  it('lists each model’s levels once each, with its default among them', () => {
     for (const id of CODING_AGENT_IDS) {
-      for (const model of CODING_AGENTS[id].models) {
+      const { launch, models } = CODING_AGENTS[id];
+      for (const model of models) {
         if (!model.effort) continue;
-        const ids = model.effort.levels.map((level) => level.id);
-        const ranks = ids.map((level) => SESSION_EFFORTS.indexOf(level));
-        expect(ranks, `${id}/${model.id} out of order`).toEqual([...ranks].sort((a, b) => a - b));
-        expect(new Set(ids).size, `${id}/${model.id} repeats a level`).toBe(ids.length);
-        expect(ids, `${id}/${model.id}`).toContain(model.effort.default);
-        // Only `none` may leave the CLI alone; every other level says something.
-        for (const level of model.effort.levels) {
-          if (level.id === 'none') continue;
-          expect(level.argv.length + Object.keys(level.env).length).toBeGreaterThan(0);
+        const { levels, default: fallback } = model.effort;
+        expect(new Set(levels).size, `${id}/${model.id} repeats a level`).toBe(levels.length);
+        expect(levels, `${id}/${model.id}`).toContain(fallback);
+        // A level is only as good as the agent's way of saying it.
+        expect(launch.effort, `${id} has levels but no spelling`).toBeDefined();
+      }
+    }
+  });
+
+  it('never lets an effort set a variable a permission level sets', () => {
+    for (const id of CODING_AGENT_IDS) {
+      const { effort, permission } = CODING_AGENTS[id].launch;
+      if (!effort || !permission) continue;
+      for (const level of SESSION_PERMISSIONS) {
+        for (const name of Object.keys(effort.env)) {
+          expect(
+            permission[level].env,
+            `${id} ${level} and effort both set ${name}`,
+          ).not.toHaveProperty(name);
         }
       }
     }

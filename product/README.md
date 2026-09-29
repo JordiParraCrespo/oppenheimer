@@ -303,10 +303,3 @@ earlier note:
   `RATE_LIMIT_*`), with the product's numbers as the defaults (2026-09-29).
 - 05's composer drew a paperclip wired to nothing; it now attaches images
   to the first task (03) (2026-09-28).
-- 05's effort slider was five product stops (Minimal to Max) that each
-  agent's catalog entry mapped onto its CLI. It is now each CLI's own
-  levels, per model, under the CLI's names, starting on the level the CLI
-  runs unasked, and an untouched slider sends nothing; OpenCode, which had
-  no effort, takes it as the model's variant. Stored efforts were
-  rewritten to the level each session and automation already ran at
-  (2026-09-29).

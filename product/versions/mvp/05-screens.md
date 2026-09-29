@@ -148,34 +148,21 @@
   **What each agent offers**, from the shared catalog (`CODING_AGENTS`)
   and never a list kept in the console:
 
-  | Agent | Models (default first in bold) | Permission chip | Effort: levels (default) |
+  | Agent | Models (default first in bold) | Permission chip | Effort |
   |---|---|---|---|
-  | Claude Code | **Opus 5.5**, Fable 5.1, Sonnet 5.5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | `--effort` low … max (Opus and Sonnet `medium`, Fable `high`); none for Haiku |
-  | Codex | GPT-6 Astra, **GPT-5.6 Sol**, Terra, Luna | yes | `model_reasoning_effort` low … max, plus `ultra` on Astra, Sol and Terra (Astra and Sol `low`, Terra and Luna `medium`) |
-  | OpenCode | Claude's four under `anthropic/` (**`anthropic/claude-opus-5-5`**), `openai/gpt-5.6-sol` | yes | the model's variant: low … max for the adaptive Claude models (`high`), Off / high / max for Haiku (Off), low … max for Sol (`medium`) |
-  | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default) | yes | `--reasoning-effort` minimal … max (`high`) |
+  | Claude Code | **Opus 5.5**, Fable 5.1, Sonnet 5.5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | the model's levels; none for Haiku |
+  | Codex | GPT-6 Astra, **GPT-5.6 Sol**, Terra, Luna | yes | the model's levels |
+  | OpenCode | Claude's four under `anthropic/` (**`anthropic/claude-opus-5-5`**), `openai/gpt-5.6-sol` | yes | the model's levels |
+  | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default) | yes | the model's levels |
   | Blank terminal | none, picked outright | no | no |
 
-  **The effort levels are each CLI's own, per model** (changed
-  2026-09-29). The slider's stops are the levels the model's CLI offers,
-  under that CLI's names, and the knob starts on the level the CLI runs
-  unasked. Until then the stops were the product's five, mapped onto
-  each CLI: that put "Medium" on a slider that started Claude Code at
-  `high`, sent Codex a `minimal` none of its models takes, left Codex's
-  `max` and `ultra` out of reach, and started an untouched Grok session
-  below Grok's own default. The levels and defaults were read off the
-  CLIs themselves — claude's request with no `--effort`, `codex debug
-  models`, `opencode models --verbose`, grok's own check — and are catalog
-  data on each model row (`effortFor`). OpenCode takes a level as the
-  model's *variant*, which its TUI has no flag for, so it is inline
-  configuration (`OPENCODE_CONFIG_CONTENT` naming the build agent's
-  model and variant) beside the permission block.
-
-  An untouched slider **sends nothing**, so the session runs exactly as
-  the CLI would unasked. A pick is kept per agent, since each agent's
-  levels are its own; a pick the model does not offer lands on the
-  nearest level below it (Sol's `ultra`, then Luna, is `max`), and the
-  API records only a level the session's model offers.
+  **The effort slider draws the model's own levels** under its CLI's
+  names, starts on the level that CLI runs unasked, and **sends nothing
+  until it is moved**, so an untouched session runs exactly as the CLI
+  would. It is hidden for a model with no effort. A pick is kept per
+  agent; on a model that does not offer it the slider shows the model's
+  default and sends nothing, and the pick waits for a model that has it.
+  Which levels exist is the catalog's (01, 02 §5).
 
   A control the agent does not take is **hidden, and not sent**: the
   composer keeps what was chosen for the last agent (a permission level

@@ -7,6 +7,7 @@ import {
   type SessionAttachmentDto,
   type SessionSortDto,
 } from '@oppenheimer/shared';
+import { effortLevelFor } from '@oppenheimer/shared/agents';
 import {
   SESSION_IMAGE_MEDIA_TYPES,
   type SessionImageMediaType,
@@ -23,7 +24,6 @@ import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-ent
 import { SessionCheckoutEntity } from './domain/session-checkout.entity';
 import type { SessionLaunchImage } from './domain/session-launch-image.types';
 import {
-  launchEffortFor,
   launchPermissionFor,
   SESSION_EVENT_KINDS,
   type SessionAgent,
@@ -314,7 +314,7 @@ export class WorkSessionMapper
    * anything else: a default that escalated is the single mistake this field must
    * not make (`product/versions/mvp/03-control-plane.md`). An agent with no
    * approvals records no level at all (`launchPermissionFor`), and an effort
-   * the model does not offer is not recorded (`launchEffortFor`).
+   * the model does not offer is not recorded (`effortLevelFor`).
    */
   toLaunch(
     agent: CreateSessionDto['agent'],
@@ -323,7 +323,7 @@ export class WorkSessionMapper
     return {
       model: launch?.model ?? null,
       permission: launchPermissionFor(agent, launch?.permission),
-      effort: launchEffortFor(agent, launch?.model ?? null, launch?.effort),
+      effort: effortLevelFor(agent, launch?.model ?? null, launch?.effort),
     };
   }
 

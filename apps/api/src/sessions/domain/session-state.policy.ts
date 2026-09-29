@@ -4,8 +4,8 @@ import type {
   SessionPermissionDto,
   SessionState,
 } from '@oppenheimer/shared';
-import { SESSION_EFFORTS, SESSION_PERMISSIONS } from '@oppenheimer/shared';
-import { CODING_AGENTS, effortFor, isCodingAgentId } from '@oppenheimer/shared/agents';
+import { SESSION_PERMISSIONS } from '@oppenheimer/shared';
+import { CODING_AGENTS, effortLevelFor, isCodingAgentId } from '@oppenheimer/shared/agents';
 
 /**
  * The fold: `(fold, event) → fold`.
@@ -217,27 +217,6 @@ export function launchPermissionFor(
 }
 
 /**
- * The effort a session of `agent` on `model` is recorded with, given what was
- * asked for: the level when that model's CLI offers it, and null otherwise.
- *
- * The levels are the model's (`effortFor`), so one asked of a model that lacks
- * it — `ultra` of Codex's Luna, anything of Claude's Haiku, anything of the
- * blank terminal — is what the runner drops, and the record says so rather
- * than naming a level nothing ran at. An agent this build does not know keeps
- * a level from the union: it cannot be checked, and a newer runner may know.
- */
-export function launchEffortFor(
-  agent: string | null,
-  model: string | null,
-  requested: string | null | undefined,
-): SessionEffortDto | null {
-  if (!SESSION_EFFORTS.includes(requested as SessionEffortDto)) return null;
-  const level = requested as SessionEffortDto;
-  if (!agent || !isCodingAgentId(agent)) return level;
-  return effortFor(agent, model)?.levels.some((offered) => offered.id === level) ? level : null;
-}
-
-/**
  * Whether a host's runner can start `agent`, from the tool names its last
  * inventory probed.
  *
@@ -274,16 +253,14 @@ function launchOf(payload: unknown): SessionLaunchFold | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const launch = (payload as { launch?: unknown }).launch;
   if (typeof launch !== 'object' || launch === null) return null;
-  const effort = stringField(launch, 'effort');
+  const agent = stringField(payload, 'agent');
+  const model = stringField(launch, 'model');
   return {
-    model: stringField(launch, 'model'),
-    permission: launchPermissionFor(
-      stringField(payload, 'agent'),
-      stringField(launch, 'permission'),
-    ),
-    effort: SESSION_EFFORTS.includes(effort as SessionEffortDto)
-      ? (effort as SessionEffortDto)
-      : null,
+    model,
+    permission: launchPermissionFor(agent, stringField(launch, 'permission')),
+    // The same rule the create applied (`effortLevelFor`), so a replay of the
+    // log records exactly what the create did.
+    effort: effortLevelFor(agent, model, stringField(launch, 'effort')),
   };
 }
 
