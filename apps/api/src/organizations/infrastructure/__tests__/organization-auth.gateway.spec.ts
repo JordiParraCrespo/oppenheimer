@@ -59,7 +59,6 @@ describe('OrganizationAuthGateway', () => {
       slug: 'custom-slug',
       logo: undefined,
     });
-    // Headers are converted to a `Headers` object for Better Auth.
     expect(api.createOrganization.mock.calls[0][0].headers).toBeInstanceOf(Headers);
   });
 

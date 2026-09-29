@@ -1,5 +1,6 @@
 import {
   Button,
+  EmptyState,
   Terminal,
   TerminalStatusBar,
   TerminalStatusItem,
@@ -47,7 +48,7 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
   const image = useImagePaste(sessionId, AGENT_WINDOW);
-  const { containerRef, status, ended, retryNow } = useTerminal(createStream, {
+  const { containerRef, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
     onEnd: refresh,
     agentWindow: true,
     onImage: image.onImage,
@@ -59,8 +60,30 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
           host element and counts that host's padding as usable space, so a
           padded host overflows its own box and paints over the rows below it.
           xterm owns everything inside the inner element, scrollbar included. */}
-      <div className="min-h-0 flex-1 overflow-hidden px-5 py-4">
+      <div className="relative min-h-0 flex-1 overflow-hidden px-5 py-4">
         <div ref={containerRef} className="size-full" />
+        {/* A live link with an empty grid behind it.
+            The host reports a session "started" once tmux holds it, which is
+            before the agent inside has drawn anything — a few seconds cold,
+            tens of them on a loaded machine. The provisioning pane has handed
+            over by then, so without this the reader gets a white rectangle and
+            no way to tell a slow start from a broken session. It covers the
+            grid rather than replacing it: the terminal stays mounted, keeps
+            its size, and the first byte the agent writes takes this away.
+            A reconnect replays the scrollback, so a session that has run
+            before never shows it. */}
+        {status === 'live' && !hasOutput ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-term-bg">
+            <EmptyState>
+              <EmptyState.Header>
+                <EmptyState.Title>{t('sessions.session.starting.title')}</EmptyState.Title>
+                <EmptyState.Description>
+                  {t('sessions.session.starting.description')}
+                </EmptyState.Description>
+              </EmptyState.Header>
+            </EmptyState>
+          </div>
+        ) : null}
       </div>
 
       {/* An end the refetch will not explain: the session is still live, but

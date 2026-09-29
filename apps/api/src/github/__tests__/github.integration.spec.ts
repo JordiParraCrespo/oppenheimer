@@ -54,8 +54,6 @@ describe('GitHub installations schema (integration)', () => {
     await container?.stop();
   });
 
-  // --- helpers ---------------------------------------------------------------
-
   const ORG_ONE = '11111111-1111-4111-8111-111111111111';
   const ORG_TWO = '22222222-2222-4222-8222-222222222222';
   const USER = '33333333-3333-4333-8333-333333333333';
@@ -88,8 +86,6 @@ describe('GitHub installations schema (integration)', () => {
       [organizationId, githubInstallationId, USER],
     );
   }
-
-  // --- the table -------------------------------------------------------------
 
   describe('github_installation', () => {
     beforeAll(seedTenants);
@@ -356,8 +352,6 @@ describe('GitHub installations schema (integration)', () => {
       expect(rows).toEqual([]);
     });
   });
-
-  // --- the owner role --------------------------------------------------------
 
   describe('installation role permissions', () => {
     it('gives the workspace owner role its installations, and no repository rule', async () => {

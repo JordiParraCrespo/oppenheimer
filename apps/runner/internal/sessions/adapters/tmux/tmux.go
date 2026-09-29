@@ -30,6 +30,26 @@ var _ app.Terminals = (*Server)(nil)
 // commandTimeout bounds a control command. Attaching is not one of these.
 const commandTimeout = 10 * time.Second
 
+// launchCols and launchRows are the grid a session starts on, before any
+// browser has attached and said how wide it really is.
+//
+// tmux starts a detached session at 80x24, and an agent lays its turn out for
+// the terminal it is told about: a session created and left alone — which is
+// every session between "send" and the reader opening it, and every session an
+// automation runs — did its work in 80 columns, then reflowed into the 130-odd
+// the console actually shows when someone finally looked. Wrapped tables,
+// broken box drawing and a prompt stranded mid-pane, all from a size no reader
+// ever had.
+//
+// There is no right answer without a reader, so this is a plausible one: a
+// laptop-width console, which is close enough that the reflow is small and
+// wide enough that nothing an agent prints has to wrap. `window-size latest`
+// hands the window over the moment a real viewport attaches.
+const (
+	launchCols = 132
+	launchRows = 40
+)
+
 // Server is the runner's tmux server.
 type Server struct {
 	socket string
@@ -144,7 +164,10 @@ func (s *Server) command(ctx context.Context, args ...string) (string, error) {
 // when command is empty. The environment is set on the session, so every
 // window opened later inherits it.
 func (s *Server) Create(ctx context.Context, name, dir, command string, env map[string]string) error {
-	args := []string{"new-session", "-d", "-s", name, "-c", dir}
+	args := []string{
+		"new-session", "-d", "-s", name, "-c", dir,
+		"-x", strconv.Itoa(launchCols), "-y", strconv.Itoa(launchRows),
+	}
 	for key, value := range env {
 		args = append(args, "-e", key+"="+value)
 	}

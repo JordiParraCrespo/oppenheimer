@@ -39,6 +39,10 @@ export function useTerminal(
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [status, setStatus] = useState<StreamStatus>('connecting');
+  // Whether the far end has said anything on this attachment. A live link with
+  // nothing on it is an agent still starting, and that is not the same picture
+  // as a terminal — see `onFirstOutput`.
+  const [hasOutput, setHasOutput] = useState(false);
   // Why the stream ended, if it has; cleared by a retry that opens a new one.
   const [ended, setEnded] = useState<StreamEnd | null>(null);
   // Bumped to open a new stream after an end.
@@ -66,6 +70,9 @@ export function useTerminal(
     const unmount = mountSessionTerminal(container, stream, {
       agentWindow,
       onImage: (image) => onImageRef.current?.(image),
+      // A reconnect replays the scrollback, so a session that has already run
+      // answers this on its first frame and the waiting state never shows.
+      onFirstOutput: () => setHasOutput(true),
     });
     const offStatus = stream.onStatus(setStatus);
     const offEnd = stream.onEnd((reason) => {
@@ -94,11 +101,12 @@ export function useTerminal(
   const retryNow = () => {
     if (ended) {
       setEnded(null);
+      setHasOutput(false);
       setGeneration((current) => current + 1);
       return;
     }
     streamRef.current?.reconnectNow();
   };
 
-  return { containerRef, status, ended, retryNow };
+  return { containerRef, status, hasOutput, ended, retryNow };
 }

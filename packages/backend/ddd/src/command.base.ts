@@ -10,7 +10,10 @@ export interface CommandMetadata {
   /** Causation id used to reconstruct execution order if needed. */
   readonly causationId?: string;
 
-  /** Time when the command was created. */
+  /**
+   * Epoch milliseconds when the command was constructed: `Date.now()` unless
+   * the caller passes one.
+   */
   readonly timestamp: number;
 }
 

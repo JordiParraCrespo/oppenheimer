@@ -248,7 +248,6 @@ import { UsersModule } from './users/user.module';
     HostsModule,
     AdminModule,
     FeatureFlagsModule,
-    // The control plane's own modules, in the order their slices land.
     ProjectsModule,
     // The module the other three feed into: the sessions themselves, their
     // checkouts, and the append-only log the row is a fold of.

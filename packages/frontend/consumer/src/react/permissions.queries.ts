@@ -6,7 +6,6 @@ import { CONSUMER_CONFIG } from '../config';
 import type { PermissionCatalog } from '../modules/permissions/permission-catalog';
 import { useConsumerApp } from './context';
 
-/** Query key factory for the `permissions` feature. */
 const permissionsKeys = {
   all: ['permissions'] as const,
   catalog: () => [...permissionsKeys.all, 'catalog'] as const,

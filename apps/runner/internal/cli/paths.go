@@ -151,6 +151,13 @@ func ChooseWorkspaces(raw string, p Paths) (dir string, warnings []string, err e
 			break
 		}
 	}
+	// Said once, here, where the directory is settled: everything below it is
+	// checkouts and their dependencies, which nobody searches for by name.
+	// A failure is not a reason to refuse the directory — see
+	// `ExcludeFromIndexing`.
+	if err := ExcludeFromIndexing(dir); err != nil {
+		warnings = append(warnings, "could not keep "+dir+" out of the desktop search index ("+err.Error()+"); indexing a session's checkouts costs this host CPU it owes the agents")
+	}
 	return dir, warnings, nil
 }
 

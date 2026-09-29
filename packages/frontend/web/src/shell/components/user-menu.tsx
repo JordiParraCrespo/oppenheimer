@@ -1,6 +1,7 @@
 import {
   Avatar,
   AvatarFallback,
+  Callout,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -174,10 +175,13 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
             <LogOut />
             {t('nav.logOut')}
           </DropdownMenuItem>
+          {/* The menu stays open on a failure, so the sentence sits under Log out.
+              A `Callout`, not `ErrorAlert`: that card is drawn for a form or a
+              page, and this menu is 250px of rows. */}
           {logout.error ? (
-            <p role="alert" className="m-0 px-2.5 pt-1 pb-1.5 text-xs text-danger">
+            <Callout tone="danger" className="mx-1 mt-1 mb-1">
               {resolveError(logout.error, t('nav.logOutFailed')).message}
-            </p>
+            </Callout>
           ) : null}
         </DropdownMenuGroup>
       </DropdownMenuContent>

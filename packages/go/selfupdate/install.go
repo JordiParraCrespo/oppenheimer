@@ -69,7 +69,6 @@ func (l Layout) Promote(stagedPath, version string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// 0700: an executable only its owner may read or run.
 	if err := os.Chmod(stagedPath, 0o700); err != nil { //nolint:gosec // an executable owned by, and readable only by, this user
 		return "", err
 	}
