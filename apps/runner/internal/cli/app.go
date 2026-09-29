@@ -90,7 +90,7 @@ func New(version string) (*App, error) {
 	}
 
 	hostSvc := hostapp.New(hostapp.Options{
-		Prober: system.New(), WorkspaceRoot: paths.Workspaces, Version: version,
+		Prober: system.New(), Updater: system.Updater{}, WorkspaceRoot: paths.Workspaces, Version: version,
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
 		Store:        store,
@@ -217,6 +217,11 @@ func unit(paths Paths) svcdomain.Unit {
 	}
 	if workspaces := os.Getenv(EnvWorkspaces); workspaces != "" {
 		env[EnvWorkspaces] = workspaces
+	}
+	// An install that opted out of agent updates stays opted out under the
+	// service, which would not otherwise see the installer's environment.
+	if updates := os.Getenv(EnvAgentUpdates); updates != "" {
+		env[EnvAgentUpdates] = updates
 	}
 	// The PATH the installer was run with, carried onto the service.
 	//

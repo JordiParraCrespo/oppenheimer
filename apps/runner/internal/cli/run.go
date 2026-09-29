@@ -90,6 +90,15 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 		defer loops.Done()
 		a.sessionLoop(ctx, logger)
 	}()
+	if AgentUpdatesEnabled() {
+		loops.Add(1)
+		go func() {
+			defer loops.Done()
+			a.agentUpdateLoop(ctx, logger)
+		}()
+	} else {
+		logger.Info("agent updates are off", slog.String("by", EnvAgentUpdates))
+	}
 	// The link: one outbound socket, redialled for as long as this process
 	// lives. Sessions do not wait for it — tmux does not care whether the
 	// control plane can see it.
@@ -276,6 +285,46 @@ func (a *App) updateLoop(ctx context.Context, logger *slog.Logger) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+		}
+	}
+}
+
+// agentUpdateAfterBoot is how long `run` waits before the first round of
+// agent updates: long enough that a boot, an adoption and the first dial are
+// not competing with a download, short enough that a host that was off when
+// a model shipped is current within the minute it comes back.
+const agentUpdateAfterBoot = 30 * time.Second
+
+// agentUpdateLoop keeps the agent CLIs on the host current: every installed
+// agent's own updater, shortly after boot and every AgentUpdateInterval
+// after. A CLI a release behind is refused by its vendor the day a model
+// needs the newer one, and the person finds out in the session's terminal —
+// so this runs whether or not anyone is watching. A failure is logged and
+// retried at the next tick; the CLI it failed on is still the one it was.
+func (a *App) agentUpdateLoop(ctx context.Context, logger *slog.Logger) {
+	timer := time.NewTimer(agentUpdateAfterBoot)
+	defer timer.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-timer.C:
+		}
+		a.updateAgents(ctx, logger)
+		timer.Reset(hostdomain.AgentUpdateInterval)
+	}
+}
+
+func (a *App) updateAgents(ctx context.Context, logger *slog.Logger) {
+	for _, result := range a.Host.UpdateAgents(ctx) {
+		attrs := []any{slog.String("agent", result.Tool), slog.String("from", result.From), slog.String("to", result.To)}
+		switch result.Outcome {
+		case hostdomain.AgentUpdated:
+			logger.Info("agent updated", attrs...)
+		case hostdomain.AgentUpdateFailed:
+			logger.Warn("agent update failed", append(attrs, slog.String("detail", result.Detail))...)
+		case hostdomain.AgentCurrent:
+			logger.Debug("agent is current", attrs...)
 		}
 	}
 }

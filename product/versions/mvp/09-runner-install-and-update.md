@@ -368,8 +368,13 @@ putting the user's credentials on it.
 3. Windows, through WSL2 or not at all in this slice. Not at all for
    now; the runner is Linux and macOS.
 4. Whether the installer should offer to install `claude` too, rather
-   than hint. Hint for now — the agent's login and version are the
-   user's, not ours to manage (00 §"Agent login is the host's own").
+   than hint. Hint for now — the agent's login and whether it is
+   installed are the user's (00 §"Agent login is the host's own").
+   ~~and its version~~: **changed 2026-09-29** — once installed, the
+   runner keeps the agent CLI current with the CLI's own updater, hourly,
+   because vendors refuse a CLI one release behind the day a model needs
+   the newer one (02 §10, "Agent updates"). Off with
+   `RUNNER_AGENT_UPDATES=off`.
 5. Update telemetry: is "version, channel, last outcome" per host enough
    to run a rollout, or does the control plane need per-attempt records
    to spot a version that fails the health gate on one distro?

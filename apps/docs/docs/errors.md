@@ -564,6 +564,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `HOST_006` <a id="host_006" />         | This machine looks temporary                 | 412  |
 | `HOST_007` <a id="host_007" />         | The workspaces directory is not usable       | 400  |
 | `HOST_008` <a id="host_008" />         | The runner's own directory is not safe to use | 412 |
+| `HOST_009` <a id="host_009" />         | An agent CLI could not be updated            | 424  |
 | `PAIR_001` <a id="pair_001" />         | This host is not paired yet                  | 428  |
 | `PAIR_002` <a id="pair_002" />         | This host is already paired                  | 409  |
 | `PAIR_003` <a id="pair_003" />         | The registration token was rejected          | 401  |
@@ -611,6 +612,15 @@ the service (`systemctl --user restart oppenheimer-runner` or
 `launchctl kickstart -k gui/$(id -u)/dev.oppenheimer.runner`). A directory
 another account owns is fixed with `chown`; a mode looser than `0700` is
 tightened by the runner itself.
+
+`HOST_009` is `runner agents update` reporting that at least one agent CLI's
+own updater failed; its table names the agent and the updater's last line.
+The usual cause is a CLI installed where the runner's account cannot write
+— `npm install -g` as root, or a system package — so its updater cannot
+replace it. Reinstall the agent as the account the runner runs as (Claude
+Code's own installer puts it in `~/.local/bin`), or keep it current yourself
+and set `RUNNER_AGENT_UPDATES=off` before `runner install`. The running
+service retries every hour and only logs the failure.
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants

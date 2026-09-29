@@ -33,3 +33,10 @@ type Prober interface {
 	// itself. Fields it cannot read are left empty; it never fails.
 	Machine(ctx context.Context) domain.Machine
 }
+
+// Updater runs an agent CLI's own updater: the executable at path with args,
+// bounded by domain.AgentUpdateTimeout, with no terminal and nothing on
+// stdin. It returns what the command printed, on failure too.
+type Updater interface {
+	Update(ctx context.Context, path string, args []string) (output string, err error)
+}

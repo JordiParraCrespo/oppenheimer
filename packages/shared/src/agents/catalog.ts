@@ -199,6 +199,22 @@ export interface CodingAgentDefinition {
   readonly models: readonly CodingAgentModel[];
   /** What the person's three choices mean to this CLI. */
   readonly launch: CodingAgentLaunch;
+  /**
+   * The argv, appended to `command`, that brings this CLI to its latest
+   * release in place — the CLI's own updater, which knows how it was
+   * installed (its own installer, npm, Homebrew) better than we would.
+   *
+   * The runner runs it on every host where the agent is on PATH, at boot and
+   * hourly after (`product/versions/mvp/02-runner.md` §"Agent updates"),
+   * because a CLI one release behind is refused by its vendor the day a model
+   * ships that needs the newer one: "Claude Code 2.1.274 does not support
+   * this model; version 2.1.280 or newer is required". A session already
+   * running keeps the binary it started with; the next one gets the update.
+   *
+   * Absent: this CLI has no updater (a plain shell), and the runner leaves it
+   * alone.
+   */
+  readonly update?: readonly string[];
 }
 
 /**
@@ -237,12 +253,13 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     //
     // The current family, newest of each line, as Synara's model table and
     // Orca's pricing table both list it: Opus 5.5 replaced Opus 5 as the Opus
-    // the `opus` alias names, and stays the default because it is the
+    // the `opus` alias names, Sonnet 5.5 replaced Sonnet 5 the same way, and
+    // Opus 5.5 stays the default because it is the
     // everyday model of the four.
     models: Object.freeze([
       Object.freeze({ id: 'claude-fable-5-1', label: 'Claude Fable 5.1' }),
       Object.freeze({ id: 'claude-opus-5-5', label: 'Claude Opus 5.5', default: true as const }),
-      Object.freeze({ id: 'claude-sonnet-5', label: 'Claude Sonnet 5' }),
+      Object.freeze({ id: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5' }),
       Object.freeze({ id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' }),
     ]),
     launch: Object.freeze({
@@ -278,6 +295,9 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // session" — so this starts the TUI with the task already in it.
       prompt: Object.freeze(['<prompt>']),
     }),
+    // `claude update|upgrade`: "Check for updates and install if available",
+    // read off claude 2.1.284's own `--help`.
+    update: Object.freeze(['update']),
   }),
   codex: Object.freeze({
     id: 'codex',
@@ -344,6 +364,8 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // non-interactive one and would give the person no terminal to take over.
       prompt: Object.freeze(['<prompt>']),
     }),
+    // `codex update`: "Update Codex to the latest version", codex-cli 0.158.0.
+    update: Object.freeze(['update']),
   }),
   opencode: Object.freeze({
     id: 'opencode',
@@ -387,7 +409,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         label: 'Claude Opus 5.5',
         default: true as const,
       }),
-      Object.freeze({ id: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' }),
+      Object.freeze({ id: 'anthropic/claude-sonnet-5-5', label: 'Claude Sonnet 5.5' }),
       Object.freeze({ id: 'anthropic/claude-haiku-4-5', label: 'Claude Haiku 4.5' }),
       Object.freeze({ id: 'openai/gpt-5.6-sol', label: 'GPT-5.6 Sol' }),
     ]),
@@ -431,6 +453,9 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // task in it; `opencode run` is the non-interactive one.
       prompt: Object.freeze(['--prompt', '<prompt>']),
     }),
+    // `opencode upgrade [target]`: "upgrade opencode to the latest or a
+    // specific version", opencode 1.18.33. With no target it takes the latest.
+    update: Object.freeze(['upgrade']),
   }),
   grok: Object.freeze({
     id: 'grok',
@@ -500,6 +525,9 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // and exits.
       prompt: Object.freeze(['<prompt>']),
     }),
+    // `grok update`: "Check for updates or install a specific version", grok
+    // 1.0.44. Bare, it installs the latest.
+    update: Object.freeze(['update']),
   }),
   shell: Object.freeze({
     id: 'shell',

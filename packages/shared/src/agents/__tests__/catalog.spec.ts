@@ -289,7 +289,7 @@ describe('launch mapping', () => {
     expect(CODING_AGENTS['claude-code'].models.map((model) => [model.id, model.label])).toEqual([
       ['claude-fable-5-1', 'Claude Fable 5.1'],
       ['claude-opus-5-5', 'Claude Opus 5.5'],
-      ['claude-sonnet-5', 'Claude Sonnet 5'],
+      ['claude-sonnet-5-5', 'Claude Sonnet 5.5'],
       ['claude-haiku-4-5', 'Claude Haiku 4.5'],
     ]);
     expect(CODING_AGENTS.codex.models.map((model) => [model.id, model.label])).toEqual([
@@ -307,7 +307,7 @@ describe('launch mapping', () => {
     expect(CODING_AGENTS.opencode.models.map((model) => model.id)).toEqual([
       'anthropic/claude-fable-5-1',
       'anthropic/claude-opus-5-5',
-      'anthropic/claude-sonnet-5',
+      'anthropic/claude-sonnet-5-5',
       'anthropic/claude-haiku-4-5',
       'openai/gpt-5.6-sol',
     ]);
@@ -337,7 +337,25 @@ describe('the runner launch table', () => {
     const require = createRequire(import.meta.url);
     // The generator reads the built catalog, as the shared build does; the
     // committed Go file must be byte-identical to what it renders now.
-    const { outputPath, render } = require('../../../scripts/emit-agent-catalog.cjs');
+    const {
+      outputPath,
+      render,
+      updatesOutputPath,
+      renderUpdates,
+    } = require('../../../scripts/emit-agent-catalog.cjs');
     expect(readFileSync(outputPath, 'utf8')).toBe(render());
+    expect(readFileSync(updatesOutputPath, 'utf8')).toBe(renderUpdates());
+  });
+});
+
+describe('agent updates', () => {
+  it('names each CLI’s own updater, and none for the blank terminal', () => {
+    // Read off each CLI's own `--help`: an agent a release behind is refused
+    // by its vendor the day a model needs the newer one.
+    expect(CODING_AGENTS['claude-code'].update).toEqual(['update']);
+    expect(CODING_AGENTS.codex.update).toEqual(['update']);
+    expect(CODING_AGENTS.opencode.update).toEqual(['upgrade']);
+    expect(CODING_AGENTS.grok.update).toEqual(['update']);
+    expect(CODING_AGENTS.shell.update).toBeUndefined();
   });
 });

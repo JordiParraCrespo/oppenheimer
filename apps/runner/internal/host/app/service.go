@@ -16,18 +16,21 @@ type Options struct {
 	WorkspaceRoot string
 	// Version is the running runner's version, reported with the facts.
 	Version string
+	// Updater runs the agents' own updaters. Nil disables UpdateAgents.
+	Updater Updater
 }
 
 // Service collects the host inventory.
 type Service struct {
 	prober    Prober
+	updater   Updater
 	workspace string
 	version   string
 }
 
 // New builds the service.
 func New(opts Options) *Service {
-	return &Service{prober: opts.Prober, workspace: opts.WorkspaceRoot, version: opts.Version}
+	return &Service{prober: opts.Prober, updater: opts.Updater, workspace: opts.WorkspaceRoot, version: opts.Version}
 }
 
 // Collect inspects the machine. It answers with whatever it could learn even
@@ -97,6 +100,56 @@ func (s *Service) Preflight(ctx context.Context) (domain.Facts, error) {
 	default:
 		return facts, domain.ErrProbe.WithCause(err)
 	}
+}
+
+// UpdateAgents runs the updater of every agent CLI found on PATH, one after
+// another, and reports what each came to. An agent that is not installed is
+// skipped: installing one is the person's choice, keeping it current is ours
+// (`product/versions/mvp/02-runner.md` §"Agent updates").
+//
+// Sessions already running keep the binary they started with; the next
+// session starts the new one. The facts' tool versions are read again after,
+// so the next heartbeat carries them and the control plane records the change
+// on the host's timeline.
+func (s *Service) UpdateAgents(ctx context.Context) []domain.AgentUpdate {
+	if s.updater == nil {
+		return nil
+	}
+	var results []domain.AgentUpdate
+	for _, name := range domain.ProbedTools {
+		args, ok := domain.AgentUpdateArgs(name)
+		if !ok {
+			continue
+		}
+		before := s.prober.Tool(ctx, name)
+		if !before.Found() {
+			continue
+		}
+		output, err := s.updater.Update(ctx, before.Path, args)
+		if ctx.Err() != nil {
+			// Shutting down: an updater cut short is not a failure to report.
+			return results
+		}
+		// The prober keys its cache on the file, which an in-place update
+		// rewrites; forgetting it is the backstop for one that does not.
+		s.prober.Invalidate()
+		after := s.prober.Tool(ctx, name)
+		result := domain.AgentUpdate{Tool: name, From: before.Version, To: after.Version}
+		switch {
+		case err != nil:
+			result.Outcome = domain.AgentUpdateFailed
+			result.Detail = domain.UpdateFailureDetail(output)
+			if result.Detail == "" {
+				result.Detail = err.Error()
+			}
+		case !domain.SameVersion(before.Version, after.Version):
+			result.Outcome = domain.AgentUpdated
+		default:
+			result.Outcome = domain.AgentCurrent
+		}
+		results = append(results, result)
+	}
+	return results
 }
 
 func required(name string) bool {

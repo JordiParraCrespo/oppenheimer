@@ -16,4 +16,5 @@ var (
 	ErrEphemeral           = problem.New("HOST_006", http.StatusPreconditionFailed, "This machine looks temporary")
 	ErrWorkspaces          = problem.New("HOST_007", http.StatusBadRequest, "The workspaces directory is not usable")
 	ErrRunnerDirectory     = problem.New("HOST_008", http.StatusPreconditionFailed, "The runner's own directory is not safe to use")
+	ErrAgentUpdate         = problem.New("HOST_009", http.StatusFailedDependency, "An agent CLI could not be updated")
 )
