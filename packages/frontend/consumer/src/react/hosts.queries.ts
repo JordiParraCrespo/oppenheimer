@@ -9,7 +9,7 @@ import {
 } from '@tanstack/react-query';
 import type { HostEntity, HostPairing, HostPairingToken } from '../modules/hosts/host.entity';
 import { useConsumerApp } from './context';
-import { LIVE_POLL } from './live-poll';
+import { type Poll, type PollKeys, pollWhile } from './live-poll';
 
 /**
  * Query key factory for the `hosts` feature, from the most generic (`all`) to
@@ -47,12 +47,7 @@ export const hostsKeys = {
  * it. A component that only needs the list inside an event handler should not
  * subscribe at all: that is `useHostsSnapshot`.
  */
-export function useHosts<TData = HostEntity[]>(
-  options?: Omit<
-    UseQueryOptions<HostEntity[], Error, TData>,
-    'queryKey' | 'queryFn' | 'refetchInterval'
-  >,
-) {
+export function useHosts<TData = HostEntity[]>(options?: HostListOptions<TData>) {
   return useHostList(options);
 }
 
@@ -62,16 +57,22 @@ export function useHosts<TData = HostEntity[]>(
  * as such a view is mounted, on `LIVE_POLL.hostPresence`.
  */
 export function useHostPresence() {
-  return useHostList({ refetchInterval: LIVE_POLL.hostPresence });
+  return useHostList(undefined, pollWhile('hostPresence', true));
 }
 
+type HostListOptions<TData> = Omit<
+  UseQueryOptions<HostEntity[], Error, TData>,
+  'queryKey' | 'queryFn' | PollKeys
+>;
+
 /**
- * The one read of `GET /v1/hosts`, polling on whatever interval this package
- * gives it. Not in the barrel: a feature reads `useHosts`, which never polls,
- * or `useHostPresence`, and the pairing flow polls it on `LIVE_POLL.pairing`.
+ * The one read of `GET /v1/hosts`, polling as `poll` says. Not in the barrel:
+ * a feature reads `useHosts`, which never polls, or `useHostPresence`, and the
+ * pairing flow polls it on `LIVE_POLL.pairing`.
  */
 export function useHostList<TData = HostEntity[]>(
-  options?: Omit<UseQueryOptions<HostEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
+  options?: HostListOptions<TData>,
+  poll?: Poll<HostEntity[]>,
 ) {
   const app = useConsumerApp();
 
@@ -79,6 +80,7 @@ export function useHostList<TData = HostEntity[]>(
     queryKey: hostsKeys.list(),
     queryFn: () => app.hosts.findAll(),
     ...options,
+    ...poll,
   });
 }
 
@@ -150,7 +152,8 @@ export function useReplacePairing(name: string) {
  * list cannot answer for an account that already owns one.
  */
 export function usePairingTokens(
-  options?: Omit<UseQueryOptions<HostPairingToken[], Error>, 'queryKey' | 'queryFn'>,
+  options?: Omit<UseQueryOptions<HostPairingToken[], Error>, 'queryKey' | 'queryFn' | PollKeys>,
+  poll?: Poll<HostPairingToken[]>,
 ) {
   const app = useConsumerApp();
 
@@ -158,6 +161,7 @@ export function usePairingTokens(
     queryKey: hostsKeys.pairingList(),
     queryFn: () => app.hosts.pairings(),
     ...options,
+    ...poll,
   });
 }
 
