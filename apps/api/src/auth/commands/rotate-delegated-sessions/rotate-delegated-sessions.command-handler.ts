@@ -8,7 +8,7 @@ import { RotateDelegatedSessionsCommand } from './rotate-delegated-sessions.comm
  * Rotates an account's delegated-session generation, so no credential keeps
  * presenting a token cached for a session row that is gone.
  *
- * `AdminService.ban`/`.unban` do this themselves; a ban made straight through
+ * The admin module's ban and unban do this themselves; a ban made straight through
  * Better Auth's own endpoint reaches it through the plugin's after-hook, which
  * cannot inject the port and so raises this command instead. Idempotent: a
  * second rotation only moves the keys again.

@@ -7,7 +7,9 @@ import { QueryProvider } from '@/providers/query-provider';
 import { App } from './app';
 import './styles/globals.css';
 
-const root = ReactDOM.createRoot(document.getElementById('root')!);
+const container = document.getElementById('root');
+if (!container) throw new Error('Missing #root element');
+const root = ReactDOM.createRoot(container);
 
 const tree = (
   <StrictMode>

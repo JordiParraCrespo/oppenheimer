@@ -14,8 +14,17 @@ import type { RoleEntity } from '../domain/role.entity';
 export interface UserRoleRepositoryPort {
   findRoleIdsForUser(userId: string, organizationId?: string | null): Promise<string[]>;
   findRolesForUser(userId: string, organizationId?: string | null): Promise<RoleEntity[]>;
-  /** Replace the user's role assignments **within one scope**. */
-  setRolesForUser(userId: string, roleIds: string[], organizationId?: string | null): Promise<void>;
+  /**
+   * Replace the user's role assignments **within one scope**. With `manager`
+   * the write joins that transaction, for a caller whose unit of work spans
+   * more than this table; without it the replacement is its own transaction.
+   */
+  setRolesForUser(
+    userId: string,
+    roleIds: string[],
+    organizationId?: string | null,
+    manager?: EntityManager,
+  ): Promise<void>;
 
   /**
    * Make `roleId` the membership role (`MEMBERSHIP_ROLES` in `@oppenheimer/shared`) the user

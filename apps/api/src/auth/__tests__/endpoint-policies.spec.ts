@@ -3,7 +3,7 @@ import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { CHECK_POLICIES_KEY, type PolicyRule } from '@oppenheimer/backend-authz';
 import { ENDPOINT_POLICIES, type GuardedEndpoint } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
-import { AdminController } from '../../admin/admin.controller';
+import { ListUsersHttpController } from '../../admin/queries/list-users/list-users.http.controller';
 import { FindApiTokensHttpController } from '../../api-tokens/queries/find-api-tokens/find-api-tokens.http.controller';
 import { CreateAutomationHttpController } from '../../automations/commands/create-automation/create-automation.http.controller';
 import { DeleteAutomationHttpController } from '../../automations/commands/delete-automation/delete-automation.http.controller';
@@ -13,7 +13,7 @@ import { FindAutomationHttpController } from '../../automations/queries/find-aut
 import { FindAutomationRunsHttpController } from '../../automations/queries/find-automation-runs/find-automation-runs.http.controller';
 import { FindAutomationsHttpController } from '../../automations/queries/find-automations/find-automations.http.controller';
 import { FindFeatureFlagsHttpController } from '../../feature-flags/queries/find-feature-flags/find-feature-flags.http.controller';
-import { MembersController } from '../../organizations/members.controller';
+import { ListMembersHttpController } from '../../organizations/queries/list-members/list-members.http.controller';
 import { ArchiveProjectHttpController } from '../../projects/commands/archive-project/archive-project.http.controller';
 import { CreateProjectHttpController } from '../../projects/commands/create-project/create-project.http.controller';
 import { UpdateProjectHttpController } from '../../projects/commands/update-project/update-project.http.controller';
@@ -51,13 +51,10 @@ import { FindSessionsHttpController } from '../../sessions/queries/find-sessions
 
 /** The handler each guarded endpoint's data actually comes from. */
 const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }> = {
-  'GET /organizations/:orgId/members': {
-    controller: MembersController,
-    handler: 'listOrganizationMembers',
-  },
+  'GET /organizations/:orgId/members': { controller: ListMembersHttpController, handler: 'list' },
   'GET /roles': { controller: FindRolesHttpController, handler: 'findAll' },
   'GET /tokens': { controller: FindApiTokensHttpController, handler: 'findAll' },
-  'GET /admin/users': { controller: AdminController, handler: 'listUsers' },
+  'GET /admin/users': { controller: ListUsersHttpController, handler: 'listUsers' },
   'GET /feature-flags/admin': {
     controller: FindFeatureFlagsHttpController,
     handler: 'findFeatureFlags',
