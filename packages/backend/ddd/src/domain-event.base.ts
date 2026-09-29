@@ -4,7 +4,10 @@ import { Guard } from './guard';
 import { RequestContextService } from './request-context.service';
 
 export interface DomainEventMetadata {
-  /** Timestamp when this domain event occurred. */
+  /**
+   * Epoch milliseconds when the event was raised: `Date.now()` unless the caller
+   * passes one.
+   */
   readonly timestamp: number;
 
   /** Correlation id (integration events, log correlation, etc). */
@@ -31,7 +34,6 @@ export type DomainEventProps<T> = Omit<T, 'id' | 'metadata'> & {
 export abstract class DomainEvent {
   public readonly id: string;
 
-  /** Aggregate id where the domain event occurred. */
   public readonly aggregateId: string;
 
   /**

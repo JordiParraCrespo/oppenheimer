@@ -39,8 +39,7 @@ const TAG_BYTES = 16;
 /** SPKI DER prefix for a raw X25519 public key. */
 const X25519_SPKI_PREFIX = Buffer.from('302a300506032b656e032100', 'hex');
 
-/** 2^255 - 19 */
-const P = (1n << 255n) - 19n;
+const CURVE25519_P = (1n << 255n) - 19n;
 
 export function seal(base64Ed25519PublicKey: string, plaintext: Uint8Array): Buffer {
   const hostEdPublic = Buffer.from(base64Ed25519PublicKey, 'base64');
@@ -68,8 +67,8 @@ export function x25519PublicFromEd25519(edPublic: Buffer): KeyObject {
   // The top bit of the last byte is the sign of x; y is the rest, little-endian.
   encoded[31] &= 0x7f;
   const y = bytesToBigIntLE(encoded);
-  if (y >= P) throw new RangeError('not a canonical Ed25519 public key');
-  const u = mod((1n + y) * modInverse(mod(1n - y), P));
+  if (y >= CURVE25519_P) throw new RangeError('not a canonical Ed25519 public key');
+  const u = mod((1n + y) * modInverse(mod(1n - y), CURVE25519_P));
   return createPublicKey({
     key: Buffer.concat([X25519_SPKI_PREFIX, bigIntToBytesLE(u, 32)]),
     format: 'der',
@@ -78,8 +77,8 @@ export function x25519PublicFromEd25519(edPublic: Buffer): KeyObject {
 }
 
 function mod(value: bigint): bigint {
-  const r = value % P;
-  return r < 0n ? r + P : r;
+  const r = value % CURVE25519_P;
+  return r < 0n ? r + CURVE25519_P : r;
 }
 
 function modInverse(value: bigint, modulus: bigint): bigint {

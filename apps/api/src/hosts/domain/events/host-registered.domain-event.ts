@@ -12,7 +12,6 @@ export class HostRegisteredDomainEvent extends DomainEvent {
   readonly ownerUserId: string;
   readonly publicKeyFingerprint: string;
   readonly pairingTokenId: string;
-  /** The name the host was given. */
   readonly name: string;
   /** The hostname and platform the runner reported, when it reported them. */
   readonly hostname: string | null;

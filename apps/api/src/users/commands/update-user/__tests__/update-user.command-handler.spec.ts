@@ -73,7 +73,6 @@ describe('UpdateUserCommandHandler', () => {
     const saved = vi.mocked(repo.save).mock.calls[0][0] as UserEntity;
     expect(saved.firstName).toBe('Updated');
     expect(saved.isActive).toBe(false);
-    // Unchanged fields are preserved.
     expect(saved.lastName).toBe('User');
   });
 

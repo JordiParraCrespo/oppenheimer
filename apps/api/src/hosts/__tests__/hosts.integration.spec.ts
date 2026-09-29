@@ -107,8 +107,6 @@ describe('Hosts & pairing (integration)', () => {
     await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);
   });
 
-  // --- helpers -------------------------------------------------------------
-
   interface CallOptions {
     method?: string;
     token?: string;
@@ -240,8 +238,6 @@ describe('Hosts & pairing (integration)', () => {
     return createHash('sha256').update(`${Math.random()}`).digest('hex').slice(0, 32);
   }
 
-  // --- the migration -------------------------------------------------------
-
   describe('migration', () => {
     it('creates the host table with no organization column', async () => {
       const columns: { column_name: string; data_type: string; is_nullable: string }[] =
@@ -321,8 +317,6 @@ describe('Hosts & pairing (integration)', () => {
       expect(hostRules[0].conditions).toEqual({ ownerUserId: '${user.id}' });
     });
   });
-
-  // --- pairing -------------------------------------------------------------
 
   describe('minting a pairing token', () => {
     it('returns the secret exactly once, inside the install command', async () => {
