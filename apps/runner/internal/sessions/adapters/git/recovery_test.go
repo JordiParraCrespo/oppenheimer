@@ -113,6 +113,30 @@ func TestEnsureClonesAPrivateRepositoryForTheSessionItIsFor(t *testing.T) {
 	}
 }
 
+func TestPushForNoSessionIsRefusedBeforeTheNetwork(t *testing.T) {
+	remote := privateOrigin(t)
+	c, layout, seen := privateClient(t)
+	ctx := context.Background()
+	if err := c.Ensure(domain.WithSession(ctx, sessionID), repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	worktree := layout.Worktree(repo, "session-unmarked")
+	if err := c.Add(ctx, repo, worktree, "oppenheimer/unmarked", "main", true); err != nil {
+		t.Fatal(err)
+	}
+	before, _ := os.ReadFile(seen)
+
+	_, err := c.Push(ctx, worktree, "oppenheimer/unmarked")
+
+	var prob *problem.Error
+	if !isProblem(err, &prob, "GIT_004") {
+		t.Fatalf("err = %v, want GIT_004", err)
+	}
+	if after, _ := os.ReadFile(seen); string(after) != string(before) {
+		t.Fatalf("the helper was asked (%q): the push reached the network", after)
+	}
+}
+
 func TestEnsureSaysWhatIsMissingWhenAPrivateCloneHasNoCredential(t *testing.T) {
 	remote := privateOrigin(t)
 	c, layout, _ := privateClient(t)

@@ -622,6 +622,7 @@ type CloseInput struct {
 // reported, and the worktree is kept unless Force says otherwise.
 func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.Session, error) {
 	defer s.hold(id)()
+	ctx = domain.WithSession(ctx, id)
 	session, err := s.recorded(id)
 	if err != nil {
 		return domain.Session{}, err
