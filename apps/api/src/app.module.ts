@@ -33,6 +33,7 @@ import { AuthzModule } from './authz/authz.module';
 import { AutomationsModule } from './automations/automations.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
 import {
+  apiTokensConfig,
   appConfig,
   automationsConfig,
   databaseConfig,
@@ -43,8 +44,11 @@ import {
   llmConfigFrom,
   oauthConfig,
   redisConfig,
+  relayConfig,
+  retentionConfig,
   sessionsConfig,
   storageConfig,
+  throttlingConfig,
 } from './config';
 import { bootDataSourceFactory } from './config/boot-migrations';
 import { type DatabaseConfig, poolOptions } from './config/database.config';
@@ -87,6 +91,10 @@ import { UsersModule } from './users/user.module';
         llmConfig,
         sessionsConfig,
         automationsConfig,
+        retentionConfig,
+        relayConfig,
+        throttlingConfig,
+        apiTokensConfig,
       ],
     }),
     // Request logging with hardened defaults (credential redaction, no
@@ -151,9 +159,14 @@ import { UsersModule } from './users/user.module';
     RedisModule,
     ThrottlerModule.forRootAsync({
       imports: [ThrottlingModule],
-      inject: [RedisThrottlerStorage],
-      useFactory: (storage: RedisThrottlerStorage) => ({
-        throttlers: [{ ttl: 60000, limit: 100 }],
+      inject: [RedisThrottlerStorage, ConfigService],
+      useFactory: (storage: RedisThrottlerStorage, configService: ConfigService) => ({
+        throttlers: [
+          {
+            ttl: configService.getOrThrow<number>('throttling.defaultWindowSeconds') * 1000,
+            limit: configService.getOrThrow<number>('throttling.defaultLimit'),
+          },
+        ],
         // Integration tests drive many requests through the same pipeline in
         // seconds; rate limiting there measures nothing but the limit itself.
         skipIf: () => process.env.NODE_ENV === 'test',

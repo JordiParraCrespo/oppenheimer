@@ -1,11 +1,18 @@
+import { ConfigService } from '@nestjs/config';
 import type { OutboxService } from '@oppenheimer/backend-ddd';
 import type { Queue } from 'bullmq';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  OUTBOX_RETENTION_BATCH,
-  OUTBOX_RETENTION_DAYS,
-  OutboxRetentionProcessor,
-} from '../infrastructure/outbox-retention.processor';
+import { OutboxRetentionProcessor } from '../infrastructure/outbox-retention.processor';
+
+const OUTBOX_RETENTION_DAYS = 7;
+const OUTBOX_RETENTION_BATCH = 5_000;
+const config = new ConfigService({
+  retention: {
+    outboxDays: OUTBOX_RETENTION_DAYS,
+    batchSize: OUTBOX_RETENTION_BATCH,
+    maxBatches: 200,
+  },
+});
 
 function processor(batches: number[] | (() => number)) {
   const next = typeof batches === 'function' ? batches : () => batches.shift() ?? 0;
@@ -13,7 +20,7 @@ function processor(batches: number[] | (() => number)) {
     deleteProcessedBefore: vi.fn(async () => next()),
   } as unknown as OutboxService;
   const queue = { upsertJobScheduler: vi.fn().mockResolvedValue(undefined) } as unknown as Queue;
-  return { outbox, queue, subject: new OutboxRetentionProcessor(outbox, queue) };
+  return { outbox, queue, subject: new OutboxRetentionProcessor(outbox, queue, config) };
 }
 
 describe('OutboxRetentionProcessor', () => {

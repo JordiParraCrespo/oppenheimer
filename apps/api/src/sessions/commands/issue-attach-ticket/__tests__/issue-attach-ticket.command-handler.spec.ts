@@ -1,3 +1,4 @@
+import type { ConfigService } from '@nestjs/config';
 import type { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import { Some } from 'oxide.ts';
@@ -48,10 +49,18 @@ describe('IssueAttachTicketCommandHandler', () => {
     } as unknown as WorkSessionRepositoryPort;
     hosts = { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) };
     cache = { setIfAbsent: vi.fn().mockResolvedValue(true) };
+    // `sessions.attachTicketTtlSeconds` at its default.
+    const config = {
+      getOrThrow: (key: string) => {
+        if (key === 'sessions.attachTicketTtlSeconds') return 60;
+        throw new Error(`Missing config ${key}`);
+      },
+    } as unknown as ConfigService;
     handler = new IssueAttachTicketCommandHandler(
       new SessionLoaderResolver(sessions),
       hosts as unknown as HostAccessPort,
       cache as unknown as CacheService,
+      config,
     );
   });
 

@@ -28,9 +28,6 @@ import { refuseUpgrade } from './upgrade.util';
 /** The path a runner dials, under the API's global prefix and version. */
 export const RUNNER_LINK_PATH = '/api/v1/relay/runner';
 
-/** How long the runner has to say hello after the upgrade. */
-export const HELLO_TIMEOUT_MS = 10_000;
-
 /**
  * How often the control plane pings a runner. A link that has not answered the
  * previous ping by the next one is terminated: a TCP connection that died
@@ -169,7 +166,7 @@ export class RunnerLinkGateway {
   private accept(ws: WebSocket, hostId: string, address: string | null): void {
     const timer = setTimeout(
       () => ws.close(RUNNER_LINK_CLOSE_CODES.HELLO_TIMEOUT, 'hello expected'),
-      HELLO_TIMEOUT_MS,
+      this.helloTimeoutMs,
     );
     ws.once('message', (data, isBinary) => {
       clearTimeout(timer);
@@ -221,6 +218,7 @@ export class RunnerLinkGateway {
       this.links.nextEpoch(hostId),
       ws,
       hello.capabilities,
+      this.linkMaxBufferedBytes,
     );
     const replaced = this.links.register(link);
     if (replaced instanceof SocketRunnerLink) {
@@ -412,12 +410,22 @@ export class RunnerLinkGateway {
     }
   }
 
-  /** The fingerprint registration handed every host, which the runner pins. */
   /** `TRUST_PROXY`: how many reverse-proxy hops to believe in `X-Forwarded-For`. */
   private get trustedProxyHops(): number {
     return this.configService.get<number>('app.trustProxy') ?? 0;
   }
 
+  /** How long the runner has to say hello after the upgrade. */
+  private get helloTimeoutMs(): number {
+    return this.configService.getOrThrow<number>('relay.helloTimeoutMs');
+  }
+
+  /** The bytes a runner's link may leave unread before it is closed as a slow consumer. */
+  private get linkMaxBufferedBytes(): number {
+    return this.configService.getOrThrow<number>('relay.linkMaxBufferedBytes');
+  }
+
+  /** The fingerprint registration handed every host, which the runner pins. */
   private get keyFingerprint(): string | null {
     const value = this.configService.get<string>('hosts.signingKeyFingerprint');
     return value && /^[0-9a-f]{64}$/.test(value) ? value : null;

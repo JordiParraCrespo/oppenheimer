@@ -63,9 +63,6 @@ const MAX_EARLY_FRAMES = 8;
 /** Keystrokes larger than this are not keystrokes. */
 const MAX_INPUT_BYTES = 64 * 1024;
 
-/** The socket a browser may leave unread before its attachment is dropped. */
-const BROWSER_MAX_BUFFERED_BYTES = 4 * 1024 * 1024;
-
 /**
  * How often an open attachment is judged again, the way its ticket was. What
  * can end one — a grant revoked, a membership removed (Better Auth writes it
@@ -205,11 +202,17 @@ export class BrowserAttachGateway {
     // and its `close` has already fired: an attachment opened now would never
     // be detached.
     if (ws.readyState !== ws.OPEN) return;
-    new BrowserAttachment(ws, claim, link, {
-      authorize: () => this.authorize(claim),
-      everyMs: this.reauthorizeIntervalMs,
-      logger: this.logger,
-    }).start([...early]);
+    new BrowserAttachment(
+      ws,
+      claim,
+      link,
+      {
+        authorize: () => this.authorize(claim),
+        everyMs: this.reauthorizeIntervalMs,
+        logger: this.logger,
+      },
+      this.browserMaxBufferedBytes,
+    ).start([...early]);
   }
 
   /**
@@ -264,6 +267,11 @@ export class BrowserAttachGateway {
     if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(message));
   }
 
+  /** The socket a browser may leave unread before its attachment is dropped. */
+  private get browserMaxBufferedBytes(): number {
+    return this.configService.getOrThrow<number>('relay.browserMaxBufferedBytes');
+  }
+
   private originAllowed(origin: string | undefined): boolean {
     // A non-browser client sends no Origin; the ticket is what authorises it.
     if (!origin) return true;
@@ -314,6 +322,8 @@ class BrowserAttachment implements AttachmentSink {
       everyMs: number;
       logger: Logger;
     },
+    /** The socket the browser may leave unread before it is dropped (`relay.browserMaxBufferedBytes`). */
+    private readonly maxBufferedBytes: number,
   ) {}
 
   /** `early` is what the browser sent while its ticket was redeemed, in order. */
@@ -360,7 +370,7 @@ class BrowserAttachment implements AttachmentSink {
 
   deliver(bytes: Uint8Array): void {
     if (this.ws.readyState !== this.ws.OPEN) return;
-    if (this.ws.bufferedAmount > BROWSER_MAX_BUFFERED_BYTES) {
+    if (this.ws.bufferedAmount > this.maxBufferedBytes) {
       // A client that cannot keep up is disconnected, never allowed to stall
       // the relay (02 §7).
       this.ws.close(1008, 'slow consumer');

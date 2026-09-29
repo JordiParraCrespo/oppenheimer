@@ -27,8 +27,6 @@ const OAUTH_TOKEN_PATH = '/login/oauth/access_token';
 const API_VERSION = '2022-11-28';
 /** GitHub requires a User-Agent and refuses requests without one. */
 const USER_AGENT = 'oppenheimer-control-plane';
-/** A listing the picker is waiting on is worth failing fast rather than hanging. */
-const REQUEST_TIMEOUT_MS = 10_000;
 const PAGE_SIZE = 100;
 /**
  * A hard stop on pagination. `Link` comes from upstream, so a malformed or
@@ -154,6 +152,11 @@ export class GithubRestAdapter implements GithubAppPort {
     return (
       this.configService.get<string>('githubApp.apiBaseUrl') ?? 'https://api.github.com'
     ).replace(/\/+$/, '');
+  }
+
+  /** A listing the picker is waiting on is worth failing fast rather than hanging. */
+  private get requestTimeoutMs(): number {
+    return this.configService.getOrThrow<number>('githubApp.requestTimeoutMs');
   }
 
   /** Where an OAuth code is exchanged for this deployment. */
@@ -427,7 +430,7 @@ export class GithubRestAdapter implements GithubAppPort {
           ...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
         },
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        signal: AbortSignal.timeout(this.requestTimeoutMs),
       });
     } catch (error) {
       // A timeout, a DNS failure, a reset: GitHub did not answer at all, which is

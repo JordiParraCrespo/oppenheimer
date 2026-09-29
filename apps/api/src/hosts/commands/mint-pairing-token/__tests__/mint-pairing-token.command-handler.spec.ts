@@ -1,3 +1,4 @@
+import type { ConfigService } from '@nestjs/config';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,10 +7,20 @@ import { HostPairingTokenEntity } from '../../../domain/host-pairing-token.entit
 import { hashPairingTokenSecret } from '../../../domain/pairing-token-secret.factory';
 import type { RunnerReleaseConfig } from '../../../infrastructure/runner-release.config';
 import { MintPairingTokenCommand } from '../mint-pairing-token.command';
-import {
-  MAX_SPENDABLE_TOKENS,
-  MintPairingTokenCommandHandler,
-} from '../mint-pairing-token.command-handler';
+import { MintPairingTokenCommandHandler } from '../mint-pairing-token.command-handler';
+
+/** The pairing settings `hosts.config.ts` registers, at their defaults. */
+const MAX_SPENDABLE_TOKENS = 5;
+const CONFIG: Record<string, number> = {
+  'hosts.pairingTokenTtlSeconds': 3_600,
+  'hosts.maxUnspentPairingTokens': MAX_SPENDABLE_TOKENS,
+};
+const config = {
+  getOrThrow: (key: string) => {
+    if (!(key in CONFIG)) throw new Error(`Missing config ${key}`);
+    return CONFIG[key];
+  },
+} as unknown as ConfigService;
 
 describe('MintPairingTokenCommandHandler', () => {
   let tokens: Pick<HostPairingTokenRepositoryPort, 'insertWithinCap' | 'findOneById'>;
@@ -39,6 +50,7 @@ describe('MintPairingTokenCommandHandler', () => {
     handler = new MintPairingTokenCommandHandler(
       tokens as HostPairingTokenRepositoryPort,
       release as RunnerReleaseConfig,
+      config,
     );
   });
 

@@ -1,10 +1,18 @@
+import { ConfigService } from '@nestjs/config';
 import type { Queue } from 'bullmq';
 import { describe, expect, it, vi } from 'vitest';
 import type { HostMetadataRepositoryPort } from '../database/host-metadata.repository.port';
-import {
-  HostRetentionProcessor,
-  RETENTION_BATCH,
-} from '../infrastructure/host-retention.processor';
+import { HostRetentionProcessor } from '../infrastructure/host-retention.processor';
+
+const RETENTION_BATCH = 5_000;
+const config = new ConfigService({
+  retention: {
+    hostNetworkDays: 90,
+    hostTimelineDays: 180,
+    batchSize: RETENTION_BATCH,
+    maxBatches: 200,
+  },
+});
 
 function processor(networks: number[], timeline: number[]) {
   const metadata = {
@@ -12,7 +20,7 @@ function processor(networks: number[], timeline: number[]) {
     deleteTimelineBefore: vi.fn(async () => timeline.shift() ?? 0),
   } as unknown as HostMetadataRepositoryPort;
   const queue = { upsertJobScheduler: vi.fn().mockResolvedValue(undefined) } as unknown as Queue;
-  return { metadata, queue, subject: new HostRetentionProcessor(metadata, queue) };
+  return { metadata, queue, subject: new HostRetentionProcessor(metadata, queue, config) };
 }
 
 describe('HostRetentionProcessor', () => {

@@ -1,5 +1,6 @@
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger, type OnApplicationBootstrap } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CommandBus } from '@nestjs/cqrs';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Job, Queue } from 'bullmq';
@@ -9,10 +10,6 @@ import type { InboundEventRepositoryPort } from '../database/inbound-event.repos
 import { DELIVERY_RETENTION_DAYS } from '../domain/delivery-retention.policy';
 import { INBOUND_EVENT_REPOSITORY } from '../inbound-events.di-tokens';
 
-/** Normalized events: the trigger preview's week, with room to debug a recent run. */
-export const EVENT_RETENTION_DAYS = 30;
-const RETENTION_BATCH = 5_000;
-const MAX_BATCHES = 200;
 const PURGE_JOB = 'purge';
 const SWEEP_JOB = 'sweep';
 const SCHEDULER_ID = 'inbound-events-retention-daily';
@@ -41,6 +38,7 @@ export class InboundEventsProcessor extends WorkerHost implements OnApplicationB
     private readonly store: InboundEventRepositoryPort,
     @InjectQueue(QUEUE_NAMES.INBOUND_EVENTS)
     private readonly queue: Queue,
+    private readonly config: ConfigService,
   ) {
     super();
   }
@@ -81,23 +79,38 @@ export class InboundEventsProcessor extends WorkerHost implements OnApplicationB
   private async purge(): Promise<{ deliveries: number; events: number }> {
     const day = 24 * 60 * 60 * 1000;
     const now = Date.now();
-    const deliveries = await drain((batch) =>
+    const deliveries = await this.drain((batch) =>
       this.store.deleteDeliveriesBefore(new Date(now - DELIVERY_RETENTION_DAYS * day), batch),
     );
-    const events = await drain((batch) =>
-      this.store.deleteEventsBefore(new Date(now - EVENT_RETENTION_DAYS * day), batch),
+    const events = await this.drain((batch) =>
+      this.store.deleteEventsBefore(new Date(now - this.eventRetentionDays * day), batch),
     );
     this.logger.log({ message: 'inbound-events retention ran', deliveries, events });
     return { deliveries, events };
   }
-}
 
-async function drain(deleteBatch: (batch: number) => Promise<number>): Promise<number> {
-  let total = 0;
-  for (let i = 0; i < MAX_BATCHES; i += 1) {
-    const deleted = await deleteBatch(RETENTION_BATCH);
-    total += deleted;
-    if (deleted < RETENTION_BATCH) break;
+  private async drain(deleteBatch: (batch: number) => Promise<number>): Promise<number> {
+    const batchSize = this.batchSize;
+    const maxBatches = this.maxBatches;
+    let total = 0;
+    for (let i = 0; i < maxBatches; i += 1) {
+      const deleted = await deleteBatch(batchSize);
+      total += deleted;
+      if (deleted < batchSize) break;
+    }
+    return total;
   }
-  return total;
+
+  /** Normalized events: the trigger preview's week, with room to debug a recent run. */
+  private get eventRetentionDays(): number {
+    return this.config.getOrThrow<number>('retention.inboundEventDays');
+  }
+
+  private get batchSize(): number {
+    return this.config.getOrThrow<number>('retention.batchSize');
+  }
+
+  private get maxBatches(): number {
+    return this.config.getOrThrow<number>('retention.maxBatches');
+  }
 }

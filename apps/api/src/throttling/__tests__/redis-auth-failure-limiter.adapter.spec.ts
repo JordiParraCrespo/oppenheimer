@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 import type Redis from 'ioredis';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RedisAuthFailureLimiter } from '../infrastructure/redis-auth-failure-limiter.adapter';
@@ -22,6 +23,16 @@ function fakeRedis(
   };
 }
 
+/** `throttling.*`'s defaults: 30 refusals a minute, then a minute's block. */
+const config = {
+  getOrThrow: (key: string) =>
+    ({
+      'throttling.authFailureLimit': 30,
+      'throttling.authFailureWindowSeconds': 60,
+      'throttling.authFailureBlockSeconds': 60,
+    })[key],
+} as unknown as ConfigService;
+
 describe('RedisAuthFailureLimiter', () => {
   let storage: { increment: ReturnType<typeof vi.fn> };
   let redis: ReturnType<typeof fakeRedis>;
@@ -31,6 +42,7 @@ describe('RedisAuthFailureLimiter', () => {
     new RedisAuthFailureLimiter(
       storage as unknown as RedisThrottlerStorage,
       redis as unknown as Redis,
+      config,
     );
 
   beforeEach(() => {

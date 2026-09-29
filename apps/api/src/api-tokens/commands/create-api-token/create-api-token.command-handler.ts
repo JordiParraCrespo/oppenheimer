@@ -1,4 +1,5 @@
 import { Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { ungrantableScopes } from '@oppenheimer/shared';
@@ -9,9 +10,6 @@ import type { OrganizationMembershipReaderPort } from '../../database/organizati
 import { ApiTokenEntity } from '../../domain/api-token.entity';
 import { ApiTokenErrors } from '../../domain/api-token.errors';
 import { CreateApiTokenCommand } from './create-api-token.command';
-
-/** How many usable tokens one user may hold at a time. */
-const MAX_ACTIVE_TOKENS_PER_USER = 50;
 
 /**
  * What the caller gets back. Commands normally return just the aggregate id,
@@ -42,6 +40,7 @@ export class CreateApiTokenCommandHandler
     @Inject(ORGANIZATION_MEMBERSHIP_READER)
     private readonly memberships: OrganizationMembershipReaderPort,
     private readonly abilityFactory: AbilityFactory,
+    private readonly configService: ConfigService,
   ) {}
 
   async execute(command: CreateApiTokenCommand): Promise<CreateApiTokenResult> {
@@ -64,7 +63,7 @@ export class CreateApiTokenCommandHandler
       command.actor.id,
       new Date(),
     );
-    if (activeCount >= MAX_ACTIVE_TOKENS_PER_USER) {
+    if (activeCount >= this.maxActiveTokensPerUser) {
       throw new AppError(ApiTokenErrors.LIMIT_REACHED);
     }
 
@@ -80,6 +79,11 @@ export class CreateApiTokenCommandHandler
     await this.apiTokenRepository.insert(token);
 
     return { tokenId: token.id, secret };
+  }
+
+  /** How many usable tokens one user may hold at a time. */
+  private get maxActiveTokensPerUser(): number {
+    return this.configService.getOrThrow<number>('apiTokens.maxActivePerUser');
   }
 
   /**

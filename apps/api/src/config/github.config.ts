@@ -55,6 +55,10 @@ const schema = z.object({
    * as the one above.
    */
   oauthBaseUrl: z.string().url().default('https://github.com'),
+  /** How long one GitHub REST call may take before it is abandoned. */
+  requestTimeoutMs: z.coerce.number().int().positive().default(10_000),
+  /** How long an installation's repository list is cached, in seconds. */
+  repositoriesCacheTtlSeconds: z.coerce.number().int().positive().default(60),
 });
 
 export const githubAppConfig = registerAs('githubApp', () =>
@@ -67,5 +71,7 @@ export const githubAppConfig = registerAs('githubApp', () =>
     slug: 'GITHUB_APP_SLUG',
     apiBaseUrl: 'GITHUB_APP_API_URL',
     oauthBaseUrl: 'GITHUB_APP_OAUTH_URL',
+    requestTimeoutMs: 'GITHUB_APP_REQUEST_TIMEOUT_MS',
+    repositoriesCacheTtlSeconds: 'GITHUB_APP_REPOSITORIES_CACHE_TTL_SECONDS',
   }),
 );

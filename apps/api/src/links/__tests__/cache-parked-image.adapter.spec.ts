@@ -1,3 +1,4 @@
+import type { ConfigService } from '@nestjs/config';
 import type { CacheService } from '@oppenheimer/backend-cache';
 import { describe, expect, it } from 'vitest';
 import { CacheParkedImageAdapter } from '../infrastructure/cache-parked-image.adapter';
@@ -18,6 +19,16 @@ function memoryCache(): CacheService {
   } as unknown as CacheService;
 }
 
+/** `sessions.pastedImageTtlSeconds` at its default. */
+function config(): ConfigService {
+  return {
+    getOrThrow: (key: string) => {
+      if (key === 'sessions.pastedImageTtlSeconds') return 120;
+      throw new Error(`Missing config ${key}`);
+    },
+  } as unknown as ConfigService;
+}
+
 const image = {
   hostId: 'host-a',
   sessionId: 'session-1',
@@ -27,7 +38,7 @@ const image = {
 
 describe('CacheParkedImageAdapter', () => {
   it('hands an image over once, to the host it was parked for', async () => {
-    const parked = new CacheParkedImageAdapter(memoryCache());
+    const parked = new CacheParkedImageAdapter(memoryCache(), config());
     await parked.park('cmd-1', image);
 
     await expect(parked.collect('cmd-1', 'host-a')).resolves.toEqual(image);
@@ -35,7 +46,7 @@ describe('CacheParkedImageAdapter', () => {
   });
 
   it('gives another host nothing, and leaves the image for its own', async () => {
-    const parked = new CacheParkedImageAdapter(memoryCache());
+    const parked = new CacheParkedImageAdapter(memoryCache(), config());
     await parked.park('cmd-1', image);
 
     await expect(parked.collect('cmd-1', 'host-b')).resolves.toBeUndefined();

@@ -22,6 +22,13 @@ const schema = z.object({
    * short: a title is not worth a slow button.
    */
   namerTimeoutMs: z.coerce.number().int().positive().default(2_000),
+  /**
+   * How long a terminal attach ticket can be redeemed after it is issued, in
+   * seconds. A browser redeems it at once; this only bounds a leaked one.
+   */
+  attachTicketTtlSeconds: z.coerce.number().int().positive().default(60),
+  /** How long an image pasted into a session stays parked for the runner to pull, in seconds. */
+  pastedImageTtlSeconds: z.coerce.number().int().positive().default(120),
 });
 
 /**
@@ -41,5 +48,7 @@ export const sessionsConfig = registerAs('sessions', () =>
   parseEnv('sessions', schema, {
     namerModel: 'SESSION_NAMER_MODEL',
     namerTimeoutMs: 'SESSION_NAMER_TIMEOUT_MS',
+    attachTicketTtlSeconds: 'SESSION_ATTACH_TICKET_TTL_SECONDS',
+    pastedImageTtlSeconds: 'SESSION_PASTED_IMAGE_TTL_SECONDS',
   }),
 );

@@ -1,15 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CacheService } from '@oppenheimer/backend-cache';
 import type { SessionImageMediaType } from '@oppenheimer/shared/protocol';
 import type { ParkedImage, ParkedImagePort } from '../application/parked-image.port';
 
 const PREFIX = 'session-image:';
-
-/**
- * Two minutes: long enough for a runner on a slow link to pull the image,
- * short enough that a paste nobody collected is not kept.
- */
-export const PARKED_IMAGE_TTL_SECONDS = 120;
 
 interface Stored {
   hostId: string;
@@ -21,7 +16,10 @@ interface Stored {
 /** `ParkedImagePort` in the shared cache, where attach tickets also live. */
 @Injectable()
 export class CacheParkedImageAdapter implements ParkedImagePort {
-  constructor(private readonly cache: CacheService) {}
+  constructor(
+    private readonly cache: CacheService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async park(commandId: string, image: ParkedImage): Promise<void> {
     await this.cache.set<Stored>(
@@ -32,7 +30,7 @@ export class CacheParkedImageAdapter implements ParkedImagePort {
         mediaType: image.mediaType,
         data: image.data.toString('base64'),
       },
-      PARKED_IMAGE_TTL_SECONDS,
+      this.ttlSeconds,
     );
   }
 
@@ -49,5 +47,13 @@ export class CacheParkedImageAdapter implements ParkedImagePort {
       mediaType: stored.mediaType,
       data: Buffer.from(stored.data, 'base64'),
     };
+  }
+
+  /**
+   * Two minutes by default: long enough for a runner on a slow link to pull the
+   * image, short enough that a paste nobody collected is not kept.
+   */
+  private get ttlSeconds(): number {
+    return this.configService.getOrThrow<number>('sessions.pastedImageTtlSeconds');
   }
 }

@@ -86,6 +86,10 @@ const schema = z
      */
     geoipCityDb: z.string().min(1).optional(),
     geoipAsnDb: z.string().min(1).optional(),
+    /** How long a pairing token can be redeemed after it is minted, in seconds. */
+    pairingTokenTtlSeconds: z.coerce.number().int().positive().default(3_600),
+    /** Unspent, unexpired pairing tokens one user may hold at once. */
+    maxUnspentPairingTokens: z.coerce.number().int().positive().default(5),
   })
   .transform(({ apiPublicUrl, controlPlaneUrl, signingKey, ...rest }) => ({
     // Trailing slashes are stripped on both sides of the audience comparison,
@@ -107,6 +111,8 @@ export const hostsConfig = registerAs('hosts', () =>
     installSha256: 'RUNNER_INSTALL_SHA256',
     geoipCityDb: 'HOSTS_GEOIP_CITY_DB',
     geoipAsnDb: 'HOSTS_GEOIP_ASN_DB',
+    pairingTokenTtlSeconds: 'HOSTS_PAIRING_TOKEN_TTL_SECONDS',
+    maxUnspentPairingTokens: 'HOSTS_MAX_UNSPENT_PAIRING_TOKENS',
   }),
 );
 

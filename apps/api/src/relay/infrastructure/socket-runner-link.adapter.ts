@@ -9,13 +9,6 @@ import { encodeFrame } from './frame.util';
 import { LinkAttachments } from './link-attachments.util';
 
 /**
- * The bytes a runner may have queued for it before it is dropped as a slow
- * consumer. Bounded queues everywhere (`02-runner.md` §7): a link that cannot
- * keep up is closed, never allowed to hold the process's memory.
- */
-export const LINK_MAX_BUFFERED_BYTES = 8 * 1024 * 1024;
-
-/**
  * The session commands whose refusal belongs in the session's log. An attach
  * is not one of them: its refusal belongs to the browser that asked, and the
  * attachment table already routes it there.
@@ -58,7 +51,14 @@ export class SocketRunnerLink implements RunnerLink {
     readonly runId: string,
     readonly epoch: number,
     private readonly socket: WebSocket,
-    readonly capabilities: readonly RunnerCapability[] = [],
+    readonly capabilities: readonly RunnerCapability[],
+    /**
+     * The bytes a runner may have queued for it before it is dropped as a slow
+     * consumer (`relay.linkMaxBufferedBytes`). Bounded queues everywhere
+     * (`02-runner.md` §7): a link that cannot keep up is closed, never allowed
+     * to hold the process's memory.
+     */
+    private readonly maxBufferedBytes: number,
   ) {}
 
   send(message: ProtocolMessage): boolean {
@@ -132,7 +132,7 @@ export class SocketRunnerLink implements RunnerLink {
    */
   private get writable(): boolean {
     if (this.socket.readyState !== this.socket.OPEN) return false;
-    if (this.socket.bufferedAmount >= LINK_MAX_BUFFERED_BYTES) {
+    if (this.socket.bufferedAmount >= this.maxBufferedBytes) {
       this.close(1013, 'slow consumer');
       return false;
     }
