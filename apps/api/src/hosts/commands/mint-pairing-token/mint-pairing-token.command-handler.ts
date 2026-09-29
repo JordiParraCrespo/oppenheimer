@@ -78,7 +78,7 @@ export class MintPairingTokenCommandHandler
     });
     if (!minted) {
       throw new AppError(HostErrors.TOO_MANY_PAIRING_TOKENS, {
-        detail: `You already hold ${cap} unspent pairing tokens. Pair a machine with one, or wait for them to expire; each lasts ${Math.ceil(lifetimeMs / 60_000)} minutes.`,
+        detail: `You already hold ${cap} unspent pairing tokens. Pair a machine with one, or wait for them to expire; each expires ${Math.ceil(lifetimeMs / 60_000)} minutes after it is created.`,
       });
     }
 

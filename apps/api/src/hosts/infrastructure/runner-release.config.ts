@@ -106,7 +106,7 @@ export class RunnerReleaseConfig {
       ...(digest
         ? [`The installer's SHA-256 is ${digest}. If you download it first, check it.`, '']
         : []),
-      'Do not copy the token anywhere else; it expires within the hour.',
+      'Do not copy the token anywhere else; it expires soon after it is created.',
       '',
       'Afterwards, run ~/.local/bin/oppenheimer-runner status and show me what it prints.',
       'If anything fails, stop and show me the output. The error says what to do next.',
