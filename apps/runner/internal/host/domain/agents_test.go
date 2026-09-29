@@ -6,15 +6,16 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 )
 
-func TestEveryAgentToolHasAnUpdaterAndHostToolsDoNot(t *testing.T) {
-	for _, tool := range []string{domain.ToolClaude, domain.ToolCodex, domain.ToolOpenCode, domain.ToolGrok} {
+func TestOnlyUnattendedAgentUpdatersAreRun(t *testing.T) {
+	for _, tool := range []string{domain.ToolClaude, domain.ToolCodex, domain.ToolGrok} {
 		if args, ok := domain.AgentUpdateArgs(tool); !ok || len(args) == 0 {
 			t.Errorf("%s: no updater", tool)
 		}
 	}
-	for _, tool := range []string{domain.ToolGit, domain.ToolTmux} {
+	// git and tmux are the package manager's; OpenCode's updater asks.
+	for _, tool := range []string{domain.ToolGit, domain.ToolTmux, domain.ToolOpenCode} {
 		if _, ok := domain.AgentUpdateArgs(tool); ok {
-			t.Errorf("%s is the package manager's to update, not ours", tool)
+			t.Errorf("%s has no unattended updater of ours to run", tool)
 		}
 	}
 }
@@ -42,17 +43,5 @@ func TestSameVersionComparesTheReleaseNotTheLine(t *testing.T) {
 		if got := domain.SameVersion(c.a, c.b); got != c.same {
 			t.Errorf("SameVersion(%q, %q) = %v, want %v", c.a, c.b, got, c.same)
 		}
-	}
-}
-
-func TestUpdateFailureDetailSkipsTheTUIsLeftovers(t *testing.T) {
-	// opencode 1.18.33's upgrade, installed through npm, with stdin closed.
-	output := "\x1b[0m\n\u250c  Upgrade\n\u2502\n\u2717  opencode is installed to /x/opencode.exe and may be managed by a package manager\n" +
-		"\x1b[?25l\u2502\n\u25c6  Install anyways?\n\u2502    Yes\n\u2502  > No\n\u2014"
-	if got := domain.UpdateFailureDetail(output); got != "Install anyways?" {
-		t.Fatalf("detail = %q", got)
-	}
-	if got := domain.UpdateFailureDetail("npm error code EACCES\nnpm error EACCES: permission denied\n"); got != "npm error EACCES: permission denied" {
-		t.Fatalf("detail = %q", got)
 	}
 }

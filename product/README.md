@@ -297,7 +297,3 @@ earlier note:
   owner's runner is now refused at the link handshake and closed by a heartbeat
   within a minute, and a session's git token is not minted for a creator who may
   not act (2026-09-28).
-- `versions/mvp/09` left an agent CLI's version to the person. The runner
-  now keeps every installed agent current with the CLI's own updater,
-  because vendors refuse a CLI one release behind the day a model needs
-  the newer one (`versions/mvp/02` §10, 2026-09-29).

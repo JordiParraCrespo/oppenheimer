@@ -515,13 +515,3 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `github_app_install_url` stays as the capability that says an App
   exists. The first-run walk rides as the state's prefix,
   `first-run.<nonce>`.
-- 2026-09-29: **the runner keeps the agent CLIs current** (02 §10, 09
-  open question 4). 09 had left an agent's version to the person. A host
-  running Claude Code 2.1.274 refused Opus 5.5 ("version 2.1.280 or newer
-  is required") inside the session's terminal, which is the one place the
-  console cannot help. The runner now runs each installed agent's own
-  updater (the catalog's new `update` argv) thirty seconds after boot and
-  hourly after; running sessions keep their binary, the next one gets the
-  update, and `RUNNER_AGENT_UPDATES=off` opts a host out. Installing an
-  agent stays the person's choice. The Claude seed moves Sonnet 5 to
-  Sonnet 5.5 (`claude-sonnet-5-5`) at the same time (05).

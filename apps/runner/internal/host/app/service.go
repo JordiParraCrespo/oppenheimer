@@ -102,20 +102,24 @@ func (s *Service) Preflight(ctx context.Context) (domain.Facts, error) {
 	}
 }
 
-// UpdateAgents runs the updater of every agent CLI found on PATH, one after
-// another, and reports what each came to. An agent that is not installed is
-// skipped: installing one is the person's choice, keeping it current is ours
-// (`product/versions/mvp/02-runner.md` §"Agent updates").
+// UpdateAgents runs the unattended updater of every agent CLI found on PATH,
+// one after another, and reports what each came to. An agent that is not
+// installed is skipped: installing one is the person's choice, keeping it
+// current is ours (`product/versions/mvp/02-runner.md` §10).
 //
 // Sessions already running keep the binary they started with; the next
-// session starts the new one. The facts' tool versions are read again after,
-// so the next heartbeat carries them and the control plane records the change
-// on the host's timeline.
+// session starts the new one. The versions are read afresh once the round is
+// over, so the next heartbeat carries them.
 func (s *Service) UpdateAgents(ctx context.Context) []domain.AgentUpdate {
 	if s.updater == nil {
 		return nil
 	}
-	var results []domain.AgentUpdate
+	type ran struct {
+		name   string
+		before domain.Tool
+		err    error
+	}
+	var round []ran
 	for _, name := range domain.ProbedTools {
 		args, ok := domain.AgentUpdateArgs(name)
 		if !ok {
@@ -125,24 +129,28 @@ func (s *Service) UpdateAgents(ctx context.Context) []domain.AgentUpdate {
 		if !before.Found() {
 			continue
 		}
-		output, err := s.updater.Update(ctx, before.Path, args)
+		err := s.updater.Update(ctx, before.Path, args)
 		if ctx.Err() != nil {
 			// Shutting down: an updater cut short is not a failure to report.
-			return results
+			return nil
 		}
-		// The prober keys its cache on the file, which an in-place update
-		// rewrites; forgetting it is the backstop for one that does not.
-		s.prober.Invalidate()
-		after := s.prober.Tool(ctx, name)
-		result := domain.AgentUpdate{Tool: name, From: before.Version, To: after.Version}
+		round = append(round, ran{name: name, before: before, err: err})
+	}
+	if len(round) == 0 {
+		return nil
+	}
+	// The prober keys its cache on the file, which an in-place update
+	// rewrites; one drop for the round is the backstop for one that does not.
+	s.prober.Invalidate()
+	results := make([]domain.AgentUpdate, 0, len(round))
+	for _, r := range round {
+		after := s.prober.Tool(ctx, r.name)
+		result := domain.AgentUpdate{Tool: r.name, From: r.before.Version, To: after.Version}
 		switch {
-		case err != nil:
+		case r.err != nil:
 			result.Outcome = domain.AgentUpdateFailed
-			result.Detail = domain.UpdateFailureDetail(output)
-			if result.Detail == "" {
-				result.Detail = err.Error()
-			}
-		case !domain.SameVersion(before.Version, after.Version):
+			result.Detail = r.err.Error()
+		case !domain.SameVersion(r.before.Version, after.Version):
 			result.Outcome = domain.AgentUpdated
 		default:
 			result.Outcome = domain.AgentCurrent

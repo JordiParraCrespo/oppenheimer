@@ -5,7 +5,6 @@ import (
 	"slices"
 	"strings"
 	"time"
-	"unicode"
 )
 
 // AgentUpdateInterval is how often the runner brings every installed agent
@@ -22,8 +21,10 @@ const AgentUpdateInterval = time.Hour
 const AgentUpdateTimeout = 5 * time.Minute
 
 // AgentUpdateArgs is the argv, appended to the agent's executable, that runs
-// that CLI's own updater. ok is false for a tool that is not an agent or has
-// no updater: git and tmux belong to the host's package manager, not to us.
+// that CLI's own updater unattended. ok is false for a tool that is not an
+// agent, or whose updater cannot run without asking: git and tmux belong to
+// the host's package manager, and OpenCode's `upgrade` has no spelling that
+// does not stop to ask when it cannot tell how it was installed.
 //
 // The table is the catalog's (`packages/shared/src/agents/catalog.ts`),
 // generated into agent_update.gen.go.
@@ -52,8 +53,8 @@ type AgentUpdate struct {
 	From    string             `json:"from,omitempty"`
 	To      string             `json:"to,omitempty"`
 	Outcome AgentUpdateOutcome `json:"outcome"`
-	// Detail is the updater's last line of output on failure: usually the
-	// reason ("EACCES: permission denied", "not installed via …").
+	// Detail is why the updater failed: its last line of output, which is
+	// usually the reason ("EACCES: permission denied"), or the exit error.
 	Detail string `json:"detail,omitempty"`
 }
 
@@ -70,31 +71,4 @@ func SameVersion(a, b string) bool {
 		return na == nb
 	}
 	return strings.TrimSpace(a) == strings.TrimSpace(b)
-}
-
-// ansiEscape matches the terminal control sequences an updater's spinner and
-// colours leave in its output.
-var ansiEscape = regexp.MustCompile(`\x1b\[[0-9;?]*[ -/]*[@-~]`)
-
-// UpdateFailureDetail picks the line of a failed updater's output worth
-// showing: the last one with at least a short word in it, once colours and
-// box-drawing are gone. Updaters that draw a TUI end on a frame glyph or on
-// the answer they defaulted to ("> No"), which says nothing on its own.
-func UpdateFailureDetail(output string) string {
-	lines := strings.Split(ansiEscape.ReplaceAllString(output, ""), "\n")
-	for i := len(lines) - 1; i >= 0; i-- {
-		line := strings.TrimFunc(lines[i], func(r rune) bool {
-			return !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '(' && r != ')' && r != '\'' && r != '?' && r != '.'
-		})
-		letters := 0
-		for _, r := range line {
-			if unicode.IsLetter(r) {
-				letters++
-			}
-		}
-		if letters >= 4 {
-			return line
-		}
-	}
-	return ""
 }

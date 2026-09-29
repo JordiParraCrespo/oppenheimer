@@ -413,7 +413,7 @@ func usage(w *os.File) {
   runner status                   platform, pairing, service, tools, disk
   runner update [--check|--force|--pin V|--unpin|--rollback]
   runner agents update            bring every installed agent CLI to its latest release
-                                  (run does it hourly unless RUNNER_AGENT_UPDATES=off)
+                                  (run does it on its own unless RUNNER_AGENT_UPDATES=off)
   runner credential-helper get    git's credential protocol, answered over the socket
   runner selfcheck                what a staged binary must pass to be activated
   runner serve                    the HTTP service on a TCP port (containers)

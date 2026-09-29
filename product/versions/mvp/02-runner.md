@@ -62,6 +62,7 @@ user-facing diagnostics are the same artifact and the same version.
 | `status` | local diagnostics: link state, sessions, versions, preflight, disk. Exit codes are a contract, as in `apps/cli` |
 | `credential-helper` | git's credential protocol on stdin/stdout, answered over the Unix socket (§8) |
 | `update` | check, apply, pin or roll back a version (09 §5) |
+| `agents update` | bring every installed agent CLI current now, the round `run` does on its own (§10) |
 | `selfcheck` | a staged binary proving it can parse the config and speak the protocol before it becomes the service (09 §5) |
 | `version` | version, commit, build date, protocol range |
 
@@ -497,27 +498,19 @@ the control plane refuses to create a session for (01). Missing
 §2). **Disk pressure** is a status event before a session fails to
 write, not an error after (note 12).
 
-**Agent updates.** The runner keeps every installed agent CLI current: at
-thirty seconds after boot and hourly after, it runs each one's own updater
-— the catalog's `update` argv (`claude update`, `codex update`,
-`opencode upgrade`, `grok update`), generated into the host context as
-`agent_update.gen.go` — one after another, with nothing on stdin, in a
-process group of its own, five minutes each at most. The reason is the
-vendors: a CLI one release behind is refused the day a model ships that
-needs the newer one ("Claude Code 2.1.274 does not support this model;
-version 2.1.280 or newer is required"), and the person finds out in the
-session's own terminal. The CLI's own updater, not ours, because it knows
-how it was installed (its installer, npm, Homebrew); an agent that is not
-installed is left alone, since installing one is the person's choice.
-Sessions already running keep the binary they started with and the next
-one starts the new one — nothing is restarted under anyone. The versions
-are probed again after, so the next heartbeat carries them and the host's
-timeline records the change as `facts_changed`. A failed updater (usually
-a CLI installed where the runner's account cannot write) is logged and
-retried the next hour; `runner agents update` runs the same round by hand
-and exits `HOST_009` when one fails. `RUNNER_AGENT_UPDATES=off`, set before
-`runner install`, turns it off for a host whose agents are pinned by
-other means.
+**Agent updates.** Installed agent CLIs stay current: `run` runs each
+one's own unattended updater, the catalog's `update`
+(`packages/shared/src/agents/catalog.ts`), shortly after boot and on a
+schedule after, one at a time and never beside the runner's own update
+check. A CLI one release behind is refused by its vendor the day a model
+ships that needs the newer one, and the person would find out in the
+session's terminal. A running session keeps the binary it started with;
+the next session starts the new one. An agent that is not installed is
+left alone, and so is one whose updater cannot run without asking
+(OpenCode's asks whenever it cannot tell how it was installed): the catalog
+gives it no `update`. A failure is logged and retried; `runner agents
+update` runs the round by hand (09 open question 4 says what to do when it
+fails). `RUNNER_AGENT_UPDATES=off` opts a host out.
 
 ### 11. State on disk
 

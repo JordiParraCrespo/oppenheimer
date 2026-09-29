@@ -292,7 +292,8 @@ func (a *App) updateLoop(ctx context.Context, logger *slog.Logger) {
 // agentUpdateAfterBoot is how long `run` waits before the first round of
 // agent updates: long enough that a boot, an adoption and the first dial are
 // not competing with a download, short enough that a host that was off when
-// a model shipped is current within the minute it comes back.
+// a model shipped is current within the minute it comes back. The runner's
+// own update check never overlaps a round: both take App.downloads.
 const agentUpdateAfterBoot = 30 * time.Second
 
 // agentUpdateLoop keeps the agent CLIs on the host current: every installed
@@ -316,7 +317,10 @@ func (a *App) agentUpdateLoop(ctx context.Context, logger *slog.Logger) {
 }
 
 func (a *App) updateAgents(ctx context.Context, logger *slog.Logger) {
-	for _, result := range a.Host.UpdateAgents(ctx) {
+	a.downloads.Lock()
+	results := a.Host.UpdateAgents(ctx)
+	a.downloads.Unlock()
+	for _, result := range results {
 		attrs := []any{slog.String("agent", result.Tool), slog.String("from", result.From), slog.String("to", result.To)}
 		switch result.Outcome {
 		case hostdomain.AgentUpdated:
@@ -330,7 +334,9 @@ func (a *App) updateAgents(ctx context.Context, logger *slog.Logger) {
 }
 
 func (a *App) checkForUpdate(ctx context.Context, logger *slog.Logger) {
+	a.downloads.Lock()
 	plan, err := a.Updates.Apply(ctx, applyOptions())
+	a.downloads.Unlock()
 	if err != nil {
 		logger.Warn("update check failed", slog.Any("error", err))
 		return

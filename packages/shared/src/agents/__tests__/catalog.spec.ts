@@ -349,12 +349,12 @@ describe('the runner launch table', () => {
 });
 
 describe('agent updates', () => {
-  it('names each CLI’s own updater, and none for the blank terminal', () => {
-    // Read off each CLI's own `--help`: an agent a release behind is refused
-    // by its vendor the day a model needs the newer one.
+  it('names each CLI’s unattended updater, and none where the updater asks', () => {
+    // Read off each CLI's own `--help`; the runner runs these with no terminal.
     expect(CODING_AGENTS['claude-code'].update).toEqual(['update']);
     expect(CODING_AGENTS.codex.update).toEqual(['update']);
-    expect(CODING_AGENTS.opencode.update).toEqual(['upgrade']);
+    // `opencode upgrade` asks "Install anyways?" and has no flag not to.
+    expect(CODING_AGENTS.opencode.update).toBeUndefined();
     expect(CODING_AGENTS.grok.update).toEqual(['update']);
     expect(CODING_AGENTS.shell.update).toBeUndefined();
   });

@@ -36,7 +36,7 @@ type Prober interface {
 
 // Updater runs an agent CLI's own updater: the executable at path with args,
 // bounded by domain.AgentUpdateTimeout, with no terminal and nothing on
-// stdin. It returns what the command printed, on failure too.
+// stdin. A failure's message is the reason, fit to show a person.
 type Updater interface {
-	Update(ctx context.Context, path string, args []string) (output string, err error)
+	Update(ctx context.Context, path string, args []string) error
 }

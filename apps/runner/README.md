@@ -39,7 +39,7 @@ the way this host proves who it is, and they go when the link lands.
 | `runner credential-helper get` | git's credential protocol, answered over the local socket |
 | `runner status` | platform, pairing, key fingerprint, service, tools, disk. Exits 0 whenever it can print the table, ready or not: read the lines, not the exit code |
 | `runner update [--check\|--force\|--pin V\|--unpin\|--rollback]` | the update policy, by hand |
-| `runner agents update` | runs every installed agent CLI's own updater now (`claude update`, `codex update`, …) — what `run` does thirty seconds after boot and hourly, unless `RUNNER_AGENT_UPDATES=off`. Exits `HOST_009` when one fails |
+| `runner agents update` | runs every installed agent CLI's unattended updater now, the round `run` does on its own unless `RUNNER_AGENT_UPDATES=off`. Exits `HOST_009` when one fails |
 | `runner selfcheck` | what a staged binary must pass before it is allowed to become the service |
 | `runner serve` | the control-plane-facing HTTP service on a TCP port — what the container image runs |
 

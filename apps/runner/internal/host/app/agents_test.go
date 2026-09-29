@@ -16,16 +16,19 @@ func TestUpdateAgentsRunsEachInstalledAgentsOwnUpdater(t *testing.T) {
 	p.Tools[domain.ToolClaude] = domain.Tool{Path: "/home/jordi/.local/bin/claude", Version: "2.1.274 (Claude Code)"}
 	p.Tools[domain.ToolOpenCode] = domain.Tool{Path: "/usr/local/bin/opencode", Version: "1.18.33"}
 	p.Tools[domain.ToolCodex] = domain.Tool{Path: "/usr/local/bin/codex", Version: "codex-cli 0.155.1"}
-	u := &fake.Updater{Run: func(path string, _ []string) (string, error) {
+	p.Tools[domain.ToolGrok] = domain.Tool{Path: "/usr/local/bin/grok", Version: "grok 1.0.44 (5b807183dd79)"}
+	u := &fake.Updater{Run: func(path string, _ []string) error {
 		switch path {
 		case "/home/jordi/.local/bin/claude":
 			// The screenshot's case: a model that needs a newer CLI.
 			p.Tools[domain.ToolClaude] = domain.Tool{Path: path, Version: "2.1.284 (Claude Code)"}
-			return "Successfully updated from 2.1.274 to 2.1.284", nil
 		case "/usr/local/bin/codex":
-			return "npm error code EACCES\nnpm error EACCES: permission denied", errors.New("exit status 243")
+			return errors.New("npm error EACCES: permission denied")
+		case "/usr/local/bin/grok":
+			// Same release, reworded line: not an update.
+			p.Tools[domain.ToolGrok] = domain.Tool{Path: path, Version: "grok 1.0.44 (5b807183dd79) [stable]"}
 		}
-		return "opencode is up to date", nil
+		return nil
 	}}
 	svc := app.New(app.Options{Prober: p, Updater: u, Version: "1.2.3"})
 
@@ -34,10 +37,10 @@ func TestUpdateAgentsRunsEachInstalledAgentsOwnUpdater(t *testing.T) {
 	want := []string{
 		"/home/jordi/.local/bin/claude update",
 		"/usr/local/bin/codex update",
-		"/usr/local/bin/opencode upgrade",
+		"/usr/local/bin/grok update",
 	}
 	if !slices.Equal(u.Calls, want) {
-		t.Fatalf("calls = %v, want %v (git and tmux, and agents not installed, are left alone)", u.Calls, want)
+		t.Fatalf("calls = %v, want %v (git, tmux, OpenCode's asking updater and missing agents are left alone)", u.Calls, want)
 	}
 	byTool := map[string]domain.AgentUpdate{}
 	for _, r := range results {
@@ -49,11 +52,20 @@ func TestUpdateAgentsRunsEachInstalledAgentsOwnUpdater(t *testing.T) {
 	if r := byTool[domain.ToolCodex]; r.Outcome != domain.AgentUpdateFailed || r.Detail != "npm error EACCES: permission denied" {
 		t.Errorf("codex = %+v, want failed with the updater's last line", r)
 	}
-	if r := byTool[domain.ToolOpenCode]; r.Outcome != domain.AgentCurrent {
-		t.Errorf("opencode = %+v", r)
+	if r := byTool[domain.ToolGrok]; r.Outcome != domain.AgentCurrent {
+		t.Errorf("grok = %+v", r)
 	}
-	if !slices.Contains(p.Calls, "invalidate") {
-		t.Error("the versions were not read afresh after updating")
+	if _, ok := byTool[domain.ToolOpenCode]; ok {
+		t.Error("opencode was reported, but it has no unattended updater")
+	}
+	invalidations := 0
+	for _, call := range p.Calls {
+		if call == "invalidate" {
+			invalidations++
+		}
+	}
+	if invalidations != 1 {
+		t.Errorf("the cache was dropped %d times; once per round reads every version afresh", invalidations)
 	}
 }
 
@@ -70,9 +82,9 @@ func TestUpdateAgentsStopsQuietlyOnShutdown(t *testing.T) {
 	p.Tools[domain.ToolClaude] = domain.Tool{Path: "/usr/bin/claude", Version: "2.1.274"}
 	p.Tools[domain.ToolCodex] = domain.Tool{Path: "/usr/bin/codex", Version: "0.155.1"}
 	ctx, cancel := context.WithCancel(context.Background())
-	u := &fake.Updater{Run: func(string, []string) (string, error) {
+	u := &fake.Updater{Run: func(string, []string) error {
 		cancel()
-		return "", context.Canceled
+		return context.Canceled
 	}}
 
 	results := app.New(app.Options{Prober: p, Updater: u}).UpdateAgents(ctx)

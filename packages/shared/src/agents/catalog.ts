@@ -200,19 +200,12 @@ export interface CodingAgentDefinition {
   /** What the person's three choices mean to this CLI. */
   readonly launch: CodingAgentLaunch;
   /**
-   * The argv, appended to `command`, that brings this CLI to its latest
-   * release in place — the CLI's own updater, which knows how it was
-   * installed (its own installer, npm, Homebrew) better than we would.
+   * The argv, appended to `command`, that updates this CLI in place to its
+   * latest release **without asking**: the runner runs it unattended, with no
+   * terminal and nothing on stdin (`product/versions/mvp/02-runner.md` §10).
    *
-   * The runner runs it on every host where the agent is on PATH, at boot and
-   * hourly after (`product/versions/mvp/02-runner.md` §"Agent updates"),
-   * because a CLI one release behind is refused by its vendor the day a model
-   * ships that needs the newer one: "Claude Code 2.1.274 does not support
-   * this model; version 2.1.280 or newer is required". A session already
-   * running keeps the binary it started with; the next one gets the update.
-   *
-   * Absent: this CLI has no updater (a plain shell), and the runner leaves it
-   * alone.
+   * Absent: this CLI has no updater that runs without asking (OpenCode's,
+   * or a plain shell's none), and the runner leaves it alone.
    */
   readonly update?: readonly string[];
 }
@@ -296,7 +289,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       prompt: Object.freeze(['<prompt>']),
     }),
     // `claude update|upgrade`: "Check for updates and install if available",
-    // read off claude 2.1.284's own `--help`.
+    // claude 2.1.284. It takes no options and asks nothing.
     update: Object.freeze(['update']),
   }),
   codex: Object.freeze({
@@ -365,6 +358,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       prompt: Object.freeze(['<prompt>']),
     }),
     // `codex update`: "Update Codex to the latest version", codex-cli 0.158.0.
+    // Its options are config overrides only; it asks nothing.
     update: Object.freeze(['update']),
   }),
   opencode: Object.freeze({
@@ -453,9 +447,10 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // task in it; `opencode run` is the non-interactive one.
       prompt: Object.freeze(['--prompt', '<prompt>']),
     }),
-    // `opencode upgrade [target]`: "upgrade opencode to the latest or a
-    // specific version", opencode 1.18.33. With no target it takes the latest.
-    update: Object.freeze(['upgrade']),
+    // No `update`. `opencode upgrade` (1.18.33) has no flag that means "do
+    // not ask", and it asks "Install anyways?" whenever it cannot tell how it
+    // was installed — which is exactly when replacing it is not ours to do.
+    // OpenCode's own launch-time autoupdate skips the same case.
   }),
   grok: Object.freeze({
     id: 'grok',
@@ -526,7 +521,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       prompt: Object.freeze(['<prompt>']),
     }),
     // `grok update`: "Check for updates or install a specific version", grok
-    // 1.0.44. Bare, it installs the latest.
+    // 1.0.44. Bare, it installs the latest and asks nothing.
     update: Object.freeze(['update']),
   }),
   shell: Object.freeze({
