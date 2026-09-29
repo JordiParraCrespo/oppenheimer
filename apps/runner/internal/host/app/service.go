@@ -16,18 +16,21 @@ type Options struct {
 	WorkspaceRoot string
 	// Version is the running runner's version, reported with the facts.
 	Version string
+	// Updater runs the agents' own updaters. Nil disables UpdateAgents.
+	Updater Updater
 }
 
 // Service collects the host inventory.
 type Service struct {
 	prober    Prober
+	updater   Updater
 	workspace string
 	version   string
 }
 
 // New builds the service.
 func New(opts Options) *Service {
-	return &Service{prober: opts.Prober, workspace: opts.WorkspaceRoot, version: opts.Version}
+	return &Service{prober: opts.Prober, updater: opts.Updater, workspace: opts.WorkspaceRoot, version: opts.Version}
 }
 
 // Collect inspects the machine. It answers with whatever it could learn even
@@ -97,6 +100,64 @@ func (s *Service) Preflight(ctx context.Context) (domain.Facts, error) {
 	default:
 		return facts, domain.ErrProbe.WithCause(err)
 	}
+}
+
+// UpdateAgents runs the unattended updater of every agent CLI found on PATH,
+// one after another, and reports what each came to. An agent that is not
+// installed is skipped: installing one is the person's choice, keeping it
+// current is ours (`product/versions/mvp/02-runner.md` §10).
+//
+// Sessions already running keep the binary they started with; the next
+// session starts the new one. The versions are read afresh once the round is
+// over, so the next heartbeat carries them.
+func (s *Service) UpdateAgents(ctx context.Context) []domain.AgentUpdate {
+	if s.updater == nil {
+		return nil
+	}
+	type ran struct {
+		name   string
+		before domain.Tool
+		err    error
+	}
+	var round []ran
+	for _, name := range domain.ProbedTools {
+		args, ok := domain.AgentUpdateArgs(name)
+		if !ok {
+			continue
+		}
+		before := s.prober.Tool(ctx, name)
+		if !before.Found() {
+			continue
+		}
+		err := s.updater.Update(ctx, name, before.Path, args)
+		if ctx.Err() != nil {
+			// Shutting down: an updater cut short is not a failure to report.
+			return nil
+		}
+		round = append(round, ran{name: name, before: before, err: err})
+	}
+	if len(round) == 0 {
+		return nil
+	}
+	// The prober keys its cache on the file, which an in-place update
+	// rewrites; one drop for the round is the backstop for one that does not.
+	s.prober.Invalidate()
+	results := make([]domain.AgentUpdate, 0, len(round))
+	for _, r := range round {
+		after := s.prober.Tool(ctx, r.name)
+		result := domain.AgentUpdate{Tool: r.name, From: r.before.Version, To: after.Version}
+		switch {
+		case r.err != nil:
+			result.Outcome = domain.AgentUpdateFailed
+			result.Detail = r.err.Error()
+		case !domain.SameVersion(r.before.Version, after.Version):
+			result.Outcome = domain.AgentUpdated
+		default:
+			result.Outcome = domain.AgentCurrent
+		}
+		results = append(results, result)
+	}
+	return results
 }
 
 func required(name string) bool {

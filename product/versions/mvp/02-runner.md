@@ -62,6 +62,7 @@ user-facing diagnostics are the same artifact and the same version.
 | `status` | local diagnostics: link state, sessions, versions, preflight, disk. Exit codes are a contract, as in `apps/cli` |
 | `credential-helper` | git's credential protocol on stdin/stdout, answered over the Unix socket (§8) |
 | `update` | check, apply, pin or roll back a version (09 §5) |
+| `agents update` | bring every installed agent CLI current now, the round `run` does on its own (§10) |
 | `selfcheck` | a staged binary proving it can parse the config and speak the protocol before it becomes the service (09 §5) |
 | `version` | version, commit, build date, protocol range |
 
@@ -506,6 +507,21 @@ the control plane refuses to create a session for (01). Missing
 `tmux` is fatal for sessions and the installer offers to fix it (09
 §2). **Disk pressure** is a status event before a session fails to
 write, not an error after (note 12).
+
+**Agent updates.** Installed agent CLIs stay current: `run` runs each
+one's own unattended updater, the catalog's `update`
+(`packages/shared/src/agents/catalog.ts`), shortly after boot and on a
+schedule after, one at a time and never beside the runner's own update
+check or another round, and a session starting that agent meanwhile
+waits for its update. A CLI one release behind is refused by its vendor the day a model
+ships that needs the newer one, and the person would find out in the
+session's terminal. A running session keeps the binary it started with;
+the next session starts the new one. An agent that is not installed is
+left alone, and so is one whose updater cannot run without asking
+(OpenCode's asks whenever it cannot tell how it was installed): the catalog
+gives it no `update`. A failure is logged and retried; `runner agents
+update` runs the round by hand (09 open question 4 says what to do when it
+fails). `RUNNER_AGENT_UPDATES=off` opts a host out.
 
 ### 11. State on disk
 

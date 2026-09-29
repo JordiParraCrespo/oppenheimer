@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
@@ -65,6 +66,11 @@ type App struct {
 	Link *link.Client
 	// Credentials answers the git credential helper while `run` holds a link.
 	Credentials *credentialBroker
+
+	// downloads keeps the runner's own update check and a round of agent
+	// updates from running at once: two downloads on one link, and a
+	// self-update restart landing in the middle of an agent's install.
+	downloads sync.Mutex
 }
 
 // New wires the host agent. It reads the identity when there is one, which is
@@ -90,7 +96,8 @@ func New(version string) (*App, error) {
 	}
 
 	hostSvc := hostapp.New(hostapp.Options{
-		Prober: system.New(), WorkspaceRoot: paths.Workspaces, Version: version,
+		Prober: system.New(), Updater: lockedUpdater{paths: paths, next: system.Updater{}},
+		WorkspaceRoot: paths.Workspaces, Version: version,
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
 		Store:        store,
@@ -144,6 +151,8 @@ func New(version string) (*App, error) {
 			}
 			return env
 		},
+		// A session never starts an agent CLI its updater is replacing.
+		Gate: agentGate{paths: paths},
 	})
 	if err != nil {
 		return nil, err
@@ -217,6 +226,11 @@ func unit(paths Paths) svcdomain.Unit {
 	}
 	if workspaces := os.Getenv(EnvWorkspaces); workspaces != "" {
 		env[EnvWorkspaces] = workspaces
+	}
+	// An install that opted out of agent updates stays opted out under the
+	// service, which would not otherwise see the installer's environment.
+	if updates := os.Getenv(EnvAgentUpdates); updates != "" {
+		env[EnvAgentUpdates] = updates
 	}
 	// The PATH the installer was run with, carried onto the service.
 	//

@@ -49,7 +49,17 @@ type Paths struct {
 const (
 	EnvHome       = "RUNNER_HOME"
 	EnvWorkspaces = "RUNNER_WORKSPACES"
+	// EnvAgentUpdates set to "off" stops `run` keeping the agent CLIs
+	// current, for a host whose agents are pinned by other means (a
+	// managed image, a package the person holds back). Anything else, or
+	// unset, is on.
+	EnvAgentUpdates = "RUNNER_AGENT_UPDATES"
 )
+
+// AgentUpdatesEnabled reports whether `run` keeps the agent CLIs current.
+func AgentUpdatesEnabled() bool {
+	return !strings.EqualFold(strings.TrimSpace(os.Getenv(EnvAgentUpdates)), "off")
+}
 
 // ResolvePaths builds the layout, honouring RUNNER_HOME so a second runner
 // can be developed on a machine that already hosts one.

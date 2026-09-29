@@ -199,6 +199,15 @@ export interface CodingAgentDefinition {
   readonly models: readonly CodingAgentModel[];
   /** What the person's three choices mean to this CLI. */
   readonly launch: CodingAgentLaunch;
+  /**
+   * The argv, appended to `command`, that updates this CLI in place to its
+   * latest release **without asking**: the runner runs it unattended, with no
+   * terminal and nothing on stdin (`product/versions/mvp/02-runner.md` §10).
+   *
+   * Absent: this CLI has no updater that runs without asking (OpenCode's,
+   * or a plain shell's none), and the runner leaves it alone.
+   */
+  readonly update?: readonly string[];
 }
 
 /**
@@ -235,14 +244,13 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // names and that CLI does not fails in the session's own terminal, where
     // the person can see it.
     //
-    // The current family, newest of each line, as Synara's model table and
-    // Orca's pricing table both list it: Opus 5.5 replaced Opus 5 as the Opus
-    // the `opus` alias names, and stays the default because it is the
-    // everyday model of the four.
+    // The current family, newest of each line, in the order Claude's own model
+    // picker lists it: Opus 5.5 first and the default, the everyday model of
+    // the four, then Fable 5.1, Sonnet 5.5 and Haiku 4.5.
     models: Object.freeze([
-      Object.freeze({ id: 'claude-fable-5-1', label: 'Claude Fable 5.1' }),
       Object.freeze({ id: 'claude-opus-5-5', label: 'Claude Opus 5.5', default: true as const }),
-      Object.freeze({ id: 'claude-sonnet-5', label: 'Claude Sonnet 5' }),
+      Object.freeze({ id: 'claude-fable-5-1', label: 'Claude Fable 5.1' }),
+      Object.freeze({ id: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5' }),
       Object.freeze({ id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' }),
     ]),
     launch: Object.freeze({
@@ -278,6 +286,9 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // session" — so this starts the TUI with the task already in it.
       prompt: Object.freeze(['<prompt>']),
     }),
+    // `claude update|upgrade`: "Check for updates and install if available",
+    // claude 2.1.284. It takes no options and asks nothing.
+    update: Object.freeze(['update']),
   }),
   codex: Object.freeze({
     id: 'codex',
@@ -344,6 +355,9 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // non-interactive one and would give the person no terminal to take over.
       prompt: Object.freeze(['<prompt>']),
     }),
+    // `codex update`: "Update Codex to the latest version", codex-cli 0.158.0.
+    // Its options are config overrides only; it asks nothing.
+    update: Object.freeze(['update']),
   }),
   opencode: Object.freeze({
     id: 'opencode',
@@ -381,13 +395,13 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // provider, plus OpenAI's Codex default. A row the host's OpenCode has
     // no provider for fails in the session's own terminal, as for the others.
     models: Object.freeze([
-      Object.freeze({ id: 'anthropic/claude-fable-5-1', label: 'Claude Fable 5.1' }),
       Object.freeze({
         id: 'anthropic/claude-opus-5-5',
         label: 'Claude Opus 5.5',
         default: true as const,
       }),
-      Object.freeze({ id: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' }),
+      Object.freeze({ id: 'anthropic/claude-fable-5-1', label: 'Claude Fable 5.1' }),
+      Object.freeze({ id: 'anthropic/claude-sonnet-5-5', label: 'Claude Sonnet 5.5' }),
       Object.freeze({ id: 'anthropic/claude-haiku-4-5', label: 'Claude Haiku 4.5' }),
       Object.freeze({ id: 'openai/gpt-5.6-sol', label: 'GPT-5.6 Sol' }),
     ]),
@@ -431,6 +445,10 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // task in it; `opencode run` is the non-interactive one.
       prompt: Object.freeze(['--prompt', '<prompt>']),
     }),
+    // No `update`. `opencode upgrade` (1.18.33) has no flag that means "do
+    // not ask", and it asks "Install anyways?" whenever it cannot tell how it
+    // was installed — which is exactly when replacing it is not ours to do.
+    // OpenCode's own launch-time autoupdate skips the same case.
   }),
   grok: Object.freeze({
     id: 'grok',
@@ -500,6 +518,9 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // and exits.
       prompt: Object.freeze(['<prompt>']),
     }),
+    // `grok update`: "Check for updates or install a specific version", grok
+    // 1.0.44. Bare, it installs the latest and asks nothing.
+    update: Object.freeze(['update']),
   }),
   shell: Object.freeze({
     id: 'shell',

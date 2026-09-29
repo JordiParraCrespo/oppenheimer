@@ -66,7 +66,7 @@ function RoutineTableRow({
 }: Omit<React.ComponentProps<'div'>, 'children'> & {
   icon: React.ReactNode;
   name: React.ReactNode;
-  /** "Claude Code · Claude Sonnet 4.6 · XRP Mobile". */
+  /** "Claude Code · Claude Sonnet 5.5 · XRP Mobile". */
   sub?: React.ReactNode;
   trigger: React.ReactNode;
   /** "Tomorrow, 02:00", "On next event", or "—". */

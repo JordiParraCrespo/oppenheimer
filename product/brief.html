@@ -204,7 +204,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <thead><tr><th>Layer</th><th>MVP</th><th>Later</th></tr></thead>
 <tbody>
 <tr><td>Terminal</td><td>xterm.js WebGL, binary WS, reattach, splits</td><td>serialized scrollback, search, clickable paths</td></tr>
-<tr><td>Runner</td><td>one static Go binary: tmux-backed PTYs, outbound WS, ring buffer, signed self-update</td><td>hypervisor and guest modes, egress proxy</td></tr>
+<tr><td>Runner</td><td>one static Go binary: tmux-backed PTYs, outbound WS, ring buffer, signed self-update, agent CLIs kept current</td><td>hypervisor and guest modes, egress proxy</td></tr>
 <tr><td>Workspace</td><td>git worktree per session on a direct-mode target</td><td>Firecracker VM per task with Docker inside</td></tr>
 <tr><td>Agents</td><td>none built in: whatever you type</td><td>status hooks, "new session with prompt", Agent SDK for unattended runs</td></tr>
 <tr><td>Board</td><td>sessions per project and target with live status</td><td>delegation via a small MCP server</td></tr>

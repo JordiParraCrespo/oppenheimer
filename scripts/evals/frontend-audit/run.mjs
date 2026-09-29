@@ -24,7 +24,7 @@
 //                                                                     mechanical checks fail only where
 //                                                                     a case says they should
 //   node scripts/evals/frontend-audit/run.mjs --grade <report.json>   re-grade a saved report
-//   options: --model <id> (default claude-sonnet-5), --timeout <minutes>, --keep
+//   options: --model <id> (default claude-sonnet-5-5), --timeout <minutes>, --keep
 import { execFileSync, spawnSync } from 'node:child_process';
 import {
   cpSync,
@@ -67,7 +67,7 @@ const AGENT_TOOLS = [
 const SERIOUS = new Set(['high', 'medium']);
 
 function parseArgs(argv) {
-  const args = { model: 'claude-sonnet-5', timeout: 30, trials: 1, mode: 'agent', keep: false };
+  const args = { model: 'claude-sonnet-5-5', timeout: 30, trials: 1, mode: 'agent', keep: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--case') args.case = argv[++i];

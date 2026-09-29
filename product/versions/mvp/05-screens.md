@@ -149,7 +149,7 @@
 
   | Agent | Models (default first in bold) | Permission chip | Effort |
   |---|---|---|---|
-  | Claude Code | Fable 5.1, **Opus 5.5**, Sonnet 5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | yes |
+  | Claude Code | **Opus 5.5**, Fable 5.1, Sonnet 5.5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | yes |
   | Codex | GPT-6 Astra, **GPT-5.6 Sol**, Terra, Luna | yes | yes |
   | OpenCode | Claude's four under `anthropic/` (**`anthropic/claude-opus-5-5`**), `openai/gpt-5.6-sol` | yes | no: OpenCode has no effort flag |
   | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default) | yes | yes |

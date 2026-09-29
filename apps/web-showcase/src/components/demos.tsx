@@ -1777,7 +1777,7 @@ export function RoutineEditorDemo() {
         title="Agent"
         subtitle="Each run is its own session."
         done
-        summary="Claude Code · Claude Sonnet 4.6"
+        summary="Claude Code · Claude Sonnet 5.5"
         note="Works on a fresh opp/ branch, so nothing lands on main without a pull request."
         last
       >
@@ -1788,7 +1788,7 @@ export function RoutineEditorDemo() {
           </Field>
           <Field>
             <FieldLabel>Model</FieldLabel>
-            <FieldSelect {...SELECT_COPY} value="sonnet" onValueChange={() => {}} options={[{ value: 'sonnet', label: 'Claude Sonnet 4.6' }, { value: 'opus', label: 'Claude Opus 4.2' }]} />
+            <FieldSelect {...SELECT_COPY} value="sonnet" onValueChange={() => {}} options={[{ value: 'sonnet', label: 'Claude Sonnet 5.5' }, { value: 'opus', label: 'Claude Opus 5.5' }]} />
           </Field>
         </RoutineStepFields>
       </RoutineStep>
