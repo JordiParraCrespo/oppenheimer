@@ -228,16 +228,17 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual([]);
   });
 
-  /** The heading stands alone over the composer: no line under it reads the draft. */
-  it('places the heading over the composer with no subtitle', () => {
+  /** The line under the title says what sending will do once a project is picked. */
+  it('summarises the picked project under the title', () => {
     cleanup();
     render(
       <ConsoleDialogProvider>
         <NewSessionForm heading={<h1>title</h1>} />
       </ConsoleDialogProvider>,
     );
-    expect(screen.getByRole('heading', { name: 'title' })).toBeTruthy();
-    expect(screen.queryByText(/sessions\.new\.subtitle/)).toBeNull();
+    expect(screen.getByText('sessions.new.subtitle')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'project' }));
+    expect(screen.getByText('sessions.new.subtitleProject')).toBeTruthy();
   });
 
   /** The send gate (05): a host still in the workspace and one repository the body can carry. */

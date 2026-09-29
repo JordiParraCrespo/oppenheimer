@@ -297,6 +297,5 @@ earlier note:
   owner's runner is now refused at the link handshake and closed by a heartbeat
   within a minute, and a session's git token is not minted for a creator who may
   not act (2026-09-28).
-- 05's subtitle under New session's title is gone; the title is "Ready
-  when you are.", and the paperclip attaches images to the first task (03)
-  (2026-09-28).
+- 05's composer drew a paperclip wired to nothing; it now attaches images
+  to the first task (03) (2026-09-28).

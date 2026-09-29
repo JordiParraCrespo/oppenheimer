@@ -40,7 +40,7 @@ test('an image attached to the first task reaches the agent with it', async ({
   await page.setViewportSize({ width: 1280, height: 800 });
   await signInAs(page, user);
   await page.goto('/sessions/new');
-  await expect(page.getByRole('heading', { name: 'Ready when you are.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'New session', level: 1 })).toBeVisible();
   await shot('1-new-session');
 
   await page.getByRole('button', { name: 'Host' }).click();
@@ -60,7 +60,7 @@ test('an image attached to the first task reaches the agent with it', async ({
   await shot('2-refused-too-large');
 
   // A real PNG: a picture of the heading itself.
-  const png = await page.getByRole('heading', { name: 'Ready when you are.' }).screenshot();
+  const png = await page.getByRole('heading', { name: 'New session', level: 1 }).screenshot();
   await picker.setInputFiles({ name: 'mockup.png', mimeType: 'image/png', buffer: png });
   await expect(page.getByText('mockup.png', { exact: true })).toBeVisible();
   await page.getByRole('textbox', { name: /Describe a task/ }).fill('Match this mockup');

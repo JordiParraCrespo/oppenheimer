@@ -414,7 +414,11 @@
     },
     "new": {
       "title": "Nueva sesión",
-      "heading": "Cuando quieras, empezamos.",
+      "subtitle": "Define el alcance y describe el trabajo.",
+      "subtitleProject_one": "En {{name}} · clonando {{picked}} de {{count}} repositorio, cada uno en su propia rama opp/.",
+      "subtitleProject_other": "En {{name}} · clonando {{picked}} de {{count}} repositorios, cada uno en su propia rama opp/.",
+      "subtitleCloning_one": "En {{name}} · clonando {{count}} repositorio, en su propia rama opp/.",
+      "subtitleCloning_other": "En {{name}} · clonando {{count}} repositorios, cada uno en su propia rama opp/.",
       "host": {
         "label": "Host",
         "placeholder": "Host",
