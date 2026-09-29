@@ -49,9 +49,9 @@ export const protocolAgentSchema = z.enum(CODING_AGENT_IDS);
  * How the agent is started, as the host receives it.
  *
  * **Structured, never argv.** The control plane says which of the product's
- * three permission levels and five effort stops somebody chose; the host is
- * what turns that into a command line, from the same catalog this schema takes
- * its unions from. A control plane that sent argv would be dictating a command
+ * three permission levels and which of the CLI's effort levels somebody chose;
+ * the host is what turns that into a command line, from the same catalog this
+ * schema takes its unions from. A control plane that sent argv would be dictating a command
  * to run on somebody's laptop, and the runner would have nothing left to check
  * — so the mapping stays on the machine that executes it
  * (`product/versions/mvp/01-protocol.md`, and

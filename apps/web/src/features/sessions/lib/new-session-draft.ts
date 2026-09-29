@@ -3,10 +3,11 @@ import {
   CODING_AGENTS,
   type CodingAgentId,
   isCodingAgentId,
+  SESSION_EFFORTS,
   type SessionEffort,
   type SessionPermission,
 } from '@oppenheimer/shared/agents';
-import { defaultModelFor } from './session-options';
+import { defaultModelFor, type EffortPicks } from './session-options';
 
 /**
  * What New session has been set to, and what it remembers between visits.
@@ -33,7 +34,12 @@ export interface NewSessionDraft {
   agent: CodingAgentId;
   model: string | null;
   permission: SessionPermission;
-  effort: SessionEffort;
+  /**
+   * The effort picked for each agent, under that CLI's own level names. Empty
+   * until somebody moves the slider: the knob then sits on the model's default
+   * and nothing is sent (`effortChoiceFor`).
+   */
+  efforts: EffortPicks;
 }
 
 const FALLBACK: NewSessionDraft = {
@@ -43,13 +49,13 @@ const FALLBACK: NewSessionDraft = {
   agent: 'claude-code',
   model: defaultModelFor('claude-code'),
   permission: 'ask',
-  effort: 'medium',
+  efforts: {},
 };
 
 /** What is worth carrying between visits: the project and the engine, never the scope. */
 type RememberedChoices = Pick<
   NewSessionDraft,
-  'projectId' | 'hostId' | 'agent' | 'model' | 'effort'
+  'projectId' | 'hostId' | 'agent' | 'model' | 'efforts'
 >;
 
 /**
@@ -68,16 +74,16 @@ export function initialDraft(): NewSessionDraft {
     hostId: stored.hostId ?? FALLBACK.hostId,
     agent: stored.agent ?? FALLBACK.agent,
     model: stored.model ?? (stored.agent ? defaultModelFor(stored.agent) : FALLBACK.model),
-    effort: stored.effort ?? FALLBACK.effort,
+    efforts: stored.efforts ?? FALLBACK.efforts,
   };
 }
 
 /** Write the five choices worth carrying between visits out to storage. */
-export function rememberDraft({ projectId, hostId, agent, model, effort }: RememberedChoices) {
+export function rememberDraft({ projectId, hostId, agent, model, efforts }: RememberedChoices) {
   try {
     window.localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ projectId, hostId, agent, model, effort }),
+      JSON.stringify({ projectId, hostId, agent, model, efforts }),
     );
   } catch {
     // Private browsing, a full quota, storage switched off. The screen works
@@ -100,11 +106,28 @@ function remembered(): Partial<RememberedChoices> {
         agent && CODING_AGENTS[agent].models.some((model) => model.id === stored.model)
           ? stored.model
           : undefined,
-      effort: typeof stored.effort === 'string' ? (stored.effort as SessionEffort) : undefined,
+      efforts: effortPicks(stored.efforts),
     };
   } catch {
     // Storage can be unavailable or hold something from an older shape. A draft
     // is a convenience; failing to read one is not worth an error on screen.
     return {};
   }
+}
+
+/**
+ * The per-agent picks a stored draft holds, keeping only an agent this build
+ * knows and a level in the union. A draft saved before effort was per agent
+ * held one `effort` stop for all of them; it is not read back, because the
+ * same word now names a different level for Claude Code.
+ */
+function effortPicks(stored: unknown): EffortPicks | undefined {
+  if (typeof stored !== 'object' || stored === null) return undefined;
+  const picks: EffortPicks = {};
+  for (const [agent, level] of Object.entries(stored)) {
+    if (isCodingAgentId(agent) && SESSION_EFFORTS.includes(level as SessionEffort)) {
+      picks[agent] = level as SessionEffort;
+    }
+  }
+  return picks;
 }

@@ -23,6 +23,7 @@ import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-ent
 import { SessionCheckoutEntity } from './domain/session-checkout.entity';
 import type { SessionLaunchImage } from './domain/session-launch-image.types';
 import {
+  launchEffortFor,
   launchPermissionFor,
   SESSION_EVENT_KINDS,
   type SessionAgent,
@@ -312,7 +313,8 @@ export class WorkSessionMapper
    * An absent level is `ask` — the one that asks before every action — and never
    * anything else: a default that escalated is the single mistake this field must
    * not make (`product/versions/mvp/03-control-plane.md`). An agent with no
-   * approvals records no level at all (`launchPermissionFor`).
+   * approvals records no level at all (`launchPermissionFor`), and an effort
+   * the model does not offer is not recorded (`launchEffortFor`).
    */
   toLaunch(
     agent: CreateSessionDto['agent'],
@@ -321,7 +323,7 @@ export class WorkSessionMapper
     return {
       model: launch?.model ?? null,
       permission: launchPermissionFor(agent, launch?.permission),
-      effort: launch?.effort ?? null,
+      effort: launchEffortFor(agent, launch?.model ?? null, launch?.effort),
     };
   }
 

@@ -26,17 +26,23 @@ type Launch struct {
 // shared package's build and checked against it by `catalog.spec.ts`, so the
 // next catalog edit reaches this host or fails the build — never drifts.
 type launchMap struct {
-	command    string
-	model      []string
-	permission map[string]launchLevel
-	effort     map[string][]string
-	prompt     []string
+	command string
+	model   []string
+	// defaultModel is the model a launch that names none runs, which is the
+	// row its effort is read from.
+	defaultModel string
+	permission   map[string]launchLevel
+	// effort is keyed by model and then by level, because the levels are the
+	// model's: Codex's Luna has no `ultra`, Claude's Haiku has no effort.
+	effort map[string]map[string]launchLevel
+	prompt []string
 }
 
-// launchLevel is one permission level: the argv appended to the command and
-// the environment set on the agent's process. The two are one value because
-// together they are the level — an OpenCode Ask is all environment, and
-// without it OpenCode allows everything — so nothing here can emit one half.
+// launchLevel is one permission or effort level: the argv appended to the
+// command and the environment set on the agent's process. The two are one
+// value because together they are the level — an OpenCode Ask is all
+// environment, and without it OpenCode allows everything — so nothing here can
+// emit one half.
 type launchLevel struct {
 	argv []string
 	env  map[string]string
@@ -70,19 +76,40 @@ func (l Launch) Args(agent Agent) []string {
 		args = append(args, substitute(m.model, "<model>", l.Model)...)
 	}
 	args = append(args, m.permission[l.Permission].argv...)
-	if v, ok := m.effort[l.Effort]; ok {
-		args = append(args, v...)
-	}
+	args = append(args, l.effortLevel(m).argv...)
 	if l.Prompt != "" && m.prompt != nil {
 		args = append(args, substitute(m.prompt, "<prompt>", l.Prompt)...)
 	}
 	return args
 }
 
-// Env is the environment the chosen permission level sets on the agent's
-// process, or nil.
+// effortLevel is the chosen effort level of the model this launch runs, or
+// the zero level when that model offers no such level — dropped, as Args says.
+func (l Launch) effortLevel(m launchMap) launchLevel {
+	model := l.Model
+	if model == "" {
+		model = m.defaultModel
+	}
+	return m.effort[model][l.Effort]
+}
+
+// Env is the environment the chosen permission and effort levels set on the
+// agent's process, or nil. The two never name the same variable: a catalog
+// that made them would be setting one level through the other.
 func (l Launch) Env(agent Agent) map[string]string {
-	return launchCatalog[agent.CatalogID()].permission[l.Permission].env
+	m := launchCatalog[agent.CatalogID()]
+	permission, effort := m.permission[l.Permission].env, l.effortLevel(m).env
+	if len(effort) == 0 {
+		return permission
+	}
+	env := make(map[string]string, len(permission)+len(effort))
+	for name, value := range permission {
+		env[name] = value
+	}
+	for name, value := range effort {
+		env[name] = value
+	}
+	return env
 }
 
 // PromptWithImages is the first task followed by the paths of the images

@@ -3,6 +3,7 @@ import {
   CODING_AGENT_IDS,
   CODING_AGENTS,
   type CodingAgentId,
+  effortFor,
   isCodingAgentId,
   SESSION_EFFORTS,
   SESSION_PERMISSIONS,
@@ -37,16 +38,63 @@ describe('coding agent catalog', () => {
     expect(models.filter((model) => model.default).map((model) => model.id)).toEqual(['grok-4.6']);
   });
 
-  it('maps Grok’s effort stops 1:1 onto its own levels, and Ask onto its `default` mode', () => {
-    // Two product decisions, pinned so a later `--help` pass cannot slide them:
-    // `--reasoning-effort` has all five names, so no stop is shifted; and Ask
-    // is `default`, not Grok's own `auto`, which approves on its own.
-    const { effort, permission } = CODING_AGENTS.grok.launch;
-    for (const stop of SESSION_EFFORTS) {
-      expect(effort?.[stop]).toEqual(['--reasoning-effort', stop]);
+  it('asks Grok for its levels by their own names, and Ask onto its `default` mode', () => {
+    // Pinned so a later `--help` pass cannot slide them: grok refuses a level
+    // it does not know at launch, so every level is one of its names verbatim;
+    // and Ask is `default`, not Grok's own `auto`, which approves on its own.
+    for (const model of CODING_AGENTS.grok.models) {
+      for (const level of model.effort?.levels ?? []) {
+        expect(level.argv).toEqual(['--reasoning-effort', level.id]);
+      }
+      expect(model.effort?.default).toBe('high');
     }
+    const { permission } = CODING_AGENTS.grok.launch;
     expect(permission?.ask.argv).toEqual(['--permission-mode', 'default']);
     expect(permission?.full.argv).toEqual(['--permission-mode', 'bypassPermissions']);
+  });
+
+  it('gives each model the effort levels and default its own CLI reports', () => {
+    // Read off the CLIs themselves: claude's request with no `--effort`,
+    // `codex debug models`, `opencode models --verbose`.
+    const levelsOf = (agent: CodingAgentId, model: string | null) =>
+      effortFor(agent, model)?.levels.map((level) => level.id);
+    expect(levelsOf('claude-code', null)).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
+    expect(effortFor('claude-code', 'claude-opus-5-5')?.default).toBe('medium');
+    expect(effortFor('claude-code', 'claude-fable-5-1')?.default).toBe('high');
+    expect(effortFor('claude-code', 'claude-haiku-4-5')).toBeUndefined();
+    expect(levelsOf('codex', 'gpt-5.6-sol')).toEqual(['low', 'medium', 'high', 'xhigh', 'max', 'ultra']);
+    expect(levelsOf('codex', 'gpt-5.6-luna')).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
+    expect(effortFor('codex', 'gpt-5.6-sol')?.default).toBe('low');
+    expect(effortFor('codex', 'gpt-5.6-terra')?.default).toBe('medium');
+    expect(levelsOf('opencode', 'anthropic/claude-haiku-4-5')).toEqual(['none', 'high', 'max']);
+    expect(effortFor('opencode', 'anthropic/claude-haiku-4-5')?.default).toBe('none');
+    expect(effortFor('shell', null)).toBeUndefined();
+    // A model the catalog does not list has levels nobody here knows.
+    expect(effortFor('codex', 'gpt-4o')).toBeUndefined();
+  });
+
+  it('never offers `minimal` to Codex, whose models take none', () => {
+    for (const model of CODING_AGENTS.codex.models) {
+      expect(model.effort?.levels.map((level) => level.id)).not.toContain('minimal');
+    }
+  });
+
+  it('sets an OpenCode level as the variant of the model it is listed under', () => {
+    for (const model of CODING_AGENTS.opencode.models) {
+      for (const level of model.effort?.levels ?? []) {
+        expect(level.argv).toEqual([]);
+        const config = level.env.OPENCODE_CONFIG_CONTENT;
+        if (level.id === 'none') {
+          expect(config).toBeUndefined();
+          continue;
+        }
+        // The variant applies only while the agent runs its own configured
+        // model, so the model is named again, and it must be this row's.
+        expect(JSON.parse(config ?? '')).toEqual({
+          agent: { build: { model: model.id, variant: level.id } },
+        });
+      }
+    }
   });
 
   it('offers the plain terminal as an entry with nothing to launch', () => {
@@ -225,13 +273,20 @@ describe('launch mapping', () => {
     }
   });
 
-  it('maps every effort stop where the agent has a notion of effort', () => {
+  it('lists each model’s levels lowest first, once each, with its default among them', () => {
     for (const id of CODING_AGENT_IDS) {
-      const { effort } = CODING_AGENTS[id].launch;
-      if (!effort) continue;
-      expect(Object.keys(effort).sort()).toEqual([...SESSION_EFFORTS].sort());
-      for (const stop of SESSION_EFFORTS) {
-        expect(effort[stop].length, `${id} states nothing for ${stop}`).toBeGreaterThan(0);
+      for (const model of CODING_AGENTS[id].models) {
+        if (!model.effort) continue;
+        const ids = model.effort.levels.map((level) => level.id);
+        const ranks = ids.map((level) => SESSION_EFFORTS.indexOf(level));
+        expect(ranks, `${id}/${model.id} out of order`).toEqual([...ranks].sort((a, b) => a - b));
+        expect(new Set(ids).size, `${id}/${model.id} repeats a level`).toBe(ids.length);
+        expect(ids, `${id}/${model.id}`).toContain(model.effort.default);
+        // Only `none` may leave the CLI alone; every other level says something.
+        for (const level of model.effort.levels) {
+          if (level.id === 'none') continue;
+          expect(level.argv.length + Object.keys(level.env).length).toBeGreaterThan(0);
+        }
       }
     }
   });

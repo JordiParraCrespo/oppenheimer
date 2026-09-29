@@ -141,29 +141,41 @@
   and agent win over the last visit's choice when it names them. The
   agent lives in the engine button, not a chip: opening it
   lists the harnesses, choosing one slides to its models with a search,
-  and a blank terminal is picked outright. Effort is a five-stop slider
-  (Minimal to Max) in a popover, not a list.
+  and a blank terminal is picked outright. Effort is a slider over the
+  model's own levels in a popover, not a list (changed 2026-09-29; it
+  was five product stops, Minimal to Max, for every agent).
 
   **What each agent offers**, from the shared catalog (`CODING_AGENTS`)
   and never a list kept in the console:
 
-  | Agent | Models (default first in bold) | Permission chip | Effort |
+  | Agent | Models (default first in bold) | Permission chip | Effort: levels (default) |
   |---|---|---|---|
-  | Claude Code | **Opus 5.5**, Fable 5.1, Sonnet 5.5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | yes |
-  | Codex | GPT-6 Astra, **GPT-5.6 Sol**, Terra, Luna | yes | yes |
-  | OpenCode | Claude's four under `anthropic/` (**`anthropic/claude-opus-5-5`**), `openai/gpt-5.6-sol` | yes | no: OpenCode has no effort flag |
-  | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default) | yes | yes |
-
-  **The effort stops are the product's, and each agent's catalog entry
-  says what they mean.** Where a CLI has a level of each name, a stop is
-  the level of that name: Grok's `--reasoning-effort` has all five, so
-  Minimal is `minimal` and Max is `max`, and the Grok models' own
-  default, `high`, sits one stop above the slider's middle — a Grok
-  session left on Medium thinks less than Grok would unasked. Where a
-  CLI has fewer, the stops shift so the middle is its default: Claude
-  Code has no `minimal`, so its Minimal is `low` and its Medium is
-  `high`.
+  | Claude Code | **Opus 5.5**, Fable 5.1, Sonnet 5.5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | `--effort` low … max (Opus and Sonnet `medium`, Fable `high`); none for Haiku |
+  | Codex | GPT-6 Astra, **GPT-5.6 Sol**, Terra, Luna | yes | `model_reasoning_effort` low … max, plus `ultra` on Astra, Sol and Terra (Astra and Sol `low`, Terra and Luna `medium`) |
+  | OpenCode | Claude's four under `anthropic/` (**`anthropic/claude-opus-5-5`**), `openai/gpt-5.6-sol` | yes | the model's variant: low … max for the adaptive Claude models (`high`), Off / high / max for Haiku (Off), low … max for Sol (`medium`) |
+  | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default) | yes | `--reasoning-effort` minimal … max (`high`) |
   | Blank terminal | none, picked outright | no | no |
+
+  **The effort levels are each CLI's own, per model** (changed
+  2026-09-29). The slider's stops are the levels the model's CLI offers,
+  under that CLI's names, and the knob starts on the level the CLI runs
+  unasked. Until then the stops were the product's five, mapped onto
+  each CLI: that put "Medium" on a slider that started Claude Code at
+  `high`, sent Codex a `minimal` none of its models takes, left Codex's
+  `max` and `ultra` out of reach, and started an untouched Grok session
+  below Grok's own default. The levels and defaults were read off the
+  CLIs themselves — claude's request with no `--effort`, `codex debug
+  models`, `opencode models --verbose`, grok's own check — and are catalog
+  data on each model row (`effortFor`). OpenCode takes a level as the
+  model's *variant*, which its TUI has no flag for, so it is inline
+  configuration (`OPENCODE_CONFIG_CONTENT` naming the build agent's
+  model and variant) beside the permission block.
+
+  An untouched slider **sends nothing**, so the session runs exactly as
+  the CLI would unasked. A pick is kept per agent, since each agent's
+  levels are its own; a pick the model does not offer lands on the
+  nearest level below it (Sol's `ultra`, then Luna, is `max`), and the
+  API records only a level the session's model offers.
 
   A control the agent does not take is **hidden, and not sent**: the
   composer keeps what was chosen for the last agent (a permission level
@@ -229,15 +241,14 @@
   level is the product's own three words (`ask` / `auto` / `full`
   stored; "Ask for approval" / "Approve for me" / "Full access" on the
   control), and each agent's catalog entry says what they mean to its
-  CLI. Effort is the five stops the slider draws; an agent whose own
-  vocabulary is coarser collapses the ones it cannot express, and one
+  CLI. Effort is the model's own levels, under its CLI's names; a model
   that has no notion of effort hides the control. **Chips remember the
   last choice, except `full`**: a permission level that escalated itself
   because it was used once is the failure
   [`../../04-security-review.md`](../../04-security-review.md) exists to
   prevent, so a stored `full` reads back as `ask` and every new session
   starts there. The memory is the browser's — the host, the agent, the
-  model and the effort, in `localStorage`, on the device that chose
+  model and each agent's effort, in `localStorage`, on the device that chose
   them. It is a convenience, not a record: the scope is never
   remembered, because the repositories one visit is about are not the
   next visit's. The project a visit starts on outranks the memory where it

@@ -20,6 +20,7 @@ import {
   CODING_AGENT_IDS,
   CODING_AGENTS,
   type CodingAgentId,
+  effortFor,
   SESSION_EFFORTS,
   type SessionEffort,
   type SessionPermission,
@@ -123,42 +124,80 @@ export function defaultModelFor(agent: CodingAgentId): string | null {
 }
 
 /**
- * Which of the foot row's controls an agent takes, read off its catalog entry
- * once: a control the catalog declares nothing for is neither drawn nor sent.
- * The blank terminal takes none of them.
+ * Whether an agent takes a permission level, read off its catalog entry once:
+ * a control the catalog declares nothing for is neither drawn nor sent. The
+ * blank terminal takes none. Effort is not here because it is the model's, not
+ * the agent's — `effortChoiceFor`.
  */
 export interface LaunchControls {
   permission: boolean;
-  effort: boolean;
 }
 
 export function launchControlsFor(agent: CodingAgentId): LaunchControls {
-  const { launch } = CODING_AGENTS[agent];
-  return { permission: launch.permission !== undefined, effort: launch.effort !== undefined };
+  return { permission: CODING_AGENTS[agent].launch.permission !== undefined };
+}
+
+/** The effort level somebody picked, per agent, since each agent's levels are its own. */
+export type EffortPicks = Partial<Record<CodingAgentId, SessionEffort>>;
+
+/**
+ * What the effort slider draws for a draft, and whether it is sent.
+ *
+ * `levels` are the model's, lowest first. `value` is the level picked for this
+ * agent when the model offers it; the nearest one below it when the model does
+ * not (a pick of `ultra` on Sol, then a switch to Luna, lands on `max`); and
+ * the model's own default when nothing was picked. Only the first two are
+ * `chosen`: an untouched slider sends nothing, and the CLI runs exactly as it
+ * would unasked. Null when the model takes no effort, and the slider is hidden.
+ */
+export interface EffortChoice {
+  levels: readonly SessionEffort[];
+  value: SessionEffort;
+  chosen: boolean;
+}
+
+export function effortChoiceFor(
+  agent: CodingAgentId,
+  model: string | null,
+  picked: SessionEffort | undefined,
+): EffortChoice | null {
+  const effort = effortFor(agent, model);
+  if (!effort) return null;
+  const levels = effort.levels.map((level) => level.id);
+  if (!picked) return { levels, value: effort.default, chosen: false };
+  if (levels.includes(picked)) return { levels, value: picked, chosen: true };
+  const rank = SESSION_EFFORTS.indexOf(picked);
+  const below = levels.filter((level) => SESSION_EFFORTS.indexOf(level) < rank).at(-1);
+  return { levels, value: below ?? levels[0] ?? effort.default, chosen: true };
 }
 
 /**
- * The foot row as `POST /sessions` takes it: only the controls this agent
- * has. A level or an effort the composer still holds from the last agent is
- * dropped rather than sent, so a blank terminal records no permission at all.
+ * The foot row as `POST /sessions` takes it: only the controls this agent and
+ * model have. A level the composer still holds from the last agent is dropped
+ * rather than sent, so a blank terminal records no permission at all, and an
+ * effort nobody picked is left to the CLI.
  */
 export function toLaunchInput(draft: {
   agent: CodingAgentId;
   model: string | null;
   permission: SessionPermission;
-  effort: SessionEffort;
+  efforts: EffortPicks;
 }): CreateSessionInput['launch'] {
   const controls = launchControlsFor(draft.agent);
+  const effort = effortChoiceFor(draft.agent, draft.model, draft.efforts[draft.agent]);
   return {
     model: draft.model,
     ...(controls.permission ? { permission: draft.permission } : {}),
-    ...(controls.effort ? { effort: draft.effort } : {}),
+    ...(effort?.chosen ? { effort: effort.value } : {}),
   };
 }
 
-/** The five stops, translated where the call site translates. */
-export function toEffortStops(labels: Record<SessionEffort, string>): EffortStop[] {
-  return SESSION_EFFORTS.map((stop) => ({ value: stop, label: labels[stop] }));
+/** A model's levels as slider stops, translated where the call site translates. */
+export function toEffortStops(
+  levels: readonly SessionEffort[],
+  labels: Record<SessionEffort, string>,
+): EffortStop[] {
+  return levels.map((level) => ({ value: level, label: labels[level] }));
 }
 
 /**

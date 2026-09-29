@@ -9,7 +9,8 @@ import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
 /**
  * EffortSlider — how long the agent may think, as a stepped track rather
- * than a list: five stops from Minimal to Max, a 30px knob in full ink, the
+ * than a list: one stop per level the caller passes (five from Minimal to
+ * Max when it passes none), a 30px knob in full ink, the
  * used part of the track in the control-hover wash, a dot at every stop
  * the knob is not on. 28px tall at the 10px radius. Pointer picks and drags;
  * arrows, Home and End step. Picking stays put: the reader is comparing,

@@ -5,7 +5,7 @@ import type {
   SessionState,
 } from '@oppenheimer/shared';
 import { SESSION_EFFORTS, SESSION_PERMISSIONS } from '@oppenheimer/shared';
-import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
+import { CODING_AGENTS, effortFor, isCodingAgentId } from '@oppenheimer/shared/agents';
 
 /**
  * The fold: `(fold, event) → fold`.
@@ -214,6 +214,27 @@ export function launchPermissionFor(
   return SESSION_PERMISSIONS.includes(requested as SessionPermissionDto)
     ? (requested as SessionPermissionDto)
     : 'ask';
+}
+
+/**
+ * The effort a session of `agent` on `model` is recorded with, given what was
+ * asked for: the level when that model's CLI offers it, and null otherwise.
+ *
+ * The levels are the model's (`effortFor`), so one asked of a model that lacks
+ * it — `ultra` of Codex's Luna, anything of Claude's Haiku, anything of the
+ * blank terminal — is what the runner drops, and the record says so rather
+ * than naming a level nothing ran at. An agent this build does not know keeps
+ * a level from the union: it cannot be checked, and a newer runner may know.
+ */
+export function launchEffortFor(
+  agent: string | null,
+  model: string | null,
+  requested: string | null | undefined,
+): SessionEffortDto | null {
+  if (!SESSION_EFFORTS.includes(requested as SessionEffortDto)) return null;
+  const level = requested as SessionEffortDto;
+  if (!agent || !isCodingAgentId(agent)) return level;
+  return effortFor(agent, model)?.levels.some((offered) => offered.id === level) ? level : null;
 }
 
 /**

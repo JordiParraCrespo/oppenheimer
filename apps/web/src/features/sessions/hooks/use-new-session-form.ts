@@ -37,7 +37,7 @@ export function useNewSessionForm(): NewSessionDraftForm {
   useEffect(
     () =>
       subscribe({
-        name: ['projectId', 'hostId', 'agent', 'model', 'effort'],
+        name: ['projectId', 'hostId', 'agent', 'model', 'efforts'],
         formState: { values: true },
         callback: ({ values }) => rememberDraft(values),
       }),
