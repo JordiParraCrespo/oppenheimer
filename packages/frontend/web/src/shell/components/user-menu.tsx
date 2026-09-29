@@ -18,10 +18,11 @@ import {
   SidebarMenuButton,
 } from '@oppenheimer/design-system-web';
 import { ChevronDown, Globe, LogOut, Moon } from '@oppenheimer/design-system-web/icons';
-import { useErrorMessage, useLogout, useProfile } from '@oppenheimer/frontend-core/react';
+import { useLogout, useProfile } from '@oppenheimer/frontend-core/react';
 import { type Locale, locales } from '@oppenheimer/translations/locales';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { ErrorAlert } from '../../forms';
 import { type ThemePreference, useTheme } from '../../theme';
 import { useShell } from '../hooks/use-shell';
 
@@ -51,7 +52,6 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
   const { data: user } = useProfile();
   const navigate = useNavigate();
   const logout = useLogout({ onSuccess: () => navigate({ to: '/login' }) });
-  const resolveError = useErrorMessage();
 
   // Narrowed to `Locale` because the menu *names* it (`language.en`), not just
   // compares it: `t()` is typed over the catalog, and a bare `string` in the
@@ -174,11 +174,7 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
             <LogOut />
             {t('nav.logOut')}
           </DropdownMenuItem>
-          {logout.error ? (
-            <p role="alert" className="m-0 px-2.5 pt-1 pb-1.5 text-xs text-danger">
-              {resolveError(logout.error, t('nav.logOutFailed')).message}
-            </p>
-          ) : null}
+          <ErrorAlert error={logout.error} fallback={t('nav.logOutFailed')} className="mt-1" />
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

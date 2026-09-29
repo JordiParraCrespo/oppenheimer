@@ -1,6 +1,6 @@
-import { Alert, AlertDescription } from '@oppenheimer/design-system-web';
-import { Info } from '@oppenheimer/design-system-web/icons';
+import { Callout } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
+import { ErrorAlert } from '../../forms';
 
 /**
  * The OAuth failures this deployment's auth config can actually produce, and
@@ -40,19 +40,17 @@ export function OAuthCallbackNotice({ code, className }: { code?: string; classN
   if (!code) return null;
 
   const notice = code in NOTICES ? NOTICES[code as OAuthErrorCode] : undefined;
-  const guidance = notice?.tone === 'guidance';
+
+  // Guidance is a note above the form — nobody signing up did anything wrong —
+  // so it is the neutral `Callout`; every other code is a failure.
+  if (notice?.tone === 'guidance') {
+    return <Callout className={className}>{t(notice.key ?? 'auth.oauth.noAccount')}</Callout>;
+  }
 
   return (
-    <Alert
-      variant={guidance ? 'default' : 'destructive'}
-      // Only the guidance case overrides the icon: nobody signing up did
-      // anything wrong, so it takes `Info` rather than the alert disc.
-      icon={guidance ? Info : undefined}
+    <ErrorAlert
+      message={notice?.key ? t(notice.key) : t('auth.oauth.failed')}
       className={className}
-    >
-      <AlertDescription>
-        {notice ? t(notice.key ?? 'auth.oauth.noAccount') : t('auth.oauth.failed')}
-      </AlertDescription>
-    </Alert>
+    />
   );
 }

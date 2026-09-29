@@ -1,5 +1,4 @@
-import { Alert, AlertDescription, BrandGlyph, Button } from '@oppenheimer/design-system-web';
-import { Info } from '@oppenheimer/design-system-web/icons';
+import { BrandGlyph, Button, Callout } from '@oppenheimer/design-system-web';
 import type { SocialAuthIntent } from '@oppenheimer/frontend-core';
 import { useDeploymentCapabilities, useSocialLogin } from '@oppenheimer/frontend-core/react';
 import { useTranslation } from 'react-i18next';
@@ -43,13 +42,9 @@ export function SocialLoginButtons({
   const github = capabilities?.github_oauth ?? true;
 
   if (!google && !github) {
-    // A notice, not a failure — nobody signing in did anything wrong — so it is
-    // the plain `Alert`, not the destructive one.
-    return (
-      <Alert icon={Info}>
-        <AlertDescription>{t('auth.login.noSocialProviders')}</AlertDescription>
-      </Alert>
-    );
+    // A note, not a failure — nobody signing in did anything wrong — so it is
+    // the neutral `Callout`, not an alert.
+    return <Callout>{t('auth.login.noSocialProviders')}</Callout>;
   }
 
   const busyWith = social.isPending ? social.variables?.provider : undefined;
