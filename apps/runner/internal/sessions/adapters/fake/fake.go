@@ -294,6 +294,16 @@ func (t *Terminals) Dir(name string) string {
 	return ""
 }
 
+// CommandOf exposes the command line a session's window 0 was started with.
+func (t *Terminals) CommandOf(name string) string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if session, ok := t.sessions[name]; ok {
+		return session.command
+	}
+	return ""
+}
+
 type attachment struct {
 	server *Terminals
 	screen string

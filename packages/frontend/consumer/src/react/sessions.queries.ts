@@ -9,7 +9,11 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { CreateSessionInput, SessionEntity } from '../modules/sessions/session.entity';
+import type {
+  CreateSessionInput,
+  SessionAttachment,
+  SessionEntity,
+} from '../modules/sessions/session.entity';
 import type { SessionStartProgress } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
 import { CLOSE_WATCH_MS, type PollKeys, pollWhile } from './live-poll';
@@ -261,6 +265,20 @@ export function useCloseSession(
       watchClose(queryClient, session.id);
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     }),
+  });
+}
+
+/**
+ * Upload an image for New session's first task. Nothing is cached: what comes
+ * back is the id the create names in `attachmentIds`.
+ */
+export function useUploadSessionAttachment(
+  options?: UseMutationOptions<SessionAttachment, Error, Blob>,
+) {
+  const app = useConsumerApp();
+  return useMutation({
+    mutationFn: (image: Blob) => app.sessions.uploadAttachment(image),
+    ...options,
   });
 }
 

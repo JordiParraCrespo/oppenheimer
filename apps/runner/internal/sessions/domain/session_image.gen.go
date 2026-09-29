@@ -6,6 +6,9 @@ package domain
 // ImageMaxBytes is the largest image a session takes.
 const ImageMaxBytes = 5242880
 
+// CreateMaxImages is how many images a session's first task may carry.
+const CreateMaxImages = 5
+
 // imageTypes is what counts as an image, in the order they are tried.
 var imageTypes = []imageType{
 	{

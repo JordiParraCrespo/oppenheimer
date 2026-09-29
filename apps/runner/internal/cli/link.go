@@ -229,7 +229,7 @@ func (h *linkHandler) Hello(ctx context.Context) (link.Hello, error) {
 		RunID:         h.reporter.RunID(),
 		Host:          facts,
 		Sessions:      h.snapshots(),
-		Capabilities:  []string{link.CapabilitySessionImage},
+		Capabilities:  []string{link.CapabilitySessionImage, link.CapabilitySessionCreateImages},
 	}, nil
 }
 

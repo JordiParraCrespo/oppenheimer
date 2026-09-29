@@ -129,21 +129,42 @@ export const SessionErrors = {
     httpStatus: 400,
   },
   /**
-   * The session's host holds no link right now. Input is not queued for a
-   * host that comes back: the prompt it was meant for will have moved on.
+   * The host holds no link right now: a paste into a session on it, or a
+   * create carrying images for it. Neither is queued for a host that comes
+   * back — the prompt moves on, and the images expire.
    */
   HOST_OFFLINE: {
     code: 'SESSIONS_016',
-    message: 'The session’s host is offline',
+    message: 'The host is offline',
     httpStatus: 503,
   },
   /**
-   * The host is linked but its runner did not say it takes this command: it
-   * predates it, and updating the runner is what fixes it.
+   * The host is linked but its runner did not say it takes images — pasted
+   * into a session or attached to a first task. It predates them, and updating
+   * the runner is what fixes it.
    */
   HOST_CANNOT_TAKE_IMAGES: {
     code: 'SESSIONS_017',
-    message: 'The session’s host cannot take images until its runner is updated',
+    message: 'The host cannot take images until its runner is updated',
     httpStatus: 409,
+  },
+  /**
+   * A create names an attachment that is not waiting for this person: it
+   * expired, it was already used, or it was never theirs. The three are one
+   * answer, so an id cannot be probed.
+   */
+  ATTACHMENT_NOT_FOUND: {
+    code: 'SESSIONS_019',
+    message: 'An attached image is no longer waiting',
+    httpStatus: 410,
+  },
+  /**
+   * One person already has as many uploads waiting as they may. Each is up to
+   * 5 MB in the cache that also backs sign-in, so the cap is on what is held.
+   */
+  TOO_MANY_ATTACHMENTS: {
+    code: 'SESSIONS_020',
+    message: 'Too many images are waiting to be sent',
+    httpStatus: 429,
   },
 } as const satisfies Record<string, ErrorDefinition>;

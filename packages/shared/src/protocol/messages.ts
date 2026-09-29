@@ -15,7 +15,11 @@ import {
   sessionSnapshotSchema,
   windowIndexSchema,
 } from './primitives.js';
-import { SESSION_IMAGE_MEDIA_TYPES } from './session-image.js';
+import {
+  attachedImagesAreValid,
+  SESSION_CREATE_MAX_IMAGES,
+  SESSION_IMAGE_MEDIA_TYPES,
+} from './session-image.js';
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON
@@ -38,7 +42,7 @@ import { SESSION_IMAGE_MEDIA_TYPES } from './session-image.js';
  * dropping it.
  */
 /** What a runner can name in `hello.capabilities`. */
-export const RUNNER_CAPABILITIES = ['session.image'] as const;
+export const RUNNER_CAPABILITIES = ['session.image', 'session.create.images'] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
 export const helloSchema = z.object({
@@ -200,59 +204,89 @@ export type EventsAckMessage = z.infer<typeof eventsAckSchema>;
  * name its checkouts already recorded — created from each checkout's base and
  * never the base itself.
  */
-export const sessionCreateSchema = z.object({
-  type: z.literal('session.create'),
-  commandId: commandIdSchema,
-  sessionId: sessionIdSchema,
-  organizationSlug: gitRefSchema,
-  sessionSlug: gitRefSchema,
-  agent: protocolAgentSchema,
-  /**
-   * How the agent is started: the model, the permission level and the effort
-   * somebody chose in the composer's foot row. Structured rather than argv —
-   * the host owns the mapping to its own flags, from the same catalog
-   * (`launchOptionsSchema`).
-   *
-   * It replaces the bare `model` this message carried while a model was the
-   * only launch option there was; the three travel together now, and the fold
-   * keeps them on the session so a restart reproduces the launch
-   * (`product/versions/mvp/01-protocol.md`).
-   */
-  launch: launchOptionsSchema,
-  /**
-   * The person's first task, if the composer supplied one.
-   *
-   * The runner appends it to the agent's **argv** — both CLIs document the
-   * first task as a trailing positional, and the catalog's `launch.prompt`
-   * says how (`product/versions/mvp/02-runner.md` §5). So it rides the launch
-   * rather than arriving as a `session.input` after `session.started`: input
-   * needs the agent up, and "the agent is up" is a moment only the host can
-   * name. In argv there is nothing to synchronise.
-   *
-   * Set, the control plane has already written `prompt.first` to the log and
-   * the runner writes nothing; unset, the runner reports the first message off
-   * the transcript instead. The field is what decides which, so the two
-   * writers never collide and never need a shared key (02 §7).
-   */
-  prompt: promptTextSchema.optional(),
-  branch: gitRefSchema,
-  checkouts: z.array(
-    z.object({
-      checkoutId: checkoutIdSchema,
-      githubRepoId: githubRepoIdSchema,
-      repositoryFullName: gitRefSchema,
-      /** Never reused inside a session: a retired name would inherit a stranger's history. */
-      directoryName: gitRefSchema,
-      baseBranch: gitRefSchema,
-    }),
-  ),
-  /**
-   * Where the agent is launched. Set, it starts inside that checkout with the
-   * others as `../siblings`; null, it starts in the session directory with
-   * every checkout a peer.
-   */
-  cwdCheckoutId: checkoutIdSchema.nullable(),
-});
+export const sessionCreateSchema = z
+  .object({
+    type: z.literal('session.create'),
+    commandId: commandIdSchema,
+    sessionId: sessionIdSchema,
+    organizationSlug: gitRefSchema,
+    sessionSlug: gitRefSchema,
+    agent: protocolAgentSchema,
+    /**
+     * How the agent is started: the model, the permission level and the effort
+     * somebody chose in the composer's foot row. Structured rather than argv —
+     * the host owns the mapping to its own flags, from the same catalog
+     * (`launchOptionsSchema`).
+     *
+     * It replaces the bare `model` this message carried while a model was the
+     * only launch option there was; the three travel together now, and the fold
+     * keeps them on the session so a restart reproduces the launch
+     * (`product/versions/mvp/01-protocol.md`).
+     */
+    launch: launchOptionsSchema,
+    /**
+     * The person's first task, if the composer supplied one.
+     *
+     * The runner appends it to the agent's **argv** — both CLIs document the
+     * first task as a trailing positional, and the catalog's `launch.prompt`
+     * says how (`product/versions/mvp/02-runner.md` §5). So it rides the launch
+     * rather than arriving as a `session.input` after `session.started`: input
+     * needs the agent up, and "the agent is up" is a moment only the host can
+     * name. In argv there is nothing to synchronise.
+     *
+     * Set, the control plane has already written `prompt.first` to the log and
+     * the runner writes nothing; unset, the runner reports the first message off
+     * the transcript instead. The field is what decides which, so the two
+     * writers never collide and never need a shared key (02 §7).
+     */
+    prompt: promptTextSchema.optional(),
+    /**
+     * The images attached to the first task in the composer. Like
+     * `session.image`, the bytes are **not** here: the control plane parks each
+     * under its `imageId` and the runner pulls it once over HTTPS
+     * (`GET /hosts/self/images/{imageId}`) before it starts the agent, saves it
+     * outside the worktree, and appends its path to `prompt` so the agent reads
+     * it with the task (02 §7).
+     *
+     * Present only with a `prompt`, each named once (the refine below), and
+     * sent only to a runner whose `hello` named `session.create.images`: an older runner would drop the field and
+     * launch the task without the pictures it talks about.
+     */
+    images: z
+      .array(
+        z.object({
+          imageId: commandIdSchema,
+          mediaType: z.enum(SESSION_IMAGE_MEDIA_TYPES),
+        }),
+      )
+      .max(SESSION_CREATE_MAX_IMAGES)
+      .optional(),
+    branch: gitRefSchema,
+    checkouts: z.array(
+      z.object({
+        checkoutId: checkoutIdSchema,
+        githubRepoId: githubRepoIdSchema,
+        repositoryFullName: gitRefSchema,
+        /** Never reused inside a session: a retired name would inherit a stranger's history. */
+        directoryName: gitRefSchema,
+        baseBranch: gitRefSchema,
+      }),
+    ),
+    /**
+     * Where the agent is launched. Set, it starts inside that checkout with the
+     * others as `../siblings`; null, it starts in the session directory with
+     * every checkout a peer.
+     */
+    cwdCheckoutId: checkoutIdSchema.nullable(),
+  })
+  .refine(
+    (message) =>
+      attachedImagesAreValid(
+        message.prompt,
+        message.images?.map((image) => image.imageId),
+      ),
+    { path: ['images'] },
+  );
 
 export type SessionCreateMessage = z.infer<typeof sessionCreateSchema>;
 

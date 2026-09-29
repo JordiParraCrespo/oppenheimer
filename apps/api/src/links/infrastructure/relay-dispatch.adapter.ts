@@ -54,7 +54,15 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     session: WorkSessionEntity,
     spec: SessionLaunchSpec,
   ): Promise<SessionDispatchOutcome> {
-    return this.withLink(session, (link) => this.deliver(link, createMessage(session, spec)));
+    return this.withLink(session, (link) => {
+      // A runner that did not say it takes images at launch would drop the
+      // field and start the task without them. The ids stay in the log, so
+      // the hello of an updated runner is sent them.
+      if (spec.images?.length && !link.capabilities.includes('session.create.images')) {
+        return NOT_SUPPORTED;
+      }
+      return this.deliver(link, createMessage(session, spec));
+    });
   }
 
   async stop(session: WorkSessionEntity): Promise<SessionDispatchOutcome> {
@@ -176,6 +184,7 @@ function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): Ses
       ...(session.launch.effort ? { effort: session.launch.effort } : {}),
     },
     ...(spec.prompt ? { prompt: spec.prompt } : {}),
+    ...(spec.images?.length ? { images: spec.images } : {}),
     branch: spec.branch,
     checkouts: session.liveCheckouts.map((checkout) => ({
       checkoutId: checkout.id,

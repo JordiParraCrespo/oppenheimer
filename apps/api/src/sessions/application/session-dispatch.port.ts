@@ -1,5 +1,6 @@
 import type { SessionImageMediaType } from '@oppenheimer/shared/protocol';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
+import type { SessionLaunchImage } from '../domain/session-launch-image.types';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 
 /**
@@ -54,6 +55,13 @@ export interface SessionLaunchSpec {
    * folded.
    */
   prompt?: string;
+  /**
+   * Images attached to the first task, already parked for the host under
+   * these ids. Only the ids travel; the runner pulls the bytes. They come from
+   * the log's `prompt.first`, like the prompt, so the hello reconciliation
+   * resends them with it.
+   */
+  images?: SessionLaunchImage[];
 }
 
 export interface SessionCloseSpec {

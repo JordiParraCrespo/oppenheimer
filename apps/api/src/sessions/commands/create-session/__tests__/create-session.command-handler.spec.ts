@@ -2,7 +2,13 @@ import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HostAccessPort } from '../../../../hosts/application/host-access.port';
+import type {
+  LinkRegistryPort,
+  RunnerLink,
+} from '../../../../links/application/link-registry.port';
+import type { ParkedImagePort, StagedImage } from '../../../../links/application/parked-image.port';
 import { ProjectEntity } from '../../../../projects/domain/project.entity';
+import { SessionAttachmentsResolver } from '../../../application/session-attachments.resolver';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../../application/session-launch.factory';
 import type { SessionNamingResolver } from '../../../application/session-naming.resolver';
@@ -59,15 +65,54 @@ function launches(): SessionLaunchSpecFactory {
   });
 }
 
+/** The image store in memory: staged uploads by id, checked against their owner as the adapter does. */
+function imageStore(uploads: Record<string, StagedImage> = {}) {
+  const staged = new Map(Object.entries(uploads));
+  let next = 0;
+  const read = (ids: readonly string[], owner: { organizationId: string; userId: string }) => {
+    const found = ids.map((id) => staged.get(id));
+    return found.every(
+      (image) => image?.organizationId === owner.organizationId && image.userId === owner.userId,
+    )
+      ? (found as StagedImage[])
+      : undefined;
+  };
+  return {
+    park: vi.fn(),
+    stage: vi.fn(),
+    claim: vi.fn(async (ids: readonly string[], owner) =>
+      read(ids, owner)?.map((image) => ({
+        imageId: `parked-${++next}`,
+        mediaType: image.mediaType,
+      })),
+    ),
+    collect: vi.fn(),
+  } satisfies ParkedImagePort;
+}
+
+/** The link registry: the host linked with these capabilities, or not linked at all. */
+function linksWith(capabilities: RunnerLink['capabilities'] | null): LinkRegistryPort {
+  return {
+    register: vi.fn(),
+    unregister: vi.fn(),
+    nextEpoch: vi.fn(),
+    find: vi.fn(() => (capabilities ? ({ capabilities } as unknown as RunnerLink) : undefined)),
+  };
+}
+
 describe('CreateSessionCommandHandler', () => {
   let sessions: WorkSessionRepositoryPort;
   let hosts: { assertUsable: ReturnType<typeof vi.fn> };
   let dispatch: SessionDispatchPort;
   let plan: SessionPlanFactory;
   let naming: { propose: ReturnType<typeof vi.fn>; record: ReturnType<typeof vi.fn> };
+  let store: ReturnType<typeof imageStore>;
+  let links: LinkRegistryPort;
   let handler: CreateSessionCommandHandler;
 
   beforeEach(() => {
+    store = imageStore();
+    links = linksWith(['session.image', 'session.create.images']);
     sessions = {
       findOneByIdempotencyKey: vi.fn().mockResolvedValue(None),
       createIfUnclaimed: vi.fn().mockImplementation(async (session: WorkSessionEntity) => ({
@@ -91,7 +136,12 @@ describe('CreateSessionCommandHandler', () => {
       record: vi.fn().mockResolvedValue(undefined),
     };
 
-    handler = new CreateSessionCommandHandler(
+    handler = rebuild();
+  });
+
+  /** The handler over the current fakes; a test that swaps the store or the link calls it again. */
+  function rebuild() {
+    return new CreateSessionCommandHandler(
       sessions,
       hosts as unknown as HostAccessPort,
       dispatch,
@@ -99,8 +149,9 @@ describe('CreateSessionCommandHandler', () => {
       launches(),
       naming as unknown as SessionNamingResolver,
       new WorkSessionMapper(),
+      new SessionAttachmentsResolver(store, links),
     );
-  });
+  }
 
   const command = (
     overrides: Partial<ConstructorParameters<typeof CreateSessionCommand>[0]> = {},
@@ -226,6 +277,80 @@ describe('CreateSessionCommandHandler', () => {
     expect(dispatch.create).not.toHaveBeenCalled();
   });
 
+  describe('attached images', () => {
+    const upload = (userId = 'user-1'): StagedImage => ({
+      organizationId: 'org-acme',
+      userId,
+      mediaType: 'image/png',
+      data: Buffer.from('png'),
+    });
+    const attached = (ids: string[]) =>
+      command({ input: { ...INPUT, prompt: 'look at this', attachmentIds: ids } });
+
+    it('parks the uploads for this session before the row, and records their ids', async () => {
+      store = imageStore({ 'a-1': upload(), 'a-2': upload() });
+      // The resolver reads `store` when called, so rebuild the handler around it.
+      handler = rebuild();
+
+      await handler.execute(attached(['a-1', 'a-2']));
+
+      const [session, events] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
+      expect(store.claim).toHaveBeenCalledWith(
+        ['a-1', 'a-2'],
+        { organizationId: 'org-acme', userId: 'user-1' },
+        { hostId: 'host-1', sessionId: session.id },
+      );
+      const images = [
+        { imageId: 'parked-1', mediaType: 'image/png' },
+        { imageId: 'parked-2', mediaType: 'image/png' },
+      ];
+      // The log keeps the ids, so a create sent again after a reconnect names them.
+      expect(events.find((event) => event.kind === 'prompt.first')?.payload).toEqual({
+        text: 'look at this',
+        images,
+      });
+      const [, spec] = vi.mocked(dispatch.create).mock.calls[0];
+      expect(spec.images).toEqual(images);
+    });
+
+    it('refuses an upload that is not the caller’s, before writing anything', async () => {
+      store = imageStore({ 'a-1': upload('someone-else') });
+      handler = rebuild();
+
+      await expect(handler.execute(attached(['a-1']))).rejects.toMatchObject({
+        code: 'SESSIONS_019',
+      });
+      expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
+    });
+
+    it('refuses a host that cannot take them now, before parking or writing anything', async () => {
+      store = imageStore({ 'a-1': upload() });
+      links = linksWith(null);
+      handler = rebuild();
+      await expect(handler.execute(attached(['a-1']))).rejects.toMatchObject({
+        code: 'SESSIONS_016',
+      });
+
+      links = linksWith(['session.image']);
+      handler = rebuild();
+      await expect(handler.execute(attached(['a-1']))).rejects.toMatchObject({
+        code: 'SESSIONS_017',
+      });
+      expect(store.claim).not.toHaveBeenCalled();
+      expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
+    });
+
+    it('asks nothing of the host when nothing is attached', async () => {
+      links = linksWith(null);
+      handler = rebuild();
+
+      await handler.execute(command());
+
+      expect(store.claim).not.toHaveBeenCalled();
+      expect(vi.mocked(dispatch.create).mock.calls[0][1].images).toBeUndefined();
+    });
+  });
+
   it('refuses when the project the repository belongs to is archived', async () => {
     vi.mocked(plan.resolveProject).mockRejectedValue(
       new AppError({ code: 'PROJECTS_004', message: 'That project is archived', httpStatus: 409 }),
@@ -286,6 +411,7 @@ describe('CreateSessionCommandHandler: the launch and the first task', () => {
       launches(),
       naming as unknown as SessionNamingResolver,
       new WorkSessionMapper(),
+      new SessionAttachmentsResolver(imageStore(), linksWith(null)),
     );
   });
 

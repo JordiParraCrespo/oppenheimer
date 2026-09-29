@@ -133,9 +133,22 @@ type CreateInput struct {
 	// repository, kept for the credential helper.
 	CheckoutID   string
 	GithubRepoID int64
+	// Images are the pictures attached to the first task, already pulled.
+	// Each is saved outside the worktree just before the agent starts, and
+	// its path appended to the prompt the agent is launched with.
+	Images []CreateImage
 	// Progress, when set, hears each stage start and land, in order. It must
 	// not block.
 	Progress func(domain.StageEvent)
+}
+
+// CreateImage is one picture attached to a session's first task.
+type CreateImage struct {
+	// ID names the file on disk, so it is a plain name: the control plane's
+	// image id, checked at the link.
+	ID        string
+	MediaType string
+	Data      []byte
 }
 
 // base is the branch a new session's branch is cut from.
@@ -175,6 +188,9 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 	base := in.base()
 	if err := domain.ValidateBranch(base); err != nil {
 		return domain.Session{}, domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
+	}
+	if err := s.checkImages(in.Images, in.Launch.Prompt); err != nil {
+		return domain.Session{}, err
 	}
 
 	id := in.ID
@@ -248,13 +264,72 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 	}
 	session.State = domain.StateStarting
 	if err := run(domain.StageAgent, func() error {
-		return s.terminals.Create(ctx, session.TmuxName(), session.Worktree, in.Launch.CommandLine(session.Agent), s.env(session))
+		launch, err := s.saveImages(session.ID, in)
+		if err != nil {
+			return err
+		}
+		if err := s.terminals.Create(ctx, session.TmuxName(), session.Worktree, launch.CommandLine(session.Agent), s.env(session)); err != nil {
+			s.discardImages(session.ID)
+			return err
+		}
+		return nil
 	}); err != nil {
 		// Leave the worktree: it is on disk, it is the user's, and a
 		// half-created session they can see beats one that vanished.
 		return domain.Session{}, err
 	}
 	return session, nil
+}
+
+// checkImages refuses a first task's images before anything is made: too
+// many, a type a session does not take, or bytes that are not the type they
+// claim. A create that would launch the task without its pictures is refused
+// rather than started, since the task talks about them.
+func (s *Service) checkImages(images []CreateImage, prompt string) error {
+	if len(images) == 0 {
+		return nil
+	}
+	if s.images == nil {
+		return domain.ErrImage.WithDetail("this runner keeps no images")
+	}
+	if prompt == "" {
+		return domain.ErrInvalidInput.WithDetail("attached images ride a first task, and this create has none")
+	}
+	if len(images) > domain.CreateMaxImages {
+		return domain.ErrInvalidInput.WithDetail("a first task carries at most %d images; this one carried %d", domain.CreateMaxImages, len(images))
+	}
+	for _, image := range images {
+		if _, ok := domain.ImageExtension(image.MediaType); !ok {
+			return domain.ErrImage.WithDetail("%q is not an image type a session takes", image.MediaType)
+		}
+		if domain.SniffImage(image.Data) != image.MediaType {
+			return domain.ErrImage.WithDetail("the bytes are not a %s image", image.MediaType)
+		}
+	}
+	return nil
+}
+
+// saveImages writes the first task's images where pasted ones go and returns
+// the launch that names them. Only the command line gets the paths:
+// session.Launch keeps the task as typed, so a restart, by which time the
+// images have been discarded with the tmux session, names no file that is gone.
+func (s *Service) saveImages(id string, in CreateInput) (domain.Launch, error) {
+	launch := in.Launch
+	if len(in.Images) == 0 {
+		return launch, nil
+	}
+	paths := make([]string, 0, len(in.Images))
+	for _, image := range in.Images {
+		ext, _ := domain.ImageExtension(image.MediaType)
+		path, err := s.images.Save(id, image.ID+ext, image.Data)
+		if err != nil {
+			s.discardImages(id)
+			return launch, domain.ErrImage.WithDetail("write the image: %v", err).WithCause(err)
+		}
+		paths = append(paths, path)
+	}
+	launch.Prompt = domain.PromptWithImages(launch.Prompt, paths)
+	return launch, nil
 }
 
 // creation is one create in flight.

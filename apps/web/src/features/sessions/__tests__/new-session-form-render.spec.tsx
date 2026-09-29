@@ -97,13 +97,29 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   // Called once per render of NewSessionSend, so it doubles as that section's count.
   useCreateSession: () => {
     renders.set('send', (renders.get('send') ?? 0) + 1);
-    return { mutate: vi.fn(), isPending: false, isError: false };
+    return {
+      mutate: vi.fn(),
+      reset: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+      submittedAt: 0,
+    };
   },
+  // Nothing here attaches a file, so nothing is uploaded.
+  useUploadSessionAttachment: () => ({
+    mutateAsync: vi.fn(),
+    reset: vi.fn(),
+    isPending: false,
+    error: null,
+    submittedAt: 0,
+  }),
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', () => ({
   useDeploymentCapabilities: () => ({ data: null, isPending: false }),
   useErrorMessage: () => (_error: unknown, fallback: string) => ({ message: fallback }),
+  lastFailure: () => ({ error: null, index: -1, dismiss: vi.fn() }),
 }));
 
 const PROJECTS = [

@@ -3,6 +3,7 @@ export {
   type CreateSessionCheckout,
   type CreateSessionInput,
   type SessionAgent,
+  type SessionAttachment,
   SessionEntity,
   type SessionGroup,
   type SessionLaunch,

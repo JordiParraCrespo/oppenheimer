@@ -52,7 +52,12 @@ function harness(withLink: boolean, capabilities: RunnerCapability[] = ['session
     capabilities,
     send: vi.fn().mockReturnValue(true),
   } as unknown as RunnerLink;
-  const images = { park: vi.fn(), collect: vi.fn() } satisfies ParkedImagePort;
+  const images = {
+    park: vi.fn(),
+    stage: vi.fn(),
+    claim: vi.fn(),
+    collect: vi.fn(),
+  } satisfies ParkedImagePort;
   const links: LinkRegistryPort = {
     register: vi.fn(),
     unregister: vi.fn(),
@@ -172,5 +177,36 @@ describe('RelayDispatchAdapter', () => {
     expect(outcome).toEqual({ delivered: false, hints: ['not_supported'] });
     expect(link.send).not.toHaveBeenCalled();
     expect(images.park).not.toHaveBeenCalled();
+  });
+
+  describe('a first task with images', () => {
+    const imageId = '5b1c2d3e-4f50-4a6b-8c7d-9e0f1a2b3c4d';
+    const spec = {
+      organizationSlug: 'jordi',
+      branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
+      prompt: 'Match this screenshot',
+      images: [{ imageId, mediaType: 'image/png' as const }],
+    };
+
+    it('names the parked images on the create, and parks nothing itself', async () => {
+      const { adapter, link, images } = harness(true, ['session.create.images']);
+
+      const outcome = await adapter.create(session(), spec);
+
+      expect(outcome).toEqual({ delivered: true, hints: [] });
+      const sent = sessionCreateSchema.parse(vi.mocked(link.send).mock.calls[0]?.[0]);
+      expect(sent.images).toEqual([{ imageId, mediaType: 'image/png' }]);
+      // The images were parked when the create claimed them, before the row.
+      expect(images.park).not.toHaveBeenCalled();
+    });
+
+    it('sends nothing to a runner that cannot take them at launch', async () => {
+      const { adapter, link } = harness(true, ['session.image']);
+
+      const outcome = await adapter.create(session(), spec);
+
+      expect(outcome).toEqual({ delivered: false, hints: ['not_supported'] });
+      expect(link.send).not.toHaveBeenCalled();
+    });
   });
 });

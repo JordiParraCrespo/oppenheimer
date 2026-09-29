@@ -78,5 +78,6 @@ export {
   useSession,
   useSessionStartProgress,
   useSessions,
+  useUploadSessionAttachment,
 } from './sessions.queries';
 export { useSessionStream } from './sessions.stream';

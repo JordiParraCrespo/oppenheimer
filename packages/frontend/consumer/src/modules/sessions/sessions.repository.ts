@@ -12,6 +12,7 @@ import { CONSUMER_CONFIG } from '../../config';
 import {
   type AttachTicket,
   type CreateSessionInput,
+  type SessionAttachment,
   SessionCheckoutEntity,
   SessionEntity,
 } from './session.entity';
@@ -89,6 +90,7 @@ function toRequest(input: CreateSessionInput): CreateSessionRequest {
     ...(input.cwdGithubRepoId !== undefined ? { cwdGithubRepoId: input.cwdGithubRepoId } : {}),
     ...(launch && Object.keys(launch).length ? { launch } : {}),
     ...(input.prompt ? { prompt: input.prompt } : {}),
+    ...(input.attachmentIds?.length ? { attachmentIds: input.attachmentIds } : {}),
     ...(input.name ? { name: input.name } : {}),
     ...(input.projectId ? { projectId: input.projectId } : {}),
   };
@@ -254,6 +256,21 @@ export class SessionsRepository {
       expiresAt: new Date(data.expiresAt),
       window: data.window,
     };
+  }
+
+  /**
+   * An image for a session that does not exist yet: kept briefly by the API
+   * for the `create` that names its id in `attachmentIds`. A file over the cap
+   * is refused here, before it is sent; the API judges the type by the bytes.
+   */
+  @MapApiError(SessionsErrors.UPLOAD_ATTACHMENT_FAILED)
+  async uploadAttachment(image: Blob): Promise<SessionAttachment> {
+    if (image.size > SESSION_IMAGE_MAX_BYTES) throw new AppError(SessionsErrors.IMAGE_TOO_LARGE);
+    const data = await unwrapBody(
+      heyApiSdk.uploadSessionAttachment({ body: { file: image } }),
+      SessionsErrors.UPLOAD_ATTACHMENT_FAILED,
+    );
+    return { id: data.id, mediaType: data.mediaType, size: data.size };
   }
 
   /**

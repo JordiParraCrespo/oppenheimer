@@ -301,3 +301,5 @@ earlier note:
   the API's default and auth-failure rate limits were fixed in code. They are
   now deploy-tunable through the root `.env` (`RETENTION_*`, `HOSTS_*`,
   `RATE_LIMIT_*`), with the product's numbers as the defaults (2026-09-29).
+- 05's composer drew a paperclip wired to nothing; it now attaches images
+  to the first task (03) (2026-09-28).
