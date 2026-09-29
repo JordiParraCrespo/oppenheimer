@@ -23,7 +23,6 @@
     { "id": "P8", "key": "mechanical:domain-stays-pure", "file": "users/domain/value-objects/email.value-object.ts", "section": "Findings", "note": "must be reported from the arch output, as blocking" },
     { "id": "P9a", "key": "HEX-ALWAYS-VALID", "file": "users/domain/user.entity.ts", "section": "Findings", "note": "_id redeclared" },
     { "id": "P9b", "key": "HEX-ALWAYS-VALID", "file": "users/domain/user.entity.ts", "section": "Findings or Worth a look", "note": "rename() skips validate(); empty first name possible" },
-    { "id": "P10", "key": "HEX-LEGACY-SHAPE", "file": "admin/admin.controller.ts", "section": "Findings" },
     { "id": "P11a", "key": "ledger-drift", "file": "apps/api/.dependency-cruiser.cjs", "section": "Findings", "note": "added pathNot on handlers-depend-on-port-not-adapter" },
     { "id": "P11b", "key": "HEX-PORT-INJECTION", "file": "users/queries/find-users/find-users.query-handler.ts", "section": "Findings", "note": "may be folded into P11a" }
   ],
