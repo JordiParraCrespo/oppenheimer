@@ -84,7 +84,7 @@ export function GithubTriggerCard({
             {matches.slice(0, 2).map((match) => (
               <span
                 key={`${match.repository}${match.ref}${match.occurredAt.getTime()}`}
-                className="flex min-w-0 gap-2 text-[12.5px]"
+                className="flex min-w-0 gap-2 text-xs"
               >
                 <span className="figures shrink-0 text-fg">
                   {picked.length > 1 ? `${match.repository}${match.ref ?? ''}` : match.ref}

@@ -58,6 +58,7 @@ export function BadgeDemo() {
 export function SkeletonDemo() {
   return (
     <div className="grid w-full max-w-sm gap-2">
+      <Skeleton shape="pill" className="size-7" />
       <Skeleton className="h-4 w-2/3" />
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-1/2" />

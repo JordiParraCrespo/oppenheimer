@@ -12,12 +12,15 @@ described here. When they disagree, fix the code or update both together.
 ## The two splits
 
 **By product, for logic.** An entity, a repository, a service or a query hook
-belongs to the kernel or to a product. `core` is the kernel every app loads:
-session (`auth`), `users`, `user-settings`, `capabilities`, `analytics`, the
+belongs to the kernel or to a product. `core` is the kernel every app loads: the signed-in session and user, their
+settings, what the deployment can do, analytics and feature flags, with the
 InversifyJS container (`OppenheimerApp`, `TOKENS`) and `validation/`.
-`consumer` is the console's product — `sessions` and `hosts` — plus the
-account chrome it keeps (`organizations` as the personal workspace, `profile`,
-`permissions` — the catalog OAuth consent names scopes from). An app loads exactly one product package, and the kernel never
+`consumer` is the console's product plus the account chrome it keeps
+(`organizations` as the personal workspace, `profile`, and `permissions`, the
+catalog OAuth consent names scopes from). Each package's modules are the
+directories under its `src/modules/` — that is the list, and `pnpm
+check:structure` reads it; the kernel's `core/` there is its own wiring, not a
+module a feature is named after. An app loads exactly one product package, and the kernel never
 imports it.
 
 **By platform, for UI and glue.** A component, a hook over a browser API, an
@@ -126,11 +129,10 @@ createQueryPersistOptions(__APP_VERSION__, {
 The kernel never imports the product, so what the kernel defines for every
 product to follow is an export, not an import:
 
-- `KERNEL_NON_PERSISTED_FEATURES` names the features whose queries never
-  reach storage whatever the product (`auth`, `userSettings`);
-  `CONSUMER_NON_PERSISTED_FEATURES` adds the consumer's (`sessions`, `hosts`,
-  `installations`, `profile`, `projects`, `automations`), and the app passes
-  it through `nonPersistedFeatures`.
+- `createQueryPersistOptions` keeps the kernel's own features (`auth`,
+  `userSettings`, in `KERNEL_NON_PERSISTED_FEATURES`) out of storage whatever
+  the product passes; `CONSUMER_NON_PERSISTED_FEATURES` (`consumer/src/react/persistence.ts`) adds
+  the product's, and the app passes it through `nonPersistedFeatures`.
 - `user-settings` is a kernel module, not a consumer one, because applying
   the saved theme and locale on mount is not product logic
   (`useApplyUserSettings` in the web kit reads `useUserSettings`).
@@ -230,7 +232,9 @@ in `packages/tsconfig/depcruise/`.
 - `one-api-client` — the API is called through `@oppenheimer/api-client`'s
   root, which exports `heyApiSdk` and nothing else that calls it; never a
   path into its `src/`. The SDK's function names come from the API's
-  operation-id factory (`apps/api/src/openapi-document.ts`).
+  operation-id factory (`apps/api/src/openapi-document.ts`). Better Auth's routes under
+  `/api/auth` are not in the SDK: they go through the Better Auth client
+  (`modules/auth/auth.client.ts`).
 
 `frontend-kit.cjs` (`web`):
 

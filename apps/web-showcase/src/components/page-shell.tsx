@@ -30,10 +30,10 @@ export function PageHead({
 }) {
   return (
     <div className="mb-12 flex flex-wrap items-end justify-between gap-4">
-      <div className="min-w-60 flex-[1_1_320px]">
+      <div className="min-w-60 grow basis-80">
         {eyebrow ? <div className="eyebrow mb-3">{eyebrow}</div> : null}
         <h1 className="text-3xl font-semibold text-balance">{title}</h1>
-        {sub ? <p className="mt-3 max-w-[60ch] text-lg text-pretty text-fg-muted">{sub}</p> : null}
+        {sub ? <p className="mt-3 max-w-prose text-lg text-pretty text-fg-muted">{sub}</p> : null}
       </div>
       {action ? <div className="flex-none">{action}</div> : null}
     </div>
@@ -79,7 +79,7 @@ export function Spec({
         <h2 className="text-2xl font-semibold">{title}</h2>
         {meta ? <span className="figures text-xs text-fg-subtle">{meta}</span> : null}
       </div>
-      {desc ? <p className="mt-2 max-w-[68ch] text-base text-pretty text-fg-muted">{desc}</p> : null}
+      {desc ? <p className="mt-2 max-w-prose text-base text-pretty text-fg-muted">{desc}</p> : null}
       {bare ? (
         <div className="mt-5">{children}</div>
       ) : (
@@ -99,15 +99,13 @@ export function Spec({
 /** A labelled specimen inside a Spec. */
 export function Swatch({
   label,
-  width,
   children,
 }: {
   label?: string;
-  width?: number | string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-start gap-2.5" style={width ? { width } : undefined}>
+    <div className="flex flex-col items-start gap-2.5">
       <div className="flex min-h-10 items-center">{children}</div>
       {label ? <span className="text-xs text-fg-subtle">{label}</span> : null}
     </div>

@@ -10,43 +10,30 @@ The kit is organised by concern, not by kind: `src/<concern>/<kind>/`, with
 the same kind directories a feature has. A concern imports another only
 through that concern's `index.ts`, and the concerns are layered — `platform`,
 `theme`, `i18n`, `analytics` and `forms` are leaves, `layout` and
-`roles` build on them, `shell` and `auth` sit on top. The kit imports the
+`pairing` build on them, `shell` and `auth` sit on top. The kit imports the
 design system and `@oppenheimer/frontend-core`, never a product package: a
 component that needs a product hook is a feature in an app, not kit.
 
 ## What it exports
 
-Everything is re-exported from the package root (`src/index.ts`):
+Everything is re-exported from the package root (`src/index.ts`), one
+`export *` per concern. Each concern's `index.ts` is its catalog; this list
+names the concern and what to reach for first.
 
-- **shell** — `AppShell` (its sidebar, top bar, user menu and command palette
-  stay inside it), `SettingsSidebar`, `createDialogSlot`, and the nav types
-  `NavItem`, `NavLink`, `NavPolicy`, `NavTo`, `ShellWorkspace`.
-- **auth** — `AuthLayout`, `BrandLogo`,
-  `SocialLoginButtons`, `OAuthCallbackNotice`, the auth primitives, the
-  provider icons, `redirectSignedIn`.
-- **layout** — `RouteError`/`RouteNotFound`, `AppPending`, `ConfirmDialog` (the
-  destructive confirm: `confirmLabel`, `pendingLabel`, `error`, `children`,
-  `form`), `QueryState` (a read's failed / loading / empty / there, in that
-  order, with `stale` naming what a later failure does to data on screen)
-  and `combineQueries` (two reads as one source).
-- **forms** — `ErrorAlert` (an inline failure: a raw `error` it resolves into
-  the locale, or a `message` already resolved; its correlation id; Dismiss or
-  the caller's own `action`), `useZodResolver`, `SidebarSearchField`,
-  `useServerFieldErrors`, the `ResolvedErrorMessage`
-  type, and `notifySuccess(key, values?, action?)`: the success toast, which
-  takes a `toasts.*` key so its copy cannot live anywhere else. Errors never
-  go through it; they stay inline. When to toast is
-  `.agents/rules/frontend-ui.md`. `useErrorMessage` itself is imported from
-  `@oppenheimer/frontend-core/react`.
-- **pairing** — `PairingChrome` and its parts, the column that pairs a
-  machine.
-- **theme** — `ThemeProvider`, `ThemeToggle`.
-- **i18n** — `i18n`, `i18nReady`, `LanguageSwitcher`,
-  `useLocale`, `useApplyUserSettings`, `RelativeTime` (a "2 hours ago" leaf
-  that owns its clock), the date formatters (`formatMediumDate`,
-  `formatAge`, …), the duration formatters (`formatCountdown`,
-  `formatShortDuration`, `formatElapsed`) and the person-name helpers.
-- **analytics** — `PageViewTracker`, `createWebAnalyticsClient`.
+- **shell** — `AppShell`, the authenticated frame (sidebar, top bar, user
+  menu and command palette are its parts).
+- **auth** — `AuthLayout`, the split screen around sign-in and onboarding.
+- **layout** — `QueryState`, a read's failed, loading, empty and loaded
+  states; `ConfirmDialog` for the destructive confirm.
+- **forms** — `ErrorAlert` for an inline failure and `notifySuccess(key)` for
+  a success toast (a `toasts.*` key, so its copy lives in one place; when to
+  toast is `.agents/rules/frontend-ui.md`). `useErrorMessage` itself comes
+  from `@oppenheimer/frontend-core/react`.
+- **pairing** — `PairingChrome`, the column that pairs a machine.
+- **theme** — `ThemeProvider`.
+- **i18n** — `useLocale` and the formatters; `RelativeTime` for a "2 hours
+  ago" that keeps moving.
+- **analytics** — `PageViewTracker`.
 - **platform** — `LocalStorageService`, `sanitizeRedirect`.
 
 `package.json` `sideEffects` names one file, `src/i18n/lib/i18n.ts`: it

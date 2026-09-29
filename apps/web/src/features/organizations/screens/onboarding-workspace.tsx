@@ -116,7 +116,7 @@ export function OnboardingWorkspaceScreen({
         {t('onboarding.flow.workspace.description')}
       </StepHeader>
 
-      <FieldGroup className="gap-3.5">
+      <FieldGroup>
         <Field>
           <FieldLabel htmlFor="ws-name">{t('onboarding.flow.workspace.name')}</FieldLabel>
           <Input

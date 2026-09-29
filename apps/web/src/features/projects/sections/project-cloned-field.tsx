@@ -17,9 +17,9 @@ export function ProjectClonedField({ control }: { control: Control<ProjectFormVa
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-[12.5px] text-fg-muted">{t('projects.dialog.clonedByDefault')}</span>
+      <span className="text-xs text-fg-muted">{t('projects.dialog.clonedByDefault')}</span>
       {rows.length === 0 ? (
-        <p className="m-0 text-[12.5px] text-fg-subtle">{t('projects.dialog.selectFirst')}</p>
+        <p className="m-0 text-xs text-fg-subtle">{t('projects.dialog.selectFirst')}</p>
       ) : (
         <RepositoryRowList
           repositories={options}

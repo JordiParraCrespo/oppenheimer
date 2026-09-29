@@ -44,32 +44,35 @@ export function FilterToken({
       <PopoverTrigger render={<InlineToken mono={mono && filter.op === 'equals'} open={open} />}>
         {filter.op === 'equals' ? filter.value : anyLabel}
       </PopoverTrigger>
-      <ChipSelectPopup width={240} className="gap-2 p-2">
-        <button
-          type="button"
-          onClick={() => {
-            setText('');
-            onFilterChange({ op: 'any' });
-            setOpen(false);
-          }}
-          className="rounded-sm px-2.5 py-1.5 text-left text-[13px] text-fg transition-colors duration-fast hover:bg-hover-surface"
-        >
-          {anyLabel}
-        </button>
-        <Input
-          value={text}
-          placeholder={placeholder}
-          aria-label={placeholder}
-          onChange={(event) => setText(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              apply();
+      <ChipSelectPopup width={240}>
+        {/* The popup's own 4px, plus 4px: the pane sits 8px in. */}
+        <div className="flex flex-col gap-2 p-1">
+          <button
+            type="button"
+            onClick={() => {
+              setText('');
+              onFilterChange({ op: 'any' });
               setOpen(false);
-            }
-          }}
-          autoFocus
-        />
+            }}
+            className="rounded-sm px-2.5 py-1.5 text-left text-sm text-fg transition-colors duration-fast hover:bg-hover-surface"
+          >
+            {anyLabel}
+          </button>
+          <Input
+            value={text}
+            placeholder={placeholder}
+            aria-label={placeholder}
+            onChange={(event) => setText(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                apply();
+                setOpen(false);
+              }
+            }}
+            autoFocus
+          />
+        </div>
       </ChipSelectPopup>
     </Popover>
   );
