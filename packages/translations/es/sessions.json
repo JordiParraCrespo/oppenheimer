@@ -149,8 +149,8 @@
       "refused": "El host se ha negado a abrir este terminal."
     },
     "starting": {
-      "title": "Esperando al agente",
-      "description": "La sesión está en marcha. El agente dibuja su primera pantalla en cuanto termina de arrancar."
+      "title": "Todavía no hay nada en pantalla",
+      "description": "La conexión está activa. Esto se llena en cuanto el agente dibuja: una sesión nueva cuando termina de arrancar, y una anterior cuando se reenvía su historial."
     }
   },
   "sidebar": {

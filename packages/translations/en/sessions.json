@@ -149,8 +149,8 @@
       "refused": "The host refused to open this terminal."
     },
     "starting": {
-      "title": "Waiting for the agent",
-      "description": "The session is running. The agent draws its first screen once it has finished starting."
+      "title": "Nothing on the grid yet",
+      "description": "The link is up. This fills as soon as the agent draws — a new session once it has started, an older one once its history has replayed."
     }
   },
   "sidebar": {
