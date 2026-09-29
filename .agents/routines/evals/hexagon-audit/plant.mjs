@@ -211,7 +211,7 @@ edit(
 edit(
   'P9',
   api('users/domain/user.entity.ts'),
-  `  /** Mark the user for deletion and raise the corresponding domain event. */`,
+  `  delete(): void {`,
   `  /** Rename in one go, e.g. from the GitHub profile. */
   rename(fullName: string): void {
     const [first, ...rest] = fullName.split(' ');
@@ -219,7 +219,7 @@ edit(
     this.props.lastName = rest.join(' ');
   }
 
-  /** Mark the user for deletion and raise the corresponding domain event. */`,
+  delete(): void {`,
 );
 
 // P11 ledger drift + HEX-PORT-INJECTION: a query handler injects the concrete
