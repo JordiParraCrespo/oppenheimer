@@ -192,7 +192,14 @@ if (
 ) {
   job('go', [
     ['go vet', 'go', ['vet', 'github.com/jordiparracrespo/oppenheimer/...']],
-    ['golangci-lint', 'sh', ['-c', `golangci-lint run $(go list -m -f '{{.Dir}}/...')`]],
+    // NUL-delimited, like `packages/go/Makefile`: unquoted, the module
+    // directories split on the spaces in a checkout path and golangci-lint
+    // lints nothing while reporting `0 issues`.
+    [
+      'golangci-lint',
+      'sh',
+      ['-c', `go list -m -f '{{.Dir}}/...' | tr '\\n' '\\0' | xargs -0 golangci-lint run`],
+    ],
     ['go test', 'go', ['test', '-count=1', 'github.com/jordiparracrespo/oppenheimer/...']],
     [
       'build the runner',
