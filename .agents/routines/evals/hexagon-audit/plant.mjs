@@ -222,11 +222,12 @@ edit(
   /** Mark the user for deletion and raise the corresponding domain event. */`,
 );
 
-// P10 HEX-LEGACY-SHAPE: a new route added to a ledgered legacy controller.
+// P10 HEX-LEGACY-SHAPE: a new operation added to an existing slice's
+// controller, beside the route it owns, instead of as a slice of its own.
 edit(
   'P10',
-  api('admin/admin.controller.ts'),
-  `  @Patch('users/:id')
+  api('admin/queries/get-user/get-user.http.controller.ts'),
+  `  @Get('users/:id')
   @Version('1')`,
   `  @Get('users/:id/impersonations')
   @Version('1')
@@ -238,10 +239,12 @@ edit(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<AdminUserResponseDto> {
-    return this.admin.getUser(req.headers, id);
+    return this.queryBus.execute<GetUserQuery, AdminUserResponseDto>(
+      new GetUserQuery({ headers: req.headers, userId: id }),
+    );
   }
 
-  @Patch('users/:id')
+  @Get('users/:id')
   @Version('1')`,
 );
 
