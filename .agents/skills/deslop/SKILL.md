@@ -1,26 +1,51 @@
 ---
 name: deslop
-description: "Diff-scoped AI-slop cleanup pass: strip comment slop, defensive-check slop, type-laundering, and style drift from the current branch diff before review. Use before opening or updating a pull request, or when asked to deslop, clean up, or strip unnecessary comments from a change."
+description: "Comments-only cleanup of the current branch diff: strip comments that narrate or restate the code, dividers that repeat the heading under them, and doc comments stranded on the wrong symbol. Behavior-neutral; everything else it notices is reported, not edited. Use before opening or updating a pull request, or when asked to deslop or strip unnecessary comments."
 ---
 
 # Deslop
 
-Adapted from openclaw's `deslop` skill (`openclaw/openclaw`, `.agents/skills/deslop/`).
+Adapted from openclaw's `deslop` skill (`openclaw/openclaw`, `.agents/skills/deslop/`),
+cut down to the one pass that cannot change behavior: comments.
 
-Clean only the current branch diff before review. Preserve behavior absolutely.
+## Scope
 
-## Checklist
+The branch diff: `git diff` against `origin/main`, or the merge base when it
+differs. A wider run only when the user asks for one, and then only the paths
+they name.
 
-1. Scope the pass to `git diff` against `origin/main`, or the branch merge base when it differs. Never run a repo-wide cleanup unless the user asks for one by name, and then only for the paths they name.
-2. Inspect every changed hunk for:
-   - comments a human maintainer would not write, including narration, syntax explanation, and prose that merely restates the code. Keep the comments that say why: a constraint, an invariant, a failure the code avoids, a decision a reader would otherwise undo. Keep Go doc comments on exported identifiers, directives (`biome-ignore`, `@ts-expect-error`, `//go:`, `eslint-disable`), and license headers;
-   - defensive checks or `try`/`catch` blocks that are abnormal for the surrounding module or protect only imagined states;
-   - casts that launder types, especially `as any`, `as unknown as T`, and widen-then-assert flows;
-   - redundant intermediate variables or one-use helpers that do not add domain meaning, reduce duplication, or simplify control flow;
-   - compatibility shims, aliases, retries, and fallback branches without a named shipped contract and removal plan;
-   - naming, control flow, imports, formatting, and other style that conflicts with the surrounding file.
-3. Make no functional edits. If cleanup could change behavior, leave it alone and report it instead.
-4. Fix a finding inline only when the cleanup is trivial and behavior-neutral. Otherwise note it for the author.
-5. Report the result in 1–3 sentences, including whether anything changed and any non-trivial item left for review.
+## Edit
 
-Run `/deslop` before `/code-review`, never instead of it. The review and `pnpm ci:local` remain the correctness gate.
+Only comments, and only these:
+
+- a comment that restates the line under it, narrates syntax, or repeats the
+  name of what it sits on;
+- a divider or banner that repeats the `describe`, heading or `GroupHead`
+  right below it;
+- a doc comment stranded on the wrong symbol: move it back onto the one it
+  names, and drop it if that symbol already carries the same note.
+
+When a comment names a constraint the code does not show (a unit, a magic
+number, an ordering, a platform quirk), keep it, or move its meaning into an
+identifier (`CURVE25519_P`, not `P` under `/** 2^255 - 19 */`) and then drop
+it. Never leave a bare field in a shared contract whose unit or construction
+rule only the deleted comment gave.
+
+Always keep: comments that say why, Go doc comments on exported identifiers,
+directives (`biome-ignore`, `@ts-expect-error`, `//go:`, `//nolint`,
+`oppenheimer:begin/end`), TODOs and license headers.
+
+## Report, never edit
+
+Whatever else looks like slop is left in the diff and listed in the pull
+request body, one line each: casts that launder types (`as any`,
+`as unknown as T`), defensive checks and `try`/`catch` for states that cannot
+happen, one-use helpers, compatibility shims, retries and fallbacks with no
+named contract. Removing any of them changes behavior, so it is a code change
+with its own review, not cleanup.
+
+## Finish
+
+Say in 1–3 sentences what changed and what was reported. Then drive the pull
+request as `.agents/skills/steward/SKILL.md` says; `pnpm ci:local` is the
+gate, and a deslop pass never replaces it.

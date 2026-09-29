@@ -4,6 +4,10 @@ import { Guard } from './guard';
 import { RequestContextService } from './request-context.service';
 
 export interface DomainEventMetadata {
+  /**
+   * Epoch milliseconds when the event was raised: `Date.now()` unless the caller
+   * passes one.
+   */
   readonly timestamp: number;
 
   /** Correlation id (integration events, log correlation, etc). */

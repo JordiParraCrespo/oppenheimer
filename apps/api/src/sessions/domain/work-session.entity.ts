@@ -273,7 +273,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return null;
   }
 
-  /** Every checkout, retired ones included. */
   get checkouts(): readonly SessionCheckoutEntity[] {
     return this.props.checkouts;
   }
