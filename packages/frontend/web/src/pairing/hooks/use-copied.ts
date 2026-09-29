@@ -1,8 +1,7 @@
-import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useEffect, useRef, useState } from 'react';
 
 /** How long a button reads "Copied" before it reads its verb again. */
-const COPIED_FOR_MS = CORE_CONFIG.feedback.copiedMs;
+const COPIED_FOR_MS = 1800;
 
 /**
  * Which of several things was copied last, for a row of copy buttons that

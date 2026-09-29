@@ -41,7 +41,7 @@ export function featureFlagsQueryOptions(app: OppenheimerApp, audience: FlagAudi
   return {
     queryKey: featureFlagKeys.evaluated(audience),
     queryFn: (): Promise<ClientFeatureFlags> => app.featureFlags.get(),
-    staleTime: CORE_CONFIG.featureFlagsStaleMs,
+    staleTime: CORE_CONFIG.query.featureFlagsStaleMs,
   };
 }
 

@@ -1,5 +1,4 @@
 import type { RunsFilter } from '@oppenheimer/frontend-consumer';
-import { CONSUMER_CONFIG } from '@oppenheimer/frontend-consumer/config';
 import type { AutomationRunStatus, RunWindow } from '@oppenheimer/shared/automations';
 import { getRouteApi } from '@tanstack/react-router';
 import type { RunStatusTab, RunsSearch } from '../lib/runs-search';
@@ -15,7 +14,7 @@ const TAB_STATUSES: Record<RunStatusTab, readonly AutomationRunStatus[] | undefi
 const DEFAULT_WINDOW: RunWindow = '30d';
 
 /** Pages of ten, as the foot reads "1–10 of 65". */
-export const RUNS_PAGE_SIZE = CONSUMER_CONFIG.automations.runsPageSize;
+export const RUNS_PAGE_SIZE = 10;
 
 /** The two routes that draw the list, each declaring `runsSearchSchema`. */
 const overview = getRouteApi('/_authenticated/automations/runs');

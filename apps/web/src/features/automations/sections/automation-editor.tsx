@@ -48,7 +48,7 @@ export function AutomationEditor({
   onSubmit: (draft: AutomationDraft, task: AutomationTaskDto) => void;
 }) {
   const { t } = useTranslation();
-  const now = useNow(CORE_CONFIG.clock.minuteMs);
+  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   const [step, setStep] = useState<EditorStep>('task');
   const [draft, setDraft] = useState(initialDraft);
   const { data: project } = useProjects({

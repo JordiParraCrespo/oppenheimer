@@ -46,7 +46,7 @@ export function GithubTriggerCard({
   onRemove: () => void;
 }) {
   const { t } = useTranslation();
-  const now = useNow(CORE_CONFIG.clock.minuteMs);
+  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   const definition = externalEventDefinition('github', card.event);
   const { key: _key, ...trigger } = card;
   const preview = useTriggerPreview(card.repositories.length ? trigger : undefined);

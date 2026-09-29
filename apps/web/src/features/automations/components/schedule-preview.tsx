@@ -19,7 +19,7 @@ const DAY = 86_400_000;
 export function SchedulePreview({ card }: { card: ScheduleCard }) {
   const { t } = useTranslation();
   const locale = useLocale();
-  const now = useNow(CORE_CONFIG.clock.halfMinuteMs);
+  const now = useNow(CORE_CONFIG.clock.everyHalfMinuteMs);
   const zone = viewerTimeZone();
 
   const fires = new Set<string>();

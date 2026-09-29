@@ -39,7 +39,7 @@ export function useDeploymentCapabilities<TData = ClientDeployment>(
   return useQuery({
     queryKey: capabilitiesKeys.deployment(),
     queryFn: () => app.capabilities.get(),
-    staleTime: CORE_CONFIG.capabilitiesStaleMs,
+    staleTime: CORE_CONFIG.query.capabilitiesStaleMs,
     ...options,
   });
 }

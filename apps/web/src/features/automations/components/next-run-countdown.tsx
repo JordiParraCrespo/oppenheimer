@@ -11,7 +11,7 @@ import { nextRunCountdown } from '../lib/automation-view';
  */
 export function NextRunCountdown({ automation }: { automation: AutomationEntity }) {
   const { t } = useTranslation();
-  const now = useNow(CORE_CONFIG.clock.secondMs);
+  const now = useNow(CORE_CONFIG.clock.everySecondMs);
   const locale = useLocale();
   const relative = nextRunCountdown(automation, now, locale);
   if (!relative) return null;

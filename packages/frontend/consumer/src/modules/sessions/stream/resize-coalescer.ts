@@ -1,4 +1,3 @@
-import { CONSUMER_CONFIG } from '../../../config';
 /**
  * The PTY's size, told once a drag has settled rather than on every frame of
  * it. The console is the one place resizes are coalesced (02 §5): every size
@@ -6,9 +5,9 @@ import { CONSUMER_CONFIG } from '../../../config';
  * whole screen, so the runner applies what arrives as it arrives.
  *
  * The first size goes straight out — it is the viewport the attach is opened
- * with — and a size equal to the last one sent is not sent again. How long a
- * drag must be still is `CONSUMER_CONFIG.stream.resizeSettleMs`.
+ * with — and a size equal to the last one sent is not sent again.
  */
+const RESIZE_SETTLE_MS = 50;
 
 export interface ResizeCoalescer {
   request(cols: number, rows: number): void;
@@ -23,7 +22,7 @@ export function createResizeCoalescer(
     schedule?: (fn: () => void, ms: number) => () => void;
   } = {},
 ): ResizeCoalescer {
-  const settleMs = options.settleMs ?? CONSUMER_CONFIG.stream.resizeSettleMs;
+  const settleMs = options.settleMs ?? RESIZE_SETTLE_MS;
   const schedule =
     options.schedule ??
     ((fn, ms) => {

@@ -12,7 +12,7 @@ import { nextRunCountdown, nextRunText } from '../lib/automation-view';
 export function NextRun({ automation }: { automation: AutomationEntity }) {
   const { t } = useTranslation();
   const locale = useLocale();
-  const now = useNow(CORE_CONFIG.clock.secondMs);
+  const now = useNow(CORE_CONFIG.clock.everySecondMs);
   const relative = nextRunCountdown(automation, now, locale);
   return (
     <span className="flex flex-col gap-px">

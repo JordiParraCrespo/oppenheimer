@@ -20,7 +20,7 @@ function clock(seconds: number): string {
  */
 export function TokenCountdown({ expiresAt }: { expiresAt: Date }) {
   const { t } = useTranslation();
-  const now = useNow(CORE_CONFIG.clock.secondMs);
+  const now = useNow(CORE_CONFIG.clock.everySecondMs);
   const seconds = Math.max(0, Math.floor((expiresAt.getTime() - now) / 1000));
 
   return <>{t('hosts.pairing.tokenExpires', { time: clock(seconds) })}</>;

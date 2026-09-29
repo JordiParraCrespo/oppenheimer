@@ -37,7 +37,7 @@ export function AutomationGroup({
   onNew: (project: ProjectEntity) => void;
 }) {
   const { t } = useTranslation();
-  const now = useNow(CORE_CONFIG.clock.minuteMs);
+  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
 
   return (
     <SidebarProjectGroup>

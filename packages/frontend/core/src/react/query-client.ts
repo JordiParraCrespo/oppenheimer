@@ -75,7 +75,10 @@ export function expireSession(app: SessionExpiryTarget, queryClient: QueryClient
  * The client, with {@link defaultQueryClientOptions}, the retry policy, and a
  * cache that expires the session on the first 401 any query or mutation sees.
  */
-export function createQueryClient(app: SessionExpiryTarget, staleTime: number): QueryClient {
+export function createQueryClient(
+  app: SessionExpiryTarget,
+  staleTime: number = CORE_CONFIG.query.staleTimeMs,
+): QueryClient {
   const onError = (error: unknown) => {
     if (isUnauthorized(error)) expireSession(app, queryClient);
   };

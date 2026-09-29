@@ -1,7 +1,5 @@
-import { CONSUMER_CONFIG } from '@oppenheimer/frontend-consumer/config';
-
 /** How long a frame opened by a hide waits for its show. */
-const CURSOR_FRAME_MAX_MS = CONSUMER_CONFIG.stream.cursorFrameMaxMs;
+const CURSOR_FRAME_MAX_MS = 100;
 
 const ESC = 0x1b;
 const HIDE = '\x1b[?25l';

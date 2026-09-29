@@ -1,6 +1,5 @@
 import { CONSUMER_NON_PERSISTED_FEATURES } from '@oppenheimer/frontend-consumer/react';
 import type { OppenheimerApp } from '@oppenheimer/frontend-core';
-import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { createQueryClient, createQueryPersistOptions } from '@oppenheimer/frontend-core/react';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import {
@@ -51,7 +50,7 @@ export function QueryProvider({
 }) {
   // A 401 anywhere expires the session and forgets its cache, which sends the
   // router to /login; a 4xx is never retried.
-  const [queryClient] = useState(() => createQueryClient(app, CORE_CONFIG.query.staleTimeMs));
+  const [queryClient] = useState(() => createQueryClient(app));
 
   return (
     <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>

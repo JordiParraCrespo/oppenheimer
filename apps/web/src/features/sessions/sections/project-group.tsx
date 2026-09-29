@@ -56,7 +56,7 @@ export function ProjectGroup({
   // One clock for the group's ages, ticking once a minute: every row redraws
   // on the tick, because every age may have moved, and the sidebar around the
   // groups — its head, its filters — does not.
-  const now = useNow(CORE_CONFIG.clock.minuteMs);
+  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   // Unassigned under its translated name; the API's spelling is English.
   const label = project
     ? project.isUnassigned

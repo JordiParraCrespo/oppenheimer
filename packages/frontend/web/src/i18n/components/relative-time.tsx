@@ -16,7 +16,7 @@ import { formatRelativeTime } from '../lib/format-date';
  */
 export function RelativeTime({
   date,
-  interval = CORE_CONFIG.clock.minuteMs,
+  interval = CORE_CONFIG.clock.everyMinuteMs,
   children,
 }: {
   date: Date;
