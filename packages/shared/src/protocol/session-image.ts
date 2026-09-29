@@ -85,3 +85,16 @@ export function sniffSessionImage(bytes: Uint8Array): SessionImageMediaType | nu
   }
   return null;
 }
+
+/**
+ * The two rules any list of images attached to a first task keeps, on the HTTP
+ * body and on the wire alike: they ride a task — with no prompt there is
+ * nothing to read them with — and no image is named twice.
+ */
+export function attachedImagesAreValid(
+  prompt: string | undefined,
+  ids: readonly string[] | undefined,
+): boolean {
+  if (!ids?.length) return true;
+  return prompt !== undefined && prompt.length > 0 && new Set(ids).size === ids.length;
+}

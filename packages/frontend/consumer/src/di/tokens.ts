@@ -7,7 +7,7 @@ import { TOKENS as KERNEL_TOKENS } from '@oppenheimer/frontend-core';
  */
 export const TOKENS = {
   ...KERNEL_TOKENS,
-  ApiTokensRepository: Symbol.for('ApiTokensRepository'),
+  PermissionsRepository: Symbol.for('PermissionsRepository'),
   AutomationsRepository: Symbol.for('AutomationsRepository'),
   HostsRepository: Symbol.for('HostsRepository'),
   InstallationsRepository: Symbol.for('InstallationsRepository'),

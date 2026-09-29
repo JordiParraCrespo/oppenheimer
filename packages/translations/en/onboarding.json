@@ -1,18 +1,6 @@
 {
-  "description": "Your account is ready. Name the workspace your sessions will live in.",
-  "eyebrow": "Almost there",
-  "signOut": "Sign out",
-  "title": "Create your workspace",
-  "create": {
-    "name": "Workspace name",
-    "namePlaceholder": "Acme Inc.",
-    "hint": "You can rename it later from Settings.",
-    "submit": "Create workspace",
-    "submitting": "Creating…"
-  },
   "flow": {
     "back": "Back",
-    "counter": "{{step}} of {{total}}",
     "continue": "Continue",
     "workspace": {
       "title": "Name your workspace",

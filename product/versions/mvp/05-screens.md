@@ -109,14 +109,9 @@
   band fused to the top of the composer (the tabbed composer of the
   2026-09-26 export); a composer for the
   first task whose foot row reads scope of action, then engine: attach
-  (images for the first task — PNG, JPEG, GIF or WebP, up to five of
-  5 MB each, picked with the paperclip or pasted into the field, each a
-  removable chip under the text; a file the session cannot take is
-  refused under the field with the reason, never dropped. They are
-  uploaded when the task is sent, and the host saves them outside the
-  worktree and appends their paths to the task, so the agent reads them
-  with it. A host offline or on a runner too old for them refuses the
-  create before anything is written)
+  (the paperclip, or an image pasted into the field, attaches it to the
+  first task as a removable chip under the text; a file it cannot take
+  is refused under the field with the reason, never dropped)
   and the permission level on the left (ask for approval, approve for
   me, full access, the last in a warning tone because it changes a
   machine unattended); the agent and model, the effort and dictation on
@@ -139,6 +134,10 @@
   project offers its defaults — its host, its agent, its first default
   repository on its base — and the chips stay the person's to change: a
   repository outside the project is as good as one inside it (10). The
+  project a visit starts on — named in the address, remembered, or
+  Unassigned — offers the same defaults a pick does: its default
+  repository is in the repository chip when it names one, and its host
+  and agent win over the last visit's choice when it names them. The
   agent lives in the engine button, not a chip: opening it
   lists the harnesses, choosing one slides to its models with a search,
   and a blank terminal is picked outright. Effort is a five-stop slider
@@ -240,7 +239,9 @@
   model and the effort, in `localStorage`, on the device that chose
   them. It is a convenience, not a record: the scope is never
   remembered, because the repositories one visit is about are not the
-  next visit's.
+  next visit's. The project a visit starts on outranks the memory where it
+  names a default: its host or agent replaces the remembered one, and a
+  chip it names nothing for keeps the last choice.
 - The pane beside the sidebar is a URL: `/sessions/new` (the composer),
   `/sessions/{id}` (the terminal, or the provisioning pane while the
   session is starting, or a closed session), and anything else (a 404

@@ -25,10 +25,11 @@ interface HeldFile {
  * keystroke. What leaves this component is the finished sentence and its
  * files, once.
  *
- * Files come from the paperclip or from pasting an image into the field. A
- * file a session cannot take — not a PNG, JPEG, GIF or WebP by its label, over
- * the size cap, or past the count — is refused here with the reason under the
- * field, never silently dropped; the API judges the bytes again.
+ * Files come from the paperclip or from pasting an image into the field. What
+ * a file *is* is the API's to judge, by its bytes: a browser's label is often
+ * empty for a pasted screenshot, so here a file is refused only for its size
+ * or for going past the count, with the reason under the field — never
+ * silently dropped. A paste that carries no image is the field's, untouched.
  *
  * `scope` is the band over the field and `tools` and `engine` are the foot
  * row's two slots — where the work happens on top, scope of action on the
@@ -61,9 +62,7 @@ export function NewSessionComposer({
     const accepted: HeldFile[] = [];
     let reason: string | null = null;
     for (const file of incoming) {
-      if (!(SESSION_IMAGE_MEDIA_TYPES as readonly string[]).includes(file.type)) {
-        reason = t('sessions.new.composer.attachNotImage', { name: file.name });
-      } else if (file.size > SESSION_IMAGE_MAX_BYTES) {
+      if (file.size > SESSION_IMAGE_MAX_BYTES) {
         reason = t('sessions.new.composer.attachTooLarge', { name: file.name });
       } else if (files.length + accepted.length >= SESSION_CREATE_MAX_IMAGES) {
         reason = t('sessions.new.composer.attachTooMany', { max: SESSION_CREATE_MAX_IMAGES });
@@ -76,11 +75,13 @@ export function NewSessionComposer({
   }
 
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
-    const pasted = Array.from(event.clipboardData.files);
-    if (pasted.length === 0) return;
-    // An image pasted into the task is an attachment, not text.
-    event.preventDefault();
-    hold(pasted);
+    // Only what could be an image; an unlabelled file is a screenshot more
+    // often than not. Nothing is prevented: text pasted with it still lands
+    // in the field, and a textarea inserts nothing for a file.
+    const images = Array.from(event.clipboardData.files).filter(
+      (file) => file.type === '' || file.type.startsWith('image/'),
+    );
+    if (images.length > 0) hold(images);
   }
 
   return (

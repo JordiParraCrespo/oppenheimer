@@ -297,11 +297,6 @@ earlier note:
   owner's runner is now refused at the link handshake and closed by a heartbeat
   within a minute, and a session's git token is not minted for a creator who may
   not act (2026-09-28).
-- 05 put a line under New session's title that said what sending would do
-  ("In XRP Mobile · cloning 1 of 1 repository…", "Set the scope, then
-  describe the work." before a project). It is gone: the title is one
-  centred line, "Ready when you are.", and the chips over the composer say
-  where the work runs. The composer's paperclip, drawn since the first
-  export and wired to nothing, now attaches images to the first task,
-  which the host saves and names to the agent with it (01, 02 §7)
+- 05's subtitle under New session's title is gone; the title is "Ready
+  when you are.", and the paperclip attaches images to the first task (03)
   (2026-09-28).

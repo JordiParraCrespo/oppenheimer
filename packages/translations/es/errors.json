@@ -136,6 +136,7 @@
     "SESSIONS_016": "El equipo está desconectado, así que la imagen no se envió.",
     "SESSIONS_017": "Este equipo necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a intentarlo.",
     "SESSIONS_019": "Una imagen adjunta caducó antes de que empezara la sesión. Vuelve a enviar para subirla de nuevo.",
+    "SESSIONS_020": "Tienes demasiadas imágenes en espera. Envía o quita alguna y vuelve a adjuntar.",
     "HOSTS_007": "No hay ninguna imagen esperando para esa orden.",
     "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
     "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",

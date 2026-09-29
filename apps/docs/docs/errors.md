@@ -431,10 +431,11 @@ are never reissued.
 | `SESSIONS_013` <a id="sessions_013" /> | That is not an image the session can take       | 415  |
 | `SESSIONS_014` <a id="sessions_014" /> | That session is stopped                         | 409  |
 | `SESSIONS_015` <a id="sessions_015" /> | No image was attached                           | 400  |
-| `SESSIONS_016` <a id="sessions_016" /> | The session’s host is offline                   | 503  |
-| `SESSIONS_017` <a id="sessions_017" /> | The session’s host cannot take images until its runner is updated | 409 |
+| `SESSIONS_016` <a id="sessions_016" /> | The host is offline                             | 503  |
+| `SESSIONS_017` <a id="sessions_017" /> | The host cannot take images until its runner is updated | 409 |
 | `SESSIONS_018` <a id="sessions_018" /> | That project does not include this session’s repository (no longer raised) | 409 |
 | `SESSIONS_019` <a id="sessions_019" /> | An attached image is no longer waiting          | 410  |
+| `SESSIONS_020` <a id="sessions_020" /> | Too many images are waiting to be sent          | 429  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -473,11 +474,11 @@ nothing waiting.
 
 The same refusals cover images attached to a session's first task. Each is uploaded
 with `POST /sessions/attachments`, which answers `012`, `013` and `015` as a paste does,
-and named in `attachmentIds` on `POST /sessions`. The create answers `016` or `017`
-before it writes anything when the host cannot take them now, since a task that talks
-about a screenshot must not start without it, and `019` when an id is not waiting for
-the caller: it expired (uploads are kept for fifteen minutes), it was already used, or
-it was never theirs. The three are one answer, so an id cannot be probed.
+and `020` when the caller already has as many uploads waiting as one person may. The
+create that names them in `attachmentIds` answers `016` or `017` before it writes
+anything, when the host cannot take them now, and `019` when an id is not waiting for
+the caller: it expired, or it was never theirs. The two are one answer, so an id cannot
+be probed.
 
 `SESSIONS_007` is the end of a deliberately short list. A checkout's directory is
 named `<repo>`, then `<owner>--<repo>`, then `<owner>--<repo>-<githubRepoId>`, and a

@@ -220,6 +220,25 @@ func TestCloseKeepsUnsavedWorkAndForceMeansIt(t *testing.T) {
 	}
 }
 
+func TestClosePushesForTheSession(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+
+	closed, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Push: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if closed.State != domain.StateClosed {
+		t.Fatalf("state = %q, want closed", closed.State)
+	}
+	if _, ok := h.worktrees.Paths[session.Worktree]; ok {
+		t.Fatal("a closed session's worktree is removed")
+	}
+	if len(h.worktrees.PushedFor) != 1 || h.worktrees.PushedFor[0] != session.ID {
+		t.Fatalf("pushed for %q, want [%q]", h.worktrees.PushedFor, session.ID)
+	}
+}
+
 func TestCloseIsIdempotentEnoughToRetry(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
@@ -475,6 +494,20 @@ func TestCreateRefusesAttachedImagesThatAreNotWhatTheyClaim(t *testing.T) {
 	}
 	if len(h.worktrees.Paths) != 0 || len(h.images.Saved) != 0 {
 		t.Fatal("a refused image must be refused before anything is made")
+	}
+}
+
+func TestCreateRefusesImagesWithNoTaskToCarryThem(t *testing.T) {
+	h := newFakeHarness(t)
+
+	_, err := h.svc.Create(context.Background(), app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		BaseBranch: "main", Agent: domain.AgentClaude,
+		Images: []app.CreateImage{{ID: imageCommand, MediaType: "image/png", Data: png}},
+	})
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != "SESS_002" {
+		t.Fatalf("err = %v, want the invalid-input refusal", err)
 	}
 }
 

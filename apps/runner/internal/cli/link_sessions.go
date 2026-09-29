@@ -35,7 +35,14 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 		return
 	}
 	first := m.Checkouts[0]
-	images, err := h.pullCreateImages(ctx, m.Images)
+	// A create sent again for a session this host already holds (a redelivery,
+	// a reconnect) makes nothing new, so it pulls nothing: its images were
+	// pulled once, and a parked image is handed over only once.
+	var images []sessionsapp.CreateImage
+	var err error
+	if _, notHeld := h.app.Sessions.Get(m.SessionID); notHeld != nil {
+		images, err = h.pullCreateImages(ctx, m.Images)
+	}
 	if err != nil {
 		h.fail(m.CommandID, err)
 		h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))

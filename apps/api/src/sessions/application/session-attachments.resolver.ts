@@ -2,63 +2,50 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { CreateSessionDto } from '@oppenheimer/shared';
+import type { LinkRegistryPort } from '../../links/application/link-registry.port';
+import type { ParkedImagePort } from '../../links/application/parked-image.port';
+import { LINK_REGISTRY, PARKED_IMAGES } from '../../links/links.di-tokens';
+import type { SessionLaunchImage } from '../domain/session-launch-image.types';
 import { SessionErrors } from '../domain/sessions.errors';
-import type { SessionAttachmentStorePort } from '../infrastructure/session-attachment-store.port';
-import { SESSION_ATTACHMENTS, SESSION_DISPATCH } from '../sessions.di-tokens';
-import type { SessionAttachedImage, SessionDispatchPort } from './session-dispatch.port';
+import { requireImageCapableHost } from './require-image-capable-host.policy';
 
 /**
- * Answers which images a create's `attachmentIds` name, or refuses the create.
+ * Turns a create's `attachmentIds` into the images its host will pull, or
+ * refuses the create.
  *
- * It runs before the row is written, because a first task that talks about a
- * screenshot must not start without it: a host with no link, or a runner too
- * old to take images at launch, is refused as a paste into it would be, and so
- * is an id that is not waiting for this person. Nothing is taken here; the
- * uploads are removed once the host has been handed them, so a create that
- * fails after this can be sent again.
+ * It runs after the session's id is minted and **before** its row is written:
+ * a task that talks about a screenshot must not start without it. The host is
+ * asked first (`requireImageCapableHost`), then each upload is parked for this
+ * session on this host. What comes back is recorded on the log's
+ * `prompt.first`, so the ids outlive the request: a create that reaches its
+ * host late, or again after a reconnect, still names images that are waiting.
+ * The uploads themselves stay staged until they expire, so a create that fails
+ * after this can be sent again as it was.
  */
 @Injectable()
 export class SessionAttachmentsResolver {
   constructor(
-    @Inject(SESSION_ATTACHMENTS)
-    private readonly store: SessionAttachmentStorePort,
-    @Inject(SESSION_DISPATCH)
-    private readonly dispatch: SessionDispatchPort,
+    @Inject(PARKED_IMAGES)
+    private readonly images: ParkedImagePort,
+    @Inject(LINK_REGISTRY)
+    private readonly links: LinkRegistryPort,
   ) {}
 
-  async resolve(
+  async claim(
     scope: AccessScope,
     userId: string,
+    sessionId: string,
     { hostId, attachmentIds: ids }: Pick<CreateSessionDto, 'hostId' | 'attachmentIds'>,
-  ): Promise<SessionAttachedImage[]> {
+  ): Promise<SessionLaunchImage[]> {
     if (!ids?.length || !scope.organizationId) return [];
-
-    const support = this.dispatch.createImageSupport(hostId);
-    if (support === 'host_offline') {
-      throw new AppError(SessionErrors.HOST_OFFLINE, {
-        detail: 'Nothing was created: attached images are not kept for a host that comes back.',
-      });
-    }
-    if (support === 'not_supported') {
-      throw new AppError(SessionErrors.HOST_CANNOT_TAKE_IMAGES, {
-        detail: 'Update the runner on this host to start a session with attached images.',
-      });
-    }
-
+    requireImageCapableHost(this.links, hostId);
     const owner = { organizationId: scope.organizationId, userId };
-    const found = await Promise.all(ids.map((id) => this.store.find(id, owner)));
-    return found.map((attachment, i) => {
-      if (!attachment) {
-        throw new AppError(SessionErrors.ATTACHMENT_NOT_FOUND, {
-          detail: `Attachment ${ids[i]} expired or was never uploaded here; attach it again.`,
-        });
-      }
-      return { mediaType: attachment.mediaType, data: attachment.data };
-    });
-  }
-
-  /** Drops the uploads a create has handed on. */
-  async release(ids: readonly string[] | undefined): Promise<void> {
-    if (ids?.length) await this.store.remove(ids);
+    const claimed = await this.images.claim(ids, owner, { hostId, sessionId });
+    if (!claimed) {
+      throw new AppError(SessionErrors.ATTACHMENT_NOT_FOUND, {
+        detail: 'An attached image expired or was never uploaded here; attach it again.',
+      });
+    }
+    return claimed;
   }
 }

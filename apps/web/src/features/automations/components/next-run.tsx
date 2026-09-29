@@ -17,7 +17,7 @@ export function NextRun({ automation }: { automation: AutomationEntity }) {
     <span className="flex flex-col gap-px">
       <span>{nextRunText(automation, now, locale, t)}</span>
       {relative ? (
-        <span className="figures text-[11.5px] text-fg-subtle">
+        <span className="figures text-micro text-fg-subtle">
           {t('automations.next.in', { time: relative })}
         </span>
       ) : null}

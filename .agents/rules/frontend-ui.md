@@ -151,10 +151,7 @@ look one up in — the nav row names the endpoint directly. Today both
 `apps/web` rows are ungated (`policies: []`), so the first gated row is still
 to be written.
 
-A screen the product picks for the reader (the dashboard `/` redirects to)
-checks its own policies through `useLandingRoute` and answers `null` rather
-than bouncing between errors. An org-less account goes to `/onboarding` from
-the `_authenticated` layout.
+An org-less account goes to `/onboarding` from the `_authenticated` layout.
 
 ## One colour vocabulary: the brand primitives
 
@@ -192,7 +189,10 @@ Biome owns correctness; oxlint's own categories are off.
 Rules sit at `warn` while inherited findings are worked off. Promote a rule to
 `error` in `oxlint.design.json` once its count reaches zero; never lower one
 back to `warn` to land a change. Known false positive before promoting
-`no-raw-colors`: `shadow-panel` is read as a colour.
+`no-raw-colors`: `shadow-panel` is read as a colour. The linter's grammar reads every font
+size the theme adds (`text-operate`, `text-h2`, `text-micro`…) as a colour
+too; those are an `allow` list on `no-raw-colors` in `oxlint.design.json`,
+kept in step with `FONT_SIZES` in the design system's `cn()`.
 
 ## The design system is its folder
 

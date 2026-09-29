@@ -17,13 +17,10 @@ rules in `apps/api/.dependency-cruiser.cjs` (`pnpm arch`) beside it.
 This page describes what the API *does*. It deliberately does not restate that
 table: a second copy would drift from the one CI enforces.
 
-Two modules are not there yet. `admin/` and `organizations/` are the
-delegating Better Auth façades and still carry the pre-contract layout — a
-root-level service behind a multi-route controller — which
-`check-api-structure.mjs` reports and carries on a ledger rather than
-excusing. They are being cut into use-case slices over gateway ports; until
-then they are not the example to copy (`users/` and `profile/` are). See
-`apps/api/AGENTS.md`.
+Every module is there, and the structure check carries no ledgered
+violations. `admin/` and `organizations/`, the delegating Better Auth façades,
+are cut like the rest: a port and a gateway in `infrastructure/` for Better
+Auth, and one use-case slice per operation. See `apps/api/AGENTS.md`.
 :::
 
 ## Module structure

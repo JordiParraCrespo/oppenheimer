@@ -201,15 +201,6 @@ export class SessionsRepository {
     return entries;
   }
 
-  @MapApiError(SessionsErrors.STOP_FAILED)
-  async stop(id: string): Promise<SessionEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.stopSession({ path: { id } }),
-      SessionsErrors.STOP_FAILED,
-    );
-    return toEntity(data);
-  }
-
   /** Display only: the slug, the directory and the branch never change. */
   @MapApiError(SessionsErrors.RENAME_FAILED)
   async rename(id: string, name: string): Promise<SessionEntity> {
@@ -269,13 +260,6 @@ export class SessionsRepository {
   }
 
   /**
-   * An image for one window's prompt. The agent reads its host's clipboard,
-   * not the browser's, so the image goes to the host and the runner pastes
-   * its path in. A file over the cap is refused here, before it is sent; the
-   * API judges the type by the bytes and answers an unreachable host as an
-   * error, so a resolved call means the host has it.
-   */
-  /**
    * An image for a session that does not exist yet: kept briefly by the API
    * for the `create` that names its id in `attachmentIds`. A file over the cap
    * is refused here, before it is sent; the API judges the type by the bytes.
@@ -290,6 +274,13 @@ export class SessionsRepository {
     return { id: data.id, mediaType: data.mediaType, size: data.size };
   }
 
+  /**
+   * An image for one window's prompt. The agent reads its host's clipboard,
+   * not the browser's, so the image goes to the host and the runner pastes
+   * its path in. A file over the cap is refused here, before it is sent; the
+   * API judges the type by the bytes and answers an unreachable host as an
+   * error, so a resolved call means the host has it.
+   */
   @MapApiError(SessionsErrors.PASTE_IMAGE_FAILED)
   async pasteImage(id: string, image: Blob, window = 0): Promise<void> {
     if (image.size > SESSION_IMAGE_MAX_BYTES) throw new AppError(SessionsErrors.IMAGE_TOO_LARGE);

@@ -20,13 +20,14 @@ they disagree, fix the code or update both together. The tier-wide model is
   src/features/<module>/          screens sections dialogs forms
       │                           components hooks lib __tests__
       ├──────────────► @oppenheimer/frontend-web        the web platform kit
-      │                  AppShell, PageHead, useZodResolver,
+      │                  AppShell, ConfirmDialog, useZodResolver,
       │                  dateFormatter, LocalStorageService
       │                       │
       │                       ▼
       │                @oppenheimer/design-system-web   Base UI + Tailwind v4
       │
-      ├──────────────► @oppenheimer/frontend-consumer   sessions, projects, hosts; organizations, profile, api-tokens
+      ├──────────────► @oppenheimer/frontend-consumer   sessions, projects, hosts, installations,
+      │                                  automations; organizations, profile, permissions
       │                       │
       └──────────────► @oppenheimer/frontend-core       auth, users, user-settings,
                               │                   capabilities, analytics, OppenheimerApp
@@ -48,7 +49,7 @@ the kernel or the kit imports it back.
 | --- | --- | --- | --- | --- |
 | `screens/` | the page body a route mounts | yes | yes | `sessions/screens/session.tsx` |
 | `sections/` | a pane, a card group, a table | yes | yes | `sessions/sections/sessions-sidebar.tsx` |
-| `dialogs/` | one dialog per file, owning its mutation | yes | yes | — none yet in this app |
+| `dialogs/` | one dialog per file, owning its mutation | yes | yes | `hosts/dialogs/add-host.tsx` |
 | `forms/` | React Hook Form over a shared Zod schema; props in, `onSubmit` out | no | no | `auth/forms/login-form.tsx` |
 | `components/` | entity UI: a row, a badge, a hero, a checklist | no | no | `installations/components/installation-card.tsx` |
 | `hooks/` | `use-*.ts` over queries and UI state; the only home of an effect | yes | yes | `sessions/hooks/use-elapsed.ts` |
@@ -123,15 +124,13 @@ reads it off the innermost match.
 - **State lives in the lowest component that reads it.** Which session is
   open is the URL's, read by the screen that renders it; what a pane is doing
   inside it is the pane's own.
-- **Subscribe at the leaf.** `src/features/auth/components/password-checklist.tsx`
+- **Subscribe at the leaf.** `src/features/projects/components/project-save-button.tsx`
   is the reference: it takes `control` and calls `useWatch` itself, so a
-  keystroke re-renders the checklist and the submit button it gates, not the
-  register page around them. A page-level `useWatch` is the thing this replaces.
+  keystroke in the project name re-renders the Save button it gates, not the
+  dialog around it. A dialog-level `useWatch` is the thing this replaced.
 - **An effect synchronises with something outside React, and says what.** It
   lives in a `hooks/` file with a comment naming the system; Biome forbids
-  `useEffect` anywhere else in the app. This app currently has none — the
-  browser glue it would need (theme, analytics, i18n) already sits in
-  `@oppenheimer/frontend-web`.
+  `useEffect` anywhere else in the app.
 - **The React Compiler is on** (`compiler: true` in `vite.config.ts`). No
   `useMemo`, `useCallback` or `memo` outside `hooks/`; Biome forbids the import.
 - **One component per file.** Biome's `noNestedComponentDefinitions` is on.
@@ -150,11 +149,11 @@ by the method and route it reads — `ENDPOINT_POLICIES['GET /tokens']`), add th
 translation keys, and
 add a spec in `e2e/tests/web/`.
 
-Module names this app may use: the kernel's `analytics`, `auth`,
-`capabilities`, `user-settings`, `users`; the console's `api-tokens`,
-`organizations`, `profile`, `sessions`, `hosts` (the first three have no
-feature here yet); and the app's allowlist, `public`
-(the marketing pages render no entity). Anything else has to become a module of
+A feature's name is a module's: `pnpm check:structure` reads the module
+directories of the kernel and of this app's product package (the kernel's
+`core/`, its own wiring, excepted) and adds the app's allowlist, `public` (the
+marketing pages render no entity). The directories are the list — a new module
+makes a new feature name legal. Anything else has to become a module of
 `@oppenheimer/frontend-consumer` first — the domain leads.
 
 ## What the checkers enforce
@@ -168,15 +167,22 @@ feature here yet); and the app's allowlist, `public`
   or `hooks/`.
 - `forms-and-components-stay-pure` — neither touches the query port or the router.
 - `lib-has-no-jsx` — a feature's `lib/` imports `react` for types only.
+- `providers-mount-dialogs` — `src/providers/` imports a feature's `dialogs/`
+  and nothing else of a feature.
+- `features-query-through-the-product` — a feature never imports
+  `@tanstack/react-query` outside its tests; it reads and writes through the
+  product package's hooks.
 - `one-product-per-app` — this app is the consumer product and loads no other
   product package.
 - `kit-through-its-entry` — `@oppenheimer/frontend-web` by its package name only.
 
-`pnpm check:structure` — feature names against the module lists above, the
-kind directories, no barrel and no sub-directory inside a kind, the 120-line
-route cap, the `src/lib/` allowlist, no app file whose basename the kit
-already ships, and that this app carries a README, an AGENTS.md linking a rule
-file, and this document.
+`pnpm check:structure` — the layout and the render rules this document states
+that a cruiser cannot see: feature names and kinds, the route cap, what may sit
+in `src/lib/`, and where a query is subscribed. `scripts/check-frontend-structure.mjs`
+is the list.
+
+`pnpm check:unused` (knip) — no unused file, dependency or export here or in
+the frontend packages.
 
 Biome (`overrides` in `biome.json`) — no `useEffect` outside `hooks/`, no
 `useMemo`/`useCallback`/`memo` outside `hooks/`, no nested components.

@@ -48,7 +48,7 @@ export function describeScopes(
  * Client-side fallbacks for the consent call. `NO_REDIRECT` has its own
  * `errors.byCode` entry; `FAILED` reads as the screen's own fallback.
  */
-export const ConsentErrors = {
+const ConsentErrors = {
   FAILED: { code: 'CONSENT_CLIENT_001', message: 'The consent could not be recorded' },
   NO_REDIRECT: { code: 'CONSENT_CLIENT_002', message: 'The consent answer carried no redirect' },
 } as const;

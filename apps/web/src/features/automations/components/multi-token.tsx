@@ -63,7 +63,7 @@ export function MultiToken({
                 <span className="flex flex-col">
                   <span>{option.label}</span>
                   {locked && lastLabel ? (
-                    <span className="text-[11.5px] text-fg-subtle">{lastLabel}</span>
+                    <span className="text-micro text-fg-subtle">{lastLabel}</span>
                   ) : null}
                 </span>
               </DropdownMenuCheckboxItem>

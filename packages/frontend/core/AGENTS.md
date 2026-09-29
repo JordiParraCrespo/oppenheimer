@@ -22,9 +22,8 @@ The layer model is [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
   mutation's cache update goes through `withCacheOnSuccess(options, update)`
   (`src/react/mutations.ts`), never a hand-written `onSuccess` beside
   `...options`: spread in the wrong order, a caller's `onSuccess` replaces it.
-- A key that is a kernel contract → `src/react/query-keys.ts`
-  (`MEMBER_LISTS_KEY` lives there for exactly that reason), not a product
-  package.
+- A key that is a kernel contract, one a product must name without the
+  kernel importing it → `src/react/query-keys.ts`, not a product package.
 - A feature whose responses must never reach storage → add its key prefix to
   `KERNEL_NON_PERSISTED_FEATURES` in `src/react/persistence.ts`.
 - A translated message for a Zod issue → `src/validation/zod-error-map.ts`

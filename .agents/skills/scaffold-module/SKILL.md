@@ -14,9 +14,10 @@ pnpm check:api-structure          # where a file may live, what it may be called
 pnpm --filter @oppenheimer/api arch     # what it is then allowed to import
 ```
 
-`users/` is the reference module — read it when a shape is unclear. Do **not**
-copy `organizations/` or `admin/`, which are mid-migration to this contract and
-are ledgered as such.
+`users/` is the reference module — read it when a shape is unclear. A module
+that wraps an external system it does not own (Better Auth, here) follows the
+same contract with a port and gateway in `infrastructure/`: `admin/` is the
+small example, `profile/` and `organizations/` the larger ones.
 
 ## Before generating
 
@@ -108,6 +109,12 @@ Every file inside a slice is named after the slice: `commands/update-user/`
 holds `update-user.command.ts`, not `command.ts`. A message and its handler
 come as a pair. A slice with only a controller is one that dispatches another
 slice's message — that is the only way to have a controller without a handler.
+
+The controller's class name is the operation's name in the OpenAPI document
+and the console client's function (`FindThingsHttpController` → `findThings`,
+by the factory in `apps/api/src/openapi-document.ts`), so it is unique across
+the API: `generate:openapi` refuses two handlers on one name. Never write an
+`operationId` by hand.
 
 ## A module that owns no aggregate
 

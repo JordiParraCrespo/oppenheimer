@@ -108,8 +108,7 @@ client reports, so gate on flags that target identity.
 
 ## Changing targeting
 
-Through the API — the console has no flags screen yet; the copy for one is in
-`packages/translations/*/control.json` under `flags` — gated by
+Through the API — the console has no flags screen — gated by
 `read`/`update` on `FeatureFlag` and the `flags:read`/`flags:write` scopes.
 Every change — targeting, a toggle, a segment — lands on the audit trail
 (`GET /v1/feature-flags/changes`) with the actor, their comment and the

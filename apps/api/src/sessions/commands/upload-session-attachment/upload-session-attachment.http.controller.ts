@@ -49,8 +49,9 @@ export class UploadSessionAttachmentHttpController {
   // The same policy and scope as the create it is for.
   @CheckPolicies({ action: 'create', subject: 'Session' })
   @RequireScopes('sessions:write')
-  // A handful per session, a session a few times a minute at most.
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  // A handful per session, a session a few times a minute at most. What bounds
+  // the bytes held is the per-person cap on waiting uploads (SESSIONS_020).
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @UseInterceptors(SessionImageFileInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -63,23 +64,24 @@ export class UploadSessionAttachmentHttpController {
   @ApiOperation({
     summary: 'Attach an image to a first task',
     description:
-      'Kept briefly for the `POST /sessions` that names it in `attachmentIds`; the host saves it and gives the agent its path with the task. Only its uploader can name it.',
+      'Kept briefly for the `POST /sessions` that names it in `attachmentIds`; the host saves it and gives the agent its path with the task. Only its uploader can name it, and the same bytes uploaded again answer the same id.',
   })
   @ApiResponse({ status: 201, type: SessionAttachmentResponseDto })
   @ApiProblemResponse({ status: 413, description: 'Image too large', code: 'SESSIONS_012' })
   @ApiProblemResponse({ status: 415, description: 'Not an image', code: 'SESSIONS_013' })
   @ApiProblemResponse({ status: 400, description: 'No image attached', code: 'SESSIONS_015' })
+  @ApiProblemResponse({ status: 429, description: 'Too many images waiting', code: 'SESSIONS_020' })
   @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async upload(
     @CurrentAccessScope() scope: AccessScope,
     @CurrentUser('id') userId: string,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: Express.Multer.File | undefined,
   ): Promise<SessionAttachmentResponseDto> {
     return this.commandBus.execute<UploadSessionAttachmentCommand, SessionAttachmentDto>(
       new UploadSessionAttachmentCommand({
         organizationId: scope.organizationId,
         userId,
-        data: file.buffer,
+        data: file?.buffer,
       }),
     );
   }

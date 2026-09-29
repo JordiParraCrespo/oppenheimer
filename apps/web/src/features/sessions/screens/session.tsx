@@ -77,7 +77,7 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
        "not a widget tucked into a card: it is the whole right-hand side of
        the app". */
     <div className="flex min-h-0 flex-1 flex-col p-3.5">
-      <div className="mx-auto flex min-h-0 w-full max-w-[1040px] flex-1 flex-col overflow-hidden">
+      <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
         <SessionTerminal sessionId={session.id} />
       </div>
     </div>

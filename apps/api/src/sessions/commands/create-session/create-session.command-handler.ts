@@ -58,8 +58,6 @@ export class CreateSessionCommandHandler
     }
 
     await requireLaunchableHost(this.hosts, scope, input.hostId, input.agent);
-    // Before the row: a task that talks about a picture must not start without it.
-    const images = await this.attachments.resolve(scope, command.userId, input);
     const project = await this.plan.resolveProject(scope, input);
 
     const session = WorkSessionEntity.request({
@@ -77,6 +75,8 @@ export class CreateSessionCommandHandler
     for (const checkout of input.checkouts) {
       await this.plan.attachCheckout(scope, session, checkout);
     }
+    // Before the row: a task that talks about a picture must not start without it.
+    const images = await this.attachments.claim(scope, command.userId, session.id, input);
 
     const created = await this.sessions.createIfUnclaimed(
       session,
@@ -84,6 +84,7 @@ export class CreateSessionCommandHandler
         commandId: command.id,
         userId: command.userId,
         input,
+        images,
         checkouts: session.checkouts.length,
         cwdCheckoutId: this.plan.cwdCheckoutIdFor(session, input.cwdGithubRepoId),
       }),
@@ -107,7 +108,6 @@ export class CreateSessionCommandHandler
       created.session,
       await this.launches.build(created.session, { prompt: input.prompt, images }),
     );
-    await this.attachments.release(input.attachmentIds);
 
     await this.naming.record(
       created.session,

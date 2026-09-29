@@ -7,9 +7,8 @@ import type { NavItem, NavLink } from '@oppenheimer/frontend-web';
  * There is one, New session, and the console does not show it as a nav row:
  * its sidebar *is* the session list, with New session above it as a button.
  * With nothing open, New session is where the console lands. The list is
- * what `useAuthorizedNav` and the landing route read, which is why it still
- * exists — an app whose sidebar is its content still has to be able to answer
- * "where does a reader who chose nothing go".
+ * what the shell's sidebar and command palette read through the kit's
+ * `useAuthorizedNav`, which is why it still exists.
  *
  * Settings is not a row either: it is the account menu's link (`USER_MENU`),
  * since the 2026-09-26 export drew it there, and it opens its own chrome

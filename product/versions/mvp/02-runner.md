@@ -401,8 +401,10 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
   (§11), and pastes the path through a tmux buffer named for the command,
   as a bracketed paste. A paste that does not land deletes its file.
 - **Images attached to the first task** (`session.create`'s `images`)
-  are pulled the same way, before anything is made, and a pull that
-  fails fails the create with the reason. They are saved where pasted
+  are pulled the same way, all at once and before anything is made, and
+  not at all for a session the host already holds (a create sent again);
+  a pull that fails fails the create with the reason, and a create with
+  images and no task is refused. They are saved where pasted
   images go (§11) just before the agent starts, and their paths are
   appended to the prompt it is launched with, a blank line after the
   task and one path to a line. The session keeps the task as typed, so
@@ -426,6 +428,10 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
   on for want of a credential fails with `GIT_004`, saying which
   repository and session had no token — never git's "could not read
   Username", which points at a prompt nobody was shown.
+  Close marks its whole run with the session, as create does, and a
+  push for no session is refused with `GIT_004` before it reaches the
+  network: a push always needs the token, and GitHub's refusal would
+  read as work that could not be pushed.
 - The runner **pulls** a fresh token from the control plane before
   expiry — it is the side that knows when the token is about to be used
   — and the control plane may push `credentials.revoke` to drop it early

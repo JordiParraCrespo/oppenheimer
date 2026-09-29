@@ -54,7 +54,8 @@ export function RenameHostForm({
             void field.onChange(event);
           }}
           size="sm"
-          className="w-55 font-mono text-[13px]"
+          mono
+          className="w-55"
           aria-label={t('hosts.settings.renameLabel')}
           aria-invalid={Boolean(formState.errors.name)}
           autoFocus

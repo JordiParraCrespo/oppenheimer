@@ -52,7 +52,12 @@ function harness(withLink: boolean, capabilities: RunnerCapability[] = ['session
     capabilities,
     send: vi.fn().mockReturnValue(true),
   } as unknown as RunnerLink;
-  const images = { park: vi.fn(), collect: vi.fn() } satisfies ParkedImagePort;
+  const images = {
+    park: vi.fn(),
+    stage: vi.fn(),
+    claim: vi.fn(),
+    collect: vi.fn(),
+  } satisfies ParkedImagePort;
   const links: LinkRegistryPort = {
     register: vi.fn(),
     unregister: vi.fn(),
@@ -175,49 +180,33 @@ describe('RelayDispatchAdapter', () => {
   });
 
   describe('a first task with images', () => {
+    const imageId = '5b1c2d3e-4f50-4a6b-8c7d-9e0f1a2b3c4d';
     const spec = {
       organizationSlug: 'jordi',
       branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
       prompt: 'Match this screenshot',
-      images: [{ mediaType: 'image/png' as const, data: Buffer.from([0x89, 0x50]) }],
+      images: [{ imageId, mediaType: 'image/png' as const }],
     };
 
-    it('parks each image for the host and names it on the create', async () => {
+    it('names the parked images on the create, and parks nothing itself', async () => {
       const { adapter, link, images } = harness(true, ['session.create.images']);
-      const work = session();
 
-      const outcome = await adapter.create(work, spec);
+      const outcome = await adapter.create(session(), spec);
 
       expect(outcome).toEqual({ delivered: true, hints: [] });
       const sent = sessionCreateSchema.parse(vi.mocked(link.send).mock.calls[0]?.[0]);
-      expect(sent.images).toHaveLength(1);
-      expect(sent.images?.[0]?.mediaType).toBe('image/png');
-      expect(images.park).toHaveBeenCalledWith(sent.images?.[0]?.imageId, {
-        hostId: HOST,
-        sessionId: work.id,
-        mediaType: 'image/png',
-        data: spec.images[0].data,
-      });
+      expect(sent.images).toEqual([{ imageId, mediaType: 'image/png' }]);
+      // The images were parked when the create claimed them, before the row.
+      expect(images.park).not.toHaveBeenCalled();
     });
 
     it('sends nothing to a runner that cannot take them at launch', async () => {
-      const { adapter, link, images } = harness(true, ['session.image']);
+      const { adapter, link } = harness(true, ['session.image']);
 
       const outcome = await adapter.create(session(), spec);
 
       expect(outcome).toEqual({ delivered: false, hints: ['not_supported'] });
       expect(link.send).not.toHaveBeenCalled();
-      expect(images.park).not.toHaveBeenCalled();
-    });
-
-    it('says whether a host could take them before anything is written', () => {
-      expect(harness(false).adapter.createImageSupport(HOST)).toBe('host_offline');
-      expect(harness(true, ['session.image']).adapter.createImageSupport(HOST)).toBe(
-        'not_supported',
-      );
-      expect(harness(true, ['session.create.images']).adapter.createImageSupport(HOST)).toBe(
-        'ready',
-      );
     });
   });
 });

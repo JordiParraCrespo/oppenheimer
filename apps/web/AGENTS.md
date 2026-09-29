@@ -66,7 +66,7 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
   automation editor are dialogs too, not pages
   (`product/versions/mvp/05-screens.md`, `13-automations.md`).
 - Putting `useWatch` or a query in the page and threading the value down.
-  Subscribe at the leaf — `packages/frontend/web/src/auth/components/password-requirements.tsx`
+  Subscribe at the leaf — `src/features/projects/components/project-save-button.tsx`
   for a form value, `src/features/sessions/screens/session.tsx` for a query:
   the route composes, and the screen that branches on a session's state is the
   one that asked for it. `pnpm check:structure` fails a query a screen holds

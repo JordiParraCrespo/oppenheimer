@@ -6,7 +6,7 @@ import type { DelegatedSessionPort } from '../infrastructure/delegated-session.p
 
 /**
  * A ban made straight through Better Auth's admin plugin bypasses
- * `AdminService`, so the after-hook is what rotates the account's delegated
+ * the admin module, so the after-hook is what rotates the account's delegated
  * sessions. It must fire for a ban or an unban that happened, and for nothing
  * else.
  */

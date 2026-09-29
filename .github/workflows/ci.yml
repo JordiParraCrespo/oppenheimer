@@ -59,7 +59,9 @@ jobs:
             packages/go/*/go.sum
       # oppenheimer:end runner
       - run: pnpm install --frozen-lockfile
-      - run: pnpm check
+      # `pnpm check` is the contributor's command and writes the fixes it can;
+      # in CI a drift Biome could fix would then pass. Check without writing.
+      - run: pnpm exec biome check .
       - run: pnpm check:biome-plugins
       # oppenheimer:begin web|web-showcase
       # The design-system linter (`@shadcn/lint` through oxlint, scoped to its
@@ -92,7 +94,24 @@ jobs:
       # package carries. Import rules are dependency-cruiser's, above.
       - name: Frontend structure
         run: pnpm check:structure
+      # The React Compiler gives up silently on a function it cannot compile
+      # (the build prints nothing). The web tier is at zero bail-outs; keep it.
+      - name: React Compiler bail-outs
+        run: pnpm check:compiler --strict
+      # Unused exports, files and dependencies in the console and the frontend
+      # packages (knip, `knip.json`): an export nobody imports is deleted, not
+      # left for someone to wonder about.
+      - name: Unused code
+        run: pnpm check:unused
       # oppenheimer:end web
+      # The hexagon audit's eval plants its violations by anchoring on exact
+      # lines of apps/api; a refactor that moves one silently retires the
+      # eval. Planting into a throwaway worktree proves every anchor still
+      # matches.
+      - name: Audit evals stay plantable
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/planted" HEAD
+          node .agents/routines/evals/hexagon-audit/plant.mjs "$RUNNER_TEMP/planted"
       # oppenheimer:begin starter
       # The starter's feature manifest must keep describing the repo: every
       # optional app referenced only inside its own paths or a marker block.

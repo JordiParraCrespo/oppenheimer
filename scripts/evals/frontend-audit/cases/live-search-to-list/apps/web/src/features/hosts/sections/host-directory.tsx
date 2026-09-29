@@ -1,4 +1,4 @@
-import { SearchInput, Skeleton } from '@oppenheimer/design-system-web';
+import { SidebarSearch, Skeleton } from '@oppenheimer/design-system-web';
 import { useHosts } from '@oppenheimer/frontend-consumer/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,10 +17,11 @@ export function HostDirectory() {
 
   return (
     <div className="flex flex-col gap-3">
-      <SearchInput
+      <SidebarSearch
         value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder={t('common.search')}
+        onValueChange={setQuery}
+        placeholder={t('sessions.new.host.search')}
+        aria-label={t('sessions.new.host.search')}
       />
       {isPending ? (
         <Skeleton className="h-8 w-full" />

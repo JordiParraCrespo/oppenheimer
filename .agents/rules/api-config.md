@@ -143,6 +143,15 @@ before parameterized ones (e.g. `:id`).
 
 All API endpoints need `@ApiOperation`, `@ApiResponse`, and `@ApiTags` decorators for the auto-generated client (`pnpm generate:api-client`).
 
+Operation names come from one factory, `apps/api/src/openapi-document.ts`,
+never from a hand-written `operationId`. A slice's `<UseCase>HttpController`
+names its operation after the use case (`FindHostsHttpController` →
+`findHosts`), which is the console client's function name; a controller that
+holds several operations names each by its method. A name two handlers share
+fails `generate:openapi` and lists the collisions, so a new controller class
+needs a name no other module uses (`FindThingsHttpController`, never
+`ListHttpController`), and a façade method a name unique in the API.
+
 ## Validation
 
 - Request DTOs use Zod schemas from `packages/shared`

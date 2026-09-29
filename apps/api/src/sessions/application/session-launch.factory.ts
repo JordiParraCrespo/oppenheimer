@@ -1,9 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { WorkspaceLookupPort } from '../../organizations/application/workspace-lookup.port';
 import { WORKSPACE_LOOKUP } from '../../organizations/organizations.di-tokens';
+import type { SessionLaunchImage } from '../domain/session-launch-image.types';
 import { sessionBranchName } from '../domain/session-layout.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
-import type { SessionAttachedImage, SessionLaunchSpec } from './session-dispatch.port';
+import type { SessionLaunchSpec } from './session-dispatch.port';
 
 /**
  * Builds what the host is told to make, from the session and the one name it
@@ -22,7 +23,7 @@ export class SessionLaunchSpecFactory {
 
   async build(
     session: WorkSessionEntity,
-    extra: { prompt?: string; images?: SessionAttachedImage[] } = {},
+    extra: { prompt?: string; images?: SessionLaunchImage[] } = {},
   ): Promise<SessionLaunchSpec> {
     const organizationSlug = await this.workspaces.slugOf(session.organizationId);
     // The session row was written in this workspace; a missing slug is a broken

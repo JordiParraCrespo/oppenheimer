@@ -75,8 +75,12 @@ export class CreateSessionHttpController {
     description: "The host's runner is older than the agent picked",
     code: 'SESSIONS_011',
   })
-  @ApiProblemResponse({ status: 503, description: 'Images, host offline', code: 'SESSIONS_016' })
-  @ApiProblemResponse({ status: 409, description: 'Images, old runner', code: 'SESSIONS_017' })
+  @ApiProblemResponse({ status: 503, description: 'The host is offline', code: 'SESSIONS_016' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'The host’s runner takes no images',
+    code: 'SESSIONS_017',
+  })
   @ApiProblemResponse({ status: 410, description: 'Attachment gone', code: 'SESSIONS_019' })
   @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async create(

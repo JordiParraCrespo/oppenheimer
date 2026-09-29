@@ -48,7 +48,7 @@ export function EditorFooter({
 
   return (
     <DialogFooter className="items-center">
-      <span className="min-w-0 flex-1 text-[12.5px] text-pretty text-fg-muted">{missing}</span>
+      <span className="min-w-0 flex-1 text-xs text-pretty text-fg-muted">{missing}</span>
       {index > 0 ? (
         <Button
           type="button"

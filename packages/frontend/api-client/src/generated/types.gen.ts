@@ -3271,7 +3271,7 @@ export type DeleteOrganizationResponses = {
 
 export type DeleteOrganizationResponse = DeleteOrganizationResponses[keyof DeleteOrganizationResponses];
 
-export type GetFullData = {
+export type GetOrganizationData = {
     body?: never;
     path: {
         id: string;
@@ -3280,7 +3280,7 @@ export type GetFullData = {
     url: '/api/v1/organizations/{id}';
 };
 
-export type GetFullErrors = {
+export type GetOrganizationErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3305,13 +3305,13 @@ export type GetFullErrors = {
     502: ProblemDetailsDto;
 };
 
-export type GetFullError = GetFullErrors[keyof GetFullErrors];
+export type GetOrganizationError = GetOrganizationErrors[keyof GetOrganizationErrors];
 
-export type GetFullResponses = {
+export type GetOrganizationResponses = {
     200: FullOrganizationResponseDto;
 };
 
-export type GetFullResponse = GetFullResponses[keyof GetFullResponses];
+export type GetOrganizationResponse = GetOrganizationResponses[keyof GetOrganizationResponses];
 
 export type UpdateOrganizationData = {
     body: UpdateOrganizationRequest;
@@ -3431,7 +3431,7 @@ export type GetMembershipResponses = {
 
 export type GetMembershipResponse = GetMembershipResponses[keyof GetMembershipResponses];
 
-export type ListOrganizationMembersData = {
+export type ListMembersData = {
     body?: never;
     path: {
         orgId: string;
@@ -3449,7 +3449,7 @@ export type ListOrganizationMembersData = {
     url: '/api/v1/organizations/{orgId}/members';
 };
 
-export type ListOrganizationMembersErrors = {
+export type ListMembersErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3474,15 +3474,15 @@ export type ListOrganizationMembersErrors = {
     502: ProblemDetailsDto;
 };
 
-export type ListOrganizationMembersError = ListOrganizationMembersErrors[keyof ListOrganizationMembersErrors];
+export type ListMembersError = ListMembersErrors[keyof ListMembersErrors];
 
-export type ListOrganizationMembersResponses = {
+export type ListMembersResponses = {
     200: Array<MemberResponseDto>;
 };
 
-export type ListOrganizationMembersResponse = ListOrganizationMembersResponses[keyof ListOrganizationMembersResponses];
+export type ListMembersResponse = ListMembersResponses[keyof ListMembersResponses];
 
-export type AddData = {
+export type AddMemberData = {
     body: AddMemberRequest;
     path: {
         orgId: string;
@@ -3491,7 +3491,7 @@ export type AddData = {
     url: '/api/v1/organizations/{orgId}/members';
 };
 
-export type AddErrors = {
+export type AddMemberErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3516,13 +3516,13 @@ export type AddErrors = {
     502: ProblemDetailsDto;
 };
 
-export type AddError = AddErrors[keyof AddErrors];
+export type AddMemberError = AddMemberErrors[keyof AddMemberErrors];
 
-export type AddResponses = {
+export type AddMemberResponses = {
     201: MemberResponseDto;
 };
 
-export type AddResponse = AddResponses[keyof AddResponses];
+export type AddMemberResponse = AddMemberResponses[keyof AddMemberResponses];
 
 export type UpdateMemberRoleData = {
     body: UpdateMemberRoleRequest;
@@ -3567,7 +3567,7 @@ export type UpdateMemberRoleResponses = {
 
 export type UpdateMemberRoleResponse = UpdateMemberRoleResponses[keyof UpdateMemberRoleResponses];
 
-export type RemoveOrganizationMemberData = {
+export type RemoveMemberData = {
     body?: never;
     path: {
         orgId: string;
@@ -3577,7 +3577,7 @@ export type RemoveOrganizationMemberData = {
     url: '/api/v1/organizations/{orgId}/members/{memberIdOrEmail}';
 };
 
-export type RemoveOrganizationMemberErrors = {
+export type RemoveMemberErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3602,15 +3602,15 @@ export type RemoveOrganizationMemberErrors = {
     502: ProblemDetailsDto;
 };
 
-export type RemoveOrganizationMemberError = RemoveOrganizationMemberErrors[keyof RemoveOrganizationMemberErrors];
+export type RemoveMemberError = RemoveMemberErrors[keyof RemoveMemberErrors];
 
-export type RemoveOrganizationMemberResponses = {
+export type RemoveMemberResponses = {
     200: MemberResponseDto;
 };
 
-export type RemoveOrganizationMemberResponse = RemoveOrganizationMemberResponses[keyof RemoveOrganizationMemberResponses];
+export type RemoveMemberResponse = RemoveMemberResponses[keyof RemoveMemberResponses];
 
-export type LeaveData = {
+export type LeaveOrganizationData = {
     body?: never;
     path: {
         orgId: string;
@@ -3619,7 +3619,7 @@ export type LeaveData = {
     url: '/api/v1/organizations/{orgId}/leave';
 };
 
-export type LeaveErrors = {
+export type LeaveOrganizationErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3644,13 +3644,13 @@ export type LeaveErrors = {
     502: ProblemDetailsDto;
 };
 
-export type LeaveError = LeaveErrors[keyof LeaveErrors];
+export type LeaveOrganizationError = LeaveOrganizationErrors[keyof LeaveOrganizationErrors];
 
-export type LeaveResponses = {
+export type LeaveOrganizationResponses = {
     200: MemberResponseDto;
 };
 
-export type LeaveResponse = LeaveResponses[keyof LeaveResponses];
+export type LeaveOrganizationResponse = LeaveOrganizationResponses[keyof LeaveOrganizationResponses];
 
 export type ListOrganizationInvitationsData = {
     body?: never;
@@ -3694,7 +3694,7 @@ export type ListOrganizationInvitationsResponses = {
 
 export type ListOrganizationInvitationsResponse = ListOrganizationInvitationsResponses[keyof ListOrganizationInvitationsResponses];
 
-export type InviteData = {
+export type InviteMemberData = {
     body: InviteMemberRequest;
     path: {
         orgId: string;
@@ -3703,7 +3703,7 @@ export type InviteData = {
     url: '/api/v1/organizations/{orgId}/invitations';
 };
 
-export type InviteErrors = {
+export type InviteMemberErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3728,13 +3728,13 @@ export type InviteErrors = {
     502: ProblemDetailsDto;
 };
 
-export type InviteError = InviteErrors[keyof InviteErrors];
+export type InviteMemberError = InviteMemberErrors[keyof InviteMemberErrors];
 
-export type InviteResponses = {
+export type InviteMemberResponses = {
     201: InvitationResponseDto;
 };
 
-export type InviteResponse = InviteResponses[keyof InviteResponses];
+export type InviteMemberResponse = InviteMemberResponses[keyof InviteMemberResponses];
 
 export type ListMyInvitationsData = {
     body?: never;
@@ -3818,7 +3818,7 @@ export type GetInvitationResponses = {
 
 export type GetInvitationResponse = GetInvitationResponses[keyof GetInvitationResponses];
 
-export type AcceptData = {
+export type AcceptInvitationData = {
     body?: never;
     path: {
         id: string;
@@ -3827,7 +3827,7 @@ export type AcceptData = {
     url: '/api/v1/invitations/{id}/accept';
 };
 
-export type AcceptErrors = {
+export type AcceptInvitationErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3852,15 +3852,15 @@ export type AcceptErrors = {
     502: ProblemDetailsDto;
 };
 
-export type AcceptError = AcceptErrors[keyof AcceptErrors];
+export type AcceptInvitationError = AcceptInvitationErrors[keyof AcceptInvitationErrors];
 
-export type AcceptResponses = {
+export type AcceptInvitationResponses = {
     200: InvitationResponseDto;
 };
 
-export type AcceptResponse = AcceptResponses[keyof AcceptResponses];
+export type AcceptInvitationResponse = AcceptInvitationResponses[keyof AcceptInvitationResponses];
 
-export type RejectData = {
+export type RejectInvitationData = {
     body?: never;
     path: {
         id: string;
@@ -3869,7 +3869,7 @@ export type RejectData = {
     url: '/api/v1/invitations/{id}/reject';
 };
 
-export type RejectErrors = {
+export type RejectInvitationErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3894,15 +3894,15 @@ export type RejectErrors = {
     502: ProblemDetailsDto;
 };
 
-export type RejectError = RejectErrors[keyof RejectErrors];
+export type RejectInvitationError = RejectInvitationErrors[keyof RejectInvitationErrors];
 
-export type RejectResponses = {
+export type RejectInvitationResponses = {
     200: InvitationResponseDto;
 };
 
-export type RejectResponse = RejectResponses[keyof RejectResponses];
+export type RejectInvitationResponse = RejectInvitationResponses[keyof RejectInvitationResponses];
 
-export type CancelData = {
+export type CancelInvitationData = {
     body?: never;
     path: {
         id: string;
@@ -3911,7 +3911,7 @@ export type CancelData = {
     url: '/api/v1/invitations/{id}/cancel';
 };
 
-export type CancelErrors = {
+export type CancelInvitationErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3936,13 +3936,13 @@ export type CancelErrors = {
     502: ProblemDetailsDto;
 };
 
-export type CancelError = CancelErrors[keyof CancelErrors];
+export type CancelInvitationError = CancelInvitationErrors[keyof CancelInvitationErrors];
 
-export type CancelResponses = {
+export type CancelInvitationResponses = {
     200: InvitationResponseDto;
 };
 
-export type CancelResponse = CancelResponses[keyof CancelResponses];
+export type CancelInvitationResponse = CancelInvitationResponses[keyof CancelInvitationResponses];
 
 export type ListMyWorkspacesData = {
     body?: never;
@@ -4108,7 +4108,7 @@ export type DeleteWorkspaceResponses = {
 
 export type DeleteWorkspaceResponse = DeleteWorkspaceResponses[keyof DeleteWorkspaceResponses];
 
-export type UpdateWorkspaceData = {
+export type RenameWorkspaceData = {
     body: UpdateWorkspaceRequest;
     path: {
         id: string;
@@ -4117,7 +4117,7 @@ export type UpdateWorkspaceData = {
     url: '/api/v1/workspaces/{id}';
 };
 
-export type UpdateWorkspaceErrors = {
+export type RenameWorkspaceErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4142,13 +4142,13 @@ export type UpdateWorkspaceErrors = {
     502: ProblemDetailsDto;
 };
 
-export type UpdateWorkspaceError = UpdateWorkspaceErrors[keyof UpdateWorkspaceErrors];
+export type RenameWorkspaceError = RenameWorkspaceErrors[keyof RenameWorkspaceErrors];
 
-export type UpdateWorkspaceResponses = {
+export type RenameWorkspaceResponses = {
     200: WorkspaceResponseDto;
 };
 
-export type UpdateWorkspaceResponse = UpdateWorkspaceResponses[keyof UpdateWorkspaceResponses];
+export type RenameWorkspaceResponse = RenameWorkspaceResponses[keyof RenameWorkspaceResponses];
 
 export type SetActiveWorkspaceData = {
     body?: never;
@@ -4192,7 +4192,7 @@ export type SetActiveWorkspaceResponses = {
 
 export type SetActiveWorkspaceResponse = SetActiveWorkspaceResponses[keyof SetActiveWorkspaceResponses];
 
-export type ListMembersData = {
+export type ListWorkspaceMembersData = {
     body?: never;
     path: {
         id: string;
@@ -4201,7 +4201,7 @@ export type ListMembersData = {
     url: '/api/v1/workspaces/{id}/members';
 };
 
-export type ListMembersErrors = {
+export type ListWorkspaceMembersErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4226,15 +4226,15 @@ export type ListMembersErrors = {
     502: ProblemDetailsDto;
 };
 
-export type ListMembersError = ListMembersErrors[keyof ListMembersErrors];
+export type ListWorkspaceMembersError = ListWorkspaceMembersErrors[keyof ListWorkspaceMembersErrors];
 
-export type ListMembersResponses = {
+export type ListWorkspaceMembersResponses = {
     200: Array<WorkspaceMemberResponseDto>;
 };
 
-export type ListMembersResponse = ListMembersResponses[keyof ListMembersResponses];
+export type ListWorkspaceMembersResponse = ListWorkspaceMembersResponses[keyof ListWorkspaceMembersResponses];
 
-export type AddMemberData = {
+export type AddWorkspaceMemberData = {
     body: AddWorkspaceMemberRequest;
     path: {
         id: string;
@@ -4243,7 +4243,7 @@ export type AddMemberData = {
     url: '/api/v1/workspaces/{id}/members';
 };
 
-export type AddMemberErrors = {
+export type AddWorkspaceMemberErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4268,15 +4268,15 @@ export type AddMemberErrors = {
     502: ProblemDetailsDto;
 };
 
-export type AddMemberError = AddMemberErrors[keyof AddMemberErrors];
+export type AddWorkspaceMemberError = AddWorkspaceMemberErrors[keyof AddWorkspaceMemberErrors];
 
-export type AddMemberResponses = {
+export type AddWorkspaceMemberResponses = {
     201: WorkspaceMemberResponseDto;
 };
 
-export type AddMemberResponse = AddMemberResponses[keyof AddMemberResponses];
+export type AddWorkspaceMemberResponse = AddWorkspaceMemberResponses[keyof AddWorkspaceMemberResponses];
 
-export type RemoveMemberData = {
+export type RemoveWorkspaceMemberData = {
     body?: never;
     path: {
         id: string;
@@ -4286,7 +4286,7 @@ export type RemoveMemberData = {
     url: '/api/v1/workspaces/{id}/members/{userId}';
 };
 
-export type RemoveMemberErrors = {
+export type RemoveWorkspaceMemberErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4311,13 +4311,13 @@ export type RemoveMemberErrors = {
     502: ProblemDetailsDto;
 };
 
-export type RemoveMemberError = RemoveMemberErrors[keyof RemoveMemberErrors];
+export type RemoveWorkspaceMemberError = RemoveWorkspaceMemberErrors[keyof RemoveWorkspaceMemberErrors];
 
-export type RemoveMemberResponses = {
+export type RemoveWorkspaceMemberResponses = {
     204: void;
 };
 
-export type RemoveMemberResponse = RemoveMemberResponses[keyof RemoveMemberResponses];
+export type RemoveWorkspaceMemberResponse = RemoveWorkspaceMemberResponses[keyof RemoveWorkspaceMemberResponses];
 
 export type FindInstallationsData = {
     body?: never;
@@ -5241,7 +5241,7 @@ export type AdminUpdateUserResponses = {
 
 export type AdminUpdateUserResponse = AdminUpdateUserResponses[keyof AdminUpdateUserResponses];
 
-export type SetRoleData = {
+export type SetUserRoleData = {
     body: SetUserRoleRequest;
     path: {
         id: string;
@@ -5250,7 +5250,7 @@ export type SetRoleData = {
     url: '/api/v1/admin/users/{id}/role';
 };
 
-export type SetRoleErrors = {
+export type SetUserRoleErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -5279,15 +5279,15 @@ export type SetRoleErrors = {
     502: ProblemDetailsDto;
 };
 
-export type SetRoleError = SetRoleErrors[keyof SetRoleErrors];
+export type SetUserRoleError = SetUserRoleErrors[keyof SetUserRoleErrors];
 
-export type SetRoleResponses = {
+export type SetUserRoleResponses = {
     200: AdminUserResponseDto;
 };
 
-export type SetRoleResponse = SetRoleResponses[keyof SetRoleResponses];
+export type SetUserRoleResponse = SetUserRoleResponses[keyof SetUserRoleResponses];
 
-export type BanData = {
+export type BanUserData = {
     body: BanUserRequest;
     path: {
         id: string;
@@ -5296,7 +5296,7 @@ export type BanData = {
     url: '/api/v1/admin/users/{id}/ban';
 };
 
-export type BanErrors = {
+export type BanUserErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -5325,15 +5325,15 @@ export type BanErrors = {
     502: ProblemDetailsDto;
 };
 
-export type BanError = BanErrors[keyof BanErrors];
+export type BanUserError = BanUserErrors[keyof BanUserErrors];
 
-export type BanResponses = {
+export type BanUserResponses = {
     200: AdminUserResponseDto;
 };
 
-export type BanResponse = BanResponses[keyof BanResponses];
+export type BanUserResponse = BanUserResponses[keyof BanUserResponses];
 
-export type UnbanData = {
+export type UnbanUserData = {
     body?: never;
     path: {
         id: string;
@@ -5342,7 +5342,7 @@ export type UnbanData = {
     url: '/api/v1/admin/users/{id}/unban';
 };
 
-export type UnbanErrors = {
+export type UnbanUserErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -5371,15 +5371,15 @@ export type UnbanErrors = {
     502: ProblemDetailsDto;
 };
 
-export type UnbanError = UnbanErrors[keyof UnbanErrors];
+export type UnbanUserError = UnbanUserErrors[keyof UnbanUserErrors];
 
-export type UnbanResponses = {
+export type UnbanUserResponses = {
     200: AdminUserResponseDto;
 };
 
-export type UnbanResponse = UnbanResponses[keyof UnbanResponses];
+export type UnbanUserResponse = UnbanUserResponses[keyof UnbanUserResponses];
 
-export type ImpersonateData = {
+export type ImpersonateUserData = {
     body?: never;
     path: {
         id: string;
@@ -5388,7 +5388,7 @@ export type ImpersonateData = {
     url: '/api/v1/admin/users/{id}/impersonate';
 };
 
-export type ImpersonateErrors = {
+export type ImpersonateUserErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -5417,13 +5417,13 @@ export type ImpersonateErrors = {
     502: ProblemDetailsDto;
 };
 
-export type ImpersonateError = ImpersonateErrors[keyof ImpersonateErrors];
+export type ImpersonateUserError = ImpersonateUserErrors[keyof ImpersonateUserErrors];
 
-export type ImpersonateResponses = {
+export type ImpersonateUserResponses = {
     200: AdminUserResponseDto;
 };
 
-export type ImpersonateResponse = ImpersonateResponses[keyof ImpersonateResponses];
+export type ImpersonateUserResponse = ImpersonateUserResponses[keyof ImpersonateUserResponses];
 
 export type ListUserSessionsData = {
     body?: never;
@@ -5471,7 +5471,7 @@ export type ListUserSessionsResponses = {
 
 export type ListUserSessionsResponse = ListUserSessionsResponses[keyof ListUserSessionsResponses];
 
-export type RevokeSessionsData = {
+export type RevokeUserSessionsData = {
     body?: never;
     path: {
         id: string;
@@ -5480,7 +5480,7 @@ export type RevokeSessionsData = {
     url: '/api/v1/admin/users/{id}/revoke-sessions';
 };
 
-export type RevokeSessionsErrors = {
+export type RevokeUserSessionsErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -5509,15 +5509,15 @@ export type RevokeSessionsErrors = {
     502: ProblemDetailsDto;
 };
 
-export type RevokeSessionsError = RevokeSessionsErrors[keyof RevokeSessionsErrors];
+export type RevokeUserSessionsError = RevokeUserSessionsErrors[keyof RevokeUserSessionsErrors];
 
-export type RevokeSessionsResponses = {
+export type RevokeUserSessionsResponses = {
     200: AdminSuccessResponseDto;
 };
 
-export type RevokeSessionsResponse = RevokeSessionsResponses[keyof RevokeSessionsResponses];
+export type RevokeUserSessionsResponse = RevokeUserSessionsResponses[keyof RevokeUserSessionsResponses];
 
-export type SetPasswordData = {
+export type SetUserPasswordData = {
     body: SetUserPasswordRequest;
     path: {
         id: string;
@@ -5526,7 +5526,7 @@ export type SetPasswordData = {
     url: '/api/v1/admin/users/{id}/set-password';
 };
 
-export type SetPasswordErrors = {
+export type SetUserPasswordErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -5555,13 +5555,13 @@ export type SetPasswordErrors = {
     502: ProblemDetailsDto;
 };
 
-export type SetPasswordError = SetPasswordErrors[keyof SetPasswordErrors];
+export type SetUserPasswordError = SetUserPasswordErrors[keyof SetUserPasswordErrors];
 
-export type SetPasswordResponses = {
+export type SetUserPasswordResponses = {
     200: AdminSuccessResponseDto;
 };
 
-export type SetPasswordResponse = SetPasswordResponses[keyof SetPasswordResponses];
+export type SetUserPasswordResponse = SetUserPasswordResponses[keyof SetUserPasswordResponses];
 
 export type GetClientFeatureFlagsData = {
     body?: never;
@@ -6179,7 +6179,7 @@ export type CreateSessionErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_017 — Images, old runner
+     * SESSIONS_017 — The host’s runner takes no images
      *
      * SESSIONS_011 — The host's runner is older than the agent picked
      *
@@ -6195,7 +6195,7 @@ export type CreateSessionErrors = {
      */
     429: ProblemDetailsDto;
     /**
-     * SESSIONS_016 — Images, host offline
+     * SESSIONS_016 — The host is offline
      */
     503: ProblemDetailsDto;
 };
@@ -6240,6 +6240,8 @@ export type UploadSessionAttachmentErrors = {
     415: ProblemDetailsDto;
     /**
      * RATE_001 — Rate limit reached
+     *
+     * SESSIONS_020 — Too many images waiting
      */
     429: ProblemDetailsDto;
 };

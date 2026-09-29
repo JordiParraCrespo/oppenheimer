@@ -55,7 +55,7 @@ export interface BetterAuthFailure {
 
 /**
  * Folds a Better Auth failure onto an entry in the calling module's error
- * catalog — see `organizations/organization-error.mapper.ts`.
+ * catalog — see `organizations/infrastructure/organization-error.util.ts`.
  */
 export type BetterAuthErrorMapper = (failure: BetterAuthFailure) => ErrorDefinition;
 

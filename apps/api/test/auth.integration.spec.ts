@@ -186,7 +186,7 @@ describe('Auth (integration)', () => {
       const target = await signUp();
       const token = await adminToken();
 
-      // Regression: only `AdminService.ban` rotated the generation, so a ban
+      // Regression: only the admin module's ban rotated the generation, so a ban
       // through Better Auth's own endpoint left cached delegated sessions alive.
       expect((await adminCall('ban-user', token, target.id)).ok).toBe(true);
       expect(rotate).toHaveBeenCalledWith(target.id);

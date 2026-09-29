@@ -304,7 +304,7 @@ export const auth = betterAuth({
   },
   hooks: {
     // A ban or unban made straight through the admin plugin
-    // (`/api/auth/admin/ban-user`) bypasses `AdminService`, which is what
+    // (`/api/auth/admin/ban-user`) bypasses the admin module's gateway, which is what
     // rotates the account's cached delegated sessions. Awaited by Better Auth,
     // and best-effort like every dispatch from a hook.
     after: createAuthMiddleware(async (ctx) => {
@@ -474,7 +474,7 @@ export const auth = betterAuth({
       // shared with the clients via @oppenheimer/auth so both sides must agree.
       teams: {
         ...organizationSharedOptions.teams,
-        // The default workspace is created by `OrganizationsService.create`,
+        // The default workspace is created by the create-organization handler,
         // alongside the role that opens the organization, so organizations can
         // be created here without forcing a default team.
         allowRemovingAllTeams: false,

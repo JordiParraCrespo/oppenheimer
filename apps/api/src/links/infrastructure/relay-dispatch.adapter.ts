@@ -13,7 +13,6 @@ import type {
   SessionDispatchOutcome,
   SessionDispatchPort,
   SessionImageSpec,
-  SessionImageSupport,
   SessionLaunchSpec,
 } from '../../sessions/application/session-dispatch.port';
 import type { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
@@ -55,34 +54,15 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     session: WorkSessionEntity,
     spec: SessionLaunchSpec,
   ): Promise<SessionDispatchOutcome> {
-    return this.withLink(session, async (link) => {
-      const images = spec.images ?? [];
-      if (images.length === 0) return this.deliver(link, createMessage(session, spec, []));
-      // Asked before the row was written; a link that changed since to a
-      // runner without it would launch the task without its pictures.
-      if (!link.capabilities.includes('session.create.images')) return NOT_SUPPORTED;
-      // Parked like a pasted image: the runner pulls each over HTTPS before it
-      // starts the agent, and the frame carries only the ids.
-      const parked = await Promise.all(
-        images.map(async (image) => {
-          const imageId = randomUUID();
-          await this.images.park(imageId, {
-            hostId: session.hostId,
-            sessionId: session.id,
-            mediaType: image.mediaType,
-            data: image.data,
-          });
-          return { imageId, mediaType: image.mediaType };
-        }),
-      );
-      return this.deliver(link, createMessage(session, spec, parked));
+    return this.withLink(session, (link) => {
+      // A runner that did not say it takes images at launch would drop the
+      // field and start the task without them. The ids stay in the log, so
+      // the hello of an updated runner is sent them.
+      if (spec.images?.length && !link.capabilities.includes('session.create.images')) {
+        return NOT_SUPPORTED;
+      }
+      return this.deliver(link, createMessage(session, spec));
     });
-  }
-
-  createImageSupport(hostId: string): SessionImageSupport {
-    const link = this.links.find(hostId);
-    if (!link) return 'host_offline';
-    return link.capabilities.includes('session.create.images') ? 'ready' : 'not_supported';
   }
 
   async stop(session: WorkSessionEntity): Promise<SessionDispatchOutcome> {
@@ -190,11 +170,7 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
   }
 }
 
-function createMessage(
-  session: WorkSessionEntity,
-  spec: SessionLaunchSpec,
-  images: NonNullable<SessionCreateMessage['images']>,
-): SessionCreateMessage {
+function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): SessionCreateMessage {
   return {
     type: 'session.create',
     commandId: randomUUID(),
@@ -208,7 +184,7 @@ function createMessage(
       ...(session.launch.effort ? { effort: session.launch.effort } : {}),
     },
     ...(spec.prompt ? { prompt: spec.prompt } : {}),
-    ...(images.length > 0 ? { images } : {}),
+    ...(spec.images?.length ? { images: spec.images } : {}),
     branch: spec.branch,
     checkouts: session.liveCheckouts.map((checkout) => ({
       checkoutId: checkout.id,

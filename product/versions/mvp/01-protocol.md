@@ -109,14 +109,14 @@ runner does with it and point back.
   `shell` among them for the blank terminal); `launch`
   (`{ model?, permission?, effort? }`); `prompt` (the person's first task,
   optional); `images` (up to five `{ imageId, mediaType }` attached to
-  that task, only with a `prompt`); and the slugs and checkouts the
-  directory layout needs. Like `session.image`, `images` carries no
-  bytes: the control plane parks each under its `imageId` and the runner
-  pulls it with `GET /hosts/self/images/{imageId}` before it starts the
-  agent. It is sent only to a runner whose `hello` names
-  `session.create.images` (2026-09-28): a runner that predates it would
-  drop the field and launch the task without the pictures it talks
-  about, so the console's create is refused instead.
+  that task, only with a `prompt`, each once); and the slugs and
+  checkouts the directory layout needs. Like `session.image`, `images`
+  carries no bytes: the runner pulls each with
+  `GET /hosts/self/images/{imageId}` before it starts the agent. It is
+  sent only to a runner whose `hello` names `session.create.images`
+  (2026-09-28): one that predates it would drop the field and launch the
+  task without the pictures it talks about. How the images got there is
+  the control plane's (03).
   `permission` is present exactly when the agent has approvals: the
   control plane fills an absent level in as `ask` for every such agent
   and records none for one without, so the blank terminal is sent no

@@ -189,7 +189,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 	if err := domain.ValidateBranch(base); err != nil {
 		return domain.Session{}, domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
 	}
-	if err := s.checkImages(in.Images); err != nil {
+	if err := s.checkImages(in.Images, in.Launch.Prompt); err != nil {
 		return domain.Session{}, err
 	}
 
@@ -285,12 +285,15 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 // many, a type a session does not take, or bytes that are not the type they
 // claim. A create that would launch the task without its pictures is refused
 // rather than started, since the task talks about them.
-func (s *Service) checkImages(images []CreateImage) error {
+func (s *Service) checkImages(images []CreateImage, prompt string) error {
 	if len(images) == 0 {
 		return nil
 	}
 	if s.images == nil {
 		return domain.ErrImage.WithDetail("this runner keeps no images")
+	}
+	if prompt == "" {
+		return domain.ErrInvalidInput.WithDetail("attached images ride a first task, and this create has none")
 	}
 	if len(images) > domain.CreateMaxImages {
 		return domain.ErrInvalidInput.WithDetail("a first task carries at most %d images; this one carried %d", domain.CreateMaxImages, len(images))
@@ -694,6 +697,7 @@ type CloseInput struct {
 // reported, and the worktree is kept unless Force says otherwise.
 func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.Session, error) {
 	defer s.hold(id)()
+	ctx = domain.WithSession(ctx, id)
 	session, err := s.recorded(id)
 	if err != nil {
 		return domain.Session{}, err

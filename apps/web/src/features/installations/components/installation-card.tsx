@@ -22,24 +22,26 @@ export function InstallationCard({
   const { t } = useTranslation();
 
   return (
-    <Card className="flex-row items-center gap-3 px-[18px] py-4">
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-pill bg-success text-white">
-        <Check className="size-3.5" strokeWidth={2.5} aria-hidden />
-      </span>
-      <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="figures text-[13px] text-fg">{installation.accountLogin}</span>
-        {/* The account is known before the count is. While it is in flight the
+    <Card>
+      <div className="flex items-center gap-3 px-4.5 py-4">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-pill bg-success text-white">
+          <Check className="size-3.5" strokeWidth={2.5} aria-hidden />
+        </span>
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="figures text-sm text-fg">{installation.accountLogin}</span>
+          {/* The account is known before the count is. While it is in flight the
             line names the account alone — "0 repositories" under a connection
             that just succeeded reads as a failure, which is the case Ready was
             written to avoid. */}
-        <span className="text-xs text-fg-muted">
-          {installation.coversEveryRepository
-            ? t('onboarding.flow.github.connectedAll')
-            : repositoryCount === undefined
-              ? t('onboarding.flow.github.connectedPending')
-              : t('onboarding.flow.github.connected', { count: repositoryCount })}
+          <span className="text-xs text-fg-muted">
+            {installation.coversEveryRepository
+              ? t('onboarding.flow.github.connectedAll')
+              : repositoryCount === undefined
+                ? t('onboarding.flow.github.connectedPending')
+                : t('onboarding.flow.github.connected', { count: repositoryCount })}
+          </span>
         </span>
-      </span>
+      </div>
     </Card>
   );
 }

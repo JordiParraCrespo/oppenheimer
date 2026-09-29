@@ -34,14 +34,6 @@
     },
     "details": "Details from the host: {{detail}}"
   },
-  "group": {
-    "working": "Working",
-    "waiting-on-you": "Waiting on you",
-    "ready-for-review": "Ready for review",
-    "landing": "Landing",
-    "idle": "Idle",
-    "resolved": "Done"
-  },
   "closed": {
     "description": "This session has stopped. Its work is on its branch.",
     "deleted": "This session was deleted. Its worktree is gone from the host; commits already pushed stay on the remote."
@@ -131,10 +123,8 @@
       "attach": "Attach images",
       "removeAttachment": "Remove {{name}}",
       "attachTooLarge": "{{name}} is over 5 MB. Crop it or save it smaller, then attach it again.",
-      "attachNotImage": "{{name}} is not an image a session can take: attach a PNG, JPEG, GIF or WebP.",
       "attachTooMany": "A first task carries at most {{max}} images."
     },
-    "queued": "Your first task is queued for this host.",
     "failed": "The session could not be created."
   },
   "session": {
@@ -146,7 +136,6 @@
     },
     "image": {
       "sending": "Sending image",
-      "hostOffline": "The image was not sent: the host is offline.",
       "failedTitle": "The image did not reach the session"
     },
     "retryNow": "Retry now",
@@ -206,10 +195,5 @@
     "recent": "Last activity",
     "oldest": "Oldest first",
     "name": "Name"
-  },
-  "row": {
-    "actions": "Session actions",
-    "move": "Move to project…",
-    "moveTitle": "Move to project"
   }
 }

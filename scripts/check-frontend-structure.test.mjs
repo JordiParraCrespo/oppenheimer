@@ -152,14 +152,13 @@ test('a feature named after a page is reported; a module or an allowlisted name 
   const { report } = check({
     'src/features/settings/screens/settings.tsx': 'export function SettingsScreen() {}\n',
     'src/features/users/screens/users.tsx': 'export function UsersScreen() {}\n',
-    'src/features/automations/screens/automations.tsx': 'export function AutomationsScreen() {}\n',
     'src/features/public/screens/about.tsx': 'export function AboutScreen() {}\n',
   });
   assert.match(
     report,
     /features\/settings: not a module of @oppenheimer\/frontend-core or @oppenheimer\/frontend-consumer/,
   );
-  assert.doesNotMatch(report, /features\/(users|automations|public): not a module/);
+  assert.doesNotMatch(report, /features\/(users|public): not a module/);
 });
 
 test('a feature holds only flat kind directories, with no barrel and no loose file', () => {
@@ -230,6 +229,36 @@ export const useOther = () => useQuery({ queryKey: ['other'], queryFn: () => [] 
   assert.match(report, /things\.queries\.ts: imports useQuery from @tanstack\/react-query/);
   assert.doesNotMatch(report, /other\.queries\.ts/);
 });
+test('a poll is LIVE_POLL: a raw refetchInterval fails, a hook that spreads pollWhile passes', () => {
+  const { report } = check(
+    {
+      'src/features/things/sections/thing-list.tsx': `import { useThings } from '@oppenheimer/frontend-consumer/react';
+export function ThingList() {
+  const things = useThings({ refetchInterval: 2000 });
+  return <ul>{things.data?.map((row) => <li key={row}>{row}</li>)}</ul>;
+}
+`,
+    },
+    {
+      'packages/frontend/consumer/src/react/live-poll.ts': `export const LIVE_POLL = { thing: { interval: 2000, inBackground: true } } as const;
+export const pollWhile = (kind, active) => ({ refetchInterval: active ? LIVE_POLL[kind].interval : false, refetchIntervalInBackground: LIVE_POLL[kind].inBackground });
+`,
+      'packages/frontend/consumer/src/react/raw.queries.ts': `import { useQuery } from '@oppenheimer/frontend-core/react';
+export const useRaw = () => useQuery({ queryKey: ['raw'], queryFn: () => [], refetchInterval: 2000 });
+`,
+      'packages/frontend/consumer/src/react/things.queries.ts': `import { useQuery } from '@oppenheimer/frontend-core/react';
+import { pollWhile } from './live-poll';
+export const useThings = (options) =>
+  useQuery({ queryKey: ['things'], queryFn: () => [], ...options, ...pollWhile('thing', true) });
+`,
+    },
+  );
+  assert.match(report, /features\/things\/sections\/thing-list\.tsx: sets refetchInterval/);
+  assert.match(report, /raw\.queries\.ts: sets refetchInterval/);
+  assert.doesNotMatch(report, /things\.queries\.ts: sets refetchInterval/);
+  assert.doesNotMatch(report, /live-poll\.ts: sets/);
+});
+
 test('two components side by side in an app file are reported; one passes', () => {
   const { report } = check({
     'src/features/things/sections/two.tsx': `export function ThingList() {

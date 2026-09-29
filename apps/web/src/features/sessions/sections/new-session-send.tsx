@@ -5,7 +5,6 @@ import {
   useProjectsSnapshot,
   useUploadSessionAttachment,
 } from '@oppenheimer/frontend-consumer/react';
-import { AppError } from '@oppenheimer/frontend-core';
 import { lastFailure } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
@@ -15,9 +14,6 @@ import { useTranslation } from 'react-i18next';
 import { NewSessionComposer } from '../components/new-session-composer';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { toCheckouts, toLaunchInput } from '../lib/session-options';
-
-/** The API's answer to a create naming an upload that is no longer waiting. */
-const ATTACHMENT_NOT_FOUND = 'SESSIONS_019';
 
 /**
  * The composer of New session, and the requests the draft makes: an upload
@@ -77,42 +73,27 @@ export function NewSessionSend({
    * the API would answer it with the session the first one made.
    */
   const attempt = useRef<{ key: string; body: string } | null>(null);
-  /**
-   * The upload each attached file already has, so a second press of send
-   * names the same ids — the same body, so the same key — instead of uploading
-   * again and minting a second session. Forgotten when the API says an upload
-   * is no longer waiting, so the next press uploads it anew.
-   */
-  const uploaded = useRef(new Map<File, string>());
   const upload = useUploadSessionAttachment();
   const create = useCreateSession({
     onSuccess: (session) => {
       attempt.current = null;
       navigate({ to: '/sessions/$sessionId', params: { sessionId: session.id } });
     },
-    onError: (error) => {
-      if (error instanceof AppError && error.code === ATTACHMENT_NOT_FOUND)
-        uploaded.current.clear();
-    },
   });
 
-  /** Each file's upload id, uploading the ones that have none; null when one failed. */
+  /**
+   * Each file's upload id, all uploaded at once; null when one failed. The API
+   * names an upload by its owner and its bytes, so sending the same files again
+   * answers the same ids — the same body, so the same key — and a second press
+   * of send, or two in one frame, is the create the first one was.
+   */
   async function attach(files: File[]): Promise<string[] | null> {
-    const ids: string[] = [];
-    for (const file of files) {
-      let id = uploaded.current.get(file);
-      if (!id) {
-        try {
-          id = (await upload.mutateAsync(file)).id;
-        } catch {
-          // The failure is the mutation's error, which the alert below reads.
-          return null;
-        }
-        uploaded.current.set(file, id);
-      }
-      ids.push(id);
+    try {
+      return await Promise.all(files.map(async (file) => (await upload.mutateAsync(file)).id));
+    } catch {
+      // The failure is the mutation's error, which the alert below reads.
+      return null;
     }
-    return ids;
   }
 
   async function start(prompt: string, files: File[]) {

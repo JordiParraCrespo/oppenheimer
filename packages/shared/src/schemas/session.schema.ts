@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { SESSION_EFFORTS, SESSION_PERMISSIONS } from '../agents/catalog.js';
 import { PAGINATION } from '../constants/index.js';
 import {
+  attachedImagesAreValid,
   SESSION_CREATE_MAX_IMAGES,
   SESSION_IMAGE_MAX_BYTES,
   SESSION_IMAGE_MEDIA_TYPES,
@@ -134,9 +135,9 @@ const createSessionFields = z.object({
   prompt: promptSchema.optional(),
   /**
    * Images attached to the first task, each uploaded beforehand with
-   * `POST /sessions/attachments` and named here by the id that returned. The
-   * host saves them outside the worktree and gives the agent their paths with
-   * the task, so they need a `prompt` to ride on.
+   * `POST /sessions/attachments` and named here by the id that returned
+   * (`product/versions/mvp/03-control-plane.md`). What becomes of them on the
+   * wire is `session.create`'s `images`.
    */
   attachmentIds: z.array(z.string().uuid()).max(SESSION_CREATE_MAX_IMAGES).optional(),
 });
@@ -170,15 +171,10 @@ export const createSessionSchema = createSessionFields
       value.checkouts.length,
     { path: ['checkouts'] },
   )
-  /** Attachments are read with the task; with no task there is nothing to read them with. */
-  .refine((value) => !value.attachmentIds?.length || value.prompt !== undefined, {
+  /** The wire's own rule for `session.create`'s images: they ride a task, each once. */
+  .refine((value) => attachedImagesAreValid(value.prompt, value.attachmentIds), {
     path: ['attachmentIds'],
-  })
-  /** The same upload twice would give the agent the same picture twice. */
-  .refine(
-    (value) => new Set(value.attachmentIds ?? []).size === (value.attachmentIds?.length ?? 0),
-    { path: ['attachmentIds'] },
-  );
+  });
 
 export type CreateSessionDto = z.infer<typeof createSessionSchema>;
 

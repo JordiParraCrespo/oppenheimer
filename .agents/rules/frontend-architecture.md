@@ -12,8 +12,9 @@ for names, shapes and where a query is subscribed to, Biome for effects and
 memo, Biome plugins in `biome-plugins/` for query keys, `skipToken` and
 mutation cache updates (the rules are
 [`apps/docs/docs/architecture/query-keys.md`](../../apps/docs/docs/architecture/query-keys.md)),
-and a `*-render.spec.tsx` for what a component costs. The Claude Code Stop hook
-runs all three. The layer model and the cookbooks are in
+`pnpm check:unused` (knip) for code nothing reaches, and a `*-render.spec.tsx`
+for what a component costs. The Claude Code Stop hook runs dependency-cruiser
+and `pnpm check:structure`; CI runs every check. The layer model and the cookbooks are in
 [`packages/frontend/ARCHITECTURE.md`](../../packages/frontend/ARCHITECTURE.md)
 and `apps/web/ARCHITECTURE.md`; `/scaffold-feature` produces the shape.
 
@@ -25,7 +26,7 @@ built from this starter.
 | Question | Answer | Goes in |
 | --- | --- | --- |
 | Is it logic (an entity, a repository, a service, a query hook)? | kernel: session, users, settings, anything any app needs | `packages/frontend/core` |
-| | the product's domain: sessions, hosts, the account chrome | `packages/frontend/consumer` |
+| | the product's domain and its account chrome | `packages/frontend/consumer` |
 | Is it UI or platform glue below the routes that needs no product hook? | | `packages/frontend/web` |
 | Is it a design-system primitive? | | `packages/frontend/design-system/web` |
 | Everything else | | `apps/web/src/features/<module>/<kind>/` |
@@ -91,13 +92,18 @@ shared ─► core ─► consumer ─► apps/web
   feature (`providers-mount-dialogs`).
 - The kit is imported by its package name (`@oppenheimer/frontend-web`), never by a
   path into its `src/`.
+- The API is called through `@oppenheimer/api-client`'s root (`heyApiSdk`),
+  from a product package's repository, never a path into the client's `src/`
+  (`one-api-client`). A function is named after the API slice's use case
+  (`FindHostsHttpController` is `findHosts`); the API's operation-id factory
+  refuses two handlers on one name, so there is never a `list2` to guess at.
 - An app never keeps a file the kit ships. `pnpm check:structure` compares
   basenames; the fix is to import it.
 
 ## The kit is concerns, not kinds, at its top level
 
 `packages/frontend/web/src/<concern>/<kind>/` — `shell`, `auth`,
-`layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`, `roles`,
+`layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`,
 `pairing`. A concern is named after what it does, never after a product
 module. Each
 concern has an `index.ts`; a concern imports another only through it. The
@@ -246,6 +252,16 @@ name the jobs and split *those*.
   takes a narrowing `select`, and a read that only happens in an event handler
   uses the module's `use…Snapshot()` rather than subscribing.
 
+- **Polling is one policy.** `LIVE_POLL` in the product package
+  (`src/react/live-poll.ts`) owns every poll: its interval and whether it
+  keeps running while the tab is hidden. A package hook spreads `pollWhile()`
+  and says only when the thing it watches is still moving; a feature never
+  sets `refetchInterval` and asks for the hook that already polls
+  (`useHostPresence`). A poll that watches something finish keeps running on
+  a hidden tab, because that is the tab the reader leaves while it runs;
+  presence, which never settles, does not. `pnpm check:structure` fails a
+  `refetchInterval` anywhere but that file.
+
 ## Routing is its own skill
 
 `apps/web` routes with TanStack Router, where a file's
@@ -255,6 +271,26 @@ moving or guarding a route — or touching `routeTree.gen.ts`, `beforeLoad`,
 (`.agents/skills/tanstack-routing/`). It carries the file-name table, the
 guard and search-param rules, and the check that proves a restructure did not
 change a URL.
+
+## Nothing is kept for later
+
+`pnpm check:unused` runs knip (`knip.json`) over `apps/web` and the kernel,
+product and kit packages, and fails on an unused file, dependency or export.
+
+- An export is checked **through its package's barrel**, the kernel's
+  included: a package exports what the console imports and nothing else. A
+  hook, key factory or error catalog only the package itself uses stays in it,
+  unexported. Keeping something "for a later screen" is the shape this check
+  exists to stop — the later screen re-exports it.
+- A kernel export that is a documented contract with no caller yet (the
+  flags rule's `useFeatureFlag`, the analytics doc's `useCaptureEvent`) is
+  tagged `/** @public <why> */` on its line in the barrel. One symbol, one
+  reason; never a package or a file.
+- Exported types are not checked: they cost nothing at run time and are the
+  vocabulary a caller annotates with.
+- Knip does not see class members. When you delete the last caller of a hook,
+  delete the service and repository methods only it reached, and the error
+  codes only they raised.
 
 ## Patterns agents get wrong
 

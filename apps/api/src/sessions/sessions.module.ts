@@ -48,7 +48,6 @@ import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import { WorkSessionRepository } from './database/work-session.repository';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
-import { CacheSessionAttachmentStoreAdapter } from './infrastructure/cache-session-attachment-store.adapter';
 import { FindSessionHttpController } from './queries/find-session/find-session.http.controller';
 import { FindSessionQueryHandler } from './queries/find-session/find-session.query-handler';
 import { FindSessionEventsHttpController } from './queries/find-session-events/find-session-events.http.controller';
@@ -57,7 +56,6 @@ import { FindSessionsHttpController } from './queries/find-sessions/find-session
 import { FindSessionsQueryHandler } from './queries/find-sessions/find-sessions.query-handler';
 import {
   RECORD_SESSION_EVENTS,
-  SESSION_ATTACHMENTS,
   SESSION_LOOKUP,
   SESSION_RECONCILIATION,
   WORK_SESSION_REPOSITORY,
@@ -112,7 +110,6 @@ const adapters: Provider[] = [
   { provide: RECORD_SESSION_EVENTS, useClass: RecordSessionEventsResolver },
   { provide: SESSION_LOOKUP, useClass: SessionLookupResolver },
   { provide: SESSION_RECONCILIATION, useClass: SessionReconciliationResolver },
-  { provide: SESSION_ATTACHMENTS, useClass: CacheSessionAttachmentStoreAdapter },
 ];
 
 /**

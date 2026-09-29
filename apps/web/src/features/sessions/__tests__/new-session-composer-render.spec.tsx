@@ -131,18 +131,33 @@ describe('NewSessionComposer', () => {
       expect(onSubmit).toHaveBeenCalledWith('Look', [file]);
     });
 
-    it('refuses a file a session cannot take, and says why', () => {
+    it('refuses a file over the size cap, and says why', () => {
       const onSubmit = vi.fn();
       const { container } = render(<NewSessionComposer onSubmit={onSubmit} />);
 
-      pick(container, [new File(['x'], 'notes.txt', { type: 'text/plain' })]);
+      pick(container, [png('huge.png', 5 * 1024 * 1024 + 1)]);
       expect(screen.getByRole('alert')).toBeTruthy();
-      expect(screen.queryByText('notes.txt')).toBeNull();
+      expect(screen.queryByText('huge.png')).toBeNull();
 
       const textarea = screen.getByRole('textbox');
       fireEvent.change(textarea, { target: { value: 'Go' } });
       fireEvent.keyDown(textarea, { key: 'Enter' });
       expect(onSubmit).toHaveBeenCalledWith('Go', []);
+    });
+
+    it('takes a screenshot the browser left unlabelled, and leaves other pastes to the field', () => {
+      render(<NewSessionComposer onSubmit={vi.fn()} />);
+      const textarea = screen.getByRole('textbox');
+
+      fireEvent.paste(textarea, {
+        clipboardData: { files: [new File(['%PDF'], 'doc.pdf', { type: 'application/pdf' })] },
+      });
+      expect(screen.queryByText('doc.pdf')).toBeNull();
+
+      fireEvent.paste(textarea, {
+        clipboardData: { files: [new File([new Uint8Array(8)], 'image.png', { type: '' })] },
+      });
+      expect(screen.getByText('image.png')).toBeTruthy();
     });
 
     it('lets a chip be removed before sending', () => {

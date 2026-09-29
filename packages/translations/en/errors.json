@@ -136,6 +136,7 @@
     "SESSIONS_016": "The host is offline, so the image was not sent.",
     "SESSIONS_017": "This host needs a newer runner before it can take images. Update the runner, then try again.",
     "SESSIONS_019": "An attached image expired before the session started. Send again to upload it anew.",
+    "SESSIONS_020": "You have too many images waiting. Send or remove some, then attach again.",
     "HOSTS_007": "No image is waiting for that command.",
     "AUTOMATIONS_001": "That automation doesn't exist, or it was deleted.",
     "AUTOMATIONS_002": "Choose a workspace before working with automations.",

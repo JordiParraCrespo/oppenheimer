@@ -5,6 +5,7 @@ import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
+import type { SessionLaunchImage } from '../domain/session-launch-image.types';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import {
@@ -351,19 +352,23 @@ export class WorkSessionRepository
         select: { sessionId: true, payload: true },
       }),
     ]);
-    const firstPrompts = new Map<string, string>();
+    const firstPrompts = new Map<string, { prompt: string; images: SessionLaunchImage[] }>();
     for (const event of prompts) {
       const text = (event.payload as { text?: unknown } | null)?.text;
       if (typeof text === 'string' && !firstPrompts.has(event.sessionId)) {
-        firstPrompts.set(event.sessionId, text);
+        firstPrompts.set(event.sessionId, {
+          prompt: text,
+          images: WorkSessionMapper.imagesOf(event.payload),
+        });
       }
     }
     return records.flatMap((record) => {
-      const prompt = firstPrompts.get(record.id);
+      const first = firstPrompts.get(record.id);
       return [
         {
           session: this.mapper.toDomain(record, checkouts.get(record.id) ?? []),
-          ...(prompt ? { prompt } : {}),
+          ...(first ? { prompt: first.prompt } : {}),
+          ...(first?.images.length ? { images: first.images } : {}),
         },
       ];
     });

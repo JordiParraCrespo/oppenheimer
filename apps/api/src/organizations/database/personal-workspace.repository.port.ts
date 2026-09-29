@@ -7,7 +7,7 @@ import type { PersonalWorkspaceEntity } from '../domain/personal-workspace.entit
  * Deliberately narrower than `RepositoryPort`: this aggregate is written once,
  * at sign-up, and never loaded to be mutated — the roster operations that
  * would edit an organization go through Better Auth's own API, which owns
- * these tables (see `organizations.service.ts`). A port declaring `save`,
+ * these tables (see `infrastructure/organization-auth.port.ts`). A port declaring `save`,
  * `delete` and two flavours of `findAll` would be five methods no caller has,
  * each an invitation to write the second mechanism that disagrees with the
  * first. It grows the day something needs more.

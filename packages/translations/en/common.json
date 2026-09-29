@@ -1,22 +1,11 @@
 {
   "appName": "Oppenheimer",
-  "back": "Back",
   "cancel": "Cancel",
   "close": "Close",
-  "confirm": "Confirm",
-  "controlAppName": "Oppenheimer Control",
   "copied": "Copied",
   "copy": "Copy",
-  "create": "Create",
-  "delete": "Delete",
-  "edit": "Edit",
-  "error": "Something went wrong",
-  "github": "GitHub",
-  "google": "Google",
   "loading": "Loading...",
-  "next": "Next",
   "or": "or",
-  "orContinueWith": "Or continue with",
   "product": "Console",
   "relative": {
     "day": "{{count}}d",
@@ -27,8 +16,6 @@
     "week": "{{count}}w",
     "year": "{{count}}y"
   },
-  "save": "Save",
-  "search": "Search",
   "dismiss": "Dismiss",
   "breadcrumb": "Breadcrumb"
 }

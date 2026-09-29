@@ -52,10 +52,10 @@ function UpgradeButton() {
 
 Writes are mutations and reads are queries, the same split as every other
 feature module here. `mutate` has a stable identity, so it's safe to pass to a
-memoized child or list in a dependency array — reading `capture` off
-`useAnalytics()` is not, since it loses its `this` binding. Reach for
-`useAnalytics()` only for a call this module doesn't wrap, such as `identify()`
-after a profile edit.
+memoized child or
+list in a dependency array. A call this module doesn't wrap, such as
+`identify()` after a profile edit, gets its own hook here when the first
+screen needs it.
 
 One caveat specific to analytics: the mutation always succeeds. `AnalyticsService`
 guards every provider call, so a blocked or failing SDK is swallowed and warned
@@ -63,8 +63,8 @@ rather than surfaced. `isPending` and `error` exist for interface consistency,
 not because a capture is expected to fail — analytics must never sit in a
 critical path.
 
-`useCapturePageView` is the equivalent mutation for page and screen views;
-`usePageView` below wraps it for the router.
+Page and screen views go through `usePageView` below, which the router's
+tracker calls once per settled path.
 
 For events whose trigger is a render rather than an interaction — an upsell
 appeared, an empty state was reached — use `useCaptureOnMount`:

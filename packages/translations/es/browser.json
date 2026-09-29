@@ -1,23 +1,12 @@
 {
   "common": {
     "appName": "Oppenheimer",
-    "back": "Volver",
     "cancel": "Cancelar",
     "close": "Cerrar",
-    "confirm": "Confirmar",
-    "controlAppName": "Oppenheimer Control",
     "copied": "Copiado",
     "copy": "Copiar",
-    "create": "Crear",
-    "delete": "Eliminar",
-    "edit": "Editar",
-    "error": "Algo salió mal",
-    "github": "GitHub",
-    "google": "Google",
     "loading": "Cargando...",
-    "next": "Siguiente",
     "or": "o",
-    "orContinueWith": "O continúa con",
     "product": "Consola",
     "relative": {
       "day": "{{count}}d",
@@ -28,13 +17,10 @@
       "week": "{{count}}sem",
       "year": "{{count}}a"
     },
-    "save": "Guardar",
-    "search": "Buscar",
     "dismiss": "Descartar",
     "breadcrumb": "Ruta de navegación"
   },
   "validation": {
-    "title": "Error de validación",
     "required": "Este campo es obligatorio",
     "email": "Introduce una dirección de correo válida",
     "minLength": "Debe tener al menos {{min}} caracteres",
@@ -189,6 +175,7 @@
       "SESSIONS_016": "El equipo está desconectado, así que la imagen no se envió.",
       "SESSIONS_017": "Este equipo necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a intentarlo.",
       "SESSIONS_019": "Una imagen adjunta caducó antes de que empezara la sesión. Vuelve a enviar para subirla de nuevo.",
+      "SESSIONS_020": "Tienes demasiadas imágenes en espera. Envía o quita alguna y vuelve a adjuntar.",
       "HOSTS_007": "No hay ninguna imagen esperando para esa orden.",
       "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
       "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",
@@ -242,11 +229,8 @@
       "signUp": "Crea una",
       "invalidCredentials": "Correo electrónico o contraseña inválidos",
       "noSocialProviders": "El inicio de sesión social no está configurado en este despliegue. Define GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET o GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET en la API para activarlo.",
-      "failedTitle": "Error al iniciar sesión",
-      "failedMessage": "No se pudo iniciar sesión.",
       "continueWithGithub": "Continuar con GitHub",
       "continueWithGoogle": "Continuar con Google",
-      "keepSignedIn": "Mantener la sesión iniciada",
       "socialFailed": "No se pudo iniciar el acceso social. Inténtalo de nuevo o inicia sesión con tu correo y contraseña."
     },
     "register": {
@@ -258,8 +242,6 @@
       "hasAccount": "¿Ya tienes una cuenta?",
       "signIn": "Iniciar sesión",
       "failed": "Error en el registro",
-      "successTitle": "Cuenta creada",
-      "successMessage": "Ya puedes iniciar sesión.",
       "passwordHint": "Doce caracteres como mínimo."
     },
     "forgotPassword": {
@@ -268,11 +250,9 @@
       "submit": "Enviar enlace",
       "submitting": "Enviando...",
       "successTitle": "Revisa tu correo",
-      "successMessage": "Si existe una cuenta con ese correo, recibirás un enlace para restablecer tu contraseña en breve.",
       "backToSignIn": "Volver a iniciar sesión",
       "error": "Algo salió mal",
       "legal": "Solo los miembros de este espacio de trabajo pueden restablecer una contraseña.",
-      "notReceived": "¿No te ha llegado? Revisa tu carpeta de spam o <retry>prueba con otro correo</retry>.",
       "sentMessage": "Hemos enviado un enlace para restablecer tu contraseña a <address>{{email}}</address>. Caduca en 30 minutos.",
       "emailLabel": "Correo de trabajo",
       "resend": "Reenviar enlace",
@@ -291,7 +271,6 @@
       "requestNewLink": "Solicitar un nuevo enlace",
       "successTitle": "Contraseña actualizada",
       "successMessage": "Ya puedes iniciar sesión.",
-      "failedTitle": "Error al restablecer",
       "error": "No se pudo restablecer la contraseña",
       "confirmPassword": "Confirmar contraseña",
       "confirmPasswordPlaceholder": "Repite la contraseña",
@@ -339,10 +318,6 @@
       "accountNotLinked": "Esa dirección ya tiene una cuenta con contraseña. Inicia sesión con tu contraseña; cuando la dirección esté verificada, este botón también funcionará.",
       "failed": "Ese acceso no se completó. Inténtalo de nuevo o usa tu correo y contraseña.",
       "noAccount": "Todavía no hay ninguna cuenta con ese acceso. Crea una abajo: los botones de proveedor lo hacen en un solo paso."
-    },
-    "passwordRules": {
-      "length": "Al menos 12 caracteres",
-      "match": "Las dos contraseñas coinciden"
     },
     "showPassword": "Mostrar contraseña",
     "legal": "Al continuar aceptas nuestros <terms>Términos</terms> y la <privacy>Política de privacidad</privacy>.",
@@ -433,14 +408,6 @@
       },
       "details": "Detalles del host: {{detail}}"
     },
-    "group": {
-      "working": "Trabajando",
-      "waiting-on-you": "Te espera",
-      "ready-for-review": "Lista para revisar",
-      "landing": "Aterrizando",
-      "idle": "Inactiva",
-      "resolved": "Terminada"
-    },
     "closed": {
       "description": "Esta sesión se ha detenido. Su trabajo está en su rama.",
       "deleted": "Esta sesión se eliminó. Su worktree ya no está en el host; los commits ya enviados siguen en el remoto."
@@ -530,10 +497,8 @@
         "attach": "Adjuntar imágenes",
         "removeAttachment": "Quitar {{name}}",
         "attachTooLarge": "{{name}} pesa más de 5 MB. Recórtala o guárdala más pequeña y vuelve a adjuntarla.",
-        "attachNotImage": "{{name}} no es una imagen que una sesión pueda recibir: adjunta un PNG, JPEG, GIF o WebP.",
         "attachTooMany": "Una primera tarea lleva como mucho {{max}} imágenes."
       },
-      "queued": "Tu primera tarea está en cola para este host.",
       "failed": "No se pudo crear la sesión."
     },
     "session": {
@@ -545,7 +510,6 @@
       },
       "image": {
         "sending": "Enviando imagen",
-        "hostOffline": "La imagen no se envió: el equipo está desconectado.",
         "failedTitle": "La imagen no llegó a la sesión"
       },
       "retryNow": "Reintentar ahora",
@@ -605,11 +569,6 @@
       "recent": "Última actividad",
       "oldest": "Más antiguas primero",
       "name": "Nombre"
-    },
-    "row": {
-      "actions": "Acciones de la sesión",
-      "move": "Mover a un proyecto…",
-      "moveTitle": "Mover a un proyecto"
     }
   },
   "automations": {
@@ -898,7 +857,6 @@
       "save": "Guardar",
       "create": "Crear automatización",
       "saveFailed": "No se ha podido guardar la automatización.",
-      "forProject": "Para {{name}}.",
       "noMatch": "Nada coincide con «{{query}}».",
       "chooseRepositories": "Elige repositorios…",
       "chooseAgent": "Elige un agente…",
@@ -1077,8 +1035,6 @@
       "add": "Añadir host",
       "empty": "Todavía no hay hosts",
       "emptyHint": "Los equipos que conectes aparecen aquí con sus sesiones en curso. Las sesiones no pueden empezar hasta que uno esté en línea.",
-      "online": "En línea",
-      "offline": "Sin conexión",
       "failed": "No se pudieron cargar los hosts."
     }
   },
@@ -1127,20 +1083,8 @@
     "failed": "No se ha podido completar. Inténtalo de nuevo."
   },
   "onboarding": {
-    "description": "Tu cuenta está lista. Ponle nombre al espacio de trabajo donde vivirán tus sesiones.",
-    "eyebrow": "Casi listo",
-    "signOut": "Cerrar sesión",
-    "title": "Crea tu espacio de trabajo",
-    "create": {
-      "name": "Nombre del espacio de trabajo",
-      "namePlaceholder": "Acme S.L.",
-      "hint": "Podrás cambiarle el nombre más adelante desde Ajustes.",
-      "submit": "Crear espacio de trabajo",
-      "submitting": "Creando…"
-    },
     "flow": {
       "back": "Atrás",
-      "counter": "{{step}} de {{total}}",
       "continue": "Continuar",
       "workspace": {
         "title": "Nombra tu espacio de trabajo",

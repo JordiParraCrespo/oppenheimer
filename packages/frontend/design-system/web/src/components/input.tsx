@@ -29,6 +29,11 @@ const inputVariants = cva(
       pill: {
         true: 'rounded-pill px-3.5',
       },
+      /** The system mono, for a value that is an identifier rather than prose:
+       *  the host name on Hosts settings' rename field. */
+      mono: {
+        true: 'font-mono',
+      },
     },
     defaultVariants: {
       size: 'md',
@@ -51,6 +56,7 @@ function Input({
   inputClassName,
   size = 'md',
   pill,
+  mono,
   leading,
   trailing,
   type,
@@ -60,7 +66,7 @@ function Input({
     <div
       data-slot="input"
       data-size={size}
-      className={cn(inputVariants({ size, pill }), className)}
+      className={cn(inputVariants({ size, pill, mono }), className)}
     >
       {leading ? (
         <span data-slot="input-leading" className="flex shrink-0 text-fg-subtle">
