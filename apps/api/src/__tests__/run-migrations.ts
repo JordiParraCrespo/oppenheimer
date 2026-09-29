@@ -6,9 +6,9 @@ import { DataSource } from 'typeorm';
 const MIGRATIONS_DIR = resolve(__dirname, '../migrations');
 
 /**
- * Build the test schema by running the **whole** migration chain.
+ * Build the test schema by running every migration file in `src/migrations`.
  *
- * The chain is discovered from the directory rather than listed by hand.
+ * They are discovered from the directory rather than listed by hand.
  * A hand-maintained list silently drifts the moment someone adds a migration
  * and forgets this file: the suite then runs against a schema that is missing
  * columns the entities declare, and every affected route fails with an opaque

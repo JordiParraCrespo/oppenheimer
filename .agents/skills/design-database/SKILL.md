@@ -11,15 +11,13 @@ off on. The standard those tables are held to is
 keys, index rules and the review checklist. This skill is the process that
 gets there, so the rules are applied because of the queries, not recited.
 
-The schema so far is one baseline,
-`apps/api/src/migrations/1790900000000-InitialSchema.ts`, squashed from the
-migrations written before the first deployment; a new migration comes after
-it. The tables worth reading in it before designing a new one are
-`outbox_message`, `user_role`, `access_grant` and `user_settings`, with their
-ORM entities. The baseline has no per-table headers: for the reasoning and
-the header style, read the pre-squash migrations in git history
-(`git log -- apps/api/src/migrations`), and do not copy the oldest ones'
-`TIMESTAMP` (no time zone) or unnamed constraints.
+The schema as it stood before the first deployment is one migration,
+`1790900000000-InitialSchema`, with its SQL split by owning module under
+`apps/api/src/migrations/initial-schema/`; a new migration comes after it.
+The tables worth reading before designing a new one are `outbox_message`,
+`user_role`, `access_grant` and `user_settings`: their SQL in the module file
+and their ORM entities, which hold the reasoning. The header and the shape of
+a new migration are `references/templates.md`.
 
 ## 1. Understand the data before drawing tables
 

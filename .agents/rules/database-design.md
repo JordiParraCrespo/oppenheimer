@@ -14,16 +14,15 @@ new table is held to. `typeorm.md` covers the decorator mechanics; this file
 covers the design. Designing a table from scratch is the `/design-database`
 skill, which walks the process and ends on the checklist at the bottom here.
 
-The whole schema today is one baseline,
-`apps/api/src/migrations/1790900000000-InitialSchema.ts`: the migrations
-written before the first deployment were squashed into it. The tables in it
-that already read the way a new one should: `outbox_message` (an index named
-for the query it serves), `user_role` (partial uniques where NULLs would slip
-through), `access_grant` (a `CHECK`, a lookup index, a partial expiry index),
-`user_settings` (one row per parent, keyed by the parent's id). The baseline
-carries no per-table headers; the why lives in the ORM entities' comments and
-in the pre-squash migrations, which `git log -- apps/api/src/migrations`
-still has. Read one before writing a new one.
+The schema as it stood before the first deployment is one migration,
+`1790900000000-InitialSchema`, with its SQL split by owning module under
+`apps/api/src/migrations/initial-schema/`. The tables that already read the
+way a new one should: `outbox_message` (an index named for the query it
+serves), `user_role` (partial uniques where NULLs would slip through),
+`access_grant` (a `CHECK`, a lookup index, a partial expiry index),
+`user_settings` (one row per parent, keyed by the parent's id). Read the
+table in its module file and its ORM entity, which is where the why lives,
+before writing a new one.
 
 ## Two kinds of table
 
@@ -283,8 +282,8 @@ Design for the table at a hundred times today's size.
 - One migration per change, after the baseline and named for what it does
   (`1791000000000-AddInvoices.ts`), with a header comment explaining **why**:
   the design decisions, the relationships that were considered, and anything
-  deliberately left out. The pre-squash migrations' headers in git history are
-  the model.
+  deliberately left out. The migration in
+  `.agents/skills/design-database/references/templates.md` is the model.
 - Its timestamp is later than the newest migration's and shared with none:
   TypeORM orders by the timestamp in the class name, so two migrations with
   the same one run in whatever order the loader finds them.
@@ -313,6 +312,10 @@ Design for the table at a hundred times today's size.
   - Adding an index to a large table: `CREATE INDEX CONCURRENTLY`, which cannot
     run in a transaction, so it is built outside the boot migration first, by
     hand or as a one-off command, under the name the migration then expects.
+    The migration asserts it did: it fails the deploy with a message naming
+    the command if the index is missing or invalid (or a constraint is not
+    validated), and builds it itself only on a small table (development, CI).
+    Without that check a large-table deploy ships without its index.
   - Adding a foreign key or `CHECK` to a large table: add it `NOT VALID`, then
     `VALIDATE CONSTRAINT` in a separate statement. Delete orphans after the
     `NOT VALID` constraint exists (it stops new ones), then validate.

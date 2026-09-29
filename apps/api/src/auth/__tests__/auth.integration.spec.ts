@@ -36,9 +36,9 @@ describe('Auth (integration)', () => {
     process.env.REDIS_PORT = redisContainer.getMappedPort(6379).toString();
     process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
 
-    // The real migration chain, not `synchronize`: sign-up's side effects need
-    // the system roles the migrations seed, and the personal workspace is
-    // granted the `owner` row one of them writes.
+    // The migrations, not `synchronize`: sign-up's side effects need the
+    // system roles the baseline seeds, and the personal workspace is granted
+    // its `owner` row.
     await runAllMigrations();
 
     // Import AppModule (and therefore the Better Auth instance, which reads the

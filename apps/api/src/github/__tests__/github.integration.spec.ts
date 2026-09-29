@@ -7,12 +7,12 @@ import { GithubInstallationRepository } from '../database/github-installation.re
 import { GithubInstallationMapper } from '../github-installation.mapper';
 
 /**
- * The migration chain, against a real Postgres.
+ * The GitHub installation tables, against a real Postgres.
  *
  * This is the layer unit tests cannot reach: constraint names, the check
  * constraint, the composite unique a later slice's foreign key depends on, and
- * the role edit — none of which a mock can be wrong about. The schema is built by
- * running the **actual chain** rather than `synchronize`, so a mistake in a
+ * the owner role's rule — none of which a mock can be wrong about. The schema is
+ * built by running the migrations rather than `synchronize`, so a mistake in a
  * migration fails here rather than in production.
  *
  * It deliberately does not boot the application: what is under test is SQL.
@@ -357,7 +357,7 @@ describe('GitHub installations schema (integration)', () => {
     });
   });
 
-  // --- the role edit ---------------------------------------------------------
+  // --- the owner role --------------------------------------------------------
 
   describe('installation role permissions', () => {
     it('gives the workspace owner role its installations, and no repository rule', async () => {

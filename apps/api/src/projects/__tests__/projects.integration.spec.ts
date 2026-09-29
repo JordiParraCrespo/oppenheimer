@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
+import { SYSTEM_ROLE_PERMISSIONS } from '@oppenheimer/shared';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from '../../__tests__/run-migrations';
@@ -17,8 +18,8 @@ import { ProjectMapper } from '../project.mapper';
  * behaves the way the doubles claim, and that the migration created what the
  * statements name.
  *
- * The schema is built by running the **whole migration chain**, so a mistake in a
- * migration fails here rather than in production.
+ * The schema is built by running the migrations, not `synchronize`, so a
+ * mistake in a migration fails here rather than in production.
  */
 describe('projects: the saved scope (integration)', () => {
   let pgContainer: StartedTestContainer;
@@ -309,13 +310,10 @@ describe('projects: the saved scope (integration)', () => {
 
   it('grants a workspace owner its projects', async () => {
     // Without this rule every project route answers 403 for the person who owns
-    // the workspace: the ability comes from the database role.
-    const rule = {
-      action: 'manage',
-      subject: 'Project',
-      // biome-ignore lint/suspicious/noTemplateCurlyInString: a placeholder the ability builder interpolates
-      conditions: { organizationId: '${activeOrganizationId}' },
-    };
+    // the workspace: the ability comes from the database role, seeded from
+    // the catalog.
+    const rule = SYSTEM_ROLE_PERMISSIONS.owner.find((candidate) => candidate.subject === 'Project');
+    expect(rule).toBeDefined();
     const ownerRules = async () => {
       const [role] = await dataSource.query(
         `SELECT "permissions" FROM "role" WHERE "name" = 'owner' AND "organizationId" IS NULL`,

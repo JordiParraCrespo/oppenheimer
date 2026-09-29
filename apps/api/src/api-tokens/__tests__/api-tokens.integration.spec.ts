@@ -13,9 +13,8 @@ import { SESSION_CACHE } from '../../auth/auth.di-tokens';
  * running in a real request pipeline, and the intersection of a token's scopes
  * with its owner's live roles.
  *
- * The schema is built by running the **actual migration chain** rather than
- * `synchronize`, so a mistake in the migration fails here rather than in
- * production.
+ * The schema is built by running the migrations rather than `synchronize`, so
+ * a mistake in a migration fails here rather than in production.
  */
 describe('API tokens & scopes (integration)', () => {
   let app: INestApplication;
@@ -95,8 +94,8 @@ describe('API tokens & scopes (integration)', () => {
   // --- helpers -------------------------------------------------------------
 
   /**
-   * Build the schema from the **actual migration chain**, discovered from the
-   * directory so it cannot drift when a migration is added.
+   * Build the schema from the migrations, discovered from the directory so it
+   * cannot drift when a migration is added.
    */
   async function runMigrations(): Promise<void> {
     await runAllMigrations();
@@ -271,8 +270,8 @@ describe('API tokens & scopes (integration)', () => {
       // as the marker that the migration added its rules without clobbering
       // what was already there. `Article` has since been removed on purpose —
       // it had no resource, module or table behind it — so the assertion is
-      // now the stronger one it was standing in for: after the whole migration
-      // chain, the default role grants exactly this set. Anything else
+      // now the stronger one it was standing in for: after the migrations, the
+      // default role grants exactly this set. Anything else
       // appearing here is a grant nobody decided to give a plain account.
       const [role]: {
         permissions: { action: string; subject: string; conditions?: unknown }[];

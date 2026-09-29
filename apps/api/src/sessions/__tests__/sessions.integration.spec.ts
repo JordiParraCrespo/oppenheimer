@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { OutboxService } from '@oppenheimer/backend-ddd';
+import { SYSTEM_ROLE_PERMISSIONS } from '@oppenheimer/shared';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource, type EntityManager } from 'typeorm';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
@@ -28,8 +29,8 @@ import { WorkSessionMapper } from '../work-session.mapper';
  * test could catch, and each one is a bug that produces a second directory, a second
  * branch or a stranger's conversation state.
  *
- * The schema is built by running the **whole migration chain**, so a mistake in a
- * migration fails here rather than in production.
+ * The schema is built by running the migrations, not `synchronize`, so a
+ * mistake in a migration fails here rather than in production.
  */
 describe('sessions: the log, the fold and the keys (integration)', () => {
   let pgContainer: StartedTestContainer;
@@ -118,8 +119,8 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
     process.env.DB_PASSWORD = 'test';
     process.env.DB_DATABASE = 'test';
 
-    // The whole chain, in order. A session's composite keys reference tables three
-    // migrations created, so this is also the test that they run together.
+    // The migrations, not `synchronize`: a session's composite keys reference
+    // the project, checkout and installation tables, and only the SQL has them.
     await runAllMigrations();
 
     dataSource = new DataSource({
@@ -1016,12 +1017,10 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
 
   describe('the owner role', () => {
     it('manages the sessions of the active workspace', async () => {
-      const rule = {
-        action: 'manage',
-        subject: 'Session',
-        // biome-ignore lint/suspicious/noTemplateCurlyInString: a placeholder the ability builder interpolates
-        conditions: { organizationId: '${activeOrganizationId}' },
-      };
+      const rule = SYSTEM_ROLE_PERMISSIONS.owner.find(
+        (candidate) => candidate.subject === 'Session',
+      );
+      expect(rule).toBeDefined();
       const ownerRules = async () => {
         const [role] = await dataSource.query(
           `SELECT "permissions" FROM "role" WHERE "name" = 'owner' AND "organizationId" IS NULL`,

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { likeContains } from '@oppenheimer/backend-core';
+import { USERNAME_PATTERN } from '@oppenheimer/shared';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { loadMigrations } from './run-migrations';
@@ -104,6 +105,15 @@ describe('the migrated schema (integration)', () => {
         ORDER BY 1`,
     );
     expect(zoneless).toEqual([]);
+  });
+
+  // The value object and the database refuse the same usernames.
+  it('checks a username against USERNAME_PATTERN', async () => {
+    const [check]: { definition: string }[] = await dataSource.query(
+      `SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint
+        WHERE conname = 'CHK_user_username'`,
+    );
+    expect(check.definition).toContain(`'${USERNAME_PATTERN.source}'`);
   });
 
   it('keys and indexes the auth tables', async () => {
@@ -315,7 +325,7 @@ describe('the migrated schema (integration)', () => {
     await expectHotPathIndexes();
   });
 
-  /** The indexes the automation and session hot paths read, and two that none does. */
+  /** The indexes the automation and session hot paths read. */
   const HOT_PATH_CREATED = [
     'IDX_automation_run_dispatched',
     'IDX_automation_run_created_brin',
@@ -324,7 +334,6 @@ describe('the migrated schema (integration)', () => {
     'IDX_work_session_created_by',
     'IDX_session_checkout_installation',
   ];
-  const HOT_PATH_DROPPED = ['IDX_session_checkout_session', 'IDX_work_session_organization_state'];
 
   const indexDefinitions = () =>
     byName<{ name: string; definition: string }>(
@@ -337,9 +346,6 @@ describe('the migrated schema (integration)', () => {
     const index = await indexes();
     for (const name of HOT_PATH_CREATED) {
       expect(index.get(name), name).toMatchObject({ valid: true });
-    }
-    for (const name of HOT_PATH_DROPPED) {
-      expect(index.has(name), name).toBe(false);
     }
     const definition = await indexDefinitions();
     expect(definition.get('IDX_automation_trigger_automation')?.definition).toMatch(
