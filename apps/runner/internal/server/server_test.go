@@ -22,18 +22,9 @@ import (
 
 const bootstrap = "test-bootstrap-key-0123456789abcdef0123456789"
 
-var servers = map[*httptest.Server]*Server{}
-
-func serverOf(t *testing.T, ts *httptest.Server) *Server {
-	t.Helper()
-	srv, ok := servers[ts]
-	if !ok {
-		t.Fatal("unknown test server")
-	}
-	return srv
-}
-
-func newTestServer(t *testing.T, extra map[string]string) *httptest.Server {
+// newTestServer starts the composition root over httptest; the *Server is
+// returned for the one test that publishes on its hub.
+func newTestServer(t *testing.T, extra map[string]string) (*httptest.Server, *Server) {
 	t.Helper()
 	env := map[string]string{"RUNNER_BOOTSTRAP_API_KEY": bootstrap, "RUNNER_ENV": "test"}
 	for k, v := range extra {
@@ -51,14 +42,12 @@ func newTestServer(t *testing.T, extra map[string]string) *httptest.Server {
 	ctx, cancel := context.WithCancel(context.Background())
 	srv.Start(ctx)
 	ts := httptest.NewServer(srv.Handler)
-	servers[ts] = srv
 	t.Cleanup(func() {
-		delete(servers, ts)
 		ts.Close()
 		cancel()
 		srv.Shutdown(context.Background())
 	})
-	return ts
+	return ts, srv
 }
 
 func call(t *testing.T, ts *httptest.Server, method, path, token string, body any) (*http.Response, []byte) {
@@ -84,7 +73,7 @@ func call(t *testing.T, ts *httptest.Server, method, path, token string, body an
 }
 
 func TestHealthIsPublic(t *testing.T) {
-	ts := newTestServer(t, nil)
+	ts, _ := newTestServer(t, nil)
 	res, body := call(t, ts, http.MethodGet, "/readyz", "", nil)
 	if res.StatusCode != 200 || !strings.Contains(string(body), `"status":"ok"`) {
 		t.Fatalf("%d %s", res.StatusCode, body)
@@ -96,7 +85,7 @@ func TestHealthIsPublic(t *testing.T) {
 }
 
 func TestAuthAndProblems(t *testing.T) {
-	ts := newTestServer(t, nil)
+	ts, _ := newTestServer(t, nil)
 	res, body := call(t, ts, http.MethodGet, "/v1/me", "", nil)
 	if res.StatusCode != 401 || res.Header.Get("Content-Type") != problem.ContentType {
 		t.Fatalf("%d %s", res.StatusCode, body)
@@ -117,7 +106,7 @@ func TestAuthAndProblems(t *testing.T) {
 }
 
 func TestKeyLifecycleAndScopes(t *testing.T) {
-	ts := newTestServer(t, nil)
+	ts, _ := newTestServer(t, nil)
 
 	// Bootstrap mints a read-only key.
 	res, body := call(t, ts, http.MethodPost, "/v1/api-keys", bootstrap, map[string]any{"name": "reader", "scopes": []string{"events:read"}})
@@ -168,7 +157,7 @@ func TestKeyLifecycleAndScopes(t *testing.T) {
 }
 
 func TestServiceTokens(t *testing.T) {
-	ts := newTestServer(t, map[string]string{"RUNNER_JWT_SECRET": "0123456789abcdef0123456789abcdef", "RUNNER_JWT_TTL": "5m"})
+	ts, _ := newTestServer(t, map[string]string{"RUNNER_JWT_SECRET": "0123456789abcdef0123456789abcdef", "RUNNER_JWT_TTL": "5m"})
 	_, body := call(t, ts, http.MethodGet, "/health/capabilities", "", nil)
 	if !strings.Contains(string(body), "service_tokens") {
 		t.Fatalf("capability missing: %s", body)
@@ -189,7 +178,7 @@ func TestServiceTokens(t *testing.T) {
 }
 
 func TestServiceTokensDisabledIs501(t *testing.T) {
-	ts := newTestServer(t, nil)
+	ts, _ := newTestServer(t, nil)
 	res, body := call(t, ts, http.MethodPost, "/v1/service-tokens", bootstrap, map[string]any{"subject": "a", "scopes": []string{"events:read"}})
 	if res.StatusCode != 501 || !strings.Contains(string(body), "APIKEY_004") {
 		t.Fatalf("%d %s", res.StatusCode, body)
@@ -197,7 +186,7 @@ func TestServiceTokensDisabledIs501(t *testing.T) {
 }
 
 func TestEventStreamDeliversPublishedEvents(t *testing.T) {
-	ts := newTestServer(t, nil)
+	ts, srv := newTestServer(t, nil)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -216,7 +205,6 @@ func TestEventStreamDeliversPublishedEvents(t *testing.T) {
 		t.Fatalf("subscribe: %+v", env)
 	}
 
-	srv := serverOf(t, ts)
 	srv.Hub.Publish("hosts", "host.online", map[string]string{"id": "h1"})
 	if err := wsjson.Read(ctx, c, &env); err != nil {
 		t.Fatal(err)
@@ -227,7 +215,7 @@ func TestEventStreamDeliversPublishedEvents(t *testing.T) {
 }
 
 func TestWebSocketNeedsEventsScope(t *testing.T) {
-	ts := newTestServer(t, nil)
+	ts, _ := newTestServer(t, nil)
 	_, body := call(t, ts, http.MethodPost, "/v1/api-keys", bootstrap, map[string]any{"name": "r", "scopes": []string{"keys:read"}})
 	var key struct{ Token string }
 	_ = json.Unmarshal(body, &key)

@@ -42,13 +42,16 @@ func (r *recorder) Run(_ context.Context, name string, args ...string) (string, 
 	return "", nil
 }
 
-func (r *recorder) ran(prefix string) bool {
-	for _, c := range r.calls {
+func (r *recorder) ran(prefix string) bool { return r.index(prefix) >= 0 }
+
+// index is the position of the first call starting with prefix, or -1.
+func (r *recorder) index(prefix string) int {
+	for i, c := range r.calls {
 		if strings.HasPrefix(c, prefix) {
-			return true
+			return i
 		}
 	}
-	return false
+	return -1
 }
 
 func unit(home string) domain.Unit {
@@ -81,11 +84,9 @@ func TestSystemdInstallWritesTheUnitEnablesLingeringAndStarts(t *testing.T) {
 	}
 	// Lingering before enable: a unit enabled first would not survive the
 	// next reboot until someone logged in.
-	if !cmds.ran("loginctl enable-linger jordi") {
-		t.Fatalf("calls = %v", cmds.calls)
-	}
-	if !cmds.ran("systemctl --user daemon-reload") || !cmds.ran("systemctl --user enable "+domain.SystemdUnit) {
-		t.Fatalf("calls = %v", cmds.calls)
+	linger, enable := cmds.index("loginctl enable-linger jordi"), cmds.index("systemctl --user enable "+domain.SystemdUnit)
+	if linger < 0 || enable < 0 || linger > enable || !cmds.ran("systemctl --user daemon-reload") {
+		t.Fatalf("calls = %v, want lingering enabled before the unit", cmds.calls)
 	}
 	// A re-run on a host whose unit is already active must run the release it
 	// just linked: `enable --now` would leave the old process in place.

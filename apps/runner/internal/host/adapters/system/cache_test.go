@@ -1,4 +1,4 @@
-package system_test
+package system
 
 import (
 	"context"
@@ -7,8 +7,6 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
 )
 
 const toolName = "opp-probe-tool"
@@ -16,7 +14,7 @@ const toolName = "opp-probe-tool"
 // probeHarness is a prober over a PATH the test owns, counting how often it
 // runs a tool to ask its version.
 type probeHarness struct {
-	prober *system.Prober
+	prober *Prober
 	mu     sync.Mutex
 	calls  int
 	clock  time.Time
@@ -26,16 +24,18 @@ func newProbeHarness(t *testing.T, dirs ...string) *probeHarness {
 	t.Helper()
 	t.Setenv("PATH", filepath.Join(dirs...))
 	h := &probeHarness{clock: time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)}
-	h.prober = system.NewForTest(func(context.Context, string) string {
+	h.prober = &Prober{tools: map[string]toolEntry{}}
+	h.prober.version = func(context.Context, string) string {
 		h.mu.Lock()
 		defer h.mu.Unlock()
 		h.calls++
 		return "opp-probe-tool 1.0"
-	}, func() time.Time {
+	}
+	h.prober.now = func() time.Time {
 		h.mu.Lock()
 		defer h.mu.Unlock()
 		return h.clock
-	})
+	}
 	return h
 }
 
@@ -123,7 +123,7 @@ func TestACachedVersionExpires(t *testing.T) {
 	h := newProbeHarness(t, dir)
 	h.probe(t)
 
-	h.advance(system.FactsTTL - time.Second)
+	h.advance(factsTTL - time.Second)
 	h.probe(t)
 	h.advance(2 * time.Second)
 	h.probe(t)

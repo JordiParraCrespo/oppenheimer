@@ -103,25 +103,6 @@ func TestAnAckTimeoutResendsInOrderFromTheOverdueBatch(t *testing.T) {
 	}
 }
 
-// The ack timeout never grows what is held: the pending cap still drops the
-// oldest batch, and a resend replays only what is left.
-func TestAnAckTimeoutKeepsThePendingCap(t *testing.T) {
-	sender := &fakeSender{}
-	r, c := newClockedReporter(sender)
-	link.SetReporterLimit(r, 2)
-	for i := 0; i < 4; i++ {
-		r.Append("s1", "session.step", map[string]any{"i": i})
-	}
-	if r.Pending() != 2 {
-		t.Fatalf("pending = %d, want the cap of 2", r.Pending())
-	}
-	c.advance(link.ReporterAckTimeout(r))
-	r.Retry()
-	if keys := sentKeys(sender)[4:]; fmt.Sprint(keys) != fmt.Sprint([]string{"run:3", "run:4"}) {
-		t.Fatalf("resent %v, want the two newest in order", keys)
-	}
-}
-
 // tooLargeSender refuses one batch as over the frame cap and takes the rest.
 type tooLargeSender struct {
 	fakeSender

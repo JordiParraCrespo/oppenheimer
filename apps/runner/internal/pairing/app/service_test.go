@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"crypto/ed25519"
 	"encoding/json"
 	"errors"
 	"os"
@@ -56,12 +57,16 @@ func TestRegisterStoresTheIdentityAndPinsTheFingerprint(t *testing.T) {
 	if len(cp.Requests) != 1 || cp.Requests[0].Token != validToken {
 		t.Fatalf("requests = %+v", cp.Requests)
 	}
-	// The public key goes to the control plane; the private half never does.
-	if cp.Requests[0].PublicKey == "" || strings.Contains(string(cp.Requests[0].Facts), "PRIVATE") {
-		t.Fatalf("request = %+v", cp.Requests[0])
-	}
-	if _, _, err := store.Load(); err != nil {
+	// The key the control plane is sent is the public half of the one kept
+	// on disk: the host proves itself with a key it generated and kept.
+	_, key, err := store.Load()
+	if err != nil {
 		t.Fatalf("load after register: %v", err)
+	}
+	stored := domain.EncodePublicKey(key.Public().(ed25519.PublicKey))
+	if cp.Requests[0].PublicKey != stored || identity.PublicKey != stored {
+		t.Fatalf("sent %q, identity %q, want the stored key's public half %q",
+			cp.Requests[0].PublicKey, identity.PublicKey, stored)
 	}
 }
 
@@ -84,8 +89,12 @@ func TestRegisterWritesTheKey0600AndNeverStoresTheToken(t *testing.T) {
 	if strings.Contains(string(config), validToken) {
 		t.Fatal("the registration token must never be written to disk")
 	}
-	if info, err := os.Stat(store.ConfigPath()); err != nil || info.Mode().Perm() != 0o600 {
-		t.Fatalf("config.json is %v, want 0600", info.Mode().Perm())
+	info, err = os.Stat(store.ConfigPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if perm := info.Mode().Perm(); perm != 0o600 {
+		t.Fatalf("config.json is %#o, want 0600", perm)
 	}
 }
 

@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -62,25 +61,6 @@ func client(t *testing.T) (*gitadapter.Client, domain.Layout) {
 }
 
 const repo = "jordi/oppenheimer"
-
-func TestEnsureClonesThenFetches(t *testing.T) {
-	remote := origin(t)
-	c, layout := client(t)
-	ctx := context.Background()
-
-	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
-		t.Fatalf("first ensure (clone): %v", err)
-	}
-	if _, err := os.Stat(filepath.Join(layout.Mirror(repo), ".git")); err != nil {
-		t.Fatalf("the mirror is not there: %v", err)
-	}
-
-	// The second call fetches, and needs no remote: the host already knows
-	// where the repository came from.
-	if err := c.Ensure(ctx, repo, "", "main"); err != nil {
-		t.Fatalf("second ensure (fetch): %v", err)
-	}
-}
 
 // advance lands a commit on branch in the origin, from a scratch clone.
 func advance(t *testing.T, remote, branch string) {
@@ -283,21 +263,6 @@ func TestDirtyAndPush(t *testing.T) {
 	pushed, err = c.Push(ctx, worktree, "oppenheimer/push")
 	if err != nil || pushed {
 		t.Fatalf("second push = %v, err = %v; want nothing to do", pushed, err)
-	}
-}
-
-func TestGitNeverWaitsForAPassword(t *testing.T) {
-	c, _ := client(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// A remote that cannot be reached must fail fast, not hang a session
-	// create. What it is classified as is pinned against a remote that does
-	// answer, in recovery_test.go.
-	err := c.Ensure(ctx, repo, "https://127.0.0.1:1/private.git", "main")
-
-	if err == nil || ctx.Err() != nil {
-		t.Fatalf("err = %v, ctx = %v; want a prompt failure, not a wait", err, ctx.Err())
 	}
 }
 

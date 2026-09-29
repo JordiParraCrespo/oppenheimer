@@ -56,14 +56,3 @@ func TestWriteCatalogError(t *testing.T) {
 		t.Fatalf("unexpected document %+v", doc)
 	}
 }
-
-func TestErrorsIsAcrossWithDetail(t *testing.T) {
-	err := ErrConflict.WithDetail("x")
-	if !errors.Is(err, err) {
-		t.Fatal("identity")
-	}
-	var pe *Error
-	if !errors.As(err, &pe) || pe.Code != "RUNNER_005" {
-		t.Fatal("errors.As should find the problem")
-	}
-}

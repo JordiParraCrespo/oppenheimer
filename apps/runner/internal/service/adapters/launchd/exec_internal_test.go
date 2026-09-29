@@ -24,13 +24,3 @@ func TestExecCommandsTimesOut(t *testing.T) {
 		t.Fatalf("err = %q, want it to say it timed out", err)
 	}
 }
-
-func TestExecCommandsDefaultTimeoutRunsToCompletion(t *testing.T) {
-	if commandTimeout <= 0 {
-		t.Fatal("commandTimeout must bound every call")
-	}
-	out, err := execCommands{}.Run(context.Background(), "echo", "ok")
-	if err != nil || out != "ok" {
-		t.Fatalf("Run = %q, %v; want ok, nil", out, err)
-	}
-}

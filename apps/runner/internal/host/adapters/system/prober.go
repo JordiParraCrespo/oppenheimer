@@ -39,7 +39,7 @@ const factsTTL = 10 * time.Minute
 // PATH is still looked up on every call, so an uninstall shows at once, and
 // Invalidate drops everything for a preflight.
 type Prober struct {
-	// version and now are replaceable for tests.
+	// version and now are replaced by the package's tests.
 	version func(ctx context.Context, path string) string
 	now     func() time.Time
 
@@ -85,16 +85,16 @@ func (p *Prober) Platform(ctx context.Context) (domain.Platform, string, error) 
 			return domain.PlatformLinuxOther, "", nil //nolint:nilerr // an unreadable os-release is "some other Linux", not a failure
 		}
 		defer f.Close() //nolint:errcheck // read-only
-		platform, version := ParseOSRelease(f)
+		platform, version := parseOSRelease(f)
 		return platform, version, nil
 	default:
 		return domain.PlatformUnsupported, runtime.GOOS, nil
 	}
 }
 
-// ParseOSRelease maps an os-release file onto a platform. It is exported and
-// takes a reader so the mapping is testable without a Debian box.
-func ParseOSRelease(r interface{ Read([]byte) (int, error) }) (domain.Platform, string) {
+// parseOSRelease maps an os-release file onto a platform. It takes a reader
+// so the mapping is testable without a Debian box.
+func parseOSRelease(r interface{ Read([]byte) (int, error) }) (domain.Platform, string) {
 	fields := map[string]string{}
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {

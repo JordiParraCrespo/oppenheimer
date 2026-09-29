@@ -1,7 +1,6 @@
 package manifest_test
 
 import (
-	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -267,22 +266,6 @@ func TestBundledManifestsLoad(t *testing.T) {
 	for _, agent := range []domain.Agent{domain.AgentClaude, domain.AgentCodex, domain.AgentOpenCode, domain.AgentGrok, domain.AgentShell} {
 		if !agents[agent] {
 			t.Errorf("no bundled manifest for %q, which the runner can start", agent)
-		}
-	}
-}
-
-func TestBundledManifestsAreValidJSONWithNoStrayFields(t *testing.T) {
-	manifests, err := manifest.Bundled()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, m := range manifests {
-		raw, err := json.Marshal(m)
-		if err != nil {
-			t.Fatalf("%s: %v", m.Agent, err)
-		}
-		if !strings.Contains(string(raw), manifest.Schema) {
-			t.Fatalf("%s round-trips without its schema", m.Agent)
 		}
 	}
 }

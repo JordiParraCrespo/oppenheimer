@@ -53,8 +53,6 @@ type Reporter struct {
 	batches atomic.Uint64
 	// limit is maxPendingBatches; a field so a test need not make 4096.
 	limit int
-	// ackTimeout is the package's; a field so a test can read it.
-	ackTimeout time.Duration
 }
 
 // pendingBatch is a batch awaiting its ack. queued says the link that is up
@@ -73,7 +71,7 @@ func NewReporter(runID string, sender Sender, logger *slog.Logger) *Reporter {
 	}
 	return &Reporter{
 		runID: runID, sender: sender, logger: logger, now: time.Now,
-		limit: maxPendingBatches, ackTimeout: ackTimeout,
+		limit: maxPendingBatches,
 	}
 }
 
@@ -180,37 +178,17 @@ func (r *Reporter) Retry() {
 func (r *Reporter) requeueOverdueLocked() {
 	now := r.now()
 	for i, entry := range r.pending {
-		if !entry.queued || now.Sub(entry.sentAt) < r.ackTimeout {
+		if !entry.queued || now.Sub(entry.sentAt) < ackTimeout {
 			continue
 		}
 		r.logger.Warn("event batch unacked past the ack timeout; sending it and every later batch again",
-			slog.String("batch", entry.batch.BatchID), slog.Duration("timeout", r.ackTimeout),
+			slog.String("batch", entry.batch.BatchID), slog.Duration("timeout", ackTimeout),
 			slog.Int("batches", len(r.pending)-i))
 		for _, later := range r.pending[i:] {
 			later.queued = false
 		}
 		return
 	}
-}
-
-// Pending is how many batches await an ack, for status and tests.
-func (r *Reporter) Pending() int {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return len(r.pending)
-}
-
-// Unsent is how many pending batches the link has not taken, for tests.
-func (r *Reporter) Unsent() int {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	unsent := 0
-	for _, entry := range r.pending {
-		if !entry.queued {
-			unsent++
-		}
-	}
-	return unsent
 }
 
 // flushLocked hands the link every batch it has not taken yet, in the order
