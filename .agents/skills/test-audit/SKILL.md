@@ -41,8 +41,11 @@ than guessing:
   `apps/runner/ARCHITECTURE.md`, `.agents/rules/go.md`.
 - Frontend: the placement grid in `.agents/rules/frontend-architecture.md`
   and `apps/web/AGENTS.md`.
-- Wire contracts: `packages/shared` schemas and the protocol in
-  `product/versions/mvp/01-protocol.md`.
+- Packages (`packages/shared`, `packages/auth`, `packages/backend/*`): the
+  package's own `AGENTS.md`; wire contracts are its schemas and the protocol
+  in `product/versions/mvp/01-protocol.md`.
+- `scripts/`: each `check-*.mjs` or `prune.mjs` owns its contract; its
+  `*.test.mjs` runs through the root `package.json` script that calls it.
 
 ## Junk patterns
 
@@ -105,12 +108,17 @@ implementation, and do not turn uncertain candidates into deletions.
 
 ## Validation
 
-1. Run the owner and sibling tests (`pnpm --filter <pkg> exec vitest run
-   <path>`, or `go test -count=1 ./<pkg>/...`).
+1. Run the owner and sibling tests: `pnpm --filter <pkg> exec vitest run
+   <path>`; in `apps/runner`, `go test -count=1 ./internal/<module>/...`; in a
+   `packages/go/<name>` module, `go test -count=1 ./...`; for `scripts/`, the
+   root `package.json` script that runs the `*.test.mjs`.
 2. For a removed source grep, run the check that owns the real contract
-   (`pnpm arch`, `pnpm check:structure`, the arch test).
-3. Typecheck the package: a deleted export can leave a dangling import in a
-   file the tests never load.
+   (`pnpm arch`, `pnpm check:structure`, `pnpm check:api-structure`,
+   `go test ./internal/arch/...`).
+3. Typecheck the package, since a deleted export can leave a dangling import
+   in a file the tests never load. Most packages have no `typecheck` script,
+   and their `build` is the type-check: `pnpm turbo run build --filter=<pkg>`
+   (it builds the workspace dependencies first). For Go, `go vet ./...`.
 4. Report `git diff --numstat` with production and tests counted separately.
 
 Landing follows the `steward` skill.

@@ -41,6 +41,9 @@ unless its rows need different marks):
 
 Judge a test by its assertions, not its name.
 
+The ledger travels with the slice: it goes in that pull request's description,
+so the reviewer reads each deletion's evidence beside the diff.
+
 Done when every declaration has a mark and an evidence line.
 
 ## 4. Layer plan
@@ -81,9 +84,9 @@ discrepancies become follow-ups.
 
 ## 8. Reconcile and land
 
-Merge `main` rather than rebasing. When `main` changed a file the campaign
-deleted, re-judge that file on its new content: keep the deletion only if the
-new assertions have a keeper, otherwise restore it or port them. Rerun the
+Merge `main` rather than rebasing. A `main` change to a path the campaign
+deleted is a conflict, never an automatic keep-delete: restore the file, mark
+the new declarations in the ledger, and delete again only what has a keeper. Rerun the
 subsystem's suites on the merged head. Land in slices a reviewer can read,
 each with its own `pnpm ci:local` report (the `steward` skill).
 
