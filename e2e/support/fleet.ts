@@ -264,8 +264,6 @@ export interface Terminal {
   send(text: string): void;
   screen(): string;
   waitFor(text: string, timeout?: number): Promise<string>;
-  /** Every byte the socket delivered, whatever the screen still keeps. */
-  bytes(): number;
   /** The close code, once the socket has closed. */
   closeCode(): number | null;
   close(): Promise<void>;
@@ -297,7 +295,6 @@ export async function attach(
   } as unknown as string[]);
   socket.binaryType = 'arraybuffer';
   let screen = '';
-  let bytes = 0;
   let closeCode: number | null = null;
   const controls: { type?: string }[] = [];
   socket.addEventListener('message', (event) => {
@@ -310,7 +307,6 @@ export async function attach(
       return;
     }
     const chunk = Buffer.from(event.data as ArrayBuffer);
-    bytes += chunk.byteLength;
     screen = (screen + chunk.toString()).slice(-keep);
     if (credit) socket.send(JSON.stringify({ type: 'credit', bytes: chunk.byteLength }));
   });
@@ -341,7 +337,6 @@ export async function attach(
         .toBe(true);
       return screen;
     },
-    bytes: () => bytes,
     closeCode: () => closeCode,
     close: () =>
       new Promise<void>((done) => {

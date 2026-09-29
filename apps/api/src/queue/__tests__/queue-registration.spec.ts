@@ -2,11 +2,13 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Queue } from 'bullmq';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { configStub } from '../../config/__tests__/config-stub';
 import {
   DEFAULT_JOB_OPTIONS,
   DURABLE_JOB_OPTIONS,
@@ -50,7 +52,11 @@ describe('queue registration', () => {
    */
   @Module({
     imports: [CqrsModule, QueueModule],
-    providers: [InboundEventsProcessor, { provide: INBOUND_EVENT_REPOSITORY, useValue: {} }],
+    providers: [
+      InboundEventsProcessor,
+      { provide: INBOUND_EVENT_REPOSITORY, useValue: {} },
+      { provide: ConfigService, useValue: configStub() },
+    ],
   })
   class InboundEventsStandInModule {}
 

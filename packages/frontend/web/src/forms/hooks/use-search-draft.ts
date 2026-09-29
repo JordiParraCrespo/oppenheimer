@@ -1,4 +1,5 @@
 import { useDebouncedCallback } from '@oppenheimer/design-system-web';
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useState } from 'react';
 
 /**
@@ -8,7 +9,6 @@ import { useState } from 'react';
  * is the field's state until it settles, so a burst of keystrokes costs one
  * render of one input rather than one render of everything downstream.
  */
-const SEARCH_DEBOUNCE_MS = 300;
 
 /**
  * The search-field policy, in one place: the half-typed word is local, it
@@ -36,7 +36,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 export function useSearchDraft({
   value,
   onChange,
-  delay = SEARCH_DEBOUNCE_MS,
+  delay = CORE_CONFIG.input.searchDebounceMs,
 }: {
   /** The settled value, when something outside the field owns it. */
   value?: string;

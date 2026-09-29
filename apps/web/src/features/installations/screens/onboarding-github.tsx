@@ -116,12 +116,14 @@ export function OnboardingGithubScreen({
       <ErrorAlert message={unstarted ? t('onboarding.flow.github.unstarted') : null} />
 
       {isPending || isExchanging ? (
-        <Card className="flex-row items-center gap-3 px-[18px] py-4">
-          <Skeleton className="size-7 shrink-0 rounded-pill" />
-          <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <Skeleton className="h-3 w-32" />
-            <Skeleton className="h-2.5 w-20" />
-          </span>
+        <Card>
+          <div className="flex items-center gap-3 px-4.5 py-4">
+            <Skeleton shape="pill" className="size-7 shrink-0" />
+            <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-2.5 w-20" />
+            </span>
+          </div>
         </Card>
       ) : installation ? (
         <div className="flex flex-col gap-5">
@@ -130,12 +132,11 @@ export function OnboardingGithubScreen({
             {t('onboarding.flow.continue')}
           </Button>
           {canInstall && (
-            <TextLink
-              className="self-start text-sm"
-              render={<button type="button" onClick={start} disabled={isStarting} />}
-            >
-              {t('onboarding.flow.github.change')}
-            </TextLink>
+            <span className="self-start text-sm">
+              <TextLink render={<button type="button" onClick={start} disabled={isStarting} />}>
+                {t('onboarding.flow.github.change')}
+              </TextLink>
+            </span>
           )}
         </div>
       ) : (

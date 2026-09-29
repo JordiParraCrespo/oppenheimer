@@ -1,6 +1,8 @@
 import { Logger } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 import type Redis from 'ioredis';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { configStub } from '../../config/__tests__/config-stub';
 import { RedisAuthFailureLimiter } from '../infrastructure/redis-auth-failure-limiter.adapter';
 import type { RedisThrottlerStorage } from '../infrastructure/redis-throttler.adapter';
 
@@ -27,10 +29,12 @@ describe('RedisAuthFailureLimiter', () => {
   let redis: ReturnType<typeof fakeRedis>;
   let limiter: RedisAuthFailureLimiter;
 
-  const build = () =>
+  // The `throttling` section at its defaults unless a test passes its own.
+  const build = (config: ConfigService = configStub()) =>
     new RedisAuthFailureLimiter(
       storage as unknown as RedisThrottlerStorage,
       redis as unknown as Redis,
+      config,
     );
 
   beforeEach(() => {
@@ -48,6 +52,27 @@ describe('RedisAuthFailureLimiter', () => {
       60_000,
       30,
       60_000,
+      'auth-failures',
+    );
+  });
+
+  it('counts against a deployment’s own limit, window and block', () => {
+    limiter = build(
+      configStub({
+        throttling: {
+          authFailureLimit: 2,
+          authFailureWindowSeconds: 300,
+          authFailureBlockSeconds: 900,
+        },
+      }),
+    );
+    limiter.recordFailure('6.6.6.6');
+
+    expect(storage.increment).toHaveBeenCalledWith(
+      'ip:6.6.6.6',
+      300_000,
+      2,
+      900_000,
       'auth-failures',
     );
   });

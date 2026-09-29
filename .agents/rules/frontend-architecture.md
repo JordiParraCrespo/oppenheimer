@@ -26,7 +26,7 @@ built from this starter.
 | Question | Answer | Goes in |
 | --- | --- | --- |
 | Is it logic (an entity, a repository, a service, a query hook)? | kernel: session, users, settings, anything any app needs | `packages/frontend/core` |
-| | the product's domain: sessions, hosts, the account chrome | `packages/frontend/consumer` |
+| | the product's domain and its account chrome | `packages/frontend/consumer` |
 | Is it UI or platform glue below the routes that needs no product hook? | | `packages/frontend/web` |
 | Is it a design-system primitive? | | `packages/frontend/design-system/web` |
 | Everything else | | `apps/web/src/features/<module>/<kind>/` |
@@ -251,6 +251,17 @@ name the jobs and split *those*.
   check:structure` fences TanStack's own two out of those files. A list hook
   takes a narrowing `select`, and a read that only happens in an event handler
   uses the module's `use…Snapshot()` rather than subscribing.
+
+- **A decision about time is config; a unit is not.** How long data stays
+  fresh, how often a clock on screen moves, how long input waits, how many
+  times a request is retried: a value in `CORE_CONFIG`
+  (`@oppenheimer/frontend-core/config`) when any product lives with it, or in
+  `CONSUMER_CONFIG` (`@oppenheimer/frontend-consumer/config`) when it is the
+  console's, because the kernel never names a product. Polls are `LIVE_POLL`,
+  below. A unit (`MINUTE = 60_000`), a protocol fact (an escape code, the API's
+  page maximum) and a small value with one reader that is part of how that
+  code works (a "Copied" flash, a resize settle) stay a constant where they
+  are used.
 
 - **Polling is one policy.** `LIVE_POLL` in the product package
   (`src/react/live-poll.ts`) owns every poll: its interval and whether it

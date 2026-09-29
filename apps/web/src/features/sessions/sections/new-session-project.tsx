@@ -7,6 +7,7 @@ import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { ProjectSelect } from '../components/project-select';
+import { useLandingPick } from '../hooks/use-landing-pick';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { useSearchPick } from '../hooks/use-search-pick';
 import { projectPrefill, toProjectOptions } from '../lib/session-options';
@@ -23,7 +24,10 @@ import { projectPrefill, toProjectOptions } from '../lib/session-options';
  * made before it has would drop the project's default host as if it were
  * gone. New project… asks the console for its project dialog; what it
  * makes is picked here once the list holds it, its defaults applied, the
- * same way the sidebar's "New session here" names one in the address.
+ * same way the sidebar's "New session here" names one in the address. With
+ * nothing in the address, the project the screen starts on — remembered, or
+ * Unassigned — has its defaults applied too, so the draft a visit opens with
+ * is always the one its project describes.
  */
 export function NewSessionProject() {
   const { t } = useTranslation();
@@ -66,6 +70,14 @@ export function NewSessionProject() {
   // The sidebar's "New session here" names the project in the address; the
   // dialog names the one it made. Either is picked once the lists can.
   useSearchPick(created ?? search.project, projects.data, hostsReady === true, pick);
+
+  // With neither, the project the chip starts on offers its defaults on
+  // arrival. Precedence, per chip: a default the project names wins over the
+  // last visit's choice; a chip it names nothing for (no default host, no
+  // default agent) keeps what `initialDraft` restored, because `projectPrefill`
+  // leaves a missing default out of the patch. The scope is never remembered,
+  // so it is always the project's first default repository, or empty.
+  useLandingPick(value, projects.data, hostsReady === true, Boolean(search.project), pick);
 
   return (
     <ProjectSelect

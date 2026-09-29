@@ -1,4 +1,5 @@
 import { useNow } from '@oppenheimer/design-system-web';
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useTranslation } from 'react-i18next';
 
 /** `mm:ss`, from the seconds left on a token. */
@@ -19,7 +20,7 @@ function clock(seconds: number): string {
  */
 export function TokenCountdown({ expiresAt }: { expiresAt: Date }) {
   const { t } = useTranslation();
-  const now = useNow(1000);
+  const now = useNow(CORE_CONFIG.clock.everySecondMs);
   const seconds = Math.max(0, Math.floor((expiresAt.getTime() - now) / 1000));
 
   return <>{t('hosts.pairing.tokenExpires', { time: clock(seconds) })}</>;

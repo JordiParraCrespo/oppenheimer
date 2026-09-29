@@ -42,10 +42,21 @@ var (
 	ErrPing  = errors.New("ping")
 )
 
+// failedWrite is what a failed write or ping of kind (ErrWrite or ErrPing)
+// returns: ctx's error once ctx is done, the failure wrapped in kind otherwise.
+func failedWrite(ctx context.Context, err, kind error) error {
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return ctxErr
+	}
+	return fmt.Errorf("%w: %w", kind, err)
+}
+
 // Pump is the one goroutine that writes to conn: frames from src in the order
 // src gives them, and a ping every PingInterval. A busy socket still pings: a
 // tick that fired while frames were waiting is served between two of them.
-// It returns the first write or ping error, src's error, or ctx's.
+// It returns the first write or ping error, src's error, or ctx's. A write or
+// ping that fails once ctx is done reports ctx's error: that is shutdown, not
+// a failed peer.
 func Pump(ctx context.Context, conn *websocket.Conn, src Source, opts PumpOptions) error {
 	return pump(ctx, conn, &sourceAdapter{src: src}, opts)
 }
@@ -77,20 +88,11 @@ func pump(ctx context.Context, conn *websocket.Conn, src source, opts PumpOption
 		defer ticker.Stop()
 		tick = ticker.C
 	}
-	// A write or ping that ctx cuts short closes the socket, and the library
-	// can report that close ("use of closed network connection") rather than
-	// ctx's error; when ctx is done, that is the error to return.
-	failed := func(kind, err error) error {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			return ctxErr
-		}
-		return fmt.Errorf("%w: %w", kind, err)
-	}
 	ping := func() error {
 		pingCtx, cancel := context.WithTimeout(ctx, opts.PingTimeout)
 		defer cancel()
 		if err := conn.Ping(pingCtx); err != nil {
-			return failed(ErrPing, err)
+			return failedWrite(ctx, err, ErrPing)
 		}
 		return nil
 	}
@@ -135,7 +137,7 @@ func pump(ctx context.Context, conn *websocket.Conn, src source, opts PumpOption
 		err = conn.Write(writeCtx, kind, frame.Data)
 		cancel()
 		if err != nil {
-			return failed(ErrWrite, err)
+			return failedWrite(ctx, err, ErrWrite)
 		}
 	}
 }

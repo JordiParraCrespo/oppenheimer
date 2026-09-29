@@ -1,4 +1,5 @@
 import { Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { HostPairingTokenRepositoryPort } from '../../database/host-pairing-token.repository.port';
@@ -8,21 +9,6 @@ import { generatePairingTokenSecret } from '../../domain/pairing-token-secret.fa
 import { HOST_PAIRING_TOKEN_REPOSITORY } from '../../hosts.di-tokens';
 import { RunnerReleaseConfig } from '../../infrastructure/runner-release.config';
 import { MintPairingTokenCommand } from './mint-pairing-token.command';
-
-/**
- * How long a registration token is good for. An hour is the span of "I am
- * sitting at the machine now": long enough to find a terminal, short enough that
- * a token left in a chat log is worthless by the time anyone reads it.
- */
-const LIFETIME_MS = 60 * 60 * 1000;
-
-/**
- * How many unspent tokens one person may hold at once. Each is a live way to
- * add a machine to the account for its hour, and the console only ever shows
- * one — its "New token" replaces the one on screen — so a handful covers two
- * tabs and a retry without leaving a drawer of them in chat logs.
- */
-export const MAX_SPENDABLE_TOKENS = 5;
 
 /**
  * What the caller gets back.
@@ -56,6 +42,7 @@ export class MintPairingTokenCommandHandler
     @Inject(HOST_PAIRING_TOKEN_REPOSITORY)
     private readonly tokens: HostPairingTokenRepositoryPort,
     private readonly release: RunnerReleaseConfig,
+    private readonly configService: ConfigService,
   ) {}
 
   async execute(command: MintPairingTokenCommand): Promise<MintPairingTokenResult> {
@@ -72,6 +59,8 @@ export class MintPairingTokenCommandHandler
     const replacing = await this.replacedToken(command);
     replacing?.revoke(now);
 
+    const lifetimeMs = this.lifetimeMs;
+    const cap = this.maxSpendableTokens;
     const secret = generatePairingTokenSecret();
     const token = HostPairingTokenEntity.mint({
       ownerUserId: command.userId,
@@ -79,17 +68,17 @@ export class MintPairingTokenCommandHandler
       prefix: secret.prefix,
       tokenHash: secret.hash,
       createdFromIp: command.createdFromIp,
-      expiresAt: new Date(now.getTime() + LIFETIME_MS),
+      expiresAt: new Date(now.getTime() + lifetimeMs),
     });
 
     const minted = await this.tokens.insertWithinCap(token, {
-      cap: MAX_SPENDABLE_TOKENS,
+      cap,
       now,
       replacing,
     });
     if (!minted) {
       throw new AppError(HostErrors.TOO_MANY_PAIRING_TOKENS, {
-        detail: `You already hold ${MAX_SPENDABLE_TOKENS} unspent pairing tokens. Pair a machine with one, or wait for them to expire; each lasts an hour.`,
+        detail: `You already hold ${cap} unspent pairing tokens. Pair a machine with one, or wait for them to expire; each expires ${Math.ceil(lifetimeMs / 60_000)} minutes after it is created.`,
       });
     }
 
@@ -99,6 +88,16 @@ export class MintPairingTokenCommandHandler
       installScriptSha256: this.release.installScriptSha256,
       agentPrompt: this.release.agentPromptFor(secret.secret),
     };
+  }
+
+  /** Short-lived on purpose: why is on `pairingTokenTtlSeconds` in hosts.config.ts. */
+  private get lifetimeMs(): number {
+    return this.configService.getOrThrow<number>('hosts.pairingTokenTtlSeconds') * 1000;
+  }
+
+  /** A handful, not a drawer: why is on `maxUnspentPairingTokens` in hosts.config.ts. */
+  private get maxSpendableTokens(): number {
+    return this.configService.getOrThrow<number>('hosts.maxUnspentPairingTokens');
   }
 
   /** The caller's own token this mint replaces; missing is an error, not a plain mint. */

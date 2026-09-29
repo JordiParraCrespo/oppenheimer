@@ -85,7 +85,7 @@ export function EditorTriggerStep({
                   <Clock />
                   <span className="flex flex-col">
                     <span>{t(`automations.frequency.${frequency}.label`)}</span>
-                    <span className="text-[12px] text-fg-subtle">
+                    <span className="text-xs text-fg-subtle">
                       {t(`automations.frequency.${frequency}.desc`)}
                     </span>
                   </span>
@@ -112,7 +112,7 @@ export function EditorTriggerStep({
                   <BrandGlyph name="github" size={14} />
                   <span className="flex flex-col">
                     <span>{eventLabel(event, t)}</span>
-                    <span className="text-[12px] text-fg-subtle">
+                    <span className="text-xs text-fg-subtle">
                       {t(`automations.event.${event}.desc`)}
                     </span>
                   </span>

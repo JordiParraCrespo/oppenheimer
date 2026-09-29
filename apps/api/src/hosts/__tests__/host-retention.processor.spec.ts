@@ -1,10 +1,12 @@
 import type { Queue } from 'bullmq';
 import { describe, expect, it, vi } from 'vitest';
+import { configDefaults, configStub } from '../../config/__tests__/config-stub';
 import type { HostMetadataRepositoryPort } from '../database/host-metadata.repository.port';
-import {
-  HostRetentionProcessor,
-  RETENTION_BATCH,
-} from '../infrastructure/host-retention.processor';
+import { HostRetentionProcessor } from '../infrastructure/host-retention.processor';
+
+const { retention } = configDefaults();
+const RETENTION_BATCH = retention.batchSize;
+const config = configStub();
 
 function processor(networks: number[], timeline: number[]) {
   const metadata = {
@@ -12,7 +14,7 @@ function processor(networks: number[], timeline: number[]) {
     deleteTimelineBefore: vi.fn(async () => timeline.shift() ?? 0),
   } as unknown as HostMetadataRepositoryPort;
   const queue = { upsertJobScheduler: vi.fn().mockResolvedValue(undefined) } as unknown as Queue;
-  return { metadata, queue, subject: new HostRetentionProcessor(metadata, queue) };
+  return { metadata, queue, subject: new HostRetentionProcessor(metadata, queue, config) };
 }
 
 describe('HostRetentionProcessor', () => {
@@ -27,7 +29,7 @@ describe('HostRetentionProcessor', () => {
     expect(metadata.deleteTimelineBefore).toHaveBeenCalledTimes(1);
   });
 
-  it('cuts networks at 90 days and the timeline at 180', async () => {
+  it('cuts networks and the timeline at their retention (90 and 180 days by default)', async () => {
     const { subject, metadata } = processor([], []);
     const before = Date.now();
     await subject.process();
@@ -35,8 +37,10 @@ describe('HostRetentionProcessor', () => {
     const [networkCutoff] = vi.mocked(metadata.deleteNetworksUnseenSince).mock.calls[0];
     const [timelineCutoff] = vi.mocked(metadata.deleteTimelineBefore).mock.calls[0];
     const days = (cutoff: Date) => Math.round((before - cutoff.getTime()) / 86_400_000);
-    expect(days(networkCutoff)).toBe(90);
-    expect(days(timelineCutoff)).toBe(180);
+    expect(days(networkCutoff)).toBe(retention.hostNetworkDays);
+    expect(days(timelineCutoff)).toBe(retention.hostTimelineDays);
+    // The product's numbers (15-host-metadata.md), as a deployment that sets nothing gets them.
+    expect([retention.hostNetworkDays, retention.hostTimelineDays]).toEqual([90, 180]);
   });
 
   it('schedules itself once, by id, so every replica upserts the same entry', async () => {

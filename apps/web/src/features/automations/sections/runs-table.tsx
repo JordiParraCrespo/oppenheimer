@@ -113,7 +113,7 @@ export function RunsTable({ automationId }: { automationId?: string }) {
           <button
             type="button"
             onClick={filters.clear}
-            className="ml-1 text-[13px] text-fg-muted transition-colors duration-fast hover:text-fg"
+            className="ml-1 text-sm text-fg-muted transition-colors duration-fast hover:text-fg"
           >
             {t('automations.runs.clear')}
           </button>

@@ -3,6 +3,7 @@ import {
   type AttachClientMessage,
   attachServerMessageSchema,
 } from '@oppenheimer/shared/protocol';
+import { CONSUMER_CONFIG } from '../../../config';
 
 /**
  * The contract between the console and whatever is feeding a terminal.
@@ -78,9 +79,6 @@ export interface SessionStreamOptions {
   /** Injected in tests; `setTimeout` otherwise. */
   schedule?: (fn: () => void, ms: number) => () => void;
 }
-
-/** The reconnect ladder, with jitter on top (`12-lessons-from-grok-bot.md`). */
-const RECONNECT_LADDER_MS = [500, 1_000, 2_000, 5_000, 10_000, 30_000] as const;
 
 /** Close codes after which reconnecting cannot help: the answer would be the same. */
 const FINAL_CLOSE_CODES = new Map<number, StreamEnd>([
@@ -247,7 +245,8 @@ export class AttachSessionStream implements SessionStream {
   private retry(after: StreamStatus): void {
     if (this.disposed) return;
     this.setStatus(after);
-    const base = RECONNECT_LADDER_MS[Math.min(this.attempt, RECONNECT_LADDER_MS.length - 1)];
+    const ladder = CONSUMER_CONFIG.stream.reconnectLadderMs;
+    const base = ladder[Math.min(this.attempt, ladder.length - 1)];
     this.attempt += 1;
     const jitter = base * (Math.random() * 0.4 - 0.2);
     this.waiting = true;

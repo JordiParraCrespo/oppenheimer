@@ -6,6 +6,7 @@ import {
   useNow,
 } from '@oppenheimer/design-system-web';
 import { useTriggerPreview } from '@oppenheimer/frontend-consumer/react';
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { formatShortDuration } from '@oppenheimer/frontend-web';
 import {
   externalEventDefinition,
@@ -45,7 +46,7 @@ export function GithubTriggerCard({
   onRemove: () => void;
 }) {
   const { t } = useTranslation();
-  const now = useNow(60_000);
+  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   const definition = externalEventDefinition('github', card.event);
   const { key: _key, ...trigger } = card;
   const preview = useTriggerPreview(card.repositories.length ? trigger : undefined);
@@ -84,7 +85,7 @@ export function GithubTriggerCard({
             {matches.slice(0, 2).map((match) => (
               <span
                 key={`${match.repository}${match.ref}${match.occurredAt.getTime()}`}
-                className="flex min-w-0 gap-2 text-[12.5px]"
+                className="flex min-w-0 gap-2 text-xs"
               >
                 <span className="figures shrink-0 text-fg">
                   {picked.length > 1 ? `${match.repository}${match.ref ?? ''}` : match.ref}

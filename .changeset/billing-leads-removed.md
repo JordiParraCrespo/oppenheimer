@@ -17,10 +17,9 @@ is why the packages below take a minor bump while they are on 0.x.
 
 - `@oppenheimer/api` drops `src/billing`, `src/leads`, the `stripe` config and
   the `stripe` dependency, and the `stripe_billing` capability (and with it the
-  property on `GET /health/capabilities`). A new migration,
-  `1789600000000-DropBillingAndLeads`, drops the `lead`, `subscription` and
-  `billing_customer` tables, which nothing ever wrote; the migrations that
-  created them stay, since deployed databases have run them. The `STRIPE_*`
+  property on `GET /health/capabilities`). The `lead`, `subscription` and
+  `billing_customer` tables, which nothing ever wrote, are gone from the
+  schema. The `STRIPE_*`
   variables leave `.env.example`.
 - `@oppenheimer/shared` drops the `billing` and `leads` scope resources and
   permission groups (so the `billing:*` and `leads:*` scopes), the

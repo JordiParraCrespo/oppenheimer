@@ -8,7 +8,7 @@ when a number looks borderline.
 
 | | v1 planted | v1 clean | v2 planted | v2 clean |
 | --- | --- | --- | --- | --- |
-| Planted items caught (of 13) | **13** | – | **13** | – |
+| Planted items caught (of 13, P10 included) | **13** | – | **13** | – |
 | Decoys under Findings (N1–N5) | 0 | 0 | 0 | 0 |
 | Decoys mentioned anywhere | 1 (N1 as "not a finding") | 0 | 0 | 1 (N3, as a rule-vs-reference note) |
 | Rows under Findings | 17 | 1 | 14 | **0** |
@@ -16,6 +16,11 @@ when a number looks borderline.
 | Mechanical breach (P8) reported as blocking | ✅ | – | ✅ | – |
 | Ledger addition (P11) caught | ✅ | – | ✅ | – |
 | Ledger counts consistent across runs | – | 12 | 21 ❌ | 12 |
+
+P10 (`HEX-LEGACY-SHAPE`, a route added to the legacy admin controller) was
+retired on 2026-09-29: `admin/` and `organizations/` are use-case slices now,
+so there is no legacy controller to plant against, and the key left the
+checklist with it. Later runs count against `cases.json`'s `expected`.
 
 **Pass bar** (`cases.json`): recall ≥ 0.85, zero decoys under Findings, and
 every finding cites a rule. v1 and v2 both pass. v2 is the version that ships.

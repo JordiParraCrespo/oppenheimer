@@ -1,7 +1,7 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
-/** What a run executes, immutable and numbered (`1790600000000-AddAutomations`). Append-only. */
+/** What a run executes, immutable and numbered. Append-only. */
 @Entity('automation_revision')
 @Unique('UQ_automation_revision_automation_number', ['automationId', 'number'])
 @Unique('UQ_automation_revision_organization_id', ['organizationId', 'id'])

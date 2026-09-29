@@ -7,6 +7,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
+import { CORE_CONFIG } from '../config';
 import type { SocialAuthIntent, SocialProvider } from '../modules/auth/auth.client';
 import { useOppenheimerApp } from './context';
 import { featureFlagsQueryOptions } from './feature-flags.queries';
@@ -50,8 +51,12 @@ export function useSessionRestore(
     // unauthenticated user resolves successfully, so retries never fire for
     // them. Without this a single network blip masquerades as "logged out" and
     // silently bounces the user to /login.
-    retry: 2,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+    retry: CORE_CONFIG.session.restoreRetries,
+    retryDelay: (attempt) =>
+      Math.min(
+        CORE_CONFIG.session.restoreRetryBaseMs * 2 ** attempt,
+        CORE_CONFIG.session.restoreRetryMaxMs,
+      ),
     staleTime: Infinity,
     ...options,
   });

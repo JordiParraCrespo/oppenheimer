@@ -12,11 +12,10 @@ import {
 /**
  * Maps the Better Auth `session` table. Owned by Better Auth; declared here so
  * TypeORM creates/migrates the table alongside the rest of the schema.
- * Foreign keys live in the migrations, as for every entity here: `userId`
- * (`CascadeSignInsWithTheirUser`) and `impersonatedBy` (`HardenAuthTables`)
- * reference `user` (ON DELETE CASCADE); `activeOrganizationId` and
- * `activeTeamId` reference `organization` and `team` (ON DELETE SET NULL,
- * `HardenAuthTables`).
+ * Foreign keys live in the migrations (`InitialSchema`), as for every entity
+ * here: `userId` and `impersonatedBy` reference `user` (ON DELETE CASCADE);
+ * `activeOrganizationId` and `activeTeamId` reference `organization` and
+ * `team` (ON DELETE SET NULL).
  */
 @Entity('session')
 @Unique('UQ_session_token', ['token'])

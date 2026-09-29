@@ -147,7 +147,7 @@ export function ProjectEditorDialog({
                 </DisclosureTrigger>
                 <DisclosurePanel>
                   <div className="flex flex-col gap-4.5">
-                    <p className="m-0 text-[13px] text-pretty text-fg-muted">
+                    <p className="m-0 text-sm text-pretty text-fg-muted">
                       {t('projects.dialog.defaultsHint')}
                     </p>
                     <ProjectHostField control={control} />

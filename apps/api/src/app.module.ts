@@ -43,13 +43,16 @@ import {
   llmConfigFrom,
   oauthConfig,
   redisConfig,
+  retentionConfig,
   sessionsConfig,
   storageConfig,
+  throttlingConfig,
 } from './config';
 import { bootDataSourceFactory } from './config/boot-migrations';
 import { type DatabaseConfig, poolOptions } from './config/database.config';
 import { DEFAULT_JOB_OPTIONS } from './config/queue-options.config';
 import { type RedisConfig, redisConnectionOptions } from './config/redis.config';
+import type { ThrottlingConfig } from './config/throttling.config';
 import { TypeOrmQueryLogger } from './config/typeorm-query.logger';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { GithubModule } from './github/github.module';
@@ -87,6 +90,8 @@ import { UsersModule } from './users/user.module';
         llmConfig,
         sessionsConfig,
         automationsConfig,
+        retentionConfig,
+        throttlingConfig,
       ],
     }),
     // Request logging with hardened defaults (credential redaction, no
@@ -151,16 +156,21 @@ import { UsersModule } from './users/user.module';
     RedisModule,
     ThrottlerModule.forRootAsync({
       imports: [ThrottlingModule],
-      inject: [RedisThrottlerStorage],
-      useFactory: (storage: RedisThrottlerStorage) => ({
-        throttlers: [{ ttl: 60000, limit: 100 }],
-        // Integration tests drive many requests through the same pipeline in
-        // seconds; rate limiting there measures nothing but the limit itself.
-        skipIf: () => process.env.NODE_ENV === 'test',
-        // Counters live in Redis so the limit is the limit, not the limit times
-        // the replica count. See `RedisThrottlerStorage`.
-        storage,
-      }),
+      inject: [RedisThrottlerStorage, ConfigService],
+      useFactory: (storage: RedisThrottlerStorage, configService: ConfigService) => {
+        const throttling = configService.getOrThrow<ThrottlingConfig>('throttling');
+        return {
+          throttlers: [
+            { ttl: throttling.defaultWindowSeconds * 1000, limit: throttling.defaultLimit },
+          ],
+          // Integration tests drive many requests through the same pipeline in
+          // seconds; rate limiting there measures nothing but the limit itself.
+          skipIf: () => process.env.NODE_ENV === 'test',
+          // Counters live in Redis so the limit is the limit, not the limit times
+          // the replica count. See `RedisThrottlerStorage`.
+          storage,
+        };
+      },
     }),
     BullModule.forRootAsync({
       inject: [ConfigService],

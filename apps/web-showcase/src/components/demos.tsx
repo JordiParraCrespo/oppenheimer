@@ -247,11 +247,11 @@ export function AddHostDialogDemo() {
                   Copy agent prompt
                 </Button>
               </div>
-              <div className="flex flex-wrap items-baseline gap-2.5">
-                <span className="figures text-[11.5px] whitespace-nowrap text-fg-subtle">
+              <div className="flex flex-wrap items-baseline gap-2.5 text-xs">
+                <span className="figures whitespace-nowrap text-fg-subtle">
                   Token expires in 59:41 · single use
                 </span>
-                <Link href="#dialog" className="text-[11.5px] whitespace-nowrap">
+                <Link href="#dialog" className="whitespace-nowrap">
                   New token
                 </Link>
               </div>
@@ -275,7 +275,7 @@ export function AddHostDialogDemo() {
             <div className="flex min-h-10.5 items-center">
               {registered ? (
                 <StatusDot state="running" className="items-center">
-                  <span className="figures text-[13px]">mac-studio</span>
+                  <span className="figures text-sm">mac-studio</span>
                   <span className="text-xs text-fg-muted">macOS 15 · git, tmux, claude ready</span>
                 </StatusDot>
               ) : (
@@ -492,7 +492,7 @@ export function EffortDemo({ bare }: { bare?: boolean }) {
   const [effort, setEffort] = React.useState('medium');
   if (bare) {
     return (
-      <div className="w-[240px]">
+      <div className="w-60">
         <EffortSlider value={effort} onValueChange={setEffort} />
       </div>
     );
@@ -648,7 +648,7 @@ export function SlugFieldDemo() {
     timer.current = setTimeout(() => setStatus(TAKEN.includes(clean) ? 'taken' : 'ok'), 550);
   }
   return (
-    <Field className="w-full max-w-[400px]" data-invalid={status === 'taken' || undefined}>
+    <Field className="w-full max-w-100" data-invalid={status === 'taken' || undefined}>
       <FieldLabel htmlFor="ws-slug">Workspace URL</FieldLabel>
       <SlugInput
         id="ws-slug"
@@ -689,7 +689,7 @@ export function SegmentedDemo() {
 export function CheckboxDemo() {
   const [discard, setDiscard] = React.useState(false);
   return (
-    <FieldLabel className="flex items-center gap-2.5">
+    <FieldLabel className="items-center">
       <Checkbox checked={discard} onCheckedChange={(checked) => setDiscard(checked === true)} />
       Discard work that is not pushed
     </FieldLabel>
@@ -706,7 +706,7 @@ export function ComposerDemo({ full }: { full?: boolean }) {
   );
   const [recording, setRecording] = React.useState(false);
   return (
-    <div className="w-full max-w-[720px]">
+    <div className="w-full max-w-180">
       <Composer
         value={value}
         onValueChange={setValue}
@@ -833,7 +833,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
   const projects = empty ? [] : PROJECTS;
   const total = projects.reduce((n, p) => n + p.sessions.length, 0);
   return (
-    <div className="flex h-[600px] shrink-0 overflow-hidden">
+    <div className="flex h-150 shrink-0 overflow-hidden">
       <Rail>
         <RailMark>O</RailMark>
         <RailItem label="Sessions" count={total} active>
@@ -843,7 +843,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
           <ZapIcon />
         </RailItem>
       </Rail>
-      <div className="flex w-[264px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+      <div className="flex w-66 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="flex h-14 items-center px-4">
           <Wordmark product="Console" />
         </div>
@@ -981,7 +981,7 @@ export function StepperDemo() {
     return () => clearInterval(id);
   }, []);
   return (
-    <div className="w-full max-w-[420px]">
+    <div className="w-full max-w-105">
       <div className="eyebrow figures">mac-studio</div>
       <h3 className="mt-2 text-h2 font-semibold">Starting your session</h3>
       <p className="mt-1.5 text-operate text-fg-muted">JordiParraCrespo/xrp-mobile · main</p>
@@ -1018,7 +1018,7 @@ function LinkDemo() {
 
 export function TerminalDemo() {
   return (
-    <div className="h-[520px] w-full overflow-hidden rounded-lg border border-term-border">
+    <div className="h-130 w-full overflow-hidden rounded-lg border border-term-border">
       <Terminal>
         <TerminalScrollback>
           <TerminalLine command>gh auth login --web</TerminalLine>
@@ -1074,7 +1074,7 @@ const SLIDES = [
 
 export function CarouselDemo() {
   return (
-    <div className="h-[460px] w-full max-w-[420px]">
+    <div className="h-115 w-full max-w-105">
       <ImageCarousel
         slides={SLIDES.map(([file, alt, caption, position]) => ({
           src: `/imagery/${file}.webp`,
@@ -1110,7 +1110,7 @@ export function RepositoryRowListDemo() {
   const [host, setHost] = React.useState<string | null>('mac-studio');
   const summary = [host, rows.filter((r) => r.isDefault).length + ' cloned'].filter(Boolean).join(' · ');
   return (
-    <div className="flex w-full max-w-[484px] flex-col gap-[22px]">
+    <div className="flex w-full max-w-121 flex-col gap-5.5">
       <div className="flex flex-col gap-2">
         <span className="text-sm font-medium text-fg">Repositories</span>
         <RepositoryAddField
@@ -1139,11 +1139,11 @@ export function RepositoryRowListDemo() {
         </DisclosureTrigger>
         <DisclosurePanel>
           <div className="flex flex-col gap-4.5">
-          <p className="m-0 text-[13px] text-fg-muted">
+          <p className="m-0 text-sm text-fg-muted">
             What every new session in this project starts with. Each can be changed per session.
           </p>
           <div className="flex flex-col gap-2">
-            <span className="text-[12.5px] text-fg-muted">Host</span>
+            <span className="text-sm text-fg-muted">Host</span>
             <div className="flex flex-wrap gap-1.5">
               {['mac-studio', 'optimus', 'hetzner-1'].map((name) => (
                 <Chip key={name} selected={host === name} onClick={() => setHost(host === name ? null : name)}>
@@ -1153,11 +1153,11 @@ export function RepositoryRowListDemo() {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-[12.5px] text-fg-muted">Cloned by default</span>
+            <span className="text-sm text-fg-muted">Cloned by default</span>
             {rows.length ? (
               <RepositoryRowList repositories={PROJECT_REPOS} value={rows} onValueChange={setRows} />
             ) : (
-              <p className="m-0 text-[12.5px] text-fg-subtle">Select repositories above first.</p>
+              <p className="m-0 text-sm text-fg-subtle">Select repositories above first.</p>
             )}
           </div>
           </div>
@@ -1193,7 +1193,7 @@ export function DisclosureDemo() {
           Defaults
         </DisclosureTrigger>
         <DisclosurePanel>
-          <p className="m-0 text-[13px] text-fg-muted">
+          <p className="m-0 text-sm text-fg-muted">
             What every new session in this project starts with. Each can be changed per session.
           </p>
         </DisclosurePanel>
@@ -1206,7 +1206,7 @@ export function DisclosureDemo() {
 
 export function CalloutDemo() {
   return (
-    <div className="flex w-full max-w-[440px] flex-col gap-3.5">
+    <div className="flex w-full max-w-110 flex-col gap-3.5">
       <Callout>No account yet for that sign-in. The provider buttons create one in a single step.</Callout>
       <Callout tone="info">
         A worktree is created per session, so two runs on one repository never share a checkout.
@@ -1346,7 +1346,7 @@ export function PageHeaderDemo() {
           }
         />
         <PageHeaderMeta>
-          <StatusDot state={paused ? 'paused' : 'active'} className="items-center text-[13px]">
+          <StatusDot state={paused ? 'paused' : 'active'} density="compact">
             {paused ? 'Paused' : 'Active'}
           </StatusDot>
           <PageHeaderSep />
@@ -1505,7 +1505,7 @@ export function TemplateGridDemo() {
   return (
     <div className="flex w-full flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
-        <h3 className="m-0 flex-1 text-[17px] font-semibold tracking-[-0.012em]">Templates</h3>
+        <h3 className="m-0 flex-1 text-lg font-semibold">Templates</h3>
         <PillTabs value={cat} onValueChange={setCat} size="sm" aria-label="Category">
           <PillTab value="all">All</PillTab>
           <PillTab value="review">Review</PillTab>
@@ -1589,18 +1589,21 @@ export function TimeTokenDemo() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger render={<InlineToken mono open={open} />}>{time}</PopoverTrigger>
-      <ChipSelectPopup width={292} maxHeight={480} side="bottom" align="start" className="p-3">
-        <TimeGrid
-          groups={[
-            { label: 'Morning', cells: HOURS.slice(0, 6).map((h) => ({ value: h, label: h, disabled: h < '08:00' })) },
-            { label: 'Afternoon', cells: HOURS.slice(6).map((h) => ({ value: h, label: h })) },
-          ]}
-          value={time}
-          onValueChange={(next) => {
-            setTime(next);
-            setOpen(false);
-          }}
-        />
+      <ChipSelectPopup width={292} maxHeight={480} side="bottom" align="start">
+        {/* The popup keeps its own 4px inset; the grid wants 12, so the rest is a wrapper's. */}
+        <div className="p-2">
+          <TimeGrid
+            groups={[
+              { label: 'Morning', cells: HOURS.slice(0, 6).map((h) => ({ value: h, label: h, disabled: h < '08:00' })) },
+              { label: 'Afternoon', cells: HOURS.slice(6).map((h) => ({ value: h, label: h })) },
+            ]}
+            value={time}
+            onValueChange={(next) => {
+              setTime(next);
+              setOpen(false);
+            }}
+          />
+        </div>
       </ChipSelectPopup>
     </Popover>
   );
@@ -1798,8 +1801,8 @@ export function RoutineEditorDemo() {
 export function RoutineItemsDemo() {
   const [active, setActive] = React.useState('review');
   return (
-    <div className="flex w-[264px] flex-col gap-px rounded-lg border border-sidebar-border bg-sidebar p-3">
-      <RoutineItem name="Review new pull requests" meta={26} icon={<BrandGlyph name="github" size={13} className="opacity-80" />} running active={active === 'review'} onClick={() => setActive('review')} />
+    <div className="flex w-66 flex-col gap-px rounded-lg border border-sidebar-border bg-sidebar p-3">
+      <RoutineItem name="Review new pull requests" meta={26} icon={<BrandGlyph name="github" size={13} />} running active={active === 'review'} onClick={() => setActive('review')} />
       {active === 'review' ? (
         <RoutineRunList>
           <RoutineRun title="Review #124 · Harden API config loading" ago="17h" active />
@@ -1813,7 +1816,7 @@ export function RoutineItemsDemo() {
           <RoutineRunsEmpty>No runs yet.</RoutineRunsEmpty>
         </RoutineRunList>
       ) : null}
-      <RoutineItem name="Triage bug reports" meta="Paused" paused icon={<BrandGlyph name="github" size={13} className="opacity-80" />} active={active === 'triage'} onClick={() => setActive('triage')} />
+      <RoutineItem name="Triage bug reports" meta="Paused" paused icon={<BrandGlyph name="github" size={13} />} active={active === 'triage'} onClick={() => setActive('triage')} />
     </div>
   );
 }
@@ -1853,19 +1856,22 @@ export function SettingsShellDemo() {
 export function SettingsNavDemo() {
   const [page, setPage] = React.useState('profile');
   return (
-    <SettingsNav className="h-[360px] rounded-lg border border-sidebar-border">
-      <SettingsNavBack>Back to console</SettingsNavBack>
-      <SettingsNavGroup label="Account">
-        <SettingsNavItem icon={<UserIcon />} active={page === 'profile'} onClick={() => setPage('profile')}>
-          Profile
-        </SettingsNavItem>
-      </SettingsNavGroup>
-      <SettingsNavGroup label="Workspace">
-        <SettingsNavItem icon={<CpuIcon />} count={3} active={page === 'hosts'} onClick={() => setPage('hosts')}>
-          Hosts
-        </SettingsNavItem>
-      </SettingsNavGroup>
-    </SettingsNav>
+    <div className="flex h-90 w-full max-w-150 overflow-hidden rounded-lg border border-sidebar-border">
+      <SettingsNav>
+        <SettingsNavBack>Back to console</SettingsNavBack>
+        <SettingsNavGroup label="Account">
+          <SettingsNavItem icon={<UserIcon />} active={page === 'profile'} onClick={() => setPage('profile')}>
+            Profile
+          </SettingsNavItem>
+        </SettingsNavGroup>
+        <SettingsNavGroup label="Workspace">
+          <SettingsNavItem icon={<CpuIcon />} count={3} active={page === 'hosts'} onClick={() => setPage('hosts')}>
+            Hosts
+          </SettingsNavItem>
+        </SettingsNavGroup>
+      </SettingsNav>
+      <div className="flex-1 bg-canvas" />
+    </div>
   );
 }
 
@@ -1873,7 +1879,7 @@ export function SettingsGroupDemo() {
   const [name, setName] = React.useState('Jordi Parra Crespo');
   const dirty = name !== 'Jordi Parra Crespo';
   return (
-    <div className="flex w-full max-w-[680px] flex-col gap-6">
+    <div className="flex w-full max-w-170 flex-col gap-6">
       <SettingsForm onSubmit={(event) => event.preventDefault()}>
         <SettingsRow label="Profile picture" hint="Shown beside your sessions and routines">
           <Avatar size="lg" variant="accent">
@@ -1924,7 +1930,7 @@ export function HostCardsDemo() {
       <DropdownMenuContent align="end" className="min-w-50">
         <DropdownMenuItem>Rename</DropdownMenuItem>
         <DropdownMenuItem>
-          Copy host ID <DropdownMenuShortcut className="figures">h_b40e</DropdownMenuShortcut>
+          Copy host ID <DropdownMenuShortcut><span className="figures">h_b40e</span></DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive">Remove host</DropdownMenuItem>
@@ -1932,7 +1938,7 @@ export function HostCardsDemo() {
     </DropdownMenu>
   );
   return (
-    <div className="flex w-full max-w-[680px] flex-col gap-2.5">
+    <div className="flex w-full max-w-170 flex-col gap-2.5">
       <HostCard name="jordis-mac-studio" meta="macOS 15 · local · runner 0.14.2" status="running" state="Running · 2 sessions" seen="connected" action={action} />
       <HostCard name="optimus" meta="Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2" status="idle" state="Idle" seen="connected" action={action} />
       <HostCard name="fable" meta="Debian 12 · 16 vCPU · us-east · runner 0.13.8" status="offline" state="Offline" seen="last seen 2 days ago" action={action} />

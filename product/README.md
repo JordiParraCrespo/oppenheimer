@@ -297,3 +297,7 @@ earlier note:
   owner's runner is now refused at the link handshake and closed by a heartbeat
   within a minute, and a session's git token is not minted for a creator who may
   not act (2026-09-28).
+- 15's retention periods, the pairing token's lifetime and cap (00, 09) and
+  the API's default and auth-failure rate limits were fixed in code. They are
+  now deploy-tunable through the root `.env` (`RETENTION_*`, `HOSTS_*`,
+  `RATE_LIMIT_*`), with the product's numbers as the defaults (2026-09-29).

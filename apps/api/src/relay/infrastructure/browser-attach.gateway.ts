@@ -73,7 +73,8 @@ const BROWSER_MAX_BUFFERED_BYTES = 4 * 1024 * 1024;
  * an event at all or an outbox event that reaches one replica, while the
  * attachment lives in whichever process holds the socket. A timer on every
  * attachment bounds revocation to this interval on every replica, with no
- * pub/sub.
+ * pub/sub. Paired on purpose with `OWNER_RECHECK_MS` in
+ * hosts/application/host-presence.resolver.ts: both re-check on the same minute.
  */
 export const REAUTHORIZE_INTERVAL_MS = 60_000;
 

@@ -54,9 +54,9 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
     <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas-recessed">
       {/* The export's provisioning pane: a 420px column centred in whatever
           room the shell gives it (`.op-provision__inner`). */}
-      <div className="m-auto w-full max-w-[420px] p-8">
-        <p className="figures text-[11px] tracking-[0.06em] text-fg-muted uppercase">{host}</p>
-        <h1 className="mt-2 font-display text-[26px] leading-[1.15] font-semibold tracking-[-0.018em] text-fg">
+      <div className="m-auto w-full max-w-105 p-8">
+        <p className="figures text-micro text-fg-muted uppercase">{host}</p>
+        <h1 className="mt-2 font-display text-h2 font-semibold text-fg">
           {t(failed ? 'sessions.provisioning.failedTitle' : 'sessions.provisioning.title')}
         </h1>
         <p className="mt-1.5 text-operate text-fg-muted">
