@@ -1,7 +1,7 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
-/** A webhook delivery as it arrived (`1790500000000-AddInboundEvents`). */
+/** A webhook delivery as it arrived. */
 @Entity('inbound_delivery')
 @Unique('UQ_inbound_delivery_source_delivery', ['source', 'deliveryId'])
 @Index('IDX_inbound_delivery_received_brin', { synchronize: false })
@@ -28,8 +28,7 @@ export class InboundDeliveryOrmEntity {
 
   /**
    * SHA-256 hex of the raw bytes the provider signed; unique per source, so a
-   * replay under a new delivery id is the delivery already stored
-   * (`1790860000000-HardenGithubWebhookIngest`). Null on rows from before it.
+   * replay under a new delivery id is the delivery already stored.
    */
   @Column({ type: 'varchar', length: 64, nullable: true })
   payloadDigest!: string | null;

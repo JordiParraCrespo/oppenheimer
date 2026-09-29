@@ -15,8 +15,7 @@ the daily issue does.
 `cases.json` holds the expected verdict for every planted item (`P*`) and every
 decoy (`N*`), plus the pass bar.
 
-`plant.mjs` plants the violations `cases.json` lists under `expected` (that list
-is the one count; recall is measured against it), including a mechanical boundary
+`plant.mjs` plants 10 violations across 7 checklist keys, a mechanical boundary
 breach (P8), and a ledger addition that silences a boundary rule (P11). It also
 plants two decoys that look like violations but are allowed. Most of the
 violations pass both scripts. That is the point: the judgment layer is what this

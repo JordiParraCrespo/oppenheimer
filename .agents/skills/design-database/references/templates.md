@@ -24,8 +24,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * <Growth and retention, when the table is unbounded: how long rows live and
  * what removes them.>
  */
-export class AddInvoices1789000000000 implements MigrationInterface {
-  name = 'AddInvoices1789000000000';
+export class AddInvoices1791000000000 implements MigrationInterface {
+  name = 'AddInvoices1791000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`

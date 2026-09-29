@@ -9,7 +9,7 @@ export default defineConfig({
   test: {
     globals: true,
     root: './',
-    include: ['test/**/*.integration.spec.ts'],
+    include: ['src/**/*.integration.spec.ts'],
     setupFiles: ['./vitest.setup.ts'],
     testTimeout: 30000,
     // The app holds Redis/Postgres connections (BullMQ, cache, Better Auth).

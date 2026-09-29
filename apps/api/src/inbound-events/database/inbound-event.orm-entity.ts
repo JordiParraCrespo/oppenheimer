@@ -1,7 +1,7 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
-/** One normalized event in one workspace (`1790500000000-AddInboundEvents`). Append-only. */
+/** One normalized event in one workspace. Append-only. */
 @Entity('inbound_event')
 @Unique('UQ_inbound_event_organization_external', ['organizationId', 'source', 'externalId'])
 @Unique('UQ_inbound_event_organization_id', ['organizationId', 'id'])

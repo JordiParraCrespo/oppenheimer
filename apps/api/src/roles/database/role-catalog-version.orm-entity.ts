@@ -5,7 +5,7 @@ import { Check, Column, Entity, PrimaryColumn } from 'typeorm';
  * `organizationId IS NULL`). A single row, bumped in the same transaction as
  * any create, edit or delete of a global role, and by any migration that edits
  * one. The authorization cache and each replica's snapshot of the global roles
- * are keyed on it (`AddAuthzVersions`).
+ * are keyed on it.
  *
  * `bigint` comes back from `pg` as a string, which is how the version reader
  * treats every counter: an opaque token compared for equality.

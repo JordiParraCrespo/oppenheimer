@@ -114,6 +114,7 @@ that the report uses for fingerprinting.
 | `HEX-PORT-OPTION` | `*.repository.port.ts`, `*.port.ts` | Single-row lookups on a repository port return `Option<T>` from `oxide.ts`, not `T \| null` or `T \| undefined`. (nestjs-architecture.md, "Repository ports") |
 | `HEX-PORT-INJECTION` | handlers, `application/` | A port is injected through its `Symbol` DI token, typed as the port interface. Never inject the concrete class, and never type the parameter as the adapter even when the token is correct. (nestjs-di.md) |
 | `HEX-ERRORS` | handlers, controllers, guards, `application/`, adapters | Anything that can reach an HTTP response throws `AppError` with a catalog entry. Each of these is a finding: throwing a bare `HttpException`, `ForbiddenException`, `NotFoundException` or other Nest exception; a guard that `return false`s instead of throwing; spreading a catalog entry to interpolate request data into `message` (that goes in `detail`); passing an upstream error through unmapped. A plain `Error` is allowed only on paths that never answer HTTP (the outbox relay, queue processors). (nestjs-architecture.md, "Structured errors") |
+| `HEX-LEGACY-SHAPE` | `admin/`, `organizations/` | A new route, or a new public method on a ledgered `*.service.ts`, added in the old shape. New operations go in as slices. (apps/api/AGENTS.md, "Delegating façades") |
 | `HEX-USE-CASE-LEAK` | `application/`, `infrastructure/` | Code that is really a use case, meaning an operation a user triggers that loads an aggregate, changes it and saves it, hiding in `application/` or `infrastructure/` instead of a `commands/` slice. (ARCHITECTURE.md, rule 1 of "The module contract") |
 
 Out of scope, because other tools own them: formatting and lint (Biome), file
@@ -221,6 +222,8 @@ Skip this step under `--dry-run`, and when there are no blocking findings.
 - It does not change the HTTP contract, meaning response shapes, status codes,
   routes and error codes. The one exception is replacing a bare Nest exception
   with the matching catalog `AppError`, when the catalog already has the entry.
+- It is not under `admin/` or `organizations/`. Migrating those façades is
+  planned work (apps/api/AGENTS.md), not a daily patch.
 - It is not a mechanical failure whose cause is outside `apps/api/src`, such as
   a broken build or a dependency bump.
 - It is not a ledger addition. Say in the issue that someone has to decide
