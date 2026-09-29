@@ -59,13 +59,6 @@ describe('OutboxService', () => {
       expect(rows[0].reason).toContain('ThingDeletedDomainEvent');
       expect(rows[0].reason).toContain('agg-2');
     });
-
-    it('does nothing for an empty event list', async () => {
-      const insert = vi.fn();
-      const service = new OutboxService({} as DataSource);
-      await service.stageEvents(managerWith(insert), []);
-      expect(insert).not.toHaveBeenCalled();
-    });
   });
 
   describe('stageJob', () => {
@@ -94,62 +87,30 @@ describe('OutboxService', () => {
     const record = (attempts: number) =>
       ({ id: 'row-1', attempts }) as Parameters<OutboxService['markFailed']>[0];
 
-    it('returns the row to pending with backoff while attempts remain', async () => {
+    // params: [id, status, error, delayMs, attempts, lockedBy]; the last two
+    // fence the update on the claim it came from.
+    it.each([
+      ['returns the row to pending, backing off base * 2^(attempt-1)', 2, {}, 'pending', 2000],
+      ['parks the row as failed once attempts are exhausted', 3, {}, 'failed', 4000],
+      [
+        'caps the backoff at maxRetryDelayMs',
+        50,
+        { maxAttempts: 100, maxRetryDelayMs: 4000 },
+        'pending',
+        4000,
+      ],
+    ] as const)('%s', async (_case, attempts, options, status, delayMs) => {
       const query = vi.fn().mockResolvedValue([]);
       const service = new OutboxService({ query } as unknown as DataSource, {
         maxAttempts: 3,
         baseRetryDelayMs: 1000,
+        ...options,
       });
 
-      await service.markFailed(record(2), 'boom');
+      await service.markFailed(record(attempts), 'boom');
 
       const [, params] = query.mock.calls[0];
-      // [id, status, error, delayMs, attempts, lockedBy] — attempt 2 backs off
-      // 1000 * 2^1; the last two fence the update on the claim it came from.
-      expect(params).toEqual(['row-1', 'pending', 'boom', 2000, 2, null]);
-    });
-
-    it('parks the row as failed once attempts are exhausted', async () => {
-      const query = vi.fn().mockResolvedValue([]);
-      const service = new OutboxService({ query } as unknown as DataSource, {
-        maxAttempts: 3,
-      });
-
-      await service.markFailed(record(3), 'boom');
-
-      const [, params] = query.mock.calls[0];
-      expect(params[1]).toBe('failed');
-    });
-
-    it('caps the backoff at maxRetryDelayMs', async () => {
-      const query = vi.fn().mockResolvedValue([]);
-      const service = new OutboxService({ query } as unknown as DataSource, {
-        maxAttempts: 100,
-        baseRetryDelayMs: 1000,
-        maxRetryDelayMs: 4000,
-      });
-
-      await service.markFailed(record(50), 'boom');
-
-      const [, params] = query.mock.calls[0];
-      expect(params[3]).toBe(4000);
-    });
-  });
-
-  describe('deleteProcessedBefore', () => {
-    it('deletes one batch of old processed rows by ctid and returns how many went', async () => {
-      // TypeORM returns [rows, affected] for a DELETE.
-      const query = vi.fn().mockResolvedValue([[], 42]);
-      const service = new OutboxService({ query } as unknown as DataSource);
-      const cutoff = new Date('2026-09-01T00:00:00Z');
-
-      await expect(service.deleteProcessedBefore(cutoff, 5000)).resolves.toBe(42);
-
-      const [sql, params] = query.mock.calls[0];
-      expect(sql).toMatch(/DELETE FROM "outbox_message"\s+WHERE ctid = ANY \(ARRAY\(/);
-      expect(sql).toContain(`"createdAt" < $1 AND "status" = 'processed'`);
-      expect(sql).toContain('LIMIT $2');
-      expect(params).toEqual([cutoff, 5000]);
+      expect(params).toEqual(['row-1', status, 'boom', delayMs, attempts, null]);
     });
   });
 

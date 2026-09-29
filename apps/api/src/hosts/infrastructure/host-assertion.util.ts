@@ -111,7 +111,7 @@ export function keyFingerprint(base64PublicKey: string): string | null {
 }
 
 /** Turn the runner's base64 public key into something `verify` accepts. */
-export function publicKeyFromBase64(base64PublicKey: string): KeyObject | null {
+function publicKeyFromBase64(base64PublicKey: string): KeyObject | null {
   const raw = rawKeyFromBase64(base64PublicKey);
   if (!raw) return null;
   try {

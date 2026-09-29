@@ -23,6 +23,9 @@ describe('HostUsageRegistry', () => {
       { ...presence('a'), runningSessions: 2 },
       { ...presence('b', false), runningSessions: 0 },
     ]);
+    // With no module contributing at all, the answer is still nothing running.
+    const [bare] = await new HostUsageRegistry().overview([presence('a')]);
+    expect(bare.runningSessions).toBe(0);
   });
 
   it('adds up what every contribution counts, so a second kind of work is not a rewrite', async () => {
@@ -52,10 +55,5 @@ describe('HostUsageRegistry', () => {
 
     expect(await registry.overview([])).toEqual([]);
     expect(sessions.countRunningSessions).not.toHaveBeenCalled();
-  });
-
-  it('answers with nothing running when no module contributed, rather than refusing', async () => {
-    const [a] = await new HostUsageRegistry().overview([presence('a')]);
-    expect(a.runningSessions).toBe(0);
   });
 });

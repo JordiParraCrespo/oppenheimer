@@ -424,6 +424,8 @@ describe('Hosts & pairing (integration)', () => {
         // Nothing has sent a heartbeat, so it cannot be online.
         online: false,
       });
+      // `FACTS` is `Facts` as Go marshals it, including a `claude` probe with no
+      // path: a schema only the unit fixtures could satisfy fails here.
       expect(host.body?.capabilities).toEqual(FACTS);
       expect(host.body?.publicKeyFingerprint).toBe(key.fingerprint);
     });
@@ -451,17 +453,6 @@ describe('Hosts & pairing (integration)', () => {
         },
         { timeout: 10_000, interval: 200 },
       );
-    });
-
-    it('accepts the document a real runner sends, tools array and all', async () => {
-      // This is the test that would have caught a schema that only the unit
-      // fixtures could satisfy: the body below is `Facts` as Go marshals it,
-      // including a `claude` probe with no path because the tool was not found
-      // and Go omits the empty string.
-      const minted = await mintPairingToken('Real runner');
-      const registered = await register(minted.secret, hostKey());
-
-      expect(registered.status, JSON.stringify(registered.body)).toBe(201);
     });
 
     it('refuses a facts document that is not one', async () => {

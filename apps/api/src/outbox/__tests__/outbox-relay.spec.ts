@@ -64,19 +64,10 @@ describe('OutboxRelay', () => {
 
     expect(delivered).toBe(2);
     expect(published).toEqual(['a', 'b']);
+    // The whole batch in one call.
+    expect(outbox.markProcessed).toHaveBeenCalledTimes(1);
     expect(outbox.markProcessed).toHaveBeenCalledWith(['a', 'b'], 'test:1');
     expect(outbox.markFailed).not.toHaveBeenCalled();
-  });
-
-  it('marks a batch processed in one call', async () => {
-    const rows = [message({ id: 'a' }), message({ id: 'b' }), message({ id: 'c' })];
-    outbox.claim.mockResolvedValueOnce(rows).mockResolvedValue([]);
-    const relay = relayWith(async () => {});
-
-    await relay.drainOnce();
-
-    expect(outbox.markProcessed).toHaveBeenCalledTimes(1);
-    expect(outbox.markProcessed).toHaveBeenCalledWith(['a', 'b', 'c'], 'test:1');
   });
 
   it('marks a failed row failed alone and the rest of the batch processed in one call', async () => {
@@ -105,23 +96,6 @@ describe('OutboxRelay', () => {
 
     await expect(relay.drainOnce()).resolves.toBe(0);
     expect(outbox.claim).toHaveBeenCalledTimes(1);
-  });
-
-  it('marks a row failed when the publisher rejects, and keeps going', async () => {
-    const rows = [message({ id: 'bad' }), message({ id: 'good' })];
-    outbox.claim.mockResolvedValueOnce(rows).mockResolvedValue([]);
-    const relay = relayWith(async (m) => {
-      if (m.id === 'bad') throw new Error('redis is down');
-    });
-
-    const delivered = await relay.drainOnce();
-
-    expect(delivered).toBe(1);
-    expect(outbox.markFailed).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'bad' }),
-      'redis is down',
-    );
-    expect(outbox.markProcessed).toHaveBeenCalledWith(['good'], 'test:1');
   });
 
   it('keeps claiming until a batch comes back short', async () => {
@@ -274,12 +248,23 @@ describe('OutboxRelay', () => {
     expect(outbox.markProcessed).toHaveBeenCalledWith(['a'], 'test:1');
   });
 
-  it('registers itself as the wake drainer on start and unregisters on stop', async () => {
-    const relay = relayWith(async () => {});
+  it('drains on a wake once started, and no longer once stopped', async () => {
+    const service = new OutboxService({} as DataSource);
+    const claim = vi.spyOn(service, 'claim').mockResolvedValue([]);
+    const relay = new OutboxRelay(service, async () => {}, { owner: 'test:1' });
+
+    service.wake();
+    expect(claim).not.toHaveBeenCalled();
+
     relay.start();
-    expect(outbox.registerDrainer).toHaveBeenCalledWith(expect.any(Function));
+    service.wake();
+    await vi.waitFor(() => expect(claim).toHaveBeenCalled());
+
     await relay.stop();
-    expect(outbox.registerDrainer).toHaveBeenLastCalledWith(undefined);
+    const claims = claim.mock.calls.length;
+    service.wake();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(claim).toHaveBeenCalledTimes(claims);
   });
 
   describe('the lease heartbeat', () => {

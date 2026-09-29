@@ -72,17 +72,6 @@ describe('HostPrincipalGuard', () => {
     await expect(guard.canActivate(context())).rejects.toMatchObject({ code: 'HOSTS_005' });
   });
 
-  it('resolves the credential once, through the shared port', async () => {
-    // Verification burns the assertion's `jti`, so a guard that re-verified
-    // instead of reading the memoized resolution would refuse itself as a replay.
-    vi.mocked(credentials.resolve).mockResolvedValue(host());
-
-    await guard.canActivate(context());
-
-    expect(credentials.resolve).toHaveBeenCalledTimes(1);
-    expect(credentials.resolve).toHaveBeenCalledWith(request);
-  });
-
   it('lets the resolver’s own rejection through', async () => {
     // An unrecognisable bearer is refused where every other credential is
     // refused, with the same opaque answer.

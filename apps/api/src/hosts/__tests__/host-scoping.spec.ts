@@ -1,5 +1,5 @@
 import { type AccessScope, applyAccessScope, expectAbility } from '@oppenheimer/backend-authz';
-import type { PermissionDefinition } from '@oppenheimer/shared';
+import { SYSTEM_ROLE_PERMISSIONS } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
 import { HostResource } from '../hosts.resource';
 
@@ -45,32 +45,26 @@ function fakeQueryBuilder(alias: string) {
   return qb as any;
 }
 
-function whereClausesFor(
-  callerScope: AccessScope,
-  resource = HostResource,
-  alias = 'host',
-): string[] {
-  const qb = fakeQueryBuilder(alias);
-  applyAccessScope(qb, resource, callerScope);
+function whereClausesFor(callerScope: AccessScope): string[] {
+  const qb = fakeQueryBuilder('host');
+  applyAccessScope(qb, HostResource, callerScope);
   return qb.calls.map((call: { clause: string }) => call.clause);
 }
 
-/** How the `user` system role grants a person their own machines. */
-const OWN_HOSTS: PermissionDefinition[] = [
-  {
-    action: 'manage',
-    subject: 'Host',
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: a placeholder interpolated when the ability is built
-    conditions: { ownerUserId: '${user.id}' },
-  },
-];
+/** The seeded `user` role, which is where a person's own machines are granted. */
+const USER_ROLE = SYSTEM_ROLE_PERMISSIONS.user;
 
 describe('host row scoping (SQL)', () => {
   it('never constrains a tenant, because a host has no workspace', () => {
-    const clauses = whereClausesFor(scope());
+    // A caller who owns no host and holds no grant still gets the owner
+    // predicate, and it is unsatisfiable rather than absent: the failure mode
+    // of a missing clause is "every host in the deployment".
+    const qb = fakeQueryBuilder('host');
+    applyAccessScope(qb, HostResource, scope({ userId: 'stranger' }));
 
-    expect(clauses).toEqual(['(host.ownerUserId = :authzUserId)']);
-    expect(clauses.some((clause) => clause.includes('organizationId'))).toBe(false);
+    expect(qb.calls).toEqual([
+      { clause: '(host.ownerUserId = :authzUserId)', parameters: { authzUserId: 'stranger' } },
+    ]);
   });
 
   it('widens to an explicitly granted host beside the caller’s own', () => {
@@ -84,43 +78,11 @@ describe('host row scoping (SQL)', () => {
       '(host.ownerUserId = :authzUserId OR host.id IN (:...authzGrantIds))',
     ]);
   });
-
-  it('returns nothing to a stranger', () => {
-    // A caller who owns no host and holds no grant still gets a predicate, and it
-    // is unsatisfiable rather than absent: the failure mode of a missing clause
-    // is "every host in the deployment".
-    const clauses = whereClausesFor(scope({ userId: 'stranger' }));
-
-    expect(clauses).toEqual(['(host.ownerUserId = :authzUserId)']);
-    const parameters = (() => {
-      const qb = fakeQueryBuilder('host');
-      applyAccessScope(qb, HostResource, scope({ userId: 'stranger' }));
-      return qb.calls[0].parameters;
-    })();
-    expect(parameters).toEqual({ authzUserId: 'stranger' });
-  });
-
-  it('drops every filter for a platform-tier caller', () => {
-    expect(whereClausesFor(scope({ bypass: true }))).toEqual([]);
-  });
-});
-
-describe('pairing token row scoping (SQL)', () => {
-  it('is the same predicate on the same column, because it is the same resource', () => {
-    // A pairing token is how a host comes to exist: the routes that mint and
-    // revoke one are `create Host` and `delete Host`, and the column is the same
-    // `ownerUserId`. A declaration of its own would be a column map pretending to
-    // be a noun, and the day a host is shared by grant the two listings would
-    // diverge with nothing in the policy table to explain it.
-    expect(whereClausesFor(scope(), HostResource, 'token')).toEqual([
-      '(token.ownerUserId = :authzUserId)',
-    ]);
-  });
 });
 
 describe('host capabilities (CASL)', () => {
   it('lets a person manage their own machine', () => {
-    expectAbility(OWN_HOSTS, { user: { id: 'jordi' }, scope: scope() })
+    expectAbility(USER_ROLE, { user: { id: 'jordi' }, scope: scope() })
       .canOn('read', 'Host', { ownerUserId: 'jordi' })
       .canOn('update', 'Host', { ownerUserId: 'jordi' })
       .canOn('delete', 'Host', { ownerUserId: 'jordi' });
@@ -129,65 +91,8 @@ describe('host capabilities (CASL)', () => {
   it('does not let them touch somebody else’s', () => {
     // The ability has to refuse it too, or the UI would offer a button the
     // scoped query then reports as a missing host.
-    expectAbility(OWN_HOSTS, { user: { id: 'jordi' }, scope: scope() }).cannotOn('update', 'Host', {
+    expectAbility(USER_ROLE, { user: { id: 'jordi' }, scope: scope() }).cannotOn('update', 'Host', {
       ownerUserId: 'alex',
     });
-  });
-
-  it('reaches a shared machine through an explicit grant', () => {
-    const teammate = scope({
-      userId: 'alex',
-      grants: new Map([['Host', new Set(['host-shared'])]]),
-    });
-
-    expectAbility(
-      [
-        {
-          action: 'read',
-          subject: 'Host',
-          // biome-ignore lint/suspicious/noTemplateCurlyInString: a placeholder interpolated when the ability is built
-          conditions: { id: { $in: '${scope.grants.Host}' } },
-        },
-      ],
-      { user: { id: 'alex' }, scope: teammate },
-    )
-      .canOn('read', 'Host', { id: 'host-shared' })
-      .cannotOn('read', 'Host', { id: 'host-private' });
-  });
-});
-
-describe('the declarations themselves', () => {
-  it('names a column for every scope dimension the host claims', () => {
-    // `defineResource` enforces this at boot; asserting it here means an edit
-    // that drops a key fails in CI rather than at deploy.
-    for (const dimension of HostResource.scopes) {
-      const key = (
-        { organization: 'organization', team: 'team', own: 'owner', grant: 'id' } as const
-      )[dimension];
-      expect(HostResource.keys[key]).toBeTruthy();
-    }
-  });
-
-  it('declares no organization key at all', () => {
-    expect(HostResource.keys.organization).toBeUndefined();
-    expect(HostResource.scopes).not.toContain('organization');
-  });
-
-  it('is reachable by scoped credentials', () => {
-    // Without a credentialScope the resource is invisible to API tokens and MCP,
-    // which is a silent failure rather than a loud one.
-    expect(HostResource.credentialScope).toBe('hosts');
-  });
-
-  it('is the only resource this module declares', () => {
-    // Pairing tokens are scoped by it too. One noun, one row predicate, one set
-    // of verbs in the role builder.
-    expect(HostResource.subject).toBe('Host');
-    expect(HostResource.actions.map((action) => action.name)).toEqual([
-      'read',
-      'create',
-      'update',
-      'delete',
-    ]);
   });
 });

@@ -23,6 +23,14 @@ const HOST_KEY = Buffer.from(
   'hex',
 ).toString('base64');
 
+const LIVE = {
+  hostId: HOST,
+  installationId: 'inst-1',
+  githubRepoId: 42,
+  live: true,
+  createdByUserId: USER,
+};
+
 function harness(target: Awaited<ReturnType<SessionLookupPort['findCredentialTarget']>>) {
   const link = {
     hostId: HOST,
@@ -59,13 +67,7 @@ function harness(target: Awaited<ReturnType<SessionLookupPort['findCredentialTar
 
 describe('CredentialsProcessor', () => {
   it('mints live and answers a grant sealed to the host key', async () => {
-    const h = harness({
-      hostId: HOST,
-      installationId: 'inst-1',
-      githubRepoId: 42,
-      live: true,
-      createdByUserId: USER,
-    });
+    const h = harness(LIVE);
     await h.processor.onToken(h.link, ASK);
     expect(h.repositories.mintRepositoryToken).toHaveBeenCalledWith('inst-1', 42);
     const [message] = vi.mocked(h.link.send).mock.calls[0];
@@ -75,72 +77,47 @@ describe('CredentialsProcessor', () => {
     expect(grant.sealed).not.toContain('ghs_minted');
   });
 
-  it('refuses a checkout on another host without minting', async () => {
-    const h = harness({
-      hostId: 'other',
-      installationId: 'inst-1',
-      githubRepoId: 42,
-      live: true,
-      createdByUserId: USER,
-    });
-    await h.processor.onToken(h.link, ASK);
-    expect(h.repositories.mintRepositoryToken).not.toHaveBeenCalled();
-    expect(h.link.send).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'command.failed', commandId: ASK.requestId }),
-    );
-  });
-
-  it('refuses, without minting, a session whose owner may not act', async () => {
+  it.each([
+    ['no such checkout', null, 'SESSIONS_001', 'none'],
+    ['a checkout on another host', { ...LIVE, hostId: 'other' }, 'SESSIONS_001', 'none'],
+    ['a checkout that is no longer live', { ...LIVE, live: false }, 'SESSIONS_001', 'none'],
+    [
+      "a repository that is not the checkout's",
+      { ...LIVE, githubRepoId: 43 },
+      'SESSIONS_001',
+      'none',
+    ],
     // Banned or deactivated since the session started: the session's git
     // credential goes the way of every other credential they hold.
-    const h = harness({
-      hostId: HOST,
-      installationId: 'inst-1',
-      githubRepoId: 42,
-      live: true,
-      createdByUserId: USER,
-    });
-    h.owners.findActiveOwner.mockResolvedValue(null);
+    ['a session whose owner may not act', LIVE, 'TOKEN_003', 'owner'],
+    ['a host whose key is unavailable', LIVE, 'HOSTS_001', 'key'],
+  ] as const)('refuses %s without minting (%s)', async (_case, target, code, gone) => {
+    const h = harness(target);
+    if (gone === 'owner') h.owners.findActiveOwner.mockResolvedValue(null);
+    if (gone === 'key') vi.mocked(h.keys.publicKeyOf).mockResolvedValue(null);
 
     await h.processor.onToken(h.link, ASK);
 
-    expect(h.owners.findActiveOwner).toHaveBeenCalledWith(USER);
     expect(h.repositories.mintRepositoryToken).not.toHaveBeenCalled();
+    expect(h.link.send).toHaveBeenCalledTimes(1);
     expect(h.link.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'command.failed',
-        commandId: ASK.requestId,
-        code: 'TOKEN_003',
-      }),
+      expect.objectContaining({ type: 'command.failed', commandId: ASK.requestId, code }),
     );
   });
 
-  it("refuses a repository that is not the checkout's", async () => {
-    const h = harness({
-      hostId: HOST,
-      installationId: 'inst-1',
-      githubRepoId: 43,
-      live: true,
-      createdByUserId: USER,
-    });
-    await h.processor.onToken(h.link, ASK);
-    expect(h.repositories.mintRepositoryToken).not.toHaveBeenCalled();
-  });
-
-  it('turns a refused mint into a command.failed with the catalog code', async () => {
-    const h = harness({
-      hostId: HOST,
-      installationId: 'inst-1',
-      githubRepoId: 42,
-      live: true,
-      createdByUserId: USER,
-    });
-    vi.mocked(h.repositories.mintRepositoryToken).mockRejectedValueOnce(
+  it.each([
+    [
+      'its catalog code',
       Object.assign(new Error('suspended'), { code: 'GITHUB_003' }),
-    );
+      'GITHUB_003',
+    ],
+    ['GITHUB_002 when it carries none', new Error('socket hang up'), 'GITHUB_002'],
+  ])('turns a refused mint into a command.failed with %s', async (_case, error, code) => {
+    const h = harness(LIVE);
+    vi.mocked(h.repositories.mintRepositoryToken).mockRejectedValueOnce(error);
     await h.processor.onToken(h.link, ASK);
     expect(h.link.send).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'command.failed', code: 'GITHUB_003' }),
+      expect.objectContaining({ type: 'command.failed', commandId: ASK.requestId, code }),
     );
   });
 });

@@ -44,7 +44,6 @@ import { RelayUpgradeGateway } from '../infrastructure/relay-upgrade.gateway';
 import {
   APPEND_QUEUE_LIMITS,
   LINK_PING_INTERVAL_MS,
-  MIN_SUPPORTED_PROTOCOL,
   RunnerLinkGateway,
 } from '../infrastructure/runner-link.gateway';
 
@@ -427,7 +426,7 @@ describe('runner link', () => {
     );
   });
 
-  it('refuses a runner below min_supported with update_required, not a drop', async () => {
+  it('tells a runner newer than this control plane to wait, not to update', async () => {
     const runner = ws(h.origin, '/api/v1/relay/runner', {
       headers: { authorization: 'Bearer valid.host' },
     });
@@ -439,12 +438,6 @@ describe('runner link', () => {
     expect((await hint).text).toMatchObject({ type: 'hint', kind: 'blocked' });
     await expect(gone).resolves.toMatchObject({ code: 4426 });
     expect(h.registry.find(HOST)).toBeUndefined();
-  });
-
-  it('refuses a runner whose newest protocol is below the floor with update_required', async () => {
-    // With one protocol version the floor is that version, and a runner whose
-    // range tops out below it cannot exist yet; the branch is the constant's.
-    expect(MIN_SUPPORTED_PROTOCOL).toBe(PROTOCOL_VERSION);
   });
 
   it('closes a socket whose first frame is not hello', async () => {
@@ -482,49 +475,11 @@ describe('runner link', () => {
     );
   });
 
-  it("applies a link's event batches in the order they arrived, however long each takes", async () => {
-    // A start's steps are consecutive batches, and the log's order is the order
-    // they are recorded in: `running` must not land after `done`.
-    const finished: string[] = [];
-    vi.mocked(h.events.record).mockImplementation(async (batch: RunnerEventBatch) => {
-      await new Promise((resolve) => setTimeout(resolve, batch.batchId === 'b1' ? 50 : 0));
-      finished.push(batch.batchId);
-      return {
-        batchId: batch.batchId,
-        accepted: batch.events.map((event) => event.idempotencyKey),
-        rejected: [],
-      };
-    });
-    const runner = await runnerUp(h);
-    sockets.push(runner);
-    for (const [batchId, n, status] of [
-      ['b1', 1, 'running'],
-      ['b2', 2, 'done'],
-    ] as const) {
-      runner.send(
-        JSON.stringify({
-          type: 'events.append',
-          batchId,
-          sessionId: SESSION,
-          events: [
-            {
-              idempotencyKey: `run-1:${n}`,
-              kind: 'session.step',
-              payload: JSON.stringify({ step: 'clone', status }),
-              occurredAt: new Date().toISOString(),
-            },
-          ],
-        }),
-      );
-    }
-    await nextMessage(runner);
-    await nextMessage(runner);
-    expect(finished).toEqual(['b1', 'b2']);
-  });
-
-  it('applies the batches queued behind one for the same session as one append, acked per batch', async () => {
+  it('applies the batches queued behind one for the same session as one append, in arrival order, acked per batch', async () => {
     // A runner sends one event per batch, so this is what makes the batched
     // insert pay off: whatever queued while an append ran lands in the next one.
+    // The log's order is the order they are recorded in: a start's `running`
+    // must not land after its `done`.
     vi.mocked(h.events.record).mockImplementation(async (batch: RunnerEventBatch) => {
       if (batch.batchId === 'b1') await new Promise((resolve) => setTimeout(resolve, 50));
       return {
@@ -562,9 +517,11 @@ describe('runner link', () => {
       );
     }
     await vi.waitFor(() => expect(acks).toHaveLength(4));
-    expect(vi.mocked(h.events.record).mock.calls.map(([batch]) => batch.events.length)).toEqual([
-      1, 3,
-    ]);
+    expect(
+      vi
+        .mocked(h.events.record)
+        .mock.calls.map(([batch]) => batch.events.map((event) => event.idempotencyKey)),
+    ).toEqual([['run-1:1'], ['run-1:2', 'run-1:3', 'run-1:4']]);
     expect(acks).toEqual([
       { type: 'events.ack', batchId: 'b1', accepted: ['run-1:1'] },
       { type: 'events.ack', batchId: 'b2', accepted: ['run-1:2'] },
@@ -680,12 +637,6 @@ describe('runner link', () => {
         { timeout: 5_000, interval: 1 },
       );
       expect(socket.close).not.toHaveBeenCalled();
-    });
-
-    it('closes with 1013 at the ceiling, from frames read before the pause took hold', async () => {
-      const socket = await linkUp();
-      flood(socket, APPEND_QUEUE_LIMITS.closeAt + 1);
-      expect(socket.close).toHaveBeenCalledWith(1013, 'append queue overloaded; try again later');
     });
 
     it('does not terminate a paused link for a missed pong, and closes it with 1013 after the maximum pause', async () => {

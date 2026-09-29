@@ -78,21 +78,10 @@ describe('MoveSessionCommandHandler', () => {
     work = session(['42']);
     sessions = {
       findOneById: vi.fn(async () => Some(work)),
-      appendMove: vi.fn(async (moved: WorkSessionEntity, target: string, events) => {
-        moved.recordEvent({
-          seq: 9,
-          kind: events[0].kind,
-          payload: events[0].payload,
-          occurredAt: new Date(),
-        });
-        expect(target).toBe(events[0].payload.to);
-        return 'moved' as const;
-      }),
+      appendMove: vi.fn().mockResolvedValue('moved'),
     } as unknown as WorkSessionRepositoryPort;
     projects = {
-      findOneById: vi.fn(async (_scope: AccessScope, id: string) =>
-        Some(id === 'narrow' ? project('narrow', ['7']) : project(id, ['42', '7'])),
-      ),
+      findOneById: vi.fn(async (_scope: AccessScope, id: string) => Some(project(id, ['7']))),
     } as unknown as ProjectLookupPort;
     handler = new MoveSessionCommandHandler(
       new SessionLoaderResolver(sessions),
@@ -104,27 +93,20 @@ describe('MoveSessionCommandHandler', () => {
   const move = (projectId: string) =>
     handler.execute(new MoveSessionCommand({ scope: SCOPE, sessionId: work.id, projectId }));
 
-  it('lists the session under the target', async () => {
-    const { sessionId, hints } = await move('wide');
+  it('lists the session under the target, whatever repositories the target holds', async () => {
+    // No membership rule: a project's repositories are suggestions, and a
+    // session may work on any repository in any project.
+    const { sessionId, hints } = await move('narrow');
 
     expect(sessionId).toBe(work.id);
     expect(hints).toEqual([]);
-    expect(vi.mocked(sessions.appendMove).mock.calls[0][1]).toBe('wide');
-    expect(vi.mocked(sessions.appendMove).mock.calls[0][2]).toEqual([
+    expect(sessions.appendMove).toHaveBeenCalledWith(work, 'narrow', [
       expect.objectContaining({
         kind: SESSION_EVENT_KINDS.MOVED,
         source: 'api',
-        payload: { from: 'home', to: 'wide' },
+        payload: { from: 'home', to: 'narrow' },
       }),
     ]);
-  });
-
-  it('moves a session to a project that does not hold its repository', async () => {
-    // No membership rule: a project's repositories are suggestions, and a
-    // session may work on any repository in any project.
-    await move('narrow');
-    expect(sessions.appendMove).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(sessions.appendMove).mock.calls[0][1]).toBe('narrow');
   });
 
   it('writes nothing when the session is already there', async () => {

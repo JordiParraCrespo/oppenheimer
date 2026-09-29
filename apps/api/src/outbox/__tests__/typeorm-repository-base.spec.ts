@@ -118,16 +118,14 @@ describe('TypeOrmRepositoryBase', () => {
     expect((await found.repository.findOneById('thing-1')).unwrap().name).toBe('stored');
   });
 
-  it('delete answers false when no row was affected', async () => {
-    const { repository, orm } = harness({ delete: vi.fn().mockResolvedValue({ affected: 0 }) });
+  it.each([
+    ['true when the row went', { affected: 1 }, true],
+    ['false when no row was affected', { affected: 0 }, false],
+    ['false when the driver reports no count', {}, false],
+  ])('delete answers %s', async (_case, result, expected) => {
+    const { repository, orm } = harness({ delete: vi.fn().mockResolvedValue(result) });
 
-    await expect(repository.delete(thing())).resolves.toBe(false);
+    await expect(repository.delete(thing())).resolves.toBe(expected);
     expect(orm.delete).toHaveBeenCalledWith({ id: 'thing-1' });
-  });
-
-  it('delete answers true when the row went, and false when the driver reports no count', async () => {
-    await expect(harness().repository.delete(thing())).resolves.toBe(true);
-    const unknown = harness({ delete: vi.fn().mockResolvedValue({}) });
-    await expect(unknown.repository.delete(thing())).resolves.toBe(false);
   });
 });
