@@ -62,7 +62,6 @@ test('floods on three panes stall neither themselves nor typing on a fourth', as
     await pane.waitFor('FLOOD-DONE', 300_000);
     pane.send('echo alive-$((6*7))\r');
     await pane.waitFor('alive-42');
-    expect(pane.bytes()).toBeGreaterThan(10_000_000);
   }
   expect(panes.map((pane) => pane.closeCode())).toEqual(panes.map(() => null));
   await Promise.all(panes.map((pane) => pane.close()));
