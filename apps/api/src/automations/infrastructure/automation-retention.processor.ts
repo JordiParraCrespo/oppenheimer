@@ -1,17 +1,20 @@
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger, type OnApplicationBootstrap } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Queue } from 'bullmq';
+import { purgeInBatches } from '../../config/purge-in-batches';
+import type { RetentionConfig } from '../../config/retention.config';
 import { AUTOMATION_RUN_REPOSITORY } from '../automations.di-tokens';
 import type { AutomationRunRepositoryPort } from '../database/automation-run.repository.port';
 
-/** Runs are kept this long: the chart shows 30 days; the rest is for debugging and audit. */
-export const RUN_RETENTION_DAYS = 180;
-const BATCH = 5_000;
-const MAX_BATCHES = 200;
 const SCHEDULER_ID = 'automation-retention-daily';
 
-/** The nightly purge of runs past their retention, in batches through the time index. */
+/**
+ * The nightly purge of runs past `retention.automationRunDays`, in batches
+ * through the time index. The chart shows 30 days; the rest is for debugging
+ * and audit.
+ */
 @Processor(QUEUE_NAMES.AUTOMATION_RETENTION)
 export class AutomationRetentionProcessor extends WorkerHost implements OnApplicationBootstrap {
   private readonly logger = new Logger(AutomationRetentionProcessor.name);
@@ -21,6 +24,7 @@ export class AutomationRetentionProcessor extends WorkerHost implements OnApplic
     private readonly runs: AutomationRunRepositoryPort,
     @InjectQueue(QUEUE_NAMES.AUTOMATION_RETENTION)
     private readonly queue: Queue,
+    private readonly config: ConfigService,
   ) {
     super();
   }
@@ -35,14 +39,10 @@ export class AutomationRetentionProcessor extends WorkerHost implements OnApplic
   }
 
   async process(): Promise<number> {
-    const cutoff = new Date(Date.now() - RUN_RETENTION_DAYS * 86_400_000);
-    let total = 0;
-    for (let i = 0; i < MAX_BATCHES; i += 1) {
-      const deleted = await this.runs.deleteBefore(cutoff, BATCH);
-      total += deleted;
-      if (deleted < BATCH) break;
-    }
-    this.logger.log({ message: 'automation retention ran', runs: total });
-    return total;
+    const retention = this.config.getOrThrow<RetentionConfig>('retention');
+    const cutoff = new Date(Date.now() - retention.automationRunDays * 86_400_000);
+    const runs = await purgeInBatches((limit) => this.runs.deleteBefore(cutoff, limit), retention);
+    this.logger.log({ message: 'automation retention ran', runs });
+    return runs;
   }
 }

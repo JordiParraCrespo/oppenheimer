@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import { z } from 'zod';
 
 /**
  * Normalizes unset AND blank (`FOO=`, or whitespace-only) env vars to
@@ -15,6 +15,14 @@ import type { z } from 'zod';
  */
 export const orUndefined = (value: string | undefined): string | undefined =>
   value?.trim() ? value : undefined;
+
+/**
+ * A positive integer with a default: the shape of every tuning knob (a limit, a
+ * window, a retention period). Blank counts as unset (see `orUndefined`), so
+ * the default applies; anything else must coerce to a positive integer.
+ */
+export const positiveInt = (fallback: number) =>
+  z.coerce.number().int().positive().default(fallback);
 
 /**
  * Reads a config section from the environment and validates it, failing with a
