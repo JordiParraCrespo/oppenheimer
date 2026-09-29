@@ -144,6 +144,31 @@ func TestPumpPingsBetweenFramesOnABusySocket(t *testing.T) {
 	}
 }
 
+// A ping still waiting for its pong when ctx ends is ctx's error, not a
+// ping failure: the socket the library closes on the way out is not news.
+func TestPumpReturnsCtxErrorWhenCancelledDuringAPing(t *testing.T) {
+	conn, _ := dial(t, false)
+	opts := PumpOptions{PingInterval: 10 * time.Millisecond, PingTimeout: 5 * time.Second, WriteTimeout: time.Second}
+	ctx, cancel := context.WithCancel(context.Background())
+	time.AfterFunc(100*time.Millisecond, cancel)
+	err := Pump(ctx, conn, &listSource{never: make(chan struct{})}, opts)
+	if !errors.Is(err, context.Canceled) || errors.Is(err, ErrPing) {
+		t.Fatalf("Pump = %v, want context.Canceled and not a ping failure", err)
+	}
+}
+
+// A busy source never waits, so ctx ending must still be seen between
+// writes, and a write it cut short must not read as a write failure.
+func TestPumpReturnsCtxErrorOnABusySocket(t *testing.T) {
+	conn, _ := dial(t, true)
+	ctx, cancel := context.WithCancel(context.Background())
+	time.AfterFunc(50*time.Millisecond, cancel)
+	err := Pump(ctx, conn, busySource{}, pumpOptions(time.Hour))
+	if !errors.Is(err, context.Canceled) || errors.Is(err, ErrWrite) {
+		t.Fatalf("Pump = %v, want context.Canceled and not a write failure", err)
+	}
+}
+
 func TestPumpEndsWhenAPingGoesUnanswered(t *testing.T) {
 	conn, _ := dial(t, false)
 	opts := PumpOptions{PingInterval: 20 * time.Millisecond, PingTimeout: 100 * time.Millisecond, WriteTimeout: time.Second}
