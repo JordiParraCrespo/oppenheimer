@@ -33,6 +33,5 @@ export class InitialSchema1790900000000 implements MigrationInterface {
     const tables = SLICES.flatMap((slice) => Object.keys(slice.tables));
     await queryRunner.query(`DROP TABLE ${tables.map((table) => `"${table}"`).join(', ')} CASCADE`);
     await queryRunner.query('DROP EXTENSION IF EXISTS pg_trgm');
-    await queryRunner.query('DROP EXTENSION IF EXISTS "uuid-ossp"');
   }
 }

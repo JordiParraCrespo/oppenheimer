@@ -15,10 +15,8 @@ import type { SchemaSlice } from './schema-slice';
 import { sessions } from './sessions';
 import { users } from './users';
 
-export const EXTENSIONS = [
-  'CREATE EXTENSION IF NOT EXISTS pg_trgm',
-  'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"',
-];
+/** `pg_trgm` backs the user search index. Keys use the built-in `gen_random_uuid()`. */
+export const EXTENSIONS = ['CREATE EXTENSION IF NOT EXISTS pg_trgm'];
 
 /** Every module's slice. Order does not matter: the foreign keys run after all the tables. */
 export const SLICES: SchemaSlice[] = [
