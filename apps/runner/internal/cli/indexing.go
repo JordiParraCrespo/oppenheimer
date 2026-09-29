@@ -44,6 +44,10 @@ func excludeFromIndexing(goos, dir string) error {
 		// their own (some people put a note in it) is left as they left it.
 		return nil
 	}
+	// #nosec G304 -- the path is this runner's own workspace root, already
+	// resolved and checked by ChooseWorkspaces, with a fixed basename appended;
+	// nothing here is read, and O_EXCL is what keeps a marker someone wrote by
+	// hand from being truncated by a boot that races the Stat above.
 	file, err := os.OpenFile(marker, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 	if err != nil {
 		if os.IsExist(err) {
