@@ -12,9 +12,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
+	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
@@ -39,6 +41,53 @@ func (h *linkHandler) image(ctx context.Context, m link.SessionImage) {
 			h.fail(m.CommandID, err)
 		}
 	}()
+}
+
+// pullCreateImages fetches the images a `session.create` attached to its
+// first task, before anything is made, all at once under one budget: the
+// create waits for the slowest pull, not the sum of them. The task that names
+// them must not start without them, so one that cannot be pulled fails the
+// create, with the reason.
+func (h *linkHandler) pullCreateImages(ctx context.Context, attached []link.SessionCreateImages) ([]sessionsapp.CreateImage, error) {
+	if len(attached) == 0 {
+		return nil, nil
+	}
+	if len(attached) > sessionsdomain.CreateMaxImages {
+		return nil, sessionsdomain.ErrInvalidInput.WithDetail(
+			"a first task carries at most %d images; this one carried %d", sessionsdomain.CreateMaxImages, len(attached))
+	}
+	for _, image := range attached {
+		// The id names the file on disk and the pull's path.
+		if !link.IsCommandID(image.ImageID) {
+			return nil, sessionsdomain.ErrImage.WithDetail("an attached image id is not one")
+		}
+	}
+	ctx, cancel := context.WithTimeout(ctx, imagePullTimeout)
+	defer cancel()
+	images := make([]sessionsapp.CreateImage, len(attached))
+	errs := make([]error, len(attached))
+	var wg sync.WaitGroup
+	for i, image := range attached {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			data, err := h.pullImage(ctx, image.ImageID)
+			if err != nil {
+				errs[i] = err
+				// The others are for a create that will fail anyway.
+				cancel()
+				return
+			}
+			images[i] = sessionsapp.CreateImage{ID: image.ImageID, MediaType: image.MediaType, Data: data}
+		}()
+	}
+	wg.Wait()
+	for _, err := range errs {
+		if err != nil {
+			return nil, err
+		}
+	}
+	return images, nil
 }
 
 // pullImage fetches the parked image. The route names no host: the assertion

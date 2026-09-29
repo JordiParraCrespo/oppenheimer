@@ -123,7 +123,11 @@
     "composer": {
       "placeholder": "Describe a task or ask a question",
       "send": "Send",
-      "stop": "Stop"
+      "stop": "Stop",
+      "attach": "Attach images",
+      "removeAttachment": "Remove {{name}}",
+      "attachTooLarge": "{{name}} is over 5 MB. Crop it or save it smaller, then attach it again.",
+      "attachTooMany": "A first task carries at most {{max}} images."
     },
     "failed": "The session could not be created."
   },

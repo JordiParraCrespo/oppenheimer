@@ -3,7 +3,9 @@ import {
   useCreateSession,
   useHosts,
   useProjectsSnapshot,
+  useUploadSessionAttachment,
 } from '@oppenheimer/frontend-consumer/react';
+import { lastFailure } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { type ReactNode, useRef } from 'react';
@@ -14,7 +16,8 @@ import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { toCheckouts, toLaunchInput } from '../lib/session-options';
 
 /**
- * The composer of New session, and the one request the draft makes.
+ * The composer of New session, and the requests the draft makes: an upload
+ * per attached image, then the create that names them.
  *
  * What this section reads during render is only what it must: whether a host
  * is picked and still paired, and whether the pick names one repository the
@@ -70,6 +73,7 @@ export function NewSessionSend({
    * the API would answer it with the session the first one made.
    */
   const attempt = useRef<{ key: string; body: string } | null>(null);
+  const upload = useUploadSessionAttachment();
   const create = useCreateSession({
     onSuccess: (session) => {
       attempt.current = null;
@@ -77,10 +81,29 @@ export function NewSessionSend({
     },
   });
 
-  function start(prompt: string) {
+  /**
+   * Each file's upload id, all uploaded at once; null when one failed. The API
+   * names an upload by its owner and its bytes, so sending the same files again
+   * answers the same ids — the same body, so the same key — and a second press
+   * of send, or two in one frame, is the create the first one was.
+   */
+  async function attach(files: File[]): Promise<string[] | null> {
+    try {
+      return await Promise.all(files.map(async (file) => (await upload.mutateAsync(file)).id));
+    } catch {
+      // The failure is the mutation's error, which the alert below reads.
+      return null;
+    }
+  }
+
+  async function start(prompt: string, files: File[]) {
     const draft = getValues();
     const [checkout] = toCheckouts(draft.scope);
     if (!draft.hostId || hostKnown === false || !checkout) return;
+    create.reset();
+    upload.reset();
+    const attachmentIds = await attach(files);
+    if (!attachmentIds) return;
     const projectId = projects()?.find((project) => project.id === draft.projectId)?.id ?? null;
     const input: CreateSessionInput = {
       hostId: draft.hostId,
@@ -89,6 +112,7 @@ export function NewSessionSend({
       checkouts: [checkout],
       launch: toLaunchInput(draft),
       prompt,
+      ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
     };
     const body = JSON.stringify(input);
     if (attempt.current?.body !== body) attempt.current = { key: crypto.randomUUID(), body };
@@ -99,14 +123,14 @@ export function NewSessionSend({
     <div className="flex flex-col gap-4.5">
       <NewSessionComposer
         onSubmit={start}
-        busy={create.isPending}
+        busy={upload.isPending || create.isPending}
         disabled={!hostId || hostKnown === false || !hasCheckout}
         scope={scope}
         tools={tools}
         engine={engine}
       />
 
-      <ErrorAlert error={create.error} fallback={t('sessions.new.failed')} />
+      <ErrorAlert error={lastFailure([upload, create]).error} fallback={t('sessions.new.failed')} />
     </div>
   );
 }

@@ -1,14 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { describeError } from '@oppenheimer/backend-core';
 import type Redis from 'ioredis';
 import type { AuthFailureLimiterPort } from '../../auth/application/auth-failure-limiter.port';
 import { REDIS_CLIENT } from '../../redis/redis.di-tokens';
 import { RedisThrottlerStorage } from './redis-throttler.adapter';
-
-/** Refused credentials an address may present per window before it is refused outright. */
-const FAILURE_LIMIT = 30;
-const FAILURE_WINDOW_MS = 60_000;
-const BLOCK_MS = 60_000;
 
 /** The counter's name in `RedisThrottlerStorage` — its keys are `throttle:auth-failures:ip:<ip>`. */
 const THROTTLER_NAME = 'auth-failures';
@@ -26,8 +22,8 @@ const VOUCHER_MEMORY = 10_000;
  * {@link AuthFailureLimiterPort} on the rate limiter's own Redis counters.
  *
  * A refusal increments `throttle:auth-failures:ip:<ip>` through the same atomic
- * script every rate limit uses; past {@link FAILURE_LIMIT} in a minute the
- * script sets its `:blocked` key for a minute. Asking is one round trip: the
+ * script every rate limit uses; past `throttling.authFailureLimit` in its
+ * window the script sets its `:blocked` key for `throttling.authFailureBlockSeconds`. Asking is one round trip: the
  * block's remaining time and whether this credential holds a recent voucher,
  * in one `MULTI`.
  *
@@ -43,11 +39,18 @@ export class RedisAuthFailureLimiter implements AuthFailureLimiterPort {
   constructor(
     private readonly storage: RedisThrottlerStorage,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    private readonly configService: ConfigService,
   ) {}
 
   recordFailure(ip: string): void {
     void this.storage
-      .increment(failureKey(ip), FAILURE_WINDOW_MS, FAILURE_LIMIT, BLOCK_MS, THROTTLER_NAME)
+      .increment(
+        failureKey(ip),
+        this.failureWindowMs,
+        this.failureLimit,
+        this.blockMs,
+        THROTTLER_NAME,
+      )
       .catch((error: unknown) =>
         this.logger.warn(`Auth failure not counted: ${describeError(error)}`),
       );
@@ -82,6 +85,20 @@ export class RedisAuthFailureLimiter implements AuthFailureLimiterPort {
       this.logger.warn(`Auth failure budget unavailable; allowing: ${describeError(error)}`);
       return 0;
     }
+  }
+
+  /** Refused credentials an address may present per window before it is refused outright. */
+  private get failureLimit(): number {
+    return this.configService.getOrThrow<number>('throttling.authFailureLimit');
+  }
+
+  private get failureWindowMs(): number {
+    return this.configService.getOrThrow<number>('throttling.authFailureWindowSeconds') * 1000;
+  }
+
+  /** How long a blocked address stays blocked. */
+  private get blockMs(): number {
+    return this.configService.getOrThrow<number>('throttling.authFailureBlockSeconds') * 1000;
   }
 }
 

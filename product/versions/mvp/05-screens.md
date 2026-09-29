@@ -110,6 +110,9 @@
   band fused to the top of the composer (the tabbed composer of the
   2026-09-26 export); a composer for the
   first task whose foot row reads scope of action, then engine: attach
+  (the paperclip, or an image pasted into the field, attaches it to the
+  first task as a removable chip under the text; a file it cannot take
+  is refused under the field with the reason, never dropped)
   and the permission level on the left (ask for approval, approve for
   me, full access, the last in a warning tone because it changes a
   machine unattended); the agent and model, the effort and dictation on

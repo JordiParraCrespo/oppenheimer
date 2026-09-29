@@ -64,7 +64,7 @@ describe('NewSessionComposer', () => {
     fireEvent.keyDown(textarea, { key: 'Enter' });
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
-    expect(onSubmit).toHaveBeenCalledWith('Fix the wallet list');
+    expect(onSubmit).toHaveBeenCalledWith('Fix the wallet list', []);
   });
 
   it('sends nothing for a task of whitespace', () => {
@@ -91,5 +91,86 @@ describe('NewSessionComposer', () => {
     // `jest-dom` matchers are not loaded in the render-budget project, which
     // runs without the app's test setup on purpose.
     expect((textarea as HTMLTextAreaElement).value).toBe('Fix the wallet list');
+  });
+
+  describe('attached images', () => {
+    const png = (name = 'screen.png', size = 16) =>
+      new File([new Uint8Array(size)], name, { type: 'image/png' });
+
+    function pick(container: HTMLElement, files: File[]) {
+      const input = container.querySelector<HTMLInputElement>('input[type="file"]');
+      if (!input) throw new Error('no file input');
+      fireEvent.change(input, { target: { files } });
+    }
+
+    it('hands the picked images up with the sentence, and lists each as a chip', () => {
+      const onSubmit = vi.fn();
+      const { container } = render(<NewSessionComposer onSubmit={onSubmit} />);
+      const file = png();
+
+      pick(container, [file]);
+      expect(screen.getByText('screen.png')).toBeTruthy();
+
+      const textarea = screen.getByRole('textbox');
+      fireEvent.change(textarea, { target: { value: 'Match this' } });
+      fireEvent.keyDown(textarea, { key: 'Enter' });
+
+      expect(onSubmit).toHaveBeenCalledWith('Match this', [file]);
+    });
+
+    it('takes an image pasted into the field as an attachment', () => {
+      const onSubmit = vi.fn();
+      render(<NewSessionComposer onSubmit={onSubmit} />);
+      const file = png('pasted.png');
+      const textarea = screen.getByRole('textbox');
+
+      fireEvent.paste(textarea, { clipboardData: { files: [file] } });
+      fireEvent.change(textarea, { target: { value: 'Look' } });
+      fireEvent.keyDown(textarea, { key: 'Enter' });
+
+      expect(onSubmit).toHaveBeenCalledWith('Look', [file]);
+    });
+
+    it('refuses a file over the size cap, and says why', () => {
+      const onSubmit = vi.fn();
+      const { container } = render(<NewSessionComposer onSubmit={onSubmit} />);
+
+      pick(container, [png('huge.png', 5 * 1024 * 1024 + 1)]);
+      expect(screen.getByRole('alert')).toBeTruthy();
+      expect(screen.queryByText('huge.png')).toBeNull();
+
+      const textarea = screen.getByRole('textbox');
+      fireEvent.change(textarea, { target: { value: 'Go' } });
+      fireEvent.keyDown(textarea, { key: 'Enter' });
+      expect(onSubmit).toHaveBeenCalledWith('Go', []);
+    });
+
+    it('takes a screenshot the browser left unlabelled, and leaves other pastes to the field', () => {
+      render(<NewSessionComposer onSubmit={vi.fn()} />);
+      const textarea = screen.getByRole('textbox');
+
+      fireEvent.paste(textarea, {
+        clipboardData: { files: [new File(['%PDF'], 'doc.pdf', { type: 'application/pdf' })] },
+      });
+      expect(screen.queryByText('doc.pdf')).toBeNull();
+
+      fireEvent.paste(textarea, {
+        clipboardData: { files: [new File([new Uint8Array(8)], 'image.png', { type: '' })] },
+      });
+      expect(screen.getByText('image.png')).toBeTruthy();
+    });
+
+    it('lets a chip be removed before sending', () => {
+      const onSubmit = vi.fn();
+      const { container } = render(<NewSessionComposer onSubmit={onSubmit} />);
+
+      pick(container, [png()]);
+      const chip = screen.getByText('screen.png').parentElement;
+      const remove = chip?.querySelector('button');
+      if (!remove) throw new Error('no remove button');
+      fireEvent.click(remove);
+
+      expect(screen.queryByText('screen.png')).toBeNull();
+    });
   });
 });

@@ -41,6 +41,10 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_010',
     message: 'Failed to delete the session',
   },
+  UPLOAD_ATTACHMENT_FAILED: {
+    code: 'SESSIONS_CLIENT_011',
+    message: 'Failed to attach the image',
+  },
   /**
    * The API's own code for an image over the cap, raised here before the
    * upload: a file that would be refused is not worth sending, and the reader

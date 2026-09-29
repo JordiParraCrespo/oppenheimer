@@ -97,6 +97,10 @@ func pump(ctx context.Context, conn *websocket.Conn, src source, opts PumpOption
 		return nil
 	}
 	for {
+		// A busy source never waits, so this is where it sees ctx end.
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		frame, ok, err := src.poll()
 		if err != nil {
 			return err

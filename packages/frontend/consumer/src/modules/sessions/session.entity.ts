@@ -174,6 +174,15 @@ export interface CreateSessionInput {
   launch?: Partial<SessionLaunch>;
   /** The composer's first task. It names the session and reaches the agent. */
   prompt?: string;
+  /** Images uploaded with `uploadAttachment`, given to the agent with the task. */
+  attachmentIds?: string[];
   name?: string;
   projectId?: string;
+}
+
+/** An image uploaded for a first task, waiting for the create that names it. */
+export interface SessionAttachment {
+  id: string;
+  mediaType: string;
+  size: number;
 }

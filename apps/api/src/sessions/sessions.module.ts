@@ -11,6 +11,7 @@ import { UsersModule } from '../users/user.module';
 import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
 import { SessionAccountErasure } from './application/session-account-erasure.resolver';
+import { SessionAttachmentsResolver } from './application/session-attachments.resolver';
 import { SessionHostUsage } from './application/session-host-usage.resolver';
 import { SessionLaunchSpecFactory } from './application/session-launch.factory';
 import { SessionLoaderResolver } from './application/session-loader.resolver';
@@ -40,6 +41,8 @@ import { RestartSessionCommandHandler } from './commands/restart-session/restart
 import { RestartSessionHttpController } from './commands/restart-session/restart-session.http.controller';
 import { StopSessionCommandHandler } from './commands/stop-session/stop-session.command-handler';
 import { StopSessionHttpController } from './commands/stop-session/stop-session.http.controller';
+import { UploadSessionAttachmentCommandHandler } from './commands/upload-session-attachment/upload-session-attachment.command-handler';
+import { UploadSessionAttachmentHttpController } from './commands/upload-session-attachment/upload-session-attachment.http.controller';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
@@ -68,6 +71,7 @@ import { WorkSessionMapper } from './work-session.mapper';
 const httpControllers = [
   FindSessionsHttpController,
   CreateSessionHttpController,
+  UploadSessionAttachmentHttpController,
   FindSessionEventsHttpController,
   IssueAttachTicketHttpController,
   PasteSessionImageHttpController,
@@ -92,6 +96,7 @@ const commandHandlers: Provider[] = [
   RemoveCheckoutCommandHandler,
   IssueAttachTicketCommandHandler,
   PasteSessionImageCommandHandler,
+  UploadSessionAttachmentCommandHandler,
   RecordSessionEventsCommandHandler,
 ];
 
@@ -155,6 +160,7 @@ const adapters: Provider[] = [
     SessionLaunchSpecFactory,
     SessionNamingResolver,
     SessionLoaderResolver,
+    SessionAttachmentsResolver,
     // Contributed rather than exported: the implementation is built here, in this
     // module's injector, so it injects this module's repository port while
     // `projects/` reaches across only for the registry.

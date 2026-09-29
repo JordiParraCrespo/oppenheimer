@@ -70,6 +70,12 @@ export const SESSION_IMAGE_MEDIA_TYPES = SESSION_IMAGE_TYPES.map(
  */
 export const SESSION_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
+/**
+ * How many images a session's first task may carry. Each is pulled before the
+ * agent starts, so the cap bounds how long a launch can wait on downloads.
+ */
+export const SESSION_CREATE_MAX_IMAGES = 5;
+
 /** The type an image's bytes declare, or `null` when they declare none of the table's. */
 export function sniffSessionImage(bytes: Uint8Array): SessionImageMediaType | null {
   const matches = (part: SignaturePart) =>
@@ -78,4 +84,17 @@ export function sniffSessionImage(bytes: Uint8Array): SessionImageMediaType | nu
     if (type.signatures.some((signature) => signature.every(matches))) return type.mediaType;
   }
   return null;
+}
+
+/**
+ * The two rules any list of images attached to a first task keeps, on the HTTP
+ * body and on the wire alike: they ride a task — with no prompt there is
+ * nothing to read them with — and no image is named twice.
+ */
+export function attachedImagesAreValid(
+  prompt: string | undefined,
+  ids: readonly string[] | undefined,
+): boolean {
+  if (!ids?.length) return true;
+  return prompt !== undefined && prompt.length > 0 && new Set(ids).size === ids.length;
 }

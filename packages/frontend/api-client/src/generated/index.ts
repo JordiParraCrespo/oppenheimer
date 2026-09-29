@@ -145,6 +145,7 @@ export {
   updateUser,
   updateUserSettings,
   uploadAvatar,
+  uploadSessionAttachment,
 } from './sdk.gen';
 export type {
   AcceptInvitationData,
@@ -844,6 +845,7 @@ export type {
   ScopeLevelDto,
   ScopeLevelsDto,
   ScopePolicyDto,
+  SessionAttachmentResponseDto,
   SessionCheckoutResponseDto,
   SessionEventPageResponseDto,
   SessionEventResponseDto,
@@ -990,6 +992,11 @@ export type {
   UploadAvatarErrors,
   UploadAvatarResponse,
   UploadAvatarResponses,
+  UploadSessionAttachmentData,
+  UploadSessionAttachmentError,
+  UploadSessionAttachmentErrors,
+  UploadSessionAttachmentResponse,
+  UploadSessionAttachmentResponses,
   UserResponseDto,
   UserSessionResponseDto,
   UserSettingsResponseDto,

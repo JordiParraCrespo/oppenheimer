@@ -50,7 +50,7 @@ export function QueryProvider({
 }) {
   // A 401 anywhere expires the session and forgets its cache, which sends the
   // router to /login; a 4xx is never retried.
-  const [queryClient] = useState(() => createQueryClient(app, 60_000));
+  const [queryClient] = useState(() => createQueryClient(app));
 
   return (
     <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>

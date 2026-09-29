@@ -34,7 +34,7 @@
     { "id": "N5", "file": "anything on the 18-entry LEDGER in scripts/check-api-structure.mjs", "why": "known debt, not new" }
   ],
   "scoring": {
-    "recall": "planted items found in the right section / 13 (P9b counts in either section)",
+    "recall": "planted items found in the right section / the number of `expected` entries (P9b counts in either section)",
     "precision": "true findings / all items under Findings, across both runs",
     "pass": "recall ≥ 0.85, zero must_not_flag hits, and every finding cites a rule sentence"
   }

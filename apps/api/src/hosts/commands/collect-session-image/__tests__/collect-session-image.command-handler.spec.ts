@@ -13,6 +13,8 @@ describe('CollectSessionImageCommandHandler', () => {
     };
     const images = {
       park: vi.fn(),
+      stage: vi.fn(),
+      claim: vi.fn(),
       collect: vi.fn().mockResolvedValue(image),
     } satisfies ParkedImagePort;
 
@@ -27,6 +29,8 @@ describe('CollectSessionImageCommandHandler', () => {
   it('answers HOSTS_007 when nothing is waiting, whatever the reason', async () => {
     const images = {
       park: vi.fn(),
+      stage: vi.fn(),
+      claim: vi.fn(),
       collect: vi.fn().mockResolvedValue(undefined),
     } satisfies ParkedImagePort;
 

@@ -54,7 +54,8 @@ const MaxEventPayloadBytes = 8192
 // The hello capabilities: commands a runner takes beyond its protocol
 // version's baseline.
 const (
-	CapabilitySessionImage = "session.image"
+	CapabilitySessionImage        = "session.image"
+	CapabilitySessionCreateImages = "session.create.images"
 )
 
 // The `type` of every message on the link.
@@ -278,17 +279,18 @@ type EventsAckRejected struct {
 
 // SessionCreate is the `session.create` message.
 type SessionCreate struct {
-	Type             string        `json:"type"`
-	CommandID        string        `json:"commandId"`
-	SessionID        string        `json:"sessionId"`
-	OrganizationSlug string        `json:"organizationSlug"`
-	SessionSlug      string        `json:"sessionSlug"`
-	Agent            string        `json:"agent"`
-	Launch           LaunchOptions `json:"launch"`
-	Prompt           string        `json:"prompt,omitempty"`
-	Branch           string        `json:"branch"`
-	Checkouts        []Checkout    `json:"checkouts"`
-	CwdCheckoutID    *string       `json:"cwdCheckoutId"`
+	Type             string                `json:"type"`
+	CommandID        string                `json:"commandId"`
+	SessionID        string                `json:"sessionId"`
+	OrganizationSlug string                `json:"organizationSlug"`
+	SessionSlug      string                `json:"sessionSlug"`
+	Agent            string                `json:"agent"`
+	Launch           LaunchOptions         `json:"launch"`
+	Prompt           string                `json:"prompt,omitempty"`
+	Images           []SessionCreateImages `json:"images,omitempty"`
+	Branch           string                `json:"branch"`
+	Checkouts        []Checkout            `json:"checkouts"`
+	CwdCheckoutID    *string               `json:"cwdCheckoutId"`
 }
 
 // LaunchOptions is SessionCreate.Launch.
@@ -296,6 +298,12 @@ type LaunchOptions struct {
 	Model      string `json:"model,omitempty"`
 	Permission string `json:"permission,omitempty"`
 	Effort     string `json:"effort,omitempty"`
+}
+
+// SessionCreateImages is SessionCreate.Images.
+type SessionCreateImages struct {
+	ImageID   string `json:"imageId"`
+	MediaType string `json:"mediaType"`
 }
 
 // Checkout is SessionCreate.Checkouts.

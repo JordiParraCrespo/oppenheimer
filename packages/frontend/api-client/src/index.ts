@@ -114,6 +114,7 @@ export type {
   ScopeLevelDto,
   ScopeLevelsDto,
   ScopePolicyDto,
+  SessionAttachmentResponseDto,
   SessionCheckoutResponseDto,
   SessionEventPageResponseDto,
   SessionEventResponseDto,

@@ -123,7 +123,11 @@
     "composer": {
       "placeholder": "Describe una tarea o haz una pregunta",
       "send": "Enviar",
-      "stop": "Detener"
+      "stop": "Detener",
+      "attach": "Adjuntar imágenes",
+      "removeAttachment": "Quitar {{name}}",
+      "attachTooLarge": "{{name}} pesa más de 5 MB. Recórtala o guárdala más pequeña y vuelve a adjuntarla.",
+      "attachTooMany": "Una primera tarea lleva como mucho {{max}} imágenes."
     },
     "failed": "No se pudo crear la sesión."
   },

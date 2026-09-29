@@ -47,12 +47,14 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
     const rows = await this.sessions.findUnresolvedForHostForMachine(hostId);
     const outcome: HostReconciliationOutcome = { redispatched: [], stopped: [] };
 
-    for (const { session, prompt } of rows) {
+    for (const { session, prompt, images } of rows) {
       if (held.has(session.id)) continue;
       if (session.state === 'starting') {
+        // The first task's images ride again with it: the log recorded the ids
+        // they were parked under, and the runner pulls what is still waiting.
         const { delivered } = await this.dispatch.create(
           session,
-          await this.launches.build(session, { prompt }),
+          await this.launches.build(session, { prompt, images }),
         );
         if (delivered) outcome.redispatched.push(session.id);
         continue;

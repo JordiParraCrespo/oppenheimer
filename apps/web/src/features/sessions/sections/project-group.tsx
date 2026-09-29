@@ -8,6 +8,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Plus, Settings2 } from '@oppenheimer/design-system-web/icons';
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { SessionRow } from './session-row';
@@ -55,7 +56,7 @@ export function ProjectGroup({
   // One clock for the group's ages, ticking once a minute: every row redraws
   // on the tick, because every age may have moved, and the sidebar around the
   // groups — its head, its filters — does not.
-  const now = useNow(60_000);
+  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   // Unassigned under its translated name; the API's spelling is English.
   const label = project
     ? project.isUnassigned

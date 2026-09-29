@@ -57,6 +57,18 @@ func TestCommandLineKeepsAPromptOneWord(t *testing.T) {
 	}
 }
 
+func TestPromptWithImagesListsThePathsAfterTheTask(t *testing.T) {
+	if got := PromptWithImages("look", []string{"/a.png", "/b.jpg"}); got != "look\n\n/a.png\n/b.jpg" {
+		t.Fatalf("prompt = %q", got)
+	}
+	if got := PromptWithImages("look", nil); got != "look" {
+		t.Fatalf("prompt = %q, want the task unchanged", got)
+	}
+	if got := PromptWithImages("", []string{"/a.png"}); got != "/a.png" {
+		t.Fatalf("prompt = %q", got)
+	}
+}
+
 func TestOpenCodeApprovalsAreEnvironmentOnWindowZero(t *testing.T) {
 	line := Launch{Model: "anthropic/claude-opus-5-5", Permission: "ask", Prompt: "go"}.CommandLine(AgentOpenCode)
 	want := `env 'OPENCODE_PERMISSION={"edit":"ask","bash":"ask","webfetch":"ask","websearch":"ask","codesearch":"ask"}' opencode --model anthropic/claude-opus-5-5 --prompt go`

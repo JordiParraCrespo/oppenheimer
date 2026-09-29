@@ -56,7 +56,8 @@
           "items": {
             "type": "string",
             "enum": [
-              "session.image"
+              "session.image",
+              "session.create.images"
             ]
           }
         }
@@ -413,6 +414,31 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 2048
+        },
+        "images": {
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "imageId": {
+                "$ref": "#/$defs/commandId"
+              },
+              "mediaType": {
+                "type": "string",
+                "enum": [
+                  "image/png",
+                  "image/jpeg",
+                  "image/gif",
+                  "image/webp"
+                ]
+              }
+            },
+            "required": [
+              "imageId",
+              "mediaType"
+            ]
+          }
         },
         "branch": {
           "$ref": "#/$defs/gitRef"
@@ -1192,7 +1218,8 @@
     "creditWindowBytes": 262144,
     "maxFrameBytes": 524288,
     "capabilities": [
-      "session.image"
+      "session.image",
+      "session.create.images"
     ],
     "maxEventPayloadBytes": 8192
   }

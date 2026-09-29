@@ -197,8 +197,10 @@ them and the per-route number describes nothing anybody intended.
 A digest bucket costs nothing to open, so the brake on made-up credentials is
 the **auth-failure budget** (`AUTH_FAILURE_LIMITER`, bound in `throttling`):
 every refused credential (`TOKEN_003`) counts against its source IP, and past
-30 a minute that IP's bearer requests are refused with `RATE_001` for a minute
-before any lookup — except a credential that recently succeeded, so one broken
+`RATE_LIMIT_AUTH_FAILURES` (30 by default) in `RATE_LIMIT_AUTH_FAILURE_WINDOW_SECONDS`
+that IP's bearer requests are refused with `RATE_001` for
+`RATE_LIMIT_AUTH_FAILURE_BLOCK_SECONDS` before any lookup (the `throttling`
+config section) — except a credential that recently succeeded, so one broken
 client does not lock out the others behind its address.
 
 **Counters live in Redis** (`RedisThrottlerStorage`), because the in-memory
