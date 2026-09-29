@@ -622,6 +622,7 @@ type CloseInput struct {
 // reported, and the worktree is kept unless Force says otherwise.
 func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.Session, error) {
 	defer s.hold(id)()
+	ctx = domain.WithSession(ctx, id)
 	session, err := s.recorded(id)
 	if err != nil {
 		return domain.Session{}, err
@@ -636,9 +637,7 @@ func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.S
 	}
 	var pushErr error
 	if in.Push {
-		// The push is this session's, as its create's clone was: without it
-		// the credential helper asks for nobody and GitHub refuses the push.
-		if _, pushErr = s.worktrees.Push(domain.WithSession(ctx, id), session.Worktree, session.Branch); pushErr != nil {
+		if _, pushErr = s.worktrees.Push(ctx, session.Worktree, session.Branch); pushErr != nil {
 			// Report and keep going: the session is over either way, and
 			// the branch is still in the worktree we are about to name.
 			session.Dirty = true

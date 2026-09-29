@@ -287,7 +287,14 @@ func (c *Client) Dirty(ctx context.Context, path string) (bool, error) {
 // to say — and `--set-upstream` is harmless when the upstream is already set,
 // which keeps this one command instead of a check plus a command that can
 // disagree with each other.
+//
+// A push always needs a credential, so one done for no session is refused
+// before it reaches the network: the helper would have nothing to ask for,
+// and GitHub's refusal would read as work that could not be pushed.
 func (c *Client) Push(ctx context.Context, path, branch string) (bool, error) {
+	if c.credentialHelper != "" && domain.SessionOf(ctx) == "" {
+		return false, credentialRefused("push", "", "")
+	}
 	out, err := c.run(ctx, command{timeout: fetchTimeout, dir: path}, "push", "--set-upstream", "origin", branch)
 	if err != nil {
 		return false, pushRejected(out, err)
