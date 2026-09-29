@@ -19,7 +19,8 @@ export interface ChoiceOption {
  * the runs list ("All automations", "Last 7 days") at `sm`, or a part of a
  * trigger's sentence ("Weekdays", "Pull request opened") at `md`. `dirty`
  * turns it blue while it differs from the default, the frames' cue that a
- * filter is on.
+ * filter is on. A facet caps its width and truncates, so a long name or a
+ * longer locale cannot push the filter row onto another line.
  */
 export function ChoiceToken({
   label,
@@ -42,7 +43,16 @@ export function ChoiceToken({
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger
-        render={<InlineToken size={size} mono={mono} dirty={dirty} open={open} />}
+        render={
+          <InlineToken
+            size={size}
+            mono={mono}
+            dirty={dirty}
+            open={open}
+            title={size === 'sm' ? label : undefined}
+            className={size === 'sm' ? 'max-w-52' : undefined}
+          />
+        }
       >
         {label}
       </DropdownMenuTrigger>
