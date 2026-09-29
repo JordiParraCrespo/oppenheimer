@@ -218,7 +218,7 @@ error through**. Fold its code onto a catalog entry with a mapper, and keep the
 original as an `upstreamCode` extension member so debugging loses nothing:
 
 ```typescript
-// organizations/organization-error.mapper.ts
+// organizations/infrastructure/organization-error.util.ts
 export const invokeOrganizationApi = betterAuthInvoker(mapOrganizationError);
 ```
 

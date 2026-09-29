@@ -180,43 +180,11 @@ const HTTP_METHOD = /^\s*@(Get|Post|Put|Patch|Delete|All|Head|Options)\s*\(/m;
  * fails, and an entry that stops matching is itself an error: the list cannot
  * outlive the debt it describes.
  *
- * `admin/` and `organizations/` are the pre-contract Better Auth façades — a
- * root-level service behind multi-route controllers, from before a module that
- * owns no aggregate was expected to have a port and a slice per operation. See
- * `apps/api/AGENTS.md` for what to do when you touch them.
+ * Empty: `admin/` and `organizations/`, the Better Auth façades that were the
+ * last entries here, are cut into use-case slices over gateway ports like every
+ * other module. Adding an entry deserves the same scrutiny as deleting a rule.
  */
-const LEDGER = [
-  { path: 'apps/api/src/admin/admin.controller.ts', kind: 'controller-at-module-root' },
-  { path: 'apps/api/src/admin/admin.controller.ts', kind: 'route-outside-slice' },
-  { path: 'apps/api/src/admin/admin.service.ts', kind: 'service-at-module-root' },
-  { path: 'apps/api/src/admin/admin.mappers.ts', kind: 'plural-mappers-file' },
-  { path: 'apps/api/src/admin/dtos/admin.request.dto.ts', kind: 'file-name-not-admitted' },
-  {
-    path: 'apps/api/src/organizations/organizations.controller.ts',
-    kind: 'controller-at-module-root',
-  },
-  { path: 'apps/api/src/organizations/organizations.controller.ts', kind: 'route-outside-slice' },
-  { path: 'apps/api/src/organizations/members.controller.ts', kind: 'controller-at-module-root' },
-  { path: 'apps/api/src/organizations/members.controller.ts', kind: 'route-outside-slice' },
-  {
-    path: 'apps/api/src/organizations/invitations.controller.ts',
-    kind: 'controller-at-module-root',
-  },
-  { path: 'apps/api/src/organizations/invitations.controller.ts', kind: 'route-outside-slice' },
-  {
-    path: 'apps/api/src/organizations/workspaces.controller.ts',
-    kind: 'controller-at-module-root',
-  },
-  { path: 'apps/api/src/organizations/workspaces.controller.ts', kind: 'route-outside-slice' },
-  { path: 'apps/api/src/organizations/organizations.service.ts', kind: 'service-at-module-root' },
-  { path: 'apps/api/src/organizations/invitations.service.ts', kind: 'service-at-module-root' },
-  { path: 'apps/api/src/organizations/workspaces.service.ts', kind: 'service-at-module-root' },
-  { path: 'apps/api/src/organizations/organization.mappers.ts', kind: 'plural-mappers-file' },
-  {
-    path: 'apps/api/src/organizations/dtos/organization.request.dto.ts',
-    kind: 'file-name-not-admitted',
-  },
-];
+const LEDGER = [];
 const tsFiles = (dir) => readdirSync(dir, { withFileTypes: true }).filter((e) => e.isFile());
 const subDirs = (dir) => readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory());
 const lineCount = (path) => readFileSync(path, 'utf8').split('\n').length;
@@ -552,6 +520,6 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   }
   console.log(
     `API structure: ${modules.length} modules conform` +
-      (ledgered ? `, with ${ledgered} ledgered violations in admin/ and organizations/.` : '.'),
+      (ledgered ? `, with ${ledgered} ledgered violations.` : '.'),
   );
 }

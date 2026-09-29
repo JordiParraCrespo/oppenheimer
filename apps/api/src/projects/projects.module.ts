@@ -6,6 +6,7 @@ import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { UsersModule } from '../users/user.module';
+import { OrganizationCreatedDomainEventHandler } from './application/event-handlers/organization-created.domain-event-handler';
 import { PersonalWorkspaceProvisionedDomainEventHandler } from './application/event-handlers/personal-workspace-provisioned.domain-event-handler';
 import { ProjectAccountErasure } from './application/project-account-erasure.resolver';
 import { ProjectLookupResolver } from './application/project-lookup.resolver';
@@ -69,6 +70,7 @@ const repositories: Provider[] = [{ provide: PROJECT_REPOSITORY, useClass: Proje
     ProjectUsageRegistry,
     ProjectSettingsResolver,
     PersonalWorkspaceProvisionedDomainEventHandler,
+    OrganizationCreatedDomainEventHandler,
     { provide: PROJECT_LOOKUP, useClass: ProjectLookupResolver },
     ...UsersModule.contributeAccountErasure([ProjectAccountErasure]),
   ],
