@@ -19,7 +19,8 @@ multi-line, so a grep for `export` misses most of them.
 
 | Need                                  | Use                           | Not                                                   |
 | ------------------------------------- | ----------------------------- | ----------------------------------------------------- |
-| Whole-form or whole-page failure      | the kit's `ErrorAlert`: `error` + `fallback` to resolve a raw failure, `message` for one a form already resolved, `onDismiss` or `action` for its one button | a hand-built destructive `Alert`, a styled `div`, a bare `<p class="text-destructive">` |
+| A failure inside a screen that still draws its chrome (a form, a section, a dialog) | the kit's `ErrorAlert`: `error` + `fallback` to resolve a raw failure, `message` for one a form already resolved, `onDismiss` or `action` for its one button | a hand-built destructive `Alert`, a styled `div`, a bare `<p class="text-destructive">` |
+| A failure that is the whole screen (the app cannot start, a route threw) | the kit's `ScreenFailure` | an `ErrorAlert` alone on an empty canvas, a hand-built `EmptyState` |
 | A refusal about one field (a name the server rejected) | `FieldError` under the field | an `ErrorAlert` above the form |
 | A section that draws a read's failed, loading, empty and loaded states | the kit's `QueryState` (`combineQueries` for two reads, `stale="keep"` to keep a drawn page beside a later failure, `renderError` for a 404 said as "not found") | a hand-written ternary ladder, a forged `{ isPending, error, data }` |
 | A picker chip whose loading and failure show inside its popup | its `loading` and `failure` props — the chip stays on screen in every state, so it is not a `QueryState` site | a skeleton in the chip's place |
