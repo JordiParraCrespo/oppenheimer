@@ -36,8 +36,20 @@ const LIVE_TURN = `('queued', 'in_progress', 'requires_action')`;
 const LIVE_JOINS = `
   LEFT JOIN "work_session" ws ON ws."id" = run."sessionId"
   LEFT JOIN "session_turn" turn ON turn."sessionId" = run."sessionId" AND turn."seq" = 1`;
-const LIVE_WHERE = `(turn."state" IN ${LIVE_TURN}
-  OR (turn."state" IS NULL AND ws."state" IN ('starting', 'open')))`;
+/**
+ * A run is live while its session is.
+ *
+ * `ws."stoppedAt"` is the half that is easy to miss: stopping a session ends
+ * its processes and leaves the worktree, so the lifecycle deliberately does
+ * *not* move — a stopped session is still `open`, with `stoppedAt` set, and
+ * can be restarted (`session-state.policy`). Counted as live, every stopped
+ * session held one of its host's slots for ever: measured, six of them on one
+ * host filled a `liveRunsPerHost` of two, and every automation pointed at that
+ * host stopped dispatching, deferring for ever behind panes that had not
+ * existed for hours.
+ */
+const LIVE_WHERE = `(ws."stoppedAt" IS NULL AND (turn."state" IN ${LIVE_TURN}
+  OR (turn."state" IS NULL AND ws."state" IN ('starting', 'open'))))`;
 
 /**
  * A run's status, derived once, here (§Q4): the firing's own outcome until it
