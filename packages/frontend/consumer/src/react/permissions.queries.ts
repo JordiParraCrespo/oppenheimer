@@ -2,6 +2,7 @@
 
 import { useQuery } from '@oppenheimer/frontend-core/react';
 import type { UseQueryOptions } from '@tanstack/react-query';
+import { CONSUMER_CONFIG } from '../config';
 import type { PermissionCatalog } from '../modules/permissions/permission-catalog';
 import { useConsumerApp } from './context';
 
@@ -24,7 +25,7 @@ export function usePermissionCatalog(
   return useQuery({
     queryKey: permissionsKeys.catalog(),
     queryFn: () => app.permissions.catalog(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: CONSUMER_CONFIG.permissions.catalogStaleMs,
     ...options,
   });
 }

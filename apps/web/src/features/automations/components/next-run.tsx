@@ -1,5 +1,6 @@
 import { useNow } from '@oppenheimer/design-system-web';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useLocale } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { nextRunCountdown, nextRunText } from '../lib/automation-view';
@@ -11,7 +12,7 @@ import { nextRunCountdown, nextRunText } from '../lib/automation-view';
 export function NextRun({ automation }: { automation: AutomationEntity }) {
   const { t } = useTranslation();
   const locale = useLocale();
-  const now = useNow(1000);
+  const now = useNow(CORE_CONFIG.clock.everySecondMs);
   const relative = nextRunCountdown(automation, now, locale);
   return (
     <span className="flex flex-col gap-px">

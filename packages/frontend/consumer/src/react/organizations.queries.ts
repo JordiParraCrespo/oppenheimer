@@ -12,6 +12,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
+import { CONSUMER_CONFIG } from '../config';
 import type { OrganizationEntity } from '../modules/organizations/organization.entity';
 import { useConsumerApp } from './context';
 
@@ -52,7 +53,7 @@ export function useCheckSlug(
     queryKey: organizationsKeys.slug(slug),
     queryFn: slug ? () => app.organizations.checkSlug(slug) : skipToken,
     staleTime: 0,
-    gcTime: 30_000,
+    gcTime: CONSUMER_CONFIG.organizations.slugCheckGcMs,
     retry: false,
     ...options,
   });

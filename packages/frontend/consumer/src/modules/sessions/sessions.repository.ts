@@ -5,8 +5,10 @@ import {
   type SessionResponseDto,
 } from '@oppenheimer/api-client';
 import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { PAGINATION } from '@oppenheimer/shared/constants';
 import { SESSION_IMAGE_MAX_BYTES } from '@oppenheimer/shared/protocol';
 import { injectable } from 'inversify';
+import { CONSUMER_CONFIG } from '../../config';
 import {
   type AttachTicket,
   type CreateSessionInput,
@@ -27,12 +29,6 @@ import { SessionsErrors } from './sessions.errors';
  * noticed, because nothing called it. That is the whole argument for calling the
  * generated operations rather than composing URLs by hand.
  */
-/** Entries per page of the start log, and how many pages a start may span. */
-const START_LOG_PAGE = 50;
-/** The API's largest page (`PAGINATION.MAX_LIMIT`), so the whole list is as few requests as it can be. */
-const LIST_PAGE_LIMIT = 100;
-
-const MAX_START_LOG_PAGES = 20;
 
 function toCheckout(data: SessionCheckoutResponseDto): SessionCheckoutEntity {
   return new SessionCheckoutEntity(
@@ -120,7 +116,7 @@ export class SessionsRepository {
       // `[]` would render "no sessions" over a request that never succeeded.
       const data = await unwrapBody(
         heyApiSdk.findSessions({
-          query: { limit: LIST_PAGE_LIMIT, ...(cursor ? { cursor } : {}) },
+          query: { limit: PAGINATION.MAX_LIMIT, ...(cursor ? { cursor } : {}) },
         }),
         SessionsErrors.FETCH_LIST_FAILED,
         (body) => Array.isArray(body.data),
@@ -181,9 +177,12 @@ export class SessionsRepository {
   async findStartLog(id: string): Promise<SessionStartEntry[]> {
     const entries: SessionStartEntry[] = [];
     let afterSeq: number | undefined;
-    for (let page = 0; page < MAX_START_LOG_PAGES; page += 1) {
+    for (let page = 0; page < CONSUMER_CONFIG.sessions.maxStartLogPages; page += 1) {
       const data = await unwrapBody(
-        heyApiSdk.findSessionEvents({ path: { id }, query: { limit: START_LOG_PAGE, afterSeq } }),
+        heyApiSdk.findSessionEvents({
+          path: { id },
+          query: { limit: CONSUMER_CONFIG.sessions.startLogPageSize, afterSeq },
+        }),
         SessionsErrors.FETCH_EVENTS_FAILED,
         (body) => Array.isArray(body.data),
       );
