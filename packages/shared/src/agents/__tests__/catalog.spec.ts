@@ -6,7 +6,6 @@ import {
   effortFor,
   effortLevelFor,
   isCodingAgentId,
-  SESSION_EFFORTS,
   SESSION_PERMISSIONS,
 } from '../catalog.js';
 import { loginUrlPattern } from '../login.js';
