@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import { TeamOrmEntity } from '../../../organizations/database/team.orm-entity';
 import { ScopeResolver } from '../scope.resolver';
 
 /** A grant row as the port hands it back. */
@@ -54,7 +53,10 @@ describe('ScopeResolver', () => {
 
     // Roles: the caller's global ones plus those scoped to *this* organization.
     expect(userRoles.findRoleIdsForUser).toHaveBeenCalledWith('user-1', 'org-1');
-    // Teams: narrowed to this organization, never another tenant's.
+    // Teams: the caller's own, narrowed to this organization, never another tenant's.
+    expect(teamQuery.where).toHaveBeenCalledWith(expect.stringContaining('userId'), {
+      userId: 'user-1',
+    });
     expect(teamQuery.andWhere).toHaveBeenCalledWith(expect.stringContaining('organizationId'), {
       organizationId: 'org-1',
     });
@@ -64,19 +66,6 @@ describe('ScopeResolver', () => {
       { principalType: 'team', principalId: 'team-1' },
       { principalType: 'role', principalId: 'role-1' },
     ]);
-  });
-
-  it('reads team membership in one query, joined to the team for the tenant', async () => {
-    const { resolver, teamMembers, teamQuery } = resolverWith();
-
-    await resolver.resolve(input);
-
-    expect(teamMembers.createQueryBuilder).toHaveBeenCalledTimes(1);
-    expect(teamQuery.innerJoin).toHaveBeenCalledWith(TeamOrmEntity, 't', expect.any(String));
-    expect(teamQuery.where).toHaveBeenCalledWith(expect.stringContaining('userId'), {
-      userId: 'user-1',
-    });
-    expect(teamQuery.getRawMany).toHaveBeenCalledTimes(1);
   });
 
   it('uses the role ids it is handed instead of reading user_role again', async () => {

@@ -165,31 +165,30 @@ describe('AdminAuthGateway', () => {
     expect(api.unbanUser).toHaveBeenCalledWith(expect.objectContaining({ body: { userId: 'u1' } }));
   });
 
-  it('rotates the delegated-session generation after a ban', async () => {
-    // The ban deletes the delegated rows; without the rotation a credential
-    // keeps presenting the cached token of a deleted row after an unban.
-    api.banUser.mockResolvedValue(userRecord);
-    await gateway.ban(headers, 'u1', {});
-    expect(delegatedSessions.invalidateForUser).toHaveBeenCalledExactlyOnceWith('u1');
-  });
+  // The ban deletes the delegated rows; without the rotation a credential
+  // keeps presenting the cached token of a deleted row after an unban.
+  const banOrUnban = [
+    ['ban', 'banUser', () => gateway.ban(headers, 'u1', {})],
+    ['unban', 'unbanUser', () => gateway.unban(headers, 'u1')],
+  ] as const;
 
-  it('rotates the delegated-session generation after an unban', async () => {
-    api.unbanUser.mockResolvedValue(userRecord);
-    await gateway.unban(headers, 'u1');
-    expect(delegatedSessions.invalidateForUser).toHaveBeenCalledExactlyOnceWith('u1');
-  });
+  it.each(banOrUnban)(
+    'rotates the delegated-session generation after a %s',
+    async (_, method, call) => {
+      api[method].mockResolvedValue(userRecord);
+      await call();
+      expect(delegatedSessions.invalidateForUser).toHaveBeenCalledExactlyOnceWith('u1');
+    },
+  );
 
-  it('leaves the delegated sessions alone when the ban fails', async () => {
-    api.banUser.mockRejectedValue(new Error('upstream down'));
-    await expect(gateway.ban(headers, 'u1', {})).rejects.toBeDefined();
-    expect(delegatedSessions.invalidateForUser).not.toHaveBeenCalled();
-  });
-
-  it('leaves the delegated sessions alone when the unban fails', async () => {
-    api.unbanUser.mockRejectedValue(new Error('upstream down'));
-    await expect(gateway.unban(headers, 'u1')).rejects.toBeDefined();
-    expect(delegatedSessions.invalidateForUser).not.toHaveBeenCalled();
-  });
+  it.each(banOrUnban)(
+    'leaves the delegated sessions alone when the %s fails',
+    async (_, method, call) => {
+      api[method].mockRejectedValue(new Error('upstream down'));
+      await expect(call()).rejects.toBeDefined();
+      expect(delegatedSessions.invalidateForUser).not.toHaveBeenCalled();
+    },
+  );
 
   it('removes a user and reports success', async () => {
     api.removeUser.mockResolvedValue({ success: true });

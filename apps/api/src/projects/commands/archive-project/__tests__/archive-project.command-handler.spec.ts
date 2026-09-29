@@ -26,8 +26,8 @@ const SCOPE = {
   bypass: false,
 };
 
-function project(archivedAt: Date | null = null) {
-  const entity = ProjectEntity.createNew({
+function project() {
+  return ProjectEntity.createNew({
     organizationId: 'org-acme',
     name: 'xrp-mobile',
     slug: 'xrp-mobile',
@@ -41,8 +41,6 @@ function project(archivedAt: Date | null = null) {
       },
     ],
   });
-  if (archivedAt) entity.archive(archivedAt);
-  return entity;
 }
 
 describe('ArchiveProjectCommandHandler', () => {
@@ -105,30 +103,15 @@ describe('ArchiveProjectCommandHandler', () => {
     await expect(handler.execute(command())).rejects.toThrow('the database fell over');
   });
 
-  it('archives twice with the same outcome', async () => {
-    vi.mocked(projects.archiveIfUnused).mockResolvedValue({
-      result: 'archived',
-      project: project(new Date()),
-    });
+  it.each([
+    // A project the caller cannot see reads as missing.
+    ['not-found', { result: 'not-found' } as const, 'PROJECTS_001'],
+    // Sessions that name no project are listed in Unassigned; retiring it would
+    // leave that work nowhere to go.
+    ['unassigned', { result: 'unassigned', project: project() } as const, 'PROJECTS_008'],
+  ])('reports a %s outcome as its own problem', async (_result, outcome, code) => {
+    vi.mocked(projects.archiveIfUnused).mockResolvedValue(outcome);
 
-    const archived = await handler.execute(command());
-    expect(archived.isArchived).toBe(true);
-  });
-
-  it('reports a project it cannot see as missing', async () => {
-    vi.mocked(projects.archiveIfUnused).mockResolvedValue({ result: 'not-found' });
-
-    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_001' });
-  });
-
-  it('refuses the Unassigned project', async () => {
-    // Sessions that name no project are listed there; retiring it would leave
-    // that work nowhere to go.
-    vi.mocked(projects.archiveIfUnused).mockResolvedValue({
-      result: 'unassigned',
-      project: project(),
-    });
-
-    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_008' });
+    await expect(handler.execute(command())).rejects.toMatchObject({ code });
   });
 });

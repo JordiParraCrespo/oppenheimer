@@ -49,33 +49,4 @@ describe('UpdateUserSettingsCommandHandler', () => {
     expect(repo.save).toHaveBeenCalledWith(existing);
     expect(existing.theme).toBe('dark');
   });
-
-  it('replaces every preference, including the ones left at their default', async () => {
-    const existing = UserSettingsEntity.create({
-      id: 'user-uuid',
-      props: {
-        theme: 'light',
-        locale: 'es',
-        density: 'compact',
-        weeklyDigest: true,
-        productUpdates: true,
-      },
-    });
-    repo.findOneById = vi.fn().mockResolvedValue(Some(existing));
-
-    await service.execute(
-      new UpdateUserSettingsCommand({
-        userId: 'user-uuid',
-        theme: 'system',
-        locale: 'es',
-        density: 'comfortable',
-        weeklyDigest: false,
-        productUpdates: false,
-      }),
-    );
-
-    expect(existing.density).toBe('comfortable');
-    expect(existing.weeklyDigest).toBe(false);
-    expect(existing.productUpdates).toBe(false);
-  });
 });

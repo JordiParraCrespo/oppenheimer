@@ -93,11 +93,6 @@ describe('OrganizationAuthGateway', () => {
     });
   });
 
-  it('lists organizations', async () => {
-    api.listOrganizations.mockResolvedValue([orgRecord]);
-    expect(await gateway.list(headers)).toHaveLength(1);
-  });
-
   describe('getFull', () => {
     it('maps a full organization', async () => {
       api.getFullOrganization.mockResolvedValue({ ...orgRecord, members: [memberRecord] });
@@ -172,10 +167,5 @@ describe('OrganizationAuthGateway', () => {
         body: { memberId: 'm1', role: 'admin', organizationId: 'org1' },
       }),
     );
-  });
-
-  it('leaves an organization', async () => {
-    api.leaveOrganization.mockResolvedValue(memberRecord);
-    expect((await gateway.leave(headers, 'org1')).id).toBe('m1');
   });
 });

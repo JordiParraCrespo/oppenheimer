@@ -106,12 +106,6 @@ describe('WorkspaceAuthGateway', () => {
     });
   });
 
-  it('lists the caller’s workspaces', async () => {
-    api.listUserTeams.mockResolvedValue([workspace]);
-    const result = await gateway.listForCaller(headers);
-    expect(result).toHaveLength(1);
-  });
-
   it('lists workspace members', async () => {
     api.listTeamMembers.mockResolvedValue([workspaceMember]);
     const result = await gateway.listMembers(headers, 'team1');

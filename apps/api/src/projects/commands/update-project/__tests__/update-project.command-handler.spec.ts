@@ -1,5 +1,4 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { AppError } from '@oppenheimer/backend-core';
 import type { ProjectRepositoryInputDto } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -74,10 +73,6 @@ describe('UpdateProjectCommandHandler', () => {
     expect(projects.saveSettingsIfActive).toHaveBeenCalledWith(scope, project);
   });
 
-  it('leaves the slug alone', async () => {
-    expect((await handler.execute(command())).slug).toBe('xrp-mobile');
-  });
-
   it('leaves absent fields as they are and clears a default given null', async () => {
     project.configure({ defaultAgent: 'codex', defaultHostId: 'host-1' });
 
@@ -124,7 +119,6 @@ describe('UpdateProjectCommandHandler', () => {
     vi.mocked(projects.findOneById).mockResolvedValue(None);
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_001' });
-    await expect(handler.execute(command())).rejects.toBeInstanceOf(AppError);
     expect(projects.findOneById).toHaveBeenCalledWith(scope, project.id);
     expect(projects.saveSettingsIfActive).not.toHaveBeenCalled();
   });

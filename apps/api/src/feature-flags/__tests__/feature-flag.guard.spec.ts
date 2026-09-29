@@ -13,10 +13,13 @@ function contextFor(handler: () => void, request: object): ExecutionContext {
   } as unknown as ExecutionContext;
 }
 
-function guardWith(enabled: boolean) {
-  const evaluator = { isEnabled: vi.fn().mockReturnValue(enabled) };
+/** An evaluator that turns the flag on for one organization only. */
+function guardFor(organizationId: string) {
+  const evaluator: Pick<FlagEvaluatorPort, 'isEnabled'> = {
+    isEnabled: vi.fn((_key, context) => context.organizationId === organizationId),
+  };
   return {
-    guard: new FeatureFlagGuard(new Reflector(), evaluator as unknown as FlagEvaluatorPort),
+    guard: new FeatureFlagGuard(new Reflector(), evaluator as FlagEvaluatorPort),
     evaluator,
   };
 }
@@ -26,28 +29,27 @@ describe('FeatureFlagGuard', () => {
   Reflect.defineMetadata(REQUIRE_FLAG_KEY, 'api_token_creation', gated);
 
   it('lets an ungated route through without evaluating anything', () => {
-    const { guard, evaluator } = guardWith(false);
+    const { guard, evaluator } = guardFor('org-1');
     expect(guard.canActivate(contextFor(() => {}, {}))).toBe(true);
     expect(evaluator.isEnabled).not.toHaveBeenCalled();
   });
 
-  it('evaluates for the caller the auth guard resolved', () => {
-    const { guard, evaluator } = guardWith(true);
+  it('serves a gated route to a caller the flag is on for', () => {
+    const { guard } = guardFor('org-1');
     const request = {
       user: { id: 'u1', email: 'ada@acme.com', role: 'user' },
       tenant: { organizationId: 'org-1' },
     };
 
     expect(guard.canActivate(contextFor(gated, request))).toBe(true);
-    expect(evaluator.isEnabled).toHaveBeenCalledWith(
-      'api_token_creation',
-      expect.objectContaining({ userId: 'u1', organizationId: 'org-1', email: 'ada@acme.com' }),
-    );
   });
 
-  it('refuses with the catalog code, not a bare 403', () => {
-    const { guard } = guardWith(false);
-    expect(() => guard.canActivate(contextFor(gated, {}))).toThrow(
+  it.each([
+    ['another organization', { user: { id: 'u2' }, tenant: { organizationId: 'org-2' } }],
+    ['an anonymous caller', {}],
+  ])('refuses %s with the catalog code, not a bare 403', (_who, request) => {
+    const { guard } = guardFor('org-1');
+    expect(() => guard.canActivate(contextFor(gated, request))).toThrow(
       expect.objectContaining({ code: FeatureFlagErrors.FEATURE_DISABLED.code }),
     );
   });

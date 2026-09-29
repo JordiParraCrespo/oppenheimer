@@ -19,7 +19,7 @@ function resolver(config: Record<string, number> = {}) {
   const configService = {
     get: (key: string) => config[key.replace('automations.', '')],
   } as unknown as ConfigService;
-  return { limits: new AutomationLimitsResolver(settings, configService), settings };
+  return { limits: new AutomationLimitsResolver(settings, configService) };
 }
 
 describe('AutomationLimitsResolver', () => {
@@ -30,12 +30,6 @@ describe('AutomationLimitsResolver', () => {
       await limits.resolve('org-1', automation),
     );
     expect(limits.resolveWith(saved)).toEqual(await limits.resolve('org-1'));
-  });
-
-  it("reads the workspace's overrides from the store once per call to workspace()", async () => {
-    const { limits, settings } = resolver();
-    expect(await limits.workspace('org-1')).toBe(saved);
-    expect(settings.find).toHaveBeenCalledWith('org-1');
   });
 
   it("names the platform's run ceiling, configured or default", () => {

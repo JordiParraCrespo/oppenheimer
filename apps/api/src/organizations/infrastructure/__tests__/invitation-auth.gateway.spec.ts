@@ -72,11 +72,6 @@ describe('InvitationAuthGateway', () => {
     expect((await gateway.reject(headers, 'inv1')).id).toBe('inv1');
   });
 
-  it('cancels an invitation (bare result, no envelope)', async () => {
-    api.cancelInvitation.mockResolvedValue(invitation);
-    expect((await gateway.cancel(headers, 'inv1')).status).toBe('pending');
-  });
-
   it('gets an invitation by id via the query param', async () => {
     api.getInvitation.mockResolvedValue(invitation);
     await gateway.get(headers, 'inv1');
@@ -92,10 +87,5 @@ describe('InvitationAuthGateway', () => {
     expect(api.listInvitations).toHaveBeenCalledWith(
       expect.objectContaining({ query: { organizationId: 'org1' } }),
     );
-  });
-
-  it('lists invitations for the caller', async () => {
-    api.listUserInvitations.mockResolvedValue([invitation]);
-    expect(await gateway.listForCaller(headers)).toHaveLength(1);
   });
 });

@@ -32,19 +32,49 @@ function makeRole({
 describe('UpdateRolePermissionsCommandHandler', () => {
   let service: UpdateRolePermissionsCommandHandler;
   let repo: Pick<RoleRepositoryPort, 'findOneById' | 'save'>;
+  let policy: {
+    assertGrantable: ReturnType<typeof vi.fn>;
+    assertCanModify: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     repo = {
       findOneById: vi.fn().mockResolvedValue(Some(makeRole())),
       save: vi.fn().mockResolvedValue(undefined),
     };
+    policy = {
+      assertGrantable: vi.fn().mockResolvedValue(undefined),
+      assertCanModify: vi.fn().mockResolvedValue(undefined),
+    };
     service = new UpdateRolePermissionsCommandHandler(
       repo as RoleRepositoryPort,
-      {
-        assertGrantable: vi.fn().mockResolvedValue(undefined),
-        assertCanModify: vi.fn().mockResolvedValue(undefined),
-      } as unknown as RoleGrantPolicy,
+      policy as unknown as RoleGrantPolicy,
     );
+  });
+
+  // No privilege escalation (ROLE_005) and no writing another tenant's or the
+  // platform's role (ROLE_006): either refusal leaves the role unsaved.
+  it.each([
+    ['assertGrantable', RoleErrors.PERMISSION_NOT_GRANTABLE.code],
+    ['assertCanModify', RoleErrors.CROSS_ORGANIZATION_ROLE.code],
+  ] as const)('saves nothing when %s refuses the actor', async (check, code) => {
+    policy[check].mockRejectedValue(Object.assign(new Error('refused'), { code }));
+
+    await expect(
+      service.execute(
+        new UpdateRolePermissionsCommand({
+          roleId: 'role-1',
+          permissions: [MANAGE_ALL],
+          actorId: 'actor-1',
+          organizationId: 'org-1',
+        }),
+      ),
+    ).rejects.toMatchObject({ code });
+    expect(policy[check]).toHaveBeenCalledWith(
+      { id: 'actor-1', role: undefined, organizationId: 'org-1' },
+      expect.anything(),
+    );
+    expect(repo.save).not.toHaveBeenCalled();
   });
 
   it('replaces the permission set on a custom role and returns its id', async () => {

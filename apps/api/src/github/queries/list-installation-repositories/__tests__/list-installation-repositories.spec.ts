@@ -36,10 +36,10 @@ const scope: AccessScope = {
   bypass: false,
 };
 
-function installation(): GithubInstallationEntity {
+function installation(githubInstallationId = 45678901): GithubInstallationEntity {
   return GithubInstallationEntity.connect({
     organizationId: 'org-acme',
-    githubInstallationId: 45678901,
+    githubInstallationId,
     accountLogin: 'acme-labs',
     accountType: 'Organization',
     repositorySelection: 'selected',
@@ -56,26 +56,27 @@ function fakeCache() {
   const store = new Map<string, string>();
   const redis = {
     get: vi.fn(async (key: string) => store.get(key) ?? null),
-    set: vi.fn(async (key: string, value: string) => {
+    set: vi.fn(async (key: string, value: string, ..._expiry: unknown[]) => {
       store.set(key, value);
       return 'OK';
     }),
   };
-  const cache = new RedisCacheService(redis as unknown as Redis);
-  vi.spyOn(cache, 'getOrSet');
-  return cache;
+  return { cache: new RedisCacheService(redis as unknown as Redis), redis };
 }
 
-function build(found: GithubInstallationEntity | null) {
+function build(...found: GithubInstallationEntity[]) {
   const installations = {
-    findOneById: vi.fn().mockResolvedValue(found ? Some(found) : None),
+    findOneById: vi.fn(async (_scope: AccessScope, id: string) => {
+      const match = found.find((candidate) => candidate.id === id);
+      return match ? Some(match) : None;
+    }),
   } satisfies Pick<GithubInstallationRepositoryPort, 'findOneById'>;
 
   const github = {
     listInstallationRepositories: vi.fn().mockResolvedValue(REPOSITORIES),
   } satisfies Pick<GithubAppPort, 'listInstallationRepositories'>;
 
-  const cache = fakeCache();
+  const { cache, redis } = fakeCache();
 
   const handler = new ListInstallationRepositoriesQueryHandler(
     installations as unknown as GithubInstallationRepositoryPort,
@@ -83,7 +84,7 @@ function build(found: GithubInstallationEntity | null) {
     cache as unknown as CacheService,
   );
 
-  return { handler, installations, github, cache };
+  return { handler, installations, github, redis };
 }
 
 describe('list installation repositories', () => {
@@ -119,19 +120,27 @@ describe('list installation repositories', () => {
     expect(subject.github.listInstallationRepositories).toHaveBeenCalledTimes(1);
   });
 
-  it('caches under a key of its own per installation, for a minute', async () => {
-    const subject = build(connected);
+  it('keeps one listing per installation, for a minute', async () => {
+    const other = installation(99999999);
+    const subject = build(connected, other);
+
     await subject.handler.execute(
       new ListInstallationRepositoriesQuery({ scope, installationId: connected.id }),
     );
-
-    // One key per installation: two workspaces' listings must never collide, and
-    // the TTL is short enough that a repository created a minute ago is there.
-    expect(subject.cache.getOrSet).toHaveBeenCalledWith(
-      `github:repositories:${connected.id}`,
-      60,
-      expect.any(Function),
+    await subject.handler.execute(
+      new ListInstallationRepositoriesQuery({ scope, installationId: other.id }),
     );
+
+    // Two installations' listings must never collide, and the TTL is short
+    // enough that a repository created a minute ago is there.
+    expect(subject.github.listInstallationRepositories.mock.calls).toEqual([
+      [45678901],
+      [99999999],
+    ]);
+    for (const call of subject.redis.set.mock.calls) {
+      expect(call.slice(2)).toEqual(['EX', 60]);
+    }
+    expect(subject.redis.set).toHaveBeenCalledTimes(2);
   });
 
   it('re-reads the installation under the caller’s scope every time', async () => {
@@ -148,7 +157,7 @@ describe('list installation repositories', () => {
   });
 
   it('never reaches GitHub for an installation outside the caller’s scope', async () => {
-    const subject = build(null);
+    const subject = build();
 
     await expect(
       subject.handler.execute(
