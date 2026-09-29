@@ -90,22 +90,12 @@ export class MintPairingTokenCommandHandler
     };
   }
 
-  /**
-   * How long a registration token is good for. An hour by default: the span of
-   * "I am sitting at the machine now", long enough to find a terminal, short
-   * enough that a token left in a chat log is worthless by the time anyone reads
-   * it.
-   */
+  /** Short-lived on purpose: why is on `pairingTokenTtlSeconds` in hosts.config.ts. */
   private get lifetimeMs(): number {
     return this.configService.getOrThrow<number>('hosts.pairingTokenTtlSeconds') * 1000;
   }
 
-  /**
-   * How many unspent tokens one person may hold at once. Each is a live way to
-   * add a machine to the account for its lifetime, and the console only ever
-   * shows one — its "New token" replaces the one on screen — so a handful covers
-   * two tabs and a retry without leaving a drawer of them in chat logs.
-   */
+  /** A handful, not a drawer: why is on `maxUnspentPairingTokens` in hosts.config.ts. */
   private get maxSpendableTokens(): number {
     return this.configService.getOrThrow<number>('hosts.maxUnspentPairingTokens');
   }

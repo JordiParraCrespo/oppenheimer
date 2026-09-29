@@ -1,8 +1,6 @@
 import { registerAs } from '@nestjs/config';
 import { z } from 'zod';
-import { parseEnv } from './env';
-
-const positive = (fallback: number) => z.coerce.number().int().positive().default(fallback);
+import { parseEnv, positiveInt } from './env';
 
 /**
  * How long the nightly purges keep what they purge, and how they purge it.
@@ -17,19 +15,19 @@ const positive = (fallback: number) => z.coerce.number().int().positive().defaul
  */
 const schema = z.object({
   /** An IP address is personal data: where a laptop has been is kept this long past its last use. */
-  hostNetworkDays: positive(90),
+  hostNetworkDays: positiveInt(90),
   /** The host timeline is kept long enough to answer "what changed this season". */
-  hostTimelineDays: positive(180),
+  hostTimelineDays: positiveInt(180),
   /** Finished automation runs, and their history. */
-  automationRunDays: positive(180),
+  automationRunDays: positiveInt(180),
   /** Processed inbound events (GitHub webhooks). */
-  inboundEventDays: positive(30),
+  inboundEventDays: positiveInt(30),
   /** Delivered outbox rows: enough to answer "did this event go out?" about last week. */
-  outboxDays: positive(7),
+  outboxDays: positiveInt(7),
   /** Rows per delete statement, so a large purge never holds a long lock. */
-  batchSize: positive(5_000),
+  batchSize: positiveInt(5_000),
   /** Statements per run: whatever is left is the next night's. */
-  maxBatches: positive(200),
+  maxBatches: positiveInt(200),
 });
 
 export type RetentionConfig = z.infer<typeof schema>;

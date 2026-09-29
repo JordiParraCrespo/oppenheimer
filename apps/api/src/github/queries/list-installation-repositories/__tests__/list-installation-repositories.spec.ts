@@ -1,4 +1,3 @@
-import type { ConfigService } from '@nestjs/config';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { type CacheService, RedisCacheService } from '@oppenheimer/backend-cache';
 import type Redis from 'ioredis';
@@ -78,19 +77,10 @@ function build(found: GithubInstallationEntity | null) {
 
   const cache = fakeCache();
 
-  // `githubApp.repositoriesCacheTtlSeconds` at its default.
-  const config = {
-    getOrThrow: vi.fn((key: string) => {
-      if (key === 'githubApp.repositoriesCacheTtlSeconds') return 60;
-      throw new Error(`Missing config ${key}`);
-    }),
-  } satisfies Pick<ConfigService, 'getOrThrow'>;
-
   const handler = new ListInstallationRepositoriesQueryHandler(
     installations as unknown as GithubInstallationRepositoryPort,
     github as unknown as GithubAppPort,
     cache as unknown as CacheService,
-    config as unknown as ConfigService,
   );
 
   return { handler, installations, github, cache };

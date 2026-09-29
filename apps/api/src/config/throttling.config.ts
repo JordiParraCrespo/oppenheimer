@@ -1,8 +1,6 @@
 import { registerAs } from '@nestjs/config';
 import { z } from 'zod';
-import { parseEnv } from './env';
-
-const positive = (fallback: number) => z.coerce.number().int().positive().default(fallback);
+import { parseEnv, positiveInt } from './env';
 
 /**
  * The API's rate limits: the default every route gets, and the failed-credential
@@ -14,13 +12,13 @@ const positive = (fallback: number) => z.coerce.number().int().positive().defaul
  */
 const schema = z.object({
   /** Requests one caller may make to a route in a window, unless the route says otherwise. */
-  defaultLimit: positive(100),
-  defaultWindowSeconds: positive(60),
+  defaultLimit: positiveInt(100),
+  defaultWindowSeconds: positiveInt(60),
   /** Failed credentials one address may present in a window before it is blocked. */
-  authFailureLimit: positive(30),
-  authFailureWindowSeconds: positive(60),
+  authFailureLimit: positiveInt(30),
+  authFailureWindowSeconds: positiveInt(60),
   /** How long a blocked address stays blocked. */
-  authFailureBlockSeconds: positive(60),
+  authFailureBlockSeconds: positiveInt(60),
 });
 
 export type ThrottlingConfig = z.infer<typeof schema>;

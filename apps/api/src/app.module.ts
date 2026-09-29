@@ -33,7 +33,6 @@ import { AuthzModule } from './authz/authz.module';
 import { AutomationsModule } from './automations/automations.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
 import {
-  apiTokensConfig,
   appConfig,
   automationsConfig,
   databaseConfig,
@@ -44,7 +43,6 @@ import {
   llmConfigFrom,
   oauthConfig,
   redisConfig,
-  relayConfig,
   retentionConfig,
   sessionsConfig,
   storageConfig,
@@ -54,6 +52,7 @@ import { bootDataSourceFactory } from './config/boot-migrations';
 import { type DatabaseConfig, poolOptions } from './config/database.config';
 import { DEFAULT_JOB_OPTIONS } from './config/queue-options.config';
 import { type RedisConfig, redisConnectionOptions } from './config/redis.config';
+import type { ThrottlingConfig } from './config/throttling.config';
 import { TypeOrmQueryLogger } from './config/typeorm-query.logger';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { GithubModule } from './github/github.module';
@@ -92,9 +91,7 @@ import { UsersModule } from './users/user.module';
         sessionsConfig,
         automationsConfig,
         retentionConfig,
-        relayConfig,
         throttlingConfig,
-        apiTokensConfig,
       ],
     }),
     // Request logging with hardened defaults (credential redaction, no
@@ -160,20 +157,20 @@ import { UsersModule } from './users/user.module';
     ThrottlerModule.forRootAsync({
       imports: [ThrottlingModule],
       inject: [RedisThrottlerStorage, ConfigService],
-      useFactory: (storage: RedisThrottlerStorage, configService: ConfigService) => ({
-        throttlers: [
-          {
-            ttl: configService.getOrThrow<number>('throttling.defaultWindowSeconds') * 1000,
-            limit: configService.getOrThrow<number>('throttling.defaultLimit'),
-          },
-        ],
-        // Integration tests drive many requests through the same pipeline in
-        // seconds; rate limiting there measures nothing but the limit itself.
-        skipIf: () => process.env.NODE_ENV === 'test',
-        // Counters live in Redis so the limit is the limit, not the limit times
-        // the replica count. See `RedisThrottlerStorage`.
-        storage,
-      }),
+      useFactory: (storage: RedisThrottlerStorage, configService: ConfigService) => {
+        const throttling = configService.getOrThrow<ThrottlingConfig>('throttling');
+        return {
+          throttlers: [
+            { ttl: throttling.defaultWindowSeconds * 1000, limit: throttling.defaultLimit },
+          ],
+          // Integration tests drive many requests through the same pipeline in
+          // seconds; rate limiting there measures nothing but the limit itself.
+          skipIf: () => process.env.NODE_ENV === 'test',
+          // Counters live in Redis so the limit is the limit, not the limit times
+          // the replica count. See `RedisThrottlerStorage`.
+          storage,
+        };
+      },
     }),
     BullModule.forRootAsync({
       inject: [ConfigService],

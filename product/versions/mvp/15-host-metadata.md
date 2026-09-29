@@ -111,6 +111,10 @@ indexed either.
 - `host_event`: 180 days, in batches of 5,000 through the BRIN.
 - `host_presence` and `host_inventory`: one row per host, bounded.
 
+These are the defaults. A deployment overrides them with
+`RETENTION_HOST_NETWORK_DAYS`, `RETENTION_HOST_TIMELINE_DAYS` and
+`RETENTION_BATCH_SIZE` (the API's `retention` config section).
+
 Both deletes run from one scheduled job. Neither table is near the volume
 where partitioning pays; the header says when it would.
 

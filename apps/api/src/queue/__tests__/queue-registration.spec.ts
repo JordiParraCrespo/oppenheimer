@@ -8,6 +8,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Queue } from 'bullmq';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { configStub } from '../../config/__tests__/config-stub';
 import {
   DEFAULT_JOB_OPTIONS,
   DURABLE_JOB_OPTIONS,
@@ -54,7 +55,7 @@ describe('queue registration', () => {
     providers: [
       InboundEventsProcessor,
       { provide: INBOUND_EVENT_REPOSITORY, useValue: {} },
-      { provide: ConfigService, useValue: new ConfigService() },
+      { provide: ConfigService, useValue: configStub() },
     ],
   })
   class InboundEventsStandInModule {}

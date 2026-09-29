@@ -31,18 +31,8 @@ const CONFIG: Record<string, string> = {
   'githubApp.slug': 'oppenheimer-sessions',
 };
 
-/** The tuning values `github.config.ts` registers, at their defaults. */
-const TUNING: Record<string, number> = { 'githubApp.requestTimeoutMs': 10_000 };
-
 function configWith(values: Record<string, string> = CONFIG): ConfigService {
-  const all: Record<string, unknown> = { ...TUNING, ...values };
-  return {
-    get: (key: string) => all[key],
-    getOrThrow: (key: string) => {
-      if (all[key] === undefined) throw new Error(`Missing config ${key}`);
-      return all[key];
-    },
-  } as unknown as ConfigService;
+  return { get: (key: string) => values[key] } as ConfigService;
 }
 
 interface Answer {

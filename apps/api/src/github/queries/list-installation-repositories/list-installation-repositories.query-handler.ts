@@ -1,5 +1,4 @@
 import { Inject } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
@@ -8,6 +7,12 @@ import { GithubErrors } from '../../domain/github.errors';
 import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY } from '../../github.di-tokens';
 import type { GithubAppPort, GithubRepository } from '../../infrastructure/github-app.port';
 import { ListInstallationRepositoriesQuery } from './list-installation-repositories.query';
+
+/**
+ * Long enough that typing in the picker does not hit GitHub on every keystroke,
+ * short enough that a repository created a minute ago is there.
+ */
+const CACHE_TTL_SECONDS = 60;
 
 /**
  * The repository list is never stored: GitHub owns it, the installation is the
@@ -30,7 +35,6 @@ export class ListInstallationRepositoriesQueryHandler
     @Inject(GITHUB_APP)
     private readonly github: GithubAppPort,
     private readonly cache: CacheService,
-    private readonly configService: ConfigService,
   ) {}
 
   async execute(query: ListInstallationRepositoriesQuery): Promise<GithubRepository[]> {
@@ -51,16 +55,8 @@ export class ListInstallationRepositoriesQueryHandler
     // Single-flight: when the entry expires under a picker's keystrokes, the
     // requests in flight share one GitHub listing instead of each paginating
     // the whole installation.
-    return this.cache.getOrSet(`github:repositories:${installation.id}`, this.cacheTtlSeconds, () =>
+    return this.cache.getOrSet(`github:repositories:${installation.id}`, CACHE_TTL_SECONDS, () =>
       this.github.listInstallationRepositories(installation.githubInstallationId),
     );
-  }
-
-  /**
-   * Long enough that typing in the picker does not hit GitHub on every keystroke,
-   * short enough that a repository created a minute ago is there.
-   */
-  private get cacheTtlSeconds(): number {
-    return this.configService.getOrThrow<number>('githubApp.repositoriesCacheTtlSeconds');
   }
 }

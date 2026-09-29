@@ -11,16 +11,20 @@ import { MintPairingTokenCommandHandler } from '../mint-pairing-token.command-ha
 
 /** The pairing settings `hosts.config.ts` registers, at their defaults. */
 const MAX_SPENDABLE_TOKENS = 5;
-const CONFIG: Record<string, number> = {
-  'hosts.pairingTokenTtlSeconds': 3_600,
-  'hosts.maxUnspentPairingTokens': MAX_SPENDABLE_TOKENS,
+const configWith = (overrides: Record<string, number> = {}) => {
+  const values: Record<string, number> = {
+    'hosts.pairingTokenTtlSeconds': 3_600,
+    'hosts.maxUnspentPairingTokens': MAX_SPENDABLE_TOKENS,
+    ...overrides,
+  };
+  return {
+    getOrThrow: (key: string) => {
+      if (!(key in values)) throw new Error(`Missing config ${key}`);
+      return values[key];
+    },
+  } as unknown as ConfigService;
 };
-const config = {
-  getOrThrow: (key: string) => {
-    if (!(key in CONFIG)) throw new Error(`Missing config ${key}`);
-    return CONFIG[key];
-  },
-} as unknown as ConfigService;
+const config = configWith();
 
 describe('MintPairingTokenCommandHandler', () => {
   let tokens: Pick<HostPairingTokenRepositoryPort, 'insertWithinCap' | 'findOneById'>;
@@ -151,6 +155,26 @@ describe('MintPairingTokenCommandHandler', () => {
     const minutes = (token.expiresAt.getTime() - Date.now()) / 60_000;
     expect(minutes).toBeGreaterThan(55);
     expect(minutes).toBeLessThanOrEqual(60);
+  });
+
+  it('honours a deployment’s own lifetime, in the expiry and in the refusal', async () => {
+    handler = new MintPairingTokenCommandHandler(
+      tokens as HostPairingTokenRepositoryPort,
+      release as RunnerReleaseConfig,
+      configWith({ 'hosts.pairingTokenTtlSeconds': 900 }),
+    );
+    const before = Date.now();
+    await handler.execute(command());
+
+    const minutes = (inserted().expiresAt.getTime() - before) / 60_000;
+    expect(minutes).toBeGreaterThan(14.9);
+    expect(minutes).toBeLessThanOrEqual(15.1);
+
+    vi.mocked(tokens.insertWithinCap).mockResolvedValueOnce(false);
+    await expect(handler.execute(command())).rejects.toMatchObject({
+      code: 'HOSTS_006',
+      detail: expect.stringContaining('15 minutes'),
+    });
   });
 
   it('refuses to mint what nobody could spend', async () => {

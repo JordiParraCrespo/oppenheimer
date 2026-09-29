@@ -154,12 +154,6 @@ async function boot(): Promise<World> {
         'hosts.signingKeyFingerprint': CP_FINGERPRINT,
         'app.frontendUrl': 'http://localhost:3000',
       })[key],
-    getOrThrow: (key: string) =>
-      ({
-        'relay.helloTimeoutMs': 10_000,
-        'relay.linkMaxBufferedBytes': 8 * 1024 * 1024,
-        'relay.browserMaxBufferedBytes': 4 * 1024 * 1024,
-      })[key],
   } as unknown as ConfigService;
 
   const batches: RunnerEventBatch[] = [];

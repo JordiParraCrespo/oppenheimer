@@ -4,9 +4,12 @@ import { ConfigService } from '@nestjs/config';
 import { CommandBus } from '@nestjs/cqrs';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Job, Queue } from 'bullmq';
+import { purgeInBatches } from '../../config/purge-in-batches';
+import type { RetentionConfig } from '../../config/retention.config';
 import { ProcessInboundDeliveryCommand } from '../commands/process-inbound-delivery/process-inbound-delivery.command';
 import { PROCESS_DELIVERY_JOB } from '../database/inbound-event.repository';
 import type { InboundEventRepositoryPort } from '../database/inbound-event.repository.port';
+// A domain constant, not a `retention` knob: `isBeyondReplayWindow` counts from it.
 import { DELIVERY_RETENTION_DAYS } from '../domain/delivery-retention.policy';
 import { INBOUND_EVENT_REPOSITORY } from '../inbound-events.di-tokens';
 
@@ -77,40 +80,21 @@ export class InboundEventsProcessor extends WorkerHost implements OnApplicationB
   }
 
   private async purge(): Promise<{ deliveries: number; events: number }> {
+    const retention = this.config.getOrThrow<RetentionConfig>('retention');
     const day = 24 * 60 * 60 * 1000;
     const now = Date.now();
-    const deliveries = await this.drain((batch) =>
-      this.store.deleteDeliveriesBefore(new Date(now - DELIVERY_RETENTION_DAYS * day), batch),
+    const deliveryCutoff = new Date(now - DELIVERY_RETENTION_DAYS * day);
+    // Normalized events: the trigger preview's week, with room to debug a recent run.
+    const eventCutoff = new Date(now - retention.inboundEventDays * day);
+    const deliveries = await purgeInBatches(
+      (limit) => this.store.deleteDeliveriesBefore(deliveryCutoff, limit),
+      retention,
     );
-    const events = await this.drain((batch) =>
-      this.store.deleteEventsBefore(new Date(now - this.eventRetentionDays * day), batch),
+    const events = await purgeInBatches(
+      (limit) => this.store.deleteEventsBefore(eventCutoff, limit),
+      retention,
     );
     this.logger.log({ message: 'inbound-events retention ran', deliveries, events });
     return { deliveries, events };
-  }
-
-  private async drain(deleteBatch: (batch: number) => Promise<number>): Promise<number> {
-    const batchSize = this.batchSize;
-    const maxBatches = this.maxBatches;
-    let total = 0;
-    for (let i = 0; i < maxBatches; i += 1) {
-      const deleted = await deleteBatch(batchSize);
-      total += deleted;
-      if (deleted < batchSize) break;
-    }
-    return total;
-  }
-
-  /** Normalized events: the trigger preview's week, with room to debug a recent run. */
-  private get eventRetentionDays(): number {
-    return this.config.getOrThrow<number>('retention.inboundEventDays');
-  }
-
-  private get batchSize(): number {
-    return this.config.getOrThrow<number>('retention.batchSize');
-  }
-
-  private get maxBatches(): number {
-    return this.config.getOrThrow<number>('retention.maxBatches');
   }
 }

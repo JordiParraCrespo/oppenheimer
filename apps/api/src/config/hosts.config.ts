@@ -2,7 +2,7 @@ import { createHash, createPrivateKey, createPublicKey } from 'node:crypto';
 import type { ConfigService } from '@nestjs/config';
 import { registerAs } from '@nestjs/config';
 import { z } from 'zod';
-import { parseEnv } from './env';
+import { parseEnv, positiveInt } from './env';
 
 /** DER prefix of an Ed25519 SubjectPublicKeyInfo, which wraps the raw 32 bytes. */
 const SPKI_PREFIX_BYTES = 12;
@@ -86,10 +86,21 @@ const schema = z
      */
     geoipCityDb: z.string().min(1).optional(),
     geoipAsnDb: z.string().min(1).optional(),
-    /** How long a pairing token can be redeemed after it is minted, in seconds. */
-    pairingTokenTtlSeconds: z.coerce.number().int().positive().default(3_600),
-    /** Unspent, unexpired pairing tokens one user may hold at once. */
-    maxUnspentPairingTokens: z.coerce.number().int().positive().default(5),
+    /**
+     * How long a pairing token can be redeemed after it is minted, in seconds:
+     * the span of "I am sitting at the machine now", long enough to find a
+     * terminal, short enough that a token left in a chat log is worthless by
+     * the time anyone reads it.
+     */
+    pairingTokenTtlSeconds: positiveInt(3_600),
+    /**
+     * Unspent, unexpired pairing tokens one user may hold at once. Each is a
+     * live way to add a machine to the account for its lifetime, and the
+     * console only ever shows one — its "New token" replaces the one on screen
+     * — so a handful covers two tabs and a retry without leaving a drawer of
+     * them in chat logs.
+     */
+    maxUnspentPairingTokens: positiveInt(5),
   })
   .transform(({ apiPublicUrl, controlPlaneUrl, signingKey, ...rest }) => ({
     // Trailing slashes are stripped on both sides of the audience comparison,

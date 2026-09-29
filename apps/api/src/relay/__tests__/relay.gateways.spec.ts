@@ -64,13 +64,6 @@ const ORG = 'b8a4c2d0-1e2f-4a3b-8c4d-5e6f7a8b9c0d';
 const USER = 'a7a3b1cf-0d1e-4f2a-9b3c-4d5e6f7a8b9c';
 const FINGERPRINT = 'f'.repeat(64);
 
-/** The `relay.*` budgets, at their defaults. */
-const RELAY_CONFIG: Record<string, number> = {
-  'relay.helloTimeoutMs': 10_000,
-  'relay.linkMaxBufferedBytes': 8 * 1024 * 1024,
-  'relay.browserMaxBufferedBytes': 4 * 1024 * 1024,
-};
-
 const hostFacts = {
   platform: 'macos',
   arch: 'arm64',
@@ -166,7 +159,6 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
           options.fingerprint === undefined ? FINGERPRINT : options.fingerprint,
         'app.frontendUrl': 'http://localhost:3000',
       })[key],
-    getOrThrow: (key: string) => RELAY_CONFIG[key],
   } as unknown as ConfigService;
 
   const registry = new InProcessLinkRegistry(() => 0);
@@ -630,10 +622,7 @@ describe('runner link', () => {
         new InProcessLinkRegistry(() => 0),
         processor,
         {} as CredentialsProcessor,
-        {
-          get: () => FINGERPRINT,
-          getOrThrow: (key: string) => RELAY_CONFIG[key],
-        } as unknown as ConfigService,
+        { get: () => FINGERPRINT } as unknown as ConfigService,
       );
       const socket = new FakeSocket();
       await (

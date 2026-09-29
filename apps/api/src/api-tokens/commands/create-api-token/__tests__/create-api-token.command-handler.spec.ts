@@ -1,4 +1,3 @@
-import type { ConfigService } from '@nestjs/config';
 import { defineAbilitiesFromPermissions } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AbilityFactory } from '../../../../roles/application/ability.factory';
@@ -10,14 +9,6 @@ import { CreateApiTokenCommandHandler } from '../create-api-token.command-handle
 
 const ADMIN_PERMISSIONS = [{ action: 'manage', subject: 'all' }];
 const READER_PERMISSIONS = [{ action: 'read', subject: 'User' }];
-
-/** `apiTokens.maxActivePerUser` at its default. */
-const config = {
-  getOrThrow: (key: string) => {
-    if (key === 'apiTokens.maxActivePerUser') return 50;
-    throw new Error(`Missing config ${key}`);
-  },
-} as unknown as ConfigService;
 
 describe('CreateApiTokenCommandHandler', () => {
   let service: CreateApiTokenCommandHandler;
@@ -56,7 +47,6 @@ describe('CreateApiTokenCommandHandler', () => {
       repo as ApiTokenRepositoryPort,
       memberships,
       abilityFactory as AbilityFactory,
-      config,
     );
   });
 

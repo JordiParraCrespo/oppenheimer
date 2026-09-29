@@ -1,6 +1,5 @@
 import { randomBytes } from 'node:crypto';
 import { Inject } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
@@ -12,10 +11,18 @@ import { SessionErrors } from '../../domain/sessions.errors';
 import { IssueAttachTicketCommand } from './issue-attach-ticket.command';
 
 /**
- * A ticket is a **Redis key, not a table**: it cannot outlive the seconds it is
- * valid for, and a row whose whole life is shorter than a request timeout earns
+ * A ticket is a **Redis key, not a table**: it cannot outlive the sixty seconds it
+ * is valid for, and a row whose whole life is shorter than a request timeout earns
  * no table.
  */
+/**
+ * Sixty seconds, not thirty. Single use is the real control, so the lifetime should
+ * buy reliability rather than shave a risk that is already bounded to one attach:
+ * mint, DNS, TLS and upgrade on a cold radio can take five to ten seconds, and the
+ * failure mode of being too tight is "the terminal did not open" on precisely the
+ * device this product exists for.
+ */
+export const ATTACH_TICKET_TTL_SECONDS = 60;
 /** The path the console opens the socket on, on this API's own origin. */
 const ATTACH_URL = '/api/v1/relay/attach';
 
@@ -52,7 +59,6 @@ export class IssueAttachTicketCommandHandler
     @Inject(HOST_ACCESS)
     private readonly hosts: HostAccessPort,
     private readonly cache: CacheService,
-    private readonly configService: ConfigService,
   ) {}
 
   async execute(command: IssueAttachTicketCommand): Promise<IssuedAttachTicket> {
@@ -64,7 +70,6 @@ export class IssueAttachTicketCommandHandler
     // 32 bytes of `node:crypto`, base64url: unguessable, and URL-safe because it
     // travels as a subprotocol token.
     const ticket = randomBytes(32).toString('base64url');
-    const ttlSeconds = this.ticketTtlSeconds;
     const claimed = await this.cache.setIfAbsent<AttachTicket>(
       `${ATTACH_TICKET_PREFIX}${ticket}`,
       {
@@ -73,7 +78,7 @@ export class IssueAttachTicketCommandHandler
         window: command.window,
         userId: command.userId,
       },
-      ttlSeconds,
+      ATTACH_TICKET_TTL_SECONDS,
     );
     if (!claimed) throw new AppError(SessionErrors.ATTACH_TICKET_UNAVAILABLE);
 
@@ -83,19 +88,8 @@ export class IssueAttachTicketCommandHandler
     return {
       ticket,
       url: ATTACH_URL,
-      expiresAt: new Date(Date.now() + ttlSeconds * 1000),
+      expiresAt: new Date(Date.now() + ATTACH_TICKET_TTL_SECONDS * 1000),
       window: command.window,
     };
-  }
-
-  /**
-   * Sixty seconds by default, not thirty. Single use is the real control, so the
-   * lifetime should buy reliability rather than shave a risk that is already
-   * bounded to one attach: mint, DNS, TLS and upgrade on a cold radio can take
-   * five to ten seconds, and the failure mode of being too tight is "the terminal
-   * did not open" on precisely the device this product exists for.
-   */
-  private get ticketTtlSeconds(): number {
-    return this.configService.getOrThrow<number>('sessions.attachTicketTtlSeconds');
   }
 }
