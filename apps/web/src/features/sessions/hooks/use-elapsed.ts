@@ -1,3 +1,4 @@
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { formatElapsed } from '@oppenheimer/frontend-web';
 import { useEffect, useState } from 'react';
 
@@ -17,7 +18,7 @@ export function useElapsed(since: Date, ticking = true): string {
 
     // A second is the resolution the pane shows; anything finer is a render
     // per frame for a number that did not change.
-    const id = setInterval(() => setNow(Date.now()), 1000);
+    const id = setInterval(() => setNow(Date.now()), CORE_CONFIG.clock.secondMs);
     return () => clearInterval(id);
   }, [ticking]);
 

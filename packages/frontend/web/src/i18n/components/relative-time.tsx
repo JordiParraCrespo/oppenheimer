@@ -1,4 +1,5 @@
 import { useNow } from '@oppenheimer/design-system-web';
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import type { ReactNode } from 'react';
 import { useLocale } from '../hooks/use-locale';
 import { formatRelativeTime } from '../lib/format-date';
@@ -15,7 +16,7 @@ import { formatRelativeTime } from '../lib/format-date';
  */
 export function RelativeTime({
   date,
-  interval = 60_000,
+  interval = CORE_CONFIG.clock.minuteMs,
   children,
 }: {
   date: Date;

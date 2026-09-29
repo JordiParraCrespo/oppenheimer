@@ -6,6 +6,7 @@ import {
   useNow,
 } from '@oppenheimer/design-system-web';
 import { useTriggerPreview } from '@oppenheimer/frontend-consumer/react';
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { formatShortDuration } from '@oppenheimer/frontend-web';
 import {
   externalEventDefinition,
@@ -45,7 +46,7 @@ export function GithubTriggerCard({
   onRemove: () => void;
 }) {
   const { t } = useTranslation();
-  const now = useNow(60_000);
+  const now = useNow(CORE_CONFIG.clock.minuteMs);
   const definition = externalEventDefinition('github', card.event);
   const { key: _key, ...trigger } = card;
   const preview = useTriggerPreview(card.repositories.length ? trigger : undefined);

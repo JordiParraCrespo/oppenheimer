@@ -9,6 +9,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
+import { CONSUMER_CONFIG } from '../config';
 import type {
   AutomationEntity,
   AutomationInput,
@@ -118,7 +119,7 @@ export function useTriggerPreview(trigger: GithubTriggerInput | undefined) {
     queryKey: automationsKeys.preview(trigger),
     queryFn: trigger ? () => app.automations.previewTrigger(trigger) : skipToken,
     placeholderData: keepPreviousData,
-    staleTime: 30_000,
+    staleTime: CONSUMER_CONFIG.automations.triggerPreviewStaleMs,
   });
 }
 

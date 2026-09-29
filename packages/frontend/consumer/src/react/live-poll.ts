@@ -1,3 +1,5 @@
+import { CONSUMER_CONFIG } from '../config';
+
 /**
  * Every poll the console runs against the API, in one place: how often it
  * asks, and whether it keeps asking while the tab is hidden. A query hook in
@@ -20,13 +22,11 @@
  * - `liveRun`: an automation run, queued for seconds and running for minutes.
  * - `hostPresence`: a host going on or offline, for a view that shows it
  *   (Settings → Hosts). A heartbeat is not streamed to the console yet.
+ *
+ * The values are `CONSUMER_CONFIG.poll` (`src/config.ts`), with the console's
+ * other tunables; this file is the one that turns them into query options.
  */
-export const LIVE_POLL = {
-  sessionStarting: { interval: 2000, inBackground: true },
-  pairing: { interval: 3000, inBackground: true },
-  liveRun: { interval: 5000, inBackground: true },
-  hostPresence: { interval: 15_000, inBackground: false },
-} as const;
+export const LIVE_POLL = CONSUMER_CONFIG.poll;
 
 export type LivePollKind = keyof typeof LIVE_POLL;
 
@@ -63,9 +63,5 @@ export function pollWhile<TData>(
   };
 }
 
-/**
- * How long the session list keeps watching a deleted session's row. A host
- * that is online answers a close in seconds; one that is offline answers only
- * when it is back, and the list stops asking after this.
- */
-export const CLOSE_WATCH_MS = 60_000;
+/** How long the session list keeps watching a deleted session's row: `CONSUMER_CONFIG.sessions.closeWatchMs`. */
+export const CLOSE_WATCH_MS = CONSUMER_CONFIG.sessions.closeWatchMs;

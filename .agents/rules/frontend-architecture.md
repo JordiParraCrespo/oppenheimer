@@ -252,6 +252,15 @@ name the jobs and split *those*.
   takes a narrowing `select`, and a read that only happens in an event handler
   uses the module's `use…Snapshot()` rather than subscribing.
 
+- **Timings and limits are config.** A poll interval, a stale time, a clock
+  tick, a debounce, a page size or a retry delay is a value in a config
+  object, never a number at its call site. Generic ones are `CORE_CONFIG`
+  (`@oppenheimer/frontend-core/config`); the console's are `CONSUMER_CONFIG`
+  (`@oppenheimer/frontend-consumer/config`), because the kernel never names a
+  product. Unit constants (`MINUTE`, `DAY`) and protocol facts (escape codes,
+  close codes, `setTimeout`'s ceiling) are not tunables and stay where they
+  are used.
+
 - **Polling is one policy.** `LIVE_POLL` in the product package
   (`src/react/live-poll.ts`) owns every poll: its interval and whether it
   keeps running while the tab is hidden. A package hook spreads `pollWhile()`

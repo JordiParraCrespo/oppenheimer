@@ -1,14 +1,14 @@
 'use client';
 
 import type { Query, QueryClient } from '@tanstack/query-core';
+import { CORE_CONFIG } from '../config';
 import { authKeys, userSettingsKeys } from './query-keys';
 
 /**
  * How long a restored cache entry stays usable before the persister throws it
- * away. Entries older than this are dropped on restore, so a user who comes
- * back after a week never sees week-old data flash on screen.
+ * away: `CORE_CONFIG.query.persistMaxAgeMs`.
  */
-export const QUERY_PERSIST_MAX_AGE = 24 * 60 * 60 * 1000;
+export const QUERY_PERSIST_MAX_AGE = CORE_CONFIG.query.persistMaxAgeMs;
 
 /**
  * Features whose queries never reach storage, whatever the product. The

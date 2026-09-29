@@ -1,4 +1,5 @@
 import { TokenMono, useNow, WeekdayStrip } from '@oppenheimer/design-system-web';
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { formatCountdown, useLocale } from '@oppenheimer/frontend-web';
 import { nextScheduleOccurrence } from '@oppenheimer/shared/automations';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +19,7 @@ const DAY = 86_400_000;
 export function SchedulePreview({ card }: { card: ScheduleCard }) {
   const { t } = useTranslation();
   const locale = useLocale();
-  const now = useNow(30_000);
+  const now = useNow(CORE_CONFIG.clock.halfMinuteMs);
   const zone = viewerTimeZone();
 
   const fires = new Set<string>();

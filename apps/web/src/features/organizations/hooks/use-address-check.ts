@@ -1,8 +1,6 @@
 import { type SlugStatus, useDebouncedValue } from '@oppenheimer/design-system-web';
 import { useCheckSlug } from '@oppenheimer/frontend-consumer/react';
-
-/** How long the field stays quiet after a keystroke before it asks the API. */
-const DEBOUNCE_MS = 400;
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 
 /**
  * The availability verdict for a workspace address, as the field shows it:
@@ -20,7 +18,7 @@ const DEBOUNCE_MS = 400;
  * failure and keeps Continue disabled, because it still does not know.
  */
 export function useAddressCheck(address: string): { status: SlugStatus; error: Error | null } {
-  const debounced = useDebouncedValue(address, DEBOUNCE_MS);
+  const debounced = useDebouncedValue(address, CORE_CONFIG.input.availabilityCheckDebounceMs);
   const settled = debounced === address;
   // Nothing to ask until the reader stops typing, and nothing to ask about an
   // empty address: the query holds `undefined` and does not fetch.
