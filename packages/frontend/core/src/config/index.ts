@@ -30,14 +30,34 @@ export const CORE_CONFIG = {
      * flash on screen.
      */
     persistMaxAgeMs: 24 * 60 * 60 * 1000,
+    /** How many times a failed query is retried; a 4xx never is. */
+    retries: 1,
   },
+  session: {
+    /**
+     * How many times the startup session lookup is retried, so one network
+     * blip does not read as "logged out" and bounce the user to /login.
+     */
+    restoreRetries: 2,
+    /** The first retry's delay; each one after doubles it, up to the cap. */
+    restoreRetryBaseMs: 1_000,
+    restoreRetryMaxMs: 5_000,
+  },
+  /** How long the deployment's capabilities stay fresh: they change on a redeploy, not while a tab is open. */
+  capabilitiesStaleMs: 5 * 60 * 1000,
+  /**
+   * How long the caller's feature flags stay fresh: short enough that a kill
+   * switch lands within a minute of the next focus, long enough that
+   * navigating between screens does not refetch.
+   */
+  featureFlagsStaleMs: 60_000,
   /**
    * The clocks a time on screen ticks on (`useNow(interval)`). Pick the one
    * that matches what the text shows: a clock finer than the text is a render
    * for a number that did not change.
    */
   clock: {
-    /** For a running clock in seconds: the provisioning pane's elapsed time. */
+    /** For a clock in seconds: the provisioning pane's elapsed time, countdowns. */
     secondMs: 1_000,
     /** For "in 3 minutes" next to a schedule, which has to turn over on time. */
     halfMinuteMs: 30_000,

@@ -6,6 +6,7 @@ import {
   QueryClient,
   type QueryClientConfig,
 } from '@tanstack/query-core';
+import { CORE_CONFIG } from '../config';
 import { defaultQueryClientOptions } from './persistence';
 import { authKeys } from './query-keys';
 
@@ -47,7 +48,7 @@ function isUnauthorized(error: unknown): boolean {
 export function shouldRetryQuery(failureCount: number, error: unknown): boolean {
   const status = statusOf(error);
   if (status !== undefined && status < 500) return false;
-  return failureCount < 1;
+  return failureCount < CORE_CONFIG.query.retries;
 }
 
 /**

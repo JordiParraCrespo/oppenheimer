@@ -119,7 +119,7 @@ export function defaultQueryClientOptions(staleTime: number) {
     queries: {
       staleTime,
       gcTime: QUERY_PERSIST_MAX_AGE,
-      retry: 1,
+      retry: CORE_CONFIG.query.retries,
     },
   };
 }

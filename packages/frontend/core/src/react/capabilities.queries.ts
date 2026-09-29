@@ -2,6 +2,7 @@
 
 import type { ClientDeployment } from '@oppenheimer/shared';
 import { type UseQueryOptions } from '@tanstack/react-query';
+import { CORE_CONFIG } from '../config';
 import { useOppenheimerApp } from './context';
 import { useQuery } from './query';
 
@@ -38,7 +39,7 @@ export function useDeploymentCapabilities<TData = ClientDeployment>(
   return useQuery({
     queryKey: capabilitiesKeys.deployment(),
     queryFn: () => app.capabilities.get(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: CORE_CONFIG.capabilitiesStaleMs,
     ...options,
   });
 }
