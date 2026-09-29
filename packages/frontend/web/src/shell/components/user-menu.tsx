@@ -1,6 +1,7 @@
 import {
   Avatar,
   AvatarFallback,
+  Callout,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -18,11 +19,10 @@ import {
   SidebarMenuButton,
 } from '@oppenheimer/design-system-web';
 import { ChevronDown, Globe, LogOut, Moon } from '@oppenheimer/design-system-web/icons';
-import { useLogout, useProfile } from '@oppenheimer/frontend-core/react';
+import { useErrorMessage, useLogout, useProfile } from '@oppenheimer/frontend-core/react';
 import { type Locale, locales } from '@oppenheimer/translations/locales';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { ErrorAlert } from '../../forms';
 import { type ThemePreference, useTheme } from '../../theme';
 import { useShell } from '../hooks/use-shell';
 
@@ -52,6 +52,7 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
   const { data: user } = useProfile();
   const navigate = useNavigate();
   const logout = useLogout({ onSuccess: () => navigate({ to: '/login' }) });
+  const resolveError = useErrorMessage();
 
   // Narrowed to `Locale` because the menu *names* it (`language.en`), not just
   // compares it: `t()` is typed over the catalog, and a bare `string` in the
@@ -174,7 +175,14 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
             <LogOut />
             {t('nav.logOut')}
           </DropdownMenuItem>
-          <ErrorAlert error={logout.error} fallback={t('nav.logOutFailed')} className="mt-1" />
+          {/* The menu stays open on a failure, so the sentence sits under Log out.
+              A `Callout`, not `ErrorAlert`: that card is drawn for a form or a
+              page, and this menu is 250px of rows. */}
+          {logout.error ? (
+            <Callout tone="danger" className="mx-1 mt-1 mb-1">
+              {resolveError(logout.error, t('nav.logOutFailed')).message}
+            </Callout>
+          ) : null}
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

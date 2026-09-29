@@ -42,8 +42,6 @@ export function SocialLoginButtons({
   const github = capabilities?.github_oauth ?? true;
 
   if (!google && !github) {
-    // A note, not a failure — nobody signing in did anything wrong — so it is
-    // the neutral `Callout`, not an alert.
     return <Callout>{t('auth.login.noSocialProviders')}</Callout>;
   }
 
