@@ -293,15 +293,23 @@ export class AutomationRunRepository
   async restageStalled(staleBefore: Date, batch: number): Promise<number> {
     return this.outbox.transaction(async (manager) => {
       // IDX_automation_run_pending; SKIP LOCKED so replicas sweep disjoint rows.
-      const due: { id: string; automationId: string; cause: string }[] = await manager.query(
-        `UPDATE "automation_run" r SET "availableAt" = now(), "updatedAt" = now()
+      //
+      // Destructured, because TypeORM hands an UPDATE's result back as
+      // `[rows, affected]` and only a SELECT's as the rows themselves
+      // (`PostgresQueryRunner.query`). Read as rows, this loop ran twice per
+      // sweep over an array and a number, staged two jobs whose `runId` was
+      // `undefined` — which the processor then logged as an unknown job — and
+      // never re-dispatched the runs that were actually due.
+      const [due]: [{ id: string; automationId: string; cause: string }[], number] =
+        await manager.query(
+          `UPDATE "automation_run" r SET "availableAt" = now(), "updatedAt" = now()
            FROM (SELECT "id" FROM "automation_run"
                   WHERE "outcome" = 'pending' AND "availableAt" < $1
                   ORDER BY "availableAt" LIMIT $2 FOR UPDATE SKIP LOCKED) due
           WHERE r."id" = due."id"
           RETURNING r."id", r."automationId", r."cause"`,
-        [staleBefore, batch],
-      );
+          [staleBefore, batch],
+        );
       for (const row of due) {
         await this.outbox.stageJob(manager, {
           queue: QUEUE_NAMES.AUTOMATION_RUNS,

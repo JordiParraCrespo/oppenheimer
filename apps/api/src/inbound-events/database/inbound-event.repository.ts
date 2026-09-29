@@ -178,7 +178,14 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
     batch: number,
   ): Promise<{ restaged: number; abandoned: number }> {
     return this.outbox.transaction(async (manager) => {
-      const abandoned: { id: string }[] = await manager.query(
+      // Both statements are destructured: TypeORM hands an UPDATE's result
+      // back as `[rows, affected]` and only a SELECT's as the rows themselves
+      // (`PostgresQueryRunner.query`). Read as rows, `abandoned.length` was
+      // the constant 2 and the loop below ran twice over an array and a
+      // number, staging two jobs whose `inboundDeliveryId` was `undefined` —
+      // which the processor logged as an unknown job — while the deliveries
+      // that were actually stuck were never restaged.
+      const [abandoned]: [{ id: string }[], number] = await manager.query(
         `UPDATE "inbound_delivery"
             SET "status" = 'failed', "lastError" = 'not processed after its retries and a day of sweeps'
           WHERE "status" = 'received' AND "receivedAt" < $1
@@ -187,16 +194,17 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
       );
       // IDX_inbound_delivery_unprocessed; SKIP LOCKED so two replicas sweep
       // disjoint rows.
-      const due: { id: string; source: string; deliveryId: string }[] = await manager.query(
-        `UPDATE "inbound_delivery" d SET "restagedAt" = now()
+      const [due]: [{ id: string; source: string; deliveryId: string }[], number] =
+        await manager.query(
+          `UPDATE "inbound_delivery" d SET "restagedAt" = now()
            FROM (SELECT "id" FROM "inbound_delivery"
                   WHERE "status" = 'received' AND "receivedAt" < $1
                     AND ("restagedAt" IS NULL OR "restagedAt" < $1)
                   ORDER BY "receivedAt" LIMIT $2 FOR UPDATE SKIP LOCKED) due
           WHERE d."id" = due."id"
           RETURNING d."id", d."source", d."deliveryId"`,
-        [staleBefore, batch],
-      );
+          [staleBefore, batch],
+        );
       for (const row of due) {
         await this.outbox.stageJob(manager, {
           queue: QUEUE_NAMES.INBOUND_EVENTS,
