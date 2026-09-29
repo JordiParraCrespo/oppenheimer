@@ -26,6 +26,4 @@ for ever.
 - `OutboxMessageSchema` declares `IDX_outbox_message_pending` (partial,
   `("createdAt") WHERE status = 'pending'`) and `IDX_outbox_message_created_brin`
   in place of `IDX_outbox_message_status_available`, mirroring the API's
-  migration `1790800000000-OutboxPendingIndexAndRetention`. On a large
-  `outbox_message` table, run
-  `apps/api/db/ops/1790800000000-outbox-pending-index.sql` before deploying.
+  schema.

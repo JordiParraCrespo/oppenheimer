@@ -8,7 +8,8 @@ interface Queryable {
 }
 
 /**
- * Reads the authorization version counters (see `AddAuthzVersions`).
+ * Reads the authorization version counters (`organization.roleVersion`,
+ * `role_catalog_version`, `user_role_version`).
  *
  * The bump helpers below are the other half: every writer that changes
  * effective permissions calls one with **its own transaction's manager**.

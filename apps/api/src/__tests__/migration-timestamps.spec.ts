@@ -8,36 +8,10 @@ import { describe, expect, it } from 'vitest';
  * TypeORM orders migrations by the 13-digit timestamp at the end of the class
  * name and records each one by that name. Two migrations with the same
  * timestamp have no defined order: the TypeORM CLI, which globs the directory
- * as the API does at boot, and the integration suites
- * (`test/run-migrations.ts`, which sorts file names) already apply the three
- * pairs below in opposite orders. A pair is only safe when neither migration reads or writes anything
- * the other creates, and nothing checks that but a person. So a new migration
- * takes a timestamp later than the newest one, and this fails on one that
- * shares a timestamp.
- *
- * The three pairs below predate the check and have run on deployed databases,
- * where they are recorded by class name, so they keep their names. Each was
- * checked to be order-independent:
+ * as the API does at boot, and the integration suites (`runAllMigrations`,
+ * which sorts file names) could apply such a pair in opposite orders. So a new migration takes a timestamp later than the newest
+ * one, and this fails on one that shares a timestamp.
  */
-const EXISTING_PAIRS: Record<string, string[]> = {
-  // From the Flama starter. AddAdminAndOrganizations adds the admin and
-  // organization columns to `user` and `session`, creates `organization`,
-  // `member`, `team`, `teamMember` and `invitation`, and seeds `role` (from the
-  // earlier AddRolesRbac); AddBilling creates `billing_customer` and
-  // `subscription` (dropped since by DropBillingAndLeads), referencing only
-  // `user`. Neither touches the other's tables.
-  '1781000000000': ['AddAdminAndOrganizations', 'AddBilling'],
-  // AddGithubInstallations creates `github_installation`; AddHosts creates
-  // `host` and `host_pairing_token`. Both only reference `user` and
-  // `organization`, seed nothing, and neither touches the other's tables.
-  '1788700000000': ['AddGithubInstallations', 'AddHosts'],
-  // AddHostInventoryAndPresence creates the `host_*` side tables and backfills
-  // them from `host`; NameProjectsAndFlattenSessions changes `project`,
-  // `project_repository` and `work_session` and reads `session_checkout` and
-  // `organization`. Disjoint tables, and each down() drops only its own.
-  '1789900000000': ['AddHostInventoryAndPresence', 'NameProjectsAndFlattenSessions'],
-};
-
 const MIGRATIONS_DIR = resolve(__dirname, '../migrations');
 
 interface Migration {
@@ -85,6 +59,6 @@ describe('migration timestamps', () => {
         .filter(([, names]) => names.length > 1)
         .map(([timestamp, names]) => [timestamp, names.sort()]),
     );
-    expect(shared).toEqual(EXISTING_PAIRS);
+    expect(shared).toEqual({});
   });
 });

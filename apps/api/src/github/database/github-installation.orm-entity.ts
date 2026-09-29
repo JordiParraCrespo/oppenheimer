@@ -26,7 +26,7 @@ import {
  */
 @Entity('github_installation')
 @Index(['organizationId'])
-// Behind FK_github_installation_installed_by (1790890000000-IndexUnbackedForeignKeys).
+// Backs FK_github_installation_installed_by.
 @Index('IDX_github_installation_installed_by', ['installedByUserId'])
 @Unique('UQ_github_installation_organization_id', ['organizationId', 'id'])
 export class GithubInstallationOrmEntity {
