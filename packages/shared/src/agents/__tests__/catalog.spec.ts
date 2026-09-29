@@ -62,7 +62,14 @@ describe('coding agent catalog', () => {
     expect(effortFor('claude-code', 'claude-opus-5-5')?.default).toBe('medium');
     expect(effortFor('claude-code', 'claude-fable-5-1')?.default).toBe('high');
     expect(effortFor('claude-code', 'claude-haiku-4-5')).toBeUndefined();
-    expect(levelsOf('codex', 'gpt-5.6-sol')).toEqual(['low', 'medium', 'high', 'xhigh', 'max', 'ultra']);
+    expect(levelsOf('codex', 'gpt-5.6-sol')).toEqual([
+      'low',
+      'medium',
+      'high',
+      'xhigh',
+      'max',
+      'ultra',
+    ]);
     expect(levelsOf('codex', 'gpt-5.6-luna')).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
     expect(effortFor('codex', 'gpt-5.6-sol')?.default).toBe('low');
     expect(effortFor('codex', 'gpt-5.6-terra')?.default).toBe('medium');

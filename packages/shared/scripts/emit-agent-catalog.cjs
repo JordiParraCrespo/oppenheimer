@@ -94,7 +94,10 @@ function goEfforts(models) {
   const rows = models
     .filter((model) => model.effort)
     .map((model) => {
-      const entries = model.effort.levels.map((level) => [JSON.stringify(level.id), goLevel(level)]);
+      const entries = model.effort.levels.map((level) => [
+        JSON.stringify(level.id),
+        goLevel(level),
+      ]);
       return `\t\t\t${JSON.stringify(model.id)}: {\n${aligned(entries, '\t\t\t\t').join('\n')}\n\t\t\t},`;
     });
   return `map[string]map[string]launchLevel{\n${rows.join('\n')}\n\t\t}`;

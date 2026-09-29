@@ -267,7 +267,11 @@ function effort(
     levels: Object.freeze(
       levels.map((id) => {
         const { argv, env } = launch(id);
-        return Object.freeze({ id, argv: Object.freeze([...argv]), env: Object.freeze({ ...env }) });
+        return Object.freeze({
+          id,
+          argv: Object.freeze([...argv]),
+          env: Object.freeze({ ...env }),
+        });
       }),
     ),
     default: defaultLevel,
@@ -705,7 +709,10 @@ export function isCodingAgentId(value: unknown): value is CodingAgentId {
  * runs. The console draws the slider from this, the API records only a level
  * it lists, and the runner's generated table holds the same answer.
  */
-export function effortFor(agent: CodingAgentId, model: string | null): CodingAgentEffort | undefined {
+export function effortFor(
+  agent: CodingAgentId,
+  model: string | null,
+): CodingAgentEffort | undefined {
   const { models } = CODING_AGENTS[agent];
   const row = model === null ? models.find((m) => m.default) : models.find((m) => m.id === model);
   return row?.effort;
