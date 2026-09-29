@@ -222,32 +222,6 @@ edit(
   /** Mark the user for deletion and raise the corresponding domain event. */`,
 );
 
-// P10 HEX-LEGACY-SHAPE: a new operation added to an existing slice's
-// controller, beside the route it owns, instead of as a slice of its own.
-edit(
-  'P10',
-  api('admin/queries/get-user/get-user.http.controller.ts'),
-  `  @Get('users/:id')
-  @Version('1')`,
-  `  @Get('users/:id/impersonations')
-  @Version('1')
-  @RequireScopes('admin:read')
-  @CheckPolicies({ action: 'manage', subject: 'User' })
-  @ApiOperation({ summary: "List a user's active impersonation sessions" })
-  @ApiResponse({ status: 200, type: AdminUserResponseDto })
-  listImpersonations(
-    @Req() req: Request,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<AdminUserResponseDto> {
-    return this.queryBus.execute<GetUserQuery, AdminUserResponseDto>(
-      new GetUserQuery({ headers: req.headers, userId: id }),
-    );
-  }
-
-  @Get('users/:id')
-  @Version('1')`,
-);
-
 // P11 ledger drift + HEX-PORT-INJECTION: a query handler injects the concrete
 // repository, and a new pathNot silences the rule that would catch it.
 edit(
@@ -296,4 +270,4 @@ edit(
   public validate(): void {`,
 );
 
-console.log('planted P1–P11 and decoys N1–N2 in', root);
+console.log('planted P1–P9, P11 and decoys N1–N2 in', root);

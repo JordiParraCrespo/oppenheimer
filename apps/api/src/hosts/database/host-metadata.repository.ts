@@ -27,10 +27,10 @@ import type { HostPresenceOrmEntity } from './host-presence.orm-entity';
 type PresenceRow = HostPresenceOrmEntity & { online: boolean };
 
 /**
- * The four side tables, in SQL written out: every statement here is one the
- * migration's header names as an access pattern (Q1–Q8 in
- * `1789900000000-AddHostInventoryAndPresence.ts`), and a conditional upsert
- * or a keyset page reads better as the statement it is than as a builder.
+ * The four side tables, in SQL written out: every statement here is one of
+ * their access patterns (Q1–Q8 in `product/versions/mvp/15-host-metadata.md`),
+ * and a conditional upsert or a keyset page reads better as the statement it
+ * is than as a builder.
  */
 @Injectable()
 export class HostMetadataRepository implements HostMetadataRepositoryPort {

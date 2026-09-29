@@ -15,8 +15,8 @@ import {
  * guards, the credential resolver, the Zod request pipe and the problem-document
  * filter all have to agree about a route whose policy is `update Session` behind
  * `sessions:write`. The state machine and the constraints are proved against a real
- * Postgres in `apps/api/test/sessions.integration.spec.ts`; what is proved here is
- * that a caller reaches them, and that another workspace does not.
+ * Postgres in `apps/api/src/sessions/__tests__/sessions.integration.spec.ts`; what
+ * is proved here is that a caller reaches them, and that another workspace does not.
  *
  * Creating a session needs a **host** and a **connected GitHub installation**.
  * Both are set up here through the real routes — minting a pairing token and

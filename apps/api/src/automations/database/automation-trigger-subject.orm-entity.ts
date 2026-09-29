@@ -1,6 +1,6 @@
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
-/** A subject a trigger watches: a repository today (`1790600000000-AddAutomations`). */
+/** A subject a trigger watches: a repository today. */
 @Entity('automation_trigger_subject')
 @Index('IDX_automation_trigger_subject_lookup', ['organizationId', 'subjectKind', 'subjectRef'])
 export class AutomationTriggerSubjectOrmEntity {

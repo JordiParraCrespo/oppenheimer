@@ -33,7 +33,8 @@ to the API.
   `PingInterval` bounded by `PingTimeout`, served between two frames when
   the socket is busy. Each write is bounded by `WriteTimeout`. It returns the
   first failure, wrapping `ErrWrite` or `ErrPing` ("write: …", "ping: …"),
-  the source's error, or ctx's.
+  the source's error, or ctx's; a write or ping that fails once ctx is done
+  reports ctx's error.
 - `Source` — `Next() (Frame, ready, error)`, never blocking: a `Frame`
   (`Binary`, `Data`), or no frame and a channel that closes when there may be
   one. The runner's control-plane link pumps its outbox through it.
