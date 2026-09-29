@@ -519,6 +519,10 @@
       "ended": {
         "forbidden": "You do not have access to this session's terminal.",
         "refused": "The host refused to open this terminal."
+      },
+      "starting": {
+        "title": "Waiting for the agent",
+        "description": "The session is running. The agent draws its first screen once it has finished starting."
       }
     },
     "sidebar": {
