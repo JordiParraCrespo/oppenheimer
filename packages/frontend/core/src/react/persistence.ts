@@ -1,6 +1,7 @@
 'use client';
 
 import type { Query, QueryClient } from '@tanstack/query-core';
+import { CORE_CONFIG } from '../config';
 import { authKeys, userSettingsKeys } from './query-keys';
 
 /**
@@ -119,7 +120,7 @@ export function defaultQueryClientOptions(staleTime: number) {
     queries: {
       staleTime,
       gcTime: QUERY_PERSIST_MAX_AGE,
-      retry: 1,
+      retry: CORE_CONFIG.query.retries,
     },
   };
 }

@@ -8,6 +8,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Plus } from '@oppenheimer/design-system-web/icons';
 import type { AutomationEntity, ProjectEntity } from '@oppenheimer/frontend-consumer';
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useTranslation } from 'react-i18next';
 import { AutomationSidebarRow } from './automation-sidebar-row';
 
@@ -36,7 +37,7 @@ export function AutomationGroup({
   onNew: (project: ProjectEntity) => void;
 }) {
   const { t } = useTranslation();
-  const now = useNow(60_000);
+  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
 
   return (
     <SidebarProjectGroup>

@@ -1,3 +1,4 @@
+import type { ConfigService } from '@nestjs/config';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,10 +7,24 @@ import { HostPairingTokenEntity } from '../../../domain/host-pairing-token.entit
 import { hashPairingTokenSecret } from '../../../domain/pairing-token-secret.factory';
 import type { RunnerReleaseConfig } from '../../../infrastructure/runner-release.config';
 import { MintPairingTokenCommand } from '../mint-pairing-token.command';
-import {
-  MAX_SPENDABLE_TOKENS,
-  MintPairingTokenCommandHandler,
-} from '../mint-pairing-token.command-handler';
+import { MintPairingTokenCommandHandler } from '../mint-pairing-token.command-handler';
+
+/** The pairing settings `hosts.config.ts` registers, at their defaults. */
+const MAX_SPENDABLE_TOKENS = 5;
+const configWith = (overrides: Record<string, number> = {}) => {
+  const values: Record<string, number> = {
+    'hosts.pairingTokenTtlSeconds': 3_600,
+    'hosts.maxUnspentPairingTokens': MAX_SPENDABLE_TOKENS,
+    ...overrides,
+  };
+  return {
+    getOrThrow: (key: string) => {
+      if (!(key in values)) throw new Error(`Missing config ${key}`);
+      return values[key];
+    },
+  } as unknown as ConfigService;
+};
+const config = configWith();
 
 describe('MintPairingTokenCommandHandler', () => {
   let tokens: Pick<HostPairingTokenRepositoryPort, 'insertWithinCap' | 'findOneById'>;
@@ -39,6 +54,7 @@ describe('MintPairingTokenCommandHandler', () => {
     handler = new MintPairingTokenCommandHandler(
       tokens as HostPairingTokenRepositoryPort,
       release as RunnerReleaseConfig,
+      config,
     );
   });
 
@@ -139,6 +155,26 @@ describe('MintPairingTokenCommandHandler', () => {
     const minutes = (token.expiresAt.getTime() - Date.now()) / 60_000;
     expect(minutes).toBeGreaterThan(55);
     expect(minutes).toBeLessThanOrEqual(60);
+  });
+
+  it('honours a deployment’s own lifetime, in the expiry and in the refusal', async () => {
+    handler = new MintPairingTokenCommandHandler(
+      tokens as HostPairingTokenRepositoryPort,
+      release as RunnerReleaseConfig,
+      configWith({ 'hosts.pairingTokenTtlSeconds': 900 }),
+    );
+    const before = Date.now();
+    await handler.execute(command());
+
+    const minutes = (inserted().expiresAt.getTime() - before) / 60_000;
+    expect(minutes).toBeGreaterThan(14.9);
+    expect(minutes).toBeLessThanOrEqual(15.1);
+
+    vi.mocked(tokens.insertWithinCap).mockResolvedValueOnce(false);
+    await expect(handler.execute(command())).rejects.toMatchObject({
+      code: 'HOSTS_006',
+      detail: expect.stringContaining('15 minutes'),
+    });
   });
 
   it('refuses to mint what nobody could spend', async () => {

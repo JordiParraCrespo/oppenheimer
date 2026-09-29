@@ -13,7 +13,7 @@ import {
 /**
  * One turn of a session: a prompt given to the agent and what became of it.
  * A projection of `work_session_event`, written in the append's transaction
- * (`1790400000000-AddSessionTurns`, `domain/session-turn.policy.ts`).
+ * (`domain/session-turn.policy.ts`).
  */
 @Entity('session_turn')
 @Unique('UQ_session_turn_session_seq', ['sessionId', 'seq'])

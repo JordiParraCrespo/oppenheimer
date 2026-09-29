@@ -1,6 +1,7 @@
 import { DialogBody, DialogHeader, DialogTitle, useNow } from '@oppenheimer/design-system-web';
 import { parseRepositoryKey } from '@oppenheimer/frontend-consumer';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import {
   ErrorAlert,
   type ResolvedErrorMessage,
@@ -47,7 +48,7 @@ export function AutomationEditor({
   onSubmit: (draft: AutomationDraft, task: AutomationTaskDto) => void;
 }) {
   const { t } = useTranslation();
-  const now = useNow(60_000);
+  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   const [step, setStep] = useState<EditorStep>('task');
   const [draft, setDraft] = useState(initialDraft);
   const { data: project } = useProjects({

@@ -7,6 +7,8 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['src/**/*.spec.ts'],
+    // Integration suites need Docker; `pnpm test:integration` runs them.
+    exclude: ['src/**/*.integration.spec.ts'],
     setupFiles: ['./vitest.setup.ts'],
   },
 });

@@ -1,11 +1,14 @@
 import type { OutboxService } from '@oppenheimer/backend-ddd';
 import type { Queue } from 'bullmq';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  OUTBOX_RETENTION_BATCH,
-  OUTBOX_RETENTION_DAYS,
-  OutboxRetentionProcessor,
-} from '../infrastructure/outbox-retention.processor';
+import { configDefaults, configStub } from '../../config/__tests__/config-stub';
+import { OutboxRetentionProcessor } from '../infrastructure/outbox-retention.processor';
+
+const { retention } = configDefaults();
+const OUTBOX_RETENTION_DAYS = retention.outboxDays;
+const OUTBOX_RETENTION_BATCH = retention.batchSize;
+const MAX_BATCHES = retention.maxBatches;
+const config = configStub();
 
 function processor(batches: number[] | (() => number)) {
   const next = typeof batches === 'function' ? batches : () => batches.shift() ?? 0;
@@ -13,7 +16,7 @@ function processor(batches: number[] | (() => number)) {
     deleteProcessedBefore: vi.fn(async () => next()),
   } as unknown as OutboxService;
   const queue = { upsertJobScheduler: vi.fn().mockResolvedValue(undefined) } as unknown as Queue;
-  return { outbox, queue, subject: new OutboxRetentionProcessor(outbox, queue) };
+  return { outbox, queue, subject: new OutboxRetentionProcessor(outbox, queue, config) };
 }
 
 describe('OutboxRetentionProcessor', () => {
@@ -24,11 +27,11 @@ describe('OutboxRetentionProcessor', () => {
     expect(outbox.deleteProcessedBefore).toHaveBeenCalledTimes(3);
   });
 
-  it('stops after 200 batches, leaving the rest for the next run', async () => {
+  it('stops after maxBatches batches, leaving the rest for the next run', async () => {
     const { subject, outbox } = processor(() => OUTBOX_RETENTION_BATCH);
 
-    await expect(subject.process()).resolves.toBe(200 * OUTBOX_RETENTION_BATCH);
-    expect(outbox.deleteProcessedBefore).toHaveBeenCalledTimes(200);
+    await expect(subject.process()).resolves.toBe(MAX_BATCHES * OUTBOX_RETENTION_BATCH);
+    expect(outbox.deleteProcessedBefore).toHaveBeenCalledTimes(MAX_BATCHES);
   });
 
   it('cuts at seven days, in batches of the retention size', async () => {

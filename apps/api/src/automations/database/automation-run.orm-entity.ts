@@ -9,7 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-/** One firing of an automation (`1790600000000-AddAutomations`). */
+/** One firing of an automation. */
 @Entity('automation_run')
 @Unique('UQ_automation_run_automation_cause', ['automationId', 'causeKey'])
 @Index('IDX_automation_run_organization_created', ['organizationId', 'createdAt', 'id'])
@@ -36,7 +36,7 @@ import {
 })
 @Index('IDX_automation_run_pending', ['availableAt'], { where: `"outcome" = 'pending'` })
 @Index('IDX_automation_run_dispatched', ['dispatchedAt'], { where: `"outcome" = 'dispatched'` })
-// BRIN on "createdAt" for the retention purge (`1790810000000-AddHotPathIndexesAndDropRedundant`).
+// BRIN on "createdAt" for the retention purge (`InitialSchema`).
 @Index('IDX_automation_run_created_brin', { synchronize: false })
 export class AutomationRunOrmEntity {
   @PrimaryGeneratedColumn('uuid')

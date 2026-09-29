@@ -98,7 +98,8 @@ test('an image attached to the first task reaches the agent with it', async ({
   // draws on a canvas, so what it shows is read off the attach socket.
   // Escape sequences and the pane's line breaks are stripped, so a path the
   // pane wrapped still reads as one.
-  const shown = () => screen.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '').replace(/\s+/g, '');
+  const escapes = new RegExp(`${String.fromCharCode(27)}\\[[0-9;?]*[A-Za-z]`, 'g');
+  const shown = () => screen.replace(escapes, '').replace(/\s+/g, '');
   await expect.poll(shown, { timeout: 120_000 }).toContain('CLAUDE-SHIMargv=');
   await expect.poll(shown).toContain(`Matchthismockup${saved}`);
   await expect(page.getByText('Live', { exact: true })).toBeVisible();
