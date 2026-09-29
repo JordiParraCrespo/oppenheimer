@@ -23,9 +23,10 @@ const VOUCHER_MEMORY = 10_000;
  *
  * A refusal increments `throttle:auth-failures:ip:<ip>` through the same atomic
  * script every rate limit uses; past `throttling.authFailureLimit` in its
- * window the script sets its `:blocked` key for `throttling.authFailureBlockSeconds`. Asking is one round trip: the
- * block's remaining time and whether this credential holds a recent voucher,
- * in one `MULTI`.
+ * window the script sets its `:blocked` key for
+ * `throttling.authFailureBlockSeconds`. Asking is one round trip: the block's
+ * remaining time and whether this credential holds a recent voucher, in one
+ * `MULTI`.
  *
  * Fails open throughout, like the limiter itself.
  */
@@ -96,7 +97,6 @@ export class RedisAuthFailureLimiter implements AuthFailureLimiterPort {
     return this.configService.getOrThrow<number>('throttling.authFailureWindowSeconds') * 1000;
   }
 
-  /** How long a blocked address stays blocked. */
   private get blockMs(): number {
     return this.configService.getOrThrow<number>('throttling.authFailureBlockSeconds') * 1000;
   }

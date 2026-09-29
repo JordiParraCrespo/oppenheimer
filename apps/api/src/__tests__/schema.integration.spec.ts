@@ -325,7 +325,6 @@ describe('the migrated schema (integration)', () => {
     await expectHotPathIndexes();
   });
 
-  /** The indexes the automation and session hot paths read. */
   const HOT_PATH_CREATED = [
     'IDX_automation_run_dispatched',
     'IDX_automation_run_created_brin',

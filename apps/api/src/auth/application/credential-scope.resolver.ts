@@ -15,7 +15,6 @@ import type { CredentialResolverPort } from './credential-resolver.port';
 import { CredentialResolverRegistry } from './credential-resolver.registry';
 import type { CredentialScopePort } from './credential-scope.port';
 
-/** Header carrying an API token, for clients that prefer it over `Authorization`. */
 const API_KEY_HEADER = 'x-api-key';
 
 /** `requestMemo` keys: the guards each ask, and share one answer per request. */
@@ -44,12 +43,10 @@ interface Resolution {
  * - **OAuth access token** — verified by Better Auth's MCP plugin, its granted
  *   scopes carried through.
  *
- * Every other kind is a **contribution**: the module that owns a credential
- * contributes a {@link CredentialResolverPort} through
- * `AuthModule.contributeCredentials`, and
- * this resolver asks each registered resolver, in registration order, whether
- * the presented string is theirs. API tokens (`oppenheimer_pat_…`) are the
- * first such contribution; nothing here names them.
+ * Every other kind is a **contribution** (a {@link CredentialResolverPort}),
+ * asked in registration order whether the presented string is theirs. API
+ * tokens (`oppenheimer_pat_…`) are the first such contribution; nothing here
+ * names them.
  *
  * A bearer credential that cannot be resolved is rejected rather than ignored:
  * silently falling back to a cookie would let a stale token act with the
@@ -59,8 +56,7 @@ interface Resolution {
  * Each credential is verified **once per request**, whoever asks: the global
  * scopes guard, `ApiAuthGuard`, a host guard. A session token presented as a
  * bearer is verified while ruling out an OAuth grant, and that verdict is the
- * session `ApiAuthGuard` authenticates with — it used to be verified, thrown
- * away, and verified twice more.
+ * session `ApiAuthGuard` authenticates with.
  */
 @Injectable()
 export class CredentialScopeResolver implements CredentialScopePort {
@@ -75,7 +71,6 @@ export class CredentialScopeResolver implements CredentialScopePort {
     private readonly failures?: AuthFailureLimiterPort,
   ) {}
 
-  /** Resolve (once per request) the scoped credential, or `null` for a session. */
   async resolve(request: ScopedRequest): Promise<ScopeContext | null> {
     return (await this.resolution(request)).scope;
   }
@@ -100,7 +95,6 @@ export class CredentialScopeResolver implements CredentialScopePort {
       return cookie ? `session:${digest(cookie).slice(0, 32)}` : null;
     }
 
-    // A single-use kind is bucketed by what it resolves to; see `singleUse`.
     if (this.contributionFor(presented)?.singleUse) {
       const scope = await this.resolve(request).catch(() => null);
       return scope ? `cred:${scope.credentialId}` : null;
@@ -192,7 +186,6 @@ export class CredentialScopeResolver implements CredentialScopePort {
   }
 }
 
-/** The raw credential string, from either supported header. */
 function extractCredential(request: ScopedRequest): string | null {
   const apiKeyHeader = request.headers[API_KEY_HEADER];
   const apiKey = Array.isArray(apiKeyHeader) ? apiKeyHeader[0] : apiKeyHeader;

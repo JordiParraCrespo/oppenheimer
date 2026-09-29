@@ -34,8 +34,6 @@ import type { DelegatedSessionPort } from '../infrastructure/delegated-session.p
  *
  * It verifies nothing itself: the credential, and the session for a session
  * caller, come from `CREDENTIAL_SCOPE`, which resolves each once per request.
- * A session token presented as a bearer was already verified there while
- * ruling out an OAuth grant, and the cookie is verified on first ask.
  *
  * It does **not** decide what the credential may do: `PoliciesGuard` applies
  * the owner's roles and the global `ScopesGuard` applies the credential's
@@ -90,8 +88,6 @@ export class ApiAuthGuard implements CanActivate {
       });
 
       if (sessionToken) {
-        // Present the delegated session to the façade, which resolves the
-        // caller through Better Auth.
         request.headers.authorization = `Bearer ${sessionToken}`;
       }
     }
@@ -104,7 +100,6 @@ export class ApiAuthGuard implements CanActivate {
     };
   }
 
-  /** Whether this route calls Better Auth as the caller (`@UsesBetterAuthSession()`). */
   private usesBetterAuthSession(context: ExecutionContext): boolean {
     return (
       this.reflector.getAllAndOverride<boolean>(USES_BETTER_AUTH_SESSION_KEY, [

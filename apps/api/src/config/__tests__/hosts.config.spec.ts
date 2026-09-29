@@ -3,11 +3,6 @@ import type { ConfigService } from '@nestjs/config';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { hostsAreConfigured, hostsConfig } from '../hosts.config';
 
-/**
- * The `hosts` section, and the one predicate the host routes and the `hosts`
- * capability both answer from.
- */
-
 function withEnv(values: Record<string, string | undefined>) {
   for (const [key, value] of Object.entries(values)) {
     if (value === undefined) delete process.env[key];

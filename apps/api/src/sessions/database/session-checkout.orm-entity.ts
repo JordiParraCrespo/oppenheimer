@@ -64,7 +64,6 @@ export class SessionCheckoutOrmEntity {
   @Column({ type: 'varchar' })
   directoryName!: string;
 
-  /** Recorded rather than guessed, because cleanup differs between the two. */
   @Column({ type: 'varchar', default: 'worktree' })
   mode!: CheckoutMode;
 
@@ -82,7 +81,6 @@ export class SessionCheckoutOrmEntity {
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   pushedAt!: Date | null;
 
-  /** Retires the checkout. Rows are never hard-deleted. */
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   removedAt!: Date | null;
 

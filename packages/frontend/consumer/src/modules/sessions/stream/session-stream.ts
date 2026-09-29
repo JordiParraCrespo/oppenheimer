@@ -49,7 +49,6 @@ export interface SessionStream {
   onStatus(listener: (status: StreamStatus) => void): () => void;
   /** Keystrokes, already encoded by the terminal. */
   send(data: string): void;
-  /** The grid changed shape; the PTY needs to know. */
   resize(cols: number, rows: number): void;
   /**
    * Skip the rest of the wait before the next reconnect and dial now: the
@@ -112,7 +111,6 @@ function endOfMintFailure(error: unknown): StreamEnd | null {
   }
 }
 
-/** Turn the ticket's path into the socket URL on the API's origin. */
 export function attachSocketUrl(path: string, apiBaseUrl: string | undefined): string {
   const base = apiBaseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
   const url = new URL(path, base);
@@ -289,7 +287,6 @@ export class AttachSessionStream implements SessionStream {
 
     ws.onopen = () => {
       if (thisEpoch !== this.epoch) return;
-      // The viewport first, so the attach the relay dispatches carries it.
       if (this.viewport) this.tell({ type: 'resize', ...this.viewport });
     };
     ws.onmessage = (event: MessageEvent) => {

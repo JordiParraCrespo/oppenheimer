@@ -92,7 +92,6 @@ export class FeatureFlagEntity extends AggregateRoot<FeatureFlagProps> {
     return this.props.updatedBy;
   }
 
-  /** Every segment key the rules target. */
   referencedSegments(): string[] {
     return [
       ...new Set(
@@ -105,7 +104,6 @@ export class FeatureFlagEntity extends AggregateRoot<FeatureFlagProps> {
     ];
   }
 
-  /** The evaluator's view of this row. */
   toConfig(): FlagConfig {
     return {
       key: this.props.key,
@@ -116,7 +114,7 @@ export class FeatureFlagEntity extends AggregateRoot<FeatureFlagProps> {
     };
   }
 
-  /** Replace the whole targeting. Validity against the catalog is the handler's check. */
+  /** Validity against the catalog is the handler's check. */
   replaceTargeting(targeting: FlagTargeting, change: FlagChange): void {
     const before = this.targetingSnapshot();
     this.props.enabled = targeting.enabled;

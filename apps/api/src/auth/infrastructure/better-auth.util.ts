@@ -11,7 +11,6 @@ import { fromNodeHeaders } from 'better-auth/node';
  * than re-implementing writes to the Better-Auth-owned tables.
  */
 
-/** Convert incoming Express request headers into the `Headers` object the Better Auth server API expects (for session resolution). */
 export function betterAuthHeaders(headers: IncomingHttpHeaders): Headers {
   return fromNodeHeaders(headers);
 }
@@ -60,9 +59,8 @@ export interface BetterAuthFailure {
 export type BetterAuthErrorMapper = (failure: BetterAuthFailure) => ErrorDefinition;
 
 /**
- * Narrow an `APIError` to the fields we need. It carries an HTTP `statusCode`
- * and a `body` (`{ message, code }`), neither of which its public type
- * surfaces, so read them through `asRecord`.
+ * An `APIError` carries an HTTP `statusCode` and a `body` (`{ message, code }`),
+ * neither of which its public type surfaces, so read them through `asRecord`.
  */
 function readApiError(err: APIError): BetterAuthFailure {
   const e = asRecord(err);

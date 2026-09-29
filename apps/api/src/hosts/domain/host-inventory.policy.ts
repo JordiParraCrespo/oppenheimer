@@ -28,17 +28,16 @@ const DIFFED = [
   'channel',
 ] as const satisfies readonly (keyof HostInventory)[];
 
-/**
- * The static facts as a canonical string: keys sorted at every level, live
- * numbers removed. Two reports of the same machine hash the same whatever
- * order the runner marshalled them in.
- */
 export function staticFactsOf(facts: HostFactsDto): Record<string, unknown> {
   const copy: Record<string, unknown> = { ...facts };
   for (const key of LIVE_FACTS) delete copy[key];
   return copy;
 }
 
+/**
+ * Keys sorted at every level, so two reports of the same machine hash the same
+ * whatever order the runner marshalled them in.
+ */
 function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
   if (value && typeof value === 'object') {
@@ -50,7 +49,7 @@ function canonical(value: unknown): string {
   return JSON.stringify(value);
 }
 
-/** SHA-256, hex, of the canonical static facts. Channel is hashed separately; see below. */
+/** SHA-256, hex, of the canonical static facts. */
 export function factsHashOf(facts: HostFactsDto): string {
   return createHash('sha256')
     .update(canonical(staticFactsOf(facts)))
@@ -58,8 +57,6 @@ export function factsHashOf(facts: HostFactsDto): string {
 }
 
 /**
- * The inventory a report describes.
- *
  * `channel` is not in the facts: the heartbeat carries it and the hello does
  * not. It is kept out of the hash so a hello cannot flip the inventory back and
  * forth, and `null` here means "not reported this time", which the repository
@@ -86,9 +83,6 @@ export function inventoryFromFacts(facts: HostFactsDto, channel: string | null):
     channel,
     serviceManager: facts.serviceManager ?? null,
     tools: facts.tools,
-    // The report as it arrived, live readings included: it is what the host
-    // answers as `capabilities`. Only the hash leaves the live ones out, so a
-    // beat that moves free disk is not a change to the inventory.
     facts: { ...facts },
   };
 }
@@ -104,8 +98,6 @@ function toolsSummary(tools: HostInventory['tools']): Record<string, string | nu
 }
 
 /**
- * What changed between two inventories, as timeline entries.
- *
  * A new runner version is its own entry (`runner_updated`), because the update
  * story reads it on its own (09 §5); everything else that changed is one
  * `facts_changed` with a `{ field: [before, after] }` diff, tools summarised as

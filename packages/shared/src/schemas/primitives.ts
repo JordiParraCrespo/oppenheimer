@@ -79,8 +79,8 @@ export const gitRefSchema = z.string().min(FIELD_BOUNDS.gitRef.min).max(FIELD_BO
  * How long a prompt is, as the event log counts it: UTF-8 bytes.
  *
  * Exported because the wire schema is built on a different Zod entry point and
- * cannot share the schema object — only the rule. `src/__tests__/cross-version-primitives.spec.ts`
- * holds the two to the same answer.
+ * cannot share the schema object — only the rule.
+ * `src/__tests__/cross-version-primitives.spec.ts` holds the two to the same answer.
  */
 export function promptByteLength(value: string): number {
   let bytes = 0;
@@ -160,7 +160,6 @@ export type HostToolDto = z.infer<typeof hostToolSchema>;
  * runner's to define; this schema follows it. An earlier version invented
  * `hostname`/`os`/`arch` with a `tools` map and an `agents` array, which no
  * runner has ever sent — a real registration would have been a 400.
- *
  *
  * Agents installed on a host are read from `tools` — the names `ProbedTools` in
  * `facts.go` reports, an agent's being its catalog `command` — and there is no

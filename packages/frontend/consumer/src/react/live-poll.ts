@@ -33,7 +33,6 @@ export type LivePollKind = keyof typeof LIVE_POLL;
 /** The two TanStack options a poll is, so a hook can leave them out of what it accepts. */
 export type PollKeys = 'refetchInterval' | 'refetchIntervalInBackground';
 
-/** What {@link pollWhile} returns: the query options that make a hook poll. */
 export interface Poll<TData> {
   refetchInterval: number | false | ((query: { state: { data?: TData } }) => number | false);
   refetchIntervalInBackground: boolean;

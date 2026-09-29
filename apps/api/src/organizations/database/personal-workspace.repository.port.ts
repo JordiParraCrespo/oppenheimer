@@ -1,9 +1,6 @@
 import type { PersonalWorkspaceEntity } from '../domain/personal-workspace.entity';
 
 /**
- * Port for provisioning the workspace an account lives in. Implemented by the
- * TypeORM adapter in `personal-workspace.repository.ts`.
- *
  * Deliberately narrower than `RepositoryPort`: this aggregate is written once,
  * at sign-up, and never loaded to be mutated — the roster operations that
  * would edit an organization go through Better Auth's own API, which owns

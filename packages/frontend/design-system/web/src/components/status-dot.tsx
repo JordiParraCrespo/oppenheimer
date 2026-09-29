@@ -59,9 +59,7 @@ function StatusDot({
   ...props
 }: React.ComponentProps<'span'> &
   VariantProps<typeof dotVariants> & {
-    /** A muted second line under the label. */
     meta?: React.ReactNode;
-    /** Animate the dot for a live wait. */
     pulse?: boolean;
     /**
      * `compact` is a routine's status in a table row or a page's facts: a

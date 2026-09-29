@@ -50,8 +50,6 @@ export class SessionPlanFactory {
   }
 
   /**
-   * Build a checkout and attach it to the session.
-   *
    * The directory name is derived over every name the session has **ever** used,
    * retired ones included, so a name is never reissued inside a session: the coding
    * agents key their conversation state by working directory, and a new checkout

@@ -72,7 +72,6 @@ export function initialDraft(): NewSessionDraft {
   };
 }
 
-/** Write the five choices worth carrying between visits out to storage. */
 export function rememberDraft({ projectId, hostId, agent, model, effort }: RememberedChoices) {
   try {
     window.localStorage.setItem(

@@ -3,15 +3,10 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColum
 import type { HostCapabilities } from '../domain/host.entity';
 
 /**
- * Persistence model for `host`.
- *
  * **No `organizationId`.** A host belongs to the person who paired it, the way
  * Better Auth's own device-and-login tables (`session`, `account`) hang off
  * `user`; what *runs* on a host is scoped by the session's workspace instead.
- *
- * The key sits on this row rather than in a `host_key` table: the boot lookup
- * for an assertion is the hottest read in the system, and when rotation arrives
- * on the link the retired key is one more column beside it — two keys, never N.
+ * Why the key is a column here is on `HostEntity`.
  */
 @Entity('host')
 @Index(['ownerUserId'])
@@ -37,7 +32,6 @@ export class HostOrmEntity {
   @Column({ type: 'varchar', length: 40, nullable: true })
   runnerVersion!: string | null;
 
-  /** The inventory the runner last reported: tools, agents, disk. */
   @Column({ type: 'jsonb', nullable: true })
   capabilities!: HostCapabilities | null;
 

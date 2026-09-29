@@ -68,9 +68,6 @@ describe('the hosts module’s credential contribution', () => {
   it('builds the resolver in the hosts injector, over this module’s own port', async () => {
     const [resolver] = (await bootedRegistry()).all();
 
-    // Answered by a provider only `HostsContributionModule` declares, which is
-    // the property the contribution shape exists for: recognising a machine
-    // costs the module no application-wide publication.
     expect(resolver.recognises(ASSERTION)).toBe(true);
     expect(resolver.recognises('oppenheimer_pat_not_a_host')).toBe(false);
   });

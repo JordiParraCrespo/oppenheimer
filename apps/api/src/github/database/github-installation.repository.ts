@@ -20,10 +20,6 @@ import type {
 const UNIQUE_VIOLATION = '23505';
 
 /**
- * TypeORM adapter for the installation aggregate. Translates domain ↔
- * persistence via the mapper and stages domain events on the transactional
- * outbox atomically with the write that raised them.
- *
  * Note what is absent from the scoped reads: no `WHERE organizationId = ...`.
  * Extending `ScopedRepositoryBase` and naming the resource is the whole of it,
  * so a query and an `ability.can()` cannot disagree.
@@ -133,9 +129,6 @@ export class GithubInstallationRepository
     if (ordered) patch.statusChangedAt = change.occurredAt;
     const githubInstallationId = String(change.githubInstallationId);
 
-    // One statement, only the named columns, and only while the row is live —
-    // so a delivery that read the world before a disconnect committed cannot
-    // write `deletedAt` back to null and resurrect a claim.
     const update = this.repository
       .createQueryBuilder()
       .update(GithubInstallationOrmEntity)

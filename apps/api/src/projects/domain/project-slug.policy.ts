@@ -11,11 +11,8 @@
  * 2. `<name>-<first 8 hex of the project's UUID>` — the id is minted before the
  *    insert, so the fallback is derived from the row itself and cannot collide
  *    in practice.
- *
- * Pure by construction — strings in, strings out.
  */
 
-/** Lower-case kebab. */
 export const PROJECT_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** Long enough for any name worth reading. */
@@ -24,7 +21,7 @@ export const PROJECT_SLUG_MAX_LENGTH = 60;
 /** What an unnameable name falls back to, so a slug is never empty. */
 const FALLBACK_SLUG = 'project';
 
-/** Sanitise: lower-case, URL-safe, no leading, trailing or doubled dash. */
+/** Lower-case, URL-safe, no leading, trailing or doubled dash. */
 function sanitise(segment: string): string {
   return segment
     .toLowerCase()

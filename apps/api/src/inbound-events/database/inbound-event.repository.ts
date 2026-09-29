@@ -148,10 +148,8 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
           );
         }
       }
-      // The total stored for the delivery, not this run's inserts: a re-run
-      // inserts nothing and must not reset the count to 0. Served by
-      // IDX_inbound_event_delivery, in this transaction, so it sees this
-      // run's rows too.
+      // Served by IDX_inbound_event_delivery, in this transaction, so the count
+      // sees this run's rows too.
       await manager.query(
         `UPDATE "inbound_delivery" d
             SET "status" = 'processed', "processedAt" = now(), "lastError" = NULL,

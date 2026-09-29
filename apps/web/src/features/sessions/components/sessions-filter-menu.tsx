@@ -22,7 +22,6 @@ import {
   type SessionSort,
 } from '../lib/session-filters';
 
-/** The orders it offers, likewise. */
 const SORTS: SessionSort[] = ['recent', 'oldest', 'name'];
 
 /**

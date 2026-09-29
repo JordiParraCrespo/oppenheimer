@@ -92,7 +92,6 @@ test.describe('New session: project defaults', () => {
   });
 });
 
-/** The chips, on the project's defaults. */
 async function expectDefaults(page: Page) {
   await expect(page.getByRole('button', { name: 'Project', exact: true })).toContainText('Wallet');
   await expect(page.getByRole('button', { name: 'Host' })).toContainText('Default box');

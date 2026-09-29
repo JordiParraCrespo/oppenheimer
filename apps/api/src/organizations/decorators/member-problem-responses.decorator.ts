@@ -1,7 +1,6 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiProblemResponse } from '@oppenheimer/backend-core';
 
-/** The problems every route that changes an organization's roster can answer with. */
 export const MemberProblemResponses = () =>
   applyDecorators(
     ApiProblemResponse({

@@ -36,7 +36,6 @@ const (
 	KeepVersions = 2
 )
 
-// Sentinel conditions.
 var (
 	ErrNoRelease   = errors.New("no release is available for this host")
 	ErrNotNewer    = errors.New("the offered version is not newer")
@@ -79,7 +78,6 @@ func (a Activity) Quiet() bool { return a.WorkingSessions == 0 && a.AttachedClie
 // Action is what Plan decided.
 type Action string
 
-// Actions.
 const (
 	// ActionNone: nothing to do.
 	ActionNone Action = "none"
@@ -147,7 +145,6 @@ func Decide(current string, release Release, pinned string, activity Activity, w
 // Phase is where a recorded update got to.
 type Phase string
 
-// Phases.
 const (
 	PhasePending Phase = "pending"
 	PhaseHealthy Phase = "healthy"

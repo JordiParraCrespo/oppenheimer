@@ -161,7 +161,6 @@ test.describe('Session screen', () => {
     await page.keyboard.type('echo e2e-typed');
     await expect(grid(page)).toContainText('$ echo e2e-typed');
 
-    // The console told the relay its size, and credited what it drew.
     expect(controls.some((frame) => frame.type === 'resize')).toBe(true);
     await expect.poll(() => controls.some((frame) => frame.type === 'credit')).toBe(true);
 

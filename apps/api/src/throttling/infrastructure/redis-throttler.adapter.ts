@@ -45,9 +45,8 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
   private readonly logger = new Logger(RedisThrottlerStorage.name);
 
   /**
-   * Increment the hit counter, set its expiry on first write, and report the
-   * block state — atomically, so two replicas incrementing the same key at the
-   * same instant cannot both read "1".
+   * Atomic, so two replicas incrementing the same key at the same instant
+   * cannot both read "1".
    *
    * `PEXPIRE ... NX` is what keeps the window *fixed* rather than sliding: the
    * TTL is set only when the key is created, so a steady stream of requests
@@ -122,9 +121,8 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
        * A rate limiter exists to shed abusive load, not to be a second thing
        * that can take the API down. If Redis is unreachable the honest choice
        * is to serve the request: refusing every caller because the counter is
-       * unavailable converts a cache outage into a total outage, and on this
-       * endpoint specifically it would drop real customer enquiries on the
-       * floor. The counter is a courtesy backstop; authentication and the
+       * unavailable converts a cache outage into a total outage. The counter
+       * is a courtesy backstop; authentication and the
        * proof-of-human check at the edge are the actual controls, and neither
        * depends on this.
        */

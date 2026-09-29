@@ -145,7 +145,6 @@ export class SessionCheckoutEntity extends Entity<SessionCheckoutProps> {
     return this.props.removedAt !== null;
   }
 
-  /** What the runner reported about the checkout it made. */
   reportCreated(mode: CheckoutMode, storeDirectoryName: string, at: Date): void {
     this.props.mode = mode;
     this.props.storeDirectoryName = storeDirectoryName;
@@ -156,7 +155,7 @@ export class SessionCheckoutEntity extends Entity<SessionCheckoutProps> {
     this.props.pushedAt = at;
   }
 
-  /** Retire the checkout. Idempotent: the first removal is the one that counts. */
+  /** Idempotent: the first removal is the one that counts. */
   remove(at: Date): void {
     this.props.removedAt = this.props.removedAt ?? at;
   }

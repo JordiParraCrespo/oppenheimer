@@ -135,7 +135,6 @@ const LAYERS = {
   },
 };
 
-/** The files a module's root may carry, and what each one is for. */
 const ROOT_FILES = [
   { pattern: /\.module\.ts$/, what: 'the NestJS module' },
   { pattern: /\.mapper\.ts$/, what: 'a mapper between domain, persistence and response' },
@@ -173,8 +172,7 @@ const HTTP_METHOD = /^\s*@(Get|Post|Put|Patch|Delete|All|Head|Options)\s*\(/m;
 
 /**
  * Known violations, waiting on a refactor. Each entry names one file and one
- * *kind* of breach — never the sentence, so rewording a message cannot silence
- * a violation or invent a stale one.
+ * *kind* of breach (see `errors` above).
  *
  * Nothing else in these modules is excused, a new violation in them still
  * fails, and an entry that stops matching is itself an error: the list cannot
@@ -212,7 +210,6 @@ function requireNonEmpty(dir, label) {
   return true;
 }
 
-/** Check the files directly inside a directory against the patterns it allows. */
 function checkFiles(dir, label, patterns, hint) {
   for (const entry of tsFiles(dir)) {
     if (entry.name === 'index.ts') {
@@ -323,7 +320,6 @@ function checkSlices(dir, label, kind) {
   }
 }
 
-/** Walk a layer directory: its own files, then the sub-directories it allows. */
 function checkLayer(dir, label, spec) {
   checkFiles(dir, label, spec.files, spec.what);
   for (const sub of subDirs(dir)) {
@@ -399,7 +395,6 @@ function checkModule(name) {
     }
   }
 
-  // Layers.
   for (const sub of subDirs(moduleDir)) {
     const subLabel = `${label}/${sub.name}`;
     const dissolved = DISSOLVED_DIRS[sub.name];

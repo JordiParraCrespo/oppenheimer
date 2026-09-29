@@ -28,12 +28,9 @@ export function OnboardingHostScreen({
   next,
   skip,
 }: {
-  /** Where this step sits in the flow the route is part of. */
   step: number;
   total: number;
-  /** The link the header's back renders. */
   back: ReactElement;
-  /** Continue's link, with the paired host's id. */
   next: (hostId: string | undefined) => ReactElement;
   /** Skip's link, for a deployment that cannot pair a machine yet. */
   skip: ReactElement;

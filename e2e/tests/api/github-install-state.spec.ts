@@ -63,7 +63,6 @@ test.describe('GitHub install state', () => {
     });
     await expectProblemDocument(response, { status: 400, code: 'GITHUB_011' });
 
-    // Nothing landed in the victim's workspace.
     const listed = await victor.api.get('/api/v1/installations');
     expect((await listed.json()) as unknown[]).toHaveLength(0);
 

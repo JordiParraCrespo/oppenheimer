@@ -96,7 +96,6 @@ function splitName(name?: string | null): {
   return { firstName, lastName: rest.join(' ') };
 }
 
-/** The `session.delete` hooks; see `sessionDeleteHooks`. */
 const sessionDeletion = sessionDeleteHooks({
   tokensOf: async (userId) =>
     (
@@ -329,12 +328,8 @@ export const auth = betterAuth({
             userId: user.id,
             name: user.name,
           });
-          // Sign-up finished; the application decides what that owes. This
-          // file says only that, and names no module that fulfils it — the
-          // orchestration is `CompleteSignUpCommandHandler`, which can inject a
-          // command bus where this hook cannot inject anything. See
-          // `auth-command-bus.util.ts` for why that seam exists and why the
-          // dispatch is best-effort.
+          // Names no module that fulfils sign-up; see `auth-command-bus.util.ts`
+          // for why that seam exists and why the dispatch is best-effort.
           await dispatchFromAuthHook(
             new CompleteSignUpCommand({
               userId: user.id,
@@ -431,16 +426,11 @@ export const auth = betterAuth({
       },
       delete: {
         // Every session row Better Auth deletes — one revocation, a bulk
-        // sign-out, a ban, a password reset — takes its cached copy with it.
-        // Better Auth deletes the copies it finds through its per-user index,
-        // but that index is itself a cache entry, rewritten on every sign-in: a
-        // session whose index entry was lost to a failed read or write would
-        // stay live in Redis after its row was gone. The row is the record, so its
-        // deletion is what clears the copy. A failure here aborts the delete,
-        // so a revocation that cannot reach Redis fails loudly instead of
-        // succeeding in Postgres alone. Better Auth hands the hook at most 100
-        // rows of a bulk delete; for a user holding more, the hook evicts the
-        // copy of every row they hold (`sessionDeleteHooks`).
+        // sign-out, a ban, a password reset — takes its cached copy with it,
+        // since Better Auth's per-user index of copies is itself a cache entry
+        // (`sessionDeleteHooks`). A failure here aborts the delete, so a
+        // revocation that cannot reach Redis fails loudly instead of
+        // succeeding in Postgres alone.
         before: (session) => sessionDeletion.before(session),
         after: async (session) => sessionDeletion.after(session),
       },
@@ -450,9 +440,7 @@ export const auth = betterAuth({
     admin({
       // Users whose `role` is one of these can call the admin plugin endpoints
       // (list/ban/impersonate/set-role/...). CASL still governs the app's own
-      // REST routes; this only gates `/api/auth/admin/*`. Every admin role must
-      // be defined in `roles` below (the built-in `admin`/`user` reuse Better
-      // Auth's own access-control roles; `superadmin` gets the full statement set).
+      // REST routes; this only gates `/api/auth/admin/*`.
       roles: { superadmin: superadminAc, admin: adminAc, user: userAc },
       adminRoles: ['superadmin', 'admin'],
       defaultRole: 'user',

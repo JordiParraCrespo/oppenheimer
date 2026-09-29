@@ -42,10 +42,7 @@ import { DeleteProjectDialog } from './delete-project';
 /**
  * New project and Project settings, once the project it edits is known
  * (`ProjectDialog` reads it, and keys this so a different project is a fresh
- * form rather than one reset by an effect). A 540px dialog: the name;
- * Repositories; then a Defaults fold, optional, that reads what is set while
- * closed — the host, the agent, and Cloned by default. Editing puts Delete
- * project on the footer's left, and Delete closes this dialog into the confirm.
+ * form rather than one reset by an effect).
  *
  * This owns the two writes and the form's store, and reads no field. Every
  * field is its own file and binds its own value from the form: one that lists

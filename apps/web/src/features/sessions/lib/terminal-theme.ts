@@ -55,7 +55,6 @@ function isLightBackground(hex: string): boolean {
   return luminance > 0.5;
 }
 
-/** Resolve one custom property off the document element. */
 function read(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
@@ -124,11 +123,6 @@ export function readTerminalTheme(): ITheme {
  * is why every agent line opened with a stray mark instead of its bullet. The
  * symbol-only Nerd Font faces are the usual fix and are already installed on
  * most developer machines; naming them is free on machines without them.
- *
- * Orca solves the same problem the same way and goes one step further by
- * *bundling* a symbols face, so a machine with none still renders the glyphs.
- * Shipping a webfont is a size and licensing decision this has not taken, so
- * the chain relies on what the host already has.
  */
 const TERMINAL_FONT_STACK = [
   'ui-monospace',

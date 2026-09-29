@@ -89,7 +89,6 @@ test('an automation from the editor to deletion', async ({ page }) => {
   await editor.getByRole('button', { name: 'Create automation' }).click();
   await expect(editor).toHaveCount(0);
 
-  // The table and the sidebar list it.
   const row = page.getByRole('row', { name: 'Nightly audit' });
   await expect(row).toBeVisible();
   await expect(row).toContainText('Weekdays at 09:00 +1');
@@ -130,7 +129,6 @@ test('an automation from the editor to deletion', async ({ page }) => {
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await expect(page.getByText('Paused. Triggers are ignored')).toHaveCount(0);
 
-  // Edit opens the same dialog on what was saved.
   await page.getByRole('button', { name: 'Edit', exact: true }).click();
   const edit = page.getByRole('dialog', { name: 'Edit automation' });
   await expect(edit.getByLabel('Name')).toHaveValue('Nightly audit');
@@ -140,7 +138,6 @@ test('an automation from the editor to deletion', async ({ page }) => {
   await expect(edit).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Nightly dependency audit' })).toBeVisible();
 
-  // The Runs tab lists the run, with the status pills counting it.
   await page.goto('/automations/runs');
   const listed = page.getByRole('row').filter({ hasText: 'Nightly dependency audit' });
   await expect(listed).toBeVisible();

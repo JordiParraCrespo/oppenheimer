@@ -134,7 +134,6 @@ export const hostToolSchema = z.object({
  * What the runner last saw about the machine — the wire half of
  * `hostFactsSchema` in `../schemas/primitives`, which registration uses.
  *
- *
  * Agents installed on a host are read from `tools` — the names `ProbedTools` in
  * `facts.go` reports, an agent's being its catalog `command` — and there is no
  * separate agents key; that is what the console consumes for the agent chip.

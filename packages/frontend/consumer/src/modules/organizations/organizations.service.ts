@@ -60,7 +60,6 @@ export class OrganizationsService {
     return this.repository.update(existing.id, claimed ? { name } : { name, slug });
   }
 
-  /** Whether an address is still free, for the onboarding step that claims one. */
   checkSlug(slug: string): Promise<boolean> {
     return this.repository.checkSlug(slug);
   }

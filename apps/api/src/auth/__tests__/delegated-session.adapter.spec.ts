@@ -82,7 +82,6 @@ function fakeAdapter() {
   });
 }
 
-/** An in-memory stand-in for the Redis-backed cache. */
 function fakeCache() {
   const store = new Map<string, unknown>();
   return {
@@ -251,7 +250,6 @@ describe('DelegatedSessionAdapter', () => {
   });
 
   it('still hands back the token when the sweep fails', async () => {
-    // A tidy table is not worth a failed request.
     listSessions.mockRejectedValue(new Error('database down'));
 
     await expect(service.resolveSessionToken(OPTIONS)).resolves.toBe('session-token-1');
@@ -318,7 +316,6 @@ describe('DelegatedSessionAdapter', () => {
   });
 
   it('reports no token when a session cannot be minted', async () => {
-    // Callers fall back to scope-only access rather than failing the request.
     createSession.mockRejectedValue(new Error('database down'));
 
     await expect(service.resolveSessionToken(OPTIONS)).resolves.toBeNull();

@@ -200,8 +200,7 @@ async function seed() {
   // The sign-up hook fires while seeding too, but finds no command bus outside
   // the API and does nothing — so this script owes itself these side effects,
   // and calls the handlers directly rather than installing a second bus for
-  // the hook to reach. That is also what repairs a database seeded before the
-  // personal workspace existed: both handlers are idempotent.
+  // the hook to reach.
   const roleMapper = new RoleMapper();
   const roleRepository = new RoleRepository(roleRepo, roleMapper, new OutboxService(dataSource));
   const userRoleRepository = new UserRoleRepository(userRoleRepo, roleRepo, roleMapper);
@@ -228,12 +227,12 @@ async function seed() {
       },
     });
 
-    // Elevate the role and mark the email verified (not settable on sign-up).
+    // Neither `role` nor `emailVerified` is settable on sign-up.
     await userRepo.update({ email: seedUser.email }, { role: seedUser.role, emailVerified: true });
 
-    // Elevate this account to its seed role. Only the elevation is written
-    // here: the default `user` grant every account gets belongs to
-    // `AssignDefaultRoleCommandHandler`, which the loop below runs for all of them.
+    // Only the elevation is written here: the default `user` grant every
+    // account gets belongs to `AssignDefaultRoleCommandHandler`, which the loop
+    // below runs for all of them.
     const user = await userRepo.findOneBy({ email: seedUser.email });
     const role = await roleRepo.findOneBy({ name: seedUser.role });
     if (user && role && seedUser.role !== ROLES.USER) {

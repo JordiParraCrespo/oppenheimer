@@ -96,7 +96,6 @@ test('pairs a machine from the console and selects it for the next session', asy
   await expect(pane).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Host' })).toContainText('New host');
 
-  // And the control plane holds it under the id the runner was given.
   const read = await owner.api.get('/api/v1/hosts', { failOnStatusCode: false });
   expect(read.status(), await read.text()).toBe(200);
   const hosts = (await read.json()) as { id: string; name: string }[];

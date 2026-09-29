@@ -476,10 +476,6 @@ export class WorkSessionMapper
     return { sort, key: k, id: i };
   }
 
-  /**
-   * A page's `meta`. `nextCursor` is always there; the counts only in page mode,
-   * because a cursor walk never counts.
-   */
   toPageMeta(page: SessionListPage): SessionPageMetaDto {
     const meta = new SessionPageMetaDto();
     meta.limit = page.limit;
@@ -509,10 +505,8 @@ export class WorkSessionMapper
   }
 
   /**
-   * `hints` is what the control plane could not do for *this request* — it is
-   * empty on every read and carries `host_offline` when a command could not reach
-   * the host. It rides the session rather than a second envelope because the
-   * console renders the row it just changed.
+   * `hints` rides the session rather than a second envelope because the console
+   * renders the row it just changed.
    */
   toResponse(
     entity: WorkSessionEntity,

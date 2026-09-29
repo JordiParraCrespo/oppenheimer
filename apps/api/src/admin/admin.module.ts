@@ -71,7 +71,6 @@ const queryHandlers: Provider[] = [
   ListUserSessionsQueryHandler,
 ];
 
-// The one outbound dependency, bound to the token its port is named by.
 const adapters: Provider[] = [{ provide: ADMIN_AUTH, useClass: AdminAuthGateway }];
 
 /**

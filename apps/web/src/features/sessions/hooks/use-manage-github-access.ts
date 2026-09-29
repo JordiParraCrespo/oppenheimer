@@ -12,8 +12,6 @@ import { useStartInstallation } from '@oppenheimer/frontend-consumer/react';
  * `rel="noopener"` link it replaces gave, and is pointed at GitHub once the
  * URL arrives. A failed mint closes it again and leaves the error for the
  * section to show.
- *
- * No effect: an event handler's call, and the navigation is the new tab's.
  */
 export function useManageGithubAccess() {
   const { mutate, error, reset } = useStartInstallation();

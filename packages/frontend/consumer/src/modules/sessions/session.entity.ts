@@ -70,16 +70,6 @@ export class SessionCheckoutEntity {
 }
 
 /**
- * A session as the console needs it: a terminal, an agent, and a set of
- * checkouts on a host.
- *
- * Two state words, because the API has two and they answer different questions:
- * `state` is the derived group the sidebar dot shows, and `lifecycle` is the
- * stored fold of the log. Collapsing them was the error an earlier version of
- * this file made — it carried one `running | idle | stopped` union that the API
- * had already stopped sending.
- */
-/**
  * A single-use pass to one window of a session's terminal, as
  * `POST /sessions/{id}/attach-ticket` mints it. It travels in
  * `Sec-WebSocket-Protocol` and is redeemed by opening `url` on the API's origin.
@@ -92,6 +82,16 @@ export interface AttachTicket {
   window: number;
 }
 
+/**
+ * A session as the console needs it: a terminal, an agent, and a set of
+ * checkouts on a host.
+ *
+ * Two state words, because the API has two and they answer different questions:
+ * `state` is the derived group the sidebar dot shows, and `lifecycle` is the
+ * stored fold of the log. Collapsing them was the error an earlier version of
+ * this file made — it carried one `running | idle | stopped` union that the API
+ * had already stopped sending.
+ */
 export class SessionEntity {
   constructor(
     public readonly id: string,

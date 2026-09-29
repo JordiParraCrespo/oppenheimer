@@ -14,11 +14,10 @@ import { AuthErrors } from '../domain/auth.errors';
  * instance-level checks.
  *
  * **Fails closed.** A route that declares neither `@CheckPolicies` nor an
- * explicit `@NoPolicy('reason')` is rejected. The previous behaviour — allow
- * any authenticated caller — meant a forgotten decorator silently opened an
- * endpoint, which is the opposite of how `ScopesGuard` treats the same
- * omission. `route-policy-coverage.spec.ts` turns that rejection into a build
- * failure so it is caught when the route is written.
+ * explicit `@NoPolicy('reason')` is rejected, as `ScopesGuard` treats the
+ * same omission: a forgotten decorator must not silently open an endpoint.
+ * `route-policy-coverage.spec.ts` turns that rejection into a build failure
+ * so it is caught when the route is written.
  */
 @Injectable()
 export class PoliciesGuard implements CanActivate {
@@ -41,8 +40,6 @@ export class PoliciesGuard implements CanActivate {
 
     if (!rules || rules.length === 0) {
       if (exemption) return true;
-      // A programming error, not a client one: the route reached production
-      // without saying what it requires.
       throw new AppError(AuthErrors.ROUTE_HAS_NO_POLICY);
     }
 

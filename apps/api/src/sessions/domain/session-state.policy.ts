@@ -91,7 +91,6 @@ export const SESSION_EVENT_KINDS = {
    * moves on disk: a session's directory and branch never name a project.
    */
   MOVED: 'session.moved',
-  /** A repository was added to a session. */
   CHECKOUT_ADDED: 'session.checkout_added',
   /** A checkout was retired. Payload `{ checkoutId }`. The row stays; `removedAt` retires it. */
   CHECKOUT_REMOVED: 'session.checkout_removed',
@@ -170,7 +169,6 @@ export interface SessionFold {
   /** The agent's last report, and the last one somebody read. Equal means "seen". */
   reportHash: string | null;
   ackedReportHash: string | null;
-  /** The model, permission level and effort this session was launched with. */
   launch: SessionLaunchFold;
   /**
    * The project the session is listed under, once a move has said so. Null in a
@@ -373,7 +371,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
   }
 }
 
-/** Replay a whole log. `initial` exists so a fold can resume from a stored row. */
+/** `initial` exists so a fold can resume from a stored row. */
 export function foldSessionLog(
   events: readonly SessionLogEntry[],
   initial: SessionFold = INITIAL_SESSION_FOLD,

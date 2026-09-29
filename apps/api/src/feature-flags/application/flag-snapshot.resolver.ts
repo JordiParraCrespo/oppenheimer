@@ -101,7 +101,6 @@ export class FlagSnapshotResolver
     if (this.timer) clearInterval(this.timer);
   }
 
-  /** The version of the configuration currently being served. */
   get version(): string {
     return this.snapshot.version;
   }
@@ -140,9 +139,9 @@ export class FlagSnapshotResolver
   }
 
   /**
-   * Reload now, and reject if it fails — for a caller that must know, such as
-   * the change handler: a delivery whose reload failed is retried by the
-   * outbox rather than marked done while this replica serves the old rules.
+   * For a caller that must know the reload failed, such as the change handler:
+   * a delivery whose reload failed is retried by the outbox rather than marked
+   * done while this replica serves the old rules.
    */
   reload(): Promise<void> {
     // Coalesce: a burst of change events is one reload, not one each.

@@ -12,8 +12,6 @@ export interface CaptureEventVariables {
 }
 
 /**
- * Captures a product event.
- *
  * ```ts
  * const { mutate: capture } = useCaptureEvent();
  * <Button onPress={() => capture({ event: ANALYTICS_EVENTS.USER_SIGNED_UP })} />
@@ -43,8 +41,6 @@ export function useCaptureEvent(
 }
 
 /**
- * Captures an event once, when the component mounts.
- *
  * For the "this was shown" family of events — an upsell appeared, an empty
  * state was reached — where the trigger is a render rather than an interaction.
  *
@@ -76,8 +72,6 @@ export function useCaptureOnMount(event: AnalyticsEvent, properties?: AnalyticsP
 }
 
 /**
- * Records a page view whenever `path` changes.
- *
  * Call this once, high in the tree, wired to the router's current location.
  * A single-page app doesn't emit navigations the provider can see on its own,
  * so without this only the first load is ever counted. The app wires it up in
@@ -86,7 +80,6 @@ export function useCaptureOnMount(event: AnalyticsEvent, properties?: AnalyticsP
 export function usePageView(path: string): void {
   const app = useOppenheimerApp();
 
-  // The analytics provider: one page view per path the router settles on.
   useEffect(() => {
     app.analytics.pageView(path);
   }, [app, path]);

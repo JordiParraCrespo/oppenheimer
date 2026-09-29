@@ -26,7 +26,6 @@ export const ProjectResource = defineResource({
     { name: 'update', label: 'Change and archive projects' },
   ],
 
-  /** The columns each scope dimension filters on. */
   keys: {
     organization: 'organizationId',
     id: 'id',

@@ -31,7 +31,6 @@ export const SessionResource = defineResource({
     { name: 'delete', label: 'Close sessions' },
   ],
 
-  /** The columns each scope dimension filters on. */
   keys: {
     organization: 'organizationId',
     id: 'id',

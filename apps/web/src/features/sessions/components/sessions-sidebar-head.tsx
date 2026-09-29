@@ -13,10 +13,10 @@ import { SessionsFilterMenu } from './sessions-filter-menu';
  *
  * Props in, choice out: the filters and the settled query are the section's
  * state, because the list under the head is what they narrow; the half-typed
- * query is the search box's own. `projectCount` is
- * absent until the projects have settled — a zero under a request that has
- * not answered reads as "you have none", which is a different thing from
- * "not yet known" — and the filter menu waits for the sessions the same way.
+ * query is the search box's own. `projectCount` is absent until the projects
+ * have settled — a zero under a request that has not answered reads as "you
+ * have none", which is a different thing from "not yet known" — and the filter
+ * menu waits for the sessions the same way.
  */
 export function SessionsSidebarHead({
   newSession,

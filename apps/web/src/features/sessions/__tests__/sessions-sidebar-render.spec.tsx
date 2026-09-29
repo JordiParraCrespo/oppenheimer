@@ -30,7 +30,6 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 
-/** Renders of each row, by session name. */
 const renders = vi.hoisted(() => new Map<string, number>());
 
 /**
@@ -129,7 +128,6 @@ const ROWS = ['alpha', 'bravo', 'charlie', 'delta', 'echo'].map((id, index) =>
   session(id, index * 10 + 5),
 );
 
-/** Which rows rendered since the last call, and resets the count. */
 function rendered(): string[] {
   const names = [...renders.keys()].filter((name) => (renders.get(name) ?? 0) > 0).sort();
   renders.clear();
@@ -174,7 +172,6 @@ describe('SessionsSidebar', () => {
     expect(rendered()).toEqual([]);
   });
 
-  /** The ages are an input now: a minute passing moves them. */
   it('moves every age when the minute ticks', () => {
     const before = document.body.textContent;
     act(() => world.set({ now: START + MINUTE }));

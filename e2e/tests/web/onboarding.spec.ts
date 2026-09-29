@@ -26,7 +26,6 @@ test('a newcomer is sent to name the workspace sign-up made', async ({ page }) =
   await expect(page).toHaveURL(/\/onboarding\/workspace/, { timeout: 30_000 });
   await expect(page.locator('[data-slot="alert"]')).toHaveCount(0);
 
-  // One workspace already, owned by the account, with no team.
   const account = await findUserByEmail(user.email);
   expect(account).toBeTruthy();
   const memberships = await findOrganizationsForUser(account?.id ?? '');

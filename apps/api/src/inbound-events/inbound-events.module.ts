@@ -23,9 +23,6 @@ import { InboundEventsProcessor } from './infrastructure/inbound-events.processo
  * contribute a source adapter and dispatch `ReceiveInboundDeliveryCommand` from
  * their own verified endpoint; consumers (`automations/`) listen for
  * `ExternalEventReceivedDomainEvent` and read through `INBOUND_EVENT_LOOKUP`.
- *
- * Nest modules are singletons, so every module that imports this one — each
- * provider, to contribute its adapter — shares the one registry.
  */
 @Module({
   imports: [

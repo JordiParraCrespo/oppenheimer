@@ -24,8 +24,6 @@ function stripUrlSecrets(result: CaptureResult | null): CaptureResult | null {
 }
 
 /**
- * PostHog adapter for the web app.
- *
  * The SDK is loaded with a dynamic `import()` rather than a static one, so it
  * lands in its own chunk and is fetched only when a project key is configured.
  * That keeps ~50KB of vendor JavaScript off the critical path of the marketing
@@ -61,8 +59,6 @@ class PostHogAnalyticsClient implements IAnalyticsClient {
         // every client-side navigation would go uncounted.
         capture_pageview: false,
         persistence: 'localStorage+cookie',
-        // Runs on every outgoing event, including the autocapture ones we
-        // never raise ourselves. See `stripUrlSecrets`.
         before_send: stripUrlSecrets,
         advanced_disable_feature_flags: true,
       });

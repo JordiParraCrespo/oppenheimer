@@ -71,8 +71,6 @@ function unwatchClose(queryClient: QueryClient, id: string): void {
 }
 
 /**
- * The sessions in the caller's workspace: the sidebar and the sessions list.
- *
  * A resolved session is a tombstone the API keeps so its directory and branch
  * are never reissued; the list leaves it out, and its detail is still written
  * for a screen that has it open. It polls while a row is starting or a close
@@ -170,7 +168,6 @@ export function useSessionStartProgress(
   });
 }
 
-/** What starting a session takes: the draft, and the key that makes a retry safe. */
 export interface CreateSessionVariables {
   input: CreateSessionInput;
   /**
@@ -184,7 +181,6 @@ export interface CreateSessionVariables {
   idempotencyKey: string;
 }
 
-/** Start a session: New session's chips, its foot row and its first task. */
 export function useCreateSession(
   options?: UseMutationOptions<SessionEntity, Error, CreateSessionVariables>,
 ) {
@@ -251,7 +247,6 @@ export interface CloseSessionVariables {
   acceptUnpushedWork?: boolean;
 }
 
-/** The row stays `open` until the host resolves it, so the list watches for that. */
 export function useCloseSession(
   options?: UseMutationOptions<SessionEntity, Error, CloseSessionVariables>,
 ) {

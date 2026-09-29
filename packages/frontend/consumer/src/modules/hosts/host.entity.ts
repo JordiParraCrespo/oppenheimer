@@ -1,15 +1,4 @@
 /**
- * A host as the console needs it: a machine the user owns that runs sessions
- * (`product/versions/mvp/00-scope.md`). A host is paired with one pasted
- * install command carrying a registration token, and appears here once its
- * runner connects.
- *
- * The API reports `online` as a boolean rather than a state word, so that is
- * what this carries. `pairing` was a third state in the design note; on the
- * wire a host simply does not exist until its runner has registered, which is
- * the same fact told a shorter way.
- */
-/**
  * One word for the row, derived by the API on every read: `running` (online,
  * a session up), `idle`, `offline`, `unpaired`.
  */
@@ -47,6 +36,17 @@ const NO_DETAILS: HostDetails = {
   roundTripMillis: null,
 };
 
+/**
+ * A host as the console needs it: a machine the user owns that runs sessions
+ * (`product/versions/mvp/00-scope.md`). A host is paired with one pasted
+ * install command carrying a registration token, and appears here once its
+ * runner connects.
+ *
+ * The API reports `online` as a boolean rather than a state word, so that is
+ * what this carries. `pairing` was a third state in the design note; on the
+ * wire a host simply does not exist until its runner has registered, which is
+ * the same fact told a shorter way.
+ */
 export class HostEntity {
   constructor(
     public readonly id: string,
@@ -106,6 +106,5 @@ export interface HostPairing {
   installScriptSha256: string | null;
   /** When the token stops registering a host. */
   expiresAt: Date;
-  /** The host this token created, once a runner has redeemed it. */
   redeemedHostId: string | null;
 }

@@ -62,10 +62,6 @@ export class ProfileAuthGateway implements ProfileAuthPort {
   }
 
   /**
-   * Revoke one session by its token. The token is never accepted from a client
-   * — the caller names a session by id and the repository resolves it, after
-   * the handler has checked the session is theirs.
-   *
    * No eviction here: a single revocation names a device session, and a
    * delegated session is not one — it is minted per credential and never
    * appears to the user as a device they chose to sign out.
@@ -80,8 +76,6 @@ export class ProfileAuthGateway implements ProfileAuthPort {
   }
 
   /**
-   * Revoke every session except the one this request was made with.
-   *
    * Better Auth finds "the other sessions" through its session cache's own
    * index, which knows nothing of a session signed in before the cache existed
    * or one whose index entry was lost — and those still work, from Postgres.

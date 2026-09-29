@@ -75,9 +75,8 @@ interface CachedDelegatedSession {
  * (`@UsesBetterAuthSession()`); every other route a scoped credential reaches
  * never touches this class.
  *
- * The rows are marked `delegated` (see `auth.ts`), which keeps them out of the
- * profile and security "Active sessions" lists: they are bridges, not devices,
- * and offering someone a "Sign out" button for one would promise a revocation
+ * The rows are marked `delegated`, which keeps them out of the "Active
+ * sessions" lists: offering someone a "Sign out" button for one would promise a revocation
  * it cannot deliver — the credential mints another on its next request. API
  * tokens and OAuth grants are revoked where they are managed.
  */
@@ -87,12 +86,6 @@ export class DelegatedSessionAdapter implements DelegatedSessionPort {
 
   constructor(private readonly cache: CacheService) {}
 
-  /**
-   * A Better Auth session token acting as `userId`, reused across requests
-   * from the same credential. Returns `null` if a session could not be minted
-   * — callers fall back to scope-only access rather than failing the request,
-   * since most routes never touch the Better Auth API.
-   */
   async resolveSessionToken(options: DelegatedSessionRequest): Promise<string | null> {
     const key = this.cacheKey(options.credentialId);
     let generation: string;
@@ -201,7 +194,6 @@ export class DelegatedSessionAdapter implements DelegatedSessionPort {
     }
   }
 
-  /** Drop the cached session for a credential (used when it is revoked). */
   async invalidate(credentialId: string, _userId: string): Promise<void> {
     await this.cache
       .del(this.cacheKey(credentialId))

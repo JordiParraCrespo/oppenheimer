@@ -73,12 +73,10 @@ export class AuthService {
   }
 
   /**
-   * Restores the session on app start by asking the auth client whether a
-   * valid session exists, and syncs the `isAuthenticated` store accordingly.
-   *
-   * Returns the restored user's id, or `null` when there is no session. The
-   * caller uses it to decide whether a persisted query cache from an earlier
-   * run still belongs to the person now sitting in front of the app.
+   * Runs on app start. Returns the restored user's id, or `null` when there
+   * is no session. The caller uses it to decide whether a persisted query
+   * cache from an earlier run still belongs to the person now sitting in
+   * front of the app.
    */
   async restoreSession(): Promise<string | null> {
     const session = await this.authRepository.getSession();
@@ -140,8 +138,6 @@ export class AuthService {
   }
 
   /**
-   * Emits the sign-in event for an OAuth round-trip, if one just completed.
-   *
    * The marker is cleared first so a reload can't double-count it. Note this
    * reports `USER_SIGNED_IN` for both new and returning users — the OAuth
    * callback carries nothing that distinguishes them; providers derive
@@ -167,8 +163,6 @@ export class AuthService {
   }
 
   /**
-   * Resolves who just authenticated and reports it.
-   *
    * Deliberately not awaited: learning the user id costs a `getSession()`
    * round-trip, and analytics must never sit in the critical path of a login.
    * The caller's promise resolves as soon as auth itself is done; the identify
@@ -180,7 +174,6 @@ export class AuthService {
     void this.authRepository
       .getSession()
       .then((session) => {
-        // Superseded by a logout that happened while this was in flight.
         if (epoch !== this.identityEpoch) return;
 
         if (session) {

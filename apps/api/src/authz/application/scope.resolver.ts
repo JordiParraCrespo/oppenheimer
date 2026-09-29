@@ -10,8 +10,6 @@ import { ACCESS_GRANT_REPOSITORY } from '../authz.di-tokens';
 import type { AccessGrantRepositoryPort } from '../database/access-grant.repository.port';
 
 /**
- * The application's default scope resolver.
- *
  * Everything is resolved in **one organization**, `input.organizationId`,
  * which `AccessScopeInterceptor` fills from the request's tenant — the same
  * organization `PoliciesGuard` built the caller's ability in (on an

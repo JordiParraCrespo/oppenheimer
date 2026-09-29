@@ -56,7 +56,6 @@ export type BooleanFeatureFlagKey = {
   [K in FeatureFlagKey]: Catalog[K]['type'] extends 'boolean' ? K : never;
 }[FeatureFlagKey];
 
-/** Keys a client may read. */
 export type ClientFeatureFlagKey = {
   [K in FeatureFlagKey]: Catalog[K]['client'] extends true ? K : never;
 }[FeatureFlagKey];
@@ -89,7 +88,6 @@ export function getFlagDefinition(key: FeatureFlagKey): FlagDefinition {
   return FEATURE_FLAGS[key] as FlagDefinition;
 }
 
-/** Whether `value` is one a flag of this definition may take. */
 export function isValidFlagValue(definition: FlagDefinition, value: unknown): value is FlagValue {
   if (definition.type === 'boolean') return typeof value === 'boolean';
   return typeof value === 'string' && definition.variants.includes(value);

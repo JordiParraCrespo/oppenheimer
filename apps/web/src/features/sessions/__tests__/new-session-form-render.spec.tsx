@@ -27,7 +27,6 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), useSearch: () => ({}) }));
 
-/** Every chip, counted by name, with a button that makes the chip's pick. */
 const renders = vi.hoisted(() => new Map<string, number>());
 
 vi.mock('../components/project-select', () => ({
@@ -92,7 +91,6 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useInstallations: () => ({ data: [], isPending: false }),
   useInstallationRepositoriesFor: () => ({ repositories: [], isPending: false }),
   useRepositoryBranchesFor: () => ({ byRepository: new Map(), isPending: false }),
-  // "Manage repository access" mints on click; nothing here clicks it.
   useStartInstallation: () => ({ mutate: vi.fn(), error: null, reset: vi.fn() }),
   // Called once per render of NewSessionSend, so it doubles as that section's count.
   useCreateSession: () => {
@@ -106,7 +104,6 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
       submittedAt: 0,
     };
   },
-  // Nothing here attaches a file, so nothing is uploaded.
   useUploadSessionAttachment: () => ({
     mutateAsync: vi.fn(),
     reset: vi.fn(),
@@ -155,7 +152,6 @@ function chip(name: string, pick: unknown, others: Record<string, unknown> = {})
   };
 }
 
-/** Which chips rendered since the last call, and resets the count. */
 function rendered(): string[] {
   const names = [...renders.keys()].filter((name) => (renders.get(name) ?? 0) > 0).sort();
   renders.clear();
@@ -188,7 +184,6 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual(['permission']);
   });
 
-  /** The send gate re-renders when a host is picked; the chips beside it must not. */
   it('renders only the host chip and the send gate when a host is picked', () => {
     fireEvent.click(screen.getByRole('button', { name: 'host' }));
     expect(rendered()).toEqual(['host', 'send']);
@@ -228,7 +223,6 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual([]);
   });
 
-  /** The line under the title says what sending will do once a project is picked. */
   it('summarises the picked project under the title', () => {
     cleanup();
     render(

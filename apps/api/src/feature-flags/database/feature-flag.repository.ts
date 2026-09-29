@@ -8,11 +8,6 @@ import { FeatureFlagMapper } from '../feature-flag.mapper';
 import { FeatureFlagOrmEntity } from './feature-flag.orm-entity';
 import type { FeatureFlagRepositoryPort } from './feature-flag.repository.port';
 
-/**
- * TypeORM adapter for flag targeting. Stages the aggregate's change events on
- * the transactional outbox with the write, so an audited change and the change
- * itself commit together.
- */
 @Injectable()
 export class FeatureFlagRepository
   extends TypeOrmRepositoryBase<FeatureFlagEntity, FeatureFlagOrmEntity>

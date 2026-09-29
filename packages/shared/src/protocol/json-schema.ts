@@ -30,8 +30,8 @@ import { PROTOCOL_VERSION } from './version.js';
  *
  * The link's constants ride along under `x-constants`, a vendor keyword JSON
  * Schema ignores: the close codes, the refusal header, the frame header, the
- * credit window and the frame cap are part of the contract too, and the Go side is generated from
- * this artifact alone rather than from a second hand-kept list.
+ * credit window and the frame cap are part of the contract too, and the Go side
+ * is generated from this artifact alone rather than from a second hand-kept list.
  *
  * `io: 'input'` because the schema describes what a peer may **send**: it is what
  * a defaulted field looks like before the default applies. `reused: 'ref'` puts

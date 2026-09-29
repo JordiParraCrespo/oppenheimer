@@ -47,7 +47,6 @@ export function NewSessionComposer({
   onSubmit: (text: string, files: File[]) => void;
   busy?: boolean;
   disabled?: boolean;
-  /** The scope chips, in the band fused to the top of the field. */
   scope?: ReactNode;
   tools?: ReactNode;
   engine?: ReactNode;
@@ -131,8 +130,7 @@ export function NewSessionComposer({
           );
           // Deliberately not cleared. A successful submit navigates to the new
           // session and this unmounts with it; a failed one leaves the sentence
-          // and its files where their author can fix them and send again, which
-          // is the whole reason not to clear on the way out.
+          // and its files where their author can fix them and send again.
         }}
       />
       {refusal ? <FieldError className="mx-4.5">{refusal}</FieldError> : null}

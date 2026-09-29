@@ -4,7 +4,6 @@ import type { WorkspaceAuthPort } from '../../infrastructure/workspace-auth.port
 import { WORKSPACE_AUTH } from '../../organizations.di-tokens';
 import { AddWorkspaceMemberCommand } from './add-workspace-member.command';
 
-/** Puts a member of the organization into one of its workspaces. */
 @CommandHandler(AddWorkspaceMemberCommand)
 export class AddWorkspaceMemberCommandHandler
   implements ICommandHandler<AddWorkspaceMemberCommand, void>

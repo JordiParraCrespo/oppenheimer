@@ -36,7 +36,7 @@ export interface ErrorMessageResolverOptions {
 export interface ResolvedErrorMessage {
   /** Translated, user-facing sentence. Never a raw server string. */
   message: string;
-  /** The catalog code, when the failure came from the API. */
+  /** The API's catalog code, or whatever code the failure named (Better Auth's, say). */
   code?: string;
   /** Quote-in-a-bug-report id, when the server sent one. */
   correlationId?: string;
@@ -45,8 +45,6 @@ export interface ResolvedErrorMessage {
 }
 
 /**
- * Turns anything thrown by a repository call into a **translated** message.
- *
  * The server's problem document is authoritative about *what* went wrong — its
  * `code` — but not about how to say it: `detail` and `title` are English,
  * written for operators and API clients. Rendering them straight into the UI (the
@@ -87,8 +85,6 @@ export function createErrorMessageResolver({ t, translateCode }: ErrorMessageRes
 
     return {
       message: translated ?? generic,
-      // The API's catalog code, or whatever code the failure named (Better
-      // Auth's, say) — undefined when it named none.
       code: problem?.code ?? (code || undefined),
       correlationId: appError.correlationId,
       fieldErrors: appError.fieldErrors,

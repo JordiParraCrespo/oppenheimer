@@ -19,8 +19,7 @@ import { searchFlag } from '@oppenheimer/frontend-web';
  * the third such fact.
  *
  * It is minted when step 2's claim lands (the workspace route) — the only
- * thing that opens a walk — and
- * carried by the flow's own links. A reader New session sent here to pair a
+ * thing that opens a walk — and carried by the flow's own links. A reader New session sent here to pair a
  * second machine has no `walk`, so Continue takes them back to the console
  * rather than to a landing that congratulates them on first-run. Nothing has
  * to be cleaned up afterwards: the fact lives and dies with the URLs that
@@ -76,7 +75,6 @@ export function isWalkState(raw: unknown): boolean {
   return typeof raw === 'string' && (raw === WALK_STATE || raw.startsWith(WALK_PREFIX));
 }
 
-/** The echoed `state` with the walk's prefix off, which is what the API minted. */
 export function stateWithoutWalk(raw: unknown): unknown {
   return typeof raw === 'string' && raw.startsWith(WALK_PREFIX)
     ? raw.slice(WALK_PREFIX.length)

@@ -13,7 +13,6 @@ import type { CredentialOwner } from '../domain/scope-context.types';
  * the caller learns only that their credential is not usable.
  */
 export interface CredentialOwnerPort {
-  /** The owner, or `null` if there is none that may still act. */
   findActiveOwner(userId: string): Promise<CredentialOwner | null>;
 
   /**

@@ -26,7 +26,6 @@
  */
 export const CODING_AGENT_IDS = ['claude-code', 'codex', 'opencode', 'grok', 'shell'] as const;
 
-/** A coding agent this product knows how to launch. */
 export type CodingAgentId = (typeof CODING_AGENT_IDS)[number];
 
 /** Where an agent keeps the conversation transcript, and what it keys it by. */
@@ -146,10 +145,8 @@ export interface CodingAgentLoginTarget {
   readonly path?: string;
 }
 
-/** One agent's launch and inspection facts. */
 export interface CodingAgentDefinition {
   readonly id: CodingAgentId;
-  /** Human-readable name, for the agent chip. */
   readonly label: string;
   /**
    * The executable the runner launches inside the session's tmux window.
@@ -211,8 +208,8 @@ export interface CodingAgentDefinition {
 }
 
 /**
- * The catalog. Frozen because it is shared mutable state otherwise: the API
- * and the console both read the same object.
+ * Frozen because it is shared mutable state otherwise: the API and the
+ * console both read the same object.
  */
 export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition>> = Object.freeze({
   'claude-code': Object.freeze({
@@ -244,9 +241,8 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // names and that CLI does not fails in the session's own terminal, where
     // the person can see it.
     //
-    // The current family, newest of each line, in the order Claude's own model
-    // picker lists it: Opus 5.5 first and the default, the everyday model of
-    // the four, then Fable 5.1, Sonnet 5.5 and Haiku 4.5.
+    // The newest of each line, in the order Claude's own model picker lists
+    // it; Opus 5.5 is the default because it is the everyday model of the four.
     models: Object.freeze([
       Object.freeze({ id: 'claude-opus-5-5', label: 'Claude Opus 5.5', default: true as const }),
       Object.freeze({ id: 'claude-fable-5-1', label: 'Claude Fable 5.1' }),
@@ -538,7 +534,6 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
 
 const CODING_AGENT_ID_SET = new Set<string>(CODING_AGENT_IDS);
 
-/** Type guard: is `value` an agent in the catalog? */
 export function isCodingAgentId(value: unknown): value is CodingAgentId {
   return typeof value === 'string' && CODING_AGENT_ID_SET.has(value);
 }

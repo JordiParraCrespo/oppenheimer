@@ -15,7 +15,6 @@
  * refuses one.
  */
 export interface AuthFailureLimiterPort {
-  /** A credential presented from `ip` was refused. */
   recordFailure(ip: string): void;
 
   /** The credential behind this rate-limit key was just accepted. */

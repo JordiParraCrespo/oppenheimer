@@ -6,7 +6,6 @@ import { ROLE_REPOSITORY } from '../roles.di-tokens';
 /** The global roles as they stood at one catalog version. */
 interface Snapshot {
   version: string;
-  /** Permission definitions by role name. */
   byName: ReadonlyMap<string, readonly PermissionDefinition[]>;
 }
 

@@ -52,7 +52,6 @@ const modulesOf = (pkg) => {
 };
 const kernel = modulesOf('core');
 
-/** Each frontend app: where its routes and features are, which product it is, what else it may name. */
 const APPS = [
   // oppenheimer:begin web
   {
@@ -231,6 +230,8 @@ function queryBindingsOf(source, hooks) {
   return bound;
 }
 
+const FETCHING_KINDS = new Set(['screens', 'sections', 'dialogs']);
+
 /**
  * A query result may not be handed down to its only consumer.
  *
@@ -245,8 +246,6 @@ function queryBindingsOf(source, hooks) {
  * Two siblings genuinely sharing one result is a different thing and passes:
  * `profile.tsx` fetches the profile once for its hero and its details pane.
  */
-const FETCHING_KINDS = new Set(['screens', 'sections', 'dialogs']);
-
 function checkQueryStaysHome(source, label) {
   const hooks = queryHooksOf(source);
   if (hooks.size === 0) return;

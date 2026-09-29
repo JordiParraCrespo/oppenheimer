@@ -49,8 +49,6 @@ const repositories: Provider[] = [
 ];
 
 /**
- * API tokens module.
- *
  * It owns a credential kind, so what an `oppenheimer_pat_…` secret is stays
  * here: the resolver below is contributed to the auth kernel
  * (`AuthModule.contributeCredentials`) and built in this module's injector, so

@@ -168,7 +168,6 @@ describe('projects: the saved scope (integration)', () => {
     );
     expect(row.archivedAt).not.toBeNull();
     expect(row.name).toBe('xrp-mobile');
-    // And the listing leaves a retired project out.
     expect(await repository.findAll(caller)).toEqual([]);
   });
 

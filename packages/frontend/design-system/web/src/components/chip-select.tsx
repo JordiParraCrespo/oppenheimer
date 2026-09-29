@@ -610,7 +610,6 @@ function ChipSelect({
   action?: ChipSelectAction;
   width?: number;
   maxHeight?: number;
-  /** `tab` inside the composer's scope band. */
   variant?: ChipSelectTriggerVariant;
   disabled?: boolean;
   className?: string;

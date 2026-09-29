@@ -40,7 +40,6 @@ export function AutomationsSidebar() {
   const [closed, setClosed] = useState<string[]>([]);
   const [query, setQuery] = useState('');
   const dialogs = useConsoleDialog();
-  // All automations is current on the overview and on the runs page.
   const all = useRouterState({
     select: (state) =>
       state.location.pathname === '/automations' || state.location.pathname === '/automations/runs',

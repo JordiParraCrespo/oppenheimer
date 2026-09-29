@@ -270,8 +270,6 @@ describe('Hosts & pairing (integration)', () => {
       );
       const names = columns.map((column) => column.column_name);
 
-      // Same person, same column name, same scope rule — which is why the token
-      // repository is scoped by `HostResource` rather than a second declaration.
       expect(names).toContain('ownerUserId');
       expect(names).not.toContain('createdByUserId');
     });
@@ -416,8 +414,6 @@ describe('Hosts & pairing (integration)', () => {
         name: 'Named by the console',
         ownerUserId: user.id,
         hostname: 'devbox.local',
-        // The family the runner installs a service for, plus the release it
-        // reported; the parts stay separate in `capabilities`.
         os: 'macos 15.2',
         arch: 'arm64',
         runnerVersion: '0.3.1',
@@ -504,8 +500,6 @@ describe('Hosts & pairing (integration)', () => {
         register(minted.secret, second),
       ]);
 
-      // Exactly one wins. The other is refused with the one opaque answer, and
-      // never with a second host.
       const statuses = [a.status, b.status].sort();
       expect(statuses).toEqual([201, 401]);
       const refused = a.status === 401 ? a : b;
@@ -525,7 +519,6 @@ describe('Hosts & pairing (integration)', () => {
       const first = await register(minted.secret, key);
       const retry = await register(minted.secret, key);
 
-      // A dropped response must not cost a token or pair a machine twice.
       expect(retry.status).toBe(201);
       expect(retry.body?.hostId).toBe(first.body?.hostId);
     });
@@ -540,8 +533,6 @@ describe('Hosts & pairing (integration)', () => {
 
       const registered = await register(minted.secret, hostKey());
 
-      // `revokedAt IS NULL` is a term of the burn, which is what makes the
-      // console's revoke button mean anything.
       expect(registered.status).toBe(401);
       expect(registered.body?.code).toBe('HOSTS_003');
     });
@@ -567,9 +558,7 @@ describe('Hosts & pairing (integration)', () => {
       });
       expect(first.status).toBe(204);
 
-      // A fresh assertion, because the first one's `jti` is burned. The answer is
-      // the same the second time: the machine cannot tell "never here" from
-      // "already gone", and neither side would act differently.
+      // A fresh assertion, because the first one's `jti` is burned.
       const second = await call('/api/v1/hosts/self', {
         method: 'DELETE',
         token: bootAssertion(key.privateKey, hostId),
@@ -671,7 +660,6 @@ describe('Hosts & pairing (integration)', () => {
         [hostId],
       );
       expect(inventory).toMatchObject({ platform: 'macos', hostname: 'devbox.local' });
-      // The report is kept as it arrived, live reading included.
       expect(inventory?.facts).toEqual(FACTS);
       expect(
         await rows(`SELECT 1 FROM "host_presence" WHERE "hostId" = $1`, [hostId]),
@@ -725,8 +713,6 @@ describe('Hosts & pairing (integration)', () => {
       const hello = () => presence.observe(hostId, { facts: FACTS, connectedAt: new Date() });
       await dataSource.query(`UPDATE "user" SET "banned" = true WHERE "id" = $1`, [user.id]);
       try {
-        // The link that reported this is closed, and not as unpaired: the ban
-        // can be lifted and the same host let back in.
         expect(await hello()).toBe('owner_refused');
       } finally {
         await dataSource.query(`UPDATE "user" SET "banned" = false WHERE "id" = $1`, [user.id]);

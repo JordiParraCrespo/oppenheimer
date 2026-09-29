@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Theme, ThemePreference } from '../components/theme-provider';
 
-/** The query the OS answers when it is asked which appearance it is wearing. */
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
 /** The OS appearance right now, or light where the browser will not say. */

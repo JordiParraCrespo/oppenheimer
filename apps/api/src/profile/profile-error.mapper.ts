@@ -31,7 +31,6 @@ const BY_UPSTREAM_CODE: Readonly<Record<string, ErrorDefinition>> = {
   CHANGE_EMAIL_DISABLED: ProfileErrors.UPSTREAM_FAILURE,
 };
 
-/** Entry to use when the upstream code is unknown (or absent), keyed by status. */
 function fallbackFor(status: number): ErrorDefinition {
   if (status === 400) return ProfileErrors.INCORRECT_PASSWORD;
   if (status === 401) return ProfileErrors.INCORRECT_PASSWORD;

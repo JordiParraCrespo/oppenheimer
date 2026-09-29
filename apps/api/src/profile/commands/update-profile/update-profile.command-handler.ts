@@ -10,8 +10,6 @@ import { ProfileErrors } from '../../domain/profile.errors';
 import { UpdateProfileCommand } from './update-profile.command';
 
 /**
- * Applies a user's edits to their own profile.
- *
  * The command carries no `role` or `isActive`, so this can never be the path by
  * which someone promotes themselves — the fields simply are not reachable from
  * here, rather than being filtered out somewhere downstream.

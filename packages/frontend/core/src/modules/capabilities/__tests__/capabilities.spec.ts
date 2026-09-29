@@ -47,8 +47,6 @@ describe('CapabilitiesRepository', () => {
   });
 
   it('passes an empty set through as a real answer', async () => {
-    // A deployment with no optional features configured genuinely reports
-    // nothing, and that is different from the failure below.
     api.deploymentCapabilities.mockResolvedValue(ok({}));
 
     await expect(repository.get()).resolves.toEqual({});

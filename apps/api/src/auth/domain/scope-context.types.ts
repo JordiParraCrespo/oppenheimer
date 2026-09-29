@@ -32,7 +32,6 @@ export interface UserCredentialContext {
   kind: string;
   /** Id of the token record (API token id, or a digest of the OAuth token). */
   credentialId: string;
-  /** The user the credential acts on behalf of. */
   userId: string;
   /**
    * The owner's current record. Resolved with the credential so that a
@@ -68,7 +67,6 @@ export interface HostCredentialContext {
   /** Always empty. A machine holds no permissions of its own. */
   scopes: Scope[];
   resourceScope: ResourceScope;
-  /** When the presented assertion stops being valid. */
   expiresAt: Date | null;
 }
 

@@ -337,9 +337,7 @@ export class RunnerLinkGateway {
     }
     const message = parsed.data;
     if (message.type === 'events.append') {
-      // In arrival order, coalesced, and bounded: see `LinkAppendQueue`. Every
-      // other message still runs on its own, so a credential ask never queues
-      // behind the log.
+      // In arrival order, coalesced, and bounded: see `LinkAppendQueue`.
       this.appendQueues.get(link)?.push(message);
       return;
     }
@@ -412,12 +410,12 @@ export class RunnerLinkGateway {
     }
   }
 
-  /** The fingerprint registration handed every host, which the runner pins. */
   /** `TRUST_PROXY`: how many reverse-proxy hops to believe in `X-Forwarded-For`. */
   private get trustedProxyHops(): number {
     return this.configService.get<number>('app.trustProxy') ?? 0;
   }
 
+  /** The fingerprint registration handed every host, which the runner pins. */
   private get keyFingerprint(): string | null {
     const value = this.configService.get<string>('hosts.signingKeyFingerprint');
     return value && /^[0-9a-f]{64}$/.test(value) ? value : null;

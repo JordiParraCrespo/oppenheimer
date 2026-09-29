@@ -7,10 +7,10 @@ import { mountSessionTerminal } from '../lib/terminal-runtime';
  * Mounts a session terminal in `containerRef` for as long as the component
  * lives, and reports the stream's status.
  *
- * The terminal itself — xterm, its fit, the anchor, keys, renderer, fonts
- * and theme — is `mountSessionTerminal`. What this adds is the React side:
- * one effect synchronising that imperative runtime with the component's
- * lifetime, and the one piece of state the pane renders: the link status.
+ * The terminal itself — xterm, its fit, keys, renderer, fonts and theme — is
+ * `mountSessionTerminal`. What this adds is the React side: one effect
+ * synchronising that imperative runtime with the component's lifetime, and
+ * the one piece of state the pane renders: the link status.
  *
  * The grid's size is deliberately not state. A refit runs once per animation
  * frame while the pane is resized, and state set there re-rendered the pane
@@ -55,7 +55,6 @@ export function useTerminal(
   });
   const agentWindow = options.agentWindow ?? false;
 
-  // `generation` is read only to re-run: a retry after an end is a new stream.
   // biome-ignore lint/correctness/useExhaustiveDependencies: generation is the re-run key
   useEffect(() => {
     const container = containerRef.current;
@@ -72,8 +71,6 @@ export function useTerminal(
       setEnded(reason);
       onEndRef.current?.(reason);
     });
-    // The browser's connectivity and the tab's visibility: either coming back
-    // is a reason to stop waiting on the ladder.
     const wake = () => {
       if (document.visibilityState === 'visible') stream.reconnectNow();
     };

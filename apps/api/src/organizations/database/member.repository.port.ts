@@ -21,7 +21,6 @@ export interface MemberRepositoryPort {
    */
   findMembership(organizationId: string, userId: string): Promise<Option<Membership>>;
 
-  /** One membership by its id, with the account behind it. */
   findMembershipById(organizationId: string, memberId: string): Promise<Option<Membership>>;
 
   /**

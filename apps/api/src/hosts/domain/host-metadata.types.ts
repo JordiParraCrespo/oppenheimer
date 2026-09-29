@@ -33,7 +33,6 @@ export interface HostInventory {
   facts: Record<string, unknown>;
 }
 
-/** When the inventory last changed, beside what it is. */
 export interface StoredHostInventory extends HostInventory {
   changedAt: Date;
 }
@@ -61,7 +60,7 @@ export interface HostNetwork {
   lastSeenAt: Date;
 }
 
-/** One entry of a host's timeline: `host_event`. */
+/** The kinds of a host's timeline entry: `host_event`. */
 export const HOST_TIMELINE_KINDS = [
   'paired',
   'renamed',

@@ -26,8 +26,6 @@ export interface QueryPersistConfig {
 }
 
 /**
- * Whether a query may be written to storage.
- *
  * Only successful queries are persisted — restoring an error or a pending
  * fetch would replay a failure the user has already moved past. The feature
  * segment is the first entry of every key factory (see the "React Query keys"
@@ -44,14 +42,12 @@ export function shouldDehydrateQuery(
 }
 
 /**
- * Records which user a persisted cache belongs to. Persisted like any other
- * successful query, so it travels with the cache it describes.
+ * The user a persisted cache belongs to. Persisted like any other successful
+ * query, so it travels with the cache it describes.
  */
 export const cacheOwnerKey = ['cacheOwner'] as const;
 
 /**
- * Drops a restored cache that doesn't belong to the user who is signed in now.
- *
  * A persisted cache outlives its session: it survives an expired or
  * server-revoked session, and a tab closed right after logout can beat the
  * persister's throttled write to storage. Without this, the next boot hydrates

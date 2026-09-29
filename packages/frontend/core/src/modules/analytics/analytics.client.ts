@@ -35,12 +35,10 @@ export type AnalyticsProperties = Record<string, AnalyticsValue>;
 export type AnalyticsTraits = AnalyticsProperties;
 
 export interface IAnalyticsClient {
-  /** Record a product event. */
   capture(event: string, properties?: AnalyticsProperties): void;
   /** Associate subsequent events with a user. */
   identify(userId: string, traits?: AnalyticsTraits): void;
   /** Drop the current identity so later events aren't misattributed. */
   reset(): void;
-  /** Record a page/screen view. */
   pageView(path: string, properties?: AnalyticsProperties): void;
 }

@@ -36,17 +36,14 @@ const DOT: Record<SessionGroup, 'running' | 'idle' | 'failed' | 'pending' | 'com
   resolved: 'completed',
 };
 
-/** The dot a row shows: provisioning first, then what needs you. */
 function dotFor(session: SessionEntity) {
   return session.isProvisioning ? 'pending' : DOT[session.state];
 }
 
 /**
- * One row. The age is derived on render rather than held: `compactAge` returns
- * the unit and the count, and the words are ours to translate — `null` is
- * "less than a minute", which the artboard leaves blank rather than labelling.
- * The ellipsis is the row's `action`, shown on hover and while its menu is
- * open; the inline rename replaces the name and hides both.
+ * The age is derived on render rather than held: `compactAge` returns the unit
+ * and the count, and the words are ours to translate — `null` is "less than a
+ * minute", which the artboard leaves blank rather than labelling.
  *
  * The row owns what only it reads: whether its menu is open, the half-typed
  * rename, and the two writes its menu makes — a rename commits from the inline

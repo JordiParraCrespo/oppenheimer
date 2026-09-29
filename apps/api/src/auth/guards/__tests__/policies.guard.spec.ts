@@ -61,8 +61,6 @@ describe('PoliciesGuard', () => {
       abilities,
     );
 
-    // Returning `false` would hand back Nest's own codeless 403; the guard
-    // throws the catalog error so the response carries AUTH_002.
     const error = await guard
       .canActivate(contextWith({ user: { id: 'u1' } }))
       .catch((thrown: AppError) => thrown);
@@ -96,8 +94,6 @@ describe('PoliciesGuard', () => {
       abilities,
     );
 
-    // 401 tells the client to re-authenticate; a 403 would have it give up on
-    // a request a fresh session would satisfy.
     const error = await guard.canActivate(contextWith({})).catch((thrown: AppError) => thrown);
 
     expect(error).toBeInstanceOf(AppError);

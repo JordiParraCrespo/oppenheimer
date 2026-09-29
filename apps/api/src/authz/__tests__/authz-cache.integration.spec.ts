@@ -165,7 +165,6 @@ describe('authorization cache (integration)', () => {
     access_grant: /(FROM|JOIN)\s+"access_grant"/i,
   } as const;
 
-  /** Run `work`, and count the authorization queries it sent. */
   async function counting(work: () => Promise<unknown>) {
     recorded = [];
     await work();

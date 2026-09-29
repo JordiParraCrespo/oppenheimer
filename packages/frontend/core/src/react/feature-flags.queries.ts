@@ -18,8 +18,6 @@ import { useQuery } from './query';
 type FlagAudience = 'signed-in' | 'anonymous';
 
 /**
- * Query key factory for the `featureFlags` feature.
- *
  * The flags are evaluated for whoever is calling, so the key separates a
  * signed-in caller from an anonymous one: the set fetched on the login page
  * must not be what the dashboard renders after sign-in. Switching organization
@@ -114,8 +112,6 @@ export function useFeatureFlagValue<K extends ClientFeatureFlagKey>(
 
   // Latched in state, not a ref, with what it was latched for: a different
   // key, or a sign-in or sign-out, is a different answer and latches afresh.
-  // Set during render, which React allows for a value derived from what the
-  // component already has.
   const [latched, setLatched] = useState<Latch<FeatureFlagValueOf<K>> | undefined>(undefined);
   const holds = latched?.key === key && latched.audience === audience;
   if (sticky && isSuccess && !holds) setLatched({ key, audience, value: live });

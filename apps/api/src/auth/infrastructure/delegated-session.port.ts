@@ -1,4 +1,3 @@
-/** What a caller needs a delegated session minted for. */
 export interface DelegatedSessionRequest {
   credentialId: string;
   userId: string;
@@ -30,6 +29,5 @@ export interface DelegatedSessionPort {
   /** Drop the session held for one credential, e.g. when it is revoked. */
   invalidate(credentialId: string, userId: string): Promise<void>;
 
-  /** Drop every delegated session held for a person. */
   invalidateForUser(userId: string): Promise<void>;
 }

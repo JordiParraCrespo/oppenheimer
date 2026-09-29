@@ -87,7 +87,6 @@ export function PairingChrome({
   );
 }
 
-/** The token's clock and the way to replace it. */
 export function PairingToken({
   expiresAt,
   expired,
@@ -132,7 +131,6 @@ export function PairingToken({
   );
 }
 
-/** The status line that resolves in place when a runner spends the token. */
 export function PairingStatus({
   host,
   layout = 'dialog',

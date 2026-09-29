@@ -104,8 +104,6 @@ describe('installation capabilities (CASL)', () => {
   });
 
   it('does not let one workspace reach another workspace’s installation', () => {
-    // This is the motivating requirement: reaching that row is an hour of write
-    // access to someone else's repositories.
     expect(
       canAccess(abilityFor('org-acme'), 'read', 'Installation', { organizationId: 'org-rival' }),
     ).toBe(false);

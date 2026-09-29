@@ -55,7 +55,7 @@ export class HostPairingTokenEntity extends AggregateRoot<HostPairingTokenProps>
     return new HostPairingTokenEntity(create);
   }
 
-  /** Mint a token. The caller holds the secret; only its digest lands here. */
+  /** The caller holds the secret; only its digest lands here. */
   static mint(props: MintHostPairingTokenProps): HostPairingTokenEntity {
     return new HostPairingTokenEntity({
       id: randomUUID(),
@@ -115,8 +115,6 @@ export class HostPairingTokenEntity extends AggregateRoot<HostPairingTokenProps>
   }
 
   /**
-   * Revoke the token and nothing else.
-   *
    * The column is load-bearing: the redemption statement requires
    * `revokedAt IS NULL`, so without this write "revocable" would be a column
    * nobody reads and a revoked token would still pair a machine.

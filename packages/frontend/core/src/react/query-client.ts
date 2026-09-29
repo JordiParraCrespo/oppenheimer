@@ -26,21 +26,17 @@ export interface SessionExpiryTarget {
   auth: { expireSession(): boolean };
 }
 
-/** The HTTP status a failure carries, whatever threw it; `undefined` without one. */
 function statusOf(error: unknown): number | undefined {
   if (typeof error !== 'object' || error === null) return undefined;
   const { status } = error as { status?: unknown };
   return typeof status === 'number' ? status : undefined;
 }
 
-/** An API answer saying the caller's session is no longer honoured. */
 function isUnauthorized(error: unknown): boolean {
   return statusOf(error) === 401;
 }
 
 /**
- * Retry policy: whether a failed query is worth asking again.
- *
  * A refusal the server explained (a 4xx) will be refused again: retrying a
  * 404, a 403 or a 401 only delays the error by a round-trip. A server error
  * (5xx) or a request that never got an answer (no status) gets one more try.
@@ -52,9 +48,6 @@ export function shouldRetryQuery(failureCount: number, error: unknown): boolean 
 }
 
 /**
- * Session expiry: the server stopped honouring the session, so the app stops
- * believing in it, and forgets what it cached under it.
- *
  * Flipping the auth store is what sends the reader to /login: the router's
  * guards subscribe to it. Forgetting the cache is what keeps the next person
  * to sign in on this tab from seeing the previous account's sessions and

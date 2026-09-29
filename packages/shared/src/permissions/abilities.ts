@@ -158,7 +158,6 @@ function resolveScopePath(segments: string[], context: AbilityContext): unknown 
   return undefined;
 }
 
-/** Resolve a dotted path (e.g. `user.id`, `scope.teamIds`) against the context. */
 function resolvePath(path: string, context: AbilityContext): unknown {
   const segments = path.split('.');
   if (segments[0] === 'scope') return resolveScopePath(segments.slice(1), context);
@@ -171,16 +170,16 @@ function resolvePath(path: string, context: AbilityContext): unknown {
   }, context);
 }
 
-/**
- * Deep-clone `conditions`, replacing any string value of the form `${path}`
- * with the corresponding value from the context. Non-placeholder values are
- * passed through untouched.
- */
 // CASL parameterizes conditions by the subject's field type. Because our
 // subjects are free-form strings (not typed records), that collapses to
 // `MongoQuery<never>`; conditions are validated at runtime instead.
 type AbilityConditions = MongoQuery<never>;
 
+/**
+ * Deep-clone `conditions`, replacing any string value of the form `${path}`
+ * with the corresponding value from the context. Non-placeholder values are
+ * passed through untouched.
+ */
 function interpolateConditions(
   conditions: Record<string, unknown>,
   context: AbilityContext,

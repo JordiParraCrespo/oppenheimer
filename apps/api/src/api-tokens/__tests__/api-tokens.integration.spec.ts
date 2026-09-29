@@ -7,8 +7,6 @@ import type { SessionCachePort } from '../../auth/application/session-cache.port
 import { SESSION_CACHE } from '../../auth/auth.di-tokens';
 
 /**
- * End-to-end coverage of scoped credentials against a real Postgres and Redis.
- *
  * This is the layer unit tests cannot reach: the migration's SQL, the guards
  * running in a real request pipeline, and the intersection of a token's scopes
  * with its owner's live roles.
@@ -155,7 +153,6 @@ describe('API tokens & scopes (integration)', () => {
     };
   }
 
-  /** Mint a token as the signed-in owner, returning the one-time secret. */
   async function mintToken(body: Record<string, unknown>) {
     const created = await call('/api/v1/tokens', {
       method: 'POST',
@@ -204,8 +201,6 @@ describe('API tokens & scopes (integration)', () => {
     );
     await dataSource.query('UPDATE "organization" SET "roleVersion" = "roleVersion" + 1');
   }
-
-  // --- the migration -------------------------------------------------------
 
   describe('migration', () => {
     it('creates the api_token table with the expected shape', async () => {
@@ -301,8 +296,6 @@ describe('API tokens & scopes (integration)', () => {
     });
   });
 
-  // --- minting -------------------------------------------------------------
-
   describe('minting a token', () => {
     // These two are about the secret — returned once, stored as a digest — and
     // the scope on them is incidental. It is `tokens:read` rather than
@@ -342,7 +335,6 @@ describe('API tokens & scopes (integration)', () => {
     });
 
     it('refuses scopes the creator does not hold', async () => {
-      // The creator may mint tokens and read users — but nothing about roles.
       await grantOwnerPermissions([
         { action: 'read', subject: 'User' },
         { action: 'read', subject: 'ApiToken' },
@@ -369,8 +361,6 @@ describe('API tokens & scopes (integration)', () => {
       expect(refused.status).toBe(400);
     });
   });
-
-  // --- authenticating ------------------------------------------------------
 
   describe('authenticating with a token', () => {
     beforeAll(async () => {
@@ -457,8 +447,6 @@ describe('API tokens & scopes (integration)', () => {
     });
   });
 
-  // --- the intersection ----------------------------------------------------
-
   describe('scopes intersected with the owner’s roles', () => {
     it('refuses a scope the token holds once the owner loses the role behind it', async () => {
       await grantOwnerPermissions([
@@ -474,7 +462,6 @@ describe('API tokens & scopes (integration)', () => {
 
       expect((await call('/api/v1/roles', { token })).status).toBe(200);
 
-      // The owner loses the Role permission; the token is untouched.
       await grantOwnerPermissions([
         { action: 'read', subject: 'User' },
         { action: 'read', subject: 'ApiToken' },
@@ -508,8 +495,6 @@ describe('API tokens & scopes (integration)', () => {
       expect(response.body?.effectiveScopes).toEqual([]);
     });
   });
-
-  // --- lifecycle -----------------------------------------------------------
 
   describe('lifecycle', () => {
     beforeAll(async () => {
@@ -707,8 +692,6 @@ describe('API tokens & scopes (integration)', () => {
     });
   });
 
-  // --- the owner's standing -----------------------------------------------
-
   describe('owner standing', () => {
     /** A fresh account, so its ban or deactivation touches no other test. */
     let owner: { id: string; email: string; sessionToken: string };
@@ -821,8 +804,6 @@ describe('API tokens & scopes (integration)', () => {
     });
   });
 
-  // --- organization restriction -------------------------------------------
-
   describe('organization restriction', () => {
     it('refuses a token acting on an organization it is not scoped to', async () => {
       await grantOwnerPermissions([
@@ -877,8 +858,6 @@ describe('API tokens & scopes (integration)', () => {
       expect(response.body?.code).toBe('TOKEN_008');
     });
   });
-
-  // --- OAuth discovery -----------------------------------------------------
 
   describe('OAuth provider for MCP clients', () => {
     it('publishes authorization-server metadata', async () => {

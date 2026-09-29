@@ -2,8 +2,7 @@ import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 /**
  * Authentication and authorization error catalog for the guards that protect
- * every route. Surfaced as HTTP responses by the global `AllExceptionsFilter`
- * via `AppError`.
+ * every route.
  *
  * The first two are deliberately coarse. A guard knows only that the caller is
  * unauthenticated or that a rule said no — spelling out *which* rule, or

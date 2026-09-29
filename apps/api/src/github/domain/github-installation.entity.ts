@@ -24,7 +24,6 @@ export interface GithubInstallationProps {
   githubInstallationId: number;
   /** The user or organization the App is installed on. */
   accountLogin: string;
-  /** `User` or `Organization`, as GitHub reports it. */
   accountType: AccountType;
   repositorySelection: RepositorySelection;
   /** The account that completed the installation redirect. */
@@ -42,7 +41,6 @@ export interface ConnectInstallationProps {
   accountType: AccountType;
   repositorySelection: RepositorySelection;
   installedByUserId: string;
-  /** What GitHub says about the installation right now, not what we hope. */
   suspendedAt: Date | null;
 }
 

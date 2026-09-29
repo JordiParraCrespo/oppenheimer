@@ -52,7 +52,6 @@ export function projectBlock(
   return null;
 }
 
-/** The form's starting values: the project's, or an empty one. */
 export function projectDraftOf(project: ProjectEntity | undefined): ProjectFormValues {
   return {
     name: project?.name ?? '',

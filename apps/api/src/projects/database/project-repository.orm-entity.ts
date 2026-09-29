@@ -45,7 +45,6 @@ export class ProjectRepositoryOrmEntity {
   @Column({ type: 'bigint' })
   githubRepoId!: string;
 
-  /** `owner/repo` as GitHub spelled it at the last write. Display only. */
   @Column({ type: 'varchar' })
   repositoryFullName!: string;
 

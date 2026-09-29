@@ -14,8 +14,7 @@ import { IssueAttachTicketCommand } from './issue-attach-ticket.command';
  * A ticket is a **Redis key, not a table**: it cannot outlive the sixty seconds it
  * is valid for, and a row whose whole life is shorter than a request timeout earns
  * no table.
- */
-/**
+ *
  * Sixty seconds, not thirty. Single use is the real control, so the lifetime should
  * buy reliability rather than shave a risk that is already bounded to one attach:
  * mint, DNS, TLS and upgrade on a cold radio can take five to ten seconds, and the

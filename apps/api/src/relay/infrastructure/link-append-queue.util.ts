@@ -10,7 +10,6 @@ export type AppendRun = [EventsAppendMessage, ...EventsAppendMessage[]];
 export interface AppendQueueFlow {
   /** Stop reading the socket: the runner's writes back up into TCP. */
   pause(): void;
-  /** Read it again. */
   resume(): void;
   /** Give up on the link: close it with 1013 so the runner redials and resends. */
   overflow(reason: 'queue_full' | 'paused_too_long'): void;

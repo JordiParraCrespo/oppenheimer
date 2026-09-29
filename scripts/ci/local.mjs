@@ -118,7 +118,6 @@ function step(job, name, command, commandArgs, options = {}) {
   return ok;
 }
 
-/** Runs a job's steps in order, stopping at the first failure. */
 function job(name, steps) {
   if (skip.has(name)) {
     rows.push({ job: name, name: 'skipped with --skip', ok: null, seconds: 0 });

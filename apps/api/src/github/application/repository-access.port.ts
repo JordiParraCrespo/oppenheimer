@@ -1,15 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { GithubRepository } from '../infrastructure/github-app.port';
 
-/**
- * What `sessions/` and `relay/` inject to exercise a workspace's GitHub access.
- *
- * It is the one door out of this module for that purpose: a caller names a
- * connected installation and one repository, and gets either a credential for
- * exactly that repository or what GitHub currently calls it. There is nothing to
- * ask for "the repositories I may use", because the installation is the access
- * control and GitHub answers it (`product/versions/mvp/03-control-plane.md`).
- */
 export interface RepositoryToken {
   /** The installation access token. Never logged, never stored in a row. */
   token: string;
@@ -19,6 +10,15 @@ export interface RepositoryToken {
   githubRepoId: number;
 }
 
+/**
+ * What `sessions/` and `relay/` inject to exercise a workspace's GitHub access.
+ *
+ * It is the one door out of this module for that purpose: a caller names a
+ * connected installation and one repository, and gets either a credential for
+ * exactly that repository or what GitHub currently calls it. There is nothing to
+ * ask for "the repositories I may use", because the installation is the access
+ * control and GitHub answers it (`product/versions/mvp/03-control-plane.md`).
+ */
 export interface RepositoryAccessPort {
   /**
    * One repository of one connected installation, as GitHub describes it right
@@ -37,8 +37,6 @@ export interface RepositoryAccessPort {
     githubRepoId: number,
   ): Promise<GithubRepository>;
   /**
-   * Mint a token for one repository of one connected installation.
-   *
    * `installationId` is the **control-plane row's uuid**, not GitHub's number:
    * it is what a checkout records, and the caller is expected to have read that
    * checkout under its own tenant scope. There is no access scope here because a

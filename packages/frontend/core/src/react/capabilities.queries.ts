@@ -7,10 +7,9 @@ import { useOppenheimerApp } from './context';
 import { useQuery } from './query';
 
 /**
- * Query key factory for the `capabilities` feature. Same shape as the other
- * feature key factories: everything derives from `all`, and `all` itself is
- * never handed to `useQuery` — a root that is also a leaf stops meaning
- * "everything" the day a second query joins it.
+ * Everything derives from `all`, and `all` itself is never handed to
+ * `useQuery` — a root that is also a leaf stops meaning "everything" the day a
+ * second query joins it.
  */
 const capabilitiesKeys = {
   all: ['capabilities'] as const,

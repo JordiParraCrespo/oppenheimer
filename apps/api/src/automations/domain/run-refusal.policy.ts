@@ -19,7 +19,6 @@ const REFUSALS: Readonly<Record<string, RunRefusal>> = {
   SESSIONS_011: { reason: 'agent_unavailable', pause: null },
   // The revision names an agent this build cannot run unattended.
   AUTOMATIONS_005: { reason: 'agent_unavailable', pause: null },
-  // The project was archived.
   SESSIONS_006: { reason: 'not_launchable', pause: 'project_archived' },
   PROJECTS_001: { reason: 'not_launchable', pause: 'project_archived' },
   PROJECTS_004: { reason: 'not_launchable', pause: 'project_archived' },

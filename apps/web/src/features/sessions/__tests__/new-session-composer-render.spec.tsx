@@ -24,7 +24,6 @@ vi.mock('react-i18next', () => ({
 
 afterEach(cleanup);
 
-/** A foot-row control that counts how often it is asked to render. */
 function Chip({ onRender, label }: { onRender: () => void; label: string }) {
   onRender();
   return <button type="button">{label}</button>;
@@ -77,10 +76,6 @@ describe('NewSessionComposer', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  /**
-   * A failed create leaves the sentence on screen. Clearing on submit would
-   * throw away a paragraph somebody wrote because the network dropped it.
-   */
   it('keeps the draft after submitting, so a failure loses nothing', () => {
     render(<NewSessionComposer onSubmit={vi.fn()} />);
 

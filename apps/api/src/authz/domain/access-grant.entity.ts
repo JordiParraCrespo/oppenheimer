@@ -5,7 +5,6 @@ import {
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
 
-/** Who a grant is addressed to. */
 export type AccessGrantPrincipalType = 'user' | 'team' | 'role';
 
 export interface AccessGrantProps {

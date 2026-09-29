@@ -26,7 +26,6 @@ export const NewSessionFormContext = createContext<NewSessionDraftForm | null>(n
 
 /** Create the draft's store, seeded from the last visit and remembering this one. */
 export function useNewSessionForm(): NewSessionDraftForm {
-  // Read storage once, not on every render of the section.
   const [defaultValues] = useState(initialDraft);
   const form = useForm<NewSessionDraft>({ defaultValues });
 
@@ -47,7 +46,6 @@ export function useNewSessionForm(): NewSessionDraftForm {
   return form;
 }
 
-/** The draft's store, from inside New session. */
 export function useNewSessionDraft(): NewSessionDraftForm {
   const form = useContext(NewSessionFormContext);
   if (!form) throw new Error('useNewSessionDraft must be used inside NewSessionForm.');

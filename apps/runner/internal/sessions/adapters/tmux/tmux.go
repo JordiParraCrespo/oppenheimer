@@ -228,8 +228,6 @@ func (s *Server) Capture(ctx context.Context, target string) (app.Screen, error)
 	}
 	title, err := s.command(ctx, "display-message", "-p", "-t", target, "#{pane_title}")
 	if err != nil {
-		// A pane that will not report its title is not a reason to lose the
-		// screen we already have.
 		return app.Screen{Body: body}, nil //nolint:nilerr // the body is still worth classifying
 	}
 	return app.Screen{Body: body, Title: strings.TrimSpace(title)}, nil

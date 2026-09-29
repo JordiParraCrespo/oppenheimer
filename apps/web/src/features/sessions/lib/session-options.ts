@@ -41,8 +41,6 @@ export { parseRepositoryKey, repositoryKey } from '@oppenheimer/frontend-consume
  */
 
 /**
- * The hosts, as the host chip's rows.
- *
  * A host that is offline is shown and selectable rather than hidden: the
  * session is recorded and the work is owed to that machine the moment its
  * runner dials in, which is a real thing to want and is what `host_offline`
@@ -85,7 +83,6 @@ export function toRepositoryOptions(
   }));
 }
 
-/** The branches of one repository, as the lone branch chip's rows. */
 export function toBranchOptions(
   branches: readonly BranchEntity[],
   labels: { default: string },
@@ -116,7 +113,6 @@ export function toAgentOptions(): AgentOption[] {
   }));
 }
 
-/** The model an agent runs when nobody has chosen one. */
 export function defaultModelFor(agent: CodingAgentId): string | null {
   const models = CODING_AGENTS[agent].models;
   return (models.find((model) => model.default) ?? models[0])?.id ?? null;
@@ -156,14 +152,11 @@ export function toLaunchInput(draft: {
   };
 }
 
-/** The five stops, translated where the call site translates. */
 export function toEffortStops(labels: Record<SessionEffort, string>): EffortStop[] {
   return SESSION_EFFORTS.map((stop) => ({ value: stop, label: labels[stop] }));
 }
 
 /**
- * The picker's selection, as `POST /sessions` takes it.
- *
  * A row whose id no longer parses is dropped rather than sent: it would name a
  * repository this workspace cannot reach, and the API would refuse it with a
  * 404 that says nothing useful to whoever is looking at the screen.

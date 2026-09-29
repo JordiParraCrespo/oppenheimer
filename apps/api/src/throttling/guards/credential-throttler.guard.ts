@@ -14,12 +14,9 @@ type HandleRequestProps = Parameters<ThrottlerGuard['handleRequest']>[0];
  * on where the packets came from.
  *
  * The default tracker is the source IP, which is the right answer for a browser
- * hitting `/login` and the wrong one for every machine caller we have. The
- * fleet's lead-collector Worker relays the contact-form enquiries of ~33
- * websites, and they all reach us from that one Worker: an IP-keyed bucket
- * would be shared by the entire fleet, so a busy day on one site would throttle
- * the other thirty-two, and the per-route limit would describe nothing anybody
- * intended. The same goes for everyone signed in behind one office NAT.
+ * hitting `/login` and the wrong one for callers that share an address: an
+ * IP-keyed bucket would be shared by every caller behind one office NAT, and
+ * the per-route limit would describe nothing anybody intended.
  *
  * **The bucket is derived from what the request presents, without verifying
  * it.** This guard is an `APP_GUARD`, so it runs before `ApiAuthGuard` has

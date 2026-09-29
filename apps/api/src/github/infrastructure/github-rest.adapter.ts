@@ -14,13 +14,6 @@ import type {
   GithubRepositoryToken,
 } from './github-app.port';
 
-/**
- * Where GitHub is. Configuration rather than a constant since GitHub Enterprise
- * Server exists and serves the same API on somebody else's host — and since an
- * end-to-end run has to reach a stub to exercise a path that needs a repository
- * without registering an App (`e2e/README.md`).
- * Both default to github.com, so a deployment that sets neither is unchanged.
- */
 const OAUTH_TOKEN_PATH = '/login/oauth/access_token';
 
 /** GitHub's REST API version, pinned so a future default cannot move under us. */
@@ -110,10 +103,8 @@ interface RequestOptions {
  * pagination rule, and a dependency for that is a dependency to keep current,
  * audit and resolve at install time.
  *
- * Everything it returns is in this module's own vocabulary, so a change of
- * transport is a change to this file and nothing else. Its other job is to make
- * GitHub's failures into this module's problem documents: an unmapped upstream
- * error would reach a client as a bare 500 with no code.
+ * It also makes GitHub's failures into this module's problem documents: an
+ * unmapped upstream error would reach a client as a bare 500 with no code.
  *
  * **Nothing here logs a response body.** The access-token endpoint answers with
  * a live credential, and a log line is the easiest place to leak one.
@@ -126,11 +117,6 @@ export class GithubRestAdapter implements GithubAppPort {
   constructor(
     private readonly configService: ConfigService,
     private readonly capabilities: CapabilitiesService,
-    /**
-     * Left unbound in the composition root, so the platform `fetch` is used. It
-     * is a seam for a test double, and for a deployment that has to route egress
-     * through a client of its own.
-     */
     @Optional()
     @Inject(GITHUB_FETCH)
     fetchImpl?: GithubFetch,
@@ -149,14 +135,20 @@ export class GithubRestAdapter implements GithubAppPort {
     return this.capabilities.has('github_app');
   }
 
-  /** GitHub's REST root for this deployment, without a trailing slash. */
+  /**
+   * GitHub's REST root, without a trailing slash. Configuration rather than a
+   * constant since GitHub Enterprise Server serves the same API on somebody
+   * else's host — and since an end-to-end run has to reach a stub to exercise a
+   * path that needs a repository without registering an App (`e2e/README.md`).
+   * This and {@link oauthTokenUrl} default to github.com, so a deployment that
+   * sets neither is unchanged.
+   */
   private get api(): string {
     return (
       this.configService.get<string>('githubApp.apiBaseUrl') ?? 'https://api.github.com'
     ).replace(/\/+$/, '');
   }
 
-  /** Where an OAuth code is exchanged for this deployment. */
   private get oauthTokenUrl(): string {
     const base = (
       this.configService.get<string>('githubApp.oauthBaseUrl') ?? 'https://github.com'
@@ -212,12 +204,6 @@ export class GithubRestAdapter implements GithubAppPort {
     return repositories.map(toRepository);
   }
 
-  /**
-   * One repository, resolved by id. GitHub refuses it when the installation does
-   * not cover it, and that refusal *is* `GITHUB_010` — asking it here is cheaper
-   * and more current than rebuilding the installation's whole repository set in
-   * process to answer a question GitHub already answers.
-   */
   async readRepository(
     githubInstallationId: number,
     githubRepoId: number,
@@ -384,7 +370,6 @@ export class GithubRestAdapter implements GithubAppPort {
     return `${signingInput}.${base64url(signature)}`;
   }
 
-  /** Walk `Link: rel="next"` until GitHub stops offering one. */
   private async paginate<T>(
     url: string,
     token: string,
@@ -518,7 +503,6 @@ async function messageOf(response: Response): Promise<string | undefined> {
   }
 }
 
-/** JWT segments are base64url with the padding stripped. */
 function base64url(value: Buffer): string {
   return value.toString('base64url');
 }

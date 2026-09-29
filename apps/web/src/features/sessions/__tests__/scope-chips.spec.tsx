@@ -29,7 +29,6 @@ function chip(name: string) {
   return screen.getByRole('button', { name }) as HTMLButtonElement;
 }
 
-/** Open a chip and hand back its popup. */
 function openChip(name: string) {
   fireEvent.click(chip(name));
   return screen.getByRole('listbox');

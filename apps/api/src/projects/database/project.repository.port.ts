@@ -18,8 +18,6 @@ export type ArchiveOutcome =
   | { result: 'not-found' };
 
 /**
- * Port for persisting and querying the project aggregate.
- *
  * Every read takes an {@link AccessScope}, which is what turns "this query is
  * authorized" from something a handler has to remember into something the
  * compiler asks for; the adapter throws rather than falling back to an

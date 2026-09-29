@@ -87,7 +87,6 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     return new ProjectEntity(create);
   }
 
-  /** Create a brand-new project with a generated id. */
   static createNew(props: CreateProjectProps): ProjectEntity {
     assertHoldable(props.repositories);
     return new ProjectEntity({
@@ -189,7 +188,7 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     );
   }
 
-  /** Rename the project. Display only: the slug stays as it is. */
+  /** Display only: the slug stays as it is. */
   rename(name: string): void {
     if (name !== this.props.name) this.assertNotUnassigned('renamed');
     this.props.name = name;

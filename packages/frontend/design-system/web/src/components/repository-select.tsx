@@ -108,7 +108,6 @@ function RepositorySelect({
   branchPaneTitle?: (repoName: string) => React.ReactNode;
   changeBranchLabel?: string;
   action?: ChipSelectAction;
-  /** `tab` inside the composer's scope band. */
   variant?: ChipSelectTriggerVariant;
   disabled?: boolean;
   className?: string;

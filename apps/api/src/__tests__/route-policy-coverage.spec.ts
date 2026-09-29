@@ -71,7 +71,6 @@ function collectRoutes(file: string): Route[] {
   return routes;
 }
 
-/** Every controller source under `src/`, excluding test folders. */
 function controllerFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name);

@@ -102,7 +102,7 @@ const SUFFIX_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyz';
  */
 export const SESSION_SLUG_PATTERN = /^[a-z]+-[a-z]+-[0-9a-z]{6}$/;
 
-/** Mint a slug. The randomness is `node:crypto`'s, not `Math.random`'s. */
+/** The randomness is `node:crypto`'s, not `Math.random`'s. */
 export function mintSessionSlug(): string {
   const adjective = ADJECTIVES[randomInt(ADJECTIVES.length)];
   const noun = NOUNS[randomInt(NOUNS.length)];

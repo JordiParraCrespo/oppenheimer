@@ -58,10 +58,10 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
     // re-derived: a capability that says yes while every route answers
     // HOSTS_004 is a second source of truth, and the console reads this one.
     hosts: hostsAreConfigured(configService),
-    // The same predicate the namer adapter checks, called rather than re-derived.
-    // With no provider, or one whose key or model is missing, sessions are named
-    // from their prompt's own words instead — a supported configuration, which is
-    // why this exists to answer "why are titles never a model's" from the log.
+    // The same predicate the namer adapter checks. With no provider, or one
+    // whose key or model is missing, sessions are named from their prompt's own
+    // words instead — a supported configuration, which is why this exists to
+    // answer "why are titles never a model's" from the log.
     session_namer: sessionNamerIsConfigured(configService),
     // A database on disk to place a host's network with. Without it networks
     // are recorded by address only, and no new-network email can be judged.

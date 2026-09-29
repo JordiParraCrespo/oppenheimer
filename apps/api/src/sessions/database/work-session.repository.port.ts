@@ -80,8 +80,18 @@ export interface SessionEventPage {
 }
 
 /**
- * Port for the work-session aggregate: the row, its checkouts, and its log.
- *
+ * A session on a host as the link's hello reconciliation reads it: the row,
+ * and the first prompt if the
+ * log holds one — everything a re-dispatched `session.create` needs.
+ */
+export interface HostSessionRow {
+  session: WorkSessionEntity;
+  prompt?: string;
+  /** The images the first task carries, off the same `prompt.first` entry. */
+  images?: SessionLaunchImage[];
+}
+
+/**
  * Every person-facing read takes an {@link AccessScope}, so "this query is
  * authorized" is something the compiler asks for rather than something a handler
  * has to remember. The writes are different: they take the **aggregate**, which is
@@ -99,18 +109,6 @@ export interface SessionEventPage {
  * `work_session_event` declare no resource and are only ever read through their
  * session, which is what keeps one tenant predicate in the system instead of three.
  */
-/**
- * A session on a host as the link's hello reconciliation reads it: the row,
- * and the first prompt if the
- * log holds one — everything a re-dispatched `session.create` needs.
- */
-export interface HostSessionRow {
-  session: WorkSessionEntity;
-  prompt?: string;
-  /** The images the first task carries, off the same `prompt.first` entry. */
-  images?: SessionLaunchImage[];
-}
-
 export interface WorkSessionRepositoryPort {
   /** Every unresolved session on a host, unscoped: the host proved who it is. */
   findUnresolvedForHostForMachine(hostId: string): Promise<HostSessionRow[]>;
@@ -198,7 +196,6 @@ export interface WorkSessionRepositoryPort {
     events: NewSessionEvent[],
   ): Promise<'moved' | 'project-archived'>;
 
-  /** Add a checkout to a session, with the log entries that explain it. */
   insertCheckout(
     session: WorkSessionEntity,
     checkout: SessionCheckoutEntity,
@@ -243,8 +240,6 @@ export interface WorkSessionRepositoryPort {
   ): Promise<SessionEventPage>;
 
   /**
-   * How many sessions in this project are not resolved.
-   *
    * The one question archiving a project has to ask, and the reason archiving
    * ships with this module rather than with `projects/`: a placeholder answering
    * "none" would be fail-open on a destructive path.

@@ -1,9 +1,5 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
-/**
- * Role domain error catalog. Surfaced as HTTP responses by the global
- * `AllExceptionsFilter` via `AppError`.
- */
 export const RoleErrors = {
   NOT_FOUND: {
     code: 'ROLE_001',

@@ -163,7 +163,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.origin;
   }
 
-  /** The latest turn as last folded. Null before the first prompt. */
   get latestTurn(): SessionTurnFold | null {
     return this.props.latestTurn;
   }
@@ -287,10 +286,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.checkouts.map((checkout) => checkout.directoryName);
   }
 
-  /**
-   * The derived group, for the wire — a function of the row, because every input
-   * it reads is a folded column.
-   */
   group(now: Date = new Date()): SessionGroup {
     return sessionGroup(this.fold, now);
   }
@@ -378,7 +373,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     }
   }
 
-  /** Replay a whole log onto the aggregate, entry by entry. */
   recordEvents(entries: readonly (SessionLogEntry | WorkSessionEventEntity)[]): void {
     for (const entry of entries) {
       this.recordEvent({
@@ -413,7 +407,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return `${kind}:${commandId}`;
   }
 
-  /** Fold the entry onto the latest turn, and remember what to write back. */
   private foldTurn(entry: SessionLogEntry): void {
     const before = this.props.latestTurn;
     const after = foldTurnEvent(before, entry, this.props.origin);

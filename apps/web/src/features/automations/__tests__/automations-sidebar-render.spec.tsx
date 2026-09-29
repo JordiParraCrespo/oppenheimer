@@ -24,7 +24,6 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 
-/** Renders of each row, by automation name. */
 const renders = vi.hoisted(() => new Map<string, number>());
 
 /** What the sidebar reads, from one store the test drives. */
@@ -100,7 +99,6 @@ function automation(id: string): AutomationEntity {
 
 const ROWS = ['alpha', 'bravo', 'charlie', 'delta'].map(automation);
 
-/** Which rows rendered since the last call (All automations aside), and resets the count. */
 function rendered(): string[] {
   const names = [...renders.keys()]
     .filter((name) => name !== 'automations.sidebar.all' && (renders.get(name) ?? 0) > 0)

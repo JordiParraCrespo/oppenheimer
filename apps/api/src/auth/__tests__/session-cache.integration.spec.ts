@@ -192,8 +192,6 @@ describe('Session cache (integration)', () => {
     return signIn(admin.email);
   }
 
-  // --- what a request costs -----------------------------------------------
-
   describe('cost per request', () => {
     it('authenticates a cookie and a bearer session without reading the session table', async () => {
       const owner = await signUp('cost');
@@ -254,8 +252,6 @@ describe('Session cache (integration)', () => {
       expect(n).toBe(1);
     });
   });
-
-  // --- revocation ---------------------------------------------------------
 
   describe('a cached session never outlives its revocation', () => {
     it('revoking one session removes it from Postgres and from Redis', async () => {
@@ -412,8 +408,6 @@ describe('Session cache (integration)', () => {
       expect((await call('/api/v1/users/me', { cookie: legacy.cookie })).status).toBe(401);
     });
   });
-
-  // --- writes behind Better Auth's back -------------------------------------
 
   describe('the cached copy follows the rows the application writes', () => {
     const currentSession = async (account: Account) =>

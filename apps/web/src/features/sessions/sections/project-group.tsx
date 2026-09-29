@@ -21,11 +21,10 @@ import { SessionRow } from './session-row';
  *
  * The sidebar owns the open set and the filters; each row owns its menu,
  * its rename and its writes; this draws one group, owns its ages' clock and
- * reports what was clicked. It is a
- * section rather than a component for one reason: the header's "one of mine
- * is open" mark is a subscription to the route, a boolean per group, so a
- * navigation re-renders the groups whose mark moved and not the list above
- * them.
+ * reports what was clicked. It is a section rather than a component for one
+ * reason: the header's "one of mine is open" mark is a subscription to the
+ * route, a boolean per group, so a navigation re-renders the groups whose mark
+ * moved and not the list above them.
  */
 export function ProjectGroup({
   project,

@@ -19,9 +19,7 @@ const alertVariants = cva(
         default: "bg-card text-card-foreground",
         // The failure callout, on the same terms as the status ones below: the
         // hairline takes the destructive hue so the edge reads as an error
-        // rather than as a plain card that happens to hold red text. It was
-        // the one variant left on the neutral `border-border`, which is why a
-        // failed sign-in looked like an unstyled box.
+        // rather than as a plain card that happens to hold red text.
         destructive:
           "border-destructive/25 bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 *:[svg]:text-current",
         // Status callouts, mirroring Badge's vocabulary. The surface stays the
@@ -47,11 +45,9 @@ const alertVariants = cva(
 /**
  * The leading icon each variant wears when the caller does not name one.
  *
- * An alert without an icon is a box of coloured text, which is what every
- * error callout in the product was until these became the default — the icon
- * was optional, so all 47 of them went without. `destructive` takes the alert
- * disc rather than `ended`'s cross: one is a failure to act on, the other a
- * state something has settled into, and they share a colour.
+ * An alert without an icon is a box of coloured text. `destructive` takes the
+ * alert disc rather than `ended`'s cross: one is a failure to act on, the
+ * other a state something has settled into, and they share a colour.
  */
 const VARIANT_ICONS: Record<
   NonNullable<VariantProps<typeof alertVariants>["variant"]>,

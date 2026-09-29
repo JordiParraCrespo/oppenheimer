@@ -6,9 +6,6 @@ import { Session } from '../../auth/database/session.orm-entity';
 import type { OwnedSession, SessionReaderPort } from './session.repository.port';
 
 /**
- * TypeORM-backed read adapter over Better Auth's `session` table, reading the
- * device sessions out of it.
- *
  * Expired rows are filtered out rather than shown as "expired": Better Auth
  * leaves them behind until they are cleaned up, and a device that can no longer
  * authenticate is not something a user needs to be offered a "sign out" button

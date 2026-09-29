@@ -21,8 +21,6 @@ import { useShellConfig } from './use-shell';
  * components call `useAuthorizedNav()` and get the app's nav from context.
  */
 export function useAuthorizedNav(nav?: readonly NavItem[]): NavItem[] {
-  // Both are read unconditionally: hooks run in the same order whether or
-  // not the caller passed its own nav.
   const shell = useShellConfig();
   const entries = nav ?? shell?.nav ?? [];
   const { ability, isUnavailable } = useAbilityState();

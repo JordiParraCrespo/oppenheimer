@@ -118,7 +118,7 @@ const repositories: Provider[] = [
   // writes the timeline inside its own transactions through the class.
   HostMetadataRepository,
   { provide: HOST_METADATA_REPOSITORY, useExisting: HostMetadataRepository },
-  // Offline: DB-IP Lite on disk. No database configured is an answer of all-null.
+  // Offline: DB-IP Lite on disk.
   { provide: IP_GEOLOCATION, useClass: DbipGeolocationAdapter },
   // TODO(remove after #162 has been live once): replay markers burned before
   // the cache prefixed its keys. See `LegacyReplayMarkerPort`.
@@ -184,7 +184,7 @@ const resolvers: Provider[] = [
     HostNetworkChangedDomainEventHandler,
     HostRetentionProcessor,
   ],
-  // The two application ports, and nothing else. A consumer that could inject
+  // The application ports, and nothing else. A consumer that could inject
   // the repository could skip `assertUsable` and read unpaired rows unscoped,
   // which is exactly the check the port exists to make unavoidable.
   //

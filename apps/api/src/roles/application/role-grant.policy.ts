@@ -10,7 +10,6 @@ import type { RoleEntity } from '../domain/role.entity';
 import { RoleErrors } from '../domain/role.errors';
 import { AbilityFactory } from './ability.factory';
 
-/** Who is performing a role write, and in which organization. */
 export interface RoleActor {
   id: string;
   role?: string;

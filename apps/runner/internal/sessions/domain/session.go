@@ -162,7 +162,6 @@ type Session struct {
 	Dirty bool `json:"dirty,omitempty"`
 }
 
-// Sentinel conditions.
 var (
 	ErrRepoName     = errors.New("repository must be owner/name")
 	ErrBranchName   = errors.New("branch name is not usable")
@@ -172,8 +171,7 @@ var (
 	ErrNoSuchWindow = errors.New("no such window")
 )
 
-// TmuxName is the tmux session name: the id, prefixed, so adoption can tell
-// ours from anyone else's.
+// TmuxName is the tmux session name: the id, prefixed.
 func (s Session) TmuxName() string { return Prefix + s.ID }
 
 // Target addresses one window for tmux.

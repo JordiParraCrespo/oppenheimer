@@ -18,8 +18,6 @@ import {
 import { HostMetadataRepository } from './host-metadata.repository';
 
 /**
- * TypeORM adapter for the host aggregate.
- *
  * Note what is absent from the reads: no owner test and no tenant filter.
  * Extending `ScopedRepositoryBase` and naming `HostResource` is the whole of it —
  * and because that resource declares no organization key, the generated
@@ -107,15 +105,6 @@ export class HostRepository
   }
 
   /**
-   * The burn and the insert, in one transaction.
-   *
-   * The `UPDATE … WHERE tokenHash = $1 AND redeemedAt IS NULL AND revokedAt IS
-   * NULL AND expiresAt > now() RETURNING` is what makes a token single-use: the
-   * database decides the race, so two machines presenting one secret produce one
-   * host. `revokedAt IS NULL` is load-bearing — without it `DELETE
-   * /hosts/pairing/{id}` would write a column nobody reads and a revoked token
-   * would still pair a machine.
-   *
    * `redeemedHostId` is written by the same statement, so a lost response is not
    * a lost host: the retry finds the token spent, matches the fingerprint it
    * presents, and is handed the host that already exists.
@@ -128,9 +117,6 @@ export class HostRepository
    * owns, and the relay is woken after it commits.
    */
   async redeemAndRegister(input: RedeemAndRegisterInput): Promise<Option<HostEntity>> {
-    // The id is minted before the statement runs because the burn writes it into
-    // `redeemedHostId` in the same breath; the row it names is inserted below,
-    // which is why that foreign key is deferred to commit.
     const hostId = randomUUID();
 
     const registered = await this.outbox.transaction(async (manager) => {
@@ -157,7 +143,6 @@ export class HostRepository
       // Cast around TypeORM's `QueryDeepPartialEntity` recursion, which cannot
       // represent the free-form `capabilities` jsonb.
       await hosts.insert(record as Parameters<typeof hosts.insert>[0]);
-      // The machine as it paired, and the first line of its timeline, with it.
       const inventory = this.mapper.toRegisterInventory(host);
       if (inventory) {
         await manager.query(
@@ -209,7 +194,6 @@ export class HostRepository
     return Some(registered);
   }
 
-  /** The rows, each with its side tables: three primary-key reads for the whole list. */
   private async withMetadata(records: HostOrmEntity[]): Promise<HostPresence[]> {
     const metadata = await this.metadata.findForHosts(records.map((record) => record.id));
     return records.map((record) => {

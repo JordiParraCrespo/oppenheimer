@@ -5,7 +5,6 @@ import type { OrganizationAuthPort } from '../../infrastructure/organization-aut
 import { ORGANIZATION_AUTH } from '../../organizations.di-tokens';
 import { SetActiveOrganizationCommand } from './set-active-organization.command';
 
-/** Selects the organization the caller's session acts in. */
 @CommandHandler(SetActiveOrganizationCommand)
 export class SetActiveOrganizationCommandHandler
   implements ICommandHandler<SetActiveOrganizationCommand, AggregateID>

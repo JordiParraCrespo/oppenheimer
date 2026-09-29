@@ -26,10 +26,9 @@ import { NewSessionSubtitle } from './new-session-subtitle';
  *
  * So this component renders once. The chips are created here and handed to
  * `NewSessionSend` as elements, which is what keeps them still when the send
- * gate or the request's state re-renders that section: an element React has
- * already seen, passed back unchanged, is not rendered again. The React
- * Compiler would give the same result for a component shaped worse; this shape
- * does not depend on it, and `new-session-form-render.spec.tsx` holds it there.
+ * gate or the request's state re-renders that section. The React Compiler
+ * would give the same result for a component shaped worse; this shape does
+ * not depend on it, and `new-session-form-render.spec.tsx` holds it there.
  *
  * `heading` is the screen's title; the subtitle under it is a section of
  * its own that watches the project and the repositories it summarises.
@@ -47,8 +46,6 @@ export function NewSessionForm({ heading }: { heading?: ReactNode }) {
   return (
     <NewSessionFormContext.Provider value={form}>
       {heading ? (
-        // The title comes from the screen; the line under it reads the draft,
-        // so it lives inside the store's provider.
         <div>
           {heading}
           <NewSessionSubtitle />

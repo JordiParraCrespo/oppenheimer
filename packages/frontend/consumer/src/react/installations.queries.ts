@@ -101,8 +101,6 @@ export function useStartInstallation(options?: UseMutationOptions<InstallationSt
 }
 
 /**
- * Attach the installation GitHub just created to this workspace.
- *
  * The list is invalidated on success because the step that called this renders
  * straight off it — without that, a reader who has just connected is told they
  * have not.
@@ -192,8 +190,6 @@ export function useRepositoryBranchesFor(repositories: readonly RepositoryRef[])
 }
 
 /**
- * The repositories of several installations, merged into one list.
- *
  * A workspace may have the App installed on more than one account — a personal
  * one and an organisation's — and the picker is one list rather than one per
  * account. Each row carries the installation it came from, because

@@ -18,7 +18,6 @@
  * derived attribute.
  */
 
-/** The prefix every branch this product creates lives under. */
 const BRANCH_NAMESPACE = 'oppenheimer';
 
 /**

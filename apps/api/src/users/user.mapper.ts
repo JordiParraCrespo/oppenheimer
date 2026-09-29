@@ -8,9 +8,7 @@ import { Username } from './domain/value-objects/username.value-object';
 import { UserResponseDto } from './dtos/user.response.dto';
 
 /**
- * Maps the user aggregate between its domain, persistence and response shapes.
- *
- * Note: `toPersistence` only writes the profile columns the application owns.
+ * `toPersistence` only writes the profile columns the application owns.
  * `name` is Better Auth's display name and is *derived* here from the first
  * and last name: the member list and the invitation email read `name`, and a
  * profile update that left it alone kept showing the old name everywhere the

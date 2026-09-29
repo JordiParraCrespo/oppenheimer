@@ -71,8 +71,6 @@ export function mapOrganizationError({ upstreamCode, status }: BetterAuthFailure
   if (upstreamCode) {
     const known = BY_UPSTREAM_CODE[upstreamCode];
     if (known) return known;
-    // Better Auth spells authorization failures as YOU_ARE_NOT_ALLOWED_TO_<verb>
-    // — one entry covers every verb, present and future.
     if (upstreamCode.startsWith('YOU_ARE_NOT_ALLOWED_TO')) {
       return OrganizationErrors.INSUFFICIENT_ROLE;
     }

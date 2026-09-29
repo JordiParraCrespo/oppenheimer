@@ -117,7 +117,6 @@ export class OrganizationMapper {
     };
   }
 
-  /** A member row joined to its account, as the members list reads it. */
   static toMembership(row: MembershipRow): Membership {
     return {
       id: row.id,
@@ -138,7 +137,6 @@ export class OrganizationMapper {
     };
   }
 
-  /** The account behind a membership, from the users table. */
   static toMembershipUser(user: {
     id: string;
     name: string;

@@ -1,7 +1,6 @@
 import type { IncomingHttpHeaders } from 'node:http';
 import type { AccountStanding } from '../domain/account-access.policy';
 
-/** An OAuth access grant the identity provider recognised. */
 export interface VerifiedOAuthGrant {
   userId: string;
   /** The raw access token, for deriving a stable credential id by digest. */
@@ -33,7 +32,6 @@ export interface VerifiedSession {
  * than throwing, because a request may legitimately carry none of them.
  */
 export interface CredentialVerifierPort {
-  /** The OAuth grant these headers carry, or `null` if they carry none. */
   verifyOAuthGrant(headers: IncomingHttpHeaders): Promise<VerifiedOAuthGrant | null>;
 
   /**

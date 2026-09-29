@@ -55,14 +55,10 @@ export function OnboardingGithubScreen({
   installUrlFor: (installUrl: string) => string;
   /** The code was exchanged: the route clears the spent callback from its URL. */
   onExchanged: () => void;
-  /** Where this step sits in the flow the route is part of. */
   step: number;
   total: number;
-  /** The link the header's back renders. */
   back: ReactElement;
-  /** Continue's link, with the connected installation's id. */
   next: (installationId: string) => ReactElement;
-  /** Skip's link, for a reader who connects GitHub later. */
   skip: ReactElement;
 }) {
   const { t } = useTranslation();

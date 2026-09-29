@@ -10,13 +10,12 @@ import { USER_REPOSITORY } from '../../user.di-tokens';
 import { DeleteUserCommand } from './delete-user.command';
 
 /**
- * Deletes an account — an admin's `DELETE /users/{id}` and a person's own
- * `DELETE /profile` are this one handler.
+ * An admin's `DELETE /users/{id}` and a person's own `DELETE /profile` are this
+ * one handler.
  *
  * What the account holds elsewhere goes first, through the owning modules'
- * contributions (`AccountErasureRegistry`): its hosts are unpaired, then the
- * personal workspace's sessions and projects go, then the workspace. The
- * user row goes last, and its sign-ins, tokens, grants, hosts and preferences
+ * contributions (`AccountErasureRegistry`, in `ACCOUNT_ERASURE_STEPS` order).
+ * The user row goes last, and its sign-ins, tokens, grants, hosts and preferences
  * cascade from it in that one write, so no failure leaves an account that
  * exists with its sign-ins gone. Every step is idempotent, so a delete that
  * failed part way is simply asked again. The aggregate raises

@@ -9,8 +9,9 @@ import { describe, expect, it } from 'vitest';
  * name and records each one by that name. Two migrations with the same
  * timestamp have no defined order: the TypeORM CLI, which globs the directory
  * as the API does at boot, and the integration suites (`runAllMigrations`,
- * which sorts file names) could apply such a pair in opposite orders. So a new migration takes a timestamp later than the newest
- * one, and this fails on one that shares a timestamp.
+ * which sorts file names) could apply such a pair in opposite orders. So a new
+ * migration takes a timestamp later than the newest one, and this fails on one
+ * that shares a timestamp.
  */
 const MIGRATIONS_DIR = resolve(__dirname, '../migrations');
 

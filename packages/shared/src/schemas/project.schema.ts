@@ -8,8 +8,6 @@ import {
 } from './primitives.js';
 
 /**
- * Project shapes.
- *
  * A project is a **saved scope a person creates**: the repositories its sessions
  * usually work on, the base each one branches from, which of them are offered by
  * default, and the host and agent a new session starts with

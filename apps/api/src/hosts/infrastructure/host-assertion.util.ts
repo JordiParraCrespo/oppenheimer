@@ -36,11 +36,8 @@ export interface DecodedHostAssertion {
 }
 
 /**
- * Does this bearer value even look like an EdDSA JWS?
- *
- * This is the question the credential resolver asks before handing a bearer to
- * the hosts module: three dot-separated base64url segments whose header decodes
- * to `{"alg":"EdDSA",…}`. Cheap, and wrong only in the direction of asking the
+ * Three dot-separated base64url segments whose header decodes to
+ * `{"alg":"EdDSA",…}`. Cheap, and wrong only in the direction of asking the
  * verifier about something it will then refuse.
  */
 export function looksLikeHostAssertion(value: string): boolean {
@@ -78,8 +75,6 @@ export function decodeHostAssertion(assertion: string): DecodedHostAssertion | n
 }
 
 /**
- * Is this assertion signed by one of these keys?
- *
  * Takes a list because a host may hold two valid keys during a rotation window,
  * and a boot that arrives on either is the same host.
  */
@@ -110,7 +105,6 @@ export function keyFingerprint(base64PublicKey: string): string | null {
   return createHash('sha256').update(raw).digest('hex');
 }
 
-/** Turn the runner's base64 public key into something `verify` accepts. */
 export function publicKeyFromBase64(base64PublicKey: string): KeyObject | null {
   const raw = rawKeyFromBase64(base64PublicKey);
   if (!raw) return null;

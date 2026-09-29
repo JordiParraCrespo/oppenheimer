@@ -5,7 +5,6 @@ import type { AdminSessionResponseDto } from '../../dtos/admin-user.response.dto
 import type { AdminAuthPort } from '../../infrastructure/admin-auth.port';
 import { ListUserSessionsQuery } from './list-user-sessions.query';
 
-/** An account's live sign-in sessions — never their tokens. */
 @QueryHandler(ListUserSessionsQuery)
 export class ListUserSessionsQueryHandler
   implements IQueryHandler<ListUserSessionsQuery, AdminSessionResponseDto[]>

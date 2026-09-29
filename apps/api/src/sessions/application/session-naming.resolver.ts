@@ -12,7 +12,6 @@ import type { WorkSessionEntity } from '../domain/work-session.entity';
 import type { WorkSessionEventEntity } from '../domain/work-session-event.entity';
 import { WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
 
-/** A name for a session, and who chose it. */
 export interface SessionNameProposal {
   name: string;
   source: Exclude<SessionNameSource, 'user'>;
@@ -132,8 +131,7 @@ export class SessionNamingResolver {
   }
 
   /**
-   * Whether this session already has a name somebody or something chose. A name
-   * a person typed is never overwritten — the fold enforces that as well — and a
+   * A name a person typed is never overwritten — the fold enforces that as well — and a
    * derived name is not re-derived, because there is only one first prompt.
    */
   private alreadyNamed(session: WorkSessionEntity): boolean {

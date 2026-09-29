@@ -35,7 +35,6 @@ export class ProjectOrmEntity {
   @Column({ type: 'uuid' })
   organizationId!: string;
 
-  /** Display name. Free to change. */
   @Column({ type: 'varchar' })
   name!: string;
 
@@ -50,7 +49,6 @@ export class ProjectOrmEntity {
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   archivedAt!: Date | null;
 
-  /** Who created the project. Audit only; null once that account is gone. */
   @Column({ type: 'uuid', nullable: true })
   createdByUserId!: string | null;
 
@@ -61,7 +59,6 @@ export class ProjectOrmEntity {
   @Column({ type: 'uuid', nullable: true })
   defaultHostId!: string | null;
 
-  /** The agent a new session is offered, from the closed catalog. */
   @Column({ type: 'varchar', nullable: true })
   defaultAgent!: string | null;
 

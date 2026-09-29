@@ -35,16 +35,16 @@ import {
 
 /* ------------------------------------------------------------------ runner → control plane */
 
+/** What a runner can name in `hello.capabilities`. */
+export const RUNNER_CAPABILITIES = ['session.image', 'session.create.images'] as const;
+export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
+
 /**
  * The first message after the upgrade. The control plane reconciles the
  * snapshot against its own state rather than replaying a queue, and refuses a
  * runner below `min_supported` with an `update_required` hint rather than
  * dropping it.
  */
-/** What a runner can name in `hello.capabilities`. */
-export const RUNNER_CAPABILITIES = ['session.image', 'session.create.images'] as const;
-export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
-
 export const helloSchema = z.object({
   type: z.literal('hello'),
   runnerVersion: z.string().min(1).max(64),
@@ -218,9 +218,7 @@ export const sessionCreateSchema = z
      * the host owns the mapping to its own flags, from the same catalog
      * (`launchOptionsSchema`).
      *
-     * It replaces the bare `model` this message carried while a model was the
-     * only launch option there was; the three travel together now, and the fold
-     * keeps them on the session so a restart reproduces the launch
+     * The fold keeps them on the session so a restart reproduces the launch
      * (`product/versions/mvp/01-protocol.md`).
      */
     launch: launchOptionsSchema,
@@ -304,15 +302,6 @@ export const sessionAttachSchema = z.object({
 
 export type SessionAttachMessage = z.infer<typeof sessionAttachSchema>;
 
-/**
- * Write to a session's PTY from the control plane — the first prompt, or a
- * command the console sends without a pane open.
- *
- * Interactive keystrokes do **not** come this way: they are binary frames on
- * the attach socket, relayed as binary frames on the link. This message exists
- * for input the control plane originates, which is why the bytes are base64 in
- * a JSON control frame rather than raw.
- */
 /**
  * Input the **control plane** originates for a window nobody is watching: the
  * composer's line on a session with no pane open, a scripted command. It is
@@ -426,11 +415,6 @@ export const sessionCloseSchema = z.object({
 export type SessionCloseMessage = z.infer<typeof sessionCloseSchema>;
 
 /**
- * Recreate window 0 in the same worktrees. This is what a host reboot needs: it
- * shows every session as stopped with a Restart button, and nothing about the
- * checkouts has changed.
- */
-/**
  * End the agent and the tmux session and leave every checkout on disk, which
  * is what makes Restart possible afterwards (02 §5: "Stop is not close").
  */
@@ -442,6 +426,11 @@ export const sessionStopSchema = z.object({
 
 export type SessionStopMessage = z.infer<typeof sessionStopSchema>;
 
+/**
+ * Recreate window 0 in the same worktrees. This is what a host reboot needs: it
+ * shows every session as stopped with a Restart button, and nothing about the
+ * checkouts has changed.
+ */
 export const sessionRestartSchema = z.object({
   type: z.literal('session.restart'),
   commandId: commandIdSchema,

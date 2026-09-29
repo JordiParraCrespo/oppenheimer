@@ -40,7 +40,6 @@ export function SessionRowMenu({
   onRename: () => void;
   onMove: (projectId: string) => void;
   onDelete: () => void;
-  /** Where the session may move: every other project holding its repository. */
   projects: { id: string; name: string; isUnassigned?: boolean }[];
 }) {
   const { t } = useTranslation();

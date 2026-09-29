@@ -101,7 +101,6 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'integer', default: 0 })
   stateSeq!: number;
 
-  /** The agent's own session id, as the runner reported it. */
   @Column({ type: 'varchar', nullable: true })
   agentSessionId!: string | null;
 
@@ -157,7 +156,6 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   launchEffort!: SessionEffortDto | null;
 
-  /** The agent's last report and the last one somebody read. Equal means "seen". */
   @Column({ type: 'varchar', nullable: true })
   reportHash!: string | null;
 

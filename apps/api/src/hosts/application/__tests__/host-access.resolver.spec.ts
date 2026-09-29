@@ -6,15 +6,6 @@ import { HostEntity } from '../../domain/host.entity';
 import { HostMapper } from '../../host.mapper';
 import { HostAccessResolver } from '../host-access.resolver';
 
-/**
- * What `sessions/` will inject to check a caller may put work on a host.
- *
- * `work_session.hostId` is the one reference in the schema a foreign key cannot
- * hold — a host has no workspace column and a grant is a row, not a column — so
- * this check is what stands in for the constraint, and it has to refuse the same
- * way a missing row would.
- */
-
 const FINGERPRINT = 'f'.repeat(64);
 
 function scope(overrides: Partial<AccessScope> = {}): AccessScope {
@@ -78,8 +69,6 @@ describe('HostAccessResolver', () => {
 
   it('admits a host the caller can reach', async () => {
     await expect(resolver.assertUsable(scope(), 'host-1')).resolves.toEqual({ probedTools: null });
-    // Reached through the *scoped* read, so it is the same predicate the listing
-    // uses: a host a caller cannot see is one they cannot name either.
     expect(hosts.findOneById).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'jordi' }),
       'host-1',
@@ -95,7 +84,6 @@ describe('HostAccessResolver', () => {
   });
 
   it('refuses an unpaired host, and says no more than "missing"', async () => {
-    // Telling the two apart would confirm an id to someone who cannot reach it.
     vi.mocked(hosts.findOneById).mockResolvedValue(Some(host(new Date())));
 
     await expect(resolver.assertUsable(scope(), 'host-1')).rejects.toMatchObject({

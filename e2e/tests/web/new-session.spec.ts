@@ -68,7 +68,6 @@ test.describe('New session', () => {
     await page.getByRole('button', { name: 'New project…' }).click();
     const projectDialog = page.getByRole('dialog', { name: 'New project' });
     await expect(projectDialog).toBeVisible();
-    // Save is off until the project is whole.
     await expect(projectDialog.getByRole('button', { name: 'Create project' })).toBeDisabled();
     await projectDialog.getByLabel('Name').fill('XRP');
     // Adding a repository makes it cloned by default.
@@ -82,9 +81,8 @@ test.describe('New session', () => {
     await projectDialog.getByRole('button', { name: /^Defaults/ }).click();
     await projectDialog.getByRole('button', { name: 'E2E box' }).click();
     await projectDialog.getByRole('button', { name: 'Create project' }).click();
-    // Creating closes the dialog with the project picked in the chip…
     await expect(projectDialog).toHaveCount(0);
-    // …and picking it prefilled the host and the repository from its defaults.
+    // Picking it prefilled the host and the repository from its defaults.
     await expect(page.getByRole('button', { name: 'Project', exact: true })).toContainText('XRP');
     await expect(page.getByRole('button', { name: 'Host' })).toContainText('E2E box');
     await expect(page.getByRole('button', { name: 'Repositories' })).toContainText(
@@ -124,7 +122,6 @@ test.describe('New session', () => {
     await page.getByRole('textbox', { name: /Describe a task/ }).fill(task);
     await page.getByRole('button', { name: /send/i }).click();
 
-    // The pane the session opens in is its own URL.
     await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]{36}$/, { timeout: 30_000 });
     const sessionId = page.url().split('/').pop() as string;
 

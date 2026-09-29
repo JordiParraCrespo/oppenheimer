@@ -3,14 +3,6 @@ import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useState } from 'react';
 
 /**
- * How long a search field holds a keystroke before it becomes a query.
- *
- * The field owns this, not whatever asked for the results: what a reader types
- * is the field's state until it settles, so a burst of keystrokes costs one
- * render of one input rather than one render of everything downstream.
- */
-
-/**
  * The search-field policy, in one place: the half-typed word is local, it
  * leaves once typing settles, and the field ignores the echo of its own commit.
  *
@@ -42,6 +34,11 @@ export function useSearchDraft({
   value?: string;
   /** Called with a settled value, once per burst of typing. */
   onChange: (value: string) => void;
+  /**
+   * How long the field holds a keystroke before it becomes a query. The field
+   * owns this, not whatever asked for the results: a burst of keystrokes costs
+   * one render of one input rather than one render of everything downstream.
+   */
   delay?: number;
 }): { draft: string; type: (next: string) => void } {
   const [draft, setDraft] = useState(value ?? '');

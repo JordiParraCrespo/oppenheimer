@@ -32,7 +32,6 @@ export interface HostPresence {
 /** What the burn hands back about the token it claimed, and nothing more. */
 export interface RedeemedPairingToken {
   id: string;
-  /** The person the host belongs to. */
   ownerUserId: string;
   /** The name the console gave the machine before it existed. */
   intendedName: string;
@@ -64,8 +63,6 @@ export interface RedeemAndRegisterInput {
 }
 
 /**
- * Port for the host aggregate.
- *
  * Every read a *person* makes takes an {@link AccessScope}, so "this query is
  * authorized" is something the compiler asks for rather than something a
  * handler remembers. The two exceptions are named for what they are: a machine

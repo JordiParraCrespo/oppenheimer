@@ -65,14 +65,12 @@ interface RoleSet {
    * role-addressed grants.
    */
   roleIds: string[];
-  /** The union of their permissions. */
   permissions: PermissionDefinition[];
 }
 
 /**
  * Builds a CASL ability for an authenticated user from the union of every role
- * assigned to them. This replaces the old hardcoded `defineAbilitiesFor(role)`
- * switch: permissions now live in the database and are fully admin-managed.
+ * assigned to them.
  *
  * Resolution order:
  *   1. Roles assigned through the `user_role` join (dynamic RBAC).
@@ -172,10 +170,8 @@ export class AbilityFactory implements AbilityPort {
     user: AuthenticatedUser,
     scope: AbilityScope,
   ): AppAbility {
-    // Pass the principal and the organization so resource-scoping conditions
-    // (e.g. `${user.id}`, `${activeOrganizationId}`) can be interpolated when
-    // the ability is built. The placeholder keeps its name because role rows
-    // store it (the `owner` role's seed in `InitialSchema`); what it resolves to is the
+    // `${activeOrganizationId}` keeps its name because role rows store it (the
+    // `owner` role's seed in `InitialSchema`); what it resolves to is the
     // organization this ability is built in.
     return defineAbilitiesFromPermissions(permissions, {
       user,

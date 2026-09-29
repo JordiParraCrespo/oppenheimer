@@ -98,7 +98,6 @@ type Pattern string
 // Region names a part of the captured terminal.
 type Region string
 
-// Regions.
 const (
 	// RegionTitle is the terminal title the agent sets with an escape
 	// sequence. It is the most trustworthy signal there is: the agent

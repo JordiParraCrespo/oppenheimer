@@ -28,10 +28,6 @@ import { capRepositories } from '../lib/session-options';
  * GitHub live, and the pane that shows it is inside this same popup. Both are
  * `loading` rather than `disabled`: an empty list is a list that has not
  * arrived, and a greyed chip says the opposite.
- *
- * Every row carries the branches the section has loaded for it. Until that read
- * lands the picker falls back to the repository's `defaultBranch`, which is the
- * branch it would have chosen anyway.
  */
 export function RepositoryBranchSelect({
   repositories,

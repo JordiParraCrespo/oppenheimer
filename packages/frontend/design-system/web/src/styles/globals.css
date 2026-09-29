@@ -885,9 +885,6 @@
     opacity: 1;
   }
 }
-/* Menus and dialogs enter with a 4px rise plus fade; nothing slides in from
-   an edge. */
-/* The effort value swapping in as the knob moves. */
 /* The terminal's link dot while reconnecting: a breath, not a blink. */
 @keyframes op-pulse-dot {
   0%,
@@ -911,6 +908,7 @@
   }
 }
 
+/* The effort value swapping in as the knob moves. */
 @keyframes op-effort-in {
   from {
     opacity: 0;
@@ -932,6 +930,8 @@
     transform: none;
   }
 }
+/* Menus and dialogs enter with a 4px rise plus fade; nothing slides in from
+   an edge. */
 @keyframes op-rise {
   from {
     opacity: 0;

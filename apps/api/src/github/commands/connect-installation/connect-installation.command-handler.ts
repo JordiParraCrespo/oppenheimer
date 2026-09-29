@@ -12,8 +12,6 @@ import type { GithubAppPort, GithubInstallationClaim } from '../../infrastructur
 import { ConnectInstallationCommand } from './connect-installation.command';
 
 /**
- * Claims a GitHub App installation for the caller's workspace.
- *
  * Most of this handler is the proof, in two halves. The install `state` proves
  * this console user started this install, in this workspace: without it, a
  * callback URL someone stopped halfway would connect their installation to
@@ -111,8 +109,6 @@ export class ConnectInstallationCommandHandler
       });
     }
 
-    // Read with the App's own JWT once visibility is proven: the name, the
-    // selection and — what a redirect cannot be trusted for — the suspension.
     return this.github.readInstallation(command.githubInstallationId);
   }
 }

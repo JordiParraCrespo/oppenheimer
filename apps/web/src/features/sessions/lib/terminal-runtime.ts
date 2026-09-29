@@ -98,7 +98,6 @@ export function mountSessionTerminal(
     return false;
   });
 
-  // Images, pasted or dropped, go to the caller rather than to xterm.
   const unbindImages = options.onImage ? bindImageGestures(container, options.onImage) : () => {};
 
   // The wheel scrolls the session, not the program.
@@ -113,8 +112,7 @@ export function mountSessionTerminal(
   // the reader's, and scrolls what has been printed. On the alternate buffer
   // it is the program's, because a full-screen application — an editor, a
   // pager, tmux's own copy mode — has no scrollback for us to move and draws
-  // its own idea of a viewport. Nothing here is per-agent; the two land
-  // differently because they use the terminal differently.
+  // its own idea of a viewport.
   term.attachCustomWheelEventHandler((event) => {
     if (term.buffer.active.type !== 'normal') return true;
     const lines = wheelLines(event, term.rows);
@@ -199,8 +197,6 @@ export function mountSessionTerminal(
   // back afterwards is the reader's, and nothing here fights it.
   const offStatus = stream.onStatus((next) => {
     if (next !== 'live') return;
-    // The viewport, asserted on every connect.
-    //
     // The size is otherwise sent once, from the first fit that succeeds — and
     // the first `fit()` throws, because React has only just attached the ref
     // and the pane has no layout yet, so the first real measurement lands a

@@ -5,8 +5,6 @@ import type { AdminAuthPort, IssuedSession } from '../../infrastructure/admin-au
 import { StopImpersonatingCommand } from './stop-impersonating.command';
 
 /**
- * Ends the caller's impersonation and puts them back on their own session.
- *
  * The one admin command that answers with an account rather than its id: the
  * account is the administrator this request just restored, and the only
  * credential the request carries is the impersonation session this call ended,

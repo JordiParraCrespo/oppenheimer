@@ -23,7 +23,6 @@ export const InstallationResource = defineResource({
     { name: 'delete', label: 'Disconnect a GitHub App installation' },
   ],
 
-  /** The columns each scope dimension filters on. */
   keys: {
     organization: 'organizationId',
     id: 'id',

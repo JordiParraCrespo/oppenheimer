@@ -19,7 +19,6 @@ import { claimInstallation } from './github-stub';
  */
 export const GITHUB_STUB_URL = process.env.GITHUB_STUB_URL ?? 'http://127.0.0.1:4319';
 
-/** The repositories the stub serves, as the picker will show them. */
 export const STUB_REPOSITORIES = {
   mobile: { githubRepoId: 821374923, name: 'xrp-mobile', defaultBranch: 'main' },
   web: { githubRepoId: 821374924, name: 'xrp-web', defaultBranch: 'trunk' },
@@ -123,13 +122,7 @@ const FACTS = {
 const THROTTLE_RETRY_MS = 5_000;
 const THROTTLE_WINDOW_MS = 65_000;
 
-/**
- * Make a throttled call, waiting the limiter out rather than working around it.
- *
- * A 429 here is the product working. The only correct response from a test is
- * patience, so this retries until the window has rolled and returns whatever
- * the route says then.
- */
+/** Make a throttled call, waiting the limiter out rather than working around it. */
 async function withoutTripping(call: () => Promise<APIResponse>): Promise<APIResponse> {
   const deadline = Date.now() + THROTTLE_WINDOW_MS;
   let response = await call();
@@ -156,16 +149,6 @@ export function registerHost(
 }
 
 /**
- * Spend a registration token the way a runner does — anonymously, with its own
- * keypair.
- *
- * Exported apart from {@link pairHost} because a token is not always minted
- * through the API: the Add host dialog mints its own and prints it inside the
- * install command, and the spec that drives it redeems *that* secret, which is
- * the only way the dialog's status line can be shown to be watching the token
- * it minted rather than the host list.
- */
-/**
  * Try to spend a registration token and answer only the status, for a spec
  * that expects a refusal — a token the dialog revoked when it minted the next.
  */
@@ -182,6 +165,16 @@ export async function redemptionStatus(secret: string, name: string): Promise<nu
   return status;
 }
 
+/**
+ * Spend a registration token the way a runner does — anonymously, with its own
+ * keypair.
+ *
+ * Exported apart from {@link pairHost} because a token is not always minted
+ * through the API: the Add host dialog mints its own and prints it inside the
+ * install command, and the spec that drives it redeems *that* secret, which is
+ * the only way the dialog's status line can be shown to be watching the token
+ * it minted rather than the host list.
+ */
 export async function redeemPairingToken(secret: string, name: string): Promise<string> {
   const anonymous = await newContext();
   const registered = await registerHost(anonymous, {
@@ -207,10 +200,6 @@ export function tokenFrom(installCommand: string): string {
   return secret as string;
 }
 
-/**
- * Pair a machine: mint the token the install command carries, then redeem it
- * the way a runner does — anonymously, with its own keypair.
- */
 export async function pairHost(api: APIRequestContext, name: string): Promise<string> {
   return redeemPairingToken(await mintPairingToken(api, name), name);
 }
@@ -300,7 +289,6 @@ export async function createSession(
  */
 export type SessionLifecycle = 'starting' | 'open' | 'failed' | 'resolved';
 
-/** What the specs read off a session row. */
 export interface SessionRow {
   id: string;
   name: string;
@@ -309,7 +297,6 @@ export interface SessionRow {
   checkouts: { branch: string; directoryName: string }[];
 }
 
-/** Wait until the session's stored lifecycle is `lifecycle`, and return the row. */
 export async function waitForLifecycle(
   api: APIRequestContext,
   sessionId: string,

@@ -13,11 +13,8 @@ import type { HostAssertionPort } from './host-assertion.port';
  *
  * The kernel recognises no machine credential of its own — it asks every
  * registered resolver whether a presented string is theirs — so "what shape a
- * host assertion has" and "which host signed this one" both stay knowledge of
- * this module. Verification is reached through {@link HostAssertionPort}, the
- * same port the rest of the module injects, which means the signature, the
- * audience, the expiry and the replay guard are decided in one place and refused
- * with one answer.
+ * host assertion has" and "which host signed this one" both stay behind
+ * {@link HostAssertionPort}, the same port the rest of the module injects.
  *
  * What comes back is a credential with no owner and no scopes. That is all the
  * guards need: `ScopesGuard` refuses it on every route that declares a scope by
@@ -43,16 +40,14 @@ export class HostCredentialResolver implements CredentialResolverPort {
   /**
    * A compact JWS whose header says `EdDSA`, which neither an API token nor a
    * Better Auth session token can be — so claiming the string takes nothing away
-   * from the other kinds. Recognising is not verifying: it only says this
-   * resolver is the right one to ask next.
+   * from the other kinds.
    */
   recognises(presented: string): boolean {
     return this.assertions.recognises(presented);
   }
 
   /**
-   * Verify the assertion and describe what it authorizes. A refusal throws this
-   * module's opaque rejection from the port, never a `null`: a string this
+   * A refusal throws the port's opaque rejection, never a `null`: a string this
    * resolver claimed must not fall through to another kind or to the session
    * path.
    */

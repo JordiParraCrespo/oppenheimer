@@ -12,8 +12,6 @@ import { OrganizationOrmEntity } from './organization.orm-entity';
 import type { PersonalWorkspaceRepositoryPort } from './personal-workspace.repository.port';
 
 /**
- * TypeORM-backed adapter for the personal-workspace aggregate.
- *
  * Everything happens in one transaction, staged alongside the aggregate's
  * domain events on the transactional outbox: the test for an existing
  * membership, the organization, the membership itself, and the application
@@ -32,10 +30,6 @@ import type { PersonalWorkspaceRepositoryPort } from './personal-workspace.repos
  * aggregate's events whatever the write returns, which would announce a
  * workspace that was never provisioned. Events are staged explicitly, on the
  * branch that wrote, and the relay is woken after commit only when they were.
- *
- * The owner's open sessions are pointed at the new workspace in the same
- * transaction, because at sign-up they were written before it existed — see
- * `provision` below.
  */
 @Injectable()
 export class PersonalWorkspaceRepository implements PersonalWorkspaceRepositoryPort {

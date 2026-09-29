@@ -16,7 +16,6 @@ export function workspaceAddressPrefix(): string {
   return `${window.location.host}/`;
 }
 
-/** The full address for a slug, for the copy that quotes it back. */
 export function workspaceAddress(slug: string): string {
   return `${workspaceAddressPrefix()}${slug}`;
 }

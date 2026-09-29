@@ -1,9 +1,6 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 /**
- * API token domain error catalog. Surfaced as HTTP responses by the global
- * `AllExceptionsFilter` via `AppError`.
- *
  * These are the rules this module owns: what a token is, who may mint one and
  * how far it may be scoped. The refusals the auth kernel raises about a
  * *credential* — `TOKEN_003` for one it will not accept and `TOKEN_005`–`007`

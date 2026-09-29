@@ -47,8 +47,6 @@ export class UninstallHostHttpController {
     code: 'HOSTS_005',
   })
   async uninstall(@CurrentHost() hostId: string): Promise<void> {
-    // The host comes from the assertion the guard verified, never from the
-    // path. That is what "self" means here.
     await this.commandBus.execute(new UninstallHostCommand({ hostId }));
   }
 }

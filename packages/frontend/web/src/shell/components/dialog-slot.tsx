@@ -33,8 +33,6 @@ export function createDialogSlot<TRequest>(name: string): DialogSlot<TRequest> {
 
   function DialogSlotProvider({ children }: { children: ReactNode }) {
     const [request, setRequest] = useState<TRequest | null>(null);
-    // A lazy initial state: the actions close over the setter, which React
-    // keeps stable, so they are built once and never change.
     const [actions] = useState<DialogSlotActions<TRequest>>(() => ({
       open: (next) => setRequest(() => next),
       close: () => setRequest(null),

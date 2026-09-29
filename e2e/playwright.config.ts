@@ -16,7 +16,6 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 export const WEB_URL = process.env.WEB_URL ?? 'http://localhost:3000';
-/** A Chromium the environment already has, for images that ship one. */
 const CHROMIUM_PATH = process.env.PLAYWRIGHT_CHROMIUM_PATH;
 /**
  * The browser every project that opens a page uses. An environment that

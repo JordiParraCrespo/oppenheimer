@@ -25,8 +25,6 @@ export class UninstallHostCommandHandler implements ICommandHandler<UninstallHos
   ) {}
 
   async execute(command: UninstallHostCommand): Promise<void> {
-    // No access scope: the caller is the host itself, identified by the
-    // signature on its assertion rather than by a person's membership.
     const found = await this.hosts.findOneByIdForMachine(command.hostId);
     if (found.isNone()) return;
 

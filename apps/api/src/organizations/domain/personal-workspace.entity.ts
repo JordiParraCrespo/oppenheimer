@@ -8,10 +8,8 @@ import { PersonalWorkspaceProvisionedDomainEvent } from './events/personal-works
 import { OrganizationSlug } from './value-objects/organization-slug.value-object';
 
 export interface PersonalWorkspaceProps {
-  /** What the workspace is called: the account's own name. */
   name: string;
   slug: OrganizationSlug;
-  /** The account the workspace belongs to. */
   ownerId: string;
   /** Identity of the membership row that makes the owner a member. */
   membershipId: AggregateID;
@@ -23,7 +21,6 @@ export interface ProvisionPersonalWorkspaceProps {
   ownerId: string;
   /** The account's email, used to name the workspace when it has no name. */
   ownerEmail: string;
-  /** The account's display name, when it has one. */
   ownerName?: string | null;
   /** Id of the system `owner` role, looked up by the handler. */
   ownerRoleId: string;
@@ -48,8 +45,6 @@ export interface ProvisionPersonalWorkspaceProps {
  */
 export class PersonalWorkspaceEntity extends AggregateRoot<PersonalWorkspaceProps> {
   /**
-   * Provision the workspace a new account is owed.
-   *
    * The workspace is named after the account — its display name, or the local
    * part of its email when it has none, which is what someone signing up with
    * a bare address would call themselves anyway.

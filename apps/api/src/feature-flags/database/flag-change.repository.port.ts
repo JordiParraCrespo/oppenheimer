@@ -4,7 +4,6 @@ import type {
   FlagChangeSubject,
 } from '../domain/events/flag-configuration-changed.domain-event';
 
-/** One audit entry, as stored. */
 export interface FlagChangeRecord {
   /** The id of the domain event that produced it — what makes recording idempotent. */
   id: string;
@@ -32,8 +31,8 @@ export interface FindFlagChangesParams {
  */
 export interface FlagChangeRepositoryPort {
   /**
-   * Appends an entry. Recording the same event twice is a no-op, because the
-   * outbox delivers at least once.
+   * Recording the same event twice is a no-op, because the outbox delivers at
+   * least once.
    */
   record(change: FlagChangeRecord): Promise<void>;
   find(params: FindFlagChangesParams): Promise<Paginated<FlagChangeRecord>>;

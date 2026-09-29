@@ -57,9 +57,8 @@ export function NewSessionSend({
   const { data: hostKnown } = useHosts({
     select: (hosts) => hosts.some((host) => host.id === hostId),
   });
-  // Read at send time, not subscribed to: the list is only needed to send a
-  // remembered project the workspace no longer has as none, and a subscription
-  // would re-render the composer on every refetch of a list it never draws.
+  // Needed only to send a remembered project the workspace no longer has as
+  // none.
   const projects = useProjectsSnapshot();
 
   /**

@@ -28,8 +28,6 @@ export interface RunnerSessionEvent {
  *
  * The batch shape is the wire's, deliberately: `events.append` is what a runner
  * sends, and re-describing it here would be a second vocabulary for one message.
- * `seq` is absent from it, because `seq` is the control plane's to assign — under a
- * row lock, so a buggy or hostile host cannot create gaps or regress the log.
  */
 export interface RunnerEventBatch {
   /**

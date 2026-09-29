@@ -41,14 +41,13 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Serve locally-stored avatars over HTTP. The `local` storage backend writes
-  // an avatar to `<uploadDir>/<key>` and hands the client an absolute
-  // `<publicUrl>/uploads/<key>` pointing back here (see `LocalStorageService`),
-  // so the browser loads it from the API regardless of where the SPA is hosted —
-  // the documented Tier-1 serves the web app from a different origin. Mount it
-  // outside the `api` global prefix to match that URL. The S3 backend hands back
-  // absolute signed URLs and needs no route, so this is gated on the local
-  // provider.
+  // The `local` storage backend writes an avatar to `<uploadDir>/<key>` and
+  // hands the client an absolute `<publicUrl>/uploads/<key>` pointing back here
+  // (see `LocalStorageService`), so the browser loads it from the API
+  // regardless of where the SPA is hosted — the documented Tier-1 serves the
+  // web app from a different origin. Mount it outside the `api` global prefix
+  // to match that URL. The S3 backend hands back absolute signed URLs and
+  // needs no route, so this is gated on the local provider.
   //
   // **Only the `avatars/` subtree is mounted, never the upload root.** This
   // route has no guard — that is deliberate for avatars, which are public by

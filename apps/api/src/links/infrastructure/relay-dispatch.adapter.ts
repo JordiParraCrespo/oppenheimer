@@ -111,8 +111,6 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       // unknown and paste nothing, while this answered "delivered".
       if (!link.capabilities.includes('session.image')) return NOT_SUPPORTED;
       const commandId = randomUUID();
-      // The bytes wait here and the runner pulls them over HTTPS; the link
-      // carries only the command (`ParkedImagePort`).
       await this.images.park(commandId, {
         hostId: session.hostId,
         sessionId: session.id,

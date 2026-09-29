@@ -34,8 +34,6 @@ const CLOCK_SKEW_SECONDS = 30;
 const REPLAY_KEY_PREFIX = 'host-assertion:jti';
 
 /**
- * Verifies a runner's boot assertion.
- *
  * Four things have to hold, and a failure of any of them produces one answer:
  *
  * 1. it is a compact EdDSA JWS whose `iss` and `sub` are the same host id — the
@@ -92,11 +90,8 @@ export class HostAssertionResolver implements HostAssertionPort {
     if (!assertionIsSignedBy(decoded, [host.publicKey])) {
       throw this.rejected('not signed by this host');
     }
-    // A host acts for the person who paired it, so it can do no more than they
-    // may: a banned or deactivated owner (`isAccessAllowed`, asked through the
-    // same port every other credential kind asks) takes the machine's
-    // credential down with theirs. Read per dial, never cached, so lifting
-    // the ban lets the runner's next dial through.
+    // The owner's standing is read per dial, never cached, so lifting a ban
+    // lets the runner's next dial through.
     if (!(await this.owners.findActiveOwner(host.ownerUserId))) {
       throw this.rejected('the owner may not act');
     }
@@ -196,11 +191,7 @@ export class HostAssertionResolver implements HostAssertionPort {
     return (this.configService.get<string>('hosts.controlPlaneUrl') ?? '').replace(/\/+$/, '');
   }
 
-  /**
-   * One problem document for every failure. The reason is a `detail` for the
-   * operator reading a log, never a branch a caller can take: telling a caller
-   * which check refused it is telling them what to change.
-   */
+  /** The reason is a `detail` for an operator's log, never a branch a caller can take. */
   private rejected(reason: string): AppError {
     return new AppError(HostErrors.ASSERTION_REJECTED, { detail: reason });
   }

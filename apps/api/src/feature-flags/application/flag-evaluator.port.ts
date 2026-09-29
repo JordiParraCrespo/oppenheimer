@@ -19,7 +19,6 @@ import type {
 export interface FlagEvaluatorPort {
   /** One flag, with the reason it resolved as it did. */
   evaluate(key: FeatureFlagKey, context: FlagEvaluationContext): FlagEvaluation;
-  /** A flag's value, typed by the catalog. */
   valueOf<K extends FeatureFlagKey>(key: K, context: FlagEvaluationContext): FeatureFlagValueOf<K>;
   /**
    * Whether a boolean flag is on. Boolean flags only: a variant flag's control

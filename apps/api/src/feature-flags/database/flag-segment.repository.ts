@@ -8,7 +8,6 @@ import { FlagSegmentMapper } from '../flag-segment.mapper';
 import { FlagSegmentOrmEntity } from './flag-segment.orm-entity';
 import type { FlagSegmentRepositoryPort } from './flag-segment.repository.port';
 
-/** TypeORM adapter for segments; stages change events on the outbox with the write. */
 @Injectable()
 export class FlagSegmentRepository
   extends TypeOrmRepositoryBase<FlagSegmentEntity, FlagSegmentOrmEntity>

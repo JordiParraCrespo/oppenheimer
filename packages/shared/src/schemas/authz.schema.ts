@@ -4,8 +4,6 @@ import { z } from 'zod';
 export const accessGrantPrincipalTypes = ['user', 'team', 'role'] as const;
 
 /**
- * Create an access grant.
- *
  * `resourceId` omitted (or null) means every resource of that type within the
  * organization — the strongest grant expressible, and the one `canGrantScope`
  * restricts to callers who already hold it.

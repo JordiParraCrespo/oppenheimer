@@ -11,6 +11,9 @@ import { useImagePaste } from '../hooks/use-image-paste';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
 
+/** Window 0 is the agent's (05); the pane shows only that one today. */
+const AGENT_WINDOW = 0;
+
 /**
  * The session's terminal: the scrollback and the status band along the
  * bottom. No window strip — the design does not have one, and the design
@@ -25,11 +28,6 @@ import { useTerminal } from '../hooks/use-terminal';
  * history, the slash commands and the mode — so the grid keeps the input and
  * this renders none.
  *
- * The scrollback is xterm.js, mounted by `useTerminal` and fed by the attach
- * socket `app.sessions.openStream` opens with a ticket for this session
- * (`@oppenheimer/frontend-consumer`). Everything here holds a `SessionStream`,
- * not a socket.
- *
  * **An image pasted or dropped onto the grid** goes to the host rather than
  * to xterm: the agent reads its host's clipboard, never the browser's, so the
  * runner saves the file and pastes its path into the prompt (05).
@@ -39,9 +37,6 @@ import { useTerminal } from '../hooks/use-terminal';
  * so plain output lands close to it and an agent drawing a full-screen TUI
  * does not. That is a property of terminals, not of this component.
  */
-/** Window 0 is the agent's (05); the pane shows only that one today. */
-const AGENT_WINDOW = 0;
-
 export function SessionTerminal({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);

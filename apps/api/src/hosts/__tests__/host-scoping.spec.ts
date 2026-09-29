@@ -107,11 +107,6 @@ describe('host row scoping (SQL)', () => {
 
 describe('pairing token row scoping (SQL)', () => {
   it('is the same predicate on the same column, because it is the same resource', () => {
-    // A pairing token is how a host comes to exist: the routes that mint and
-    // revoke one are `create Host` and `delete Host`, and the column is the same
-    // `ownerUserId`. A declaration of its own would be a column map pretending to
-    // be a noun, and the day a host is shared by grant the two listings would
-    // diverge with nothing in the policy table to explain it.
     expect(whereClausesFor(scope(), HostResource, 'token')).toEqual([
       '(token.ownerUserId = :authzUserId)',
     ]);

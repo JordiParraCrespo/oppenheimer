@@ -49,11 +49,7 @@ const DeleteSessionDialog = lazy(() =>
  * write that failed last (a menu closes on its pick, so the failure stays on
  * screen above the list). Everything else is lower: the half-typed search is
  * the search box's, a row's menu, rename and writes are the row's, and the
- * minute clock is each group's. The head is a component that draws what it is
- * handed; each group and each row are sections, because the highlight is
- * theirs to subscribe to; New project behind the plus and Project settings
- * behind a header's cog are the console's project dialog, asked for through
- * `useConsoleDialog`.
+ * minute clock is each group's.
  *
  * The filters live here rather than in the menu because this is what they
  * narrow, and in state rather than the URL because they are a view of the
@@ -76,8 +72,7 @@ export function SessionsSidebar() {
   const [query, setQuery] = useState('');
   const [closed, setClosed] = useState<string[]>([]);
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
-  // The row write that failed last, if one did. A later write that lands
-  // clears it, and so does Dismiss.
+  // A later write that lands clears it, and so does Dismiss.
   const [failure, setFailure] = useState<Error | null>(null);
   const dialogs = useConsoleDialog();
 

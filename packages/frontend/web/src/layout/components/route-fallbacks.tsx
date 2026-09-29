@@ -37,11 +37,8 @@ export function RouteNotFound({ children }: { children?: ReactNode }) {
  * the document, so a failure that was the network's costs a retry and not the
  * whole app's state.
  *
- * `error` is `unknown`, which is what a route's `errorComponent` is handed and
- * what a `throw` is worth: anything at all can be thrown, and a component that
- * declares `Error` is one `throw 'nope'` away from reading `.message` off a
- * string. Typing it honestly is also what makes this assignable to
- * `errorComponent` without a cast.
+ * `error` is `unknown`, which is what a route's `errorComponent` is handed, and
+ * what makes this assignable to it without a cast.
  *
  * The message shown is never the error's own: what a bundler throws is not a
  * sentence anyone can act on. A failure from a request — one carrying the
@@ -92,7 +89,6 @@ export function RouteError({ error }: { error: unknown }) {
   );
 }
 
-/** Whether a throw came from a request: it carries an HTTP status or a named code. */
 function isRequestFailure(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) return false;
   const { status, code } = error as { status?: unknown; code?: unknown };

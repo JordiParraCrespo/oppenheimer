@@ -38,10 +38,8 @@ export function OnboardingWorkspaceScreen({
   total,
   onClaimed,
 }: {
-  /** Where this step sits in the flow the route is part of. */
   step: number;
   total: number;
-  /** The address is claimed: the route takes the reader on. */
   onClaimed: () => void;
 }) {
   const { t } = useTranslation();
@@ -73,8 +71,7 @@ export function OnboardingWorkspaceScreen({
   // network blip. And it is decided once, on arrival, because submitting this
   // step claims the address and writes it into the cache before navigating on
   // to GitHub — a gate that kept reading would send the newcomer to the
-  // console, past the rest of the walk. Adjusting state during render is
-  // React's documented shape for "remember the first answer".
+  // console, past the rest of the walk.
   const [claimedOnArrival, setClaimedOnArrival] = useState<boolean | null>(null);
   if (claimedOnArrival === null && workspacesRead) setClaimedOnArrival(claimedAddress !== null);
 
@@ -127,8 +124,6 @@ export function OnboardingWorkspaceScreen({
             onChange={(event) =>
               edit({
                 name: event.target.value,
-                // The address follows the name until the reader takes it over,
-                // and never once it is claimed.
                 ...(addressEdited || claimedAddress
                   ? {}
                   : { address: slugify(event.target.value) }),
@@ -148,7 +143,6 @@ export function OnboardingWorkspaceScreen({
             takenLabel={t('onboarding.flow.workspace.takenLabel')}
             value={address}
             status={claimedAddress ? 'ok' : status}
-            // Permanent once claimed: the field shows it and stops taking edits.
             readOnly={Boolean(claimedAddress)}
             onChange={(event) => {
               setAddressEdited(true);
@@ -194,9 +188,6 @@ export function OnboardingWorkspaceScreen({
         size="lg"
         block
         type="button"
-        // `workspacesRead` is the guard against creating a second workspace:
-        // until the list has answered, this step does not know whether there
-        // is a row to claim.
         disabled={!workspacesRead || !addressReady || !name.trim()}
         onClick={submit}
         pending={claim.isPending}

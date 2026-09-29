@@ -375,7 +375,6 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
 
       // UTC+14: a zoneless column keeps the wall clock and loses the offset, so
       // it would come back fourteen hours in the future.
-      // An UPDATE comes back from TypeORM as [rows, affected].
       const [[updated]]: [{ updatedAt: Date }[], number] = await dataSource.transaction(
         async (manager) => {
           await manager.query(`SET LOCAL TIME ZONE 'Pacific/Kiritimati'`);
@@ -534,7 +533,6 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
 
       expect(outcome.rejected.map((row) => row.idempotencyKey)).toEqual(['run-1:1']);
       expect(outcome.accepted).toEqual(['run-1:2']);
-      // And the seq stays dense over what did land.
       expect((await events(work.id)).map((entry) => entry.seq)).toEqual([1, 2]);
     });
 

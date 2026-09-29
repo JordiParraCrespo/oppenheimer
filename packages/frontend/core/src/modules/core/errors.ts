@@ -49,12 +49,10 @@ export class AppError extends Error {
     this.name = 'AppError';
   }
 
-  /** Correlation id to quote when reporting the failure. */
   get correlationId(): string | undefined {
     return this.problem?.correlationId;
   }
 
-  /** Field-level validation failures, keyed by field name. */
   get fieldErrors(): Record<string, string> {
     const entries = this.problem?.invalidParams?.map((param) => [param.name, param.reason]) ?? [];
     return Object.fromEntries(entries);
@@ -62,8 +60,6 @@ export class AppError extends Error {
 }
 
 /**
- * Normalises anything thrown by a repository call into an {@link AppError}.
- *
  * The generated api-client throws its own `ApiError` with the parsed response
  * on `body`; when that body is a problem document the server's own explanation
  * wins over the caller's generic fallback.

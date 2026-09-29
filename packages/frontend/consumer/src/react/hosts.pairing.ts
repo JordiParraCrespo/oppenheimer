@@ -47,11 +47,6 @@ export interface HostPairingFlow {
  * step and the console's Add host dialog — and both go through here rather
  * than polling the host list themselves.
  *
- * One token is minted per visit. The mint is a query, not a mutation fired
- * from an effect — a surface needs exactly one token for as long as it is open,
- * which is what a query keyed to it gives, and `regenerate()` replaces it.
- * Nothing here has to survive StrictMode by hand.
- *
  * **Correlation is the point.** "The host list is non-empty" is a different
  * question from "this token landed" — an account that already owns a machine
  * answers the first the moment the dialog opens, which would offer a machine
@@ -62,10 +57,7 @@ export interface HostPairingFlow {
  *
  * One effect, and it synchronises with the clock — but only with the one
  * moment that changes what the flow does: the token's expiry, which stops the
- * poll and offers a new token. It used to tick once a second so it could hand
- * out `secondsLeft`, and that tick re-rendered every surface running the flow,
- * code blocks and all, for a number one line of it shows. The flow hands out
- * `expiresAt` now, and the countdown ticks in the leaf that draws it.
+ * poll and offers a new token.
  */
 export function useHostPairing(hostName: string): HostPairingFlow {
   const { data: pairing, isPending, error } = useCurrentPairing(hostName);
@@ -90,9 +82,9 @@ export function useHostPairing(hostName: string): HostPairingFlow {
   // arrives in: nothing here has expired it yet.
   const expired = Boolean(pairing) && expiredId === pairing?.id;
 
-  // Poll the token, not the host list. Stops once this token names a host, and
-  // once it has expired: a dead token can pair nothing, so polling past that is
-  // a request every three seconds that can only answer "no".
+  // Stops once this token names a host, and once it has expired: a dead token
+  // can pair nothing, so polling past that is a request every three seconds
+  // that can only answer "no".
   const { data: tokens } = usePairingTokens(
     { enabled: Boolean(pairing) && !expired },
     pollWhile('pairing', (rows) => {

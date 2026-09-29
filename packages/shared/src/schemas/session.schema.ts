@@ -19,8 +19,6 @@ import {
 } from './primitives.js';
 
 /**
- * Session shapes.
- *
  * A session is one piece of work inside a project: a terminal, an agent, and a
  * set of checkouts. A **checkout** is one repository checked out for one session
  * on its own branch, and a session has zero or more of them — zero is a real
@@ -321,7 +319,6 @@ export const moveSessionSchema = z.object({
 
 export type MoveSessionDto = z.infer<typeof moveSessionSchema>;
 
-/** The orders the session list can come back in. */
 export const SESSION_SORTS = ['recent', 'oldest', 'name'] as const;
 
 export const sessionSortSchema = z.enum(SESSION_SORTS);
