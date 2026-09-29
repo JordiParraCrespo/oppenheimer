@@ -81,20 +81,6 @@ export async function claimWorkspaceThroughUi(page: Page, label: string): Promis
   return name;
 }
 
-/** Invites `email` into the organization and returns the invitation id. */
-export async function inviteByApi(
-  api: APIRequestContext,
-  organizationId: string,
-  email: string,
-  role: 'owner' | 'admin' | 'member' = 'member',
-): Promise<string> {
-  const response = await api.post(`/api/v1/organizations/${organizationId}/invitations`, {
-    data: { email, role },
-  });
-  expect(response.status(), `inviting ${email} should succeed`).toBe(201);
-  return ((await response.json()) as { id: string }).id;
-}
-
 /**
  * Reloads with the persisted query cache thrown away.
  *

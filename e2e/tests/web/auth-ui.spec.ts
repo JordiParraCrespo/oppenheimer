@@ -89,20 +89,7 @@ test.describe('web auth UI', () => {
     await expect(page).toHaveURL(/\/login/, { timeout: 20_000 });
   });
 
-  test('forgot-password confirms without revealing whether the account exists', async ({
-    page,
-  }) => {
-    const { user } = await provisionedUser('uiforgot');
-
-    await page.goto('/forgot-password');
-    await page.fill('#email', user.email);
-    await page.getByRole('button', { name: 'Send reset link' }).click();
-
-    await expect(page.getByRole('heading', { name: /check your email/i })).toBeVisible({
-      timeout: 20_000,
-    });
-  });
-
+  // A real account's confirmation is the first leg of the reset journey below.
   test('a ghost address gets the same confirmation', async ({ page }) => {
     await page.goto('/forgot-password');
     await page.fill('#email', `ghost-${Date.now().toString(36)}@e2e.oppenheimer.test`);

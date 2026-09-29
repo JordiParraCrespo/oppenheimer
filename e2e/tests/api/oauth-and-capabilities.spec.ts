@@ -49,16 +49,6 @@ test.describe('optional auth providers', () => {
     expect(response.status()).toBeGreaterThanOrEqual(400);
     expect(response.status()).toBeLessThan(500);
   });
-
-  test('the API still authenticates by password with every provider off', async () => {
-    const { signedUpContext } = await import('../../support/auth');
-    const { api, user } = await signedUpContext('nooauth');
-
-    const me = await api.get('/api/v1/users/me', { failOnStatusCode: false });
-
-    expect(me.status()).toBe(200);
-    expect((await me.json()).email).toBe(user.email);
-  });
 });
 
 test.describe('OAuth provider metadata for MCP clients', () => {

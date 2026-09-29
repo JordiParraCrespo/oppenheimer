@@ -80,18 +80,6 @@ export async function findResetToken(email: string): Promise<string | undefined>
   return identifier ? identifier.slice('reset-password:'.length) : undefined;
 }
 
-export async function countResetTokens(email: string): Promise<number> {
-  const rows = await query<{ count: string }>(
-    `SELECT count(*)::text AS count
-       FROM "verification" v
-       JOIN "user" u ON u."id"::text = v."value"
-      WHERE lower(u."email") = lower($1)
-        AND v."identifier" LIKE 'reset-password:%'`,
-    [email],
-  );
-  return Number(rows[0]?.count ?? '0');
-}
-
 /** Force a token to look expired without waiting out its real lifetime. */
 export async function expireResetToken(token: string): Promise<void> {
   await query(

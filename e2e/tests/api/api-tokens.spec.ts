@@ -117,7 +117,8 @@ test.describe('API tokens', () => {
 
   test("a user cannot list another user's tokens", async () => {
     const { api: victim } = await signedUpContext('tokenvictim');
-    await mintToken(victim, ['profile:read'], 'victim token');
+    // Minted for certain, or the absence below would prove nothing.
+    expect((await mintToken(victim, ['profile:read'], 'victim token')).status).toBe(201);
     const { api: attacker } = await signedUpContext('tokenattacker');
 
     const response = await attacker.get('/api/v1/tokens', {

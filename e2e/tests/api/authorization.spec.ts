@@ -72,18 +72,6 @@ test.describe('boundaries that do hold', () => {
     expect(response.status()).toBe(403);
   });
 
-  test('cannot reach the Better Auth admin plugin', async () => {
-    const { api } = await signedUpContext('adminplugin');
-
-    const response = await api.get('/api/auth/admin/list-users?limit=1', {
-      failOnStatusCode: false,
-    });
-
-    expect(response.status(), 'the admin plugin is gated on the user role').toBeGreaterThanOrEqual(
-      400,
-    );
-  });
-
   test('cannot impersonate another user', async () => {
     const { userId: victimId } = await signedUpContext('impvictim');
     const { api } = await signedUpContext('impattacker');

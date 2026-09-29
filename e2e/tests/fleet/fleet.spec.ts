@@ -58,7 +58,8 @@ test('three machines pair, and each session runs on the machine it names', async
   const branches = hosts[0].host.exec(
     'find ~/oppenheimer-ai -name README.md -execdir git rev-parse --abbrev-ref HEAD \\;',
   );
-  expect(branches.split('\n').filter((branch) => branch !== 'main')).not.toHaveLength(0);
+  // Blank lines dropped: a machine with no clone prints nothing, which must fail.
+  expect(branches.split('\n').filter((branch) => branch && branch !== 'main')).not.toHaveLength(0);
 
   await Promise.all(terminals.map((terminal) => terminal.close()));
 });
