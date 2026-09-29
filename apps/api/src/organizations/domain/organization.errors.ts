@@ -8,7 +8,7 @@ import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
  * `APIError`s with a `SCREAMING_SNAKE_CASE` code. Those codes are an upstream
  * detail: there are ~60 of them, they are grouped by the wording of the English
  * sentence rather than by what a client would do about them, and they change
- * between Better Auth releases. `organization-error.mapper.ts` folds them into
+ * between Better Auth releases. `infrastructure/organization-error.util.ts` folds them into
  * the entries below, which are the distinctions a client actually branches on.
  * The upstream code is preserved verbatim as an `upstreamCode` extension member
  * so nothing is lost for debugging.

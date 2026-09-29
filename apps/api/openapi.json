@@ -2385,7 +2385,7 @@
     },
     "/api/v1/organizations/{id}": {
       "get": {
-        "operationId": "getFull",
+        "operationId": "getOrganization",
         "parameters": [
           {
             "name": "id",
@@ -2791,7 +2791,7 @@
     },
     "/api/v1/organizations/{orgId}/members": {
       "get": {
-        "operationId": "listOrganizationMembers",
+        "operationId": "listMembers",
         "parameters": [
           {
             "name": "orgId",
@@ -2898,7 +2898,7 @@
         "tags": ["Organization members"]
       },
       "post": {
-        "operationId": "add",
+        "operationId": "addMember",
         "parameters": [
           {
             "name": "orgId",
@@ -3094,7 +3094,7 @@
     },
     "/api/v1/organizations/{orgId}/members/{memberIdOrEmail}": {
       "delete": {
-        "operationId": "removeOrganizationMember",
+        "operationId": "removeMember",
         "parameters": [
           {
             "name": "orgId",
@@ -3186,7 +3186,7 @@
     },
     "/api/v1/organizations/{orgId}/leave": {
       "post": {
-        "operationId": "leave",
+        "operationId": "leaveOrganization",
         "parameters": [
           {
             "name": "orgId",
@@ -3270,7 +3270,7 @@
     },
     "/api/v1/organizations/{orgId}/invitations": {
       "post": {
-        "operationId": "invite",
+        "operationId": "inviteMember",
         "parameters": [
           {
             "name": "orgId",
@@ -3611,7 +3611,7 @@
     },
     "/api/v1/invitations/{id}/accept": {
       "post": {
-        "operationId": "accept",
+        "operationId": "acceptInvitation",
         "parameters": [
           {
             "name": "id",
@@ -3695,7 +3695,7 @@
     },
     "/api/v1/invitations/{id}/reject": {
       "post": {
-        "operationId": "reject",
+        "operationId": "rejectInvitation",
         "parameters": [
           {
             "name": "id",
@@ -3779,7 +3779,7 @@
     },
     "/api/v1/invitations/{id}/cancel": {
       "post": {
-        "operationId": "cancel",
+        "operationId": "cancelInvitation",
         "parameters": [
           {
             "name": "id",
@@ -4111,7 +4111,7 @@
     },
     "/api/v1/workspaces/{id}": {
       "patch": {
-        "operationId": "updateWorkspace",
+        "operationId": "renameWorkspace",
         "parameters": [
           {
             "name": "id",
@@ -4364,7 +4364,7 @@
     },
     "/api/v1/workspaces/{id}/members": {
       "get": {
-        "operationId": "listMembers",
+        "operationId": "listWorkspaceMembers",
         "parameters": [
           {
             "name": "id",
@@ -4449,7 +4449,7 @@
         "tags": ["Workspaces"]
       },
       "post": {
-        "operationId": "addMember",
+        "operationId": "addWorkspaceMember",
         "parameters": [
           {
             "name": "id",
@@ -4543,7 +4543,7 @@
     },
     "/api/v1/workspaces/{id}/members/{userId}": {
       "delete": {
-        "operationId": "removeMember",
+        "operationId": "removeWorkspaceMember",
         "parameters": [
           {
             "name": "id",
@@ -6505,7 +6505,7 @@
     },
     "/api/v1/admin/users/{id}/role": {
       "post": {
-        "operationId": "setRole",
+        "operationId": "setUserRole",
         "parameters": [
           {
             "name": "id",
@@ -6609,7 +6609,7 @@
     },
     "/api/v1/admin/users/{id}/ban": {
       "post": {
-        "operationId": "ban",
+        "operationId": "banUser",
         "parameters": [
           {
             "name": "id",
@@ -6713,7 +6713,7 @@
     },
     "/api/v1/admin/users/{id}/unban": {
       "post": {
-        "operationId": "unban",
+        "operationId": "unbanUser",
         "parameters": [
           {
             "name": "id",
@@ -6807,7 +6807,7 @@
     },
     "/api/v1/admin/users/{id}/impersonate": {
       "post": {
-        "operationId": "impersonate",
+        "operationId": "impersonateUser",
         "parameters": [
           {
             "name": "id",
@@ -6998,7 +6998,7 @@
     },
     "/api/v1/admin/users/{id}/revoke-sessions": {
       "post": {
-        "operationId": "revokeSessions",
+        "operationId": "revokeUserSessions",
         "parameters": [
           {
             "name": "id",
@@ -7092,7 +7092,7 @@
     },
     "/api/v1/admin/users/{id}/set-password": {
       "post": {
-        "operationId": "setPassword",
+        "operationId": "setUserPassword",
         "parameters": [
           {
             "name": "id",

@@ -34,7 +34,7 @@ describe('MemberRepository.findMembership', () => {
   it('reads the member row in exactly that organization joined to its account, in one query', async () => {
     const { builder, calls } = builderAnswering(row);
     const members = { createQueryBuilder: vi.fn().mockReturnValue(builder) };
-    const repository = new MemberRepository(members as never);
+    const repository = new MemberRepository(members as never, {} as never);
 
     const found = await repository.findMembership('org-b', 'u1');
 
@@ -68,9 +68,12 @@ describe('MemberRepository.findMembership', () => {
 
   it('answers None for someone who is not a member there', async () => {
     const { builder } = builderAnswering(undefined);
-    const repository = new MemberRepository({
-      createQueryBuilder: vi.fn().mockReturnValue(builder),
-    } as never);
+    const repository = new MemberRepository(
+      {
+        createQueryBuilder: vi.fn().mockReturnValue(builder),
+      } as never,
+      {} as never,
+    );
 
     expect((await repository.findMembership('org-b', 'u1')).isNone()).toBe(true);
   });
