@@ -26,6 +26,18 @@ export interface SessionTerminalOptions {
    * xterm, which pastes nothing for them.
    */
   onImage?: (image: File) => void;
+  /**
+   * The first byte the far end has sent, ever, on this attachment. Called
+   * once.
+   *
+   * A session is "started" the moment the host has a tmux session, which is
+   * before the agent inside it has drawn anything: Claude Code takes a few
+   * seconds cold, and tens of them on a loaded machine. The console swaps its
+   * provisioning pane for the terminal at "started", so the reader is handed
+   * an empty white rectangle with a live link behind it and no way to tell a
+   * slow start from a broken one. The caller uses this to say which it is.
+   */
+  onFirstOutput?: () => void;
 }
 
 /**
@@ -186,9 +198,24 @@ export function mountSessionTerminal(
   // that is the moment the bytes are consumed, and the credit goes with it.
   // A TUI's hide, draw, show painted as one frame (02 §6).
   const cursorFrames = new CursorFrames((data) => term.write(data));
-  const offData = stream.onData((chunk, consumed) =>
-    term.write(cursorFrames.frame(chunk), consumed),
-  );
+  // Announced from the chunk rather than from the write callback: what the
+  // reader is waiting for is the far end having something to say, and the
+  // parser draining it a frame later does not change the answer.
+  //
+  // "Something to say" is not "some bytes". An attachment opens with tmux's
+  // own preamble — a device-attributes query, the cursor put at home, the
+  // screen cleared — which is several dozen bytes that paint nothing. Taking
+  // any non-empty chunk as output made this fire on the first frame of every
+  // session, which is the bug it exists to catch. So a chunk counts once it
+  // carries a glyph: anything outside the escape sequences and the C0 controls.
+  let announcedOutput = false;
+  const offData = stream.onData((chunk, consumed) => {
+    if (!announcedOutput && hasVisibleText(chunk)) {
+      announcedOutput = true;
+      options.onFirstOutput?.();
+    }
+    term.write(cursorFrames.frame(chunk), consumed);
+  });
   // The replay a fresh attachment opens with is written into the buffer the
   // same way live output is, and xterm follows output only when the viewport
   // is already at the end — at that moment it sits on line zero. Pinning to
@@ -277,4 +304,57 @@ function wheelLines(event: WheelEvent, rows: number): number {
     default:
       return Math.trunc(event.deltaY / perLine);
   }
+}
+
+const VISIBLE_TEXT_DECODER = new TextDecoder('utf-8', { fatal: false });
+
+/**
+ * The escape grammar, in the order it has to be unwound. Every one of these
+ * names a control character on purpose — that is what an escape sequence is —
+ * so the rule against them is switched off for the block rather than the line.
+ */
+/* biome-ignore-start lint/suspicious/noControlCharactersInRegex: an escape sequence is control characters by definition */
+const ESCAPE_PATTERNS = [
+  // OSC: ESC ] ... BEL, or ... ST
+  /\u001b\][\s\S]*?(?:\u0007|\u001b\\)/g,
+  // DCS, SOS, PM, APC: ESC P/X/^/_ ... ST
+  /\u001b[P^_X][\s\S]*?(?:\u0007|\u001b\\)/g,
+  // CSI: ESC [ parameters intermediates final
+  /\u001b\[[0-?]*[ -/]*[@-~]/g,
+  // Whatever escape is left is ESC plus one character.
+  /\u001b[\s\S]/g,
+  // The C0 controls and DEL.
+  /[\u0000-\u001f\u007f]/g,
+];
+/* biome-ignore-end lint/suspicious/noControlCharactersInRegex: an escape sequence is control characters by definition */
+
+/**
+ * Whether a chunk from the far end would put a glyph on the grid.
+ *
+ * Escape sequences and the C0 controls move the cursor, set a colour, clear a
+ * line; they are how a terminal is driven and none of them is something a
+ * reader can see. What is left after taking them out is the text. Whitespace
+ * does not count either: a cleared screen arrives as spaces and newlines, and
+ * a pane of those still reads as blank.
+ *
+ * Deliberately a scan, not a parse. It runs on chunks until the first one that
+ * has text in it and never again, so the cost is bounded by one session's
+ * start, and an escape sequence it fails to recognise can only make it answer
+ * late — the waiting state stays a moment longer, which is the safe way to be
+ * wrong.
+ */
+export function hasVisibleText(chunk: string | Uint8Array): boolean {
+  // The stream hands over whatever the socket carried; a binary frame is
+  // decoded loosely here because this only has to decide "is there a glyph",
+  // and a multi-byte character split across two chunks still answers yes on
+  // one of them.
+  const text = typeof chunk === 'string' ? chunk : VISIBLE_TEXT_DECODER.decode(chunk);
+  // Taken off in the order the grammar nests: the string-terminated forms
+  // first, because their payload may contain anything, then CSI, which ends at
+  // its final byte and *not* at the next escape — reading it as "up to the
+  // next ESC" swallowed the text after a colour change, which is most of what
+  // an agent prints. What is left of an escape is the two-character kind.
+  let withoutEscapes = text;
+  for (const pattern of ESCAPE_PATTERNS) withoutEscapes = withoutEscapes.replace(pattern, '');
+  return withoutEscapes.trim().length > 0;
 }

@@ -324,3 +324,25 @@ func TestPasteIsABracketedPasteForAProgramThatAskedForOne(t *testing.T) {
 		t.Fatalf("capture:\n%s", screen)
 	}
 }
+
+// A session nobody has attached to still has to be a plausible terminal: tmux
+// would start it at 80x24, and the agent inside lays its turn out for whatever
+// it is told, so the size a detached session launches at is the size the first
+// reader's scrollback was written for.
+func TestASessionLaunchesWiderThanTmuxsDefault(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	if err := s.Create(ctx, "opp-launch-size", t.TempDir(), "", nil); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	out, err := exec.Command("tmux", "-L", "opp-test-"+t.Name(),
+		"display-message", "-p", "-t", "opp-launch-size", "#{window_width}x#{window_height}").Output()
+	if err != nil {
+		t.Fatalf("display-message: %v", err)
+	}
+
+	if got := strings.TrimSpace(string(out)); got != "132x40" {
+		t.Fatalf("a detached session launched at %s, want 132x40 (tmux's own default is 80x24)", got)
+	}
+}

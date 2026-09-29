@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -210,9 +211,30 @@ func TestChooseWorkspacesCreatesAPrivateDirectoryAndExpandsTheTilde(t *testing.T
 	if err != nil || info.Mode().Perm() != 0o700 {
 		t.Fatalf("created %v with %v, want 0700", err, info)
 	}
+	// The search-index opt-out is the one thing choosing a directory leaves in
+	// it, and only on macOS; the writability probe is not.
 	entries, _ := os.ReadDir(dir)
-	if len(entries) != 0 {
+	for _, entry := range entries {
+		if entry.Name() == cli.IndexingOptOut && runtime.GOOS == "darwin" {
+			continue
+		}
 		t.Fatalf("the writability probe was left behind: %v", entries)
+	}
+}
+
+func TestChooseWorkspacesKeepsTheDirectoryOutOfTheSearchIndex(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("the marker is macOS's")
+	}
+	paths := workspacePaths(t)
+
+	dir, _, err := cli.ChooseWorkspaces("~/code/oppenheimer", paths)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := os.Stat(filepath.Join(dir, cli.IndexingOptOut)); err != nil {
+		t.Fatalf("a chosen workspace root is left to Spotlight: %v", err)
 	}
 }
 
