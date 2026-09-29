@@ -45,7 +45,10 @@ var (
 // Pump is the one goroutine that writes to conn: frames from src in the order
 // src gives them, and a ping every PingInterval. A busy socket still pings: a
 // tick that fired while frames were waiting is served between two of them.
-// It returns the first write or ping error, src's error, or ctx's.
+// It returns the first write or ping error, src's error, or ctx's. A write or
+// ping that fails because ctx ended reports ctx's error: the library closes
+// the socket when a deadline passes mid-write, and the error it then returns
+// ("use of closed network connection") would read as a failed peer.
 func Pump(ctx context.Context, conn *websocket.Conn, src Source, opts PumpOptions) error {
 	return pump(ctx, conn, &sourceAdapter{src: src}, opts)
 }
@@ -81,6 +84,9 @@ func pump(ctx context.Context, conn *websocket.Conn, src source, opts PumpOption
 		pingCtx, cancel := context.WithTimeout(ctx, opts.PingTimeout)
 		defer cancel()
 		if err := conn.Ping(pingCtx); err != nil {
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				return ctxErr
+			}
 			return fmt.Errorf("%w: %w", ErrPing, err)
 		}
 		return nil
@@ -122,6 +128,9 @@ func pump(ctx context.Context, conn *websocket.Conn, src source, opts PumpOption
 		err = conn.Write(writeCtx, kind, frame.Data)
 		cancel()
 		if err != nil {
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				return ctxErr
+			}
 			return fmt.Errorf("%w: %w", ErrWrite, err)
 		}
 	}
