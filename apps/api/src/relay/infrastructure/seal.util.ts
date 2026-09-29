@@ -39,7 +39,6 @@ const TAG_BYTES = 16;
 /** SPKI DER prefix for a raw X25519 public key. */
 const X25519_SPKI_PREFIX = Buffer.from('302a300506032b656e032100', 'hex');
 
-/** 2^255 - 19 */
 const P = (1n << 255n) - 19n;
 
 export function seal(base64Ed25519PublicKey: string, plaintext: Uint8Array): Buffer {

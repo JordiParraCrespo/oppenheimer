@@ -10,7 +10,6 @@ export interface CommandMetadata {
   /** Causation id used to reconstruct execution order if needed. */
   readonly causationId?: string;
 
-  /** Time when the command was created. */
   readonly timestamp: number;
 }
 

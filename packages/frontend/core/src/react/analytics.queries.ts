@@ -6,10 +6,6 @@ import type { AnalyticsProperties } from '../modules/analytics/analytics.client'
 import type { AnalyticsEvent } from '../modules/analytics/analytics.events';
 import { useOppenheimerApp } from './context';
 
-/* -------------------------------------------------------------------------- */
-/*                                 Mutations                                  */
-/* -------------------------------------------------------------------------- */
-
 export interface CaptureEventVariables {
   event: AnalyticsEvent;
   properties?: AnalyticsProperties;

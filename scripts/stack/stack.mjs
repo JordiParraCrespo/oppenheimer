@@ -322,7 +322,6 @@ async function up(flags) {
   log(`up. The API's log is ${join(STATE, 'api.log')}, where the suites read it`);
 }
 
-/** Stop a recorded process group and wait for it to go, killing it at 20 s. */
 /**
  * Whether any process in the group is still running. A zombie is not: it has
  * exited and waits only for whoever inherited it to reap it, and counting it
@@ -339,6 +338,7 @@ function groupAlive(pgid) {
   }
 }
 
+/** Stop a recorded process group and wait for it to go, killing it at 20 s. */
 async function stop(pid) {
   if (!groupAlive(pid)) return;
   try {

@@ -44,7 +44,6 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
 
     submitConsent(accept, search.consent_code).then(
       (redirectURI) => {
-        // Hand control back to the OAuth client.
         window.location.href = redirectURI;
       },
       (cause: unknown) => {

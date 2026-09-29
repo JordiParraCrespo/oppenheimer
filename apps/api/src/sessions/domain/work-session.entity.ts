@@ -262,7 +262,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.state === 'resolved';
   }
 
-  /** Every checkout, retired ones included. */
   /**
    * Why this session cannot take input right now — typed keys, a pasted
    * image — or `null` when it can. Closed is final and stopped has no window
@@ -274,6 +273,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return null;
   }
 
+  /** Every checkout, retired ones included. */
   get checkouts(): readonly SessionCheckoutEntity[] {
     return this.props.checkouts;
   }

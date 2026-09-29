@@ -113,7 +113,6 @@ export default function Page() {
         sub={`Achromatic by default, colour rationed to one blue for actions and one for links, one typeface with size and tracking carrying the hierarchy, no shadow on any surface, six radii and no others. ${TOC_COUNT} components, every one of them on an MVP screen.`}
       />
 
-      {/* ── Foundations ─────────────────────────────────────────────────── */}
       <GroupHead>Foundations</GroupHead>
 
       <Spec
@@ -184,7 +183,6 @@ export default function Page() {
         <Icons />
       </Spec>
 
-      {/* ── Core ─────────────────────────────────────────────────────────── */}
       <GroupHead>Core</GroupHead>
 
       <Spec
@@ -697,7 +695,6 @@ export default function Page() {
         <SkeletonDemo />
       </Spec>
 
-      {/* ── Forms ────────────────────────────────────────────────────────── */}
       <GroupHead>Forms</GroupHead>
 
       <Spec
@@ -886,7 +883,6 @@ export default function Page() {
         </div>
       </Spec>
 
-      {/* ── Overlays ─────────────────────────────────────────────────────── */}
       <GroupHead>Overlays</GroupHead>
 
       <Spec
@@ -968,7 +964,6 @@ export default function Page() {
         <ToastDemo />
       </Spec>
 
-      {/* ── Navigation ───────────────────────────────────────────────────── */}
       <GroupHead>Navigation</GroupHead>
 
       <Spec
@@ -1045,7 +1040,6 @@ export default function Page() {
         <StepperDemo />
       </Spec>
 
-      {/* ── Terminal ─────────────────────────────────────────────────────── */}
       <GroupHead>Terminal</GroupHead>
 
       <Spec
@@ -1060,7 +1054,6 @@ export default function Page() {
         </ThemePair>
       </Spec>
 
-      {/* ── Routines ─────────────────────────────────────────────────────── */}
       <GroupHead>Routines</GroupHead>
 
       <Spec
@@ -1113,7 +1106,6 @@ export default function Page() {
         <RoutineEditorDemo />
       </Spec>
 
-      {/* ── Settings ─────────────────────────────────────────────────────── */}
       <GroupHead>Settings</GroupHead>
 
       <Spec
@@ -1156,7 +1148,6 @@ export default function Page() {
         <HostCardsDemo />
       </Spec>
 
-      {/* ── Media ────────────────────────────────────────────────────────── */}
       <GroupHead>Media</GroupHead>
 
       <Spec

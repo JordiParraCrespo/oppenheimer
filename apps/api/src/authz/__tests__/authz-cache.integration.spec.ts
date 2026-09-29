@@ -94,8 +94,6 @@ describe('authorization cache (integration)', () => {
     await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);
   });
 
-  // --- helpers -------------------------------------------------------------
-
   /** Sign up, then wait for sign-up's personal workspace to reach the session. */
   async function signUp(email: string) {
     const response = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
@@ -191,8 +189,6 @@ describe('authorization cache (integration)', () => {
       )
     )[0] as { id: string; permissions: unknown[] };
 
-  // --- query count ---------------------------------------------------------
-
   describe('queries per guarded request', () => {
     beforeAll(async () => {
       await actIn(user.workspaceId);
@@ -231,8 +227,6 @@ describe('authorization cache (integration)', () => {
       });
     });
   });
-
-  // --- invalidation --------------------------------------------------------
 
   describe('every writer is visible on the next request', () => {
     let organizationId: string;

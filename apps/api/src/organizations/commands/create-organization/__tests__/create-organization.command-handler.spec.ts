@@ -64,7 +64,6 @@ describe('CreateOrganizationCommandHandler', () => {
 
   it('generates a slug from the name when none is provided', async () => {
     await create({ name: 'My Great Org!' });
-    // slugified base + '-' + 8 hex chars
     expect(organizations.create.mock.calls[0][1].slug).toMatch(/^my-great-org-[0-9a-f]{8}$/);
   });
 

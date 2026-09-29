@@ -8,7 +8,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-/** One trigger of an automation. */
 @Entity('automation_trigger')
 @Index('IDX_automation_trigger_automation', ['automationId', 'organizationId', 'position'])
 @Index('IDX_automation_trigger_match', ['organizationId', 'source', 'eventType'])
