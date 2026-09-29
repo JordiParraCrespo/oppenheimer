@@ -2,7 +2,7 @@
 // Prove a new migration on a real Postgres before anyone reviews it.
 //
 //   node --experimental-strip-types .agents/skills/design-database/scripts/check-migration.mjs \
-//     apps/api/src/migrations/1789000000000-AddInvoices.ts [more.ts...] \
+//     apps/api/src/migrations/1791000000000-AddInvoices.ts [more.ts...] \
 //     [--before stubs.sql] [--fixture fixture.sql] [--explain queries.sql] [--keep]
 //
 // It creates a scratch database next to the one in the root `.env` (DB_* —

@@ -13,8 +13,8 @@ import {
  * Maps the Better Auth `account` table (credential + OAuth provider links).
  * Owned by Better Auth; declared here so TypeORM creates/migrates the table.
  * `userId` references `user` (`FK_account_user`, ON DELETE CASCADE); the
- * foreign key lives in `CascadeSignInsWithTheirUser`, as every entity's here
- * lives in a migration.
+ * foreign key lives in the migrations (`InitialSchema`), as every entity's
+ * here does.
  */
 @Entity('account')
 @Index('IDX_account_userId', ['userId'])

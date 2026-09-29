@@ -197,7 +197,7 @@ export const auth = betterAuth({
       },
     },
   },
-  // Verification records stay in Postgres, where `HardenAuthTables` indexed
+  // Verification records stay in Postgres, where `InitialSchema` indexes
   // them; the session store does not cache them either.
   verification: { storeInDatabase: true },
   emailAndPassword: {

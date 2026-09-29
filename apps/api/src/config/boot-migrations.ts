@@ -5,7 +5,7 @@ import { DataSource, type DataSourceOptions } from 'typeorm';
  * timeout. A migration may legitimately run longer than any request should (a
  * backfill, a `CREATE INDEX` on a table that grew, `VALIDATE CONSTRAINT`), and
  * one that needs a lock timeout sets its own `SET LOCAL lock_timeout` and
- * `RESET`s it (see `HardenAuthTables`), which returns to this connection's
+ * `RESET`s it as its last statement, which returns to this connection's
  * startup value: none.
  */
 export const MIGRATOR_POOL_OPTIONS = {
