@@ -976,6 +976,51 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(await repository.countUnresolvedForProject(scope(), target)).toBe(1);
     });
 
+    it('erases a workspace while an append to one of its sessions is in flight', async () => {
+      // An account deletion raced a log append: the erase deleted the log, the
+      // append committed a row, and the session delete then failed its foreign
+      // key. The appender is held open here, lock taken and row written, until
+      // the erase is waiting on it.
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+
+      const appender = dataSource.createQueryRunner();
+      await appender.connect();
+      await appender.startTransaction();
+      try {
+        await appender.query(`SELECT "id" FROM "work_session" WHERE "id" = $1 FOR UPDATE`, [
+          work.id,
+        ]);
+        await appender.query(
+          `INSERT INTO "work_session_event"
+             ("sessionId", "seq", "idempotencyKey", "source", "kind", "occurredAt")
+           VALUES ($1, 2, $2, 'runner', $3, now())`,
+          [work.id, `observed:${randomUUID()}`, SESSION_EVENT_KINDS.AGENT_OBSERVED],
+        );
+
+        const erasing = repository.eraseWorkspace(organizationId);
+        await vi.waitFor(async () => {
+          const [{ waiting }] = await dataSource.query(
+            `SELECT count(*)::int AS waiting FROM pg_locks WHERE NOT granted`,
+          );
+          expect(waiting).toBeGreaterThan(0);
+        });
+        await appender.commitTransaction();
+
+        await expect(erasing).resolves.toBeUndefined();
+      } finally {
+        if (appender.isTransactionActive) await appender.rollbackTransaction();
+        await appender.release();
+      }
+
+      const [{ count }] = await dataSource.query(
+        `SELECT count(*)::int FROM "work_session" WHERE "organizationId" = $1`,
+        [organizationId],
+      );
+      expect(count).toBe(0);
+      expect(await events(work.id)).toEqual([]);
+    });
+
     it('refuses a move into a project an archive retired first, and writes nothing', async () => {
       const work = session();
       await repository.createIfUnclaimed(work, requested());
