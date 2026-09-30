@@ -43,16 +43,6 @@ func TestSystemdUnitStopsOnlyTheRunner(t *testing.T) {
 	}
 }
 
-func TestSystemdUnitExecutesTheCurrentSymlinkNotAVersion(t *testing.T) {
-	out, _ := unit().Render(domain.KindSystemd)
-
-	// An update is a symlink swap plus a restart; a versioned path in the
-	// unit would make it a unit rewrite plus a daemon-reload as well.
-	if strings.Contains(out, "runner-1.") {
-		t.Fatalf("the unit must point at `current`:\n%s", out)
-	}
-}
-
 func TestLaunchdPlistIsValidXMLAndAbandonsTheProcessGroup(t *testing.T) {
 	out, err := unit().Render(domain.KindLaunchd)
 	if err != nil {

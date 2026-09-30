@@ -20,11 +20,11 @@ func readMachine(context.Context) domain.Machine {
 	}
 	cpuModel, hypervisor := cpuInfo()
 	m.CPUModel = cpuModel
-	m.MemoryTotalBytes = MeminfoBytes(readTrimmed("/proc/meminfo"), "MemTotal")
-	if booted, ok := BootTime(readTrimmed("/proc/stat")); ok {
+	m.MemoryTotalBytes = meminfoBytes(readTrimmed("/proc/meminfo"), "MemTotal")
+	if booted, ok := bootTime(readTrimmed("/proc/stat")); ok {
 		m.BootedAt = &booted
 	}
-	m.Virtualization, m.CloudProvider = Classify(DMI{
+	m.Virtualization, m.CloudProvider = classify(dmi{
 		SysVendor:        readTrimmed("/sys/class/dmi/id/sys_vendor"),
 		ProductName:      readTrimmed("/sys/class/dmi/id/product_name"),
 		BIOSVendor:       readTrimmed("/sys/class/dmi/id/bios_vendor"),
@@ -81,8 +81,8 @@ func cpuInfo() (model string, hypervisor bool) {
 	return model, hypervisor
 }
 
-// MeminfoBytes reads one kB field of /proc/meminfo as bytes.
-func MeminfoBytes(meminfo, field string) uint64 {
+// meminfoBytes reads one kB field of /proc/meminfo as bytes.
+func meminfoBytes(meminfo, field string) uint64 {
 	for _, line := range strings.Split(meminfo, "\n") {
 		key, value, found := strings.Cut(line, ":")
 		if !found || strings.TrimSpace(key) != field {
@@ -101,8 +101,8 @@ func MeminfoBytes(meminfo, field string) uint64 {
 	return 0
 }
 
-// BootTime reads the btime line of /proc/stat.
-func BootTime(stat string) (time.Time, bool) {
+// bootTime reads the btime line of /proc/stat.
+func bootTime(stat string) (time.Time, bool) {
 	for _, line := range strings.Split(stat, "\n") {
 		if rest, found := strings.CutPrefix(line, "btime "); found {
 			seconds, err := strconv.ParseInt(strings.TrimSpace(rest), 10, 64)
@@ -128,7 +128,7 @@ func inContainer() bool {
 // AvailableMemory is MemAvailable: what a new process could have without
 // swapping, which is the number "is this host full" means.
 func AvailableMemory() uint64 {
-	return MeminfoBytes(readTrimmed("/proc/meminfo"), "MemAvailable")
+	return meminfoBytes(readTrimmed("/proc/meminfo"), "MemAvailable")
 }
 
 // readTrimmed reads one /proc, /sys or /etc file; only Linux reads the

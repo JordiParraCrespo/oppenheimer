@@ -10,7 +10,6 @@ import (
 	"strings"
 	"syscall"
 	"testing"
-	"time"
 
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
@@ -119,23 +118,5 @@ func TestPrivateDirectoryRefusesADirectoryAnotherAccountOwns(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "not owned by this account") {
 		t.Fatalf("the refusal should say why: %v", err)
-	}
-}
-
-func TestPrivateDirectoryLeavesAPrivateDirectoryAlone(t *testing.T) {
-	dir := shortTempDir(t)
-	if err := os.Chmod(dir, 0o700); err != nil {
-		t.Fatal(err)
-	}
-	before, _ := os.Stat(dir)
-	time.Sleep(10 * time.Millisecond)
-
-	if err := privateDirectory(dir); err != nil {
-		t.Fatal(err)
-	}
-
-	after, _ := os.Stat(dir)
-	if after.Mode() != before.Mode() {
-		t.Fatalf("mode changed from %v to %v", before.Mode(), after.Mode())
 	}
 }

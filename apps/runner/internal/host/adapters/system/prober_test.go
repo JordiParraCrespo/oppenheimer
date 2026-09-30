@@ -1,10 +1,9 @@
-package system_test
+package system
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 )
 
@@ -22,7 +21,7 @@ func TestParseOSRelease(t *testing.T) {
 		{"empty", "", domain.PlatformLinuxOther},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			got, _ := system.ParseOSRelease(strings.NewReader(tc.content))
+			got, _ := parseOSRelease(strings.NewReader(tc.content))
 			if got != tc.platform {
 				t.Fatalf("platform = %q, want %q", got, tc.platform)
 			}
@@ -31,7 +30,7 @@ func TestParseOSRelease(t *testing.T) {
 }
 
 func TestParseOSReleasePrefersThePrettyName(t *testing.T) {
-	_, version := system.ParseOSRelease(strings.NewReader("ID=debian\nVERSION_ID=\"12\"\nPRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"\n"))
+	_, version := parseOSRelease(strings.NewReader("ID=debian\nVERSION_ID=\"12\"\nPRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"\n"))
 	if version != "Debian GNU/Linux 12 (bookworm)" {
 		t.Fatalf("version = %q", version)
 	}

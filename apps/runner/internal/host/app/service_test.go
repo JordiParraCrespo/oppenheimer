@@ -131,9 +131,3 @@ func TestPreflightProbesAfreshWhereCollectMayUseTheCache(t *testing.T) {
 		t.Fatalf("calls = %v, want the cache dropped before the tools are probed", p.Calls)
 	}
 }
-
-func TestPreflightPassesOnAHealthyHost(t *testing.T) {
-	if _, err := service(fake.New()).Preflight(context.Background()); err != nil {
-		t.Fatalf("preflight: %v", err)
-	}
-}

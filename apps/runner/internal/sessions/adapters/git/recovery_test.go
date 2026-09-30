@@ -166,6 +166,35 @@ func TestEnsureSaysWhatIsMissingWhenAPrivateCloneHasNoCredential(t *testing.T) {
 	}
 }
 
+// A remote that wants a credential the helper does not have must fail the
+// clone, not ask anyone: a daemon has no one to ask, and a prompt it waits on
+// hangs the session create. The askpass programs the daemon's environment
+// names are what git would run to ask; each one here writes a marker.
+func TestGitNeverAsksForAPassword(t *testing.T) {
+	remote := privateOrigin(t)
+	c, _, _ := privateClient(t)
+	marker := filepath.Join(t.TempDir(), "asked")
+	askpass := filepath.Join(t.TempDir(), "askpass")
+	if err := os.WriteFile(askpass, []byte("#!/bin/sh\necho asked >> '"+marker+"'\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GIT_ASKPASS", askpass)
+	t.Setenv("SSH_ASKPASS", askpass)
+	t.Setenv("GIT_TERMINAL_PROMPT", "1")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err := c.Ensure(ctx, repo, remote, "main")
+
+	var prob *problem.Error
+	if !isProblem(err, &prob, "GIT_004") || ctx.Err() != nil {
+		t.Fatalf("err = %v, ctx = %v; want GIT_004 at once", err, ctx.Err())
+	}
+	if _, err := os.Stat(marker); err == nil {
+		t.Fatal("git ran an askpass program to ask for a password")
+	}
+}
+
 func TestEnsureClearsAnEmptyMirrorAnOlderRunnerLeft(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
