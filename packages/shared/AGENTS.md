@@ -49,7 +49,9 @@ src/
 - **The coding-agent catalog** (`agents/catalog.ts`): a closed union plus one
   frozen config record per agent. It is deliberately **not a table** — every
   entry carries behaviour the runner needs code for anyway, so a row would be a
-  second source of truth. Keep it data; the type guard is the only function.
+  second source of truth. Keep it data; its only functions are the type guard
+  and the two effort lookups (`effortFor`, `effortLevelFor`), which every
+  tier asks the same way.
 - **`hostFactsSchema` is the runner's `Facts` struct, verbatim.** It mirrors
   `apps/runner/internal/host/domain/facts.go` key for key and json tag for json
   tag, because the runner marshals that struct whole into `POST /hosts/register`

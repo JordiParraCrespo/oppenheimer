@@ -299,7 +299,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
           kind: SESSION_EVENT_KINDS.REQUESTED,
           payload: {
             agent: 'claude-code',
-            launch: { model: 'opus', permission: 'auto', effort: 'high' },
+            launch: { model: 'claude-opus-5-5', permission: 'auto', effort: 'high' },
           },
         },
         {
@@ -327,7 +327,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       ]);
 
       // The launch the request stated, which a restart and the engine button read.
-      expect(row.launchModel).toBe('opus');
+      expect(row.launchModel).toBe('claude-opus-5-5');
       expect(row.launchPermission).toBe('auto');
       expect(row.launchEffort).toBe('high');
       // The observation columns the derived group is computed from.
@@ -340,7 +340,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       const replayed = await repository.findOneById(scope(), work.id);
       expect(replayed.isSome()).toBe(true);
       expect(replayed.unwrap().launch).toEqual({
-        model: 'opus',
+        model: 'claude-opus-5-5',
         permission: 'auto',
         effort: 'high',
       });

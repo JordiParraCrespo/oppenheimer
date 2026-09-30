@@ -12,8 +12,11 @@
  * is a host fact (`host.capabilities`), reported by the runner and shown as a
  * hint on the agent chip — never a gate.
  *
- * This module is data. The only function is the type guard, because a closed
- * union needs one at every boundary a string arrives at.
+ * This module is data. Its functions are the type guard, because a closed
+ * union needs one at every boundary a string arrives at, and the two effort
+ * lookups (`effortFor`, `effortLevelFor`), because which levels a session
+ * offers depends on its model as well as its agent, and every tier has to ask
+ * that the same way.
  */
 
 /**
@@ -55,15 +58,56 @@ export const SESSION_PERMISSIONS = ['ask', 'auto', 'full'] as const;
 export type SessionPermission = (typeof SESSION_PERMISSIONS)[number];
 
 /**
- * How hard the agent may think, as the five stops the effort slider draws.
+ * Every effort level name any CLI here takes: the wire's and the columns'
+ * vocabulary, and **not a scale**. Which names a launch may carry, and in what
+ * order they run from faster to smarter, is each model's own list
+ * (`CodingAgentModel.effort`); a name the session's model does not list is
+ * recorded as none and never sent (`effortLevelFor`).
  *
- * A product ordinal, not a passthrough: each agent states below what each stop
- * means in its own vocabulary, because no two CLIs name these the same and a
- * reader is choosing an amount of thinking, not a flag.
+ * The names are the CLIs' own, so a recorded level is the level the CLI was
+ * started at. `none` is thinking switched off, which only a model that does
+ * not think unasked offers (Haiku under OpenCode); `ultra` is Codex's level
+ * above `max`, which also lets the agent hand work to sub-agents.
  */
-export const SESSION_EFFORTS = ['minimal', 'low', 'medium', 'high', 'max'] as const;
+export const SESSION_EFFORTS = [
+  'none',
+  'minimal',
+  'low',
+  'medium',
+  'high',
+  'xhigh',
+  'max',
+  'ultra',
+] as const;
 
 export type SessionEffort = (typeof SESSION_EFFORTS)[number];
+
+/**
+ * The effort levels one model offers, from faster to smarter, and the one its
+ * CLI runs when nobody asks — where the slider's knob starts. How a level is
+ * spelled on the command line is the agent's (`CodingAgentLaunch.effort`).
+ */
+export interface CodingAgentEffort {
+  readonly levels: readonly SessionEffort[];
+  readonly default: SessionEffort;
+}
+
+/**
+ * How one agent is told an effort level: the argv and environment a level
+ * becomes, with `<effort>` replaced by the level's name and `<model>` by the
+ * model's id **inside** each word, since no CLI here takes the level as a word
+ * of its own (`model_reasoning_effort=<effort>`, OpenCode's JSON). Both are
+ * safe to splice: a level is a name from `SESSION_EFFORTS`, and a level is only
+ * spelled for a model the catalog lists with it, whose id is catalog data.
+ *
+ * `unset` is the level that is the CLI left alone, which sends nothing.
+ *
+ * The environment names never meet a permission level's: the spec holds that,
+ * and the runner lets the permission level win if they ever did.
+ */
+export interface CodingAgentEffortSpelling extends CodingAgentLaunchLevel {
+  readonly unset?: SessionEffort;
+}
 
 /** One model the engine button offers, inside its agent's pane. */
 export interface CodingAgentModel {
@@ -73,6 +117,16 @@ export interface CodingAgentModel {
   readonly label: string;
   /** Offered first, and what a session with no model chosen runs. */
   readonly default?: true;
+  /**
+   * The effort levels this model's CLI offers for it. Per model because that is
+   * where the CLIs put them: Codex's Luna stops at `max` where Sol goes on to
+   * `ultra`, Claude Code starts Opus at `medium` and Fable at `high`, and
+   * Haiku takes no effort at all under Claude Code.
+   *
+   * Absent: this model has no notion of effort, and the console hides the
+   * slider.
+   */
+  readonly effort?: CodingAgentEffort;
 }
 
 /**
@@ -100,9 +154,8 @@ export interface CodingAgentLaunchLevel {
  * become a second word by accident. `<model>` is the one placeholder, and it is
  * substituted whole.
  *
- * The maps are total on purpose. An agent whose own vocabulary is coarser than
- * the five stops says so by repeating itself — which is a fact about that CLI,
- * stated here once, instead of a gap every call site has to handle.
+ * Effort's spelling is here, once per agent; which levels a model offers is
+ * its own row's.
  */
 export interface CodingAgentLaunch {
   /** Absent: this agent takes no model. */
@@ -112,8 +165,8 @@ export interface CodingAgentLaunch {
    * hides the permission chip and sends no level, and the session records none.
    */
   readonly permission?: Readonly<Record<SessionPermission, CodingAgentLaunchLevel>>;
-  /** Absent: this agent has no notion of effort, and the console hides the slider. */
-  readonly effort?: Readonly<Record<SessionEffort, readonly string[]>>;
+  /** Absent: no model of this agent takes an effort. */
+  readonly effort?: CodingAgentEffortSpelling;
   /**
    * How the person's first task reaches the agent, with `<prompt>` substituted
    * whole — always the **last** argv appended: Claude Code, Codex and Grok take
@@ -205,6 +258,16 @@ export interface CodingAgentDefinition {
   readonly update?: readonly string[];
 }
 
+/** A model's levels and default, frozen as the rest of the catalog is. */
+function levels(ids: readonly SessionEffort[], defaultLevel: SessionEffort): CodingAgentEffort {
+  return Object.freeze({ levels: Object.freeze([...ids]), default: defaultLevel });
+}
+
+const CLAUDE_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
+const CODEX_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
+const CODEX_ULTRA_LEVELS = [...CODEX_LEVELS, 'ultra'] as const;
+const GROK_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
+
 /**
  * Frozen because it is shared mutable state otherwise: the API and the
  * console both read the same object.
@@ -237,10 +300,25 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     //
     // The newest of each line, in the order Claude's own model picker lists
     // them; Opus 5.5, the everyday model of the four, is the default.
+    // Each effort default is what claude runs the model at unasked; Haiku has
+    // none, since `--effort` changes nothing claude sends for it.
     models: Object.freeze([
-      Object.freeze({ id: 'claude-opus-5-5', label: 'Claude Opus 5.5', default: true as const }),
-      Object.freeze({ id: 'claude-fable-5-1', label: 'Claude Fable 5.1' }),
-      Object.freeze({ id: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5' }),
+      Object.freeze({
+        id: 'claude-opus-5-5',
+        label: 'Claude Opus 5.5',
+        default: true as const,
+        effort: levels(CLAUDE_LEVELS, 'medium'),
+      }),
+      Object.freeze({
+        id: 'claude-fable-5-1',
+        label: 'Claude Fable 5.1',
+        effort: levels(CLAUDE_LEVELS, 'high'),
+      }),
+      Object.freeze({
+        id: 'claude-sonnet-5-5',
+        label: 'Claude Sonnet 5.5',
+        effort: levels(CLAUDE_LEVELS, 'medium'),
+      }),
       Object.freeze({ id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' }),
     ]),
     launch: Object.freeze({
@@ -260,16 +338,10 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
           env: Object.freeze({}),
         }),
       }),
-      // `--effort` takes low | medium | high | xhigh | max — five levels for
-      // five stops, so this is order-preserving and every stop is distinct.
-      // "Minimal" is the slider's floor, not a level claude has; it maps to the
-      // lowest one there is.
+      // `--effort <level>`, whose `--help` lists low | medium | high | xhigh | max.
       effort: Object.freeze({
-        minimal: Object.freeze(['--effort', 'low']),
-        low: Object.freeze(['--effort', 'medium']),
-        medium: Object.freeze(['--effort', 'high']),
-        high: Object.freeze(['--effort', 'xhigh']),
-        max: Object.freeze(['--effort', 'max']),
+        argv: Object.freeze(['--effort', '<effort>']),
+        env: Object.freeze({}),
       }),
       // `claude [options] [command] [prompt]`, whose own help calls the
       // positional "Your prompt" and the default mode "an interactive
@@ -303,11 +375,34 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // Same seed argument as Claude Code above, and the same limit: a probe is
     // still what would tell the console which of these *this* machine's codex
     // knows (`product/versions/mvp/05-screens.md`, open question 6).
+    //
+    // Each model's levels and default are codex's own (`codex debug models`):
+    // Sol and Astra think `low` unasked, Terra and Luna `medium`, Luna has no
+    // `ultra`, and none has `minimal`. Codex forwards a level a model lacks to
+    // the API unchanged, so a level listed here that the model does not take
+    // is a failed turn, not a dropped setting.
     models: Object.freeze([
-      Object.freeze({ id: 'gpt-6-astra', label: 'GPT-6 Astra' }),
-      Object.freeze({ id: 'gpt-5.6-sol', label: 'GPT-5.6 Sol', default: true as const }),
-      Object.freeze({ id: 'gpt-5.6-terra', label: 'GPT-5.6 Terra' }),
-      Object.freeze({ id: 'gpt-5.6-luna', label: 'GPT-5.6 Luna' }),
+      Object.freeze({
+        id: 'gpt-6-astra',
+        label: 'GPT-6 Astra',
+        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
+      }),
+      Object.freeze({
+        id: 'gpt-5.6-sol',
+        label: 'GPT-5.6 Sol',
+        default: true as const,
+        effort: levels(CODEX_ULTRA_LEVELS, 'low'),
+      }),
+      Object.freeze({
+        id: 'gpt-5.6-terra',
+        label: 'GPT-5.6 Terra',
+        effort: levels(CODEX_ULTRA_LEVELS, 'medium'),
+      }),
+      Object.freeze({
+        id: 'gpt-5.6-luna',
+        label: 'GPT-5.6 Luna',
+        effort: levels(CODEX_LEVELS, 'medium'),
+      }),
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
@@ -325,20 +420,10 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
           env: Object.freeze({}),
         }),
       }),
-      // Codex has no effort flag; it is the `model_reasoning_effort` config key,
-      // set per invocation with `-c`. Its config reference runs to `xhigh`, so
-      // the slider's top two stops are distinct and only `minimal` is below
-      // what the reference lists.
-      //
-      // These names are the one thing in this file not read off a `--help`: the
-      // CLI accepts an unrecognised value without failing, so a wrong name costs
-      // the setting rather than the launch.
+      // No flag: the `model_reasoning_effort` config key, set per invocation.
       effort: Object.freeze({
-        minimal: Object.freeze(['-c', 'model_reasoning_effort=minimal']),
-        low: Object.freeze(['-c', 'model_reasoning_effort=low']),
-        medium: Object.freeze(['-c', 'model_reasoning_effort=medium']),
-        high: Object.freeze(['-c', 'model_reasoning_effort=high']),
-        max: Object.freeze(['-c', 'model_reasoning_effort=xhigh']),
+        argv: Object.freeze(['-c', 'model_reasoning_effort=<effort>']),
+        env: Object.freeze({}),
       }),
       // `codex [OPTIONS] [PROMPT]`, documented as "Optional user prompt to
       // start the session". Not the `exec` subcommand, which is the
@@ -384,16 +469,40 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // Anthropic family Claude Code offers, under OpenCode's `anthropic/`
     // provider, plus OpenAI's Codex default. A row the host's OpenCode has
     // no provider for fails in the session's own terminal, as for the others.
+    //
+    // Each model's levels are its OpenCode variants (`opencode models
+    // --verbose`), and its default is what it runs with none: the API's own
+    // `high` for the adaptive Claude models, no thinking for Haiku, whose
+    // variants are only `high` and `max` budgets, and `medium` for Sol. Sol's
+    // `none` variant is left off: "don't think" is not an amount of thinking
+    // anyone picks for a coding session.
     models: Object.freeze([
       Object.freeze({
         id: 'anthropic/claude-opus-5-5',
         label: 'Claude Opus 5.5',
         default: true as const,
+        effort: levels(CLAUDE_LEVELS, 'high'),
       }),
-      Object.freeze({ id: 'anthropic/claude-fable-5-1', label: 'Claude Fable 5.1' }),
-      Object.freeze({ id: 'anthropic/claude-sonnet-5-5', label: 'Claude Sonnet 5.5' }),
-      Object.freeze({ id: 'anthropic/claude-haiku-4-5', label: 'Claude Haiku 4.5' }),
-      Object.freeze({ id: 'openai/gpt-5.6-sol', label: 'GPT-5.6 Sol' }),
+      Object.freeze({
+        id: 'anthropic/claude-fable-5-1',
+        label: 'Claude Fable 5.1',
+        effort: levels(CLAUDE_LEVELS, 'high'),
+      }),
+      Object.freeze({
+        id: 'anthropic/claude-sonnet-5-5',
+        label: 'Claude Sonnet 5.5',
+        effort: levels(CLAUDE_LEVELS, 'high'),
+      }),
+      Object.freeze({
+        id: 'anthropic/claude-haiku-4-5',
+        label: 'Claude Haiku 4.5',
+        effort: levels(['none', 'high', 'max'], 'none'),
+      }),
+      Object.freeze({
+        id: 'openai/gpt-5.6-sol',
+        label: 'GPT-5.6 Sol',
+        effort: levels(CODEX_LEVELS, 'medium'),
+      }),
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
@@ -428,9 +537,18 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         }),
         full: Object.freeze({ argv: Object.freeze(['--auto']), env: Object.freeze({}) }),
       }),
-      // No effort: reasoning is a per-provider model variant in OpenCode, not
-      // a launch flag, so the console hides the slider.
-      //
+      // A level is the model's *variant*, and the TUI has no flag for one
+      // (`--variant` is `opencode run`'s only), so it is inline configuration
+      // giving the build agent the model and the variant. The model is named
+      // again because OpenCode applies an agent's `variant` only while that
+      // agent runs its own configured `model`. `none` is no variant at all.
+      effort: Object.freeze({
+        argv: Object.freeze([]),
+        env: Object.freeze({
+          OPENCODE_CONFIG_CONTENT: '{"agent":{"build":{"model":"<model>","variant":"<effort>"}}}',
+        }),
+        unset: 'none' as const,
+      }),
       // `opencode [project] --prompt <text>`, which starts the TUI with the
       // task in it; `opencode run` is the non-interactive one.
       prompt: Object.freeze(['--prompt', '<prompt>']),
@@ -469,9 +587,23 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // capability order as Codex's list is. Same seed argument as the others:
     // whether a given account's `grok` offers 4.7 is the probe still open in
     // `product/versions/mvp/05-screens.md`.
+    //
+    // Which effort levels a Grok model takes comes from xAI's model catalog
+    // after sign-in, which this repo has no copy of, so both rows offer the six
+    // grok's `--reasoning-effort` knows (`none` left off, as for Sol), with
+    // the models' own `high` as the default.
     models: Object.freeze([
-      Object.freeze({ id: 'grok-4.7', label: 'Grok 4.7' }),
-      Object.freeze({ id: 'grok-4.6', label: 'Grok 4.6', default: true as const }),
+      Object.freeze({
+        id: 'grok-4.7',
+        label: 'Grok 4.7',
+        effort: levels(GROK_LEVELS, 'high'),
+      }),
+      Object.freeze({
+        id: 'grok-4.6',
+        label: 'Grok 4.6',
+        default: true as const,
+        effort: levels(GROK_LEVELS, 'high'),
+      }),
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
@@ -492,16 +624,10 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
           env: Object.freeze({}),
         }),
       }),
-      // `--reasoning-effort` takes none | minimal | low | medium | high |
-      // xhigh | max, so each of the five stops is the level of the same name.
-      // The models' own default is `high`, one stop above the slider's middle
-      // (`product/versions/mvp/05-screens.md`).
+      // `--reasoning-effort <level>`, which grok refuses to start on a name it lacks.
       effort: Object.freeze({
-        minimal: Object.freeze(['--reasoning-effort', 'minimal']),
-        low: Object.freeze(['--reasoning-effort', 'low']),
-        medium: Object.freeze(['--reasoning-effort', 'medium']),
-        high: Object.freeze(['--reasoning-effort', 'high']),
-        max: Object.freeze(['--reasoning-effort', 'max']),
+        argv: Object.freeze(['--reasoning-effort', '<effort>']),
+        env: Object.freeze({}),
       }),
       // `grok [OPTIONS] [PROMPT]`, whose help calls the positional "Initial
       // prompt for the interactive session". Not `-p`, which is single-turn
@@ -530,4 +656,40 @@ const CODING_AGENT_ID_SET = new Set<string>(CODING_AGENT_IDS);
 
 export function isCodingAgentId(value: unknown): value is CodingAgentId {
   return typeof value === 'string' && CODING_AGENT_ID_SET.has(value);
+}
+
+/**
+ * The effort levels a session of `agent` on `model` offers, or `undefined` when
+ * it has none — the blank terminal, Haiku under Claude Code, or a model id the
+ * catalog does not list (an alias such as `opus`), whose levels nobody here
+ * knows. No model is the agent's default model, because that is what runs.
+ */
+export function effortFor(
+  agent: CodingAgentId,
+  model: string | null,
+): CodingAgentEffort | undefined {
+  const { models } = CODING_AGENTS[agent];
+  const row = model === null ? models.find((m) => m.default) : models.find((m) => m.id === model);
+  return row?.effort;
+}
+
+/**
+ * The effort a launch of `agent` on `model` records, given what was asked for:
+ * the level when that model offers it, and null — the CLI's own default —
+ * otherwise. The one rule for every writer: a session's create, the fold of
+ * its log, and an automation's revision. The runner's generated table drops
+ * the same levels, so what is recorded is what ran.
+ *
+ * An agent this build does not know keeps a name from the union: it cannot be
+ * checked here, and a newer runner may know it.
+ */
+export function effortLevelFor(
+  agent: string | null,
+  model: string | null,
+  requested: unknown,
+): SessionEffort | null {
+  if (!SESSION_EFFORTS.includes(requested as SessionEffort)) return null;
+  const level = requested as SessionEffort;
+  if (!agent || !isCodingAgentId(agent)) return level;
+  return effortFor(agent, model)?.levels.includes(level) ? level : null;
 }

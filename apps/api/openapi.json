@@ -14849,7 +14849,7 @@
           },
           "effort": {
             "type": "string",
-            "enum": ["minimal", "low", "medium", "high", "max", null],
+            "enum": ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra", null],
             "nullable": true,
             "description": "How hard the agent may think. Null leaves the agent its own default."
           }
@@ -15142,7 +15142,7 @@
               },
               "effort": {
                 "type": "string",
-                "enum": ["minimal", "low", "medium", "high", "max"]
+                "enum": ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"]
               }
             }
           },
@@ -15843,7 +15843,7 @@
               },
               "effort": {
                 "type": "string",
-                "enum": ["minimal", "low", "medium", "high", "max"]
+                "enum": ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"]
               }
             },
             "default": {
@@ -16181,7 +16181,7 @@
               },
               "effort": {
                 "type": "string",
-                "enum": ["minimal", "low", "medium", "high", "max"]
+                "enum": ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"]
               }
             },
             "default": {

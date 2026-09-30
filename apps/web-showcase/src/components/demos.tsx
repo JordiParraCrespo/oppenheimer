@@ -487,16 +487,27 @@ export function AgentModelDemo() {
   return <AgentModelSelect agents={HARNESSES} value={engine} onValueChange={setEngine} />;
 }
 
+// A model's own levels, as the console passes them: the stops are the caller's.
+const EFFORT_LEVELS = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'xhigh', label: 'Extra high' },
+  { value: 'max', label: 'Max' },
+] as const;
+
+type EffortLevel = (typeof EFFORT_LEVELS)[number]['value'];
+
 export function EffortDemo({ bare }: { bare?: boolean }) {
-  const [effort, setEffort] = React.useState('medium');
+  const [effort, setEffort] = React.useState<EffortLevel>('medium');
   if (bare) {
     return (
       <div className="w-60">
-        <EffortSlider value={effort} onValueChange={setEffort} />
+        <EffortSlider stops={EFFORT_LEVELS} value={effort} onValueChange={setEffort} />
       </div>
     );
   }
-  return <EffortPicker value={effort} onValueChange={setEffort} />;
+  return <EffortPicker stops={EFFORT_LEVELS} value={effort} onValueChange={setEffort} />;
 }
 
 export function PermissionDemo({ initial = 'auto' }: { initial?: PermissionLevel }) {

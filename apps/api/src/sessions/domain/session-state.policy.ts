@@ -4,8 +4,8 @@ import type {
   SessionPermissionDto,
   SessionState,
 } from '@oppenheimer/shared';
-import { SESSION_EFFORTS, SESSION_PERMISSIONS } from '@oppenheimer/shared';
-import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
+import { SESSION_PERMISSIONS } from '@oppenheimer/shared';
+import { CODING_AGENTS, effortLevelFor, isCodingAgentId } from '@oppenheimer/shared/agents';
 
 /**
  * The fold: `(fold, event) → fold`.
@@ -235,16 +235,14 @@ function launchOf(payload: unknown): SessionLaunchFold | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const launch = (payload as { launch?: unknown }).launch;
   if (typeof launch !== 'object' || launch === null) return null;
-  const effort = stringField(launch, 'effort');
+  const agent = stringField(payload, 'agent');
+  const model = stringField(launch, 'model');
   return {
-    model: stringField(launch, 'model'),
-    permission: launchPermissionFor(
-      stringField(payload, 'agent'),
-      stringField(launch, 'permission'),
-    ),
-    effort: SESSION_EFFORTS.includes(effort as SessionEffortDto)
-      ? (effort as SessionEffortDto)
-      : null,
+    model,
+    permission: launchPermissionFor(agent, stringField(launch, 'permission')),
+    // The same rule the create applied (`effortLevelFor`), so a replay of the
+    // log records exactly what the create did.
+    effort: effortLevelFor(agent, model, stringField(launch, 'effort')),
   };
 }
 
