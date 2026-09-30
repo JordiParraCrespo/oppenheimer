@@ -31,7 +31,6 @@ export {
 } from './logging/auth-route-logging.middleware';
 export {
   CORRELATION_HEADER,
-  isValidCorrelationId,
   resolveCorrelationId,
 } from './logging/correlation-id';
 export {
