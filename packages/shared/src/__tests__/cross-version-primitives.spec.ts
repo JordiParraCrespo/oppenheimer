@@ -27,7 +27,9 @@ import {
  * A literal sample of what `apps/runner/internal/host/domain/facts.go` marshals.
  * Copied from the struct's json tags rather than written to suit the schema — the
  * register body is the runner's to define, and this is the artefact both schemas
- * must accept.
+ * must accept. It is an example, not a field census: the struct's fields are
+ * pinned against the emitted schema by the runner's `TestHostFactsMatchesTheSchema`
+ * (`apps/runner/internal/link/protocol_test.go`).
  */
 const runnerFactsJson = `{
   "platform": "macos",

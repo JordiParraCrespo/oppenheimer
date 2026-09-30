@@ -14,6 +14,7 @@ const bundles = {
         year: '{{count}}y',
       },
     },
+    inbox: { greeting: 'Hello {{name}}' },
   },
   es: {
     common: {
@@ -27,6 +28,7 @@ const bundles = {
         year: '{{count}}a',
       },
     },
+    inbox: { greeting: 'Hola {{name}}' },
   },
 };
 
@@ -43,6 +45,12 @@ function service() {
 }
 
 describe('I18nService', () => {
+  it('binds a formatter to one locale so two readers cannot be mixed', () => {
+    const subject = service();
+    expect(subject.for('en').t('inbox.greeting', { name: 'Adri' })).toBe('Hello Adri');
+    expect(subject.for('es').t('inbox.greeting', { name: 'Adri' })).toBe('Hola Adri');
+  });
+
   it('renders the compact stamp from the copy tree, not from code', () => {
     const subject = service();
     // Spanish abbreviates minutes differently — which is exactly why the label

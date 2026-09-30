@@ -27,7 +27,8 @@ export class CapabilitiesService<TCapability extends string = string> {
 
   /**
    * A snapshot narrowed to the given capabilities — for surfaces that must not
-   * expose the whole registry, like the public wire response.
+   * expose the whole registry, like the public wire response. It is the only
+   * snapshot the service hands out: a caller names what it may show.
    */
   pick<TSubset extends TCapability>(names: readonly TSubset[]): CapabilityMap<TSubset> {
     return Object.fromEntries(

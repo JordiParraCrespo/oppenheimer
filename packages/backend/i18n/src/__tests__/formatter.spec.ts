@@ -28,6 +28,11 @@ describe('Formatter', () => {
     it('renders a ratio as a percentage', () => {
       expect(normalize(formatter.percent('en', 0.38))).toBe('38%');
     });
+
+    it('keeps the sign on a delta so a drop reads as a drop', () => {
+      expect(normalize(formatter.percentDelta('en', -0.38))).toBe('-38%');
+      expect(normalize(formatter.percentDelta('en', 0.12))).toBe('+12%');
+    });
   });
 
   describe('relativeParts', () => {
@@ -109,7 +114,6 @@ describe('Formatter', () => {
     });
 
     it('formats zero rather than rendering an empty cell', () => {
-      // Only null and undefined are absent; a zero amount is a value.
       expect(normalize(formatter.format('en', 0, 'currency', { currency: 'EUR' }))).toBe('€0.00');
     });
 

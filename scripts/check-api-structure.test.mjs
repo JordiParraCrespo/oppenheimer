@@ -8,6 +8,7 @@
  * rename here is a visible, deliberate change rather than a silent one.
  */
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -182,4 +183,12 @@ test('a ledger entry silences exactly its own (path, kind), and nothing else', (
 test('a ledger entry that no longer matches is itself an error', () => {
   const ledger = [{ path: 'src/widget/gone.service.ts', kind: 'service-at-module-root' }];
   assert.deepEqual(kinds(check(CONFORMING, { ledger })), ['stale-ledger-entry']);
+});
+
+test('the CLI checks apps/api against the ledger in the script, and it is current', () => {
+  const script = new URL('./check-api-structure.mjs', import.meta.url);
+  const run = spawnSync(process.execPath, [script.pathname], { encoding: 'utf8' });
+
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /API structure: \d+ modules conform/);
 });

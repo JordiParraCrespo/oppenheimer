@@ -147,7 +147,6 @@ describe('LocalStorageService', () => {
       await expect(subject.getUrl(key)).resolves.toBe(
         'https://api.example.com/uploads/avatars/user-1.png',
       );
-      // A local file has no signature to expire, so the expiry is ignored.
       await expect(subject.getUrl(key, 60)).resolves.toBe(
         'https://api.example.com/uploads/avatars/user-1.png',
       );

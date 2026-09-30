@@ -192,7 +192,6 @@ describe('host facts on the link', () => {
     }
     const parsed = protocolMessageSchema.parse(SAMPLES.heartbeat);
     if (parsed.type === 'heartbeat') {
-      // The three fields the heartbeat used to duplicate now live on `host`.
       expect(parsed).not.toHaveProperty('tools');
       expect(parsed).not.toHaveProperty('runnerVersion');
       expect(parsed.load).not.toHaveProperty('workspacesFreeBytes');

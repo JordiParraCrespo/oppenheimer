@@ -17,6 +17,20 @@ describe('coding agent catalog', () => {
     }
   });
 
+  it('names the launch command and the variable that scopes the login', () => {
+    expect(CODING_AGENTS['claude-code'].command).toBe('claude');
+    expect(CODING_AGENTS['claude-code'].configDirEnv).toBe('CLAUDE_CONFIG_DIR');
+    expect(CODING_AGENTS.codex.command).toBe('codex');
+    expect(CODING_AGENTS.codex.configDirEnv).toBe('CODEX_HOME');
+    expect(CODING_AGENTS.opencode.command).toBe('opencode');
+    // Parked: the only variable that moves OpenCode's credentials is the whole
+    // XDG data home, which is not a login scoped to one directory.
+    expect(CODING_AGENTS.opencode.configDirEnv).toBeUndefined();
+    expect(CODING_AGENTS.grok.command).toBe('grok');
+    // Moves `~/.grok`, `auth.json` included, and nothing else.
+    expect(CODING_AGENTS.grok.configDirEnv).toBe('GROK_HOME');
+  });
+
   it('maps Grok’s effort stops 1:1 onto its own levels, and Ask onto its `default` mode', () => {
     // Two product decisions, pinned so a later `--help` pass cannot slide them:
     // `--reasoning-effort` has all five names, so no stop is shifted; and Ask

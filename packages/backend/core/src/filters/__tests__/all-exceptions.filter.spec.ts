@@ -1,6 +1,6 @@
 import type { ArgumentsHost } from '@nestjs/common';
 import { BadRequestException, ForbiddenException, HttpException, HttpStatus } from '@nestjs/common';
-import { NotFoundException } from '@oppenheimer/backend-ddd';
+import { ConflictException, NotFoundException } from '@oppenheimer/backend-ddd';
 import { ZodValidationException } from 'nestjs-zod';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -142,6 +142,10 @@ describe('AllExceptionsFilter', () => {
       detail: 'Aggregate is gone',
       type: 'https://oppenheimer.dev/errors#generic_not_found',
     });
+  });
+
+  it('surfaces a domain ConflictException as a 409', () => {
+    expect(handle(new ConflictException('Already exists')).problem().status).toBe(409);
   });
 
   it('never leaks the message of an unexpected failure', () => {

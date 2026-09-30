@@ -35,6 +35,8 @@ vi.mock('./resend-email.service', () => ({
 }));
 
 interface ProvidedFactory {
+  provide: unknown;
+  inject: unknown[];
   useFactory: (config: ConfigService) => EmailService;
 }
 
@@ -52,6 +54,17 @@ function provider(configured: string | undefined): EmailService {
 }
 
 describe('EmailModule.register', () => {
+  it('provides and exports the abstract service, built from ConfigService', () => {
+    // Consumers inject `EmailService`. Binding the concrete class instead would
+    // make every injection site depend on the deployment's provider choice.
+    const module = EmailModule.register();
+    const [provided] = (module.providers ?? []) as ProvidedFactory[];
+
+    expect(module.exports).toEqual([EmailService]);
+    expect(provided.provide).toBe(EmailService);
+    expect(provided.inject).toEqual([ConfigService]);
+  });
+
   it('selects nodemailer when configured', () => {
     provider('nodemailer');
 

@@ -26,6 +26,14 @@ describe('defineAbilitiesFromPermissions', () => {
     expect(ability.can('manage', 'all')).toBe(false);
   });
 
+  it('supports the `manage`/`all` wildcards for full access', () => {
+    const ability = defineAbilitiesFromPermissions([{ action: 'manage', subject: 'all' }]);
+
+    expect(ability.can('read', 'Article')).toBe(true);
+    expect(ability.can('delete', 'Role')).toBe(true);
+    expect(ability.can('update', 'AnythingCustom')).toBe(true);
+  });
+
   it('honours `inverted` permissions as CASL `cannot` rules', () => {
     const ability = defineAbilitiesFromPermissions([
       { action: 'manage', subject: 'all' },
