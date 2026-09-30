@@ -85,6 +85,10 @@ type Worktrees interface {
 	Ensure(ctx context.Context, repo, remote, ref string) error
 	// Add creates a worktree at path, on branch, cut from base.
 	Add(ctx context.Context, repo, path, branch, base string, newBranch bool) error
+	// Prepare makes the directory this repository's worktrees are created in
+	// and answers it, so a terminal can be started there before the worktree
+	// itself exists. Add makes it too; this is for the pane that comes first.
+	Prepare(ctx context.Context, repo string) (string, error)
 	// Remove deletes a worktree and prunes the record.
 	Remove(ctx context.Context, repo, path string, force bool) error
 	// Dirty reports uncommitted changes in a worktree.

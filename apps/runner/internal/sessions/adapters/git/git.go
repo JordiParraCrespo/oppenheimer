@@ -254,6 +254,20 @@ func (c *Client) Add(ctx context.Context, repo, path, branch, base string, newBr
 	return nil
 }
 
+// Prepare makes the directory this repository's worktrees are created in and
+// answers it. The session's terminal is started there before the worktree
+// exists, so the reader is in the pane while the clone is still running.
+func (c *Client) Prepare(ctx context.Context, repo string) (string, error) {
+	if err := domain.ValidateRepo(repo); err != nil {
+		return "", domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
+	}
+	dir := filepath.Dir(c.layout.Worktree(repo, "x"))
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", domain.ErrWorktree.WithDetail("create %s: %v", dir, err).WithCause(err)
+	}
+	return dir, nil
+}
+
 // Remove deletes a worktree and prunes git's record of it.
 func (c *Client) Remove(ctx context.Context, repo, path string, force bool) error {
 	mirror := c.layout.Mirror(repo)

@@ -144,6 +144,12 @@ type CreateInput struct {
 	// Progress, when set, hears each stage start and land, in order. It must
 	// not block.
 	Progress func(domain.StageEvent)
+	// Ready, when set, is called once the session's terminal exists — before
+	// the repository is cloned and the worktree made. It is what tells the
+	// control plane the session can be attached to, so the reader is put in
+	// front of the pane while the rest is still being built. It must not
+	// block.
+	Ready func(domain.Session)
 }
 
 // CreateImage is one picture attached to a session's first task.
@@ -258,15 +264,41 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 		return nil
 	}
 
+	// The terminal comes first, before the repository exists. A create spends
+	// its seconds on the clone and the worktree, and every one of them used to
+	// be a spinner: the pane was made last, so there was nothing to look at
+	// until everything was done. Made first, the reader is in the session at
+	// once and watches it being built, which is the whole difference between
+	// waiting and working.
+	//
+	// It starts in the directory the worktree will be made in — the worktree
+	// itself is not there yet — and the agent is sent once it is.
+	parent, err := s.worktrees.Prepare(ctx, in.Repo)
+	if err != nil {
+		return domain.Session{}, err
+	}
+	if err := s.terminals.Create(ctx, session.TmuxName(), parent, "", s.env(session)); err != nil {
+		return domain.Session{}, err
+	}
+	// A stage that fails from here leaves no pane behind: the session never
+	// became one, and a terminal nothing is running in is not a session.
+	abandon := func(err error) (domain.Session, error) {
+		_ = s.terminals.Kill(context.WithoutCancel(ctx), session.TmuxName())
+		return domain.Session{}, err
+	}
+	if in.Ready != nil {
+		in.Ready(session)
+	}
+
 	if err := run(domain.StageClone, func() error {
 		return s.worktrees.Ensure(ctx, in.Repo, in.Remote, in.fetchRef())
 	}); err != nil {
-		return domain.Session{}, err
+		return abandon(err)
 	}
 	if err := run(domain.StageWorktree, func() error {
 		return s.worktrees.Add(ctx, in.Repo, session.Worktree, session.Branch, session.BaseBranch, !in.Existing)
 	}); err != nil {
-		return domain.Session{}, err
+		return abandon(err)
 	}
 	session.State = domain.StateStarting
 	if err := run(domain.StageAgent, func() error {
@@ -275,7 +307,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 			return err
 		}
 		defer s.holdLaunch(ctx, session.Agent)()
-		if err := s.terminals.Create(ctx, session.TmuxName(), session.Worktree, launch.CommandLine(session.Agent), s.env(session)); err != nil {
+		if err := s.terminals.SendKeys(ctx, session.TmuxName(), enterWorktree(session.Worktree, launch.CommandLine(session.Agent))); err != nil {
 			s.discardImages(session.ID)
 			return err
 		}
@@ -283,9 +315,28 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 	}); err != nil {
 		// Leave the worktree: it is on disk, it is the user's, and a
 		// half-created session they can see beats one that vanished.
-		return domain.Session{}, err
+		return abandon(err)
 	}
 	return session, nil
+}
+
+// enterWorktree is the line window 0 is sent once the worktree is there: move
+// into it, then become the agent. `exec` is what makes the agent the pane's
+// own process rather than a child of a shell, so the window ends when the
+// agent does and every reader of a pane's process still reads the agent. A
+// session with no agent (a plain terminal) is left at its shell, in place.
+func enterWorktree(worktree, command string) string {
+	cd := "cd " + shellQuote(worktree)
+	if command == "" {
+		return cd + "\n"
+	}
+	return cd + " && exec " + command + "\n"
+}
+
+// shellQuote wraps a path for the shell window 0 runs, so a directory with a
+// space or a quote in it is one word.
+func shellQuote(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", `'\''`) + "'"
 }
 
 // checkImages refuses a first task's images before anything is made: too

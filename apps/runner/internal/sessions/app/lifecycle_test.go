@@ -77,8 +77,13 @@ func TestCreateFetchesTheMirrorAddsAWorktreeAndStartsTheAgent(t *testing.T) {
 	if branch := h.worktrees.Paths[session.Worktree]; branch != session.Branch {
 		t.Fatalf("worktree %q is on %q, want %q", session.Worktree, branch, session.Branch)
 	}
-	if dir := h.terminals.Dir(session.TmuxName()); dir != session.Worktree {
-		t.Fatalf("the tmux session runs in %q, want the worktree", dir)
+	// The pane is made before the worktree is, so it starts in the directory
+	// the worktree will be in and is sent into it once there is one.
+	if dir := h.terminals.Dir(session.TmuxName()); dir == session.Worktree {
+		t.Fatalf("the tmux session waited for the worktree to exist: %q", dir)
+	}
+	if keys := h.terminals.Screens[session.TmuxName()]; !strings.Contains(keys, "cd '"+session.Worktree+"'") {
+		t.Fatalf("window 0 was never sent into the worktree: %q", keys)
 	}
 	// Set once at creation, inherited by every window, which is how the
 	// credential helper knows which session it is answering for.
@@ -468,7 +473,9 @@ func TestCreateSavesTheFirstTasksImagesAndNamesThemInTheLaunch(t *testing.T) {
 	if got := h.images.Saved[session.ID][imageCommand+".png"]; string(got) != string(png) {
 		t.Fatal("the attached image was not saved under the session")
 	}
-	command := h.terminals.CommandOf(session.TmuxName())
+	// The agent is typed into the pane that already exists, not handed to
+	// tmux at creation, so the task and its images are in those keys.
+	command := h.terminals.Screens[session.TmuxName()]
 	if !strings.Contains(command, "fix this") || !strings.Contains(command, "/"+session.ID+"/"+imageCommand+".png") {
 		t.Fatalf("command = %q, want the task followed by the image's path", command)
 	}
