@@ -127,6 +127,12 @@ export interface CodingAgentLaunch {
   readonly conversation?: {
     readonly create?: readonly string[];
     readonly resume: readonly string[];
+    /**
+     * The resume form is a subcommand, so it leads the argv instead of
+     * following it: `codex resume --last --model …`, never `codex --model …
+     * resume --last`.
+     */
+    readonly resumeLeads?: boolean;
   };
   /**
    * Absent: this agent has no notion of approvals (a plain shell). The console
@@ -348,6 +354,17 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
+      // Codex names its own conversation, so there is nothing to pin on a
+      // create — but it does not need one. `codex resume` filters by working
+      // directory (that is what `--all` turns off, read off 0.159.2's own
+      // `--help`), and a session's worktree is its own directory that is never
+      // reused, so "the most recent conversation here" is this session's and
+      // no other's. With nothing to resume it opens a fresh Codex rather than
+      // failing, which is what a session whose agent never got going needs.
+      conversation: Object.freeze({
+        resume: Object.freeze(['resume', '--last']),
+        resumeLeads: true,
+      }),
       permission: Object.freeze({
         // Read off codex-cli 0.155.1's own `--help`. `--approve-for-me` is that
         // CLI's own name for the middle level, and is more than the flag pair it
@@ -434,6 +451,14 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
+      // OpenCode keys its sessions by project, and a project is the directory
+      // it was started in — which for a session is its own worktree, never
+      // reused — so `--continue` ("continue the last session", 1.18.33's own
+      // `--help`) reopens this session's conversation and nobody else's. Like
+      // Codex it names its own conversation, so there is nothing to pin on a
+      // create, and with nothing to continue it opens a fresh OpenCode rather
+      // than failing.
+      conversation: Object.freeze({ resume: Object.freeze(['--continue']) }),
       // Read off opencode 1.18.32's own `--help` and `debug agent build`.
       //
       // The TUI has one approval flag, `--auto` ("auto-approve permissions

@@ -133,6 +133,9 @@ function render() {
     if (launch.conversation?.resume) {
       tail.push(['conversationResume', goStrings(launch.conversation.resume)]);
     }
+    if (launch.conversation?.resumeLeads) {
+      tail.push(['conversationResumeLeads', 'true']);
+    }
     if (tail.length > 0) lines.push(...aligned(tail, '\t\t'));
     lines.push('\t},');
   }

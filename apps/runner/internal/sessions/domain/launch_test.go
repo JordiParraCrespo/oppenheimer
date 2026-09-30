@@ -181,12 +181,50 @@ func containsValue(args []string, value string) bool {
 // thing it must never do is offer an id that already exists.
 func TestResumeFallsBackForAnAgentThatCannotReopen(t *testing.T) {
 	const id = "17a57597-65a4-4517-84e3-b4010c7b8ed9"
-	resumed := Launch{Conversation: id, Prompt: "Do the thing.", Resume: true}.Args(AgentCodex)
+	resumed := Launch{Conversation: id, Prompt: "Do the thing.", Resume: true}.Args(AgentShell)
 
 	if containsValue(resumed, id) {
 		t.Fatalf("offered a conversation id to an agent that cannot take one: %v", resumed)
 	}
-	if !containsValue(resumed, "Do the thing.") {
-		t.Fatalf("dropped the first task with nothing to resume: %v", resumed)
+}
+
+// Codex and OpenCode name their own conversations, so the control plane never
+// has an id to hand them — and they do not need one: each scopes "the last
+// one" to the directory it was started in, which for a session is its own
+// worktree and never another's. A resume that waited for an id would never
+// fire for them, and the session would come back empty beside the transcript
+// it should have continued.
+func TestResumeWithoutAnIDReopensByTheWorkingDirectory(t *testing.T) {
+	for _, c := range []struct {
+		agent Agent
+		want  []string
+	}{
+		{AgentCodex, []string{"resume", "--last"}},
+		{AgentOpenCode, []string{"--continue"}},
+	} {
+		resumed := Launch{Prompt: "Do the thing.", Resume: true}.Args(c.agent)
+		for _, word := range c.want {
+			if !containsValue(resumed, word) {
+				t.Fatalf("%s did not reopen its conversation: %v", c.agent, resumed)
+			}
+		}
+		// The conversation already holds the first task.
+		if containsValue(resumed, "Do the thing.") {
+			t.Fatalf("%s replayed the first task on a resume: %v", c.agent, resumed)
+		}
+	}
+}
+
+// `codex resume` is a subcommand, so it has to be the first word: clap reads
+// `codex --model x resume --last` as a global flag followed by a subcommand it
+// no longer accepts there. Appended like a flag it would launch nothing.
+func TestASubcommandResumeLeadsTheArguments(t *testing.T) {
+	resumed := Launch{Model: "gpt-5.6-sol", Permission: "ask", Resume: true}.Args(AgentCodex)
+
+	if len(resumed) < 2 || resumed[0] != "resume" || resumed[1] != "--last" {
+		t.Fatalf("resume did not lead the argv: %v", resumed)
+	}
+	if !containsPair(resumed, "--model", "gpt-5.6-sol") {
+		t.Fatalf("a leading resume dropped the rest of the launch: %v", resumed)
 	}
 }

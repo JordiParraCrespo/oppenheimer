@@ -41,7 +41,9 @@ var launchCatalog = map[string]launchMap{
 			"high":    {"-c", "model_reasoning_effort=high"},
 			"max":     {"-c", "model_reasoning_effort=xhigh"},
 		},
-		prompt: []string{"<prompt>"},
+		prompt:                  []string{"<prompt>"},
+		conversationResume:      []string{"resume", "--last"},
+		conversationResumeLeads: true,
 	},
 	"opencode": {
 		command: "opencode",
@@ -51,7 +53,8 @@ var launchCatalog = map[string]launchMap{
 			"auto": {env: map[string]string{"OPENCODE_PERMISSION": "{\"edit\":\"allow\",\"bash\":\"ask\",\"webfetch\":\"ask\",\"websearch\":\"ask\",\"codesearch\":\"ask\"}"}},
 			"full": {argv: []string{"--auto"}},
 		},
-		prompt: []string{"--prompt", "<prompt>"},
+		prompt:             []string{"--prompt", "<prompt>"},
+		conversationResume: []string{"--continue"},
 	},
 	"grok": {
 		command: "grok",

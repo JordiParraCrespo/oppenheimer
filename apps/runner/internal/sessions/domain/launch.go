@@ -46,6 +46,9 @@ type launchMap struct {
 	// needs is a name both sides agree on: the session's id, pinned here.
 	conversationCreate []string
 	conversationResume []string
+	// The resume form is a subcommand, so it leads the argv instead of
+	// following it.
+	conversationResumeLeads bool
 }
 
 // launchLevel is one permission level: the argv appended to the command and
@@ -91,8 +94,18 @@ func (l Launch) Args(agent Agent) []string {
 	// Reopening the conversation, and then there is no first task to send: the
 	// conversation already holds it, and sending it again would ask for the
 	// same work twice.
-	if l.Resume && l.Conversation != "" && m.conversationResume != nil {
-		return append(args, substitute(m.conversationResume, "<conversation>", l.Conversation)...)
+	//
+	// An agent that names its own conversation is reopened without an id:
+	// Codex and OpenCode both scope "the last one" to the directory they were
+	// started in, and a session's worktree is its own and never reused, so
+	// that is this session's conversation. Only a resume that asks for an id
+	// needs one.
+	if l.Resume && m.conversationResume != nil && (l.Conversation != "" || !namesConversation(m.conversationResume)) {
+		resume := substitute(m.conversationResume, "<conversation>", l.Conversation)
+		if m.conversationResumeLeads {
+			return append(resume, args...)
+		}
+		return append(args, resume...)
 	}
 	// Naming it, on a create. Never on a resume: an agent that can be told an
 	// id but not reopen one would be handed an id that already exists, which
@@ -126,6 +139,17 @@ func PromptWithImages(prompt string, paths []string) string {
 		return list
 	}
 	return prompt + "\n\n" + list
+}
+
+// namesConversation reports whether a form asks for the conversation's id.
+// A form that does not is reopened by the directory it is started in.
+func namesConversation(vector []string) bool {
+	for _, word := range vector {
+		if word == "<conversation>" {
+			return true
+		}
+	}
+	return false
 }
 
 func substitute(vector []string, placeholder, value string) []string {
