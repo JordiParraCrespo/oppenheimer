@@ -135,10 +135,12 @@ export const TERMINAL_FONT = {
   fontFamily: TERMINAL_FONT_STACK.join(', '),
   fontSize: 13,
   /**
-   * 1, not `terminal.css`'s 1.55: xterm's `lineHeight` multiplies the cell
-   * rather than adding leading, so 1.55 stretches the block characters agents
-   * draw banners and progress bars from (Claude Code's mark came out
-   * elongated). 1 is the ratio the glyphs were drawn for, and Orca's default.
+   * 1.3, between the glyphs' own 1 and `terminal.css`'s 1.55. xterm's
+   * `lineHeight` multiplies the cell rather than adding leading, and the WebGL
+   * renderer draws block and box characters to fill it: at 1.55 Claude Code's
+   * mark came out elongated, and at 1 a turn's tool calls, results and prose
+   * packed into a wall the artboard's transcript never was. 1.3 gives each
+   * row air and keeps boxes joined and the mark close to its shape.
    */
-  lineHeight: 1,
+  lineHeight: 1.3,
 } as const;
