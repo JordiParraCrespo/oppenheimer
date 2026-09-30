@@ -632,3 +632,13 @@ capacity gate, the egress proxy, and the `hypervisor`, `guest` and
 8. Whether `sessions` should split into `sessions` and `workspaces` once
    the VM slice adds a second kind of place a worktree can live. Today
    git is an adapter of `sessions`; then it may want its own context.
+9. **Network work before Send.** The first session on a large repository
+   waits on the clone and the first checkout: 33–35 s for
+   microsoft/vscode, measured in note 14 of the top-level series. A later
+   session on it waits about 1 s. The composer knows the host and the
+   repository before Send. Should the store's fetch and the spare (§5) be
+   built then, and by which existing frame? The same note measured, and
+   did not decide, three things:
+   - a clone with `--filter=tree:0` instead of blobless;
+   - a parallel checkout;
+   - skipping the create's fetch when the store is fresh.
