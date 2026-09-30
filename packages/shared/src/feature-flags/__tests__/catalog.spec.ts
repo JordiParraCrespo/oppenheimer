@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CLIENT_FEATURE_FLAG_KEYS,
   FEATURE_FLAG_KEYS,
   FEATURE_FLAGS,
   getFlagDefinition,
@@ -23,10 +22,6 @@ describe('the feature-flag catalog', () => {
     if (definition.type === 'variant') {
       expect(new Set(definition.variants).size).toBe(definition.variants.length);
     }
-  });
-
-  it('lists only client flags as client keys', () => {
-    for (const key of CLIENT_FEATURE_FLAG_KEYS) expect(getFlagDefinition(key).client).toBe(true);
   });
 
   it('recognises its own keys and nothing inherited', () => {

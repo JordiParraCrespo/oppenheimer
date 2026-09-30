@@ -17,6 +17,18 @@ describe('coding agent catalog', () => {
     }
   });
 
+  it('maps Grok’s effort stops 1:1 onto its own levels, and Ask onto its `default` mode', () => {
+    // Two product decisions, pinned so a later `--help` pass cannot slide them:
+    // `--reasoning-effort` has all five names, so no stop is shifted; and Ask
+    // is `default`, not Grok's own `auto`, which approves on its own.
+    const { effort, permission } = CODING_AGENTS.grok.launch;
+    for (const stop of SESSION_EFFORTS) {
+      expect(effort?.[stop]).toEqual(['--reasoning-effort', stop]);
+    }
+    expect(permission?.ask.argv).toEqual(['--permission-mode', 'default']);
+    expect(permission?.full.argv).toEqual(['--permission-mode', 'bypassPermissions']);
+  });
+
   it('offers the plain terminal as an entry with nothing to launch', () => {
     const shell = CODING_AGENTS.shell;
     expect(shell.command).toBe('');
@@ -260,5 +272,17 @@ describe('the runner launch table', () => {
     } = require('../../../scripts/emit-agent-catalog.cjs');
     expect(readFileSync(outputPath, 'utf8')).toBe(render());
     expect(readFileSync(updatesOutputPath, 'utf8')).toBe(renderUpdates());
+  });
+});
+
+describe('agent updates', () => {
+  it('names each CLI’s unattended updater, and none where the updater asks', () => {
+    // Read off each CLI's own `--help`; the runner runs these with no terminal.
+    expect(CODING_AGENTS['claude-code'].update).toEqual(['update']);
+    expect(CODING_AGENTS.codex.update).toEqual(['update']);
+    // `opencode upgrade` asks "Install anyways?" and has no flag not to.
+    expect(CODING_AGENTS.opencode.update).toBeUndefined();
+    expect(CODING_AGENTS.grok.update).toEqual(['update']);
+    expect(CODING_AGENTS.shell.update).toBeUndefined();
   });
 });

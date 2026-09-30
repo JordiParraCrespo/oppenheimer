@@ -21,7 +21,7 @@ vi.mock('@bull-board/api', () => ({
 
 vi.mock('@bull-board/api/bullMQAdapter', () => ({
   BullMQAdapter: class {
-    constructor(queue: unknown) {
+    constructor(readonly queue: unknown) {
       BullMQAdapterCtor(queue);
     }
   },
@@ -76,7 +76,10 @@ describe('setupBullBoard', () => {
       [{ name: getQueueToken('email') }],
       [{ name: getQueueToken('webhook') }],
     ]);
-    expect(createBullBoard.mock.calls[0]?.[0]).toMatchObject({ queues: [{}, {}] });
+    const resolved = get.mock.results.map((result) => result.value);
+    const boarded = createBullBoard.mock.calls[0]?.[0].queues as { queue: unknown }[];
+    expect(boarded).toHaveLength(2);
+    for (const [index, adapter] of boarded.entries()) expect(adapter.queue).toBe(resolved[index]);
   });
 
   it('mounts the router at the same base path the adapter was given', () => {

@@ -84,8 +84,6 @@ describe('buildPinoHttpOptions', () => {
   });
 
   it('replaces an invalid inbound correlation id with a fresh UUID', () => {
-    // The request-context middleware re-validates and overwrites the response
-    // header, so only this proves pino never logs the raw inbound value.
     const genReqId = buildPinoHttpOptions().genReqId as unknown as (
       req: Record<string, unknown>,
       res: { setHeader: (name: string, value: string) => void },

@@ -3,6 +3,7 @@ import {
   defineAbilitiesFromPermissions,
   KNOWN_ACTIONS,
   KNOWN_SUBJECTS,
+  type PermissionDefinition,
   SYSTEM_ROLE_PERMISSIONS,
 } from '../../permissions/index.js';
 import {
@@ -96,6 +97,14 @@ describe('the control plane’s scopes', () => {
   it('opens a terminal with `update Session`, so that rule alone grants sessions:write', () => {
     const ability = defineAbilitiesFromPermissions([{ action: 'update', subject: 'Session' }]);
     expect(grantableScopes(ability)).toContain('sessions:write');
+  });
+
+  it.each([
+    ['a `Repository` reader', { action: 'read', subject: 'Repository' }],
+    ['an `attach Session` holder', { action: 'attach', subject: 'Session' }],
+  ])('grants %s nothing past their profile: no scope is backed by that rule', (_, rule) => {
+    const ability = defineAbilitiesFromPermissions([rule as unknown as PermissionDefinition]);
+    expect(grantableScopes(ability)).toEqual(['profile:read', 'profile:write']);
   });
 
   it('lets a person grant their own hosts, because a host is theirs and not a workspace’s', () => {
