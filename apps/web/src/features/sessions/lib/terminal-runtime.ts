@@ -15,6 +15,9 @@ import {
 } from './terminal-theme';
 import { bindUserTurns } from './user-turns';
 
+/** The platform test xterm itself uses to pick its Mac behaviour. */
+const IS_MAC = typeof navigator !== 'undefined' && /^Mac/.test(navigator.platform);
+
 export interface SessionTerminalOptions {
   /**
    * The pane shows the agent's window (window 0), whose prompt takes
@@ -84,8 +87,19 @@ export function mountSessionTerminal(
     const verdict = classifyKey(event, {
       hasSelection: term.hasSelection(),
       agentWindow: options.agentWindow ?? false,
+      mac: IS_MAC,
     });
     if (verdict.kind === 'terminal') return true;
+    if (verdict.kind === 'copy') {
+      event.preventDefault();
+      copyToClipboard(term.getSelection());
+      return false;
+    }
+    if (verdict.kind === 'selectAll') {
+      event.preventDefault();
+      term.selectAll();
+      return false;
+    }
     if (verdict.kind === 'send') {
       // Stops the keypress and the textarea input that would follow.
       event.preventDefault();
@@ -225,6 +239,16 @@ export function mountSessionTerminal(
     ptySize.dispose();
     term.dispose();
   };
+}
+
+/**
+ * The console's own copy (05): nothing selected copies nothing, and a copy
+ * the browser refuses (no clipboard API outside a secure context, a denied
+ * permission) is a no-op rather than an error.
+ */
+function copyToClipboard(text: string) {
+  if (!text || !navigator.clipboard) return;
+  navigator.clipboard.writeText(text).catch(() => {});
 }
 
 /**

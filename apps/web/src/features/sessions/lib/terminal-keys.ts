@@ -1,58 +1,102 @@
 /**
- * The console's keymap (05), decided before xterm encodes the key.
- *
- * xterm encodes every key it is given, which is right for almost all of them
- * and wrong for three: a copy the reader meant for the clipboard, a paste the
- * browser should perform, and the newline an agent's prompt wants inside a
- * message. Everything else is the program's.
+ * The console's keymap (05), decided before xterm encodes the key: the chords
+ * the console answers are rows of `CHORDS`, and every other key is the
+ * program's.
  */
 
 /**
  * - `terminal` — xterm encodes it as usual.
  * - `browser` — xterm leaves it alone and the browser's default runs (copy, paste).
  * - `send` — the console writes `data` to the PTY itself and swallows the key.
+ * - `copy` — the console copies the selection itself and swallows the key.
+ * - `selectAll` — the console selects the whole buffer and swallows the key.
  */
 export type KeyVerdict =
   | { kind: 'terminal' }
   | { kind: 'browser' }
-  | { kind: 'send'; data: string };
+  | { kind: 'send'; data: string }
+  | { kind: 'copy' }
+  | { kind: 'selectAll' };
 
 export type KeyChord = Pick<
   KeyboardEvent,
   'type' | 'key' | 'shiftKey' | 'ctrlKey' | 'altKey' | 'metaKey'
 >;
 
+export interface KeyContext {
+  hasSelection: boolean;
+  agentWindow: boolean;
+  mac: boolean;
+}
+
+type Modifier = 'ctrl' | 'shift' | 'alt' | 'meta';
+
+interface ChordRow {
+  /** `mac` or `other` fences a row to one side; absent, it holds on both. */
+  platform?: 'mac' | 'other';
+  /** Exactly these modifiers are down, and no others. */
+  mods: Modifier[];
+  key: string;
+  /** The row holds only in window 0, the agent's (Shift+Enter). */
+  agentWindow?: true;
+  /** The row holds only while text is selected (Ctrl+C). */
+  selection?: true;
+  verdict: KeyVerdict;
+}
+
 const TERMINAL: KeyVerdict = { kind: 'terminal' };
 const BROWSER: KeyVerdict = { kind: 'browser' };
 
-/**
- * In the agent's window, Shift+Enter is a newline in the message rather than
- * sending it: Claude Code and Codex both read a line feed (Ctrl+J) that way,
- * and it is what their own `/terminal-setup` binds the chord to. A shell
- * window gets the chord as typed — a line feed is not what a shell or an
- * editor asked for.
- */
-const NEWLINE_IN_PROMPT = '\n';
+/** 05's chords, first match wins. */
+const CHORDS: ChordRow[] = [
+  // A line feed is a newline in Claude Code's and Codex's prompt.
+  { mods: ['shift'], key: 'Enter', agentWindow: true, verdict: { kind: 'send', data: '\n' } },
+  { mods: ['ctrl'], key: 'c', selection: true, verdict: BROWSER },
+  { platform: 'other', mods: ['ctrl', 'shift'], key: 'c', verdict: { kind: 'copy' } },
+  { mods: ['ctrl', 'shift'], key: 'v', verdict: BROWSER },
+  { platform: 'other', mods: ['ctrl', 'shift'], key: 'a', verdict: { kind: 'selectAll' } },
+  { platform: 'mac', mods: ['meta'], key: 'a', verdict: { kind: 'selectAll' } },
+  { platform: 'mac', mods: ['meta'], key: 'ArrowLeft', verdict: { kind: 'send', data: '\x01' } },
+  { platform: 'mac', mods: ['meta'], key: 'ArrowRight', verdict: { kind: 'send', data: '\x05' } },
+  { platform: 'mac', mods: ['meta'], key: 'Backspace', verdict: { kind: 'send', data: '\x15' } },
+  { platform: 'mac', mods: ['meta'], key: 'Delete', verdict: { kind: 'send', data: '\x0b' } },
+  { mods: ['alt'], key: 'ArrowLeft', verdict: { kind: 'send', data: '\x1bb' } },
+  { mods: ['alt'], key: 'ArrowRight', verdict: { kind: 'send', data: '\x1bf' } },
+  // Ctrl+arrows are the Mac's for switching Spaces.
+  { platform: 'other', mods: ['ctrl'], key: 'ArrowLeft', verdict: { kind: 'send', data: '\x1bb' } },
+  {
+    platform: 'other',
+    mods: ['ctrl'],
+    key: 'ArrowRight',
+    verdict: { kind: 'send', data: '\x1bf' },
+  },
+  { mods: ['ctrl'], key: 'Backspace', verdict: { kind: 'send', data: '\x17' } },
+];
 
-export function classifyKey(
-  event: KeyChord,
-  context: { hasSelection: boolean; agentWindow: boolean },
-): KeyVerdict {
-  const onlyShift = event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey;
-  const onlyCtrl = event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey;
-  const ctrlShift = event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey;
-  const key = event.key.toLowerCase();
+function held(event: KeyChord): Set<Modifier> {
+  const mods = new Set<Modifier>();
+  if (event.ctrlKey) mods.add('ctrl');
+  if (event.shiftKey) mods.add('shift');
+  if (event.altKey) mods.add('alt');
+  if (event.metaKey) mods.add('meta');
+  return mods;
+}
 
-  if (event.key === 'Enter' && onlyShift && context.agentWindow) {
-    // Every phase of the key is claimed, not just keydown, or the keypress
-    // that follows still reaches xterm and submits the prompt.
-    return event.type === 'keydown' ? { kind: 'send', data: NEWLINE_IN_PROMPT } : BROWSER;
-  }
-  // Ctrl+C is an interrupt unless something is selected, in which case it is
-  // the copy a reader on Linux or Windows expects. Cmd+C on a Mac never
-  // reaches the PTY, so it needs nothing here.
-  if (onlyCtrl && key === 'c' && context.hasSelection) return BROWSER;
-  // Ctrl+Shift+V is the terminal paste on Linux; xterm would send ^V.
-  if (ctrlShift && key === 'v') return BROWSER;
-  return TERMINAL;
+function matches(row: ChordRow, event: KeyChord, down: Set<Modifier>, context: KeyContext) {
+  if (row.platform && row.platform !== (context.mac ? 'mac' : 'other')) return false;
+  if (row.agentWindow && !context.agentWindow) return false;
+  if (row.selection && !context.hasSelection) return false;
+  if (row.key.toLowerCase() !== event.key.toLowerCase()) return false;
+  return row.mods.length === down.size && row.mods.every((mod) => down.has(mod));
+}
+
+export function classifyKey(event: KeyChord, context: KeyContext): KeyVerdict {
+  const down = held(event);
+  const row = CHORDS.find((candidate) => matches(candidate, event, down, context));
+  if (!row) return TERMINAL;
+  // A verdict that acts (writes the PTY, the clipboard or the selection) acts once, on
+  // keydown; the keypress and keyup of the same chord are claimed too, or
+  // xterm encodes the keypress after the console has already answered it.
+  const acts = row.verdict.kind !== 'terminal' && row.verdict.kind !== 'browser';
+  return acts && event.type !== 'keydown' ? BROWSER : row.verdict;
 }

@@ -535,3 +535,5 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   lighter terminal read as a slab on a darker page; the artboard paints the
   session's frame in the terminal colour too, so the console now does the same
   and matches it.
+- 2026-09-30: **The terminal answers the line, word and select-all chords
+  a desktop terminal does, and Ctrl+Shift+C copies off the Mac** (05).
