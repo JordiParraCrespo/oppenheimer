@@ -88,8 +88,8 @@ function isLinkElement(render: ButtonProps['render']): render is React.ReactElem
  * keeps its link role, which Base UI's button would overwrite with `role="button"`.
  *
  * `pending` disables the button, sets `aria-busy` and swaps the label for
- * `pendingLabel` when there is one ("Deleting…"). No spinner: the MVP export
- * draws none, and the progressive verb already says the request is in flight.
+ * `pendingLabel` when there is one ("Deleting…"). No spinner: the MVP
+ * export draws none, and the progressive verb already says the request is in flight.
  * It locks this button only; a sibling that must wait (the other sign-in
  * provider, Deny beside Allow) takes `disabled`.
  */
