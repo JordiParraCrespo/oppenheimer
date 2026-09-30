@@ -2,15 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppError } from '../../core/errors';
 import { CapabilitiesErrors } from '../capabilities.errors';
 
-/**
- * What the deployment can actually do, read before any session exists so the
- * login screen can hide a social button for a provider with no credentials.
- *
- * The failure semantics are the point: an error here means the API was
- * unreachable, which says nothing about what is configured. Returning an empty
- * capability set on failure would hide every provider on a deployment that has
- * them all — a login page with no way in.
- */
+// The failure rule: see `useDeploymentCapabilities` in react/capabilities.queries.ts.
 
 const api = vi.hoisted(() => ({ deploymentCapabilities: vi.fn() }));
 
@@ -22,7 +14,6 @@ function ok(data: unknown) {
 }
 
 const { CapabilitiesRepository } = await import('../capabilities.repository');
-const { CapabilitiesService } = await import('../capabilities.service');
 
 describe('CapabilitiesRepository', () => {
   let repository: InstanceType<typeof CapabilitiesRepository>;
@@ -47,8 +38,6 @@ describe('CapabilitiesRepository', () => {
   });
 
   it('passes an empty set through as a real answer', async () => {
-    // A deployment with no optional features configured genuinely reports
-    // nothing, and that is different from the failure below.
     api.deploymentCapabilities.mockResolvedValue(ok({}));
 
     await expect(repository.get()).resolves.toEqual({});
@@ -63,22 +52,5 @@ describe('CapabilitiesRepository', () => {
 
     expect(error).toBeInstanceOf(AppError);
     expect((error as AppError).code).toBe(CapabilitiesErrors.FETCH_FAILED.code);
-  });
-});
-
-describe('CapabilitiesService', () => {
-  it('reads through the repository', async () => {
-    const get = vi.fn().mockResolvedValue({ google_oauth: true });
-    const service = new CapabilitiesService({ get } as never);
-
-    await expect(service.get()).resolves.toEqual({ google_oauth: true });
-    expect(get).toHaveBeenCalled();
-  });
-
-  it('lets a failed read propagate rather than substituting a default', async () => {
-    const get = vi.fn().mockRejectedValue(new AppError(CapabilitiesErrors.FETCH_FAILED));
-    const service = new CapabilitiesService({ get } as never);
-
-    await expect(service.get()).rejects.toBeInstanceOf(AppError);
   });
 });

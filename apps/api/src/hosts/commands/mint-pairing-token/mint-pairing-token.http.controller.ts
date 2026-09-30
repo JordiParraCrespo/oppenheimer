@@ -77,8 +77,6 @@ export class MintPairingTokenHttpController {
       }),
     );
 
-    // The command wrote this row and the secret in the command below exists
-    // nowhere else, so there is nothing a follow-up read could add.
     return {
       ...this.mapper.toResponse(minted.token),
       installCommand: minted.installCommand,

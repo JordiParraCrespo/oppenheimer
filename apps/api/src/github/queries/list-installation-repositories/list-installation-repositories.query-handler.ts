@@ -15,15 +15,13 @@ import { ListInstallationRepositoriesQuery } from './list-installation-repositor
 const CACHE_TTL_SECONDS = 60;
 
 /**
- * The repository list is never stored: GitHub owns it, the installation is the
- * access control GitHub enforces, and a repository that leaves it simply stops
- * appearing here (`product/versions/mvp/03-control-plane.md`).
+ * The repository list is never stored: GitHub owns it and enforces the
+ * installation's access, so a repository that leaves it stops appearing here
+ * (`product/versions/mvp/03-control-plane.md`).
  *
- * The one-minute Redis key is this module's only answer to "what does this
- * installation cover", and it is only ever read here — the branch listing
- * resolves its one repository through GitHub rather than through a second copy
- * of this list, and the token mint never consults it at all. So it is a cache of
- * a picker's page, not a mirror that anything authorises against.
+ * The one-minute Redis key is read only here; the branch listing and the token
+ * mint go to GitHub. It is a cache of a picker's page, not a mirror anything
+ * authorises against.
  */
 @QueryHandler(ListInstallationRepositoriesQuery)
 export class ListInstallationRepositoriesQueryHandler

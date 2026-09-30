@@ -6,17 +6,12 @@ import {
 import { OrganizationErrors } from '../domain/organization.errors';
 
 /**
- * Better Auth's `ORGANIZATION_ERROR_CODES` → this module's catalog.
- *
- * Only codes whose distinction a client would act on are listed. Everything
- * else falls through to {@link fallbackFor}, which picks an entry from the HTTP
- * status — so a code added by a future Better Auth release still produces a
- * sensible, documented problem instead of an unhandled 500. The upstream code
- * survives on the problem document either way (`upstreamCode`).
- *
- * Better Auth phrases most authorization failures as
- * `YOU_ARE_NOT_ALLOWED_TO_<verb>`; rather than listing all ~25 of them, the
- * prefix is matched in {@link mapOrganizationError}.
+ * Better Auth's `ORGANIZATION_ERROR_CODES` → this module's catalog, listing
+ * only codes whose distinction a client would act on. The rest fall through to
+ * {@link fallbackFor}, which picks by HTTP status, so a code a future Better
+ * Auth adds still gets a documented problem rather than a 500; `upstreamCode`
+ * survives either way. The ~25 `YOU_ARE_NOT_ALLOWED_TO_<verb>` codes are
+ * matched by prefix in {@link mapOrganizationError}.
  */
 const BY_UPSTREAM_CODE: Readonly<Record<string, ErrorDefinition>> = {
   ORGANIZATION_NOT_FOUND: OrganizationErrors.NOT_FOUND,
@@ -57,7 +52,6 @@ const BY_UPSTREAM_CODE: Readonly<Record<string, ErrorDefinition>> = {
   TOO_MANY_ROLES: OrganizationErrors.LIMIT_REACHED,
 };
 
-/** Entry to use when the upstream code is unknown (or absent), keyed by status. */
 function fallbackFor(status: number): ErrorDefinition {
   if (status === 401) return OrganizationErrors.NOT_A_MEMBER;
   if (status === 403) return OrganizationErrors.INSUFFICIENT_ROLE;
@@ -71,8 +65,6 @@ export function mapOrganizationError({ upstreamCode, status }: BetterAuthFailure
   if (upstreamCode) {
     const known = BY_UPSTREAM_CODE[upstreamCode];
     if (known) return known;
-    // Better Auth spells authorization failures as YOU_ARE_NOT_ALLOWED_TO_<verb>
-    // — one entry covers every verb, present and future.
     if (upstreamCode.startsWith('YOU_ARE_NOT_ALLOWED_TO')) {
       return OrganizationErrors.INSUFFICIENT_ROLE;
     }
@@ -80,8 +72,4 @@ export function mapOrganizationError({ upstreamCode, status }: BetterAuthFailure
   return fallbackFor(status);
 }
 
-/**
- * Wraps an `auth.api.*` organization/team/invitation call so its failures
- * become catalog `AppError`s. Every call the module's gateways make goes through it.
- */
 export const invokeOrganizationApi = betterAuthInvoker(mapOrganizationError);

@@ -1,8 +1,6 @@
 /**
  * Source-IP allowlist matching for API tokens. Entries are plain addresses
  * (`203.0.113.7`, `2001:db8::1`) or CIDR blocks (`203.0.113.0/24`).
- *
- * Pure functions with no dependencies — the domain layer owns this rule.
  */
 
 /** Parse an IPv4 address into its four octets, or `null` if malformed. */
@@ -79,7 +77,6 @@ function toBytes(address: string): number[] | null {
   return parseIPv4(trimmed);
 }
 
-/** Does `address` fall inside the single allowlist `entry`? */
 export function matchesIpRule(entry: string, address: string): boolean {
   const segments = entry.trim().split('/');
   // A rule is `address` or `address/prefix` — anything else is malformed and

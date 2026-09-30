@@ -356,6 +356,9 @@ pnpm changeset          # Create a changeset for versioning
 ## When modifying code
 
 - Shared types/schemas go in `packages/shared`, not duplicated in apps
+- A test names the behavior it protects and the regression that breaks it,
+  lives at the owner boundary, and needs no test-only production seam;
+  auditing existing tests is `.agents/skills/test-audit/`
 - New env vars go in the root `.env.example` with a note on what they do; never
   add a per-package `.env` (see `.agents/rules/api-config.md`)
 - New API endpoints need Swagger decorators and `@RequireScopes`; without the

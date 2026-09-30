@@ -25,14 +25,6 @@ export interface RegisterHostResult {
   releaseBaseUrl: string;
 }
 
-/**
- * Turns a machine holding a registration token into a host.
- *
- * The redemption and the host's creation are one transaction, so a lost response
- * is not a lost host: the runner retries with the same key, the burn claims
- * nothing the second time, and the fingerprint it presents identifies the host
- * that already exists.
- */
 @CommandHandler(RegisterHostCommand)
 export class RegisterHostCommandHandler
   implements ICommandHandler<RegisterHostCommand, RegisterHostResult>
@@ -64,9 +56,6 @@ export class RegisterHostCommandHandler
       tokenHash,
       redeemedFromIp: command.redeemedFromIp,
       now: new Date(),
-      // Built from the row the burn claimed, so a forged token never constructs
-      // an aggregate: who the host belongs to and what it is called come back
-      // with the statement that decided it may be spent.
       host: (token) =>
         HostEntity.register(
           this.mapper.toRegisterProps({

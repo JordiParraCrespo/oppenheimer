@@ -64,9 +64,9 @@ describe('UploadAvatarCommandHandler', () => {
     );
   });
 
-  it('refreshes the cached sessions after the row is written', async () => {
-    // Better Auth caches each session with a copy of the user; the session path
-    // reads that copy, so a write behind its back must be followed by this.
+  it('saves the profile, refreshes the cached sessions, then removes the previous object', async () => {
+    // Removing first leaves a profile pointing at a deleted file if the save
+    // fails.
     const order: string[] = [];
     vi.mocked(repo.save).mockImplementation(async (entity) => {
       order.push('save');
@@ -75,11 +75,15 @@ describe('UploadAvatarCommandHandler', () => {
     sessionCache.refreshUser.mockImplementation(async () => {
       order.push('refresh');
     });
+    avatars.remove.mockImplementation(async () => {
+      order.push('remove');
+    });
 
     await service.execute(command());
 
     expect(sessionCache.refreshUser).toHaveBeenCalledWith('user-uuid');
-    expect(order).toEqual(['save', 'refresh']);
+    expect(order).toEqual(['save', 'refresh', 'remove']);
+    expect(avatars.remove).toHaveBeenCalledWith('avatars/user-uuid.jpg');
   });
 
   it('points the profile at the new key', async () => {
@@ -88,24 +92,6 @@ describe('UploadAvatarCommandHandler', () => {
     expect(avatars.store).toHaveBeenCalledWith('user-uuid', expect.any(Buffer), 'image/png', 3);
     expect(user.avatarUrl).toBe('avatars/user-uuid.png');
     expect(repo.save).toHaveBeenCalledWith(user);
-  });
-
-  it('removes the previous object only after the profile is saved', async () => {
-    // The other order leaves a profile pointing at a deleted file if the save
-    // fails.
-    const order: string[] = [];
-    repo.save = vi.fn().mockImplementation(async (entity) => {
-      order.push('save');
-      return entity;
-    });
-    avatars.remove.mockImplementation(async () => {
-      order.push('remove');
-    });
-
-    await service.execute(command());
-
-    expect(order).toEqual(['save', 'remove']);
-    expect(avatars.remove).toHaveBeenCalledWith('avatars/user-uuid.jpg');
   });
 
   it('does not delete the object it just wrote when the key is unchanged', async () => {

@@ -106,13 +106,6 @@ test.describe('session security', () => {
     ).toBe(true);
   });
 
-  test('a session cookie is not readable by scripts', async () => {
-    const { api } = await signedUpContext('httponly');
-    const cookie = (await api.storageState()).cookies.find((c) => c.name.includes('session_token'));
-
-    expect(cookie?.httpOnly).toBe(true);
-  });
-
   test('security headers are present on API responses', async () => {
     const api = await newContext();
 

@@ -32,7 +32,6 @@ export abstract class ValueObject<T> {
     return obj instanceof ValueObject;
   }
 
-  /** Structural equality check. */
   public equals(vo?: ValueObject<T>): boolean {
     if (vo === null || vo === undefined) {
       return false;
@@ -40,7 +39,6 @@ export abstract class ValueObject<T> {
     return JSON.stringify(this) === JSON.stringify(vo);
   }
 
-  /** Unpack a value object to get its raw properties. */
   public unpack(): T {
     if (this.isDomainPrimitive(this.props)) {
       return this.props.value;

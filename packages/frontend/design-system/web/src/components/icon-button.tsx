@@ -3,22 +3,6 @@ import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '../lib/utils';
 
-/**
- * IconButton — a square footprint with a pill silhouette, on the same
- * 28 / 34 / 42 ramp as Button. Icon-only, so every instance needs an
- * `aria-label`, and normally a Tooltip.
- *
- * - `ghost` (default) — muted glyph, hover wash. The attach and mic buttons in
- *   the composer, the dialog close.
- * - `quiet` — a grey quieter, for the 24px button in a list header (the
- *   sidebar's filter). `data-dirty` keeps it lit while a filter is on.
- * - `solid` — the neutral grey pill.
- * - `outline` — hairline on transparent.
- * - `primary` — the round blue send button.
- *
- * `shape="square"` swaps the pill for the 10px control radius, for buttons that
- * sit inside a field or a list header.
- */
 const iconButtonVariants = cva(
   'inline-flex shrink-0 items-center justify-center rounded-pill border border-transparent transition-[background-color,color,border-color,opacity,transform] duration-fast ease-standard outline-none select-none active:scale-[0.975] disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',
   {
@@ -64,6 +48,22 @@ type IconButtonProps = ButtonPrimitive.Props &
     'aria-label'?: string;
   };
 
+/**
+ * IconButton — a square footprint with a pill silhouette, on the same
+ * 28 / 34 / 42 ramp as Button. Icon-only, so every instance needs an
+ * `aria-label`, and normally a Tooltip.
+ *
+ * - `ghost` (default) — muted glyph, hover wash. The attach and mic buttons in
+ *   the composer, the dialog close.
+ * - `quiet` — a grey quieter, for the 24px button in a list header (the
+ *   sidebar's filter). `data-dirty` keeps it lit while a filter is on.
+ * - `solid` — the neutral grey pill.
+ * - `outline` — hairline on transparent.
+ * - `primary` — the round blue send button.
+ *
+ * `shape="square"` swaps the pill for the 10px control radius, for buttons that
+ * sit inside a field or a list header.
+ */
 function IconButton({
   className,
   variant = 'ghost',

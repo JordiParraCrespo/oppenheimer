@@ -5,7 +5,6 @@ import { RoleEntity } from './domain/role.entity';
 import { Permission } from './domain/value-objects/permission.value-object';
 import { RoleResponseDto } from './dtos/role.response.dto';
 
-/** Maps the role aggregate between its domain, persistence and response shapes. */
 @Injectable()
 export class RoleMapper implements Mapper<RoleEntity, RoleOrmEntity, RoleResponseDto> {
   toPersistence(entity: RoleEntity): RoleOrmEntity {

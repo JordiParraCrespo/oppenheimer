@@ -27,7 +27,6 @@ import {
 
 test.describe('Sessions', () => {
   test('a session is created, listed, stopped and keeps its log', async () => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const { api } = await signedUpContext('sessionowner');
 
@@ -134,7 +133,6 @@ test.describe('Sessions', () => {
    * the log, and a name derived from that task where a namer is configured.
    */
   test('the launch options and the first task survive the round trip', async () => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const { api } = await signedUpContext('sessionlaunch');
     const hostId = await pairHost(api, 'Launch box');
@@ -155,7 +153,7 @@ test.describe('Sessions', () => {
             baseBranch: 'release/2026-09',
           },
         ],
-        launch: { model: 'opus', permission: 'auto', effort: 'high' },
+        launch: { model: 'claude-opus-5-5', permission: 'auto', effort: 'high' },
         prompt: task,
       },
       failOnStatusCode: false,
@@ -163,7 +161,11 @@ test.describe('Sessions', () => {
     expect(created.status(), await created.text()).toBe(201);
     const session = await created.json();
 
-    expect(session.launch).toEqual({ model: 'opus', permission: 'auto', effort: 'high' });
+    expect(session.launch).toEqual({
+      model: 'claude-opus-5-5',
+      permission: 'auto',
+      effort: 'high',
+    });
     // Named within the create itself: the model is asked while the host is told,
     // and the response waits for its title (or the prompt's own words) rather
     // than leaving the slug for the next listing to replace.
@@ -176,7 +178,7 @@ test.describe('Sessions', () => {
     // is what a listing and a restart will read.
     const read = await api.get(`/api/v1/sessions/${session.id}`, { failOnStatusCode: false });
     expect((await read.json()).launch).toEqual({
-      model: 'opus',
+      model: 'claude-opus-5-5',
       permission: 'auto',
       effort: 'high',
     });
@@ -285,7 +287,6 @@ test.describe('Sessions', () => {
   });
 
   test('an image for an unlinked host is refused, and so is what is not an image', async () => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const { api } = await signedUpContext('sessionimage');
     const hostId = await pairHost(api, 'Image box');

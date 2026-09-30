@@ -5,8 +5,6 @@ import { PROFILE_AUTH } from '../../profile.di-tokens';
 import { ChangePasswordCommand } from './change-password.command';
 
 /**
- * Changes the caller's password.
- *
  * There is no domain step here on purpose: Better Auth owns the credential —
  * the hashing scheme, the account record, and invalidating the sessions the old
  * password minted. The handler exists so the operation is dispatched, guarded

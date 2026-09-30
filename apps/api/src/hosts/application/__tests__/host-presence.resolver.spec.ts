@@ -91,8 +91,6 @@ describe('HostPresenceResolver', () => {
     await resolver.observe('host-1', { facts }, new Date(at.getTime() + 15_000));
     await resolver.observe('host-1', { facts }, new Date(at.getTime() + 30_000));
     expect(metadata.recordVitalsIfPaired).toHaveBeenCalledTimes(3);
-    // A host never changes owner, and the owner's standing is trusted for a
-    // minute: the common beat stays one statement.
     expect(hosts.findOneByIdForMachine).toHaveBeenCalledTimes(1);
     expect(owners.findActiveOwner).toHaveBeenCalledTimes(1);
   });
@@ -135,7 +133,6 @@ describe('HostPresenceResolver', () => {
   });
 
   it('always reads the inventory on a hello, whatever this process remembers', async () => {
-    // The link may have lived on another replica since, which wrote its own.
     const { metadata, resolver } = setup({ isUnpaired: false });
     await resolver.observe('host-1', { facts });
     await resolver.observe('host-1', { facts, connectedAt: new Date() });
@@ -143,8 +140,6 @@ describe('HostPresenceResolver', () => {
   });
 
   it('refuses, without recording, a host whose owner may not act', async () => {
-    // Banned or deactivated since the link opened: the caller closes the link,
-    // and not as unpaired, because the ban can be lifted.
     const { metadata, owners, resolver } = setup({ isUnpaired: false, ownerUserId: 'jordi' });
     owners.findActiveOwner.mockResolvedValue(null);
 
@@ -160,13 +155,10 @@ describe('HostPresenceResolver', () => {
     await resolver.observe('host-1', { facts }, at);
     owners.findActiveOwner.mockResolvedValue(null);
 
-    // Trusted for a minute…
     await expect(resolver.observe('host-1', { facts }, later(30_000))).resolves.toBe('recorded');
-    // …then asked again.
     await expect(resolver.observe('host-1', { facts }, later(OWNER_RECHECK_MS))).resolves.toBe(
       'owner_refused',
     );
-    // A hello always asks.
     owners.findActiveOwner.mockResolvedValue({ id: 'jordi' });
     await resolver.observe('host-1', { facts }, later(OWNER_RECHECK_MS + 1_000));
     owners.findActiveOwner.mockResolvedValue(null);

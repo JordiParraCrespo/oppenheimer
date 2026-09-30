@@ -18,16 +18,10 @@ import { useConnectInstallationCallback } from '@/features/installations/hooks/u
 import { useStartGithubInstall } from '@/features/installations/hooks/use-start-github-install';
 
 /**
- * Onboarding step 3: install the GitHub App. One primary button that sends the
- * browser to GitHub; once the installation exists it becomes a card naming the
- * account and how many repositories it covers, with Continue below. Skippable:
- * the repo picker stays empty until it is done.
- *
- * The button mints the install state first, then leaves for GitHub with it —
- * the install happens there. What comes back is `installation_id`, `code` and
- * that `state` on the query string, which the hook below exchanges once for
- * the installation row. A callback without a state was not started here, and
- * is refused on screen rather than posted.
+ * Onboarding step 3: install the GitHub App. Skippable; the repo picker stays
+ * empty until it is done. The button mints the install state before leaving
+ * for GitHub, and `useConnectInstallationCallback` exchanges what comes back;
+ * a callback without a state is refused on screen rather than posted.
  */
 export function OnboardingGithubScreen({
   githubInstallationId,
@@ -55,14 +49,10 @@ export function OnboardingGithubScreen({
   installUrlFor: (installUrl: string) => string;
   /** The code was exchanged: the route clears the spent callback from its URL. */
   onExchanged: () => void;
-  /** Where this step sits in the flow the route is part of. */
   step: number;
   total: number;
-  /** The link the header's back renders. */
   back: ReactElement;
-  /** Continue's link, with the connected installation's id. */
   next: (installationId: string) => ReactElement;
-  /** Skip's link, for a reader who connects GitHub later. */
   skip: ReactElement;
 }) {
   const { t } = useTranslation();
@@ -107,6 +97,7 @@ export function OnboardingGithubScreen({
         total={total}
         back={{ render: back }}
         backLabel={t('onboarding.flow.back')}
+        counterLabel={t('onboarding.flow.step', { step, total })}
         title={t('onboarding.flow.github.title')}
       >
         {t('onboarding.flow.github.description')}

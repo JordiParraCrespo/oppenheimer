@@ -13,18 +13,11 @@ import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { parseRepositoryKey, toRepositoryOptions } from '../lib/session-options';
 
 /**
- * The repository chip, bound to the draft's scope.
- *
- * Four reads, all of them for this picker: the installations, their
- * repositories, whether the deployment has a GitHub App at all (the kernel's
- * capabilities read — cached and persisted, so it costs no request here) and
- * the branches of the repositories somebody has actually picked. The branches
- * are deliberately late: the API answers them live from GitHub, so a call per
- * row of a picker nobody has opened is a rate limit spent on nothing.
- *
- * "Manage repository access" is a mutation, not a link: the install URL it
- * opens carries a state minted on click (`useManageGithubAccess`), and a mint
- * that fails is shown under the chips.
+ * The repository chip, bound to the draft's scope. Branches are read only for
+ * picked repositories: the API answers them live from GitHub, so a call per
+ * row of an unopened picker spends rate limit on nothing. "Manage repository
+ * access" is a mutation, not a link, because its install URL carries a state
+ * minted on click (`useManageGithubAccess`).
  */
 export function NewSessionRepositories() {
   const { t } = useTranslation();

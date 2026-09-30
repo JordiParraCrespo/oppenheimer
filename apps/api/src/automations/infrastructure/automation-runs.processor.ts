@@ -7,7 +7,7 @@ import { DispatchAutomationRunCommand } from '../commands/dispatch-automation-ru
 import { DISPATCH_RUN_JOB } from '../database/automation-run.repository';
 
 /**
- * Dispatches runs. Each job is staged on the outbox in the transaction that
+ * Each dispatch job is staged on the outbox in the transaction that
  * created or deferred its run, so a run is never queued in the database and
  * lost on its way to Redis; BullMQ owns the retries of a dispatch that faulted.
  */

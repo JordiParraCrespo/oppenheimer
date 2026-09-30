@@ -1,17 +1,13 @@
 /**
- * Architecture fitness rules for the Domain-Driven Hexagon layout.
- * See ARCHITECTURE.md. Run with: pnpm --filter @oppenheimer/api arch
+ * Architecture fitness rules for the Domain-Driven Hexagon layout (ARCHITECTURE.md).
+ * Run with: pnpm --filter @oppenheimer/api arch
  *
- * These rules police the *direction* of dependencies. The shape of a module —
- * which directories exist and what a file in each may be called — is policed
- * by `scripts/check-api-structure.mjs` (`pnpm check:api-structure`). The two
- * are meant to be read together: the structure check says where a file lives,
- * this says what it is then allowed to know about.
+ * These police the direction of dependencies; the shape of a module (which
+ * directories exist, what a file may be called) is `scripts/check-api-structure.mjs`.
  *
- * Where a rule carries a `pathNot` exception naming specific files, that is a
- * ledger entry, not a carve-out: the file is a known violation waiting on a
- * refactor, and the comment says which. Adding a name to one of those lists
- * needs the same scrutiny as deleting the rule.
+ * A `pathNot` exception naming specific files is a ledger entry, not a carve-out: a
+ * known violation waiting on a refactor, and the comment says which. Adding a name to
+ * one of those lists needs the same scrutiny as deleting the rule.
  */
 
 /**

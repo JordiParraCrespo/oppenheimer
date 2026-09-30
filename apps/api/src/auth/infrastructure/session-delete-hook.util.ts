@@ -30,21 +30,17 @@ export interface SessionDeleteHooks {
  * The `session.delete` database hooks that keep the Redis copy from outliving
  * its row.
  *
- * `before` drops the copy of the row it is handed. That alone is complete for a
- * single revocation and for any bulk delete of up to {@link HOOK_ROW_CAP} rows,
- * but Better Auth reads at most that many rows before a bulk delete, so for a
- * user holding more (a script's bridges, a test account) `deleteUserSessions`
- * would remove every row and evict only the first hundred copies. Better Auth
- * evicts the rest itself only when its per-user index lists them, and that
- * index is a cache entry too.
+ * `before` drops the copy of the row it is handed, which covers a single
+ * revocation and any bulk delete of up to {@link HOOK_ROW_CAP} rows. Better
+ * Auth reads at most that many rows before a bulk delete, so for a user holding
+ * more, `deleteUserSessions` would evict only the first hundred copies (its
+ * own eviction relies on a per-user index that is a cache entry too).
  *
- * So the first `before` of a delete also asks Postgres for all of the user's
- * rows, which still exist at that point. At or under the cap there is nothing
- * the hook cannot see, and nothing more is done. Over it, the hook cannot tell
- * which of the other rows are going, so it drops the copy of every one: a copy
- * dropped needlessly costs its session a Postgres read, a copy left behind is a
- * revoked session that still works. The sweep is shared by every `before` of
- * the same delete and forgotten on its first `after`.
+ * So the first `before` of a delete also reads all the user's rows from
+ * Postgres. Over the cap it cannot tell which are going, so it drops every
+ * copy: a needless drop costs a Postgres read, a copy left behind is a revoked
+ * session that still works. The sweep is shared by every `before` of the same
+ * delete and forgotten on its first `after`.
  */
 export function sessionDeleteHooks(deps: SessionDeleteHookDeps): SessionDeleteHooks {
   const sweeps = new Map<string, Promise<void>>();

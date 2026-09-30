@@ -7,7 +7,7 @@ import type { AutomationRepositoryPort } from '../../database/automation.reposit
 import { AutomationErrors } from '../../domain/automations.errors';
 import { ResumeAutomationCommand } from './resume-automation.command';
 
-/** Resume: triggers listen again, and every schedule's next slot is computed from now — a paused week does not fire a burst of missed slots. */
+/** Resume: triggers listen again, and every schedule's next slot is computed from now. */
 @CommandHandler(ResumeAutomationCommand)
 export class ResumeAutomationCommandHandler
   implements ICommandHandler<ResumeAutomationCommand, AggregateID>

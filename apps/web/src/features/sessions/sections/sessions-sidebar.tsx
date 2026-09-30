@@ -34,32 +34,14 @@ const DeleteSessionDialog = lazy(() =>
 
 /**
  * The console's sidebar body: the sessions grouped by project
- * (`product/versions/mvp/05-screens.md`).
+ * (`product/versions/mvp/05-screens.md`). It holds the three reads (sessions,
+ * projects in API order, hosts for a facet's names) and only the state
+ * siblings share: the filters and settled search, the folded groups, the row
+ * whose delete is up (its dialog outlives the row) and the last failed write
+ * (a menu closes on its pick, so it shows above the list).
  *
- * The product is the list, so the list is the navigation. It is a feature
- * rather than kit because it reads product hooks; the brand row above it and
- * the account menu below it are the shell's, and the rail beside it is its
- * sibling section.
- *
- * What lives here is the three reads — the sessions (the rows), the projects
- * (the groups, in the order the API lists them) and the hosts (a facet's
- * names) — and only the state siblings share: the filters and the settled
- * search (the head sets them, the list is what they narrow), the folded
- * groups, the row whose delete is up (its dialog outlives the row) and the
- * write that failed last (a menu closes on its pick, so the failure stays on
- * screen above the list). Everything else is lower: the half-typed search is
- * the search box's, a row's menu, rename and writes are the row's, and the
- * minute clock is each group's. The head is a component that draws what it is
- * handed; each group and each row are sections, because the highlight is
- * theirs to subscribe to; New project behind the plus and Project settings
- * behind a header's cog are the console's project dialog, asked for through
- * `useConsoleDialog`.
- *
- * The filters live here rather than in the menu because this is what they
- * narrow, and in state rather than the URL because they are a view of the
- * navigation, not a destination: the console's URL is the session that is
- * open, and a filter must not change which one that is. The search box is the
- * same kind of thing, applied once typing settles — the list is already whole.
+ * Filters and search are state, not URL: the console's URL is the open
+ * session, and a filter must not change which one that is.
  */
 export function SessionsSidebar() {
   const { t } = useTranslation();
@@ -76,8 +58,7 @@ export function SessionsSidebar() {
   const [query, setQuery] = useState('');
   const [closed, setClosed] = useState<string[]>([]);
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
-  // The row write that failed last, if one did. A later write that lands
-  // clears it, and so does Dismiss.
+  // A later write that lands clears it, and so does Dismiss.
   const [failure, setFailure] = useState<Error | null>(null);
   const dialogs = useConsoleDialog();
 

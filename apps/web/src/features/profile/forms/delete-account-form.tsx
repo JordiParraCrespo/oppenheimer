@@ -8,9 +8,6 @@ import { useTranslation } from 'react-i18next';
  * The confirmation: the account's email, typed out. The same comparison the
  * API makes — case and surrounding spaces aside — is made here first, so a
  * typo reads under the field instead of as a failed request.
- *
- * The form has no buttons of its own: the confirm dialog around it submits it
- * by `id`.
  */
 function confirmationSchema(email: string, mismatch: string) {
   return deleteAccountSchema.refine(
@@ -19,6 +16,10 @@ function confirmationSchema(email: string, mismatch: string) {
   );
 }
 
+/**
+ * The form has no buttons of its own: the confirm dialog around it submits it
+ * by `id`.
+ */
 export function DeleteAccountForm({
   id,
   email,

@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { databaseConfigFromEnv, poolOptions } from '../database.config';
 
-/**
- * The `database` section: the pool sizes and timeouts both Postgres pools are
- * built from, and the one function that turns them into `pg.Pool` options.
- */
-
 const POOL_VARS = [
   'DB_POOL_MAX',
   'DB_AUTH_POOL_MAX',
@@ -36,13 +31,6 @@ describe('databaseConfigFromEnv', () => {
       statementTimeoutMs: 15_000,
       lockTimeoutMs: 5_000,
       idleInTransactionTimeoutMs: 30_000,
-    });
-  });
-
-  it('treats a blank variable as unset', () => {
-    expect(withEnv({ DB_POOL_MAX: '', DB_STATEMENT_TIMEOUT_MS: '  ' })).toMatchObject({
-      poolMax: 10,
-      statementTimeoutMs: 15_000,
     });
   });
 

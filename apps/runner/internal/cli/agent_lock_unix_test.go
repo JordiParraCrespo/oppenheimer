@@ -39,8 +39,14 @@ func TestAgentLockSerialisesUpdatersAndHoldsLaunches(t *testing.T) {
 			done <- struct{}{}
 		}()
 	}
-	time.Sleep(10 * time.Millisecond)
-	// A launch while an update holds the lock waits for it.
+	// A launch while an update holds the lock waits for it: wait until one
+	// updater is inside the lock, not a fixed sleep a loaded machine outruns.
+	for deadline := time.Now().Add(5 * time.Second); inner.running.Load() == 0; {
+		if time.Now().After(deadline) {
+			t.Fatal("no updater took the lock")
+		}
+		time.Sleep(time.Millisecond)
+	}
 	start := time.Now()
 	release := agentGate{paths: paths}.Hold(context.Background(), "claude")
 	release()

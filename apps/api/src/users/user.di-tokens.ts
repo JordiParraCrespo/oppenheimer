@@ -1,7 +1,6 @@
 /**
- * DI tokens for the users module. The repository is injected through a token so
- * application/domain code depends on the `UserRepositoryPort` abstraction, not
- * the concrete TypeORM adapter.
+ * Application code injects each port through its token, so it depends on
+ * `UserRepositoryPort`, never on the TypeORM adapter behind it.
  */
 export const USER_REPOSITORY = Symbol('USER_REPOSITORY');
 

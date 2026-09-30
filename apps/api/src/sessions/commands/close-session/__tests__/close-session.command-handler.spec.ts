@@ -1,4 +1,4 @@
-import { None, Some } from 'oxide.ts';
+import { Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import { SessionLoaderResolver } from '../../../application/session-loader.resolver';
@@ -49,13 +49,20 @@ describe('CloseSessionCommandHandler', () => {
     );
   });
 
-  const command = (sessionId = work.id) =>
-    new CloseSessionCommand({ scope: SCOPE, sessionId, acceptUnpushedWork: false });
+  const command = () =>
+    new CloseSessionCommand({ scope: SCOPE, sessionId: work.id, acceptUnpushedWork: true });
 
-  it('records the request and tells the host', async () => {
+  it('records a request, not an outcome, and tells the host what the caller accepted', async () => {
     await expect(handler.execute(command())).resolves.toEqual({ sessionId: work.id, hints: [] });
-    expect(sessions.appendEvents).toHaveBeenCalledTimes(1);
-    expect(dispatch.close).toHaveBeenCalledTimes(1);
+    // Only the host can say the close happened; the runner reads the decision.
+    expect(sessions.appendEvents).toHaveBeenCalledWith(work, [
+      expect.objectContaining({
+        kind: SESSION_EVENT_KINDS.CLOSE_REQUESTED,
+        payload: { acceptUnpushedWork: true },
+      }),
+    ]);
+    expect(dispatch.close).toHaveBeenCalledWith(work, { acceptUnpushedWork: true });
+    expect(work.isResolved).toBe(false);
   });
 
   it('is a no-op on a session that is already closed', async () => {
@@ -69,14 +76,5 @@ describe('CloseSessionCommandHandler', () => {
     await expect(handler.execute(command())).resolves.toEqual({ sessionId: work.id, hints: [] });
     expect(sessions.appendEvents).not.toHaveBeenCalled();
     expect(dispatch.close).not.toHaveBeenCalled();
-  });
-
-  it('is not found when the session is not the caller’s', async () => {
-    sessions.findOneById.mockResolvedValue(None);
-
-    await expect(handler.execute(command('missing'))).rejects.toMatchObject({
-      code: 'SESSIONS_001',
-      detail: 'No session with id missing',
-    });
   });
 });

@@ -1,7 +1,7 @@
 /**
  * The protocol version **this package describes**.
  *
- * One number, one meaning, because there were nearly three. Concretely:
+ * One number, one meaning:
  *
  * - a peer built from this package advertises `hello.protocol.max ===
  *   PROTOCOL_VERSION` — that is the contract between this constant and the

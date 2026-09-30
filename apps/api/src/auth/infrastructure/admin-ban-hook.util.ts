@@ -12,12 +12,8 @@ export interface AfterHookCall {
 /**
  * The account a successful ban or unban changed, or `null` for any other
  * call — including a ban the plugin refused (not an admin, no such user),
- * whose answer is an error rather than a result.
- *
- * The admin module's ban and unban rotate the account's delegated sessions
- * themselves, but a ban made straight through `/api/auth/admin/ban-user`
- * never reaches them; the after-hook reads this and raises the rotation for
- * both paths (a second rotation is harmless).
+ * whose answer is an error rather than a result. Why: see
+ * `RotateDelegatedSessionsCommand`.
  */
 export function standingChangeOf(call: AfterHookCall): string | null {
   if (!call.path || !STANDING_PATHS.has(call.path)) return null;

@@ -22,8 +22,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * a crash. The partial index is the guards' own lookup — the only rows that
  * matter are the claimed, undispatched ones, which is a handful at any moment.
  */
-export class AddAutomationRunClaim1791000000000 implements MigrationInterface {
-  name = 'AddAutomationRunClaim1791000000000';
+export class AddAutomationRunClaim1791000100000 implements MigrationInterface {
+  name = 'AddAutomationRunClaim1791000100000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(

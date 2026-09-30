@@ -93,11 +93,6 @@ describe('OrganizationAuthGateway', () => {
     });
   });
 
-  it('lists organizations', async () => {
-    api.listOrganizations.mockResolvedValue([orgRecord]);
-    expect(await gateway.list(headers)).toHaveLength(1);
-  });
-
   describe('getFull', () => {
     it('maps a full organization', async () => {
       api.getFullOrganization.mockResolvedValue({ ...orgRecord, members: [memberRecord] });
@@ -174,8 +169,20 @@ describe('OrganizationAuthGateway', () => {
     );
   });
 
-  it('leaves an organization', async () => {
+  // Which Better Auth method each wrapper reaches, and with the caller's
+  // session: nothing else in the suite calls `list` or `leave`.
+  it('lists the caller’s organizations with their session', async () => {
+    api.listOrganizations.mockResolvedValue([orgRecord]);
+    await gateway.list(headers);
+    const [[call]] = api.listOrganizations.mock.calls;
+    expect(call.headers.get('cookie')).toBe('session=abc');
+  });
+
+  it('leaves the named organization as the caller', async () => {
     api.leaveOrganization.mockResolvedValue(memberRecord);
-    expect((await gateway.leave(headers, 'org1')).id).toBe('m1');
+    await gateway.leave(headers, 'org1');
+    const [[call]] = api.leaveOrganization.mock.calls;
+    expect(call.body).toEqual({ organizationId: 'org1' });
+    expect(call.headers.get('cookie')).toBe('session=abc');
   });
 });

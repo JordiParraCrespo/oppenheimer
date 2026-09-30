@@ -51,13 +51,17 @@ func TestAnAckByKeySettlesTheBatch(t *testing.T) {
 	sender := &fakeSender{}
 	r := link.NewReporter("run", sender, nil)
 	r.Append("s1", "session.started", map[string]any{})
+	r.Append("s1", "agent.observed", map[string]any{"state": "idle"})
 	batch := sender.sent[0]
 	r.Ack(link.EventsAck{Type: "events.ack", BatchID: batch.BatchID, Accepted: []string{"run:1"}})
-	if r.Pending() != 0 {
-		t.Fatalf("acked batch still pending")
+	if r.Pending() != 1 {
+		t.Fatalf("pending = %d, want only the unacked batch", r.Pending())
 	}
-	// An ack for a batch nobody sent is ignored.
-	r.Ack(link.EventsAck{BatchID: "ghost", Accepted: []string{"x:1"}})
+	// An ack for a batch nobody sent settles nothing, even naming a real key.
+	r.Ack(link.EventsAck{BatchID: "ghost", Accepted: []string{"run:2"}})
+	if r.Pending() != 1 {
+		t.Fatalf("pending = %d after a ghost ack, want 1", r.Pending())
+	}
 }
 
 func TestARejectedKeyIsDroppedNotResent(t *testing.T) {
@@ -72,37 +76,17 @@ func TestARejectedKeyIsDroppedNotResent(t *testing.T) {
 	}
 }
 
-func TestUnackedBatchesAreResentAfterAReconnect(t *testing.T) {
-	sender := &fakeSender{fail: true}
-	r := link.NewReporter("run", sender, nil)
-	r.Append("s1", "session.started", map[string]any{})
-	r.Append("s1", "agent.observed", map[string]any{"state": "idle"})
-	if len(sender.sent) != 0 || r.Pending() != 2 {
-		t.Fatalf("nothing should have left while the link was down")
-	}
-	sender.mu.Lock()
-	sender.fail = false
-	sender.mu.Unlock()
-	r.Resend()
-	if len(sender.sent) != 2 {
-		t.Fatalf("resend sent %d batches, want 2", len(sender.sent))
-	}
-	keys := map[string]bool{}
-	for _, batch := range sender.sent {
-		keys[batch.Events[0].IdempotencyKey] = true
-	}
-	if !keys["run:1"] || !keys["run:2"] {
-		t.Fatalf("resent keys = %v", keys)
-	}
-}
-
-// A session's log is ordered by arrival, so a resend replays batches in the
-// order they were made — a start's `running` never lands after its `done`.
+// Unacked batches are resent after a reconnect. A session's log is ordered by
+// arrival, so a resend replays batches in the order they were made — a
+// start's `running` never lands after its `done`.
 func TestResendKeepsTheOrderTheBatchesWereMadeIn(t *testing.T) {
 	sender := &fakeSender{fail: true}
 	r := link.NewReporter("run", sender, nil)
 	for i := 0; i < 20; i++ {
 		r.Append("s1", "session.step", map[string]any{"i": i})
+	}
+	if len(sender.sent) != 0 || r.Pending() != 20 {
+		t.Fatalf("sent %d, pending %d; nothing leaves while the link is down, and nothing is lost", len(sender.sent), r.Pending())
 	}
 	sender.mu.Lock()
 	sender.fail = false

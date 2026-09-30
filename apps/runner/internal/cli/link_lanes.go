@@ -16,9 +16,8 @@ import (
 // The read loop itself never waits: pongs and the `credentials.grant` a
 // private clone is waiting on arrive on it.
 //
-// Unpairing closes them: nothing queued after that runs, and the host waits
-// for what is running to return before it stops its sessions, so a create
-// cannot start a tmux session behind the stop.
+// Unpairing closes them and waits for what is running to return before the
+// sessions are stopped (see unpaired).
 type lanes struct {
 	mu sync.Mutex
 	// closed drops work arriving after the host was unpaired.

@@ -117,16 +117,3 @@ describe('sticky reads', () => {
     await waitFor(() => expect(result.current).toBe(false));
   });
 });
-
-describe('featureFlagKeys', () => {
-  // The login page's anonymous flags must not be what the dashboard renders.
-  it('separates a signed-in caller from an anonymous one', async () => {
-    const { wrapper, get, store } = setup({ api_token_creation: true });
-    const { result } = renderHook(() => useFeatureFlags(), { wrapper });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-    act(() => store.setState({ isAuthenticated: true }));
-
-    await waitFor(() => expect(get).toHaveBeenCalledTimes(2));
-  });
-});

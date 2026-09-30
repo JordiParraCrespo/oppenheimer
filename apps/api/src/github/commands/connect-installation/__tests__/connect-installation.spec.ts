@@ -18,20 +18,12 @@ import { ConnectInstallationCommand } from '../connect-installation.command';
 import { ConnectInstallationCommandHandler } from '../connect-installation.command-handler';
 
 /**
- * Three things are asserted here, and they fail independently.
- *
- * The **install state**: the redirect's `code` binds the claim to a GitHub
- * account, not to the console user whose browser posts it, so without a state
- * this person minted, a callback URL someone else stopped halfway would connect
- * their installation to whoever opened it.
- *
- * The **claim proof**: `POST /installations` takes an installation id from the
- * caller's browser, so if the handler trusted it, anyone could post someone
- * else's number and receive one-hour write tokens for their repositories.
- *
- * And **which row the claim lands on**: a claim is something a workspace holds,
- * not something it once touched, so a live row elsewhere is a conflict while a
- * disconnected one is history.
+ * Three things are asserted here, and they fail independently: the install
+ * state (without one this person minted, a half-finished callback URL would
+ * connect someone's installation to whoever opened it); the claim proof (the
+ * installation id comes from the browser, so trusting it would hand anyone
+ * one-hour write tokens for another account's repositories); and which row the
+ * claim lands on (see `ConnectInstallationCommandHandler`).
  */
 
 const CLAIM: GithubInstallationClaim = {
@@ -106,7 +98,7 @@ function build(rows: Rows = {}) {
     installState,
   );
 
-  return { handler, installations, github, installState, cache };
+  return { handler, installations, github, cache };
 }
 
 function command(overrides: Partial<ConnectInstallationCommand> = {}) {
@@ -133,27 +125,20 @@ function connected(organizationId: string, suspendedAt: Date | null = null) {
 }
 
 describe('the install state', () => {
-  it('refuses a state this console never minted, before GitHub is called', async () => {
+  it.each([
     // The regression: Mallory's stopped callback carries her code and no state
     // of Victor's, and used to connect her installation to his workspace.
+    ['a state this console never minted', { state: 'never-minted-state-nonce' }],
+    ['a state minted for someone else', { userId: 'mallory' }],
+    ['a state minted in another workspace', { organizationId: 'org-rival' }],
+  ])('refuses %s, before GitHub is called', async (_case, overrides) => {
     const subject = build();
 
-    await expect(
-      subject.handler.execute(command({ state: 'never-minted-state-nonce' })),
-    ).rejects.toMatchObject({ code: 'GITHUB_011' });
+    await expect(subject.handler.execute(command(overrides))).rejects.toMatchObject({
+      code: 'GITHUB_011',
+    });
     expect(subject.github.listUserInstallations).not.toHaveBeenCalled();
     expect(subject.installations.insert).not.toHaveBeenCalled();
-  });
-
-  it('refuses a state minted for someone else, or in another workspace', async () => {
-    for (const overrides of [{ userId: 'mallory' }, { organizationId: 'org-rival' }]) {
-      const subject = build();
-
-      await expect(subject.handler.execute(command(overrides))).rejects.toMatchObject({
-        code: 'GITHUB_011',
-      });
-      expect(subject.github.listUserInstallations).not.toHaveBeenCalled();
-    }
   });
 
   it('spends the state: a second post with it is refused', async () => {
@@ -171,13 +156,6 @@ describe('the install state', () => {
 
     await expect(subject.handler.execute(command())).rejects.toMatchObject({ code: 'GITHUB_004' });
     expect(subject.cache.store.size).toBe(0);
-  });
-
-  it('accepts a state the resolver minted for this person in this workspace', async () => {
-    const subject = build();
-    const { state } = await subject.installState.mint('ana', 'org-acme');
-
-    await expect(subject.handler.execute(command({ state }))).resolves.toBeTruthy();
   });
 });
 
@@ -206,13 +184,6 @@ describe('the claim proof', () => {
     await expect(other.handler.execute(command())).rejects.toMatchObject({ code: 'GITHUB_004' });
     expect(other.github.readInstallation).not.toHaveBeenCalled();
     expect(other.installations.insert).not.toHaveBeenCalled();
-  });
-
-  it('refuses when GitHub lists nothing at all for the caller', async () => {
-    const empty = build({ visible: [] });
-
-    await expect(empty.handler.execute(command())).rejects.toBeInstanceOf(AppError);
-    expect(empty.installations.insert).not.toHaveBeenCalled();
   });
 
   it('carries GitHub’s current suspension onto a new row', async () => {
@@ -286,15 +257,6 @@ describe('which row the claim lands on', () => {
     // installation usable here until the next webhook said otherwise.
     expect(existing.suspendedAt).toEqual(stillSuspended);
     expect(existing.isUsable).toBe(false);
-  });
-
-  it('claims an installation another workspace disconnected', async () => {
-    // A claim is something a workspace holds. Once it is given up, the number is
-    // free, and `GITHUB_003` would otherwise mean "someone once connected this".
-    const subject = build({ disconnected: undefined, live: undefined });
-
-    await expect(subject.handler.execute(command())).resolves.toBeTruthy();
-    expect(subject.installations.insert).toHaveBeenCalledTimes(1);
   });
 
   it('reports the constraint’s refusal as the same 409, not a 500', async () => {

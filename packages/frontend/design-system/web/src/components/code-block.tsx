@@ -6,31 +6,23 @@ import * as React from 'react';
 import { cn } from '../lib/utils';
 import { Button } from './button';
 
-/**
- * CodeBlock — a command or snippet a person copies: 12.5px SF Mono, wrapped,
- * with a small secondary "Copy" that reads "Copied" for a moment. On Add host
- * two sit side by side inside Cards: the install command and the prompt for
- * an AI agent. `title` is the card-style header; `note` is a muted line under
- * the code ("Paste into Claude Code or Codex already running on that machine.").
- *
- * `dim` marks a trailing span of the code as faint (the token in the agent
- * prompt) without changing what gets copied.
- *
- * `layout="panel"` is the Add host dialog's form: a tonal 10px panel at
- * 11.5px with a header band of its own — pill `tabs` on the left (Command,
- * Agent prompt) and one small ghost Copy on the right, a hairline under it,
- * then the code at a fixed 152px so switching tabs never moves the token
- * line under it. One block, two ways to read it, one Copy: the same block
- * opens from the composer's host chip and from Settings. Without `tabs` the
- * band holds Copy alone.
- *
- * `copyLabel` and `copiedLabel` default to English because the design system
- * carries no catalog. Any app that translates must pass its own — the defaults
- * are for the showcase, not for a product screen, where leaving them is how a
- * Spanish reader ends up with an English button.
- */
 type CodeBlockTab = { value: string; label: React.ReactNode };
 
+/**
+ * CodeBlock — a command or snippet a person copies: 12.5px SF Mono, wrapped,
+ * with a small secondary "Copy" that reads "Copied" for a moment. `title` is a
+ * card-style header; `note` a muted line under the code. `dim` marks a trailing
+ * span as faint (the token in the agent prompt) without changing what is copied.
+ *
+ * `layout="panel"` is the Add host dialog's form: a tonal 10px panel at 11.5px
+ * with its own header band (pill `tabs` left, one small ghost Copy right, a
+ * hairline under it), then the code at a fixed 152px so switching tabs never
+ * moves the token line. Without `tabs` the band holds Copy alone.
+ *
+ * `copyLabel` and `copiedLabel` default to English because the design system
+ * carries no catalog: an app that translates must pass its own, or a Spanish
+ * reader gets an English button.
+ */
 function CodeBlock({
   code,
   title,

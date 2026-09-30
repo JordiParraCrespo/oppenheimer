@@ -43,9 +43,6 @@ export class FindUserByIdHttpController {
       new FindUserByIdQuery(id),
     );
 
-    // `PoliciesGuard` only checked action + subject; the default role's rule is
-    // scoped to `{ id: '${user.id}' }`, and that condition can only be tested
-    // once the row is loaded. Admins hold `manage all` and pass unconditionally.
     assertCanAccessUser(request, 'read', user);
 
     return this.mapper.toResponse(user);

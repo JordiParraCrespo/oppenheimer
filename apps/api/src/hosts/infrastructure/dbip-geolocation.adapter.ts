@@ -13,18 +13,14 @@ const UNKNOWN: IpGeolocation = {
 };
 
 /**
- * DB-IP Lite, read from `.mmdb` files on disk (`product/versions/mvp/15-host-metadata.md`).
+ * DB-IP Lite, read from `.mmdb` files on disk (`product/versions/mvp/15-host-metadata.md`):
+ * free, CC BY 4.0, no account. MaxMind GeoLite2 is the same format, so a deployment
+ * holding that licence points the same two variables at its files.
  *
- * Free, CC BY 4.0, no account: every deployment can place a network without
- * registering anywhere. MaxMind GeoLite2 is the same format, so a deployment
- * that holds that licence points the same two variables at its files.
- *
- * Offline on purpose. A lookup service would send every host's address to a
- * third party on every connect, and the answer is only ever a hint.
- *
- * Each database opens on first use and stays open; a file that is missing or
- * unreadable is logged once and read as "no answer", so a bad path costs the
- * geography, never a connect.
+ * Offline on purpose: a lookup service would send every host's address to a third
+ * party on every connect, for an answer that is only a hint. A missing or unreadable
+ * file is logged once and read as "no answer", so a bad path costs the geography,
+ * never a connect.
  */
 @Injectable()
 export class DbipGeolocationAdapter implements IpGeolocationPort {

@@ -3,9 +3,9 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { UserDeletedDomainEvent } from '../../domain/events/user-deleted.domain-event';
 
 /**
- * Reacts to user deletion. Kept intentionally small — downstream cleanup
- * (revoking sessions, purging files, analytics) hangs off this handler so the
- * deletion flow stays decoupled from those concerns.
+ * Kept intentionally small — downstream cleanup (revoking sessions, purging
+ * files, analytics) hangs off this handler so the deletion flow stays
+ * decoupled from those concerns.
  */
 @Injectable()
 export class UserDeletedDomainEventHandler {

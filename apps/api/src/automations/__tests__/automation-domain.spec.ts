@@ -108,6 +108,27 @@ describe('the automation aggregate', () => {
     });
   });
 
+  // The levels are the model's, and a run drops one its model lacks: a revision
+  // keeps only a level its agent and model offer, judged on the whole revision.
+  it('keeps only an effort the revision’s model offers', () => {
+    const entity = automation();
+    entity.change(
+      { revision: { agent: 'codex', model: 'gpt-5.6-sol', effort: 'ultra' } },
+      'user-2',
+      now,
+    );
+    expect(entity.revision.effort).toBe('ultra');
+    // Luna has no `ultra`, and the edit names only the model.
+    entity.change({ revision: { model: 'gpt-5.6-luna' } }, 'user-2', now);
+    expect(entity.revision).toMatchObject({ model: 'gpt-5.6-luna', effort: null });
+    entity.change(
+      { revision: { agent: 'claude-code', model: 'claude-haiku-4-5', effort: 'high' } },
+      'user-2',
+      now,
+    );
+    expect(entity.revision.effort).toBeNull();
+  });
+
   it('refuses a GitHub trigger on a repository the automation does not work in', () => {
     const outside = triggerFromInput(
       { source: 'github', event: 'push', repositories: [999], filter: { op: 'any' } },

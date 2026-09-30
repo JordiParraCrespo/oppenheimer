@@ -14,7 +14,7 @@ import (
 // `CREATE TABLE IF NOT EXISTS`, which is not safe at the catalog level and
 // fails with a duplicate-key error on the type name. A session advisory lock
 // held on one connection makes concurrent startup safe.
-const migrationLockKey int64 = 0x666c616d61 // "oppenheimer"
+const migrationLockKey int64 = 0x666c616d61 // "flama" in ASCII
 
 // Migrate applies every `*.sql` file in files, in filename order, that has
 // not already run for namespace. Each unapplied file runs in its own

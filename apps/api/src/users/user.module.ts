@@ -53,10 +53,6 @@ const mappers: Provider[] = [UserMapper];
 
 const repositories: Provider[] = [{ provide: USER_REPOSITORY, useClass: UserRepository }];
 
-/**
- * The auth kernel's question about a credential's owner, answered from here;
- * and the revocation a deactivated account is owed, done through Better Auth.
- */
 const ports: Provider[] = [
   { provide: CREDENTIAL_OWNER, useClass: UserCredentialOwnerAdapter },
   { provide: ACCOUNT_SESSIONS, useClass: AccountSessionsGateway },
@@ -94,9 +90,8 @@ export class UsersModule {
    * providers: [...UsersModule.contributeAccountErasure([HostAccountErasure])]
    * ```
    *
-   * The same shape as `HostsModule.contributeUsage`: the implementation is
-   * built in the injector of the module that owns the rows, so it uses that
-   * module's own repository and nothing is published application-wide.
+   * Built in the injector of the module that owns the rows, so it uses that module's own
+   * repository and nothing is published application-wide.
    */
   static contributeAccountErasure(contributions: Type<AccountErasurePort>[]): Provider[] {
     return [

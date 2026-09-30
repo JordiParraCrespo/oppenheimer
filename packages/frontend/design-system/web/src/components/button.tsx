@@ -6,38 +6,6 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 
-/**
- * Button — anything you press is a pill.
- *
- * One height ramp shared with Input and ChipSelect (28 / 34 / 42) so a row of
- * controls lines up without adjustment. Press is a `scale(.975)` over 80ms,
- * never a hue change. Disabled keeps the shape at 40% opacity.
- *
- * Variants, from the MVP screens:
- * - `primary` — the one blue per view. "Sign in", "Connect GitHub", "Start session".
- * - `secondary` — the neutral grey pill. "Resend link", "Copy", "New session" when
- *   the composer is already open.
- * - `ghost` — text only, hover wash. Toolbar and dialog dismissals.
- * - `outline` — hairline on transparent. Rare; kept for shadcn parity.
- * - `social` — the sign-in row: a lit `card` surface, hairline, 600 weight, an 18px
- *   brand glyph before the label (`BrandGlyph`). It sits on `card` rather than
- *   `control` so the providers read as the offer on the auth screens, the way the
- *   MVP artboards draw them, instead of as neutral secondary actions.
- * - `destructive` — red fill. "Stop run", "Log out" confirmations.
- *
- * It navigates, it is a `Link`; it acts, it is a `Button`. The one crossover is a
- * step's primary action that also routes ("Continue"): pass `render={<a />}` or
- * the router's link. A `render` that navigates — an `<a>`, or any element given
- * `href` or `to` — keeps its link role: Base UI's button would stamp
- * `role="button"` on it, and a reader would hear a button where there is a link.
- *
- * `pending` is the state between a press and its answer: the button is
- * disabled and `aria-busy`, and its label becomes `pendingLabel` when there is
- * one ("Deleting…"), or stays as it is. No spinner: the MVP export draws none,
- * and the verb in its progressive form already says the request is in flight.
- * It locks this button only: a sibling that must wait (the other sign-in
- * provider, Deny beside Allow) takes `disabled` while this one is pending.
- */
 const buttonVariants = cva(
   'group/button inline-flex shrink-0 items-center justify-center gap-1.5 rounded-pill border border-transparent bg-transparent font-medium whitespace-nowrap transition-[background-color,color,border-color,opacity,transform] duration-fast ease-standard outline-none select-none active:scale-[0.975] active:duration-instant disabled:pointer-events-none disabled:opacity-40 aria-disabled:pointer-events-none aria-disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',
   {
@@ -97,6 +65,34 @@ function isLinkElement(render: ButtonProps['render']): render is React.ReactElem
   return render.type === 'a' || 'href' in props || 'to' in props;
 }
 
+/**
+ * Button — anything you press is a pill.
+ *
+ * One height ramp shared with Input and ChipSelect (28 / 34 / 42) so a row of
+ * controls lines up. Press is a `scale(.975)` over 80ms, never a hue change.
+ * Disabled keeps the shape at 40% opacity.
+ *
+ * Variants:
+ * - `primary` — the one blue per view. "Sign in", "Start session".
+ * - `secondary` — the neutral grey pill. "Resend link", "Copy".
+ * - `ghost` — text only, hover wash. Toolbar and dialog dismissals.
+ * - `outline` — hairline on transparent. Rare; kept for shadcn parity.
+ * - `social` — the sign-in row: a lit `card` surface, hairline, 600 weight, an
+ *   18px `BrandGlyph` before the label. On `card` rather than `control` so the
+ *   providers read as the offer on the auth screens, as the MVP artboards draw.
+ * - `destructive` — red fill. "Stop run", "Log out" confirmations.
+ *
+ * It navigates, it is a `Link`; it acts, it is a `Button`. A step's primary
+ * action that also routes ("Continue") passes `render={<a />}` or the router's
+ * link. A `render` that navigates (an `<a>`, or anything given `href` or `to`)
+ * keeps its link role, which Base UI's button would overwrite with `role="button"`.
+ *
+ * `pending` disables the button, sets `aria-busy` and swaps the label for
+ * `pendingLabel` when there is one ("Deleting…"). No spinner: the MVP
+ * export draws none, and the progressive verb already says the request is in flight.
+ * It locks this button only; a sibling that must wait (the other sign-in
+ * provider, Deny beside Allow) takes `disabled`.
+ */
 function Button({
   className,
   variant = 'primary',

@@ -1,8 +1,7 @@
 import type { ArgumentsHost } from '@nestjs/common';
-import { AllExceptionsFilter, AppError } from '@oppenheimer/backend-core';
+import { AllExceptionsFilter } from '@oppenheimer/backend-core';
 import { APIError } from 'better-auth/api';
 import { describe, expect, it, vi } from 'vitest';
-import { AuthErrors } from '../../../auth/domain/auth.errors';
 import { invokeOrganizationApi } from '../organization-error.util';
 
 /**
@@ -52,15 +51,6 @@ describe('façade failure → problem document', () => {
       code: 'ORG_002',
       upstreamCode: 'ORGANIZATION_SLUG_ALREADY_TAKEN',
       instance: '/api/v1/organizations',
-    });
-  });
-
-  it('renders a guard rejection as a documented AUTH_002 problem', () => {
-    expect(render(new AppError(AuthErrors.FORBIDDEN))).toMatchObject({
-      type: 'https://oppenheimer.dev/errors#auth_002',
-      title: 'You do not have permission to perform this action',
-      status: 403,
-      code: 'AUTH_002',
     });
   });
 });

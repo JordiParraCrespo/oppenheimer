@@ -9,11 +9,8 @@
  * and `scripts/emit-link-protocol.cjs` writes them into
  * `apps/runner/internal/link/protocol.gen.go`.
  *
- * The handshake's `410` carries `X-Oppenheimer-Refusal: host-unpaired`, and the
- * runner treats a `410` as terminal only with that header: any proxy in front
- * of the control plane can answer `410`, and a host that took a stranger's as
- * its verdict would stop dialling for good. A `4410` needs no such proof —
- * proxies do not invent codes in the private range.
+ * The handshake's `410` is terminal only with {@link RUNNER_LINK_REFUSAL_HEADER}.
+ * A `4410` needs no such proof — proxies do not invent codes in the private range.
  *
  * "Unpaired" is a close code rather than a fourth hint because a hint rides a
  * live link, and the point of this one is that the host may not have one.

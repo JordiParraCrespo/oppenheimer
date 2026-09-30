@@ -3,8 +3,6 @@ import type { Scope } from '@oppenheimer/shared';
 import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 /**
- * Persistence model for the application-owned `api_token` table.
- *
  * Only the SHA-256 digest of a token is stored; the secret is shown once at
  * creation and is unrecoverable afterwards. `tokenHash` is unique and indexed
  * because it is the lookup key on every authenticated request.

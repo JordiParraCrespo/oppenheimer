@@ -7,16 +7,13 @@ import { ListMembersQuery } from './list-members.query';
 
 /**
  * The organization's members, narrowed the way the team table narrows them.
- *
- * The search and the role facet are part of the query, not a pass over the
- * roster afterwards: a filter the response does not carry is one no other
- * client (the CLI, an MCP tool, a CSV export) can ask for, and one applied to
- * a page on screen drops the matches on pages nobody scrolled to.
+ * Search and the role facet are part of the query: a filter the response does
+ * not carry is one no other client (CLI, MCP tool, CSV export) can ask for,
+ * and one applied to a page on screen drops matches on unscrolled pages.
  *
  * Read from Postgres rather than Better Auth's `listMembers`: the route's
- * guards (`@OrganizationScoped`, `read Member`) are what admit the caller, as
- * they are for `members/me`, and the provider's list would be one more copy of
- * the roster to narrow by hand.
+ * guards (`@OrganizationScoped`, `read Member`) admit the caller, and the
+ * provider's list would be one more roster copy to narrow by hand.
  */
 @QueryHandler(ListMembersQuery)
 export class ListMembersQueryHandler implements IQueryHandler<ListMembersQuery, Membership[]> {

@@ -8,20 +8,17 @@ import { cn } from '../lib/utils';
 
 /**
  * EditorPage — the page over the main column: the automations overview
- * (`design/version1/Routines.dc.html`, `op-rpage` and `op-rp`), and the
- * Add a host page inside Settings. The frame and nothing in it: a canvas
- * column that scrolls on its own, the measured body centred in it — `wide`
- * for a page that holds a table — and the Back pill that sits above the page
- * header. `EditorPageTop` is a first row for a page that opens on view tabs
- * and one action. What a page puts in the body is the page's. New project,
- * Project settings, Add a host from the console and the automation editor
- * are dialogs since the 2026-09-27 export, not pages.
+ * (`design/version1/Routines.dc.html`, `op-rpage` and `op-rp`) and Settings'
+ * Add a host page. The frame only: a canvas column that scrolls on its own, the
+ * measured body centred in it (`wide` for a page that holds a table), and the
+ * Back pill above the page header. `EditorPageTop` is a first row for a page
+ * that opens on view tabs and one action. New project, Project settings, the
+ * console's Add a host and the automation editor are dialogs, not pages.
  *
- * The ground is `canvas-recessed`, the grey the frames draw these pages on
- * (`op-rp` and `op-rpage` sit on the export's `--canvas`, gray-50): the run
- * history, the table and the runs list are white cards, and the selected
- * view tab is a white pill, so on the console's white canvas all three would
- * vanish. Dark lifts the card instead, where the two grounds are one.
+ * The ground is `canvas-recessed`, the export's gray-50 `--canvas`: the run
+ * history, table and runs list are white cards and the selected view tab a
+ * white pill, which would all vanish on the console's white canvas. Dark lifts
+ * the card instead, where the two grounds are one.
  *
  * `EditorPageBack` navigates, so it takes `render` for the router's link the
  * way `Link` does; on its own it is an anchor.

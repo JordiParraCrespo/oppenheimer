@@ -73,7 +73,7 @@ func Handler(hub *Hub, problems *problem.Writer, logger *slog.Logger, authorize 
 					return
 				}
 				if status == -1 {
-					// Not a close frame: a malformed message. Tell the client and stop.
+					// Not a close frame: a malformed message.
 					c.close(websocket.StatusInvalidFramePayloadData, "malformed envelope")
 				}
 				return

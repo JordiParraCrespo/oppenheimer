@@ -11,8 +11,6 @@ import { RunnerReleaseConfig } from '../../infrastructure/runner-release.config'
 import { MintPairingTokenCommand } from './mint-pairing-token.command';
 
 /**
- * What the caller gets back.
- *
  * Commands normally return only the aggregate id and the controller re-reads
  * through a query. Not here, for two reasons: the secret exists only inside this
  * handler — the row holds its digest, so no follow-up query could ever recover
@@ -27,13 +25,6 @@ export interface MintPairingTokenResult {
   agentPrompt: string;
 }
 
-/**
- * Mints a registration token and the instructions that spend it.
- *
- * The instructions are templated from deploy-owned configuration rather than
- * stored, so nothing a workspace can write ends up as a command someone pastes
- * into a terminal.
- */
 @CommandHandler(MintPairingTokenCommand)
 export class MintPairingTokenCommandHandler
   implements ICommandHandler<MintPairingTokenCommand, MintPairingTokenResult>

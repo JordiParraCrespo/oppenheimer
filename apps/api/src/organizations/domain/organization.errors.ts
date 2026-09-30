@@ -1,9 +1,6 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 /**
- * Organization / team / invitation error catalog. Surfaced as HTTP responses by
- * the global `AllExceptionsFilter` via `AppError`.
- *
  * Better Auth's organization plugin owns these tables and raises its own
  * `APIError`s with a `SCREAMING_SNAKE_CASE` code. Those codes are an upstream
  * detail: there are ~60 of them, they are grouped by the wording of the English

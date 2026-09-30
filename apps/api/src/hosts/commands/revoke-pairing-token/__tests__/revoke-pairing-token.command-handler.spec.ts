@@ -52,8 +52,6 @@ describe('RevokePairingTokenCommandHandler', () => {
     await handler.execute(command());
 
     const [saved] = vi.mocked(tokens.save).mock.calls[0];
-    // `revokedAt IS NULL` is a term of the burn, so this one column is the whole
-    // of revocation — without it a revoked token would still pair a machine.
     expect(saved.revokedAt).toBeInstanceOf(Date);
   });
 
@@ -77,7 +75,6 @@ describe('RevokePairingTokenCommandHandler', () => {
   });
 
   it('reports somebody else’s token as missing', async () => {
-    // The scoped read cannot see it, and saying more would confirm the id.
     vi.mocked(tokens.findOneById).mockResolvedValue(None);
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_002' });

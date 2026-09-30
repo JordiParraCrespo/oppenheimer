@@ -34,15 +34,12 @@ const WEEK_SECONDS = 7 * DAY_SECONDS;
 
 /**
  * Reproduces Better Auth 1.6.25's `internalAdapter.createSession` precedence
- * rather than echoing back whatever it was handed.
- *
- * That distinction is the whole point: the real implementation spreads the
- * override, then writes its **own** `expiresAt` over it — 24 hours when
- * `dontRememberMe` is set — and re-applies the override only when
- * `overrideAll` is true. A mock that returned the requested values passed
- * happily while production persisted day-long rows (issue #122), so this one
- * applies the same order of operations, including the additional-field
- * defaults (`delegated: false`) that land after the override too.
+ * rather than echoing back what it was handed: it spreads the override, writes
+ * its own `expiresAt` over it (24 hours with `dontRememberMe`), and re-applies
+ * the override only when `overrideAll` is true. An echoing mock passed while
+ * production persisted day-long rows (issue #122), so this one applies the same
+ * order, including the additional-field defaults (`delegated: false`) that land
+ * after the override.
  */
 function fakeAdapter() {
   let minted = 0;
@@ -82,7 +79,6 @@ function fakeAdapter() {
   });
 }
 
-/** An in-memory stand-in for the Redis-backed cache. */
 function fakeCache() {
   const store = new Map<string, unknown>();
   return {
@@ -251,34 +247,25 @@ describe('DelegatedSessionAdapter', () => {
   });
 
   it('still hands back the token when the sweep fails', async () => {
-    // A tidy table is not worth a failed request.
     listSessions.mockRejectedValue(new Error('database down'));
 
     await expect(service.resolveSessionToken(OPTIONS)).resolves.toBe('session-token-1');
   });
 
-  it('re-mints for the whole user after a bulk revocation', async () => {
-    // The revoked session row is gone; serving the cached token would fail
-    // every façade call until the entry expired on its own.
-    await service.resolveSessionToken(OPTIONS);
-
-    await service.invalidateForUser('user-1');
-
-    expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-2');
-    expect(createSession).toHaveBeenCalledTimes(2);
-  });
-
-  it('evicts every credential the user holds, not just one', async () => {
-    // The point of the generation stamp: no enumeration of API tokens and OAuth
-    // grants is needed to reach them all.
+  it('re-mints for every credential the user holds after a bulk revocation', async () => {
+    // The revoked session rows are gone; serving a cached token would fail
+    // every façade call until the entry expired on its own. The generation
+    // stamp reaches them all without enumerating API tokens and OAuth grants.
     await service.resolveSessionToken(OPTIONS);
     await service.resolveSessionToken({ ...OPTIONS, credentialId: 'cred-2' });
     expect(createSession).toHaveBeenCalledTimes(2);
 
     await service.invalidateForUser('user-1');
 
-    await service.resolveSessionToken(OPTIONS);
-    await service.resolveSessionToken({ ...OPTIONS, credentialId: 'cred-2' });
+    expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-3');
+    expect(await service.resolveSessionToken({ ...OPTIONS, credentialId: 'cred-2' })).toBe(
+      'session-token-4',
+    );
     expect(createSession).toHaveBeenCalledTimes(4);
   });
 
@@ -300,12 +287,19 @@ describe('DelegatedSessionAdapter', () => {
     expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-2');
   });
 
-  it('does not resurrect a retired entry when the cache read fails', async () => {
-    // Falling back to the initial generation here would serve a token a bump
-    // had already retired.
-    await service.resolveSessionToken(OPTIONS);
-    await service.invalidateForUser('user-1');
-    cache.mget.mockRejectedValue(new Error('redis down'));
+  it('does not trust an entry written while the generation could not be read', async () => {
+    // With the read failed, the adapter cannot know which generation is
+    // current. Tagging the entry with the initial generation could hand back a
+    // token a bump had already retired; it is tagged so the next read misses.
+    cache.mget.mockRejectedValueOnce(new Error('redis down'));
+    expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-1');
+    // Written, but under a tag the next successful read (no stamp stored, so
+    // the initial generation) does not match.
+    expect(cache.set).toHaveBeenCalledWith(
+      'delegated-session:cred-1',
+      { token: 'session-token-1', generation: expect.not.stringMatching(/^initial$/) },
+      expect.any(Number),
+    );
 
     expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-2');
   });
@@ -318,7 +312,6 @@ describe('DelegatedSessionAdapter', () => {
   });
 
   it('reports no token when a session cannot be minted', async () => {
-    // Callers fall back to scope-only access rather than failing the request.
     createSession.mockRejectedValue(new Error('database down'));
 
     await expect(service.resolveSessionToken(OPTIONS)).resolves.toBeNull();

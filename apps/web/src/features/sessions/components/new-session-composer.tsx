@@ -15,26 +15,18 @@ interface HeldFile {
 }
 
 /**
- * The composer of New session: the first task, the images attached to it, and
- * the foot row of controls that says how it will be run.
+ * The composer of New session. **The task's text and files live here**, the
+ * lowest component that reads them: held higher, every keystroke would
+ * re-render the host chip, the repository picker and the branch pane. They
+ * leave once, on submit.
  *
- * **The task's text and its files live here**, in the lowest component that
- * reads them. That is the point of this file existing at all: the sections
- * above hold the chips and the lists they draw, and text held up there would
- * re-render the host chip, the repository picker and the branch pane on every
- * keystroke. What leaves this component is the finished sentence and its
- * files, once.
+ * What a file *is* is the API's to judge by its bytes: a browser's label is
+ * often empty for a pasted screenshot, so a file is refused here only for size
+ * or count, with the reason under the field, never silently dropped. A paste
+ * with no image is left to the field.
  *
- * Files come from the paperclip or from pasting an image into the field. What
- * a file *is* is the API's to judge, by its bytes: a browser's label is often
- * empty for a pasted screenshot, so here a file is refused only for its size
- * or for going past the count, with the reason under the field — never
- * silently dropped. A paste that carries no image is the field's, untouched.
- *
- * `scope` is the band over the field and `tools` and `engine` are the foot
- * row's two slots — where the work happens on top, scope of action on the
- * left, who drives it on the right — and they are passed in rather than built
- * here because each is a chip bound to the New session draft's store.
+ * `scope`, `tools` and `engine` are passed in because each is a chip bound to
+ * the New session draft's store.
  */
 export function NewSessionComposer({
   onSubmit,
@@ -47,7 +39,6 @@ export function NewSessionComposer({
   onSubmit: (text: string, files: File[]) => void;
   busy?: boolean;
   disabled?: boolean;
-  /** The scope chips, in the band fused to the top of the field. */
   scope?: ReactNode;
   tools?: ReactNode;
   engine?: ReactNode;
@@ -131,8 +122,7 @@ export function NewSessionComposer({
           );
           // Deliberately not cleared. A successful submit navigates to the new
           // session and this unmounts with it; a failed one leaves the sentence
-          // and its files where their author can fix them and send again, which
-          // is the whole reason not to clear on the way out.
+          // and its files where their author can fix them and send again.
         }}
       />
       {refusal ? <FieldError className="mx-4.5">{refusal}</FieldError> : null}

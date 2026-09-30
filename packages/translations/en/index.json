@@ -487,11 +487,14 @@
       },
       "effort": {
         "label": "Effort",
+        "none": "Off",
         "minimal": "Minimal",
         "low": "Low",
         "medium": "Medium",
         "high": "High",
+        "xhigh": "Extra high",
         "max": "Max",
+        "ultra": "Ultra",
         "faster": "Faster",
         "smarter": "Smarter",
         "hint": "How long the agent may think before it answers. Higher effort costs more and takes longer."
@@ -1099,6 +1102,7 @@
   "onboarding": {
     "flow": {
       "back": "Back",
+      "step": "{{step}} of {{total}}",
       "continue": "Continue",
       "workspace": {
         "title": "Name your workspace",

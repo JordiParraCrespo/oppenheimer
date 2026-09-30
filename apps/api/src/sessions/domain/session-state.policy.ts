@@ -4,24 +4,21 @@ import type {
   SessionPermissionDto,
   SessionState,
 } from '@oppenheimer/shared';
-import { SESSION_EFFORTS, SESSION_PERMISSIONS } from '@oppenheimer/shared';
-import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
+import { SESSION_PERMISSIONS } from '@oppenheimer/shared';
+import { CODING_AGENTS, effortLevelFor, isCodingAgentId } from '@oppenheimer/shared/agents';
 
 /**
  * The fold: `(fold, event) → fold`.
  *
- * `work_session_event` is append-only and is the truth per session; the columns
- * on `work_session` are a **projection** of it, never a second truth
- * (`product/versions/mvp/03-control-plane.md`). Everything here is pure, so a
- * replay of any log rebuilds exactly the row the appends produced — which is the
- * test that the columns are genuinely derived rather than separately maintained.
+ * `work_session_event` is append-only and the truth per session; the columns on
+ * `work_session` are a **projection** of it, never a second truth
+ * (`product/versions/mvp/03-control-plane.md`). Everything here is pure, so a replay
+ * of any log rebuilds exactly the row the appends produced.
  *
- * Every input the console needs is folded here, including the ones that are not
- * the lifecycle: what the agent was last observed doing, when it entered that
- * state, the report hashes behind "finished and you have not looked", and which
- * checkout the agent was launched in. They are columns for one reason — the read
- * path must not walk a log to answer a list — and they are folded for another:
- * anything written outside `recordEvent` would be a second truth a replay
+ * Every input the console needs is folded here, lifecycle or not: the agent's last
+ * observed activity and since when, the report hashes behind "finished and you have
+ * not looked", the launch checkout. They are columns so a list never walks a log, and
+ * folded because anything written outside `recordEvent` is a second truth a replay
  * disagrees with.
  */
 
@@ -44,16 +41,13 @@ export const AGENT_OBSERVED_STATES = ['working', 'blocked', 'idle', 'done', 'unk
 export type AgentObservedState = (typeof AGENT_OBSERVED_STATES)[number];
 
 /**
- * The kinds this fold acts on. The `kind` column is a free-form string on
- * purpose: a runner newer than the control plane may log something this version
- * has never heard of, and the log must keep it. An unknown kind advances
- * `lastEventAt` and nothing else.
+ * The kinds this fold acts on. `kind` is a free-form string on purpose: a runner
+ * newer than the control plane may log a kind this version has never heard of, and
+ * the log must keep it; an unknown kind advances `lastEventAt` and nothing else.
  *
- * Every kind here has a writer. A vocabulary entry nothing writes is how the
- * fold and the routes drift, so `attach.opened` and `session.dispatch_pending`
- * are deliberately absent: the first belongs to whoever claims the ticket and
- * the second to a dispatcher that can actually fail to send, and neither exists
- * yet.
+ * Every kind here has a writer, since an unwritten entry is how the fold and the
+ * routes drift: `attach.opened` (the ticket's claimer) and `session.dispatch_pending`
+ * (a dispatcher that can fail to send) stay absent until those exist.
  */
 export const SESSION_EVENT_KINDS = {
   /** The control plane accepted the request and the session row exists. */
@@ -67,15 +61,10 @@ export const SESSION_EVENT_KINDS = {
   /** The agent and the tmux session ended; every checkout stays on disk. */
   STOPPED: 'session.stopped',
   /**
-   * Somebody asked for the session to be restarted. It moves nothing: a request is
-   * not an outcome, and the control plane claiming `open` before a host has built
-   * anything is the second truth the log exists to prevent.
-   *
-   * Stopping is recorded as the fact it is, because the control plane's decision to
-   * stop is authoritative — it will not dispatch the session again, so the session
-   * is stopped whether or not a host is listening. Closing is a request for the
-   * opposite reason: it has to push branches and remove worktrees, and it refuses
-   * on work that is not home, so only the host can say it happened.
+   * Somebody asked for a restart. It moves nothing: a request is not an outcome, and
+   * claiming `open` before a host has built anything is the second truth the log
+   * exists to prevent. Stop, by contrast, is a fact and close a request; their
+   * handlers say why.
    */
   RESTART_REQUESTED: 'session.restart_requested',
   /** Window 0 was recreated in the same worktrees after a stop or a host reboot. */
@@ -91,7 +80,6 @@ export const SESSION_EVENT_KINDS = {
    * moves on disk: a session's directory and branch never name a project.
    */
   MOVED: 'session.moved',
-  /** A repository was added to a session. */
   CHECKOUT_ADDED: 'session.checkout_added',
   /** A checkout was retired. Payload `{ checkoutId }`. The row stays; `removedAt` retires it. */
   CHECKOUT_REMOVED: 'session.checkout_removed',
@@ -108,16 +96,13 @@ export const SESSION_EVENT_KINDS = {
 export type SessionEventKind = (typeof SESSION_EVENT_KINDS)[keyof typeof SESSION_EVENT_KINDS];
 
 /**
- * How the agent was started, as the fold keeps it.
+ * How the agent was started, as the fold keeps it: a column so a restart can
+ * relaunch the session as it was launched and the console can show the engine
+ * button, neither walking a log (`product/versions/mvp/03-control-plane.md`).
  *
- * A projection like every other column here, and a column for the same reason
- * they are: a restart has to relaunch the session the way it was launched, and
- * the console shows the engine button on a session that already exists. Neither
- * can walk a log (`product/versions/mvp/03-control-plane.md`).
- *
- * `permission` is null exactly when the agent has no approvals (the blank
- * terminal). Every other session was launched at some level, and `ask` is what
- * an absent choice meant — see `launchPermissionFor`.
+ * `permission` is null exactly when the agent has no approvals (the blank terminal);
+ * any other session was launched at some level, and an absent choice meant `ask`
+ * (see `launchPermissionFor`).
  */
 export interface SessionLaunchFold {
   model: string | null;
@@ -170,7 +155,6 @@ export interface SessionFold {
   /** The agent's last report, and the last one somebody read. Equal means "seen". */
   reportHash: string | null;
   ackedReportHash: string | null;
-  /** The model, permission level and effort this session was launched with. */
   launch: SessionLaunchFold;
   /**
    * The project the session is listed under, once a move has said so. Null in a
@@ -217,15 +201,13 @@ export function launchPermissionFor(
 }
 
 /**
- * Whether a host's runner can start `agent`, from the tool names its last
- * inventory probed.
+ * Whether a host's runner can start `agent`, from the tool names its last inventory
+ * probed.
  *
- * A runner probes the command of every agent it can launch, installed or not,
- * so a missing entry is a runner built before the agent was, and it would
- * refuse `session.create` as an unknown agent. Nothing is known before the
- * first inventory (`null`), and the blank terminal launches no command, so
- * both are allowed. Whether the agent is *installed* is not asked: that stays
- * a hint, and the terminal says so.
+ * A runner probes every agent command it can launch, installed or not, so a missing
+ * entry means a runner older than the agent, which would refuse `session.create`.
+ * Before the first inventory (`null`), and for the blank terminal (no command), it is
+ * allowed. Installation is not asked: that stays a hint, and the terminal says so.
  */
 export function runnerCanStart(agent: string, probedTools: readonly string[] | null): boolean {
   if (probedTools === null || !isCodingAgentId(agent)) return true;
@@ -253,16 +235,14 @@ function launchOf(payload: unknown): SessionLaunchFold | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const launch = (payload as { launch?: unknown }).launch;
   if (typeof launch !== 'object' || launch === null) return null;
-  const effort = stringField(launch, 'effort');
+  const agent = stringField(payload, 'agent');
+  const model = stringField(launch, 'model');
   return {
-    model: stringField(launch, 'model'),
-    permission: launchPermissionFor(
-      stringField(payload, 'agent'),
-      stringField(launch, 'permission'),
-    ),
-    effort: SESSION_EFFORTS.includes(effort as SessionEffortDto)
-      ? (effort as SessionEffortDto)
-      : null,
+    model,
+    permission: launchPermissionFor(agent, stringField(launch, 'permission')),
+    // The same rule the create applied (`effortLevelFor`), so a replay of the
+    // log records exactly what the create did.
+    effort: effortLevelFor(agent, model, stringField(launch, 'effort')),
   };
 }
 
@@ -373,7 +353,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
   }
 }
 
-/** Replay a whole log. `initial` exists so a fold can resume from a stored row. */
+/** `initial` exists so a fold can resume from a stored row. */
 export function foldSessionLog(
   events: readonly SessionLogEntry[],
   initial: SessionFold = INITIAL_SESSION_FOLD,

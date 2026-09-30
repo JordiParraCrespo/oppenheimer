@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 
-/** The request/response header that carries a request's correlation id. */
 export const CORRELATION_HEADER = 'x-correlation-id';
 
 /**
@@ -10,7 +9,7 @@ export const CORRELATION_HEADER = 'x-correlation-id';
  */
 const VALID_CORRELATION_ID = /^[A-Za-z0-9._:-]{1,64}$/;
 
-export function isValidCorrelationId(value: unknown): value is string {
+function isValidCorrelationId(value: unknown): value is string {
   return typeof value === 'string' && VALID_CORRELATION_ID.test(value);
 }
 

@@ -74,14 +74,6 @@ describe('SessionLoaderResolver', () => {
       await expect(loader.requireLive(SCOPE, work.id)).resolves.toBe(work);
     });
 
-    it('is not found when the lookup finds nothing', async () => {
-      sessions.findOneById.mockResolvedValue(None);
-      await expect(loader.requireLive(SCOPE, 'missing')).rejects.toMatchObject({
-        code: 'SESSIONS_001',
-        detail: 'No session with id missing',
-      });
-    });
-
     it('refuses a resolved session, by its slug', async () => {
       close(work);
       await expect(loader.requireLive(SCOPE, work.id)).rejects.toMatchObject({

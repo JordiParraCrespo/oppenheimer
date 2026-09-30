@@ -1,4 +1,3 @@
-import { AppError } from '@oppenheimer/backend-core';
 import { describe, expect, it } from 'vitest';
 import { SessionCheckoutEntity } from '../../domain/session-checkout.entity';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
@@ -57,7 +56,9 @@ describe('SessionPlanFactory.cwdCheckoutIdFor', () => {
     const work = session();
     work.attachCheckout(checkout(work.id, '42', 'xrp-mobile'));
 
-    expect(() => factory.cwdCheckoutIdFor(work, 999)).toThrow(AppError);
+    expect(() => factory.cwdCheckoutIdFor(work, 999)).toThrow(
+      expect.objectContaining({ code: 'SESSIONS_003' }),
+    );
   });
 
   it('names the checkout of the repository the request asked for', () => {

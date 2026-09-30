@@ -4,14 +4,11 @@ import { parseEnv } from './env';
 
 /**
  * Deployment overrides of the automation limits
- * (`product/versions/mvp/16-automations-architecture.md` §Configuration). The
- * numbers themselves live in one place, the domain's `DEFAULT_PLATFORM_LIMITS`:
- * each key here, when set, replaces the platform **ceiling** of the same name
- * (the roof no workspace or automation setting exceeds), and `diskFloorBytes`
- * the free disk a host must report before it is given a run.
- *
- * **Optional, all of it**, and none has a default here: a deployment that
- * sets nothing runs on the domain's numbers, and nothing here can fail a boot.
+ * (`product/versions/mvp/16-automations-architecture.md` §Configuration). The numbers
+ * live in the domain's `DEFAULT_PLATFORM_LIMITS`: each key here, when set, replaces the
+ * platform ceiling of the same name (the roof no workspace or automation setting
+ * exceeds), and `diskFloorBytes` the free disk a host must report before it is given a
+ * run. All optional with no defaults here, so nothing here can fail a boot.
  */
 const positive = z.coerce.number().int().positive().optional();
 

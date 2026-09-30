@@ -1,6 +1,14 @@
 import { cn, ImageCarousel } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
 
+const SLIDES = [
+  { file: 'oppenheimer-portrait', key: 'portrait', position: '50% 22%' },
+  { file: 'oppenheimer-einstein', key: 'einstein', position: '50% 30%' },
+  { file: 'calutron-operators', key: 'calutron', position: '50% 50%' },
+  { file: 'oppenheimer-groves', key: 'groves', position: '50% 40%' },
+  { file: 'los-alamos-gate', key: 'gate', position: '50% 50%' },
+] as const;
+
 /**
  * The right half of the auth split: the photograph carousel from the MVP
  * screens, in a 28px frame. The frame is the artboard's box (468 by 588,
@@ -10,14 +18,6 @@ import { useTranslation } from 'react-i18next';
  * `public/imagery/`, which is why the panel is a feature section and not
  * part of the kit's layout.
  */
-const SLIDES = [
-  { file: 'oppenheimer-portrait', key: 'portrait', position: '50% 22%' },
-  { file: 'oppenheimer-einstein', key: 'einstein', position: '50% 30%' },
-  { file: 'calutron-operators', key: 'calutron', position: '50% 50%' },
-  { file: 'oppenheimer-groves', key: 'groves', position: '50% 40%' },
-  { file: 'los-alamos-gate', key: 'gate', position: '50% 50%' },
-] as const;
-
 export function AuthPanel({ className }: { className?: string }) {
   const { t } = useTranslation();
 

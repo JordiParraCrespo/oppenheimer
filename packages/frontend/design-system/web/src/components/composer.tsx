@@ -6,29 +6,6 @@ import * as React from 'react';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 
-/**
- * Composer — the prompt box, the one place on New session with real presence:
- * an 18px-radius field holding a growing textarea, then a foot row with the
- * tools. Focus takes the blue border and ring. Enter submits, Shift+Enter
- * inserts a newline; while `busy` the send button becomes a stop button in the
- * same corner.
- *
- * The foot row reads left to right as scope of action, then engine: attach
- * and `tools` (the permission level) on the left; a spacer; `engine` (the
- * agent and model, the effort) on the right; then mic and the round primary
- * send. Both slots take `ComposerToolButton`s, the 30px text triggers the
- * console's menus hang from. Attachments list under the textarea as
- * removable chips; they are never silently dropped.
- *
- * `scope` is the tabbed form on New session: the scope chips sit in a grey
- * band fused to the top of the field (control fill, 18px radii on the top
- * corners, inset 18px from each side), each chip a `ChipSelectTrigger` in
- * its `tab` variant. With a band the field is the taller one, 128px at 15px,
- * because the sentence above it has already said where the work happens and
- * the box is the whole page's presence.
- *
- * Controlled — own `value`, handle `onSubmit`.
- */
 type ComposerAttachment = { id: string; name: string };
 
 /**
@@ -55,6 +32,26 @@ const DEFAULT_COMPOSER_LABELS: ComposerLabels = {
   removeAttachment: (name) => `Remove ${name}`,
 };
 
+/**
+ * Composer — the prompt box: an 18px-radius field holding a growing textarea,
+ * then a foot row with the tools. Focus takes the blue border and ring. Enter
+ * submits, Shift+Enter inserts a newline; while `busy` the send button becomes
+ * a stop button in the same corner.
+ *
+ * The foot row reads scope of action, then engine: attach and `tools` (the
+ * permission level) on the left; a spacer; `engine` (agent, model, effort) on
+ * the right; then mic and the round primary send. Both slots take
+ * `ComposerToolButton`s. Attachments list under the textarea as removable
+ * chips; they are never silently dropped.
+ *
+ * `scope` is New session's tabbed form: the scope chips (`ChipSelectTrigger`,
+ * `tab` variant) sit in a grey band fused to the top of the field (control
+ * fill, 18px top radii, inset 18px each side). With a band the field is the
+ * taller one, 128px at 15px, because the sentence above has already said where
+ * the work happens.
+ *
+ * Controlled — own `value`, handle `onSubmit`.
+ */
 function Composer({
   value,
   onValueChange,

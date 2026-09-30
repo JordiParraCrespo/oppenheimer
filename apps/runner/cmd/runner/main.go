@@ -6,14 +6,17 @@
 //	runner install      write and start the launchd agent or systemd user unit
 //	runner uninstall    stop the service, revoke the host, erase the identity
 //	runner status       what a person needs to answer "is this host working"
+//	runner sessions     list, create, attach to and close sessions on this host
+//	runner workspaces   the workspace roots sessions are checked out under
 //	runner update       check, apply, pin or roll back a version
 //	runner agents       keep the agent CLIs (claude, codex, …) current
+//	runner credential-helper  git's credential helper, over the local socket
 //	runner selfcheck    what a staged binary must pass before it is activated
 //	runner serve        the control-plane-facing HTTP service (containers)
 //	runner version      version, commit, target
 //
-// `main` parses flags, builds a logger and dispatches. Every wiring decision
-// lives in internal/cli (the host agent) or internal/server (the service).
+// Every wiring decision lives in internal/cli (the host agent) or
+// internal/server (the service), never here.
 package main
 
 import (

@@ -21,27 +21,20 @@ import { slugify } from '@/features/organizations/lib/slugify';
 import { workspaceAddressPrefix } from '@/features/organizations/lib/workspace-address';
 
 /**
- * Onboarding step 2: name the workspace and pick its permanent address. The
- * address follows the name until the reader edits it by hand, and is checked
- * against `POST /organizations/check-slug` as they type. Continue waits for an
- * available address, then writes it before moving on — the address is only
- * really claimed once the row holds it, so leaving the step without writing
- * would let a second person take the name in between.
- *
- * Sign-up has already provisioned a workspace, named after the account with a
- * random suffix, so this step **renames** it rather than creating a second
- * one. Creating is the fallback for the one account that has none: the sign-up
- * hook is best-effort, and this step is also the recovery path.
+ * Onboarding step 2: name the workspace and pick its permanent address, which
+ * follows the name until edited by hand. Continue waits for an available
+ * address and writes it before moving on, because it is only claimed once the
+ * row holds it. Sign-up has already provisioned a workspace, so this step
+ * **renames** it; creating is the recovery path for an account the
+ * best-effort sign-up hook left with none.
  */
 export function OnboardingWorkspaceScreen({
   step,
   total,
   onClaimed,
 }: {
-  /** Where this step sits in the flow the route is part of. */
   step: number;
   total: number;
-  /** The address is claimed: the route takes the reader on. */
   onClaimed: () => void;
 }) {
   const { t } = useTranslation();
@@ -73,8 +66,7 @@ export function OnboardingWorkspaceScreen({
   // network blip. And it is decided once, on arrival, because submitting this
   // step claims the address and writes it into the cache before navigating on
   // to GitHub — a gate that kept reading would send the newcomer to the
-  // console, past the rest of the walk. Adjusting state during render is
-  // React's documented shape for "remember the first answer".
+  // console, past the rest of the walk.
   const [claimedOnArrival, setClaimedOnArrival] = useState<boolean | null>(null);
   if (claimedOnArrival === null && workspacesRead) setClaimedOnArrival(claimedAddress !== null);
 
@@ -111,6 +103,7 @@ export function OnboardingWorkspaceScreen({
         total={total}
         back={{ render: <button type="button" onClick={leave} /> }}
         backLabel={t('onboarding.flow.back')}
+        counterLabel={t('onboarding.flow.step', { step, total })}
         title={t('onboarding.flow.workspace.title')}
       >
         {t('onboarding.flow.workspace.description')}
@@ -127,8 +120,6 @@ export function OnboardingWorkspaceScreen({
             onChange={(event) =>
               edit({
                 name: event.target.value,
-                // The address follows the name until the reader takes it over,
-                // and never once it is claimed.
                 ...(addressEdited || claimedAddress
                   ? {}
                   : { address: slugify(event.target.value) }),
@@ -148,7 +139,6 @@ export function OnboardingWorkspaceScreen({
             takenLabel={t('onboarding.flow.workspace.takenLabel')}
             value={address}
             status={claimedAddress ? 'ok' : status}
-            // Permanent once claimed: the field shows it and stops taking edits.
             readOnly={Boolean(claimedAddress)}
             onChange={(event) => {
               setAddressEdited(true);
@@ -194,9 +184,6 @@ export function OnboardingWorkspaceScreen({
         size="lg"
         block
         type="button"
-        // `workspacesRead` is the guard against creating a second workspace:
-        // until the list has answered, this step does not know whether there
-        // is a row to claim.
         disabled={!workspacesRead || !addressReady || !name.trim()}
         onClick={submit}
         pending={claim.isPending}

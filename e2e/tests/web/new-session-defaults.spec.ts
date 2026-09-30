@@ -14,7 +14,6 @@ import { provisionedUser, signInAs } from '../../support/web';
  */
 test.describe('New session: project defaults', () => {
   test('applies the project defaults to the draft and the session', async ({ page }) => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const owner = await provisionedUser('projdefaults');
     // Two machines, so a default host is a choice rather than the only row.
@@ -92,7 +91,6 @@ test.describe('New session: project defaults', () => {
   });
 });
 
-/** The chips, on the project's defaults. */
 async function expectDefaults(page: Page) {
   await expect(page.getByRole('button', { name: 'Project', exact: true })).toContainText('Wallet');
   await expect(page.getByRole('button', { name: 'Host' })).toContainText('Default box');

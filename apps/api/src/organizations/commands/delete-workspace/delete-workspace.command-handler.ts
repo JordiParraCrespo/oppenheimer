@@ -4,7 +4,6 @@ import type { WorkspaceAuthPort } from '../../infrastructure/workspace-auth.port
 import { WORKSPACE_AUTH } from '../../organizations.di-tokens';
 import { DeleteWorkspaceCommand } from './delete-workspace.command';
 
-/** Deletes a workspace. */
 @CommandHandler(DeleteWorkspaceCommand)
 export class DeleteWorkspaceCommandHandler
   implements ICommandHandler<DeleteWorkspaceCommand, void>

@@ -44,12 +44,7 @@ export class Translator {
       });
   }
 
-  /** Locales that actually have a bundle, in declaration order. */
-  locales(): readonly string[] {
-    return Object.keys(this.bundles);
-  }
-
-  supports(locale: string | null | undefined): boolean {
+  private supports(locale: string | null | undefined): boolean {
     return !!locale && locale in this.bundles;
   }
 
@@ -77,8 +72,6 @@ export class Translator {
   }
 
   /**
-   * Translate `key` into `locale`.
-   *
    * Pass `count` in `vars` to select a plural form: the lookup then prefers
    * `<key>_one` / `<key>_other` (whatever `Intl.PluralRules` selects for the
    * locale) and falls back to the bare key.

@@ -60,7 +60,6 @@ export interface RegisterHostProps {
   pairingTokenId: string;
 }
 
-/** A 64-character lowercase hex digest — SHA-256 of the raw key. */
 /**
  * `<platform> <osVersion>` when the runner knew the version — `macos 15.2` —
  * the platform alone otherwise. On Linux the runner reports the distribution's
@@ -74,7 +73,6 @@ export function platformLabelOf(platform: string, osVersion: string | null | und
     : `${platform} ${osVersion}`;
 }
 
-/** The host's platform label from a fresh facts document (`platformLabelOf`). */
 export function hostPlatformOf(facts: HostFactsDto): string {
   return platformLabelOf(facts.platform, facts.osVersion);
 }
@@ -179,12 +177,10 @@ export class HostEntity extends AggregateRoot<HostProps> {
     return this.props.unpairedAt !== null;
   }
 
-  /** Is this the machine we already paired under that key? */
   hasFingerprint(fingerprint: string): boolean {
     return this.props.publicKeyFingerprint === fingerprint;
   }
 
-  /** Display-only: nothing on disk is derived from a host's name. */
   rename(name: string): void {
     const from = this.props.name;
     if (from === name) return;
@@ -202,10 +198,9 @@ export class HostEntity extends AggregateRoot<HostProps> {
   }
 
   /**
-   * Retire the host. Idempotent, because both ends can do it and neither knows
-   * whether the other already did: the console unpairs a machine it no longer
-   * trusts, and the machine itself says so when the runner is uninstalled.
-   * The row is kept either way.
+   * Idempotent, because both ends can do it and neither knows whether the other
+   * already did: the console unpairs a machine it no longer trusts, and the
+   * machine itself says so when the runner is uninstalled.
    */
   unpair(at: Date = new Date()): void {
     if (this.props.unpairedAt) return;

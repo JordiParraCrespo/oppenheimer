@@ -33,18 +33,11 @@ const commandTimeout = 10 * time.Second
 // launchCols and launchRows are the grid a session starts on, before any
 // browser has attached and said how wide it really is.
 //
-// tmux starts a detached session at 80x24, and an agent lays its turn out for
-// the terminal it is told about: a session created and left alone — which is
-// every session between "send" and the reader opening it, and every session an
-// automation runs — did its work in 80 columns, then reflowed into the 130-odd
-// the console actually shows when someone finally looked. Wrapped tables,
-// broken box drawing and a prompt stranded mid-pane, all from a size no reader
-// ever had.
-//
-// There is no right answer without a reader, so this is a plausible one: a
-// laptop-width console, which is close enough that the reflow is small and
-// wide enough that nothing an agent prints has to wrap. `window-size latest`
-// hands the window over the moment a real viewport attaches.
+// tmux's detached default is 80x24, and an agent lays its turn out for the
+// size it is told: a session nobody has opened yet (every automation's) worked
+// in 80 columns, then reflowed into the ~130 the console shows — wrapped
+// tables, broken box drawing. A laptop-width console keeps that reflow small;
+// `window-size latest` hands the window over once a real viewport attaches.
 const (
 	launchCols = 132
 	launchRows = 40
@@ -73,13 +66,10 @@ type Options struct {
 // its own chrome), mouse on, a large scrollback, and no prefix key, because
 // every keystroke in the browser belongs to the program in the terminal.
 //
-// `window-size latest` is what makes a browser's viewport the one that counts.
-// tmux sizes a window to fit *every* attached client, so one client left on
-// the 80x24 a detached session starts at pins the window there however wide
-// the reader's pane is — and the agent, which lays its turn out to the size it
-// is told, draws an 80-column block with its prompt on row 21 of 24 while the
-// browser shows a grid half as tall again. `latest` hands the window to
-// whoever resized last, which is the person actually looking at it.
+// `window-size latest` makes a browser's viewport the one that counts: tmux
+// otherwise fits a window to *every* attached client, so one left at a
+// detached session's 80x24 pins the agent's layout there however large the
+// reader's pane is. `latest` hands the window to whoever resized last.
 const Config = `set -g status off
 set -g mouse on
 set -g history-limit 50000
@@ -251,8 +241,6 @@ func (s *Server) Capture(ctx context.Context, target string) (app.Screen, error)
 	}
 	title, err := s.command(ctx, "display-message", "-p", "-t", target, "#{pane_title}")
 	if err != nil {
-		// A pane that will not report its title is not a reason to lose the
-		// screen we already have.
 		return app.Screen{Body: body}, nil //nolint:nilerr // the body is still worth classifying
 	}
 	return app.Screen{Body: body, Title: strings.TrimSpace(title)}, nil
@@ -280,12 +268,12 @@ func (s *Server) Panes(ctx context.Context) ([]app.Pane, error) {
 		}
 		return nil, domain.ErrTmuxCommand.WithDetail("tmux list-panes: %s", firstLine(out, err)).WithCause(err)
 	}
-	return ParsePanes(out), nil
+	return parsePanes(out), nil
 }
 
-// ParsePanes reads list-panes output in paneFormat. Lines it cannot read are
+// parsePanes reads list-panes output in paneFormat. Lines it cannot read are
 // skipped rather than failing the listing.
-func ParsePanes(out string) []app.Pane {
+func parsePanes(out string) []app.Pane {
 	var panes []app.Pane
 	for _, line := range strings.Split(out, "\n") {
 		fields := strings.SplitN(line, "\t", 5)

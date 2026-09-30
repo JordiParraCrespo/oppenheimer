@@ -11,8 +11,7 @@ export type CapabilityMap<TCapability extends string = string> = Record<TCapabil
  * The application declares its capability set at composition time (a factory
  * provider that reads `ConfigService`) and every consumer — startup logging,
  * health endpoints, feature guards — asks this one registry instead of
- * re-deriving presence from raw config, or worse, comparing against a
- * sentinel value.
+ * re-deriving presence from raw config.
  */
 @Injectable()
 export class CapabilitiesService<TCapability extends string = string> {
@@ -26,26 +25,15 @@ export class CapabilitiesService<TCapability extends string = string> {
     return this.capabilities[capability] === true;
   }
 
-  snapshot(): CapabilityMap<TCapability> {
-    return { ...this.capabilities };
-  }
-
   /**
    * A snapshot narrowed to the given capabilities — for surfaces that must not
-   * expose the whole registry, like the public wire response.
+   * expose the whole registry, like the public wire response. It is the only
+   * snapshot the service hands out: a caller names what it may show.
    */
   pick<TSubset extends TCapability>(names: readonly TSubset[]): CapabilityMap<TSubset> {
     return Object.fromEntries(
       names.map((name) => [name, this.has(name)]),
     ) as CapabilityMap<TSubset>;
-  }
-
-  enabled(): TCapability[] {
-    return this.names().filter((name) => this.capabilities[name]);
-  }
-
-  disabled(): TCapability[] {
-    return this.names().filter((name) => !this.capabilities[name]);
   }
 
   /** One-line summary for the startup log, e.g. `google_oauth=on, s3_storage=off`. */

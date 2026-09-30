@@ -11,11 +11,6 @@ import { RoleOrmEntity } from './role.orm-entity';
 import type { FindRolesParams, RoleRepositoryPort } from './role.repository.port';
 
 /**
- * TypeORM-backed adapter for the role aggregate. Translates between the domain
- * `RoleEntity` and the `RoleOrmEntity` persistence model via `RoleMapper` and
- * stages any collected domain events on the transactional outbox, atomically
- * with the write that raised them.
- *
  * Every write also bumps the authorization version that covers the role, in
  * the same transaction (`bumpForRole`): a role's rules are cached by version,
  * and an edit that did not move the version would leave a revoked permission
@@ -113,7 +108,6 @@ export class RoleRepository implements RoleRepositoryPort {
   }
 }
 
-/** What `bumpForRole` needs to know about a role. */
 function versioned(role: RoleEntity): { id: string; organizationId: string | null } {
   return { id: role.id as string, organizationId: role.organizationId };
 }

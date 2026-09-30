@@ -35,16 +35,13 @@ type ErrorAlertSource =
  * the sentence in the active locale and, when the server sent one, the
  * correlation id a bug report needs, in mono under it.
  *
- * Twenty-eight screens wrote the same four lines — the alert, its description,
- * `useErrorMessage`, the fallback — and each could drift from the others. Hand
- * it the raw `error` and a `fallback`, and it resolves the sentence; hand it a
- * `message` a form already resolved (its field errors marked on the fields) and
- * it draws that. Either way it renders nothing without one, so a caller writes
- * `<ErrorAlert error={mutation.error} … />` with no guard.
+ * Hand it the raw `error` and a `fallback` and it resolves the sentence, or a
+ * `message` a form already resolved. It renders nothing without one, so a
+ * caller writes `<ErrorAlert error={mutation.error} … />` with no guard.
  *
  * `title` names what failed when one alert speaks for several rows. The one
- * action is either Dismiss (`onDismiss`: wire it to `lastFailure(…).dismiss` or
- * a mutation's `reset`) or the caller's own (`action`, a terminal's Retry).
+ * action is Dismiss (`onDismiss`: `lastFailure(…).dismiss` or a mutation's
+ * `reset`) or the caller's own (`action`, a terminal's Retry).
  */
 export function ErrorAlert({
   title,
@@ -80,7 +77,7 @@ export function ErrorAlert({
     ) : null);
 
   return (
-    <Alert variant="destructive" className={className}>
+    <Alert tone="danger" className={className}>
       {title ? <AlertTitle>{title}</AlertTitle> : null}
       <AlertDescription>
         {message}

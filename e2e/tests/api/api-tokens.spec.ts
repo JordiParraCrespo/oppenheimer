@@ -34,7 +34,6 @@ async function mintToken(
   }
 }
 
-/** A context that authenticates purely with a bearer API token. */
 async function tokenContext(secret: string): Promise<APIRequestContext> {
   const { request } = await import('@playwright/test');
   return request.newContext({
@@ -117,8 +116,9 @@ test.describe('API tokens', () => {
 
   test("a user cannot list another user's tokens", async () => {
     const { api: victim } = await signedUpContext('tokenvictim');
-    await mintToken(victim, ['profile:read'], 'victim token');
+    expect((await mintToken(victim, ['profile:read'], 'victim token')).status).toBe(201);
     const { api: attacker } = await signedUpContext('tokenattacker');
+    expect((await mintToken(attacker, ['profile:read'], 'attacker token')).status).toBe(201);
 
     const response = await attacker.get('/api/v1/tokens', {
       failOnStatusCode: false,
@@ -127,10 +127,9 @@ test.describe('API tokens', () => {
     expect(response.status()).toBe(200);
     const body = await response.json();
     const rows = Array.isArray(body) ? body : (body.data ?? []);
-    expect(
-      rows.some((row: { name?: string }) => row.name === 'victim token'),
-      "the ApiToken permission is scoped to the owner, so another user's tokens must not appear",
-    ).toBe(false);
+    const names = rows.map((row: { name?: string }) => row.name);
+    expect(names).toContain('attacker token');
+    expect(names).not.toContain('victim token');
   });
 });
 

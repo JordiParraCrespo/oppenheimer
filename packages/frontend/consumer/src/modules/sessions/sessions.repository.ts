@@ -20,15 +20,10 @@ import { type SessionStartEntry, settlesStart, toStartEntry } from './session-st
 import { SessionsErrors } from './sessions.errors';
 
 /**
- * The wire shapes come from the generated client: `pnpm generate:api-client`
- * writes them from the API's own OpenAPI, so a field the API renames cannot
- * stay right here and wrong there.
- *
- * They were hand-written here once, against a single-repository session with a
- * `running | idle | stopped` state — a shape the control plane had already
- * replaced with checkouts, a derived group and a stored lifecycle. Nothing
- * noticed, because nothing called it. That is the whole argument for calling the
- * generated operations rather than composing URLs by hand.
+ * The wire shapes come from the generated client (`pnpm generate:api-client`,
+ * from the API's own OpenAPI), so a field the API renames cannot stay right
+ * here and wrong there. Call the generated operations rather than composing
+ * URLs by hand: a hand-written shape here once drifted from the API unnoticed.
  */
 
 function toCheckout(data: SessionCheckoutResponseDto): SessionCheckoutEntity {
@@ -68,8 +63,6 @@ function toEntity(data: SessionResponseDto): SessionEntity {
 }
 
 /**
- * The body `POST /sessions` takes.
- *
  * `launch` is sent only when the caller chose something: an empty object would
  * be the API's defaults spelled out by a client that did not know them, and the
  * one default that matters — the permission level — is the API's to state.
@@ -103,10 +96,8 @@ export class SessionsRepository {
    * sidebar groups, searches and filters the whole list in the browser, so a
    * page would be a list that silently ends.
    *
-   * `GET /sessions` answers the paginated envelope every list endpoint here
-   * uses — `{ data, meta }` — so the rows are read out of it rather than off the
-   * body. The list is walked **by cursor**, at the largest page the API allows,
-   * until `meta.nextCursor` is null: no page pays for an offset or a count, and a
+   * The list is walked **by cursor**, at the largest page the API allows, until
+   * `meta.nextCursor` is null: no page pays for an offset or a count, and a
    * session whose activity moves it up the list mid-walk is never read twice.
    */
   @MapApiError(SessionsErrors.FETCH_LIST_FAILED)
@@ -132,8 +123,6 @@ export class SessionsRepository {
   }
 
   /**
-   * One session.
-   *
    * The failure keeps the response's status, as every call here does, and this
    * read leans on it: the console's session route has to tell a mistyped or
    * closed session id — a 404, and a destination that will never exist — from
@@ -149,8 +138,6 @@ export class SessionsRepository {
   }
 
   /**
-   * Start a session.
-   *
    * The `Idempotency-Key` is not optional in practice and so is minted here
    * rather than asked of the caller: a session is directories, a git checkout
    * and a process on somebody's machine, and a retry after a lost response must

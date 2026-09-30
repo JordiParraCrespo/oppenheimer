@@ -4,8 +4,10 @@ import { ADMIN_AUTH } from '../../admin.di-tokens';
 import type { AdminAuthPort } from '../../infrastructure/admin-auth.port';
 import { ImpersonateUserCommand } from './impersonate-user.command';
 
-/** Starts acting as another account. Resolves to the cookies of the impersonation session —
- * about this request, so they ride back on the command; the user is read with a query. */
+/**
+ * Resolves to the cookies of the impersonation session: they are about this
+ * request, so they ride back on the command; the user is read with a query.
+ */
 @CommandHandler(ImpersonateUserCommand)
 export class ImpersonateUserCommandHandler
   implements ICommandHandler<ImpersonateUserCommand, string[]>

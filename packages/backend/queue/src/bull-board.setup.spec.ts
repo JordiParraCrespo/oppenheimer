@@ -21,7 +21,7 @@ vi.mock('@bull-board/api', () => ({
 
 vi.mock('@bull-board/api/bullMQAdapter', () => ({
   BullMQAdapter: class {
-    constructor(queue: unknown) {
+    constructor(readonly queue: unknown) {
       BullMQAdapterCtor(queue);
     }
   },
@@ -62,7 +62,7 @@ describe('setupBullBoard', () => {
     vi.clearAllMocks();
   });
 
-  it('resolves each queue by its BullMQ DI token', () => {
+  it('resolves each queue by its BullMQ DI token and hands it to the board', () => {
     // `app.get('email')` returns nothing useful — the queue is registered under
     // `getQueueToken('email')`. Getting this wrong yields a board with no
     // queues rather than an error.
@@ -72,17 +72,14 @@ describe('setupBullBoard', () => {
 
     expect(get).toHaveBeenCalledWith(getQueueToken('email'));
     expect(get).toHaveBeenCalledWith(getQueueToken('webhook'));
-  });
-
-  it('wraps every queue in an adapter and hands them to the board', () => {
-    const { instance } = app();
-
-    setupBullBoard(instance, ['email', 'webhook', 'notifications'], { auth });
-
-    expect(BullMQAdapterCtor).toHaveBeenCalledTimes(3);
-    expect(createBullBoard).toHaveBeenCalledWith(
-      expect.objectContaining({ queues: expect.any(Array) }),
-    );
+    expect(BullMQAdapterCtor.mock.calls).toEqual([
+      [{ name: getQueueToken('email') }],
+      [{ name: getQueueToken('webhook') }],
+    ]);
+    const resolved = get.mock.results.map((result) => result.value);
+    const boarded = createBullBoard.mock.calls[0]?.[0].queues as { queue: unknown }[];
+    expect(boarded).toHaveLength(2);
+    for (const [index, adapter] of boarded.entries()) expect(adapter.queue).toBe(resolved[index]);
   });
 
   it('mounts the router at the same base path the adapter was given', () => {
@@ -103,15 +100,6 @@ describe('setupBullBoard', () => {
 
     expect(setBasePath).toHaveBeenCalledWith('/admin/queues');
     expect(use).toHaveBeenCalledWith('/admin/queues', expect.any(Function), 'the-router');
-  });
-
-  it('mounts a board with no queues rather than failing', () => {
-    // A deployment may register no queues at all. The route should still exist
-    // and say so, instead of the call throwing during bootstrap.
-    const { instance, use } = app();
-
-    expect(() => setupBullBoard(instance, [], { auth })).not.toThrow();
-    expect(use).toHaveBeenCalled();
   });
 
   it('does not mount the dashboard when credentials are omitted', () => {

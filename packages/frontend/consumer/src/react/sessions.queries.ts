@@ -105,17 +105,16 @@ function unwatchRestart(queryClient: QueryClient, id: string): void {
  * The sessions in the caller's workspace: the sidebar and the sessions list.
  *
  * A resolved session is a tombstone the API keeps so its directory and branch
- * are never reissued; the list leaves it out, and its detail is still written
- * for a screen that has it open. It polls while a row is starting or a close
- * this console asked for has not resolved.
+ * are never reissued; the list leaves it out, though its detail is still
+ * written for a screen that has it open. It polls while a row is starting or a
+ * close this console asked for has not resolved.
  *
- * Each row it reads is also written to that session's detail, so opening a
- * session from the list renders on the click instead of waiting on a second
- * read of the same row. A detail read after this list was asked for is newer
- * than its row, or as new, and is left alone.
+ * Each row is also written to that session's detail, so opening a session from
+ * the list renders on the click; a detail read after this list was asked for
+ * is as new or newer, and is left alone.
  *
- * Pass `select` to subscribe to less than the whole list: a screen that only
- * asks whether there are any sessions should not re-render on every poll.
+ * Pass `select` to subscribe to less than the whole list, so a screen that only
+ * asks whether any exist does not re-render on every poll.
  */
 export function useSessions<TData = SessionEntity[]>(
   options?: Omit<UseQueryOptions<SessionEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
@@ -214,7 +213,6 @@ export function useSessionStartProgress(
   });
 }
 
-/** What starting a session takes: the draft, and the key that makes a retry safe. */
 export interface CreateSessionVariables {
   input: CreateSessionInput;
   /**
@@ -228,7 +226,6 @@ export interface CreateSessionVariables {
   idempotencyKey: string;
 }
 
-/** Start a session: New session's chips, its foot row and its first task. */
 export function useCreateSession(
   options?: UseMutationOptions<SessionEntity, Error, CreateSessionVariables>,
 ) {

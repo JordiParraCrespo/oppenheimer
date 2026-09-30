@@ -88,29 +88,23 @@ describe('submitConsent', () => {
     return fetchMock;
   }
 
-  it('posts the answer with the consent code and returns the redirect', async () => {
-    const fetchMock = answer(200, { redirectURI: 'https://client.example/cb?code=x' });
+  it.each([
+    [true, 'https://client.example/cb?code=x'],
+    [false, 'https://client.example/cb?error=access_denied'],
+  ])(
+    'posts accept: %s with the consent code and returns its redirect',
+    async (accept, redirectURI) => {
+      const fetchMock = answer(200, { redirectURI });
 
-    await expect(submitConsent(true, 'code-1')).resolves.toBe('https://client.example/cb?code=x');
+      await expect(submitConsent(accept, 'code-1')).resolves.toBe(redirectURI);
 
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe('/api/auth/oauth2/consent');
-    expect(init.method).toBe('POST');
-    expect(init.credentials).toBe('include');
-    expect(JSON.parse(init.body as string)).toEqual({
-      accept: true,
-      consent_code: 'code-1',
-    });
-  });
-
-  it('sends a refusal as accept: false', async () => {
-    const fetchMock = answer(200, { redirectURI: 'https://client.example/cb?error=access_denied' });
-
-    await submitConsent(false, 'code-1');
-
-    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(JSON.parse(init.body as string).accept).toBe(false);
-  });
+      const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+      expect(url).toBe('/api/auth/oauth2/consent');
+      expect(init.method).toBe('POST');
+      expect(init.credentials).toBe('include');
+      expect(JSON.parse(init.body as string)).toEqual({ accept, consent_code: 'code-1' });
+    },
+  );
 
   it('rejects an answer with no redirect as its own code, keeping the status', async () => {
     answer(200, {});

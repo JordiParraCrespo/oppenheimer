@@ -126,7 +126,7 @@ func TestRefreshMovesTheStateWithTheScreen(t *testing.T) {
 	}
 }
 
-func TestRefreshOffersTheLoginURLOnce(t *testing.T) {
+func TestRefreshPutsTheLoginURLOnTheSession(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 	h.terminals.Screens[session.Target(0)] = "Open https://claude.ai/oauth/authorize?code=true to log in"
@@ -148,8 +148,6 @@ func TestListAndGetHandOutIndependentSessions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Copying the struct alone would share the Windows backing array, and a
-	// caller editing a window would be editing the service's own state.
 	listed := h.svc.List()[0]
 	listed.Windows[0].Name = "mutated by a caller"
 	held, err := h.svc.Get(session.ID)
@@ -253,47 +251,48 @@ func TestCloseIsIdempotentEnoughToRetry(t *testing.T) {
 	}
 }
 
-func TestAttachAndDetachDoNotEndTheSession(t *testing.T) {
+// Attach opens a live session's window. That detaching leaves the session
+// running is tmux's to prove (tmux_test.go).
+func TestAttachOpensALiveWindow(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 
 	attachment, err := h.svc.Attach(context.Background(), session.ID, 0, app.Size{Cols: 80, Rows: 24})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if h.terminals.Attached != 1 {
-		t.Fatalf("attached = %d", h.terminals.Attached)
+	if err != nil || attachment == nil || h.terminals.Attached != 1 {
+		t.Fatalf("attach to window 0: attachment=%v attached=%d err=%v", attachment, h.terminals.Attached, err)
 	}
 	if err := attachment.Close(); err != nil {
 		t.Fatal(err)
 	}
-
-	if h.terminals.Attached != 0 {
-		t.Fatalf("attached = %d after detaching", h.terminals.Attached)
-	}
-	if has, _ := h.terminals.Has(context.Background(), session.TmuxName()); !has {
-		t.Fatal("detaching must leave the session running")
-	}
 }
 
-func TestAttachRefusesAStoppedSessionAndAnUnknownWindow(t *testing.T) {
+func TestAttachRefusesAWindowThatDoesNotExist(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 
-	if _, err := h.svc.Attach(context.Background(), session.ID, 7, app.Size{}); err == nil {
-		t.Fatal("attaching to a window that does not exist must fail")
-	}
+	_, err := h.svc.Attach(context.Background(), session.ID, 7, app.Size{})
 
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != "SESS_001" {
+		t.Fatalf("err = %v, want SESS_001 for a window that does not exist", err)
+	}
+}
+
+func TestAttachRefusesAStoppedSession(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
 	if err := h.terminals.Kill(context.Background(), session.TmuxName()); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := h.svc.Refresh(context.Background(), session.ID); err != nil {
 		t.Fatal(err)
 	}
+
 	_, err := h.svc.Attach(context.Background(), session.ID, 0, app.Size{})
+
 	var prob *problem.Error
 	if !errors.As(err, &prob) || prob.Code != "SESS_003" {
-		t.Fatalf("err = %v, want SESS_003", err)
+		t.Fatalf("err = %v, want SESS_003 for a stopped session", err)
 	}
 }
 

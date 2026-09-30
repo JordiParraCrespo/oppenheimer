@@ -3,14 +3,11 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Every migration has a timestamp of its own.
- *
- * TypeORM orders migrations by the 13-digit timestamp at the end of the class
- * name and records each one by that name. Two migrations with the same
- * timestamp have no defined order: the TypeORM CLI, which globs the directory
- * as the API does at boot, and the integration suites (`runAllMigrations`,
- * which sorts file names) could apply such a pair in opposite orders. So a new migration takes a timestamp later than the newest
- * one, and this fails on one that shares a timestamp.
+ * Every migration has a timestamp of its own. TypeORM orders migrations by the 13-digit
+ * timestamp ending the class name; two sharing one have no defined order, so the CLI
+ * (which globs the directory, as the API does at boot) and the integration suites
+ * (`runAllMigrations`, which sorts file names) could apply them in opposite orders. A
+ * new migration takes a timestamp later than the newest one.
  */
 const MIGRATIONS_DIR = resolve(__dirname, '../migrations');
 

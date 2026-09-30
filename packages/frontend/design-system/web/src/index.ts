@@ -2,6 +2,7 @@ export type { AgentId } from './components/agent-mark';
 export { AgentMark } from './components/agent-mark';
 export type { AgentModel, AgentOption, Engine } from './components/agent-model-select';
 export { AgentModelSelect } from './components/agent-model-select';
+export type { AlertTone } from './components/alert';
 export {
   Alert,
   AlertAction,
@@ -116,7 +117,7 @@ export {
   EditorPageTop,
 } from './components/editor-page';
 export type { EffortStop } from './components/effort-slider';
-export { EFFORT_STOPS, EffortPicker, EffortSlider } from './components/effort-slider';
+export { EffortPicker, EffortSlider } from './components/effort-slider';
 export { EmptyState } from './components/empty-state';
 export {
   Field,

@@ -73,8 +73,8 @@ func TestSubscribeAndPublish(t *testing.T) {
 		t.Fatalf("event: %+v", ev)
 	}
 
-	if hub.Len() != 1 {
-		t.Fatalf("len = %d", hub.Len())
+	if live(hub) != 1 {
+		t.Fatalf("len = %d", live(hub))
 	}
 	closed := make(chan error, 1)
 	go func() {
@@ -82,8 +82,8 @@ func TestSubscribeAndPublish(t *testing.T) {
 		closed <- wsjson.Read(ctx, c, &e)
 	}()
 	hub.Close(ctx)
-	if hub.Len() != 0 {
-		t.Fatalf("len after close = %d", hub.Len())
+	if live(hub) != 0 {
+		t.Fatalf("len after close = %d", live(hub))
 	}
 	if err := <-closed; websocket.CloseStatus(err) != websocket.StatusGoingAway {
 		t.Fatalf("client should see going-away, got %v", err)
@@ -184,4 +184,11 @@ func TestUnauthenticatedUpgradeIsRefused(t *testing.T) {
 	if rec.Code != 401 {
 		t.Fatalf("code = %d", rec.Code)
 	}
+}
+
+// live is how many connections the hub holds.
+func live(h *Hub) int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.conns)
 }

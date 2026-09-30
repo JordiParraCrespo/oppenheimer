@@ -1,18 +1,27 @@
 import { useController, useWatch } from 'react-hook-form';
 import { EffortSelect } from '../components/effort-select';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
-import { launchControlsFor } from '../lib/session-options';
+import { effortChoiceFor } from '../lib/session-options';
 
 /**
- * The effort picker, bound to the draft. Drawn only for an agent whose catalog
- * entry takes an effort; the blank terminal takes none.
+ * The effort picker, bound to the draft. Drawn only for a model whose catalog
+ * row takes an effort — not the blank terminal, not Claude's Haiku — over that
+ * model's levels, with a pick kept per agent.
  */
 export function NewSessionEffort() {
   const { control } = useNewSessionDraft();
   const agent = useWatch({ control, name: 'agent' });
-  const { field } = useController({ control, name: 'effort' });
+  const model = useWatch({ control, name: 'model' });
+  const { field } = useController({ control, name: 'efforts' });
 
-  if (!launchControlsFor(agent).effort) return null;
+  const choice = effortChoiceFor(agent, model, field.value[agent]);
+  if (!choice) return null;
 
-  return <EffortSelect value={field.value} onValueChange={field.onChange} />;
+  return (
+    <EffortSelect
+      levels={choice.levels}
+      value={choice.value}
+      onValueChange={(level) => field.onChange({ ...field.value, [agent]: level })}
+    />
+  );
 }

@@ -55,23 +55,17 @@ const EMPTY: Snapshot = {
 };
 
 /**
- * The database-backed evaluator: every flag and segment held in memory,
- * evaluated with the pure `evaluateFlag` from `@oppenheimer/shared`.
+ * The database-backed evaluator: every flag and segment held in memory, evaluated with
+ * the pure `evaluateFlag` from `@oppenheimer/shared`, so `@RequireFlag` on a hot route
+ * costs a map lookup and a hash, never I/O. The flag table is small (one row per
+ * configured flag); long ID lists live in segments, loaded the same way.
  *
- * This is the shape Stripe described for its own flags — each process loads
- * them all at start and keeps them synced from the database — because it puts
- * no I/O on the request path: `@RequireFlag` on a hot route costs a map lookup
- * and a hash. The table is small (one row per configured flag), so holding it
- * whole is cheap; long ID lists live in segments, which are loaded the same way.
+ * A replica polls a digest of every row's content in each table and reloads only when
+ * it moved; the replica that made a change reloads immediately.
  *
- * Staleness is detected, not guessed: a replica polls a digest of every row's
- * content in each table and reloads only when it moved. The replica that made
- * a change reloads immediately.
- *
- * Failure keeps the last good snapshot. A database blip must not turn every
- * flag back to its default mid-incident — that is exactly when someone is
- * relying on a kill switch staying pulled. Before the first successful load
- * the snapshot is empty, and every flag serves its catalog default.
+ * Failure keeps the last good snapshot: a database blip must not turn every flag back
+ * to its default mid-incident, when someone relies on a kill switch staying pulled.
+ * Before the first successful load every flag serves its catalog default.
  */
 @Injectable()
 export class FlagSnapshotResolver
@@ -101,7 +95,6 @@ export class FlagSnapshotResolver
     if (this.timer) clearInterval(this.timer);
   }
 
-  /** The version of the configuration currently being served. */
   get version(): string {
     return this.snapshot.version;
   }
@@ -130,7 +123,7 @@ export class FlagSnapshotResolver
     return { version: this.snapshot.version, flags };
   }
 
-  /** Reload now, rather than at the next poll. Never rejects: a failure is logged. */
+  /** `reload`, except it never rejects: a failure is logged. */
   async refresh(): Promise<void> {
     try {
       await this.reload();
@@ -140,9 +133,9 @@ export class FlagSnapshotResolver
   }
 
   /**
-   * Reload now, and reject if it fails — for a caller that must know, such as
-   * the change handler: a delivery whose reload failed is retried by the
-   * outbox rather than marked done while this replica serves the old rules.
+   * For a caller that must know the reload failed, such as the change handler:
+   * a delivery whose reload failed is retried by the outbox rather than marked
+   * done while this replica serves the old rules.
    */
   reload(): Promise<void> {
     // Coalesce: a burst of change events is one reload, not one each.

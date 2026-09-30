@@ -1,10 +1,6 @@
 import type { AppAbility } from '@oppenheimer/shared';
 import type { TenantRequest } from '../domain/request-tenant.types';
 
-/**
- * The request members the ability builder reads and writes. The ability is
- * built in the request's tenant (`TenantRequest`) and no other organization.
- */
 export interface AbilityRequest extends TenantRequest {
   user?: Record<string, unknown>;
   session?: {

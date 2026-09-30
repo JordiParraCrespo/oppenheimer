@@ -2,7 +2,6 @@ import type { RepositoryPort } from '@oppenheimer/backend-ddd';
 import type { Option } from 'oxide.ts';
 import type { FeatureFlagEntity } from '../domain/feature-flag.entity';
 
-/** Port for the flag-targeting aggregate. Implemented by `feature-flag.repository.ts`. */
 export interface FeatureFlagRepositoryPort extends RepositoryPort<FeatureFlagEntity> {
   findOneByKey(key: string): Promise<Option<FeatureFlagEntity>>;
   /**

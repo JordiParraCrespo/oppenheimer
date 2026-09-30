@@ -8,7 +8,6 @@ export interface ResourceScope {
   organizationIds: string[] | null;
 }
 
-/** A credential with no organization restriction. */
 export const UNRESTRICTED_RESOURCE_SCOPE: ResourceScope = {
   organizationIds: null,
 };
