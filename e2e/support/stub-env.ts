@@ -8,8 +8,8 @@ import { readFileSync } from 'node:fs';
  * API is started: the API reads where the stubs are at boot, so a test cannot
  * arrange it.
  *
- * The keys are generated per run and thrown away with the job, so a real key
- * can never be what makes the suite pass.
+ * The keys are generated here (`scripts/stack/stack.mjs` keeps them per
+ * `.stack/`), so a real key can never be what makes the suite pass.
  */
 const GITHUB_STUB = process.env.GITHUB_STUB_URL ?? 'http://127.0.0.1:4319';
 const NAMER_STUB = process.env.NAMER_STUB_URL ?? 'http://127.0.0.1:4320';

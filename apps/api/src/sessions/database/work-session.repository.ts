@@ -535,8 +535,8 @@ export class WorkSessionRepository
     }
 
     if (appended.length > 0) {
-      // **Every column the fold projects**, and nothing else. The list is the
-      // one in `SessionFold`, spelled once: a hand-picked subset here is a
+      // **Every column the fold projects**, and nothing else: each field of
+      // `SessionFold`. The list is spelled by hand, so a field missing here is a
       // column the fold silently stops maintaining, and the row becomes a second
       // truth.
       const record = this.mapper.toPersistence(session);

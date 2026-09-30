@@ -5,7 +5,7 @@
  * becoming everything's dependency.
  *
  * @param {object} options
- * @param {string[]} options.leaves concerns that import only the design system and the kernel
+ * @param {string[]} options.leaves concerns that import the design system, the kernel and each other
  * @param {string[]} options.middle concerns that build on the leaves
  * @param {string[]} options.top concerns that may import anything below
  */

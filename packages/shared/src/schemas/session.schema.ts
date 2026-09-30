@@ -199,7 +199,8 @@ export type SessionState = z.infer<typeof sessionStateSchema>;
  * `waiting-on-you` has four sources — the session failed, the agent has been
  * blocked for ≥ 30 s, a launch has sat in a non-ready state for ≥ 60 s, or the
  * pane is gone with no report. `landing` is the phase after the agent stops:
- * branch pushed, pull request open and approved, not yet merged.
+ * branch pushed, pull request open and approved, not yet merged. The pane-gone
+ * source and `landing` have no writer yet (the API's `session-group.policy.ts`).
  * `ready-for-review` versus `idle` is not a state at all but a hash comparison.
  */
 export const SESSION_GROUPS = [

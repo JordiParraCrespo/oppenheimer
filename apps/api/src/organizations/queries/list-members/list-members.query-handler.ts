@@ -6,10 +6,10 @@ import { MEMBER_REPOSITORY } from '../../organizations.di-tokens';
 import { ListMembersQuery } from './list-members.query';
 
 /**
- * The organization's members, narrowed the way the team table narrows them.
- * Search and the role facet are part of the query: a filter the response does
- * not carry is one no other client (CLI, MCP tool, CSV export) can ask for,
- * and one applied to a page on screen drops matches on unscrolled pages.
+ * The organization's members, narrowed by search and assigned role. Both are
+ * part of the query: a filter the response does not carry is one no other
+ * client (CLI, MCP tool, CSV export) can ask for, and one applied to a page on
+ * screen drops matches on unscrolled pages.
  *
  * Read from Postgres rather than Better Auth's `listMembers`: the route's
  * guards (`@OrganizationScoped`, `read Member`) admit the caller, and the

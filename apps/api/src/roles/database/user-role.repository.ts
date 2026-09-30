@@ -37,8 +37,8 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
   async findRolesForUser(userId: string, organizationId?: string | null): Promise<RoleEntity[]> {
     const roleIds = await this.findRoleIdsForUser(userId, organizationId);
     if (roleIds.length === 0) return [];
-    // Ordered, because callers index into this: two users holding the same
-    // roles must get them in the same order, not Postgres's physical row order.
+    // Ordered, so two users holding the same roles get them (and the permission
+    // union built from them) in the same order, not Postgres's physical row order.
     const records = await this.roleRepository.find({
       where: { id: In(roleIds) },
       order: { name: 'ASC' },

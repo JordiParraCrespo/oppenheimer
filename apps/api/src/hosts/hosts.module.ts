@@ -156,9 +156,9 @@ const resolvers: Provider[] = [
       HostEventOrmEntity,
     ]),
     AuthzKernelModule.forFeature([HostResource]),
-    // The owner's address for the new-host notice.
+    // The owner's address for the new-host and new-network notices.
     UsersModule,
-    // The email queue the notice goes out on, and the host-retention queue of
+    // The email queue the notices go out on, and the host-retention queue of
     // the daily purge of networks and timeline past their retention.
     QueueModule,
   ],

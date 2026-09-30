@@ -33,10 +33,11 @@ const CLOCK_SKEW_SECONDS = 30;
 const REPLAY_KEY_PREFIX = 'host-assertion:jti';
 
 /**
- * Four things must hold, and any failure produces one answer:
+ * Four things about the token must hold, and any failure produces one answer:
  *
- * 1. a compact EdDSA JWS whose `iss` and `sub` are the same host id (the runner
- *    issues its own credential; anything else is a different scheme);
+ * 1. a compact EdDSA JWS, signed by the key its host registered, whose `iss` and
+ *    `sub` are the same host id (the runner issues its own credential; anything
+ *    else is a different scheme);
  * 2. the audience is this control plane, so another deployment's assertion cannot
  *    be replayed here;
  * 3. not expired, not issued in the future, and minted with no more life than a

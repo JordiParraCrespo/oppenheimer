@@ -25,7 +25,7 @@ export type ValueFormat =
   | 'relative';
 
 export interface FormatOptions {
-  /** ISO 4217 code. Required by `currency`, ignored otherwise. */
+  /** ISO 4217 code for `currency` (default `EUR`); ignored otherwise. */
   currency?: string;
   /** IANA zone the date formats in. Defaults to UTC. */
   timeZone?: string;

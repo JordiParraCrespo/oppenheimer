@@ -6,7 +6,8 @@ import { TokenCountdown } from './token-countdown';
 
 /**
  * A machine as the pairing chrome names it. Structural rather than
- * `HostEntity`: the kit imports no product package (`kit-knows-no-product`), and these three fields are all a status row reads.
+ * `HostEntity`: the kit imports no product package (`kit-knows-no-product`),
+ * and these three fields are all a status row reads.
  */
 export interface PairedMachine {
   name: string;

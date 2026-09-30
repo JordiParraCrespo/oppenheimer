@@ -10,8 +10,8 @@
  *  - a route file composes; past 120 lines it contains
  *  - an app never re-creates a file the platform kit already ships
  *  - every workspace package carries a README.md and an AGENTS.md, every
- *    frontend app and package an ARCHITECTURE.md, and every AGENTS.md points
- *    at a rule file
+ *    frontend app, `packages/frontend` and each platform kit an
+ *    ARCHITECTURE.md, and every AGENTS.md points at a rule file
  *
  * See .agents/rules/frontend-architecture.md. Run: pnpm check:structure
  */

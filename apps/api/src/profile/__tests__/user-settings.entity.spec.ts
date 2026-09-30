@@ -29,8 +29,9 @@ describe('UserSettingsEntity', () => {
   });
 
   it('does not share its props with the defaults object', () => {
-    // A shallow copy would let one user's first save mutate the module-level
-    // defaults, silently changing what every later account starts with.
+    // Holding the object itself would let one user's first save mutate the
+    // module-level defaults, silently changing what every later account starts
+    // with.
     const settings = UserSettingsEntity.createDefault('user-uuid');
     settings.update(SAVED);
 

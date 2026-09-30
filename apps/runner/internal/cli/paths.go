@@ -12,8 +12,7 @@ import (
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 )
 
-// Directory names under the runner home. They are the layout note 02 §11
-// describes, and nothing outside this file decides where a file goes.
+// Directory names under the runner home: the layout note 02 §11 describes.
 const (
 	DirBin   = "bin"
 	DirLog   = "log"
@@ -176,7 +175,7 @@ func (p Paths) Current() string { return filepath.Join(p.Bin(), "current") }
 // Log is the log directory.
 func (p Paths) Log() string { return filepath.Join(p.Home, DirLog) }
 
-// Run holds the socket and the single-instance lock.
+// Run holds the socket, the single-instance lock and the agent locks.
 func (p Paths) Run() string { return filepath.Join(p.Home, DirRun) }
 
 // State holds update.json and sessions.json.

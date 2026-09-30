@@ -10,8 +10,7 @@ import type { InboundEventMapper } from '../inbound-event.mapper';
  * The same shape trap as the automation sweep: TypeORM answers an
  * `UPDATE … RETURNING` with `[rows, affected]`. Read as rows, this sweep staged jobs
  * with `inboundDeliveryId: undefined` and never restaged a delivery whose retries ran
- * out. The harness answers in the driver's shape, telling the two statements apart by
- * the table each one updates.
+ * out. The harness answers in the driver's shape.
  */
 function harness(
   abandoned: { id: string }[],

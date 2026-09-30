@@ -4,8 +4,9 @@
  * is assembled from them for the JSON export path.
  *
  * Call sites keep using dotted keys on the merged default namespace
- * (`t('auth.login')`). The same copy is also registered under its area name
- * (`t('login', { ns: 'auth' })`) so a screen can load a single namespace.
+ * (`t('auth.login')`). `resources` in `index.ts` also registers the same copy
+ * under its area name (`t('login', { ns: 'auth' })`); the web app does not use
+ * it and registers only the merged default namespace.
  */
 import namespaceList from './namespaces.json';
 

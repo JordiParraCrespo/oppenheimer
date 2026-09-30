@@ -53,12 +53,12 @@ export const checkSlugSchema = z.object({
 });
 
 /**
- * How the team table narrows the member list, answered by the server.
+ * How the member list is narrowed, answered by the server.
  *
  * Both facets are here rather than in the browser because the endpoint is the
- * only place that can see the whole list: the table pages what it is given, so
- * a filter applied after the response narrows one page and leaves the rest of
- * the matches on the pages nobody looked at.
+ * only place that can see the whole list: a filter applied after a paged
+ * response narrows one page and leaves the rest of the matches on the pages
+ * nobody looked at.
  */
 export const listMembersSchema = z.object({
   /** Case-insensitive match on name, email, organization role or assigned role name. */

@@ -10,8 +10,9 @@ export interface SessionDispatchOutcome {
    * Structured hints for the caller. `host_offline` is the one the console has a
    * use for; a runner must not be able to say it about itself, which is why the
    * link's hint vocabulary and this one are two schemas. `not_supported` is the
-   * other: the host is reachable and the operation has no frame on the wire yet,
-   * so nothing was sent and the row is ahead of the host.
+   * other: the host is reachable but cannot take the operation (no frame on the
+   * wire yet, or a runner whose `hello` did not name the capability), so nothing
+   * was sent.
    */
   hints: string[];
 }

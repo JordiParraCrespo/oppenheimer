@@ -40,9 +40,9 @@ export type AgentObservedState = (typeof AGENT_OBSERVED_STATES)[number];
  * the log must keep it; an unknown kind advances `lastEventAt` and nothing else.
  *
  * An entry with no writer is how the fold and the routes drift, so `attach.opened`
- * (the ticket's claimer) and `session.dispatch_pending` (a dispatcher that can fail
- * to send) stay absent until those exist. The two `report.*` kinds are folded ahead
- * of their writer: nothing appends them yet.
+ * and `session.dispatch_pending` stay absent until the ticket's claimer and the
+ * dispatcher append them. The two `report.*` kinds are folded ahead of their
+ * writer: nothing appends them yet.
  */
 export const SESSION_EVENT_KINDS = {
   /** The control plane accepted the request and the session row exists. */

@@ -3,8 +3,7 @@ import type { Scope } from '@oppenheimer/shared';
 
 /**
  * `grantedScopes` is what the credential carries; `effectiveScopes` is that
- * intersected with the owner's live roles — the honest answer, and what the MCP
- * server filters its tool list by.
+ * intersected with the owner's live roles.
  */
 export class FindCurrentCredentialQuery extends QueryBase {
   readonly userId: string;

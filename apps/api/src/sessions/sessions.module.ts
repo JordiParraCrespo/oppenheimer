@@ -125,9 +125,9 @@ const adapters: Provider[] = [
     AuthzKernelModule.forFeature([SessionResource]),
     // The three modules this one is built on, imported rather than assumed: the
     // project a session belongs to, the machine it may run on, and what a
-    // repository is called. The one edge that runs the other way — the answer to
-    // "is this project still in use" — is contributed from this module's own
-    // providers, so `projects/` never has to import this module.
+    // repository is called. The edges that run the other way — "is this project
+    // still in use", "what runs on this host" — are contributed from this module's
+    // own providers, so neither module has to import this one.
     ProjectsModule,
     HostsModule,
     GithubModule,

@@ -75,7 +75,7 @@ export class SessionCheckoutEntity extends Entity<SessionCheckoutProps> {
         storeDirectoryName: null,
         directoryName: props.directoryName,
         // A worktree needs no network and no token, so the terminal can appear
-        // before GitHub is involved. The runner falls back to a clone and says so.
+        // before GitHub is involved.
         mode: props.mode ?? 'worktree',
         baseBranch: props.baseBranch,
         branch: props.branch,

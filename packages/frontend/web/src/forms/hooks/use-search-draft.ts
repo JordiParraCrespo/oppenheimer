@@ -11,8 +11,9 @@ import { useState } from 'react';
  * `value` is for a field whose settled value lives outside it (a URL param).
  * A followed link, cleared filter or back button changes it without typing,
  * and the field follows; the echo of its own commit looks identical, so the
- * hook remembers what it last sent up and ignores that one string. Without that, a delayed echo lands the old burst on a reader who
- * kept typing and the caret snaps backwards.
+ * hook remembers what it last sent up and ignores that one string. Without
+ * that, a delayed echo lands the old burst on a reader who kept typing and the
+ * caret snaps backwards.
  *
  * Omit `value` when nothing feeds a settled value back down
  * (`SidebarSearchField`); `draft` is then the field's own from first render.

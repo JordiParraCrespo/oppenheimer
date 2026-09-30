@@ -14,8 +14,9 @@ import {
 } from '../lib/session-filters';
 
 /**
- * The sidebar's filter menu (`SessionsConsole.dc.html`): three facets built
- * from the rows on screen, one order, and the chips for what is hidden.
+ * The sidebar's filter menu (`SessionsConsole.dc.html`): four facets (all but
+ * the project built from the rows on screen), one order, and the chips for
+ * what is hidden.
  */
 
 const session = (

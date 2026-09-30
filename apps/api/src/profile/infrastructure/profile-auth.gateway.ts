@@ -10,9 +10,9 @@ import type { ChangePasswordInput, ProfileAuthPort } from './profile-auth.port';
 
 /**
  * Façade over the Better Auth operations on the caller's own credentials:
- * changing a password and revoking sessions. Better Auth owns the `account`
- * and `session` tables and the hashing, so writing them here would own
- * password hashing and session invalidation twice. Calls go through
+ * changing a password or email address and revoking sessions. Better Auth
+ * owns the `account` and `session` tables and the hashing, so writing them
+ * here would own password hashing and session invalidation twice. Calls go through
  * `invokeProfileApi` (see `betterAuthInvoker`).
  *
  * Bulk revocation also evicts the caller's cached delegated sessions: Better

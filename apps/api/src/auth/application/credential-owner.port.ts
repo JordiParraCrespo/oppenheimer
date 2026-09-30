@@ -14,7 +14,8 @@ export interface CredentialOwnerPort {
   /**
    * The owner, or the opaque `INVALID_CREDENTIAL` (`TOKEN_003`) — the same
    * answer as an unknown token, so a missing, deactivated or banned owner is
-   * indistinguishable from outside. What every credential resolver asks.
+   * indistinguishable from outside. What the OAuth path and the API-token
+   * resolver ask.
    */
   requireActiveOwner(userId: string): Promise<CredentialOwner>;
 }

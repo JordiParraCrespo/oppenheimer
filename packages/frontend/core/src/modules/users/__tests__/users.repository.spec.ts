@@ -62,8 +62,8 @@ describe('UserEntity', () => {
   });
 
   it('does not treat superadmin as admin', () => {
-    // The two are distinct system roles, and this getter is read to decide what
-    // the UI offers. Widening it here would silently change that surface.
+    // The two are distinct system roles; `canAccessControlPlane` is the getter
+    // that admits both.
     expect(user({ role: 'superadmin' as Role }).isAdmin).toBe(false);
   });
 

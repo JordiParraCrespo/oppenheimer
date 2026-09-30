@@ -120,7 +120,7 @@ export interface FlagCondition {
 
 /**
  * One arm of a percentage split. A weight is a percentage in 0.01 % steps —
- * one of the evaluator's 10 000 buckets — and an arm's weights sum to 100.
+ * one of the evaluator's 10 000 buckets — and a split's weights sum to 100.
  */
 export interface FlagSplitArm {
   value: FlagValue;

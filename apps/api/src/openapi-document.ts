@@ -49,8 +49,8 @@ export function createOpenApiDocument(app: INestApplication): OpenAPIObject {
  * What an operation is called, and so what the client's function is called.
  *
  * A slice's controller, `<UseCase>HttpController`, holds one use case, and the
- * operation takes its name: `FindHostsHttpController` is `findHosts`. A
- * controller that holds several operations names each by its method.
+ * operation takes its name: `FindHostsHttpController` is `findHosts`. Any
+ * other controller (`HealthProbeController`) names each operation by its method.
  */
 export function operationIdFor(controller: string, method: string): string {
   const useCase = /^(\w+)HttpController$/.exec(controller)?.[1];
