@@ -164,7 +164,7 @@
   },
   "notFound": {
     "title": "Esta página no existe",
-    "description": "Puede que el enlace sea incorrecto o que lo que señalaba ya no esté.",
+    "description": "El enlace es incorrecto o su destino ya no existe.",
     "home": "Volver"
   },
   "unexpected": {
