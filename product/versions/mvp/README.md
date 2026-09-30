@@ -519,3 +519,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   from the export's 1.55 and from the earlier xterm value of 1: xterm
   stretches block and box glyphs to its cell, so 1.55 elongated Claude
   Code's mark and 1 packed a turn. The HTML terminal keeps 1.55.
+- 2026-09-30: **The reader's messages in the session grid are drawn as the
+  export's bubble** (05). Found by Claude Code's own user-message background
+  and pointer, repainted in the terminal's ramp, with the tint laid over the
+  grid; the input row stays the agent's own.

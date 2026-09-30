@@ -45,6 +45,34 @@ function read(name: string): string {
 }
 
 /**
+ * The colours a user message is repainted in (`user-turns.ts`), as the
+ * `#rrggbb` a decoration takes. A token may be any CSS colour, so it goes
+ * through a canvas, which hands a colour back in that form; its alpha is
+ * dropped, since a repaint is a solid cell.
+ */
+export function readUserTurnColors() {
+  return {
+    background: toHex(read('--term-bg')),
+    foreground: toHex(read('--term-fg')),
+    pointer: toHex(read('--term-accent')),
+  };
+}
+
+let colorContext: CanvasRenderingContext2D | null | undefined;
+
+function toHex(color: string): string {
+  colorContext ??= document.createElement('canvas').getContext('2d');
+  if (!colorContext) return '#000000';
+  colorContext.fillStyle = '#000000';
+  colorContext.fillStyle = color;
+  const normalized = String(colorContext.fillStyle);
+  if (normalized.startsWith('#')) return normalized;
+  // A translucent colour comes back as `rgba(r, g, b, a)`.
+  const [r = 0, g = 0, b = 0] = normalized.match(/\d+(\.\d+)?/g)?.map(Number) ?? [];
+  return `#${[r, g, b].map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
+}
+
+/**
  * The ten-token ramp mapped onto the sixteen ANSI slots a PTY can address.
  *
  * Two liberties, both deliberate:

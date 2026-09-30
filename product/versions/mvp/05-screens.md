@@ -284,6 +284,14 @@
   `terminal.css`'s 1.55 stays: it is the HTML terminal the showcase, empty
   states and replayed logs draw, not the session canvas, so neither is
   fixed from the other.
+- **The reader's own messages read as the export's `op-term__you`**: a
+  rounded, full-width tint (`--hover-surface`) with a blue chevron, on the
+  agent window only. Claude Code marks a user message itself, a pointer
+  (`❯`) and the text on its `userMessageBackground`, which arrives through
+  tmux as colour 237 (dark theme) or 255/253 (light); a row that opens on the
+  pointer on that grey is a turn. Those cells are repainted in the
+  terminal's own ramp, because Claude's theme is not the console's (its dark
+  grey on a light console is a black bar), and the tint is laid over them.
 - **An image pasted or dropped onto the terminal becomes a path in the
   prompt**, as a drag-and-drop does in a local terminal (01
   `session.image`). The status bar says while it travels; a refusal
