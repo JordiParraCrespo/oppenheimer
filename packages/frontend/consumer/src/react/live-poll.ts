@@ -69,3 +69,14 @@ export function pollWhile<TData>(
  * when it is back, and the list stops asking after this.
  */
 export const CLOSE_WATCH_MS = 60_000;
+
+/**
+ * How long a session's detail keeps watching a restart it asked for.
+ *
+ * A restart records a request, not an outcome: the row stays stopped until the
+ * host says it brought the terminal back, which is a clone-free relaunch and
+ * takes seconds. Without the watch the pane sits on "the turn has ended" until
+ * something else refetches, which is a reload the reader should not have to
+ * think of. A host that is offline never answers, and the watch stops asking.
+ */
+export const RESTART_WATCH_MS = 60_000;
