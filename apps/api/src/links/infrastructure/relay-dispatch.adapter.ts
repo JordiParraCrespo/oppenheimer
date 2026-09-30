@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type {
   ProtocolMessage,
@@ -182,6 +183,17 @@ function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): Ses
       ...(session.launch.model ? { model: session.launch.model } : {}),
       ...(session.launch.permission ? { permission: session.launch.permission } : {}),
       ...(session.launch.effort ? { effort: session.launch.effort } : {}),
+      // The agent's conversation takes the session's own id, so the transcript
+      // the CLI keeps is findable by the one name both sides already agree on
+      // — and a session that has stopped can be reopened rather than read back
+      // out of a pane that no longer exists.
+      //
+      // Only for an agent that has a conversation to name: a blank terminal
+      // keeps no transcript, and sending it an id would be a field the host
+      // has nothing to do with.
+      ...(CODING_AGENTS[session.agent]?.launch.conversation?.create
+        ? { conversation: session.id }
+        : {}),
     },
     ...(spec.prompt ? { prompt: spec.prompt } : {}),
     ...(spec.images?.length ? { images: spec.images } : {}),

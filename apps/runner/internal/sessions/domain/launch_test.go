@@ -128,3 +128,50 @@ func TestEveryCatalogIDIsAnAgentAndBack(t *testing.T) {
 		t.Fatal("an unknown agent borrowed another agent's launch")
 	}
 }
+
+// The agent's own transcript is what makes a stopped session continuable, and
+// the only thing missing was a name both sides agree on. These pin that name's
+// two uses: given once at launch, and given back to reopen.
+func TestLaunchNamesAndReopensTheConversation(t *testing.T) {
+	const id = "17a57597-65a4-4517-84e3-b4010c7b8ed9"
+	agent := AgentClaude
+
+	created := Launch{Conversation: id, Prompt: "Do the thing."}.Args(agent)
+	if !containsPair(created, "--session-id", id) {
+		t.Fatalf("a new session does not name its conversation: %v", created)
+	}
+	if !containsValue(created, "Do the thing.") {
+		t.Fatalf("a new session dropped its first task: %v", created)
+	}
+
+	resumed := Launch{Conversation: id, Prompt: "Do the thing.", Resume: true}.Args(agent)
+	if !containsPair(resumed, "--resume", id) {
+		t.Fatalf("a resume does not reopen the conversation: %v", resumed)
+	}
+	// The conversation already holds the first task; sending it again would
+	// ask for the same work twice.
+	if containsValue(resumed, "Do the thing.") {
+		t.Fatalf("a resume replayed the first task: %v", resumed)
+	}
+	if containsValue(resumed, "--session-id") {
+		t.Fatalf("a resume tried to name a conversation that exists: %v", resumed)
+	}
+}
+
+func containsPair(args []string, flag, value string) bool {
+	for i := 0; i+1 < len(args); i++ {
+		if args[i] == flag && args[i+1] == value {
+			return true
+		}
+	}
+	return false
+}
+
+func containsValue(args []string, value string) bool {
+	for _, a := range args {
+		if a == value {
+			return true
+		}
+	}
+	return false
+}

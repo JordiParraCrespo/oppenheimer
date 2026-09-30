@@ -12,6 +12,16 @@ type Launch struct {
 	Model      string `json:"model,omitempty"`
 	Permission string `json:"permission,omitempty"`
 	Effort     string `json:"effort,omitempty"`
+	// Conversation names the agent's own conversation, so the transcript the
+	// CLI keeps can be found and reopened later. It is the session's id: one
+	// name both sides agree on, rather than the id the CLI would have picked
+	// for itself and never told anyone.
+	//
+	// Resume reopens that conversation instead of starting one. The prompt is
+	// dropped when it is set — a resumed session continues what was said, and
+	// re-sending the first task would replay it.
+	Conversation string `json:"conversation,omitempty"`
+	Resume       bool   `json:"resume,omitempty"`
 	// Prompt is the first task, appended as the trailing positional so it is
 	// in the process's arguments before it starts (02-runner §5). It is kept
 	// for restart only and never logged.
@@ -31,6 +41,11 @@ type launchMap struct {
 	permission map[string]launchLevel
 	effort     map[string][]string
 	prompt     []string
+	// How the agent's own conversation is named at launch and reopened
+	// afterwards. These CLIs keep the transcript themselves, so what a resume
+	// needs is a name both sides agree on: the session's id, pinned here.
+	conversationCreate []string
+	conversationResume []string
 }
 
 // launchLevel is one permission level: the argv appended to the command and
@@ -72,6 +87,16 @@ func (l Launch) Args(agent Agent) []string {
 	args = append(args, m.permission[l.Permission].argv...)
 	if v, ok := m.effort[l.Effort]; ok {
 		args = append(args, v...)
+	}
+	// Naming the conversation, or reopening it. A resume carries no prompt:
+	// the conversation already holds the first task, and sending it again
+	// would ask for the same work twice.
+	switch {
+	case l.Resume && l.Conversation != "" && m.conversationResume != nil:
+		args = append(args, substitute(m.conversationResume, "<conversation>", l.Conversation)...)
+		return args
+	case l.Conversation != "" && m.conversationCreate != nil:
+		args = append(args, substitute(m.conversationCreate, "<conversation>", l.Conversation)...)
 	}
 	if l.Prompt != "" && m.prompt != nil {
 		args = append(args, substitute(m.prompt, "<prompt>", l.Prompt)...)

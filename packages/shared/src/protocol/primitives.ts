@@ -67,6 +67,17 @@ export const launchOptionsSchema = z.object({
   model: z.string().min(1).max(128).optional(),
   permission: z.enum(SESSION_PERMISSIONS).optional(),
   effort: z.enum(SESSION_EFFORTS).optional(),
+  /**
+   * The name the agent's own conversation takes, so the transcript it keeps can
+   * be reopened later. The control plane sends the session's id, which is the
+   * one name both sides already agree on; an agent whose CLI cannot be told an
+   * id ignores it.
+   *
+   * `resume` reopens that conversation instead of starting one, and carries no
+   * first task — the conversation already holds it.
+   */
+  conversation: z.string().uuid().optional(),
+  resume: z.boolean().optional(),
 });
 
 export type LaunchOptions = z.infer<typeof launchOptionsSchema>;

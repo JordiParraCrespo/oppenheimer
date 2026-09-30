@@ -109,6 +109,26 @@ export interface CodingAgentLaunch {
   /** Absent: this agent takes no model. */
   readonly model?: readonly string[];
   /**
+   * How the agent's own conversation is named and reopened, with
+   * `<conversation>` substituted whole.
+   *
+   * These CLIs already keep the transcript — `transcriptLocation` is where —
+   * so a session that ends does not lose what was said; what was missing is a
+   * name both sides agree on. `create` pins the agent's conversation to the
+   * session's own id, and `resume` reopens that conversation in the same
+   * worktree, so a stopped session is continued rather than read back.
+   *
+   * `create` absent, `resume` present: the CLI cannot be told an id but can
+   * reopen one it chose (Codex, OpenCode), so the id is discovered from the
+   * transcript rather than assigned.
+   *
+   * Both absent: this agent has no conversation to resume (a plain shell).
+   */
+  readonly conversation?: {
+    readonly create?: readonly string[];
+    readonly resume: readonly string[];
+  };
+  /**
    * Absent: this agent has no notion of approvals (a plain shell). The console
    * hides the permission chip and sends no level, and the session records none.
    */
@@ -255,6 +275,13 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
+      // `--session-id` takes a UUID and refuses one that already exists, which
+      // is exactly the property wanted: the session's own id names the
+      // conversation once, and `--resume` reopens it by that name afterwards.
+      conversation: Object.freeze({
+        create: Object.freeze(['--session-id', '<conversation>']),
+        resume: Object.freeze(['--resume', '<conversation>']),
+      }),
       permission: Object.freeze({
         // `--permission-mode` choices, read off claude 2.1.278's own `--help`.
         ask: Object.freeze({

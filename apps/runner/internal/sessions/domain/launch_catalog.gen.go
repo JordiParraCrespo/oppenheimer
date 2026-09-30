@@ -4,8 +4,8 @@
 package domain
 
 // launchCatalog is each agent's `launch` entry of the catalog: the argument
-// vectors a structured launch becomes. `<model>` and `<prompt>` are the two
-// placeholders, substituted whole.
+// vectors a structured launch becomes. `<model>`, `<prompt>` and
+// `<conversation>` are the placeholders, substituted whole.
 var launchCatalog = map[string]launchMap{
 	"claude-code": {
 		command: "claude",
@@ -23,6 +23,8 @@ var launchCatalog = map[string]launchMap{
 			"max":     {"--effort", "max"},
 		},
 		prompt: []string{"<prompt>"},
+		conversationCreate: []string{"--session-id", "<conversation>"},
+		conversationResume: []string{"--resume", "<conversation>"},
 	},
 	"codex": {
 		command: "codex",

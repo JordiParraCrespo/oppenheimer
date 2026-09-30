@@ -108,8 +108,8 @@ function render() {
     'package domain',
     '',
     "// launchCatalog is each agent's `launch` entry of the catalog: the argument",
-    '// vectors a structured launch becomes. `<model>` and `<prompt>` are the two',
-    '// placeholders, substituted whole.',
+    '// vectors a structured launch becomes. `<model>`, `<prompt>` and',
+    '// `<conversation>` are the placeholders, substituted whole.',
     'var launchCatalog = map[string]launchMap{',
   ];
   for (const id of CODING_AGENT_IDS) {
@@ -123,6 +123,12 @@ function render() {
     if (launch.permission) lines.push(`\t\tpermission: ${goLevels(launch.permission)},`);
     if (launch.effort) lines.push(`\t\teffort: ${goMap(launch.effort)},`);
     if (launch.prompt) lines.push(`\t\tprompt: ${goStrings(launch.prompt)},`);
+    if (launch.conversation?.create) {
+      lines.push(`\t\tconversationCreate: ${goStrings(launch.conversation.create)},`);
+    }
+    if (launch.conversation?.resume) {
+      lines.push(`\t\tconversationResume: ${goStrings(launch.conversation.resume)},`);
+    }
     lines.push('\t},');
   }
   lines.push('}', '');
