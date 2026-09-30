@@ -1,10 +1,7 @@
 /**
  * One entry as a runner sends it, mirroring `sessionEventSchema` in
- * `@oppenheimer/shared/protocol`.
- *
- * Written out rather than imported: the API's classic module resolution does not read
- * a package's `exports` map, so the protocol subpath is unreachable here. The caller
- * parses the wire message with that schema first, so what crosses is validated.
+ * `@oppenheimer/shared/protocol`. The caller parses the wire message with that
+ * schema first, so what crosses is validated.
  *
  * `seq` is deliberately absent: the control plane assigns it (see
  * `WorkSessionEventEntity`). `payload` is the JSON **string** the wire carries, so

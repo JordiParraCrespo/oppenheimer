@@ -3,15 +3,16 @@ import type { InstallationStatusChange } from '../database/github-installation.r
 
 /**
  * The `installation` webhook, verified and narrowed: the only event this
- * module subscribes to, because it reports installation facts that change
- * without us and that a token mint must respect. Nothing mirrors the
- * repository set, so `installation_repositories` has nothing to keep current.
+ * module acts on itself (every other event goes to the inbound-events hub),
+ * because it reports installation facts that change without us and that a
+ * token mint must respect. Nothing mirrors the repository set, so
+ * `installation_repositories` has nothing to keep current.
  *
  * A delivery is a status write ordered by GitHub's own timestamp
  * (`occurredAt`): GitHub does not promise delivery order, so a suspend or
  * unsuspend applies only when newer than the last one the row took, and a
- * late retry or a replayed body is a no-op. That is why there is no delivery
- * table and no de-duplication key.
+ * late retry or a replayed body is a no-op. That is why an installation
+ * delivery needs no stored row and no de-duplication key.
  */
 export type InstallationWebhookAction = 'suspend' | 'unsuspend' | 'delete';
 

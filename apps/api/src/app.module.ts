@@ -145,9 +145,9 @@ import { UsersModule } from './users/user.module';
       // build (`manualInitialization`).
       dataSourceFactory: bootDataSourceFactory(),
     }),
-    // The one Redis command connection the cache, the rate limiter and the
-    // health probe share (`REDIS_CLIENT`), closed on shutdown. BullMQ opens its
-    // own from the same `redisConnectionOptions` below.
+    // The one Redis command connection (`REDIS_CLIENT`) everything but BullMQ
+    // shares, closed on shutdown. BullMQ opens its own from the same
+    // `redisConnectionOptions` below.
     RedisModule,
     ThrottlerModule.forRootAsync({
       imports: [ThrottlingModule],

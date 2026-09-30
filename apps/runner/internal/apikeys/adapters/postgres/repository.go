@@ -1,6 +1,5 @@
-// Package postgres is the Postgres-backed api-key Repository. It implements
-// the same app.Repository port as the in-memory store; the composition root
-// picks it when a database URL is configured.
+// Package postgres is the Postgres-backed api-key Repository, used when a
+// database URL is configured.
 package postgres
 
 import (
@@ -77,7 +76,7 @@ func (r *Repository) List(ctx context.Context) ([]domain.Key, error) {
 }
 
 // Touch sets last_used_at without reading the row first, so it can never
-// overwrite a concurrent revocation. A missing id updates nothing.
+// overwrite a concurrent revocation.
 func (r *Repository) Touch(ctx context.Context, id string, at time.Time) error {
 	_, err := r.pool.Exec(ctx, `UPDATE api_keys SET last_used_at = $2 WHERE id = $1`, id, at)
 	return err

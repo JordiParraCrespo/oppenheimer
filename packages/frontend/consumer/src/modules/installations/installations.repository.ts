@@ -60,7 +60,7 @@ export class InstallationsRepository {
   /**
    * Start a GitHub App install: the API mints a single-use `state` for this
    * person in this workspace and answers with the App's install URL carrying
-   * it. Called on click, never on render — each call is a key in Redis.
+   * it.
    */
   @MapApiError(InstallationsErrors.START_FAILED)
   async startInstall(): Promise<InstallationStart> {

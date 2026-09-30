@@ -110,9 +110,8 @@ type Images interface {
 type Screen struct {
 	// Body is the visible text of the pane.
 	Body string
-	// Title is what the program set through an OSC escape sequence. It is
-	// the most trustworthy signal available: the agent controls it, and
-	// nothing a person types into their prompt can appear in it.
+	// Title is what the program set through an OSC escape sequence; why it
+	// is the signal to trust is manifest.RegionTitle.
 	Title string
 }
 

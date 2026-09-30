@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
  * The caller's own account, as the profile screen needs it.
  *
  * Richer than `UserResponseDto`: that one is the user *directory*, which other
- * people read, so it carries no contact details. This is only ever returned to
+ * people read, so it carries no phone, job title or avatar. This is only ever returned to
  * the account's owner.
  */
 export class ProfileResponseDto {

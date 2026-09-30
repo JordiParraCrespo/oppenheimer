@@ -9,8 +9,8 @@ import { FindAutomationsQuery } from './find-automations.query';
 
 /**
  * The sidebar and the table: every live automation with what its runs say —
- * whether one is running, how many ran in the window, and the last six. Two
- * queries for the whole list, whatever its length.
+ * whether one is running, how many ran in the window, and the last six. The
+ * same few queries for the whole list, whatever its length.
  */
 @QueryHandler(FindAutomationsQuery)
 export class FindAutomationsQueryHandler

@@ -105,8 +105,6 @@ export class SessionsRepository {
     const sessions: SessionEntity[] = [];
     let cursor: string | undefined;
     for (;;) {
-      // An absent body is a failed read, not an empty collection — returning
-      // `[]` would render "no sessions" over a request that never succeeded.
       const data = await unwrapBody(
         heyApiSdk.findSessions({
           query: { limit: PAGINATION.MAX_LIMIT, ...(cursor ? { cursor } : {}) },
@@ -140,7 +138,7 @@ export class SessionsRepository {
    * directories, a git checkout and a process on somebody's machine, and a
    * retry after a lost response must hand back the session already created
    * instead of building a second worktree and a second branch. The key is the
-   * caller's to mint (`SessionsService.create`).
+   * caller's to mint (`CreateSessionVariables`).
    */
   @MapApiError(SessionsErrors.CREATE_FAILED)
   async create(input: CreateSessionInput, idempotencyKey: string): Promise<SessionEntity> {

@@ -62,11 +62,10 @@ export function NewSessionProject() {
 
   // With neither, the project the chip starts on — remembered, or Unassigned —
   // offers its defaults on arrival, so the draft a visit opens with is always
-  // the one its project describes. Precedence, per chip: a default the project names wins over the
-  // last visit's choice; a chip it names nothing for (no default host, no
-  // default agent) keeps what `initialDraft` restored, because `projectPrefill`
-  // leaves a missing default out of the patch. The scope is never remembered,
-  // so it is always the project's first default repository, or empty.
+  // the one its project describes. Per chip, a default the project names wins
+  // over the last visit's choice; a chip it names nothing for keeps what
+  // `initialDraft` restored, because `projectPrefill` leaves a missing default
+  // out of the patch.
   useLandingPick(value, projects.data, hostsReady === true, Boolean(search.project), pick);
 
   return (

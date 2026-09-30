@@ -40,8 +40,7 @@ export class WorkSessionEventOrmEntity {
 
   /**
    * Free-form on purpose: a runner newer than this control plane may log a kind it
-   * has never heard of, and the log has to keep it. The fold acts on the kinds it
-   * knows and advances `lastEventAt` for the rest.
+   * has never heard of, and the log has to keep it.
    */
   @Column({ type: 'varchar' })
   kind!: string;
@@ -57,7 +56,7 @@ export class WorkSessionEventOrmEntity {
   @Column({ type: TIMESTAMP_COLUMN_TYPE })
   occurredAt!: Date;
 
-  /** Ours. A host with a skewed clock cannot reorder anybody's history. */
+  /** Ours; see `WorkSessionEventEntity` for why both clocks are kept. */
   @Column({ type: TIMESTAMP_COLUMN_TYPE, default: () => 'now()' })
   recordedAt!: Date;
 }

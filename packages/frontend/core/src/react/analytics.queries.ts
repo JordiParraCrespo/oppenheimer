@@ -14,7 +14,7 @@ export interface CaptureEventVariables {
 /**
  * ```ts
  * const { mutate: capture } = useCaptureEvent();
- * <Button onPress={() => capture({ event: ANALYTICS_EVENTS.USER_SIGNED_UP })} />
+ * <Button onClick={() => capture({ event: ANALYTICS_EVENTS.USER_SIGNED_UP })} />
  * ```
  *
  * `mutate` has a stable identity, unlike `capture` read off the service, which

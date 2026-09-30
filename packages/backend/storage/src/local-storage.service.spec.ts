@@ -35,8 +35,6 @@ afterEach(async () => {
 describe('LocalStorageService', () => {
   describe('upload', () => {
     it('writes the file and returns its key, not a URL', async () => {
-      // The same contract as S3: callers persist the key and ask `getUrl` for a
-      // URL at read time.
       const stored = await storage().upload(
         Buffer.from('hello'),
         'avatars/user-1.png',
@@ -111,8 +109,8 @@ describe('LocalStorageService', () => {
 
     it('does not guard getUrl, which only builds a string', async () => {
       // `getUrl` touches no filesystem, so there is no path to escape: the
-      // static handler `main.ts` mounts under `/uploads` normalises the request
-      // path itself. A guard here would only reject valid keys.
+      // static handler `main.ts` mounts under `/uploads/avatars` normalises the
+      // request path itself. A guard here would only reject valid keys.
       await expect(storage().getUrl('../../secret')).resolves.toBe(
         'https://api.example.com/uploads/../../secret',
       );

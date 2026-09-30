@@ -23,10 +23,11 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
  * `(organizationId, projectId)` composite foreign key makes a session in another
  * workspace's project unrepresentable.
  *
- * `hostId` is the one reference a handler guards instead: a host belongs to a person,
- * with no workspace column, and a grant is a row, so no composite key can reference
- * it. Create loads the host through the own-or-grant-scoped repository and refuses on
- * a miss (`product/versions/mvp/03-control-plane.md`).
+ * `hostId` is the one reference whose scope a handler guards instead: a host belongs
+ * to a person, with no workspace column, and a grant is a row, so no composite key can
+ * reference it (its plain foreign key only proves the host exists). Create loads the
+ * host through the own-or-grant-scoped repository and refuses on a miss
+ * (`product/versions/mvp/03-control-plane.md`).
  */
 @Entity('work_session')
 @Index('IDX_work_session_project_state', ['projectId', 'state'])

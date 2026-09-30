@@ -1,6 +1,5 @@
 // Package memory is the in-process Repository. It is the default store so
-// the service runs with no external dependency; the postgres adapter
-// replaces it when a database URL is configured.
+// the service runs with no external dependency.
 package memory
 
 import (

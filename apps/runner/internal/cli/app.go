@@ -166,8 +166,6 @@ func New(version string) (*App, error) {
 	}
 	app.Binaries = binStore
 
-	// The update context needs the identity: a host that is not paired has
-	// no release URL, no channel and nothing to update towards.
 	if identity, err := pairingSvc.Identity(); err == nil {
 		app.Updates = updapp.New(updapp.Options{
 			Releases: release.New(release.Options{BaseURL: releaseBaseURL(identity)}),
@@ -194,8 +192,7 @@ func releaseBaseURL(identity pairdomain.Identity) string {
 	return DefaultReleaseBaseURL
 }
 
-// serviceManager picks the init system. An unsupported platform gets a nil
-// manager, and every service use case reports SVC_001 rather than pretending.
+// serviceManager picks the init system; an unsupported platform gets nil.
 func serviceManager(paths Paths) svcapp.Manager {
 	switch runtime.GOOS {
 	case "darwin":

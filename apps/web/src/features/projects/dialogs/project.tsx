@@ -16,8 +16,7 @@ import { ProjectEditorDialog } from './project-editor';
 /**
  * New project and Project settings (`product/versions/mvp/05-screens.md`, the
  * 2026-09-27 export), opened from the project chip, the sidebar's plus and a
- * project header's cog. Delete project is off while the project holds
- * unresolved sessions, because the API refuses exactly that.
+ * project header's cog.
  *
  * Without `projectId` it creates. The project is read here rather than handed
  * in because neither opener (the sidebar, the composer) holds the rows.

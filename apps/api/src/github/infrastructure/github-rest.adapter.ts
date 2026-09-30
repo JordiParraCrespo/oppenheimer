@@ -155,9 +155,6 @@ export class GithubRestAdapter implements GithubAppPort {
   async listUserInstallations(code: string): Promise<GithubInstallationRef[]> {
     this.assertConfigured();
 
-    // The code is exchanged once, here, and never stored. What it buys is the one
-    // thing a forged installation id cannot fake: GitHub's own answer to "which
-    // installations can this account see".
     const userToken = await this.exchangeCode(code);
     const installations = await this.paginate<RawInstallation>(
       `${this.api}/user/installations`,

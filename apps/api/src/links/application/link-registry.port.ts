@@ -56,7 +56,7 @@ export interface RunnerLink {
    * always the true one (`product/versions/mvp/15-host-metadata.md`).
    */
   readonly roundTripMillis?: number | null;
-  /** The number of attachments open, for the heartbeat log and the tests. */
+  /** The number of attachments open; read by the tests. */
   readonly attachmentCount: number;
   /**
    * The session command this link sent under `commandId`, forgotten as it is

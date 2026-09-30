@@ -7,9 +7,9 @@ export interface I18nModuleOptions {
   /**
    * Message bundles keyed by locale.
    *
-   * Supplied by the application, not imported by this package: the same JSON
-   * the web app loads is the one the server renders from, so a string is
-   * written once and a translator edits one file.
+   * Supplied by the application, not imported by this package: the server
+   * renders from the same catalogs (`@oppenheimer/translations`) the web app
+   * loads, so a string is written once and a translator edits one file.
    */
   bundles: MessageBundles;
   /** Locale used when nothing else resolves. Defaults to `en`. */

@@ -7,7 +7,7 @@ import { GithubInstallationRepository } from '../database/github-installation.re
 import { GithubInstallationMapper } from '../github-installation.mapper';
 
 /**
- * The GitHub installation tables, against a real Postgres.
+ * The GitHub installation table, against a real Postgres.
  *
  * This is the layer unit tests cannot reach: constraint names, the check
  * constraint, the composite unique a later slice's foreign key depends on, and

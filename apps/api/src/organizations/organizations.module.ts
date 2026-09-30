@@ -229,9 +229,9 @@ const adapters: Provider[] = [
     MembershipAccessPolicy,
     ...UsersModule.contributeAccountErasure([WorkspaceAccountErasure]),
   ],
-  // The one published port: two facts about a workspace, for the modules that
-  // put its slug on a host or re-check a membership at a socket. The tables
-  // stay inside.
+  // The one published port: facts about a workspace for the modules that put
+  // its slug on a host, re-check a membership at a socket or erase an account.
+  // The tables stay inside.
   exports: [WORKSPACE_LOOKUP],
 })
 export class OrganizationsModule {}

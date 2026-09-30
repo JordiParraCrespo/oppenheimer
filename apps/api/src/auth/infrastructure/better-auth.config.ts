@@ -396,7 +396,8 @@ export const auth = betterAuth({
               },
             };
           } catch {
-            // Organization tables not migrated yet — leave the session as-is.
+            // Any failure leaves the session as-is: sign-in never fails over
+            // which organization it lands in.
             return;
           }
         },
@@ -462,8 +463,9 @@ export const auth = betterAuth({
     }),
     // Accepts `Authorization: Bearer <session token>`. Used by the API's own
     // auth guard, which mints a short-lived delegated session for a scoped
-    // credential so the organization/admin façades — which resolve the caller
-    // through Better Auth — keep working for API tokens and MCP clients.
+    // credential so the organization, admin and profile façades — which
+    // resolve the caller through Better Auth — keep working for API tokens and
+    // MCP clients.
     bearer(),
     // Turns the app into an OAuth 2.1 provider for MCP clients: discovery
     // metadata, dynamic client registration, authorization and token endpoints.

@@ -8,12 +8,12 @@ import { cn } from '../lib/utils';
 
 /**
  * EditorPage — the page over the main column: the automations overview
- * (`design/version1/Routines.dc.html`, `op-rpage` and `op-rp`) and Settings'
- * Add a host page. The frame only: a canvas column that scrolls on its own, the
- * measured body centred in it (`wide` for a page that holds a table), and the
- * Back pill above the page header. `EditorPageTop` is a first row for a page
- * that opens on view tabs and one action. New project, Project settings, the
- * console's Add a host and the automation editor are dialogs, not pages.
+ * (`design/version1/Routines.dc.html`, `op-rpage` and `op-rp`). The frame only:
+ * a canvas column that scrolls on its own, the measured body centred in it
+ * (`wide` for a page that holds a table), and the Back pill above the page
+ * header. `EditorPageTop` is a first row for a page that opens on view tabs and
+ * one action. New project, Project settings, the console's Add a host and the
+ * automation editor are dialogs, not pages.
  *
  * The ground is `canvas-recessed`, the export's gray-50 `--canvas`: the run
  * history, table and runs list are white cards and the selected view tab a
@@ -21,7 +21,8 @@ import { cn } from '../lib/utils';
  * the card instead, where the two grounds are one.
  *
  * `EditorPageBack` navigates, so it takes `render` for the router's link the
- * way `Link` does; on its own it is an anchor.
+ * way `Link` does; on its own it is an anchor. Settings' Add a host page uses
+ * it too.
  *
  * ```tsx
  * <EditorPage>

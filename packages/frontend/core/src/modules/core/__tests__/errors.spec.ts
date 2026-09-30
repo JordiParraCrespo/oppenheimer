@@ -7,7 +7,7 @@ const FETCH_FAILED = {
   message: 'Failed to fetch user',
 };
 
-/** What the generated api-client throws: the parsed body hangs off `body`. */
+/** A failure as `unwrap` hands it to `toAppError`: the parsed body on `body`. */
 const apiError = (status: number, body: unknown) =>
   Object.assign(new Error('api'), { status, body });
 

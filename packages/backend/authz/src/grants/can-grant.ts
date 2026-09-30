@@ -82,7 +82,7 @@ export function canGrant(
 }
 
 /**
- * Render a permission for an error message, e.g. `read Lead` or
+ * Render a permission for an error message, e.g. `read Project` or
  * `read Session where {"organizationId":"org-1"}`.
  */
 export function describePermission(permission: PermissionDefinition): string {

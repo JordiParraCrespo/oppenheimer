@@ -168,6 +168,7 @@ func (c *Client) finished(ctx context.Context, mirror, path string) bool {
 	return err == nil && out == ""
 }
 
-// Wait returns once no spare is being made. The runner does not need it; a
-// test that removes the directories a spare is written into does.
+// Wait returns once no spare is being made, for a process about to exit (a
+// one-shot `runner sessions create`) or a test about to remove the
+// directories a spare is written into.
 func (c *Client) Wait() { c.warming.Wait() }

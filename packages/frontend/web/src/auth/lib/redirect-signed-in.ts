@@ -7,7 +7,7 @@ interface RedirectSignedInArgs {
   location: { pathname: string; search: unknown };
   /** Where a signed-in visitor of an auth page is sent when nothing else asks. */
   landing: NavTo;
-  /** Auth-layout paths a signed-in visitor may still open (an invitation to redeem). */
+  /** Auth-layout paths a signed-in visitor may still open. */
   allow?: readonly string[];
 }
 

@@ -52,7 +52,7 @@ export class PoliciesGuard implements CanActivate {
       });
     }
 
-    // Built in the organization `ApiAuthGuard` stamped on the request — on an
+    // Built in the organization stamped on the request — on an
     // `@OrganizationScoped` route, the one the path names — and memoized on the
     // request, which `forRequest` also attaches it to as `request.ability`.
     const ability = await this.abilities.forRequest(request);

@@ -130,9 +130,9 @@ export function ipGeolocationIsConfigured(configService: ConfigService): boolean
 /**
  * Whether this deployment can pair a machine at all: somewhere to download the runner
  * from, somewhere to fetch signed releases from, and a usable key for the runner to
- * pin. The one predicate behind both `RunnerReleaseConfig`, which refuses every host
- * route on it, and the `hosts` capability, which the console reads first: two would let
- * the capability say yes while every route answered `HOSTS_004`.
+ * pin. The one predicate behind both `RunnerReleaseConfig`, which refuses minting and
+ * registering on it, and the `hosts` capability logged at boot: two would let the log
+ * say yes while pairing answered `HOSTS_004`.
  */
 export function hostsAreConfigured(configService: ConfigService): boolean {
   return Boolean(

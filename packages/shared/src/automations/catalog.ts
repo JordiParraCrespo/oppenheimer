@@ -10,7 +10,7 @@
  * and no new UI.
  *
  * Labels are the English copy the frames draw. The console translates them by
- * key (`automations.events.<type>`); the labels here are what the API's docs and
+ * key (`automations.event.<type>`); the labels here are what the API's docs and
  * error details print.
  */
 

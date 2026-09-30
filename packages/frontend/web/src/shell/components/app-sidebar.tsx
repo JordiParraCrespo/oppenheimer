@@ -43,9 +43,6 @@ export function AppSidebar() {
   });
 
   const entries = useAuthorizedNav();
-  // What the app calls the workspace: the console passes the caller's
-  // organization (from the same query General Settings reads, so a saved name
-  // or logo shows here at once); an app with none falls back to its name.
   const workspaceName = workspace?.name ?? t('common.appName');
 
   return (
@@ -86,8 +83,7 @@ export function AppSidebar() {
               <SidebarMenu className="gap-px">
                 {entries.map((entry) => {
                   const Icon = entry.icon;
-                  // `/sessions/new` should still light up Sessions, so match on
-                  // the prefix rather than the exact path.
+                  // A nested route lights its parent's row.
                   const active = pathname === entry.to || pathname.startsWith(`${entry.to}/`);
 
                   return (

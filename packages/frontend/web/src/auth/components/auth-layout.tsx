@@ -55,9 +55,8 @@ const WIDTHS = {
  * These screens follow the OS theme; appearance is chosen from the account
  * menu once signed in.
  *
- * The column's width and what sits under it are the page's `staticData`. The
- * innermost match that *declares* a key wins (`in`, not truthiness), because
- * `null` is a legal-note answer, not an absence.
+ * `legalNoteKey` is found with `in`, not truthiness, because `null` is a
+ * legal-note answer, not an absence.
  */
 export function AuthLayout({ product, panel, children }: AuthLayoutProps) {
   const { t } = useTranslation();

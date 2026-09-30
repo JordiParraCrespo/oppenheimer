@@ -1,11 +1,12 @@
 /**
  * What another module may ask about a workspace without seeing its tables.
  *
- * Two questions, both asked by the runner link: the workspace's slug, which is
- * a path segment on every host (`workspaces/<slug>/…`) and travels on
- * `session.create`; and whether a person is still a member, which the attach
- * socket re-checks at ticket redemption because sixty seconds is long enough
- * to have been removed. Neither answer lets the caller change anything.
+ * The workspace's slug, which is a path segment on every host
+ * (`workspaces/<slug>/…`) and travels on `session.create`; whether a person is
+ * still a member, which the attach socket re-checks at ticket redemption
+ * because sixty seconds is long enough to have been removed; and which
+ * workspaces an account owns, for account erasure. None of them lets the
+ * caller change anything.
  */
 export interface WorkspaceLookupPort {
   /** The organization's slug, or `null` for an id that names no workspace. */

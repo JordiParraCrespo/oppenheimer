@@ -18,7 +18,7 @@ export interface ProjectLookupPort {
   findOneById(scope: AccessScope, projectId: string): Promise<Option<ProjectEntity>>;
   /**
    * The workspace's Unassigned project, provisioned on the way if the workspace
-   * has none yet (one made on `/onboarding` rather than at sign-up).
+   * has none yet (the event that provisions it has not been delivered).
    */
   unassigned(scope: AccessScope): Promise<ProjectEntity>;
 }

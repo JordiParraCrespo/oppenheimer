@@ -27,7 +27,6 @@ export type NavPolicy = EndpointPolicy;
  * them; the two can never disagree because there is one list.
  */
 export interface NavItem {
-  /** Route path — also the key its label is looked up under in `nav.*`. */
   to: NavTo;
   icon: LucideIcon;
   labelKey: keyof Messages['nav'];

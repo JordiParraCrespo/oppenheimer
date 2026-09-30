@@ -165,8 +165,7 @@ describe('DelegatedSessionAdapter', () => {
 
   it('persists the ten-minute expiry instead of Better Auth’s day', async () => {
     // The bug behind issue #122: without `overrideAll` the requested expiry is
-    // spread, then overwritten, and the row outlives its purpose by 143
-    // minutes short of a day.
+    // spread, then overwritten, and the row lives a day instead of ten minutes.
     const token = await service.resolveSessionToken(OPTIONS);
 
     const lifetimeMinutes = (rowFor(token).expiresAt.getTime() - Date.now()) / 60_000;

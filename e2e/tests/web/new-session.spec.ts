@@ -33,7 +33,7 @@ test.describe('New session', () => {
     // `field-sizing-content` overrides `rows`, so an empty textarea once
     // collapsed to one line with every class still right; only a browser that
     // applied the stylesheet sees it. 128px is `min-h-32`, the tabbed composer
-    // (`[data-composer="tabbed"]` in console.css). Asserted here because the
+    // (`Composer` with a `scope`, in the design system). Asserted here because the
     // composer needs a host, and pairing another would trip the per-IP throttle.
     const composer = page.getByRole('textbox', { name: /Describe a task/ });
     expect((await composer.boundingBox())?.height, 'the empty composer is 128px tall').toBe(128);
@@ -80,7 +80,7 @@ test.describe('New session', () => {
 
     // ── The repository chip, and the branch pane inside it ───────────────────
     // One repository per session in the MVP: picking another replaces the
-    // project's default, which is the per-session override 12 describes.
+    // project's default for this session only.
     await page.getByRole('button', { name: 'Repositories' }).click();
     await page.getByRole('option', { name: new RegExp(STUB_REPOSITORIES.mobile.name) }).click();
     // A selected row grows the cell that opens its own branch pane. Picking a
@@ -151,7 +151,7 @@ test.describe('New session', () => {
     if (!prompt) throw new Error('the composer’s task was not recorded as the first prompt');
     expect((prompt.payload as { text: string }).text).toBe(task);
 
-    // Naming is not awaited by the create call, so it lands a moment later.
+    // Named within the create call, from the model or the prompt's own words.
     await expect
       .poll(
         async () => {

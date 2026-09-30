@@ -16,7 +16,7 @@ export const QUERY_PERSIST_MAX_AGE = 24 * 60 * 60 * 1000;
  * session is the kernel's own; a product adds its sensitive features (a
  * credential list, a profile) through `nonPersistedFeatures` when the app
  * builds its persist options — `CONSUMER_NON_PERSISTED_FEATURES` in
- * `@oppenheimer/frontend-consumer` is the list the consumer apps pass.
+ * `@oppenheimer/frontend-consumer` is the list `apps/web` passes.
  */
 const KERNEL_NON_PERSISTED_FEATURES: readonly string[] = [authKeys.all[0], userSettingsKeys.all[0]];
 
@@ -28,8 +28,9 @@ export interface QueryPersistConfig {
 /**
  * Only successful queries are persisted — restoring an error or a pending
  * fetch would replay a failure the user has already moved past. The feature
- * segment is the first entry of every key factory (see the "React Query keys"
- * guide), which is what makes a per-feature deny-list possible.
+ * segment is the first entry of every key factory
+ * (`apps/docs/docs/architecture/query-keys.md`), which is what makes a
+ * per-feature deny-list possible.
  */
 export function shouldDehydrateQuery(
   query: Query,

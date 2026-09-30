@@ -23,7 +23,7 @@ export default defineConfig({
     }),
     react({
       // React 19 ships the runtime the React Compiler needs;
-      // `babel-plugin-react-compiler` is the plugin's peer and the only addition.
+      // the compiler itself is `oxc-transform-react`, the only addition.
       compiler: true,
     }),
     tailwindcss(),

@@ -20,7 +20,7 @@ import { CreateSessionCommand } from '../create-session.command';
 import { CreateSessionCommandHandler } from '../create-session.command-handler';
 
 /**
- * The create path's three refusals and its one retry, which is the whole of what
+ * The create path's refusals and its one retry, which is the whole of what
  * this handler decides. Everything else — the directory name, the branch, the
  * repository's own name — belongs to the factory and is tested where it lives.
  */

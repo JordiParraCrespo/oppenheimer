@@ -21,8 +21,7 @@ import type { RepositoryRef } from '../modules/installations/repository-key';
 import { useConsumerApp } from './context';
 
 /**
- * Query key factory for `installations`, so a whole subtree can be invalidated
- * at once. Repositories repeat the ladder under an installation's `detail(id)`:
+ * Repositories repeat the key ladder under an installation's `detail(id)`:
  *
  * ```
  * [..., 'detail', id, 'repositories']                              repositories(id)
@@ -130,16 +129,14 @@ export function useInstallationRepositories(
 }
 
 /**
- * The branches of several repositories at once, for New session's multi-select
- * repository chip. `useQueries` because the selection's length changes; each
- * entry is keyed as {@link useRepositoryBranches} keys it, so the two share a
- * cache.
+ * The branches of several repositories at once; a one-repository picker passes
+ * a one-element array. `useQueries` because the selection's length changes.
  *
  * `combine` is keyed on which repositories are asked for, not on the array
  * that names them: callers build that array in render, an inline `combine`
  * re-runs each time, and the `Map` it returns cannot be structurally shared, so
- * every memo keyed on `byRepository` missed. (A plain array is shared, which is
- * why `useInstallationRepositoriesFor` needs none of this.)
+ * every memo keyed on `byRepository` would miss. (A plain array is shared, which
+ * is why `useInstallationRepositoriesFor` needs none of this.)
  */
 export function useRepositoryBranchesFor(repositories: readonly RepositoryRef[]) {
   const app = useConsumerApp();

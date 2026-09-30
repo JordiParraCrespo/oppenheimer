@@ -1,12 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-/**
- * One entry of a session's append-only log.
- *
- * `seq` is the control plane's, assigned under a row lock, which is what makes the
- * log dense and a cursor over it stable. `occurredAt` is the writer's clock and
- * `recordedAt` is ours, so a host with a skewed clock cannot reorder history.
- */
+/** One entry of a session's append-only log. */
 export class SessionEventResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;

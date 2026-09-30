@@ -58,11 +58,9 @@ export class HealthProbeController {
 
     return {
       ...flags,
-      // Built here because the slug lives here. A console that had to assemble
-      // this would need its own copy of `GITHUB_APP_SLUG`, and the two would
-      // drift. Gated on the capability rather than the slug alone: the App is
-      // only usable when all six settings are present, and a link offered
-      // without them fails after the reader has left for GitHub.
+      // Gated on the capability rather than the slug alone: the App is only
+      // usable when all six settings are present, and a link offered without
+      // them fails after the reader has left for GitHub.
       github_app_install_url:
         flags.github_app && slug ? `https://github.com/apps/${slug}/installations/new` : null,
     };

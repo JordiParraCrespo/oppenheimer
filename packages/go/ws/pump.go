@@ -120,8 +120,6 @@ func pump(ctx context.Context, conn *websocket.Conn, src source, opts PumpOption
 				continue
 			}
 		}
-		// A busy socket still pings: a tick that fired while frames were
-		// waiting is served between two of them.
 		select {
 		case <-tick:
 			if err := ping(); err != nil {

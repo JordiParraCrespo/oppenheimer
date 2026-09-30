@@ -38,8 +38,8 @@ const THEMES: readonly ThemePreference[] = ['light', 'dark', 'system'];
  * rows carry the export's 15px moon and globe, and "Log out" the 15px door in
  * the one tone the menu may colour.
  *
- * Appearance and language open sideways, so the menu stays four rows tall and
- * the console needs no chrome bar for a theme toggle.
+ * Appearance and language open sideways, so the menu stays a few rows tall
+ * and the console needs no chrome bar for a theme toggle.
  */
 export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avatar' }) {
   const { t, i18n } = useTranslation();

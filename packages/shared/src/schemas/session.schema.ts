@@ -113,8 +113,8 @@ const createSessionFields = z.object({
    * The first task, as typed into the composer.
    *
    * It is recorded as the log's `prompt.first` and carried to the host on the
-   * launch, so the agent is started and then given it — never a second message
-   * racing the first. It also names the session where a namer is configured.
+   * launch, so the agent starts with it — never a second message racing the
+   * first. It also names the session where a namer is configured.
    */
   prompt: promptSchema.optional(),
   /**
@@ -219,10 +219,10 @@ export type SessionGroup = z.infer<typeof sessionGroupSchema>;
  * A tmux window index — tabs are tmux windows, so an attach ticket authorises
  * one window.
  *
- * Written out rather than imported from `../protocol`, which the root barrel
- * deliberately does not re-export: pulling the wire vocabulary in here would put
- * it in every browser bundle that imports a session schema. Keep the two in
- * step; there is one number to keep.
+ * Written out rather than imported from `../protocol/primitives`, whose schema
+ * objects are `zod/v4` and cannot be used from a classic `zod` schema (see
+ * `./primitives`), and whose load registers JSON-Schema ids, a side effect no
+ * browser bundle should carry. Keep the two in step; there is one number to keep.
  */
 const sessionWindowSchema = z.number().int().min(0);
 

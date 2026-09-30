@@ -92,9 +92,7 @@ export interface PermissionDefinition {
  * Context made available to `${...}` placeholders in permission conditions.
  *
  * `user` powers own-resource scoping (`${user.id}`); `activeOrganizationId`
- * powers tenant scoping (`${activeOrganizationId}`) — the natural hook for
- * row-level "only within my active organization" rules once resources carry an
- * `organizationId` column.
+ * powers tenant scoping (`${activeOrganizationId}`).
  */
 export interface AbilityContext {
   user?: Record<string, unknown> | null;

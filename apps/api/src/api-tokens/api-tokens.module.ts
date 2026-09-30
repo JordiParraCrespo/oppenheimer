@@ -22,7 +22,7 @@ import { FindCurrentCredentialQueryHandler } from './queries/find-current-creden
 import { FindGrantablePermissionsHttpController } from './queries/find-grantable-permissions/find-grantable-permissions.http.controller';
 import { FindGrantablePermissionsQueryHandler } from './queries/find-grantable-permissions/find-grantable-permissions.query-handler';
 
-// Registration order matters: `permissions` must be matched before `:id`.
+// `GET permissions` stays registered before any `:id` route, so one never shadows it.
 const httpControllers = [
   FindCurrentCredentialHttpController,
   FindApiTokensHttpController,

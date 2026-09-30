@@ -39,8 +39,9 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
  * `.dependency-cruiser.cjs` enforces this.
  *
  * {@link ScopesGuard} is registered globally in `AppModule`; the other guards
- * are applied per controller. The Better Auth HTTP handler is mounted by
- * `AuthModule.forRoot({ auth })` in `AppModule`. Better Auth's organization and
+ * are applied per controller. The Better Auth HTTP handler is mounted in
+ * `AppModule` by the Better Auth Nest adapter's own module
+ * (`BetterAuthModule.forRoot({ auth })`). Better Auth's organization and
  * team tables are registered by the modules that read them (`organizations`,
  * `authz`), not here.
  *
@@ -79,8 +80,6 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     { provide: CREDENTIAL_SCOPE, useClass: CredentialScopeResolver },
     { provide: DELEGATED_SESSION, useClass: DelegatedSessionAdapter },
     { provide: SESSION_CACHE, useClass: BetterAuthSessionCacheAdapter },
-    // The auth guards run in the injector of whichever module applies them,
-    // which is why the token (never the class) is published below.
     { provide: REQUEST_TENANT, useClass: RequestTenantResolver },
   ],
   // Guards are inbound adapters other modules apply with `@UseGuards`; the rest

@@ -4,7 +4,7 @@ import { z } from 'zod';
 /**
  * Sign-in's search. `redirect` is where to go after, sanitised so an absolute
  * or protocol-relative value cannot send anyone off-site; `email` prefills the
- * form for an invitee who already has an account; `error` is the code Better
+ * form for a link that arrives with an address; `error` is the code Better
  * Auth appends when a social round trip fails and comes back here.
  */
 export const loginSearchSchema = z.object({

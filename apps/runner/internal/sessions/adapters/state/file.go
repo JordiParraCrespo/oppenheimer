@@ -23,7 +23,7 @@ type Store struct{ path string }
 // New builds a store under dir.
 func New(dir string) *Store { return &Store{path: filepath.Join(dir, FileName)} }
 
-// Path is the file's location, for `runner status`.
+// Path is the file's location.
 func (s *Store) Path() string { return s.path }
 
 // Load returns an empty map on a host that has never opened a session.

@@ -19,8 +19,6 @@ describe('isSessionNotFound', () => {
     expect(isSessionNotFound(new AppError(FETCH_FAILED, { status: 503 }))).toBe(false);
   });
 
-  // A request that never reached the API carries no status at all — the case
-  // the repository used to produce for *every* failure.
   it('is false when the failure never got a status', () => {
     expect(isSessionNotFound(new AppError(FETCH_FAILED))).toBe(false);
     expect(isSessionNotFound(new Error('offline'))).toBe(false);

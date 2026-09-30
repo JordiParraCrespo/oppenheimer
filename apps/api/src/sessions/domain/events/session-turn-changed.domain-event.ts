@@ -4,8 +4,8 @@ import type { TurnOrigin, TurnState } from '../session-turn.policy';
 /**
  * Raised when a session's turn moved state — opened, started, waiting, or
  * ended. It is how a consumer that owns a turn's *reason* (an automation's run,
- * a Slack thread later) hears that the work finished, without reading this
- * module's tables.
+ * a Slack thread) is to hear that the work finished, without reading this
+ * module's tables; nothing subscribes yet.
  */
 export class SessionTurnChangedDomainEvent extends DomainEvent {
   readonly organizationId: string;

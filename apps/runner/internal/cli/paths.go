@@ -45,7 +45,8 @@ type Paths struct {
 	WorkspacesSource string
 }
 
-// Environment variables that move the layout, for development and for tests.
+// Environment variables the runner reads. The first two move the layout, for
+// development and for tests.
 const (
 	EnvHome       = "RUNNER_HOME"
 	EnvWorkspaces = "RUNNER_WORKSPACES"
@@ -178,7 +179,7 @@ func (p Paths) Log() string { return filepath.Join(p.Home, DirLog) }
 // Run holds the socket and the single-instance lock.
 func (p Paths) Run() string { return filepath.Join(p.Home, DirRun) }
 
-// State holds update.json.
+// State holds update.json and sessions.json.
 func (p Paths) State() string { return filepath.Join(p.Home, DirState) }
 
 // Manifests is where newer agent manifests are dropped.

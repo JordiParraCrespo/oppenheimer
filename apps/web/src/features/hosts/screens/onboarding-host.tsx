@@ -9,9 +9,6 @@ import { usePairing } from '../hooks/use-pairing';
  * 2026-09-27 export). This step owns the header and the wait: Continue waits
  * for the runner to come online (`usePairing`'s rules). The column is the
  * kit's `PairingChrome`, shared with the console's Add a host dialog.
- *
- * Both forms come from the API with the secret already in them: it is shown
- * once and only the server knows it, so neither string is assembled here.
  */
 export function OnboardingHostScreen({
   step,

@@ -15,10 +15,6 @@ import { ListInstallationRepositoriesQuery } from './list-installation-repositor
 const CACHE_TTL_SECONDS = 60;
 
 /**
- * The repository list is never stored: GitHub owns it and enforces the
- * installation's access, so a repository that leaves it stops appearing here
- * (`product/versions/mvp/03-control-plane.md`).
- *
  * The one-minute Redis key is read only here; the branch listing and the token
  * mint go to GitHub. It is a cache of a picker's page, not a mirror anything
  * authorises against.

@@ -290,8 +290,8 @@ describe('API tokens & scopes (integration)', () => {
     // These two are about the secret — returned once, stored as a digest — and
     // the scope on them is incidental. It is `tokens:read` because they mint as
     // a plain seeded user with no `grantOwnerPermissions` call ahead of them:
-    // that role holds `read ApiToken` but not the unconditional `read User`
-    // (`TightenDefaultUserRole`), so `users:read` would be refused with 403.
+    // the seeded `user` role holds `read ApiToken` but not the unconditional
+    // `read User`, so `users:read` would be refused with 403.
     it('returns the secret exactly once and never again', async () => {
       const created = await mintToken({
         name: 'read-only',

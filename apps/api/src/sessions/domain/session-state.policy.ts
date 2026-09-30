@@ -22,12 +22,7 @@ import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
  * disagrees with.
  */
 
-/**
- * The coding agent a session runs, from the closed catalog in
- * `@oppenheimer/shared`. Derived from the create DTO rather than imported from
- * `@oppenheimer/shared/agents`, which the API's classic module resolution cannot
- * reach: the catalog is one union, and this is that union.
- */
+/** The coding agent a session runs: the create DTO's union over the closed agent catalog. */
 export type SessionAgent = CreateSessionDto['agent'];
 
 /**
@@ -44,9 +39,10 @@ export type AgentObservedState = (typeof AGENT_OBSERVED_STATES)[number];
  * newer than the control plane may log a kind this version has never heard of, and
  * the log must keep it; an unknown kind advances `lastEventAt` and nothing else.
  *
- * Every kind here has a writer, since an unwritten entry is how the fold and the
- * routes drift: `attach.opened` (the ticket's claimer) and `session.dispatch_pending`
- * (a dispatcher that can fail to send) stay absent until those exist.
+ * An entry with no writer is how the fold and the routes drift, so `attach.opened`
+ * (the ticket's claimer) and `session.dispatch_pending` (a dispatcher that can fail
+ * to send) stay absent until those exist. The two `report.*` kinds are folded ahead
+ * of their writer: nothing appends them yet.
  */
 export const SESSION_EVENT_KINDS = {
   /** The control plane accepted the request and the session row exists. */
@@ -82,7 +78,10 @@ export const SESSION_EVENT_KINDS = {
   CHECKOUT_ADDED: 'session.checkout_added',
   /** A checkout was retired. Payload `{ checkoutId }`. The row stays; `removedAt` retires it. */
   CHECKOUT_REMOVED: 'session.checkout_removed',
-  /** The runner read the first user message out of the agent's own transcript. */
+  /**
+   * The first task: the composer's, written by the API at create, or one a runner
+   * reads off the agent's transcript (no runner sends it yet). Payload `{ text, images? }`.
+   */
   PROMPT_FIRST: 'prompt.first',
   /** What the screen manifest last observed the agent doing. Payload `{ state }`. */
   AGENT_OBSERVED: 'agent.observed',

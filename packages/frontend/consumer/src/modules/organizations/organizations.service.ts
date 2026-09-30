@@ -5,10 +5,10 @@ import type { OrganizationsRepository } from './organizations.repository';
 
 /**
  * Whether a slug is still the one sign-up minted rather than one a person
- * chose. The provisioning hook derives it from the account and appends eight
- * hex characters to keep it unique
- * (`apps/api/src/organizations/domain/personal-workspace.entity.ts`), so that
- * suffix is what marks an address nobody has claimed yet.
+ * chose. Provisioning derives it from the account's name and appends eight
+ * hex characters to keep it unique (`OrganizationSlug.derive` in
+ * `apps/api/src/organizations/domain/value-objects/`), so that suffix is what
+ * marks an address nobody has claimed yet.
  */
 export function isProvisionalSlug(slug: string): boolean {
   return /-[0-9a-f]{8}$/.test(slug);

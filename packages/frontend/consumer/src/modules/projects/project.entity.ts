@@ -43,7 +43,7 @@ export class ProjectEntity {
     return this.repositories.filter((repository) => repository.isDefault);
   }
 
-  /** The repository's own name — the `xrp-mobile` of `acme/xrp-mobile`. */
+  /** Each repository's own name, comma-separated: `xrp-mobile` for `acme/xrp-mobile`. */
   get shortName(): string {
     return this.repositories.map((repository) => shortName(repository.fullName)).join(', ');
   }

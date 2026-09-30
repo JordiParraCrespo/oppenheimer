@@ -13,7 +13,7 @@ import { findResetToken, findSessionsForUser } from '../../support/db';
 
 test.describe('session security', () => {
   // The reset is the remedy for a session someone else is holding, so it has to
-  // end that session — `revokeSessionsOnPasswordReset` in `auth.ts`.
+  // end that session — `revokeSessionsOnPasswordReset` in `better-auth.config.ts`.
   test('a session opened before the reset no longer authenticates', async () => {
     const { api, user, userId } = await signedUpContext('stolensession');
     expect((await api.get('/api/v1/users/me', { failOnStatusCode: false })).status()).toBe(200);

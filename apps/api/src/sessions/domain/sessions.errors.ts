@@ -39,16 +39,17 @@ export const SessionErrors = {
     httpStatus: 409,
   },
   /**
-   * Raised on a stop, restart, rename or checkout change against a session that
-   * has already been closed. Closing is final: the row is a tombstone that keeps
-   * its directory name and branch from being reissued.
+   * Raised on more work for a session that has already been closed: a stop,
+   * restart, rename, move, added checkout, terminal ticket or input. Closing is
+   * final: the row is a tombstone that keeps its directory name and branch from
+   * being reissued.
    */
   ALREADY_RESOLVED: {
     code: 'SESSIONS_005',
     message: 'That session is closed',
     httpStatus: 409,
   },
-  /** The project a session was asked for is retired; its directory is out of use. */
+  /** The project a session was asked for is retired: nothing new is listed under it. */
   PROJECT_ARCHIVED: {
     code: 'SESSIONS_006',
     message: 'That project is archived',

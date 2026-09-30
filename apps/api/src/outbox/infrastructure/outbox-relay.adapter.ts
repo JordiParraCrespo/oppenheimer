@@ -16,7 +16,7 @@ import type { Queue } from 'bullmq';
  * re-emitted on the in-process `EventEmitter2` bus keyed by event class name, `queue`
  * rows are added to the BullMQ queue named by `topic`.
  *
- * Repositories `wake()` it right after their staging transaction commits, so delivery
+ * `OutboxService` wakes it right after a staging transaction commits, so delivery
  * stays in-process fast without the request waiting on it; a background poll reclaims
  * rows whose process died between commit and delivery, the case the outbox exists for.
  */

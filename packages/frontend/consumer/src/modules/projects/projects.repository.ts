@@ -65,7 +65,6 @@ function toUpdateRequest(input: UpdateProjectInput): UpdateProjectRequest {
       ? { repositories: toRepositoryRows(input.repositories) }
       : {}),
     ...(input.defaultHostId !== undefined ? { defaultHostId: input.defaultHostId } : {}),
-    // null is how a default agent is cleared.
     ...(input.defaultAgent !== undefined ? { defaultAgent: input.defaultAgent } : {}),
   };
 }
@@ -74,8 +73,6 @@ function toUpdateRequest(input: UpdateProjectInput): UpdateProjectRequest {
 export class ProjectsRepository {
   @MapApiError(ProjectsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<ProjectEntity[]> {
-    // An absent body is a failed read, not an empty collection — returning `[]`
-    // would render "no projects" over a request that never succeeded.
     const data = await unwrapBody(heyApiSdk.findProjects(), ProjectsErrors.FETCH_LIST_FAILED);
     return data.map(toEntity);
   }

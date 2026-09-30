@@ -6,11 +6,6 @@ import { CORE_CONFIG } from '../config';
 import { useOppenheimerApp } from './context';
 import { useQuery } from './query';
 
-/**
- * Everything derives from `all`, and `all` itself is never handed to
- * `useQuery` — a root that is also a leaf stops meaning "everything" the day a
- * second query joins it.
- */
 const capabilitiesKeys = {
   all: ['capabilities'] as const,
   deployment: () => [...capabilitiesKeys.all, 'deployment'] as const,

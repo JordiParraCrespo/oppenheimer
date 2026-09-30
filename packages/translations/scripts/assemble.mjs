@@ -2,8 +2,8 @@
 /**
  * Rebuilds `{locale}/index.json` — and `{locale}/browser.json`, the same
  * without the namespaces no browser reads — from the per-area namespace files.
- * The namespace files are the source of truth; the merged file exists so
- * `@oppenheimer/translations/en` (JSON) and the API translator keep working.
+ * The namespace files are the source of truth; the merged `index.json` is what
+ * the API's translator loads, every locale at once.
  */
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

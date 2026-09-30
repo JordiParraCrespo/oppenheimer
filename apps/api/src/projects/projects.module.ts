@@ -30,8 +30,6 @@ import { FindProjectQueryHandler } from './queries/find-project/find-project.que
 import { FindProjectsHttpController } from './queries/find-projects/find-projects.http.controller';
 import { FindProjectsQueryHandler } from './queries/find-projects/find-projects.query-handler';
 
-// Static routes before parameterized ones, so `GET /projects` is not shadowed by
-// `GET /projects/:id`.
 const httpControllers = [
   FindProjectsHttpController,
   FindProjectHttpController,

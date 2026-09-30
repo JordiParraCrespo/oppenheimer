@@ -8,7 +8,7 @@ import { Check, Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColum
  *
  * The fields a screen shows or a rollout counts are columns; the whole report
  * stays in `facts`, so a field a newer runner sends is kept before anything
- * promotes it. The table is created in `InitialSchema`.
+ * promotes it.
  */
 @Entity('host_inventory')
 @Check('CHK_host_inventory_facts_hash', `"factsHash" ~ '^[0-9a-f]{64}$'`)

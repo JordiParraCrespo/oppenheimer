@@ -2,9 +2,8 @@
  * A locale's message catalog: an arbitrarily nested tree of strings, addressed
  * by dotted key path (`emails.invitation.roles.admin`).
  *
- * This is deliberately structural rather than a named import of the app's
- * bundles: the package translates, it does not own copy. Callers hand it the
- * bundles they already ship to the browser, so a string is written once.
+ * Structural rather than a named import of the app's bundles: the package
+ * translates, it does not own copy (see `I18nModuleOptions.bundles`).
  */
 export type MessageNode = string | { [key: string]: MessageNode };
 export type MessageBundle = Record<string, MessageNode>;

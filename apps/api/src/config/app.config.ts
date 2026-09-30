@@ -16,8 +16,8 @@ const schema = z.object({
   errorTypeBaseUrl: z.string().url().default('https://oppenheimer.dev/errors'),
   // Number of reverse-proxy hops in front of the API (Express `trust proxy`).
   // 0 = trust none (direct connection). Behind nginx/ingress set it to the
-  // hop count so `req.ip` is the real client — the throttler keys on it and
-  // API-token IP allowlists and audit logs record it. Never blindly trust all
+  // hop count so `req.ip` is the real client — the throttler's auth-failure
+  // budget keys on it and API-token IP allowlists check it. Never blindly trust all
   // proxies (`true`), which lets a client spoof `X-Forwarded-For`.
   trustProxy: z.coerce.number().int().min(0).default(0),
   // **Optional capability** — the Bull Board queue dashboard at `/admin/queues`

@@ -40,12 +40,8 @@ export const HELLO_TIMEOUT_MS = 10_000;
 export const LINK_PING_INTERVAL_MS = 15_000;
 
 /**
- * The largest frame a runner may send, enforced by `ws` while it reads: a
- * bigger one is refused with 1009 before it is buffered. A control frame larger
- * than this is not a control frame, and a binary PTY frame is at most 32 KiB
- * plus its header, so every legitimate frame fits. It is the protocol's
- * `LINK_MAX_FRAME_BYTES`, which the runner is generated from and holds itself
- * to when it sends.
+ * The protocol's `LINK_MAX_FRAME_BYTES`, which says why every legitimate frame
+ * fits; `ws` refuses a bigger one with 1009 before buffering it.
  */
 export const MAX_RUNNER_FRAME_BYTES = LINK_MAX_FRAME_BYTES;
 
@@ -70,7 +66,6 @@ export const APPEND_QUEUE_LIMITS: AppendQueueLimits = {
    * what ends it.
    */
   maxPauseMs: 10_000,
-  /** The protocol's own cap on one `events.append`, so a coalesced append is a batch the log already takes. */
   maxEventsPerAppend: 256,
 };
 

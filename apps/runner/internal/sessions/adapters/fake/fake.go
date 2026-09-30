@@ -3,8 +3,7 @@
 // that has neither installed and without spawning a process per assertion.
 //
 // The adapters against the real tools live next door and are exercised by
-// their own tests, which skip when the tool is missing. This package is what
-// keeps the lifecycle itself fast and deterministic.
+// their own tests, which skip when the tool is missing.
 package fake
 
 import (

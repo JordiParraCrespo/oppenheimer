@@ -7,8 +7,8 @@
  *   OUTCOME=success|failure node scripts/ci/report-main.mjs
  *
  * Reads GITHUB_TOKEN (issues: write), GITHUB_API_URL, GITHUB_REPOSITORY,
- * GITHUB_SHA and RUN_URL from the workflow. It never fails the run itself: the
- * `ci:local` step already did, and this is only the report.
+ * GITHUB_SHA and RUN_URL from the workflow. A red outcome is not an exit code
+ * here: the `ci:local` step already failed the run, and this is only the report.
  */
 import { existsSync, readFileSync } from 'node:fs';
 

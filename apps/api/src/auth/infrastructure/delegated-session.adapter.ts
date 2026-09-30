@@ -53,12 +53,12 @@ interface CachedDelegatedSession {
 /**
  * Bridges scoped credentials to the Better Auth session world.
  *
- * The façade modules (organizations, members, invitations, workspaces, admin)
- * call Better Auth's server API, which resolves the caller from a session. An
- * API token or OAuth access token has none, so this mints a short-lived one for
- * the credential's owner; the auth guard presents it as
- * `Authorization: Bearer <token>` to the Better Auth `bearer` plugin. Only
- * routes marked `@UsesBetterAuthSession()` ask for one.
+ * The façade modules (organizations, admin, profile) call Better Auth's server
+ * API, which resolves the caller from a session. An API token or OAuth access
+ * token has none, so this mints a short-lived one for the credential's owner;
+ * the auth guard presents it as `Authorization: Bearer <token>` to the Better
+ * Auth `bearer` plugin. Only routes marked `@UsesBetterAuthSession()` ask for
+ * one.
  *
  * Sessions are cached per credential (one mint per ten minutes; a lookup is one
  * Redis round trip for the entry and the user's generation), and each remint

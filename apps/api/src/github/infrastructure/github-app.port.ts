@@ -53,7 +53,7 @@ export interface GithubAppPort {
    * This is the claim proof, and it has no fallback: matching the installation's
    * `account.login` against the caller's linked GitHub account fails for
    * organization installations, where that login is the org rather than a user
-   * (`product/versions/mvp/00-scope.md`). The code is used once, here, and never
+   * (`product/versions/mvp/10-api-modules-and-data-model.md`). The code is used once, here, and never
    * stored.
    */
   listUserInstallations(code: string): Promise<GithubInstallationRef[]>;

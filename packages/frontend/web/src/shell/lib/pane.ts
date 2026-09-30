@@ -9,7 +9,6 @@
  */
 export type ContentPane = 'measure' | 'full';
 
-/** Prose unless a route says otherwise: most screens are prose. */
 const DEFAULT_CONTENT_PANE: ContentPane = 'measure';
 
 declare module '@tanstack/react-router' {

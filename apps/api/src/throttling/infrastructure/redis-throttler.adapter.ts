@@ -111,8 +111,7 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
       /*
        * Fail open: a rate limiter sheds abusive load and must not be a second thing that
        * takes the API down, so an unreachable Redis serves the request. The counter is a
-       * courtesy backstop; authentication and the edge's proof-of-human check are the
-       * controls, and neither depends on it.
+       * courtesy backstop; authentication is the control, and it does not depend on it.
        */
       this.logger.error(
         { message: 'Rate-limit counter unavailable; allowing the request', throttlerName },

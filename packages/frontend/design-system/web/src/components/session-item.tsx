@@ -19,11 +19,8 @@ function SessionList({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 /**
- * `action` is the row's ellipsis: an icon button (the trigger of a
- * `DropdownMenu` with Rename, Move to project… and Delete) that only shows
- * on hover, focus, or while its menu is open (`menuOpen`), and hides the age
- * while it does. `rename` swaps the name for a 22px inline input with the
- * primary ring; Enter commits, Escape cancels.
+ * `rename` swaps the name for a 22px inline input with the primary ring; Enter
+ * commits, Escape cancels.
  */
 type SessionRename = {
   value: string;
@@ -64,7 +61,11 @@ function SessionItem({
   active?: boolean;
   /** Replaces the branch glyph. */
   icon?: React.ReactNode;
-  /** The hover-only ellipsis at the row's right edge, 20px. */
+  /**
+   * The row's 20px ellipsis (the trigger of a `DropdownMenu` with Rename, Move
+   * to project… and Delete): shown on hover, focus, or while its menu is open
+   * (`menuOpen`), and hiding the age while it is.
+   */
   action?: React.ReactNode;
   /** Keeps the row lit and the action visible while its menu is open. */
   menuOpen?: boolean;

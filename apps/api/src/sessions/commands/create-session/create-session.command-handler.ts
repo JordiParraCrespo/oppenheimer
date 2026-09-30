@@ -24,10 +24,10 @@ import { CreateSessionCommand } from './create-session.command';
  * log, and the job the host is owed.
  *
  * The order matters. The host is checked **first**: `hostId` is the one reference
- * a constraint cannot hold (a host is a person's, with no workspace column), so a
- * foreign host is refused before anything is written; then the attached images,
- * then the project, whose slug the branch needs. The row, its checkouts and its log
- * commit together, and only a session genuinely created is dispatched.
+ * no composite key can scope (a host is a person's, with no workspace column), so a
+ * foreign host is refused before anything is written; then the project, the
+ * checkouts and the attached images. The row, its checkouts and its log commit
+ * together, and only a session genuinely created is dispatched.
  */
 @CommandHandler(CreateSessionCommand)
 export class CreateSessionCommandHandler

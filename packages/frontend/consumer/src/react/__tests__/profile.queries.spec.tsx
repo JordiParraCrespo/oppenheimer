@@ -110,8 +110,6 @@ describe('profile writes', () => {
   });
 
   it('refreshes the directory too, so the shell renames with the card', async () => {
-    // The sidebar reads the caller's name from `usersKeys.me()`. Leaving it
-    // alone renames the profile card and nothing else on screen.
     const { wrapper, invalidate } = setup();
     const { result } = renderHook(() => useUpdateMyProfile(), { wrapper });
 

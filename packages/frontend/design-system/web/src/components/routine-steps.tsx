@@ -4,12 +4,12 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 
 /**
- * RoutineSteps — the routine editor as four numbered steps down a rail:
- * Where, When, What, Agent. Each step is a 24px mono number on the hover
- * wash, a title with a one-line subtitle, and its fields underneath. A
- * finished step inverts its number to a tick in full ink and prints a
- * one-line summary on the right, so the whole routine reads top to bottom
- * before you save. The rail between steps darkens once the step above is
+ * RoutineSteps — numbered steps down a rail: the export's routine editor
+ * (Where, When, What, Agent), and Settings' Add a host. Each step is a 24px
+ * mono number on the hover wash, a title with a one-line subtitle, and its
+ * fields underneath. A finished step inverts its number to a tick in full ink
+ * and prints a one-line summary on the right, so the whole routine reads top to
+ * bottom before you save. The rail between steps darkens once the step above is
  * done.
  */
 function RoutineSteps({ className, ...props }: React.ComponentProps<'ol'>) {

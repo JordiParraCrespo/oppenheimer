@@ -78,8 +78,8 @@ export class ApiTokenCredentialResolver implements CredentialResolverPort {
 
 /**
  * The request's source address. Behind a proxy this is the proxy's address
- * unless Express is configured with `trust proxy`, so an IP allowlist should
- * only be relied on once that is set (see the API tokens documentation).
+ * unless `TRUST_PROXY` (`app.config.ts`) names the hops, so an IP allowlist
+ * should only be relied on once that is set.
  */
 function sourceAddress(request: ScopedRequest): string | null {
   return request.ip ?? request.socket?.remoteAddress ?? null;

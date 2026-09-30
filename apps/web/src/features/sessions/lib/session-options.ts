@@ -240,7 +240,7 @@ export function projectPrefill(
   return patch;
 }
 
-/** The slice of the draft a project prefills; the hook owns the whole shape. */
+/** The slice of the draft a project prefills; the whole shape is `NewSessionDraft`. */
 export interface NewSessionDraftShape {
   hostId: string | null;
   scope: RepositoryScope[];

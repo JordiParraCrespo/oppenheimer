@@ -28,8 +28,8 @@ const SWEEP_BATCH = 500;
  * The hub's worker: processes stored deliveries (staged on the outbox by the
  * receive path, so a job is never lost between a commit and Redis), sweeps
  * every five minutes for deliveries whose job ran out of retries, and once a
- * day purges what retention says is not kept. One queue for both, because
- * both are the hub's own work on its own tables.
+ * day purges what retention says is not kept. One queue for all three,
+ * because all are the hub's own work on its own tables.
  */
 @Processor(QUEUE_NAMES.INBOUND_EVENTS)
 export class InboundEventsProcessor extends WorkerHost implements OnApplicationBootstrap {

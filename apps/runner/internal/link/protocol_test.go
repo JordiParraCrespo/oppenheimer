@@ -22,8 +22,8 @@ import (
 // catch is the build that changed the schema and not the Go, and a hand edit
 // of the generated file.
 
-// sharedFile reads a file of packages/shared/protocol-schema, which sits four
-// directories above this one in the repository.
+// sharedFile reads a file of packages/shared/protocol-schema; the repository
+// root is four directories above this one.
 func sharedFile(t *testing.T, name string) []byte {
 	t.Helper()
 	_, here, _, ok := runtime.Caller(0)

@@ -141,7 +141,7 @@ type Facts struct {
 
 // Machine is what the operating system says about the hardware and itself.
 // It changes on a reboot, an upgrade or a move, not between heartbeats, which
-// is why the prober reads it once and caches it.
+// is why the prober reads it at most hourly and caches it.
 type Machine struct {
 	// OSName is the distribution's own name for itself: "Ubuntu 24.04.1 LTS",
 	// "macOS 15.2".

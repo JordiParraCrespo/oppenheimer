@@ -52,12 +52,13 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
           configService.get('storage.s3SecretAccessKey'),
       ),
     // The same predicate the host routes refuse on, called rather than
-    // re-derived: a capability that says yes while every route answers
-    // HOSTS_004 is a second source of truth, and the console reads this one.
+    // re-derived, so the capability never says yes while every route answers
+    // HOSTS_004.
     hosts: hostsAreConfigured(configService),
-    // The same predicate the namer adapter checks. Without it sessions are
-    // named from their prompt's words, a supported configuration; this answers
-    // "why are titles never a model's" from the log.
+    // A configured LLM provider and a model, the condition `SessionNamingResolver`
+    // checks. Without it sessions are named from their prompt's words, a
+    // supported configuration; this answers "why are titles never a model's"
+    // from the log.
     session_namer: sessionNamerIsConfigured(configService),
     // A database on disk to place a host's network with. Without it networks
     // are recorded by address only, and no new-network email can be judged.

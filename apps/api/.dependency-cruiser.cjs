@@ -27,7 +27,7 @@ const CROSS_MODULE_PUBLIC_SURFACE = [
   // answer to "what may this principal do". Handlers that check grantability
   // ask it by design; it is published surface. The auth kernel is the one
   // caller that may not name it — it asks through its own `ABILITY` port,
-  // which this module binds to the same factory (see `auth-is-a-kernel`).
+  // which `roles` binds to the same factory (see `auth-is-a-kernel`).
   '^src/roles/application/ability\\.factory\\.ts$',
   // The one way to report a system role the database does not have: two of
   // the three paths that raise it live outside `roles`.
@@ -125,9 +125,10 @@ module.exports = {
       severity: 'error',
       from: {
         path: '^src/[^/]+/(domain|commands|queries|application|dtos)/',
-        // Ledger: these three read ORM repositories directly and still need a
-        // port. All of them reach across into organizations'/roles' tables,
-        // which is what makes the port worth defining rather than inlining.
+        // Ledger: the policy and the resolver read ORM repositories directly
+        // and still need a port. Both reach across into organizations'/roles'
+        // tables, which is what makes the port worth defining rather than
+        // inlining. active-organization.resolver.ts no longer exists.
         pathNot: [
           '^src/authz/application/active-organization\\.resolver\\.ts$',
           '^src/authz/application/principal-residency\\.policy\\.ts$',
@@ -153,7 +154,7 @@ module.exports = {
           '^src/auth/guards/',
           ...TESTS,
           // The seed is a composition root of its own: a standalone script
-          // that boots the same providers to write the first admin user.
+          // that signs its accounts up through Better Auth, as the app does.
           '^src/database/seed\\.ts$',
           // Ledger: profile's error mapper folds Better Auth's error codes onto
           // this module's catalog, which needs the invoker but is not itself an

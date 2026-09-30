@@ -31,7 +31,7 @@ export type SocialProvider = 'google' | 'github';
  * an identity that already exists — including one that only exists as an
  * email/password account, which the API links on the way through. The intent
  * decides one thing: whether an unknown identity may become a new account.
- * Only the register screens pass `'sign-up'`.
+ * Only the register screen passes `'sign-up'`.
  */
 export type SocialAuthIntent = 'sign-in' | 'sign-up';
 

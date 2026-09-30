@@ -83,7 +83,8 @@ export class WorkSessionRepository
       if (active.length === 0) return 'project-archived' as const;
       // The same for the host, whose unpair is an update of this row: an unpair
       // that commits first turns this into zero rows, and one that arrives second
-      // waits for the session, which the account's erasure then finds.
+      // waits for the session, which the unpair then stops like any other and an
+      // account's erasure, a step after its unpair, deletes.
       const paired: { id: string }[] = await manager.query(
         `SELECT "id" FROM "host" WHERE "id" = $1 AND "unpairedAt" IS NULL FOR SHARE`,
         [record.hostId],
@@ -272,14 +273,12 @@ export class WorkSessionRepository
     const sort = filters.sort ?? 'recent';
     const key = SORT_KEYS[sort];
     applySort(query, sort);
-    // The sort key as Postgres prints it, for the next cursor: text round-trips a
-    // `timestamptz` to the microsecond, which a JavaScript `Date` does not.
+    // The sort key as Postgres prints it, for the next cursor (see `toListCursor`).
     query.addSelect(`(${key.expression})::text`, 'sortKey');
 
     if (filters.cursor) {
       // A row comparison, so the walk resumes exactly after the last row it
-      // returned and never counts: `(key, id)` is unique and both halves sort in
-      // the same direction.
+      // returned and never counts: `(key, id)` is unique.
       query.andWhere(
         `(${key.expression}, "session"."id") ${key.after} (CAST(:cursorKey AS ${key.type}), CAST(:cursorId AS uuid))`,
         { cursorKey: filters.cursor.key, cursorId: filters.cursor.id },
@@ -782,10 +781,8 @@ const SORT_KEYS: Record<
 /**
  * The list's order. `recent` is last activity first, with sessions nothing has
  * happened in yet by their creation; the id breaks every tie so a page boundary
- * is stable. The tie-break runs the same way as the key — descending for
- * `recent`, ascending otherwise — because that is what lets one row comparison
- * resume a cursor walk. It only ever orders sessions whose key is equal, so no
- * caller depends on which way it runs.
+ * is stable, in the key's own direction (see `SORT_KEYS`). It only orders equal
+ * keys, so no caller depends on which way it runs.
  */
 function applySort(
   query: SelectQueryBuilder<WorkSessionOrmEntity>,

@@ -5,10 +5,9 @@
  * `packages/shared/src/agents/catalog.ts` is the source 01 points at for how
  * a structured launch becomes each agent's argv. The runner reads the same
  * entry, in Go; rather than a hand-kept twin that drifts on the next catalog
- * edit, the Go file is generated here, as the second half of
- * `pnpm --filter @oppenheimer/shared build` beside the protocol schema, and
- * committed. `catalog.spec.ts` fails when the committed file is stale, so the
- * drift cannot ship green.
+ * edit, the Go file is generated here as part of
+ * `pnpm --filter @oppenheimer/shared build` and committed. `catalog.spec.ts`
+ * fails when the committed file is stale, so the drift cannot ship green.
  */
 const { writeFileSync } = require('node:fs');
 const { join, relative } = require('node:path');

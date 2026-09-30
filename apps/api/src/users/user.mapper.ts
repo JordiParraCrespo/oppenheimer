@@ -12,9 +12,8 @@ import { UserResponseDto } from './dtos/user.response.dto';
  * Auth's display name, is derived from the first and last name, so the member list and
  * the invitation email never show a stale one. `image` round-trips, so an update that
  * does not mention the avatar (including one a social provider supplied) leaves it as
- * it was. The admin
- * plugin's ban columns are read, never written: a profile save racing a ban would
- * write a stale `banned = false` back over it.
+ * it was. The admin plugin's ban columns are read, never written: a profile save
+ * racing a ban would write a stale `banned = false` back over it.
  */
 @Injectable()
 export class UserMapper implements Mapper<UserEntity, UserOrmEntity, UserResponseDto> {

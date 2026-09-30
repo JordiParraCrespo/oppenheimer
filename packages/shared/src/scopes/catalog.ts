@@ -72,8 +72,8 @@ export interface PermissionGroup {
 
 /**
  * The permission catalog — the single source of truth shared by the API guard
- * and the web permission picker. Adding a resource here is the only step
- * needed for it to appear on every surface.
+ * and the web permission picker. A group here, with its resource in
+ * `SCOPE_RESOURCES`, is all a resource needs to appear on every surface.
  */
 export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
   {

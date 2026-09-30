@@ -28,8 +28,9 @@ const Socket = "oppenheimer"
 // classifier; the runner never invents one.
 type State string
 
-// States. `working`, `blocked` and `idle` come from the screen manifest;
-// `starting`, `stopped` and `closed` are lifecycle.
+// States. `working`, `blocked`, `idle`, `done` and `unknown` come from the
+// screen manifest; `creating`, `starting`, `stopped` and `closed` are
+// lifecycle.
 const (
 	// StateCreating is a session whose create is still running: its mirror,
 	// worktree or tmux session may not exist yet. It is only ever held in

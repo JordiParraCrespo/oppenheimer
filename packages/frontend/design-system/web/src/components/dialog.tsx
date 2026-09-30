@@ -153,9 +153,8 @@ function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 /**
- * Legacy: the starter's gradient hero band. Gradients are not part of this
- * system; it now renders a flat tonal panel so the unported screens keep
- * their layout until they are rebuilt.
+ * Legacy: the starter's gradient hero band, drawn as a flat tonal panel
+ * because gradients are not part of this system. No screen uses it.
  */
 function DialogHero({
   className,

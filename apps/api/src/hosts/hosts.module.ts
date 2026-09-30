@@ -118,7 +118,6 @@ const repositories: Provider[] = [
   // writes the timeline inside its own transactions through the class.
   HostMetadataRepository,
   { provide: HOST_METADATA_REPOSITORY, useExisting: HostMetadataRepository },
-  // Offline: DB-IP Lite on disk.
   { provide: IP_GEOLOCATION, useClass: DbipGeolocationAdapter },
   // TODO(remove after #162 has been live once): replay markers burned before
   // the cache prefixed its keys. See `LegacyReplayMarkerPort`.
@@ -139,9 +138,9 @@ const resolvers: Provider[] = [
  *
  * A host's boot assertion is a credential kind this module **contributes** to the
  * auth kernel: `HostCredentialResolver` is built in this module's injector and
- * injects its `HOST_ASSERTION` port, so nothing here is `@Global`. Only `HostResource`
- * is registered with the authorization kernel; the pairing token's declaration only
- * scopes its rows (see `host-pairing-token.resource.ts`).
+ * injects its `HOST_ASSERTION` port, so nothing here is `@Global`. `HostResource` is
+ * the one resource registered with the authorization kernel, and it scopes pairing
+ * tokens too (see `HostPairingTokenRepository`).
  */
 @Module({
   imports: [

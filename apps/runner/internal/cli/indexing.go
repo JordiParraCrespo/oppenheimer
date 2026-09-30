@@ -13,10 +13,10 @@ const IndexingOptOut = ".metadata_never_index"
 // ExcludeFromIndexing asks the desktop search index to leave dir alone.
 //
 // Every session is a worktree with its dependencies installed, gigabytes of
-// `node_modules` rewritten whenever an agent installs something. On a host with
-// eight sessions Spotlight's `mdworker_shared` outspent the agents, `tmux
-// list-panes` passed its ten-second deadline, the link missed its pings and the
-// browser's terminals went blank.
+// `node_modules` rewritten whenever an agent installs something. Indexing
+// that (Spotlight's `mdworker_shared`) outspends the agents, pushes `tmux
+// list-panes` past its deadline and the link past its pings, and the
+// browser's terminals go blank.
 //
 // The marker is macOS's own unprivileged opt-out, an empty file the user can
 // delete to get indexing back. Linux's indexers read their own configuration,

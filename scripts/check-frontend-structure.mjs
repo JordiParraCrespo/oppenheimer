@@ -233,7 +233,7 @@ const FETCHING_KINDS = new Set(['screens', 'sections', 'dialogs']);
  * fetch. What this catches is a screen that subscribes to a query so exactly
  * one sibling below it can render the result: every settle of that query then
  * re-renders the rest of the page. Two siblings genuinely sharing one result
- * pass (`profile.tsx` fetches the profile once for its hero and details pane).
+ * pass.
  */
 function checkQueryStaysHome(source, label) {
   const hooks = queryHooksOf(source);

@@ -89,7 +89,7 @@ function PermissionMenu({
               tone={option.value === 'full' ? 'warning' : 'default'}
               description={option.description}
               density="compact"
-              // Base UI keeps a radio item's menu open by default, which left
+              // Base UI keeps a radio item's menu open by default, which leaves
               // the composer's send button behind an inert backdrop.
               closeOnClick
             >

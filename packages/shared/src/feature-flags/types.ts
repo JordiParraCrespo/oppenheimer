@@ -1,6 +1,6 @@
 /**
- * The feature-flag model shared by the API (which evaluates), the clients
- * (which read evaluated values) and the control plane (which edits targeting).
+ * The feature-flag model shared by the API (which evaluates, and whose admin
+ * routes edit targeting) and the clients (which read evaluated values).
  *
  * Two halves, deliberately kept apart:
  *

@@ -103,7 +103,7 @@ export class AutomationEntity {
     public readonly maxRunsPerHour: number | null,
     /** The optimistic-lock version an edit must name. */
     public readonly version: number,
-    /** Runs in the last 30 days. */
+    /** Runs that became sessions in the last 30 days (`RUN_HISTORY_DAYS`). */
     public readonly runCount: number,
     /** The last six, newest first. */
     public readonly lastRuns: AutomationRunSummary[],

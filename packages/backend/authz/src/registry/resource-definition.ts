@@ -47,7 +47,7 @@ export interface ResourceDefinition {
   /** CASL subject string. Unique across the application. */
   subject: string;
   label: string;
-  /** Groups resources in the role builder, e.g. `crm`, `platform`. */
+  /** Groups resources in the role builder, e.g. `control-plane`, `platform`. */
   group: string;
   actions: readonly ResourceActionDefinition[];
   /** Fields the role builder may offer for field-level grants (CASL `fields`). */

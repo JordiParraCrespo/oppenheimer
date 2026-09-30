@@ -12,7 +12,7 @@ import { CODING_AGENT_IDS, type CodingAgentId } from '@oppenheimer/shared/agents
 /**
  * One repository checked out for this session.
  *
- * `repository`, `baseBranch` and `branch` are here rather than on the session
+ * `repositoryFullName`, `baseBranch` and `branch` are here rather than on the session
  * because with several checkouts they are per-checkout facts. The status line above
  * a terminal shows the cwd checkout's `repo · branch` plus a count.
  */

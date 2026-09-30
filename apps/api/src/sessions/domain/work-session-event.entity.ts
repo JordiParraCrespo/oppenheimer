@@ -10,14 +10,10 @@ import {
 export type SessionEventSource = 'runner' | 'api';
 
 /**
- * The payload cap, in bytes of its JSON form.
- *
- * It is the protocol's own `maxLength` on `events.append`, which is why the
- * number is repeated here rather than derived: the wire carries the payload as a
- * JSON *string* so the cap survives into the Go generated from the same schema,
- * and the control plane holds the same line for anything that arrives another way.
- * An event **never carries pane text** — PTY bytes go to the browser and to the
- * runner's ring buffer, never to Postgres.
+ * The payload cap, in bytes of its JSON form: the protocol's
+ * `PROTOCOL_MAX_EVENT_PAYLOAD_BYTES` on `events.append`, held again here for
+ * anything that arrives another way. An event **never carries pane text** — PTY
+ * bytes go to the browser and to the runner's ring buffer, never to Postgres.
  */
 export const SESSION_EVENT_PAYLOAD_MAX_BYTES = 8 * 1024;
 

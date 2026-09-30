@@ -13,8 +13,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
-// The lifecycle runs on in-memory adapters so it is fast and needs neither
-// tmux nor git installed; the real adapters have their own tests next door.
+// fakeHarness runs the service on the in-memory adapters (package fake).
 type fakeHarness struct {
 	svc       *app.Service
 	terminals *fake.Terminals

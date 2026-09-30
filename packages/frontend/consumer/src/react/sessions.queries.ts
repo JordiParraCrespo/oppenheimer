@@ -18,10 +18,6 @@ import type { SessionStartProgress } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
 import { CLOSE_WATCH_MS, type PollKeys, pollWhile } from './live-poll';
 
-/**
- * Query key factory for the `sessions` feature, from the most generic (`all`)
- * to the most specific so a whole subtree can be invalidated with one key.
- */
 export const sessionsKeys = {
   all: ['sessions'] as const,
   lists: () => [...sessionsKeys.all, 'list'] as const,
@@ -207,8 +203,7 @@ export interface MoveSessionVariables {
 
 /**
  * A write to one session's row that the API answers with the row: the detail
- * takes the answer and the list is re-read. Rename and move are this shape,
- * and the next patch will be too.
+ * takes the answer and the list is re-read.
  */
 function useSessionPatch<TVariables>(
   patch: (app: ReturnType<typeof useConsumerApp>, variables: TVariables) => Promise<SessionEntity>,

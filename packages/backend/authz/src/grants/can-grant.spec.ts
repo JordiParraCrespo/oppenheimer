@@ -20,8 +20,6 @@ describe('canGrant', () => {
   });
 
   it('blocks the escalation to `manage all`', () => {
-    // The whole point: someone who can edit roles must not be able to write
-    // themselves a role that outranks them.
     const actor = abilityOf([{ action: 'manage', subject: 'Role' }]);
     const requested = [{ action: 'manage', subject: 'all' }];
 

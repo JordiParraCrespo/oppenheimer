@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
- * The export map is four patterns, not a block per subpath, so a pattern that
- * stops matching a specifier fails silently: `@oppenheimer/shared/schemas/auth`
+ * The export map is mostly `*` patterns, not a block per subpath, so a pattern
+ * that stops matching a specifier fails silently: `@oppenheimer/shared/schemas/auth`
  * resolving to a file the build never wrote. This walks every subpath the
  * source can produce and resolves it through each condition.
  *

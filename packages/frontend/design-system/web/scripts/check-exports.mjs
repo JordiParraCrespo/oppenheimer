@@ -16,9 +16,6 @@
  *    `import … from '@oppenheimer/design-system-web/<name>'` for it (a comment
  *    or a string does not count).
  *
- * Internal means not exported from the package: a file in `src/internal/` is
- * reachable only through the component that wraps it.
- *
  * Run: `pnpm --filter @oppenheimer/design-system-web test`
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';

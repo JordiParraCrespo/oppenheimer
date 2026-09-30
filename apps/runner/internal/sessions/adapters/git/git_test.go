@@ -39,9 +39,7 @@ func origin(t *testing.T) string {
 	return bare
 }
 
-// git runs a git command in dir and fails the test if it does not work; the
-// fixtures below are built with real git so the adapter is exercised against
-// the tool it actually drives.
+// git runs a git command in dir and fails the test if it does not work.
 func git(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", args...)

@@ -31,7 +31,6 @@ export function useDebouncedCallback<TArgs extends unknown[]>(
 
   useEffect(() => {
     void cancelKey;
-    // The timer: cancelled when `cancelKey` changes, and on unmount.
     clearTimeout(timer.current);
     return () => clearTimeout(timer.current);
   }, [cancelKey]);

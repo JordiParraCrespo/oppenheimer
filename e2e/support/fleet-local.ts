@@ -21,7 +21,7 @@ import type { FleetHost } from './fleet';
  *
  * Everything that makes a host a host is the container transport's: the same
  * runner build, `e2e/fleet/git-server.sh` seeding the same repositories, the
- * same `claude` shim, and pairing through the real API by `support/fleet.ts`'s
+ * same agent shims, and pairing through the real API by `support/fleet.ts`'s
  * callers. What differs is only where it runs:
  *
  * - as root, each host is a Unix account of its own, because `runner register`

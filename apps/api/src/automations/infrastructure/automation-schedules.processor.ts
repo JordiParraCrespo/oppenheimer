@@ -15,8 +15,8 @@ const SWEEP_BATCH = 200;
 
 /**
  * The one-minute tick (§Q8). One BullMQ job scheduler — one Redis entry, so it
- * ticks once whatever the number of replicas — that does nothing but ask the
- * database which triggers are due. The schedules themselves live in
+ * ticks once whatever the number of replicas — that asks the database which
+ * triggers are due. The schedules themselves live in
  * `automation_trigger.nextFireAt`, never in Redis.
  *
  * The same tick sweeps for runs still pending well past their time, whose

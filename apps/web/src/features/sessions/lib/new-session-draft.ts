@@ -40,7 +40,7 @@ const FALLBACK: NewSessionDraft = {
   effort: 'medium',
 };
 
-/** What is worth carrying between visits: the project and the engine, never the scope. */
+/** What is worth carrying between visits: the project, the host and the engine, never the scope. */
 type RememberedChoices = Pick<
   NewSessionDraft,
   'projectId' | 'hostId' | 'agent' | 'model' | 'effort'

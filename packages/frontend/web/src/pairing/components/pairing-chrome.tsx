@@ -20,9 +20,8 @@ export interface PairedMachine {
  * replace it, the instruction behind its fold, a rule, and the status line
  * that resolves in place when a runner spends the token.
  *
- * Kit because two features draw it (the onboarding step and the console's Add
- * a host dialog) and a feature may not import another. `layout` is the
- * export's two sizes: the step's large buttons and 12px line
+ * The onboarding step and the console's Add a host dialog draw it. `layout`
+ * is the export's two sizes: the step's large buttons and 12px line
  * (`design/version1/AddHost.dc.html`), the dialog's medium buttons and 11.5px
  * line (`SessionsConsole.dc.html`). Settings shows the instruction outright,
  * so it composes `PairingToken`, `PairingInstruction` and `PairingStatus`.

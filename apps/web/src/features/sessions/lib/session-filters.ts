@@ -8,7 +8,7 @@ export type SessionSort = 'recent' | 'oldest' | 'name';
 
 /**
  * What the sidebar's filter menu holds
- * (`product/versions/mvp/design/version1/SessionsConsole.dc.html`): three
+ * (`product/versions/mvp/design/version1/SessionsConsole.dc.html`): four
  * facets that narrow the list and one order that does not.
  */
 export interface SessionFilters {

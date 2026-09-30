@@ -23,8 +23,7 @@ import { PROTOCOL_VERSION } from './version.js';
  *
  * The artifact is committed because the Go structs are generated from it
  * (`scripts/emit-link-protocol.cjs` → `apps/runner/internal/link/protocol.gen.go`),
- * so a wire change is a reviewable diff. The emission is part of `build` so it
- * cannot be the step someone forgets.
+ * so a wire change is a reviewable diff.
  *
  * The link's constants ride along under `x-constants`, a vendor keyword JSON
  * Schema ignores: the close codes, the refusal header, the frame header, the

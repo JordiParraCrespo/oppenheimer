@@ -43,7 +43,7 @@ import { GetUserSettingsQueryHandler } from './queries/get-user-settings/get-use
 
 // Registration order matters: every static sub-route (`settings`, `avatar`,
 // `sessions`, `email`) must be matched before `sessions/:id`, and the bare
-// `GET`/`PATCH`/`DELETE` on the collection last.
+// `GET`/`PATCH` on the collection last.
 const httpControllers = [
   GetUserSettingsHttpController,
   UpdateUserSettingsHttpController,

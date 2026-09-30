@@ -38,7 +38,7 @@ test('a newcomer is sent to name the workspace sign-up made', async ({ page }) =
 /**
  * The recovery path. Sign-up provisions the workspace, but the hook is
  * best-effort, so an account can hold none — which every product screen reads
- * as a refusal. `_authenticated` sends it to `/onboarding`, and from there it
+ * as a refusal. `WorkspaceGate` sends it to `/onboarding`, and from there it
  * is the ordinary step that serves it.
  *
  * The only way to reach that state is to remove the membership.

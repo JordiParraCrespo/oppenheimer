@@ -87,8 +87,8 @@ func (c *Classifier) load(fsys fs.FS, dir, source string) {
 	}
 }
 
-// Manifest returns the rules loaded for an agent, for `runner status` and for
-// tests that want to see which version is in force.
+// Manifest returns the rules loaded for an agent, so a test can see which
+// version is in force.
 func (c *Classifier) Manifest(agent domain.Agent) (*Manifest, bool) {
 	m, ok := c.byAgent[agent]
 	return m, ok
@@ -199,8 +199,7 @@ func LoginURL(screen string, targets []domain.LoginTarget) string {
 	return ""
 }
 
-// Bundled reads the manifests compiled into this binary, for tests and for
-// `runner status`.
+// Bundled reads the manifests compiled into this binary, for tests.
 func Bundled() ([]*Manifest, error) {
 	entries, err := fs.ReadDir(bundled, "manifests")
 	if err != nil {

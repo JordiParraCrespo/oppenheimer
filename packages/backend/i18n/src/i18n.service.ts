@@ -105,7 +105,7 @@ export class I18nService {
     );
   }
 
-  /** Escape hatch for code that needs the raw lookup (boot-time key checks). */
+  /** Escape hatch for code that needs the raw lookup. */
   has(locale: string, key: string): boolean {
     return this.translator.has(locale, key);
   }

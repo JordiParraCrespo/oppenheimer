@@ -24,8 +24,8 @@ type Options struct {
 	// Layout is where repositories and worktrees live on this host.
 	Layout domain.Layout
 	// Env is added to every session's tmux environment, inherited by every
-	// window: the session id and the runner's socket, so the git credential
-	// helper called from that shell can ask who it is answering for.
+	// window: what the git credential helper called from that shell needs to
+	// know which session it is answering for.
 	Env func(session domain.Session) map[string]string
 	// Gate holds a launch while its agent is being updated; nil launches
 	// at once.

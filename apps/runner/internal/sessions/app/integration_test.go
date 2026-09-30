@@ -18,10 +18,11 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
-// These two tests are the ones that must run against the real tmux and the
-// real git, because they are the claims the product rests on: a session is a
-// worktree with a terminal, and it survives the runner going away. Everything
-// else about the lifecycle is covered on the in-memory adapters next door.
+// These tests must run against the real tmux and the real git, because they
+// are the claims the product rests on: a session is a worktree with a
+// terminal, it survives the runner going away, and a pasted image reaches its
+// shell. Everything else about the lifecycle is covered on the in-memory
+// adapters next door.
 
 type recorder struct{ states []domain.State }
 

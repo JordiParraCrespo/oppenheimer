@@ -56,10 +56,10 @@ export function OnboardingGithubScreen({
   skip: ReactElement;
 }) {
   const { t } = useTranslation();
-  // Whether there is an App to install, as the deployment reports it. An
-  // unreachable read leaves it undefined, which renders a disabled offer
-  // rather than a button to a page that may not exist. Where the browser goes
-  // is minted on click, with the state.
+  // Whether there is an App to install, as the deployment reports it. With
+  // none configured, or an unreachable read, the offer is disabled rather than
+  // pointing at a GitHub 404. Where the browser goes is minted on click, with
+  // the state.
   const { data: deployment } = useDeploymentCapabilities();
   const canInstall = Boolean(deployment?.github_app_install_url);
   const { start, isStarting, error: startError } = useStartGithubInstall(installUrlFor);
@@ -132,8 +132,6 @@ export function OnboardingGithubScreen({
         </div>
       ) : (
         <div className="flex flex-col gap-3.5">
-          {/* No slug configured means no install page to send anyone to, so the
-              offer is disabled rather than pointing at a GitHub 404. */}
           <Button
             size="lg"
             block

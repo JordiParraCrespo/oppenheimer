@@ -37,9 +37,6 @@ describe('RedisCacheService', () => {
   });
 
   describe('key namespace', () => {
-    // The cache shares its Redis database with BullMQ (`bull:*`) and the rate
-    // limiter (`throttle:*`). Every command must land under the cache's own
-    // prefix, while callers keep writing their unprefixed keys.
     it('prefixes every key with cache: by default', async () => {
       redis.set.mockResolvedValue('OK');
       redis.get.mockResolvedValue(null);
@@ -237,7 +234,6 @@ describe('RedisCacheService', () => {
   });
 
   it('offers no way to flush the database it shares with the queues', () => {
-    // A flush would take BullMQ's jobs and the rate-limit counters with it.
     expect('reset' in service()).toBe(false);
     expect('reset' in CacheService.prototype).toBe(false);
   });

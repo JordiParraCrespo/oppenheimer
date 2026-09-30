@@ -43,8 +43,8 @@ type ChipProps = Omit<VariantProps<typeof chipVariants>, 'interactive'> & {
  * Clicks, toggles, dismisses. A leading icon (or check) sits in front of the
  * label; `selected` takes the blue tint; `solid` is the neutral filled form.
  *
- * Renders a button when it has `onClick`, otherwise a span, so the read-only
- * capability chips on Add host ("✓ git") are not announced as controls.
+ * Renders a button when it has `onClick`, otherwise a span, so a read-only
+ * chip ("✓ git") is not announced as a control.
  */
 function Chip({ className, variant, selected, icon, children, ...props }: ChipProps) {
   const classes = cn(

@@ -10,9 +10,8 @@ import {
 } from 'typeorm';
 
 /**
- * The only table in `github/`. A repository is never a row: the picker asks
- * GitHub through the installation token, and a repository is remembered only by
- * the checkout that took it (`product/versions/mvp/03-control-plane.md`).
+ * The only table in `github/`; a repository is remembered only by the checkout
+ * that took it.
  *
  * `(organizationId, id)` is unique so a checkout in another module can carry a
  * composite foreign key to it and be unable to reference another tenant's
@@ -20,8 +19,7 @@ import {
  *
  * **`githubInstallationId` is unique among live rows only**, by
  * `UQ_github_installation_live_github_id` — a partial index on
- * `WHERE "deletedAt" IS NULL`, which is why it is declared in the migration and
- * not here: TypeORM cannot express a predicate on an index, and declaring the
+ * `WHERE "deletedAt" IS NULL`, declared in the migration only. The
  * unconditional version would have a disconnected row hold the number forever.
  */
 @Entity('github_installation')

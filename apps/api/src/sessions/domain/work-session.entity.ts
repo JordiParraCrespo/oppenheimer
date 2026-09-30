@@ -426,9 +426,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     if (!this.props.hostId?.trim()) {
       throw new ArgumentNotProvidedException('A session must name a host');
     }
-    // The slug is a directory on every host and a segment of the session's git
-    // branch, so an invalid one is not a display problem: it is a path and a ref
-    // that cannot be created.
     if (!SESSION_SLUG_PATTERN.test(this.props.slug)) {
       throw new ArgumentInvalidException(
         'A session slug is <adjective>-<noun>-<6 base36 characters>',

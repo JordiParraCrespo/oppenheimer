@@ -164,7 +164,7 @@ func (s *Service) Unseal(sealed []byte) ([]byte, error) {
 	return plain, nil
 }
 
-// SetChannel and SetPin are the two settings a user changes after pairing.
+// SetChannel switches the release channel this host follows.
 func (s *Service) SetChannel(channel domain.Channel) (domain.Identity, error) {
 	if !channel.Valid() {
 		return domain.Identity{}, domain.ErrControlPlaneURL.WithDetail("unknown channel %q", channel)

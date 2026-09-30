@@ -28,8 +28,7 @@ import { ListInstallationRepositoriesQueryHandler } from './queries/list-install
 import { ListRepositoryBranchesHttpController } from './queries/list-repository-branches/list-repository-branches.http.controller';
 import { ListRepositoryBranchesQueryHandler } from './queries/list-repository-branches/list-repository-branches.query-handler';
 
-// Static routes before parameterized ones, so `POST /installations` is not
-// shadowed and `:id/repositories` is registered before `:id/...` variants.
+// Static routes before parameterized ones.
 const httpControllers = [
   FindInstallationsHttpController,
   StartInstallationHttpController,

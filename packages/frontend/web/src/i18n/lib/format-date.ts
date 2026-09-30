@@ -2,9 +2,10 @@ import type { TFunction } from 'i18next';
 import { formatShortDuration } from './format-duration';
 
 /**
- * Date formatting shared by the workspace screens. Everything goes through
- * `Intl`, so the reader's locale decides the wording and the order — nothing
- * here needs a translation key.
+ * Date formatting shared by the workspace screens, through `Intl` so the
+ * reader's locale decides the wording and the order. Only the compact ages
+ * (`compactAge`, `formatAge`) need `common.relative.*` keys, because `Intl`
+ * has no "2h".
  */
 
 /** Anything inside this window reads as "right now" rather than "0 minutes ago". */

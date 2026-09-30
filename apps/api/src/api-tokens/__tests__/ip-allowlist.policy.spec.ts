@@ -62,7 +62,6 @@ describe('isIpAllowed', () => {
   });
 
   it('denies a restricted credential whose source address is unknown', () => {
-    // Failing open here would make the restriction advisory.
     expect(isIpAllowed(['198.51.100.0/24'], null)).toBe(false);
   });
 });

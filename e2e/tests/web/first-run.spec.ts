@@ -19,9 +19,9 @@ import {
  * is the failure this guards: `HostsRepository` once read `state` for a field
  * the API sends as `online`, and nothing called it.
  *
- * GitHub and the host step are optional and cannot be driven here (one needs
- * an App on a real account, the other a runner release), so what is asserted
- * is that skipping them works and Ready says so rather than inventing a summary.
+ * The walk skips GitHub and the host step (Connect GitHub has its own test
+ * below; the host step needs a runner release), so what is asserted is that
+ * skipping them works and Ready says so rather than inventing a summary.
  */
 test('a new account walks the first-run flow into the console', async ({ page }) => {
   const user = newUser('firstrunwalk');

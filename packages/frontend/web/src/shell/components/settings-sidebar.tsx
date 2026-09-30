@@ -40,8 +40,6 @@ export function SettingsSidebar({
         <SettingsNavGroup key={group.labelKey} label={t(`settings.nav.${group.labelKey}`)}>
           {group.items.map((item) => {
             const Icon = item.icon;
-            // Lit on the section itself only: the frame leaves the row unlit
-            // while a page under it (Add a host) is open.
             const active = Boolean(matchRoute({ to: item.to }));
             return (
               <SettingsNavItem

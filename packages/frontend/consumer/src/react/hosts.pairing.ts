@@ -19,8 +19,8 @@ export interface HostPairingFlow {
   pairing: HostPairing | undefined;
   /**
    * When that token runs out. A countdown is the surface's to draw, in the
-   * leaf that shows it (the kit's `TokenCountdown`): a tick held here
-   * re-rendered the whole dialog or step every second.
+   * leaf that shows it (the kit's `TokenCountdown`), so its per-second tick
+   * re-renders that leaf and not the whole dialog or step.
    */
   expiresAt: Date | null;
   /** Whether the token has run out, so the surface can offer a new one. */

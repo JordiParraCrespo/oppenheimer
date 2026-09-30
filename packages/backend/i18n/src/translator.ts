@@ -15,9 +15,9 @@ export interface TranslatorOptions {
 /**
  * Dotted-key message lookup with interpolation and plural selection.
  *
- * Deliberately not i18next: the server needs a fraction of it, and a
- * fifty-line implementation that never throws is worth more here than a
- * feature-complete one that can. **`t()` always returns a string** — a missing
+ * Deliberately not i18next: the server needs a fraction of it, and a small
+ * implementation that never throws is worth more here than a feature-complete
+ * one that can. **`t()` always returns a string** — a missing
  * key renders its own path, which is ugly in a way that gets noticed and
  * fixed, where a thrown error would take down a whole page over one
  * untranslated string.

@@ -12,8 +12,8 @@ import type { HostAssertionPort } from './host-assertion.port';
  * {@link HostAssertionPort}.
  *
  * It yields a credential with no owner and no scopes: `ScopesGuard` refuses it on
- * every route declaring a scope, and the one route a machine calls about itself says
- * `@AllowAnyScope()`, since a machine holds no permission.
+ * every route declaring a scope, and the `/hosts/self` routes a machine calls about
+ * itself say `@AllowAnyScope()`, since a machine holds no permission.
  */
 @Injectable()
 export class HostCredentialResolver implements CredentialResolverPort {

@@ -24,9 +24,9 @@ export const mintPairingTokenSchema = z.object({
 export type MintPairingTokenDto = z.infer<typeof mintPairingTokenSchema>;
 
 /**
- * `POST /hosts/register`, the first of the runner's two HTTP calls: the
- * registration token, the name the runner detected, the host's Ed25519 public
- * key, and the host's facts.
+ * `POST /hosts/register`, the runner's first HTTP call: the registration
+ * token, the name the runner detected, the host's Ed25519 public key, and the
+ * host's facts.
  *
  * The public key travels with the token so a retry after a dropped response is
  * idempotent: redemption and host insert commit together, and a second attempt

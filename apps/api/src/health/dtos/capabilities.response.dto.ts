@@ -5,10 +5,9 @@ import type { ClientDeployment } from '@oppenheimer/shared';
  * The client-facing capabilities of this deployment, resolved from config once
  * at boot; `DeploymentCapabilities` says what `false` means.
  *
- * Deliberately a subset of the full registry: only capabilities a client hides
- * or shows UI for belong on this public wire response. Server-internal ones
- * (`s3_storage`, `email_delivery`) stay in the startup log and the in-process
- * `CapabilitiesService`.
+ * Deliberately a subset of the full registry: only `CLIENT_CAPABILITIES`, the
+ * ones a client hides or shows UI for, belong on this public wire response. The
+ * rest stay in the startup log and the in-process `CapabilitiesService`.
  */
 export class CapabilitiesResponseDto implements ClientDeployment {
   @ApiProperty({ description: 'Sign-in with Google is configured.' })

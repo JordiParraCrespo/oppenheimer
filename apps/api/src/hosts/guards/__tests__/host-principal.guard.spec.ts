@@ -7,7 +7,7 @@ import { HOST_PRINCIPAL, type HostPrincipalRequest } from '../../decorators/curr
 import { HostPrincipalGuard } from '../host-principal.guard';
 
 /**
- * The whole authorization of `DELETE /hosts/self`. There is no person on such a
+ * The whole authorization of the `/hosts/self` routes. There is no person on such a
  * request, so if this guard admitted anyone else the route would be open.
  */
 describe('HostPrincipalGuard', () => {

@@ -150,8 +150,8 @@ function basicAuthMiddleware(auth: BullBoardAuth, limiter: FailureLimiter) {
  * outcome so a self-hoster learns the dashboard is off.
  *
  * The dashboard is raw Express middleware attached to the HTTP adapter, so
- * NestJS global guards (`AuthGuard`/`ScopesGuard`) and the API's throttler
- * never see it: its own Basic auth and failure limit are all that guard it.
+ * the API's global guards (`CredentialThrottlerGuard`, `ScopesGuard`) never
+ * see it: its own Basic auth and failure limit are all that guard it.
  */
 export function setupBullBoard(
   app: INestApplication,

@@ -72,8 +72,8 @@ import { FindRunHistoryQueryHandler } from './queries/find-run-history/find-run-
 import { PreviewTriggerHttpController } from './queries/preview-trigger/preview-trigger.http.controller';
 import { PreviewTriggerQueryHandler } from './queries/preview-trigger/preview-trigger.query-handler';
 
-// Static routes before parameterized ones: `trigger-preview` before `:id`,
-// `automation-runs/history` before `automation-runs/:id`.
+// Static routes before parameterized ones: `automation-runs/history` before
+// `automation-runs/:id`.
 const httpControllers = [
   FindAutomationsHttpController,
   CreateAutomationHttpController,
@@ -140,7 +140,7 @@ const queryHandlers: Provider[] = [
     QueueModule,
     // What an automation names, confirmed through the owners' ports: a project,
     // a host, repositories; the workspace membership a run's owner must keep;
-    // the hub's events; and the sessions module, whose create command a run is.
+    // the hub's events.
     ProjectsModule,
     HostsModule,
     GithubModule,

@@ -34,7 +34,7 @@ const factsTTL = 10 * time.Minute
 // Prober is the operating system.
 //
 // Tool versions and the macOS version are cached, like Machine: the heartbeat
-// collects the facts every few seconds, and starting a Node CLI to print the
+// collects the facts every 15 seconds, and starting a Node CLI to print the
 // version it printed last time costs a noticeable slice of CPU on a laptop.
 // PATH is still looked up on every call, so an uninstall shows at once, and
 // Invalidate drops everything for a preflight.

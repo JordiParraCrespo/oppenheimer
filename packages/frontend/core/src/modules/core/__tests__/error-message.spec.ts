@@ -16,7 +16,7 @@ const resolve = createErrorMessageResolver({
   translateCode: (code) => MESSAGES[code],
 });
 
-/** A failure as the generated api-client throws it: status + parsed body. */
+/** A failure as `unwrap` hands it over: status + parsed body. */
 const apiFailure = (problem: Partial<ProblemDetails>) => ({
   status: problem.status,
   body: { type: 'about:blank', title: 'Error', ...problem } as ProblemDetails,

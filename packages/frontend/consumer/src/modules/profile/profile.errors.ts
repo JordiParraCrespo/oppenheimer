@@ -9,7 +9,7 @@ export const ProfileErrors = {
     code: 'PROFILE_CLIENT_002',
     message: 'Failed to update profile',
   },
-  // PROFILE_CLIENT_003 and _004 belong to the kernel's user-settings module.
+  // PROFILE_CLIENT_003 belongs to the kernel's user-settings module; _004 is unused.
   UPLOAD_AVATAR_FAILED: {
     code: 'PROFILE_CLIENT_005',
     message: 'Failed to upload avatar',

@@ -33,7 +33,6 @@ describe('ProjectEntity', () => {
   });
 
   it('keeps the slug when the project is renamed', () => {
-    // The slug is the project's stable handle; renaming is display only.
     const project = ProjectEntity.createNew(VALID);
 
     project.rename('XRP Mobile (v2)');

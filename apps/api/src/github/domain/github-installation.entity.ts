@@ -134,10 +134,6 @@ export class GithubInstallationEntity extends AggregateRoot<GithubInstallationPr
    * GitHub now reports about a live one. Re-running the install redirect
    * arrives with the same `githubInstallationId`, so this workspace's row is
    * revived rather than duplicated.
-   *
-   * `suspendedAt` comes from GitHub's answer rather than being cleared, or
-   * re-posting the redirect would mark a suspended installation usable until a
-   * webhook said otherwise.
    */
   reconnect(props: RefreshInstallationProps): void {
     const wasDisconnected = this.props.deletedAt !== null;

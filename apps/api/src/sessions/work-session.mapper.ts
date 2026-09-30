@@ -382,9 +382,8 @@ export class WorkSessionMapper
   /**
    * A batch as the append's single `INSERT` reads it: a JSON array for
    * `jsonb_to_recordset`, each entry numbered so the statement can keep the
-   * caller's order when it hands out `seq`. What `createNew` would default is
-   * defaulted here — an absent payload is `{}`, an absent `occurredAt` is now —
-   * so a row written in a batch is the row that would have been written alone.
+   * caller's order when it hands out `seq`. An absent payload is `{}`, an absent
+   * `occurredAt` is now.
    */
   toAppendRecordset(events: readonly NewSessionEvent[]): string {
     const now = new Date();

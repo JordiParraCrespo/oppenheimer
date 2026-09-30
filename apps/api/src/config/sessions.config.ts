@@ -25,9 +25,9 @@ const schema = z.object({
 });
 
 /**
- * One function, called by the capability and the namer adapter — the shape
- * `hostsAreConfigured` already set. It needs a configured provider and a model
+ * The `session_namer` capability. It needs a configured provider and a model
  * to ask; without either, sessions are still named, from their prompt.
+ * `SessionNamingResolver` checks the same two things itself.
  */
 export function sessionNamerIsConfigured(configService: ConfigService): boolean {
   const llm = llmConfigFrom(configService);

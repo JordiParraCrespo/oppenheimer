@@ -9,12 +9,8 @@ export const PAGINATION = {
  * ("Twelve characters minimum."). It governs every route that sets a password —
  * sign-up, reset, change, accepting an invitation — and Better Auth's own
  * `minPasswordLength`, so the server refuses what the form refuses rather than
- * leaving the rule to the client.
- *
- * Signing *in* is deliberately not bound by it: accounts created under the
- * previous eight-character minimum still hold those passwords, and checking a
- * length before checking a credential would lock them out of the reset flow
- * that is the only way to fix it.
+ * leaving the rule to the client. Signing *in* is not bound by it
+ * (`loginSchema` says why).
  */
 export const PASSWORD_MIN_LENGTH = 12;
 
@@ -32,10 +28,8 @@ export const ROLES = {
   USER: 'user',
   /**
    * Tenant administrator. Only ever assigned **scoped to an organization**
-   * (`user_role.organizationId`), to whoever creates a workspace or is invited
-   * into one as owner/admin. Its grants stop at that organization's edge — it
-   * is deliberately not `manage all`, so running a workspace never reaches the
-   * platform's user directory or another tenant.
+   * (`user_role.organizationId`); its grants (`SYSTEM_ROLE_PERMISSIONS.owner`)
+   * stop at that organization's edge.
    */
   OWNER: 'owner',
 } as const;

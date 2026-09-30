@@ -35,8 +35,8 @@ export interface ProjectProps {
   createdByUserId: string | null;
   /**
    * The repositories the project holds, in the order a person put them. Empty
-   * only for a project from before projects held repositories that had no
-   * checkout to backfill from; every write leaves at least one.
+   * only for an Unassigned project nobody has given any; every write leaves at
+   * least one.
    */
   repositories: ProjectRepositoryProps[];
   /**
@@ -217,9 +217,8 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
         `Project slug must be at most ${PROJECT_SLUG_MAX_LENGTH} characters`,
       );
     }
-    // An empty list is the Unassigned project's, or a legacy row the backfill could
-    // not fill, and it is read, not written; anything non-empty must be a list a
-    // project can hold.
+    // An empty list is an Unassigned project's that nobody has given repositories;
+    // anything non-empty must be a list a project can hold.
     if (this.props.repositories.length > 0) assertHoldable(this.props.repositories);
   }
 

@@ -19,7 +19,6 @@ func (o offered) Fetch(context.Context, string) (domain.Release, error) {
 	return domain.Release{Channel: "stable", Version: o.version, Artifact: domain.Artifact{URL: "https://example.test/r.tar.gz"}}, nil
 }
 
-// memoryState is a StateStore in memory.
 type memoryState struct {
 	mu    sync.Mutex
 	state domain.State

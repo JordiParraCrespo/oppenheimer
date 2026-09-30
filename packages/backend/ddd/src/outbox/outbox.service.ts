@@ -258,7 +258,6 @@ export class OutboxService {
    */
   async extendLease(owner: string, ids: readonly string[], leaseMs: number): Promise<string[]> {
     if (ids.length === 0) return [];
-    // TypeORM returns `[rows, affectedCount]` for UPDATE on Postgres.
     const [rows]: [{ id: string }[], number] = await this.dataSource.query(
       `UPDATE "${OUTBOX_TABLE}"
        SET "lockedUntil" = now() + ($3::int * interval '1 millisecond')

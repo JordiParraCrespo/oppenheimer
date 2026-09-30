@@ -4,7 +4,7 @@ import type { ITheme } from '@xterm/xterm';
  * The bridge between the design system's terminal ramp and xterm.js. xterm
  * paints to a canvas and takes literal colours, not CSS variables, so the
  * `--term-*` tokens are resolved against the document. The values differ per
- * theme, so the caller re-reads them whenever `theme-provider.tsx` toggles
+ * theme, so the caller re-reads them whenever `useAppliedTheme` toggles
  * `.dark` / `.light` on `<html>`.
  */
 
@@ -45,7 +45,7 @@ function read(name: string): string {
 }
 
 /**
- * The ten-token ramp mapped onto the sixteen ANSI slots a PTY can address.
+ * The terminal ramp mapped onto the sixteen ANSI slots a PTY can address.
  *
  * Two liberties, both deliberate:
  *
