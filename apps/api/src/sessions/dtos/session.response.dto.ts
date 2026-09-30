@@ -62,7 +62,7 @@ export class SessionCheckoutResponseDto {
 
   @ApiProperty({
     description: 'Always the session’s own branch, never the base.',
-    example: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
+    example: 'oppenheimer/bold-otter-3f9a7k',
   })
   branch!: string;
 }
@@ -138,7 +138,7 @@ export class SessionResponseDto {
   @ApiProperty({
     enum: SESSION_GROUPS,
     description:
-      'The derived group — what the sidebar dot shows, computed from the row and organised by what needs you: the session failed, the agent has been blocked for 30 s, or a launch has sat unready for 60 s. Two arms have no writer until the relay and the pull-request flow land: `landing`, and the fourth `waiting-on-you` source (the pane is gone with no report).',
+      'The derived group — what the sidebar dot shows, computed from the row and organised by what needs you: the session failed, the agent has been blocked for 30 s, or a launch has sat unready for 60 s. Two arms have no writer yet: `landing`, since GitHub pull-request events feed automations rather than sessions, and a pane gone with no report, since a lost session is recorded `stopped`.',
   })
   state!: (typeof SESSION_GROUPS)[number];
 
