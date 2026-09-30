@@ -25,9 +25,9 @@ const PALETTE_BACKGROUNDS = new Set([237, 253, 255, 7, 8]);
 const RGB_BACKGROUNDS = new Set([0x373737, 0xf0f0f0, 0xdcdcdc]);
 const POINTERS = new Set(['❯', '>']);
 
-/** The artboard's bubble: 10px out from the text, 6px above and below. */
+/** The artboard's bubble (`op-term__you`): padding 8px 10px, radius 10px. */
 const BUBBLE_INSET_X = 10;
-const BUBBLE_INSET_Y = 6;
+const BUBBLE_INSET_Y = 8;
 const BUBBLE_RADIUS = 10;
 
 /** The rows `findUserTurns` reads, whatever holds them. */
@@ -193,8 +193,10 @@ export function bindUserTurns(
   };
 
   const drawBubbles = (turns: { row: number; turn: UserTurn }[]) => {
-    const width = screen?.clientWidth ?? 0;
-    const cellWidth = width / term.cols;
+    const cellWidth = (screen?.clientWidth ?? 0) / term.cols;
+    // The artboard's bubble spans the pane's text column, not the grid: the
+    // grid stops at its last whole cell, up to a column short of the pane.
+    const width = term.element?.clientWidth ?? 0;
     const cellHeight = (screen?.clientHeight ?? 0) / term.rows;
     while (overlay.childElementCount > turns.length) overlay.lastElementChild?.remove();
     while (overlay.childElementCount < turns.length) {
