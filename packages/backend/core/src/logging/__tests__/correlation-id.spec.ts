@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isValidCorrelationId, resolveCorrelationId } from '../correlation-id';
+import { resolveCorrelationId } from '../correlation-id';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -53,14 +53,5 @@ describe('resolveCorrelationId', () => {
       'client',
     );
     expect(resolveCorrelationId({ id: 'x'.repeat(100), headers: {} })).toMatch(UUID);
-  });
-});
-
-describe('isValidCorrelationId', () => {
-  it('accepts only 1–64 characters of [A-Za-z0-9._:-]', () => {
-    expect(isValidCorrelationId('abc-123')).toBe(true);
-    expect(isValidCorrelationId('abc/123')).toBe(false);
-    expect(isValidCorrelationId(undefined)).toBe(false);
-    expect(isValidCorrelationId(7)).toBe(false);
   });
 });

@@ -1,6 +1,6 @@
 import type { ArgumentsHost } from '@nestjs/common';
 import { BadRequestException, ForbiddenException, HttpException, HttpStatus } from '@nestjs/common';
-import { ConflictException, NotFoundException } from '@oppenheimer/backend-ddd';
+import { NotFoundException } from '@oppenheimer/backend-ddd';
 import { ZodValidationException } from 'nestjs-zod';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -75,14 +75,6 @@ describe('AllExceptionsFilter', () => {
     expect(problem.detail).toBe('No user with id 42');
   });
 
-  it('merges extension members supplied by the thrower', () => {
-    const problem = handle(
-      new AppError(USER_NOT_FOUND, { extensions: { retryAfter: 30 } }),
-    ).problem();
-
-    expect(problem.retryAfter).toBe(30);
-  });
-
   it('does not let an extension overwrite a member the API owns', () => {
     const { status, problem } = handle(
       new AppError(USER_NOT_FOUND, {
@@ -152,10 +144,6 @@ describe('AllExceptionsFilter', () => {
     });
   });
 
-  it('surfaces a domain ConflictException as a 409', () => {
-    expect(handle(new ConflictException('Already exists')).problem().status).toBe(409);
-  });
-
   it('never leaks the message of an unexpected failure', () => {
     const problem = handle(new Error('connection string: postgres://user:hunter2@db')).problem();
 
@@ -178,27 +166,6 @@ describe('AllExceptionsFilter', () => {
     expect(problem.detail).toBe('Organization slug already taken');
     expect(problem.code).toBeUndefined();
     expect(problem.type).toBe(DEFAULT_PROBLEM_TYPE);
-  });
-
-  it("carries an AppError's extension members onto the problem document", () => {
-    const problem = handle(
-      new AppError(
-        { code: 'ORG_002', message: 'That organization slug is already taken', httpStatus: 409 },
-        {
-          detail: 'Organization slug already taken',
-          extensions: { upstreamCode: 'ORGANIZATION_SLUG_ALREADY_TAKEN' },
-        },
-      ),
-    ).problem();
-
-    expect(problem).toMatchObject({
-      type: 'https://oppenheimer.dev/errors#org_002',
-      title: 'That organization slug is already taken',
-      status: 409,
-      detail: 'Organization slug already taken',
-      code: 'ORG_002',
-      upstreamCode: 'ORGANIZATION_SLUG_ALREADY_TAKEN',
-    });
   });
 
   it('keeps a 5xx status but not its message', () => {

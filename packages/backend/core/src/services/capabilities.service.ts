@@ -25,10 +25,6 @@ export class CapabilitiesService<TCapability extends string = string> {
     return this.capabilities[capability] === true;
   }
 
-  snapshot(): CapabilityMap<TCapability> {
-    return { ...this.capabilities };
-  }
-
   /**
    * A snapshot narrowed to the given capabilities — for surfaces that must not
    * expose the whole registry, like the public wire response.
@@ -37,14 +33,6 @@ export class CapabilitiesService<TCapability extends string = string> {
     return Object.fromEntries(
       names.map((name) => [name, this.has(name)]),
     ) as CapabilityMap<TSubset>;
-  }
-
-  enabled(): TCapability[] {
-    return this.names().filter((name) => this.capabilities[name]);
-  }
-
-  disabled(): TCapability[] {
-    return this.names().filter((name) => !this.capabilities[name]);
   }
 
   /** One-line summary for the startup log, e.g. `google_oauth=on, s3_storage=off`. */
