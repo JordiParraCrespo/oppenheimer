@@ -108,8 +108,9 @@ export function SessionScreen({
        rounded, it read as a floating card with the canvas showing round its
        corners, which is the one thing `terminal.css` opens by ruling out —
        "not a widget tucked into a card: it is the whole right-hand side of
-       the app". */
-    <div className="flex min-h-0 flex-1 flex-col p-3.5">
+       the app". The frame is the terminal's colour, as the artboard's is, so
+       frame and pane read as one surface in dark mode. */
+    <div className="flex min-h-0 flex-1 flex-col bg-term-bg p-3.5">
       <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
         <SessionTerminal sessionId={session.id} />
       </div>

@@ -479,11 +479,11 @@
     --chart-axis: var(--op-gray-500);
     --brand-glyph-filter: invert(1);
 
-    /* The canvas, as in the design system's own `tokens` (`--term-bg:
-       var(--canvas)` in both themes). It was `#1a1a1c`, the card's lift,
-       which drew the terminal as a grey slab on a darker ground; the session
-       pane is one black surface, frame and page alike. */
-    --term-bg: var(--canvas);
+    /* The session artboard's (`SessionsConsole.dc.html`): `#1a1a1c`, the
+       card's lift. The session screen paints its frame in it too, as the
+       artboard does, so the terminal is one surface from the sidebar's edge
+       rather than a lighter slab on the `#121213` canvas. */
+    --term-bg: #1a1a1c;
     --term-fg: var(--op-gray-100);
     --term-dim: var(--op-gray-500);
     --term-border: #262629;
