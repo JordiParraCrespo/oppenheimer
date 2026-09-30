@@ -13,6 +13,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { checkApiStructure } from './check-api-structure.mjs';
 
 const roots = [];
@@ -186,8 +187,12 @@ test('a ledger entry that no longer matches is itself an error', () => {
 });
 
 test('the CLI checks apps/api against the ledger in the script, and it is current', () => {
-  const script = new URL('./check-api-structure.mjs', import.meta.url);
-  const run = spawnSync(process.execPath, [script.pathname], { encoding: 'utf8' });
+  // `fileURLToPath`, not `.pathname`: a URL's path is percent-encoded, so a
+  // checkout under a directory with a space in it ("Macintosh SSD") spawns
+  // node on a path that does not exist and the run fails for a reason that
+  // has nothing to do with the contract under test.
+  const script = fileURLToPath(new URL('./check-api-structure.mjs', import.meta.url));
+  const run = spawnSync(process.execPath, [script], { encoding: 'utf8' });
 
   assert.equal(run.status, 0, run.stderr);
   assert.match(run.stdout, /API structure: \d+ modules conform/);
