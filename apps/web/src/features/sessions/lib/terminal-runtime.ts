@@ -106,9 +106,56 @@ export function mountSessionTerminal(
   // buffer, not the agent: on the normal buffer the wheel scrolls what was
   // printed; on the alternate buffer it is the program's, since a full-screen
   // application (an editor, a pager, tmux's copy mode) has no scrollback.
+  //
+  // On the alternate buffer the notches are the program's, but they are not
+  // sent one per event. A trackpad emits around a hundred wheel events a
+  // second and xterm would report each one separately: a hundred round trips,
+  // each making the agent redraw its whole screen (measured: ~1.6KB and ~10ms
+  // for one). That is more work per second than a second, so the queue grows
+  // and the screen keeps moving after the reader's fingers stop. Batched into
+  // one write per frame the notches cost one round trip and one redraw, and
+  // the agent still receives every one of them, in order.
+  let pendingNotches = 0;
+  let wheelCell = { col: 1, row: 1 };
+  let wheelFrame: number | null = null;
+  const flushNotches = () => {
+    wheelFrame = null;
+    const notches = pendingNotches;
+    pendingNotches = 0;
+    if (notches === 0) return;
+    // SGR wheel (1006), which is what tmux negotiates and what the measured
+    // repaint answered to. The cell is the pointer's, not the origin: a
+    // full-screen agent has regions of its own, and a notch reported at 1;1
+    // would scroll whichever of them sits in the corner.
+    const button = notches < 0 ? 64 : 65;
+    const report = `\u001b[<${button};${wheelCell.col};${wheelCell.row}M`;
+    stream.send(report.repeat(Math.abs(notches)));
+  };
+
+  /** The pointer's cell, 1-based, clamped to the grid. */
+  const cellOf = (event: WheelEvent): { col: number; row: number } => {
+    const screen = container.querySelector('.xterm-screen');
+    const box = (screen ?? container).getBoundingClientRect();
+    if (box.width === 0 || box.height === 0) return { col: 1, row: 1 };
+    const col = Math.floor(((event.clientX - box.left) / box.width) * term.cols) + 1;
+    const row = Math.floor(((event.clientY - box.top) / box.height) * term.rows) + 1;
+    return {
+      col: Math.min(Math.max(col, 1), term.cols),
+      row: Math.min(Math.max(row, 1), term.rows),
+    };
+  };
+
   term.attachCustomWheelEventHandler((event) => {
-    if (term.buffer.active.type !== 'normal') return true;
     const lines = wheelLines(event, term.rows);
+    if (term.buffer.active.type !== 'normal') {
+      // The program's, batched: never xterm's own per-event report.
+      if (lines !== 0) {
+        wheelCell = cellOf(event);
+        pendingNotches += lines;
+        wheelFrame ??= requestAnimationFrame(flushNotches);
+      }
+      return false;
+    }
     if (lines !== 0) term.scrollLines(lines);
     // Ours: xterm neither reports it to the program nor scrolls again.
     return false;
@@ -212,6 +259,7 @@ export function mountSessionTerminal(
   const input = term.onData((data) => stream.send(data));
 
   return () => {
+    if (wheelFrame !== null) cancelAnimationFrame(wheelFrame);
     if (frame !== null) cancelAnimationFrame(frame);
     unbindImages();
     userTurns?.dispose();
