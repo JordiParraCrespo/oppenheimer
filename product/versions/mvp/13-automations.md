@@ -59,7 +59,11 @@ fired, guarded and dispatched is 16; the tables and modules are 10.
   days, drawn from the first visit: with no runs yet it is the empty axis,
   not absent (2026-09-28). The table's row menu edits, runs now, pauses or resumes, duplicates
   and deletes. The Runs tab keeps its status pill, facets (automation,
-  project, window) and page in the URL; a page is ten runs.
+  project, window) and page in the URL; a page is ten runs. The status
+  pills and the facets share one row in every locale: a facet caps its
+  width and truncates a long name, and when the row still cannot hold
+  them the facets wrap as one group, never the window alone. The unset
+  facet says "all" in every language (2026-09-29).
 - **One automation**: Back, then the ordinary page header (not the large
   one) with Run now, Edit and the more menu (pause or resume, duplicate, delete behind a confirm), the facts
   line (status, the countdown to the next run, the trigger, agent · model ·
