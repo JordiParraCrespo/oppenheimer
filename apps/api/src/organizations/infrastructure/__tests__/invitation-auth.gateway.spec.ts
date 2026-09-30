@@ -72,11 +72,6 @@ describe('InvitationAuthGateway', () => {
     expect((await gateway.reject(headers, 'inv1')).id).toBe('inv1');
   });
 
-  it('cancels an invitation (bare result, no envelope)', async () => {
-    api.cancelInvitation.mockResolvedValue(invitation);
-    expect((await gateway.cancel(headers, 'inv1')).status).toBe('pending');
-  });
-
   it('gets an invitation by id via the query param', async () => {
     api.getInvitation.mockResolvedValue(invitation);
     await gateway.get(headers, 'inv1');
@@ -94,8 +89,21 @@ describe('InvitationAuthGateway', () => {
     );
   });
 
-  it('lists invitations for the caller', async () => {
+  // Which Better Auth method each wrapper reaches, and with the caller's
+  // session: nothing else in the suite calls `cancel` or `listForCaller`.
+  it('cancels the named invitation as the caller', async () => {
+    api.cancelInvitation.mockResolvedValue(invitation);
+    await gateway.cancel(headers, 'inv1');
+    const [[call]] = api.cancelInvitation.mock.calls;
+    expect(call.body).toEqual({ invitationId: 'inv1' });
+    expect(call.headers.get('cookie')).toBe('session=abc');
+  });
+
+  it('lists the invitations addressed to the caller, not an organization’s', async () => {
     api.listUserInvitations.mockResolvedValue([invitation]);
-    expect(await gateway.listForCaller(headers)).toHaveLength(1);
+    await gateway.listForCaller(headers);
+    const [[call]] = api.listUserInvitations.mock.calls;
+    expect(call.headers.get('cookie')).toBe('session=abc');
+    expect(api.listInvitations).not.toHaveBeenCalled();
   });
 });

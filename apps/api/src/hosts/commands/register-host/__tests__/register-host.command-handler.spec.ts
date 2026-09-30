@@ -185,15 +185,6 @@ describe('RegisterHostCommandHandler', () => {
     expect(registered.capabilities).toEqual(FACTS);
   });
 
-  it('builds no aggregate for a token the burn refused', async () => {
-    // The callback is the whole point: a forged token never constructs a host,
-    // because the statement that decides it may be spent is what calls it.
-    vi.mocked(hosts.redeemAndRegister).mockResolvedValue(None);
-    vi.mocked(tokens.findOneByHash).mockResolvedValue(None);
-
-    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_003' });
-  });
-
   it('spends the token by digest, and never by the secret', async () => {
     await handler.execute(command());
 
@@ -229,20 +220,15 @@ describe('RegisterHostCommandHandler', () => {
     });
   });
 
-  it('refuses a token that was revoked, used or expired with one answer', async () => {
-    // The burn's WHERE is the authority — this handler cannot and does not tell
-    // the three apart, which is the point.
+  // The burn's WHERE is the authority: it claimed nothing, and the one read
+  // after it finds no host the token paired. This handler cannot and does not
+  // tell revoked, used, expired or never-minted apart, which is the point.
+  it.each([
+    ['was revoked, used or expired', Some(token({ revokedAt: new Date() }))],
+    ['nobody ever minted', None],
+  ])('refuses a token that %s with one answer', async (_case, found) => {
     vi.mocked(hosts.redeemAndRegister).mockResolvedValue(None);
-    vi.mocked(tokens.findOneByHash).mockResolvedValue(Some(token({ revokedAt: new Date() })));
-
-    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_003' });
-  });
-
-  it('refuses a token nobody ever minted', async () => {
-    // One read, not two: the burn is the only thing that looks the token up
-    // before deciding, and the second read below happens only on the retry path.
-    vi.mocked(hosts.redeemAndRegister).mockResolvedValue(None);
-    vi.mocked(tokens.findOneByHash).mockResolvedValue(None);
+    vi.mocked(tokens.findOneByHash).mockResolvedValue(found);
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_003' });
   });

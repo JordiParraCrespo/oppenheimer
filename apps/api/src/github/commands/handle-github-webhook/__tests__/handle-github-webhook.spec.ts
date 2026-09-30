@@ -121,16 +121,19 @@ describe('installation webhook', () => {
     warn.mockRestore();
   });
 
-  it('logs an out-of-order delivery apart from one no workspace holds', async () => {
-    const log = vi.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
-    const subject = build('stale');
+  it.each([
+    // An older delivery than the one already applied: expected, and quiet.
+    ['stale', 'log', 'Ignoring an out-of-order installation webhook'],
+    // A fact about somebody else's account: logged and dropped, never retried.
+    ['missing', 'warn', 'Ignoring an installation webhook for an installation no workspace holds'],
+  ] as const)('drops a %s delivery, logged as itself', async (result, level, message) => {
+    const logged = vi.spyOn(Logger.prototype, level).mockImplementation(() => {});
+    const subject = build(result);
 
     await expect(subject.handler.execute(delivery('suspend'))).resolves.toBeUndefined();
 
-    expect(log).toHaveBeenCalledWith(
-      expect.objectContaining({ message: 'Ignoring an out-of-order installation webhook' }),
-    );
-    log.mockRestore();
+    expect(logged).toHaveBeenCalledWith(expect.objectContaining({ message }));
+    logged.mockRestore();
   });
 
   it('records an uninstall without touching the suspension', async () => {
@@ -143,18 +146,25 @@ describe('installation webhook', () => {
     expect(change).not.toHaveProperty('suspendedAt');
   });
 
-  it('refuses a delivery whose signature does not match the bytes received', async () => {
-    const subject = build();
-    const forged = new HandleGithubWebhookCommand({
-      payload: JSON.stringify({ action: 'deleted', installation: { id: 45678901 } }),
-      signature: sign('something else entirely'),
-      event: 'installation',
-      deliveryId: 'd-2',
-    });
+  it.each([
+    ['an installation', 'installation', { action: 'deleted', installation: { id: 45678901 } }],
+    ['any other', 'pull_request', { action: 'opened' }],
+  ])(
+    'refuses %s delivery whose signature does not match the bytes received',
+    async (_kind, event, body) => {
+      const subject = build();
+      const forged = new HandleGithubWebhookCommand({
+        payload: JSON.stringify(body),
+        signature: sign('something else entirely'),
+        event,
+        deliveryId: 'd-2',
+      });
 
-    await expect(subject.handler.execute(forged)).rejects.toMatchObject({ code: 'GITHUB_007' });
-    expect(subject.installations.applyStatusChange).not.toHaveBeenCalled();
-  });
+      await expect(subject.handler.execute(forged)).rejects.toMatchObject({ code: 'GITHUB_007' });
+      expect(subject.installations.applyStatusChange).not.toHaveBeenCalled();
+      expect(subject.commandBus.execute).not.toHaveBeenCalled();
+    },
+  );
 
   it('writes nothing for an installation action this module does not act on', async () => {
     const subject = build();
@@ -203,26 +213,5 @@ describe('installation webhook', () => {
         .update(JSON.stringify(JSON.parse(payload)))
         .digest('hex'),
     );
-  });
-
-  it('hands nothing to the hub when the signature is forged', async () => {
-    const subject = build();
-    const forged = new HandleGithubWebhookCommand({
-      payload: JSON.stringify({ action: 'opened' }),
-      signature: sign('other'),
-      event: 'pull_request',
-      deliveryId: 'd-3',
-    });
-
-    await expect(subject.handler.execute(forged)).rejects.toMatchObject({ code: 'GITHUB_007' });
-    expect(subject.commandBus.execute).not.toHaveBeenCalled();
-  });
-
-  it('is quiet when no live installation matches', async () => {
-    // A delivery for an installation no workspace holds is a fact about somebody
-    // else's account. It is logged and dropped, never retried.
-    const subject = build('missing');
-
-    await expect(subject.handler.execute(delivery('suspend'))).resolves.toBeUndefined();
   });
 });

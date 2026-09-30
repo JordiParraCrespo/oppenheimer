@@ -62,7 +62,9 @@ describe('RedisConnectionAdapter', () => {
     expect(() => listener(new Error('ECONNREFUSED'))).not.toThrow();
   });
 
-  it('quits the client when the application shuts down', async () => {
+  it('quits gracefully on shutdown, so pending replies land before the socket goes', async () => {
+    // The integration spec sees the client end, which a bare `disconnect` would
+    // also do; only here is quit-and-not-drop observable.
     quit.mockResolvedValue('OK');
     const adapter = new RedisConnectionAdapter(config());
 

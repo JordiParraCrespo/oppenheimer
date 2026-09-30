@@ -88,7 +88,7 @@ const LINK_OVERLOADED = 1013;
  * versions of the runner (03); with one protocol version in existence the
  * floor is that version, and this is the constant that moves when it is not.
  */
-export const MIN_SUPPORTED_PROTOCOL = PROTOCOL_VERSION;
+const MIN_SUPPORTED_PROTOCOL = PROTOCOL_VERSION;
 
 /**
  * The server half of the runner link.

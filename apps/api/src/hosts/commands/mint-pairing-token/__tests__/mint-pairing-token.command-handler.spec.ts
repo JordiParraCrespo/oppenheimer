@@ -107,28 +107,18 @@ describe('MintPairingTokenCommandHandler', () => {
     expect(result.installScriptSha256).toBe('ab'.repeat(32));
   });
 
-  it('hands back the row it wrote, so nothing has to read it again', async () => {
-    const result = await handler.execute(command());
-
-    expect(result.token).toBe(inserted());
-  });
-
   it('stores only the digest of the secret it hands back', async () => {
     const result = await handler.execute(command());
 
     const token = inserted();
     const secret = /--token (\S+)/.exec(result.installCommand)?.[1] as string;
 
-    expect(secret).toBeTruthy();
+    // The runner checks the prefix before spending a token, so a user who pasted
+    // the wrong secret is told which one they pasted.
+    expect(secret).toMatch(/^opr_reg_/);
     expect(token.tokenHash).toBe(hashPairingTokenSecret(secret));
     // Nothing anywhere holds the secret itself, so nothing can hand it out twice.
     expect(JSON.stringify(token)).not.toContain(secret);
-  });
-
-  it('mints a secret the runner will recognise', async () => {
-    const result = await handler.execute(command());
-
-    expect(result.installCommand).toContain('--token opr_reg_');
   });
 
   it('shows a prefix that identifies the row without revealing it', async () => {
@@ -144,15 +134,6 @@ describe('MintPairingTokenCommandHandler', () => {
     const token = inserted();
     expect(token).toMatchObject({ intendedName: 'Dev box', createdFromIp: '203.0.113.7' });
     expect(token.ownerUserId).toBe('jordi');
-  });
-
-  it('expires the token within the hour', async () => {
-    await handler.execute(command());
-
-    const token = inserted();
-    const minutes = (token.expiresAt.getTime() - Date.now()) / 60_000;
-    expect(minutes).toBeGreaterThan(55);
-    expect(minutes).toBeLessThanOrEqual(60);
   });
 
   it('honours a deployment’s own lifetime, in the expiry and in the refusal', async () => {

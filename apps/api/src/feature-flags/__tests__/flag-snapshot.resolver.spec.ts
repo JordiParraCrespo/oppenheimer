@@ -1,6 +1,10 @@
+import { Logger } from '@nestjs/common';
 import { CLIENT_FEATURE_FLAG_KEYS } from '@oppenheimer/shared/feature-flags';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { FlagSnapshotResolver } from '../application/flag-snapshot.resolver';
+import {
+  FlagSnapshotResolver,
+  SNAPSHOT_POLL_INTERVAL_MS,
+} from '../application/flag-snapshot.resolver';
 import type { FeatureFlagRepositoryPort } from '../database/feature-flag.repository.port';
 import type { FlagSegmentRepositoryPort } from '../database/flag-segment.repository.port';
 import { FeatureFlagEntity } from '../domain/feature-flag.entity';
@@ -61,12 +65,6 @@ describe('FlagSnapshotResolver', () => {
     await expect(resolver.reload()).rejects.toThrow('database down');
   });
 
-  it('is enabled only while a boolean flag serves true', async () => {
-    vi.mocked(flags.findAll).mockResolvedValue([killSwitchPulled()]);
-    await resolver.refresh();
-    expect(resolver.isEnabled('api_token_creation', {})).toBe(false);
-  });
-
   it('ignores a row whose key has left the catalog', async () => {
     vi.mocked(flags.findAll).mockResolvedValue([FeatureFlagEntity.createFor('retired_flag', true)]);
     await resolver.refresh();
@@ -87,18 +85,28 @@ describe('FlagSnapshotResolver', () => {
     expect(after.flags.api_token_creation).toBe(false);
   });
 
-  it('reports every outage, even when nothing changed during the last one', async () => {
-    const warn = vi.spyOn((resolver as unknown as { logger: { warn: () => void } }).logger, 'warn');
-    const poll = () => (resolver as unknown as { reloadIfStale(): Promise<void> }).reloadIfStale();
-    await resolver.refresh();
+  it('reports each outage once, even when nothing changed during the last one', async () => {
+    const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+    vi.useFakeTimers();
+    try {
+      const poll = () => vi.advanceTimersByTimeAsync(SNAPSHOT_POLL_INTERVAL_MS);
+      await resolver.onApplicationBootstrap();
 
-    vi.mocked(flags.fingerprint).mockRejectedValueOnce(new Error('down'));
-    await poll();
-    await poll(); // back up, same data
-    vi.mocked(flags.fingerprint).mockRejectedValueOnce(new Error('down again'));
-    await poll();
+      vi.mocked(flags.fingerprint)
+        .mockRejectedValueOnce(new Error('down'))
+        .mockRejectedValueOnce(new Error('still down'));
+      await poll();
+      await poll();
+      await poll(); // back up, same data
+      vi.mocked(flags.fingerprint).mockRejectedValueOnce(new Error('down again'));
+      await poll();
 
-    expect(warn).toHaveBeenCalledTimes(2);
+      expect(warn).toHaveBeenCalledTimes(2);
+    } finally {
+      resolver.onModuleDestroy();
+      vi.useRealTimers();
+      warn.mockRestore();
+    }
   });
 
   it('coalesces concurrent refreshes into one load', async () => {

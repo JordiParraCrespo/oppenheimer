@@ -106,10 +106,14 @@ describe('WorkspaceAuthGateway', () => {
     });
   });
 
-  it('lists the caller’s workspaces', async () => {
+  // A different Better Auth method from the organization listing: nothing else
+  // in the suite calls `listForCaller`.
+  it('lists the caller’s own teams with their session, not an organization’s', async () => {
     api.listUserTeams.mockResolvedValue([workspace]);
-    const result = await gateway.listForCaller(headers);
-    expect(result).toHaveLength(1);
+    await gateway.listForCaller(headers);
+    const [[call]] = api.listUserTeams.mock.calls;
+    expect(call.headers.get('cookie')).toBe('session=abc');
+    expect(api.listOrganizationTeams).not.toHaveBeenCalled();
   });
 
   it('lists workspace members', async () => {
