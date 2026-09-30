@@ -122,13 +122,18 @@ function render() {
     lines.push(...aligned(head, '\t\t'));
     if (launch.permission) lines.push(`\t\tpermission: ${goLevels(launch.permission)},`);
     if (launch.effort) lines.push(`\t\teffort: ${goMap(launch.effort)},`);
-    if (launch.prompt) lines.push(`\t\tprompt: ${goStrings(launch.prompt)},`);
+    // gofmt aligns a run of consecutive single-line fields, so these are
+    // emitted as one run rather than a line each — otherwise the generated
+    // file is not gofmt-clean and the Go linter fails on it.
+    const tail = [];
+    if (launch.prompt) tail.push(['prompt', goStrings(launch.prompt)]);
     if (launch.conversation?.create) {
-      lines.push(`\t\tconversationCreate: ${goStrings(launch.conversation.create)},`);
+      tail.push(['conversationCreate', goStrings(launch.conversation.create)]);
     }
     if (launch.conversation?.resume) {
-      lines.push(`\t\tconversationResume: ${goStrings(launch.conversation.resume)},`);
+      tail.push(['conversationResume', goStrings(launch.conversation.resume)]);
     }
+    if (tail.length > 0) lines.push(...aligned(tail, '\t\t'));
     lines.push('\t},');
   }
   lines.push('}', '');
