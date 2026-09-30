@@ -395,6 +395,14 @@ export class WorkSessionRepository
 
   async eraseWorkspace(organizationId: string): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
+      // The appenders' lock, taken first and in id order: an append already
+      // holding a row commits before its events are deleted, and a later one
+      // waits and then finds no session. Without it an event lands between the
+      // deletes and the RESTRICT key refuses the session's.
+      await manager.query(
+        `SELECT "id" FROM "work_session" WHERE "organizationId" = $1 ORDER BY "id" FOR UPDATE`,
+        [organizationId],
+      );
       // Children first: the log and the checkouts refuse to lose their session.
       await manager
         .createQueryBuilder()

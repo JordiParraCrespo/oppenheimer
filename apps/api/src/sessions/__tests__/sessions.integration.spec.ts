@@ -978,6 +978,44 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(await repository.countUnresolvedForProject(scope(), target)).toBe(1);
     });
 
+    it('erases a workspace while an append holds a session row, leaving nothing behind', async () => {
+      // Regression: the erase deleted the log without the appenders' lock, so an
+      // append committing between its deletes left an event the RESTRICT key
+      // refused the session's delete over, and deleting an account answered 500.
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+      const appender = dataSource.createQueryRunner();
+      await appender.connect();
+      await appender.startTransaction();
+      try {
+        await appender.query(`SELECT "id" FROM "work_session" WHERE "id" = $1 FOR UPDATE`, [
+          work.id,
+        ]);
+        const erasing = repository.eraseWorkspace(organizationId);
+        // Long enough for the erase to reach the row this transaction holds.
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        await appender.query(
+          `INSERT INTO "work_session_event"
+             ("sessionId", "seq", "idempotencyKey", "source", "kind", "payload", "occurredAt")
+           SELECT $1, COALESCE(max("seq"), 0) + 1, $2, 'runner', $3, '{}'::jsonb, now()
+             FROM "work_session_event" WHERE "sessionId" = $1`,
+          [work.id, `late:${randomUUID()}`, SESSION_EVENT_KINDS.AGENT_OBSERVED],
+        );
+        await appender.commitTransaction();
+
+        await expect(erasing).resolves.toBeUndefined();
+      } finally {
+        await appender.release();
+      }
+
+      const [{ count }] = await dataSource.query(
+        `SELECT count(*)::int FROM "work_session" WHERE "organizationId" = $1`,
+        [organizationId],
+      );
+      expect(count).toBe(0);
+      expect(await events(work.id)).toEqual([]);
+    });
+
     it('refuses a move into a project an archive retired first, and writes nothing', async () => {
       const work = session();
       await repository.createIfUnclaimed(work, requested());
