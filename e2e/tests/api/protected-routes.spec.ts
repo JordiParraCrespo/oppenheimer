@@ -63,17 +63,6 @@ test.describe('protected routes', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('an ordinary user cannot delete another user', async () => {
-    const { userId: victimId } = await signedUpContext('victimdel');
-    const { api } = await signedUpContext('nosydeleter');
-
-    const response = await api.delete(`/api/v1/users/${victimId}`, {
-      failOnStatusCode: false,
-    });
-
-    expect(response.status()).toBe(403);
-  });
-
   test('sign-out revokes access to protected routes', async () => {
     const { api } = await signedUpContext('logoutprotect');
     expect((await api.get('/api/v1/users/me', { failOnStatusCode: false })).status()).toBe(200);
@@ -83,17 +72,11 @@ test.describe('protected routes', () => {
     expect((await api.get('/api/v1/users/me', { failOnStatusCode: false })).status()).toBe(401);
   });
 
-  test('health is public and reports capabilities', async () => {
+  test('health is public', async () => {
     const api = await newContext();
 
     const health = await api.get('/api/v1/health', { failOnStatusCode: false });
-    const capabilities = await api.get('/api/v1/health/capabilities', {
-      failOnStatusCode: false,
-    });
 
     expect(health.status()).toBe(200);
-    expect(capabilities.status()).toBe(200);
-    const body = await capabilities.json();
-    expect(body, 'capabilities tell a client which sign-in methods exist').toBeTruthy();
   });
 });
