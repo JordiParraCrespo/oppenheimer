@@ -134,13 +134,6 @@ export const TERMINAL_FONT_FAMILIES: ReadonlySet<string> = new Set(
 export const TERMINAL_FONT = {
   fontFamily: TERMINAL_FONT_STACK.join(', '),
   fontSize: 13,
-  /**
-   * 1.3, between the glyphs' own 1 and `terminal.css`'s 1.55. xterm's
-   * `lineHeight` multiplies the cell rather than adding leading, and the WebGL
-   * renderer draws block and box characters to fill it: at 1.55 Claude Code's
-   * mark came out elongated, and at 1 a turn's tool calls, results and prose
-   * packed into a wall the artboard's transcript never was. 1.3 gives each
-   * row air and keeps boxes joined and the mark close to its shape.
-   */
+  /** xterm multiplies the cell rather than adding leading; 1.3 is the density 05 names. */
   lineHeight: 1.3,
 } as const;

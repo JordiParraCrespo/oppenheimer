@@ -515,3 +515,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `github_app_install_url` stays as the capability that says an App
   exists. The first-run walk rides as the state's prefix,
   `first-run.<nonce>`.
+- 2026-09-30: **The session grid's line height is 1.3** (05). A departure
+  from the export's 1.55 and from the earlier xterm value of 1: xterm
+  stretches block and box glyphs to its cell, so 1.55 elongated Claude
+  Code's mark and 1 packed a turn. The HTML terminal keeps 1.55.
