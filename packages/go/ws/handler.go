@@ -44,14 +44,11 @@ func Handler(hub *Hub, problems *problem.Writer, logger *slog.Logger, authorize 
 		}
 		defer hub.remove(c)
 
-		// A WebSocket outlives the HTTP request scope. r.Context() is built
-		// on the server BaseContext, which is the SIGTERM signal context, so
-		// deriving from it would cancel this read loop at the same instant
-		// hub.Close tries to send its going-away frame — the client would
-		// then see an abnormal 1006 close instead of 1001. WithoutCancel
-		// keeps the correlation id (and any other request values) for logs
-		// while detaching that cancellation; the connection now ends only
-		// when the peer disconnects or the hub closes it.
+		// A WebSocket outlives the HTTP request scope. r.Context() derives
+		// from the server's BaseContext, the SIGTERM context, and would cancel
+		// this read loop as hub.Close sends its going-away frame: the client
+		// would see 1006 instead of 1001. WithoutCancel keeps the request
+		// values (the correlation id) for logs.
 		ctx, cancel := context.WithCancel(context.WithoutCancel(r.Context()))
 		defer cancel()
 		go c.writeLoop(ctx)

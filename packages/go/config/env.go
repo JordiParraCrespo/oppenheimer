@@ -32,10 +32,10 @@ func ParseMode(raw string) (Mode, error) {
 	}
 }
 
-// LoadWorkspaceDotenv applies the monorepo's root .env when running outside
-// production: the root is found by walking up from the working directory.
-// A process started elsewhere (a container) simply finds no marker and
-// keeps its real environment.
+// LoadWorkspaceDotenv applies the monorepo's root .env, the root found by
+// walking up from the working directory; callers skip it in production. A
+// process started elsewhere (a container) simply finds no marker and keeps
+// its real environment.
 func LoadWorkspaceDotenv() error {
 	cwd, err := os.Getwd()
 	if err != nil {

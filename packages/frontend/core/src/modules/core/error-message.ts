@@ -25,8 +25,9 @@ export interface ErrorMessageResolverOptions {
    *
    * Kept separate from {@link t} because the key is built at runtime: a typed
    * `t` cannot accept `errors.byCode.${string}`, and widening it to `string`
-   * would give up compile-time checking on every other key too. The app does
-   * the one unchecked lookup, guarded by an existence check.
+   * would give up compile-time checking on every other key too.
+   * `useErrorMessage` does the one unchecked lookup, guarded by an existence
+   * check.
    */
   translateCode: (code: string) => string | undefined;
 }

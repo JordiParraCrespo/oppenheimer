@@ -70,8 +70,8 @@ export function useCaptureOnMount(event: AnalyticsEvent, properties?: AnalyticsP
 /**
  * Call this once, high in the tree, wired to the router's current location.
  * A single-page app doesn't emit navigations the provider can see on its own,
- * so without this only the first load is ever counted. The app wires it up in
- * its own analytics module (`PageViewTracker` on web).
+ * so without this only the first load is ever counted. On web it is
+ * `PageViewTracker` (`@oppenheimer/frontend-web`), rendered at the root route.
  */
 export function usePageView(path: string): void {
   const app = useOppenheimerApp();

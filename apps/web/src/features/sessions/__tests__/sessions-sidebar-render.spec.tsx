@@ -144,9 +144,9 @@ afterEach(cleanup);
 
 describe('SessionsSidebar', () => {
   /**
-   * A poll that changed nothing. The rows arrive as fresh objects, and go
-   * through `shareEntities` the way the list query hands them over, so the
-   * sidebar is given back the list it already has.
+   * The rows arrive as fresh objects and go through `shareEntities` the way
+   * the list query hands them over, so the sidebar is given back the list it
+   * already has.
    */
   it('renders no row when a poll returns the same rows', () => {
     const fresh = ROWS.map((_, index) => session(ROWS[index]?.id ?? '', index * 10 + 5));
@@ -173,11 +173,7 @@ describe('SessionsSidebar', () => {
     expect(document.body.textContent).not.toBe(before);
   });
 
-  /**
-   * A burst of typing. The half-typed word is the search box's, so no row
-   * renders until the burst settles; the settled word then narrows the list
-   * once, and the rows it keeps render once.
-   */
+  /** The half-typed word is the search box's; only the settled one reaches the list. */
   it('renders no row while typing, and the matching row once when typing settles', () => {
     vi.useFakeTimers();
     try {

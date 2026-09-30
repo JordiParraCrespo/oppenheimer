@@ -89,8 +89,6 @@ func TestDecideOverridesEvenAPinWhenTheRunnerIsTooOld(t *testing.T) {
 
 	plan := domain.Decide("1.0.0", r, "1.0.0", domain.Activity{WorkingSessions: 4}, time.Time{}, time.Now())
 
-	// A host the control plane will not talk to is broken now; a pin is a
-	// preference, not a reason to stay unreachable.
 	if plan.Action != domain.ActionUpdateNow {
 		t.Fatalf("plan = %+v, want a required update to win", plan)
 	}

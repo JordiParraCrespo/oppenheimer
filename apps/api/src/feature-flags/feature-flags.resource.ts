@@ -1,9 +1,9 @@
 import { defineResource } from '@oppenheimer/backend-authz';
 
 /**
- * Feature-flag targeting and segments. One write action, because every write
- * has the same blast radius — a rule change and a pulled kill switch both
- * change the product for every user at once — so both are marked sensitive.
+ * Feature-flag targeting and segments. One write action, marked sensitive,
+ * because every write has the same blast radius: a rule change and a pulled
+ * kill switch both change the product for every user at once.
  */
 export const FeatureFlagResource = defineResource({
   subject: 'FeatureFlag',

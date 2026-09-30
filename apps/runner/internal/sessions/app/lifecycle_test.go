@@ -181,7 +181,6 @@ func TestAdoptTakesBackLiveSessionsAndStopsTheRest(t *testing.T) {
 	if stopped.State != domain.StateStopped {
 		t.Fatalf("a session whose tmux is gone is stopped, not lost: %q", stopped.State)
 	}
-	// Its worktree is untouched, which is what Restart needs.
 	if _, ok := h.worktrees.Paths[stopped.Worktree]; !ok {
 		t.Fatal("the worktree must survive a stopped session")
 	}

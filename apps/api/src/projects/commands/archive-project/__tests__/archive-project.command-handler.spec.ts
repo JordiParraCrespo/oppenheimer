@@ -99,8 +99,6 @@ describe('ArchiveProjectCommandHandler', () => {
   it.each([
     // A project the caller cannot see reads as missing.
     ['not-found', { result: 'not-found' } as const, 'PROJECTS_001'],
-    // Sessions that name no project are listed in Unassigned; retiring it would
-    // leave that work nowhere to go.
     ['unassigned', { result: 'unassigned', project: project() } as const, 'PROJECTS_008'],
   ])('reports a %s outcome as its own problem', async (_result, outcome, code) => {
     vi.mocked(projects.archiveIfUnused).mockResolvedValue(outcome);

@@ -55,7 +55,7 @@ interface FlagDefinitionBase {
   owner: string;
   /**
    * When a `release` or `experiment` flag should be gone. Required for both —
-   * the catalog test and `pnpm check:flags` enforce it.
+   * the catalog test enforces it, and `pnpm check:flags` fails once it passes.
    */
   expiresAt?: IsoDate;
   /**

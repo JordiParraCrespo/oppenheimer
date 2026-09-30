@@ -17,8 +17,6 @@ export class FindProjectQueryHandler implements IQueryHandler<FindProjectQuery, 
   async execute(query: FindProjectQuery): Promise<ProjectEntity> {
     const found = await this.projects.findOneById(query.scope, query.projectId);
 
-    // A project in another workspace is reported as missing, not forbidden: the
-    // scoped read cannot see it, and saying otherwise would confirm the id.
     if (found.isNone()) {
       throw new AppError(ProjectErrors.NOT_FOUND, {
         detail: `No project with id ${query.projectId}`,

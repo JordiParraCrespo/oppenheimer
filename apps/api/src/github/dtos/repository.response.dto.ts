@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 /**
  * Nothing here is stored, so `githubRepoId` is the only durable handle: a
- * checkout records that, not the name.
+ * checkout keys on it and keeps the name only as a display snapshot.
  */
 export class RepositoryResponseDto {
   @ApiProperty({ description: 'GitHub’s own repository id.', example: 831004242 })

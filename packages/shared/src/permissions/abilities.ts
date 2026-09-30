@@ -353,9 +353,9 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     },
   ],
   /**
-   * Deliberately small: a plain account holds nothing until it creates an
-   * organization or an invitation puts it in one, and whichever of those
-   * happens is what grants the org-scoped role for that workspace. No rule on
+   * Deliberately small: what an account may do in a workspace comes from the
+   * org-scoped role it holds there — granted with the personal workspace at
+   * sign-up, on creating one, or by an invitation. No rule on
    * `User`: an unconditional one lets every account list and edit every other
    * across tenants. Profile editing goes through `/profile`; colleagues come
    * from the `Member` resource.
@@ -366,10 +366,9 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     // it discloses no organization they are not in — it is what lets the app
     // tell "you are in a workspace" from "you are waiting for an invitation".
     { action: 'read', subject: 'Organization' },
-    // Self-service sign-up: a fresh account creates its first workspace from
-    // onboarding. `CreateOrganizationCommandHandler` grants the creator the
-    // org-scoped `owner` role in the same act, so this is the one door into a
-    // workspace besides an invitation.
+    // The recovery path: an account the sign-up hook left with no workspace
+    // creates its own on `/onboarding`. `CreateOrganizationCommandHandler`
+    // grants the creator the org-scoped `owner` role in the same act.
     { action: 'create', subject: 'Organization' },
     // Every user manages their own API tokens; the condition keeps them off
     // everyone else's.

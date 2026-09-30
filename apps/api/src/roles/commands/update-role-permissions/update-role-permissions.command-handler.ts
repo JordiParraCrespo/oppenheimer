@@ -51,8 +51,6 @@ export class UpdateRolePermissionsCommandHandler
       Permission.fromDefinition(permission),
     );
 
-    // Never let a full-access system role (e.g. `admin`) be stripped of its
-    // `manage all` rule — that would lock every admin out of the platform.
     if (role.isSystem && role.hasFullAccess() && !RoleEntity.grantsFullAccess(permissions)) {
       throw new AppError(RoleErrors.ADMIN_LOCKOUT);
     }

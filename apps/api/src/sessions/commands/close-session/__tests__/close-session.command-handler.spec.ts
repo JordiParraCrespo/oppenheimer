@@ -54,7 +54,7 @@ describe('CloseSessionCommandHandler', () => {
 
   it('records a request, not an outcome, and tells the host what the caller accepted', async () => {
     await expect(handler.execute(command())).resolves.toEqual({ sessionId: work.id, hints: [] });
-    // Only the host can say the close happened; the runner reads the decision.
+    // Only the host can say the close happened.
     expect(sessions.appendEvents).toHaveBeenCalledWith(work, [
       expect.objectContaining({
         kind: SESSION_EVENT_KINDS.CLOSE_REQUESTED,

@@ -4,8 +4,8 @@ import { z } from 'zod/v4';
  * Hints, split by the socket that carries them.
  *
  * `product/versions/mvp/01-protocol.md` closes the link's vocabulary at three
- * kinds, and says the two sockets share only the kinds they both need. An
- * attach ticket needs a fourth — the host has no link right now — and that one
+ * kinds, and says the two sockets share only the kinds they both need. The
+ * attach socket needs a fourth — the host has no link right now — and that one
  * is meaningless on the link itself: a runner that is connected enough to send
  * a frame cannot coherently report itself offline.
  */
@@ -32,10 +32,10 @@ export const hintSchema = z.object({
 export type HintMessage = z.infer<typeof hintSchema>;
 
 /**
- * The link's kinds plus `host_offline`, which only an attach ticket can carry.
+ * The link's kinds plus `host_offline`, which only the attach socket carries.
  *
- * Exported for the API's `POST /sessions/{id}/attach-ticket` response, so the
- * ticket's `hint` and the link's `hint` cannot silently drift apart while still
+ * Built from {@link HINT_KINDS} and extended by `attachHintSchema`, so the
+ * attach socket's `hint` and the link's cannot silently drift apart while still
  * being two different sets.
  */
 export const ATTACH_TICKET_HINT_KINDS = [...HINT_KINDS, 'host_offline'] as const;

@@ -24,9 +24,6 @@ export class CreateRoleCommandHandler implements ICommandHandler<CreateRoleComma
       ? { id: command.actorId, role: command.actorRole, organizationId }
       : undefined;
 
-    // A role with no organization is global: every tenant's ability reads it.
-    // That is never what a missing tenant means, so it takes an explicit
-    // `global` and platform-wide `manage all`.
     if (organizationId === null) {
       if (!command.global) {
         throw new AppError(RoleErrors.ORGANIZATION_REQUIRED, {

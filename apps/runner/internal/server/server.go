@@ -1,7 +1,8 @@
-// Package server is the composition root: it turns a Config into a running
-// HTTP handler by building every adapter, wiring every module and mounting
-// the routes. It is the only package that sees concrete adapters, which is
-// what keeps the contexts swappable.
+// Package server is the composition root of `runner serve`: it turns a
+// Config into a running HTTP handler by building every adapter, wiring every
+// module and mounting the routes. It and `cli`, the subcommands' root, are
+// the only packages that see concrete adapters, which is what keeps the
+// contexts swappable.
 package server
 
 import (

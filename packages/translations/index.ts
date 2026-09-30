@@ -6,8 +6,9 @@ import { namespaces } from './namespaces';
 /**
  * The eager barrel: importing anything from here pulls in *every* catalog.
  * The API imports the merged `{locale}/index.json` files directly, and the web
- * app imports metadata from `@oppenheimer/translations/locales` and catalogs
- * from `@oppenheimer/translations/lazy` — see the note in `locales.ts`.
+ * app imports metadata from `@oppenheimer/translations/locales`, the default
+ * locale's `en/browser.json` and the rest through
+ * `@oppenheimer/translations/lazy` — see the note in `locales.ts`.
  */
 export { defaultLocale, defaultNS, type Locale, locales, type Messages } from './locales';
 export { type Namespace, namespaces } from './namespaces';

@@ -222,10 +222,9 @@ export interface WorkSessionRepositoryPort {
   findOneByIdempotencyKey(scope: AccessScope, key: string): Promise<Option<WorkSessionEntity>>;
 
   /**
-   * The session a runner is reporting about. Unscoped by necessity: the writer is a
-   * machine proving its own identity, and there is no person on the request to
-   * scope by. The caller must check the session belongs to the host that presented
-   * the credential.
+   * The session an attach ticket or a runner's credential ask names. Unscoped by
+   * necessity: the proof is the ticket or the host's credential, not a person's
+   * scope. The caller must check the session against what that proof covers.
    */
   findOneByIdForMachine(id: string): Promise<Option<WorkSessionEntity>>;
 

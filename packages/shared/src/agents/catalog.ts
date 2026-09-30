@@ -151,8 +151,8 @@ export interface CodingAgentLaunchLevel {
  *
  * Every argv is the **argument vector** to append to `command`, so the runner
  * concatenates rather than parses, and a value that would need quoting cannot
- * become a second word by accident. `<model>` is the one placeholder, and it is
- * substituted whole.
+ * become a second word by accident. `<model>` and `<prompt>` are the
+ * placeholders, each substituted whole.
  *
  * Effort's spelling is here, once per agent; which levels a model offers is
  * its own row's.

@@ -50,7 +50,7 @@ export class HostOrmEntity {
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   lastSeenAt!: Date | null;
 
-  /** Set when the host is unpaired. Rows are never hard-deleted. */
+  /** Set when the host is unpaired. Unpairing never deletes the row. */
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   unpairedAt!: Date | null;
 

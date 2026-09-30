@@ -43,10 +43,10 @@ const REPLAY_KEY_PREFIX = 'host-assertion:jti';
  *    boot token has (the claimed lifetime, not just what is left of it);
  * 4. its `jti` has not been seen before.
  *
- * The fourth makes this impure. A captured assertion cannot *read* anything (job
- * payloads are sealed to the host's key), but it could open a link and inject events
- * into a session's log, the source of truth. One atomic set-if-absent, with the
- * token's remaining lifetime as TTL, closes that.
+ * The fourth makes this impure. Only the installation token on `credentials.grant` is
+ * sealed to the host's key; a captured assertion could still open a link as that host
+ * and inject events into a session's log, the source of truth. One atomic
+ * set-if-absent, with the token's remaining lifetime as TTL, closes that.
  */
 @Injectable()
 export class HostAssertionResolver implements HostAssertionPort {

@@ -178,8 +178,8 @@ describe('CreateSessionCommandHandler', () => {
     expect(events.map((event) => event.kind)).toEqual(['session.requested', 'session.cwd_set']);
     expect(events.every((event) => event.source === 'api')).toBe(true);
     expect(dispatch.create).toHaveBeenCalledOnce();
-    // Nothing reached a host, and the response says so rather than a second log
-    // entry saying it.
+    // An undelivered job is never a second log entry; the response carries only
+    // the hints the dispatcher raised, here none.
     expect(hints).toEqual([]);
   });
 
@@ -187,8 +187,8 @@ describe('CreateSessionCommandHandler', () => {
     vi.mocked(dispatch.create).mockResolvedValue({ delivered: false, hints: ['host_offline'] });
 
     await expect(handler.execute(command())).resolves.toMatchObject({ hints: ['host_offline'] });
-    // And appends nothing for it: one action is one entry, and "we could not reach
-    // the host just now" is about this request, not about the session's history.
+    // And appends nothing for it: "we could not reach the host just now" is about
+    // this request, not about the session's history.
     expect(vi.mocked(sessions.createIfUnclaimed).mock.calls[0][1]).toHaveLength(2);
   });
 
@@ -387,7 +387,7 @@ describe('CreateSessionCommandHandler', () => {
    * The composer's foot row and its first task, which is what the create request
    * grew for the New session screen (`product/versions/mvp/03-control-plane.md`).
    *
-   * All three assertions are about the same rule from different sides: the launch
+   * The launch assertions are about the same rule from different sides: the launch
    * is *stated in the log*, because the columns that carry it are a projection of
    * that log and writing them any other way would be a second truth.
    */

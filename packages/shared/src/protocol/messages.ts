@@ -33,7 +33,7 @@ import {
  * JSON wrapping and no base64 — and nothing in this file describes them.
  */
 
-/* ------------------------------------------------------------------ runner → control plane */
+/* ------------------------------------------------------------------ runner → control plane, and the ack */
 
 /** What a runner can name in `hello.capabilities`. */
 export const RUNNER_CAPABILITIES = ['session.image', 'session.create.images'] as const;

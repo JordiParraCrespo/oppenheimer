@@ -15,7 +15,7 @@ export type HostEventKind = (typeof HOST_EVENT_KINDS)[number];
 
 /**
  * Persistence model for `host_event`: what changed about a host, and when.
- * Append-only — no `updatedAt` — and kept 180 days. It grows with changes, not
+ * Append-only — no `updatedAt` — and kept 180 days by default. It grows with changes, not
  * heartbeats. The key is an identity, so inserts append to the end of the
  * primary key rather than scattering across it.
  */

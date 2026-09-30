@@ -406,8 +406,8 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       await everyStatus(second, 2);
       await everyStatus(foreign, 1); // another workspace
       const since = new Date(Date.now() - 30 * DAY);
-      // Per automation in the window: queued 2, running 2, completed 1, failed 1,
-      // cancelled 1, skipped 1, expired 1.
+      // Each `everyStatus` in the window lists seven: queued 2, running 2,
+      // completed 1, failed 1, cancelled 1; skipped and expired only when asked.
       const listed = await runs.page(scope(), { since }, 1, 10);
       expect(listed.total).toBe(3 * 7);
       expect(listed.items).toHaveLength(10);

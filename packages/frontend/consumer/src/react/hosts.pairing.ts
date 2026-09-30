@@ -39,9 +39,9 @@ export interface HostPairingFlow {
 }
 
 /**
- * The pairing flow: one token, its clock, and the host that token paired. Both
- * the onboarding step and the console's Add host dialog run it rather than
- * polling the host list themselves.
+ * The pairing flow: one token, its clock, and the host that token paired.
+ * Every pairing surface (onboarding's step, the Add host dialog and screen)
+ * runs it rather than polling the host list itself.
  *
  * **Correlation is the point.** An account that already owns a machine has a
  * non-empty host list the moment the dialog opens, which would offer a machine

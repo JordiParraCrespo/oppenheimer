@@ -12,8 +12,8 @@ import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../../sessions.di-tok
 import { RemoveCheckoutCommand } from './remove-checkout.command';
 
 /**
- * Retires one checkout: `git worktree remove` on the host, refusing on unpushed work
- * as closing a session does, then `removedAt` here.
+ * Retires one checkout: `removedAt` here, then `git worktree remove` on the host,
+ * which refuses on unpushed work as closing a session does.
  *
  * The row is never deleted, so `uq (sessionId, directoryName)` stays a tombstone: a
  * repository added again takes the next directory name, not its old one. If the agent

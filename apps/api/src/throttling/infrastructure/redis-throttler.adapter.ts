@@ -24,9 +24,9 @@ interface ThrottleRedis extends Redis {
 
 /**
  * Rate-limit counters in Redis, so a limit means the same however many API replicas
- * run: the default in-process `Map` multiplies every limit by the replica count ("120
- * per minute" becomes 360 across three pods). Redis is already a hard dependency
- * (BullMQ, the cache).
+ * run: the default in-process `Map` multiplies every limit by the replica count (the
+ * default 100 per minute becomes 300 across three pods). Redis is already a hard
+ * dependency (BullMQ, the cache).
  *
  * Not `CacheService`: a counter built from a get then a set is the race this class
  * removes; the increment is one atomic round trip. It runs on the shared

@@ -6,10 +6,8 @@ import { MapApiError } from '../core/map-api-error.decorator';
 import { CapabilitiesErrors } from './capabilities.errors';
 
 /**
- * Reads the deployment's client-facing capabilities
- * (`GET /health/capabilities`) — the subset a client shows or hides UI for.
- * Public — capabilities gate what the login screen offers, so the read must
- * work before any session exists.
+ * `GET /health/capabilities`. Public: capabilities gate what the login screen
+ * offers, so the read must work before any session exists.
  */
 @injectable()
 export class CapabilitiesRepository {

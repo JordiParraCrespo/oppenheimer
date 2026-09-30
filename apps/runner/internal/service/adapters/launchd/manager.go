@@ -31,7 +31,7 @@ type Manager struct {
 
 // Options configure the manager.
 type Options struct {
-	// Dir is where user agents live; defaults to ~/Library/LaunchAgents.
+	// Dir is where user agents live: ~/Library/LaunchAgents.
 	Dir string
 	// UID is the user's numeric id, the GUI domain launchctl addresses.
 	UID int
@@ -111,8 +111,7 @@ func (m *Manager) Restart(ctx context.Context) error {
 	return nil
 }
 
-// Status parses `launchctl print`, whose first lines carry the state and the
-// last exit code.
+// Status parses the state and pid lines of `launchctl print`.
 func (m *Manager) Status(ctx context.Context) (domain.Status, error) {
 	status := domain.Status{Kind: domain.KindLaunchd, Path: m.Path()}
 	if _, err := os.Stat(m.Path()); err == nil {

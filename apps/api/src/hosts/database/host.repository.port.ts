@@ -65,9 +65,9 @@ export interface RedeemAndRegisterInput {
 /**
  * Every read a *person* makes takes an {@link AccessScope}, so "this query is
  * authorized" is something the compiler asks for rather than something a
- * handler remembers. The two exceptions are named for what they are: a machine
- * authenticating itself has no access scope, and a redemption is matched by a
- * secret rather than by an identity.
+ * handler remembers. The exceptions are named for what they are: a machine
+ * authenticating itself has no access scope, a redemption is matched by a
+ * secret rather than by an identity, and deleting an account is the system's.
  */
 export interface HostRepositoryPort {
   /**

@@ -19,9 +19,10 @@ import { CloseSessionCommand } from './close-session.command';
  * arrives from the host and the fold moves the row to `resolved` then; resolving here
  * would make the terminal tombstone permanent before anybody looked at the worktrees.
  *
- * `acceptUnpushedWork` rides in the payload because the runner reads it: it lets a
- * host remove a dirty worktree. With the host offline the session stays `open` with a
- * request on its log, the honest state, which the `host_offline` hint reports.
+ * `acceptUnpushedWork` rides with the close the runner is sent, and on the log entry:
+ * it lets a host remove a dirty worktree. With the host offline the session stays
+ * `open` with a request on its log, the honest state, which the `host_offline` hint
+ * reports.
  *
  * Asking twice is asking once for a session already resolved: a retry after a lost
  * response is not a conflict.

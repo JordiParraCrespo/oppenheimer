@@ -12,7 +12,7 @@ import type { WorkspaceAuthPort } from '../../infrastructure/workspace-auth.port
 import { ORGANIZATION_AUTH, WORKSPACE_AUTH } from '../../organizations.di-tokens';
 import { CreateOrganizationCommand } from './create-organization.command';
 
-/** The workspace every new organization starts with, named as sign-up names it. */
+/** The workspace (Better Auth team) an organization created here starts with. */
 const DEFAULT_WORKSPACE = 'General';
 
 /**
@@ -77,7 +77,7 @@ export class CreateOrganizationCommandHandler
     }
   }
 
-  /** Tell the API the organization exists, so it gets its Unassigned project. */
+  /** Announce the organization in process, so it gets its Unassigned project. */
   private async announce(organizationId: string, creatorId: string): Promise<void> {
     try {
       await this.events.emitAsync(

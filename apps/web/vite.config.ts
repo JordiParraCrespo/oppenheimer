@@ -10,8 +10,7 @@ export default defineConfig({
   // There is one .env, at the monorepo root; a .env placed in apps/web is
   // deliberately not read. Only VITE_-prefixed values reach the client bundle.
   envDir: path.resolve(import.meta.dirname, '../..'),
-  // Busts the persisted query cache on release: a version bump drops entries
-  // that may not match the new response shapes.
+  // The persisted query cache's buster (`providers/query-provider.tsx`).
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },

@@ -60,7 +60,7 @@ func TestRegisterPostsUnderTheApiV1Prefix(t *testing.T) {
 	if resp.HostID != "host_01HZ" {
 		t.Fatalf("response = %+v", resp)
 	}
-	// The request shape is what the API is being written to.
+	// The fields `registerHostSchema` (packages/shared) reads.
 	var sent map[string]any
 	if err := json.Unmarshal(seen.body, &sent); err != nil {
 		t.Fatalf("request body: %v", err)

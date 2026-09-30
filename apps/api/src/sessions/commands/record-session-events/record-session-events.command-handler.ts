@@ -14,9 +14,8 @@ import { RecordSessionEventsCommand } from './record-session-events.command';
  * what is now durable.
  *
  * No controller: the batch arrives over the runner link, and the safety is here, not
- * in the transport. The session is **checked against the host that presented the
- * credential** by the row lock the append takes, so nothing is read before the
- * transaction; the payload cap and `seq` allocation are the repository's.
+ * in the transport: the append checks the session **against the host that presented
+ * the credential** (`appendEventsForHost`).
  *
  * Refusal is per row, not per batch: an event the log will never accept is rejected
  * so the runner stops resending it, and a key in neither list should be sent again.
@@ -39,7 +38,7 @@ export class RecordSessionEventsCommandHandler
     );
     // A session this host does not hold is refused per key rather than by throwing:
     // the runner must learn to stop resending, and an error would have it retry for
-    // ever. The two cases answer alike so a host cannot probe for session ids.
+    // ever.
     if (appended.isNone()) {
       return {
         batchId: command.batchId,
@@ -60,7 +59,6 @@ export class RecordSessionEventsCommandHandler
   }
 }
 
-/** One wire event as the log takes it. `seq` is the control plane's, so it is absent. */
 function toAppend(event: RunnerSessionEvent) {
   return {
     idempotencyKey: event.idempotencyKey,

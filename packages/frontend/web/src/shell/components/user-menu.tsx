@@ -171,8 +171,7 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
             <LogOut />
             {t('nav.logOut')}
           </DropdownMenuItem>
-          {/* The menu stays open on a failure, so the sentence sits under Log out.
-              A `Callout`, not `ErrorAlert`: that card is drawn for a form or a
+          {/* A `Callout`, not `ErrorAlert`: that card is drawn for a form or a
               page, and this menu is 250px of rows. */}
           {logout.error ? (
             <Callout tone="danger" className="mx-1 mt-1 mb-1">
