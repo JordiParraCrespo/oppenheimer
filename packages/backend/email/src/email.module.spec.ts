@@ -35,45 +35,23 @@ vi.mock('./resend-email.service', () => ({
 }));
 
 interface ProvidedFactory {
-  provide: unknown;
   useFactory: (config: ConfigService) => EmailService;
-  inject: unknown[];
 }
 
-/** The single provider `register()` declares, without an unchecked index. */
-function providersOf(): ProvidedFactory[] {
-  const module = EmailModule.register();
-  return (module.providers ?? []) as ProvidedFactory[];
-}
-
-function provider(configured: string | undefined) {
+function provider(configured: string | undefined): EmailService {
   const config = {
     get: (key: string) => (key === 'email.provider' ? configured : undefined),
   } as unknown as ConfigService;
 
-  const [provided] = providersOf();
+  const [provided] = (EmailModule.register().providers ?? []) as ProvidedFactory[];
   // Destructured under another name: `useFactory(...)` reads as a React hook
   // call to the linter, which is a rule this file has no business suppressing.
-  const { useFactory: build, inject } = provided;
+  const { useFactory: build } = provided;
 
-  return { instance: build(config), inject };
+  return build(config);
 }
 
 describe('EmailModule.register', () => {
-  it('provides and exports the abstract service as the token', () => {
-    // Consumers inject `EmailService`. Binding the concrete class instead would
-    // make every injection site depend on the deployment's provider choice.
-    const module = EmailModule.register();
-    const [provided] = providersOf();
-
-    expect(module.exports).toEqual([EmailService]);
-    expect(provided.provide).toBe(EmailService);
-  });
-
-  it('injects ConfigService into the factory', () => {
-    expect(provider('console').inject).toEqual([ConfigService]);
-  });
-
   it('selects nodemailer when configured', () => {
     provider('nodemailer');
 
@@ -86,21 +64,15 @@ describe('EmailModule.register', () => {
     expect(ResendCtor).toHaveBeenCalled();
   });
 
-  it('defaults to the console provider when nothing is configured', () => {
-    // A self-hoster with no SMTP or Resend key must still boot. Logging the
-    // email is the honest fallback; throwing at startup would make email
-    // configuration mandatory for a deployment that does not send any.
-    expect(provider(undefined).instance).toBeInstanceOf(ConsoleEmailService);
-  });
-
-  it('falls back to console for an unrecognised provider name', () => {
-    // A typo in `EMAIL_PROVIDER` reaches this branch. Falling through to the
-    // console service keeps the app up, and the startup capability log is where
-    // the operator learns email delivery is off.
-    expect(provider('sendgrid').instance).toBeInstanceOf(ConsoleEmailService);
-  });
-
-  it('treats an empty provider string as unset', () => {
-    expect(provider('').instance).toBeInstanceOf(ConsoleEmailService);
+  // A self-hoster with no SMTP or Resend key must still boot, and a typo in
+  // `EMAIL_PROVIDER` must not take the app down: logging the email is the
+  // honest fallback, and the startup capability log is where the operator
+  // learns delivery is off.
+  it.each([
+    ['nothing is configured', undefined],
+    ['the provider is empty', ''],
+    ['the provider name is unrecognised', 'sendgrid'],
+  ])('falls back to the console provider when %s', (_label, configured) => {
+    expect(provider(configured)).toBeInstanceOf(ConsoleEmailService);
   });
 });

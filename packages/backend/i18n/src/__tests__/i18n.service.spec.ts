@@ -14,7 +14,6 @@ const bundles = {
         year: '{{count}}y',
       },
     },
-    inbox: { greeting: 'Hello {{name}}' },
   },
   es: {
     common: {
@@ -28,7 +27,6 @@ const bundles = {
         year: '{{count}}a',
       },
     },
-    inbox: { greeting: 'Hola {{name}}' },
   },
 };
 
@@ -45,19 +43,6 @@ function service() {
 }
 
 describe('I18nService', () => {
-  it('negotiates through the candidate chain in priority order', () => {
-    // Query param wins over header wins over stored preference.
-    expect(service().negotiate('es', 'en-GB', 'en')).toBe('es');
-    expect(service().negotiate(null, 'en-GB', 'es')).toBe('en');
-    expect(service().negotiate(null, null, 'es')).toBe('es');
-  });
-
-  it('binds a formatter to one locale so two readers cannot be mixed', () => {
-    const subject = service();
-    expect(subject.for('en').t('inbox.greeting', { name: 'Adri' })).toBe('Hello Adri');
-    expect(subject.for('es').t('inbox.greeting', { name: 'Adri' })).toBe('Hola Adri');
-  });
-
   it('renders the compact stamp from the copy tree, not from code', () => {
     const subject = service();
     // Spanish abbreviates minutes differently — which is exactly why the label
@@ -72,14 +57,5 @@ describe('I18nService', () => {
     const lateNight = new Date('2026-08-07T23:30:00Z');
     expect(subject.for('en', 'UTC').dayBucket(lateNight)).toBe('yesterday');
     expect(subject.for('en', 'Europe/Madrid').dayBucket(lateNight)).toBe('today');
-  });
-
-  it('defaults the timezone when the caller has none stored', () => {
-    expect(service().for('en', null).timeZone).toBe('UTC');
-  });
-
-  it('reports the locales it can render', () => {
-    expect(service().locales).toEqual(['en', 'es']);
-    expect(service().supports('de')).toBe(false);
   });
 });

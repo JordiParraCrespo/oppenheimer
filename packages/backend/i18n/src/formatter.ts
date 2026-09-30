@@ -82,15 +82,6 @@ export class Formatter {
     }).format(value);
   }
 
-  /** A signed ratio, for deltas like a `−38%` impressions drop. */
-  percentDelta(locale: string, value: number): string {
-    return this.numberFormat(locale, {
-      style: 'percent',
-      maximumFractionDigits: 1,
-      signDisplay: 'exceptZero',
-    }).format(value);
-  }
-
   date(locale: string, value: Date, timeZone = 'UTC'): string {
     return this.dateFormat(locale, { dateStyle: 'medium', timeZone }).format(value);
   }

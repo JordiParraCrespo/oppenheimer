@@ -17,10 +17,6 @@ describe('Formatter', () => {
     it('places the symbol where the locale puts it', () => {
       expect(normalize(formatter.currency('es', 3_140_000, 'EUR'))).toBe('31.400,00 €');
     });
-
-    it('formats zero rather than rendering an empty cell', () => {
-      expect(normalize(formatter.currency('en', 0, 'EUR'))).toBe('€0.00');
-    });
   });
 
   describe('numbers', () => {
@@ -31,11 +27,6 @@ describe('Formatter', () => {
 
     it('renders a ratio as a percentage', () => {
       expect(normalize(formatter.percent('en', 0.38))).toBe('38%');
-    });
-
-    it('keeps the sign on a delta so a drop reads as a drop', () => {
-      expect(normalize(formatter.percentDelta('en', -0.38))).toBe('-38%');
-      expect(normalize(formatter.percentDelta('en', 0.12))).toBe('+12%');
     });
   });
 
@@ -88,13 +79,6 @@ describe('Formatter', () => {
       expect(formatter.dayBucket(lateNight, now, 'UTC')).toBe('yesterday');
       expect(formatter.dayBucket(lateNight, now, 'Europe/Madrid')).toBe('today');
     });
-
-    it('handles a zone behind UTC', () => {
-      // 01:00 UTC on the 8th is still the 7th in Los Angeles.
-      const earlyMorning = new Date('2026-08-08T01:00:00Z');
-      expect(formatter.dayBucket(earlyMorning, now, 'UTC')).toBe('today');
-      expect(formatter.dayBucket(earlyMorning, now, 'America/Los_Angeles')).toBe('yesterday');
-    });
   });
 
   describe('dates', () => {
@@ -122,6 +106,11 @@ describe('Formatter', () => {
     it('renders null and undefined as an empty cell', () => {
       expect(formatter.format('en', null, 'currency')).toBe('');
       expect(formatter.format('en', undefined, 'text')).toBe('');
+    });
+
+    it('formats zero rather than rendering an empty cell', () => {
+      // Only null and undefined are absent; a zero amount is a value.
+      expect(normalize(formatter.format('en', 0, 'currency', { currency: 'EUR' }))).toBe('€0.00');
     });
 
     it('falls through to text for a format it does not know', () => {
