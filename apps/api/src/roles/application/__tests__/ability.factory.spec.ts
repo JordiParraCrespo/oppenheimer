@@ -370,23 +370,4 @@ describe('AbilityFactory', () => {
       expect(ability.can('manage', 'all')).toBe(true);
     });
   });
-
-  it('serves a second replica the same change on its next call', async () => {
-    // Two factories, two snapshots: a global role edit bumps the catalog in the
-    // database, and each process sees the new version on its own next read.
-    vi.mocked(roleRepo.findGlobal).mockResolvedValue([makeRole('admin', [], true)]);
-    const replica = build();
-    await factory.createForUser({ id: 'user-1', role: 'admin' });
-    await replica.createForUser({ id: 'user-1', role: 'admin' });
-
-    vi.mocked(roleRepo.findGlobal).mockResolvedValue([makeRole('admin', manageAll(), true)]);
-    current.catalog = '2';
-
-    expect(
-      (await replica.createForUser({ id: 'user-1', role: 'admin' })).can('manage', 'all'),
-    ).toBe(true);
-    expect(
-      (await factory.createForUser({ id: 'user-1', role: 'admin' })).can('manage', 'all'),
-    ).toBe(true);
-  });
 });

@@ -77,16 +77,7 @@ describe('CreateApiTokenCommandHandler', () => {
     );
   });
 
-  it('refuses scopes the creator does not hold', async () => {
-    useAbility(READER_PERMISSIONS);
-
-    await expect(service.execute(command({ scopes: ['roles:write'] }))).rejects.toMatchObject({
-      code: 'TOKEN_002',
-    });
-    expect(repo.insert).not.toHaveBeenCalled();
-  });
-
-  it('names the offending scopes so the caller can fix the request', async () => {
+  it('refuses scopes the creator does not hold, naming them', async () => {
     useAbility(READER_PERMISSIONS);
 
     // The catalog message titles the problem type; the scopes this particular
@@ -94,9 +85,11 @@ describe('CreateApiTokenCommandHandler', () => {
     await expect(
       service.execute(command({ scopes: ['users:read', 'roles:write'] })),
     ).rejects.toMatchObject({
+      code: 'TOKEN_002',
       detail: expect.stringContaining('roles:write'),
       extensions: { ungrantableScopes: ['roles:write'] },
     });
+    expect(repo.insert).not.toHaveBeenCalled();
   });
 
   it('allows scopes the creator does hold', async () => {

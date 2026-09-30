@@ -86,7 +86,9 @@ describe('SessionReconciliationResolver', () => {
 
   it('leaves alone what the host holds, and what is already stopped', async () => {
     const held = session('open');
-    const h = harness([{ session: held }]);
+    const stopped = session('open');
+    stopped.recordEvent({ seq: 3, kind: 'session.stopped', payload: {}, occurredAt: new Date() });
+    const h = harness([{ session: held }, { session: stopped }]);
     const outcome = await h.resolver.reconcile(HOST, 'run-1', [held.id]);
     expect(outcome).toEqual({ redispatched: [], stopped: [] });
     expect(h.dispatch.create).not.toHaveBeenCalled();

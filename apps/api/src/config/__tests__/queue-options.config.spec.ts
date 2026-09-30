@@ -9,20 +9,9 @@ import {
  * `@nestjs/bullmq` merges the root and a queue's options shallowly: a queue's
  * `defaultJobOptions` replace the root's whole. So every set a queue can be
  * given must carry the removal policy itself, or that queue keeps its jobs in
- * Redis for ever.
+ * Redis for ever. Each set is pinned whole below, removal policy included.
  */
 describe('queue job options', () => {
-  it.each([
-    ['DEFAULT_JOB_OPTIONS', DEFAULT_JOB_OPTIONS],
-    ['DURABLE_JOB_OPTIONS', DURABLE_JOB_OPTIONS],
-    ['EMAIL_JOB_OPTIONS', EMAIL_JOB_OPTIONS],
-  ])('%s removes completed and failed jobs', (_name, options) => {
-    expect(options.removeOnComplete).toEqual(
-      expect.objectContaining({ age: expect.any(Number), count: expect.any(Number) }),
-    );
-    expect(options.removeOnFail).toEqual(expect.objectContaining({ age: expect.any(Number) }));
-  });
-
   it('keeps an hour of completed jobs and a week of failed ones by default', () => {
     expect(DEFAULT_JOB_OPTIONS).toEqual({
       removeOnComplete: { age: 3_600, count: 1_000 },
@@ -31,7 +20,6 @@ describe('queue job options', () => {
   });
 
   it('retries email through transient provider failures, then drops it quickly', () => {
-    expect(EMAIL_JOB_OPTIONS.attempts).toBeGreaterThan(1);
     expect(EMAIL_JOB_OPTIONS).toEqual({
       ...DEFAULT_JOB_OPTIONS,
       attempts: 5,

@@ -5,7 +5,7 @@ import { UserSettingsOrmEntity } from '../database/user-settings.orm-entity';
 import { UserSettingsEntity } from '../domain/user-settings.entity';
 import { ProfileMapper, type SessionRecord } from '../profile.mapper';
 
-function makeUser(overrides: { phone?: string | null; avatarUrl?: string | null } = {}) {
+function makeUser() {
   return UserEntity.create({
     id: 'user-uuid',
     createdAt: new Date('2026-01-01'),
@@ -14,10 +14,10 @@ function makeUser(overrides: { phone?: string | null; avatarUrl?: string | null 
       email: new Email({ value: 'adri@example.com' }),
       firstName: 'Adri',
       lastName: 'Rodrigo',
-      phone: overrides.phone ?? '+34 600 123 456',
+      phone: '+34 600 123 456',
       jobTitle: 'Founder',
       username: null,
-      avatarUrl: overrides.avatarUrl ?? 'avatars/user-uuid.png',
+      avatarUrl: 'avatars/user-uuid.png',
       role: 'owner',
       isActive: true,
       emailVerified: true,
@@ -118,25 +118,27 @@ describe('ProfileMapper', () => {
       expect(mapper.toProfileResponse(makeUser(), null).twoFactorEnabled).toBe(false);
     });
 
-    it('passes a null avatar through', () => {
-      expect(mapper.toProfileResponse(makeUser({ avatarUrl: null }), null).avatarUrl).toBeNull();
+    it('never falls back to the stored key when the caller resolved no URL', () => {
+      // The user holds a storage key; a key is not something a browser can load.
+      expect(mapper.toProfileResponse(makeUser(), null).avatarUrl).toBeNull();
     });
   });
 
   describe('toSessionResponse', () => {
-    it('marks the session the request was made with', () => {
-      expect(mapper.toSessionResponse(makeSession(), 'session-1').current).toBe(true);
-      expect(mapper.toSessionResponse(makeSession(), 'session-2').current).toBe(false);
-    });
-
-    it('marks nothing as current when the caller has no session id', () => {
+    it.each([
+      ['session-1', true],
+      ['session-2', false],
       // The scoped-credential path has no device session — claiming one of the
       // user's real devices is "current" would offer the wrong affordance.
-      expect(mapper.toSessionResponse(makeSession(), null).current).toBe(false);
+      [null, false],
+    ])('with the request on session %s, marks it current: %s', (currentSessionId, current) => {
+      expect(mapper.toSessionResponse(makeSession(), currentSessionId).current).toBe(current);
     });
 
     it('never exposes the session token', () => {
-      const dto = mapper.toSessionResponse(makeSession(), null);
+      // The controller hands over the repository's `OwnedSession`, token included.
+      const owned = { ...makeSession(), token: 'secret-token' };
+      const dto = mapper.toSessionResponse(owned, null);
 
       expect(Object.keys(dto)).not.toContain('token');
     });

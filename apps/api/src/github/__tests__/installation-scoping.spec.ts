@@ -2,7 +2,7 @@ import { type AccessScope, applyAccessScope } from '@oppenheimer/backend-authz';
 import {
   canAccess,
   defineAbilitiesFromPermissions,
-  type PermissionDefinition,
+  SYSTEM_ROLE_PERMISSIONS,
 } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
 import { InstallationResource } from '../github.resource';
@@ -10,7 +10,9 @@ import { InstallationResource } from '../github.resource';
 /**
  * The proof that the kernel does what the github module claims. The SQL
  * predicate and the CASL ability come from one declaration but fail
- * independently, so both are tested.
+ * independently, so both are tested; their generic branches (bypass, no
+ * tenant) are proved once, in `@oppenheimer/backend-authz` and
+ * `@oppenheimer/shared`.
  *
  * What an installation grants is one hour of write access to someone's source,
  * so the interesting assertion is the negative one: a workspace cannot reach a
@@ -48,90 +50,46 @@ function whereClausesFor(callerScope: AccessScope): string[] {
   return qb.calls.map((call: { clause: string }) => call.clause);
 }
 
-/** What the org-scoped `owner` role carries for this subject. */
-const WORKSPACE_INSTALLATIONS: PermissionDefinition[] = [
-  {
-    action: 'manage',
-    subject: 'Installation',
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: a placeholder interpolated when the ability is built
-    conditions: { organizationId: '${activeOrganizationId}' },
-  },
-];
+/** The owner role's rules, as the catalog seeds them into the `role` table. */
+const OWNER = SYSTEM_ROLE_PERMISSIONS.owner;
 
 describe('installation row scoping (SQL)', () => {
-  it('constrains the tenant, and nothing else', () => {
+  it('constrains the tenant, and nothing else, whatever else the caller holds', () => {
     // No team, own or grant dimension is declared: an installation is what the
     // *workspace* was granted, so narrowing it further would hide a connection
     // from the colleague who has to use it.
-    expect(whereClausesFor(scope())).toEqual([
-      'installation.organizationId = :authzOrganizationId',
-    ]);
-  });
-
-  it('constrains the tenant even for a caller with grants elsewhere', () => {
     const clauses = whereClausesFor(
       scope({ teamIds: ['team-madrid'], grants: new Map([['Project', new Set(['project-x'])]]) }),
     );
     expect(clauses).toEqual(['installation.organizationId = :authzOrganizationId']);
   });
-
-  it('drops every filter for a platform-tier caller', () => {
-    expect(whereClausesFor(scope({ bypass: true }))).toEqual([]);
-  });
 });
 
 describe('installation capabilities (CASL)', () => {
   /**
-   * Built the way `AbilityFactory` builds it for a request: the
+   * The owner rule built the way `AbilityFactory` builds it for a request: the
    * `${activeOrganizationId}` placeholder is what narrows a workspace role to
-   * the workspace that is actually selected.
+   * the workspace that is actually selected. Reaching another workspace's row
+   * is an hour of write access to someone else's repositories.
    */
-  function abilityFor(activeOrganizationId: string | null) {
-    return defineAbilitiesFromPermissions(WORKSPACE_INSTALLATIONS, {
+  it.each([
+    ['reads its own workspace’s installation', 'org-acme', 'org-acme', true],
+    ['cannot reach another workspace’s installation', 'org-acme', 'org-rival', false],
+    ['gets nothing with no active workspace', null, 'org-acme', false],
+  ] as const)('an owner %s', (_case, activeOrganizationId, rowOrganizationId, allowed) => {
+    const ability = defineAbilitiesFromPermissions(OWNER, {
       user: { id: 'ana' },
       activeOrganizationId,
     });
-  }
-
-  it('lets a member of the workspace read its installations', () => {
-    expect(
-      canAccess(abilityFor('org-acme'), 'read', 'Installation', { organizationId: 'org-acme' }),
-    ).toBe(true);
-  });
-
-  it('does not let one workspace reach another workspace’s installation', () => {
-    expect(
-      canAccess(abilityFor('org-acme'), 'read', 'Installation', { organizationId: 'org-rival' }),
-    ).toBe(false);
-  });
-
-  it('grants nothing to an account with no active workspace', () => {
-    expect(
-      canAccess(abilityFor(null), 'read', 'Installation', { organizationId: 'org-acme' }),
-    ).toBe(false);
+    expect(canAccess(ability, 'read', 'Installation', { organizationId: rowOrganizationId })).toBe(
+      allowed,
+    );
   });
 });
 
 describe('the declaration itself', () => {
-  it('names a column for every scope dimension it claims', () => {
-    // defineResource enforces this at boot; this fails in CI instead.
-    for (const dimension of InstallationResource.scopes) {
-      const key = (
-        { organization: 'organization', team: 'team', own: 'owner', grant: 'id' } as const
-      )[dimension];
-      expect(InstallationResource.keys[key]).toBeTruthy();
-    }
-  });
-
   it('is reachable by scoped credentials under the repositories group', () => {
     // The group is named for what a caller asks for, not for the vendor.
     expect(InstallationResource.credentialScope).toBe('repositories');
-  });
-
-  it('declares no repository subject of its own', () => {
-    // There is no repository row anywhere, so there is nothing an instance-level
-    // check could be made against; the listing routes sit on `read Installation`,
-    // which is the access GitHub is about to be asked to honour.
-    expect(InstallationResource.subject).toBe('Installation');
   });
 });

@@ -22,20 +22,15 @@ describe('AvatarStorageAdapter', () => {
   });
 
   describe('store', () => {
-    it('returns the key the back-end stored the file under', async () => {
-      await expect(avatars.store('user-uuid', Buffer.from('x'), 'image/png', 1)).resolves.toMatch(
-        /^avatars\/user-uuid\/[0-9a-f-]{36}\.png$/,
-      );
-    });
+    it.each([
+      ['image/png', 'png'],
+      ['image/jpeg', 'jpg'],
+      ['image/webp', 'webp'],
+    ])('stores %s under a key of its own, in the user’s prefix, named .%s', async (type, ext) => {
+      const key = await avatars.store('user-uuid', Buffer.from('x'), type, 1);
 
-    it('names the file after the type it was given', async () => {
-      await avatars.store('user-uuid', Buffer.from('x'), 'image/jpeg', 1);
-
-      expect(storage.upload).toHaveBeenCalledWith(
-        expect.any(Buffer),
-        expect.stringMatching(/\.jpg$/),
-        'image/jpeg',
-      );
+      expect(key).toMatch(new RegExp(`^avatars/user-uuid/[0-9a-f-]{36}\\.${ext}$`));
+      expect(storage.upload).toHaveBeenCalledWith(expect.any(Buffer), key, type);
     });
 
     it('never writes over the object the profile currently points at', async () => {
@@ -46,12 +41,6 @@ describe('AvatarStorageAdapter', () => {
       const second = await avatars.store('user-uuid', Buffer.from('b'), 'image/png', 1);
 
       expect(second).not.toBe(first);
-    });
-
-    it('files every one of a user’s avatars under their own prefix', async () => {
-      const key = await avatars.store('user-uuid', Buffer.from('x'), 'image/png', 1);
-
-      expect(key.startsWith('avatars/user-uuid/')).toBe(true);
     });
 
     it('rejects a type that is not an accepted image', async () => {

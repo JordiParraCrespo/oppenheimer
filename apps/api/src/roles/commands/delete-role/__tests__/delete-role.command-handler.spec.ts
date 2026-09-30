@@ -23,18 +23,34 @@ function makeRole(isSystem: boolean): RoleEntity {
 describe('DeleteRoleCommandHandler', () => {
   let service: DeleteRoleCommandHandler;
   let repo: Pick<RoleRepositoryPort, 'findOneById' | 'delete'>;
+  let policy: { assertCanModify: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     repo = {
       findOneById: vi.fn().mockResolvedValue(Some(makeRole(false))),
       delete: vi.fn().mockResolvedValue(true),
     };
+    policy = { assertCanModify: vi.fn().mockResolvedValue(undefined) };
     service = new DeleteRoleCommandHandler(
       repo as RoleRepositoryPort,
-      {
-        assertCanModify: vi.fn().mockResolvedValue(undefined),
-      } as unknown as RoleGrantPolicy,
+      policy as unknown as RoleGrantPolicy,
     );
+  });
+
+  it("deletes nothing when the actor may not modify the role (another tenant's, or global)", async () => {
+    const code = RoleErrors.CROSS_ORGANIZATION_ROLE.code;
+    policy.assertCanModify.mockRejectedValue(Object.assign(new Error('refused'), { code }));
+
+    await expect(
+      service.execute(
+        new DeleteRoleCommand({ roleId: 'role-1', actorId: 'actor-1', organizationId: 'org-1' }),
+      ),
+    ).rejects.toMatchObject({ code });
+    expect(policy.assertCanModify).toHaveBeenCalledWith(
+      { id: 'actor-1', role: undefined, organizationId: 'org-1' },
+      expect.objectContaining({ id: 'role-1' }),
+    );
+    expect(repo.delete).not.toHaveBeenCalled();
   });
 
   it('deletes a custom role and raises the deletion event', async () => {

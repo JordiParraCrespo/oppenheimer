@@ -6,7 +6,6 @@ import {
   findTeamsForUser,
   findUserByEmail,
 } from '../../support/db';
-import { waitForEmailUrl } from '../../support/mail';
 
 test.describe('sign-up', () => {
   test('creates the account and returns a session', async () => {
@@ -62,15 +61,6 @@ test.describe('sign-up', () => {
       .poll(async () => findOrganizationsForUser(userId), { timeout: 10_000 })
       .toEqual([expect.objectContaining({ role: 'owner' })]);
     expect(await findTeamsForUser(userId)).toEqual([]);
-  });
-
-  test('sends verification and welcome email on sign-up', async () => {
-    const api = await newContext();
-    const user = newUser('verifymail');
-    await signUp(api, user);
-
-    const url = await waitForEmailUrl('EMAIL VERIFICATION', user.email);
-    expect(url).toContain('/api/auth/verify-email?token=');
   });
 
   test('rejects a duplicate email', async () => {

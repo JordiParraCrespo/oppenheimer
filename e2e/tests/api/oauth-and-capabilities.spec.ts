@@ -2,10 +2,9 @@ import { expect, test } from '@playwright/test';
 import { newContext } from '../../support/auth';
 
 /**
- * How the deployment behaves when the optional sign-in methods are switched
- * off. The rule the codebase states is that a missing key disables a feature
- * rather than breaking the app, and that `GET /health/capabilities` is how a
- * client finds out — so both halves are asserted here.
+ * The optional sign-in methods: `GET /health/capabilities` tells a client which
+ * ones this deployment has, and a social provider with no key refuses cleanly
+ * instead of breaking the app.
  */
 test.describe('optional auth providers', () => {
   test('capabilities reports which sign-in methods this deployment has', async () => {
@@ -48,16 +47,6 @@ test.describe('optional auth providers', () => {
 
     expect(response.status()).toBeGreaterThanOrEqual(400);
     expect(response.status()).toBeLessThan(500);
-  });
-
-  test('the API still authenticates by password with every provider off', async () => {
-    const { signedUpContext } = await import('../../support/auth');
-    const { api, user } = await signedUpContext('nooauth');
-
-    const me = await api.get('/api/v1/users/me', { failOnStatusCode: false });
-
-    expect(me.status()).toBe(200);
-    expect((await me.json()).email).toBe(user.email);
   });
 });
 

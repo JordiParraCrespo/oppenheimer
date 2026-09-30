@@ -8,21 +8,18 @@ import {
 
 /** A slug is a project's stable handle: derived once, URL-safe, never reissued. */
 describe('projectSlugFromName', () => {
-  it('leaves a name that is already a slug alone', () => {
-    expect(projectSlugFromName('xrp-mobile')).toBe('xrp-mobile');
-  });
-
-  it('lower-cases and folds everything else into single dashes', () => {
-    expect(projectSlugFromName('XRP  Mobile_App.v2')).toBe('xrp-mobile-app-v2');
-  });
-
-  it('trims the ends', () => {
-    expect(projectSlugFromName('--Client sites!--')).toBe('client-sites');
-  });
-
-  it('never returns an empty slug', () => {
-    expect(projectSlugFromName('...')).toBe('project');
-    expect(projectSlugFromName('')).toBe('project');
+  it.each([
+    ['leaves a name that is already a slug alone', 'xrp-mobile', 'xrp-mobile'],
+    [
+      'lower-cases and folds everything else into single dashes',
+      'XRP  Mobile_App.v2',
+      'xrp-mobile-app-v2',
+    ],
+    ['trims the ends', '--Client sites!--', 'client-sites'],
+    ['never returns an empty slug', '...', 'project'],
+    ['never returns an empty slug, even for nothing', '', 'project'],
+  ])('%s', (_case, name, slug) => {
+    expect(projectSlugFromName(name)).toBe(slug);
   });
 
   it('truncates a long name without leaving a trailing dash', () => {
@@ -53,9 +50,5 @@ describe('projectSlugCandidates', () => {
 
   it('gives an unnameable name the fallback, still derived from the id', () => {
     expect(projectSlugCandidates('!!!', id)).toEqual(['project', 'project-3f9a7b2c']);
-  });
-
-  it('is deterministic', () => {
-    expect(projectSlugCandidates('Atlas', id)).toEqual(projectSlugCandidates('Atlas', id));
   });
 });

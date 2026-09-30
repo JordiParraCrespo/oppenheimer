@@ -85,43 +85,23 @@ describe('ScopesGuard', () => {
       await expect(guard.canActivate(context())).resolves.toBe(true);
     });
 
-    it('admits a write credential on a read route', async () => {
-      useCredential(tokenContext({ scopes: ['users:write'] }));
-      metadata[REQUIRE_SCOPES_KEY] = ['users:read'];
-
-      await expect(guard.canActivate(context())).resolves.toBe(true);
-    });
-
-    it('refuses a credential missing the required scope', async () => {
+    it('refuses a credential missing the required scope, naming it', async () => {
       useCredential(tokenContext({ scopes: ['users:read'] }));
       metadata[REQUIRE_SCOPES_KEY] = ['roles:write'];
 
       await expect(guard.canActivate(context())).rejects.toMatchObject({
         code: 'TOKEN_005',
-      });
-    });
-
-    it('names the missing scope in the error', async () => {
-      useCredential(tokenContext({ scopes: ['users:read'] }));
-      metadata[REQUIRE_SCOPES_KEY] = ['roles:write'];
-
-      await expect(guard.canActivate(context())).rejects.toMatchObject({
         detail: expect.stringContaining('roles:write'),
         extensions: { missingScopes: ['roles:write'] },
       });
     });
 
-    it('refuses a route that declares no scopes — closed by default', async () => {
+    it.each([
+      ['declares no scopes', undefined],
+      ['declares an empty scope list', []],
+    ])('refuses a route that %s — closed by default', async (_label, declared) => {
       useCredential(tokenContext());
-
-      await expect(guard.canActivate(context())).rejects.toMatchObject({
-        code: 'TOKEN_006',
-      });
-    });
-
-    it('refuses a route whose declared scope list is empty', async () => {
-      useCredential(tokenContext());
-      metadata[REQUIRE_SCOPES_KEY] = [];
+      metadata[REQUIRE_SCOPES_KEY] = declared;
 
       await expect(guard.canActivate(context())).rejects.toMatchObject({
         code: 'TOKEN_006',
@@ -154,19 +134,27 @@ describe('ScopesGuard', () => {
       await expect(guard.canActivate(context())).resolves.toBe(true);
     });
 
-    it('refuses a request against another organization', async () => {
-      useCredential(
-        tokenContext({
-          scopes: ['members:read'],
-          resourceScope: toResourceScope([ORG_1]),
-        }),
-      );
-      request.params = { orgId: ORG_2 };
+    it.each([
+      ['path', 'orgId', 'params'],
+      ['body', 'organizationId', 'body'],
+      ['query', 'organizationId', 'query'],
+    ] as const)(
+      'refuses a %s-named organization outside the restriction',
+      async (from, param, field) => {
+        metadata[ORGANIZATION_PARAM_KEY] = { param, from };
+        useCredential(
+          tokenContext({
+            scopes: ['members:read'],
+            resourceScope: toResourceScope([ORG_1]),
+          }),
+        );
+        request[field] = { [param]: ORG_2 };
 
-      await expect(guard.canActivate(context())).rejects.toMatchObject({
-        code: 'TOKEN_007',
-      });
-    });
+        await expect(guard.canActivate(context())).rejects.toMatchObject({
+          code: 'TOKEN_007',
+        });
+      },
+    );
 
     it('ignores the restriction for an unrestricted credential', async () => {
       useCredential(tokenContext({ scopes: ['members:read'] }));
@@ -175,37 +163,9 @@ describe('ScopesGuard', () => {
       await expect(guard.canActivate(context())).resolves.toBe(true);
     });
 
-    it('holds a body-named organization to the restriction on a route that declares it', async () => {
-      metadata[ORGANIZATION_PARAM_KEY] = { param: 'organizationId', from: 'body' };
-      useCredential(
-        tokenContext({
-          scopes: ['members:read'],
-          resourceScope: toResourceScope([ORG_1]),
-        }),
-      );
-      request.body = { organizationId: ORG_2 };
-
-      await expect(guard.canActivate(context())).rejects.toMatchObject({
-        code: 'TOKEN_007',
-      });
-    });
-
-    it('holds a query-named organization to the restriction on a route that declares it', async () => {
-      metadata[ORGANIZATION_PARAM_KEY] = { param: 'organizationId', from: 'query' };
-      useCredential(
-        tokenContext({
-          scopes: ['members:read'],
-          resourceScope: toResourceScope([ORG_1]),
-        }),
-      );
-      request.query = { organizationId: ORG_2 };
-
-      await expect(guard.canActivate(context())).rejects.toMatchObject({
-        code: 'TOKEN_007',
-      });
-    });
-
-    it('refuses a malformed organization id in the path before anything reads it', async () => {
+    it('refuses a malformed organization id rather than reading it as no organization', async () => {
+      // A restriction admits a request that names no organization, so a
+      // malformed id the guard swallowed would walk a restricted token past it.
       useCredential(
         tokenContext({
           scopes: ['members:read'],

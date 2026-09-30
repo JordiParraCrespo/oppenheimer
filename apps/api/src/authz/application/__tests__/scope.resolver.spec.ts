@@ -47,34 +47,28 @@ describe('ScopeResolver', () => {
   });
 
   it('resolves teams, roles and grants all in the organization it is given', async () => {
-    const { resolver, teamQuery, grants, userRoles } = resolverWith();
+    const { resolver, teamMembers, teamQuery, grants, userRoles } = resolverWith();
 
     await resolver.resolve(input);
 
     // Roles: the caller's global ones plus those scoped to *this* organization.
     expect(userRoles.findRoleIdsForUser).toHaveBeenCalledWith('user-1', 'org-1');
-    // Teams: narrowed to this organization, never another tenant's.
-    expect(teamQuery.andWhere).toHaveBeenCalledWith(expect.stringContaining('organizationId'), {
-      organizationId: 'org-1',
-    });
-    expect(grants.findActiveForPrincipals).toHaveBeenCalledWith('org-1', [
-      { principalType: 'user', principalId: 'user-1' },
-      { principalType: 'team', principalId: 'team-1' },
-      { principalType: 'role', principalId: 'role-1' },
-    ]);
-  });
-
-  it('reads team membership in one query, joined to the team for the tenant', async () => {
-    const { resolver, teamMembers, teamQuery } = resolverWith();
-
-    await resolver.resolve(input);
-
+    // Teams: the caller's own, narrowed to this organization, never another
+    // tenant's — one query, joined onto the team so the tenant is the team's.
     expect(teamMembers.createQueryBuilder).toHaveBeenCalledTimes(1);
     expect(teamQuery.innerJoin).toHaveBeenCalledWith(TeamOrmEntity, 't', expect.any(String));
     expect(teamQuery.where).toHaveBeenCalledWith(expect.stringContaining('userId'), {
       userId: 'user-1',
     });
+    expect(teamQuery.andWhere).toHaveBeenCalledWith(expect.stringContaining('organizationId'), {
+      organizationId: 'org-1',
+    });
     expect(teamQuery.getRawMany).toHaveBeenCalledTimes(1);
+    expect(grants.findActiveForPrincipals).toHaveBeenCalledWith('org-1', [
+      { principalType: 'user', principalId: 'user-1' },
+      { principalType: 'team', principalId: 'team-1' },
+      { principalType: 'role', principalId: 'role-1' },
+    ]);
   });
 
   it('uses the role ids it is handed instead of reading user_role again', async () => {

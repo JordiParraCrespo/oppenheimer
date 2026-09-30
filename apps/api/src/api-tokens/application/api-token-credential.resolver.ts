@@ -7,6 +7,7 @@ import { AuthErrors } from '../../auth/domain/auth.errors';
 import type { ScopeContext, ScopedRequest } from '../../auth/domain/scope-context.types';
 import { API_TOKEN_REPOSITORY } from '../api-tokens.di-tokens';
 import type { ApiTokenRepositoryPort } from '../database/api-token.repository.port';
+import { isLastUseStale } from '../domain/api-token.entity';
 import { ApiTokenErrors } from '../domain/api-token.errors';
 import { hashApiTokenSecret, isApiTokenSecret } from '../domain/api-token-secret.factory';
 
@@ -54,7 +55,7 @@ export class ApiTokenCredentialResolver implements CredentialResolverPort {
     // Best-effort usage stamp — never let it fail the request. The token is
     // already loaded, so skipping a fresh stamp costs nothing to decide.
     const now = new Date();
-    if (token.isLastUseStale(now)) {
+    if (isLastUseStale(token.lastUsedAt, now)) {
       void this.apiTokens
         .touchLastUsedAt(token.id, now)
         .catch((error) =>
