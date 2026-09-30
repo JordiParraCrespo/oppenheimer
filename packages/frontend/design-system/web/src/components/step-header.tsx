@@ -24,6 +24,7 @@ function StepHeader({
   total,
   back,
   backLabel = 'Back',
+  counterLabel,
   title,
   className,
   children,
@@ -34,6 +35,8 @@ function StepHeader({
   /** Props for the Back `Link`; omit for no back link. */
   back?: React.ComponentProps<typeof Link>;
   backLabel?: string;
+  /** The counter as the reader's language says it; defaults to "2 of 4". */
+  counterLabel?: string;
   title: React.ReactNode;
 }) {
   const counter = step !== undefined && total !== undefined;
@@ -57,7 +60,7 @@ function StepHeader({
           {back && counter ? <span aria-hidden className="h-3 w-px bg-border-subtle" /> : null}
           {counter ? (
             <span className="eyebrow text-fg-subtle">
-              {step} of {total}
+              {counterLabel ?? `${step} of ${total}`}
             </span>
           ) : null}
         </div>

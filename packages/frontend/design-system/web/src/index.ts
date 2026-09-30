@@ -2,6 +2,7 @@ export type { AgentId } from './components/agent-mark';
 export { AgentMark } from './components/agent-mark';
 export type { AgentModel, AgentOption, Engine } from './components/agent-model-select';
 export { AgentModelSelect } from './components/agent-model-select';
+export type { AlertTone } from './components/alert';
 export {
   Alert,
   AlertAction,

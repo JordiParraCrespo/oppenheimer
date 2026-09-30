@@ -899,8 +899,8 @@ export default function Page() {
         id="alert"
         title="Alert"
         meta="alert.tsx"
-        desc="A whole-form or whole-page failure, on the flat card with the hue in the ink and the hairline. A note under a form is a Callout; a success is a toast."
-        code={`<Alert variant="destructive"><AlertTitle>Could not sign in</AlertTitle>…</Alert>`}
+        desc="The callout box with a title and, for a failure, its one action (Dismiss, Retry). A plain note is a Callout; a success is a toast."
+        code={`<Alert tone="danger"><AlertTitle>Could not sign in</AlertTitle>…</Alert>`}
       >
         <AlertDemo />
       </Spec>

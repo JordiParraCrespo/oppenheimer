@@ -80,7 +80,7 @@ export function ErrorAlert({
     ) : null);
 
   return (
-    <Alert variant="destructive" className={className}>
+    <Alert tone="danger" className={className}>
       {title ? <AlertTitle>{title}</AlertTitle> : null}
       <AlertDescription>
         {message}

@@ -203,7 +203,7 @@
     },
     "notFound": {
       "title": "Esta página no existe",
-      "description": "Puede que el enlace sea incorrecto o que lo que señalaba ya no esté.",
+      "description": "El enlace es incorrecto o su destino ya no existe.",
       "home": "Volver"
     },
     "unexpected": {
@@ -221,7 +221,7 @@
     "lastName": "Apellido",
     "login": {
       "title": "Simple pero potente",
-      "description": "Inicia sesión para acceder a tus espacios de trabajo.",
+      "description": "Inicia sesión en tus espacios de trabajo.",
       "submit": "Iniciar sesión",
       "submitting": "Iniciando sesión...",
       "forgotPassword": "¿Olvidaste la contraseña?",
@@ -252,7 +252,7 @@
       "successTitle": "Revisa tu correo",
       "backToSignIn": "Volver a iniciar sesión",
       "error": "Algo salió mal",
-      "legal": "Solo los miembros de este espacio de trabajo pueden restablecer una contraseña.",
+      "legal": "Solo los miembros del espacio pueden restablecerla.",
       "sentMessage": "Hemos enviado un enlace para restablecer tu contraseña a <address>{{email}}</address>. Caduca en 30 minutos.",
       "emailLabel": "Correo de trabajo",
       "resend": "Reenviar enlace",
@@ -275,7 +275,7 @@
       "confirmPassword": "Confirmar contraseña",
       "confirmPasswordPlaceholder": "Repite la contraseña",
       "continue": "Ir al espacio de trabajo",
-      "legal": "Solo los miembros de este espacio de trabajo pueden restablecer una contraseña.",
+      "legal": "Solo los miembros del espacio pueden restablecerla.",
       "descriptionFor": "Elige una nueva contraseña para {{email}}.",
       "note": "Al guardar se cerrará la sesión en el resto de dispositivos."
     },
@@ -320,7 +320,7 @@
       "noAccount": "Todavía no hay ninguna cuenta con ese acceso. Crea una abajo: los botones de proveedor lo hacen en un solo paso."
     },
     "showPassword": "Mostrar contraseña",
-    "legal": "Al continuar aceptas nuestros <terms>Términos</terms> y la <privacy>Política de privacidad</privacy>.",
+    "legal": "Al continuar aceptas los <terms>Términos</terms> y la <privacy>Privacidad</privacy>.",
     "passwordsDoNotMatch": "Las contraseñas no coinciden"
   },
   "projects": {
@@ -971,14 +971,14 @@
       "removePicture": "Quitar",
       "pictureFailed": "No se ha podido cambiar la foto.",
       "email": "Correo",
-      "emailHint": "Para iniciar sesión y para los avisos de ejecuciones",
+      "emailHint": "Para iniciar sesión y recibir avisos",
       "unverified": "Sin verificar",
       "change": "Cambiar",
       "fullName": "Nombre completo",
       "firstName": "Nombre",
       "lastName": "Apellidos",
       "username": "Nombre de usuario",
-      "usernameHint": "Aparece en los registros de sesión y en los trailers de los commits",
+      "usernameHint": "Aparece en los registros y en los commits",
       "discard": "Descartar",
       "saveChanges": "Guardar cambios",
       "saving": "Guardando…",
@@ -1096,10 +1096,11 @@
   "onboarding": {
     "flow": {
       "back": "Atrás",
+      "step": "{{step}} de {{total}}",
       "continue": "Continuar",
       "workspace": {
-        "title": "Nombra tu espacio de trabajo",
-        "description": "Un espacio de trabajo reúne tus hosts, repositorios e historial de ejecuciones. Podrás cambiarle el nombre; la dirección es permanente.",
+        "title": "Nombra tu espacio",
+        "description": "Reúne tus hosts, repositorios e historial de ejecuciones. Podrás renombrarlo; la dirección es permanente.",
         "name": "Nombre del espacio de trabajo",
         "namePlaceholder": "Versio Platform",
         "address": "URL del espacio de trabajo",

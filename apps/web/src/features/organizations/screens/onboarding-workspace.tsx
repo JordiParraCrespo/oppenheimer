@@ -111,6 +111,7 @@ export function OnboardingWorkspaceScreen({
         total={total}
         back={{ render: <button type="button" onClick={leave} /> }}
         backLabel={t('onboarding.flow.back')}
+        counterLabel={t('onboarding.flow.step', { step, total })}
         title={t('onboarding.flow.workspace.title')}
       >
         {t('onboarding.flow.workspace.description')}

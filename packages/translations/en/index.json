@@ -1090,6 +1090,7 @@
   "onboarding": {
     "flow": {
       "back": "Back",
+      "step": "{{step}} of {{total}}",
       "continue": "Continue",
       "workspace": {
         "title": "Name your workspace",
