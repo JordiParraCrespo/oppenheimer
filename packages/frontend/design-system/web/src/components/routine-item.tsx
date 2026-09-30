@@ -104,6 +104,11 @@ function RoutineRun({
       role="listitem"
       className={cn(
         'flex h-7 w-full items-center gap-2 rounded-sm pr-2.5 pl-8 text-left text-[12.5px] text-fg-muted outline-none transition-colors duration-fast hover:bg-hover-surface hover:text-fg focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-active:text-fg',
+        // A run with no session has nothing to open. Left to itself the row
+        // looked exactly like one that does and answered a click with
+        // nothing, so the disabled state has to be visible: it stops
+        // reacting to the pointer and drops to the subtle weight.
+        'disabled:cursor-default disabled:text-fg-subtle disabled:hover:bg-transparent disabled:hover:text-fg-subtle',
         className,
       )}
       {...props}
