@@ -138,7 +138,7 @@ export class SessionResponseDto {
   @ApiProperty({
     enum: SESSION_GROUPS,
     description:
-      'The derived group — what the sidebar dot shows, computed from the row and organised by what needs you: the session failed, the agent has been blocked for 30 s, or a launch has sat unready for 60 s. Two arms have no writer yet: `landing`, since GitHub pull-request events feed automations rather than sessions, and a pane gone with no report, since a lost session is recorded `stopped`.',
+      'The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/versions/mvp/03-control-plane.md`).',
   })
   state!: (typeof SESSION_GROUPS)[number];
 

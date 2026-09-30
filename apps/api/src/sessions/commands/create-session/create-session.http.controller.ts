@@ -50,7 +50,7 @@ export class CreateSessionHttpController {
   @ApiOperation({
     summary: 'Start a session',
     description:
-      'Several repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the working branch is always `oppenheimer/<session slug>`. A session that names no `projectId` lands in the workspace’s Unassigned project.',
+      'Several repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the control plane names the working branch (`sessionBranchName`) and each checkout on the response carries it. Without a `projectId` the session lands in the workspace’s Unassigned project (`product/versions/mvp/03-control-plane.md`).',
   })
   @ApiHeader({
     name: 'Idempotency-Key',
