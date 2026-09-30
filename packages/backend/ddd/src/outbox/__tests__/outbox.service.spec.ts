@@ -1,6 +1,7 @@
-import { DomainEvent, type DomainEventProps, OutboxService } from '@oppenheimer/backend-ddd';
 import type { DataSource, EntityManager } from 'typeorm';
 import { describe, expect, it, vi } from 'vitest';
+import { DomainEvent, type DomainEventProps } from '../../domain-event.base';
+import { OutboxService } from '../outbox.service';
 
 class ThingDeletedDomainEvent extends DomainEvent {
   readonly name: string;

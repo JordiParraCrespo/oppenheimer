@@ -1,6 +1,8 @@
-import { type OutboxMessageRecord, OutboxRelay, OutboxService } from '@oppenheimer/backend-ddd';
 import type { DataSource } from 'typeorm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { OutboxService } from '../outbox.service';
+import type { OutboxMessageRecord } from '../outbox-message';
+import { OutboxRelay } from '../outbox-relay';
 
 /**
  * The relay's contract: claim → publish → mark the batch processed, with
@@ -262,8 +264,17 @@ describe('OutboxRelay', () => {
 
     await relay.stop();
     const claims = claim.mock.calls.length;
-    service.wake();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    // Stopping unregisters the drainer, so a wake no longer reaches the relay at
+    // all; fake timers flush anything a wake could have scheduled for later.
+    const requestDrain = vi.spyOn(relay, 'requestDrain');
+    vi.useFakeTimers();
+    try {
+      service.wake();
+      await vi.runAllTimersAsync();
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(requestDrain).not.toHaveBeenCalled();
     expect(claim).toHaveBeenCalledTimes(claims);
   });
 

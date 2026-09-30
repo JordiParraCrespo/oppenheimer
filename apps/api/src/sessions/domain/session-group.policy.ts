@@ -19,9 +19,10 @@ import type { SessionFold } from './session-state.policy';
  *     session into `waiting-on-you`.
  *  2. **Precedence is a different function from display order.** "Blocked for
  *     thirty seconds beats an approved pull request" is a correctness rule and
- *     is {@link sessionGroup}; "ready-for-review sorts first" is a UI rule and
- *     belongs to the client that sorts. Conflating them means neither can
- *     change alone.
+ *     is {@link sessionGroup}; the order groups are shown in is a UI rule and
+ *     is not decided here. No client orders by group yet (the console's session
+ *     list sorts by name or creation time), so that rule has no owner today.
+ *     Conflating the two means neither can change alone.
  *
  * **Two arms have no writer yet, and are not faked.** `waiting-on-you`'s fourth
  * source — the pane is gone with no report — needs the host's own session

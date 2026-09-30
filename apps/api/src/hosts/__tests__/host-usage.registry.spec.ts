@@ -23,8 +23,11 @@ describe('HostUsageRegistry', () => {
       { ...presence('a'), runningSessions: 2 },
       { ...presence('b', false), runningSessions: 0 },
     ]);
-    // With no module contributing at all, the answer is still nothing running.
+  });
+
+  it('answers with nothing running when no module contributed, rather than refusing', async () => {
     const [bare] = await new HostUsageRegistry().overview([presence('a')]);
+
     expect(bare.runningSessions).toBe(0);
   });
 

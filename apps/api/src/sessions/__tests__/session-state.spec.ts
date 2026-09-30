@@ -139,12 +139,15 @@ describe('the session fold', () => {
       entry(SESSION_EVENT_KINDS.MOVED, {}),
     ]);
     expect(moved.projectId).toBe('p-3');
-    // A resolved session is a tombstone and stays where it ended.
+    // A resolved session is a tombstone and stays where it ended: the close keeps
+    // its project, and a later move does not retarget it.
     const closed = foldSessionLog([
+      entry(SESSION_EVENT_KINDS.REQUESTED),
+      entry(SESSION_EVENT_KINDS.MOVED, { to: 'project-1' }),
       entry(SESSION_EVENT_KINDS.CLOSED),
-      entry(SESSION_EVENT_KINDS.MOVED, { from: 'p-1', to: 'p-2' }),
+      entry(SESSION_EVENT_KINDS.MOVED, { from: 'project-1', to: 'project-2' }),
     ]);
-    expect(closed.projectId).toBeNull();
+    expect(closed.projectId).toBe('project-1');
   });
 
   it('keeps an unknown kind in the log and advances nothing but the clock', () => {

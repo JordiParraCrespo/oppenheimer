@@ -12,7 +12,8 @@ import { HostResource } from '../hosts.resource';
  * key, and `host` deliberately has no such column — one laptop is paired once and
  * every workspace its owner is in borrows it. If a later edit gave the resource
  * an organization key, the same laptop would become invisible from the second
- * workspace, and the first test below is what fails.
+ * workspace. Nothing asserts that absence on its own: both SQL tests below
+ * compare the exact clause list, so a tenant clause added to either fails them.
  *
  * Both halves are covered because both have to hold and they fail
  * independently: the **SQL predicate** decides which rows a query returns, and
@@ -55,10 +56,11 @@ function whereClausesFor(callerScope: AccessScope): string[] {
 const USER_ROLE = SYSTEM_ROLE_PERMISSIONS.user;
 
 describe('host row scoping (SQL)', () => {
-  it('never constrains a tenant, because a host has no workspace', () => {
-    // A caller who owns no host and holds no grant still gets the owner
-    // predicate, and it is unsatisfiable rather than absent: the failure mode
-    // of a missing clause is "every host in the deployment".
+  it('gives a caller with no host and no grant an owner predicate that matches nothing', () => {
+    // The predicate is unsatisfiable rather than absent: the failure mode of a
+    // missing clause is "every host in the deployment". The exact call list is
+    // also the no-tenant lock: a host has no workspace, so an organization
+    // clause here is a regression.
     const qb = fakeQueryBuilder('host');
     applyAccessScope(qb, HostResource, scope({ userId: 'stranger' }));
 

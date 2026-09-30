@@ -77,24 +77,36 @@ describe('CredentialsProcessor', () => {
     expect(grant.sealed).not.toContain('ghs_minted');
   });
 
+  type Harness = ReturnType<typeof harness>;
+  const asIs = (_h: Harness) => {};
+
   it.each([
-    ['no such checkout', null, 'SESSIONS_001', 'none'],
-    ['a checkout on another host', { ...LIVE, hostId: 'other' }, 'SESSIONS_001', 'none'],
-    ['a checkout that is no longer live', { ...LIVE, live: false }, 'SESSIONS_001', 'none'],
+    ['no such checkout', null, asIs, 'SESSIONS_001'],
+    ['a checkout on another host', { ...LIVE, hostId: 'other' }, asIs, 'SESSIONS_001'],
+    ['a checkout that is no longer live', { ...LIVE, live: false }, asIs, 'SESSIONS_001'],
     [
       "a repository that is not the checkout's",
       { ...LIVE, githubRepoId: 43 },
+      asIs,
       'SESSIONS_001',
-      'none',
     ],
     // Banned or deactivated since the session started: the session's git
     // credential goes the way of every other credential they hold.
-    ['a session whose owner may not act', LIVE, 'TOKEN_003', 'owner'],
-    ['a host whose key is unavailable', LIVE, 'HOSTS_001', 'key'],
-  ] as const)('refuses %s without minting (%s)', async (_case, target, code, gone) => {
+    [
+      'a session whose owner may not act',
+      LIVE,
+      (h: Harness) => h.owners.findActiveOwner.mockResolvedValue(null),
+      'TOKEN_003',
+    ],
+    [
+      'a host whose key is unavailable',
+      LIVE,
+      (h: Harness) => vi.mocked(h.keys.publicKeyOf).mockResolvedValue(null),
+      'HOSTS_001',
+    ],
+  ] as const)('refuses %s without minting', async (_case, target, arrange, code) => {
     const h = harness(target);
-    if (gone === 'owner') h.owners.findActiveOwner.mockResolvedValue(null);
-    if (gone === 'key') vi.mocked(h.keys.publicKeyOf).mockResolvedValue(null);
+    arrange(h);
 
     await h.processor.onToken(h.link, ASK);
 

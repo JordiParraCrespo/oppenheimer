@@ -1,11 +1,9 @@
-import {
-  AggregateRoot,
-  DomainEvent,
-  OutboxService,
-  TypeOrmRepositoryBase,
-} from '@oppenheimer/backend-ddd';
 import type { DataSource, EntityManager, Repository } from 'typeorm';
 import { describe, expect, it, vi } from 'vitest';
+import { AggregateRoot } from '../aggregate-root.base';
+import { DomainEvent } from '../domain-event.base';
+import { OutboxService } from '../outbox/outbox.service';
+import { TypeOrmRepositoryBase } from '../typeorm-repository.base';
 
 class ThingRenamedDomainEvent extends DomainEvent {}
 
