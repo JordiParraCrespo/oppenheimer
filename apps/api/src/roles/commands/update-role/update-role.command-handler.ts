@@ -10,7 +10,6 @@ import { Permission } from '../../domain/value-objects/permission.value-object';
 import { ROLE_REPOSITORY } from '../../roles.di-tokens';
 import { UpdateRoleCommand } from './update-role.command';
 
-/** Updates a role's description and/or its full permission set. */
 @CommandHandler(UpdateRoleCommand)
 export class UpdateRoleCommandHandler implements ICommandHandler<UpdateRoleCommand, AggregateID> {
   constructor(
@@ -21,8 +20,6 @@ export class UpdateRoleCommandHandler implements ICommandHandler<UpdateRoleComma
 
   async execute(command: UpdateRoleCommand): Promise<AggregateID> {
     if (command.permissions !== undefined) {
-      // No privilege escalation: the author must already hold everything they
-      // are putting on the role.
       await this.grantPolicy.assertGrantable(
         command.actorId
           ? {

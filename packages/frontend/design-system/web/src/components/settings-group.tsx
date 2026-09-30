@@ -2,6 +2,8 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
+const groupClass = 'flex flex-col overflow-hidden rounded-lg border border-border-subtle bg-card';
+
 /**
  * SettingsGroup — one card per group of settings, one row per setting:
  * the label and a one-line hint on the left, the control on the right,
@@ -14,8 +16,6 @@ import { cn } from '../lib/utils';
  * edited and saved together: the rows stay its direct children, so the
  * hairlines fall between them, and the save row's Save changes submits it.
  */
-const groupClass = 'flex flex-col overflow-hidden rounded-lg border border-border-subtle bg-card';
-
 function SettingsGroup({ className, ...props }: React.ComponentProps<'section'>) {
   return <section data-slot="settings-group" className={cn(groupClass, className)} {...props} />;
 }

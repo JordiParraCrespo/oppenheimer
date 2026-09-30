@@ -5,20 +5,16 @@ import type { SessionEventSource } from '../domain/work-session-event.entity';
 /**
  * A session's append-only log, which is the truth per session.
  *
- * The two uniques are the whole design. `(sessionId, seq)` is what makes the log
- * dense and monotonic, and `seq` is assigned by the control plane under a row lock
- * on `work_session` rather than by the writer, so a buggy or hostile host cannot
- * create gaps or regress it. `(sessionId, idempotencyKey)` is what makes an append
- * idempotent: one
- * `INSERT … ON CONFLICT ("sessionId", "idempotencyKey") DO NOTHING` per row means a
- * batch replayed after a dropped acknowledgement, or half-applied before a crash,
- * appends only what was not yet seen.
+ * `(sessionId, seq)` keeps the log dense and monotonic; `seq` is assigned by the
+ * control plane under a row lock on `work_session`, not by the writer, so a buggy or
+ * hostile host cannot create gaps or regress it. `(sessionId, idempotencyKey)` makes
+ * an append idempotent: a batch replayed after a dropped acknowledgement, or
+ * half-applied before a crash, appends only what was not yet seen.
  *
- * There is no `organizationId` here, and that is deliberate: every read is by
- * session, through a session the caller has already been scoped to. It is the one
- * of the new tables that is not workspace-owned, because it has no life of its own.
- * The one other index is partial, on the at most one `prompt.first` row per
- * session, which a runner's hello reads for every unresolved session on its host.
+ * No `organizationId`, deliberately: every read goes through a session the caller is
+ * already scoped to, and the log has no life of its own. The partial index covers the
+ * at most one `prompt.first` row per session, which a runner's hello reads for every
+ * unresolved session on its host.
  */
 @Entity('work_session_event')
 @Index('IDX_work_session_event_session_seq', ['sessionId', 'seq'], { unique: true })

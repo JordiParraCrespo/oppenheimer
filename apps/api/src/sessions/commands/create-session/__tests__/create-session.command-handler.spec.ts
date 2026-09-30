@@ -167,7 +167,6 @@ describe('CreateSessionCommandHandler', () => {
 
   it('mints a slug, records the request and the cwd, and dispatches the job', async () => {
     const { sessionId, hints } = await handler.execute(command());
-    // Commands answer with the id; the session is what the handler inserted.
     const [session] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
 
     expect(sessionId).toBe(session.id);

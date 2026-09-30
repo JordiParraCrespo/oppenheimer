@@ -8,8 +8,6 @@ import {
 } from './primitives.js';
 
 /**
- * Project shapes.
- *
  * A project is a **saved scope a person creates**: the repositories its sessions
  * usually work on, the base each one branches from, which of them are offered by
  * default, and the host and agent a new session starts with
@@ -22,8 +20,6 @@ import {
  * `slug` is in no request body: it is the project's stable handle, derived once
  * from its first name and never reissued. A project is metadata; nothing on a
  * host is named after it.
- *
- * Schemas state the constraint only, never a message (`.agents/rules/forms.md`).
  */
 
 /** How many repositories one project may hold. The dialog shows them all at once. */

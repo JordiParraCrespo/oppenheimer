@@ -5,7 +5,6 @@ import { ProjectRepositoryOrmEntity } from './database/project-repository.orm-en
 import { ProjectEntity } from './domain/project.entity';
 import { ProjectRepositoryResponseDto, ProjectResponseDto } from './dtos/project.response.dto';
 
-/** Maps the project aggregate between its domain, persistence and response shapes. */
 @Injectable()
 export class ProjectMapper implements Mapper<ProjectEntity, ProjectOrmEntity, ProjectResponseDto> {
   toPersistence(entity: ProjectEntity): ProjectOrmEntity {

@@ -18,12 +18,9 @@ import { type ConsentSearch, describeScopes, submitConsent } from '@/features/au
 import { CenteredCard } from '../components/centered-card';
 
 /**
- * OAuth consent screen.
- *
  * Better Auth's MCP plugin sends the user here mid-authorization with the
  * client and the scopes it asked for; approving posts the consent code back and
- * follows the redirect it returns. Signing in first is required, so an
- * unauthenticated visitor is bounced to the login page and returned here.
+ * follows the redirect it returns.
  */
 export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
   const { t } = useTranslation();
@@ -110,7 +107,6 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
         </CardContent>
 
         <CardFooter className="justify-end">
-          {/* The answer in flight is pending; the other is locked beside it. */}
           <Button
             variant="outline"
             disabled={pending === 'accept'}

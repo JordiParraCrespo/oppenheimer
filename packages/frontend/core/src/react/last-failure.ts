@@ -22,19 +22,15 @@ export interface LastFailure {
 /**
  * One alert for several mutations, without the stale error.
  *
- * `a.error ?? b.error` keeps showing `a`'s failure after `b` succeeds, and
- * nothing can clear it. This answers the mutation that was submitted **last**
- * instead: its error if it failed, nothing if it succeeded or is still
- * running. So a later success clears an earlier failure and a later failure
+ * `a.error ?? b.error` keeps showing `a`'s failure after `b` succeeds. This
+ * answers the mutation submitted **last**: its error if it failed, nothing
+ * otherwise, so a later success clears an earlier failure and a later failure
  * replaces it. Two submitted in the same millisecond resolve to the one later
  * in the list.
  *
- * Dismiss resets every failed mutation, not only the one showing: resetting
- * that one alone would hand "last submitted" to an older failure, and the alert
- * the reader just closed would come back with it.
- *
- * A plain function, not a hook: it reads the mutation results a component
- * already holds and calls no React API.
+ * Dismiss resets every failed mutation: resetting only the one showing would
+ * hand "last submitted" to an older failure, and the closed alert would return.
+ * A plain function, not a hook: it calls no React API.
  */
 export function lastFailure(mutations: readonly TrackedMutation[]): LastFailure {
   let index = -1;

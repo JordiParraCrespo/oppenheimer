@@ -73,7 +73,6 @@ export function toStartEntry(entry: RawSessionLogEntry): SessionStartEntry | nul
   }
 }
 
-/** Whether the log already says how the start ended. */
 export function settlesStart(entry: SessionStartEntry): boolean {
   return entry.kind === 'started' || entry.kind === 'failed';
 }

@@ -5,21 +5,17 @@ import { useTranslation } from 'react-i18next';
 import { ErrorAlert } from '../../forms';
 
 /**
- * The social sign-in row at the top of the sign-in and create-account
- * screens, driven by the deployment's capability set
- * (`GET /health/capabilities`) so only providers that are actually configured
- * render a button.
+ * The social sign-in row on the sign-in and create-account screens, showing
+ * only providers the deployment configured (`GET /health/capabilities`).
  *
- * Failure semantics matter here: until the capability read *succeeds* we
- * assume every provider is available, because an unreachable API is not a
- * missing configuration. The "nothing configured" hint — which names the env
- * vars to set, for the self-hoster who is the one person able to fix it —
- * only ever renders from a successful read reporting no providers.
+ * Until the capability read *succeeds*, every provider is assumed available:
+ * an unreachable API is not a missing configuration. The "nothing configured"
+ * hint, which names the env vars for the self-hoster, renders only from a
+ * successful read reporting no providers.
  *
- * `intent` is what separates the two screens that render this. The API refuses
- * a provider identity it has never seen unless the caller asks for a sign-up,
- * so the login screen's buttons sign in only, and the register screen's are
- * the one place an account can be created from a provider.
+ * `intent` separates the two screens: the API refuses a provider identity it
+ * has never seen unless the caller asks for a sign-up, so only the register
+ * screen's buttons can create an account.
  */
 export function SocialLoginButtons({
   disabled,

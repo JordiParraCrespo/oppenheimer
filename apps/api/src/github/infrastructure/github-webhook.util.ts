@@ -2,19 +2,16 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import type { InstallationStatusChange } from '../database/github-installation.repository.port';
 
 /**
- * The `installation` webhook, verified and narrowed.
+ * The `installation` webhook, verified and narrowed: the only event this
+ * module subscribes to, because it reports installation facts that change
+ * without us and that a token mint must respect. Nothing mirrors the
+ * repository set, so `installation_repositories` has nothing to keep current.
  *
- * It is the only event this module subscribes to, because it is the only one
- * that reports a fact about an installation that changes without us and that a
- * token mint must respect. Nothing mirrors the repository set, so there is
- * nothing for `installation_repositories` to keep current.
- *
- * A delivery is a status write, idempotent to repeat **and ordered by GitHub's
- * own timestamp** (`occurredAt`). GitHub does not promise delivery order, and a
- * retry can land after a newer delivery, so a suspend or unsuspend applies only
- * when it is newer than the last one the row took: a late retry, or a replay
- * of an older captured body, is a no-op. That is why this path still has no
- * delivery table and no de-duplication key.
+ * A delivery is a status write ordered by GitHub's own timestamp
+ * (`occurredAt`): GitHub does not promise delivery order, so a suspend or
+ * unsuspend applies only when newer than the last one the row took, and a
+ * late retry or a replayed body is a no-op. That is why there is no delivery
+ * table and no de-duplication key.
  */
 export type InstallationWebhookAction = 'suspend' | 'unsuspend' | 'delete';
 

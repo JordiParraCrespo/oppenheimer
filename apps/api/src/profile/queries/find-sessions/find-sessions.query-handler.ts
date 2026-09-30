@@ -4,7 +4,6 @@ import type { OwnedSession, SessionReaderPort } from '../../database/session.rep
 import { SESSION_READER } from '../../profile.di-tokens';
 import { FindSessionsQuery } from './find-sessions.query';
 
-/** The caller's live sessions. Read-only — revoking goes through a command. */
 @QueryHandler(FindSessionsQuery)
 export class FindSessionsQueryHandler implements IQueryHandler<FindSessionsQuery, OwnedSession[]> {
   constructor(

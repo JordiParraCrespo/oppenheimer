@@ -4,17 +4,6 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
-/**
- * Input — anything you type into has a 10px radius. Sizes follow the shared
- * control ramp (28 / 34 / 42; `lg` is the auth forms). Focus is the blue border
- * plus a 3px `--ring` halo; invalid swaps both for red.
- *
- * The field is a flex shell around the native input so `leading` and
- * `trailing` slots (a search glyph, the password reveal) sit inside the border
- * without the text running under them. Every input prop, including `ref`, goes
- * to the inner `<input>`, so it drops into React Hook Form as-is; `className`
- * styles the shell.
- */
 const inputVariants = cva(
   'group/input flex w-full min-w-0 items-center gap-2 rounded-sm border border-field-border bg-field text-fg transition-[border-color,box-shadow,background-color] duration-fast ease-standard hover:border-border-strong has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring has-aria-invalid:border-danger has-aria-invalid:has-focus-visible:ring-danger-surface has-disabled:pointer-events-none has-disabled:bg-control has-disabled:opacity-50 [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4',
   {
@@ -51,6 +40,17 @@ type InputProps = Omit<React.ComponentProps<'input'>, 'size'> &
     inputClassName?: string;
   };
 
+/**
+ * Input — anything you type into has a 10px radius. Sizes follow the shared
+ * control ramp (28 / 34 / 42; `lg` is the auth forms). Focus is the blue border
+ * plus a 3px `--ring` halo; invalid swaps both for red.
+ *
+ * The field is a flex shell around the native input so `leading` and
+ * `trailing` slots (a search glyph, the password reveal) sit inside the border
+ * without the text running under them. Every input prop, including `ref`, goes
+ * to the inner `<input>`, so it drops into React Hook Form as-is; `className`
+ * styles the shell.
+ */
 function Input({
   className,
   inputClassName,

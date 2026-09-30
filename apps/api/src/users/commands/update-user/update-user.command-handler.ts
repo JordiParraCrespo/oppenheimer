@@ -10,9 +10,6 @@ import { USER_REPOSITORY } from '../../user.di-tokens';
 import { UpdateUserCommand } from './update-user.command';
 
 /**
- * Command handler for updating a user's profile. Loads the aggregate, applies
- * the change through its domain method and persists it.
- *
  * Better Auth caches each session with a copy of its user, and the session
  * path reads that copy — `isActive` included — so the copies are refreshed
  * once the row is written. A deactivation therefore refuses the account's

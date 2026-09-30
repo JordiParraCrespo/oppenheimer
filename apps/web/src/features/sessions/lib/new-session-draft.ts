@@ -8,18 +8,12 @@ import {
 import { defaultModelFor, type EffortPicks } from './session-options';
 
 /**
- * What New session has been set to, and what it remembers between visits.
- *
- * The artboard says the chips remember the last choice — the project among
- * them, since 12 — with one exception enforced here: **`full` is never
- * remembered**. Every other control can be restored from storage without
- * consequence; a permission level that escalated itself because it was used
- * once is the failure `product/04-security-review.md` exists to prevent, so a
- * stored `full` is never read back.
- *
- * Nothing here is validated against the lists — the chips do that once their
- * queries answer, because only then is "that host is gone" a fact rather than a
- * list that has not loaded yet.
+ * What New session has been set to and remembers between visits, except that
+ * **`full` is never remembered**: a permission level that escalated itself
+ * because it was used once is the failure `product/04-security-review.md`
+ * exists to prevent, so a stored `full` is never read back. Nothing here is
+ * validated against the lists; the chips do that once their queries answer,
+ * when "that host is gone" is a fact rather than a list not yet loaded.
  */
 const STORAGE_KEY = 'oppenheimer.new-session.draft';
 
@@ -76,7 +70,6 @@ export function initialDraft(): NewSessionDraft {
   };
 }
 
-/** Write the five choices worth carrying between visits out to storage. */
 export function rememberDraft({ projectId, hostId, agent, model, efforts }: RememberedChoices) {
   try {
     window.localStorage.setItem(

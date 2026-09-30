@@ -85,9 +85,6 @@ describe('decodeHostAssertion', () => {
   });
 
   it('refuses a segment with trailing garbage rather than decoding what it can', () => {
-    // Node's base64 decoder skips what it does not recognise and returns the
-    // rest, so without a re-encode check a token could verify on bytes the
-    // decoder chose out of a longer string.
     const { privateKey } = keypair();
     const [header, payload, signature] = assertion(privateKey, { sub: 'host-1' }).split('.');
 
@@ -115,8 +112,6 @@ describe('assertionIsSignedBy', () => {
   });
 
   it('accepts a match anywhere in the list, and survives an unusable key', () => {
-    // The list is how a rotation window is expressed, and a key the platform
-    // cannot load must not stop the other one being tried.
     const host = keypair();
     expect(
       assertionIsSignedBy(decoded(assertion(host.privateKey, { sub: 'host-1' })), [

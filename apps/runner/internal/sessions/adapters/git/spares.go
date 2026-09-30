@@ -19,10 +19,8 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
-// spareName is the spare's directory beside the sessions' worktrees.
 const spareName = ".spare"
 
-// spare is one repository's worktree made ahead of time.
 type spare struct {
 	path string
 	// ready is set once the checkout has finished; a spare still being
@@ -30,7 +28,6 @@ type spare struct {
 	ready bool
 }
 
-// sparePath is where repo's spare lives.
 func (c *Client) sparePath(repo string) string {
 	return filepath.Join(filepath.Dir(c.layout.Worktree(repo, spareName)), spareName)
 }

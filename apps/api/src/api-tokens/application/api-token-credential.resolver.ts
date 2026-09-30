@@ -11,15 +11,12 @@ import { ApiTokenErrors } from '../domain/api-token.errors';
 import { hashApiTokenSecret, isApiTokenSecret } from '../domain/api-token-secret.factory';
 
 /**
- * This module's contribution to the auth kernel: `oppenheimer_pat_…` secrets,
- * presented as a bearer credential or in `x-api-key`.
+ * `oppenheimer_pat_…` secrets, presented as a bearer credential or in
+ * `x-api-key`; this resolver claims the prefix they are minted with.
  *
- * The kernel recognises no token format of its own — it asks every registered
- * resolver whether a presented string is theirs, and this one claims the
- * prefix its secrets are minted with. Everything a token can fail on (unknown
- * digest, revoked, expired, an address outside its allowlist) is decided here,
- * against this module's repository, because this module is what those rules
- * belong to.
+ * Everything a token can fail on (unknown digest, revoked, expired, an address
+ * outside its allowlist) is decided here, against this module's repository,
+ * because this module is what those rules belong to.
  */
 @Injectable()
 export class ApiTokenCredentialResolver implements CredentialResolverPort {

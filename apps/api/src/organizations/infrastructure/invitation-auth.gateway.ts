@@ -8,7 +8,6 @@ import { OrganizationMapper } from '../organization.mapper';
 import type { AcceptedInvitation, InvitationAuthPort } from './invitation-auth.port';
 import { invokeOrganizationApi } from './organization-error.util';
 
-/** The invitation port, over the Better Auth organization plugin's invitation endpoints. */
 @Injectable()
 export class InvitationAuthGateway implements InvitationAuthPort {
   async invite(

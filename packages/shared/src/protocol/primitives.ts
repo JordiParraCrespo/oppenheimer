@@ -140,12 +140,6 @@ export const hostToolSchema = z.object({
  * What the runner last saw about the machine — the wire half of
  * `hostFactsSchema` in `../schemas/primitives`, which registration uses.
  *
- *
- * Agents installed on a host are read from `tools` — the names `ProbedTools` in
- * `facts.go` reports, an agent's being its catalog `command` — and there is no
- * separate agents key; that is what the console consumes for the agent chip.
- * The blank terminal needs no tool of its own.
- *
  * Both mirror `Facts` in `apps/runner/internal/host/domain/facts.go` verbatim,
  * because the runner marshals that struct whole into both `POST /hosts/register`
  * and this link. Keep the two identical; the conformance spec fails otherwise.

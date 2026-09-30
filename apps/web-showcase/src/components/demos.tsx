@@ -207,13 +207,6 @@ const INSTALL = 'curl -fsSL https://app.oppenheimer.dev/install.sh \\\n  | sh -s
 const PROMPT =
   'Install the oppenheimer runner here, then run\noppenheimer-runner status and report the hostname.\ncurl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c';
 
-/**
- * Add a host, from the inventory: one sentence, two copy Buttons, the token
- * line, the instruction as a CodeBlock panel behind a Disclosure, and a
- * StatusDot line that resolves in place so nothing under it moves. The
- * product draws the same column from the kit's pairing parts.
- */
-
 /** The copy `FieldSelect` requires, in the showcase's one language. */
 const SELECT_COPY = {
   placeholder: 'Choose…',
@@ -221,6 +214,12 @@ const SELECT_COPY = {
   emptyText: (query: string) => `No match for “${query}”.`,
 };
 
+/**
+ * Add a host, from the inventory: one sentence, two copy Buttons, the token
+ * line, the instruction as a CodeBlock panel behind a Disclosure, and a
+ * StatusDot line that resolves in place so nothing under it moves. The
+ * product draws the same column from the kit's pairing parts.
+ */
 export function AddHostDialogDemo() {
   const [tab, setTab] = React.useState('cmd');
   const [registered, setRegistered] = React.useState(false);

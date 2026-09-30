@@ -3,15 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { ErrorAlert } from '../../forms';
 
 /*
- * The OAuth codes this deployment's auth config can actually produce, and the
- * sentence each one owes the reader.
- *
- * A social round-trip fails on a redirect the app never sees, so Better Auth
- * reports it the only way a redirect can: by sending the browser to the
- * caller's `errorCallbackURL` with `?error=<code>` appended. The codes below
- * are the two the API deliberately raises — anything else is a genuine
- * malfunction and falls through to the generic message, because "nothing
- * happened" is the one outcome a person cannot act on.
+ * The OAuth codes this deployment's auth config can produce, and the sentence
+ * each one owes the reader. A failed social round-trip can only report through
+ * the redirect: Better Auth sends the browser to the caller's `errorCallbackURL`
+ * with `?error=<code>`. The two codes below are the ones the API raises on
+ * purpose; anything else is a malfunction and gets the generic message.
  */
 
 /** Codes that are guidance, not failure: nobody did anything wrong. */

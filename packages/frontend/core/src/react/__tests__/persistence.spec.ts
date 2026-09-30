@@ -62,8 +62,7 @@ describe('createQueryPersistOptions', () => {
     expect(options.maxAge).toBe(QUERY_PERSIST_MAX_AGE);
     expect(options.buster).toBe('1.2.3:3');
     // The predicate is bound to the app's non-persisted features, so it is
-    // checked by behaviour: a kernel-excluded key stays out, an unknown one
-    // persists, and a feature the app names is kept out too.
+    // checked by behaviour.
     const { shouldDehydrateQuery: dehydrate } = options.dehydrateOptions;
     expect(dehydrate(query(authKeys.session()))).toBe(false);
     expect(dehydrate(query(organizationsList))).toBe(true);
@@ -72,7 +71,6 @@ describe('createQueryPersistOptions', () => {
   });
 
   it('keeps queries alive at least as long as they are persisted', () => {
-    // A query collected before it is written would persist nothing.
     expect(defaultQueryClientOptions(0).queries.gcTime).toBeGreaterThanOrEqual(
       QUERY_PERSIST_MAX_AGE,
     );

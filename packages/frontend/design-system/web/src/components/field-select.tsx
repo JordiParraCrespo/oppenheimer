@@ -8,23 +8,7 @@ import { Checkbox } from './checkbox';
 import { ChipSelectEmpty, ChipSelectItem, ChipSelectPopup, ChipSelectSearch } from './chip-select';
 import { Popover, PopoverTrigger } from './popover';
 
-/**
- * FieldSelect — the routine editor's picker: a 42px labelled field on a
- * 10px radius whose value and a muted mono `meta` ("1 repo", "+1",
- * "idle") sit on one line. It opens the same listbox the scope chips use,
- * with a search row and, when `multiple`, a checkbox per row and a check
- * on the picked ones. Options can carry a `group` eyebrow ("In XRP
- * Mobile").
- *
- * Wrap it in `Field` + `FieldLabel` like any control. `variant="quiet"` is
- * the same picker as the value at the end of a `FieldSelectRow`: a borderless
- * pill sized to what it shows, washed on hover, whose listbox opens under its
- * right edge.
- */
-/**
- * The two looks, keyed on `data-variant` so one class list carries both: the
- * labelled field, and the quiet pill at the end of a `FieldSelectRow`.
- */
+/** Both looks (see `FieldSelect`), keyed on `data-variant` so one class list carries them. */
 const TRIGGER = [
   'flex items-center text-left text-fg outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-standard disabled:pointer-events-none disabled:opacity-50',
   'data-[variant=field]:h-(--control-h-lg) data-[variant=field]:w-full data-[variant=field]:gap-2 data-[variant=field]:rounded-sm data-[variant=field]:border data-[variant=field]:border-border data-[variant=field]:bg-card data-[variant=field]:pr-3 data-[variant=field]:pl-3.5 data-[variant=field]:text-operate data-[variant=field]:hover:border-fg-subtle data-[variant=field]:focus-visible:border-primary data-[variant=field]:focus-visible:ring-3 data-[variant=field]:focus-visible:ring-ring data-[variant=field]:data-popup-open:border-primary data-[variant=field]:data-popup-open:ring-3 data-[variant=field]:data-popup-open:ring-ring',
@@ -65,6 +49,19 @@ type FieldSelectProps = {
   | { multiple: true; value: string[]; onValueChange: (value: string[]) => void }
 );
 
+/**
+ * FieldSelect — the routine editor's picker: a 42px labelled field on a
+ * 10px radius whose value and a muted mono `meta` ("1 repo", "+1",
+ * "idle") sit on one line. It opens the same listbox the scope chips use,
+ * with a search row and, when `multiple`, a checkbox per row and a check
+ * on the picked ones. Options can carry a `group` eyebrow ("In XRP
+ * Mobile").
+ *
+ * Wrap it in `Field` + `FieldLabel` like any control. `variant="quiet"` is
+ * the same picker as the value at the end of a `FieldSelectRow`: a borderless
+ * pill sized to what it shows, washed on hover, whose listbox opens under its
+ * right edge.
+ */
 function FieldSelect(props: FieldSelectProps) {
   const {
     options,

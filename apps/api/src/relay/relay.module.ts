@@ -13,16 +13,12 @@ import { RunnerLinkGateway } from './infrastructure/runner-link.gateway';
 
 /**
  * Relay: the two sockets of `product/versions/mvp/01-protocol.md`.
- *
- * `GET /api/v1/relay/runner` is the multiplexed link a runner dials, authenticated
- * by its boot assertion; `GET /api/v1/relay/attach` is the unmultiplexed socket a
- * browser opens with an attach ticket. Between them sits `links/`, the registry
- * that says which host is reachable, which is also what `sessions/` dispatches
- * through — so this module imports `sessions/` for the door that records what a
- * runner reports, and never the other way round. What it sees of the other
- * modules is their published ports and nothing of their tables: the sessions
- * doors, the host assertion, presence and key, the repository token mint, and
- * the workspace membership check.
+ * `GET /api/v1/relay/runner` is the multiplexed link a runner dials with its boot
+ * assertion; `GET /api/v1/relay/attach` the unmultiplexed socket a browser opens with
+ * an attach ticket. `links/` sits between them as the registry of reachable hosts,
+ * which `sessions/` dispatches through, so this module imports `sessions/` and never
+ * the reverse. It sees other modules only through their published ports, never
+ * their tables.
  */
 @Module({
   imports: [LinksModule, SessionsModule, HostsModule, GithubModule, OrganizationsModule],

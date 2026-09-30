@@ -9,29 +9,6 @@ import { ChipSelectEmpty, ChipSelectItem, ChipSelectPopup, ChipSelectSearch } fr
 import { IconButton } from './icon-button';
 import { Popover, PopoverTrigger } from './popover';
 
-/**
- * RepositoryAddField — the project dialog's Repositories field
- * (`design/version1/SessionsConsole.dc.html`): a field that reads "Add a
- * repository…" and opens the scope chips' pane — the search row, one row
- * per repository the App can see that is not yet in the project, the
- * GitHub mark before its mono name — and under it a 14px card with one
- * row per repository added, the mark, the name and an X to take it out.
- * Nothing else is on a row here: what each repository does in a new
- * session is the Defaults fold's, in `RepositoryRowList`.
- *
- * Ids in, ids out: the caller owns `value` (the ids added, in order) and
- * renders the label and the hint around it. The pane is `ChipSelect`'s
- * parts, the same ones the branch pill opens, so the two repository
- * controls share one picker.
- *
- * ```tsx
- * <RepositoryAddField
- *   repositories={[{ id: 'xrp-mobile', name: 'acme/xrp-mobile', description: 'TypeScript · pushed 3h ago' }]}
- *   value={ids}
- *   onValueChange={setIds}
- * />
- * ```
- */
 type RepositoryAddOption = {
   id: string;
   /** Mono, as GitHub names it. */
@@ -43,6 +20,27 @@ type RepositoryAddOption = {
 const defaultEmptyText = (query: string): React.ReactNode =>
   query ? `No repository matches “${query}”` : 'Every repository is added';
 
+/**
+ * RepositoryAddField — the project dialog's Repositories field
+ * (`design/version1/SessionsConsole.dc.html`): a field reading "Add a
+ * repository…" that opens the scope chips' pane (search, one row per
+ * repository the App can see and the project lacks, the GitHub mark before its
+ * mono name), over a 14px card with one row per added repository and an X to
+ * take it out. What each repository does in a new session is the Defaults
+ * fold's, in `RepositoryRowList`.
+ *
+ * Ids in, ids out: the caller owns `value` (the ids added, in order) and the
+ * label and hint around it. The pane is `ChipSelect`'s parts, as the branch
+ * pill's is, so the two repository controls share one picker.
+ *
+ * ```tsx
+ * <RepositoryAddField
+ *   repositories={[{ id: 'xrp-mobile', name: 'acme/xrp-mobile', description: 'TypeScript · pushed 3h ago' }]}
+ *   value={ids}
+ *   onValueChange={setIds}
+ * />
+ * ```
+ */
 function RepositoryAddField({
   repositories,
   value,
@@ -60,8 +58,8 @@ function RepositoryAddField({
   emptyText?: (query: string) => React.ReactNode;
   removeLabel?: (name: string) => string;
 }) {
-  // Defaults resolved in the body, not the signature: the React Compiler
-  // leaves a component whose default parameter is a function uncompiled.
+  // Defaulted here, not in the signature: the React Compiler skips a component
+  // whose default parameter is a function.
   const emptyText = emptyTextProp ?? defaultEmptyText;
   const removeLabel = removeLabelProp ?? ((name: string) => `Remove ${name}`);
   const [open, setOpen] = React.useState(false);

@@ -5,16 +5,10 @@ import { toEffortStops } from '../lib/session-options';
 
 /**
  * How hard the agent may think: a slider over the model's own levels, in a
- * popover.
- *
- * A slider rather than a list because the levels are ordered and somebody
- * setting one is comparing rather than picking a name
- * (`product/versions/mvp/05-screens.md`). The stops are the levels the model's
- * CLI offers, under that CLI's names — five for Claude Code, six for Sol with
- * `ultra` — so the label on the knob is the level the agent is started at.
- *
- * The section above renders this only for a model that has a notion of effort
- * at all, so there is no disabled state to explain.
+ * popover, because the levels are ordered and the reader compares rather
+ * than picks a name (`product/versions/mvp/05-screens.md`). The stops are the
+ * CLI's levels under its own names. Only a model with a notion of effort
+ * renders this, so there is no "unsupported" state to explain.
  */
 export function EffortSelect({
   levels,

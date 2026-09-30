@@ -23,8 +23,6 @@ describe('AvatarStorageAdapter', () => {
 
   describe('store', () => {
     it('returns the key the back-end stored the file under', async () => {
-      // Every back-end resolves `upload` to the key; the key is what is
-      // persisted, and `getUrl` turns it into a URL at read time.
       await expect(avatars.store('user-uuid', Buffer.from('x'), 'image/png', 1)).resolves.toMatch(
         /^avatars\/user-uuid\/[0-9a-f-]{36}\.png$/,
       );

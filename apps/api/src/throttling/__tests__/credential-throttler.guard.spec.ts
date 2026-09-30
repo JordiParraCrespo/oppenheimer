@@ -12,17 +12,11 @@ import type { CredentialVerifierPort } from '../../auth/infrastructure/credentia
 import { CredentialThrottlerGuard } from '../guards/credential-throttler.guard';
 
 /**
- * The tracker decides which requests share a rate-limit bucket, and getting it
- * wrong is invisible: the limiter still works, it just limits the wrong set of
- * callers. That is exactly what happened before this suite existed — the guard
- * read `request.scopeContext`, which `ApiAuthGuard` populates, without
- * accounting for Nest running global guards *first*. On every real request that
- * property was undefined, the credential branch never fired, and the whole
- * website fleet quietly shared one IP bucket while the code looked correct.
- *
- * The guard runs against the real kernel resolver here, with every lookup it
- * could make spied on: deriving the bucket must cost no database and no
- * identity-provider call, or the limiter does its work before it limits.
+ * The tracker decides which requests share a bucket, and getting it wrong is
+ * invisible. The guard once read `request.scopeContext`, which `ApiAuthGuard` sets, but
+ * Nest runs global guards first, so every caller behind one address silently shared an
+ * IP bucket. The guard runs against the real kernel resolver here with every lookup
+ * spied on: deriving the bucket must cost no database or identity-provider call.
  */
 describe('CredentialThrottlerGuard', () => {
   let verifier: { [K in keyof CredentialVerifierPort]: ReturnType<typeof vi.fn> };
@@ -171,15 +165,12 @@ describe('CredentialThrottlerGuard', () => {
   });
 
   it('prefers a resolved user when one is present, over the IP', async () => {
-    // Only populated when the guard is applied at route level, after auth.
     expect(await tracker({ ip: '1.2.3.4', headers: {}, user: { id: 'user-3' } })).toBe(
       'user:user-3',
     );
   });
 
   it('treats a refused single-use credential as anonymous instead of throwing', async () => {
-    // Rejecting it is `ApiAuthGuard`'s job, with the catalog error and the
-    // opaque wording that keeps ids from being probed.
     hostResolve.mockRejectedValue(new Error('replayed'));
 
     expect(await tracker({ ip: '1.2.3.4', headers: { authorization: 'Bearer eyJold' } })).toBe(
@@ -240,8 +231,6 @@ describe('CredentialThrottlerGuard', () => {
 
 describe('CredentialThrottlerGuard – a blocked request', () => {
   it('answers with the RATE_001 catalog error, not a codeless ThrottlerException', async () => {
-    // Nest's own exception reaches the client with no `code`, so nothing can
-    // tell a rate limit apart from any other 429.
     const guard = new CredentialThrottlerGuard(
       { throttlers: [] } as never,
       {} as never,

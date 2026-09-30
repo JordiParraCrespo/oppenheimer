@@ -19,18 +19,14 @@ import { WorkSessionEntity } from '../domain/work-session.entity';
 import { WorkSessionMapper } from '../work-session.mapper';
 
 /**
- * The log, the fold and the composite keys, against a real Postgres.
- *
- * The unit tests prove the fold is pure and the handlers refuse what they should.
- * This is the layer that proves the **database** enforces what the design says it
- * does — that a foreign project is rejected by a constraint rather than by a check
- * somebody remembered, that `seq` stays dense under concurrent appends, and that
- * closing a session leaves the row where it was. Those are the failures no unit
- * test could catch, and each one is a bug that produces a second directory, a second
+ * The log, the fold and the composite keys, against a real Postgres: what the
+ * **database** enforces. A foreign project is rejected by a constraint, not a check
+ * somebody remembered; `seq` stays dense under concurrent appends; closing a session
+ * leaves the row where it was. Each failure would mean a second directory, a second
  * branch or a stranger's conversation state.
  *
- * The schema is built by running the migrations, not `synchronize`, so a
- * mistake in a migration fails here rather than in production.
+ * The schema is built by the migrations, not `synchronize`, so a bad migration fails
+ * here rather than in production.
  */
 describe('sessions: the log, the fold and the keys (integration)', () => {
   let pgContainer: StartedTestContainer;
@@ -285,15 +281,11 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
     });
 
     /**
-     * The fold's columns are the projection, so **every** one of them has to be
-     * written where the fold runs.
-     *
-     * This is the test that would have caught a real bug: the update inside
-     * `appendWithin` hand-listed its columns, so the four observation columns —
-     * the inputs the sidebar's debounce reads — and later the three launch
-     * options were folded onto the aggregate and never reached the row. Nothing
-     * noticed, because every assertion read the aggregate rather than the row.
-     * So this one reads the row.
+     * The fold's columns are the projection, so **every** one must be written where
+     * the fold runs. Regression: the update in `appendWithin` hand-listed its
+     * columns, so the four observation columns (the sidebar debounce's inputs) and
+     * the three launch options reached the aggregate but never the row, unnoticed
+     * because every assertion read the aggregate. So this one reads the row.
      */
     it('persists every column the fold projects, not the ones somebody listed', async () => {
       const work = session();
@@ -375,7 +367,6 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
 
       // UTC+14: a zoneless column keeps the wall clock and loses the offset, so
       // it would come back fourteen hours in the future.
-      // An UPDATE comes back from TypeORM as [rows, affected].
       const [[updated]]: [{ updatedAt: Date }[], number] = await dataSource.transaction(
         async (manager) => {
           await manager.query(`SET LOCAL TIME ZONE 'Pacific/Kiritimati'`);
@@ -534,7 +525,6 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
 
       expect(outcome.rejected.map((row) => row.idempotencyKey)).toEqual(['run-1:1']);
       expect(outcome.accepted).toEqual(['run-1:2']);
-      // And the seq stays dense over what did land.
       expect((await events(work.id)).map((entry) => entry.seq)).toEqual([1, 2]);
     });
 

@@ -10,10 +10,6 @@ export interface FindUsersParams {
   search?: string;
 }
 
-/**
- * Port for persisting and querying the user aggregate. Implemented by the
- * TypeORM adapter in `user.repository.ts`.
- */
 export interface UserRepositoryPort extends RepositoryPort<UserEntity> {
   findOneByEmail(email: string): Promise<Option<UserEntity>>;
   findUsers(params: FindUsersParams): Promise<Paginated<UserEntity>>;

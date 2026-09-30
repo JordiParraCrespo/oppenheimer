@@ -17,17 +17,11 @@ import { useTranslation } from 'react-i18next';
 import { workspaceAddress } from '@/features/organizations/lib/workspace-address';
 
 /**
- * The landing after onboarding: a success ring, the three facts the steps
- * produced, one button into the console.
- *
- * Each row names what its step produced, found by the id that step carried
- * here — not by taking the head of a list. An account that already owned a
- * machine, or connected a second GitHub account, would otherwise be shown
- * whichever row came first and told it was the one they just made.
- *
- * A step that was skipped has nothing to show, and the row says so rather than
- * printing a zero. Both GitHub and the host step are skippable, so both empty
- * states are reachable.
+ * The landing after onboarding. Each row finds what its step produced by the
+ * id that step carried here, not the head of a list, or an account with an
+ * older machine or a second GitHub account would be shown the wrong row. A
+ * skipped step (GitHub and host both can be) has nothing to show, and its row
+ * says so rather than printing a zero.
  */
 export function OnboardingReadyScreen({
   installationId,
@@ -106,7 +100,8 @@ export function OnboardingReadyScreen({
             t('onboarding.flow.ready.failed')
           ) : loadingRepositories ? (
             // The account is known before the count is. Showing it alone beats
-            // printing "0 repositories" at a reader who has just connected.
+            // "0 repositories", which under a connection that just succeeded
+            // reads as a failure.
             installation.accountLogin
           ) : (
             t('onboarding.flow.ready.repos', {

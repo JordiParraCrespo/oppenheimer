@@ -31,7 +31,6 @@ const BY_UPSTREAM_CODE: Readonly<Record<string, ErrorDefinition>> = {
   CHANGE_EMAIL_DISABLED: ProfileErrors.UPSTREAM_FAILURE,
 };
 
-/** Entry to use when the upstream code is unknown (or absent), keyed by status. */
 function fallbackFor(status: number): ErrorDefinition {
   if (status === 400) return ProfileErrors.INCORRECT_PASSWORD;
   if (status === 401) return ProfileErrors.INCORRECT_PASSWORD;
@@ -47,9 +46,4 @@ export function mapProfileError({ upstreamCode, status }: BetterAuthFailure): Er
   return fallbackFor(status);
 }
 
-/**
- * Wraps an `auth.api.*` call made on the caller's own account so its failures
- * become catalog `AppError`s. Every Better Auth call in this module goes
- * through it.
- */
 export const invokeProfileApi = betterAuthInvoker(mapProfileError);

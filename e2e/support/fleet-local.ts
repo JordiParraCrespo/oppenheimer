@@ -133,7 +133,6 @@ function accountComment(user: string): string | undefined {
 /** The agent shims every host carries (`e2e/fleet/`): each prints its argv. */
 const SHIMS = ['claude', 'grok'];
 
-/** The runner and the shims in `ROOT/bin`, and the git server on loopback. */
 export function buildLocalFleet(repoRoot: string): void {
   teardownLocalFleet();
   mkdirSync(join(ROOT, 'bin'), { recursive: true });

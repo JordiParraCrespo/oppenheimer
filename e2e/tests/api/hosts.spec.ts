@@ -52,7 +52,6 @@ function bootAssertion(privateKey: KeyObject, hostId: string): string {
   return `${header}.${payload}.${signature.toString('base64url')}`;
 }
 
-/** A context that authenticates purely as a host, with its own assertion. */
 async function hostContext(assertion: string): Promise<APIRequestContext> {
   return request.newContext({
     baseURL: API_URL,
@@ -60,7 +59,6 @@ async function hostContext(assertion: string): Promise<APIRequestContext> {
   });
 }
 
-/** Mint a pairing token and pull the secret out of the install command. */
 async function mintPairingToken(api: APIRequestContext, name = 'e2e box') {
   const response = await api.post('/api/v1/hosts/pairing', {
     data: { name },

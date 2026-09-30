@@ -29,7 +29,6 @@
  */
 export const CODING_AGENT_IDS = ['claude-code', 'codex', 'opencode', 'grok', 'shell'] as const;
 
-/** A coding agent this product knows how to launch. */
 export type CodingAgentId = (typeof CODING_AGENT_IDS)[number];
 
 /** Where an agent keeps the conversation transcript, and what it keys it by. */
@@ -173,12 +172,10 @@ export interface CodingAgentLaunch {
    * whole — always the **last** argv appended: Claude Code, Codex and Grok take
    * it as a trailing positional, OpenCode as the value of its trailing `--prompt`.
    *
-   * It is a launch option and not a message typed at a running process, which
-   * is the whole reason it is here: writing into window 0 once the TUI is up
-   * is neither how these CLIs take a first task nor a thing with a moment you
-   * can name, and `product/versions/mvp/02-runner.md` §5 is what that would
-   * have raced with. Appended to argv, the task is present before the agent
-   * starts and there is nothing to synchronise.
+   * A launch option, never a message typed at the running TUI: these CLIs do
+   * not take a first task that way, and "the TUI is up" has no moment to race
+   * against (`product/versions/mvp/02-runner.md` §5). In argv the task is
+   * present before the agent starts, with nothing to synchronise.
    *
    * Absent: this agent takes no task on the command line, and the person types
    * the first one themselves.
@@ -199,10 +196,8 @@ export interface CodingAgentLoginTarget {
   readonly path?: string;
 }
 
-/** One agent's launch and inspection facts. */
 export interface CodingAgentDefinition {
   readonly id: CodingAgentId;
-  /** Human-readable name, for the agent chip. */
   readonly label: string;
   /**
    * The executable the runner launches inside the session's tmux window.
@@ -274,8 +269,8 @@ const CODEX_ULTRA_LEVELS = [...CODEX_LEVELS, 'ultra'] as const;
 const GROK_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 
 /**
- * The catalog. Frozen because it is shared mutable state otherwise: the API
- * and the console both read the same object.
+ * Frozen because it is shared mutable state otherwise: the API and the
+ * console both read the same object.
  */
 export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition>> = Object.freeze({
   'claude-code': Object.freeze({
@@ -294,26 +289,19 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // The family, one row per model, named as the person choosing it knows it.
     //
     // Pinned ids rather than the aliases `claude --help` also takes (`opus`,
-    // `sonnet`, `fable`): a row's label names a generation, so its id has to
-    // name the same one. An alias under a versioned label is the pair that can
-    // drift apart silently — the day the alias moves, the button keeps saying
-    // "Claude Opus 5" while the host runs something else. A pinned id can only
-    // go stale in the open: the row still runs what it says, and the list is
-    // one edit behind until somebody adds the next model here.
+    // `sonnet`, `fable`): a row's label names a generation, and the day an alias
+    // moves the button would keep its label while the host runs something else.
+    // A pinned id can only go stale in the open.
     //
-    // This is the **seed**. Whether a given host's `claude` knows a given id is
-    // a host fact, and the probe that would report it is open question 6 in
-    // `product/versions/mvp/05-screens.md`; until it lands, an id this list
-    // names and that CLI does not fails in the session's own terminal, where
-    // the person can see it.
+    // This is the **seed**. Whether a host's `claude` knows an id is a host
+    // fact, and its probe is open question 6 in `product/versions/mvp/05-screens.md`;
+    // until then an unknown id fails in the session's own terminal, where the
+    // person can see it.
     //
-    // The current family, newest of each line, in the order Claude's own model
-    // picker lists it: Opus 5.5 first and the default, the everyday model of
-    // the four, then Fable 5.1, Sonnet 5.5 and Haiku 4.5.
-    //
-    // Each model's effort default is what claude runs it at unasked: `medium`
-    // for Opus and Sonnet, `high` for Fable. Haiku has none — `--effort`
-    // changes nothing claude sends for it.
+    // The newest of each line, in the order Claude's own model picker lists
+    // them; Opus 5.5, the everyday model of the four, is the default.
+    // Each effort default is what claude runs the model at unasked; Haiku has
+    // none, since `--effort` changes nothing claude sends for it.
     models: Object.freeze([
       Object.freeze({
         id: 'claude-opus-5-5',
@@ -666,7 +654,6 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
 
 const CODING_AGENT_ID_SET = new Set<string>(CODING_AGENT_IDS);
 
-/** Type guard: is `value` an agent in the catalog? */
 export function isCodingAgentId(value: unknown): value is CodingAgentId {
   return typeof value === 'string' && CODING_AGENT_ID_SET.has(value);
 }

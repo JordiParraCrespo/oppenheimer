@@ -7,7 +7,6 @@ import { OrganizationMapper } from '../organization.mapper';
 import { InvitationOrmEntity } from './invitation.orm-entity';
 import type { InvitationRepositoryPort } from './invitation.repository.port';
 
-/** TypeORM adapter behind `INVITATION_REPOSITORY`. */
 @Injectable()
 export class InvitationRepository implements InvitationRepositoryPort {
   constructor(

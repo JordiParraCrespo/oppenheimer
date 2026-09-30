@@ -7,6 +7,10 @@ import { cn } from '../lib/utils';
 import { ComposerToolButton } from './composer';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
+type EffortStop<V extends string = string> = { value: V; label: string };
+
+const KNOB = 30;
+
 /**
  * EffortSlider — how long the agent may think, as a stepped track rather
  * than a list: one stop per level the caller passes, a 30px knob in full ink,
@@ -25,10 +29,6 @@ import { Popover, PopoverContent, PopoverTrigger } from './popover';
  * header, an info glyph explaining the trade, "Faster" and "Smarter" at the
  * ends, and the slider.
  */
-type EffortStop<V extends string = string> = { value: V; label: string };
-
-const KNOB = 30;
-
 function EffortSlider<V extends string>({
   stops,
   value,

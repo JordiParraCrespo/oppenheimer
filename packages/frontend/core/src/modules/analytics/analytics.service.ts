@@ -4,8 +4,6 @@ import type { AnalyticsProperties, AnalyticsTraits, IAnalyticsClient } from './a
 import type { AnalyticsEvent } from './analytics.events';
 
 /**
- * The application-facing analytics API.
- *
  * Every call into the provider is wrapped so a failing or misconfigured
  * analytics SDK can never break the product — a dropped event is always
  * preferable to a broken login. Failures are warned once per call rather than

@@ -3,14 +3,9 @@ import { provisionedUser, signInAs } from '../../support/web';
 
 /**
  * The console's chrome, end to end: what the version-1 artboards draw and,
- * just as deliberately, what they do not.
- *
- * This replaces a permissions spec over a nav list that no longer exists. The
- * sidebar is the session list now, so there are no gated rows to hide from a
- * restricted reader — what `useAuthorizedNav` still decides is covered by its
- * own unit spec in the kit. What needs a real browser is the shape of the
- * shell: one column of chrome, no second bar, and an account menu that is the
- * only place appearance and language live.
+ * just as deliberately, what they do not — one column of chrome, no second bar,
+ * and an account menu that is the only place appearance and language live.
+ * What `useAuthorizedNav` decides is its own unit spec in the kit.
  */
 test('the console is a rail, a sidebar and a pane, with no chrome bar over them', async ({
   page,

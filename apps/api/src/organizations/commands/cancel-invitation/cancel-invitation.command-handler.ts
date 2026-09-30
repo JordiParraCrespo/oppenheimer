@@ -5,7 +5,6 @@ import type { InvitationAuthPort } from '../../infrastructure/invitation-auth.po
 import { INVITATION_AUTH } from '../../organizations.di-tokens';
 import { CancelInvitationCommand } from './cancel-invitation.command';
 
-/** Withdraws an invitation before it is answered. */
 @CommandHandler(CancelInvitationCommand)
 export class CancelInvitationCommandHandler
   implements ICommandHandler<CancelInvitationCommand, AggregateID>

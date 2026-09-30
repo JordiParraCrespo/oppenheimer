@@ -27,7 +27,6 @@ import {
 
 test.describe('Sessions', () => {
   test('a session is created, listed, stopped and keeps its log', async () => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const { api } = await signedUpContext('sessionowner');
 
@@ -134,7 +133,6 @@ test.describe('Sessions', () => {
    * the log, and a name derived from that task where a namer is configured.
    */
   test('the launch options and the first task survive the round trip', async () => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const { api } = await signedUpContext('sessionlaunch');
     const hostId = await pairHost(api, 'Launch box');
@@ -289,7 +287,6 @@ test.describe('Sessions', () => {
   });
 
   test('an image for an unlinked host is refused, and so is what is not an image', async () => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const { api } = await signedUpContext('sessionimage');
     const hostId = await pairHost(api, 'Image box');

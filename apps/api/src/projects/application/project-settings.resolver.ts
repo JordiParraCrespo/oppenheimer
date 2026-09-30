@@ -13,21 +13,16 @@ import {
 import { ProjectErrors } from '../domain/projects.errors';
 
 /**
- * Turns what a person asked a project to hold into what the project may hold.
+ * Turns what a person asked a project to hold into what the project may hold. Creating
+ * and changing a project resolve settings the same way, so the shared rules live here.
  *
- * It lives in `application/` because it needs two other modules' ports and is not
- * a use case: creating a project and changing one resolve their settings the same
- * way, and the rules they share must not be written twice.
- *
- *  - **Repositories are asked about live.** GitHub owns what a repository is
- *    called and whether the workspace's installation still covers it, so each
- *    one is resolved through `RepositoryAccessPort` on every write — its 404 is
- *    the refusal — and the name the project keeps is a display snapshot of the
- *    answer. There is still no repository table.
- *  - **A default host must be one the caller can use** when it is set. The
- *    default is a suggestion, never a grant, and a session on it is checked again
- *    at create; refusing an unusable one here only keeps the column from naming a
- *    host nobody in the conversation could have picked.
+ *  - **Repositories are asked about live.** GitHub owns a repository's name and whether
+ *    the installation still covers it, so each is resolved through
+ *    `RepositoryAccessPort` on every write (its 404 is the refusal); the name kept is a
+ *    display snapshot, and there is no repository table.
+ *  - **A default host must be one the caller can use.** It is a suggestion, never a
+ *    grant, and a session on it is checked again at create; refusing one here keeps
+ *    the column from naming a host the caller could not have picked.
  */
 @Injectable()
 export class ProjectSettingsResolver {

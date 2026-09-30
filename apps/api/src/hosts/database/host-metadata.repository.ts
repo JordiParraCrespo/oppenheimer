@@ -48,8 +48,6 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
       this.dataSource.query(`SELECT * FROM "host_inventory" WHERE "hostId" = ANY($1)`, [
         ids,
       ]) as Promise<HostInventoryOrmEntity[]>,
-      // `online` is judged here, by the database's clock, beside the row it
-      // describes: one response, one clock.
       this.dataSource.query(
         `SELECT *, "lastSeenAt" > now() - ($2 * interval '1 second') AS "online"
            FROM "host_presence" WHERE "hostId" = ANY($1)`,
@@ -84,10 +82,8 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
   }
 
   /**
-   * Q3, for a host that is still paired, in one statement. One row, nothing it
-   * writes indexed, so a HOT update. A value not reported this time keeps the
-   * one on file, so a hello that carries no load does not blank the last
-   * heartbeat's.
+   * Q3. One row, nothing it writes indexed, so a HOT update. Keeping what is on
+   * file means a hello that carries no load does not blank the last heartbeat's.
    *
    * The pairing check rides the insert: the row to write is selected from
    * `host` by primary key with `"unpairedAt" IS NULL`, so an unpaired or
@@ -207,10 +203,8 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
   }
 
   /**
-   * Q5. The address becomes (or stays) one of the host's networks and its
-   * current one, and a move is on the timeline — all in one transaction, under
-   * the presence row's lock so two links racing on a reconnect agree on what
-   * "before" was.
+   * Q5. Under the presence row's lock, so two links racing on a reconnect agree
+   * on what "before" was.
    */
   async recordNetwork(
     hostId: string,
@@ -282,7 +276,7 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
     });
   }
 
-  /** Q6. Newest first, keyset on (occurredAt, id), one row over the page to know there is more. */
+  /** Q6. One row over the page, to know there is more. */
   async findTimeline(
     hostId: string,
     before: TimelineCursor | null,
@@ -345,7 +339,6 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
     }
   }
 
-  /** The unpaired host's current network stops being current, so retention can reach it. */
   async clearCurrentNetwork(manager: EntityManager, hostId: string): Promise<void> {
     await manager.query(
       `UPDATE "host_presence" SET "currentNetworkId" = NULL WHERE "hostId" = $1 AND "currentNetworkId" IS NOT NULL`,

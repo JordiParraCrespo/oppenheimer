@@ -18,14 +18,11 @@ export interface RosterEntry {
 
 /**
  * Keeps what the app lets a person do in an organization aligned with Better
- * Auth's roster of it.
- *
- * Better Auth owns memberships and their organization roles; CASL owns what
- * the app's routes allow. The two live in different stores, so no transaction
- * spans them. What makes "you are in this organization" and "you may work in
- * it" one fact is that neither half is ever left standing alone: a roster
- * write whose application role cannot be written is undone, and ending a
- * membership takes everything the organization gave in one transaction.
+ * Auth's roster of it. Memberships live in Better Auth, route permissions in
+ * CASL roles, and no transaction spans the two stores, so neither half is left
+ * standing alone: a roster write whose application role cannot be written is
+ * undone, and ending a membership takes everything the organization gave in
+ * one transaction.
  */
 @Injectable()
 export class MembershipAccessPolicy {

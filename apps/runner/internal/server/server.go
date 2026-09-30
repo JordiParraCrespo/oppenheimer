@@ -47,7 +47,6 @@ type Server struct {
 func New(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*Server, error) {
 	problems := &problem.Writer{TypeBaseURL: cfg.ErrorTypeBaseURL, Logger: logger}
 
-	// Optional capability: service tokens.
 	var issuer *auth.JWT
 	if cfg.JWT != nil {
 		j, err := auth.NewJWT(auth.JWTOptions{Secret: cfg.JWT.Secret, Issuer: cfg.JWT.Issuer, Audience: cfg.JWT.Audience})

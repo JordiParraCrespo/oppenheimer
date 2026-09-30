@@ -5,19 +5,14 @@ import { z } from 'zod';
 import { parseEnv } from './env';
 
 /**
- * The deployment's LLM provider, for the short, best-effort calls the product
- * makes — a session's title today (`sessions.config.ts`), other one-shot queries
- * later. `@oppenheimer/backend-llm` is the client; this is only where its
- * settings come from.
+ * The deployment's LLM provider for the short, best-effort calls the product makes (a
+ * session's title today, `sessions.config.ts`); `@oppenheimer/backend-llm` is the
+ * client.
  *
- * **Optional, all of it.** `none` is the default, and every caller has a
- * fallback that does not need a model, so nothing here can fail a boot. A
- * provider switched on without its key (or, for `openai-compatible`, its base
- * URL) is not configured rather than half-configured, and the startup log
- * says so.
- *
- * `model` has no default that names a model family: a model id is a moving
- * target and a deployment picks its own.
+ * Optional, all of it: `none` is the default and every caller has a fallback that
+ * needs no model, so nothing here can fail a boot. A provider without its key (or, for
+ * `openai-compatible`, its base URL) is not configured, and the startup log says so.
+ * `model` has no default: a model id is a moving target and a deployment picks its own.
  */
 const schema = z.object({
   provider: z.enum(LLM_PROVIDERS).default('none'),

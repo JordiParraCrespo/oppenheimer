@@ -1,6 +1,4 @@
 /**
- * The event catalog.
- *
  * Analytics is only useful if event names are stable, so they live here rather
  * than as string literals at call sites: renaming an event in one place breaks
  * the build instead of silently splitting a funnel in two.

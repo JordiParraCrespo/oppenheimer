@@ -5,7 +5,6 @@ import type { OrganizationAuthPort } from '../../infrastructure/organization-aut
 import { ORGANIZATION_AUTH } from '../../organizations.di-tokens';
 import { GetOrganizationQuery } from './get-organization.query';
 
-/** One organization with its members, invitations and workspaces. */
 @QueryHandler(GetOrganizationQuery)
 export class GetOrganizationQueryHandler
   implements IQueryHandler<GetOrganizationQuery, FullOrganizationResponseDto | null>

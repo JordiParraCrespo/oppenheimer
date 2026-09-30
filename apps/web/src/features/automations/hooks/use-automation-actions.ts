@@ -9,21 +9,12 @@ import { lastFailure } from '@oppenheimer/frontend-core/react';
 import { notifySuccess } from '@oppenheimer/frontend-web';
 
 /**
- * What a row menu and a page header do to an automation: Run now, pause or
- * resume, duplicate, delete. One hook for both so they cannot drift, and so
- * the surface shows the one failure the last action left — and which
- * automation it was, so a list can name it. A later action that succeeds
- * clears it, and `dismiss` does too.
- *
- * Delete is the exception: it goes through a confirm, and its failure stays
- * in that dialog (`removeFailure`), never on the page as well.
- *
- * Each action toasts when it lands, with the name its response carries; the
- * delete's is the one the confirm already holds. Where Run now's Open leads
- * is the caller's (`onOpenRun`).
- *
- * Run now mints one idempotency key per click: a retried request of that
- * click is the same run, and a second click is a second run.
+ * What a row menu and a page header do to an automation, in one hook so they
+ * cannot drift. The surface shows the one failure the last action left, and
+ * which automation, until a later success or `dismiss` clears it. Delete's
+ * failure stays in its confirm dialog (`removeFailure`), never on the page as
+ * well. Run now mints one idempotency key per click: a retry of that click is
+ * the same run, a second click a second run.
  */
 export function useAutomationActions(options: {
   onOpenRun: (run: AutomationRunEntity) => void;

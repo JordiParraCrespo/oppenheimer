@@ -20,11 +20,8 @@ import type {
 import { useConsumerApp } from './context';
 
 /**
- * Query key factory for the `installations` feature, from the most generic
- * (`all`) to the most specific so a whole subtree can be invalidated at once.
- *
- * What GitHub says about one installation hangs off its `detail(id)`, and
- * repositories repeat the ladder one level down, one function per level:
+ * Query key factory for `installations`, so a whole subtree can be invalidated
+ * at once. Repositories repeat the ladder under an installation's `detail(id)`:
  *
  * ```
  * [..., 'detail', id, 'repositories']                              repositories(id)
@@ -36,10 +33,8 @@ import { useConsumerApp } from './context';
  *
  * So removing an installation drops its whole subtree, while refreshing its
  * repository list leaves every repository's branches alone — the list leaf is
- * not a prefix of them.
- *
- * An id a picker has not chosen yet stays `undefined` in the key; the hook
- * gates the fetch with `skipToken` rather than inventing an id.
+ * not a prefix of them. An id a picker has not chosen yet stays `undefined` in
+ * the key; the hook gates the fetch with `skipToken`.
  */
 export const installationsKeys = {
   all: ['installations'] as const,
@@ -101,8 +96,6 @@ export function useStartInstallation(options?: UseMutationOptions<InstallationSt
 }
 
 /**
- * Attach the installation GitHub just created to this workspace.
- *
  * The list is invalidated on success because the step that called this renders
  * straight off it — without that, a reader who has just connected is told they
  * have not.
@@ -142,22 +135,16 @@ export interface RepositoryRef {
 }
 
 /**
- * The branches of several repositories at once — what New session needs, since
- * its repository chip multi-selects and each selected row carries its own
- * branch.
+ * The branches of several repositories at once, for New session's multi-select
+ * repository chip. `useQueries` because the selection's length changes; each
+ * entry is keyed as {@link useRepositoryBranches} keys it, so the two share a
+ * cache.
  *
- * `useQueries` rather than a hook per repository: the number of selected
- * repositories changes as somebody picks them, and a hook cannot be called in a
- * loop. Each entry is keyed exactly as {@link useRepositoryBranches} keys it, so
- * the two share a cache rather than fetching the same branches twice.
- *
- * `combine` is keyed on which repositories are asked for, not on the array that
- * names them. Callers build that array in render, and an inline `combine` is a
- * new function each time, which `useQueries` re-runs: `byRepository` came back
- * a new `Map` on every render — structural sharing cannot keep a `Map` — and
- * every memo keyed on it, a picker's rows among them, missed. (A plain array
- * is shared structurally, which is why `useInstallationRepositoriesFor` needs
- * none of this.)
+ * `combine` is keyed on which repositories are asked for, not on the array
+ * that names them: callers build that array in render, an inline `combine`
+ * re-runs each time, and the `Map` it returns cannot be structurally shared, so
+ * every memo keyed on `byRepository` missed. (A plain array is shared, which is
+ * why `useInstallationRepositoriesFor` needs none of this.)
  */
 export function useRepositoryBranchesFor(repositories: readonly RepositoryRef[]) {
   const app = useConsumerApp();
@@ -192,8 +179,6 @@ export function useRepositoryBranchesFor(repositories: readonly RepositoryRef[])
 }
 
 /**
- * The repositories of several installations, merged into one list.
- *
  * A workspace may have the App installed on more than one account — a personal
  * one and an organisation's — and the picker is one list rather than one per
  * account. Each row carries the installation it came from, because

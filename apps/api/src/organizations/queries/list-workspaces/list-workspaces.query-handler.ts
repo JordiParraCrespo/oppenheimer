@@ -5,7 +5,6 @@ import type { WorkspaceAuthPort } from '../../infrastructure/workspace-auth.port
 import { WORKSPACE_AUTH } from '../../organizations.di-tokens';
 import { ListWorkspacesQuery } from './list-workspaces.query';
 
-/** An organization's workspaces. */
 @QueryHandler(ListWorkspacesQuery)
 export class ListWorkspacesQueryHandler
   implements IQueryHandler<ListWorkspacesQuery, WorkspaceResponseDto[]>

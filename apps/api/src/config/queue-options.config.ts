@@ -1,23 +1,19 @@
 import type { DefaultJobOptions } from 'bullmq';
 
 /**
- * The job options every BullMQ queue in the API is created with.
+ * The job options every BullMQ queue in the API is created with (the root defaults,
+ * `BullModule.forRootAsync` in `app.module.ts`).
  *
- * BullMQ keeps completed and failed jobs in Redis until told otherwise, so
- * without a removal policy a queue grows for ever: the one-minute automation
- * tick alone adds 1,440 jobs a day, and email jobs carry recipient addresses
- * and tokenized URLs. These are the root defaults (`BullModule.forRootAsync`
- * in `app.module.ts`). An hour of completed jobs still covers the outbox
- * relay's `jobId` deduplication window (a reclaimed row re-adds the same id)
- * by a wide margin; failures stay a week for inspection on Bull Board.
+ * BullMQ keeps completed and failed jobs in Redis until told otherwise: the one-minute
+ * automation tick alone adds 1,440 jobs a day, and email jobs carry recipient
+ * addresses and tokenized URLs. An hour of completed jobs still covers the outbox
+ * relay's `jobId` deduplication window (a reclaimed row re-adds the same id); failures
+ * stay a week for Bull Board.
  *
- * A queue's own `defaultJobOptions` replace these whole — `@nestjs/bullmq`
- * merges root and queue options shallowly — so every per-queue constant below
- * spells the removal policy out again.
- *
- * This is composition-root configuration rather than the queue module's own:
- * the auth kernel's standalone email queue must carry the same options, and
- * `src/config` is the one place every module, the kernel included, may read.
+ * A queue's own `defaultJobOptions` replace these whole (`@nestjs/bullmq` merges
+ * shallowly), so every per-queue constant below spells the removal policy out again.
+ * This lives in `src/config` because the auth kernel's standalone email queue must
+ * carry the same options.
  */
 export const DEFAULT_JOB_OPTIONS = {
   removeOnComplete: { age: 60 * 60, count: 1_000 },

@@ -22,8 +22,6 @@ export class UpdateRolePermissionsCommandHandler
   ) {}
 
   async execute(command: UpdateRolePermissionsCommand): Promise<AggregateID> {
-    // No privilege escalation: the author must already hold everything they
-    // are putting on the role.
     await this.grantPolicy.assertGrantable(
       command.actorId
         ? {

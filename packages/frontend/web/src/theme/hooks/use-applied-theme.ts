@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Theme, ThemePreference } from '../components/theme-provider';
 
-/** The query the OS answers when it is asked which appearance it is wearing. */
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
 /** The OS appearance right now, or light where the browser will not say. */
@@ -14,16 +13,14 @@ function readSystemTheme(): Theme {
 }
 
 /**
- * Resolves the account menu's choice — light, dark or "Match system" — and
- * keeps `<html>` wearing the answer.
+ * Resolves the account menu's choice (light, dark or "Match system") and keeps
+ * `<html>` wearing the answer.
  *
- * Two systems outside React, one effect each: the `prefers-color-scheme`
- * media query, which is what "Match system" follows and which changes under
- * us when the OS flips at sunset, and `document.documentElement`, where
- * Tailwind's `dark` variant and the portalled dialogs and toasts read the
- * theme from. Neither runs on the first paint — `public/theme-init.js`
- * applied the same answer before the bundle did — so mount is a no-op and
- * every later change is an event.
+ * Two systems outside React, one effect each: the `prefers-color-scheme` media
+ * query, which "Match system" follows and which flips under us at sunset, and
+ * `document.documentElement`, where Tailwind's `dark` variant and portalled
+ * dialogs and toasts read the theme. `public/theme-init.js` already applied
+ * the answer before first paint, so mount is a no-op.
  */
 export function useAppliedTheme(preference: ThemePreference): Theme {
   const [system, setSystem] = useState<Theme>(readSystemTheme);

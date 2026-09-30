@@ -13,9 +13,6 @@ import type { FeatureFlagsClientContext } from './feature-flags.client';
 import type { FeatureFlagsRepository } from './feature-flags.repository';
 
 /**
- * The client side of feature flags: fetch the caller's evaluated flags, and
- * record an exposure when an experiment's variant is actually shown.
- *
  * Flags are evaluated on the server. The client never sees a rule, only its
  * own answers, so there is nothing here to evaluate — and nothing a curious
  * user can read out of the bundle about who else gets what.
@@ -52,10 +49,10 @@ export class FeatureFlagsService {
   }
 
   /**
-   * Records that the caller saw an experiment's variant, once per variant for
-   * each signed-in (or signed-out) stretch. Only `experiment` flags are recorded: an exposure is what lets a
-   * result be attributed to the arm someone was actually shown, and a release
-   * or ops flag has no result to attribute.
+   * Once per variant for each signed-in (or signed-out) stretch. Only
+   * `experiment` flags are recorded: an exposure is what lets a result be
+   * attributed to the arm someone was actually shown, and a release or ops
+   * flag has no result to attribute.
    */
   recordExposure(key: ClientFeatureFlagKey, value: FlagValue): void {
     if (getFlagDefinition(key).kind !== 'experiment') return;

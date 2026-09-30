@@ -43,14 +43,11 @@ if (!app || !args.module) {
   );
   process.exit(2);
 }
-// `fileURLToPath`, not `new URL(...).pathname`: a pathname is URL-encoded, so a
-// checkout under a directory with a space in it resolves to `/Macintosh%20SSD/...`
-// and every `readdirSync` below it fails — or, worse, still relativises, and the
-// paths silently match nothing they are compared against.
+// `fileURLToPath`, not `.pathname`, for a checkout path with a space: see check-api-structure.mjs.
 const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
+// Mirrors `modulesOf` in check-frontend-structure.mjs.
 const modulesOf = (pkg) => {
   const dir = join(root, 'packages/frontend', pkg, 'src/modules');
-  // `core` is the kernel's own wiring (errors, storage), not something a feature renders.
   return existsSync(dir)
     ? readdirSync(dir).filter((n) => n !== 'core' && statSync(join(dir, n)).isDirectory())
     : [];
