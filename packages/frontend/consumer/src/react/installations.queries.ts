@@ -17,6 +17,7 @@ import type {
   InstallationStart,
   RepositoryEntity,
 } from '../modules/installations/installation.entity';
+import type { RepositoryRef } from '../modules/installations/repository-key';
 import { useConsumerApp } from './context';
 
 /**
@@ -126,12 +127,6 @@ export function useInstallationRepositories(
     queryFn: installationId ? () => app.installations.repositories(installationId) : skipToken,
     ...options,
   });
-}
-
-/** One repository, as a picker names it: our installation row plus GitHub's id. */
-export interface RepositoryRef {
-  installationId: string;
-  githubRepoId: number;
 }
 
 /**
