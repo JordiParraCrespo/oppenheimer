@@ -10,34 +10,25 @@ import { ThrottlingErrors } from '../domain/throttling.errors';
 type HandleRequestProps = Parameters<ThrottlerGuard['handleRequest']>[0];
 
 /**
- * The application's `ThrottlerGuard`, keyed on **who is calling** rather than
- * on where the packets came from.
+ * The application's `ThrottlerGuard`, keyed on who is calling rather than the source
+ * IP: an IP bucket is right for a browser hitting `/login` and wrong for callers
+ * behind one office NAT.
  *
- * The default tracker is the source IP, which is the right answer for a browser
- * hitting `/login` and the wrong one for callers that share an address: an
- * IP-keyed bucket would be shared by every caller behind one office NAT, and
- * the per-route limit would describe nothing anybody intended.
+ * The bucket is derived from what the request presents, without verifying it: this is
+ * an `APP_GUARD` and runs before `ApiAuthGuard`, and a limiter that resolved
+ * credentials itself would do database work before deciding whether to shed the
+ * request (see `CredentialScopePort.rateLimitKey`):
  *
- * **The bucket is derived from what the request presents, without verifying
- * it.** This guard is an `APP_GUARD`, so it runs before `ApiAuthGuard` has
- * resolved anything — and a limiter that resolved credentials itself would do
- * its database work *before* deciding whether to shed the request, which is
- * the one thing a limiter is for. So (see `CredentialScopePort.rateLimitKey`):
+ * - a bearer credential or `x-api-key` → `cred:<digest>`, one bucket per secret and
+ *   never the secret itself (a host's single-use assertion is bucketed by its host);
+ * - a session cookie whose signature verifies → `session:<digest>`;
+ * - otherwise the user id, when this guard runs after authentication, then the IP.
  *
- * - a bearer credential or `x-api-key` → `cred:<digest>`, one bucket per
- *   secret and never the secret itself (a host's single-use assertion is the
- *   exception, bucketed by the host it resolves to);
- * - a session cookie whose signature verifies → `session:<digest>`, one
- *   bucket per signed-in browser, not one per office;
- * - otherwise the user id, when this guard runs after authentication, then
- *   the IP.
- *
- * A digest bucket costs nothing to open, so a caller spraying made-up bearer
- * strings would get a fresh one per request. The brake is the auth-failure
- * budget (`AUTH_FAILURE_LIMITER`): every refused credential counts against its
- * source address, and an address past that budget is refused here before any
- * lookup — unless the credential it presents recently succeeded, so one broken
- * client does not lock out the callers that share its address.
+ * A digest bucket costs nothing to open, so made-up bearer strings would get a fresh
+ * one per request. The brake is the auth-failure budget (`AUTH_FAILURE_LIMITER`):
+ * refused credentials count against their source address, and an address past it is
+ * refused here before any lookup, unless its credential recently succeeded, so one
+ * broken client does not lock out the callers that share its address.
  */
 @Injectable()
 export class CredentialThrottlerGuard extends ThrottlerGuard {

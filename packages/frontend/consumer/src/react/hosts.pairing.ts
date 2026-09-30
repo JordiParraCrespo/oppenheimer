@@ -39,25 +39,19 @@ export interface HostPairingFlow {
 }
 
 /**
- * The pairing flow: one token, its clock, and the host that token paired.
+ * The pairing flow: one token, its clock, and the host that token paired. Both
+ * the onboarding step and the console's Add host dialog run it rather than
+ * polling the host list themselves.
  *
- * A file of its own rather than another export in `hosts.queries.ts`: that one
- * is the key factory and the three primitives over the endpoints, and this is
- * the surface flow composed out of them. Two surfaces run it — the onboarding
- * step and the console's Add host dialog — and both go through here rather
- * than polling the host list themselves.
- *
- * **Correlation is the point.** "The host list is non-empty" is a different
- * question from "this token landed" — an account that already owns a machine
- * answers the first the moment the dialog opens, which would offer a machine
+ * **Correlation is the point.** An account that already owns a machine has a
+ * non-empty host list the moment the dialog opens, which would offer a machine
  * nobody had paired. So the poll watches the *token*: the pairing list reports
- * `redeemedHostId` once a runner spends it, and only then is the matching host
- * looked up. A regenerated token is a different id, so the host it offered
- * goes with it.
+ * `redeemedHostId` once a runner spends it, and only then is the host looked
+ * up. A regenerated token is a different id, so the host it offered goes with
+ * it.
  *
- * One effect, and it synchronises with the clock — but only with the one
- * moment that changes what the flow does: the token's expiry, which stops the
- * poll and offers a new token.
+ * One effect, synchronised with the clock at the token's expiry, which stops
+ * the poll and offers a new token.
  */
 export function useHostPairing(hostName: string): HostPairingFlow {
   const { data: pairing, isPending, error } = useCurrentPairing(hostName);

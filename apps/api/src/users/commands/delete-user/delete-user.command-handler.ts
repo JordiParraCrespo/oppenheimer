@@ -10,22 +10,18 @@ import { USER_REPOSITORY } from '../../user.di-tokens';
 import { DeleteUserCommand } from './delete-user.command';
 
 /**
- * An admin's `DELETE /users/{id}` and a person's own `DELETE /profile` are this
- * one handler.
+ * An admin's `DELETE /users/{id}` and a person's own `DELETE /profile`.
  *
  * What the account holds elsewhere goes first, through the owning modules'
- * contributions (`AccountErasureRegistry`, in `ACCOUNT_ERASURE_STEPS` order).
- * The user row goes last, and its sign-ins, tokens, grants, hosts and preferences
- * cascade from it in that one write, so no failure leaves an account that
- * exists with its sign-ins gone. Every step is idempotent, so a delete that
- * failed part way is simply asked again. The aggregate raises
- * `UserDeletedDomainEvent`, which the repository publishes after the delete.
+ * contributions (`AccountErasureRegistry`). The user row goes last, and its sign-ins,
+ * tokens, grants, hosts and preferences cascade from it in that one write, so no
+ * failure leaves an account without its sign-ins. Every step is idempotent, so a
+ * delete that failed part way is asked again.
  *
- * The cascade removes the session rows but not Better Auth's cached copies of
- * them, which would keep the deleted account's cookie working until it
- * expired. So the copies are evicted first — the sessions answer from the
- * database meanwhile, and a failure here stops the deletion before anything is
- * gone — and once more after the delete, for a sign-in that landed in between.
+ * The cascade leaves Better Auth's cached session copies, which would keep the deleted
+ * account's cookie working until expiry, so they are evicted first (a failure stops
+ * the deletion before anything is gone) and again after the delete, for a sign-in that
+ * landed in between.
  */
 @CommandHandler(DeleteUserCommand)
 export class DeleteUserCommandHandler implements ICommandHandler<DeleteUserCommand, void> {

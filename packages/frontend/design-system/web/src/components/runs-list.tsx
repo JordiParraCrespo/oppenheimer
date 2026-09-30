@@ -4,6 +4,8 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 
+type RunState = 'completed' | 'failed' | 'running';
+
 /**
  * RunsList — the Runs tab: a filter row (status pill tabs with counts,
  * then the facet tokens and a Clear link), a head, a 44px row per run and
@@ -13,8 +15,6 @@ import { IconButton } from './icon-button';
  * a finished run, not a live state; a run still going shows the pulsing
  * dot instead.
  */
-type RunState = 'completed' | 'failed' | 'running';
-
 function RunsList({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div

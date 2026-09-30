@@ -1,16 +1,14 @@
 import { defineResource } from '@oppenheimer/backend-authz';
 
 /**
- * The module's whole authorization surface.
+ * The module's whole authorization surface: one subject, `Installation`, the
+ * only row. Repositories and branches are listed live through the
+ * installation's token, so the routes that list them check `read
+ * Installation`, exactly the access GitHub is about to be asked to honour.
  *
- * One subject, because there is only one row: `Installation`. Repositories and
- * branches are listed live through the installation's own token, so they are
- * not a resource of ours — the routes that list them check `read Installation`,
- * which is exactly the access GitHub is about to be asked to honour.
- *
- * `credentialScope` is `repositories` because that is what the scope catalog
- * calls the group an API token or MCP client asks for; the vendor name stops at
- * the directory (`product/versions/mvp/03-control-plane.md`).
+ * `credentialScope` is `repositories`, the scope catalog's name for the group;
+ * the vendor name stops at the directory
+ * (`product/versions/mvp/03-control-plane.md`).
  */
 export const InstallationResource = defineResource({
   subject: 'Installation',

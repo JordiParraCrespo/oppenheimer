@@ -7,9 +7,6 @@ export const accessGrantPrincipalTypes = ['user', 'team', 'role'] as const;
  * `resourceId` omitted (or null) means every resource of that type within the
  * organization — the strongest grant expressible, and the one `canGrantScope`
  * restricts to callers who already hold it.
- *
- * Schemas here state the constraint only, never a message: an explicit string
- * would pin every consumer to English (see `.agents/rules/forms.md`).
  */
 export const createAccessGrantSchema = z.object({
   principalType: z.enum(accessGrantPrincipalTypes),

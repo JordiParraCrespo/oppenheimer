@@ -21,17 +21,12 @@ import { slugify } from '@/features/organizations/lib/slugify';
 import { workspaceAddressPrefix } from '@/features/organizations/lib/workspace-address';
 
 /**
- * Onboarding step 2: name the workspace and pick its permanent address. The
- * address follows the name until the reader edits it by hand, and is checked
- * against `POST /organizations/check-slug` as they type. Continue waits for an
- * available address, then writes it before moving on — the address is only
- * really claimed once the row holds it, so leaving the step without writing
- * would let a second person take the name in between.
- *
- * Sign-up has already provisioned a workspace, named after the account with a
- * random suffix, so this step **renames** it rather than creating a second
- * one. Creating is the fallback for the one account that has none: the sign-up
- * hook is best-effort, and this step is also the recovery path.
+ * Onboarding step 2: name the workspace and pick its permanent address, which
+ * follows the name until edited by hand. Continue waits for an available
+ * address and writes it before moving on, because it is only claimed once the
+ * row holds it. Sign-up has already provisioned a workspace, so this step
+ * **renames** it; creating is the recovery path for an account the
+ * best-effort sign-up hook left with none.
  */
 export function OnboardingWorkspaceScreen({
   step,

@@ -5,21 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { usePairing } from '../hooks/use-pairing';
 
 /**
- * Onboarding: pair the first host (`design/version1/AddHost.dc.html`,
- * the 2026-09-27 export). One sentence — run one command on the machine —
- * then the two copy buttons at the large size, the token line, the command
- * and the prompt folded behind Inspect command and prompt, a rule, and the
- * status line that resolves in place when the runner registers. Continue
- * waits for that.
- *
- * What is this step's is the header and that wait. The column under it —
- * the buttons, the token line, the fold, the status row — is the kit's
- * `PairingChrome`, which the console's Add a host dialog draws too at
- * its smaller size, and the flow under both is `usePairing`.
+ * Onboarding: pair the first host (`design/version1/AddHost.dc.html`, the
+ * 2026-09-27 export). This step owns the header and the wait: Continue waits
+ * for the runner to come online (`usePairing`'s rules). The column is the
+ * kit's `PairingChrome`, shared with the console's Add a host dialog.
  *
  * Both forms come from the API with the secret already in them: it is shown
- * once, and the server is the only place that knows it, so neither string is
- * assembled here.
+ * once and only the server knows it, so neither string is assembled here.
  */
 export function OnboardingHostScreen({
   step,

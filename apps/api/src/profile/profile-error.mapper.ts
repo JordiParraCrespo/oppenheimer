@@ -46,9 +46,4 @@ export function mapProfileError({ upstreamCode, status }: BetterAuthFailure): Er
   return fallbackFor(status);
 }
 
-/**
- * Wraps an `auth.api.*` call made on the caller's own account so its failures
- * become catalog `AppError`s. Every Better Auth call in this module goes
- * through it.
- */
 export const invokeProfileApi = betterAuthInvoker(mapProfileError);

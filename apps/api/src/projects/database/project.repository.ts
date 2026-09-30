@@ -96,15 +96,10 @@ export class ProjectRepository
   }
 
   /**
-   * `FOR UPDATE` on the project row is what serialises this against creating a
-   * session, whose insert transaction takes `FOR SHARE` on the same row: an archive
-   * that commits first turns that read into zero rows, and one that arrives second
-   * waits here and then sees the session it would have stranded.
-   *
-   * A check that ran before the lock could be true and stale by the time
-   * `archivedAt` lands, so the question is asked between the lock and the write.
-   * The scope's own predicate is reused verbatim as a sub-query, so a project in
-   * another workspace is `not-found` here exactly as it is on every read.
+   * The lock is the port's contract: a session create that reads after an archive
+   * commits finds zero rows, and a check asked before the lock could be stale by the
+   * time `archivedAt` lands. The scope's own predicate is reused verbatim as a
+   * sub-query, so a project in another workspace is `not-found` here as on every read.
    */
   async archiveIfUnused(
     scope: AccessScope,

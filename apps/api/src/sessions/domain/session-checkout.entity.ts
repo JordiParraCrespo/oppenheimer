@@ -47,18 +47,16 @@ export interface CreateSessionCheckoutProps {
 /**
  * One repository, checked out for one session, on the session's own branch.
  *
- * A checkout is also **where a repository is remembered**: there is no repository
- * table, because GitHub owns the list and the runner owns the disk. What a
- * checkout needs is GitHub's id, the installation that mints its token and a name
- * to display — three fields, inline, exactly as Better Auth's `account` row
- * carries its provider's ids rather than pointing at a `provider` table
- * (`product/versions/mvp/03-control-plane.md`).
+ * A checkout is also **where a repository is remembered**: GitHub owns the list and
+ * the runner the disk, so there is no repository table. It carries GitHub's id, the
+ * installation that mints its token and a display name inline, as Better Auth's
+ * `account` carries its provider's ids (`product/versions/mvp/03-control-plane.md`).
  *
  * `mode` is recorded rather than guessed because cleanup differs: a worktree needs
- * `git worktree remove` and a prune, a clone is a directory removal, and reading
- * it back off the filesystem is how dangling git metadata accumulates.
+ * `git worktree remove` and a prune, a clone a directory removal, and reading it back
+ * off the filesystem is how dangling git metadata accumulates.
  *
- * Rows are never hard-deleted. `removedAt` retires one, which is what keeps
+ * Never hard-deleted: `removedAt` retires a row, keeping
  * `uq (sessionId, directoryName)` a permanent tombstone.
  */
 export class SessionCheckoutEntity extends Entity<SessionCheckoutProps> {

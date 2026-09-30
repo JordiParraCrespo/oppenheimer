@@ -119,13 +119,12 @@ export class AuthService {
   }
 
   /**
-   * The server stopped honouring the session — it expired, or was revoked from
-   * another device — while the app still believed in it.
+   * The server stopped honouring the session (expired, or revoked from another
+   * device) while the app still believed in it.
    *
-   * Not a logout: the server has already forgotten the session, so there is
-   * nothing to sign out of, and the analytics identity is kept because the
-   * same person will most likely sign straight back in. Flipping the store is
-   * what matters: the router's guards read it and send the user to /login.
+   * Not a logout: there is nothing left to sign out of, and the analytics
+   * identity is kept because the same person will most likely sign back in.
+   * The router's guards read the flipped store and send the user to /login.
    *
    * Returns whether the store changed, so a burst of failing queries expires
    * the session once.

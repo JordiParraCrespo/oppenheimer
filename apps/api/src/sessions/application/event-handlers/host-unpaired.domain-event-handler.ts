@@ -7,20 +7,16 @@ import { WorkSessionEntity } from '../../domain/work-session.entity';
 import { WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
 
 /**
- * Stops every session running on a host the moment the host is removed.
+ * Stops every session on a host the moment the host is removed; the remove dialog
+ * promises its sessions "are stopped and their terminals closed; logs are kept".
  *
- * Removing a host is the person saying no work goes there again, and the remove
- * dialog says so: the sessions on it "are stopped and their terminals closed;
- * logs are kept". Stopping is the right verb and closing is not — a close pushes
- * branches and removes worktrees, which only the host can do and the host is
- * gone. Stopped is what the control plane can decide alone
- * (`StopSessionCommandHandler`), so each session gets that one entry and keeps
- * its checkouts and its log; the relay closing the link is what ends the tmux
- * sessions on a runner that is still up.
+ * Stop, not close: a close pushes branches and removes worktrees, which only the host
+ * can do, and the host is gone. Stopped is what the control plane decides alone
+ * (`StopSessionCommandHandler`), so each session keeps its checkouts and log; the
+ * relay closing the link ends the tmux sessions on a runner that is still up.
  *
- * Delivery is at least once, so the entry is keyed by the domain event's id: a
- * redelivery appends nothing. Nothing is dispatched — the host was just told,
- * terminally, that it is no longer one.
+ * Delivery is at least once, so the entry is keyed by the domain event's id. Nothing
+ * is dispatched: the host was just told, terminally, that it is no longer one.
  */
 @Injectable()
 export class HostUnpairedStopsSessionsDomainEventHandler {

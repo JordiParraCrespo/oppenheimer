@@ -2,6 +2,9 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
+type TimeGridCell = { value: string; label: React.ReactNode; disabled?: boolean; sans?: boolean };
+type TimeGridGroup = { label?: React.ReactNode; cells: TimeGridCell[] };
+
 /**
  * TimeGrid — the popover behind a time or weekday token: eyebrow-labelled
  * groups (Morning, Afternoon…) of 30px pill cells in a fixed column count.
@@ -11,9 +14,6 @@ import { cn } from '../lib/utils';
  *
  * Render it inside a `ChipSelectPopup` of 292px with 12px padding.
  */
-type TimeGridCell = { value: string; label: React.ReactNode; disabled?: boolean; sans?: boolean };
-type TimeGridGroup = { label?: React.ReactNode; cells: TimeGridCell[] };
-
 function TimeGrid({
   groups,
   value,

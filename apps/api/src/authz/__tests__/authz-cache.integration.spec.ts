@@ -14,15 +14,13 @@ import { REDIS_CLIENT } from '../../redis/redis.di-tokens';
 /**
  * The authorization cache against a real Postgres and Redis: how many queries a
  * guarded request costs, and that every writer that changes effective
- * permissions is visible on the very next request.
+ * permissions is visible on the very next request. Queries are counted through
+ * TypeORM's logger, filtered to the tables authorization reads; Better Auth's
+ * `getSession` runs on its own `pg` pool and is the same before and after.
  *
- * Queries are counted through TypeORM's logger, filtered to the tables
- * authorization reads. Better Auth's `getSession` runs on its own `pg` pool and
- * is not counted: it is the same before and after.
- *
- * The route is `GET /v1/projects` — `ApiAuthGuard` + `PoliciesGuard` +
- * `AccessScopeInterceptor`, `read Project` — which the workspace owner can
- * read and a plain account cannot.
+ * The route is `GET /v1/projects` (`ApiAuthGuard`, `PoliciesGuard`,
+ * `AccessScopeInterceptor`, `read Project`), which the workspace owner can read
+ * and a plain account cannot.
  */
 describe('authorization cache (integration)', () => {
   let app: INestApplication;

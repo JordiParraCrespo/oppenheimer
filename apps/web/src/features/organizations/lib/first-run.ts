@@ -1,35 +1,23 @@
 import { searchFlag } from '@oppenheimer/frontend-web';
 
 /**
- * The first-run walk, as a fact the URL carries.
+ * The first-run walk, as a fact the URL carries. Onboarding is shown once
+ * (`05-screens.md`) and Ready enforces it: it is the one page under
+ * `/onboarding` meaningless to a finished account, while Connect GitHub and
+ * Add host stay reachable because New session links at them.
  *
- * Onboarding is shown once (`05-screens.md`), and Ready is the step that
- * enforces it: the workspace step already returns a claimed address to the
- * console, and Connect GitHub and Add host stay reachable for good because New
- * session links at them. Ready is the one page under `/onboarding` that means
- * nothing to a finished account — "You're all set" over a walk it took days
- * ago.
+ * Ready cannot read *when* off the account: the address is claimed by the end
+ * of step 2, so a legitimate arrival looks as finished as one a week later.
+ * The visit is the missing fact, and like `installation` and `host` it lives
+ * on the query string, cheaper than a first-run store to keep in sync. `walk`
+ * is minted when step 2's claim lands (the only thing that opens a walk) and
+ * carried by the flow's own links; a reader New session sent here has none,
+ * so Continue returns to the console. It dies with the URLs, leaving nothing
+ * for a logout, a second tab or the next account to inherit.
  *
- * What Ready cannot read off the account is *when*. The address is claimed by
- * the end of step 2, so a legitimate arrival looks exactly as finished as one
- * coming back a week later. The missing fact is the visit, and `ready.tsx`
- * already decided where a visit's facts live: on the query string, beside
- * `installation` and `host`, because the summary is a page someone can reload
- * and two ids are cheaper than a first-run store to keep in sync. `walk` is
- * the third such fact.
- *
- * It is minted when step 2's claim lands (the workspace route) — the only
- * thing that opens a walk — and carried by the flow's own links. A reader New session sent here to pair a
- * second machine has no `walk`, so Continue takes them back to the console
- * rather than to a landing that congratulates them on first-run. Nothing has
- * to be cleaned up afterwards: the fact lives and dies with the URLs that
- * carry it, so there is no bit for a logout, a second tab or the next account
- * to inherit.
- *
- * `walk` as a search param, for a route's schema: on, or absent. The router
- * parses `?walk=true` into a boolean while a re-serialised or hand-typed URL
- * can still hand over the string, and a guard that answered differently to the
- * two would be a guard nobody can reason about, so both read as on.
+ * As a search param it is on or absent: the router parses `?walk=true` into a
+ * boolean, but a re-serialised or hand-typed URL can hand over the string, so
+ * both read as on.
  */
 export const walkParam = searchFlag;
 
@@ -47,18 +35,12 @@ export function walkFromState(raw: unknown): unknown {
 }
 
 /**
- * How the walk crosses GitHub.
- *
- * Connect GitHub leaves the app: the browser goes to github.com and comes back
- * to `/onboarding/github` with the query *GitHub* chose, so a `walk` handed to
- * the install page is not in the URL that returns. `state` is the one value
- * GitHub echoes back untouched, which is what it is for. Without this, a
- * reader who actually installs the App mid-walk loses the walk on the return
- * leg and is turned away from Ready two clicks later.
- *
- * `state` is also the API's single-use nonce, which is its real job, so the
- * walk rides as a prefix of it: `first-run.<nonce>`. The GitHub route reads
- * the walk off it and hands the rest on as the nonce.
+ * How the walk crosses GitHub. The install returns to `/onboarding/github`
+ * with the query *GitHub* chose, so a `walk` in the URL does not survive, and a
+ * reader who installs the App mid-walk would be turned away from Ready.
+ * `state` is the one value GitHub echoes untouched, and also the API's
+ * single-use nonce, so the walk rides as its prefix, `first-run.<nonce>`, and
+ * the GitHub route strips it before the nonce is used.
  */
 const WALK_STATE = 'first-run';
 

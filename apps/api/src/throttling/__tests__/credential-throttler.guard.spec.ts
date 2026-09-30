@@ -12,17 +12,11 @@ import type { CredentialVerifierPort } from '../../auth/infrastructure/credentia
 import { CredentialThrottlerGuard } from '../guards/credential-throttler.guard';
 
 /**
- * The tracker decides which requests share a rate-limit bucket, and getting it
- * wrong is invisible: the limiter still works, it just limits the wrong set of
- * callers. That is exactly what happened before this suite existed — the guard
- * read `request.scopeContext`, which `ApiAuthGuard` populates, without
- * accounting for Nest running global guards *first*. On every real request that
- * property was undefined, the credential branch never fired, and every caller
- * behind one address quietly shared one IP bucket while the code looked correct.
- *
- * The guard runs against the real kernel resolver here, with every lookup it
- * could make spied on: deriving the bucket must cost no database and no
- * identity-provider call, or the limiter does its work before it limits.
+ * The tracker decides which requests share a bucket, and getting it wrong is
+ * invisible. The guard once read `request.scopeContext`, which `ApiAuthGuard` sets, but
+ * Nest runs global guards first, so every caller behind one address silently shared an
+ * IP bucket. The guard runs against the real kernel resolver here with every lookup
+ * spied on: deriving the bucket must cost no database or identity-provider call.
  */
 describe('CredentialThrottlerGuard', () => {
   let verifier: { [K in keyof CredentialVerifierPort]: ReturnType<typeof vi.fn> };

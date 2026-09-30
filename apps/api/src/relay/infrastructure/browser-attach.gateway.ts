@@ -82,29 +82,21 @@ export const REAUTHORIZE_INTERVAL_MS = 60_000;
  * The browser attach socket: one per attachment, unmultiplexed.
  *
  * The ticket travels in `Sec-WebSocket-Protocol` and is redeemed with a
- * read-and-delete, so a second socket presenting it is refused. What the ticket
- * authorised is re-checked at redemption — the session still live, the person
- * still a member of its workspace (through `organizations/`' port), still an
- * account that may act, and still able to use the session's host — because
- * sixty seconds is long enough for any of them to have changed. The same
- * judgement runs again every `REAUTHORIZE_INTERVAL_MS` while the attachment is
- * open, so a revocation reaches a terminal already streaming, too.
+ * read-and-delete, so a second socket presenting it is refused. What it authorised
+ * is re-checked at redemption (session live, person still a workspace member through
+ * `organizations/`' port, account allowed to act, host still usable), since sixty
+ * seconds is long enough for any of it to change, and again every
+ * `REAUTHORIZE_INTERVAL_MS`, so a revocation reaches a terminal already streaming.
  *
  * Every refusal after the handshake is **a message and a close code on an
- * established socket**, never a refused upgrade: a browser's WebSocket cannot
- * see the status of a refused upgrade, only a 1006 it would take for a dropped
- * radio and retry. So the upgrade is completed for any request that carries a
- * ticket and comes from an origin this API serves, and the ticket is judged on
- * the socket, where `closed` names the reason and the code is final. Only a
- * request with no ticket at all, or from another origin, is refused before the
- * upgrade — neither is something a browser this app serves can send. The
- * socket is unauthenticated until its ticket is judged, so it gets an error
- * listener before anything is awaited.
+ * established socket**, never a refused upgrade: a browser sees a refused upgrade
+ * only as a 1006, which it takes for a dropped radio and retries. Only a request with
+ * no ticket, or from an origin this API does not serve, is refused before the
+ * upgrade; a browser this app serves sends neither. The socket is unauthenticated
+ * until judged, so it gets an error listener before anything is awaited.
  *
- * Then the session's host either holds a link, and the attachment is opened on
- * it with the browser's own viewport, or it does not, and the socket is told
- * `host_offline` and closed: that hint is the ticket's, not the link's, and this
- * is the one place it is said.
+ * A host with no link gets `host_offline` and a close: that hint is the ticket's,
+ * not the link's, and this is the one place it is said.
  */
 @Injectable()
 export class BrowserAttachGateway {

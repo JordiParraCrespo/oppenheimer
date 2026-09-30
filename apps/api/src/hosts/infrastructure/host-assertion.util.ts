@@ -1,16 +1,14 @@
 import { createHash, createPublicKey, type KeyObject, verify } from 'node:crypto';
 
 /**
- * The Ed25519 half of the host credential, in `node:crypto` alone.
+ * The Ed25519 half of the host credential, in `node:crypto` alone: a boot assertion
+ * is a compact JWS signed with the key the runner generated at pairing
+ * (`apps/runner/internal/pairing/domain/identity.go`), verified against the raw
+ * 32-byte key the host registered.
  *
- * A boot assertion is a compact JWS the runner signs with the key it generated
- * at pairing (`apps/runner/internal/pairing/domain/identity.go`), and this file
- * is everything needed to check one: split it, insist the header says `EdDSA`,
- * and verify the signature against the raw 32-byte key the host registered.
- *
- * `alg` is not read to *choose* an algorithm — it is asserted, and the key is
- * always Ed25519 — so the algorithm-confusion family of attacks has nothing to
- * work with here.
+ * `alg` is asserted to be `EdDSA`, never read to *choose* an algorithm, and the key
+ * is always Ed25519, so the algorithm-confusion family of attacks has nothing to work
+ * with.
  */
 
 /** DER prefix of an Ed25519 SubjectPublicKeyInfo, which wraps the raw 32 bytes. */

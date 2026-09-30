@@ -8,28 +8,21 @@ import {
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * Add host, in a browser, against the real control plane.
+ * Add host, in a browser, against the real control plane
+ * (`product/versions/mvp/05-screens.md`). The install command the dialog prints
+ * carries a live token, so the spec takes it off the screen, redeems it
+ * anonymously the way the installer does, and watches the status line resolve.
  *
- * The Add a host dialog is how a machine is paired from inside the console
- * (`product/versions/mvp/05-screens.md`), and what it hands the reader is a
- * live credential: the install command it prints carries a token the API
- * minted for this account, and spending it is what makes the machine theirs.
- * So the spec spends it — the secret comes off the screen, a runner redeems it
- * anonymously the way the installer does, and the status line is watched to
- * resolve.
+ * The regenerate leg proves the dialog watches **its** token rather than the
+ * host list: a runner spending the *old* one after a regenerate must leave the
+ * status line on "Waiting for the host to connect…", or Use this host would
+ * arm under a command the reader has already thrown away.
  *
- * The regenerate leg is the one worth the extra minute. It proves the dialog
- * is watching **its** token rather than the host list: after a new token is
- * minted, a runner spending the *old* one gives this account a host, and the
- * status line must stay "Waiting for the host to connect…" — otherwise Use this host
- * would arm under a command the reader has already thrown away.
- *
- * The run needs the stack up and the API pointed at the GitHub stub — see
- * `e2e/README.md`. The deployment also needs a runner release configured, or
- * minting answers `HOSTS_004` and there is no command to show.
+ * Needs the stack up with the API on the GitHub stub (`e2e/README.md`) and a
+ * runner release configured, or minting answers `HOSTS_004`.
  */
 test('pairs a machine from the console and selects it for the next session', async ({ page }) => {
-  // Two registrations at an IP-throttled route; see `redeemPairingToken`.
+  // Two registrations at an IP-throttled route; see `THROTTLE_WINDOW_MS` in support/sessions.ts.
   test.slow();
   const owner = await provisionedUser('addhost');
   // Without one the repository chip is empty, which is a different spec's

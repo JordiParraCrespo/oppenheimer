@@ -6,6 +6,8 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
+type PillTabsSize = 'md' | 'sm';
+
 /**
  * PillTabs — switches views inside a page: Routines / Runs at the top, the
  * template categories, the run status tabs. Bare pills with no track; the
@@ -17,8 +19,6 @@ import { cn } from '../lib/utils';
  * Exactly one tab is on, so the value is a string. For a form's two ways to
  * read one panel use `SegmentedControl`; for a route, tabs are links.
  */
-type PillTabsSize = 'md' | 'sm';
-
 function PillTabs({
   value,
   onValueChange,

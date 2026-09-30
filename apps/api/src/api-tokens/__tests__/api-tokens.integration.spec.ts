@@ -10,9 +10,6 @@ import { SESSION_CACHE } from '../../auth/auth.di-tokens';
  * This is the layer unit tests cannot reach: the migration's SQL, the guards
  * running in a real request pipeline, and the intersection of a token's scopes
  * with its owner's live roles.
- *
- * The schema is built by running the migrations rather than `synchronize`, so
- * a mistake in a migration fails here rather than in production.
  */
 describe('API tokens & scopes (integration)', () => {
   let app: INestApplication;
@@ -81,9 +78,7 @@ describe('API tokens & scopes (integration)', () => {
 
   afterAll(async () => {
     await app?.close();
-    // Better Auth's email queue is a module singleton outside the DI container,
-    // so `app.close()` does not reach it. Close it before the containers go
-    // away, or its in-flight ioredis commands reject into nothing.
+    // `app.close()` does not reach it: see `emailQueue`.
     const { emailQueue } = await import('../../auth/infrastructure/email-queue.util');
     await emailQueue.close().catch(() => {});
     await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);

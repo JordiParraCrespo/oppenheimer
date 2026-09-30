@@ -176,9 +176,8 @@ var (
 
 // unpaired is a person removing this host, and removing a host stops the
 // sessions on it (03, 14): the control plane has already recorded each one
-// stopped, and the remove dialog promised their terminals close. An agent left
-// running here would keep working where no console can see it. Stopping keeps
-// every checkout on disk — it is not a close.
+// stopped, and an agent left running would work where no console can see it.
+// Stopping keeps every checkout on disk — it is not a close.
 //
 // The order is the point. Commands in flight are cancelled and the lanes
 // closed and drained first, so a create still cloning cannot start its tmux

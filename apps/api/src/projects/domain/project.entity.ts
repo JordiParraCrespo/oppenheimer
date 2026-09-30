@@ -39,7 +39,10 @@ export interface ProjectProps {
    * checkout to backfill from; every write leaves at least one.
    */
   repositories: ProjectRepositoryProps[];
-  /** The host a new session is offered. A suggestion, never a grant. */
+  /**
+   * The host a new session is offered. A suggestion, never a grant: creating a
+   * session still loads the host through the caller's own-or-grant scope.
+   */
   defaultHostId: string | null;
   /** The agent a new session is offered, from the closed catalog. */
   defaultAgent: string | null;

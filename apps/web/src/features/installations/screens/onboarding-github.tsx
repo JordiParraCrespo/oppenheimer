@@ -18,16 +18,10 @@ import { useConnectInstallationCallback } from '@/features/installations/hooks/u
 import { useStartGithubInstall } from '@/features/installations/hooks/use-start-github-install';
 
 /**
- * Onboarding step 3: install the GitHub App. One primary button that sends the
- * browser to GitHub; once the installation exists it becomes a card naming the
- * account and how many repositories it covers, with Continue below. Skippable:
- * the repo picker stays empty until it is done.
- *
- * The button mints the install state first, then leaves for GitHub with it —
- * the install happens there. What comes back is `installation_id`, `code` and
- * that `state` on the query string, which the hook below exchanges once for
- * the installation row. A callback without a state was not started here, and
- * is refused on screen rather than posted.
+ * Onboarding step 3: install the GitHub App. Skippable; the repo picker stays
+ * empty until it is done. The button mints the install state before leaving
+ * for GitHub, and `useConnectInstallationCallback` exchanges what comes back;
+ * a callback without a state is refused on screen rather than posted.
  */
 export function OnboardingGithubScreen({
   githubInstallationId,

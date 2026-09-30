@@ -5,26 +5,18 @@ import { provisionedUser, signInAs } from '../../support/web';
 
 /**
  * The session screen, `/sessions/{id}`, in each state the URL can land on —
- * without a runner.
- *
- * `new-session.spec.ts` stops once the session exists; this picks it up from
- * there. What the `web` project cannot supply is a host that builds the
- * session: pairing here is a keypair and a row (`support/sessions.ts`), with no
- * runner holding a link, so a session stays `starting` for ever. Two things
- * stand in for the runner, and only those:
+ * without a runner. Pairing here is a keypair and a row (`support/sessions.ts`),
+ * so a session stays `starting` for ever, and two things stand in for the
+ * runner, and only those:
  *
  * - **The lifecycle a runner would report** is written to the session's row —
  *   `open` once it has built the worktree, `stoppedAt` once tmux is gone —
- *   because that is the one fact the screen branches on and nothing but a
- *   runner's link can set it. Pairing, the installation, the session and the
- *   attach ticket all go through the real API.
+ *   because only a runner's link can set it. Pairing, the installation, the
+ *   session and the attach ticket all go through the real API.
  * - **The relay's attach socket**, in the one test about what the terminal
  *   draws, is answered in the browser (`page.routeWebSocket`) with a recorded
- *   transcript in the wire format `01-protocol.md` decides — the role
- *   `FakeSessionStream` plays in the console's render tests, one layer lower.
- *   The fake stream itself is not reachable from here: the console always
- *   builds the real `AttachSessionStream`, and nothing selects the fake at
- *   runtime.
+ *   transcript in the `01-protocol.md` wire format: the console always builds
+ *   the real `AttachSessionStream`, so `FakeSessionStream` is not reachable.
  *
  * The same screen on a real runner, through the real relay, is
  * `tests/fleet/console.spec.ts`.
@@ -78,7 +70,6 @@ test.describe('Session screen', () => {
   test('a session the host has not built waits, and an open one on an offline host says so', async ({
     page,
   }) => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const owner = await provisionedUser('sessionstates');
     const hostId = await pairHost(owner.api, 'Quiet box');

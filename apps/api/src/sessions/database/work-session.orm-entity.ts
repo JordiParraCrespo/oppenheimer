@@ -14,21 +14,18 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
 /**
  * A session: one piece of work inside a project, and the fold of its own log.
  *
- * Three of the constraints here are not checks a handler could forget, because
- * they are not checks at all. `uq (organizationId, id)` exists so
- * `session_checkout` can reference a session **with its workspace in the key**,
- * and `uq (organizationId, slug)` is a permanent tombstone: rows are never
- * hard-deleted, so a retired session's directory name and branch can never be
- * reissued. The slug is unique per workspace because the directory is
- * `workspaces/<org>/sessions/<slug>`: a project is metadata, and `projectId` is
- * only where the session is listed. The `(organizationId, projectId)` composite foreign key in the
- * migration is what makes a session in another workspace's project
- * unrepresentable.
+ * Three constraints are not checks a handler could forget. `uq (organizationId, id)`
+ * lets `session_checkout` reference a session **with its workspace in the key**.
+ * `uq (organizationId, slug)` is a permanent tombstone: rows are never hard-deleted,
+ * so a retired session's directory name and branch are never reissued, and it is per
+ * workspace because the directory is `workspaces/<org>/sessions/<slug>` (a project is
+ * metadata; `projectId` is only where the session is listed). The migration's
+ * `(organizationId, projectId)` composite foreign key makes a session in another
+ * workspace's project unrepresentable.
  *
- * `hostId` is the one reference a handler guards instead: a host belongs to a
- * person and carries no workspace column, and a grant is a row rather than a
- * column, so there is nothing for a composite key to reference. The create
- * command loads the host through the own-or-grant-scoped repository and refuses on
+ * `hostId` is the one reference a handler guards instead: a host belongs to a person,
+ * with no workspace column, and a grant is a row, so no composite key can reference
+ * it. Create loads the host through the own-or-grant-scoped repository and refuses on
  * a miss (`product/versions/mvp/03-control-plane.md`).
  */
 @Entity('work_session')
@@ -48,7 +45,6 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'uuid' })
   organizationId!: string;
 
-  /** The project the session is listed under. Moving a session changes this. */
   @Column({ type: 'uuid' })
   projectId!: string;
 
@@ -132,15 +128,11 @@ export class WorkSessionOrmEntity {
   observedSince!: Date | null;
 
   /**
-   * How the agent was launched: the model, the permission level and the effort
-   * the composer's foot row was set to.
-   *
-   * Three columns rather than one JSON value, because each is a closed union and
-   * a union is what a `varchar` column here is for (`.agents/rules/typeorm.md`).
-   * They are folded from `session.requested` like every column below, and they
-   * are columns at all because a restart must reproduce the launch and the
-   * console shows it on a session that already exists
-   * (`product/versions/mvp/03-control-plane.md`).
+   * The model, permission level and effort the composer's foot row launched with.
+   * Three columns, not one JSON value, because each is a closed union, which a
+   * `varchar` column is for (`.agents/rules/typeorm.md`). They are folded from
+   * `session.requested`, and exist because a restart must reproduce the launch and
+   * the console shows it (`product/versions/mvp/03-control-plane.md`).
    */
   @Column({ type: 'varchar', nullable: true })
   launchModel!: string | null;

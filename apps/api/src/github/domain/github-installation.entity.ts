@@ -59,15 +59,12 @@ export interface RefreshInstallationProps {
 }
 
 /**
- * A GitHub App installation, which is the whole of what a workspace may reach
- * on GitHub: the installation *is* the access control and GitHub enforces it,
- * so there is no repository table and nothing here mirrors one — a repository is
- * remembered only by the checkout that took it
- * (`product/versions/mvp/03-control-plane.md`).
+ * A GitHub App installation, the whole of what a workspace may reach on
+ * GitHub: the installation *is* the access control and GitHub enforces it, so
+ * no repository table mirrors it (`product/versions/mvp/03-control-plane.md`).
  *
- * The aggregate's only job beyond staying valid is to know whether it can still
- * be exercised — `isUsable` is what the listing and the token mint ask, so
- * "suspended" and "uninstalled" are one question with one answer.
+ * `isUsable` is what the listing and the token mint ask, so "suspended" and
+ * "uninstalled" are one question with one answer.
  */
 export class GithubInstallationEntity extends AggregateRoot<GithubInstallationProps> {
   /** Rehydrate an existing installation (used by the mapper). */
@@ -134,16 +131,13 @@ export class GithubInstallationEntity extends AggregateRoot<GithubInstallationPr
 
   /**
    * Re-claim an installation this workspace had disconnected, or refresh what
-   * GitHub now reports about a live one.
-   *
-   * Re-running the install redirect is the way back from a disconnect, and it
-   * arrives with the same `githubInstallationId`, so this workspace's own row is
+   * GitHub now reports about a live one. Re-running the install redirect
+   * arrives with the same `githubInstallationId`, so this workspace's row is
    * revived rather than duplicated.
    *
-   * `suspendedAt` comes from GitHub's own answer rather than being cleared.
-   * Clearing it would make re-posting the redirect a way to mark a suspended
-   * installation usable here, and it would stay that way until a webhook said
-   * otherwise.
+   * `suspendedAt` comes from GitHub's answer rather than being cleared, or
+   * re-posting the redirect would mark a suspended installation usable until a
+   * webhook said otherwise.
    */
   reconnect(props: RefreshInstallationProps): void {
     const wasDisconnected = this.props.deletedAt !== null;

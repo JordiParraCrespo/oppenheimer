@@ -16,27 +16,17 @@ import { useTerminal } from '../hooks/use-terminal';
 const AGENT_WINDOW = 0;
 
 /**
- * The session's terminal: the scrollback and the status band along the
- * bottom. No window strip — the design does not have one, and the design
- * system's tab CSS is kept "for when the console supports several at once",
- * which is a later slice.
+ * The session's terminal: the scrollback and the status band. No window
+ * strip; the design system's tab CSS waits for several windows, a later slice.
  *
- * **There is no prompt row of ours.** The artboard draws one, but the
- * artboard's scrollback is hand-written DOM with no program behind it; a real
- * session has an agent drawing *its own* prompt inside the grid, so a second
- * field below it gave the pane two carets and no way to tell which one the
- * next keystroke reached. The agent's is the real one — it is what has the
- * history, the slash commands and the mode — so the grid keeps the input and
- * this renders none.
+ * **There is no prompt row of ours.** The artboard draws one, but a real
+ * agent draws its own prompt inside the grid, and a second field gave the pane
+ * two carets; the agent's has the history, slash commands and mode, so the
+ * grid keeps the input.
  *
  * **An image pasted or dropped onto the grid** goes to the host rather than
  * to xterm: the agent reads its host's clipboard, never the browser's, so the
  * runner saves the file and pastes its path into the prompt (05).
- *
- * What the grid *contains* is drawn by the program on the far end. The
- * artboard's scrollback is hand-written DOM in the design's own vocabulary,
- * so plain output lands close to it and an agent drawing a full-screen TUI
- * does not. That is a property of terminals, not of this component.
  */
 export function SessionTerminal({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();

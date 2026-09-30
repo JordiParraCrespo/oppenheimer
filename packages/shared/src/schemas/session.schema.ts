@@ -27,8 +27,6 @@ import {
  * This file is the fields the routes accept and the constraints that are
  * decidable from the body alone. It is deliberately not where the sessions
  * module's behaviour is written down.
- *
- * Schemas state the constraint only, never a message (`.agents/rules/forms.md`).
  */
 
 export { codingAgentSchema, SESSION_EFFORTS, SESSION_PERMISSIONS };
@@ -44,26 +42,20 @@ export type SessionEffortDto = z.infer<typeof sessionEffortSchema>;
 /**
  * How the agent is started: the composer's foot row, as one object.
  *
- * Four controls that always travel together — the route body, the log payload,
- * `session.create` and the response all carry this same shape — so it is named
- * once rather than spelled four times in four places
- * (`product/versions/mvp/03-control-plane.md`).
+ * The route body, the log payload, `session.create` and the response all carry
+ * this same shape, so it is named once (`product/versions/mvp/03-control-plane.md`).
  *
  * `agent` is deliberately **not** in here. The agent is what the session is;
  * the launch is how it was started, and only the second is something a later
  * slice changes without making a different session.
  *
- * `permission` absent means `ask` and nothing else, for every agent that has
- * approvals: it is the level that asks before every action, and a default that
- * escalates is the one mistake this field must not make. The console never
- * seeds `full` from a remembered choice either, for the same reason. The
- * default is applied where the agent is known (the API's launch mapping), not
- * here, because an agent with no approvals — the blank terminal — records no
- * level at all.
+ * `permission` absent means `ask` for every agent that has approvals: a default
+ * that escalates is the one mistake this field must not make, which is also why
+ * the console never seeds `full` from a remembered choice. The default is
+ * applied where the agent is known (the API's launch mapping), not here, because
+ * an agent with no approvals — the blank terminal — records no level at all.
  *
- * What each value means to a given CLI is catalog data, beside that agent's
- * command (`../agents/catalog`), because the answer differs per agent and a
- * column here would state it once per agent.
+ * What each value means to a given CLI is catalog data (`../agents/catalog`).
  */
 export const sessionLaunchSchema = z.object({
   /** An id or alias the agent's own CLI takes; absent runs that agent's default. */

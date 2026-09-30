@@ -65,20 +65,17 @@ export interface AppendedEventRow {
 }
 
 /**
- * Maps the work-session aggregate between its domain, persistence and response
- * shapes — the session, its checkouts and its log entries, because all three are
- * one aggregate and one mapper is what stops three files disagreeing about how a
- * bigint crosses a boundary.
+ * One mapper for the whole aggregate (session, checkouts, log entries), so three
+ * files cannot disagree about how a bigint crosses a boundary.
  *
- * `githubRepoId` travels everywhere as the string the driver exchanges a bigint
- * as. Nothing coerces it: GitHub's ids fit in a JavaScript number today and the
- * column says they are not promised to.
+ * `githubRepoId` travels everywhere as the string the driver exchanges a bigint as,
+ * never coerced: GitHub's ids fit in a number today and the column says they are not
+ * promised to.
  *
- * `state` on the wire is the **derived group**, not the stored lifecycle. That is
- * the committed client contract: the sidebar shows what needs you. It is computed
- * from the row and nothing else — every input the group reads is a column the fold
- * projects — so a listing answers it without walking a log, and a mapper cannot be
- * handed an observation the log never recorded.
+ * `state` on the wire is the **derived group**, not the stored lifecycle: the
+ * committed client contract (the sidebar shows what needs you). It is computed from
+ * the row alone, every input being a column the fold projects, so a listing needs no
+ * log walk and a mapper cannot be handed an observation the log never recorded.
  */
 @Injectable()
 export class WorkSessionMapper
@@ -222,19 +219,14 @@ export class WorkSessionMapper
   }
 
   /**
-   * The entries a create request owes its log — one action, one transaction.
+   * The entries a create request owes its log: one action, one transaction. They
+   * live here because they *are* the session's columns (the fold projects them), and
+   * building them beside the persistence shape keeps the two saying the same thing.
    *
-   * It is a mapper method rather than an object literal in the handler for the
-   * reason every shape in this file is: these three entries *are* the session's
-   * columns, since the fold projects them, and assembling them beside the
-   * persistence shape they produce is what keeps the two saying the same thing.
-   *
-   * There are three, at most. `session.requested` states the launch, because the
-   * launch columns are a projection of it. `session.cwd_set` says where the agent
-   * runs, as an entry rather than a column write because a later "work in this
-   * checkout instead" is the same entry. `prompt.first` carries the composer's
-   * task when there was one — and never appears at all when there was not, rather
-   * than appearing empty.
+   * At most three. `session.requested` states the launch, which the launch columns
+   * project. `session.cwd_set` is an entry, not a column write, because a later "work
+   * in this checkout instead" is the same entry. `prompt.first` carries the
+   * composer's task, and is absent rather than empty when there was none.
    */
   toRequestEvents(props: {
     commandId: string;

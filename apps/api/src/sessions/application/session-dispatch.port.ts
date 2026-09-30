@@ -67,18 +67,16 @@ export interface SessionImageSpec {
 }
 
 /**
- * What the module that owns the runner link implements so a session's work reaches
- * a host.
+ * What the module that owns the runner link implements so a session's work reaches a
+ * host.
  *
- * It is a port, not a queue: the desired state is already the session row and the
- * outbox is already a durable queue, so there is no `jobs` table and nothing here
- * promises delivery. An implementation says whether it got the job onto a link, and
- * the session's log is where that answer is written down.
+ * A port, not a queue: the desired state is the session row and the outbox is already
+ * durable, so there is no `jobs` table and nothing here promises delivery. An
+ * implementation says whether it got the job onto a link; the log records the answer.
  *
- * **An implementation never writes the log.** One user action is one entry,
- * appended by the command handler in the same transaction as the row change it
- * implies. A dispatcher that also appended would make a click two entries in two
- * transactions.
+ * **An implementation never writes the log.** One user action is one entry, appended
+ * by the command handler in the same transaction as its row change; a dispatcher that
+ * also appended would make a click two entries in two transactions.
  */
 export interface SessionDispatchPort {
   /** Make the directories, the checkouts and window 0, then launch the agent. */

@@ -191,8 +191,7 @@ export function toProjectOptions(
   projects: readonly ProjectEntity[],
   labels: { noRepositories: string; unassigned: string },
 ): ChipSelectOption[] {
-  // Unassigned first, under its translated name: it is where work that names
-  // no project goes, and the API's spelling of it is English.
+  // Unassigned first: it is where work that names no project goes.
   const ordered = [
     ...projects.filter((project) => project.isUnassigned),
     ...projects.filter((project) => !project.isUnassigned),

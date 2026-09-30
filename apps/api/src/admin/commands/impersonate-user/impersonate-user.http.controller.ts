@@ -51,8 +51,6 @@ export class ImpersonateUserHttpController {
     const cookies = await this.commandBus.execute<ImpersonateUserCommand, string[]>(
       new ImpersonateUserCommand({ headers: req.headers, userId: id }),
     );
-    // Better Auth issued a session for the caller; the browser only moves onto
-    // it if it stores the cookie.
     if (cookies.length > 0) res.setHeader('set-cookie', cookies);
     return this.queryBus.execute<GetUserQuery, AdminUserResponseDto>(
       new GetUserQuery({ headers: req.headers, userId: id }),

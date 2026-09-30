@@ -27,21 +27,18 @@ export interface ProvisionPersonalWorkspaceProps {
 }
 
 /**
- * The workspace an account works in — one organization, owned by one person.
+ * The workspace an account works in: one organization, owned by one person.
  *
- * Three rows are one aggregate here because they are one fact. The
- * `organization` says the workspace exists, the `member` row says who owns it,
- * and the org-scoped `owner` role grant is what lets that person actually open
- * it: the app's routes are guarded by CASL, which reads the role, not the
- * membership. A workspace written without the grant is one its owner is
- * refused from — worse than no workspace at all, because the onboarding screen
- * only recovers the *absent* case. So the consistency boundary is all three or
- * none, and the repository writes them in a single transaction.
+ * Three rows are one fact: the `organization`, the owner's `member` row, and
+ * the org-scoped `owner` role grant that lets them open it (CASL reads the
+ * role, not the membership). A workspace without the grant refuses its owner,
+ * which is worse than none because onboarding only recovers the absent case;
+ * so the repository writes all three in one transaction.
  *
  * One user per workspace is the MVP's model
- * (`product/versions/mvp/00-scope.md`). Teams and rosters arrive later on the
- * same tables; when they do, the membership this aggregate owns becomes the
- * first of many and the aggregate boundary is worth revisiting.
+ * (`product/versions/mvp/00-scope.md`); when teams arrive on the same tables,
+ * this membership becomes the first of many and the boundary is worth
+ * revisiting.
  */
 export class PersonalWorkspaceEntity extends AggregateRoot<PersonalWorkspaceProps> {
   /**

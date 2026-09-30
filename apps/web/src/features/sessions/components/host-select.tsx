@@ -7,16 +7,9 @@ import { Cpu } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 
 /**
- * The host chip of New session: which machine the work runs on.
- *
- * Props in, choice out — the list is read by the section above, which is the
- * only place on this screen that fetches. What this file owns is the
- * translation of a machine into a row: the name, the `hostname · os` line
- * underneath, and the word that says a host's runner is not dialled in.
- *
- * A list that has not arrived yet is `loading`, not `disabled`: a greyed-out
- * chip reads as a chip this workspace may not use, and the hosts are a second
- * away.
+ * The host chip of New session. Props in, choice out: the section above does
+ * the fetching. A list that has not arrived is `loading`, not `disabled`: a
+ * greyed chip reads as one this workspace may not use.
  */
 export function HostSelect({
   hosts,
@@ -33,10 +26,8 @@ export function HostSelect({
   onValueChange: (value: string) => void;
   onAddHost: () => void;
   loading?: boolean;
-  /** Why the list failed to load, shown where its rows would be. */
   failure?: string;
   disabled?: boolean;
-  /** `tab` inside the composer's scope band; `chip` on its own. */
   variant?: ChipSelectTriggerVariant;
 }) {
   const { t } = useTranslation();

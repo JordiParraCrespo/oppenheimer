@@ -4,17 +4,6 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
-/**
- * StatusDot — status is a dot, not an icon. A 6px coloured dot plus a word,
- * which is how run state reads everywhere: the session list, the host pairing
- * step, the terminal tab. The six states are the vocabulary; do not invent
- * "In progress" or "Error" alongside them.
- *
- * `completed` swaps the dot for a small green check (the connected-host and
- * connected-GitHub rows). `meta` adds a muted second line under the label.
- * `pulse` animates the dot for a live "waiting…" state; it stops under
- * reduced motion.
- */
 const dotVariants = cva('inline-block size-1.5 shrink-0 rounded-pill', {
   variants: {
     state: {
@@ -49,6 +38,17 @@ const STATUS_LABEL: Record<StatusState, string> = {
   paused: 'Paused',
 };
 
+/**
+ * StatusDot — status is a dot, not an icon. A 6px coloured dot plus a word,
+ * which is how run state reads everywhere: the session list, the host pairing
+ * step, the terminal tab. The six states are the vocabulary; do not invent
+ * "In progress" or "Error" alongside them.
+ *
+ * `completed` swaps the dot for a small green check (the connected-host and
+ * connected-GitHub rows). `meta` adds a muted second line under the label.
+ * `pulse` animates the dot for a live "waiting…" state; it stops under
+ * reduced motion.
+ */
 function StatusDot({
   state = 'idle',
   children,

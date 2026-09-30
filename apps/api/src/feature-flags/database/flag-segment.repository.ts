@@ -32,8 +32,7 @@ export class FlagSegmentRepository
   }
 
   async fingerprint(): Promise<string> {
-    // Every column of every row, in key order — the jsonb rules and the full
-    // microsecond timestamp included — so no change can leave it standing still.
+    // The same digest as `FeatureFlagRepository.fingerprint`.
     const [row] = await this.repository.query(
       `SELECT count(*)::text || ':' || coalesce(md5(string_agg(to_jsonb(t)::text, ',' ORDER BY t.key)), '') AS digest FROM feature_flag_segment t`,
     );

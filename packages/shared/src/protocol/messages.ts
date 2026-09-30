@@ -23,7 +23,7 @@ import {
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON
- * Schema emitted from it (`pnpm --filter @oppenheimer/shared build:protocol`)
+ * Schema emitted from it (`pnpm --filter @oppenheimer/shared build`)
  * and the Go structs generated from that. This settles open question 1 of
  * `product/versions/mvp/01-protocol.md`: Zod is what this repo already uses for
  * DTOs, so the wire is not a second schema language.
@@ -225,12 +225,10 @@ export const sessionCreateSchema = z
     /**
      * The person's first task, if the composer supplied one.
      *
-     * The runner appends it to the agent's **argv** — both CLIs document the
-     * first task as a trailing positional, and the catalog's `launch.prompt`
-     * says how (`product/versions/mvp/02-runner.md` §5). So it rides the launch
-     * rather than arriving as a `session.input` after `session.started`: input
-     * needs the agent up, and "the agent is up" is a moment only the host can
-     * name. In argv there is nothing to synchronise.
+     * The runner appends it to the agent's **argv** as the catalog's
+     * `launch.prompt` says (`product/versions/mvp/02-runner.md` §5), rather than
+     * sending a `session.input` after `session.started`: input needs the agent
+     * up, a moment only the host can name.
      *
      * Set, the control plane has already written `prompt.first` to the log and
      * the runner writes nothing; unset, the runner reports the first message off
@@ -247,8 +245,8 @@ export const sessionCreateSchema = z
      * it with the task (02 §7).
      *
      * Present only with a `prompt`, each named once (the refine below), and
-     * sent only to a runner whose `hello` named `session.create.images`: an older runner would drop the field and
-     * launch the task without the pictures it talks about.
+     * sent only to a runner whose `hello` named `session.create.images`: an
+     * older runner would drop the field and launch the task without the pictures.
      */
     images: z
       .array(
@@ -345,15 +343,13 @@ export type SessionImageMessage = z.infer<typeof sessionImageSchema>;
  *
  * The browser acks the bytes it has consumed, the control plane relays that
  * credit here, and the runner resumes the attachment's PTY reads. Without it a
- * pane that outruns its 256 KB window stalls for good rather than briefly, so
- * this is the message that makes "a runaway build stalls its own pane, never the
- * link" true instead of aspirational
+ * pane that outruns its 256 KB window stalls for good; with it a runaway build
+ * stalls its own pane, never the link
  * (`product/versions/mvp/01-protocol.md`, "Flow control and reconnect").
  *
- * It is the same shape in both places it is used: the browser sends it to the
- * control plane for its one attachment, and the control plane sends it on to the
- * runner. The credit is a delta, never a running total — a lost frame then costs
- * one window's worth of throughput rather than desynchronising the counter.
+ * The same shape on both hops (browser → control plane → runner). The credit is
+ * a delta, never a running total: a lost frame then costs one window's worth of
+ * throughput rather than desynchronising the counter.
  */
 export const attachmentCreditSchema = z.object({
   type: z.literal('attachment.credit'),

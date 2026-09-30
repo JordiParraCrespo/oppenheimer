@@ -21,23 +21,17 @@ import {
 import type { DelegatedSessionPort } from '../infrastructure/delegated-session.port';
 
 /**
- * Authenticates a request by any of the three supported credentials and
- * populates `request.user` / `request.session` / `request.scopeContext`, then
- * stamps `request.tenant` — the one organization the request acts in (see
- * the `REQUEST_TENANT` port) — before any guard or handler builds an ability.
+ * Authenticates a request by any supported credential, populates
+ * `request.user` / `request.session` / `request.scopeContext`, and stamps
+ * `request.tenant` (see `REQUEST_TENANT`) before any guard or handler builds
+ * an ability. Replaces Better Auth's `AuthGuard`, which only understands
+ * session cookies.
  *
- * Replaces Better Auth's own `AuthGuard`, which only understands session
- * cookies. On a route marked `@UsesBetterAuthSession()` — the façades that call
- * `auth.api.*` with the incoming headers — a scoped credential additionally
- * gets a short-lived delegated Better Auth session, and the `Authorization`
- * header is rewritten to it. Other routes never need one and never pay for it.
- *
- * It verifies nothing itself: the credential, and the session for a session
- * caller, come from `CREDENTIAL_SCOPE`, which resolves each once per request.
- *
- * It does **not** decide what the credential may do: `PoliciesGuard` applies
- * the owner's roles and the global `ScopesGuard` applies the credential's
- * scopes.
+ * On a `@UsesBetterAuthSession()` route a scoped credential also gets a
+ * delegated Better Auth session, and `Authorization` is rewritten to it. It
+ * verifies nothing itself (`CREDENTIAL_SCOPE` resolves each credential once per
+ * request) and decides nothing: `PoliciesGuard` applies the owner's roles, the
+ * global `ScopesGuard` the credential's scopes.
  */
 @Injectable()
 export class ApiAuthGuard implements CanActivate {

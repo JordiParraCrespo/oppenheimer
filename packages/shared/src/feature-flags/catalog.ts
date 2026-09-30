@@ -4,7 +4,7 @@ import type { FlagDefinition, FlagValue } from './types.js';
  * The feature-flag catalog — every flag the code may read, and the only place
  * one is declared.
  *
- * A key here is what `useFlag`, `FeatureFlagsService.isEnabled` and
+ * A key here is what `useFeatureFlag`, `FlagEvaluatorPort.isEnabled` and
  * `@RequireFlag` accept, so a typo is a compile error and deleting a flag
  * breaks every reader that still names it. The database holds only targeting
  * for these keys; it cannot invent a flag the code does not know about, and a

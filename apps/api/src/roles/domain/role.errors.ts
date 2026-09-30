@@ -37,15 +37,10 @@ export const RoleErrors = {
     httpStatus: 403,
   },
   /**
-   * A system role the code depends on is not in the database — the migrations
-   * install them, so this means the deployment is behind the code.
-   *
-   * Distinct from `NOT_FOUND`, and deliberately a 500: `NOT_FOUND` is "the role
-   * you named does not exist", something the caller got wrong and can fix. This
-   * is the platform missing a role nobody named, which no request can act on.
-   * Every path that needs one — sign-up's default `user` grant, the org-scoped
-   * `owner` grant on both the provisioning and the hand-create paths — raises
-   * this one entry, so a single fault has a single shape.
+   * A system role the code depends on is not in the database: the migrations install
+   * them, so the deployment is behind the code. A 500, unlike `NOT_FOUND` (a role the
+   * caller named and can fix), because no request can act on it. Raised only through
+   * `missingSystemRole`, so a single fault has a single shape.
    */
   SYSTEM_ROLE_MISSING: {
     code: 'ROLE_007',

@@ -36,27 +36,18 @@ interface Resolution {
 /**
  * Turns the credential on a request into a {@link ScopeContext}.
  *
- * The kernel knows two kinds itself, because they are the ones it issues:
+ * The kernel knows the two kinds it issues: a browser session (cookie, or a
+ * session token as bearer), with no scope context so the person's roles
+ * govern; and an OAuth access token, verified by Better Auth's MCP plugin with
+ * its granted scopes. Every other kind is a {@link CredentialResolverPort}
+ * contribution, asked in registration order.
  *
- * - **Browser session** (cookie, or a session token presented as a bearer) —
- *   no scope context; the person's roles govern.
- * - **OAuth access token** — verified by Better Auth's MCP plugin, its granted
- *   scopes carried through.
- *
- * Every other kind is a **contribution** (a {@link CredentialResolverPort}),
- * asked in registration order whether the presented string is theirs. API
- * tokens (`oppenheimer_pat_…`) are the first such contribution; nothing here
- * names them.
- *
- * A bearer credential that cannot be resolved is rejected rather than ignored:
- * silently falling back to a cookie would let a stale token act with the
- * browser session's full rights, which is precisely what scoping exists to
- * prevent.
- *
- * Each credential is verified **once per request**, whoever asks: the global
- * scopes guard, `ApiAuthGuard`, a host guard. A session token presented as a
- * bearer is verified while ruling out an OAuth grant, and that verdict is the
- * session `ApiAuthGuard` authenticates with.
+ * A bearer credential that cannot be resolved is rejected, not ignored:
+ * falling back to a cookie would let a stale token act with the browser
+ * session's full rights. Each credential is verified once per request,
+ * whoever asks (the scopes guard, `ApiAuthGuard`, a host guard); a session
+ * token presented as a bearer is verified while ruling out an OAuth grant, and
+ * that verdict is the session `ApiAuthGuard` authenticates with.
  */
 @Injectable()
 export class CredentialScopeResolver implements CredentialScopePort {

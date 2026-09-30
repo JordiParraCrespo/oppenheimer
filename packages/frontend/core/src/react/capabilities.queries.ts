@@ -17,18 +17,15 @@ const capabilitiesKeys = {
 };
 
 /**
- * Which client-facing optional features the deployment has configured (OAuth
- * providers), from `GET /health/capabilities`.
+ * Which client-facing optional features (OAuth providers) the deployment has
+ * configured, from `GET /health/capabilities`, to hide UI this install cannot
+ * serve. It changes only on reconfigure and restart, so it is static for a
+ * page's lifetime. The read is public: it gates the login screen, before any
+ * session exists.
  *
- * Use this to hide UI for features this install cannot serve — a social
- * sign-in button for a provider with no credentials is a dead button. The set
- * only changes when the deployment is reconfigured and restarted, so it is
- * effectively static for the lifetime of a page.
- *
- * The read is public (it gates the login screen, before any session exists).
- * Note the failure semantics: an *error* here means the API was unreachable,
- * which says nothing about what is configured — callers must not treat a
- * failed read as "capability missing".
+ * An *error* means the API was unreachable, not that a capability is missing:
+ * treating it as an empty set would hide every provider on a deployment that
+ * has them all — a login page with no way in.
  */
 export function useDeploymentCapabilities<TData = ClientDeployment>(
   options?: Omit<UseQueryOptions<ClientDeployment, Error, TData>, 'queryKey' | 'queryFn'>,

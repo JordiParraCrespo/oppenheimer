@@ -7,12 +7,8 @@ import { HostCount } from '@/features/hosts/sections/host-count';
 /**
  * Settings: its own chrome beside the console
  * (`design/version1/Settings.dc.html`, `product/versions/mvp/05-screens.md`).
- * The sidebar is the settings nav — Back to console, then Account and
- * Workspace — and the main column is the frame each section fills.
- *
- * Under `_authenticated`, so the guard and the no-workspace redirect are the
- * ones every product screen goes through; `shell: 'own'` is how this layout
- * tells that route to render no `AppShell` around it, since the console's
+ * Under `_authenticated` for its guard and no-workspace redirect;
+ * `shell: 'own'` tells that route to render no `AppShell`, since the console's
  * rail and session list are not part of Settings.
  */
 export const Route = createFileRoute('/_authenticated/settings')({

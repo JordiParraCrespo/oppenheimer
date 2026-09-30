@@ -48,12 +48,12 @@ export function shouldRetryQuery(failureCount: number, error: unknown): boolean 
 }
 
 /**
- * Flipping the auth store is what sends the reader to /login: the router's
- * guards subscribe to it. Forgetting the cache is what keeps the next person
- * to sign in on this tab from seeing the previous account's sessions and
- * projects before their own arrive — a logout clears it too. The session
- * query is spared, as `reconcileCacheOwner` spares it, because it is the
- * record of who is signed in.
+ * `AuthService.expireSession` flips the auth store, and the router's guards
+ * send the user to /login from it.
+ * Forgetting the cache keeps the next person to sign in on this tab from
+ * seeing the previous account's sessions and projects before their own
+ * arrive — a logout clears it too. The session query is spared, as
+ * `reconcileCacheOwner` spares it, because it is the record of who is signed in.
  *
  * Does nothing while the store says nobody is signed in, so a 401 on the
  * sign-in screens — a wrong password, not an expired session — leaves them

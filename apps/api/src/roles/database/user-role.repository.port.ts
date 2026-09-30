@@ -27,31 +27,24 @@ export interface UserRoleRepositoryPort {
   ): Promise<void>;
 
   /**
-   * Make `roleId` the membership role (`MEMBERSHIP_ROLES` in `@oppenheimer/shared`) the user
-   * holds in exactly `organizationId` — what a roster change calls when a
-   * member's organization role moves.
-   *
-   * In one transaction: the user's assignments of the *other* membership roles
-   * scoped to that organization are removed, `roleId` is granted there, and the
-   * organization's role version is bumped. Nothing else is touched — not a
-   * custom role an admin assigned in that organization (even one the user also
-   * holds globally: the scoped row is its own grant), not a global assignment,
-   * not another organization's.
+   * Make `roleId` the membership role (`MEMBERSHIP_ROLES` in `@oppenheimer/shared`) the
+   * user holds in exactly `organizationId`. In one transaction: the user's other
+   * membership roles scoped there are removed, `roleId` is granted there and the
+   * organization's role version is bumped. Nothing else is touched: not a custom role
+   * assigned there (even one also held globally: the scoped row is its own grant), not a
+   * global assignment, not another organization's.
    */
   replaceMembershipRole(userId: string, organizationId: string, roleId: string): Promise<void>;
 
   /**
-   * Grant one role, leaving every other assignment the user holds alone.
+   * Grant one role, leaving every other assignment alone. Additive on purpose, unlike
+   * `setRolesForUser`: sign-up hands a new account its default role through it, which
+   * must not be able to revoke anything. Granting a role already held in that scope is a
+   * no-op, so it is safe to repeat.
    *
-   * Additive on purpose, and distinct from `setRolesForUser`: the caller is
-   * sign-up handing a new account its default role, which must not be able to
-   * revoke anything. Granting a role the user already holds in that scope is a
-   * no-op, so the operation is safe to repeat.
-   *
-   * `manager` enlists the grant in a transaction the caller already owns, which
-   * is what lets the personal workspace write its organization, its membership
-   * and this grant as one unit without a second writer against `user_role`.
-   * Omitted, the grant runs in its own transaction as any other write does.
+   * `manager` enlists the grant in the caller's transaction, so the personal workspace
+   * writes its organization, membership and this grant as one unit; omitted, the grant
+   * runs in its own.
    */
   assignRoleToUser(
     userId: string,

@@ -90,9 +90,8 @@ export class UsersModule {
    * providers: [...UsersModule.contributeAccountErasure([HostAccountErasure])]
    * ```
    *
-   * The same shape as `HostsModule.contributeUsage`: the implementation is
-   * built in the injector of the module that owns the rows, so it uses that
-   * module's own repository and nothing is published application-wide.
+   * Built in the injector of the module that owns the rows, so it uses that module's own
+   * repository and nothing is published application-wide.
    */
   static contributeAccountErasure(contributions: Type<AccountErasurePort>[]): Provider[] {
     return [

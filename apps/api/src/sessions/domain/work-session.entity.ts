@@ -77,25 +77,20 @@ export interface CreateWorkSessionProps {
 }
 
 /**
- * Work-session aggregate root — a terminal, an agent, and a set of checkouts.
+ * Work-session aggregate root: a terminal, an agent, and a set of checkouts.
  *
- * **`recordEvent` is the only mutator.** There is no `setState`, no `setName` and
- * no `setCwdCheckout`: every column of `work_session` is a projection of the
- * append-only log, so writing one directly would create a second truth that a
- * replay then disagrees with (`product/versions/mvp/03-control-plane.md`). That
- * includes which checkout the agent was launched in, and it includes the inputs
- * the sidebar's dot is computed from.
+ * **`recordEvent` is the only mutator.** No `setState`, `setName` or
+ * `setCwdCheckout`: every `work_session` column, launch checkout and sidebar inputs
+ * included, is a projection of the append-only log, and a direct write would be a
+ * second truth a replay disagrees with (`product/versions/mvp/03-control-plane.md`).
  *
- * The one thing that is not a fold is **adding a member**: a checkout is a row in
- * another table with its own unique constraints, and inserting it is not a
- * projection of anything. Retiring one is, because it is a consequence of an
- * event, so `session.checkout_removed` is what marks the child and steps the agent
- * out of it.
+ * The one non-fold is **adding a member**: a checkout is a row in another table with
+ * its own unique constraints. Retiring one follows from an event, so
+ * `session.checkout_removed` marks the child and steps the agent out of it.
  *
- * Rows are never hard-deleted. Closing records `session.closed`, the state folds
- * to `resolved` and the row stays for ever: `uq (organizationId, slug)` is the
- * tombstone that stops a new session inheriting a retired session's directory
- * name, and therefore a stranger's agent conversation state.
+ * Never hard-deleted: closing folds to `resolved` and the row stays, since
+ * `uq (organizationId, slug)` is the tombstone that stops a new session inheriting a
+ * retired directory name, and with it a stranger's agent conversation state.
  */
 export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
   /**

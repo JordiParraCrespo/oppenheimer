@@ -4,27 +4,22 @@ import { SESSION_EVENT_KINDS, type SessionLogEntry } from './session-state.polic
  * A session's turns, folded from its log
  * (`product/versions/mvp/16-automations-architecture.md` §Q4).
  *
- * A turn is one prompt given to the agent and what became of it. The states are
- * OpenAI's run states, because a turn is exactly their run: a session is the
- * thread, a turn is one run on it. An automation's run is the first turn of the
- * session it started.
- *
- * Like the session fold beside it, this is pure and total: the rows in
- * `session_turn` are a projection of `work_session_event`, written in the
- * transaction that appends the events, and a replay rebuilds them.
+ * A turn is one prompt given to the agent and what became of it; the states are
+ * OpenAI's run states (session = thread, turn = run). An automation's run is the
+ * first turn of the session it started. Pure and total like the session fold:
+ * `session_turn` rows are a projection written in the transaction that appends the
+ * events, and a replay rebuilds them.
  *
  * Two drives feed it:
  *
  * - **interactive** (today): the prompt rides the launch as the agent's first
- *   argument, and the only evidence of progress is what the screen manifest
- *   observes. The turn starts when the session starts, is waiting on a person
- *   while the agent is `blocked`, and completes when the manifest reports the
- *   turn finished (`done`) or the agent goes back to its prompt (`idle`) after
- *   having been seen working. It fails with the session, and is cancelled when
- *   the session is stopped or closed under it.
+ *   argument, and the only evidence is what the screen manifest observes. The turn
+ *   starts with the session, waits on a person while the agent is `blocked`, and
+ *   completes on `done`, or on `idle` after having been seen working. It fails with
+ *   the session and is cancelled when the session is stopped or closed under it.
  * - **headless** (the next slice): the runner reports `turn.started` and
- *   `turn.ended` with the wrapper's exit code, the result and the cost, which
- *   is evidence rather than inference and wins over everything above.
+ *   `turn.ended` with the exit code, result and cost, evidence that wins over the
+ *   inference above.
  */
 export const TURN_STATES = [
   'queued',

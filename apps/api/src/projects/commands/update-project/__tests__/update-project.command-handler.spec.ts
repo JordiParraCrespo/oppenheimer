@@ -130,8 +130,7 @@ describe('UpdateProjectCommandHandler', () => {
   });
 
   it('does not resurrect a project the write found retired', async () => {
-    // The row is the authority on whether the project is still active: the
-    // targeted update matches nothing, and a save must not report success —
+    // The targeted update matches nothing, and a save must not report success —
     // nor write a stale `archivedAt` over an archive that landed meanwhile.
     vi.mocked(projects.saveSettingsIfActive).mockResolvedValue(None);
 

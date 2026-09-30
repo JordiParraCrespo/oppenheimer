@@ -81,8 +81,6 @@ describe('ProvisionPersonalWorkspaceCommandHandler', () => {
   it('answers null when the repository declined to write', async () => {
     vi.mocked(workspaces.provision).mockResolvedValue(false);
 
-    // "Already had one" is a success for every caller: sign-up and the seed
-    // both provision the same account, and the seed is the repair path.
     await expect(service.execute(command)).resolves.toBeNull();
   });
 

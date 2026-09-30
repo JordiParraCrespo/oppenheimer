@@ -9,29 +9,16 @@ import {
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * New session, in a browser, against the real control plane.
+ * New session, in a browser, against the real control plane: a session created
+ * here is a row the API actually holds — in the project the page made, with the
+ * launch options the foot row was set to, the first task in its log, and a
+ * name derived from that task.
  *
- * What this covers that nothing else can: the screen's five pickers are bound
- * to four live reads and two writes, and a session created here is a row the
- * API actually holds — in the project the page made, with the launch
- * options the foot row was set to, the first task in its log, and a name
- * derived from that task.
- *
- * The only thing faked in the run is **GitHub**, which answers repositories and
- * branches live through an App this deployment does not have
- * (`support/github-stub.ts`). The browser, the console, the API's guards, its
- * Zod pipe and its Postgres are all the real ones.
- *
- * The run needs the stack up and the API pointed at the stub — see
- * `e2e/README.md`.
- *
- * An account with no machine is no longer a separate screen: the composer
- * renders either way and the host chip's foot action opens Add host, which is
- * `add-host.spec.ts`'s subject.
+ * Only GitHub is faked (`support/github-stub.ts`); the run needs the stack up
+ * and the API pointed at the stub (`e2e/README.md`).
  */
 test.describe('New session', () => {
   test('starts a session with the scope, the foot row and the first task', async ({ page }) => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const owner = await provisionedUser('newsession');
     const hostId = await pairHost(owner.api, 'E2E box');
@@ -43,16 +30,11 @@ test.describe('New session', () => {
     await expect(page.getByRole('heading', { name: 'New session' })).toBeVisible();
 
     // ── The prompt box has the size the export gives it ──────────────────────
-    // It lost that size once: `field-sizing-content` overrides the `rows`
-    // attribute, so an empty textarea collapsed to a single line while every
-    // class still looked right. Nothing in jsdom can catch it — it needs a
-    // browser that has applied the stylesheet — and the number is what
-    // `product/versions/mvp/design/_ds/…/terminal.css` states for
-    // `.op-composer__input`. Asserted here rather than in a spec of its own
-    // because the composer only renders once a host exists, and pairing a
-    // second one would trip the per-IP throttle this file already works around.
-    // 128px since the composer became tabbed (the scope band over the field
-    // grows the field to `min-h-32`, `[data-composer="tabbed"]` in console.css).
+    // `field-sizing-content` overrides `rows`, so an empty textarea once
+    // collapsed to one line with every class still right; only a browser that
+    // applied the stylesheet sees it. 128px is `min-h-32`, the tabbed composer
+    // (`[data-composer="tabbed"]` in console.css). Asserted here because the
+    // composer needs a host, and pairing another would trip the per-IP throttle.
     const composer = page.getByRole('textbox', { name: /Describe a task/ });
     expect((await composer.boundingBox())?.height, 'the empty composer is 128px tall').toBe(128);
 
@@ -184,7 +166,6 @@ test.describe('New session', () => {
   });
 
   test('offers the way to GitHub when there is a host but no repository', async ({ page }) => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const owner = await provisionedUser('norepo');
     await pairHost(owner.api, 'Lonely box');

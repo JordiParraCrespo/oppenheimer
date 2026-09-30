@@ -29,10 +29,8 @@ export function InstallationCard({
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className="figures text-sm text-fg">{installation.accountLogin}</span>
-          {/* The account is known before the count is. While it is in flight the
-            line names the account alone — "0 repositories" under a connection
-            that just succeeded reads as a failure, which is the case Ready was
-            written to avoid. */}
+          {/* The account alone while the count is in flight: see Ready's
+            repositories row in onboarding-ready.tsx. */}
           <span className="text-xs text-fg-muted">
             {installation.coversEveryRepository
               ? t('onboarding.flow.github.connectedAll')

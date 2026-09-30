@@ -18,15 +18,13 @@ export interface PairingTokenStatus {
 /**
  * What Add host polls while it says "Listening for this host…".
  *
- * One read answers both halves of the dialog: whether *this* token was spent,
- * and the machine it paired as the row will show it — name, platform, the tools
- * its preflight found. The list of tokens answered the first half and left the
- * console a second request for the second; asking for the host by the token
- * also keeps "the host list grew" out of it, which an account that already
- * owns a machine answers the moment the dialog opens.
+ * One read answers both halves of the dialog: whether *this* token was spent, and the
+ * machine it paired as the row will show it (name, platform, preflight tools).
+ * Asking for the host by the token keeps "the host list grew" out of it, which an
+ * account already owning a machine would answer the moment the dialog opens.
  *
- * Both reads are scoped, so a token or a host outside the caller's reach is
- * not found rather than confirmed.
+ * Both reads are scoped, so a token or host outside the caller's reach is not found
+ * rather than confirmed.
  */
 @QueryHandler(FindPairingTokenQuery)
 export class FindPairingTokenQueryHandler

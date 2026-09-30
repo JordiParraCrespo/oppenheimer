@@ -24,9 +24,8 @@ import { PROTOCOL_VERSION } from './version.js';
  *
  * The artifact is committed because the Go structs are generated from it
  * (`scripts/emit-link-protocol.cjs` → `apps/runner/internal/link/protocol.gen.go`),
- * so a wire change is a reviewable diff. The emission is wired into `build`
- * rather than a separate script precisely so it cannot be the step someone
- * forgets.
+ * so a wire change is a reviewable diff. The emission is part of `build` so it
+ * cannot be the step someone forgets.
  *
  * The link's constants ride along under `x-constants`, a vendor keyword JSON
  * Schema ignores: the close codes, the refusal header, the frame header, the
@@ -37,11 +36,8 @@ import { PROTOCOL_VERSION } from './version.js';
  * a defaulted field looks like before the default applies. `reused: 'ref'` puts
  * a schema used by more than one message — the session snapshot — under `$defs`
  * once and `$ref`s it, so a field added to it cannot land in `hello` and miss
- * `heartbeat`.
- *
- * There is no `unrepresentable` escape hatch any more: the one constraint that
- * used to need it, the 8 KB cap on an event payload, is now `maxLength` on a JSON
- * string and survives the trip.
+ * `heartbeat`. No `unrepresentable` option: the 8 KB event payload cap is
+ * `maxLength` on a JSON string and survives the trip.
  */
 export function toProtocolJsonSchema(): Record<string, unknown> {
   const emitted = z.toJSONSchema(protocolMessageSchema, {

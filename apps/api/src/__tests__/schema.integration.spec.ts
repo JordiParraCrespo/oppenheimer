@@ -6,18 +6,14 @@ import { DataSource } from 'typeorm';
 import { loadMigrations } from './run-migrations';
 
 /**
- * Rules the schema holds as a whole, checked on the schema the migrations
- * build — not on the entities, which are one of several things that write it.
- * A migration's raw SQL and the outbox's `EntitySchema` land in the same
- * catalogue, so this is the only place that sees all of them at once. The last
- * case reverts the migrations and applies them again, so every `down()` is
- * proven too.
+ * Rules the schema holds as a whole, checked on what the migrations build rather than
+ * on the entities: a migration's raw SQL and the outbox's `EntitySchema` land in the
+ * same catalogue, and only here are all of them seen at once. The last case reverts
+ * and reapplies the migrations, so every `down()` is proven too.
  *
- * The suite starts its own Postgres 16 container. Where Docker is not
- * available, `SCHEMA_TEST_DATABASE_URL` points it at a database you started
- * yourself instead (`postgres://user:pass@host:port/db`). That database must be
- * empty and disposable: the suite migrates it, writes rows and reverts
- * migrations.
+ * The suite starts its own Postgres 16 container. Without Docker,
+ * `SCHEMA_TEST_DATABASE_URL` (`postgres://user:pass@host:port/db`) points it at an
+ * empty, disposable database, which it migrates, writes rows to and reverts.
  */
 describe('the migrated schema (integration)', () => {
   let pgContainer: StartedTestContainer | undefined;

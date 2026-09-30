@@ -12,8 +12,7 @@ import { AutomationsSidebar } from '../sections/automations-sidebar';
  * (which automation is selected), the minute its ages move by, and the search
  * box.
  *
- * Runs in the `render-budget` project, without the React Compiler. The rows are
- * counted at `RoutineItem`, the design system's row.
+ * The rows are counted at `RoutineItem`, the design system's row.
  */
 
 vi.mock('react-i18next', () => ({

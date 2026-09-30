@@ -21,10 +21,6 @@ export interface CoreModuleConfig {
 
 export function createCoreModule(config: CoreModuleConfig): ContainerModule {
   return new ContainerModule(({ bind }) => {
-    // Authentication is cookie-based. On web the browser sends the session
-    // cookie automatically. Whatever the auth client
-    // returns from `getAuthHeaders()` is attached to every generated API
-    // request as well, for a client that cannot rely on a cookie jar.
     applyApiClientConfig({
       baseUrl: config.apiBaseUrl,
       credentials: 'include',

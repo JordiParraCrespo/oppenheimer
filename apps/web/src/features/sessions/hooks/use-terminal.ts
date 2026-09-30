@@ -4,30 +4,21 @@ import { useEffect, useRef, useState } from 'react';
 import { mountSessionTerminal } from '../lib/terminal-runtime';
 
 /**
- * Mounts a session terminal in `containerRef` for as long as the component
- * lives, and reports the stream's status.
+ * Mounts a session terminal (`mountSessionTerminal`) in `containerRef` for the
+ * component's lifetime and reports the link status.
  *
- * The terminal itself — xterm, its fit, keys, renderer, fonts and theme — is
- * `mountSessionTerminal`. What this adds is the React side: one effect
- * synchronising that imperative runtime with the component's lifetime, and
- * the one piece of state the pane renders: the link status.
+ * The grid's size is deliberately not state: a refit runs once per animation
+ * frame during a resize, and state there re-rendered the pane sixty times a
+ * second; the runtime hands the size straight to the PTY.
  *
- * The grid's size is deliberately not state. A refit runs once per animation
- * frame while the pane is resized, and state set there re-rendered the pane
- * sixty times a second for a value nobody drew; the runtime hands the size
- * straight to the PTY instead.
+ * The stream is *created* here so one effect owns one lifetime: a stream held
+ * in state and closed by a second effect does not survive StrictMode's
+ * remount, and the next terminal renders blank in development.
+ * `createStream` must be a stable reference.
  *
- * The stream is *created* here rather than passed in, so that one effect owns
- * one lifetime. A stream held in state and closed by a second effect does not
- * survive StrictMode's remount: the cleanup closes it, and the terminal that
- * mounts next subscribes to something already shut, which renders blank in
- * development and nowhere else. `createStream` must be a stable reference.
- *
- * `retryNow` is the reader's way past a wait: while the stream is between
- * reconnects it dials at once, and after an end it opens a new stream. The
- * browser coming back online, or the tab becoming visible again, does the
- * first on its own — a laptop that wakes should not sit out a thirty-second
- * rung of the ladder.
+ * `retryNow` dials at once between reconnects and opens a new stream after an
+ * end. Coming back online or visible does the first on its own, so a waking
+ * laptop does not sit out a thirty-second rung of the ladder.
  */
 export function useTerminal(
   createStream: () => SessionStream,
@@ -49,8 +40,6 @@ export function useTerminal(
   const [generation, setGeneration] = useState(0);
   const streamRef = useRef<SessionStream | null>(null);
   // Read through a ref so a new callback identity never rebuilds the terminal.
-  // Written after commit, not during render: a ref written in render is one of
-  // the things the React Compiler silently refuses to compile.
   const onEndRef = useRef(options.onEnd);
   const onImageRef = useRef(options.onImage);
   useEffect(() => {

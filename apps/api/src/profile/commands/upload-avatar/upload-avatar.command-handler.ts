@@ -49,8 +49,6 @@ export class UploadAvatarCommandHandler
 
     user.updateProfile({ avatarUrl: key });
     await this.userRepository.save(user);
-    // Better Auth caches each session with a copy of the user; bring the
-    // copies in line with the row just written.
     await this.sessionCache.refreshUser(user.id);
 
     if (previousKey && previousKey !== key) {

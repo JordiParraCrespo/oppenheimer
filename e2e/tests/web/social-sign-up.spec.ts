@@ -3,17 +3,13 @@ import { expect, test } from '@playwright/test';
 /**
  * A social sign-in that the API refused comes back as a redirect with
  * `?error=<code>` on it — the only channel a redirect has. These specs drive
- * that landing directly, because the half worth testing is what the app does
- * with the code, and the half that is not is Google's consent screen.
+ * that landing directly: what matters is what the app does with the code, not
+ * Google's consent screen. The two codes are the ones the auth config raises
+ * on purpose (`disableImplicitSignUp` and `requireLocalEmailVerified` in
+ * `apps/api/src/auth/infrastructure/better-auth.config.ts`).
  *
- * The two codes below are the ones the auth config raises on purpose
- * (`disableImplicitSignUp` and `requireLocalEmailVerified` in
- * `apps/api/src/auth/infrastructure/better-auth.config.ts`); both used to leave the reader on a screen that
- * said nothing.
- *
- * Nothing here asserts the provider buttons themselves: they render from the
- * deployment's capability read, so a stack without `GOOGLE_CLIENT_ID` — which
- * is most of them — would fail a test that has nothing to do with credentials.
+ * The provider buttons are not asserted: they render from the deployment's
+ * capability read, so a stack without `GOOGLE_CLIENT_ID` would fail.
  */
 
 test('a Google account with no user here is sent to register, not left on login', async ({

@@ -7,17 +7,11 @@ import { ConsoleDialogProvider } from '@/lib/console';
 import { SessionsSidebar } from '../sections/sessions-sidebar';
 
 /**
- * The sessions sidebar's render budget, one assertion per clock.
- *
- * The sidebar is a list on four clocks: the sessions query (a two-second poll
- * while anything is starting, and a refetch on every window focus), the route
- * (which row is highlighted), the minute its ages move by, and the search box. It used to redraw
- * every row on the first two and never on the third: each poll handed every
- * row a new entity, the sidebar subscribed to the whole pathname, and each age
- * read the clock during render where nothing could tell it to move.
- *
- * Runs in the `render-budget` project, without the React Compiler. The rows are
- * counted at `SessionItem`, the design system's row.
+ * The sessions sidebar's render budget, one assertion per clock: the sessions
+ * query (a poll while anything starts, a refetch on window focus), the route,
+ * the minute ages move by, and the search box. It guards against a poll
+ * handing every row a new entity, a subscription to the whole pathname, and
+ * ages reading the clock in render. Rows are counted at `SessionItem`.
  */
 
 vi.mock('react-i18next', () => ({

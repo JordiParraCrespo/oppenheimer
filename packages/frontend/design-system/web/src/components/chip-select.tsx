@@ -7,38 +7,6 @@ import { cn } from '../lib/utils';
 import { Link } from './link';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
-/**
- * ChipSelect — a scope decision stated as a chip: "Run X on host **mac-studio**,
- * repo **xrp-mobile**, branch **main**, with **Claude Code**". Four of them in a
- * row on New session, so the row reads as a sentence instead of a form.
- *
- * Every one of them filters. The trigger is a 34px chip at the 14px radius on
- * the control fill with a leading icon, the current value and a chevron; open,
- * it takes the blue ring. The popup is a 248px listbox: a sticky search row on
- * top, options with a label, an optional leading mark, a muted second line
- * where the value alone is not enough, and a check on the selected one; a
- * centred "No host matches." line when the query finds nothing; and, when the
- * list can grow, a pinned action band at the foot ("Add host…") with a plus and
- * a chevron, because it opens something rather than choosing.
- *
- * Built on Popover rather than Base UI Select, which has no filtering. The
- * parts (`ChipSelectTrigger`, `ChipSelectPopup`, `ChipSelectSearch`,
- * `ChipSelectItem`, …) are exported so a picker with more than one pane, such
- * as `RepositorySelect`, is the same chip and the same rows.
- *
- * ```tsx
- * <ChipSelect
- *   value={host}
- *   onValueChange={setHost}
- *   options={hosts}
- *   icon={<CpuIcon />}
- *   aria-label="Host"
- *   searchPlaceholder="Search hosts…"
- *   emptyText="No host matches."
- *   action={{ label: 'Add host…', onSelect: openAddHost }}
- * />
- * ```
- */
 type ChipSelectOption = {
   value: string;
   label: string;
@@ -67,14 +35,12 @@ type ChipSelectAction = {
  *
  * `chip` is the scope pickers on New session: a 248px listbox under a 34px
  * chip, 13px rows at 1.35, an underlined search row, the current row in blue.
- * `menu` is the composer's engine button: a 252px pane of 13px rows at 1.47
- * with a tighter back row, a full-bleed search hairlined on both edges, and
- * the check as the only blue thing — because the export draws that one as a
- * menu rather than as a chip's listbox.
+ * `menu` is the composer's engine button, which the export draws as a menu: a
+ * 252px pane of 13px rows at 1.47 with a tighter back row, a full-bleed search
+ * hairlined on both edges, and the check as the only blue thing.
  *
- * It is one prop rather than a class list per call site: a menu is not a chip
- * with six overrides, and the last time it was, every new measurement landed
- * as another `className` in `AgentModelSelect`.
+ * One prop rather than a class list per call site: a menu is not a chip with
+ * six overrides.
  */
 type ChipSelectDensity = 'chip' | 'menu';
 
@@ -106,6 +72,7 @@ const TRIGGER_CLASSES =
 const TAB_TRIGGER_CLASSES =
   'group/chip-select inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-sm px-2.5 text-[13px] whitespace-nowrap text-fg-muted outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface hover:text-fg data-popup-open:bg-hover-surface data-popup-open:text-fg focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0';
 
+/** `chip` on its own; `tab` is the borderless form inside the composer's scope band. */
 type ChipSelectTriggerVariant = 'chip' | 'tab';
 
 /** The chip. Pass `open` so the ring follows the popup. */
@@ -121,7 +88,6 @@ function ChipSelectTrigger({
   icon?: React.ReactNode;
   open?: boolean;
   placeholder?: React.ReactNode;
-  /** `tab` is the borderless form inside the composer's scope band. */
   variant?: ChipSelectTriggerVariant;
 }) {
   const empty = children === null || children === undefined || children === '';
@@ -351,14 +317,10 @@ function ChipSelectItem({
 
 /**
  * The one line a pane shows instead of rows: "No host matches.", or — with
- * `live` — "Loading hosts…" while the list is still being read.
- *
- * `live` is one part rather than two because the difference is what the line
- * says and whether a screen reader is told it changed, not how it is drawn.
- * It exists at all because the alternative reads as broken: a chip disabled
- * until its query settles is indistinguishable from one the workspace may not
- * use, and "No repository matches." while the repositories are in flight is
- * simply false.
+ * `live`, announced to screen readers — "Loading hosts…" while the list is
+ * still being read. Without it a chip disabled until its query settles looks
+ * like one the workspace may not use, and "No repository matches." while the
+ * repositories are in flight is false.
  */
 function ChipSelectEmpty({
   live,
@@ -378,17 +340,13 @@ function ChipSelectEmpty({
 /**
  * The body of a pane: its rows, or the one line saying why there are none.
  *
- * Every picker here had the same three-branch ternary — loading, rows, empty —
- * and a fourth was one copy away, so it lives once. `rows` caps the box in
- * rows of the density rather than at a round number of pixels, and it is sized
- * from `total` (the pane's whole list) rather than from what a search has left
- * standing, or the box would resize under the cursor with every keystroke.
+ * `rows` caps the box in rows of the density, sized from `total` (the pane's
+ * whole list) rather than from what a search left, or the box would resize
+ * under the cursor with every keystroke.
  *
- * The list is the only part of a pane that scrolls. When the popup's height
- * caps it, the list shrinks inside it and scrolls on its own, so the back row
- * and search above it and the action band below never move and no row slides
- * underneath them. Scrolling the whole popup instead left the rows visible in
- * its padding above the sticky search.
+ * The list is the only part of a pane that scrolls, so the back row, search and
+ * action band never move and no row slides under them; scrolling the whole
+ * popup left rows visible in its padding above the sticky search.
  */
 function ChipSelectList({
   density = 'chip',
@@ -568,6 +526,35 @@ const ChipSelectOptionRow = React.memo(function ChipSelectOptionRow({
   );
 });
 
+/**
+ * ChipSelect — a scope decision stated as a chip: "Run X on host **mac-studio**,
+ * repo **xrp-mobile**, branch **main**, with **Claude Code**". Four in a row on
+ * New session, so the row reads as a sentence instead of a form.
+ *
+ * Every one filters. The trigger is a 34px chip at the 14px radius on the
+ * control fill (leading icon, value, chevron), with the blue ring when open.
+ * The popup is a 248px listbox: a sticky search row, options with an optional
+ * leading mark and muted second line, a check on the selected one, a centred
+ * empty line, and, when the list can grow, a pinned action band ("Add host…")
+ * with a plus and a chevron, because it opens something rather than choosing.
+ *
+ * Built on Popover because Base UI Select has no filtering. The parts are
+ * exported so a multi-pane picker such as `RepositorySelect` is the same chip
+ * and rows.
+ *
+ * ```tsx
+ * <ChipSelect
+ *   value={host}
+ *   onValueChange={setHost}
+ *   options={hosts}
+ *   icon={<CpuIcon />}
+ *   aria-label="Host"
+ *   searchPlaceholder="Search hosts…"
+ *   emptyText="No host matches."
+ *   action={{ label: 'Add host…', onSelect: openAddHost }}
+ * />
+ * ```
+ */
 function ChipSelect({
   options,
   value,

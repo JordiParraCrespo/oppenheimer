@@ -10,35 +10,22 @@ import { ACCESS_GRANT_REPOSITORY } from '../authz.di-tokens';
 import type { AccessGrantRepositoryPort } from '../database/access-grant.repository.port';
 
 /**
- * Everything is resolved in **one organization**, `input.organizationId`,
- * which `AccessScopeInterceptor` fills from the request's tenant — the same
- * organization `PoliciesGuard` built the caller's ability in (on an
- * `@OrganizationScoped` route, the one the path names). Teams, roles and grants
- * are all read in it, so the scope and the ability never describe two
- * different tenants.
+ * Everything is resolved in **one organization**, `input.organizationId`: the
+ * request's tenant, filled by `AccessScopeInterceptor`, which `PoliciesGuard`
+ * built the ability in, so the scope and the ability never describe two
+ * tenants. It composes the caller's teams there (`teamMember` joined to
+ * `team`, one query) with unexpired `access_grant` rows there addressed to the
+ * caller, one of their teams, or a role they hold there.
  *
- * Composes two sources:
+ * **Nothing here is cached.** Better Auth writes team membership outside any
+ * application transaction, so nothing reaches the outbox to invalidate on,
+ * and a cached `teamIds` would keep granting a removed member that team's
+ * rows. Two indexed queries on hot rows are cheaper than that bug.
  *
- * 1. **Structural** — the teams the caller belongs to in that organization.
- *    No new tables: `teamMember` joined to `team`, in one query.
- * 2. **Explicit** — unexpired `access_grant` rows in that organization
- *    addressed to the caller directly, to one of their teams or to a role they
- *    hold there (global, or scoped to that organization), read through the
- *    aggregate's port.
- *
- * **Nothing here is cached.** Team membership is written by Better Auth
- * (`auth.api.addTeamMember` / `removeTeamMember`) outside any application
- * transaction, so it stages nothing on the outbox and there is no event to
- * invalidate on: a cached `teamIds` would keep granting a removed member that
- * team's rows. Two indexed queries against rows already hot in the pool are
- * cheaper than that bug. `access_grant` is read fresh too.
- *
- * The caller's **role ids** normally arrive in `input.roleIds`:
- * `AccessScopeInterceptor` takes them from `AbilityFactory`, which resolved
- * them for the ability — from its Redis cache, keyed on the organization's
- * `roleVersion`, the global role catalog's version and the user's, all bumped
- * in the same transaction as the writes the application owns. Without them
- * (another caller of the port), `user_role` is read here.
+ * Role ids normally arrive in `input.roleIds` from `AbilityFactory`'s cache
+ * (keyed on the organization's `roleVersion`, the global catalog's and the
+ * user's, bumped in the same transaction as the writes); without them,
+ * `user_role` is read here.
  */
 @Injectable()
 export class ScopeResolver implements ScopeResolverPort {

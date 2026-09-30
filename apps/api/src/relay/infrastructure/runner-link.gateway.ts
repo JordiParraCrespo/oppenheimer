@@ -93,21 +93,16 @@ export const MIN_SUPPORTED_PROTOCOL = PROTOCOL_VERSION;
 /**
  * The server half of the runner link.
  *
- * The handshake is the boot assertion as a bearer, verified by the hosts
- * module's port — the same credential `DELETE /hosts/self` takes, verified
- * exactly once per dial because verifying burns the `jti`. A socket that
- * presents none is refused before the upgrade, so it never costs a frame.
- *
- * The assertion says *which* host is dialling, and whether that host has been
- * unpaired — an unpaired host still authenticates, because its own uninstall
- * has to. The handshake refuses one with `410`, the runner's cue to stop
- * dialling rather than walk its ladder forever. One unpaired while connected
- * is closed with `4410`, the same answer after the upgrade
+ * The handshake is the boot assertion as a bearer, verified by the hosts module's
+ * port exactly once per dial, because verifying burns the `jti`. A socket presenting
+ * none is refused before the upgrade. An unpaired host still authenticates (its
+ * uninstall must), and the handshake refuses it with `410`, the runner's cue to stop
+ * dialling; one unpaired while connected is closed with `4410`
  * (`RUNNER_LINK_CLOSE_CODES`).
  *
- * After the upgrade the first frame must be `hello`; anything else, or nothing
- * within the timeout, closes the socket. A runner below `MIN_SUPPORTED_PROTOCOL`
- * is refused **with** `update_required` rather than dropped (01).
+ * The first frame after the upgrade must be `hello`; anything else, or nothing
+ * within the timeout, closes the socket. A runner below `MIN_SUPPORTED_PROTOCOL` is
+ * refused **with** `update_required` rather than dropped (01).
  */
 @Injectable()
 export class RunnerLinkGateway {

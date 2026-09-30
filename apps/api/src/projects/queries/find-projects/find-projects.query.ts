@@ -1,10 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
 
-/**
- * The scope travels on the query rather than being resolved in the handler: it is
- * request state the controller already has.
- */
 export class FindProjectsQuery extends QueryBase {
   readonly scope: AccessScope;
   /** Retired projects are left out unless the caller is looking at the history. */

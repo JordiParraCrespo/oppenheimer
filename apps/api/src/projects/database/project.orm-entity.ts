@@ -17,8 +17,7 @@ import {
  *
  * `UQ_project_organization_slug` keeps a project's slug unique in its workspace
  * for ever: a slug is the project's stable handle and is never reissued, so an
- * archived project keeps it. A project is metadata only; nothing on a host is
- * named after it.
+ * archived project keeps it.
  */
 @Entity('project')
 @Index(['organizationId'])
@@ -52,10 +51,6 @@ export class ProjectOrmEntity {
   @Column({ type: 'uuid', nullable: true })
   createdByUserId!: string | null;
 
-  /**
-   * The host a new session is offered. A suggestion, never a grant: creating a
-   * session still loads the host through the caller's own-or-grant scope.
-   */
   @Column({ type: 'uuid', nullable: true })
   defaultHostId!: string | null;
 

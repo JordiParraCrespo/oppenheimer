@@ -40,16 +40,12 @@ import { ProjectRepositoriesField } from '../sections/project-repositories-field
 import { DeleteProjectDialog } from './delete-project';
 
 /**
- * New project and Project settings, once the project it edits is known
- * (`ProjectDialog` reads it, and keys this so a different project is a fresh
- * form rather than one reset by an effect).
- *
- * This owns the two writes and the form's store, and reads no field. Every
- * field is its own file and binds its own value from the form: one that lists
- * something the API holds (the repositories, the hosts) is a section and reads
- * its own query; one drawn from the form alone (the name, the agents) is a
- * component. Save watches the name, the fold's summary watches the defaults,
- * so a keystroke or a pick renders the part that shows it and not the dialog.
+ * New project and Project settings once the project is known; `ProjectDialog`
+ * keys this per project so another project is a fresh form, not an effect
+ * reset. It owns the two writes and the form's store and reads no field: each
+ * field binds its own value (a section when it lists API data, a component
+ * when it reads only the form), so a keystroke or a pick renders the part that
+ * shows it and not the dialog.
  */
 export function ProjectEditorDialog({
   project,

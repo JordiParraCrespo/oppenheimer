@@ -38,14 +38,11 @@ const NO_DETAILS: HostDetails = {
 
 /**
  * A host as the console needs it: a machine the user owns that runs sessions
- * (`product/versions/mvp/00-scope.md`). A host is paired with one pasted
- * install command carrying a registration token, and appears here once its
- * runner connects.
+ * (`product/versions/mvp/00-scope.md`), which appears once its runner connects.
  *
- * The API reports `online` as a boolean rather than a state word, so that is
- * what this carries. `pairing` was a third state in the design note; on the
- * wire a host simply does not exist until its runner has registered, which is
- * the same fact told a shorter way.
+ * `online` is a boolean because the API reports it so. The design note's
+ * `pairing` state has no wire form: a host does not exist until its runner has
+ * registered.
  */
 export class HostEntity {
   constructor(
@@ -90,7 +87,9 @@ export interface HostPairingToken {
 /**
  * What Add host hands the person: a registration token, already baked into
  * both the command a human pastes into a terminal and the same instruction
- * phrased for a coding agent that is already running on the machine.
+ * phrased for a coding agent that is already running on the machine. The
+ * secret is shown once and only the server knows it, so no surface assembles
+ * either string.
  */
 export interface HostPairing {
   /** The pairing token's own id, for revoking it. */

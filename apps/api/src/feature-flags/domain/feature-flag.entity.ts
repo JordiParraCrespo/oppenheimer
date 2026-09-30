@@ -32,16 +32,11 @@ export interface FlagChange {
 }
 
 /**
- * A flag's targeting on this deployment.
- *
- * The flag's *existence* is the catalog's business (`FEATURE_FLAGS` in
- * `@oppenheimer/shared`); this aggregate is the part an operator edits. A row is
- * created the first time someone saves targeting for a key, so a fresh install
- * has none and every flag serves its default.
- *
- * Every change raises {@link FlagConfigurationChangedDomainEvent} with the
- * before and after, so nothing about who-changed-what depends on the caller
- * remembering to log it.
+ * A flag's targeting on this deployment. The flag's existence is the catalog's
+ * (`FEATURE_FLAGS` in `@oppenheimer/shared`); a row is created the first time someone
+ * saves targeting for a key, so a fresh install has none and every flag serves its
+ * default. Every change raises {@link FlagConfigurationChangedDomainEvent} with the
+ * before and after, so the audit never depends on the caller remembering to log it.
  */
 export class FeatureFlagEntity extends AggregateRoot<FeatureFlagProps> {
   static create(create: CreateEntityProps<FeatureFlagProps>): FeatureFlagEntity {

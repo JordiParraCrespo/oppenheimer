@@ -4,17 +4,13 @@ import { CODING_AGENT_IDS } from '../agents/catalog.js';
 /**
  * The nouns more than one schema spells, defined once.
  *
- * Two of them were duplicated before and are the reason this file exists: a
- * GitHub repository id was written out in both the session DTO and the wire, and
- * host facts were a structured shape on the wire but an opaque bag on
- * registration. Both are single definitions now.
- *
  * The bare constants below are exported because the protocol module cannot
  * import these schema *objects* — it is built on a different Zod entry point —
  * but it can and does build its own from the same numbers and tuples, and
  * `src/__tests__/cross-version-primitives.spec.ts` asserts the two agree.
  *
- * Schemas state the constraint only, never a message (`.agents/rules/forms.md`).
+ * Every schema in this folder states the constraint only, never a message:
+ * a stated message defeats the translated error map (`.agents/rules/forms.md`).
  */
 
 /** Bounds shared with the wire. Change them here and the conformance spec follows. */
@@ -28,17 +24,11 @@ export const FIELD_BOUNDS = {
   /**
    * The first task somebody types into the composer.
    *
-   * **Bytes, not characters, and 2 KB because that is what already exists.**
-   * `02-runner.md` §7 caps `prompt.first` at 2 KB, and every
-   * `work_session_event` payload is capped at 8 KiB of serialized JSON. A
-   * character bound cannot honour either: four bytes per character is legal
-   * UTF-8, so a 16,000-character prompt — which an earlier draft of this
-   * allowed — passes the route, commits the session, and then has its
-   * `prompt.first` entry *rejected* by the log. The session exists, nothing
-   * records the task, and neither the namer nor the host ever sees it.
-   *
-   * So the bound is the one the log can actually keep, measured the way the
-   * log measures it.
+   * **Bytes, not characters**, because the log measures bytes: `02-runner.md`
+   * §7 caps `prompt.first` at 2 KB, and every `work_session_event` payload at
+   * 8 KiB of serialized JSON. A character bound lets a prompt of four-byte
+   * characters pass the route and commit the session, then have its
+   * `prompt.first` entry rejected by the log, so nothing records the task.
    */
   prompt: { min: 1, maxBytes: 2 * 1024 },
 } as const;
@@ -157,19 +147,15 @@ export type HostToolDto = z.infer<typeof hostToolSchema>;
  * This mirrors `Facts` in `apps/runner/internal/host/domain/facts.go` key for key
  * and tag for tag, because the runner marshals that struct whole into
  * `POST /hosts/register` and into `hello`/`heartbeat`. The register JSON is the
- * runner's to define; this schema follows it. An earlier version invented
- * `hostname`/`os`/`arch` with a `tools` map and an `agents` array, which no
- * runner has ever sent — a real registration would have been a 400.
+ * runner's to define; this schema follows it, or a real registration is a 400.
  *
- * Agents installed on a host are read from `tools` — the names `ProbedTools` in
- * `facts.go` reports, an agent's being its catalog `command` — and there is no
- * separate agents key; that is what the console consumes for the agent chip.
- * The blank terminal needs no tool of its own.
+ * Installed agents are read from `tools` (the names `ProbedTools` in `facts.go`
+ * reports, an agent's being its catalog `command`); there is no agents key.
  *
  * Two deliberate loosenings, both so that a truthful runner cannot be refused:
  *
  * - the non-`omitempty` strings accept `''`. Go always emits those keys, and
- *   `workspacePath` genuinely can be empty (`service.go` guards `s.workspace !== ''`
+ *   `workspacePath` genuinely can be empty (`service.go` guards `s.workspace != ""`
  *   before measuring disk), so a `min(1)` here would 400 exactly the host this
  *   change exists to admit;
  * - `tools` accepts `null`. A nil Go slice marshals to `null`, not `[]`, and the

@@ -25,16 +25,10 @@ import {
 const SORTS: SessionSort[] = ['recent', 'oldest', 'name'];
 
 /**
- * The filter button beside the session count, and the menu it opens.
- *
- * Both are the artboard's `.op-iconbtn-sm` and `.op-filtermenu`: a 24px
- * square-cornered button carrying a 15px glyph, lit while the menu is open
- * *or* while anything is being hidden, over a 230px menu of three facets, an
- * order and a way back to all of them. Each facet names its current value on
- * the row and opens its choices beside it.
- *
- * Props only — the sidebar owns the filters, because it is the thing that
- * renders what they narrow.
+ * The filter button beside the session count and its menu (the artboard's
+ * `.op-iconbtn-sm` and `.op-filtermenu`). The button is lit while the menu is
+ * open *or* while anything is hidden. Props only: the sidebar owns the
+ * filters, because it renders what they narrow.
  */
 export function SessionsFilterMenu({
   filters,

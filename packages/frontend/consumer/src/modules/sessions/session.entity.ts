@@ -57,7 +57,6 @@ export class SessionCheckoutEntity {
     /** A display snapshot of `owner/repo` from when the checkout was created. */
     public readonly repositoryFullName: string,
     public readonly directoryName: string,
-    /** What the session's branch was created from. */
     public readonly baseBranch: string,
     /** Always the session's own branch, never the base. */
     public readonly branch: string,

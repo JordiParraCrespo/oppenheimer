@@ -3,19 +3,14 @@ import { useEffect, useRef } from 'react';
 /**
  * Runs `handler` when a key combination is pressed anywhere in the document.
  *
- * A global shortcut is one of the few things a component cannot express as
- * markup: the keystroke lands on whatever is focused, or on `body`, never on
- * the component that answers it. So the listener is a subscription to the
- * document, which is the one job `useEffect` is for — this hook is where that
- * effect lives, so components stay free of them.
+ * The keystroke lands on whatever is focused, never on the component that
+ * answers it, so the listener is a subscription to the document; the effect
+ * lives here so components stay free of them.
  *
- * The subscription is made once. `handler` and `matches` are read through a
- * ref an effect keeps current (not the render: a ref written during render
- * makes the React Compiler skip the hook), because a caller passes an inline
- * `() => setOpen(true)` — a new function every render — and an effect that
- * depended on it would tear the document listener down and put it back on
- * every render of the shell. The effect's job is "a document keydown listener
- * exists", not "rebind whenever the parent rerenders".
+ * It subscribes once. `handler` and `matches` are read through a ref an effect
+ * keeps current (a ref written during render makes the React Compiler skip the
+ * hook), because callers pass an inline `() => setOpen(true)`, and depending
+ * on it would rebind the document listener on every render of the shell.
  *
  * The default `matches` is ⌘K / Ctrl+K.
  */

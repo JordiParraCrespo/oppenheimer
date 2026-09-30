@@ -105,16 +105,14 @@ export class HostRepository
   }
 
   /**
-   * `redeemedHostId` is written by the same statement, so a lost response is not
-   * a lost host: the retry finds the token spent, matches the fingerprint it
-   * presents, and is handed the host that already exists.
+   * `redeemedHostId` is written by the same statement, so a lost response is not a
+   * lost host: the retry finds the token spent, matches its fingerprint, and gets the
+   * existing host.
    *
-   * The transaction is `OutboxService.transaction` rather than
-   * `writeWithEvents`, which skips the explicit transaction when an aggregate
-   * happens to carry no events. That is the right default for a single
-   * statement and the wrong one for these two, whose whole point is committing
-   * together — so the events are staged inside the transaction this method
-   * owns, and the relay is woken after it commits.
+   * `OutboxService.transaction`, not `writeWithEvents`, which skips the explicit
+   * transaction when an aggregate carries no events: these two writes must commit
+   * together, so the events are staged in this method's transaction and the relay is
+   * woken after commit.
    */
   async redeemAndRegister(input: RedeemAndRegisterInput): Promise<Option<HostEntity>> {
     const hostId = randomUUID();

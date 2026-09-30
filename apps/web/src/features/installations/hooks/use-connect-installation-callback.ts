@@ -4,28 +4,22 @@ import { useEffect, useRef } from 'react';
 
 /**
  * Exchange the `installation_id`, `code` and `state` GitHub put on the return
- * leg.
+ * leg, once per state: both are one-shot and a second POST fails, so
+ * `exchanged` guards against React's dev double invoke and a mid-flight
+ * re-render.
  *
- * It runs once per state: `exchanged` guards against React's double invoke in
- * development and against a re-render mid-flight, because the state and the
- * code are both one-shot and a second POST with them fails.
+ * **No state, no post.** The state is the nonce this console minted on
+ * Connect; a callback without one (someone else's half-finished install link,
+ * GitHub's own "Configure" redirect) would connect whoever's installation it
+ * is to this workspace, so the hook reports `unstarted` instead.
  *
- * **No state, no post.** The state is the nonce this console minted when the
- * reader pressed Connect; a callback without one was not started here — a link
- * someone else stopped halfway through their own install, or GitHub's own
- * "Configure" redirect. Posting it would connect whoever's installation it is
- * to this workspace, so the hook reports `unstarted` and the step says so.
+ * The parameters are cleared on success only, so a failed exchange can still
+ * tell a refusal from never having tried; the guard already stops a refresh
+ * re-posting a dead code. Clearing is the route's (`onExchanged`): it owns the
+ * search and what else the URL must keep.
  *
- * The parameters are cleared **on success only**. They are spent either way,
- * but a failed exchange still needs to say which attempt failed: dropping them
- * leaves the step reading "not connected" under a generic alert, with no way
- * to tell a refusal from never having tried. The guard already stops a refresh
- * from re-posting a dead code. Clearing them is the route's (`onExchanged`):
- * the search is its, and it knows what else the URL carries that must survive
- * the rewrite.
- *
- * Returns the installation it connected, so the caller renders the row it just
- * wrote rather than guessing at the head of a list.
+ * Returns the installation it connected, so the caller renders that row rather
+ * than guessing at the head of a list.
  */
 export function useConnectInstallationCallback(
   githubInstallationId?: number,

@@ -1,13 +1,9 @@
 /**
- * Platform-agnostic analytics contract.
- *
- * Each platform adapts its provider SDK — `posthog-js` in the browser — to
- * this interface, which is then injected into the DI container. Feature flags
- * are not part of it: they are evaluated by the API (see the `feature-flags`
- * module), so a blocked or missing analytics SDK can never turn a kill switch
- * back on. Keeping the boundary here means the rest of the frontend package
- * never imports a vendor SDK directly, so swapping providers is a change in
- * one file per platform rather than a refactor.
+ * Platform-agnostic analytics contract: each platform adapts its provider SDK
+ * (`posthog-js` in the browser) to it, so the rest of the frontend never
+ * imports a vendor SDK. Feature flags are not part of it: the API evaluates
+ * them (the `feature-flags` module), so a blocked analytics SDK can never turn
+ * a kill switch back on.
  */
 
 /**

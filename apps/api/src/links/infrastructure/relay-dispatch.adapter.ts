@@ -28,16 +28,14 @@ const NOT_SUPPORTED: SessionDispatchOutcome = { delivered: false, hints: ['not_s
 /**
  * `SessionDispatchPort` over the runner link.
  *
- * It **writes nothing**, like the pending adapter it replaces: one user action
- * is one log entry, appended by the command handler in its own transaction. What
- * this adapter adds is an honest `delivered`: `true` means the frame was queued
- * on a live link to the session's host, `false` with `host_offline` means there
- * is no such link right now. A session created while its host is offline keeps
- * its task in the log; the hello reconciliation is where that job is delivered
- * later, which is a later slice (`02-runner.md` §4).
+ * It **writes nothing**: one user action is one log entry, appended by the command
+ * handler in its own transaction. `delivered: true` means the frame was queued on a
+ * live link to the session's host; `false` with `host_offline` means no such link
+ * now. A session created while its host is offline keeps its task in the log, and
+ * the hello reconciliation (`SessionReconciliationResolver`) dispatches it again.
  *
- * Every command carries a fresh `commandId`; the runner is idempotent by session
- * id and command id, so a reconnect that redelivers is harmless.
+ * Every command carries a fresh `commandId`; the runner is idempotent by session id
+ * and command id, so a reconnect that redelivers is harmless.
  */
 @Injectable()
 export class RelayDispatchAdapter implements SessionDispatchPort {

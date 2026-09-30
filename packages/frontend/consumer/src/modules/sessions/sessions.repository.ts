@@ -20,15 +20,10 @@ import { type SessionStartEntry, settlesStart, toStartEntry } from './session-st
 import { SessionsErrors } from './sessions.errors';
 
 /**
- * The wire shapes come from the generated client: `pnpm generate:api-client`
- * writes them from the API's own OpenAPI, so a field the API renames cannot
- * stay right here and wrong there.
- *
- * They were hand-written here once, against a single-repository session with a
- * `running | idle | stopped` state — a shape the control plane had already
- * replaced with checkouts, a derived group and a stored lifecycle. Nothing
- * noticed, because nothing called it. That is the whole argument for calling the
- * generated operations rather than composing URLs by hand.
+ * The wire shapes come from the generated client (`pnpm generate:api-client`,
+ * from the API's own OpenAPI), so a field the API renames cannot stay right
+ * here and wrong there. Call the generated operations rather than composing
+ * URLs by hand: a hand-written shape here once drifted from the API unnoticed.
  */
 
 function toCheckout(data: SessionCheckoutResponseDto): SessionCheckoutEntity {

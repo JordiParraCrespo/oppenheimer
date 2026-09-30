@@ -3,23 +3,19 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, Unique
 import type { CheckoutMode } from '../domain/session-checkout.entity';
 
 /**
- * One repository, checked out for one session — and the only place a repository is
- * remembered, because there is no repository table.
+ * One repository, checked out for one session, and the only place a repository is
+ * remembered: there is no repository table.
  *
- * Its two composite foreign keys are the point of the row's shape:
- * `(organizationId, sessionId) → work_session (organizationId, id)` and
- * `(organizationId, installationId) → github_installation (organizationId, id)`.
- * Together they make a checkout through another workspace's installation
- * **unrepresentable** rather than merely unchecked — the escalation an earlier
- * draft left to a handler. Whether `githubRepoId` is inside that installation is
- * GitHub's to say, and it says so at every token mint.
+ * Its composite foreign keys, `(organizationId, sessionId) → work_session
+ * (organizationId, id)` and `(organizationId, installationId) → github_installation
+ * (organizationId, id)`, make a checkout through another workspace's installation
+ * **unrepresentable**, not merely unchecked. Whether `githubRepoId` is inside that
+ * installation is GitHub's to say, at every token mint.
  *
- * Two partial uniques, and they say different things. `(sessionId, githubRepoId)
- * WHERE removedAt IS NULL` lets a repository be re-added after removal;
- * `(sessionId, directoryName)` is unconditional, because a directory name is
- * never reused inside a session — the coding agents key their conversation state
- * by working directory, so a new checkout on a retired name would inherit a
- * stranger's history.
+ * `(sessionId, githubRepoId) WHERE removedAt IS NULL` lets a repository be re-added
+ * after removal; `(sessionId, directoryName)` is unconditional, because the coding
+ * agents key conversation state by working directory, so a checkout on a retired name
+ * would inherit a stranger's history.
  */
 @Entity('session_checkout')
 @Index('IDX_session_checkout_installation', ['organizationId', 'installationId'])

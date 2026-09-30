@@ -122,17 +122,15 @@ type DataListener = (chunk: Uint8Array | string, consumed: () => void) => void;
 
 /**
  * The real transport: one attach socket per stream, reconnected through the
- * ladder with a fresh ticket each time, and an epoch counter so a frame or a
- * callback from a socket that has since been replaced is dropped.
+ * ladder with a fresh ticket each time, and an epoch counter so a frame or
+ * callback from a replaced socket is dropped.
  *
- * Output is delivered as the bytes the socket carried; the terminal decodes
- * them, which keeps a multi-byte character that straddles two PTY reads whole.
- * Input goes the other way as bytes too. The viewport is sent first, before
- * the relay dispatches the attach, so the pane is not resized a frame later;
- * a resize that arrives before the socket is open waits for it.
+ * Output is delivered as raw bytes and the terminal decodes them, which keeps a
+ * multi-byte character straddling two PTY reads whole. The viewport is sent
+ * before the relay dispatches the attach, so the pane is not resized a frame
+ * later; a resize that arrives before the socket opens waits for it.
  *
- * Constructing one dials: a stream exists to be connected, and the hook that
- * owns it disposes it with the terminal.
+ * Constructing one dials; the hook that owns it disposes it with the terminal.
  */
 export class AttachSessionStream implements SessionStream {
   private readonly dataListeners = new Set<DataListener>();

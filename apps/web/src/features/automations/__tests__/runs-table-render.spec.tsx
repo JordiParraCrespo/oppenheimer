@@ -12,8 +12,7 @@ import { RunsTable } from '../sections/runs-table';
  * change comes back as the page already drawn, so a poll that changed nothing
  * renders no row.
  *
- * Runs in the `render-budget` project, without the React Compiler. The rows are
- * counted at `RunRow`, the design system's row.
+ * The rows are counted at `RunRow`, the design system's row.
  */
 
 vi.mock('react-i18next', () => ({

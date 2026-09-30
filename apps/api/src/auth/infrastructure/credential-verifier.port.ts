@@ -23,13 +23,10 @@ export interface VerifiedSession {
 /**
  * Verifies a credential a request presents, against whoever issues them.
  *
- * This is the seam the rest of the application asks "is this real, and whose
- * is it?" through. The identity provider's method names, its header shape and
- * its error vocabulary stop here: `CredentialScopeResolver` composes the
- * answers into a scope context and never learns which provider gave them.
- *
- * The verifying methods answer `null` for "not this kind of credential" rather
- * than throwing, because a request may legitimately carry none of them.
+ * The identity provider's method names, header shape and error vocabulary stop
+ * here: `CredentialScopeResolver` composes the answers and never learns which
+ * provider gave them. The verifying methods answer `null` for "not this kind of
+ * credential" rather than throwing, because a request may carry none of them.
  */
 export interface CredentialVerifierPort {
   verifyOAuthGrant(headers: IncomingHttpHeaders): Promise<VerifiedOAuthGrant | null>;

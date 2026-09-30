@@ -5,18 +5,10 @@ import { ConsoleDialogProvider } from '@/lib/console';
 import { NewSessionForm } from '../sections/new-session-form';
 
 /**
- * New session's render budget, across all three of its clocks.
- *
- * The draft used to be one `useState` object in the section that also held
- * five reads, so an effort pick re-rendered the host chip, the repository
- * picker and the branch pane, and a settle of the host list re-rendered the
- * effort picker. It is a React Hook Form store behind a context now, and each
- * chip binds its own field and its own read. These assertions are what keep it
- * that way: a pick renders the chip that was picked, a settle renders the chip
- * that draws the list, a keystroke renders neither.
- *
- * Runs in the `render-budget` project, without the React Compiler, so what it
- * measures is the structure rather than the memoisation that would hide it.
+ * New session's render budget across its three clocks: a pick renders the
+ * chip picked, a list settle the chip drawing it, a keystroke neither. It
+ * guards against a draft in section state, where an effort pick re-rendered
+ * the host chip, the repository picker and the branch pane.
  */
 
 vi.mock('react-i18next', () => ({

@@ -3,28 +3,6 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
-/**
- * AgentMark — the coding agent's mark, 15px, in the agent and model picker
- * and wherever a session names its harness. Claude Code carries Anthropic's
- * mark in its own orange (a brand colour, not a system one, so it does not
- * re-point in dark); Codex the OpenAI mark, OpenCode its square-in-square and
- * Grok its slashed circle, all in the current ink so they invert with the
- * theme. "Blank terminal" takes a terminal glyph, and an id this component
- * does not know the neutral bot glyph.
- *
- * Marks are inline SVG so they need no asset pipeline and scale with the
- * text. Sources: the Claude and OpenAI marks as published in Simple Icons
- * (CC0, drawn from the vendors' brand assets); the OpenCode mark from the
- * first glyph of `packages/web/src/assets/logo-ornate-dark.svg` in
- * github.com/sst/opencode; the Grok mark as Lobe Icons publishes it
- * (`@lobehub/icons-static-svg` `icons/grok.svg`, MIT), the shape the Grok
- * CLI draws on its own welcome screen. Never a redrawn imitation.
- *
- * ```tsx
- * <AgentMark agent="claude-code" />
- * <AgentMark agent="opencode" className="size-4" />
- * ```
- */
 type AgentId = 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | (string & {});
 
 const CLAUDE_ORANGE = '#D97757';
@@ -62,6 +40,24 @@ function GrokMark(props: React.ComponentProps<'svg'>) {
   );
 }
 
+/**
+ * AgentMark — the coding agent's mark, 15px, in the agent and model picker
+ * and wherever a session names its harness. Claude Code carries Anthropic's
+ * orange (a brand colour, so it does not re-point in dark); Codex, OpenCode and
+ * Grok draw in the current ink and invert with the theme. "Blank terminal"
+ * takes a terminal glyph, and an unknown id the neutral bot glyph.
+ *
+ * Inline SVG, so no asset pipeline and it scales with the text. Sources, never
+ * a redrawn imitation: the Claude and OpenAI marks from Simple Icons (CC0);
+ * OpenCode's from the first glyph of `packages/web/src/assets/logo-ornate-dark.svg`
+ * in github.com/sst/opencode; Grok's from Lobe Icons
+ * (`@lobehub/icons-static-svg` `icons/grok.svg`, MIT).
+ *
+ * ```tsx
+ * <AgentMark agent="claude-code" />
+ * <AgentMark agent="opencode" className="size-4" />
+ * ```
+ */
 function AgentMark({
   agent,
   className,

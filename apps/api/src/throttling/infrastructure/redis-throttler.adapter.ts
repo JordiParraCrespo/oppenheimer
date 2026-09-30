@@ -23,22 +23,15 @@ interface ThrottleRedis extends Redis {
 }
 
 /**
- * Rate-limit counters in Redis, so the limit means the same thing however many
- * API replicas are running.
+ * Rate-limit counters in Redis, so a limit means the same however many API replicas
+ * run: the default in-process `Map` multiplies every limit by the replica count ("120
+ * per minute" becomes 360 across three pods). Redis is already a hard dependency
+ * (BullMQ, the cache).
  *
- * The default storage is an in-process `Map`. With the Helm chart's replicas
- * that silently multiplies every limit by the replica count — a documented
- * "120 per minute" becomes 360 across three pods, and nobody finds out from
- * reading the decorator. Redis is already a hard dependency here (BullMQ and
- * the cache both use it), so there is no new infrastructure to run.
- *
- * `CacheService` is deliberately not reused: it offers get/set, and a counter
- * built from a read followed by a write is exactly the race this class exists
- * to remove. The increment below is a single atomic round trip.
- *
- * It runs on the shared `REDIS_CLIENT`, which fails fast and is closed by
- * `RedisModule`, so this class neither configures nor quits a connection. Its
- * keys are `throttle:*`, outside the cache's `cache:` namespace.
+ * Not `CacheService`: a counter built from a get then a set is the race this class
+ * removes; the increment is one atomic round trip. It runs on the shared
+ * `REDIS_CLIENT`, which `RedisModule` owns and closes, under `throttle:*`, outside the
+ * cache's `cache:` namespace.
  */
 @Injectable()
 export class RedisThrottlerStorage implements ThrottlerStorage {
@@ -116,15 +109,10 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
       };
     } catch (error) {
       /*
-       * Fail **open**.
-       *
-       * A rate limiter exists to shed abusive load, not to be a second thing
-       * that can take the API down. If Redis is unreachable the honest choice
-       * is to serve the request: refusing every caller because the counter is
-       * unavailable converts a cache outage into a total outage. The counter
-       * is a courtesy backstop; authentication and the
-       * proof-of-human check at the edge are the actual controls, and neither
-       * depends on this.
+       * Fail open: a rate limiter sheds abusive load and must not be a second thing that
+       * takes the API down, so an unreachable Redis serves the request. The counter is a
+       * courtesy backstop; authentication and the edge's proof-of-human check are the
+       * controls, and neither depends on it.
        */
       this.logger.error(
         { message: 'Rate-limit counter unavailable; allowing the request', throttlerName },

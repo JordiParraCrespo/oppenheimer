@@ -1,25 +1,23 @@
 /**
- * Every poll the console runs against the API, in one place: how often it
- * asks, and whether it keeps asking while the tab is hidden. A query hook in
- * this package spreads {@link pollWhile}; nothing else names an interval, and a
- * feature asks for the hook that already polls (`useHostPresence`). Each poll
- * goes when the console streams that fact instead.
+ * Every poll the console runs against the API: how often it asks, and whether
+ * it keeps asking while the tab is hidden. A query hook in this package spreads
+ * {@link pollWhile}; nothing else names an interval, and a feature asks for the
+ * hook that already polls (`useHostPresence`). Each poll goes when the console
+ * streams that fact instead.
  *
- * `inBackground` is whether TanStack Query keeps the interval running on a
- * hidden document, which it pauses by default. A poll that watches something
- * finish keeps going: the tab a session was started from is the one the
- * reader leaves while it runs, and each of these stops on its own once the
- * thing settles. Presence never settles, so it pauses.
+ * `inBackground` keeps TanStack Query's interval running on a hidden document,
+ * where it pauses by default. A poll that watches something finish keeps going:
+ * the reader leaves the tab while it runs, and each stops once the thing
+ * settles. Presence never settles, so it pauses.
  *
- * - `sessionStarting`: a session a host is still building, and one the caller
+ * - `sessionStarting`: a session a host is still building, or one the caller
  *   deleted whose row stays `open` until its host answers the close (watched
  *   for at most {@link CLOSE_WATCH_MS}). A clone from GitHub takes seconds;
  *   past that, a request every two seconds can only answer "still open".
- * - `pairing`: whether a pairing token has been spent, and whether the machine
- *   that spent it is online yet.
+ * - `pairing`: whether a pairing token has been spent and its machine is online.
  * - `liveRun`: an automation run, queued for seconds and running for minutes.
- * - `hostPresence`: a host going on or offline, for a view that shows it
- *   (Settings → Hosts). A heartbeat is not streamed to the console yet.
+ * - `hostPresence`: a host going on or offline (Settings → Hosts); heartbeats
+ *   are not streamed to the console yet.
  */
 export const LIVE_POLL = {
   sessionStarting: { interval: 2000, inBackground: true },

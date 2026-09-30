@@ -34,15 +34,12 @@ const WEEK_SECONDS = 7 * DAY_SECONDS;
 
 /**
  * Reproduces Better Auth 1.6.25's `internalAdapter.createSession` precedence
- * rather than echoing back whatever it was handed.
- *
- * That distinction is the whole point: the real implementation spreads the
- * override, then writes its **own** `expiresAt` over it — 24 hours when
- * `dontRememberMe` is set — and re-applies the override only when
- * `overrideAll` is true. A mock that returned the requested values passed
- * happily while production persisted day-long rows (issue #122), so this one
- * applies the same order of operations, including the additional-field
- * defaults (`delegated: false`) that land after the override too.
+ * rather than echoing back what it was handed: it spreads the override, writes
+ * its own `expiresAt` over it (24 hours with `dontRememberMe`), and re-applies
+ * the override only when `overrideAll` is true. An echoing mock passed while
+ * production persisted day-long rows (issue #122), so this one applies the same
+ * order, including the additional-field defaults (`delegated: false`) that land
+ * after the override.
  */
 function fakeAdapter() {
   let minted = 0;

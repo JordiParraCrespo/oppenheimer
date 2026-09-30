@@ -4,17 +4,13 @@ import { RedisAuthFailureLimiter } from './infrastructure/redis-auth-failure-lim
 import { RedisThrottlerStorage } from './infrastructure/redis-throttler.adapter';
 
 /**
- * Owns the rate limiter's Redis-backed counter store, and the auth-failure
- * budget built on it.
- *
- * A module rather than an instance constructed inline in
- * `ThrottlerModule.forRootAsync` so the storage is a real provider, resolved
- * through the injector: that is how it receives the shared `REDIS_CLIENT`.
- * The connection itself belongs to `RedisModule`, which closes it on shutdown.
+ * Owns the rate limiter's Redis-backed counter store and the auth-failure budget built
+ * on it. A module, not an inline instance in `ThrottlerModule.forRootAsync`, so the
+ * storage is resolved through the injector and receives the shared `REDIS_CLIENT`.
  *
  * `@Global` for the one binding the auth kernel asks for: it counts refused
- * credentials through `AUTH_FAILURE_LIMITER` from its own injector, and may not
- * import this module (`auth-is-a-kernel`).
+ * credentials through `AUTH_FAILURE_LIMITER` and may not import this module
+ * (`auth-is-a-kernel`).
  */
 @Global()
 @Module({

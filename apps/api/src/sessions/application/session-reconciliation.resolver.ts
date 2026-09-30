@@ -11,20 +11,15 @@ import type {
 } from './session-reconciliation.port';
 
 /**
- * Reconciles a host's hello against the rows.
+ * Reconciles a host's hello against the rows, in two cases only. A `starting` session
+ * the host does not hold is a launch that never arrived (created while it was offline,
+ * or lost with the link) and is dispatched again; the runner is idempotent by session
+ * id. An `open` session the host does not hold is one tmux lost (a reboot, a kill) and
+ * is recorded stopped, so the console offers Restart, not a live dot for a gone pane.
+ * What the host holds that the rows do not know is logged and left alone: ending
+ * someone's work is not a side effect of a hello.
  *
- * Two cases, and only two. A session still `starting` that the host does not
- * hold is a launch that never arrived — created while the host was offline, or
- * lost with the link — and is dispatched again; the runner is idempotent by
- * session id, so a launch it did carry out is a no-op. A session the rows call
- * `open` that the host does not hold is one tmux lost (a reboot, a kill), and
- * is recorded stopped so the console shows a Restart button rather than a live
- * dot for a pane that is gone. Anything the host holds that the rows do not
- * know is logged and left alone: ending someone's work is not a side effect of
- * a hello.
- *
- * The stopped entry is keyed by the runner's `runId`, so the same hello
- * replayed after a reconnect writes it once.
+ * The stopped entry is keyed by the runner's `runId`, so a replayed hello writes it once.
  */
 @Injectable()
 export class SessionReconciliationResolver implements SessionReconciliationPort {

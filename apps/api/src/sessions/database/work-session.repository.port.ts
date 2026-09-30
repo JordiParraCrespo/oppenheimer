@@ -92,22 +92,18 @@ export interface HostSessionRow {
 }
 
 /**
- * Every person-facing read takes an {@link AccessScope}, so "this query is
- * authorized" is something the compiler asks for rather than something a handler
- * has to remember. The writes are different: they take the **aggregate**, which is
- * the proof that it was loaded under a scope in the first place — there is no
- * `appendEvents(sessionId, …)` a person's request could reach with an id it never
- * had permission to read.
+ * Every person-facing read takes an {@link AccessScope}, so authorization is something
+ * the compiler asks for, not something a handler remembers. Writes take the
+ * **aggregate**, the proof it was loaded under a scope: no `appendEvents(sessionId, …)`
+ * is reachable with an id a person never had permission to read.
  *
- * The **machine path** is the one exception, and it is named for it:
- * `appendEventsForHost(hostId, sessionId, …)`. There the proof is the host's own
- * credential, checked by the link, and the row lock enforces it — the session is
- * appended to only when the locked row names that host — which is the same
- * reasoning `findOneByIdForMachine` already rests on.
+ * The **machine path** is the named exception, `appendEventsForHost(hostId, sessionId,
+ * …)`: the proof is the host's credential, checked by the link, and the row lock
+ * appends only when the locked row names that host, the reasoning
+ * `findOneByIdForMachine` rests on too.
  *
- * The children have no scoped reads of their own. `session_checkout` and
- * `work_session_event` declare no resource and are only ever read through their
- * session, which is what keeps one tenant predicate in the system instead of three.
+ * The children have no scoped reads: `session_checkout` and `work_session_event` are
+ * read only through their session, keeping one tenant predicate instead of three.
  */
 export interface WorkSessionRepositoryPort {
   /** Every unresolved session on a host, unscoped: the host proved who it is. */
@@ -135,15 +131,12 @@ export interface WorkSessionRepositoryPort {
   eraseWorkspace(organizationId: string): Promise<void>;
 
   /**
-   * Insert the session, its checkouts and the first entries of its log in one
-   * transaction, unless the caller's `Idempotency-Key` already created it — or the
-   * project was archived out from under it.
-   *
-   * `created: false` with `projectArchived: false` is the
-   * retry-after-a-lost-response case and returns the session that already exists,
-   * never a second directory and a second branch. `projectArchived: true` is the
-   * race the project row lock decides: the archive committed first, so there is
-   * nothing to insert into.
+   * Insert the session, its checkouts and its first log entries in one transaction,
+   * unless the caller's `Idempotency-Key` already created it or the project was
+   * archived out from under it. `created: false, projectArchived: false` is the retry
+   * after a lost response and returns the existing session, never a second directory
+   * and branch. `projectArchived: true` is the race the project row lock decides: the
+   * archive committed first.
    */
   createIfUnclaimed(
     session: WorkSessionEntity,
@@ -165,17 +158,14 @@ export interface WorkSessionRepositoryPort {
   ): Promise<SessionAppendOutcome>;
 
   /**
-   * The runner's append: the host that proved who it is appends to a session it
-   * holds. The row lock checks the host, so there is no read before the
-   * transaction — the locked row is what the fold starts from anyway.
+   * The runner's append to a session its authenticated host holds. The row lock
+   * checks the host, so nothing is read before the transaction, and the aggregate is
+   * built from the locked row. Checkouts are loaded, in the transaction, only when
+   * the batch holds a `session.checkout_removed`, the one entry whose fold touches
+   * them.
    *
-   * The aggregate is built from the locked row. Its checkouts are loaded, inside
-   * the transaction, only when the batch holds a `session.checkout_removed`: the
-   * append never writes a checkout, `validate()` does not read them, and that is
-   * the one entry whose fold touches them. Every other batch gets none.
-   *
-   * `None` when the session is missing or on another host — answered alike, so a
-   * host cannot probe for ids — and then nothing was written.
+   * `None` when the session is missing or on another host, answered alike so a host
+   * cannot probe for ids; nothing was written.
    */
   appendEventsForHost(
     hostId: string,

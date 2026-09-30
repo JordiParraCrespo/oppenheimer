@@ -11,8 +11,7 @@ import type { SessionLaunchSpec } from './session-dispatch.port';
  * cannot read off it: the workspace's slug, asked of `organizations/` through its
  * port. One place, so every command that dispatches a launch — create, restart,
  * add a checkout, the hello reconciliation — names the same directories. No
- * project name travels: a project is metadata, and nothing on a host is named
- * after it.
+ * project name travels (see `sessionCreateSchema`).
  */
 @Injectable()
 export class SessionLaunchSpecFactory {

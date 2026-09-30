@@ -28,21 +28,18 @@ export class OrganizationsService {
   /**
    * Claim the personal workspace: give it the name and address its owner chose.
    *
-   * This is onboarding step 2's whole job, and it belongs here rather than in
-   * the screen because it encodes a decision from
-   * `product/versions/mvp/08-auth.md`: sign-up provisions exactly one
-   * workspace, so the step **names** that row. Creating is the recovery path
-   * for the account whose sign-up hook did not run — not a second branch the
-   * happy path can fall into.
+   * It lives here, not in the screen, because it encodes a decision from
+   * `product/versions/mvp/08-auth.md`: sign-up provisions exactly one workspace,
+   * so onboarding step 2 **names** that row. Creating is only the recovery path
+   * for an account whose sign-up hook did not run.
    *
-   * The caller passes the workspace it read. Deciding here from a list would
-   * put the same list-order guess one layer down; a screen that has not
-   * finished reading passes `undefined` and must not submit yet.
+   * The caller passes the workspace it read, so no list-order guess happens
+   * here; a screen that has not finished reading passes `undefined` and must
+   * not submit yet.
    *
-   * The address is set once. `08` and `05` both call it permanent, so a claim
-   * over a workspace that already has a slug sends only the name — re-slugging
-   * on a revisit would move an address the reader was told would not move, and
-   * `check-slug` counts their own slug as taken anyway.
+   * The address is set once (`08` and `05` call it permanent): a workspace whose
+   * slug is no longer provisional gets only the name, and `check-slug` counts
+   * its own slug as taken anyway.
    */
   async claimPersonalWorkspace({
     existing,

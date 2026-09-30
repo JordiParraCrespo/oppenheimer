@@ -66,16 +66,14 @@ export async function bumpUserRoleVersion(manager: Queryable, userId: string): P
 }
 
 /**
- * Bump whichever counters cover a role whose definition changed (created,
- * edited or about to be deleted). Call it **before** a delete: it reads the
- * role's assignments, which the delete cascades away.
+ * Bump whichever counters cover a role whose definition changed. Call it before a
+ * delete: it reads the role's assignments, which the delete cascades away.
  *
  * - A global role: the catalog, which every cache key carries.
- * - An organization's role: that organization, plus every user who holds it
- *   **outside** it — a global assignment (`PUT /users/:id/roles` with no
- *   tenant resolves role ids unscoped) or one scoped elsewhere. Their cache
- *   keys carry another organization's version, so bumping the owner's alone
- *   would leave them holding the old rules.
+ * - An organization's role: that organization, plus every user who holds it outside it
+ *   (a global assignment, since `PUT /users/:id/roles` with no tenant resolves role ids
+ *   unscoped, or one scoped elsewhere): their keys carry another organization's
+ *   version, so bumping the owner's alone would leave them holding the old rules.
  */
 export async function bumpForRole(
   manager: Queryable,

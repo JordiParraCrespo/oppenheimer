@@ -6,16 +6,14 @@ import { hostsAreConfigured, ipGeolocationIsConfigured } from '../config/hosts.c
 import { sessionNamerIsConfigured } from '../config/sessions.config';
 
 /**
- * Whether the sessions GitHub App is usable on this deployment.
+ * Whether the sessions GitHub App is usable on this deployment. All six values are
+ * needed together (the id and key to mint tokens, the OAuth pair to prove an
+ * installation claim, the webhook secret to trust a suspension, the slug the console
+ * builds the install link from), so a partial set is off.
  *
- * All six values are needed together — the id and key to mint tokens, the OAuth
- * pair to prove an installation claim, the webhook secret to trust a suspension,
- * the slug the console builds the install link from — so a partial set is off.
- *
- * Exported because this must be **one** predicate. It used to be two: this
- * function's six keys and the GitHub adapter's own five-key check, which meant a
- * deployment with no `GITHUB_APP_SLUG` reported `github_app: false` and still
- * answered `POST /installations` with a 201.
+ * Exported because this must be the one predicate: a second, five-key check in the
+ * GitHub adapter let a deployment with no `GITHUB_APP_SLUG` report
+ * `github_app: false` and still answer `POST /installations` with a 201.
  */
 export function hasGithubApp(configService: ConfigService): boolean {
   return Boolean(

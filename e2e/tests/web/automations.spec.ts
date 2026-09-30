@@ -46,7 +46,6 @@ test('the rail switches to the automations list, and its pages link up', async (
 });
 
 test('an automation from the editor to deletion', async ({ page }) => {
-  // Pairing redeems a token at an IP-throttled route; see `pairHost`.
   test.slow();
   const owner = await provisionedUser('automationui');
   await pairHost(owner.api, 'E2E box');

@@ -163,20 +163,13 @@ export const auth = betterAuth({
     preserveSessionInDatabase: false,
     /**
      * Two columns on Better Auth's `session` table that say a row is not a
-     * device.
-     *
-     * `DelegatedSessionAdapter` mints internal sessions so an API token or an
-     * OAuth client can reach the façades that resolve their caller through
-     * Better Auth. Those rows are bridges, not sign-ins, and the profile and
-     * security "Active sessions" lists read `delegated` to leave them out. It
-     * is a persisted fact rather than the `userAgent` prefix they also carry:
-     * a user agent is a label a client chooses, and a browser that sent
-     * `oppenheimer-api-token/...` would otherwise hide itself from the very screen
-     * that exists to expose it.
-     *
-     * `delegatedCredentialId` names the credential the row was minted for, so
-     * re-minting one after its cache entry expires can delete the row it
-     * supersedes instead of leaving a day of them behind.
+     * device. `DelegatedSessionAdapter` mints bridge sessions for API tokens
+     * and OAuth clients, and the "Active sessions" lists read `delegated` to
+     * leave them out. It is a persisted fact rather than the `userAgent` prefix
+     * they also carry: a client chooses its user agent, and a browser sending
+     * `oppenheimer-api-token/...` would otherwise hide itself from the screen
+     * that exists to expose it. `delegatedCredentialId` lets a remint delete
+     * the row it supersedes.
      */
     additionalFields: {
       delegated: {
@@ -302,10 +295,8 @@ export const auth = betterAuth({
     changeEmail: { enabled: true },
   },
   hooks: {
-    // A ban or unban made straight through the admin plugin
-    // (`/api/auth/admin/ban-user`) bypasses the admin module's gateway, which is what
-    // rotates the account's cached delegated sessions. Awaited by Better Auth,
-    // and best-effort like every dispatch from a hook.
+    // See `RotateDelegatedSessionsCommand`. Awaited by Better Auth, and
+    // best-effort like every dispatch from a hook.
     after: createAuthMiddleware(async (ctx) => {
       const userId = standingChangeOf({
         path: ctx.path,
@@ -354,27 +345,17 @@ export const auth = betterAuth({
               organizationId: string;
               teamId: string | null;
             }>(
-              // Which organization a returning user lands in.
+              // Which organization a returning user lands in: the one they last
+              // had open, then the most recently joined. Oldest-first sent an
+              // invitee back to the personal workspace sign-up provisioned
+              // seconds before the acceptance, without the invitation's
+              // org-scoped role, and the dashboard answered 403. An explicit
+              // sign-out deletes the session row that remembers, hence the
+              // most-recently-joined fallback.
               //
-              // Ordered by "the one they last had open", then by the most
-              // recently joined. It used to be the *oldest* membership, which
-              // was whichever workspace they happened to reach first — for an
-              // invitee that was the personal organization sign-up provisioned
-              // a second or two before the invitation was accepted, so they
-              // signed back in to an empty workspace of their own instead of
-              // the one that invited them, without the org-scoped role the
-              // invitation granted, and the dashboard answered 403.
-              //
-              // The session row is the memory, and an explicit sign-out
-              // deletes it; that is why the fallback is most-recently-joined
-              // rather than oldest. Someone invited to a second workspace does
-              // land there on their next sign-in, which is the same answer the
-              // acceptance itself gave them and the one they can change with
-              // the organization switcher.
-              //
-              // The workspace is chosen the same way: one the user actually
-              // belongs to, falling back to the organization's own default, so
-              // the session never points at a team they are not in.
+              // The workspace is one the user belongs to, falling back to the
+              // organization's default, so the session never points at a team
+              // they are not in.
               `SELECT m."organizationId",
                       COALESCE(mine."id", fallback."id") AS "teamId"
                  FROM "member" m

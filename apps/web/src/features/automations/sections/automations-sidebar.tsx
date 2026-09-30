@@ -17,21 +17,12 @@ import { AutomationGroup } from './automation-group';
 
 /**
  * The console's sidebar body on its automations list
- * (`product/versions/mvp/13-automations.md`): New automation on top, the
- * Projects line with its count, the search, then All automations and a
- * folding header per project — each with New automation in it — over the
- * project's automations. The selected automation expands its last six runs,
- * each opening the session it started in the run view — the pane, with this
- * list kept beside it.
- *
- * What lives here is the two reads and what the groups share: the settled
- * search and the folded groups. The half-typed search is the search box's,
- * the minute clock is each group's, and which automation is selected is each
- * row's subscription to the route — so a keystroke, a tick or a navigation
- * does not redraw the list.
- *
- * The workspace's Unassigned project has no group: it holds the sessions
- * that name no project, and an automation is always set up for one.
+ * (`product/versions/mvp/13-automations.md`). It holds the two reads and what
+ * the groups share (the settled search, the folded groups); the half-typed
+ * search, the minute clock and each row's route subscription live lower, so a
+ * keystroke, a tick or a navigation does not redraw the list. The workspace's
+ * Unassigned project has no group: it holds sessions that name no project,
+ * and an automation is always set up for one.
  */
 export function AutomationsSidebar() {
   const { t } = useTranslation();

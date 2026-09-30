@@ -188,19 +188,12 @@ async function seed() {
   const roleRepo = dataSource.getRepository(RoleOrmEntity);
   const userRoleRepo = dataSource.getRepository(UserRoleOrmEntity);
 
-  // The use cases sign-up owes a new account, hand-wired.
-  //
-  // The seed runs as a standalone script with its own DataSource rather than
-  // inside the injector, and booting the whole application to seed three rows
-  // would drag in Redis, the queues and the outbox relay. The handlers and
-  // their adapters are plain classes, so constructing them here costs one
-  // expression each and keeps there being exactly one implementation of "the
-  // default role" and "a personal workspace".
-  //
-  // The sign-up hook fires while seeding too, but finds no command bus outside
-  // the API and does nothing — so this script owes itself these side effects,
-  // and calls the handlers directly rather than installing a second bus for
-  // the hook to reach.
+  // The use cases sign-up owes a new account, hand-wired: the seed is a standalone
+  // script with its own DataSource, and booting the application for three rows would
+  // drag in Redis, the queues and the outbox relay. Constructing the handlers keeps one
+  // implementation of "the default role" and "a personal workspace". The sign-up hook
+  // finds no command bus outside the API and does nothing, so the script calls the
+  // handlers itself.
   const roleMapper = new RoleMapper();
   const roleRepository = new RoleRepository(roleRepo, roleMapper, new OutboxService(dataSource));
   const userRoleRepository = new UserRoleRepository(userRoleRepo, roleRepo, roleMapper);

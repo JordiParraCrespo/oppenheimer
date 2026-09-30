@@ -13,22 +13,18 @@ import type { HostMetadataRepositoryPort } from '../database/host-metadata.repos
 import { HOST_METADATA_REPOSITORY, HOST_PRESENCE } from '../hosts.di-tokens';
 
 /**
- * Pairing, against a real Postgres and Redis.
+ * Pairing, against a real Postgres and Redis, for two properties only the database
+ * has:
  *
- * This is the layer unit tests cannot reach, and two of the properties here only
- * exist in the database:
+ *  - **redemption is single-use under concurrency**: two requests presenting one
+ *    secret at once produce one host and one refusal. The rule is a single
+ *    `UPDATE … WHERE … RETURNING`, so only two real connections racing tests it.
+ *  - **the default role grants `manage Host`**: a live database's roles are rows the
+ *    migrations wrote, not the fallback constant, and a missing rule is a 403 on
+ *    every host route that a stubbed ability would never notice.
  *
- *  - **redemption is single-use under concurrency.** Two requests presenting one
- *    secret at the same moment must produce one host and one refusal. The rule
- *    lives in a single `UPDATE … WHERE … RETURNING`, so nothing short of two real
- *    connections racing on one row tests it.
- *  - **the default role actually grants `manage Host`.** A live database's roles
- *    are rows the migrations wrote, not the constant the ability falls back to, and a
- *    missing rule is a 403 on every host route that no test with a stubbed
- *    ability would notice.
- *
- * The schema is built by running the migrations rather than `synchronize`, so a
- * mistake in a migration fails here.
+ * The schema is built by the migrations, not `synchronize`, so a bad migration fails
+ * here.
  */
 describe('Hosts & pairing (integration)', () => {
   let app: INestApplication;

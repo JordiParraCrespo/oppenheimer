@@ -8,27 +8,6 @@ import { Checkbox } from './checkbox';
 import { ChipSelectEmpty, ChipSelectItem, ChipSelectPopup, ChipSelectSearch } from './chip-select';
 import { Popover, PopoverTrigger } from './popover';
 
-/**
- * RepositoryRowList — "Cloned by default", inside the project dialog's
- * Defaults fold (`design/version1/SessionsConsole.dc.html`, `op-prepo`): a
- * 14px card with one 40px row per repository the project holds. A row is a
- * checkbox — ticked, the repository is cloned into every new session of the
- * project — the mono name, and a 168px pill for the base branch, which opens
- * the same searchable pane the scope chips use. Which repositories are in
- * the project is decided above the fold, in `RepositoryAddField`; this list
- * only says what each does.
- *
- * It is a form control, not a menu: the caller owns `value`, one row per
- * repository in the project, in the project's order.
- *
- * ```tsx
- * <RepositoryRowList
- *   repositories={[{ id: 'xrp-mobile', name: 'xrp-mobile', defaultBranch: 'main', branches: [...] }]}
- *   value={[{ id: 'xrp-mobile', isDefault: true, branch: 'main' }]}
- *   onValueChange={setRows}
- * />
- * ```
- */
 type RepositoryRowBranch = { value: string; label?: string; description?: string };
 
 type RepositoryRowOption = {
@@ -50,6 +29,25 @@ type RepositoryRowValue = {
 const defaultBranchEmptyText = (query: string): React.ReactNode => `No branch named “${query}”`;
 const defaultBranchLabel = (name: string): string => `Base branch for ${name}`;
 
+/**
+ * RepositoryRowList — "Cloned by default", inside the project dialog's
+ * Defaults fold (`design/version1/SessionsConsole.dc.html`, `op-prepo`): a
+ * 14px card with one 40px row per repository the project holds — a checkbox
+ * (ticked, it is cloned into every new session of the project), the mono name,
+ * and a 168px base-branch pill opening the scope chips' searchable pane. Which
+ * repositories are in the project is `RepositoryAddField`'s to decide.
+ *
+ * A form control, not a menu: the caller owns `value`, one row per repository
+ * in the project's order.
+ *
+ * ```tsx
+ * <RepositoryRowList
+ *   repositories={[{ id: 'xrp-mobile', name: 'xrp-mobile', defaultBranch: 'main', branches: [...] }]}
+ *   value={[{ id: 'xrp-mobile', isDefault: true, branch: 'main' }]}
+ *   onValueChange={setRows}
+ * />
+ * ```
+ */
 function RepositoryRowList({
   repositories,
   value,
@@ -69,8 +67,8 @@ function RepositoryRowList({
   branchEmptyText?: (query: string) => React.ReactNode;
   branchLabel?: (name: string) => string;
 }) {
-  // Defaults resolved in the body, not the signature: the React Compiler
-  // leaves a component whose default parameter is a function uncompiled.
+  // Defaulted here, not in the signature: the React Compiler skips a component
+  // whose default parameter is a function.
   const branchEmptyText = branchEmptyTextProp ?? defaultBranchEmptyText;
   const branchLabel = branchLabelProp ?? defaultBranchLabel;
   const byId = new Map(repositories.map((repo) => [repo.id, repo]));

@@ -13,11 +13,8 @@ import { registerThroughUi } from '../../support/web';
  *
  * The walk itself is `first-run.spec.ts`. This file covers the two ways in —
  * a fresh sign-up, and the account whose sign-up hook left it with no
- * workspace — and the fact that both land on the same step. `/onboarding` is
- * the door to the walk, not a screen: it used to hold a second
- * create-workspace form beside the one at `/onboarding/workspace`, and the
- * step subsumed it once `claimPersonalWorkspace` learned to create when there
- * is no row to name.
+ * workspace — and that both land on the same step: `/onboarding` is the door
+ * to the walk, not a screen.
  */
 test('a newcomer is sent to name the workspace sign-up made', async ({ page }) => {
   const user = newUser('firstrun');

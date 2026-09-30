@@ -8,14 +8,9 @@ import { claimInstallation } from './github-stub';
  * What a New session spec needs standing behind it: a paired host and a
  * connected GitHub installation.
  *
- * Both are set up through the real API rather than by writing rows — the point
- * of an end-to-end run is that the path a person takes is the path under test,
- * and a seeded row proves nothing about pairing or about the App.
- *
- * The GitHub half needs a stub (`support/github-stub.ts`), because repositories
- * and branches are answered live by GitHub and this deployment has no App. The
- * API is pointed at it with `GITHUB_APP_API_URL`; everything else in the run is
- * real.
+ * Both are set up through the real API rather than by writing rows: a seeded
+ * row proves nothing about pairing or about the App. The GitHub half is
+ * `support/github-stub.ts`, which the API reaches through `GITHUB_APP_API_URL`.
  */
 export const GITHUB_STUB_URL = process.env.GITHUB_STUB_URL ?? 'http://127.0.0.1:4319';
 
@@ -199,6 +194,10 @@ export function tokenFrom(installCommand: string): string {
   return secret as string;
 }
 
+/**
+ * Mint and redeem a pairing token. Both routes are throttled by address (see
+ * `THROTTLE_WINDOW_MS`), so a test that calls this is `test.slow()`.
+ */
 export async function pairHost(api: APIRequestContext, name: string): Promise<string> {
   return redeemPairingToken(await mintPairingToken(api, name), name);
 }

@@ -13,13 +13,11 @@ import type { NavTo, SettingsNavGroupConfig } from '../lib/nav';
  * The Settings pages' sidebar: Back to console, then the groups the app
  * declares (Account, Workspace), each row a link with an icon.
  *
- * Kit rather than feature because it is chrome: it knows nothing of what a
- * row counts. `groups` is data; a count is a slot, `renderCount`, which the
- * app answers with a section that reads the product hook — so a refetch of
- * that list re-renders the number and not this sidebar. Which row is
- * current is the router's answer, not a string comparison: a row is active
- * on its destination only, and a page beneath it (Add a host under Hosts)
- * leaves it unlit, as the frame draws it.
+ * Kit because it knows nothing of what a row counts: a count is the
+ * `renderCount` slot, answered by a section that reads the product hook, so a
+ * refetch re-renders the number and not this sidebar. A row is active on its
+ * destination only (the router's answer); a page beneath it (Add a host under
+ * Hosts) leaves it unlit, as the frame draws it.
  */
 export function SettingsSidebar({
   groups,

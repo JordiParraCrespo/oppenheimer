@@ -75,15 +75,12 @@ export class RoleGrantPolicy {
   }
 
   /**
-   * Whether the actor may write *this* role row, not just "a Role".
-   *
-   * `@CheckPolicies` is a type-level check, and a role lookup scoped to the
-   * active organization returns the platform's global roles alongside the
-   * tenant's own. The tenant `owner` role's `manage Role` is conditioned on
-   * `organizationId = ${activeOrganizationId}`, so a global role (`null`) does
-   * not match it — without this check an organization owner could rewrite the
-   * default `user` role for every tenant. A platform admin's `manage all`
-   * matches any row.
+   * Whether the actor may write this role row, not just "a Role". `@CheckPolicies` is
+   * type-level, and a role lookup scoped to the active organization returns the global
+   * roles alongside the tenant's. The tenant `owner`'s `manage Role` is conditioned on
+   * `organizationId = ${activeOrganizationId}`, which a global role (`null`) does not
+   * match; without this check an organization owner could rewrite the default `user`
+   * role for every tenant. A platform admin's `manage all` matches any row.
    */
   async assertCanModify(actor: RoleActor | undefined, role: RoleEntity): Promise<void> {
     if (!actor) return;

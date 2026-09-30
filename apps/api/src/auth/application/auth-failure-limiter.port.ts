@@ -2,17 +2,15 @@
  * The brake on made-up credentials.
  *
  * The rate limiter buckets a bearer caller by a digest of what it presents,
- * without looking the credential up — which is what keeps it free of database
- * work, and what would let a caller spraying random strings open a fresh
- * bucket per request. This is the other half: every refused credential counts
- * against the address it came from, and an address past its budget is refused
- * before any lookup — except for a credential that has recently succeeded, so
- * one misconfigured client behind a shared address does not lock out the
- * callers beside it.
+ * without a lookup: free of database work, but a caller spraying random
+ * strings opens a fresh bucket per request. So every refused credential counts
+ * against its address, and an address past its budget is refused before any
+ * lookup, except for a credential that recently succeeded, so one
+ * misconfigured client behind a shared address does not lock out its
+ * neighbours.
  *
- * The kernel records; `throttling` binds the counter and asks it. Every method
- * is best-effort: a counter that cannot be reached neither fails a request nor
- * refuses one.
+ * The kernel records; `throttling` binds the counter. Best-effort: a counter
+ * that cannot be reached neither fails a request nor refuses one.
  */
 export interface AuthFailureLimiterPort {
   recordFailure(ip: string): void;

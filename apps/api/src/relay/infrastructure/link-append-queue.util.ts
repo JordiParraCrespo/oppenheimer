@@ -29,32 +29,26 @@ export interface AppendQueueLimits {
 }
 
 /**
- * One link's `events.append` messages, applied **in arrival order** by one
- * worker, with a bound.
+ * One link's `events.append` messages, applied **in arrival order** by one worker,
+ * with a bound.
  *
- * A session's log is ordered by the `seq` this control plane assigns on append,
- * and a runner sends a start's steps as consecutive batches; taken
- * concurrently, two appends race for the row lock and `running` can land after
- * `done`. So a link's appends go through here, one after another. Only appends
- * do: every other message runs on its own, so a credential ask never queues
- * behind the log — which is also why a run can only ever be cut short by
- * another session, since nothing of another type is in the queue to stop it.
+ * A runner sends a start's steps as consecutive batches, and `seq` is assigned on
+ * append; applied concurrently, two appends race for the row lock and `running` can
+ * land after `done`. Only appends queue: other messages run on their own, so a
+ * credential ask never waits behind the log.
  *
- * **Coalescing.** When the worker takes a batch it also takes every batch
- * queued right behind it for the same session, up to `maxEventsPerAppend`
- * events, and applies them as one append — one lock, one `INSERT` — which is
- * what makes the batched insert pay off for a runner that sends one event per
- * batch. The first batch for another session ends the run, so the order across
- * sessions is still the order they arrived in.
+ * **Coalescing.** The worker takes every batch queued right behind the current one
+ * for the same session, up to `maxEventsPerAppend` events, as one append (one lock,
+ * one `INSERT`), which is what makes batching pay for a runner sending one event per
+ * batch. The first batch for another session ends the run, keeping arrival order
+ * across sessions.
  *
- * **Backpressure.** The queue is bounded rather than trusted: at `pauseAt`
- * waiting batches the socket is paused, so the runner's writes back up into
- * its own bounded queue (its unacked batches stay in memory there, and are
- * resent on the next link); at `resumeAt` it reads again. Frames the socket had
- * already read still arrive while paused, so `closeAt` is the hard ceiling, and
- * a pause that outlasts `maxPauseMs` closes the link too — the runner treats
- * any close but 4410 as a reconnect and resends every unacked batch after its
- * hello, so nothing durable is lost.
+ * **Backpressure.** At `pauseAt` waiting batches the socket is paused, so the
+ * runner's writes back up into its own bounded queue; at `resumeAt` it reads again.
+ * Frames already read still arrive while paused, so `closeAt` is the hard ceiling,
+ * and a pause outlasting `maxPauseMs` closes the link too: the runner treats any
+ * close but 4410 as a reconnect and resends every unacked batch after its hello, so
+ * nothing durable is lost.
  */
 export class LinkAppendQueue {
   private readonly pending: EventsAppendMessage[] = [];

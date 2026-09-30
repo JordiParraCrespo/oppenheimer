@@ -9,19 +9,15 @@ import { HostPrincipalGuard } from '../../guards/host-principal.guard';
 import { UninstallHostCommand } from './uninstall-host.command';
 
 /**
- * `DELETE /hosts/self`, the call a runner makes when it is uninstalled, with the
- * daemon stopped and so no link to ride
- * (`product/versions/mvp/01-protocol.md`, `…/03-control-plane.md`).
+ * `DELETE /hosts/self`, the call a runner makes when uninstalled, with the daemon
+ * stopped and so no link to ride (`product/versions/mvp/01-protocol.md`,
+ * `…/03-control-plane.md`).
  *
- * The credential is the host's boot assertion in an ordinary
- * `Authorization: Bearer`, which `HostPrincipalGuard` is the whole authorization
- * of — there is no person on this request for a policy to be about, and the path
- * names no host precisely so that a host can only ever remove itself.
- *
- * `@AllowAnyScope()` is what lets the credential through the global
- * `ScopesGuard`: a machine holds no permissions, so there is no scope to require
- * here, and the guard's default of refusing a credential on a route that
- * declares none is the rule for credentials that act for a person.
+ * `HostPrincipalGuard` is the whole authorization: no person is on this request for
+ * a policy to be about, and the path names no host so a host can only remove itself.
+ * `@AllowAnyScope()` lets the credential past the global `ScopesGuard`, whose default
+ * refusal on a route declaring no scope is the rule for credentials acting for a
+ * person.
  */
 @ApiTags('Hosts')
 @ApiBearerAuth()

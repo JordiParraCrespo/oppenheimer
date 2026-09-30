@@ -48,20 +48,16 @@ export function shouldDehydrateQuery(
 export const cacheOwnerKey = ['cacheOwner'] as const;
 
 /**
- * A persisted cache outlives its session: it survives an expired or
- * server-revoked session, and a tab closed right after logout can beat the
- * persister's throttled write to storage. Without this, the next boot hydrates
- * the previous user's `users`/`organizations` entries, and the next person on
- * that browser or device sees them flash before the refetch lands.
+ * A persisted cache outlives its session (expired, server-revoked, or a tab
+ * closed before the persister's throttled write after logout), so the next
+ * boot could hydrate the previous user's `users`/`organizations` entries and
+ * flash them to the next person on that browser.
  *
- * So on every session restore the restored cache is reconciled against the
- * signed-in user: same user, keep it; anyone else — including nobody, and
- * including a cache with no owner recorded — throw the non-`auth` entries away.
- * `auth` is spared because the session query driving this call is one of them.
- *
- * Called from `useSessionRestore`'s `queryFn`, i.e. before the query resolves
- * and before either app's gate renders anything, so no component ever observes
- * another user's data.
+ * So each session restore reconciles the cache against the signed-in user:
+ * same user, keep it; anyone else, nobody, or no owner recorded, drop every
+ * non-`auth` entry (`auth` holds the session query driving this call). Called
+ * from `useSessionRestore`'s `queryFn`, before either app's gate renders, so
+ * no component ever observes another user's data.
  */
 export function reconcileCacheOwner(queryClient: QueryClient, ownerId: string | null): void {
   const previousOwnerId = queryClient.getQueryData<string>(cacheOwnerKey) ?? null;

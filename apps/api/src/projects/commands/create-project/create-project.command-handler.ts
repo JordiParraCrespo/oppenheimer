@@ -13,15 +13,11 @@ import { CreateProjectCommand } from './create-project.command';
 /**
  * Creates a project a person asked for: a name, the repositories it holds and the
  * defaults a new session is offered (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * The only other project is the workspace's Unassigned, which it is given.
  *
- * This is the only way a named project comes to exist. The one other project is
- * the workspace's Unassigned, which the workspace is given rather than asks for;
- * nothing derives a project from a repository.
- *
- * The slug is derived from the **name**, once. The id is minted first so the
- * fallback candidate can be derived from the row itself; the only race is the
- * slug, and the database's unique constraint is what answers it — nothing here
- * asks whether a slug is free and then acts on the answer.
+ * The slug is derived from the name, once. The id is minted first so the fallback slug
+ * derives from the row itself; the only race is the slug, and the database's unique
+ * constraint answers it rather than a check-then-act here.
  */
 @CommandHandler(CreateProjectCommand)
 export class CreateProjectCommandHandler

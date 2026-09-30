@@ -115,15 +115,8 @@ const adapters: Provider[] = [
 /**
  * Sessions: the row, its checkouts, its append-only log and the fold of that log.
  *
- * It is the module the other three feed into. `projects/` answers which body of work
- * a session belongs to (Unassigned when the request names none), `hosts/`
- * answers whether the caller may put work on a machine, and `github/` answers what a
- * repository is called and mints the token to check it out.
- *
- * Two ports go the other way, for `links/`, which owns the runner link:
- * `SESSION_DISPATCH` to send a session's work to a host, and
- * `RECORD_SESSION_EVENTS` to write what the host reports back. They are the whole
- * published surface — the repository stays inside.
+ * `SESSION_DISPATCH` is bound by `links/` over the runner link. The published surface
+ * is the three exported ports `relay/` calls; the repository stays inside.
  */
 @Module({
   imports: [

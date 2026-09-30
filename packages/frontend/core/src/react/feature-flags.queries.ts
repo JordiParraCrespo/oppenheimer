@@ -46,13 +46,11 @@ export function featureFlagsQueryOptions(app: OppenheimerApp, audience: FlagAudi
 /**
  * The caller's evaluated flags, from `GET /v1/feature-flags`.
  *
- * Like every query this is persisted, so a cold start renders the flags the
- * app last saw — offline included — instead of flashing defaults, and a failed
- * refetch keeps the last good answer rather than reverting to defaults. It is
- * fetched as soon as the session is known (see `useSessionRestore`), and again
- * when the window regains focus — the app returns to the foreground on
- * mobile — and on reconnect, which is how a pulled kill switch reaches a
- * long-open tab without a push channel.
+ * Persisted like every query, so a cold start (offline included) renders the
+ * flags last seen instead of flashing defaults, and a failed refetch keeps the
+ * last good answer. Fetched once the session is known (`useSessionRestore`),
+ * then on window focus and reconnect, which is how a pulled kill switch reaches
+ * a long-open tab without a push channel.
  *
  * Most code wants {@link useFeatureFlag} or {@link useFeatureFlagValue}; reach
  * for this when you need the loading state.

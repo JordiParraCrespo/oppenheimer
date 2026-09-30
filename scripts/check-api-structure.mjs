@@ -176,11 +176,8 @@ const HTTP_METHOD = /^\s*@(Get|Post|Put|Patch|Delete|All|Head|Options)\s*\(/m;
  *
  * Nothing else in these modules is excused, a new violation in them still
  * fails, and an entry that stops matching is itself an error: the list cannot
- * outlive the debt it describes.
- *
- * Empty: `admin/` and `organizations/`, the Better Auth façades that were the
- * last entries here, are cut into use-case slices over gateway ports like every
- * other module. Adding an entry deserves the same scrutiny as deleting a rule.
+ * outlive the debt it describes. Adding an entry deserves the same scrutiny as
+ * deleting a rule.
  */
 const LEDGER = [];
 const tsFiles = (dir) => readdirSync(dir, { withFileTypes: true }).filter((e) => e.isFile());

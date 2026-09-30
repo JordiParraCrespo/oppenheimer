@@ -24,18 +24,14 @@ function stripUrlSecrets(result: CaptureResult | null): CaptureResult | null {
 }
 
 /**
- * The SDK is loaded with a dynamic `import()` rather than a static one, so it
- * lands in its own chunk and is fetched only when a project key is configured.
- * That keeps ~50KB of vendor JavaScript off the critical path of the marketing
- * and auth pages, where it would otherwise cost Core Web Vitals for visitors
- * who never reach the app.
+ * The SDK is loaded with a dynamic `import()`, in its own chunk fetched only
+ * when a project key is configured, keeping ~50KB of vendor JavaScript off the
+ * critical path of the marketing and auth pages. The DI container is built
+ * synchronously, so calls made before the SDK arrives are queued and replayed.
  *
- * Because loading is async but the DI container is built synchronously, calls
- * made before the SDK arrives are queued and replayed on load.
- *
- * Feature flags do not come from here — the API evaluates them — so PostHog's
- * own flag loading is switched off: no `/flags` request per page load, and an
- * ad blocker that eats PostHog cannot change what the product shows.
+ * PostHog's own flag loading is off because the API evaluates flags: no
+ * `/flags` request per page load, and an ad blocker that eats PostHog cannot
+ * change what the product shows.
  */
 class PostHogAnalyticsClient implements IAnalyticsClient {
   private posthog: PostHog | null = null;

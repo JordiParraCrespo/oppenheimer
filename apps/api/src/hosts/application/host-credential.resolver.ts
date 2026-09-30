@@ -6,20 +6,14 @@ import { HOST_ASSERTION } from '../hosts.di-tokens';
 import type { HostAssertionPort } from './host-assertion.port';
 
 /**
- * This module's contribution to the auth kernel: the boot assertion a runner
- * signs with the key it registered, presented as an ordinary
- * `Authorization: Bearer` because that is what the protocol says it is
- * (`product/versions/mvp/03-control-plane.md`).
+ * The boot assertion a runner signs with the key it registered, presented as an
+ * ordinary `Authorization: Bearer` because the protocol says so
+ * (`product/versions/mvp/03-control-plane.md`). Parsing and verifying stay behind
+ * {@link HostAssertionPort}.
  *
- * The kernel recognises no machine credential of its own — it asks every
- * registered resolver whether a presented string is theirs — so "what shape a
- * host assertion has" and "which host signed this one" both stay behind
- * {@link HostAssertionPort}, the same port the rest of the module injects.
- *
- * What comes back is a credential with no owner and no scopes. That is all the
- * guards need: `ScopesGuard` refuses it on every route that declares a scope by
- * the rule it already had, and the one route a machine calls about itself says
- * `@AllowAnyScope()` because there is no permission for a machine to hold.
+ * It yields a credential with no owner and no scopes: `ScopesGuard` refuses it on
+ * every route declaring a scope, and the one route a machine calls about itself says
+ * `@AllowAnyScope()`, since a machine holds no permission.
  */
 @Injectable()
 export class HostCredentialResolver implements CredentialResolverPort {

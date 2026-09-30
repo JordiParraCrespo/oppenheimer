@@ -1,16 +1,13 @@
 /**
- * A project's slug: its stable handle, derived from the name a person gave it,
- * once, at creation, and never again.
- *
- * A project is metadata; nothing on a host is named after it
- * (`product/versions/mvp/10-api-modules-and-data-model.md`). The slug is kept
- * lower-case kebab so it can sit in a URL, unique in its workspace for ever
- * (archiving keeps it), and derived deterministically:
+ * A project's slug: its stable handle, derived from the name once, at creation. A
+ * project is metadata and nothing on a host is named after it
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`). The slug is lower-case
+ * kebab so it can sit in a URL, unique in its workspace for ever (archiving keeps it),
+ * and derived deterministically:
  *
  * 1. `<name>` sanitised;
- * 2. `<name>-<first 8 hex of the project's UUID>` — the id is minted before the
- *    insert, so the fallback is derived from the row itself and cannot collide
- *    in practice.
+ * 2. `<name>-<first 8 hex of the project's UUID>`: the id is minted before the insert,
+ *    so the fallback is derived from the row itself.
  */
 
 export const PROJECT_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

@@ -96,15 +96,11 @@ interface RequestOptions {
 }
 
 /**
- * The only file that talks to GitHub.
- *
- * It is written on the platform `fetch` and `node:crypto` rather than a client
- * library, deliberately: the surface is five endpoints, an RS256 JWT and one
- * pagination rule, and a dependency for that is a dependency to keep current,
- * audit and resolve at install time.
- *
- * It also makes GitHub's failures into this module's problem documents: an
- * unmapped upstream error would reach a client as a bare 500 with no code.
+ * The only file that talks to GitHub, on the platform `fetch` and
+ * `node:crypto`: seven endpoints, an RS256 JWT and one pagination rule do not
+ * earn a client library to keep current, audit and resolve at install time.
+ * GitHub's failures become this module's problem documents, or they would
+ * reach a client as a bare 500 with no code.
  *
  * **Nothing here logs a response body.** The access-token endpoint answers with
  * a live credential, and a log line is the easiest place to leak one.

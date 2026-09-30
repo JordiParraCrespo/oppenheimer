@@ -306,11 +306,9 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
    *
    * Everything here is an organization resource, narrowed to the active
    * organization by the `${activeOrganizationId}` placeholder. Nothing here
-   * touches `User`, `all` or another tenant: the role used to be the global
-   * `admin` (`manage all`) assigned org-scoped, and because non-tenant routes
-   * such as `DELETE /users/:id` check only action + subject, anyone who
-   * created a workspace could delete arbitrary platform accounts while that
-   * workspace was active.
+   * may touch `User`, `all` or another tenant: non-tenant routes such as
+   * `DELETE /users/:id` check only action + subject, so a broader rule would
+   * let anyone who creates a workspace delete arbitrary platform accounts.
    */
   owner: [
     { action: 'manage', subject: 'Organization', conditions: { id: ACTIVE_ORGANIZATION_ID } },
@@ -364,12 +362,9 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     /**
      * Deliberately small: a plain account holds nothing until it creates an
      * organization or an invitation puts it in one, and whichever of those
-     * happens is what grants the org-scoped role for that workspace.
-     *
-     * It used to carry unconditional `read`/`update` on `User` — which let
-     * every account list and edit every other account across tenants — and
-     * `read`/`create` on `Article`, a subject with no module or table behind
-     * it. Self-service profile editing goes through `/profile`; colleagues come
+     * happens is what grants the org-scoped role for that workspace. No rule on
+     * `User`: an unconditional one lets every account list and edit every other
+     * across tenants. Profile editing goes through `/profile`; colleagues come
      * from the `Member` resource.
      */
     // Which organizations this account belongs to, and nothing else about

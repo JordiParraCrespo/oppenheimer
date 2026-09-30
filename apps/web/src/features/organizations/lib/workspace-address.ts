@@ -1,15 +1,9 @@
 /**
- * The address a workspace is reached at.
- *
- * One definition, because two screens print it: the step that claims the
- * address and the summary that repeats it back. A console served from another
- * origin printing `oppenheimer.dev/` under the field is the same class of bug
- * as the installer fetching `get.oppenheimer.dev` — a hosted default standing
- * in for the deployment actually running.
- *
- * The origin is this console's own, which is where a workspace is reached in
- * any deployment. `oppenheimer.dev/` remains what the artboards show, because
- * that is the origin they were drawn for.
+ * The address a workspace is reached at, defined once because two screens
+ * print it. The origin is this console's own, never a hosted default: a
+ * console on another origin printing `oppenheimer.dev/` is the same bug as the
+ * installer fetching `get.oppenheimer.dev`. The artboards show
+ * `oppenheimer.dev/` only because that is the origin they were drawn for.
  */
 export function workspaceAddressPrefix(): string {
   if (typeof window === 'undefined') return '';

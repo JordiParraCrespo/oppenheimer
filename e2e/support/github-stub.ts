@@ -1,25 +1,18 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 
 /**
- * A stand-in for GitHub, for the one part of the console that cannot be real
- * here.
+ * A stand-in for GitHub, the one part of the run that cannot be real here.
  *
- * Repositories and branches are answered live by GitHub through a GitHub App
- * installation, and creating a session validates its repository the same way.
- * A deployment with no App therefore cannot exercise the create path at all —
- * which is why `tests/api/sessions.spec.ts` skips it, and why the web spec
- * beside it would have nothing to click.
- *
- * So this serves the six endpoints the REST adapter calls, and the API is
- * pointed at it with `GITHUB_APP_API_URL` / `GITHUB_APP_OAUTH_URL`
- * (`product/versions/mvp/03-control-plane.md`). **Everything else in the run
- * is the real thing**: a browser, the built console, the API with its guards,
- * its Zod pipe and its problem-document filter, and a real Postgres. The fake
- * stops at the network boundary the product does not own.
+ * Repositories and branches are answered live through a GitHub App
+ * installation, and creating a session validates its repository the same way,
+ * so a deployment with no App cannot exercise the create path at all. The API
+ * is pointed here with `GITHUB_APP_API_URL` / `GITHUB_APP_OAUTH_URL`
+ * (`product/versions/mvp/03-control-plane.md`); the fake stops at the network
+ * boundary the product does not own.
  *
  * The shapes are GitHub's own, copied from its REST reference rather than from
- * the adapter's readers — a stub written to suit the parser would pass while
- * the real API failed, which is the one thing a stub must not do.
+ * the adapter's readers: a stub written to suit the parser would pass while
+ * the real API failed.
  */
 export interface StubRepository {
   id: number;

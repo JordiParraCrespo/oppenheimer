@@ -16,31 +16,6 @@ import {
 import type { ChipSelectAction, ChipSelectTriggerVariant } from './chip-select';
 import { Popover, PopoverTrigger } from './popover';
 
-/**
- * RepositorySelect — the repository chip on New session. A session can span
- * several repositories, so this picker multi-selects: rows toggle in and out,
- * and the chip reads the first one plus a count ("xrp-mobile +1").
- *
- * A branch belongs to a repository, so each **selected** row grows a right-hand
- * cell (134px, hairline on its left, mono) showing that repo's branch with a
- * chevron. Clicking it swaps the same 318px popup to a branch pane for that
- * repo: a back row, its own search, mono branch options. Picking a branch
- * returns to the repository list, so the next repo's branch is one click away.
- *
- * Adding a repository lands it on its default branch; removing it forgets its
- * branch, so re-adding it never resurrects a stale choice. The caller decides
- * whether a sibling branch chip is shown: only while exactly one repository is
- * selected does a branch chip tell the truth.
- *
- * ```tsx
- * <RepositorySelect
- *   repositories={repos}
- *   value={scope}            // [{ id: 'xrp-mobile', branch: 'main' }]
- *   onValueChange={setScope}
- *   action={{ label: 'Manage repository access', icon: <BrandGlyph name="github" />, href: installUrl }}
- * />
- * ```
- */
 type RepositoryBranch = { value: string; label?: string };
 
 type RepositoryOption = {
@@ -64,6 +39,30 @@ function defaultBranchOf(repo: RepositoryOption) {
 
 const defaultBranchPaneTitle = (name: string): React.ReactNode => `Branch for ${name}`;
 
+/**
+ * RepositorySelect — the repository chip on New session. A session can span
+ * several repositories, so it multi-selects, and the chip reads the first plus
+ * a count ("xrp-mobile +1").
+ *
+ * Each **selected** row grows a right-hand cell (134px, hairline left, mono)
+ * with its branch and a chevron; clicking it swaps the same 318px popup to that
+ * repo's branch pane (back row, search, mono branches), and picking one returns
+ * to the repository list.
+ *
+ * Adding a repository lands it on its default branch; removing it forgets its
+ * branch, so re-adding never resurrects a stale choice. A sibling branch chip
+ * tells the truth only while exactly one repository is selected; the caller
+ * decides whether to show one.
+ *
+ * ```tsx
+ * <RepositorySelect
+ *   repositories={repos}
+ *   value={scope}            // [{ id: 'xrp-mobile', branch: 'main' }]
+ *   onValueChange={setScope}
+ *   action={{ label: 'Manage repository access', icon: <BrandGlyph name="github" />, href: installUrl }}
+ * />
+ * ```
+ */
 function RepositorySelect({
   repositories,
   value,
@@ -113,8 +112,8 @@ function RepositorySelect({
   className?: string;
   'aria-label'?: string;
 }) {
-  // Defaults resolved in the body, not the signature: the React Compiler
-  // leaves a component whose default parameter is a function uncompiled.
+  // Defaulted here, not in the signature: the React Compiler skips a component
+  // whose default parameter is a function.
   const branchPaneTitle = branchPaneTitleProp ?? defaultBranchPaneTitle;
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');

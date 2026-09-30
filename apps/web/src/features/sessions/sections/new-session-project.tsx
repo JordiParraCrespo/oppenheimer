@@ -13,16 +13,12 @@ import { useSearchPick } from '../hooks/use-search-pick';
 import { projectPrefill, toProjectOptions } from '../lib/session-options';
 
 /**
- * The project chip, bound to the draft: first in the scope band, because
- * picking a project prefills the host, the repository and the agent
- * (`product/versions/mvp/05-screens.md`).
- *
- * It subscribes to the projects because it draws them. The hosts it only
- * reads at pick time, to know which project default is still a machine this
- * workspace has, so a refetch of the host list does not re-render it — what
- * it subscribes to is only whether that list has answered, because a pick
- * made before it has would drop the project's default host as if it were
- * gone.
+ * The project chip, first in the scope band because picking a project
+ * prefills the host, the repository and the agent
+ * (`product/versions/mvp/05-screens.md`). The hosts are read only at pick
+ * time, so a host refetch does not re-render it; it subscribes only to whether
+ * that list has answered, because a pick before then would drop the project's
+ * default host as if it were gone.
  */
 export function NewSessionProject() {
   const { t } = useTranslation();

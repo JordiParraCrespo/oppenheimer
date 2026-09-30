@@ -27,11 +27,7 @@ const assertions: HostAssertionPort = {
   },
 };
 
-/**
- * Stands in for the root `AuthModule`, which cannot boot here: it configures
- * Better Auth and the ORM. What matters is that the registry is a global
- * provider of the kernel's, which is exactly how the real module publishes it.
- */
+/** The root `AuthModule`'s stand-in, as in `auth/__tests__/credential-contribution.spec.ts`. */
 @Global()
 @Module({ providers: [CredentialResolverRegistry], exports: [CredentialResolverRegistry] })
 class KernelStubModule {}

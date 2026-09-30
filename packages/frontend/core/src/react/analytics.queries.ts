@@ -17,15 +17,12 @@ export interface CaptureEventVariables {
  * <Button onPress={() => capture({ event: ANALYTICS_EVENTS.USER_SIGNED_UP })} />
  * ```
  *
- * `mutate` has a stable identity, so it's safe to pass to a memoized child or
- * list in a dependency array — which `capture` read off the service is not,
- * since it loses its `this` binding.
+ * `mutate` has a stable identity, unlike `capture` read off the service, which
+ * loses its `this` binding.
  *
- * Note that the mutation always succeeds: `AnalyticsService` guards every
- * provider call, so a blocked or failing SDK is swallowed and warned rather
- * than surfaced. `isPending` and `error` are there for interface consistency
- * with the other mutations, not because a capture is expected to fail — analytics
- * must never sit in a critical path.
+ * The mutation always succeeds: `AnalyticsService` swallows and warns on every
+ * provider failure, because analytics must never sit in a critical path.
+ * `isPending` and `error` exist only for consistency with the other mutations.
  */
 export function useCaptureEvent(
   options?: Omit<UseMutationOptions<void, Error, CaptureEventVariables>, 'mutationFn'>,

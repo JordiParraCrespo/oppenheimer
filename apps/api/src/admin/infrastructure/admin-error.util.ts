@@ -31,7 +31,6 @@ const BY_UPSTREAM_CODE: Readonly<Record<string, ErrorDefinition>> = {
   FAILED_TO_CREATE_USER: AdminErrors.UPSTREAM_FAILED,
 };
 
-/** Entry to use when the upstream code is unknown (or absent), keyed by status. */
 function fallbackFor(status: number): ErrorDefinition {
   if (status === 401 || status === 403) return AdminErrors.NOT_ALLOWED;
   if (status === 404) return AdminErrors.USER_NOT_FOUND;
@@ -51,8 +50,4 @@ export function mapAdminError({ upstreamCode, status }: BetterAuthFailure): Erro
   return fallbackFor(status);
 }
 
-/**
- * Wraps an `auth.api.*` admin call so its failures become catalog `AppError`s.
- * Every call in this module goes through it.
- */
 export const invokeAdminApi = betterAuthInvoker(mapAdminError);

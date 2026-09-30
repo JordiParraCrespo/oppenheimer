@@ -93,8 +93,6 @@ function headerOf(init: RequestInit, name: string): string | undefined {
 
 describe('configuration', () => {
   it('asks the capability rather than re-deriving one of its own', () => {
-    // The two used to be different subsets, so a deployment with no App slug
-    // reported `github_app: false` and still answered `POST /installations` 201.
     expect(build([]).adapter.isConfigured()).toBe(true);
     expect(build([], { configured: false }).adapter.isConfigured()).toBe(false);
   });

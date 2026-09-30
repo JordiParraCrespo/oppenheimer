@@ -10,18 +10,15 @@ import {
 } from 'typeorm';
 
 /**
- * One repository a project holds: which one, the base its sessions branch from,
- * and whether it is offered by default (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * One repository a project holds: which one, the base its sessions branch from, and
+ * whether it is offered by default (`product/versions/mvp/10-api-modules-and-data-model.md`).
  *
- * A child of the project aggregate, like `session_checkout` is of the session: it
- * declares no resource, is never queried outside `projects/database/`, and is
- * only ever read by a `projectId` the scoped project read has already verified.
- * The `(organizationId, projectId)` and `(organizationId, installationId)`
- * composite keys in the migration are what make a project holding another
- * workspace's installation unrepresentable.
- *
- * Configuration, not history: a repository taken out of a project is a deleted
- * row. What a session checked out is on its own checkout rows.
+ * A child of the project aggregate, like `session_checkout` of the session: no
+ * resource, never queried outside `projects/database/`, only read by a `projectId` the
+ * scoped project read has verified. The `(organizationId, projectId)` and
+ * `(organizationId, installationId)` composite keys in the migration make a project
+ * holding another workspace's installation unrepresentable. Configuration, not
+ * history: a repository taken out of a project is a deleted row.
  */
 @Entity('project_repository')
 @Index('IDX_project_repository_organization_repo', ['organizationId', 'githubRepoId'])

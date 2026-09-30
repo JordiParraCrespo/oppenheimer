@@ -5,19 +5,11 @@ import { HostSelect } from '../components/host-select';
 import { RepositoryBranchSelect } from '../components/repository-branch-select';
 
 /**
- * What the three scope chips do while their lists are still being read.
- *
- * New session opens cold: the hosts, the installations' repositories and the
- * branches all arrive after the first paint, so for a moment every one of these
- * chips has an empty list. They used to be `disabled` for exactly that moment —
- * which is the same chip as one this workspace may not use, and made the screen
- * read as switched off.
- *
- * The contract has two halves and this asserts both, because the second is the
- * one that can silently rot: the chip stays pressable, **and** its popup says
- * "Loading …" rather than claiming nothing matches. A suite that only checked
- * `disabled` would pass with the loading line wired to the wrong string, or
- * never rendered at all.
+ * The three scope chips while their lists are still being read: New session
+ * opens cold, and a `disabled` chip there reads as one this workspace may not
+ * use. Both halves are asserted, because the second can rot silently: the
+ * chip stays pressable, **and** its popup says "Loading …" rather than that
+ * nothing matches.
  */
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),

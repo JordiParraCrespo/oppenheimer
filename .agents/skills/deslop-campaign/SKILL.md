@@ -32,9 +32,10 @@ into an identifier (`CURVE25519_P`).
      | grep -vE '^[+-]\s*(//|/\*\*?|\*|\*/|\{/\*.*\*/\})' | grep -vE '^[+-]\s*$'
    ```
 
-   prints nothing. Then re-read every fully deleted block of more than one
-   sentence and restore the ones whose reason now lives nowhere a reader of
-   that code would find it (grep for it; do not assume). Then any eval planter
+   prints nothing. Then re-read every removed sentence, in deleted and in
+   rewritten blocks alike, and restore the ones whose reason now lives nowhere
+   a reader of that code would find it (grep for it; do not assume); check
+   every corrected comment against the code. Then any eval planter
    (`.agents/routines/evals/*/plant.mjs`) still finds its anchors, and
    `pnpm ci:local` is green.
 4. **Record.** Add the pass's column to `ledger.md`: net comment lines removed

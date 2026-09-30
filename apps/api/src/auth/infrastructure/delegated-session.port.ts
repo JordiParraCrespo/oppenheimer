@@ -11,12 +11,9 @@ export interface DelegatedSessionRequest {
  * Lets a scoped credential act as the person who issued it.
  *
  * An API token or OAuth grant carries no session, but the operations delegated
- * to the identity provider all resolve their caller from one. This mints and
+ * to the identity provider resolve their caller from one. This mints and
  * reuses a short-lived session for that credential, and invalidates it when the
  * credential or the person's sessions go away.
- *
- * Callers depend on this shape, never on the adapter: caching, the sweep of
- * superseded rows and the provider's session API are all its business.
  */
 export interface DelegatedSessionPort {
   /**

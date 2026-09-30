@@ -3,18 +3,13 @@ import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Every HTTP route must state its authorization intent: either the capability
- * it requires (`@CheckPolicies`) or an explicit, reasoned exemption
- * (`@NoPolicy`).
+ * Every HTTP route states its authorization intent: `@CheckPolicies` or a reasoned
+ * `@NoPolicy`. `PoliciesGuard` fails closed on a route with neither, so this turns that
+ * runtime rejection into a build failure.
  *
- * `PoliciesGuard` fails closed on a route that declares neither, so this test
- * is what turns that runtime rejection into a build failure — you find out when
- * you add the route, not when someone calls it.
- *
- * This is a source scan rather than a runtime `DiscoveryService` walk because
- * booting the application needs a database, Redis and a populated `.env`. The
- * trade is that it reads decorators textually; the integration suite covers
- * the runtime behaviour.
+ * A source scan, not a `DiscoveryService` walk, because booting the app needs a
+ * database, Redis and a populated `.env`. It reads decorators textually; the
+ * integration suite covers the runtime behaviour.
  */
 
 const SRC = resolve(__dirname, '..');

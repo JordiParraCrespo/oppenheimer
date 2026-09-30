@@ -70,35 +70,26 @@ interface RoleSet {
 
 /**
  * Builds a CASL ability for an authenticated user from the union of every role
- * assigned to them.
+ * assigned to them: roles through the `user_role` join, then the Better Auth
+ * `user.role` column (the global role of that name, then the seeded system-role
+ * permissions), so users that predate the join keep working.
  *
- * Resolution order:
- *   1. Roles assigned through the `user_role` join (dynamic RBAC).
- *   2. The Better Auth `user.role` column — first the global role of that
- *      name, then the seeded system-role permissions — so users that predate
- *      the join keep working.
+ * Every resolution first reads three version counters in one query
+ * (`AuthzVersionRepositoryPort`): the organization's `roleVersion`, the global role
+ * catalog's and the user's own. Every writer that changes effective permissions bumps
+ * one in its own transaction.
  *
- * **What is cached, and on what.** Every resolution first reads three version
- * counters in one query (`AuthzVersionRepositoryPort`): the organization's
- * `roleVersion`, the global role catalog's and the user's own. Every writer
- * that changes effective permissions bumps one of them in its own transaction.
+ * - The `user_role` permissions are cached in Redis under a key carrying all three, so
+ *   a write is a miss on the next request on every replica. The versions are read
+ *   before the cache and any computation: a value computed after a concurrent write is
+ *   harmlessly newer than its key, one computed before could claim to be current.
+ * - The `user.role` platform roles come from `GlobalRoleRegistry` and are not in the
+ *   cached value: `user.role` arrives fresh with every request, so Better Auth's
+ *   `set-role` needs no invalidation.
+ * - A Redis error falls back to the database, logged once per outage.
  *
- * - The `user_role`-derived permissions are cached in Redis under a key that
- *   carries all three, so a write is a miss on the very next request, on
- *   every replica. The versions are read **before** the cache and before any
- *   computation: a value computed after a concurrent write is newer than its
- *   key says, which is harmless, whereas one computed before reading the
- *   versions could be stored under a key that claims to be current.
- * - The platform roles on `user.role` come from `GlobalRoleRegistry`, this
- *   process's snapshot of the global roles, reloaded when the catalog version
- *   moves. They are not part of the cached value: `user.role` arrives fresh
- *   with every request, so Better Auth's `set-role` needs no invalidation.
- * - Redis failing is not an authorization failure: a cache error falls back
- *   to the database, logged once per outage.
- *
- * The ability itself is never cached across requests — it is interpolated
- * per request (`${user.id}`, `${activeOrganizationId}`) and does not
- * serialize — only the permission definitions it is built from.
+ * Only the permission definitions are cached; the ability is interpolated per request
+ * (`${user.id}`, `${activeOrganizationId}`) and does not serialize.
  */
 @Injectable()
 export class AbilityFactory implements AbilityPort {
@@ -115,17 +106,11 @@ export class AbilityFactory implements AbilityPort {
   ) {}
 
   /**
-   * The caller's ability for this request, built in the request's tenant and
-   * memoized per request.
-   *
-   * `PoliciesGuard` and `AccessScopeInterceptor` both ask for it; the memo
-   * makes the second ask free, and concurrent asks share one resolution. The
-   * api-token, catalog and role-grant handlers call {@link createForUser}
-   * instead, which has no request to memoize on but shares the Redis cache.
-   *
-   * The organization comes from the request (`request.tenant`, write-once),
-   * never from an argument the memo could not see, so every caller in a
-   * request asks about the same organization.
+   * The caller's ability for this request, built in the request's tenant and memoized
+   * per request: `PoliciesGuard` and `AccessScopeInterceptor` both ask, and concurrent
+   * asks share one resolution. The organization comes from `request.tenant`
+   * (write-once), never an argument the memo could not see. Handlers with no request
+   * call {@link createForUser}, which shares the Redis cache.
    */
   forRequest(request: AbilityRequest): Promise<AppAbility> {
     return requestMemo(request, ABILITY, async () => {

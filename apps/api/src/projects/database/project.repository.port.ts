@@ -45,15 +45,12 @@ export interface ProjectRepositoryPort {
    */
   saveSettingsIfActive(scope: AccessScope, entity: ProjectEntity): Promise<Option<ProjectEntity>>;
   /**
-   * Retire a project, in one transaction with the question that decides it.
-   *
-   * The row is locked with `SELECT … FOR UPDATE` **before** `stillInUse` is asked
-   * and stays locked until `archivedAt` is written, while creating a session takes
-   * a share lock on the same row inside its own insert transaction. That is what
-   * makes "an archived project holds no unresolved session" a fact rather than a
-   * probability: whichever of the two waits sees the other's committed work and
-   * refuses. A boolean callback rather than a value, because the answer has to be
-   * read inside the lock.
+   * Retire a project, in one transaction with the question that decides it. The row is
+   * locked `FOR UPDATE` before `stillInUse` is asked and until `archivedAt` is written,
+   * while creating a session takes a share lock on the same row in its insert
+   * transaction, so "an archived project holds no unresolved session" is a fact:
+   * whichever waits sees the other's committed work and refuses. A callback, because the
+   * answer has to be read inside the lock.
    */
   archiveIfUnused(
     scope: AccessScope,

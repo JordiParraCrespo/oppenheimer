@@ -60,14 +60,13 @@ export class AppError extends Error {
 }
 
 /**
- * The generated api-client throws its own `ApiError` with the parsed response
- * on `body`; when that body is a problem document the server's own explanation
- * wins over the caller's generic fallback.
+ * The generated api-client throws `ApiError` with the parsed response on
+ * `body`; when that is a problem document, the server's explanation wins over
+ * the caller's fallback.
  *
- * Not every failure arrives that way. Better Auth's client rejects through
- * `@oppenheimer/auth`'s `AuthRequestError`, which carries a `status` and its own
- * `code` but no problem document — so both are read off the error directly when
- * there is none. `status` is what distinguishes a failure the server answered
+ * Better Auth's client rejects through `@oppenheimer/auth`'s `AuthRequestError`
+ * instead, with a `status` and `code` but no problem document, so both are read
+ * off the error directly. `status` distinguishes a failure the server answered
  * from one that never reached it.
  */
 export function toAppError(error: unknown, fallback: ErrorDefinition): AppError {

@@ -9,23 +9,13 @@ import { PROJECT_REPOSITORY } from '../../projects.di-tokens';
 import { ArchiveProjectCommand } from './archive-project.command';
 
 /**
- * Retires a project: nothing new can be listed under it. The row is never deleted
- * — `uq (organizationId, slug)` is a permanent tombstone, so a new project can
- * never inherit a retired one's handle, and the grants keyed on its id can never
- * be inherited with it.
+ * Retires a project: nothing new can be listed under it. The row is never deleted:
+ * `uq (organizationId, slug)` is a permanent tombstone, so a new project can never
+ * inherit a retired one's handle, nor the grants keyed on its id.
  *
- * **It fails closed, and that is a DI fact rather than a caught exception.** "Is
- * any session still open in this project" is a question only the module that owns
- * sessions can answer, and it answers it by contributing a `ProjectUsagePort` to
- * the registry. With nothing contributed the registry is empty and the archive
- * refuses; assuming "no sessions" on a destructive path is the fail-open this shape
- * rules out.
- *
- * **The check and the write are one transaction.** The repository takes
- * `SELECT … FOR UPDATE` on the project row, asks the question inside that lock and
- * writes `archivedAt` before releasing it, while creating a session takes a share
- * lock on the same row. So an archive and a create cannot both win: whichever waits
- * sees the other's committed work and refuses.
+ * It fails closed as a DI fact (`ProjectUsagePort`), and the check and the write are
+ * one transaction under the project row's lock (`ProjectRepositoryPort.archiveIfUnused`),
+ * so an archive and a session create cannot both win.
  */
 @CommandHandler(ArchiveProjectCommand)
 export class ArchiveProjectCommandHandler

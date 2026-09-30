@@ -10,11 +10,9 @@ import {
 
 /**
  * Sealing to a host's Ed25519 key (F7): the installation token on
- * `credentials.grant` is readable by the runner holding the private half and
- * by nothing on the way.
- *
- * The scheme, which `apps/runner/internal/pairing/adapters/token/seal.go` is
- * the other half of:
+ * `credentials.grant` is readable by the runner holding the private half and by
+ * nothing on the way. The other half is
+ * `apps/runner/internal/pairing/adapters/token/seal.go`:
  *
  * 1. the host's Ed25519 public key is mapped to its X25519 twin
  *    (`u = (1 + y) / (1 - y) mod p`, the birational map between the curves);
@@ -24,11 +22,10 @@ import {
  *    Ed25519 public, info = SEAL_INFO)`, 32 bytes;
  * 4. the plaintext is AES-256-GCM under that key with a fresh 12-byte nonce.
  *
- * The sealed bytes are `ephemeral public (32) ‖ nonce (12) ‖ ciphertext ‖ tag
- * (16)`. Binding the host's key into the salt is what stops a sealed box
- * being re-addressed. Nothing here is a signature: the link the grant rides is
- * already authenticated per host, so the only property needed is that a relay
- * log, a proxy or a second host cannot read the token.
+ * Sealed bytes: `ephemeral public (32) ‖ nonce (12) ‖ ciphertext ‖ tag (16)`. The
+ * host's key in the salt stops a sealed box being re-addressed. No signature: the
+ * link is already authenticated per host, so the token need only be unreadable to a
+ * relay log, a proxy or a second host.
  */
 export const SEAL_INFO = 'oppenheimer credentials.grant v1';
 
