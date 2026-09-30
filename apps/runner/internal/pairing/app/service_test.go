@@ -3,6 +3,8 @@ package app_test
 import (
 	"context"
 	"crypto/ed25519"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"os"
@@ -67,6 +69,25 @@ func TestRegisterStoresTheIdentityAndPinsTheFingerprint(t *testing.T) {
 	if cp.Requests[0].PublicKey != stored || identity.PublicKey != stored {
 		t.Fatalf("sent %q, identity %q, want the stored key's public half %q",
 			cp.Requests[0].PublicKey, identity.PublicKey, stored)
+	}
+	// Nor is the private half sent under any other field. The seed's leading
+	// bytes open every encoding of the private key, the seed alone or whole.
+	body, err := json.Marshal(cp.Requests[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	seed := key.Seed()
+	for _, encoded := range []string{
+		base64.StdEncoding.EncodeToString(seed),
+		base64.URLEncoding.EncodeToString(seed),
+		hex.EncodeToString(seed),
+	} {
+		if strings.Contains(string(body), encoded[:40]) {
+			t.Fatalf("the register request carries the private key: %s", body)
+		}
+	}
+	if strings.Contains(string(body), "PRIVATE") {
+		t.Fatalf("the register request carries a private key block: %s", body)
 	}
 }
 

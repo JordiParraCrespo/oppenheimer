@@ -253,9 +253,9 @@ func TestCloseIsIdempotentEnoughToRetry(t *testing.T) {
 	}
 }
 
-// Attach opens a live session's window and refuses the rest. That detaching
-// leaves the session running is tmux's to prove (tmux_test.go).
-func TestAttachOpensALiveWindowAndRefusesAStoppedSessionAndAnUnknownWindow(t *testing.T) {
+// Attach opens a live session's window. That detaching leaves the session
+// running is tmux's to prove (tmux_test.go).
+func TestAttachOpensALiveWindow(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 
@@ -266,22 +266,35 @@ func TestAttachOpensALiveWindowAndRefusesAStoppedSessionAndAnUnknownWindow(t *te
 	if err := attachment.Close(); err != nil {
 		t.Fatal(err)
 	}
+}
 
-	_, err = h.svc.Attach(context.Background(), session.ID, 7, app.Size{})
+func TestAttachRefusesAWindowThatDoesNotExist(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+
+	_, err := h.svc.Attach(context.Background(), session.ID, 7, app.Size{})
+
 	var prob *problem.Error
 	if !errors.As(err, &prob) || prob.Code != "SESS_001" {
 		t.Fatalf("err = %v, want SESS_001 for a window that does not exist", err)
 	}
+}
 
+func TestAttachRefusesAStoppedSession(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
 	if err := h.terminals.Kill(context.Background(), session.TmuxName()); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := h.svc.Refresh(context.Background(), session.ID); err != nil {
 		t.Fatal(err)
 	}
-	_, err = h.svc.Attach(context.Background(), session.ID, 0, app.Size{})
+
+	_, err := h.svc.Attach(context.Background(), session.ID, 0, app.Size{})
+
+	var prob *problem.Error
 	if !errors.As(err, &prob) || prob.Code != "SESS_003" {
-		t.Fatalf("err = %v, want SESS_003", err)
+		t.Fatalf("err = %v, want SESS_003 for a stopped session", err)
 	}
 }
 

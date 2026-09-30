@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -83,15 +84,18 @@ func TestSystemdInstallWritesTheUnitEnablesLingeringAndStarts(t *testing.T) {
 		t.Fatal("the installed unit must not kill the tmux server")
 	}
 	// Lingering before enable: a unit enabled first would not survive the
-	// next reboot until someone logged in.
-	linger, enable := cmds.index("loginctl enable-linger jordi"), cmds.index("systemctl --user enable "+domain.SystemdUnit)
-	if linger < 0 || enable < 0 || linger > enable || !cmds.ran("systemctl --user daemon-reload") {
-		t.Fatalf("calls = %v, want lingering enabled before the unit", cmds.calls)
+	// next reboot until someone logged in. Then restart, not `enable --now`:
+	// a re-run on a host whose unit is already active must run the release
+	// it just linked, and `enable --now` would leave the old process in place.
+	want := []string{
+		"loginctl enable-linger jordi",
+		"systemctl --user daemon-reload",
+		"systemctl --user enable " + domain.SystemdUnit,
+		"systemctl --user restart " + domain.SystemdUnit,
 	}
-	// A re-run on a host whose unit is already active must run the release it
-	// just linked: `enable --now` would leave the old process in place.
-	if !cmds.ran("systemctl --user restart "+domain.SystemdUnit) || cmds.ran("systemctl --user enable --now") {
-		t.Fatalf("calls = %v", cmds.calls)
+	// What follows is the status read Install reports with.
+	if len(cmds.calls) < len(want) || !slices.Equal(cmds.calls[:len(want)], want) {
+		t.Fatalf("calls = %q, want them to start %q", cmds.calls, want)
 	}
 }
 

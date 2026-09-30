@@ -82,13 +82,6 @@ func (h *Hub) Publish(topic, event string, payload any) {
 	}
 }
 
-// Len is the number of live connections, for health and metrics.
-func (h *Hub) Len() int {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	return len(h.conns)
-}
-
 // Close tells every client the server is going away and waits for the
 // writers to drain, bounded by ctx. Serve calls it during shutdown.
 func (h *Hub) Close(ctx context.Context) {
@@ -98,8 +91,8 @@ func (h *Hub) Close(ctx context.Context) {
 	for c := range h.conns {
 		conns = append(conns, c)
 	}
-	// Forget them now so publishers stop queueing frames and Len reports
-	// the truth while the close handshakes are in flight.
+	// Forget them now so publishers stop queueing frames while the close
+	// handshakes are in flight.
 	h.conns = map[*conn]struct{}{}
 	h.topics = map[string]map[*conn]struct{}{}
 	h.mu.Unlock()

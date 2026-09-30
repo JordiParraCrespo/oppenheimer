@@ -24,7 +24,7 @@ func newProbeHarness(t *testing.T, dirs ...string) *probeHarness {
 	t.Helper()
 	t.Setenv("PATH", filepath.Join(dirs...))
 	h := &probeHarness{clock: time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)}
-	h.prober = &Prober{tools: map[string]toolEntry{}}
+	h.prober = New()
 	h.prober.version = func(context.Context, string) string {
 		h.mu.Lock()
 		defer h.mu.Unlock()

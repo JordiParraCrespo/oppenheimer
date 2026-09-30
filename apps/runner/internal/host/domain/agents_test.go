@@ -6,6 +6,28 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 )
 
+// The catalog decides which CLIs the runner updates on its own. git and tmux
+// are the package manager's, and OpenCode's updater stops to ask.
+func TestOnlyUnattendedAgentUpdatersAreRun(t *testing.T) {
+	cases := []struct {
+		tool string
+		ok   bool
+	}{
+		{domain.ToolClaude, true},
+		{domain.ToolCodex, true},
+		{domain.ToolGrok, true},
+		{domain.ToolGit, false},
+		{domain.ToolTmux, false},
+		{domain.ToolOpenCode, false},
+	}
+	for _, c := range cases {
+		args, ok := domain.AgentUpdateArgs(c.tool)
+		if ok != c.ok || ok != (len(args) > 0) {
+			t.Errorf("%s: updater %v (ok %v), want ok %v", c.tool, args, ok, c.ok)
+		}
+	}
+}
+
 func TestAgentUpdateArgsIsACopy(t *testing.T) {
 	args, _ := domain.AgentUpdateArgs(domain.ToolClaude)
 	args[0] = "rm"

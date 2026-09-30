@@ -276,9 +276,8 @@ func TestActivateReplacesAnExistingCurrent(t *testing.T) {
 	if err := l.Activate("2.0.0"); err != nil {
 		t.Fatalf("activate: %v", err)
 	}
-	got, _ := l.Current()
-	if got != "2.0.0" {
-		t.Fatalf("current = %q, want 2.0.0", got)
+	if got, err := l.Current(); err != nil || got != "2.0.0" {
+		t.Fatalf("current = %q, err = %v, want 2.0.0", got, err)
 	}
 
 	// Rolling back is the same operation the other way, and the old binary
@@ -286,8 +285,8 @@ func TestActivateReplacesAnExistingCurrent(t *testing.T) {
 	if err := l.Activate("1.0.0"); err != nil {
 		t.Fatalf("rollback: %v", err)
 	}
-	if got, _ := l.Current(); got != "1.0.0" {
-		t.Fatalf("after rollback current = %q", got)
+	if got, err := l.Current(); err != nil || got != "1.0.0" {
+		t.Fatalf("after rollback current = %q, err = %v", got, err)
 	}
 }
 

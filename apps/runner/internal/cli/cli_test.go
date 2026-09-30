@@ -126,14 +126,20 @@ func TestCredentialHelperNeverFailsGit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, operation := range []string{"get", "store", "erase"} {
+	// git's `get` asks with no password; `store` and `erase` carry the one it
+	// used.
+	for _, tc := range []struct{ operation, stdin string }{
+		{"get", "protocol=https\nhost=github.com\n\n"},
+		{"store", "protocol=https\nhost=github.com\nusername=x\npassword=secret\n\n"},
+		{"erase", "protocol=https\nhost=github.com\nusername=x\npassword=secret\n\n"},
+	} {
 		var out strings.Builder
-		if err := app.CredentialHelper(context.Background(), operation,
-			strings.NewReader("protocol=https\nhost=github.com\npassword=secret\n\n"), &out); err != nil {
-			t.Fatalf("%s: %v", operation, err)
+		if err := app.CredentialHelper(context.Background(), tc.operation,
+			strings.NewReader(tc.stdin), &out); err != nil {
+			t.Fatalf("%s: %v", tc.operation, err)
 		}
 		if out.String() != "" {
-			t.Fatalf("%s wrote %q; an empty answer is git's \"I have no credentials\"", operation, out.String())
+			t.Fatalf("%s wrote %q; an empty answer is git's \"I have no credentials\"", tc.operation, out.String())
 		}
 	}
 }

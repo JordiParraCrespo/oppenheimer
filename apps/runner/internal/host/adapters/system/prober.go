@@ -39,7 +39,8 @@ const factsTTL = 10 * time.Minute
 // PATH is still looked up on every call, so an uninstall shows at once, and
 // Invalidate drops everything for a preflight.
 type Prober struct {
-	// version and now are replaced by the package's tests.
+	// version runs a tool to print its version; now stamps the cache. New
+	// wires the real ones.
 	version func(ctx context.Context, path string) string
 	now     func() time.Time
 

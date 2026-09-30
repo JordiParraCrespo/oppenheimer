@@ -12,7 +12,7 @@ func SetReporterClock(r *Reporter, now func() time.Time) { r.now = now }
 
 // ReporterAckTimeout is the timeout after which a reporter resends a batch
 // the link took and nobody acked.
-func ReporterAckTimeout(*Reporter) time.Duration { return ackTimeout }
+const ReporterAckTimeout = ackTimeout
 
 // Pending is how many batches await an ack.
 func (r *Reporter) Pending() int {

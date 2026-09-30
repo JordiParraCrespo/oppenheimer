@@ -51,7 +51,8 @@ type Reporter struct {
 	// the log's order — a start's `running` must not land after its `done`.
 	pending []*pendingBatch
 	batches atomic.Uint64
-	// limit is maxPendingBatches; a field so a test need not make 4096.
+	// limit is how many batches may await an ack; past it Append drops the
+	// oldest. maxPendingBatches in production.
 	limit int
 }
 

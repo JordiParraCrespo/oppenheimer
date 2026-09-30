@@ -50,7 +50,7 @@ func sentKeys(s *fakeSender) []string {
 func TestAnUnackedBatchIsSentAgainAfterTheAckTimeout(t *testing.T) {
 	sender := &fakeSender{}
 	r, c := newClockedReporter(sender)
-	timeout := link.ReporterAckTimeout(r)
+	timeout := link.ReporterAckTimeout
 	if timeout <= 0 {
 		t.Fatal("the reporter has no ack timeout")
 	}
@@ -83,7 +83,7 @@ func TestAnUnackedBatchIsSentAgainAfterTheAckTimeout(t *testing.T) {
 func TestAnAckTimeoutResendsInOrderFromTheOverdueBatch(t *testing.T) {
 	sender := &fakeSender{}
 	r, c := newClockedReporter(sender)
-	timeout := link.ReporterAckTimeout(r)
+	timeout := link.ReporterAckTimeout
 
 	r.Append("s1", "session.step", map[string]any{"i": 1}) // run:1, acked below
 	r.Append("s1", "session.step", map[string]any{"i": 2}) // run:2, never acked
