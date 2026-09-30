@@ -14,9 +14,8 @@ import type { SessionFold } from './session-state.policy';
  *     state, and null means zero seconds, so a caller with no history cannot
  *     fabricate "blocked for five minutes" into `waiting-on-you`.
  *  2. **Precedence is not display order.** "Blocked for thirty seconds beats an
- *     approved pull request" is a correctness rule, "ready-for-review sorts first" a
- *     UI rule: {@link sessionGroup} and {@link SESSION_GROUP_DISPLAY_ORDER}, kept
- *     apart so each can change alone.
+ *     approved pull request" is a correctness rule and is {@link sessionGroup};
+ *     display order is a UI rule, not decided here (no client orders by group yet).
  *
  * **Two arms have no writer yet, and are not faked.** `waiting-on-you`'s fourth
  * source is a pane gone with no report, but `SessionReconciliationResolver` records a
@@ -29,20 +28,6 @@ import type { SessionFold } from './session-state.policy';
 const BLOCKED_SECONDS = 30;
 /** A launch that has sat in a non-ready state this long is not starting, it is stuck. */
 const LAUNCH_SECONDS = 60;
-
-/**
- * Display order for the sidebar, which is deliberately not the precedence order
- * below: what needs you sorts to the top, and "finished and you have not looked"
- * sorts above "waiting", because it is the one a person can close out.
- */
-export const SESSION_GROUP_DISPLAY_ORDER: readonly SessionGroup[] = [
-  'ready-for-review',
-  'waiting-on-you',
-  'working',
-  'landing',
-  'idle',
-  'resolved',
-];
 
 /** The group, by precedence. `now` is a parameter so the function stays pure. */
 export function sessionGroup(fold: SessionFold, now: Date = new Date()): SessionGroup {
