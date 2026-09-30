@@ -27,11 +27,6 @@ describe('canGrant', () => {
     expect(ungrantablePermissions(actor, requested)).toEqual(requested);
   });
 
-  it('lets a full-access actor grant anything', () => {
-    const actor = abilityOf([{ action: 'manage', subject: 'all' }]);
-    expect(canGrant(actor, [{ action: 'export', subject: 'Project' }])).toBe(true);
-  });
-
   it('always allows a deny — narrowing reach cannot escalate', () => {
     const actor = abilityOf([{ action: 'read', subject: 'Project' }]);
     expect(canGrant(actor, [{ action: 'export', subject: 'Project', inverted: true }])).toBe(true);
@@ -179,6 +174,7 @@ describe('canGrant — conditions', () => {
     const admin = actorWith([{ action: 'manage', subject: 'all' }]);
 
     expect(grantable(admin, { action: 'manage', subject: 'Session' })).toBe(true);
+    expect(grantable(admin, { action: 'export', subject: 'Project' })).toBe(true);
     expect(grantable(admin, { action: 'manage', subject: 'all' })).toBe(true);
     expect(
       grantable(admin, {

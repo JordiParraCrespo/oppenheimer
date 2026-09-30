@@ -515,3 +515,23 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `github_app_install_url` stays as the capability that says an App
   exists. The first-run walk rides as the state's prefix,
   `first-run.<nonce>`.
+- 2026-09-29: **Effort is each CLI's own levels, per model** (01, 02,
+  03, 05). The slider was five product stops that each agent mapped
+  onto its flag, which put "Medium" on a Claude Code launch of `--effort
+  high` and sent Codex a `minimal` no model takes. The catalog now spells
+  effort once per agent and lists each model's levels and default; the
+  slider draws those, starts on the default and sends nothing until
+  moved, and OpenCode takes a level as the model's variant.
+- 2026-09-30: **The session grid's line height is 1.3** (05). A departure
+  from the export's 1.55 and from the earlier xterm value of 1: xterm
+  stretches block and box glyphs to its cell, so 1.55 elongated Claude
+  Code's mark and 1 packed a turn. The HTML terminal keeps 1.55.
+- 2026-09-30: **The reader's messages in the session grid are drawn as the
+  export's bubble** (05). Found by Claude Code's own user-message background
+  and pointer, repainted in the terminal's ramp, with the tint laid over the
+  grid; the input row stays the agent's own.
+- 2026-09-30: **The dark session terminal is the artboard's `#1a1a1c`, frame
+  included** (05). It had been set to the canvas (`#121213`) because the
+  lighter terminal read as a slab on a darker page; the artboard paints the
+  session's frame in the terminal colour too, so the console now does the same
+  and matches it.

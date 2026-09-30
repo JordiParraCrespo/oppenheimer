@@ -57,7 +57,10 @@ export const sessionLaunchSchema = z.object({
   model: z.string().min(1).max(128).optional(),
   /** Absent is `ask` for an agent with approvals, and nothing for one without. */
   permission: sessionPermissionSchema.optional(),
-  /** Absent leaves the agent's own default; an agent with no notion of it ignores it. */
+  /**
+   * A level the session's model offers (`effortLevelFor`); any other name in
+   * the union is recorded as none and never sent. Absent is the CLI's own default.
+   */
   effort: sessionEffortSchema.optional(),
 });
 

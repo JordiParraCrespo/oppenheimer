@@ -490,8 +490,6 @@ export function checkApiStructure(dir, options = {}) {
   return { modules, outstanding, ledgered: entries.length };
 }
 
-export { LEDGER };
-
 // Run as a script; imported by the fixture suite without any of this firing.
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   if (!existsSync(API_SRC)) {

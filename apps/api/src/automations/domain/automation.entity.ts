@@ -5,6 +5,7 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
+import { effortLevelFor } from '@oppenheimer/shared/agents';
 import type {
   AutomationOverlapPolicy,
   AutomationPausedReason,
@@ -94,7 +95,13 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
         projectId: props.projectId,
         ownerUserId: props.ownerUserId,
         name: props.name.trim(),
-        revision: { ...props.revision, id: randomUUID(), number: 1, createdAt: props.now },
+        revision: {
+          ...props.revision,
+          effort: effortLevelFor(props.revision.agent, props.revision.model, props.revision.effort),
+          id: randomUUID(),
+          number: 1,
+          createdAt: props.now,
+        },
         triggers: props.triggers,
         pausedAt: props.active ? null : props.now,
         pausedReason: props.active ? null : 'user',
@@ -169,9 +176,12 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
     if (changes.maxRunsPerHour !== undefined) this.props.maxRunsPerHour = changes.maxRunsPerHour;
     if (changes.revision && this.revisionDiffers(changes.revision)) {
       const current = this.props.revision;
+      // The effort is judged on the whole next revision, since an edit can
+      // change the agent or the model without touching it (`effortLevelFor`).
+      const next = { ...current, ...changes.revision };
       this.props.revision = {
-        ...current,
-        ...changes.revision,
+        ...next,
+        effort: effortLevelFor(next.agent, next.model, next.effort),
         id: randomUUID(),
         number: current.number + 1,
         createdByUserId: by,

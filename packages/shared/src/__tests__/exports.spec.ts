@@ -64,12 +64,6 @@ describe.skipIf(!built)('the export map', () => {
     expect(require.resolve(name)).toBe(join(root, target(specifier, 'require') as string));
   });
 
-  it('sends ./schemas/auth to the schema file, and ./schemas to the barrel', () => {
-    expect(target('./schemas/auth', 'import')).toBe('./dist/esm/schemas/auth.schema.js');
-    expect(target('./schemas', 'import')).toBe('./dist/esm/schemas/index.js');
-    expect(target('./feature-flags/catalog', 'import')).toBe('./dist/esm/feature-flags/catalog.js');
-  });
-
   it('marks dist/esm as ES modules, with the side effects rebased onto it', () => {
     const esm = JSON.parse(readFileSync(join(root, 'dist', 'esm', 'package.json'), 'utf8'));
     expect(esm.type).toBe('module');

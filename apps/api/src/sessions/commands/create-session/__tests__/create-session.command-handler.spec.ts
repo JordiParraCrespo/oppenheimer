@@ -406,13 +406,24 @@ describe('CreateSessionCommandHandler', () => {
     // itself in `__tests__/session-state.spec.ts` rather than through a mock that
     // would only prove the mock records what it was handed.
     it('states the launch in the log, where the columns are folded from', async () => {
-      await run({ launch: { model: 'opus', permission: 'auto', effort: 'high' } });
+      await run({ launch: { model: 'claude-opus-5-5', permission: 'auto', effort: 'high' } });
 
       expect(requestPayload().launch).toEqual({
-        model: 'opus',
+        model: 'claude-opus-5-5',
         permission: 'auto',
         effort: 'high',
       });
+    });
+
+    // The levels are the model's: the runner drops one the model lacks, so the
+    // record does not name a level nothing ran at.
+    it('records no effort the model does not offer', async () => {
+      await run({ launch: { model: 'claude-haiku-4-5', effort: 'high' } });
+      expect(requestPayload().launch?.effort).toBeNull();
+
+      vi.mocked(sessions.createIfUnclaimed).mockClear();
+      await run({ launch: { model: 'claude-opus-5-5', effort: 'ultra' } });
+      expect(requestPayload().launch?.effort).toBeNull();
     });
 
     it('defaults to the level that asks, never to one that escalates', async () => {

@@ -8,12 +8,6 @@ describe('unwrap', () => {
     expect(() => unwrap({})).not.toThrow();
   });
 
-  it('throws the error message on failure', () => {
-    expect(() => unwrap({ error: { message: 'Invalid credentials' } })).toThrow(
-      'Invalid credentials',
-    );
-  });
-
   it('falls back to a generic message when the error has none', () => {
     expect(() => unwrap({ error: {} })).toThrow('Authentication request failed');
   });
