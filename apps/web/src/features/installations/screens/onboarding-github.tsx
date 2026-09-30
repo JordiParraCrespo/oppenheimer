@@ -103,6 +103,7 @@ export function OnboardingGithubScreen({
         total={total}
         back={{ render: back }}
         backLabel={t('onboarding.flow.back')}
+        counterLabel={t('onboarding.flow.step', { step, total })}
         title={t('onboarding.flow.github.title')}
       >
         {t('onboarding.flow.github.description')}

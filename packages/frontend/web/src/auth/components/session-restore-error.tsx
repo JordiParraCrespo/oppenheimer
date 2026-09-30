@@ -1,6 +1,6 @@
 import { Button } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
-import { ErrorAlert } from '../../forms';
+import { ScreenFailure } from '../../layout';
 
 /**
  * Restoring the session failed (a network or server error), so the app cannot
@@ -18,15 +18,13 @@ export function SessionRestoreError({
   const { t } = useTranslation();
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-canvas p-6">
-      <ErrorAlert
-        className="max-w-sm"
+    <div role="alert" className="flex min-h-svh flex-col bg-canvas p-6">
+      <ScreenFailure
         title={t('auth.session.errorTitle')}
-        message={t('auth.session.errorMessage')}
+        description={t('auth.session.errorMessage')}
         action={
           <Button
             variant="secondary"
-            size="sm"
             onClick={onRetry}
             pending={isRetrying}
             pendingLabel={t('auth.session.retrying')}

@@ -50,6 +50,7 @@ export function OnboardingHostScreen({
         total={total}
         back={{ render: back }}
         backLabel={t('onboarding.flow.back')}
+        counterLabel={t('onboarding.flow.step', { step, total })}
         title={t('onboarding.flow.host.title')}
       >
         {t('onboarding.flow.host.description')}

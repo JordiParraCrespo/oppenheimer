@@ -79,9 +79,11 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
 - **Status glyphs belong to finished things.** The check and alert circles
   appear only in `RunsList`, where each row is a finished run. Live state is
   a `StatusDot` and a word, and `RunHistory` is bars and dots, not a chart.
-- **A callout never carries a button.** `Callout` is a note in the flow on
-  a tonal fill; `neutral` is the default and takes no hue; a tinted tone
-  only when something is in that state. The action lives in the form.
+- **A callout never carries a button, except a failure's one action.**
+  `Callout` is a note in the flow on a tonal fill; `neutral` is the default
+  and takes no hue; a tinted tone only when something is in that state. The
+  action lives in the form. `Alert` is the same box with a title, and a
+  failure (`ErrorAlert`) may put its one Dismiss or Retry in `AlertAction`.
 - **Copy first, read second.** Add a host is two buttons — Copy install
   command, Copy agent prompt — then the instruction behind a `Disclosure`
   as one `CodeBlock layout="panel"` with Command / Agent prompt tabs on its

@@ -1,9 +1,10 @@
 import { Button, EmptyState } from '@oppenheimer/design-system-web';
-import { CircleAlert, Compass } from '@oppenheimer/design-system-web/icons';
+import { Compass } from '@oppenheimer/design-system-web/icons';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useRouter } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ScreenFailure } from './screen-failure';
 
 /**
  * What a route renders when there is nothing to render.
@@ -56,36 +57,32 @@ export function RouteError({ error }: { error: unknown }) {
   const resolved = isRequestFailure(error) ? resolveError(error) : undefined;
 
   return (
-    <EmptyState className="my-auto">
-      <EmptyState.Header>
-        <EmptyState.Media variant="icon">
-          <CircleAlert />
-        </EmptyState.Media>
-        <EmptyState.Title>{t('errors.unexpected.title')}</EmptyState.Title>
-        <EmptyState.Description>{resolved?.message ?? t('errors.fallback')}</EmptyState.Description>
-        {resolved?.code || resolved?.correlationId ? (
-          <EmptyState.Description className="font-mono text-xs">
-            {[
+    <ScreenFailure
+      title={t('errors.unexpected.title')}
+      description={resolved?.message ?? t('errors.fallback')}
+      detail={
+        resolved?.code || resolved?.correlationId
+          ? [
               resolved.code ? t('errors.code', { code: resolved.code }) : null,
               resolved.correlationId
                 ? t('errors.correlationId', { id: resolved.correlationId })
                 : null,
             ]
               .filter(Boolean)
-              .join(' · ')}
-          </EmptyState.Description>
-        ) : null}
-      </EmptyState.Header>
-      <EmptyState.Content>
+              .join(' · ')
+          : null
+      }
+      action={
         <Button variant="secondary" onClick={() => router.invalidate()}>
           {t('errors.unexpected.retry')}
         </Button>
-      </EmptyState.Content>
+      }
+    >
       {/* Not shown, but in the DOM for a bug report to carry. */}
       <p hidden data-slot="route-error-message">
         {describeThrow(error)}
       </p>
-    </EmptyState>
+    </ScreenFailure>
   );
 }
 
