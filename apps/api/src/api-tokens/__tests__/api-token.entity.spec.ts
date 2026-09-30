@@ -17,9 +17,7 @@ describe('ApiTokenEntity.issue', () => {
 
     expect(secret.startsWith(`${API_TOKEN_PREFIX}_`)).toBe(true);
     expect(token.tokenHash).toBe(hashApiTokenSecret(secret));
-    // Nothing the aggregate carries — and so nothing the repository persists —
-    // holds the secret itself.
-    expect(JSON.stringify(token)).not.toContain(secret);
+    expect(token.tokenHash).not.toContain(secret);
   });
 
   it('keeps a non-secret display prefix that the secret starts with', () => {

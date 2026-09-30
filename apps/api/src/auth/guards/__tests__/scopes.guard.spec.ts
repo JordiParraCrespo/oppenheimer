@@ -67,6 +67,11 @@ describe('ScopesGuard', () => {
   };
 
   describe('browser sessions', () => {
+    it('lets an unscoped request through untouched', async () => {
+      metadata[REQUIRE_SCOPES_KEY] = ['users:read'];
+      await expect(guard.canActivate(context())).resolves.toBe(true);
+    });
+
     it('lets an unscoped request reach a route that declares no scopes', async () => {
       await expect(guard.canActivate(context())).resolves.toBe(true);
     });

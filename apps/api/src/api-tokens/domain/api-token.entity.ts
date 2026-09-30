@@ -17,6 +17,11 @@ import { isIpAllowed } from './ip-allowlist.policy';
  */
 export const LAST_USED_GRANULARITY_MS = 60_000;
 
+/** Whether a use at `now` is worth recording, at {@link LAST_USED_GRANULARITY_MS}. */
+export function isLastUseStale(lastUsedAt: Date | null, now: Date): boolean {
+  return !lastUsedAt || now.getTime() - lastUsedAt.getTime() >= LAST_USED_GRANULARITY_MS;
+}
+
 export interface ApiTokenProps {
   /** Owner. The token's reach is re-derived from this user on every request. */
   userId: string;
@@ -30,6 +35,11 @@ export interface ApiTokenProps {
   organizationIds: string[] | null;
   ipAllowlist: string[] | null;
   expiresAt: Date | null;
+  /**
+   * A read-model fact, rehydrated from the row: the aggregate never records a
+   * use. The repository stamps it (`touchLastUsedAt`) when
+   * {@link isLastUseStale} says a use is worth recording.
+   */
   lastUsedAt: Date | null;
   revokedAt: Date | null;
 }
@@ -143,12 +153,6 @@ export class ApiTokenEntity extends AggregateRoot<ApiTokenProps> {
 
   get lastUsedAt(): Date | null {
     return this.props.lastUsedAt;
-  }
-
-  /** Whether a use at `now` is worth recording, at {@link LAST_USED_GRANULARITY_MS}. */
-  isLastUseStale(now: Date): boolean {
-    const last = this.props.lastUsedAt;
-    return !last || now.getTime() - last.getTime() >= LAST_USED_GRANULARITY_MS;
   }
 
   get revokedAt(): Date | null {

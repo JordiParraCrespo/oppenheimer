@@ -298,6 +298,13 @@ describe('DelegatedSessionAdapter', () => {
     // token a bump had already retired; it is tagged so the next read misses.
     cache.mget.mockRejectedValueOnce(new Error('redis down'));
     expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-1');
+    // Written, but under a tag the next successful read (no stamp stored, so
+    // the initial generation) does not match.
+    expect(cache.set).toHaveBeenCalledWith(
+      'delegated-session:cred-1',
+      { token: 'session-token-1', generation: expect.not.stringMatching(/^initial$/) },
+      expect.any(Number),
+    );
 
     expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-2');
   });

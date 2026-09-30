@@ -3,10 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { RedisThrottlerStorage } from '../infrastructure/redis-throttler.adapter';
 
 /**
- * The rate-limit counter store on the shared Redis client: how its reply maps
- * onto Nest's record, and that a Redis outage lets the request through. That
- * the script is registered once and run by hash (`EVALSHA`) is proven against
- * a real Redis in `redis/__tests__/redis.integration.spec.ts`.
+ * The rate-limit counter store on the shared Redis client. What it must hold:
+ * the increment script is registered once and run by hash (`EVALSHA`), not sent
+ * whole on every request, and a Redis outage lets the request through.
  */
 function fakeRedis(reply: () => Promise<unknown>) {
   const redis = {
@@ -20,6 +19,20 @@ function fakeRedis(reply: () => Promise<unknown>) {
 type Fake = ReturnType<typeof fakeRedis> & { throttleIncrement?: ReturnType<typeof vi.fn> };
 
 describe('RedisThrottlerStorage', () => {
+  it('registers the increment script once, as a command', () => {
+    const redis = fakeRedis(async () => [1, 60_000, 0, 0]);
+
+    new RedisThrottlerStorage(redis as unknown as Redis);
+    // A second storage on the same shared client reuses the command.
+    new RedisThrottlerStorage(redis as unknown as Redis);
+
+    expect(redis.defineCommand).toHaveBeenCalledTimes(1);
+    expect(redis.defineCommand).toHaveBeenCalledWith(
+      'throttleIncrement',
+      expect.objectContaining({ numberOfKeys: 1, lua: expect.stringContaining("'INCR'") }),
+    );
+  });
+
   it('runs the command on the throttle key and maps its reply', async () => {
     const redis: Fake = fakeRedis(async () => [101, 30_500, 1, 59_001]);
     const storage = new RedisThrottlerStorage(redis as unknown as Redis);

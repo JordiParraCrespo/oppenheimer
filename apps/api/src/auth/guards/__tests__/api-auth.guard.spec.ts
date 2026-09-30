@@ -102,6 +102,17 @@ describe('ApiAuthGuard, session path', () => {
     expect(request.session).toMatchObject({ activeOrganizationId: 'org-1' });
   });
 
+  it('asks for the session once, through the per-request resolution', async () => {
+    // The guard verifies nothing itself: a bearer session was verified while
+    // the credential was resolved, and a cookie is looked up once and shared.
+    credentials.resolveSession.mockResolvedValue(sessionFor({}));
+
+    await guard.canActivate(contextFor(request));
+
+    expect(credentials.resolveSession).toHaveBeenCalledTimes(1);
+    expect(credentials.resolveSession).toHaveBeenCalledWith(request);
+  });
+
   it('refuses a missing session with AUTH_001', async () => {
     await expect(guard.canActivate(contextFor(request))).rejects.toMatchObject({
       code: AuthErrors.UNAUTHENTICATED.code,

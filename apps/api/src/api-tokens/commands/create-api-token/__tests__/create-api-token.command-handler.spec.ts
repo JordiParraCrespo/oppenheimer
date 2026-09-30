@@ -60,6 +60,14 @@ describe('CreateApiTokenCommandHandler', () => {
     expect(result.tokenId).toBe(insertedToken().id);
   });
 
+  it('never persists the secret, only its digest', async () => {
+    const result = await service.execute(command());
+    const stored = insertedToken();
+
+    expect(stored.tokenHash).not.toBe(result.secret);
+    expect(JSON.stringify(stored)).not.toContain(result.secret);
+  });
+
   it('rebuilds the ability from the actor’s roles rather than trusting the request', async () => {
     await service.execute(command({ actor: { id: 'user-1', role: 'user' } }));
 
@@ -90,6 +98,12 @@ describe('CreateApiTokenCommandHandler', () => {
     await expect(service.execute(command({ scopes: ['users:read'] }))).resolves.toBeDefined();
   });
 
+  it('always allows the profile group, which governs the caller’s own account', async () => {
+    useAbility([]);
+
+    await expect(service.execute(command({ scopes: ['profile:read'] }))).resolves.toBeDefined();
+  });
+
   it('refuses to scope a token to an organization the creator is not a member of', async () => {
     await expect(service.execute(command({ organizationIds: ['org-2'] }))).rejects.toMatchObject({
       code: 'TOKEN_008',
@@ -100,6 +114,11 @@ describe('CreateApiTokenCommandHandler', () => {
   it('accepts an organization the creator belongs to', async () => {
     await service.execute(command({ organizationIds: ['org-1'] }));
     expect(insertedToken().organizationIds).toEqual(['org-1']);
+  });
+
+  it('skips the membership lookup when no organization is requested', async () => {
+    await service.execute(command());
+    expect(memberships.findOrganizationIdsForUser).not.toHaveBeenCalled();
   });
 
   it('refuses once the active token limit is reached', async () => {

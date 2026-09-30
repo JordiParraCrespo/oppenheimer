@@ -22,12 +22,6 @@ import { CredentialThrottlerGuard } from '../guards/credential-throttler.guard';
  * The guard runs against the real kernel resolver here, with every lookup it
  * could make spied on: deriving the bucket must cost no database and no
  * identity-provider call, or the limiter does its work before it limits.
- *
- * How each kind of credential becomes a bucket (bearer, `x-api-key`, signed
- * cookie, single-use host assertion, a refused one) is
- * `CredentialScopeResolver.rateLimitKey`'s, and its spec owns those cases.
- * This suite owns what the guard adds: that it asks for that key at all, the
- * user and IP fallbacks, the auth-failure budget and the RATE_001 answer.
  */
 describe('CredentialThrottlerGuard', () => {
   let verifier: { [K in keyof CredentialVerifierPort]: ReturnType<typeof vi.fn> };
@@ -87,14 +81,18 @@ describe('CredentialThrottlerGuard', () => {
     expect(owners.requireActiveOwner).not.toHaveBeenCalled();
   };
 
-  it('keys an API token on a digest of the secret, without looking it up', async () => {
-    const key = await tracker({
+  it('keys a credential on whatever rateLimitKey returned, without looking it up', async () => {
+    const { credentials } = guard as unknown as { credentials: CredentialScopeResolver };
+    const rateLimitKey = vi.spyOn(credentials, 'rateLimitKey');
+    const request = {
       ip: '1.2.3.4',
       headers: { authorization: 'Bearer oppenheimer_pat_secret123' },
-    });
+    };
 
-    expect(key).toMatch(/^cred:[0-9a-f]{32}$/);
-    expect(key).not.toContain('secret123');
+    const key = await tracker(request);
+
+    expect(rateLimitKey).toHaveBeenCalledWith(request);
+    expect(key).toBe(await rateLimitKey.mock.results[0]?.value);
     expectNoLookups();
   });
 

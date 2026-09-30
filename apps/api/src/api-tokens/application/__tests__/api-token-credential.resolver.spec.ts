@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import { toResourceScope } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CredentialOwnerPort } from '../../../auth/application/credential-owner.port';
 import { AuthErrors } from '../../../auth/domain/auth.errors';
 import type { CredentialOwner, ScopedRequest } from '../../../auth/domain/scope-context.types';
@@ -104,25 +104,33 @@ describe('ApiTokenCredentialResolver', () => {
 
   describe('lastUsedAt', () => {
     const second = 1000;
+    const now = new Date('2026-03-03T10:00:00Z');
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'], now });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
 
     // Regression: every request wrote the row, ten row versions a second for a
     // token polled ten times a second.
     it.each([
-      ['skips the stamp when the token was used moments ago', 10 * second, false],
-      ['stamps a token last used more than a minute ago', 2 * 60 * second, true],
-      ['stamps a token never used before', null, true],
+      ['skips the stamp when the token was used moments ago', 10 * second, 0],
+      ['stamps a token last used more than a minute ago', 2 * 60 * second, 1],
+      ['stamps a token never used before', null, 1],
     ] as const)('%s', async (_label, usedAgo, stamps) => {
       const { token, secret } = stored(
         {},
-        usedAgo === null ? null : new Date(Date.now() - usedAgo),
+        usedAgo === null ? null : new Date(now.getTime() - usedAgo),
       );
 
       await resolver.resolve(secret, request());
 
-      if (stamps) {
-        expect(apiTokens.touchLastUsedAt).toHaveBeenCalledWith(token.id, expect.any(Date));
-      } else {
-        expect(apiTokens.touchLastUsedAt).not.toHaveBeenCalled();
+      expect(apiTokens.touchLastUsedAt).toHaveBeenCalledTimes(stamps);
+      for (const call of vi.mocked(apiTokens.touchLastUsedAt).mock.calls) {
+        expect(call).toEqual([token.id, now]);
       }
     });
   });
