@@ -100,6 +100,11 @@ export function mountSessionTerminal(
       copyToClipboard(term.getSelection());
       return false;
     }
+    if (verdict.kind === 'selectAll') {
+      event.preventDefault();
+      term.selectAll();
+      return false;
+    }
     if (verdict.kind === 'send') {
       // Stops the keypress and the textarea input that would follow.
       event.preventDefault();

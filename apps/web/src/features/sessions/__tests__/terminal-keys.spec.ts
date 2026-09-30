@@ -87,15 +87,52 @@ describe('classifyKey', () => {
     });
   });
 
-  it('moves by word with Option and the arrows on the Mac', () => {
-    expect(classifyKey(chord('ArrowLeft', { altKey: true }), mac)).toEqual({
+  it('moves by word with Alt and the arrows on every platform', () => {
+    for (const context of [mac, none]) {
+      expect(classifyKey(chord('ArrowLeft', { altKey: true }), context)).toEqual({
+        kind: 'send',
+        data: '\x1bb',
+      });
+      expect(classifyKey(chord('ArrowRight', { altKey: true }), context)).toEqual({
+        kind: 'send',
+        data: '\x1bf',
+      });
+    }
+  });
+
+  it('moves by word with Ctrl and the arrows off the Mac, where the Mac keeps them', () => {
+    expect(classifyKey(chord('ArrowLeft', { ctrlKey: true }), none)).toEqual({
       kind: 'send',
       data: '\x1bb',
     });
-    expect(classifyKey(chord('ArrowRight', { altKey: true }), mac)).toEqual({
+    expect(classifyKey(chord('ArrowRight', { ctrlKey: true }), none)).toEqual({
       kind: 'send',
       data: '\x1bf',
     });
+    expect(classifyKey(chord('ArrowLeft', { ctrlKey: true }), mac)).toEqual({ kind: 'terminal' });
+  });
+
+  it('deletes a word with Ctrl+Backspace, and to the end of the line with Cmd+Delete', () => {
+    for (const context of [mac, none]) {
+      expect(classifyKey(chord('Backspace', { ctrlKey: true }), context)).toEqual({
+        kind: 'send',
+        data: '\x17',
+      });
+    }
+    expect(classifyKey(chord('Delete', { metaKey: true }), mac)).toEqual({
+      kind: 'send',
+      data: '\x0b',
+    });
+  });
+
+  it('selects everything with Cmd+A on the Mac and Ctrl+Shift+A elsewhere', () => {
+    expect(classifyKey(chord('a', { metaKey: true }), mac)).toEqual({ kind: 'selectAll' });
+    expect(classifyKey(chord('A', { ctrlKey: true, shiftKey: true }), none)).toEqual({
+      kind: 'selectAll',
+    });
+    // Ctrl+A stays the shell's start-of-line.
+    expect(classifyKey(chord('a', { ctrlKey: true }), none)).toEqual({ kind: 'terminal' });
+    expect(classifyKey(chord('a', { ctrlKey: true }), mac)).toEqual({ kind: 'terminal' });
   });
 
   it('keeps the later phases of a Mac chord away from xterm', () => {
@@ -116,8 +153,8 @@ describe('classifyKey', () => {
   });
 
   it('keeps the Mac chords to the Mac', () => {
-    expect(classifyKey(chord('ArrowLeft', { altKey: true }), none)).toEqual({ kind: 'terminal' });
     expect(classifyKey(chord('ArrowLeft', { metaKey: true }), none)).toEqual({ kind: 'terminal' });
+    expect(classifyKey(chord('Delete', { metaKey: true }), none)).toEqual({ kind: 'terminal' });
     expect(classifyKey(chord('ArrowLeft', { metaKey: true, shiftKey: true }), mac)).toEqual({
       kind: 'terminal',
     });

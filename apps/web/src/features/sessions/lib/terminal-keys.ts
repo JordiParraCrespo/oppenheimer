@@ -9,12 +9,14 @@
  * - `browser` — xterm leaves it alone and the browser's default runs (copy, paste).
  * - `send` — the console writes `data` to the PTY itself and swallows the key.
  * - `copy` — the console copies the selection itself and swallows the key.
+ * - `selectAll` — the console selects the whole buffer and swallows the key.
  */
 export type KeyVerdict =
   | { kind: 'terminal' }
   | { kind: 'browser' }
   | { kind: 'send'; data: string }
-  | { kind: 'copy' };
+  | { kind: 'copy' }
+  | { kind: 'selectAll' };
 
 export type KeyChord = Pick<
   KeyboardEvent,
@@ -52,11 +54,23 @@ const CHORDS: ChordRow[] = [
   { mods: ['ctrl'], key: 'c', selection: true, verdict: BROWSER },
   { platform: 'other', mods: ['ctrl', 'shift'], key: 'c', verdict: { kind: 'copy' } },
   { mods: ['ctrl', 'shift'], key: 'v', verdict: BROWSER },
+  { platform: 'other', mods: ['ctrl', 'shift'], key: 'a', verdict: { kind: 'selectAll' } },
+  { platform: 'mac', mods: ['meta'], key: 'a', verdict: { kind: 'selectAll' } },
   { platform: 'mac', mods: ['meta'], key: 'ArrowLeft', verdict: { kind: 'send', data: '\x01' } },
   { platform: 'mac', mods: ['meta'], key: 'ArrowRight', verdict: { kind: 'send', data: '\x05' } },
   { platform: 'mac', mods: ['meta'], key: 'Backspace', verdict: { kind: 'send', data: '\x15' } },
-  { platform: 'mac', mods: ['alt'], key: 'ArrowLeft', verdict: { kind: 'send', data: '\x1bb' } },
-  { platform: 'mac', mods: ['alt'], key: 'ArrowRight', verdict: { kind: 'send', data: '\x1bf' } },
+  { platform: 'mac', mods: ['meta'], key: 'Delete', verdict: { kind: 'send', data: '\x0b' } },
+  { mods: ['alt'], key: 'ArrowLeft', verdict: { kind: 'send', data: '\x1bb' } },
+  { mods: ['alt'], key: 'ArrowRight', verdict: { kind: 'send', data: '\x1bf' } },
+  // Ctrl+arrows are the Mac's for switching Spaces.
+  { platform: 'other', mods: ['ctrl'], key: 'ArrowLeft', verdict: { kind: 'send', data: '\x1bb' } },
+  {
+    platform: 'other',
+    mods: ['ctrl'],
+    key: 'ArrowRight',
+    verdict: { kind: 'send', data: '\x1bf' },
+  },
+  { mods: ['ctrl'], key: 'Backspace', verdict: { kind: 'send', data: '\x17' } },
 ];
 
 function held(event: KeyChord): Set<Modifier> {
@@ -80,9 +94,9 @@ export function classifyKey(event: KeyChord, context: KeyContext): KeyVerdict {
   const down = held(event);
   const row = CHORDS.find((candidate) => matches(candidate, event, down, context));
   if (!row) return TERMINAL;
-  // A verdict that acts (writes the PTY or the clipboard) acts once, on
+  // A verdict that acts (writes the PTY, the clipboard or the selection) acts once, on
   // keydown; the keypress and keyup of the same chord are claimed too, or
   // xterm encodes the keypress after the console has already answered it.
-  const acts = row.verdict.kind === 'send' || row.verdict.kind === 'copy';
+  const acts = row.verdict.kind !== 'terminal' && row.verdict.kind !== 'browser';
   return acts && event.type !== 'keydown' ? BROWSER : row.verdict;
 }

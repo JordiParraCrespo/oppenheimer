@@ -268,11 +268,13 @@
   console answers. **Shift+Enter** is a newline in the agent's prompt
   (window 0 only; a shell window gets the chord as typed). The rest hold
   in every window: **Ctrl+C** copies when text is selected and
-  interrupts otherwise; off the Mac, **Ctrl+Shift+C** copies and
-  **Ctrl+Shift+V** pastes; on the Mac, **⌘←/⌘→** go to the start and
-  end of the line, **⌘⌫** deletes to its start, and **⌥←/⌥→** move by
-  word. A copy with nothing selected, or one the browser refuses, does
-  nothing. Chords the browser keeps for itself (Ctrl+W, Ctrl+T, Ctrl+N
+  interrupts otherwise; **⌥←/⌥→** (Alt) move by word and
+  **Ctrl+Backspace** deletes one. Off the Mac, **Ctrl+←/→** also move by
+  word, **Ctrl+Shift+C** copies, **Ctrl+Shift+V** pastes and
+  **Ctrl+Shift+A** selects all. On the Mac, **⌘←/⌘→** go to the start
+  and end of the line, **⌘⌫** deletes to its start, **⌘⌦** (fn+⌘⌫) to
+  its end, and **⌘A** selects all. A copy with nothing selected, or one
+  the browser refuses, does nothing. Chords the browser keeps for itself (Ctrl+W, Ctrl+T, Ctrl+N
   off the Mac) never reach the page. Selecting text needs Shift-drag
   (Option-drag on macOS), because tmux owns plain drags.
 - The session cursor is a **steady block**. It is the default, not a
