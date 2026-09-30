@@ -76,6 +76,28 @@ describe('the control plane’s scopes', () => {
     expect(grantable).not.toContain('hosts:read');
   });
 
+  it.each([
+    ['hosts', 'Host'],
+    ['projects', 'Project'],
+    ['sessions', 'Session'],
+    ['repositories', 'Installation'],
+  ] as const)(
+    'lets a %s reader grant the read level and never the write level',
+    (resource, subject) => {
+      const ability = defineAbilitiesFromPermissions([{ action: 'read', subject }]);
+      expect(grantableScopes(ability)).toEqual([
+        'profile:read',
+        'profile:write',
+        `${resource}:read`,
+      ]);
+    },
+  );
+
+  it('opens a terminal with `update Session`, so that rule alone grants sessions:write', () => {
+    const ability = defineAbilitiesFromPermissions([{ action: 'update', subject: 'Session' }]);
+    expect(grantableScopes(ability)).toContain('sessions:write');
+  });
+
   it('lets a person grant their own hosts, because a host is theirs and not a workspace’s', () => {
     const ability = defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.user, {
       user: { id: 'me' },
