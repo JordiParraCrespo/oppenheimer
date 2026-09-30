@@ -33,6 +33,13 @@ export interface SessionAppendOutcome {
   appended: WorkSessionEventEntity[];
 }
 
+/** What {@link WorkSessionRepositoryPort.createIfUnclaimed} did. */
+export interface SessionCreateOutcome {
+  session: WorkSessionEntity;
+  created: boolean;
+  refused: 'project-archived' | 'host-unpaired' | null;
+}
+
 /**
  * Where a keyset walk of the list stands: the sort it was issued for, the last
  * row's sort key as Postgres printed it, and the last row's id.
@@ -132,16 +139,16 @@ export interface WorkSessionRepositoryPort {
 
   /**
    * Insert the session, its checkouts and its first log entries in one transaction,
-   * unless the caller's `Idempotency-Key` already created it or the project was
-   * archived out from under it. `created: false, projectArchived: false` is the retry
-   * after a lost response and returns the existing session, never a second directory
-   * and branch. `projectArchived: true` is the race the project row lock decides: the
-   * archive committed first.
+   * unless the caller's `Idempotency-Key` already created it or its project or host
+   * went out from under it. `created: false, refused: null` is the retry after a
+   * lost response and returns the existing session, never a second directory and
+   * branch. `refused` is the race a row lock decides: the project's archive or the
+   * host's unpair committed first.
    */
   createIfUnclaimed(
     session: WorkSessionEntity,
     events: NewSessionEvent[],
-  ): Promise<{ session: WorkSessionEntity; created: boolean; projectArchived: boolean }>;
+  ): Promise<SessionCreateOutcome>;
 
   /**
    * Append to the log and fold onto the row, in one transaction.

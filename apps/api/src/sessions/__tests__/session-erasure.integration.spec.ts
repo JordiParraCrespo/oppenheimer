@@ -142,7 +142,7 @@ describe('sessions: erasing a workspace (integration)', () => {
       if (waiting > 0) return;
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
-    throw new Error(`nothing waited on backend ${pid}: the erase did not take the writer's lock`);
+    throw new Error(`nothing waited on backend ${pid}: the other side never took its lock`);
   }
 
   const insertEvent = (runner: QueryRunner, sessionId: string) =>
@@ -218,6 +218,24 @@ describe('sessions: erasing a workspace (integration)', () => {
       await runner.release();
     }
 
+    await nothingLeft();
+  });
+
+  it('refuses a create that waited behind its host being unpaired', async () => {
+    // Unpairing, the erasure's step before the sessions, is an update of the
+    // host row. A create queued behind it must not land after the sessions go.
+    const { runner, pid } = await writer();
+    let creating: ReturnType<typeof repository.createIfUnclaimed> | undefined;
+    try {
+      await runner.query(`UPDATE "host" SET "unpairedAt" = now() WHERE "id" = $1`, [hostId]);
+      creating = repository.createIfUnclaimed(session(), requested());
+      await blockedBehind(pid);
+      await runner.commitTransaction();
+    } finally {
+      await runner.release();
+    }
+
+    await expect(creating).resolves.toMatchObject({ created: false, refused: 'host-unpaired' });
     await nothingLeft();
   });
 });

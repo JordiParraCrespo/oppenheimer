@@ -22,6 +22,7 @@ import type {
   HostSessionRow,
   NewSessionEvent,
   SessionAppendOutcome,
+  SessionCreateOutcome,
   SessionEventPage,
   SessionFilters,
   SessionListCursor,
@@ -64,7 +65,7 @@ export class WorkSessionRepository
   async createIfUnclaimed(
     session: WorkSessionEntity,
     events: NewSessionEvent[],
-  ): Promise<{ session: WorkSessionEntity; created: boolean; projectArchived: boolean }> {
+  ): Promise<SessionCreateOutcome> {
     const record = this.mapper.toPersistence(session);
 
     const created = await this.outbox.transaction(async (manager) => {
@@ -85,6 +86,14 @@ export class WorkSessionRepository
         [record.projectId, record.organizationId],
       );
       if (active.length === 0) return 'project-archived' as const;
+      // The same for the host, whose unpair is an update of this row: an unpair
+      // that commits first turns this into zero rows, and one that arrives second
+      // waits for the session, which the account's erasure then finds.
+      const paired: { id: string }[] = await manager.query(
+        `SELECT "id" FROM "host" WHERE "id" = $1 AND "unpairedAt" IS NULL FOR SHARE`,
+        [record.hostId],
+      );
+      if (paired.length === 0) return 'host-unpaired' as const;
 
       // The conflict target is the client's own key, so the statement itself
       // answers whether this request created the session — no second query that
@@ -138,13 +147,15 @@ export class WorkSessionRepository
       return 'created' as const;
     });
 
-    if (created === 'project-archived') return { session, created: false, projectArchived: true };
+    if (created === 'project-archived' || created === 'host-unpaired') {
+      return { session, created: false, refused: created };
+    }
     if (created === 'taken') {
       const existing: Option<WorkSessionEntity> = session.idempotencyKey
         ? await this.findOneByKeyUnscoped(session.organizationId, session.idempotencyKey)
         : None;
       if (existing.isSome()) {
-        return { session: existing.unwrap(), created: false, projectArchived: false };
+        return { session: existing.unwrap(), created: false, refused: null };
       }
       // No key to read back by: the insert cannot have been refused for any other
       // reason, so this is a fault rather than a retry.
@@ -152,7 +163,7 @@ export class WorkSessionRepository
     }
 
     session.clearEvents();
-    return { session, created: true, projectArchived: false };
+    return { session, created: true, refused: null };
   }
 
   async appendEvents(

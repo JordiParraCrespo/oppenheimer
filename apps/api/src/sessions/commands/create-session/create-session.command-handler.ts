@@ -2,6 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
+import { HostErrors } from '../../../hosts/domain/hosts.errors';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import { requireLaunchableHost } from '../../application/require-launchable-host.policy';
 import { SessionAttachmentsResolver } from '../../application/session-attachments.resolver';
@@ -89,11 +90,16 @@ export class CreateSessionCommandHandler
         cwdCheckoutId: this.plan.cwdCheckoutIdFor(session, input.cwdGithubRepoId),
       }),
     );
-    // The project was retired between the lookup and the insert; the locked
-    // project row decides that race rather than detecting it afterwards.
-    if (created.projectArchived) {
+    // The project was retired or the host unpaired between the lookup and the
+    // insert; the locked row decides that race rather than detecting it afterwards.
+    if (created.refused === 'project-archived') {
       throw new AppError(SessionErrors.PROJECT_ARCHIVED, {
         detail: `Project ${project.slug} is archived`,
+      });
+    }
+    if (created.refused === 'host-unpaired') {
+      throw new AppError(HostErrors.NOT_FOUND, {
+        detail: `No usable host with id ${input.hostId}`,
       });
     }
     if (!created.created) return { sessionId: created.session.id, hints: [] };

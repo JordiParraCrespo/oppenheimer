@@ -118,7 +118,7 @@ describe('CreateSessionCommandHandler', () => {
       createIfUnclaimed: vi.fn().mockImplementation(async (session: WorkSessionEntity) => ({
         session,
         created: true,
-        projectArchived: false,
+        refused: null,
       })),
     } as unknown as WorkSessionRepositoryPort;
     hosts = { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) };
@@ -205,10 +205,28 @@ describe('CreateSessionCommandHandler', () => {
         agent: 'claude-code',
       }),
       created: false,
-      projectArchived: true,
+      refused: 'project-archived',
     });
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'SESSIONS_006' });
+    expect(dispatch.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses when the host was unpaired while it was being planned', async () => {
+    vi.mocked(sessions.createIfUnclaimed).mockResolvedValue({
+      session: WorkSessionEntity.request({
+        organizationId: 'org-acme',
+        projectId: 'project-1',
+        createdByUserId: 'user-1',
+        hostId: 'host-1',
+        slug: 'bold-otter-3f9a7k',
+        agent: 'claude-code',
+      }),
+      created: false,
+      refused: 'host-unpaired',
+    });
+
+    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_001' });
     expect(dispatch.create).not.toHaveBeenCalled();
   });
 
@@ -245,7 +263,7 @@ describe('CreateSessionCommandHandler', () => {
     vi.mocked(sessions.createIfUnclaimed).mockResolvedValue({
       session: other,
       created: false,
-      projectArchived: false,
+      refused: null,
     });
 
     await expect(handler.execute(command())).resolves.toMatchObject({ sessionId: other.id });
@@ -386,7 +404,7 @@ describe('CreateSessionCommandHandler: the launch and the first task', () => {
       createIfUnclaimed: vi.fn().mockImplementation(async (session: WorkSessionEntity) => ({
         session,
         created: true,
-        projectArchived: false,
+        refused: null,
       })),
     } as unknown as WorkSessionRepositoryPort;
     dispatch = {

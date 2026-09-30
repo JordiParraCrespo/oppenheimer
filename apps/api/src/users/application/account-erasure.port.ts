@@ -25,7 +25,8 @@ export interface AccountErasurePort {
  *    and a revision names a host;
  * 2. `hosts` — unpair the account's machines, which stops the sessions on
  *    them and closes their links for good, while the rows that say where to
- *    send that still exist;
+ *    send that still exist. A session is created only on a paired host, under
+ *    a lock on its row, so none is created after this;
  * 3. `sessions`, then 4. `projects` — the work in the personal workspace,
  *    the two tables that refuse to lose their workspace;
  * 5. `workspace` — the personal workspace itself.
