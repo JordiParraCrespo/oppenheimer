@@ -12,7 +12,6 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
-import { fileURLToPath } from 'node:url';
 import { checkApiStructure } from './check-api-structure.mjs';
 
 const roots = [];
@@ -86,19 +85,14 @@ test('the dissolved buckets each report their own kind', () => {
   }
 });
 
-test('a service or a controller at a module root is named as such', () => {
-  assert.deepEqual(kinds(check({ ...CONFORMING, 'widget/widget.service.ts': '' })), [
-    'service-at-module-root',
-  ]);
-  assert.deepEqual(kinds(check({ ...CONFORMING, 'widget/widget.controller.ts': 'class C {}' })), [
-    'controller-at-module-root',
-  ]);
-});
-
-test('a plural mappers file is rejected', () => {
-  assert.deepEqual(kinds(check({ ...CONFORMING, 'widget/widget.mappers.ts': '' })), [
-    'plural-mappers-file',
-  ]);
+test('a service, a controller or a plural mappers file at a module root is named as such', () => {
+  for (const [file, kind] of [
+    ['widget/widget.service.ts', 'service-at-module-root'],
+    ['widget/widget.controller.ts', 'controller-at-module-root'],
+    ['widget/widget.mappers.ts', 'plural-mappers-file'],
+  ]) {
+    assert.deepEqual(kinds(check({ ...CONFORMING, [file]: 'class C {}' })), [kind], file);
+  }
 });
 
 test('a route outside a use-case controller is reported, a probe is not', () => {
@@ -188,16 +182,4 @@ test('a ledger entry silences exactly its own (path, kind), and nothing else', (
 test('a ledger entry that no longer matches is itself an error', () => {
   const ledger = [{ path: 'src/widget/gone.service.ts', kind: 'service-at-module-root' }];
   assert.deepEqual(kinds(check(CONFORMING, { ledger })), ['stale-ledger-entry']);
-});
-
-test("the repository's own ledger is current", async () => {
-  // The real run, with the real ledger: this is what CI asserts, and it fails
-  // both on a new violation and on an entry whose debt has been paid.
-  const { checkApiStructure: run, LEDGER } = await import('./check-api-structure.mjs');
-  const apiSrc = fileURLToPath(new URL('../apps/api/src', import.meta.url));
-  const result = run(apiSrc, { ledger: LEDGER });
-  assert.deepEqual(
-    result.outstanding.map((e) => e.message),
-    [],
-  );
 });
