@@ -5,4 +5,3 @@ export { useLocale } from './hooks/use-locale';
 export * from './lib/format-date';
 export * from './lib/format-duration';
 export { default as i18n, i18nReady } from './lib/i18n';
-export * from './lib/person-name';

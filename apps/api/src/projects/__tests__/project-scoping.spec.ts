@@ -1,5 +1,9 @@
-import { type AccessScope, applyAccessScope, expectAbility } from '@oppenheimer/backend-authz';
-import type { PermissionDefinition } from '@oppenheimer/shared';
+import { type AccessScope, applyAccessScope } from '@oppenheimer/backend-authz';
+import {
+  canAccess,
+  defineAbilitiesFromPermissions,
+  SYSTEM_ROLE_PERMISSIONS,
+} from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
 import { ProjectResource } from '../projects.resource';
 
@@ -8,12 +12,13 @@ import { ProjectResource } from '../projects.resource';
  *
  * Two halves, because they fail independently: the SQL predicate decides which
  * rows a query returns, the CASL ability what `can()` reports. Both are
- * generated from the same declaration, and these tests keep that true.
+ * generated from the same declaration; their generic branches (bypass, no
+ * tenant) are proved once, in `@oppenheimer/backend-authz` and
+ * `@oppenheimer/shared`.
  *
  * The interesting case for this resource is the *absence* of narrowing: a
  * project declares no team, own or grant dimension, so every member of the
- * workspace sees all of them — and `applyAccessScope` must not then fall back
- * to an unfiltered query.
+ * workspace sees all of them.
  */
 
 function scope(overrides: Partial<AccessScope> = {}): AccessScope {
@@ -47,28 +52,11 @@ function whereClausesFor(callerScope: AccessScope): string[] {
   return qb.calls.map((call: { clause: string }) => call.clause);
 }
 
-/**
- * What the org-scoped `owner` role holds over projects. The stored rule writes
- * the tenant as `${activeOrganizationId}`; interpolating it from the resolved
- * scope here asserts the same thing through the scope this module's queries use.
- */
-const WORKSPACE_PROJECTS: PermissionDefinition[] = [
-  {
-    action: 'manage',
-    subject: 'Project',
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: a placeholder interpolated when the ability is built
-    conditions: { organizationId: '${scope.organizationId}' },
-  },
-];
+/** The owner role's rules, as the catalog seeds them into the `role` table. */
+const OWNER = SYSTEM_ROLE_PERMISSIONS.owner;
 
 describe('project row scoping (SQL)', () => {
-  it('constrains the tenant, and that is the whole predicate', () => {
-    expect(whereClausesFor(scope({ teamIds: ['team-madrid'] }))).toEqual([
-      'project.organizationId = :authzOrganizationId',
-    ]);
-  });
-
-  it('ignores teams and grants, because the declaration claims neither', () => {
+  it('constrains the tenant, and ignores teams and grants the declaration never claims', () => {
     // A `Project` grant would be a row nobody writes; asserting it changes
     // nothing keeps a later `scopes` edit from silently widening a listing.
     const clauses = whereClausesFor(
@@ -80,48 +68,29 @@ describe('project row scoping (SQL)', () => {
 
     expect(clauses).toEqual(['project.organizationId = :authzOrganizationId']);
   });
-
-  it('returns nothing for a caller with no active workspace', () => {
-    // Fails closed rather than unfiltered: with no tenant there is no project
-    // this caller may see, and an empty predicate would be every project.
-    expect(whereClausesFor(scope({ organizationId: null }))).toEqual(['1 = 0']);
-  });
-
-  it('drops every filter for a platform-tier caller', () => {
-    expect(whereClausesFor(scope({ bypass: true }))).toEqual([]);
-  });
 });
 
 describe('project capabilities (CASL)', () => {
-  it('lets a workspace member manage the projects of their own workspace', () => {
-    expectAbility(WORKSPACE_PROJECTS, { user: { id: 'member-1' }, scope: scope() })
-      .canOn('read', 'Project', { organizationId: 'org-acme' })
-      .canOn('update', 'Project', { organizationId: 'org-acme' });
-  });
-
-  it('does not let them reach another workspace’s project', () => {
-    expectAbility(WORKSPACE_PROJECTS, {
+  // The owner rule stores the tenant as `${activeOrganizationId}`, the way
+  // `AbilityFactory` interpolates it for a request.
+  it.each([
+    ['manages its own workspace’s project', 'org-acme', 'org-acme', true],
+    ['cannot reach another workspace’s project', 'org-acme', 'org-other', false],
+    ['gets nothing with no active workspace', null, 'org-acme', false],
+  ] as const)('an owner %s', (_case, activeOrganizationId, rowOrganizationId, allowed) => {
+    const ability = defineAbilitiesFromPermissions(OWNER, {
       user: { id: 'member-1' },
-      scope: scope(),
-    }).cannotOn('read', 'Project', { organizationId: 'org-other' });
-  });
-
-  it('gives a caller with no active workspace nothing', () => {
-    expectAbility(WORKSPACE_PROJECTS, {
-      user: { id: 'member-1' },
-      scope: scope({ organizationId: null }),
-    }).cannotOn('read', 'Project', { organizationId: 'org-acme' });
+      activeOrganizationId,
+    });
+    for (const action of ['read', 'update'] as const) {
+      expect(canAccess(ability, action, 'Project', { organizationId: rowOrganizationId })).toBe(
+        allowed,
+      );
+    }
   });
 });
 
 describe('the declaration itself', () => {
-  it('names a column for every scope dimension it claims', () => {
-    // defineResource enforces this at boot; this fails in CI instead.
-    expect(ProjectResource.scopes).toEqual(['organization']);
-    expect(ProjectResource.keys.organization).toBe('organizationId');
-    expect(ProjectResource.keys.id).toBe('id');
-  });
-
   it('declares only the actions a route or a credential can exercise', () => {
     // No `delete` (see `ProjectResource`): it would be a permission with nothing
     // behind it.

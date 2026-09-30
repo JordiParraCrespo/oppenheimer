@@ -3,6 +3,8 @@ package problem
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -57,13 +59,18 @@ func TestWriteCatalogError(t *testing.T) {
 	}
 }
 
-func TestErrorsIsAcrossWithDetail(t *testing.T) {
-	err := ErrConflict.WithDetail("x")
-	if !errors.Is(err, err) {
-		t.Fatal("identity")
-	}
+// A caller reads a catalog error through any wrapping (cli.ExitCode maps its
+// status), and the cause it carries stays reachable. *Error does not unwrap
+// to its catalog value: WithDetail returns a copy, so errors.Is against the
+// sentinel is false by design and callers compare Code.
+func TestAWrappedCatalogErrorIsStillReadable(t *testing.T) {
+	err := fmt.Errorf("register: %w", ErrConflict.WithDetail("x").WithCause(io.EOF))
+
 	var pe *Error
-	if !errors.As(err, &pe) || pe.Code != "RUNNER_005" {
-		t.Fatal("errors.As should find the problem")
+	if !errors.As(err, &pe) || pe.Code != ErrConflict.Code || pe.Detail != "x" {
+		t.Fatalf("errors.As = %+v, want RUNNER_005 with its detail", pe)
+	}
+	if !errors.Is(err, io.EOF) {
+		t.Fatal("the cause is not reachable through the problem")
 	}
 }

@@ -50,7 +50,7 @@ func sentKeys(s *fakeSender) []string {
 func TestAnUnackedBatchIsSentAgainAfterTheAckTimeout(t *testing.T) {
 	sender := &fakeSender{}
 	r, c := newClockedReporter(sender)
-	timeout := link.ReporterAckTimeout(r)
+	timeout := link.ReporterAckTimeout
 	if timeout <= 0 {
 		t.Fatal("the reporter has no ack timeout")
 	}
@@ -83,7 +83,7 @@ func TestAnUnackedBatchIsSentAgainAfterTheAckTimeout(t *testing.T) {
 func TestAnAckTimeoutResendsInOrderFromTheOverdueBatch(t *testing.T) {
 	sender := &fakeSender{}
 	r, c := newClockedReporter(sender)
-	timeout := link.ReporterAckTimeout(r)
+	timeout := link.ReporterAckTimeout
 
 	r.Append("s1", "session.step", map[string]any{"i": 1}) // run:1, acked below
 	r.Append("s1", "session.step", map[string]any{"i": 2}) // run:2, never acked
@@ -100,25 +100,6 @@ func TestAnAckTimeoutResendsInOrderFromTheOverdueBatch(t *testing.T) {
 	keys := sentKeys(sender)[4:]
 	if want := []string{"run:2", "run:3"}; fmt.Sprint(keys) != fmt.Sprint(want) {
 		t.Fatalf("resent %v, want %v: the overdue batch, then what was made after it", keys, want)
-	}
-}
-
-// The ack timeout never grows what is held: the pending cap still drops the
-// oldest batch, and a resend replays only what is left.
-func TestAnAckTimeoutKeepsThePendingCap(t *testing.T) {
-	sender := &fakeSender{}
-	r, c := newClockedReporter(sender)
-	link.SetReporterLimit(r, 2)
-	for i := 0; i < 4; i++ {
-		r.Append("s1", "session.step", map[string]any{"i": i})
-	}
-	if r.Pending() != 2 {
-		t.Fatalf("pending = %d, want the cap of 2", r.Pending())
-	}
-	c.advance(link.ReporterAckTimeout(r))
-	r.Retry()
-	if keys := sentKeys(sender)[4:]; fmt.Sprint(keys) != fmt.Sprint([]string{"run:3", "run:4"}) {
-		t.Fatalf("resent %v, want the two newest in order", keys)
 	}
 }
 

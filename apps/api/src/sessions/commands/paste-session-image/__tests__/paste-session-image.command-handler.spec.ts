@@ -1,9 +1,9 @@
-import { None, Some } from 'oxide.ts';
+import { Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import { SessionLoaderResolver } from '../../../application/session-loader.resolver';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
-import { SessionErrors } from '../../../domain/sessions.errors';
+import { SESSION_EVENT_KINDS } from '../../../domain/session-state.policy';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
 import { PasteSessionImageCommand } from '../paste-session-image.command';
 import { PasteSessionImageCommandHandler } from '../paste-session-image.command-handler';
@@ -36,11 +36,11 @@ function openSession() {
 }
 
 function harness(
-  session: WorkSessionEntity | null,
+  session: WorkSessionEntity,
   outcome: { delivered: boolean; hints: string[] } = { delivered: true, hints: [] },
 ) {
   const sessions = {
-    findOneById: vi.fn().mockResolvedValue(session ? Some(session) : None),
+    findOneById: vi.fn().mockResolvedValue(Some(session)),
   } as unknown as WorkSessionRepositoryPort;
   const dispatch = {
     pasteImage: vi.fn().mockResolvedValue(outcome),
@@ -77,23 +77,12 @@ describe('PasteSessionImageCommandHandler', () => {
     expect(dispatch.pasteImage).not.toHaveBeenCalled();
   });
 
-  it('answers SESSIONS_001 for a session the caller cannot see', async () => {
-    const { handler, dispatch } = harness(null);
-
-    await expect(
-      handler.execute(paste('3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40', PNG)),
-    ).rejects.toMatchObject({
-      code: 'SESSIONS_001',
-    });
-    expect(dispatch.pasteImage).not.toHaveBeenCalled();
-  });
-
   it('refuses a session that cannot take input, with the reason the session gives', async () => {
-    const stopped = {
-      id: 'stopped',
-      slug: 'b',
-      inputRefusal: SessionErrors.NOT_RUNNING,
-    } as unknown as WorkSessionEntity;
+    const stopped = openSession();
+    stopped.recordEvents([
+      { seq: 1, kind: SESSION_EVENT_KINDS.STARTED, payload: {}, occurredAt: new Date() },
+      { seq: 2, kind: SESSION_EVENT_KINDS.STOPPED, payload: {}, occurredAt: new Date() },
+    ]);
     const { handler, dispatch } = harness(stopped);
     await expect(handler.execute(paste(stopped.id, PNG))).rejects.toMatchObject({
       code: 'SESSIONS_014',

@@ -19,8 +19,6 @@ type Options struct {
 	Signer       TokenSigner
 	// Unsealer is optional; without one, Unseal answers PAIR_004.
 	Unsealer Unsealer
-	// Now is injectable so token expiry is testable.
-	Now func() time.Time
 }
 
 // Service is the pairing use cases.
@@ -28,17 +26,12 @@ type Service struct {
 	store    Store
 	cp       ControlPlane
 	signer   TokenSigner
-	now      func() time.Time
 	unsealer Unsealer
 }
 
 // New builds the service.
 func New(opts Options) *Service {
-	now := opts.Now
-	if now == nil {
-		now = time.Now
-	}
-	return &Service{store: opts.Store, cp: opts.ControlPlane, signer: opts.Signer, unsealer: opts.Unsealer, now: now}
+	return &Service{store: opts.Store, cp: opts.ControlPlane, signer: opts.Signer, unsealer: opts.Unsealer}
 }
 
 // RegisterInput is what the `register` subcommand collects.
@@ -101,7 +94,7 @@ func (s *Service) Register(ctx context.Context, in RegisterInput) (domain.Identi
 		PublicKey:       domain.EncodePublicKey(pub),
 		ReleaseBaseURL:  resp.ReleaseBaseURL,
 		Channel:         channel,
-		RegisteredAt:    s.now().UTC(),
+		RegisteredAt:    time.Now().UTC(),
 	}
 	if loadErr == nil {
 		// Where this machine keeps its code is the machine's setting, not the
@@ -145,7 +138,7 @@ func (s *Service) BootToken(_ context.Context) (string, error) {
 	if _, err := rand.Read(jti); err != nil {
 		return "", domain.ErrKeyStore.WithDetail("generate a token id: %v", err).WithCause(err)
 	}
-	claims := domain.NewBootClaims(identity, hex.EncodeToString(jti), s.now().UTC())
+	claims := domain.NewBootClaims(identity, hex.EncodeToString(jti), time.Now().UTC())
 	token, err := s.signer.Sign(key, claims)
 	if err != nil {
 		return "", domain.ErrKeyStore.WithDetail("sign the boot token: %v", err).WithCause(err)
@@ -194,7 +187,7 @@ func (s *Service) SetWorkspaces(path string) (domain.Identity, error) {
 // MarkRevoked records that the control plane unpaired this host. The first
 // time is the one that stands.
 func (s *Service) MarkRevoked() (domain.Identity, error) {
-	now := s.now().UTC()
+	now := time.Now().UTC()
 	return s.mutate(func(i *domain.Identity) {
 		if i.RevokedAt == nil {
 			i.RevokedAt = &now

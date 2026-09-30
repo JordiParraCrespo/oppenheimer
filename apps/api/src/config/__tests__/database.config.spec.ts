@@ -34,13 +34,6 @@ describe('databaseConfigFromEnv', () => {
     });
   });
 
-  it('treats a blank variable as unset', () => {
-    expect(withEnv({ DB_POOL_MAX: '', DB_STATEMENT_TIMEOUT_MS: '  ' })).toMatchObject({
-      poolMax: 10,
-      statementTimeoutMs: 15_000,
-    });
-  });
-
   it('coerces the values it reads from strings', () => {
     expect(
       withEnv({

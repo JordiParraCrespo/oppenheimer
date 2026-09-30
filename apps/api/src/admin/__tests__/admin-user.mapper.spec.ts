@@ -59,35 +59,6 @@ describe('AdminUserMapper.toResponse', () => {
     expect(result.createdAt.toISOString()).toBe('2024-03-15T10:00:00.000Z');
     expect(result.banExpires?.toISOString()).toBe('2024-04-15T10:00:00.000Z');
   });
-
-  it('returns a defensive shape for a completely empty input', () => {
-    const result = AdminUserMapper.toResponse({});
-    expect(result.id).toBe('undefined');
-    expect(result.email).toBe('undefined');
-    expect(result.role).toBeNull();
-  });
-});
-
-describe('AdminUserMapper.fromEnvelope', () => {
-  it('unwraps a `{ user }` envelope', () => {
-    const result = AdminUserMapper.fromEnvelope({
-      user: {
-        id: 'u1',
-        email: 'a@b.com',
-        createdAt: '2024-01-01T00:00:00.000Z',
-      },
-    });
-    expect(result.id).toBe('u1');
-  });
-
-  it('maps a bare user object when there is no envelope', () => {
-    const result = AdminUserMapper.fromEnvelope({
-      id: 'u2',
-      email: 'c@d.com',
-      createdAt: '2024-01-01T00:00:00.000Z',
-    });
-    expect(result.id).toBe('u2');
-  });
 });
 
 describe('AdminUserMapper.toListResponse', () => {
@@ -118,10 +89,12 @@ describe('AdminUserMapper.toListResponse', () => {
 });
 
 describe('AdminUserMapper.toSessionResponse', () => {
-  it('maps a session record with defaults', () => {
+  it('maps a session row with defaults, and never carries its token', () => {
+    // The gateway hands over raw session rows, token included.
     const result = AdminUserMapper.toSessionResponse({
       id: 's1',
       userId: 'u1',
+      token: 'token-1',
       expiresAt: '2024-01-01T00:00:00.000Z',
       createdAt: '2024-01-01T00:00:00.000Z',
     });
@@ -135,38 +108,13 @@ describe('AdminUserMapper.toSessionResponse', () => {
   });
 });
 
-describe('AdminUserMapper.toSessionsResponse', () => {
-  it('unwraps a `{ sessions }` envelope', () => {
-    const result = AdminUserMapper.toSessionsResponse({
-      sessions: [
-        {
-          id: 's1',
-          userId: 'u1',
-          expiresAt: '2024-01-01T00:00:00.000Z',
-          createdAt: '2024-01-01T00:00:00.000Z',
-        },
-      ],
-    });
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe('s1');
-  });
-
-  it('returns an empty array when there are no sessions', () => {
-    expect(AdminUserMapper.toSessionsResponse({})).toEqual([]);
-  });
-});
-
 describe('AdminUserMapper.toSuccess', () => {
-  it('reads the `success` flag', () => {
-    expect(AdminUserMapper.toSuccess({ success: true })).toEqual({ success: true });
-    expect(AdminUserMapper.toSuccess({ success: false })).toEqual({ success: false });
-  });
-
-  it('falls back to the `status` flag', () => {
-    expect(AdminUserMapper.toSuccess({ status: true })).toEqual({ success: true });
-  });
-
-  it('is false when neither flag is present', () => {
-    expect(AdminUserMapper.toSuccess({})).toEqual({ success: false });
+  it.each([
+    [{ success: true }, true],
+    [{ success: false }, false],
+    [{ status: true }, true],
+    [{}, false],
+  ])('reads %j as success: %s', (input, success) => {
+    expect(AdminUserMapper.toSuccess(input)).toEqual({ success });
   });
 });

@@ -74,15 +74,9 @@ describe('DeleteUserCommandHandler', () => {
   it('erases what the account holds in step order, then the user', async () => {
     await service.execute(new DeleteUserCommand({ userId: 'user-uuid' }));
 
-    expect(calls).toEqual(['evict', 'hosts', 'sessions', 'projects', 'workspace', 'user', 'evict']);
-  });
-
-  it('evicts the cached sessions the cascade would leave behind, before and after', async () => {
     // The cascade removes the session rows but not Better Auth's cached copies,
-    // which would keep the deleted account's cookie working.
-    await service.execute(new DeleteUserCommand({ userId: 'user-uuid' }));
-
-    expect(sessionCache.evictUser).toHaveBeenCalledTimes(2);
+    // which would keep the deleted account's cookie working: evict before and after.
+    expect(calls).toEqual(['evict', 'hosts', 'sessions', 'projects', 'workspace', 'user', 'evict']);
     expect(sessionCache.evictUser).toHaveBeenCalledWith('user-uuid');
   });
 

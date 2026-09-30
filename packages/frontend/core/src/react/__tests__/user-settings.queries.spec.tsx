@@ -19,16 +19,15 @@ function setup() {
       <OppenheimerProvider app={app}>{children}</OppenheimerProvider>
     </QueryClientProvider>
   );
-  return { wrapper, userSettings, queryClient };
+  return { wrapper };
 }
 
 describe('user settings', () => {
-  it('reads the preferences through the kernel service', async () => {
-    const { wrapper, userSettings } = setup();
+  it('serves the preferences the kernel service read', async () => {
+    const { wrapper } = setup();
 
     const { result } = renderHook(() => useUserSettings(), { wrapper });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(userSettings.get).toHaveBeenCalled();
+    await waitFor(() => expect(result.current.data).toEqual(SAVED));
   });
 });
