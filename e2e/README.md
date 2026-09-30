@@ -15,17 +15,13 @@ CI runs the **`api` project** on every pull request, in the `End-to-End Tests
 started from its build, then `e2e:api`. No browser is involved, so that job
 needs none.
 
-The **`web` project does not run in CI yet, and does not pass.** Its failures
-are not flakes — the suite drifted while nothing ran it. The `/team` specs went
-with the route (the console has no roles or users screens); what is left — an
-avatar upload, a password change signing other devices out, a wrong-password
-error, the language switch — is individually stale or broken and needs
-diagnosing one at a time.
-
-Fixing that is its own piece of work: port or retire each spec against the
-surface the console has now, then add the `web` project to the e2e job in `scripts/ci/local.mjs`. Until then a green CI says
-nothing about the browser journeys, so run `pnpm --filter @oppenheimer/e2e e2e:web`
-locally when you touch them.
+The **`web` project passes but does not run in CI yet.** It drifted while
+nothing ran it; the drift was copy the console had since changed, one wait that
+raced a pending button label, and one real bug (deleting an automation from its
+own page stranded the browser there). Adding it to the e2e job in
+`scripts/ci/local.mjs` also means installing a Chromium in the scheduled
+workflow, so until then a green CI says nothing about the browser journeys: run
+`pnpm --filter @oppenheimer/e2e e2e:web` locally when you touch them.
 
 ## The two stubs, and what they are for
 

@@ -7,6 +7,7 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure } from '@oppenheimer/frontend-core/react';
 import { notifySuccess } from '@oppenheimer/frontend-web';
+import { useRef } from 'react';
 
 /**
  * What a row menu and a page header do to an automation: Run now, pause or
@@ -16,7 +17,10 @@ import { notifySuccess } from '@oppenheimer/frontend-web';
  * clears it, and `dismiss` does too.
  *
  * Delete is the exception: it goes through a confirm, and its failure stays
- * in that dialog (`removeFailure`), never on the page as well.
+ * in that dialog (`removeFailure`), never on the page as well. Its toast and
+ * `onDeleted` hang on the mutation, not on the `mutate` call: the delete's
+ * cache update refetches the open detail page into a 404, which unmounts the
+ * header that asked, and a per-call callback does not fire once it has.
  *
  * Each action toasts when it lands, with the name its response carries; the
  * delete's is the one the confirm already holds. Where Run now's Open leads
@@ -50,7 +54,14 @@ export function useAutomationActions(options: {
       options.onDuplicated?.(copy.id);
     },
   });
-  const remove = useDeleteAutomation();
+  // The name the confirm holds, for the toast of the delete it started.
+  const removingName = useRef('');
+  const remove = useDeleteAutomation({
+    onSuccess: () => {
+      notifySuccess('automationDeleted', { name: removingName.current });
+      options.onDeleted?.();
+    },
+  });
 
   const failure = lastFailure([run, pause, duplicate]);
   // The automation the failed action was for: each mutation's own variables,
@@ -61,13 +72,10 @@ export function useAutomationActions(options: {
     runNow: (id: string) => run.mutate({ id, idempotencyKey: crypto.randomUUID() }),
     setPaused: (id: string, paused: boolean) => pause.mutate({ id, paused }),
     duplicate: (id: string) => duplicate.mutate(id),
-    remove: (id: string, name: string) =>
-      remove.mutate(id, {
-        onSuccess: () => {
-          notifySuccess('automationDeleted', { name });
-          options.onDeleted?.();
-        },
-      }),
+    remove: (id: string, name: string) => {
+      removingName.current = name;
+      remove.mutate(id);
+    },
     running: run.isPending,
     removing: remove.isPending,
     removeFailure: remove.error,
