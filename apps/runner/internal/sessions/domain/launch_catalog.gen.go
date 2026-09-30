@@ -29,6 +29,7 @@ var launchCatalog = map[string]launchMap{
 	},
 	"codex": {
 		command:      "codex",
+		always:       []string{"--no-daemon"},
 		model:        []string{"--model", "<model>"},
 		defaultModel: "gpt-5.6-sol",
 		permission: map[string]launchLevel{

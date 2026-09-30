@@ -159,6 +159,12 @@ export interface CodingAgentLaunchLevel {
  */
 export interface CodingAgentLaunch {
   /** Absent: this agent takes no model. */
+  /**
+   * Flags every launch of this agent carries, before anything a caller chose.
+   * They are how the session is run rather than what it is asked to do, so
+   * they are not a level and nothing in the console offers them.
+   */
+  readonly always?: readonly string[];
   readonly model?: readonly string[];
   /**
    * How the agent's own conversation is named and reopened, with
@@ -438,6 +444,16 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       }),
     ]),
     launch: Object.freeze({
+      // A session is a terminal nobody is watching, so it cannot depend on
+      // the state of a server shared with whatever else the host runs. Codex
+      // reuses a background app-server across invocations, and when the one
+      // already running is a different release it refuses with a modal — "run
+      // without daemon this time", offered to a reader who is not there —
+      // which hangs the session for good. Measured on a host with a stale
+      // 0.159.0 daemon beside 0.159.2: every codex session stopped on that
+      // dialog until a key was pressed. `--no-daemon` answers it up front,
+      // and each session is its own process either way.
+      always: Object.freeze(['--no-daemon']),
       model: Object.freeze(['--model', '<model>']),
       // Codex names its own conversation, so there is nothing to pin on a
       // create — but it does not need one. `codex resume` filters by working

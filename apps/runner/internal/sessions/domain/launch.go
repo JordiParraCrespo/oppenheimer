@@ -44,7 +44,10 @@ type Launch struct {
 // next catalog edit reaches this host or fails the build — never drifts.
 type launchMap struct {
 	command string
-	model   []string
+	// always is what every launch of this agent carries, before any choice:
+	// how the session is run rather than what it is asked to do.
+	always []string
+	model  []string
 	// defaultModel is the model a launch that names none runs, which is the
 	// one whose effort levels apply.
 	defaultModel string
@@ -100,7 +103,7 @@ func (l Launch) Args(agent Agent) []string {
 	if !ok {
 		return nil
 	}
-	var args []string
+	args := append([]string(nil), m.always...)
 	if l.Model != "" && m.model != nil {
 		args = append(args, substitute(m.model, "<model>", l.Model)...)
 	}

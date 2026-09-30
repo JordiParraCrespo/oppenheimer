@@ -15,7 +15,12 @@ func TestLaunchArgsMirrorTheCatalog(t *testing.T) {
 	}
 	// No model is the default model, whose levels go to `ultra`.
 	got = Launch{Permission: "full", Effort: "ultra", EffortIsLevel: true}.Args(AgentCodex)
-	want = []string{"--dangerously-bypass-approvals-and-sandbox", "-c", "model_reasoning_effort=ultra"}
+	want = []string{
+		"--no-daemon",
+		"--dangerously-bypass-approvals-and-sandbox",
+		"-c",
+		"model_reasoning_effort=ultra",
+	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("codex argv = %q, want %q", got, want)
 	}
@@ -30,7 +35,8 @@ func TestLaunchArgsMirrorTheCatalog(t *testing.T) {
 // sent for the first and dropped for the second — never passed to a CLI that
 // would refuse it or forward it to an API that would.
 func TestEffortIsTheModelsOwn(t *testing.T) {
-	if got := (Launch{Model: "gpt-5.6-luna", Effort: "ultra", EffortIsLevel: true}).Args(AgentCodex); len(got) != 2 {
+	// Codex always carries `--no-daemon`, so "only the model" is three words.
+	if got := (Launch{Model: "gpt-5.6-luna", Effort: "ultra", EffortIsLevel: true}).Args(AgentCodex); len(got) != 3 {
 		t.Fatalf("luna has no ultra, want only the model, got %q", got)
 	}
 	if got := (Launch{Model: "claude-haiku-4-5", Effort: "high", EffortIsLevel: true}).Args(AgentClaude); len(got) != 2 {
@@ -250,6 +256,26 @@ func TestResumeWithoutAnIDReopensByTheWorkingDirectory(t *testing.T) {
 		if containsValue(resumed, "Do the thing.") {
 			t.Fatalf("%s replayed the first task on a resume: %v", c.agent, resumed)
 		}
+	}
+}
+
+// A session is a terminal nobody is watching, so what makes it independent of
+// the host is not a choice a caller makes: it is sent every time, on a fresh
+// launch and on a resume alike. Codex refusing to share a background server of
+// a different release is the case that costs a session — it stops on a modal
+// nobody is there to answer.
+func TestWhatEveryLaunchCarriesIsSentOnBothPaths(t *testing.T) {
+	fresh := Launch{Prompt: "Do the thing."}.Args(AgentCodex)
+	if !containsValue(fresh, "--no-daemon") {
+		t.Fatalf("a fresh codex launch shared the host's daemon: %v", fresh)
+	}
+	resumed := Launch{Resume: true}.Args(AgentCodex)
+	if !containsValue(resumed, "--no-daemon") {
+		t.Fatalf("a resumed codex launch shared the host's daemon: %v", resumed)
+	}
+	// It is how the session runs, not what it is: the subcommand still leads.
+	if resumed[0] != "resume" {
+		t.Fatalf("resume no longer leads the argv: %v", resumed)
 	}
 }
 

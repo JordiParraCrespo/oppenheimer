@@ -124,6 +124,7 @@ function render() {
     lines.push(`\t${JSON.stringify(id)}: {`);
     // Single-line fields align as a run; each multi-line map stands alone.
     const head = [['command', JSON.stringify(agent.command)]];
+    if (launch.always) head.push(['always', goStrings(launch.always)]);
     if (launch.model) head.push(['model', goStrings(launch.model)]);
     const defaultModel = agent.models.find((model) => model.default);
     if (defaultModel) head.push(['defaultModel', JSON.stringify(defaultModel.id)]);
