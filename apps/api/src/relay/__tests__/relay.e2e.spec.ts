@@ -280,7 +280,7 @@ describe.skipIf(!enabled)('the runner and the relay, end to end', () => {
       organizationSlug: 'jordi',
       sessionSlug: 'bold-otter-3f9a7k',
       agent: 'claude-code',
-      launch: { model: 'opus', permission: 'ask', effort: 'medium' },
+      launch: { model: 'claude-opus-5-5', permission: 'ask', effort: 'xhigh' },
       prompt: 'say hello',
       branch: 'oppenheimer/hello-world/bold-otter-3f9a7k',
       checkouts: [
@@ -359,7 +359,10 @@ describe.skipIf(!enabled)('the runner and the relay, end to end', () => {
       },
       20_000,
     );
-    expect(screen).toContain('--model opus --permission-mode manual --effort high say hello');
+    // The level reaches the CLI under its own name, for a model that offers it.
+    expect(screen).toContain(
+      '--model claude-opus-5-5 --permission-mode manual --effort xhigh say hello',
+    );
 
     // Keystrokes: bare bytes in, the shell's echo and output back.
     browser.send(Buffer.from('echo relay-e2e-$((40+2))\r'), { binary: true });
