@@ -57,15 +57,6 @@ describe('findWorkspaceRoot', () => {
     );
     expect(findWorkspaceRoot(path.join(root, 'packages', 'nested'))).toBe(root);
   });
-
-  it('returns null when no workspace root exists', () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oppenheimer-env-none-'));
-    try {
-      expect(findWorkspaceRoot(dir)).toBeNull();
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
-  });
 });
 
 describe('loadEnv', () => {

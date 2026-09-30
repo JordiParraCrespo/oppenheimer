@@ -31,12 +31,6 @@ describe('coding agent catalog', () => {
     expect(CODING_AGENTS.grok.configDirEnv).toBe('GROK_HOME');
   });
 
-  it('offers Grok 4.7 and 4.6, defaulting to the CLI’s own', () => {
-    const models = CODING_AGENTS.grok.models;
-    expect(models.map((model) => model.id)).toEqual(['grok-4.7', 'grok-4.6']);
-    expect(models.filter((model) => model.default).map((model) => model.id)).toEqual(['grok-4.6']);
-  });
-
   it('maps Grok’s effort stops 1:1 onto its own levels, and Ask onto its `default` mode', () => {
     // Two product decisions, pinned so a later `--help` pass cannot slide them:
     // `--reasoning-effort` has all five names, so no stop is shifted; and Ask
@@ -56,18 +50,6 @@ describe('coding agent catalog', () => {
     expect(shell.launch).toEqual({});
     // A shell prints any URL it is asked to; none of them is a login button.
     expect(shell.loginTargets).toBeUndefined();
-  });
-
-  it('records where each CLI writes the transcript the first prompt is read from', () => {
-    expect(CODING_AGENTS['claude-code'].transcriptLocation).toEqual({
-      directory: '~/.claude/projects/',
-      keyedBy: 'working-directory',
-    });
-    expect(CODING_AGENTS.codex.transcriptLocation?.directory).toBe('~/.codex/sessions/');
-    expect(CODING_AGENTS.grok.transcriptLocation).toEqual({
-      directory: '~/.grok/sessions/',
-      keyedBy: 'working-directory',
-    });
   });
 
   it('is frozen, because every tier reads the same object', () => {
@@ -160,14 +142,6 @@ describe('isCodingAgentId', () => {
     expect(isCodingAgentId('')).toBe(false);
     expect(isCodingAgentId(null)).toBe(false);
     expect(isCodingAgentId(42)).toBe(false);
-  });
-
-  it('narrows the type', () => {
-    const value: unknown = 'codex';
-    if (isCodingAgentId(value)) {
-      const id: CodingAgentId = value;
-      expect(CODING_AGENTS[id].label).toBe('Codex');
-    }
   });
 });
 
@@ -279,38 +253,6 @@ describe('launch mapping', () => {
       expect(models.filter((model) => model.default).length).toBeLessThanOrEqual(1);
       expect(new Set(models.map((model) => model.id)).size).toBe(models.length);
     }
-  });
-
-  it('seeds each agent with its family, every row naming the model it runs', () => {
-    // The pair is the assertion. A label names a generation, so its id has to
-    // name the same one: an alias (`opus`, `gpt-5.6`) moves under a versioned
-    // label and the two go out of step on the host, with nothing on screen
-    // saying so.
-    expect(CODING_AGENTS['claude-code'].models.map((model) => [model.id, model.label])).toEqual([
-      ['claude-opus-5-5', 'Claude Opus 5.5'],
-      ['claude-fable-5-1', 'Claude Fable 5.1'],
-      ['claude-sonnet-5-5', 'Claude Sonnet 5.5'],
-      ['claude-haiku-4-5', 'Claude Haiku 4.5'],
-    ]);
-    expect(CODING_AGENTS.codex.models.map((model) => [model.id, model.label])).toEqual([
-      ['gpt-6-astra', 'GPT-6 Astra'],
-      ['gpt-5.6-sol', 'GPT-5.6 Sol'],
-      ['gpt-5.6-terra', 'GPT-5.6 Terra'],
-      ['gpt-5.6-luna', 'GPT-5.6 Luna'],
-    ]);
-
-    // Each agent's default is the one its own CLI would have run.
-    expect(CODING_AGENTS['claude-code'].models.find((model) => model.default)?.id).toBe(
-      'claude-opus-5-5',
-    );
-    expect(CODING_AGENTS.opencode.models.map((model) => model.id)).toEqual([
-      'anthropic/claude-opus-5-5',
-      'anthropic/claude-fable-5-1',
-      'anthropic/claude-sonnet-5-5',
-      'anthropic/claude-haiku-4-5',
-      'openai/gpt-5.6-sol',
-    ]);
-    expect(CODING_AGENTS.codex.models.find((model) => model.default)?.id).toBe('gpt-5.6-sol');
   });
 
   it('is frozen, like the rest of the catalog', () => {

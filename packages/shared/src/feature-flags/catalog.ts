@@ -92,31 +92,3 @@ export function isValidFlagValue(definition: FlagDefinition, value: unknown): va
   if (definition.type === 'boolean') return typeof value === 'boolean';
   return typeof value === 'string' && definition.variants.includes(value);
 }
-
-/**
- * The catalog defaults for the client flags — what a client renders before
- * the first response arrives, and what it keeps rendering if it never does.
- */
-export function defaultClientFlagValues(): Record<ClientFeatureFlagKey, FlagValue> {
-  return Object.fromEntries(
-    CLIENT_FEATURE_FLAG_KEYS.map((key) => [key, getFlagDefinition(key).defaultValue]),
-  ) as Record<ClientFeatureFlagKey, FlagValue>;
-}
-
-/**
- * Flags of a temporary kind whose `expiresAt` is on or before `today`
- * (`YYYY-MM-DD`). What `pnpm check:flags` fails on.
- */
-export function expiredFlags(
-  today: string,
-  catalog: Record<string, FlagDefinition> = FEATURE_FLAGS,
-): string[] {
-  return Object.entries(catalog)
-    .filter(
-      ([, definition]) =>
-        definition.kind !== 'ops' &&
-        definition.expiresAt !== undefined &&
-        definition.expiresAt <= today,
-    )
-    .map(([key]) => key);
-}

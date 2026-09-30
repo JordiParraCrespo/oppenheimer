@@ -147,6 +147,9 @@ describe('LocalStorageService', () => {
       await expect(subject.getUrl(key)).resolves.toBe(
         'https://api.example.com/uploads/avatars/user-1.png',
       );
+      await expect(subject.getUrl(key, 60)).resolves.toBe(
+        'https://api.example.com/uploads/avatars/user-1.png',
+      );
     });
 
     it('trims trailing slashes off the configured base', async () => {
@@ -159,12 +162,6 @@ describe('LocalStorageService', () => {
 
     it('falls back to a root-relative URL when no base is configured', async () => {
       await expect(storage('').getUrl('k.png')).resolves.toBe('/uploads/k.png');
-    });
-
-    it('ignores the expiry argument — a local file has no signature to expire', async () => {
-      const subject = storage();
-
-      await expect(subject.getUrl('k.png', 60)).resolves.toBe(await subject.getUrl('k.png'));
     });
   });
 });
