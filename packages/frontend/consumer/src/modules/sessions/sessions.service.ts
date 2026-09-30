@@ -1,5 +1,6 @@
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
+import { trace } from '../../trace';
 import type {
   AttachTicket,
   CreateSessionInput,
@@ -37,7 +38,11 @@ export class SessionsService {
   }
 
   create(input: CreateSessionInput, idempotencyKey: string): Promise<SessionEntity> {
-    return this.repository.create(input, idempotencyKey);
+    trace('create.request');
+    return this.repository.create(input, idempotencyKey).then((session) => {
+      trace('create.response', { session: session.id });
+      return session;
+    });
   }
 
   rename(id: string, name: string): Promise<SessionEntity> {
@@ -78,6 +83,7 @@ export class SessionsService {
     return new AttachSessionStream({
       apiBaseUrl: this.apiBaseUrl,
       issueTicket: () => this.issueAttachTicket(id, window),
+      sessionId: id,
     });
   }
 }

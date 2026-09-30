@@ -5,6 +5,7 @@ import (
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/core/trace"
 )
 
 // wireSteps names each stage of create on the wire. The service knows its
@@ -43,9 +44,11 @@ func (s *startSteps) stage(ev sessionsdomain.StageEvent) {
 		return
 	}
 	if ev.Done {
+		trace.Mark("stage.done", map[string]any{"stage": string(step), "tookMs": ev.Took.Milliseconds()})
 		s.emit(done(step, ev.Took))
 		return
 	}
+	trace.Mark("stage.start", map[string]any{"stage": string(step)})
 	s.emit(link.SessionStepPayload{Step: step, Status: link.SessionStepRunning})
 }
 

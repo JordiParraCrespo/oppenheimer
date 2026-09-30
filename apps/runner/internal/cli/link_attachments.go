@@ -12,6 +12,7 @@ import (
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/core/trace"
 )
 
 // attach opens a PTY for the id epoch's link allocated. Opening it runs tmux
@@ -19,11 +20,14 @@ import (
 // belongs to the link that allocated it — the next may give it to another
 // browser — so a PTY opened for a link that is gone is closed, not streamed.
 func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach, epoch uint64) {
+	trace.Mark("attach.frame", map[string]any{"session": m.SessionID, "window": m.Window})
 	pty, err := h.app.Sessions.Attach(ctx, m.SessionID, m.Window, sessionsapp.Size{Cols: clampSize(m.Cols), Rows: clampSize(m.Rows)})
 	if err != nil {
+		trace.Mark("attach.failed", map[string]any{"session": m.SessionID, "err": err.Error()})
 		h.fail(m.CommandID, err)
 		return
 	}
+	trace.Mark("attach.pty-open", map[string]any{"session": m.SessionID})
 	readCtx, cancel := context.WithCancel(context.Background())
 	att := &attachment{
 		id: m.AttachmentID, sessionID: m.SessionID, window: m.Window, pty: pty, cancel: cancel,
@@ -74,6 +78,10 @@ func (h *linkHandler) pump(ctx context.Context, att *attachment) {
 		}
 		n, err := att.pty.Read(buf)
 		if n > 0 {
+			if !att.sawOutput {
+				att.sawOutput = true
+				trace.Mark("attach.first-pty-read", map[string]any{"session": att.sessionID, "bytes": n})
+			}
 			// Reserved before the frame is queued: once queued, the writer may
 			// send it and the browser's credit may come back before this line
 			// would run, and a credit that finds nothing in flight is lost.

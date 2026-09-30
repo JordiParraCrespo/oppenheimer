@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, traceSession } from '@oppenheimer/backend-core';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import { requireLaunchableHost } from '../../application/require-launchable-host.policy';
@@ -48,6 +48,7 @@ export class CreateSessionCommandHandler
   ) {}
 
   async execute(command: CreateSessionCommand): Promise<SessionCommandResult> {
+    traceSession('create.received');
     const { scope, input } = command;
     if (!scope.organizationId) throw new AppError(SessionErrors.NO_ACTIVE_ORGANIZATION);
 
@@ -97,6 +98,7 @@ export class CreateSessionCommandHandler
     // model's round trip overlaps the dispatch rather than following it.
     const naming = input.prompt ? this.naming.propose(created.session, input.prompt) : null;
 
+    traceSession('create.dispatching', { session: created.session.id });
     const { hints } = await this.dispatch.create(
       created.session,
       await this.launches.build(created.session, { prompt: input.prompt, images }),
@@ -107,6 +109,7 @@ export class CreateSessionCommandHandler
       await naming,
       WorkSessionMapper.promptKeyFor(command.id),
     );
+    traceSession('create.answering', { session: created.session.id });
     return { sessionId: created.session.id, hints };
   }
 }
