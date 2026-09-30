@@ -523,3 +523,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   export's bubble** (05). Found by Claude Code's own user-message background
   and pointer, repainted in the terminal's ramp, with the tint laid over the
   grid; the input row stays the agent's own.
+- 2026-09-30: **The dark session terminal is the artboard's `#1a1a1c`, frame
+  included** (05). It had been set to the canvas (`#121213`) because the
+  lighter terminal read as a slab on a darker page; the artboard paints the
+  session's frame in the terminal colour too, so the console now does the same
+  and matches it.
