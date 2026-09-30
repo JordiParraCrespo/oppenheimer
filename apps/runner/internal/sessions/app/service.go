@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/core/trace"
 )
 
 // Options configure the session service.
@@ -273,19 +274,27 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 	//
 	// It starts in the directory the worktree will be made in — the worktree
 	// itself is not there yet — and the agent is sent once it is.
+	trace.Mark("create.prepare-start", map[string]any{"session": session.ID})
 	parent, err := s.worktrees.Prepare(ctx, in.Repo)
 	if err != nil {
 		return domain.Session{}, err
 	}
+	trace.Mark("create.prepared", map[string]any{"session": session.ID})
 	if err := s.terminals.Create(ctx, session.TmuxName(), parent, "", s.env(session)); err != nil {
 		return domain.Session{}, err
 	}
+	trace.Mark("create.tmux-made", map[string]any{"session": session.ID})
 	// A stage that fails from here leaves no pane behind: the session never
 	// became one, and a terminal nothing is running in is not a session.
 	abandon := func(err error) (domain.Session, error) {
 		_ = s.terminals.Kill(context.WithoutCancel(ctx), session.TmuxName())
 		return domain.Session{}, err
 	}
+	// The pane is there, so an attach may be served from here — the create
+	// goes on, and the console does not wait for it. Everything else still
+	// waits for the create to land: this says the terminal exists, not that
+	// the session is finished.
+	s.paneReady(session)
 	if in.Ready != nil {
 		in.Ready(session)
 	}
@@ -395,6 +404,10 @@ type creation struct {
 	done    chan struct{}
 	result  domain.Session
 	err     error
+	// pane says the session's tmux session exists, which is true well before
+	// the create lands: it is made before the clone runs. An attach may be
+	// served from that moment; nothing else may.
+	pane bool
 }
 
 // begin registers a create, or finds what is already there for its id: a
@@ -417,6 +430,52 @@ func (s *Service) begin(session domain.Session) (c *creation, first bool, existi
 // end records a create's outcome — the session, when it landed — and wakes
 // every create that joined it. The record is written before the pending entry
 // goes, so Get never finds neither.
+// paneReady marks a session being created as attachable: its tmux session
+// exists, whatever the clone behind it is still doing. It also refreshes the
+// copy the creation holds, so what an attach reads is the session as it is.
+func (s *Service) paneReady(session domain.Session) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if c, creating := s.creating[session.ID]; creating {
+		c.session = session
+		c.pane = true
+	}
+}
+
+// attachable is the session an attach may use: one this host has recorded and
+// which is live, or one still being created whose pane already exists.
+//
+// The second case is what making the terminal before the clone is for. A
+// create that made the pane last had nothing to attach to until every stage
+// had landed, so `recorded` was the right question; made first, the pane is
+// there within milliseconds and the console's attach arrives while the clone
+// is still running. Answering it "still being created" sent the browser into
+// its reconnect ladder to wait for work its terminal never depended on.
+func (s *Service) attachable(id string) (domain.Session, error) {
+	s.mu.Lock()
+	if recorded, ok := s.sessions[id]; ok {
+		session := recorded.Clone()
+		s.mu.Unlock()
+		if !session.State.Live() {
+			return domain.Session{}, domain.ErrNotRunning.WithDetail(
+				"session %s is %s; restart it to attach", id, session.State)
+		}
+		return session, nil
+	}
+	if c, creating := s.creating[id]; creating {
+		if !c.pane {
+			s.mu.Unlock()
+			return domain.Session{}, domain.ErrNotRunning.WithDetail(
+				"session %q is still being created", id)
+		}
+		session := c.session.Clone()
+		s.mu.Unlock()
+		return session, nil
+	}
+	s.mu.Unlock()
+	return domain.Session{}, domain.ErrNotFound.WithDetail("no session %q on this host", id)
+}
+
 func (s *Service) end(c *creation, session domain.Session, err error) {
 	if err == nil {
 		s.record(session)
@@ -542,13 +601,9 @@ func (s *Service) CloseWindow(ctx context.Context, id string, index int) error {
 // Attach opens a PTY onto one window. Several devices may attach to the same
 // window; tmux sizes it to the one that resized last.
 func (s *Service) Attach(ctx context.Context, id string, window int, size Size) (Attachment, error) {
-	session, err := s.recorded(id)
+	session, err := s.attachable(id)
 	if err != nil {
 		return nil, err
-	}
-	if !session.State.Live() {
-		return nil, domain.ErrNotRunning.WithDetail(
-			"session %s is %s; restart it to attach", id, session.State)
 	}
 	if _, ok := session.Window(window); !ok {
 		return nil, domain.ErrNotFound.WithDetail("%v: %d", domain.ErrNoSuchWindow, window)

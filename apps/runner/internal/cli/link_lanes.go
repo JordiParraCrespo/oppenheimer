@@ -49,6 +49,30 @@ func (l *lanes) run(key string, job func()) {
 	go l.drain(key, job)
 }
 
+// detach runs rest outside any lane, counted like a lane's own work so
+// {@link close} still waits for it. It is how a job hands its lane back before
+// it has finished: a create holds its session's lane only until the pane
+// exists, because what queues behind a create is an attach and the pane is
+// what an attach needs. The clone that follows would otherwise keep the
+// browser waiting for work it does not depend on.
+//
+// Ordering is unchanged for everything that queued: they still run one at a
+// time, in arrival order. What changes is that they no longer wait for the
+// detached remainder.
+func (l *lanes) detach(rest func()) {
+	l.mu.Lock()
+	if l.closed {
+		l.mu.Unlock()
+		return
+	}
+	l.running.Add(1)
+	l.mu.Unlock()
+	go func() {
+		defer l.running.Done()
+		rest()
+	}()
+}
+
 // close drops everything queued and anything that arrives later, then waits
 // up to timeout for the jobs already running to return. It reports whether
 // they all did.

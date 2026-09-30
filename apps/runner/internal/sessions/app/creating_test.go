@@ -172,3 +172,67 @@ func TestAFailedCreateLeavesNoRecord(t *testing.T) {
 		t.Fatal("a failed create was saved")
 	}
 }
+
+// The regression: the pane is built before the clone, so the console's attach
+// arrives while the create is still running. Refusing it "still being created"
+// — which is what every command that needs a *recorded* session is told — sent
+// the browser into its reconnect ladder to wait out a clone its terminal never
+// depended on, and gave back the whole point of building the terminal first.
+//
+// An attach is the one command a session being created can serve, and only
+// once its pane is there: the tmux session is exactly what it needs.
+func TestASessionBeingCreatedIsAttachableOnceItsPaneExists(t *testing.T) {
+	svc, git, _ := gatedService(t, nil)
+	go func() { _, _ = svc.Create(context.Background(), createInput()) }()
+	waitCreating(t, svc)
+
+	// The clone is still gated, so the create has not landed.
+	attachment, err := svc.Attach(context.Background(), creatingID, 0, app.Size{Cols: 80, Rows: 24})
+	if err != nil {
+		t.Fatalf("attach while creating: %v; want the pane", err)
+	}
+	if attachment == nil {
+		t.Fatal("attach while creating returned no attachment")
+	}
+	_ = attachment.Close()
+
+	// Everything else still waits for the create: this says the terminal
+	// exists, not that the session is finished.
+	if _, err := svc.Stop(context.Background(), creatingID); err == nil {
+		t.Fatal("a session being created has nothing to stop yet; the stop must be refused")
+	}
+	close(git.release)
+}
+
+// A session whose pane does not exist yet is not attachable: there is nothing
+// to attach to, and saying so is what makes the console wait rather than
+// reconnect against a session that cannot answer.
+func TestASessionIsNotAttachableBeforeItsPaneExists(t *testing.T) {
+	terminals := &gatedTerminals{Terminals: fake.NewTerminals(), release: make(chan struct{})}
+	svc, err := app.New(app.Options{
+		Terminals: terminals, Worktrees: fake.NewWorktrees(), Classifier: manifest.New(manifest.Options{}),
+		Store: &memoryStore{}, Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() { _, _ = svc.Create(context.Background(), createInput()) }()
+	waitCreating(t, svc)
+
+	if _, err := svc.Attach(context.Background(), creatingID, 0, app.Size{Cols: 80, Rows: 24}); err == nil {
+		t.Fatal("attached to a session whose pane has not been made yet")
+	}
+	close(terminals.release)
+}
+
+// gatedTerminals is tmux whose session creation waits to be released, so a
+// create can be held at the moment before its pane exists.
+type gatedTerminals struct {
+	*fake.Terminals
+	release chan struct{}
+}
+
+func (g *gatedTerminals) Create(ctx context.Context, name, dir, command string, env map[string]string) error {
+	<-g.release
+	return g.Terminals.Create(ctx, name, dir, command, env)
+}

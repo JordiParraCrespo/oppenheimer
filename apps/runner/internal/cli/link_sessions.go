@@ -7,15 +7,19 @@ package cli
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	updapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/app"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/core/trace"
 )
 
 func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
+	trace.Mark("create.frame", map[string]any{"session": m.SessionID})
+	defer trace.Mark("create.handler-returned", map[string]any{"session": m.SessionID})
 	steps := newStartSteps(func(p link.SessionStepPayload) {
 		h.reporter.Append(m.SessionID, link.SessionStepKind, p)
 	}, time.Now)
@@ -48,40 +52,55 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 		h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))
 		return
 	}
-	_, err = h.app.Sessions.Create(ctx, sessionsapp.CreateInput{
-		ID:         m.SessionID,
-		Repo:       first.RepositoryFullName,
-		Remote:     "https://github.com/" + first.RepositoryFullName + ".git",
-		BaseBranch: first.BaseBranch,
-		Branch:     m.Branch,
-		Name:       m.SessionSlug,
-		Agent:      agent,
-		Launch: sessionsdomain.Launch{
-			Model: m.Launch.Model, Permission: m.Launch.Permission, Effort: m.Launch.Effort, Prompt: m.Prompt,
-			// The name the agent's conversation takes, so what it says can be
-			// reopened after the session stops.
-			Conversation: m.Launch.Conversation, Resume: m.Launch.Resume,
-		},
-		CheckoutID: first.CheckoutID, GithubRepoID: first.GithubRepoID,
-		Images:   images,
-		Progress: steps.stage,
-		// The pane exists before the clone does, and this is what lets the
-		// console attach to it then rather than when the agent lands: the
-		// worktree's path is known from the start, so the checkouts it
-		// reports are true before they are on disk.
-		Ready: func(session sessionsdomain.Session) {
-			h.reporter.Append(session.ID, "session.started", map[string]any{
-				"checkouts": []map[string]any{{
-					"checkoutId": first.CheckoutID, "branch": session.Branch, "path": session.Worktree, "mode": "worktree",
-				}},
-			})
-		},
+	// The lane is held only until the pane exists. Everything after that — the
+	// clone, the worktree, the agent — is work an attach does not depend on,
+	// and holding the lane through it made the browser wait for the clone
+	// before its attach was even read: the whole point of building the
+	// terminal first, given back. `ready` is closed by `Ready` below, or by a
+	// create that ended before it got there.
+	ready := make(chan struct{})
+	var once sync.Once
+	settle := func() { once.Do(func() { close(ready) }) }
+
+	h.lanes.detach(func() {
+		defer settle()
+		if _, err := h.app.Sessions.Create(ctx, sessionsapp.CreateInput{
+			ID:         m.SessionID,
+			Repo:       first.RepositoryFullName,
+			Remote:     "https://github.com/" + first.RepositoryFullName + ".git",
+			BaseBranch: first.BaseBranch,
+			Branch:     m.Branch,
+			Name:       m.SessionSlug,
+			Agent:      agent,
+			Launch: sessionsdomain.Launch{
+				Model: m.Launch.Model, Permission: m.Launch.Permission, Effort: m.Launch.Effort, Prompt: m.Prompt,
+				// The name the agent's conversation takes, so what it says can be
+				// reopened after the session stops.
+				Conversation: m.Launch.Conversation, Resume: m.Launch.Resume,
+			},
+			CheckoutID: first.CheckoutID, GithubRepoID: first.GithubRepoID,
+			Images:   images,
+			Progress: steps.stage,
+			// The pane exists before the clone does, and this is what lets the
+			// console attach to it then rather than when the agent lands: the
+			// worktree's path is known from the start, so the checkouts it
+			// reports are true before they are on disk.
+			Ready: func(session sessionsdomain.Session) {
+				trace.Mark("create.pane-ready", map[string]any{"session": session.ID})
+				h.reporter.Append(session.ID, "session.started", map[string]any{
+					"checkouts": []map[string]any{{
+						"checkoutId": first.CheckoutID, "branch": session.Branch, "path": session.Worktree, "mode": "worktree",
+					}},
+				})
+				// Attach may run from here: the pane is real.
+				settle()
+			},
+		}); err != nil {
+			h.fail(m.CommandID, err)
+			h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))
+		}
 	})
-	if err != nil {
-		h.fail(m.CommandID, err)
-		h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))
-		return
-	}
+	<-ready
 }
 
 // lifecycleCommand is what lifecycle reads of stop, restart, close,
