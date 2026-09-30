@@ -2,16 +2,12 @@ import { AgentModelSelect, type AgentOption, type Engine } from '@oppenheimer/de
 import { useTranslation } from 'react-i18next';
 
 /**
- * The engine button of the composer's foot row: the agent, then its model.
- *
- * Harness first and models second, because the pair has to be valid and only
- * the second pane can guarantee it (`product/versions/mvp/05-screens.md`). An
- * agent the catalog lists no models for is picked outright and the button
- * names the agent — which is the plain terminal.
- *
- * The agent list is the shared catalog's, mapped in `lib/session-options.ts`.
- * Whether *this host* has that agent on `PATH` is a host fact and a hint, never
- * a gate, so nothing here disables a row.
+ * The composer's engine button: the agent, then its model. Harness first,
+ * because only the second pane can guarantee a valid pair
+ * (`product/versions/mvp/05-screens.md`); an agent with no listed models, the
+ * plain terminal, is picked outright. The list is the shared catalog's
+ * (`lib/session-options.ts`). Whether this host has the agent on `PATH` is a
+ * hint, never a gate, so no row is disabled.
  */
 export function AgentSelect({
   agents,

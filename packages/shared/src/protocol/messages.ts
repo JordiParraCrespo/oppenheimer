@@ -23,7 +23,7 @@ import {
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON
- * Schema emitted from it (`pnpm --filter @oppenheimer/shared build:protocol`)
+ * Schema emitted from it (`pnpm --filter @oppenheimer/shared build`)
  * and the Go structs generated from that. This settles open question 1 of
  * `product/versions/mvp/01-protocol.md`: Zod is what this repo already uses for
  * DTOs, so the wire is not a second schema language.
@@ -35,16 +35,16 @@ import {
 
 /* ------------------------------------------------------------------ runner → control plane */
 
+/** What a runner can name in `hello.capabilities`. */
+export const RUNNER_CAPABILITIES = ['session.image', 'session.create.images'] as const;
+export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
+
 /**
  * The first message after the upgrade. The control plane reconciles the
  * snapshot against its own state rather than replaying a queue, and refuses a
  * runner below `min_supported` with an `update_required` hint rather than
  * dropping it.
  */
-/** What a runner can name in `hello.capabilities`. */
-export const RUNNER_CAPABILITIES = ['session.image', 'session.create.images'] as const;
-export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
-
 export const helloSchema = z.object({
   type: z.literal('hello'),
   runnerVersion: z.string().min(1).max(64),
@@ -218,21 +218,17 @@ export const sessionCreateSchema = z
      * the host owns the mapping to its own flags, from the same catalog
      * (`launchOptionsSchema`).
      *
-     * It replaces the bare `model` this message carried while a model was the
-     * only launch option there was; the three travel together now, and the fold
-     * keeps them on the session so a restart reproduces the launch
+     * The fold keeps them on the session so a restart reproduces the launch
      * (`product/versions/mvp/01-protocol.md`).
      */
     launch: launchOptionsSchema,
     /**
      * The person's first task, if the composer supplied one.
      *
-     * The runner appends it to the agent's **argv** — both CLIs document the
-     * first task as a trailing positional, and the catalog's `launch.prompt`
-     * says how (`product/versions/mvp/02-runner.md` §5). So it rides the launch
-     * rather than arriving as a `session.input` after `session.started`: input
-     * needs the agent up, and "the agent is up" is a moment only the host can
-     * name. In argv there is nothing to synchronise.
+     * The runner appends it to the agent's **argv** as the catalog's
+     * `launch.prompt` says (`product/versions/mvp/02-runner.md` §5), rather than
+     * sending a `session.input` after `session.started`: input needs the agent
+     * up, a moment only the host can name.
      *
      * Set, the control plane has already written `prompt.first` to the log and
      * the runner writes nothing; unset, the runner reports the first message off
@@ -249,8 +245,8 @@ export const sessionCreateSchema = z
      * it with the task (02 §7).
      *
      * Present only with a `prompt`, each named once (the refine below), and
-     * sent only to a runner whose `hello` named `session.create.images`: an older runner would drop the field and
-     * launch the task without the pictures it talks about.
+     * sent only to a runner whose `hello` named `session.create.images`: an
+     * older runner would drop the field and launch the task without the pictures.
      */
     images: z
       .array(
@@ -305,15 +301,6 @@ export const sessionAttachSchema = z.object({
 export type SessionAttachMessage = z.infer<typeof sessionAttachSchema>;
 
 /**
- * Write to a session's PTY from the control plane — the first prompt, or a
- * command the console sends without a pane open.
- *
- * Interactive keystrokes do **not** come this way: they are binary frames on
- * the attach socket, relayed as binary frames on the link. This message exists
- * for input the control plane originates, which is why the bytes are base64 in
- * a JSON control frame rather than raw.
- */
-/**
  * Input the **control plane** originates for a window nobody is watching: the
  * composer's line on a session with no pane open, a scripted command. It is
  * not the interactive path — a browser's keystrokes are bare binary frames on
@@ -356,15 +343,13 @@ export type SessionImageMessage = z.infer<typeof sessionImageSchema>;
  *
  * The browser acks the bytes it has consumed, the control plane relays that
  * credit here, and the runner resumes the attachment's PTY reads. Without it a
- * pane that outruns its 256 KB window stalls for good rather than briefly, so
- * this is the message that makes "a runaway build stalls its own pane, never the
- * link" true instead of aspirational
+ * pane that outruns its 256 KB window stalls for good; with it a runaway build
+ * stalls its own pane, never the link
  * (`product/versions/mvp/01-protocol.md`, "Flow control and reconnect").
  *
- * It is the same shape in both places it is used: the browser sends it to the
- * control plane for its one attachment, and the control plane sends it on to the
- * runner. The credit is a delta, never a running total — a lost frame then costs
- * one window's worth of throughput rather than desynchronising the counter.
+ * The same shape on both hops (browser → control plane → runner). The credit is
+ * a delta, never a running total: a lost frame then costs one window's worth of
+ * throughput rather than desynchronising the counter.
  */
 export const attachmentCreditSchema = z.object({
   type: z.literal('attachment.credit'),
@@ -426,11 +411,6 @@ export const sessionCloseSchema = z.object({
 export type SessionCloseMessage = z.infer<typeof sessionCloseSchema>;
 
 /**
- * Recreate window 0 in the same worktrees. This is what a host reboot needs: it
- * shows every session as stopped with a Restart button, and nothing about the
- * checkouts has changed.
- */
-/**
  * End the agent and the tmux session and leave every checkout on disk, which
  * is what makes Restart possible afterwards (02 §5: "Stop is not close").
  */
@@ -442,6 +422,11 @@ export const sessionStopSchema = z.object({
 
 export type SessionStopMessage = z.infer<typeof sessionStopSchema>;
 
+/**
+ * Recreate window 0 in the same worktrees. This is what a host reboot needs: it
+ * shows every session as stopped with a Restart button, and nothing about the
+ * checkouts has changed.
+ */
 export const sessionRestartSchema = z.object({
   type: z.literal('session.restart'),
   commandId: commandIdSchema,

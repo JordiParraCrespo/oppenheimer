@@ -236,9 +236,8 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 	return created, err
 }
 
-// create walks the stages. Each is observable on disk, so a failure half-way
-// leaves something a person can look at rather than a mystery — and something
-// the next attempt for the same session takes over (Worktrees.Add).
+// create walks the stages. What a failed stage leaves on disk is taken over
+// by the next attempt for the same session (Worktrees.Add).
 func (s *Service) create(ctx context.Context, in CreateInput, session domain.Session) (domain.Session, error) {
 	// Every stage runs through run, so "started, then landed or failed" is
 	// the one shape a stage can have, and a new stage cannot report half of it.
@@ -337,7 +336,6 @@ func (s *Service) saveImages(id string, in CreateInput) (domain.Launch, error) {
 	return launch, nil
 }
 
-// creation is one create in flight.
 type creation struct {
 	session domain.Session
 	done    chan struct{}

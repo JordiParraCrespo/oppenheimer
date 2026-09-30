@@ -4,8 +4,8 @@ import { userAdditionalFields } from './user-fields';
 
 /**
  * The client plugins every Oppenheimer Better Auth client shares, mirroring the
- * server's plugin set in `apps/api/src/auth/infrastructure/better-auth.config.ts`. Platform-specific
- * plugins, if a client needs any, are prepended by the app.
+ * server's plugin set in `apps/api/src/auth/infrastructure/better-auth.config.ts`.
+ * Platform-specific plugins, if a client needs any, are prepended by the app.
  *
  * A factory rather than a shared array so each client gets fresh plugin
  * instances. The return type is deliberately inferred — and this entry ships

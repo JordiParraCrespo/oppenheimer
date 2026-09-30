@@ -12,21 +12,18 @@ import { SESSION_LOOKUP } from '../../sessions/sessions.di-tokens';
 import { seal } from './seal.util';
 
 /**
- * `credentials.token` → `credentials.grant`: the runner asks for the
- * installation token for one session's repository, on the link, because the
- * link is the only channel already authenticated per host (01).
+ * `credentials.token` → `credentials.grant`: the runner asks on the link for one
+ * session repository's installation token, because the link is the only channel
+ * already authenticated per host (01).
  *
- * Four checks before anything is minted: the session and checkout exist and
- * are live, the session runs on **this** link's host, the repository the
- * runner names is the checkout's, and the person who started the session may
- * still act. Then the token is minted live — never cached,
- * so a repository removed from the installation stops on the next ask — and
- * sealed to the host's key, so the relay holds it in the clear for as long as
- * this function runs and no longer.
+ * Before minting: the session and checkout exist and are live, the session runs on
+ * **this** link's host, the named repository is the checkout's, and the session's
+ * starter may still act. The token is minted live, never cached, so a repository
+ * removed from the installation stops on the next ask, and sealed to the host's
+ * key, so the relay holds it in the clear only while this runs.
  *
- * A refusal is a `command.failed` carrying the ask's `requestId` and the
- * catalog code; the runner's credential helper turns that into git's "I have
- * none".
+ * A refusal is a `command.failed` with the ask's `requestId` and the catalog code,
+ * which the runner's credential helper turns into git's "I have none".
  */
 @Injectable()
 export class CredentialsProcessor {

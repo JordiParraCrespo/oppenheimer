@@ -49,17 +49,13 @@ const repositories: Provider[] = [
 ];
 
 /**
- * API tokens module.
- *
  * It owns a credential kind, so what an `oppenheimer_pat_…` secret is stays
  * here: the resolver below is contributed to the auth kernel
- * (`AuthModule.contributeCredentials`) and built in this module's injector, so
- * it injects this module's repository port like any other provider.
+ * (`AuthModule.contributeCredentials`) and built in this module's injector.
  *
- * Marked `@Global` as it has always been, which publishes the token repository
- * application-wide. That is no longer what makes token authentication work —
- * the contributed resolver resolves its dependencies here — so dropping it is
- * a question about who else reads the port, not about auth.
+ * `@Global` publishes the token repository application-wide. Token
+ * authentication does not need it, so dropping it is a question of who else
+ * reads the port.
  */
 @Global()
 @Module({

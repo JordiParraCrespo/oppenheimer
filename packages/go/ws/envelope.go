@@ -10,7 +10,6 @@ package ws
 
 import "encoding/json"
 
-// Message types.
 const (
 	TypeHello        = "hello"
 	TypeSubscribe    = "subscribe"

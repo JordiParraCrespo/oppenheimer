@@ -18,7 +18,6 @@ export class WorkspaceResponseDto {
   updatedAt!: Date | null;
 }
 
-/** A user's membership of a workspace. */
 export class WorkspaceMemberResponseDto {
   @ApiProperty()
   id!: string;

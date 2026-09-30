@@ -39,7 +39,10 @@ export interface ProjectProps {
    * checkout to backfill from; every write leaves at least one.
    */
   repositories: ProjectRepositoryProps[];
-  /** The host a new session is offered. A suggestion, never a grant. */
+  /**
+   * The host a new session is offered. A suggestion, never a grant: creating a
+   * session still loads the host through the caller's own-or-grant scope.
+   */
   defaultHostId: string | null;
   /** The agent a new session is offered, from the closed catalog. */
   defaultAgent: string | null;
@@ -87,7 +90,6 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     return new ProjectEntity(create);
   }
 
-  /** Create a brand-new project with a generated id. */
   static createNew(props: CreateProjectProps): ProjectEntity {
     assertHoldable(props.repositories);
     return new ProjectEntity({
@@ -189,7 +191,7 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     );
   }
 
-  /** Rename the project. Display only: the slug stays as it is. */
+  /** Display only: the slug stays as it is. */
   rename(name: string): void {
     if (name !== this.props.name) this.assertNotUnassigned('renamed');
     this.props.name = name;

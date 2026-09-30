@@ -13,8 +13,7 @@ const permissionsKeys = {
 
 /**
  * The permission catalog and the subset the signed-in user may grant, which
- * OAuth consent names a client's scopes from. Cached for a while: it only
- * changes when someone's roles change.
+ * OAuth consent names a client's scopes from.
  */
 export function usePermissionCatalog(
   options?: Omit<UseQueryOptions<PermissionCatalog, Error>, 'queryKey' | 'queryFn'>,

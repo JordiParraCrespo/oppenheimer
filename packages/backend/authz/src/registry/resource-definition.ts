@@ -57,7 +57,8 @@ export interface ResourceDefinition {
   /**
    * The credential-scope group this resource belongs to, so API tokens and MCP
    * clients can reach it. Resources without one are unreachable by scoped
-   * credentials — which is the correct default for internal subjects.
+   * credentials — the correct default for internal subjects, and a silent
+   * failure for a public one.
    */
   credentialScope?: string;
 }

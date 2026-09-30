@@ -7,7 +7,7 @@ import { OutboxRelayService } from './infrastructure/outbox-relay.adapter';
 import { OutboxRetentionProcessor } from './infrastructure/outbox-retention.processor';
 
 /**
- * Transactional outbox wiring. Global because every repository stages its
+ * Global because every repository stages its
  * aggregate's domain events through `OutboxService` — inside the same TypeORM
  * transaction as the aggregate write — instead of emitting them directly.
  * `OutboxRetentionProcessor` purges delivered rows daily.

@@ -8,10 +8,7 @@ import type {
   SocialProvider,
 } from './auth.client';
 
-/**
- * Thin adapter over the platform {@link IAuthClient}. Keeps the service layer
- * decoupled from the concrete Better Auth client implementation.
- */
+/** Thin adapter over the platform {@link IAuthClient}. */
 @injectable()
 export class AuthRepository {
   constructor(@inject(TOKENS.AuthClient) private readonly client: IAuthClient) {}

@@ -124,7 +124,6 @@ func (c *Classifier) Classify(screen app.Screen, agent domain.Agent) (domain.Sta
 	return state, ""
 }
 
-// region extracts the text a rule reads.
 func region(screen app.Screen, r Region) string {
 	kind, n, err := r.parse()
 	if err != nil {

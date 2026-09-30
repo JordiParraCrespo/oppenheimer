@@ -1,7 +1,8 @@
 /**
- * Dependency-cruiser rules for a platform kit (`packages/frontend/web`). A kit is organised by concern; each concern
- * has the kind directories a feature has. The concerns are layered, and the
- * layering is what keeps `shell` from becoming everything's dependency.
+ * Dependency-cruiser rules for a platform kit (`packages/frontend/web`). A kit
+ * is organised by concern; each concern has the kind directories a feature
+ * has. The concerns are layered, and the layering is what keeps `shell` from
+ * becoming everything's dependency.
  *
  * @param {object} options
  * @param {string[]} options.leaves concerns that import only the design system and the kernel

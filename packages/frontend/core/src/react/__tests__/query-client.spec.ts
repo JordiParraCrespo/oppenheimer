@@ -23,7 +23,6 @@ function setup(isAuthenticated: boolean) {
     },
   };
   const client = createQueryClient(app, 0);
-  // What the previous account had on screen, and the record of the session.
   client.setQueryData(SOMEONE_ELSES, ['someone else']);
   client.setQueryData(authKeys.session(), 'user-1');
   return { store, client };

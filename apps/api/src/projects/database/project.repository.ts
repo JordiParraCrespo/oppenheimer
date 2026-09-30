@@ -24,8 +24,6 @@ const UNIQUE_VIOLATION = '23505';
 const SLUG_CONSTRAINT = 'UQ_project_organization_slug';
 
 /**
- * TypeORM adapter for the project aggregate.
- *
  * The reads carry no tenant clause of their own: extending
  * `ScopedRepositoryBase` and naming the resource is the whole of it, so a query
  * and an `ability.can()` cannot disagree about what a scope means.
@@ -98,17 +96,10 @@ export class ProjectRepository
   }
 
   /**
-   * The lock, the question and the write, in that order and in one transaction.
-   *
-   * `FOR UPDATE` on the project row is what serialises this against creating a
-   * session, whose insert transaction takes `FOR SHARE` on the same row: an archive
-   * that commits first turns that read into zero rows, and one that arrives second
-   * waits here and then sees the session it would have stranded. Asking the
-   * question between the lock and the write is the whole point — a check that ran
-   * before the lock could be true and stale by the time `archivedAt` lands.
-   *
-   * The scope's own predicate is reused verbatim as a sub-query, so a project in
-   * another workspace is `not-found` here exactly as it is on every read.
+   * The lock is the port's contract: a session create that reads after an archive
+   * commits finds zero rows, and a check asked before the lock could be stale by the
+   * time `archivedAt` lands. The scope's own predicate is reused verbatim as a
+   * sub-query, so a project in another workspace is `not-found` here as on every read.
    */
   async archiveIfUnused(
     scope: AccessScope,
@@ -179,6 +170,10 @@ export class ProjectRepository
     return this.withRepositories(record);
   }
 
+  async eraseWorkspace(organizationId: string): Promise<void> {
+    await this.repository.delete({ organizationId });
+  }
+
   /**
    * One statement, so there is no window between asking and writing. The slug is
    * `unassigned` unless a project of the workspace already holds it, else that
@@ -186,10 +181,6 @@ export class ProjectRepository
    * covers both the one-per-workspace index and a slug race, and either way the
    * workspace ends with exactly one Unassigned project.
    */
-  async eraseWorkspace(organizationId: string): Promise<void> {
-    await this.repository.delete({ organizationId });
-  }
-
   async provisionUnassigned(organizationId: string): Promise<void> {
     const table = this.repository.metadata.tableName;
     await this.repository.query(
@@ -246,7 +237,6 @@ export class ProjectRepository
   }
 }
 
-/** Whether a driver error is the slug constraint refusing the insert. */
 function isSlugConflict(error: unknown): boolean {
   const driver = error as { code?: string; constraint?: string };
   return driver?.code === UNIQUE_VIOLATION && driver?.constraint === SLUG_CONSTRAINT;

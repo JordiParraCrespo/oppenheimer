@@ -5,6 +5,13 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 
+type RunHistoryDay = {
+  /** ISO date or any key. */
+  date: string;
+  ok: number;
+  failed: number;
+};
+
 /**
  * RunHistory — the last thirty days as one column per day. A column's
  * height is its successful runs; a red dot above it means at least one
@@ -15,13 +22,6 @@ import { cn } from '../lib/utils';
  *
  * Pure markup, no chart library: thirty bars is not a chart.
  */
-type RunHistoryDay = {
-  /** ISO date or any key. */
-  date: string;
-  ok: number;
-  failed: number;
-};
-
 function RunHistory({
   title = 'Run history',
   range = 'Last 30 days',

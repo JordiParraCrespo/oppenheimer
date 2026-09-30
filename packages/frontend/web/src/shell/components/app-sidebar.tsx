@@ -24,18 +24,16 @@ function workspaceInitial(name: string): string {
 
 /**
  * The workspace sidebar: brand row, the app's own body, and the user menu
- * pinned to the bottom. 264px and the hairline against the canvas both come
- * from the design system's `Sidebar`, which is already cut to this brand.
+ * pinned to the bottom. Width and hairline come from the design system's
+ * `Sidebar`.
  *
- * The measurements are the design export's, not this file's invention: the
- * head is one `--topbar-h` tall with 16px of leading space (`.op-sidebar__head`)
- * and the foot is 10px/12px (`.op-sidebar__foot`), which is what keeps the
- * brand row level with the content bar of an app that has one.
+ * Per the export, the head is one `--topbar-h` tall with 16px leading space
+ * (`.op-sidebar__head`) and the foot 10px/12px (`.op-sidebar__foot`), which
+ * keeps the brand row level with an app's content bar.
  *
- * The body is the nav list unless the app passed a `sidebar` of its own. The
- * console's is its session list, which is a feature rather than kit because
- * it reads a product hook; the brand row and the account menu stay here, so
- * an app that replaces the middle still gets both.
+ * The body is the nav list unless the app passes its own `sidebar` (the
+ * console's session list, a feature because it reads a product hook); the
+ * brand row and account menu stay here either way.
  */
 export function AppSidebar() {
   const { t } = useTranslation();

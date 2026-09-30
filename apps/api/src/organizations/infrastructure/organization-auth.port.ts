@@ -6,7 +6,6 @@ import type {
   OrganizationResponseDto,
 } from '../dtos/organization.response.dto';
 
-/** What a new organization is called and where it lives. */
 export interface NewOrganization {
   name: string;
   slug: string;

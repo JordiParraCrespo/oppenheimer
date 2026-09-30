@@ -12,24 +12,16 @@ const IndexingOptOut = ".metadata_never_index"
 
 // ExcludeFromIndexing asks the desktop search index to leave dir alone.
 //
-// A session is a git worktree with its dependencies installed, so a host
-// running a handful of them holds several complete copies of a repository —
-// on this monorepo, gigabytes across a few hundred `node_modules` directories,
-// most of it rewritten whenever an agent installs something. Spotlight indexes
-// all of it by default, and a host with eight sessions open spent more CPU in
-// `mdworker_shared` than in the agents: enough that `tmux list-panes`, which
-// answers in milliseconds on an idle host, passed its ten-second deadline and
-// the control-plane link missed its pings. The terminals in the browser went
-// blank while the machine indexed files nobody will ever search for.
+// Every session is a worktree with its dependencies installed, gigabytes of
+// `node_modules` rewritten whenever an agent installs something. On a host with
+// eight sessions Spotlight's `mdworker_shared` outspent the agents, `tmux
+// list-panes` passed its ten-second deadline, the link missed its pings and the
+// browser's terminals went blank.
 //
-// The marker is macOS's own opt-out and needs no privileges: an empty file the
-// user can delete to get indexing back. Linux's indexers read their own
-// configuration rather than a marker, so there is nothing to write there and
-// this is a no-op — the workspace root is still the right place to say it, so
-// a future indexer only needs a branch here.
-//
-// Failing to write it is never worth failing a command for: the host works,
-// it is just busier than it needs to be, so callers log and carry on.
+// The marker is macOS's own unprivileged opt-out, an empty file the user can
+// delete to get indexing back. Linux's indexers read their own configuration,
+// so this is a no-op there. Failing to write it only leaves the host busier, so
+// callers log and carry on.
 func ExcludeFromIndexing(dir string) error {
 	return excludeFromIndexing(runtime.GOOS, dir)
 }

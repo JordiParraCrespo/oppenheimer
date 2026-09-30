@@ -69,9 +69,7 @@ describe('Auth (integration)', () => {
 
   afterAll(async () => {
     await app?.close();
-    // Better Auth's email queue is a module singleton outside the DI container,
-    // so `app.close()` does not reach it. Close it before the containers go
-    // away, or its in-flight ioredis commands reject into nothing.
+    // `app.close()` does not reach it: see `emailQueue`.
     const { emailQueue } = await import('../infrastructure/email-queue.util');
     await emailQueue.close().catch(() => {});
     await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);
@@ -84,16 +82,11 @@ describe('Auth (integration)', () => {
   describe('the session sign-up returns', () => {
     /**
      * Sign-up provisions the personal workspace, and the session it hands back
-     * has to be able to work in it.
-     *
-     * Better Auth chooses a session's organization when the row is written, and
-     * the hook that provisions the workspace is queued until after the sign-up
-     * transaction commits — so the session row is written while the account
-     * still belongs nowhere. An org-scoped role grant only reaches a caller's
-     * ability while their session names the organization it was granted in, so
-     * a session left with `activeOrganizationId = null` holds nothing but the
-     * global `user` role: every org-scoped route answered 403, for a week, to
-     * the workspace's own owner. Provisioning points the account's org-less
+     * has to work in it. Better Auth picks a session's organization when the
+     * row is written, and the provisioning hook runs after the sign-up commits,
+     * so the session started with `activeOrganizationId = null` and held only
+     * the global `user` role: every org-scoped route answered 403 to the
+     * workspace's own owner. Provisioning points the account's org-less
      * sessions at the new workspace in the same transaction.
      */
     it('is already in the workspace sign-up provisioned', async () => {

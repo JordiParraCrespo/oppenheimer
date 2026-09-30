@@ -54,8 +54,6 @@ export class ProcessInboundDeliveryCommandHandler
       });
       return 0;
     }
-    // A body replayed after its delivery row was purged gets past the digest;
-    // an event whose own time is older than that window is dropped here.
     const fresh = events.filter((event) => !isBeyondReplayWindow(event, delivery.receivedAt));
     if (fresh.length < events.length) {
       this.logger.warn({

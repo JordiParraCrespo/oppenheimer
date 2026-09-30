@@ -10,15 +10,11 @@ export type FlagChangeAction =
   | 'segment_deleted';
 
 /**
- * Raised whenever a flag's targeting or a segment changes.
- *
- * One event for both aggregates because its consumers do not care which: the
- * audit trail records the diff, and every API replica's in-memory snapshot
- * has to be rebuilt either way. Staged on the outbox with the write, so a
- * change that committed is a change that gets audited.
- *
- * `before` and `after` are plain JSON — the relay delivers the payload, not
- * the class, and the audit row stores it as it arrives.
+ * Raised whenever a flag's targeting or a segment changes. One event for both because
+ * its consumers do not care which: the audit trail records the diff, and every
+ * replica's snapshot is rebuilt either way. Staged on the outbox with the write, so a
+ * committed change is an audited one. `before` and `after` are plain JSON: the relay
+ * delivers the payload, not the class, and the audit row stores it as it arrives.
  */
 export class FlagConfigurationChangedDomainEvent extends DomainEvent {
   readonly subjectType: FlagChangeSubject;

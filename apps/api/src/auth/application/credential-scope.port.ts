@@ -10,7 +10,6 @@ import type { VerifiedSession } from '../infrastructure/credential-verifier.port
  * resolves to the {@link ScopeContext} that narrows it.
  */
 export interface CredentialScopePort {
-  /** Resolve (once per request) the scoped credential, or `null` for a session. */
   resolve(request: ScopedRequest): Promise<ScopeContext | null>;
 
   /**

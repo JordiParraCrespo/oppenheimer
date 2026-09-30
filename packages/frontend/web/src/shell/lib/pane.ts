@@ -1,14 +1,11 @@
 /**
- * How the shell frames the screen under it.
+ * How the shell frames the screen under it. A settings pane is prose and reads
+ * best in a measured column; the console's terminal *is* the viewport, and
+ * every pixel of padding is scrollback taken away.
  *
- * Two apps share one `AppShell`, and their screens want opposite things from
- * the content column. A settings pane is prose and reads best in a measured
- * column with air around it; the console's terminal *is* the viewport and
- * every pixel the shell keeps for padding is scrollback it takes away.
- *
- * A screen says which it is as route `staticData`, the way an auth page
- * declares its legal note, so the shell reads the answer off the match instead
- * of a screen reaching up into the layout to set it.
+ * A screen declares it as route `staticData`, as an auth page declares its
+ * legal note, so the shell reads it off the match instead of a screen reaching
+ * up into the layout.
  */
 export type ContentPane = 'measure' | 'full';
 

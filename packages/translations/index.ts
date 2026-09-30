@@ -14,7 +14,6 @@ import { namespaces } from './namespaces';
 export { defaultLocale, defaultNS, type Locale, locales, type Messages } from './locales';
 export { type Namespace, namespaces } from './namespaces';
 
-/** Raw messages keyed by locale. */
 export const messages = { en, es } as const;
 
 /**

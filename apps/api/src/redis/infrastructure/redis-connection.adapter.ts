@@ -4,9 +4,6 @@ import Redis from 'ioredis';
 import { type RedisConfig, redisCommandClientOptions } from '../../config/redis.config';
 
 /**
- * Owns the API's one Redis command connection: the cache, the rate-limit
- * counters and the readiness probe all share it through `REDIS_CLIENT`.
- *
  * One owner is what makes the lifecycle hold. Every consumer used to open its
  * own client, and two of the three never closed theirs, so `app.close()` left
  * sockets behind. It closes in `onApplicationShutdown`, which Nest runs after

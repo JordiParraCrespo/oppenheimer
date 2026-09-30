@@ -2,11 +2,6 @@ import type Redis from 'ioredis';
 import { describe, expect, it, vi } from 'vitest';
 import { RedisThrottlerStorage } from '../infrastructure/redis-throttler.adapter';
 
-/**
- * The rate-limit counter store on the shared Redis client. What it must hold:
- * the increment script is registered once and run by hash (`EVALSHA`), not sent
- * whole on every request, and a Redis outage lets the request through.
- */
 function fakeRedis(reply: () => Promise<unknown>) {
   const redis = {
     defineCommand: vi.fn((name: string) => {

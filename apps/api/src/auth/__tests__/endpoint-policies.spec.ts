@@ -37,16 +37,10 @@ import { FindSessionsHttpController } from '../../sessions/queries/find-sessions
  *
  * `ENDPOINT_POLICIES` (`packages/shared/src/permissions/endpoint-policies.ts`)
  * is what a client gates a destination on; `@CheckPolicies` is what the
- * endpoint behind it actually demands. They used to be two independent
- * declarations of one rule, and two of them can come apart — a screen shown to
- * everyone while the read behind it demands a permission a plain member does
- * not hold is a link that can only answer 403.
- *
- * This is the half that holds the server to it: adding, removing or changing a
- * `@CheckPolicies` on one of these handlers fails here until the catalog is
- * brought along with it, and nothing else in the build would notice. Client
- * route paths are not in it — a nav row names its endpoint where the row
- * lives — so this test needs no frontend package to run.
+ * endpoint demands. If they come apart, a screen shown to everyone can only
+ * answer 403. Changing a `@CheckPolicies` on one of these handlers fails here
+ * until the catalog follows; nothing else in the build would notice. Client
+ * route paths are not in it, so this test needs no frontend package.
  */
 
 /** The handler each guarded endpoint's data actually comes from. */

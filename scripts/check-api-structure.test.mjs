@@ -178,7 +178,7 @@ test('a ledger entry silences exactly its own (path, kind), and nothing else', (
   const ledger = [{ path: 'src/widget/widget.service.ts', kind: 'service-at-module-root' }];
   assert.deepEqual(check(broken, { ledger }).outstanding, []);
 
-  // A different kind at the same path is still reported.
+  // A finding the entry does not name, at another path, is still reported.
   assert.deepEqual(
     kinds(check({ ...broken, 'widget/widget.controller.ts': 'class C {}' }, { ledger })),
     ['controller-at-module-root'],

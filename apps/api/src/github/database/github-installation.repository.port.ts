@@ -25,8 +25,6 @@ export interface InstallationStatusChange {
 export type InstallationStatusChangeResult = 'applied' | 'stale' | 'missing';
 
 /**
- * Port for persisting and querying the installation aggregate.
- *
  * Every read a *request* makes takes an {@link AccessScope}: putting it in the
  * signature turns "this query is authorized" from something a handler has to
  * remember into something the compiler asks for. The reads that do not take one

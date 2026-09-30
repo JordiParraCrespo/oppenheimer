@@ -193,17 +193,13 @@ const adapters: Provider[] = [
 
 /**
  * Organizations, their members and invitations, and workspaces (Better Auth
- * teams).
- *
- * Better Auth's organization plugin owns these tables and the write logic, so
- * most of the module has no aggregate: it is a port per part of the plugin
- * (`infrastructure/*-auth.port.ts`), a gateway that speaks to `auth.api.*`, and
- * one use-case slice per operation. What the app adds on top is its own rule
- * and lives where rules live: `MembershipAccessPolicy` keeps the application
- * roles aligned with the roster, and the personal workspace — the organization
- * an account is given at sign-up — is an aggregate, a repository port and a
- * command handler (`commands/provision-personal-workspace/`), dispatched by the
- * sign-up hook through `auth/infrastructure/auth-command-bus.util.ts`.
+ * teams). Better Auth's organization plugin owns these tables and their
+ * writes, so most of the module is a port per plugin part
+ * (`infrastructure/*-auth.port.ts`), a gateway over `auth.api.*` and a slice
+ * per operation. The app's own rules: `MembershipAccessPolicy` keeps
+ * application roles aligned with the roster, and the personal workspace is an
+ * aggregate provisioned by `commands/provision-personal-workspace/`, dispatched
+ * by the sign-up hook through `auth/infrastructure/auth-command-bus.util.ts`.
  */
 @Module({
   imports: [

@@ -1,24 +1,17 @@
 /* =============================================================================
    Terminal symbols
    =============================================================================
-   A terminal is the product's primary surface, and coding agents draw their
-   turns with glyphs no stock monospace face carries in full — the Powerline
-   and private-use ranges most of all. Without a face that has them, every
-   agent line opens with a substitute mark instead of its bullet.
+   Coding agents draw their turns with glyphs no stock monospace face carries,
+   so without this face every agent line opens with a substitute mark.
 
-   `unicode-range` is the whole point: the browser fetches this 1.1MB file
-   only when a session actually prints a character inside these ranges, and
-   every other glyph — all of Latin, every digit, every accent — keeps coming
-   from the platform's own monospace face at its own metrics.
+   `unicode-range` is the whole point: the browser fetches this 1.1MB file only
+   when a session prints a character in these ranges, and every other glyph
+   keeps coming from the platform's own monospace face at its own metrics.
 
-   The ranges are the symbol blocks a terminal program draws furniture from,
-   plus the private-use planes. The private-use planes alone are not enough,
-   which is the trap: Powerline and oh-my-posh live there, but the marks a
-   coding agent opens a turn with do not. `⏺` is U+23FA (Miscellaneous
-   Technical), `✻` and `❯` are U+273B and U+276F (Dingbats), and a box is
-   drawn from U+2500. Claim only the private-use planes and every one of those
-   still falls through to a face that has no glyph for it, which is what drew
-   a stray mark at the start of every agent line.
+   The ranges are the symbol blocks terminal programs draw furniture from, plus
+   the private-use planes. The planes alone are not enough: Powerline and
+   oh-my-posh live there, but `⏺` is U+23FA (Miscellaneous Technical), `✻`
+   and `❯` are U+273B and U+276F (Dingbats), and boxes are drawn from U+2500.
    ========================================================================== */
 @font-face {
   font-family: 'Oppenheimer Symbols';
@@ -885,9 +878,6 @@
     opacity: 1;
   }
 }
-/* Menus and dialogs enter with a 4px rise plus fade; nothing slides in from
-   an edge. */
-/* The effort value swapping in as the knob moves. */
 /* The terminal's link dot while reconnecting: a breath, not a blink. */
 @keyframes op-pulse-dot {
   0%,
@@ -911,6 +901,7 @@
   }
 }
 
+/* The effort value swapping in as the knob moves. */
 @keyframes op-effort-in {
   from {
     opacity: 0;
@@ -932,6 +923,8 @@
     transform: none;
   }
 }
+/* Menus and dialogs enter with a 4px rise plus fade; nothing slides in from
+   an edge. */
 @keyframes op-rise {
   from {
     opacity: 0;

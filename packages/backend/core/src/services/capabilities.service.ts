@@ -11,8 +11,7 @@ export type CapabilityMap<TCapability extends string = string> = Record<TCapabil
  * The application declares its capability set at composition time (a factory
  * provider that reads `ConfigService`) and every consumer — startup logging,
  * health endpoints, feature guards — asks this one registry instead of
- * re-deriving presence from raw config, or worse, comparing against a
- * sentinel value.
+ * re-deriving presence from raw config.
  */
 @Injectable()
 export class CapabilitiesService<TCapability extends string = string> {

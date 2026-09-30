@@ -4,15 +4,8 @@ import { hostStepSearchSchema } from '@/features/organizations/lib/onboarding-se
 
 /**
  * Carries the installation Connect GitHub wrote, so Ready can name it whether
- * or not this step pairs a machine — and the walk, which this step now needs
- * for itself.
- *
- * It did not, while New session's host chip sent a finished account here to
- * pair a machine: a step that is also the console's only pairing screen has to
- * stay open. Add host is that screen now, in the console and in a dialog, and
- * its own note says what sending readers here cost — "into a numbered step of
- * a flow they had finished". So step 4 is first-run's alone again, and takes
- * the same guard as the landing it leads to.
+ * or not this step pairs a machine, and the walk. Step 4 is first-run's alone
+ * (the console pairs in Add host), so it takes the same guard as Ready.
  */
 export const Route = createFileRoute('/_auth/onboarding/host')({
   validateSearch: hostStepSearchSchema,

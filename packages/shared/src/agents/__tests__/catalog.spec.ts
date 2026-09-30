@@ -75,6 +75,13 @@ describe('coding agent catalog', () => {
     expect(Object.isFrozen(CODING_AGENTS.codex)).toBe(true);
   });
 
+  /**
+   * F3 on the wire is asserted in `src/protocol/__tests__/protocol.spec.ts`
+   * ("F3: a login URL on the wire is a vendor login URL"), against
+   * `sessionSnapshotSchema` — the field the console actually turns into a button.
+   * The tests below cover the pattern itself; that suite covers the enforcement,
+   * so an anchored pattern nothing calls cannot pass as protection.
+   */
   describe('loginTargets', () => {
     function pattern(id: CodingAgentId): RegExp {
       const targets = CODING_AGENTS[id].loginTargets;
@@ -142,13 +149,6 @@ describe('coding agent catalog', () => {
   });
 });
 
-/**
- * F3 on the wire is asserted in `src/protocol/__tests__/protocol.spec.ts`
- * ("F3: a login URL on the wire is a vendor login URL"), against
- * `sessionSnapshotSchema` — the field the console actually turns into a button.
- * The tests below cover the pattern itself; that suite covers the enforcement,
- * so an anchored pattern nothing calls cannot pass as protection.
- */
 describe('isCodingAgentId', () => {
   it('accepts catalog ids and rejects anything else', () => {
     expect(isCodingAgentId('claude-code')).toBe(true);
@@ -303,7 +303,6 @@ describe('launch mapping', () => {
     expect(CODING_AGENTS['claude-code'].models.find((model) => model.default)?.id).toBe(
       'claude-opus-5-5',
     );
-    // OpenCode offers the same family under its `anthropic/` provider.
     expect(CODING_AGENTS.opencode.models.map((model) => model.id)).toEqual([
       'anthropic/claude-opus-5-5',
       'anthropic/claude-fable-5-1',

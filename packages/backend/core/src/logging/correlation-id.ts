@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 
-/** The request/response header that carries a request's correlation id. */
 export const CORRELATION_HEADER = 'x-correlation-id';
 
 /**

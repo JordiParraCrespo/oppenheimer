@@ -11,6 +11,6 @@ package release
 //
 // A build with no key — every development build, and the repository as it
 // stands — cannot self-update at all: `Fetch` reports UPD_008 instead of
-// trusting a manifest it has no way to check. That default is deliberate.
-// The alternative to "no key" is not "unsigned updates", it is "no updates".
+// trusting a manifest it has no way to check. That is deliberate: without a
+// key the alternative is no updates, never unsigned ones.
 var PublicKeys = ""

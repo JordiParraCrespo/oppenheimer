@@ -4,12 +4,6 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "../lib/utils";
 
-/**
- * Badge — a small pill marker. Beyond the shadcn set this carries the brand's
- * status tones: `count` is the blue count pill, `new` the pink attention
- * marker, and active/paused/ended/draft the tinted table status pills. Colour
- * on a badge is always a status signal, never decoration.
- */
 const badgeVariants = cva(
   "group/badge inline-flex h-4.5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 text-xs leading-none font-medium whitespace-nowrap transition-all] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 [&>svg]:pointer-events-none [&>svg]:size-3!",
   {
@@ -40,6 +34,12 @@ const badgeVariants = cva(
   },
 );
 
+/**
+ * Badge — a small pill marker. Beyond the shadcn set this carries the brand's
+ * status tones: `count` is the blue count pill, `new` the pink attention
+ * marker, and active/paused/ended/draft the tinted table status pills. Colour
+ * on a badge is always a status signal, never decoration.
+ */
 function Badge({
   className,
   variant = "default",

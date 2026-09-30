@@ -13,28 +13,18 @@ import { useSearchPick } from '../hooks/use-search-pick';
 import { projectPrefill, toProjectOptions } from '../lib/session-options';
 
 /**
- * The project chip, bound to the draft: first in the scope band, because
- * picking a project prefills the host, the repository and the agent
- * (`product/versions/mvp/05-screens.md`).
- *
- * It subscribes to the projects because it draws them. The hosts it only
- * reads at pick time, to know which project default is still a machine this
- * workspace has, so a refetch of the host list does not re-render it — what
- * it subscribes to is only whether that list has answered, because a pick
- * made before it has would drop the project's default host as if it were
- * gone. New project… asks the console for its project dialog; what it
- * makes is picked here once the list holds it, its defaults applied, the
- * same way the sidebar's "New session here" names one in the address. With
- * nothing in the address, the project the screen starts on — remembered, or
- * Unassigned — has its defaults applied too, so the draft a visit opens with
- * is always the one its project describes.
+ * The project chip, first in the scope band because picking a project
+ * prefills the host, the repository and the agent
+ * (`product/versions/mvp/05-screens.md`). The hosts are read only at pick
+ * time, so a host refetch does not re-render it; it subscribes only to whether
+ * that list has answered, because a pick before then would drop the project's
+ * default host as if it were gone.
  */
 export function NewSessionProject() {
   const { t } = useTranslation();
   const { control, setValue } = useNewSessionDraft();
   const { field } = useController({ control, name: 'projectId' });
   const dialogs = useConsoleDialog();
-  // The project the dialog just made, picked below once the list holds it.
   const [created, setCreated] = useState<string | undefined>();
 
   const search = useSearch({ from: '/_authenticated/sessions/new' });
@@ -54,7 +44,6 @@ export function NewSessionProject() {
     ? field.value
     : (projects.data?.find((project) => project.isUnassigned)?.id ?? null);
 
-  /** Picking a project: the chip, then what its defaults set on the others. */
   function pick(next: ProjectEntity) {
     field.onChange(next.id);
     const prefill = projectPrefill(
@@ -71,8 +60,9 @@ export function NewSessionProject() {
   // dialog names the one it made. Either is picked once the lists can.
   useSearchPick(created ?? search.project, projects.data, hostsReady === true, pick);
 
-  // With neither, the project the chip starts on offers its defaults on
-  // arrival. Precedence, per chip: a default the project names wins over the
+  // With neither, the project the chip starts on — remembered, or Unassigned —
+  // offers its defaults on arrival, so the draft a visit opens with is always
+  // the one its project describes. Precedence, per chip: a default the project names wins over the
   // last visit's choice; a chip it names nothing for (no default host, no
   // default agent) keeps what `initialDraft` restored, because `projectPrefill`
   // leaves a missing default out of the patch. The scope is never remembered,

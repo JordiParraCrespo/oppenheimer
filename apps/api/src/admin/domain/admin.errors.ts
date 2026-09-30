@@ -1,9 +1,6 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 /**
- * Admin (user-administration) error catalog. Surfaced as HTTP responses by the
- * global `AllExceptionsFilter` via `AppError`.
- *
  * As with the organization catalog, Better Auth's admin plugin raises its own
  * `SCREAMING_SNAKE_CASE` codes; `infrastructure/admin-error.util.ts` folds them into these
  * entries and keeps the upstream code as an `upstreamCode` extension member.

@@ -24,11 +24,9 @@ export interface ErrorDefinition {
 /**
  * Base domain/application exceptions used by the DDD building blocks.
  *
- * These are framework-agnostic. The HTTP exception filter in
- * `@oppenheimer/backend-core` translates `AppError` (and unknown errors) into HTTP
- * responses; domain exceptions thrown here are surfaced through that filter.
- * `httpStatus` is the status the filter reports for the exception — a plain
- * number, so the domain stays free of any HTTP framework.
+ * The HTTP exception filter in `@oppenheimer/backend-core` translates `AppError`
+ * (and unknown errors) into HTTP responses; domain exceptions thrown here are
+ * surfaced through that filter, with `httpStatus` as the status it reports.
  */
 export abstract class ExceptionBase extends Error {
   abstract code: string;

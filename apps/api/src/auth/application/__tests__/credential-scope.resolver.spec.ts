@@ -57,7 +57,7 @@ describe('CredentialScopeResolver', () => {
     resolver = new CredentialScopeResolver(registry, credentials, owners, failures);
   });
 
-  /** A contribution, as a feature module registers it through `forFeature`. */
+  /** A contribution, as `AuthModule.contributeCredentials` registers it. */
   const contribute = (overrides: Partial<CredentialResolverPort> = {}) => {
     const contributed: CredentialResolverPort = {
       kind: 'test-credential',
@@ -128,11 +128,9 @@ describe('CredentialScopeResolver', () => {
 
     expect(scope).toMatchObject({ kind: 'oauth', userId: owner.id, owner });
     expect(scope?.scopes).toContain('users:read');
-    // The id is a digest of the token, never the token itself.
     expect(scope?.credentialId.startsWith('oauth:')).toBe(true);
     expect(scope?.credentialId).not.toContain('oauth-access-token');
     expect(scope?.expiresAt).toEqual(new Date('2026-01-01T00:00:00.000Z'));
-    // An OAuth token costs the grant lookup and nothing else.
     expect(credentials.verifyOAuthGrant).toHaveBeenCalledTimes(1);
     expect(credentials.verifySession).not.toHaveBeenCalled();
   });

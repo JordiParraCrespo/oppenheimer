@@ -12,20 +12,16 @@ import type { GithubAppPort, GithubInstallationClaim } from '../../infrastructur
 import { ConnectInstallationCommand } from './connect-installation.command';
 
 /**
- * Claims a GitHub App installation for the caller's workspace.
+ * Most of this handler is the proof, in two halves, with no fallback for
+ * either. The install `state` proves this console user started this install
+ * in this workspace (see `InstallStateResolver`). The OAuth `code` proves
+ * which GitHub account can see the installation: exchanging it and asking
+ * GitHub is the only thing that stops a forged id handing out one-hour tokens
+ * to another account's repositories (`product/versions/mvp/00-scope.md`).
  *
- * Most of this handler is the proof, in two halves. The install `state` proves
- * this console user started this install, in this workspace: without it, a
- * callback URL someone stopped halfway would connect their installation to
- * whoever opened it. The OAuth `code` proves which GitHub account can see the
- * installation: exchanging it and asking GitHub is the only thing that stops a
- * forged id handing out one-hour tokens to another account's repositories
- * (`product/versions/mvp/00-scope.md`). There is no fallback for either.
- *
- * The rest is which row the claim lands on. A claim is something a workspace
- * *holds*: a live row elsewhere is a conflict, this workspace's own disconnected
- * row is revived, and another workspace's disconnected row is history that a new
- * row sits beside.
+ * A claim is something a workspace *holds*: a live row elsewhere is a
+ * conflict, this workspace's own disconnected row is revived, and another
+ * workspace's disconnected row is history a new row sits beside.
  */
 @CommandHandler(ConnectInstallationCommand)
 export class ConnectInstallationCommandHandler
@@ -111,8 +107,6 @@ export class ConnectInstallationCommandHandler
       });
     }
 
-    // Read with the App's own JWT once visibility is proven: the name, the
-    // selection and — what a redirect cannot be trusted for — the suspension.
     return this.github.readInstallation(command.githubInstallationId);
   }
 }

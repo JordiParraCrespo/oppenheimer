@@ -3,8 +3,8 @@ import type { FlagRule, FlagServe } from '@oppenheimer/shared/feature-flags';
 import { Column, CreateDateColumn, Entity, PrimaryColumn, Unique, UpdateDateColumn } from 'typeorm';
 
 /**
- * Persistence model for `feature_flag` — one row per catalog key an operator
- * has configured on this deployment. Rules and the fallthrough are `jsonb`:
+ * One row per catalog key an operator has configured on this deployment.
+ * Rules and the fallthrough are `jsonb`:
  * the aggregate always reads and writes them whole, and the evaluator wants
  * them in exactly this shape.
  */

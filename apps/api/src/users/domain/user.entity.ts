@@ -46,9 +46,8 @@ export interface UpdateUserProps {
 }
 
 /**
- * User aggregate root. Holds the profile fields the application owns on the
- * Better Auth `user` record and protects their invariants. Identity, password
- * and OAuth links remain owned by Better Auth.
+ * The profile fields the application owns on the Better Auth `user` record.
+ * Identity, password and OAuth links remain owned by Better Auth.
  */
 export class UserEntity extends AggregateRoot<UserProps> {
   static create(create: CreateEntityProps<UserProps>): UserEntity {
@@ -108,7 +107,6 @@ export class UserEntity extends AggregateRoot<UserProps> {
     return isAccessAllowed(this.props, now);
   }
 
-  /** Apply a partial profile update, ignoring fields left undefined. */
   updateProfile(props: UpdateUserProps): void {
     if (props.firstName !== undefined) this.props.firstName = props.firstName;
     if (props.lastName !== undefined) this.props.lastName = props.lastName;
@@ -134,7 +132,6 @@ export class UserEntity extends AggregateRoot<UserProps> {
     this.validate();
   }
 
-  /** Mark the user for deletion and raise the corresponding domain event. */
   delete(): void {
     this.addEvent(
       new UserDeletedDomainEvent({

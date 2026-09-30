@@ -2,7 +2,6 @@ import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import type { FlagCondition } from '@oppenheimer/shared/feature-flags';
 import { Column, CreateDateColumn, Entity, PrimaryColumn, Unique, UpdateDateColumn } from 'typeorm';
 
-/** Persistence model for `feature_flag_segment`, the named audiences rules target. */
 @Entity('feature_flag_segment')
 @Unique('UQ_feature_flag_segment_key', ['key'])
 export class FlagSegmentOrmEntity {

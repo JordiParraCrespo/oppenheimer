@@ -17,21 +17,18 @@ import { ErrorAlert } from '../../forms';
  * (`product/versions/mvp/design/version1/Components.dc.html`, "Dialog ·
  * Destructive confirm"): the title names the thing, the description states the
  * cost, and the destructive button repeats the verb — never "Confirm", which is
- * why `confirmLabel` is required. Cancel is `secondary`, as it is on every
- * dialog foot in the export.
+ * why `confirmLabel` is required. Cancel is `secondary`, as on every dialog foot.
  *
  * Each caller keeps its own mutation and hands over its state: `pending` locks
- * both buttons and the dismissal, and swaps the verb for `pendingLabel`;
- * `error`, when the caller has one (with its `errorFallback`), stays *in* the dialog, through `ErrorAlert`, because the reader has
- * to act on it and the dialog is where they still are.
+ * both buttons and the dismissal and swaps in `pendingLabel`; `error` (with
+ * `errorFallback`) stays *in* the dialog through `ErrorAlert`, because the
+ * reader has to act on it there.
  *
- * `children` is what one confirm needs beyond the sentence — Delete session's
- * box for unpushed work, Delete account's typed email. A child that is a form
- * passes its id as `form`, and the destructive button submits it instead of
- * calling `onConfirm`, so the form's own validation runs first.
- *
- * Smaller confirmations stay inside the menu that asked (the export's
- * automation delete); this is for the ones that earn a dialog.
+ * `children` is what one confirm needs beyond the sentence (Delete session's
+ * unpushed-work box, Delete account's typed email). A child form passes its id
+ * as `form`, and the destructive button submits it instead of calling
+ * `onConfirm`, so its validation runs first. Smaller confirmations stay in the
+ * menu that asked.
  */
 export function ConfirmDialog({
   title,

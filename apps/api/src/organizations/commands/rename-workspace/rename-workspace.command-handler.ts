@@ -5,7 +5,6 @@ import type { WorkspaceAuthPort } from '../../infrastructure/workspace-auth.port
 import { WORKSPACE_AUTH } from '../../organizations.di-tokens';
 import { RenameWorkspaceCommand } from './rename-workspace.command';
 
-/** Renames a workspace. */
 @CommandHandler(RenameWorkspaceCommand)
 export class RenameWorkspaceCommandHandler
   implements ICommandHandler<RenameWorkspaceCommand, AggregateID>

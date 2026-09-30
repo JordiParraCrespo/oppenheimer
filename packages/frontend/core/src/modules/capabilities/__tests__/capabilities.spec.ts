@@ -2,15 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppError } from '../../core/errors';
 import { CapabilitiesErrors } from '../capabilities.errors';
 
-/**
- * What the deployment can actually do, read before any session exists so the
- * login screen can hide a social button for a provider with no credentials.
- *
- * The failure semantics are the point: an error here means the API was
- * unreachable, which says nothing about what is configured. Returning an empty
- * capability set on failure would hide every provider on a deployment that has
- * them all — a login page with no way in.
- */
+// The failure rule: see `useDeploymentCapabilities` in react/capabilities.queries.ts.
 
 const api = vi.hoisted(() => ({ deploymentCapabilities: vi.fn() }));
 
@@ -46,8 +38,6 @@ describe('CapabilitiesRepository', () => {
   });
 
   it('passes an empty set through as a real answer', async () => {
-    // A deployment with no optional features configured genuinely reports
-    // nothing, and that is different from the failure below.
     api.deploymentCapabilities.mockResolvedValue(ok({}));
 
     await expect(repository.get()).resolves.toEqual({});

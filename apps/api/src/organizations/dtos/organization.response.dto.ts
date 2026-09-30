@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-/** Response contract for an organization (Better Auth organization plugin). */
 export class OrganizationResponseDto {
   @ApiProperty()
   id!: string;
@@ -26,7 +25,6 @@ export class OrganizationResponseDto {
   createdAt!: Date;
 }
 
-/** A user's membership of an organization. */
 export class MemberUserResponseDto {
   @ApiProperty()
   id!: string;
@@ -105,7 +103,6 @@ export class InvitationResponseDto {
   createdAt!: Date;
 }
 
-/** Full organization view including members, invitations and workspaces (teams). */
 export class FullOrganizationResponseDto extends OrganizationResponseDto {
   @ApiProperty({ type: [MemberResponseDto] })
   members!: MemberResponseDto[];
@@ -121,7 +118,6 @@ export class FullOrganizationResponseDto extends OrganizationResponseDto {
   teams!: Record<string, unknown>[];
 }
 
-/** Result of an organization slug availability check. */
 export class SlugAvailabilityResponseDto {
   @ApiProperty({ description: 'True when the slug is available.' })
   available!: boolean;

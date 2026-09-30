@@ -5,7 +5,6 @@ package scopes
 
 import "github.com/jordiparracrespo/oppenheimer/packages/go/auth/scope"
 
-// Catalog entries.
 const (
 	KeysRead   scope.Scope = "keys:read"
 	KeysWrite  scope.Scope = "keys:write"

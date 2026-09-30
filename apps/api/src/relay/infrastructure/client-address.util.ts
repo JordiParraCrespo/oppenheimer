@@ -1,15 +1,12 @@
 import type { IncomingMessage } from 'node:http';
 
 /**
- * The address a runner's link came from, by the rule Express applies to
- * `request.ip` for `trust proxy = <hops>`: the socket's peer, or — behind that
- * many trusted proxies — the entry that many hops back in `X-Forwarded-For`.
- * An upgrade never reaches Express, so the rule is applied here, with the same
- * `TRUST_PROXY` the rest of the API reads.
- *
- * With no trusted hops the header is ignored entirely: it is whatever the
- * client chose to send. IPv4 addresses that arrive mapped into IPv6
- * (`::ffff:203.0.113.7`) are unwrapped, so one machine is one address.
+ * The address a runner's link came from, by Express's `request.ip` rule for
+ * `trust proxy = <hops>`: the socket's peer, or the `X-Forwarded-For` entry that
+ * many hops back. An upgrade never reaches Express, so the rule is applied here with
+ * the API's `TRUST_PROXY`. With no trusted hops the header, being whatever the
+ * client sent, is ignored. IPv4-mapped IPv6 (`::ffff:203.0.113.7`) is unwrapped, so
+ * one machine is one address.
  */
 export function clientAddressOf(request: IncomingMessage, trustedHops: number): string | null {
   const peer = request.socket?.remoteAddress ?? null;

@@ -28,7 +28,6 @@ export type WorkspaceLimits = Partial<{
   [K in keyof AutomationLimits]: AutomationLimits[K] | null;
 }>;
 
-/** The automation's own overrides. */
 export interface AutomationOverrides {
   maxRunsPerHour: number | null;
   overlap: AutomationOverlapPolicy | null;

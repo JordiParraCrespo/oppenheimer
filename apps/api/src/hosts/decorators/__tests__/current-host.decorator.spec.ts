@@ -13,8 +13,6 @@ describe('hostPrincipalOf', () => {
   });
 
   it('refuses rather than returning undefined when no guard ran', () => {
-    // A route that read this without `HostPrincipalGuard` would otherwise hand
-    // its handler an `undefined` host id and act on it.
     expect(() => hostPrincipalOf({})).toThrowError(expect.objectContaining({ code: 'HOSTS_005' }));
   });
 });

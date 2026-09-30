@@ -49,8 +49,6 @@ describe('useCaptureEvent', () => {
     );
   });
 
-  // `mutate` must stay referentially stable, or it can't be passed to a
-  // memoized child or listed in a dependency array.
   it('keeps a stable mutate identity across re-renders', () => {
     const { wrapper } = setup();
     const { result, rerender } = renderHook(() => useCaptureEvent(), {
@@ -92,8 +90,6 @@ describe('useCaptureOnMount', () => {
     expect(capture).toHaveBeenCalledTimes(1);
   });
 
-  // A component reused across events — the same banner rendering a different
-  // event key — reports the new one, with the properties it holds now.
   it('captures again when the event name changes, with the latest properties', async () => {
     const { wrapper, capture } = setup();
     const { rerender } = renderHook(

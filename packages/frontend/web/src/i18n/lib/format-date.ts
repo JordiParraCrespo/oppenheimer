@@ -44,20 +44,17 @@ export function formatRelativeTime(date: Date, locale: string, now = new Date())
 }
 
 /**
- * The age of something, as a unit and a count — "2 hours old" as
+ * The age of something as a unit and a count: "2 hours old" is
  * `{ unit: 'hour', count: 2 }`.
  *
- * Returns the pieces rather than a string because the compact rendering the
- * product wants ("2h", "3d") is not one `Intl.RelativeTimeFormat` produces:
- * its `narrow` style still says "2 hr. ago". The words live in
- * `common.relative.*` instead, so the caller translates and this stays pure
- * date arithmetic. `null` means "less than a minute", which the caller words
- * itself — a thread list says "now", a session list says "Active now".
+ * Pieces rather than a string because `Intl.RelativeTimeFormat` cannot say
+ * "2h" (`narrow` still says "2 hr. ago"); the words live in `common.relative.*`
+ * and the caller translates. `null` means "less than a minute", which the
+ * caller words itself ("now", "Active now").
  *
- * `now` is required, and a timestamp from a ticking clock (`useNow`) is what
- * a component passes. It used to default to `new Date()`, which read the clock
- * during render where nobody could see it: the React Compiler cached the age
- * on `date` alone, and "5m" stayed "5m".
+ * `now` is required and should come from a ticking clock (`useNow`): read
+ * during render, the React Compiler caches the age on `date` alone, and "5m"
+ * stays "5m".
  */
 export function compactAge(
   date: Date,

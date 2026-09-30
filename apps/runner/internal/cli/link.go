@@ -152,8 +152,6 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 	handler.reporter = link.NewReporter(runID, client, logger)
 	handler.credentials = newCredentialBroker(client, a.Pairing.Unseal, a.Sessions.Get)
 	a.Credentials = handler.credentials
-	// State changes the session service observes become `agent.observed`
-	// entries in the control plane's log.
 	a.Sessions.SetPublisher(handler)
 	a.Link = client
 	go handler.retryEvents(life)
@@ -178,9 +176,8 @@ var (
 
 // unpaired is a person removing this host, and removing a host stops the
 // sessions on it (03, 14): the control plane has already recorded each one
-// stopped, and the remove dialog promised their terminals close. An agent left
-// running here would keep working where no console can see it. Stopping keeps
-// every checkout on disk — it is not a close.
+// stopped, and an agent left running would work where no console can see it.
+// Stopping keeps every checkout on disk — it is not a close.
 //
 // The order is the point. Commands in flight are cancelled and the lanes
 // closed and drained first, so a create still cloning cannot start its tmux
@@ -241,7 +238,6 @@ func (h *linkHandler) Heartbeat(ctx context.Context) (link.Heartbeat, error) {
 	return h.heartbeatFrom(facts), nil
 }
 
-// heartbeatFrom is a heartbeat around facts already collected.
 func (h *linkHandler) heartbeatFrom(facts hostdomain.Facts) link.Heartbeat {
 	return link.Heartbeat{
 		SentAt:   time.Now().UTC(),
@@ -469,8 +465,6 @@ func (h *linkHandler) SessionChanged(session sessionsdomain.Session) {
 		h.reporter.Append(session.ID, "agent.observed", payload)
 	}
 }
-
-/* ------------------------------------------------------------------- helpers */
 
 func (h *linkHandler) fail(commandID string, err error) {
 	code, detail := "RUNNER_000", err.Error()

@@ -4,12 +4,7 @@ import { RotateDelegatedSessionsCommandHandler } from '../commands/rotate-delega
 import { standingChangeOf } from '../infrastructure/admin-ban-hook.util';
 import type { DelegatedSessionPort } from '../infrastructure/delegated-session.port';
 
-/**
- * A ban made straight through Better Auth's admin plugin bypasses
- * the admin module, so the after-hook is what rotates the account's delegated
- * sessions. It must fire for a ban or an unban that happened, and for nothing
- * else.
- */
+/** It must fire for a ban or an unban that happened, and for nothing else. */
 describe('standingChangeOf', () => {
   const USER = '0f1e2d3c-4b5a-4968-8776-655443322110';
 

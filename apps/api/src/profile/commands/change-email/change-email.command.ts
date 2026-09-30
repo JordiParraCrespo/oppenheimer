@@ -2,8 +2,7 @@ import type { IncomingHttpHeaders } from 'node:http';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 
 /**
- * Asks to move the caller's account to another address. Carries the request
- * headers for the same reason `ChangePasswordCommand` does: Better Auth
+ * Carries the request headers for the same reason `ChangePasswordCommand` does: Better Auth
  * resolves the session making the change from them.
  */
 export class ChangeEmailCommand extends CommandBase {
