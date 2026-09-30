@@ -18,13 +18,9 @@ const API_LOG =
 /**
  * SGR colour sequences, stripped before anything is matched.
  *
- * The API's logger colourises when it thinks something is watching — which on
- * GitHub Actions it does, and in a plain local run it does not. That put an
- * `ESC[39m` reset immediately after the URL at the end of the line, and `\S+`
- * happily swallowed it: the verification link was then fetched with a
- * `callbackURL` of `/` plus three junk characters, which Better Auth refused as
- * untrusted with a 403. One test, only on CI, and nothing in the diff to
- * explain it. A log parser reads the text, not the colours.
+ * The API's logger colourises on GitHub Actions but not locally, so on CI an
+ * `ESC[39m` reset followed the URL, `\S+` swallowed it, and Better Auth
+ * refused the resulting `callbackURL` as untrusted with a 403.
  */
 // biome-ignore lint/suspicious/noControlCharactersInRegex: the escape character is what this matches
 const ANSI_SGR = /\u001B\[[0-9;]*m/g;

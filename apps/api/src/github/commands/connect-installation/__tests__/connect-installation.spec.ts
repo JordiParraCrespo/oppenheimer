@@ -18,20 +18,12 @@ import { ConnectInstallationCommand } from '../connect-installation.command';
 import { ConnectInstallationCommandHandler } from '../connect-installation.command-handler';
 
 /**
- * Three things are asserted here, and they fail independently.
- *
- * The **install state**: the redirect's `code` binds the claim to a GitHub
- * account, not to the console user whose browser posts it, so without a state
- * this person minted, a callback URL someone else stopped halfway would connect
- * their installation to whoever opened it.
- *
- * The **claim proof**: `POST /installations` takes an installation id from the
- * caller's browser, so if the handler trusted it, anyone could post someone
- * else's number and receive one-hour write tokens for their repositories.
- *
- * And **which row the claim lands on**: a claim is something a workspace holds,
- * not something it once touched, so a live row elsewhere is a conflict while a
- * disconnected one is history.
+ * Three things are asserted here, and they fail independently: the install
+ * state (without one this person minted, a half-finished callback URL would
+ * connect someone's installation to whoever opened it); the claim proof (the
+ * installation id comes from the browser, so trusting it would hand anyone
+ * one-hour write tokens for another account's repositories); and which row the
+ * claim lands on (see `ConnectInstallationCommandHandler`).
  */
 
 const CLAIM: GithubInstallationClaim = {

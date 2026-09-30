@@ -3,9 +3,7 @@
  * Ported from the Domain-Driven Hexagon reference architecture.
  */
 export class Guard {
-  /**
-   * Checks if value is empty. Accepts strings, numbers, booleans, objects and arrays.
-   */
+  /** Accepts strings, numbers, booleans, objects and arrays. */
   static isEmpty(value: unknown): boolean {
     if (typeof value === 'number' || typeof value === 'boolean') {
       return false;
@@ -34,9 +32,6 @@ export class Guard {
     return false;
   }
 
-  /**
-   * Checks length range of a provided number/string/array.
-   */
   static lengthIsBetween(
     value: number | string | Array<unknown>,
     min: number,

@@ -1,6 +1,5 @@
 import { QueryBase } from '@oppenheimer/backend-ddd';
 
-/** Someone's place in a workspace, for a command to answer with. */
 export class FindWorkspaceMemberQuery extends QueryBase {
   readonly workspaceId: string;
   readonly userId: string;

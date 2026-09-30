@@ -4,10 +4,9 @@ import { cn } from '../lib/utils';
 
 /**
  * SettingsShell — the Settings pages' frame and nothing in it
- * (`design/version1/Settings.dc.html`): the `SettingsNav` on the left, then
- * a main column on the recessed ground (grey under white cards) that scrolls
- * on its own, holding the measured content column with its sections spaced. What a page puts in the column —
- * a `SettingsTitle`, `SettingsGroup`s, `HostCard`s — is the page's.
+ * (`design/version1/Settings.dc.html`): the `SettingsNav` on the left, then a
+ * main column on the recessed ground (grey under white cards) that scrolls on
+ * its own, holding the measured content column. What goes in it is the page's.
  *
  * ```tsx
  * <SettingsShell>

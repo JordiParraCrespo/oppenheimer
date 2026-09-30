@@ -93,21 +93,16 @@ export const MIN_SUPPORTED_PROTOCOL = PROTOCOL_VERSION;
 /**
  * The server half of the runner link.
  *
- * The handshake is the boot assertion as a bearer, verified by the hosts
- * module's port — the same credential `DELETE /hosts/self` takes, verified
- * exactly once per dial because verifying burns the `jti`. A socket that
- * presents none is refused before the upgrade, so it never costs a frame.
- *
- * The assertion says *which* host is dialling, and whether that host has been
- * unpaired — an unpaired host still authenticates, because its own uninstall
- * has to. The handshake refuses one with `410`, the runner's cue to stop
- * dialling rather than walk its ladder forever. One unpaired while connected
- * is closed with `4410`, the same answer after the upgrade
+ * The handshake is the boot assertion as a bearer, verified by the hosts module's
+ * port exactly once per dial, because verifying burns the `jti`. A socket presenting
+ * none is refused before the upgrade. An unpaired host still authenticates (its
+ * uninstall must), and the handshake refuses it with `410`, the runner's cue to stop
+ * dialling; one unpaired while connected is closed with `4410`
  * (`RUNNER_LINK_CLOSE_CODES`).
  *
- * After the upgrade the first frame must be `hello`; anything else, or nothing
- * within the timeout, closes the socket. A runner below `MIN_SUPPORTED_PROTOCOL`
- * is refused **with** `update_required` rather than dropped (01).
+ * The first frame after the upgrade must be `hello`; anything else, or nothing
+ * within the timeout, closes the socket. A runner below `MIN_SUPPORTED_PROTOCOL` is
+ * refused **with** `update_required` rather than dropped (01).
  */
 @Injectable()
 export class RunnerLinkGateway {
@@ -337,9 +332,7 @@ export class RunnerLinkGateway {
     }
     const message = parsed.data;
     if (message.type === 'events.append') {
-      // In arrival order, coalesced, and bounded: see `LinkAppendQueue`. Every
-      // other message still runs on its own, so a credential ask never queues
-      // behind the log.
+      // In arrival order, coalesced, and bounded: see `LinkAppendQueue`.
       this.appendQueues.get(link)?.push(message);
       return;
     }
@@ -412,12 +405,12 @@ export class RunnerLinkGateway {
     }
   }
 
-  /** The fingerprint registration handed every host, which the runner pins. */
   /** `TRUST_PROXY`: how many reverse-proxy hops to believe in `X-Forwarded-For`. */
   private get trustedProxyHops(): number {
     return this.configService.get<number>('app.trustProxy') ?? 0;
   }
 
+  /** The fingerprint registration handed every host, which the runner pins. */
   private get keyFingerprint(): string | null {
     const value = this.configService.get<string>('hosts.signingKeyFingerprint');
     return value && /^[0-9a-f]{64}$/.test(value) ? value : null;

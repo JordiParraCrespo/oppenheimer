@@ -154,8 +154,6 @@ describe('RegisterHostCommandHandler', () => {
     const result = await handler.execute(command());
 
     expect(result).toMatchObject({
-      // The id the redemption statement recorded, so the response names the row
-      // that statement wrote.
       hostId: 'host-new',
       fingerprint: CONTROL_PLANE_FINGERPRINT,
       channel: 'stable',
@@ -164,8 +162,6 @@ describe('RegisterHostCommandHandler', () => {
   });
 
   it('adopts the name the token carried, not the one the runner detected', async () => {
-    // The console names the machine before it exists, so nobody has to rename a
-    // box that defaulted to its hostname.
     await handler.execute(command({ name: 'devbox.local' }));
 
     const [{ host }] = vi.mocked(hosts.redeemAndRegister).mock.calls[0];
@@ -182,14 +178,10 @@ describe('RegisterHostCommandHandler', () => {
 
     expect(registered).toMatchObject({
       hostname: 'devbox.local',
-      // The family the runner installs a service for, plus the release when it
-      // determined one.
       os: 'macos 15.2',
       arch: 'arm64',
       runnerVersion: '0.3.1',
     });
-    // The whole inventory as it arrived, tools included: an agent is a probed
-    // tool, so there is no second list to keep in step.
     expect(registered.capabilities).toEqual(FACTS);
   });
 
@@ -224,8 +216,6 @@ describe('RegisterHostCommandHandler', () => {
         Some(existingHost(key.fingerprint, key.base64)),
       );
 
-      // Proved by the key it presents, so a dropped answer never pairs a machine
-      // twice and never needs a second token.
       await expect(handler.execute(command())).resolves.toMatchObject({ hostId: 'host-existing' });
     });
 

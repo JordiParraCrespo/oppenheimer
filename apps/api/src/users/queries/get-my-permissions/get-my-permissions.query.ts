@@ -1,9 +1,8 @@
 import { QueryBase } from '@oppenheimer/backend-ddd';
 
 /**
- * Asks for the caller's own effective permissions. The answer depends on their
- * live roles and active organization, so only the server can compute it — the
- * web app reads it to decide which sidebar routes to show.
+ * The answer depends on the caller's live roles and active organization, so
+ * only the server can compute it.
  */
 export class GetMyPermissionsQuery extends QueryBase {
   readonly userId: string;

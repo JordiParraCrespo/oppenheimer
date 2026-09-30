@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { capRepositories } from '../lib/session-options';
 
-/**
- * One repository per session in the MVP (#56): a runner makes one worktree, so
- * the composer never sends a second. Picking another replaces the one held.
- */
 describe('capRepositories', () => {
   const mobile = { id: 'i:1', branch: 'main' };
   const web = { id: 'i:2', branch: 'trunk' };

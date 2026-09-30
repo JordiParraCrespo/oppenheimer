@@ -27,8 +27,6 @@ describe('AvatarStorageAdapter', () => {
       ['image/jpeg', 'jpg'],
       ['image/webp', 'webp'],
     ])('stores %s under a key of its own, in the user’s prefix, named .%s', async (type, ext) => {
-      // Every back-end resolves `upload` to the key; the key is what is
-      // persisted, and `getUrl` turns it into a URL at read time.
       const key = await avatars.store('user-uuid', Buffer.from('x'), type, 1);
 
       expect(key).toMatch(new RegExp(`^avatars/user-uuid/[0-9a-f-]{36}\\.${ext}$`));

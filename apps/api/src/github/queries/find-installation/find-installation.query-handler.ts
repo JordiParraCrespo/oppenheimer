@@ -19,9 +19,6 @@ export class FindInstallationQueryHandler
   async execute(query: FindInstallationQuery): Promise<GithubInstallationEntity> {
     const found = await this.installations.findOneById(query.scope, query.installationId);
 
-    // An installation outside the caller's scope is reported as missing, not
-    // forbidden: the scoped read cannot see it, and distinguishing the two would
-    // confirm the id exists.
     if (found.isNone()) {
       throw new AppError(GithubErrors.INSTALLATION_NOT_FOUND, {
         detail: `No GitHub installation with id ${query.installationId}`,

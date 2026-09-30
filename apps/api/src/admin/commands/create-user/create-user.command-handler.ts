@@ -5,7 +5,6 @@ import { ADMIN_AUTH } from '../../admin.di-tokens';
 import type { AdminAuthPort } from '../../infrastructure/admin-auth.port';
 import { CreateUserCommand } from './create-user.command';
 
-/** Creates an account on the administrator's say-so. Resolves to its id. */
 @CommandHandler(CreateUserCommand)
 export class CreateUserCommandHandler implements ICommandHandler<CreateUserCommand, AggregateID> {
   constructor(

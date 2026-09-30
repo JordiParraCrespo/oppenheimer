@@ -8,8 +8,6 @@ import { MemberOrmEntity } from './member.orm-entity';
 import type { OrganizationAccessRepositoryPort } from './organization-access.repository.port';
 
 /**
- * TypeORM adapter behind `ORGANIZATION_ACCESS`.
- *
  * One transaction for the three writes, so a failure part way leaves the
  * person exactly as they were rather than with no roles but a session still
  * acting in the organization. The roles go through `UserRoleRepositoryPort`

@@ -77,7 +77,6 @@ describe('SessionRepository', () => {
   });
 
   it('leaves delegated credential sessions out of the device list', async () => {
-    // Two browsers and two API tokens re-minting all day: the screen says two.
     const repository = new SessionRepository(
       fakeRepository([
         sessionRow({ id: 'laptop' }),

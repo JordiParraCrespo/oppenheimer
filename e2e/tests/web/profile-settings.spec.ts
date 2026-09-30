@@ -30,7 +30,6 @@ test('the profile card saves the name and the username', async ({ page }) => {
   await expect(page.getByLabel('First name')).toHaveValue('Ada');
   await expect(page.getByLabel('Username')).toHaveValue(username);
 
-  // Discard puts the card back to what is saved.
   await page.getByLabel('Last name').fill('Lovelace');
   await page.getByRole('button', { name: 'Discard' }).click();
   await expect(page.getByLabel('Last name')).toHaveValue(owner.user.lastName);

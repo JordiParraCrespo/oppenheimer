@@ -10,11 +10,9 @@
  * signing key there is nothing to hand a machine that wants to pair, so the
  * host routes answer "not configured" and the rest of the API is unaffected.
  *
- * `session_namer` is the smallest of them: it says whether a *model* titles
- * sessions. Without one, a session is still named — from its first prompt's own
- * words — which costs nothing. It is a capability so that "why is no title ever
- * a model's" is answered by the startup log rather than by reading the naming
- * code.
+ * `session_namer` says whether a *model* titles sessions. Without one a session
+ * is still named from its first prompt's own words; it is a capability so the
+ * startup log, not the naming code, answers "why is no title ever a model's".
  *
  * `ip_geolocation` says whether the networks a host connects from are placed
  * on a map: a DB-IP Lite (or MaxMind) database on disk. Without one a network
@@ -68,9 +66,8 @@ export type ClientCapabilities = Record<ClientCapability, boolean>;
  * client cannot derive from them.
  *
  * The install URL is here rather than in the browser's own environment because
- * it is built from `GITHUB_APP_SLUG`, which the server already holds. A second
- * copy in a `VITE_*` variable is a thing to keep in sync by hand, and the
- * installer fetching the hosted manifest is what that costs.
+ * it is built from `GITHUB_APP_SLUG`, which the server already holds; a second
+ * copy in a `VITE_*` variable would have to be kept in sync by hand.
  *
  * `null` whenever `github_app` is false: with no App there is no page to send
  * anyone to, and a link to `github.com/apps/undefined` is a 404 dressed as an

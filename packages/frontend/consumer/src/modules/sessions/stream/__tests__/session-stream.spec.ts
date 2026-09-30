@@ -293,7 +293,6 @@ describe('AttachSessionStream', () => {
   it('dials at once on reconnectNow, cancelling the wait and restarting the ladder', async () => {
     const h = harness();
     await h.flush();
-    // Walk a few rungs up the ladder.
     for (let rung = 0; rung < 3; rung += 1) {
       h.sockets.at(-1)?.open();
       h.sockets.at(-1)?.drop(ATTACH_CLOSE_CODES.LINK_LOST);

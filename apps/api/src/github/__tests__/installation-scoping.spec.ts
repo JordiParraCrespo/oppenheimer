@@ -8,14 +8,11 @@ import { describe, expect, it } from 'vitest';
 import { InstallationResource } from '../github.resource';
 
 /**
- * The proof that the kernel does what the github module claims.
- *
- * Two halves, because both have to hold and they fail independently: the **SQL
- * predicate** decides which rows come back from a query, and the **CASL
- * ability** decides what `can()` reports to a caller and to the UI. The first
- * comes from `InstallationResource`, the second from the owner role's rule in
- * `SYSTEM_ROLE_PERMISSIONS`; the generic branches of both (bypass, no tenant)
- * are proved once, in `@oppenheimer/backend-authz` and `@oppenheimer/shared`.
+ * The proof that the kernel does what the github module claims. The SQL
+ * predicate and the CASL ability come from one declaration but fail
+ * independently, so both are tested; their generic branches (bypass, no
+ * tenant) are proved once, in `@oppenheimer/backend-authz` and
+ * `@oppenheimer/shared`.
  *
  * What an installation grants is one hour of write access to someone's source,
  * so the interesting assertion is the negative one: a workspace cannot reach a
@@ -33,7 +30,6 @@ function scope(overrides: Partial<AccessScope> = {}): AccessScope {
   };
 }
 
-/** Records the clauses a query would carry, without needing a database. */
 function fakeQueryBuilder() {
   const calls: { clause: string; parameters?: Record<string, unknown> }[] = [];
   const qb = {
@@ -93,9 +89,7 @@ describe('installation capabilities (CASL)', () => {
 
 describe('the declaration itself', () => {
   it('is reachable by scoped credentials under the repositories group', () => {
-    // Without a credentialScope the resource is invisible to API tokens and
-    // MCP, which is a silent failure rather than a loud one. The group is named
-    // for what a caller asks for, not for the vendor.
+    // The group is named for what a caller asks for, not for the vendor.
     expect(InstallationResource.credentialScope).toBe('repositories');
   });
 });

@@ -50,10 +50,8 @@ describe('DeleteAvatarCommandHandler', () => {
   });
 
   it('saves the profile, refreshes the cached sessions, then removes the object', async () => {
-    // Better Auth caches each session with a copy of the user; the session path
-    // reads that copy, so a write behind its back must be followed by a
-    // refresh. Removing the object first could leave a profile pointing at a
-    // file that is gone.
+    // Removing the object first could leave a profile pointing at a file that
+    // is gone.
     const order: string[] = [];
     vi.mocked(repo.save).mockImplementation(async (entity) => {
       order.push('save');

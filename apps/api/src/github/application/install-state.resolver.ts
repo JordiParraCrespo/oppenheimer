@@ -25,16 +25,13 @@ export interface MintedInstallState {
 /**
  * The OAuth `state` of a GitHub App install: minted when a person starts one,
  * echoed back by GitHub on the redirect, redeemed by `POST /installations`.
+ * The redirect's `code` binds the claim to a GitHub account, not to the
+ * console user whose browser posts it; the state ties it to an install this
+ * person started, in this workspace, so a half-finished callback URL cannot
+ * connect someone's installation to whoever opens it.
  *
- * The OAuth `code` on that redirect binds the claim to *a* GitHub account, not
- * to the console user whose browser posts it — so without this, a callback URL
- * someone stopped halfway through their own install would connect their
- * installation to whoever opened it. The state is what ties the redirect to an
- * install this person started, in this workspace.
- *
- * A **Redis key, not a table**, for the attach ticket's reason: a row whose
- * whole life is a quarter of an hour earns none. Minted with `SET … NX`,
- * redeemed with an atomic read-and-delete, so it is single use.
+ * A Redis key, not a table: a quarter-hour life earns no row. Minted with
+ * `SET … NX` and redeemed with an atomic read-and-delete, so it is single use.
  */
 @Injectable()
 export class InstallStateResolver {

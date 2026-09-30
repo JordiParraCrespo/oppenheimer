@@ -1,7 +1,6 @@
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 import type { FlagRule, FlagServe } from '@oppenheimer/shared/feature-flags';
 
-/** Replace a flag's whole targeting on this deployment. */
 export class UpdateFeatureFlagCommand extends CommandBase {
   readonly key: string;
   readonly enabled: boolean;

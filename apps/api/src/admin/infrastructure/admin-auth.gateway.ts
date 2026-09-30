@@ -32,11 +32,8 @@ const SESSION_PAGE = 500;
 type SessionAction = 'list' | 'revoke';
 
 /**
- * The admin port, over the Better Auth **admin** plugin (`auth.api.*`).
- *
- * Every call goes through `invokeAdminApi`, which folds Better Auth's errors
- * onto this module's catalog, and forwards the caller's headers so the plugin
- * can make its own permission check.
+ * The admin port, over the Better Auth **admin** plugin (`auth.api.*`). Every
+ * call goes through `invokeAdminApi` (see `betterAuthInvoker`).
  */
 @Injectable()
 export class AdminAuthGateway implements AdminAuthPort {

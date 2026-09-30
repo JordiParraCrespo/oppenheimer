@@ -4,6 +4,14 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 
+type CarouselSlide = {
+  src: string;
+  alt: string;
+  caption?: React.ReactNode;
+  /** CSS object-position for the crop ("50% 22%"). */
+  position?: string;
+};
+
 /**
  * ImageCarousel — the photo panel beside the auth forms: a 28px-radius frame,
  * slides cross-fading over 700ms every 5.2s, a caption per slide, and pill
@@ -14,14 +22,6 @@ import { cn } from '../lib/utils';
  * The system ships no illustration and invents none: these are the historical
  * photographs from the design export, product-on-void, cool neutral grade.
  */
-type CarouselSlide = {
-  src: string;
-  alt: string;
-  caption?: React.ReactNode;
-  /** CSS object-position for the crop ("50% 22%"). */
-  position?: string;
-};
-
 function ImageCarousel({
   slides,
   interval = 5200,

@@ -34,17 +34,13 @@ function hasPath(values: unknown, path: string): boolean {
 /**
  * Put the fields a server refusal names on the form's own fields.
  *
- * The API's problem document lists rejected fields in `invalidParams`, and
- * nothing read them: a form showed one alert over the whole thing and left
- * the reader to guess which field it meant. This marks each named field the
- * form holds — by path, so a field whose value is `undefined` still counts
- * and a nested name (`address.city`) is found — and tells the caller whether
- * its alert is still needed.
+ * Marks each field in the problem document's `invalidParams` that the form
+ * holds (by path, so an `undefined` value still counts and `address.city` is
+ * found) and tells the caller whether its alert is still needed.
  *
- * The message is ours, not the server's: `invalidParams[].reason` is English,
- * written for API clients, and carries no code a locale could key on. So a
- * field is marked with the translated `validation.invalid`, never the raw
- * reason.
+ * The message is ours: `invalidParams[].reason` is English for API clients and
+ * carries no code a locale could key on, so a field gets the translated
+ * `validation.invalid`, never the raw reason.
  */
 export function useServerFieldErrors<TValues extends FieldValues>(
   form: Pick<UseFormReturn<TValues>, 'setError' | 'getValues'>,

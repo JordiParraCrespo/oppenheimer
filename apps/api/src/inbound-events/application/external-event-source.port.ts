@@ -3,14 +3,12 @@ import type { ExternalEvent, InboundDelivery } from '../domain/external-event.ty
 
 /**
  * The one port a provider implements to feed the hub
- * (`product/versions/mvp/16-automations-architecture.md` §Q6).
+ * (`product/versions/mvp/16-automations-architecture.md` §Q6), contributed with
+ * `InboundEventsModule.contributeSources`.
  *
- * Verifying a delivery's signature is **not** here: it is the provider module's
- * own endpoint that owns its secret and verifies before anything is stored, so
- * the hub never holds a byte nobody authenticated. What the hub needs from a
- * provider is the three answers only the provider can give.
- *
- * A module contributes its adapter with `InboundEventsModule.contributeSources`.
+ * Signature verification is not here: the provider module's own endpoint owns its
+ * secret and verifies before anything is stored, so the hub never holds a byte nobody
+ * authenticated.
  */
 export interface ExternalEventSourcePort {
   readonly id: ExternalTriggerSource;

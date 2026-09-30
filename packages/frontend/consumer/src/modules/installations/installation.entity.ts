@@ -1,7 +1,6 @@
 /** Whether the App can see every repository on the account, or a chosen few. */
 export type RepositorySelection = 'all' | 'selected';
 
-/** Whether the App is installed on a person's account or an organization's. */
 export type InstallationAccountType = 'User' | 'Organization';
 
 /**
@@ -25,7 +24,6 @@ export class InstallationEntity {
     public readonly createdAt: Date,
   ) {}
 
-  /** Whether the App was given the whole account rather than a chosen list. */
   get coversEveryRepository(): boolean {
     return this.repositorySelection === 'all';
   }
@@ -79,7 +77,6 @@ export class BranchEntity {
   constructor(
     public readonly name: string,
     public readonly commitSha: string,
-    /** Whether a branch protection rule applies. */
     public readonly isProtected: boolean,
     public readonly isDefault: boolean,
   ) {}

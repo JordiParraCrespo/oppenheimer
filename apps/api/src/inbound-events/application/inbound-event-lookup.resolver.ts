@@ -9,7 +9,6 @@ import type {
   MatchingEventsQuery,
 } from './inbound-event-lookup.port';
 
-/** The hub's published read surface, over its own store. */
 @Injectable()
 export class InboundEventLookupResolver implements InboundEventLookupPort {
   constructor(

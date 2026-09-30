@@ -35,7 +35,6 @@ export function ResetPasswordForm({
   onSubmit,
 }: {
   isPending: boolean;
-  /** The resolved failure message, if the last attempt failed. */
   error?: ResolvedErrorMessage;
   onSubmit: (values: NewPasswordValues) => void;
 }) {

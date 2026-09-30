@@ -2,6 +2,8 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
+type BrandGlyphName = 'github' | 'google';
+
 /**
  * BrandGlyph — the two third-party marks the sign-in buttons carry. They are
  * the only non-Lucide glyphs in the system and the one sanctioned exception to
@@ -15,8 +17,6 @@ import { cn } from '../lib/utils';
  * 18px by default: one step above the button label's cap height, so the mark is
  * recognisable without outweighing the word.
  */
-type BrandGlyphName = 'github' | 'google';
-
 function BrandGlyph({
   name,
   size = 18,

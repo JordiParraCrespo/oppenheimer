@@ -128,8 +128,6 @@ describe('MintPairingTokenCommandHandler', () => {
   it('mints a secret the runner will recognise', async () => {
     const result = await handler.execute(command());
 
-    // The runner checks the prefix before spending a token, so a user who pasted
-    // the wrong secret is told which one they pasted.
     expect(result.installCommand).toContain('--token opr_reg_');
   });
 
@@ -178,8 +176,6 @@ describe('MintPairingTokenCommandHandler', () => {
   });
 
   it('refuses to mint what nobody could spend', async () => {
-    // With no runner release configured there is no install command, and a
-    // credential that cannot be redeemed is worse than a clear refusal.
     release.isConfigured = false;
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_004' });

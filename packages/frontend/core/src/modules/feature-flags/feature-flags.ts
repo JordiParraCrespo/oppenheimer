@@ -27,7 +27,7 @@ export function resolveFlagValue<K extends ClientFeatureFlagKey>(
 }
 
 /**
- * Whether a boolean flag's resolved value is on. Only `true` is: a variant
+ * Only `true` is on: a variant
  * flag has no off state (its control arm is a variant like any other), so it
  * is read with `useFeatureFlagValue` and branched on by name.
  */

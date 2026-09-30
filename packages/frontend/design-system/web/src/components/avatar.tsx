@@ -109,7 +109,6 @@ function AvatarGroupCount({ className, ...props }: React.ComponentProps<'div'>) 
   );
 }
 
-/** Legacy: gradients are not part of the system. Every key maps to the accent tint. */
 const AVATAR_GRADIENTS = {
   purple: 'var(--info-surface)',
   blue: 'var(--info-surface)',

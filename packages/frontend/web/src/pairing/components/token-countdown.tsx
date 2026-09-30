@@ -10,13 +10,10 @@ function clock(seconds: number): string {
 /**
  * "Token expires in 12:34", ticking once a second.
  *
- * Its own leaf because the tick is: the pairing flow hands out when the token
- * expires, and only this line has to move every second. When the flow ticked
- * instead, the Add host dialog and the onboarding step re-rendered whole —
- * both code blocks included — once a second for as long as they were open.
- *
- * The count is derived from `expiresAt` and the clock rather than decremented,
- * so a tab that was in the background shows the right number when it returns.
+ * Its own leaf so only this line re-renders every second; when the flow
+ * ticked, the Add host dialog and onboarding step re-rendered whole. The count
+ * is derived from `expiresAt` and the clock rather than decremented, so a
+ * backgrounded tab shows the right number when it returns.
  */
 export function TokenCountdown({ expiresAt }: { expiresAt: Date }) {
   const { t } = useTranslation();

@@ -7,8 +7,6 @@ import { USER_SETTINGS_REPOSITORY } from '../../profile.di-tokens';
 import { UpdateUserSettingsCommand } from './update-user-settings.command';
 
 /**
- * Saves a user's preferences, creating the record if this is their first save.
- *
  * Starting from the defaults when no row exists — rather than failing — is what
  * lets sign-up skip provisioning a settings row for every account that may
  * never touch the settings pane.

@@ -323,7 +323,6 @@ describe('OutboxService', () => {
 
       expect(result).toBe('written');
       expect(transaction).toHaveBeenCalledTimes(1);
-      // The write and the staging both went through the transaction's manager.
       expect(write).toHaveBeenCalledWith(txManager);
       expect(insert).toHaveBeenCalledTimes(1);
       expect(aggregate.clearEvents).toHaveBeenCalledTimes(1);

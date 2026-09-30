@@ -56,7 +56,6 @@ function date(value: unknown): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-/** The run aggregate and its read model, to and from rows and responses. */
 @Injectable()
 export class AutomationRunMapper {
   toDomain(record: AutomationRunOrmEntity): AutomationRunEntity {

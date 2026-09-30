@@ -8,27 +8,6 @@ import { ChipSelectBack, ChipSelectItem, ChipSelectList, ChipSelectPopup, ChipSe
 import { ComposerToolButton } from './composer';
 import { Popover, PopoverTrigger } from './popover';
 
-/**
- * AgentModelSelect — the engine button in the composer's foot row: the
- * agent's mark and the model's name ("Claude Opus 5.5"). Opening lands on
- * the agent pane, the harness the session already uses checked and every
- * other one a step away; choosing one slides the same 252px popup to its
- * models, with a back row naming the agent, a search row and the check on
- * the current model. Harness first, then its models: the pair has to be
- * valid, and the second pane is the only place that guarantees it.
- *
- * An agent with no models (a blank terminal) is picked outright, and the
- * button then names the agent, because it is still the way back to a
- * different one.
- *
- * ```tsx
- * <AgentModelSelect
- *   agents={[{ id: 'claude-code', label: 'Claude Code', models: [{ value: 'claude-opus-5-5', label: 'Claude Opus 5.5' }] }]}
- *   value={{ agent: 'claude-code', model: 'claude-opus-5-5' }}
- *   onValueChange={setEngine}
- * />
- * ```
- */
 type AgentModel = { value: string; label: string };
 
 type AgentOption = {
@@ -44,6 +23,25 @@ const VISIBLE_ROWS = 4;
 
 const defaultEmptyText = (query: string): React.ReactNode => `No model matches “${query}”.`;
 
+/**
+ * AgentModelSelect — the engine button in the composer's foot row: the agent's
+ * mark and the model's name. It opens on the agent pane with the current
+ * harness checked; choosing one slides the same 252px popup to its models (a
+ * back row, a search row, the check on the current model). Harness first,
+ * because the pair has to be valid and the second pane is the only place that
+ * guarantees it.
+ *
+ * An agent with no models (a blank terminal) is picked outright, and the
+ * button then names the agent, since it is still the way back to another.
+ *
+ * ```tsx
+ * <AgentModelSelect
+ *   agents={[{ id: 'claude-code', label: 'Claude Code', models: [{ value: 'claude-opus-5-5', label: 'Claude Opus 5.5' }] }]}
+ *   value={{ agent: 'claude-code', model: 'claude-opus-5-5' }}
+ *   onValueChange={setEngine}
+ * />
+ * ```
+ */
 function AgentModelSelect({
   agents,
   value,
@@ -63,8 +61,8 @@ function AgentModelSelect({
   className?: string;
   'aria-label'?: string;
 }) {
-  // Defaults resolved in the body, not the signature: the React Compiler
-  // leaves a component whose default parameter is a function uncompiled.
+  // Defaulted here, not in the signature: the React Compiler skips a component
+  // whose default parameter is a function.
   const emptyText = emptyTextProp ?? defaultEmptyText;
   const [open, setOpen] = React.useState(false);
   const [pane, setPane] = React.useState<string | null>(null);

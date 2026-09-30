@@ -29,23 +29,19 @@ export function combineQueries<A, B, T>(
 
 /**
  * The four states of a read, in one order: failed, still loading, empty, or
- * there. A section wrote this ladder by hand in eight places, and three of
- * them left a rung out — a failed read spun a skeleton for ever, or read as
- * "No projects".
+ * there. Hand-written, the ladder lost rungs: a failed read spun a skeleton
+ * for ever, or read as "No projects".
  *
- * A failure the section cannot draw around is shown instead of everything
- * else, through `ErrorAlert` with the section's `errorFallback`, or through
- * `renderError` where the section says it its own way (a screen's `RouteError`,
- * a 404's "not found"). What a later failure does to data already on screen is
- * the section's call, named once: `stale="replace"` (the default) shows the
- * failure in its place; `stale="keep"` keeps drawing the data it has and puts
- * the failure above it — a page of runs that a refetch failed to replace is
- * still the page the reader was reading.
+ * A failure is shown instead of everything else, through `ErrorAlert` with the
+ * section's `errorFallback`, or `renderError` (a screen's `RouteError`, a
+ * 404's "not found"). `stale` decides what a later failure does to data on
+ * screen: `"replace"` (the default) shows the failure in its place; `"keep"`
+ * keeps the data and puts the failure above it — a page of runs a refetch
+ * failed to replace is still the page the reader was reading.
  *
- * It takes the query the section already holds and moves no subscription: the
- * component that calls the hook is the one that renders this, as the render
- * rules ask. `children` is a function because the data only exists on the
- * last rung.
+ * It takes the query the section already holds and moves no subscription, as
+ * the render rules ask. `children` is a function because the data only exists
+ * on the last rung.
  */
 export function QueryState<T>({
   query,

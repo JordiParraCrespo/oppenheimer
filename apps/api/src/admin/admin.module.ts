@@ -71,19 +71,15 @@ const queryHandlers: Provider[] = [
   ListUserSessionsQueryHandler,
 ];
 
-// The one outbound dependency, bound to the token its port is named by.
 const adapters: Provider[] = [{ provide: ADMIN_AUTH, useClass: AdminAuthGateway }];
 
 /**
  * Super-admin user management: `/v1/admin/users` (list, get, create, update,
  * set-role, ban, unban, impersonate, remove, sessions, set-password), gated by
- * CASL `manage User`.
- *
- * Better Auth's admin plugin owns the accounts, so there is no aggregate here —
- * but there is a port (`infrastructure/admin-auth.port.ts`) naming what the use
- * cases need from it, a gateway that speaks to `auth.api.*`, and one use-case
- * slice per operation, so the typed, Swagger-documented surface the generated
- * api-client reads is built the same way as every other module's.
+ * CASL `manage User`. Better Auth's admin plugin owns the accounts, so there
+ * is no aggregate; a port (`infrastructure/admin-auth.port.ts`), a gateway
+ * over `auth.api.*` and a slice per operation give the generated api-client
+ * the same typed, Swagger-documented surface as every other module.
  */
 @Module({
   imports: [CqrsModule],

@@ -10,7 +10,6 @@ import { ApiTokenEntity } from '../../domain/api-token.entity';
 import { ApiTokenErrors } from '../../domain/api-token.errors';
 import { CreateApiTokenCommand } from './create-api-token.command';
 
-/** How many usable tokens one user may hold at a time. */
 const MAX_ACTIVE_TOKENS_PER_USER = 50;
 
 /**
@@ -24,8 +23,6 @@ export interface CreateApiTokenResult {
 }
 
 /**
- * Mints an API token.
- *
  * The guard that admitted this request has already confirmed the caller may
  * create tokens at all. This handler enforces the rule that makes scoped
  * credentials safe: **a token may never carry more reach than its creator**.

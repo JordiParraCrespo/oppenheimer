@@ -116,7 +116,6 @@ export function buildFleet(): void {
   ]);
 }
 
-/** Remove every container and the network a fleet run created. */
 export function teardownFleet(): void {
   if (FLEET_HOSTS === 'local') {
     teardownLocalFleet();
@@ -221,7 +220,6 @@ interface HostRow {
   online: boolean;
 }
 
-/** Wait until the caller's host named `name` is paired and in the wanted state. */
 export async function waitForHost(
   api: APIRequestContext,
   host: FleetHost,
@@ -264,7 +262,6 @@ export interface Terminal {
   send(text: string): void;
   screen(): string;
   waitFor(text: string, timeout?: number): Promise<string>;
-  /** The close code, once the socket has closed. */
   closeCode(): number | null;
   close(): Promise<void>;
 }

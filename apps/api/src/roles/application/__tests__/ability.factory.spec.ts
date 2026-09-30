@@ -350,8 +350,7 @@ describe('AbilityFactory', () => {
 
       // The seeded `user` set grants its own API tokens and nothing else, so
       // that rule is what proves the fallback was taken rather than an empty
-      // ability being returned. (`Article` used to serve as this marker, until
-      // it turned out to be boilerplate with nothing behind it.)
+      // ability being returned.
       expect(ability.can('read', 'ApiToken')).toBe(true);
       expect(ability.can('read', 'User')).toBe(false);
       expect(ability.can('delete', 'User')).toBe(false);

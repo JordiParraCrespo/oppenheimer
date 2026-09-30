@@ -3,10 +3,8 @@ import type { PermissionDefinition } from '@oppenheimer/shared';
 import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 /**
- * Persistence model for the application-owned `role` table. The domain
- * `RoleEntity` is mapped to/from this record by `RoleMapper`. Permissions are
- * stored inline as a `jsonb` array — the role aggregate owns them, so they are
- * always read and written together.
+ * Permissions are stored inline as a `jsonb` array — the role aggregate owns
+ * them, so they are always read and written together.
  */
 @Entity('role')
 export class RoleOrmEntity {

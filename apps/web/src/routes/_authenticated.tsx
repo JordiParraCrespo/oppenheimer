@@ -32,7 +32,6 @@ const AutomationsSidebar = lazy(() =>
   })),
 );
 
-/** The sidebar each of the console's lists shows. */
 const SIDEBARS = {
   sessions: <SessionsSidebar />,
   automations: (

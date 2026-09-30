@@ -27,21 +27,20 @@ export const DEFAULT_FILTERS: SessionFilters = {
   sort: 'recent',
 };
 
-/** One row of a facet's submenu. */
 export interface FilterOption {
   value: string;
   label: string;
 }
+
+/** The facets, in the order the menu and the chips show them. */
+export const FACETS = ['project', 'repository', 'agent', 'host'] as const;
+export type SessionFacet = (typeof FACETS)[number];
 
 /**
  * Whether anything is being hidden. Sort is deliberately not part of it: the
  * artboard lights the filter button and draws the chips for what is *missing*
  * from the list, and re-ordering hides nothing.
  */
-/** The facets, in the order the menu and the chips show them. */
-export const FACETS = ['project', 'repository', 'agent', 'host'] as const;
-export type SessionFacet = (typeof FACETS)[number];
-
 export function isFiltered(filters: SessionFilters): boolean {
   return FACETS.some((facet) => filters[facet] !== ALL);
 }

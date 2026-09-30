@@ -14,18 +14,11 @@ import { useTranslation } from 'react-i18next';
 import { SessionRow } from './session-row';
 
 /**
- * One project's group in the sidebar: the folding header with its count and
- * hover actions, then its rows or the empty row. `project` is null for the
- * sessions whose project the list does not hold, which get a header with no
- * actions.
- *
- * The sidebar owns the open set and the filters; each row owns its menu,
- * its rename and its writes; this draws one group, owns its ages' clock and
- * reports what was clicked. It is a
- * section rather than a component for one reason: the header's "one of mine
- * is open" mark is a subscription to the route, a boolean per group, so a
- * navigation re-renders the groups whose mark moved and not the list above
- * them.
+ * One project's group in the sidebar; `project` is null for sessions whose
+ * project the list does not hold, which get a header with no actions. It owns
+ * its ages' clock, and is a section rather than a component because the
+ * header's "one of mine is open" mark subscribes to the route, a boolean per
+ * group, so a navigation re-renders only the groups whose mark moved.
  */
 export function ProjectGroup({
   project,
@@ -57,7 +50,6 @@ export function ProjectGroup({
   // on the tick, because every age may have moved, and the sidebar around the
   // groups — its head, its filters — does not.
   const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
-  // Unassigned under its translated name; the API's spelling is English.
   const label = project
     ? project.isUnassigned
       ? t('projects.unassigned')

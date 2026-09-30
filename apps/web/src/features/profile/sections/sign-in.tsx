@@ -8,7 +8,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChangePasswordDialog } from '../dialogs/change-password';
 
-/** Sign-in: the password, changed in a dialog. */
 export function SignInSection() {
   const { t } = useTranslation();
   const [changing, setChanging] = useState(false);

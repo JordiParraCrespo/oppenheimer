@@ -29,7 +29,6 @@ export function BranchSelect({
   onValueChange: (value: string) => void;
   loading?: boolean;
   disabled?: boolean;
-  /** `tab` inside the composer's scope band; `chip` on its own. */
   variant?: ChipSelectTriggerVariant;
 }) {
   const { t } = useTranslation();

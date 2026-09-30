@@ -38,17 +38,13 @@ declare module '@tanstack/react-router' {
   }
 }
 
-// Guarded routes read `context.auth` in `beforeLoad`, which only re-runs when
-// the router is invalidated. The auth store is the thing that changes, so it
-// tells the router directly — one subscription at module scope, instead of a
-// component watching the flag and invalidating from an effect a render late.
-//
-// Two details keep this honest. The context is handed to the router *before*
-// the invalidation, or the guards would re-run against the previous flag
-// (`RouterProvider` re-applies the same context on its next render). And an
+// Guarded routes read `context.auth` in `beforeLoad`, which re-runs only when
+// the router is invalidated, so the auth store tells the router directly
+// rather than an effect doing it a render late. The context is updated before
+// the invalidation, or the guards re-run against the previous flag. An
 // unmounted router is left alone: session restore flips the flag before the
-// provider exists, and invalidating then would run the guards with the
-// initial `false` and record a redirect to /login before the app has drawn.
+// provider exists, and invalidating then would redirect to /login on the
+// initial `false` before the app has drawn.
 app.auth.store.subscribe((state, previous) => {
   if (state.isAuthenticated === previous.isAuthenticated) return;
   router.update({ context: { auth: { isAuthenticated: state.isAuthenticated } } });
@@ -67,7 +63,7 @@ export function App() {
   // `prefers-color-scheme` while the rest of the product follows the toggle.
   const { resolvedTheme } = useTheme();
   const { isAuthenticated } = useAuthState();
-  // Rehydrate a persisted session (tokens in localStorage) before the router's
+  // Rehydrate the persisted session query (the credential is a cookie) before the router's
   // route guards run, so a returning/refreshing authenticated user isn't bounced
   // to /login. `isPending`, not `isLoading`: under `PersistQueryClientProvider`
   // a query sits idle while the persisted cache is restored, and `isLoading`

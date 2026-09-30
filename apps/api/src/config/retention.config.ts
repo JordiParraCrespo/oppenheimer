@@ -3,15 +3,12 @@ import { z } from 'zod';
 import { parseEnv, positiveInt } from './env';
 
 /**
- * How long the nightly purges keep what they purge, and how they purge it.
- * Each purge is a BullMQ job scheduler that runs once a day however many
- * replicas there are; the schedules themselves stay beside each processor,
- * staggered so no two run at once.
+ * How long the nightly purges keep what they purge, and how they purge it. Each purge
+ * is a BullMQ job scheduler that runs once a day however many replicas there are; the
+ * schedules stay beside each processor, staggered so no two run at once.
  *
- * **Defaulted, all of it**: a deployment that sets nothing keeps what
- * `product/versions/mvp/15-host-metadata.md` and the automations and outbox
- * notes decided. A value only ever changes how long rows live, so nothing
- * here can fail a boot on its absence.
+ * Defaulted, all of it, to what `product/versions/mvp/15-host-metadata.md` and the
+ * automations and outbox notes decided, so nothing here can fail a boot.
  */
 const schema = z.object({
   /** An IP address is personal data: where a laptop has been is kept this long past its last use. */

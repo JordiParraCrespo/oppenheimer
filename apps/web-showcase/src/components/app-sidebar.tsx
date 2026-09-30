@@ -58,6 +58,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   );
 }
 
+const TRIGGER_OFFSET = 120;
+
 /**
  * Tracks which `<section id>` is in view inside the main scroll container.
  *
@@ -68,8 +70,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  * section is the last one whose top has passed the trigger line, except when
  * scrolled to the bottom, where it is simply the last section.
  */
-const TRIGGER_OFFSET = 120;
-
 function useActiveSection() {
   const [active, setActive] = React.useState<string | null>(null);
 

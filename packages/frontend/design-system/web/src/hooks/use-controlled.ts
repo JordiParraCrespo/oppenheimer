@@ -2,18 +2,13 @@ import { useCallback, useState } from 'react';
 
 /**
  * State a component owns until its caller takes it over: the
- * `value` / `defaultValue` / `onChange` triple, written once.
- *
- * Every component that can be either controlled or uncontrolled otherwise
- * writes the same four lines — an internal `useState` seeded from the default,
- * `value ?? internal`, and a setter that writes the internal state only when
- * nobody passed `value` but always tells `onChange`. The copies drift: one
- * forgets to call `onChange` in uncontrolled mode, another resolves a
- * functional update against a stale value.
+ * `value` / `defaultValue` / `onChange` triple, written once, because
+ * hand-written copies drift (one forgets `onChange` when uncontrolled, another
+ * resolves a functional update against a stale value).
  *
  * `undefined` means uncontrolled; `null` is a value like any other, because a
  * picker with nothing picked is a real, controlled state. Whether the caller
- * controls it is read on every render, the way React's own inputs read it.
+ * controls it is read on every render, as React's own inputs read it.
  *
  * ```tsx
  * function Disclosure({ open, defaultOpen = false, onOpenChange }: Props) {

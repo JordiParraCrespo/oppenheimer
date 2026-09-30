@@ -2,15 +2,10 @@ import { useEffect, useRef } from 'react';
 
 /**
  * Apply the project New session lands on, once, when nothing named one.
- *
- * The external system is the draft's storage: `initialDraft` restores the
- * remembered project but deliberately not the scope, so the project on screen
- * has not offered its defaults yet. Once the lists can answer, that project is
- * picked the way a pick in the chip would pick it.
- *
- * It decides once, at arrival. A visit whose address (or the project dialog)
- * names a project leaves it to `useSearchPick`, and whatever happens after the
- * first decision — a pick by hand, another address — is never undone here.
+ * `initialDraft` restores the remembered project but deliberately not its
+ * scope, so once the lists can answer, that project is picked as the chip
+ * would pick it. It decides once, at arrival: a project named by the address
+ * or the dialog is `useSearchPick`'s, and nothing after is undone here.
  */
 export function useLandingPick<T extends { id: string }>(
   /** The project the chip shows: the remembered one, or Unassigned. */

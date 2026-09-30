@@ -71,7 +71,6 @@ export abstract class TypeOrmRepositoryBase<
     return (result.affected ?? 0) > 0;
   }
 
-  /** A looked-up record as the domain's `Option`. */
   protected toOption(record: Orm | null): Option<Aggregate> {
     return record ? Some(this.mapper.toDomain(record)) : None;
   }

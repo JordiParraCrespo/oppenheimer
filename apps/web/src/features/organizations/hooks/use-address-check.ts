@@ -3,19 +3,12 @@ import { CONSUMER_CONFIG } from '@oppenheimer/frontend-consumer/config';
 import { useCheckSlug } from '@oppenheimer/frontend-consumer/react';
 
 /**
- * The availability verdict for a workspace address, as the field shows it:
- * `checking` while the reader is still typing or the answer is in flight, then
- * `ok` or `taken` from `POST /organizations/check-slug`.
- *
- * Typing is debounced so a word costs one request rather than one per letter.
- * Between the keystroke and the request the status stays `checking`, never the
- * previous verdict — showing "available" under an address nobody has asked
- * about yet is how someone ends up pressing Continue on a name that is gone.
- *
- * A failed check returns the error rather than dressing it as a verdict. It is
- * neither `taken` (an address the reader could have, refused) nor a permanent
- * `checking` (a spinner with no end and no explanation): the caller renders the
- * failure and keeps Continue disabled, because it still does not know.
+ * The availability verdict for a workspace address: `checking` while typing
+ * (debounced) or in flight, then `ok` or `taken` from
+ * `POST /organizations/check-slug`. Between keystroke and request it stays
+ * `checking`, never the previous verdict, or Continue gets pressed on a name
+ * that is gone. A failed check returns the error, neither `taken` nor an
+ * endless `checking`; the caller shows it and keeps Continue disabled.
  */
 export function useAddressCheck(address: string): { status: SlugStatus; error: Error | null } {
   const debounced = useDebouncedValue(

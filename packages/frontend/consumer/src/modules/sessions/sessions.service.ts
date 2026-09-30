@@ -37,8 +37,6 @@ export class SessionsService {
   }
 
   /**
-   * Start a session.
-   *
    * The `idempotencyKey` is the caller's, not this layer's: it has to survive a
    * lost response and a second press of the same button, and only the screen
    * holding that draft knows the two are the same attempt. Minting one here per
@@ -60,17 +58,14 @@ export class SessionsService {
     return this.repository.close(id, acceptUnpushedWork);
   }
 
-  /** A single-use pass to one window's terminal; see the repository. */
   issueAttachTicket(id: string, window = 0): Promise<AttachTicket> {
     return this.repository.issueAttachTicket(id, window);
   }
 
-  /** Keep an image for a first task until the create names it; see the repository. */
   uploadAttachment(image: Blob): Promise<SessionAttachment> {
     return this.repository.uploadAttachment(image);
   }
 
-  /** Give one window's prompt an image; see the repository. */
   pasteImage(id: string, image: Blob, window = 0): Promise<void> {
     return this.repository.pasteImage(id, image, window);
   }

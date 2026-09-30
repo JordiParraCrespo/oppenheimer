@@ -10,10 +10,6 @@ import { OrganizationMapper } from '../organization.mapper';
 import { invokeOrganizationApi } from './organization-error.util';
 import type { WorkspaceAuthPort } from './workspace-auth.port';
 
-/**
- * The workspace port, over the Better Auth organization plugin's team
- * endpoints. "Workspaces" are Better Auth teams scoped to an organization.
- */
 @Injectable()
 export class WorkspaceAuthGateway implements WorkspaceAuthPort {
   async create(

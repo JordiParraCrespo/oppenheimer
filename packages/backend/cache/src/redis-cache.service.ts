@@ -68,12 +68,9 @@ export class RedisCacheService extends CacheService {
     if (running) return running as Promise<T>;
 
     const promise = (async () => {
-      // Cache down ⇒ load: reads fail open.
       const cached = await this.get<T>(key).catch(() => undefined);
       if (cached !== undefined) return cached;
-      // A loader error propagates to every waiter and is never cached.
       const value = await load();
-      // A failed write never fails the caller; the next one just loads again.
       await this.set(key, value, ttlSeconds).catch(() => {});
       return value;
     })().finally(() => this.inFlight.delete(key));
@@ -82,11 +79,7 @@ export class RedisCacheService extends CacheService {
     return promise;
   }
 
-  /**
-   * `SET key value EX ttl NX` — one round trip, and Redis decides the race.
-   * Returns `false` when the key was already there, which is what makes a
-   * replayed credential refusable.
-   */
+  /** `SET key value EX ttl NX` — one round trip, and Redis decides the race. */
   async setIfAbsent<T>(key: string, value: T, ttlSeconds: number): Promise<boolean> {
     const stored = await this.redis.set(
       this.key(key),

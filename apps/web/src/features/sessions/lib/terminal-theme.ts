@@ -1,36 +1,21 @@
 import type { ITheme } from '@xterm/xterm';
 
 /**
- * The bridge between the design system's terminal ramp and xterm.js.
- *
- * xterm takes literal colour strings, not CSS variables, so the `--term-*`
- * tokens have to be resolved against the document and handed over as values.
- * Nothing else in the app needs this: every other surface names the token and
- * lets the cascade answer. The terminal is the one place the cascade cannot
- * reach, because the grid is painted to a canvas.
- *
- * `theme-provider.tsx` toggles `.dark` / `.light` on `<html>`, so the caller
- * re-reads this whenever that class changes; the values differ per theme.
+ * The bridge between the design system's terminal ramp and xterm.js. xterm
+ * paints to a canvas and takes literal colours, not CSS variables, so the
+ * `--term-*` tokens are resolved against the document. The values differ per
+ * theme, so the caller re-reads them whenever `theme-provider.tsx` toggles
+ * `.dark` / `.light` on `<html>`.
  */
 
 /**
- * The contrast floor xterm holds every colour to, chosen by how light the
- * terminal's own background is.
- *
- * A single floor cannot serve both themes. 4.5 (WCAG-AA body text) is what
- * rescues a program's near-white output on a light terminal, and on a dark one
- * the same number over-brightens saturated colour until an agent's palette
- * stops looking like itself — which is why Claude's mark arrives washed out
- * rather than orange. 3 (AA large-text) is the milder floor that still lifts
- * text sitting almost on top of the background.
- *
- * Gated on the resolved background rather than the app's theme class, because
- * the two can disagree: the terminal keeps its own ramp, and it is the
- * background a colour is actually read against that decides legibility.
- *
- * The thresholds and the reasoning are Orca's
- * (`src/renderer/src/lib/terminal-contrast-correction.ts`), which arrived at
- * them from the same symptom.
+ * The contrast floor xterm holds every colour to, by how light the terminal's
+ * background is. 4.5 (WCAG-AA body text) rescues near-white output on a light
+ * terminal but on a dark one over-brightens saturated colour (Claude's mark
+ * turns washed out rather than orange); 3 (AA large-text) still lifts text
+ * sitting almost on the background. Gated on the resolved background, not the
+ * theme class, because the terminal keeps its own ramp. The thresholds are
+ * Orca's (`src/renderer/src/lib/terminal-contrast-correction.ts`).
  */
 export function terminalMinimumContrastRatio(): number {
   return isLightBackground(read('--term-bg')) ? 4.5 : 3;
@@ -55,7 +40,6 @@ function isLightBackground(hex: string): boolean {
   return luminance > 0.5;
 }
 
-/** Resolve one custom property off the document element. */
 function read(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
@@ -111,24 +95,13 @@ export function readTerminalTheme(): ITheme {
 }
 
 /**
- * The type face and metrics the ramp was drawn for.
- *
- * The chain is long on purpose. A browser skips a family it does not have, so
- * naming every platform's mono face costs nothing and means the grid never
- * falls through to a proportional font — which is why `ui-monospace` leads.
- *
- * The tail is what matters for agent output. Claude Code and Codex draw their
- * turns with characters no stock mono face carries in full — `⏺` (U+23FA),
- * `✻` (U+273B), `❯` (U+276F), box drawing, Powerline and the private-use
- * range — and a glyph the chain cannot supply is drawn as a substitute, which
- * is why every agent line opened with a stray mark instead of its bullet. The
- * symbol-only Nerd Font faces are the usual fix and are already installed on
- * most developer machines; naming them is free on machines without them.
- *
- * Orca solves the same problem the same way and goes one step further by
- * *bundling* a symbols face, so a machine with none still renders the glyphs.
- * Shipping a webfont is a size and licensing decision this has not taken, so
- * the chain relies on what the host already has.
+ * The type face the ramp was drawn for. A browser skips a family it lacks, so
+ * naming every platform's mono face is free and keeps the grid off a
+ * proportional font. The tail is for agent output: Claude Code and Codex draw
+ * with glyphs no stock mono face carries in full (`⏺` U+23FA, `✻` U+273B,
+ * `❯` U+276F, box drawing, Powerline, private use), and a missing one is drawn
+ * as a stray substitute. The symbol-only Nerd Font faces, on most developer
+ * machines, supply them.
  */
 const TERMINAL_FONT_STACK = [
   'ui-monospace',
@@ -139,9 +112,9 @@ const TERMINAL_FONT_STACK = [
   'Consolas',
   '"DejaVu Sans Mono"',
   '"Liberation Mono"',
-  // Bundled, so it is the one fallback that is always there. It claims only
-  // the private-use ranges (`@font-face` in the design system), so it never
-  // wins a character a real font should draw.
+  // Bundled, so it is the one fallback that is always there. Its `@font-face`
+  // in the design system claims only the symbol blocks and the private-use
+  // planes, so it never wins a letter or a digit a real font should draw.
   "'Oppenheimer Symbols'",
   '"Symbols Nerd Font Mono"',
   '"MesloLGS Nerd Font"',
@@ -162,15 +135,10 @@ export const TERMINAL_FONT = {
   fontFamily: TERMINAL_FONT_STACK.join(', '),
   fontSize: 13,
   /**
-   * 1, not the ramp's 1.55.
-   *
-   * `terminal.css` sets `line-height: 1.55` for its scrollback, and that is
-   * right for HTML: leading between wrapped prose. xterm's `lineHeight` is not
-   * leading — it multiplies the cell itself, so 1.55 makes every cell half as
-   * tall again as it is wide, and the block characters agents draw their
-   * banners and progress bars from stretch with it. Claude Code's mark arrived
-   * elongated for exactly that reason. 1 is the ratio the glyphs were drawn
-   * for, and it is Orca's default too.
+   * 1, not `terminal.css`'s 1.55: xterm's `lineHeight` multiplies the cell
+   * rather than adding leading, so 1.55 stretches the block characters agents
+   * draw banners and progress bars from (Claude Code's mark came out
+   * elongated). 1 is the ratio the glyphs were drawn for, and Orca's default.
    */
   lineHeight: 1,
 } as const;

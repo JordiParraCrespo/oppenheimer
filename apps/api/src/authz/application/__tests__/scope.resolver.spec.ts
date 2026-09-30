@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { TeamOrmEntity } from '../../../organizations/database/team.orm-entity';
 import { ScopeResolver } from '../scope.resolver';
 
-/** A grant row as the port hands it back. */
 function grant(resourceType: string, resourceId: string | null) {
   return { resourceType, resourceId, isBlanket: () => resourceId === null };
 }
@@ -65,7 +64,6 @@ describe('ScopeResolver', () => {
       organizationId: 'org-1',
     });
     expect(teamQuery.getRawMany).toHaveBeenCalledTimes(1);
-    // Grants: in this organization, for the caller, their teams and their roles.
     expect(grants.findActiveForPrincipals).toHaveBeenCalledWith('org-1', [
       { principalType: 'user', principalId: 'user-1' },
       { principalType: 'team', principalId: 'team-1' },

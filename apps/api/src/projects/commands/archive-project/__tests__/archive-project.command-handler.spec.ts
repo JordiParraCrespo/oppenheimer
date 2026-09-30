@@ -7,15 +7,10 @@ import { ArchiveProjectCommand } from '../archive-project.command';
 import { ArchiveProjectCommandHandler } from '../archive-project.command-handler';
 
 /**
- * Archiving is the destructive path in this module, and the whole of its design is
- * that it **fails closed**: it asks whoever contributed an answer whether any work
- * is still listed in the project, and refuses if nothing did.
- * That refusal is a DI fact — an empty registry — rather than a caught exception,
- * which is what these tests pin.
- *
- * The lock that serialises this against creating a session lives in the repository,
- * where the transaction is; this is the layer that proves the handler asks the
- * question inside it and reports each outcome as itself.
+ * Archiving fails closed: it asks whoever contributed an answer whether work is still
+ * listed in the project and refuses if nothing did, an empty registry rather than a
+ * caught exception. The lock that serialises this against creating a session is the
+ * repository's; these tests prove the handler asks inside it and reports each outcome.
  */
 
 const SCOPE = {

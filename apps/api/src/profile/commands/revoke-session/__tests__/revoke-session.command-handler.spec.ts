@@ -81,8 +81,6 @@ describe('RevokeSessionCommandHandler', () => {
   });
 
   it('still revokes when the caller has no session of its own', async () => {
-    // A caller with no current session id cannot be revoking itself, so the
-    // self-revocation guard must not fire on the missing value.
     await service.execute(command({ currentSessionId: null }));
 
     expect(profileAuth.revokeSession).toHaveBeenCalled();

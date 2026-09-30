@@ -90,7 +90,6 @@ describe('AdminAuthGateway', () => {
         }),
       }),
     );
-    // headers were converted to a Headers object for Better Auth
     const call = api.listUsers.mock.calls[0][0];
     expect(call.headers).toBeInstanceOf(Headers);
   });
