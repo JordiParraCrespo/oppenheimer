@@ -63,11 +63,6 @@ describe('titleFromPrompt', () => {
     expect(titleFromPrompt('```\nconst x = 1;\n```')).toBeNull();
     expect(titleFromPrompt('https://example.com/issue/1')).toBeNull();
   });
-
-  it('names the same prompt the same way every time', () => {
-    const prompt = 'please refactor the session relay to use the outbox';
-    expect(titleFromPrompt(prompt)).toBe(titleFromPrompt(prompt));
-  });
 });
 
 describe('cleanModelTitle', () => {

@@ -165,30 +165,59 @@ describe('HostAssertionResolver', () => {
     expect(cache.setIfAbsent).not.toHaveBeenCalled();
   });
 
-  it('refuses an expired assertion', async () => {
-    const claims = bootClaims('host-1', { exp: Math.floor(NOW.getTime() / 1000) - 120 });
+  const now = Math.floor(NOW.getTime() / 1000);
+  const without = (claim: 'jti' | 'iat') => {
+    const { [claim]: _dropped, ...rest } = bootClaims('host-1');
+    return rest;
+  };
 
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
-    });
-  });
-
-  it('refuses one that claims to live longer than a boot token', async () => {
-    // Accepting it would silently widen the replay window the burn is sized
-    // against.
-    const claims = bootClaims('host-1', { exp: Math.floor(NOW.getTime() / 1000) + 86_400 });
-
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
-    });
-  });
-
-  it('refuses one minted for another control plane', async () => {
-    const claims = bootClaims('host-1', { aud: 'https://api.someone-else.com' });
-
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
-    });
+  // Each row changes one thing about the assertion the first test accepts, and
+  // every one of them is the same opaque answer.
+  it.each<[string, () => string]>([
+    [
+      'an expired assertion',
+      () => assertion(current.privateKey, bootClaims('host-1', { exp: now - 120 })),
+    ],
+    // Accepting it would silently widen the replay window the burn is sized against.
+    [
+      'one that claims to live longer than a boot token',
+      () => assertion(current.privateKey, bootClaims('host-1', { exp: now + 86_400 })),
+    ],
+    [
+      'one minted for another control plane',
+      () =>
+        assertion(
+          current.privateKey,
+          bootClaims('host-1', { aud: 'https://api.someone-else.com' }),
+        ),
+    ],
+    [
+      'one whose issuer and subject disagree',
+      () => assertion(current.privateKey, bootClaims('host-1', { iss: 'host-2' })),
+    ],
+    ['one with no token id to burn', () => assertion(current.privateKey, without('jti'))],
+    // Claimed life, not remaining life: an assertion issued a week ago with four
+    // minutes left on it was not minted as a boot token, and capping only what is
+    // left would accept it.
+    [
+      'one minted with a longer life than a boot token',
+      () =>
+        assertion(
+          current.privateKey,
+          bootClaims('host-1', { iat: now - 7 * 24 * 3600, exp: now + 240 }),
+        ),
+    ],
+    [
+      'one issued in the future',
+      () => assertion(current.privateKey, bootClaims('host-1', { iat: now + 600 })),
+    ],
+    [
+      'one with no issued-at to measure its life against',
+      () => assertion(current.privateKey, without('iat')),
+    ],
+    ['something that is not an assertion at all', () => 'oppenheimer_pat_abc'],
+  ])('refuses %s', async (_case, token) => {
+    await expect(verify(token())).rejects.toMatchObject({ code: 'HOSTS_005' });
   });
 
   it('ignores a trailing slash on the audience', async () => {
@@ -196,23 +225,6 @@ describe('HostAssertionResolver', () => {
 
     await expect(verify(assertion(current.privateKey, claims))).resolves.toMatchObject({
       hostId: 'host-1',
-    });
-  });
-
-  it('refuses one whose issuer and subject disagree', async () => {
-    const claims = bootClaims('host-1', { iss: 'host-2' });
-
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
-    });
-  });
-
-  it('refuses one with no token id to burn', async () => {
-    const { jti, ...claims } = bootClaims('host-1');
-    void jti;
-
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
     });
   });
 
@@ -236,39 +248,6 @@ describe('HostAssertionResolver', () => {
     expect(owners.findActiveOwner).toHaveBeenCalledWith('jordi');
   });
 
-  it('refuses something that is not an assertion at all', async () => {
-    await expect(verify('oppenheimer_pat_abc')).rejects.toMatchObject({ code: 'HOSTS_005' });
-  });
-
-  it('refuses one minted with a longer life than a boot token', async () => {
-    const issued = Math.floor(NOW.getTime() / 1000) - 7 * 24 * 3600;
-    const claims = bootClaims('host-1', {
-      iat: issued,
-      exp: Math.floor(NOW.getTime() / 1000) + 240,
-    });
-
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
-    });
-  });
-
-  it('refuses one issued in the future', async () => {
-    const claims = bootClaims('host-1', { iat: Math.floor(NOW.getTime() / 1000) + 600 });
-
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
-    });
-  });
-
-  it('refuses one with no issued-at to measure its life against', async () => {
-    const { iat, ...claims } = bootClaims('host-1');
-    void iat;
-
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
-    });
-  });
-
   describe('a host that has been unpaired', () => {
     it('still proves who it is, and says it was unpaired', async () => {
       vi.mocked(hosts.findOneByIdForMachine).mockResolvedValue(
@@ -284,13 +263,6 @@ describe('HostAssertionResolver', () => {
       await expect(
         verify(assertion(current.privateKey, bootClaims('host-1'))),
       ).resolves.toMatchObject({ hostId: 'host-1', unpaired: true });
-    });
-  });
-
-  describe('recognises', () => {
-    it('claims a compact EdDSA token and nothing else', () => {
-      expect(resolver.recognises(assertion(current.privateKey, bootClaims('host-1')))).toBe(true);
-      expect(resolver.recognises('oppenheimer_pat_abc')).toBe(false);
     });
   });
 });

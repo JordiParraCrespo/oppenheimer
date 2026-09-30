@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import { toResourceScope } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CredentialOwnerPort } from '../../../auth/application/credential-owner.port';
 import { AuthErrors } from '../../../auth/domain/auth.errors';
 import type { CredentialOwner, ScopedRequest } from '../../../auth/domain/scope-context.types';
@@ -41,15 +41,26 @@ describe('ApiTokenCredentialResolver', () => {
     resolver = new ApiTokenCredentialResolver(apiTokens, owners);
   });
 
-  const stored = (overrides: Partial<Parameters<typeof ApiTokenEntity.issue>[0]> = {}) => {
-    const { token, secret } = ApiTokenEntity.issue({
+  const stored = (
+    overrides: Partial<Parameters<typeof ApiTokenEntity.issue>[0]> = {},
+    lastUsedAt: Date | null = null,
+  ) => {
+    const issued = ApiTokenEntity.issue({
       userId: owner.id,
       name: 'CI deploy',
       scopes: ['users:read'],
       ...overrides,
     });
+    // Rehydrated the way the repository loads it, so a prior use can be set.
+    const { id, createdAt, updatedAt, ...props } = issued.token.getProps();
+    const token = ApiTokenEntity.create({
+      id,
+      createdAt,
+      updatedAt,
+      props: { ...props, lastUsedAt },
+    });
     vi.mocked(apiTokens.findOneByHash).mockResolvedValue(Some(token));
-    return { token, secret };
+    return { token, secret: issued.secret };
   };
 
   it('claims the secrets this module mints, and nothing else', () => {
@@ -93,33 +104,34 @@ describe('ApiTokenCredentialResolver', () => {
 
   describe('lastUsedAt', () => {
     const second = 1000;
+    const now = new Date('2026-03-03T10:00:00Z');
 
-    it('skips the stamp when the token was used moments ago', async () => {
-      // Regression: every request wrote the row, ten row versions a second for
-      // a token polled ten times a second.
-      const { token, secret } = stored();
-      token.markUsed(new Date(Date.now() - 10 * second));
-
-      await resolver.resolve(secret, request());
-
-      expect(apiTokens.touchLastUsedAt).not.toHaveBeenCalled();
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'], now });
     });
 
-    it('stamps a token last used more than a minute ago', async () => {
-      const { token, secret } = stored();
-      token.markUsed(new Date(Date.now() - 2 * 60 * second));
-
-      await resolver.resolve(secret, request());
-
-      expect(apiTokens.touchLastUsedAt).toHaveBeenCalledWith(token.id, expect.any(Date));
+    afterEach(() => {
+      vi.useRealTimers();
     });
 
-    it('stamps a token never used before', async () => {
-      const { token, secret } = stored();
+    // Regression: every request wrote the row, ten row versions a second for a
+    // token polled ten times a second.
+    it.each([
+      ['skips the stamp when the token was used moments ago', 10 * second, 0],
+      ['stamps a token last used more than a minute ago', 2 * 60 * second, 1],
+      ['stamps a token never used before', null, 1],
+    ] as const)('%s', async (_label, usedAgo, stamps) => {
+      const { token, secret } = stored(
+        {},
+        usedAgo === null ? null : new Date(now.getTime() - usedAgo),
+      );
 
       await resolver.resolve(secret, request());
 
-      expect(apiTokens.touchLastUsedAt).toHaveBeenCalledWith(token.id, expect.any(Date));
+      expect(apiTokens.touchLastUsedAt).toHaveBeenCalledTimes(stamps);
+      for (const call of vi.mocked(apiTokens.touchLastUsedAt).mock.calls) {
+        expect(call).toEqual([token.id, now]);
+      }
     });
   });
 

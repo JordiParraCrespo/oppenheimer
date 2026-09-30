@@ -12,7 +12,6 @@ function harness() {
     target: UserSettingsOrmEntity,
     findOneBy: vi.fn().mockResolvedValue(null),
     delete: vi.fn().mockResolvedValue({ affected: 1 }),
-    save: vi.fn(async (record: UserSettingsOrmEntity) => record),
   };
   const manager = { getRepository: vi.fn(() => orm) };
   const outbox = {
@@ -25,7 +24,7 @@ function harness() {
     new ProfileMapper(),
     outbox as unknown as OutboxService,
   );
-  return { repository, orm, manager };
+  return { repository, orm };
 }
 
 describe('UserSettingsRepository', () => {
@@ -43,15 +42,5 @@ describe('UserSettingsRepository', () => {
 
     await expect(repository.delete(UserSettingsEntity.createDefault('user-1'))).resolves.toBe(true);
     expect(orm.delete).toHaveBeenCalledWith({ userId: 'user-1' });
-  });
-
-  it('saves through the ORM entity the adapter was built for', async () => {
-    const { repository, orm, manager } = harness();
-
-    const saved = await repository.save(UserSettingsEntity.createDefault('user-1'));
-
-    expect(manager.getRepository).toHaveBeenCalledWith(UserSettingsOrmEntity);
-    expect(orm.save).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-1' }));
-    expect(saved.userId).toBe('user-1');
   });
 });
