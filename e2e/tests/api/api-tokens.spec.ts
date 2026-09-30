@@ -117,9 +117,9 @@ test.describe('API tokens', () => {
 
   test("a user cannot list another user's tokens", async () => {
     const { api: victim } = await signedUpContext('tokenvictim');
-    // Minted for certain, or the absence below would prove nothing.
     expect((await mintToken(victim, ['profile:read'], 'victim token')).status).toBe(201);
     const { api: attacker } = await signedUpContext('tokenattacker');
+    expect((await mintToken(attacker, ['profile:read'], 'attacker token')).status).toBe(201);
 
     const response = await attacker.get('/api/v1/tokens', {
       failOnStatusCode: false,
@@ -128,10 +128,9 @@ test.describe('API tokens', () => {
     expect(response.status()).toBe(200);
     const body = await response.json();
     const rows = Array.isArray(body) ? body : (body.data ?? []);
-    expect(
-      rows.some((row: { name?: string }) => row.name === 'victim token'),
-      "the ApiToken permission is scoped to the owner, so another user's tokens must not appear",
-    ).toBe(false);
+    const names = rows.map((row: { name?: string }) => row.name);
+    expect(names).toContain('attacker token');
+    expect(names).not.toContain('victim token');
   });
 });
 

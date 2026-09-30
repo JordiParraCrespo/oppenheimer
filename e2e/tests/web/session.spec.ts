@@ -20,9 +20,11 @@ import { provisionedUser, signInAs } from '../../support/web';
  *   attach ticket all go through the real API.
  * - **The relay's attach socket**, in the one test about what the terminal
  *   draws, is answered in the browser (`page.routeWebSocket`) with a recorded
- *   transcript in the wire format `01-protocol.md` decides. The console
- *   always builds the real `AttachSessionStream`, so the transcript goes
- *   through the same decoding a relay's frames would.
+ *   transcript in the wire format `01-protocol.md` decides — the role
+ *   `FakeSessionStream` plays in the console's render tests, one layer lower.
+ *   The fake stream itself is not reachable from here: the console always
+ *   builds the real `AttachSessionStream`, and nothing selects the fake at
+ *   runtime.
  *
  * The same screen on a real runner, through the real relay, is
  * `tests/fleet/console.spec.ts`.

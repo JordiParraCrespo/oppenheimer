@@ -111,9 +111,9 @@ test.describe('sign-in', () => {
     const second = await newContext();
     expect((await signIn(second, user.email, user.password)).status()).toBe(200);
 
-    // Both contexts must still be able to read their own session. The body, not
-    // the status: `get-session` answers 200 with `null` when there is none.
-    expect((await (await getSession(api)).json())?.user?.email).toBe(user.email);
+    await signOut(api);
+
+    expect((await (await getSession(api)).json())?.user?.email).toBeUndefined();
     expect((await (await getSession(second)).json())?.user?.email).toBe(user.email);
   });
 });

@@ -72,7 +72,6 @@ test.describe('protected routes', () => {
     expect((await api.get('/api/v1/users/me', { failOnStatusCode: false })).status()).toBe(401);
   });
 
-  // What capabilities report is `oauth-and-capabilities.spec.ts`'s subject.
   test('health is public', async () => {
     const api = await newContext();
 

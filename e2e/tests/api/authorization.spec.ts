@@ -29,7 +29,8 @@ test.describe('authorization boundaries for a default user', () => {
     const adminPlugin = await api.get('/api/auth/admin/list-users?limit=1', {
       failOnStatusCode: false,
     });
-    expect(adminPlugin.status()).toBeGreaterThanOrEqual(400);
+    expect(adminPlugin.status()).toBe(403);
+    expect((await adminPlugin.json()).code).toBe('YOU_ARE_NOT_ALLOWED_TO_LIST_USERS');
   });
 });
 
