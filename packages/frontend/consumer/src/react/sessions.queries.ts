@@ -228,7 +228,15 @@ export function useCreateSession(
   return useMutation({
     mutationFn: ({ input, idempotencyKey }: CreateSessionVariables) =>
       app.sessions.create(input, idempotencyKey),
-    ...withCacheOnSuccess(options, () => {
+    ...withCacheOnSuccess(options, (session) => {
+      // The row the API just answered with, put where the session screen reads
+      // it. Without this the screen the caller navigates to opens `pending`,
+      // draws its skeleton and fetches the session it was handed a moment ago:
+      // a round trip on the critical path between pressing send and the
+      // terminal mounting, which is the one stretch a reader is watching. Every
+      // other session mutation already seeds it ({@link useSessionPatch});
+      // create was the one that did not.
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     }),
   });
