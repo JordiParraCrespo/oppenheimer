@@ -1,0 +1,37 @@
+{
+  "name": "@oppenheimer/backend-machines",
+  "version": "0.1.0",
+  "private": true,
+  "description": "One interface to create, start, stop, destroy and list KVM-capable hosts on AWS, Oracle Cloud and Alibaba Cloud",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts --passWithNoTests"
+  },
+  "dependencies": {
+    "@alicloud/credentials": "^2.4.7",
+    "@alicloud/ecs20140526": "^7.11.6",
+    "@alicloud/openapi-core": "^1.0.8",
+    "@aws-sdk/client-ec2": "^3.1137.0",
+    "oci-common": "^2.141.0",
+    "oci-core": "^2.140.2",
+    "oci-identity": "^2.140.2"
+  },
+  "devDependencies": {
+    "@oppenheimer/tsconfig": "workspace:^",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
+  }
+}

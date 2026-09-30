@@ -28,6 +28,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 14 | [Hosts in Settings](14-hosts-settings.md) | The 2026-09-26 Settings frame read against `hosts/`: status and running count, what removing a host stops, the pairing poll, the CPU count |
 | 15 | [Host metadata](15-host-metadata.md) | Where a host's facts live, split by how often they change: inventory, presence, networks, events; access patterns, retention, measured cost |
 | 16 | [Automations: the architecture](16-automations-architecture.md) | How a run is fired, guarded and dispatched: the inbound-events hub, the schedule tick, triggers, revisions, guards, configuration, the data model; and the headless drive that runs take next, in its slices |
+| 17 | [Orchestration (v0.2)](17-orchestration.md) | One runner per host, many hosts per person; placement as a ladder the control plane runs; machine jobs on BullMQ, events on the outbox, rows as the queue; the four layers of session persistence including the transcript snapshot; what survives what; the sweeper |
+| 18 | [Headless runs](18-headless-runs.md) | A routine's run is a session whose window 0 runs `claude -p` with `stream-json`: the launch, permissions with nobody watching, which repositories may run, turns and follow-ups, handing a run to a person with `--resume`, where triggers live, what a run records |
 
 ## Decision log
 
@@ -294,6 +296,52 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   Ollama and the rest — so a session is named by a fast open-weights
   model, never on the critical path of creating it. 05's first open
   question, how a session is named, is closed by the same change.
+- 2026-09-22: **v0.2, cloud machines** (research note 14). A cloud
+  machine is an ordinary host that pairs itself — cloud-init runs the
+  install command with a pairing token — and `hosts/` is the host
+  factory: two person-owned rows, `cloud_account` and `machine`, and a
+  `MachineProviderPort` with an adapter per provider in its
+  `infrastructure/`; no sixth module, no package. 03 gains the port,
+  the routes and the pause, resume, delete policy (Keep is the default
+  on cloud too; `suspend` fails closed on a driver without it; idle is
+  the control plane's call and the guest never powers itself off); 10
+  the tables; 01 a `push` flag on `stop`; 02 the push-on-stop and the
+  cold resume; 05 the host chip, the boot-trace rows and the session
+  menu; 09 the cloud-init path with the lingering user manager.
+- 2026-09-22: **v0.2, sessions as microVMs, the way Claude Code on the
+  web runs them** (research note 15, read off the session that wrote
+  it). A session on a host with KVM is a Firecracker VM that exists
+  only while active, on a disk that is kept; a wake boots a fresh VM on
+  that disk in about two seconds and the agent resumes by its own id;
+  the guest has no network device and reaches the host over vsock and
+  the network only through the runner's proxy. 02 §14 replaces "deferred
+  to the VM slice" with the runtime; 04 is un-deferred as a
+  Dockerfile-built raw ext4 with the guest agent as `init`; 03's cloud
+  section becomes "Cloud hosts and microVM sessions": the port rents a
+  KVM-capable *host* for several sessions, `suspend` is never sent in
+  v0.2, and pause, resume, delete are the session's first and the
+  host's second; 10 gains `work_session.runtime` and `capabilities.vm`;
+  01 `runtime` on `session.create`; 05 the runtime control and the VM
+  rows; 07 takes F14 to F18 and F26's rootfs half into the list.
+- 2026-09-22: **the provider port is a package.** The review had folded
+  the drivers into `hosts/infrastructure/`; the owner then asked for a
+  package, so `@oppenheimer/backend-machines` holds the port, the three
+  drivers (AWS EC2, Oracle Cloud, Alibaba Cloud ECS), the size and price
+  catalog and the cloud-config that pairs a fresh machine. `hosts/` is
+  its only consumer and still owns the rows and the policy (03 §Cloud
+  hosts, 10).
+- 2026-09-22: **orchestration is 12** (13 on 2026-09-26, 14 and then 16 on 2026-09-27, 17 since 2026-09-28). One
+  runner per host and many hosts per person; the control plane assigns a session to a host at
+  create by a ladder (running host with room, stopped host, new host
+  within the account's cap) and never lets hosts claim; a session
+  waiting for a host is a `starting` row with no `hostId`, not a jobs
+  table; provider calls are BullMQ jobs grouped per cloud account, with
+  the outcome written as `machine.*` events; domain events stay on the
+  outbox. Persistence gains a fourth layer, the **transcript snapshot**
+  in object storage at every stop, so a session on a lost rented host
+  resumes with its conversation. VMs run in their own scope and outlive
+  the runner. One API replica holds links in v0.2; presence and
+  dispatch through Redis are the named seam.
 - 2026-09-22: **Add host is armed on a registered host, not an online
   one** (05). The dialog picks the machine a session will run on, and
   the control plane already records a session against a host whose
@@ -464,6 +512,33 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-27: **the automations sidebar leaves out Unassigned**: an
   automation is set up for a project, and Unassigned only holds the
   sessions that name none (13).
+- 2026-09-26: orchestration renumbered from 12 to 13, because projects
+  on the console took 12 first. Only the number and the references to it
+  changed.
+- 2026-09-26: **automation runs through `claude -p`** (18). A routine's
+  run is an ordinary session whose window 0 is Claude Code headless with
+  `--output-format stream-json`, started through `runner headless` so its
+  output lands in a file the runner tails and tmux keeps the process
+  alive across runner restarts. `session.create` gains `drive`
+  (`interactive` or `headless`); the catalog gains a `headless` block per
+  agent. Runs take `auto` or `full`, always `--permission-prompts none`;
+  only repositories in the person's projects run headless; follow-ups
+  are `--resume` turns, serialised; a person takes over with Open in
+  terminal. Triggers and any Linear or Slack integration live in the
+  control plane. Whether routines ship in the MVP, and whether an
+  unattended run may use the host's subscription login, stay open.
+- 2026-09-27: orchestration renumbered from 13 to 14 and the headless-run
+  note from 14 to 15 (`15-headless-runs.md`), because automations took 13
+  first. Only the numbers and the references to them changed.
+- 2026-09-27: orchestration renumbered again from 14 to 16 and the
+  headless-run note from 15 to 17 (`17-headless-runs.md`), because hosts
+  in Settings and host metadata took 14 and 15 first. Only the numbers
+  and the references to them changed.
+- 2026-09-28: orchestration renumbered from 16 to 17 and the
+  headless-run note from 17 to 18 (`18-headless-runs.md`), because the
+  automations architecture took 16 first. 16 builds on the headless-runs
+  draft and governs where they differ, and 18 now says so at its head;
+  otherwise only the numbers and the references to them changed.
 - 2026-09-27: Settings → Profile is specified in 05; credential writes
   (password, email, devices, deleting the account) are session-only (08).
 - 2026-09-27: **a session checks out exactly one repository in the MVP.** A

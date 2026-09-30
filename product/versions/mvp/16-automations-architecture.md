@@ -79,7 +79,7 @@ first message, and its first turn is folded from the session's own events
   release. Raw lines are kept, so a bug in an adapter is fixed by
   re-translating.
 - `session.create` gains `drive: interactive | headless` (01), as the headless-runs
-  draft on `claude/affectionate-curie-s2ke6p` proposed.
+  draft (18) proposed.
 
 ### Q4. Execution belongs to sessions; the automation only records why
 
@@ -406,7 +406,7 @@ closed, its branch pushed, and the run reads "Archived".
 
 ## Open
 
-- Whose login a headless run uses (the headless-runs draft): the
+- Whose login a headless run uses (the headless-runs draft, 18): the
   host's own CLI login; confirm with Anthropic that an unattended run on a
   subscription is inside the Agent SDK terms before slice 2 ships, with an
   API key per run as the fallback.

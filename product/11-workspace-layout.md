@@ -108,6 +108,11 @@ Note 07 said "a VM per session". With a worktree model that becomes:
 | **Keep** | a **workspace VM per project per host**, long-lived, holding that project's bare stores and all its sessions. Each Keep session is a directory of worktrees plus a tmux session inside that VM. | between projects: the VM. Between sessions of the same project: processes and directories, as in Orca. |
 | **Ephemeral** | its own disposable VM, with the same layout but a single worktree. | the VM. |
 
+*v0.2 does not build the shared workspace VM* (note 15 §2): a session
+is its own microVM, Keep or Ephemeral, the way Claude Code on the web
+runs one, and this section stays as the design to reach for if the
+per-session clone ever hurts.
+
 Why this is better for Keep:
 
 - It is the Orca experience: worktrees side by side, instant to create,
@@ -167,7 +172,7 @@ all three:
 | Runtime | What it is | Isolation | When |
 |---------|------------|-----------|------|
 | **Shared workspace** | the per-repo workspace VM from §2, one worktree per session | between repos | quick tasks, several agents on one repo, Orca feel |
-| **Clean VM** | a VM for this session alone, same layout, one worktree, Docker inside, nothing else running | full | anything that starts services: Postgres, Redis, the app on a port, integration tests. The Claude Code on the web feeling. Keep or Ephemeral. |
+| **Clean VM** | a VM for this session alone, same layout, one worktree, Docker inside, nothing else running — in v0.2 a Firecracker microVM that exists only while the session is active, on a kept disk (note 15) | full | anything that starts services: Postgres, Redis, the app on a port, integration tests. The Claude Code on the web feeling. Keep or Ephemeral. The default on a host with KVM. |
 | **This machine** | the runner in direct mode (note 02 mode A) on a machine you own, same layout under your home, no VM | none, it is your machine | the Mac Studio: Xcode simulators, Android emulators, real devices over USB, screenshots and taps for QA. Anything that needs a GUI or hardware. |
 
 Port and service clashes decide the first two: a session that needs

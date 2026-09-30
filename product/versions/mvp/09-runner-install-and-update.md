@@ -126,6 +126,25 @@ failure every `curl | sh` has unless it is written this way.
    the version, the preflight table, and where sessions will live. The
    same table is what the console shows on the host's row.
 
+**From cloud-init (v0.2).** A cloud machine (03 §Cloud hosts) runs
+this same installer, with two things cloud-init has to get right.
+cloud-init runs as root and step 1 refuses root; and steps 7 and 8 need
+a systemd user session that a plain `runuser` has not got — `runner
+install` calls `systemctl --user`, which fails with "Failed to connect
+to bus" over su-style execution
+(`apps/runner/internal/service/adapters/systemd/manager.go`). So the
+cloud-config does, in order: create the `agent` user;
+`loginctl enable-linger agent`, which starts `user@<uid>.service` and
+its bus and is the linger §4 needs anyway; then the installer as that
+user with its runtime environment set —
+`runuser -u agent -- env XDG_RUNTIME_DIR=/run/user/<uid>
+DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/<uid>/bus sh -c 'curl … |
+sh -s -- --token … --url …'`. The token is spent at step 7 either way,
+so an install that fails at step 8 has created a host that never comes
+online; the control plane's sweeper destroys such a machine after the
+boot budget. On a resumed machine user-data does not run again — the
+service unit is what brings the runner back.
+
 ### 3. Pairing
 
 The GitHub Actions runner pattern, which solves exactly this problem:

@@ -39,8 +39,8 @@ existing one about sessions".
 | Need | Why | How, on the existing stack |
 |------|-----|----------------------------|
 | **A PTY into the guest, streamed to the browser** | the whole product | A guest agent baked into the golden image (the `guest` subcommand from note 03 §5) that connects to the host over **virtio-vsock**, which libvirt supports, and carries PTY bytes, resize, and status. No network hole is opened; the "guest-to-host denied except DHCP and DNS" rule stays. |
-| **Long-lived, interactive, pause and resume** | sessions last days, jobs last minutes | libvirt `managedsave` on idle timeout: memory goes to disk, RAM is freed, the tmux server and agent come back intact on `virsh start`. This is better than `virsh suspend`, which keeps RAM and would eat the two-VM cap while idle. Destroy on close. |
-| **Persistent account volumes** | vendor logins must survive across VMs (notes 04 F13, 06) | One extra qcow2 per account, attached to the VM whose session selected it, one attachment at a time, `/home/agent/.codex` mounted from it. |
+| **Long-lived, interactive, pause and resume** | sessions last days, jobs last minutes | kill the VM on idle and keep its disk; a wake boots a fresh VM on that disk in about two seconds and the agent resumes by its own session id (note 15). Delete drops the disk. |
+| **Persistent account volumes** | vendor logins must survive across VMs (notes 04 F13, 06) | One extra raw disk per account, attached to the VM whose session selected it, one attachment at a time, `/home/agent/.codex` mounted from it. |
 | **Repo clone at a chosen branch with a scoped token** | the repo and branch chips | Mint a one-hour repo-scoped installation token per session, exactly as the JIT runner config is minted today, and deliver it through the same cloud-init seed to a git credential helper in the guest. The host-side egress proxy from note 02 (token never in the guest) is the next slice; the seed path is what the runner already does for its own credential and is acceptable for a personal workspace. |
 | **Agent and terminal in the image** | Codex first | Add `tmux`, the Codex CLI, and the guest agent to the golden image; a new image revision, same build script. |
 | **Screen-manifest state for the sidebar dot** | working / blocked / idle | The guest agent classifies the pane and reports over vsock; the host runner forwards it in the heartbeat. |
@@ -71,20 +71,25 @@ gha-runner-01 (Hetzner) ── runner ─┘
 This is the same three-tier picture as note 00, with Tailscale filling
 the runner link because the host already has it.
 
-## 4. Decision: libvirt/KVM first, Firecracker later
+## 4. Decision: Firecracker first, and what that leaves of the controller
 
-Note 07 said Firecracker first because it is the fastest boot. The
-existing host runs libvirt and KVM with cloud-init and golden images,
-and that code exists and works. Reuse wins:
+This section first said libvirt/KVM first and Firecracker later,
+because the existing host ran libvirt guests and reuse won on boot
+time being "the price" of a session that starts once and lives for
+days. Note 15 (2026-09-22) reverses it: a session is a Firecracker
+microVM that exists only while active, on a kept disk, and **the boot
+time is the product** — a wake is a boot, so tens of seconds per wake
+is not acceptable and libvirt's `managedsave` is what the sleep tiers
+existed to use. What survives from the controller is the ideas:
+golden image built and verified in CI, a capacity gate counting
+running guests, reconcile-on-start, no host mounts or sockets in a
+guest. What does not: qcow2 overlays (Firecracker takes raw images),
+cloud-init guests (the guest agent is `init`), the two-VM cap sized
+for build jobs (sessions get their own, note 10 §8), and the
+`managedsave` tiers (two states, note 15 §2).
 
-- Boot time is the price: a cloud-init Ubuntu guest takes tens of seconds
-  where Firecracker takes one. For an interactive session that starts
-  once and lives for days, that is acceptable, and `managedsave` resume
-  is fast.
-- Firecracker stays in the plan as an optimization slice for cold
-  starts, behind the same runner interface, not as MVP work.
-- The two-VM capacity gate becomes the per-host session cap. Because idle
-  sessions are saved to disk, the cap counts running VMs, not sessions.
+The CI controller keeps running its own guests beside the session
+runner; they never share a domain prefix or an image.
 
 ## 5. Where the code lives
 
@@ -94,17 +99,17 @@ CI-specific:
 
 | Existing package (by responsibility) | Reused by the session runner |
 |--------------------------------------|------------------------------|
-| libvirt domain lifecycle, overlay and seed creation, console log capture | yes, unchanged |
-| golden image build script | yes, with a new image revision that adds tmux, Codex, and the guest agent |
-| capacity gate | yes, counting running domains |
+| libvirt domain lifecycle, overlay and seed creation, console log capture | no: sessions are Firecracker microVMs driven over their socket, raw reflinked disks, no seed (note 15; §4) |
+| golden image build script | as a pattern: the session image is a Dockerfile exported to a signed raw ext4 (`versions/mvp/04`) |
+| capacity gate | as a pattern, counting running microVMs with the session cap of note 10 §8 |
 | GitHub App auth and token minting | yes, minting repo-scoped installation tokens instead of runner JIT configs |
 | scale set client and job handling | no, that is CI-only |
-| reconcile-on-start of stale domains | yes, with a new `opp-vm-` prefix |
+| reconcile-on-start of stale domains | as a pattern, over VM sockets and session disks |
 
-New packages: control-plane client over the tailnet (WebSocket, heartbeat,
-job messages), vsock PTY bridge, account volume management,
-`managedsave` idle handling, and the guest agent binary that goes into
-the image. The Go choice from note 03 is confirmed by the existing code.
+New packages: the microVM runtime and the guest agent
+(`versions/mvp/02` §14), the host-side egress proxy, and account volume
+management later. The link to the control plane is the MVP runner's.
+The Go choice from note 03 is confirmed by the existing code.
 
 ## 6. What changes in the MVP order (note 07)
 
