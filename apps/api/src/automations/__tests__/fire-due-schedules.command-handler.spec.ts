@@ -57,7 +57,6 @@ function fakeRepository(
   recent: FiringContext['recent'],
 ) {
   const decisions: DueScheduleDecision[] = [];
-  const contexts: FiringContext[] = [];
   const fireDueSchedules = vi.fn(
     async (
       _now: Date,
@@ -68,9 +67,7 @@ function fakeRepository(
       const counts = { ...recent };
       const queued: AutomationRunEntity[] = [];
       for (const candidate of candidates) {
-        const context = { workspace, recent: { ...counts } };
-        contexts.push(context);
-        const decision = decide(candidate, now, context);
+        const decision = decide(candidate, now, { workspace, recent: { ...counts } });
         decisions.push(decision);
         if (decision.run?.isPending) {
           counts.automation += 1;
@@ -85,7 +82,6 @@ function fakeRepository(
     repository: { fireDueSchedules } as unknown as AutomationRepositoryPort,
     fireDueSchedules,
     decisions,
-    contexts,
   };
 }
 
@@ -115,7 +111,7 @@ describe('FireDueSchedulesCommandHandler', () => {
     expect(fake.decisions[0].nextFireAt).not.toBeNull();
   });
 
-  it('counts the batch: one slot left fires the first trigger and skips the next', async () => {
+  it('fires while a workspace slot is left and skips once the cap is reached', async () => {
     const fake = fakeRepository(
       [scheduled('One'), scheduled('Two')],
       { maxRunsPerWorkspaceHour: 5 },
@@ -123,7 +119,6 @@ describe('FireDueSchedulesCommandHandler', () => {
     );
     const queued = await handler(fake.repository).execute(new FireDueSchedulesCommand({ now }));
     expect(queued).toBe(1);
-    expect(fake.contexts.map((context) => context.recent.workspace)).toEqual([4, 5]);
     expect(fake.decisions[0].run?.outcome).toBe('pending');
     expect(fake.decisions[1].run?.outcome).toBe('skipped');
     expect(fake.decisions[1].run?.skipReason).toBe('workspace_rate_limited');

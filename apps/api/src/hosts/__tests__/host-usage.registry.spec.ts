@@ -25,6 +25,12 @@ describe('HostUsageRegistry', () => {
     ]);
   });
 
+  it('answers with nothing running when no module contributed, rather than refusing', async () => {
+    const [bare] = await new HostUsageRegistry().overview([presence('a')]);
+
+    expect(bare.runningSessions).toBe(0);
+  });
+
   it('adds up what every contribution counts, so a second kind of work is not a rewrite', async () => {
     const registry = new HostUsageRegistry();
     registry.registerAll([usage({ a: 2 }), usage({ a: 1 })]);
@@ -52,10 +58,5 @@ describe('HostUsageRegistry', () => {
 
     expect(await registry.overview([])).toEqual([]);
     expect(sessions.countRunningSessions).not.toHaveBeenCalled();
-  });
-
-  it('answers with nothing running when no module contributed, rather than refusing', async () => {
-    const [a] = await new HostUsageRegistry().overview([presence('a')]);
-    expect(a.runningSessions).toBe(0);
   });
 });

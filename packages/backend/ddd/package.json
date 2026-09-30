@@ -14,7 +14,9 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "oxide.ts": "^1.1.0",
@@ -23,6 +25,7 @@
   "devDependencies": {
     "@oppenheimer/tsconfig": "workspace:^",
     "@types/node": "^22.20.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
   }
 }

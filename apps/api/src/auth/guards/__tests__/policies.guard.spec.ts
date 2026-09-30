@@ -74,7 +74,9 @@ describe('PoliciesGuard', () => {
     // was reachable by any authenticated caller.
     const guard = new PoliciesGuard(reflectorFor({}), abilities);
 
-    await expect(guard.canActivate(contextWith({ user: { id: 'u1' } }))).rejects.toThrow(AppError);
+    await expect(guard.canActivate(contextWith({ user: { id: 'u1' } }))).rejects.toMatchObject({
+      code: AuthErrors.ROUTE_HAS_NO_POLICY.code,
+    });
   });
 
   it('allows a route with an explicit reasoned exemption', async () => {
@@ -100,21 +102,7 @@ describe('PoliciesGuard', () => {
     expect((error as AppError).code).toBe(AuthErrors.UNAUTHENTICATED.code);
   });
 
-  it('builds the ability once per request', async () => {
-    const guard = new PoliciesGuard(
-      reflectorFor({
-        [CHECK_POLICIES_KEY]: [{ action: 'read', subject: 'Project' }],
-      }),
-      abilities,
-    );
-    const request = { user: { id: 'u1' } };
-
-    await guard.canActivate(contextWith(request));
-
-    expect(abilities.forRequest).toHaveBeenCalledTimes(1);
-  });
-
-  it('asks for the ability of the request alone: the organization is the tenant stamped on it', async () => {
+  it('builds the ability once, from the request alone: the organization is the tenant stamped on it', async () => {
     const guard = new PoliciesGuard(
       reflectorFor({ [CHECK_POLICIES_KEY]: [{ action: 'read', subject: 'Project' }] }),
       abilities,
@@ -127,6 +115,7 @@ describe('PoliciesGuard', () => {
 
     await guard.canActivate(contextWith(request));
 
+    expect(abilities.forRequest).toHaveBeenCalledTimes(1);
     expect(abilities.forRequest).toHaveBeenCalledWith(request);
     expect(vi.mocked(abilities.forRequest).mock.calls[0]).toHaveLength(1);
   });

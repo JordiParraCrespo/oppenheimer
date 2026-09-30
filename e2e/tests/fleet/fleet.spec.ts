@@ -6,6 +6,7 @@ import {
   createProject,
   createSession,
   STUB_REPOSITORIES,
+  waitForLifecycle,
 } from '../../support/sessions';
 
 /**
@@ -58,7 +59,8 @@ test('three machines pair, and each session runs on the machine it names', async
   const branches = hosts[0].host.exec(
     'find ~/oppenheimer-ai -name README.md -execdir git rev-parse --abbrev-ref HEAD \\;',
   );
-  expect(branches.split('\n').filter((branch) => branch !== 'main')).not.toHaveLength(0);
+  const { checkouts } = await waitForLifecycle(api, sessions[0], 'open');
+  expect(branches.split('\n').map((branch) => branch.trim())).toContain(checkouts[0].branch);
 
   await Promise.all(terminals.map((terminal) => terminal.close()));
 });

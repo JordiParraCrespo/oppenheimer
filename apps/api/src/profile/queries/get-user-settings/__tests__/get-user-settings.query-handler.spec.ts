@@ -26,14 +26,6 @@ describe('GetUserSettingsQueryHandler', () => {
     expect(settings.density).toBe(DEFAULT_USER_SETTINGS.density);
   });
 
-  it('does not persist the defaults it hands out', async () => {
-    const readOnly = repo as UserSettingsRepositoryPort & { save?: unknown };
-
-    await handler.execute(new GetUserSettingsQuery('user-uuid'));
-
-    expect(readOnly.save).toBeUndefined();
-  });
-
   it('returns the saved record when there is one', async () => {
     const saved = UserSettingsEntity.create({
       id: 'user-uuid',

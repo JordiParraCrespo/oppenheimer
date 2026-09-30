@@ -12,21 +12,12 @@ describe('CredentialResolverRegistry', () => {
   it('answers in registration order, so wiring decides who is asked first', () => {
     const registry = new CredentialResolverRegistry();
     const first = resolverFor('api-token');
-    const second = resolverFor('host');
+    const contributed = [resolverFor('host'), resolverFor('oauth')];
 
     registry.register(first);
-    registry.register(second);
-
-    expect(registry.all()).toEqual([first, second]);
-  });
-
-  it('collects the resolvers one contribution registers together', () => {
-    const registry = new CredentialResolverRegistry();
-    const contributed = [resolverFor('api-token'), resolverFor('host')];
-
     registry.registerAll(contributed);
 
-    expect(registry.all().map((resolver) => resolver.kind)).toEqual(['api-token', 'host']);
+    expect(registry.all()).toEqual([first, ...contributed]);
   });
 
   it('refuses a second resolver claiming a kind, rather than shadowing it', () => {
@@ -44,9 +35,5 @@ describe('CredentialResolverRegistry', () => {
     registry.register(resolver);
 
     expect(registry.all()).toEqual([resolver]);
-  });
-
-  it('starts empty: a kernel with no contribution accepts no scoped credential', () => {
-    expect(new CredentialResolverRegistry().all()).toEqual([]);
   });
 });

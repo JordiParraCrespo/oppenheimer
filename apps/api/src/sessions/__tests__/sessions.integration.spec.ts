@@ -383,8 +383,6 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
   describe('the composite keys', () => {
     it('rejects a session in another workspace’s project', async () => {
       // Not a handler check: the constraint makes it unrepresentable.
-      const work = session();
-      Object.assign(work as unknown as { props: Record<string, unknown> }, {});
       await expect(
         dataSource.query(
           `INSERT INTO "work_session"
