@@ -185,6 +185,7 @@ test('an automation from the editor to deletion', async ({ page }) => {
   await page.getByRole('button', { name: 'More actions' }).click();
   await page.getByRole('menuitem', { name: 'Delete automation' }).click();
   await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(toast(page, '“Nightly dependency audit” deleted.')).toBeVisible();
   await expect(page).toHaveURL(/\/automations$/);
   await expect(page.getByText('No automations yet. An automation starts a session')).toBeVisible();
   await page.goto('/automations/runs');

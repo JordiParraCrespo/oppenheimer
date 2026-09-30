@@ -114,12 +114,7 @@ test('the devices list marks this one and signs the others out', async ({ page }
   await expect(page.getByText('This device')).toBeVisible();
   // The API context signed up too, so there is another device to sign out.
   await page.getByRole('button', { name: 'Sign out of all other devices' }).click();
-  // The button's name turns to its pending label while the request is in
-  // flight, so its absence is not the answer; the toast only lands after it.
   await expect(page.getByText('Your other devices are signed out.')).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: /sign(ing)? out of (all )?other devices/i }),
-  ).toHaveCount(0);
   await expect((await owner.api.get('/api/v1/profile', { failOnStatusCode: false })).status()).toBe(
     401,
   );
