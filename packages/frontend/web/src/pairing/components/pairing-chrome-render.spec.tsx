@@ -7,10 +7,10 @@ import { PairingChrome } from './pairing-chrome';
  * The pairing chrome's render budget: a second passing moves the countdown
  * and nothing else.
  *
- * The flow used to tick once a second and hand the chrome `secondsLeft`, so the
- * whole surface above it — the Add host dialog, the onboarding step, both code
- * blocks — re-rendered every second it was open. The tick lives in
- * `TokenCountdown` now. Runs without the React Compiler.
+ * The tick lives in `TokenCountdown`: handed down as `secondsLeft`, it would
+ * re-render the whole surface above it (the Add host dialog, the onboarding
+ * step, both code blocks) every second it was open. Runs without the React
+ * Compiler.
  */
 
 // Partial: the forms concern's index also loads the i18n instance, which

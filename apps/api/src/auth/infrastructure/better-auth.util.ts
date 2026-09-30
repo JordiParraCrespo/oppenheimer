@@ -5,10 +5,10 @@ import { APIError } from 'better-auth/api';
 import { fromNodeHeaders } from 'better-auth/node';
 
 /**
- * Helpers for the delegating façade modules (organizations, invitations,
- * workspaces, admin) that expose Better Auth plugin operations as first-class
- * NestJS REST endpoints. The modules call `auth.api.*` server methods rather
- * than re-implementing writes to the Better-Auth-owned tables.
+ * Helpers for the delegating façade modules (organizations, admin, profile)
+ * that expose Better Auth plugin operations as first-class NestJS REST
+ * endpoints. The modules call `auth.api.*` server methods rather than
+ * re-implementing writes to the Better-Auth-owned tables.
  */
 
 export function betterAuthHeaders(headers: IncomingHttpHeaders): Headers {
@@ -18,8 +18,7 @@ export function betterAuthHeaders(headers: IncomingHttpHeaders): Headers {
 /**
  * Low-level shaping helpers for the module mappers. Better Auth's `auth.api.*`
  * returns broad, strongly-typed objects; the mappers accept `unknown` and use
- * these to narrow once, so services never carry `as`-casts. Envelope helpers
- * unwrap Better Auth's `{ member }` / `{ members }` style responses.
+ * these to narrow once, so services never carry `as`-casts.
  */
 export type UnknownRecord = Record<string, unknown>;
 

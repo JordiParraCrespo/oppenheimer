@@ -13,7 +13,8 @@
  * request carries and the scheduled run are the same program. A new CI step
  * goes here and nowhere else. The jobs, chosen by `affected.mjs`:
  *
- *   lint         Biome, the design-system lint, architecture, structure, flags
+ *   lint         Biome, the design-system lint, architecture, structure, flags,
+ *                compiler bail-outs, unused code, eval anchors, starter manifest
  *   go           vet, golangci-lint, tests, the runner for every target
  *   test         build, generated files committed, unit tests, bundle budget
  *   integration  the API's suite (Testcontainers, so Docker)
@@ -23,11 +24,10 @@
  * comes down when they finish.
  *
  * It runs on the commit checked out, so commit first; it refuses a tree with
- * uncommitted changes to tracked files. A job stops at its first failed step;
- * the other jobs still run. The report
- * (HEAD, base, one row per step) is printed and written to
- * `.ci-local/report.md` — paste it into the pull request. The exit code is
- * non-zero when any step failed.
+ * any uncommitted change, untracked files included. A job stops at its first
+ * failed step; the other jobs still run. The report (HEAD, base, one row per
+ * step) is printed and written to `.ci-local/report.md` — paste it into the
+ * pull request. The exit code is non-zero when any step failed.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';

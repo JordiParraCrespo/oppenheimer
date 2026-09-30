@@ -37,8 +37,6 @@ describe('AnalyticsService', () => {
     expect(client.reset).toHaveBeenCalled();
   });
 
-  // The whole point of the wrapper: a broken analytics provider must never be
-  // able to take down a login, a logout, or a render.
   it('swallows provider errors instead of propagating them', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const boom = () => {

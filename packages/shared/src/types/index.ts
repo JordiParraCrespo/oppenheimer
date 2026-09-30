@@ -1,7 +1,7 @@
 /**
- * A role is identified by its (free-form) name. The built-in `admin` / `user`
- * roles are seeded as system roles, but admins can create arbitrary additional
- * roles, so this is a plain string rather than a closed union.
+ * A role is identified by its (free-form) name. The built-in roles are seeded
+ * as system roles, but admins can create arbitrary additional roles, so this is
+ * a plain string rather than a closed union.
  */
 export type Role = string;
 

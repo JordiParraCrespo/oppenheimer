@@ -34,10 +34,6 @@ export { parseRepositoryKey, repositoryKey } from '@oppenheimer/frontend-consume
  * Entities in, option shapes out. Nothing here renders, and nothing here
  * fetches: this is the one place that knows both the console's vocabulary and
  * the design system's, so a picker cannot drift from what the API answered.
- *
- * The one genuinely tricky mapping is the repository's **id**: a row is keyed
- * by the installation and GitHub's id together (`repositoryKey`, the product
- * package's), and the pair is parsed back out when a session is created.
  */
 
 /**
@@ -285,7 +281,7 @@ export function projectPrefill(
   return patch;
 }
 
-/** The slice of the draft a project prefills; the hook owns the whole shape. */
+/** The slice of the draft a project prefills; the whole shape is `NewSessionDraft`. */
 export interface NewSessionDraftShape {
   hostId: string | null;
   scope: RepositoryScope[];

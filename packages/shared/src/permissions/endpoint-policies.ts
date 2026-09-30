@@ -48,10 +48,9 @@ export const ENDPOINT_POLICIES = {
   'PATCH /projects/:id': [{ action: 'update', subject: 'Project' }],
   'DELETE /projects/:id': [{ action: 'update', subject: 'Project' }],
 
-  // The control plane's sessions. Opening a terminal is `update Session`: there is
-  // no `attach` verb, and the scope split (`sessions:write`) is what keeps a
-  // read-only credential from getting a PTY. Closing is `delete Session` and, like
-  // archiving, deletes nothing.
+  // The control plane's sessions. Opening a terminal is `update Session`
+  // (`sessions:write` in the scope catalog says why). Closing is `delete Session`
+  // and, like archiving, deletes nothing.
   'GET /sessions': [{ action: 'read', subject: 'Session' }],
   'GET /sessions/:id': [{ action: 'read', subject: 'Session' }],
   'GET /sessions/:id/events': [{ action: 'read', subject: 'Session' }],

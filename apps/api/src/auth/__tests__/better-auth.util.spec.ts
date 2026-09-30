@@ -108,11 +108,9 @@ describe('betterAuthInvoker', () => {
     const err = await invoke(() => Promise.reject(apiError)).catch((e: AppError) => e);
 
     expect(err).toBeInstanceOf(AppError);
-    // The catalog entry decides the client-facing contract...
     expect(err.code).toBe('ORG_002');
     expect(err.title).toBe('That organization slug is already taken');
     expect(err.getStatus()).toBe(409);
-    // ...and nothing Better Auth said is lost.
     expect(err.detail).toBe('Organization slug already taken');
     expect(err.extensions).toEqual({ upstreamCode: 'ORGANIZATION_SLUG_ALREADY_TAKEN' });
   });

@@ -73,9 +73,6 @@ describe('useCaptureOnMount', () => {
     expect(capture).toHaveBeenCalledWith(ANALYTICS_EVENTS.USER_SIGNED_UP, undefined);
   });
 
-  // A fresh object literal every render is the normal call shape. If that
-  // re-fired the capture, a component that renders ten times would report ten
-  // impressions of the same thing.
   it('does not re-capture when properties get a new object identity', async () => {
     const { wrapper, capture } = setup();
     const { rerender } = renderHook(

@@ -7,8 +7,8 @@
  * anything but a single-slash path is dropped, not sanitised; a same-origin
  * path keeps its search string.
  *
- * Shared by the login route and the `_auth` layout: two different checks is
- * how an open redirect gets in.
+ * Shared by the login search schema and `redirectSignedIn`: two different
+ * checks is how an open redirect gets in.
  */
 export function sanitizeRedirect(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;

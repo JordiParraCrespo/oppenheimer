@@ -12,14 +12,13 @@ import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../../sessions.di-tok
 import { RemoveCheckoutCommand } from './remove-checkout.command';
 
 /**
- * Retires one checkout: `git worktree remove` on the host, refusing on unpushed work
- * as closing a session does, then `removedAt` here.
+ * Retires one checkout: `removedAt` here, then `git worktree remove` on the host,
+ * which refuses on unpushed work as closing a session does.
  *
  * The row is never deleted, so `uq (sessionId, directoryName)` stays a tombstone: a
  * repository added again takes the next directory name, not its old one. If the agent
- * was launched inside this checkout, the fold steps the session out of it from
- * `session.checkout_removed` (not a setter beside the write), so a replay rebuilds it;
- * the foreign key's `ON DELETE SET NULL` never fires, since nothing is deleted.
+ * was launched inside this checkout, folding `session.checkout_removed` steps the
+ * session out of it.
  */
 @CommandHandler(RemoveCheckoutCommand)
 export class RemoveCheckoutCommandHandler
@@ -42,9 +41,6 @@ export class RemoveCheckoutCommandHandler
       });
     }
 
-    // The event is what retires the checkout: folding it marks the child row and
-    // steps the agent out of it, so the `removedAt` the repository writes and the
-    // log that explains it cannot disagree.
     await this.sessions.retireCheckout(session, target, [
       {
         idempotencyKey: WorkSessionEntity.apiIdempotencyKey(

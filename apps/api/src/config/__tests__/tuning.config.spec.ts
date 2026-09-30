@@ -20,7 +20,8 @@ function setEnv(values: Record<string, string>) {
 }
 
 beforeEach(() => {
-  // `hosts` requires the API's own URL; everything else in it is optional.
+  // Pinned so the environment's own `BETTER_AUTH_URL` cannot fail the `hosts`
+  // parse; the section defaults it otherwise.
   setEnv({ BETTER_AUTH_URL: 'https://api.example.com' });
   for (const key of ['HOSTS_PAIRING_TOKEN_TTL_SECONDS', 'HOSTS_MAX_UNSPENT_PAIRING_TOKENS']) {
     if (!touched.has(key)) touched.set(key, process.env[key]);

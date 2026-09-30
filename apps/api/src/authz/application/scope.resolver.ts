@@ -18,7 +18,7 @@ import type { AccessGrantRepositoryPort } from '../database/access-grant.reposit
  * caller, one of their teams, or a role they hold there.
  *
  * **Nothing here is cached.** Better Auth writes team membership outside any
- * application transaction, so nothing reaches the outbox to invalidate on,
+ * application transaction, so no authorization version moves when it changes,
  * and a cached `teamIds` would keep granting a removed member that team's
  * rows. Two indexed queries on hot rows are cheaper than that bug.
  *

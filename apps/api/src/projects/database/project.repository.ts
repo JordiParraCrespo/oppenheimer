@@ -124,8 +124,7 @@ export class ProjectRepository
 
       const repositories = await this.repositoriesOf([projectId], manager);
       const project = this.mapper.toDomain(locked[0], repositories.get(projectId));
-      // Already retired: nothing to ask and nothing to write, and a retried request
-      // after a lost response is not a conflict.
+      // Already retired: nothing to ask and nothing to write.
       if (project.isArchived) return { result: 'archived' as const, project };
       // Where work that names no project goes; retiring it would strand that work.
       if (project.isUnassigned) return { result: 'unassigned' as const, project };

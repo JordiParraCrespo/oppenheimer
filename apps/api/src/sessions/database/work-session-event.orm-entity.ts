@@ -6,10 +6,10 @@ import type { SessionEventSource } from '../domain/work-session-event.entity';
  * A session's append-only log, which is the truth per session.
  *
  * `(sessionId, seq)` keeps the log dense and monotonic; `seq` is assigned by the
- * control plane under a row lock on `work_session`, not by the writer, so a buggy or
- * hostile host cannot create gaps or regress it. `(sessionId, idempotencyKey)` makes
- * an append idempotent: a batch replayed after a dropped acknowledgement, or
- * half-applied before a crash, appends only what was not yet seen.
+ * control plane under a row lock on `work_session`, not by the writer.
+ * `(sessionId, idempotencyKey)` makes an append idempotent: a batch replayed after
+ * a dropped acknowledgement, or half-applied before a crash, appends only what was
+ * not yet seen.
  *
  * No `organizationId`, deliberately: every read goes through a session the caller is
  * already scoped to, and the log has no life of its own. The partial index covers the
@@ -40,17 +40,14 @@ export class WorkSessionEventOrmEntity {
 
   /**
    * Free-form on purpose: a runner newer than this control plane may log a kind it
-   * has never heard of, and the log has to keep it. The fold acts on the kinds it
-   * knows and advances `lastEventAt` for the rest.
+   * has never heard of, and the log has to keep it.
    */
   @Column({ type: 'varchar' })
   kind!: string;
 
   /**
-   * Capped at 8 KB and never pane text: PTY bytes go to the browser and the
-   * runner's ring buffer, never to Postgres. The wire carries it as a JSON string
-   * so the cap survives into the generated Go; it is parsed at the boundary and
-   * stored as jsonb.
+   * Capped at `SESSION_EVENT_PAYLOAD_MAX_BYTES` and never pane text; parsed at the
+   * boundary and stored as jsonb.
    */
   @Column({ type: 'jsonb' })
   payload!: unknown;
@@ -59,7 +56,7 @@ export class WorkSessionEventOrmEntity {
   @Column({ type: TIMESTAMP_COLUMN_TYPE })
   occurredAt!: Date;
 
-  /** Ours. A host with a skewed clock cannot reorder anybody's history. */
+  /** Ours; see `WorkSessionEventEntity` for why both clocks are kept. */
   @Column({ type: TIMESTAMP_COLUMN_TYPE, default: () => 'now()' })
   recordedAt!: Date;
 }

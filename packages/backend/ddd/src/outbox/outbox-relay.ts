@@ -38,25 +38,19 @@ const DEFAULT_BATCH_SIZE = 20;
  * Runs on two triggers: a background poll (the safety net that picks up rows
  * whose staging process died or whose post-commit drain failed) and
  * `OutboxService.wake()` right after a commit, which keeps delivery latency at
- * in-process levels in the happy path. Both go through `requestDrain()`: at
- * most one drain runs at a time, and every request that lands while it runs
- * collapses into one more pass after it. A wake never waits for that drain, so
- * the delivery backlog (and every listener's body) stays off the request path.
+ * in-process levels in the happy path. Both go through `requestDrain()`. A
+ * wake never waits for that drain, so the delivery backlog (and every
+ * listener's body) stays off the request path.
  *
  * A delivery can itself stage rows and wake the relay: an event handler that
  * dispatches a command whose repository stages the next job. That wake only
- * asks for the next pass, which delivers what it staged. The awaited
- * `drainOnce()` called from inside a delivery resolves at once with 0, since
- * waiting would mean the drain waiting on itself.
+ * asks for the next pass, which delivers what it staged.
  *
- * While a batch is delivered, a heartbeat renews its lease every `heartbeatMs`
- * (`OutboxService.extendLease`, fenced on this relay's `owner`), so a listener
- * slower than `leaseMs` keeps its rows: another replica's poll cannot claim
- * them and run them a second time. The lease still lapses when the process
- * dies or stalls long enough to miss the renewals, which is the crash
- * recovery. The marks that end a delivery are fenced the same way: a relay
- * that lost its lease anyway (a stall past `leaseMs`) neither marks the other
- * relay's claim processed nor releases it.
+ * While a batch is delivered, a heartbeat renews its lease (`startHeartbeat`),
+ * so a listener slower than `leaseMs` keeps its rows. The lease still lapses
+ * when the process dies or stalls past the renewals, which is the crash
+ * recovery. The marks that end a delivery are fenced on `owner`: a relay that
+ * lost its lease neither marks the other relay's claim processed nor releases it.
  *
  * Delivery is at least once. The rows of a batch are marked processed in one
  * statement after the batch is published, so a process that dies in between
@@ -131,7 +125,8 @@ export class OutboxRelay {
   /**
    * Drain until no due rows remain, and wait for it. Returns the number of rows
    * delivered. Called from inside a delivery, the pass is requested and the
-   * call resolves at once with 0.
+   * call resolves at once with 0, since waiting would mean the drain waiting on
+   * itself.
    */
   drainOnce(): Promise<number> {
     const run = this.requestDrain();

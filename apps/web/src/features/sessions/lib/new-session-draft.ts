@@ -9,9 +9,9 @@ import { defaultModelFor, type EffortPicks } from './session-options';
 
 /**
  * What New session has been set to and remembers between visits, except that
- * **`full` is never remembered**: a permission level that escalated itself
- * because it was used once is the failure `product/04-security-review.md`
- * exists to prevent, so a stored `full` is never read back. Nothing here is
+ * **the permission level is never remembered**: a level that escalated itself
+ * because it was used once (`full`) is the failure
+ * `product/04-security-review.md` exists to prevent. Nothing here is
  * validated against the lists; the chips do that once their queries answer,
  * when "that host is gone" is a fact rather than a list not yet loaded.
  */
@@ -44,7 +44,7 @@ const FALLBACK: NewSessionDraft = {
   efforts: {},
 };
 
-/** What is worth carrying between visits: the project and the engine, never the scope. */
+/** What is worth carrying between visits: the project, the host and the engine, never the scope. */
 type RememberedChoices = Pick<
   NewSessionDraft,
   'projectId' | 'hostId' | 'agent' | 'model' | 'efforts'
@@ -54,9 +54,9 @@ type RememberedChoices = Pick<
  * The draft a visit opens with: the fallback, overlaid with what the last
  * visit remembered.
  *
- * `permission` and `scope` are deliberately never restored: the first must
- * never come back at a level that escalates, and the second names
- * repositories this visit may not be about.
+ * `permission` and `scope` are never restored: the first for the reason on
+ * `STORAGE_KEY`, the second because it names repositories this visit may not
+ * be about.
  */
 export function initialDraft(): NewSessionDraft {
   const stored = remembered();

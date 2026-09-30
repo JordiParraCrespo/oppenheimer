@@ -21,12 +21,7 @@ import {
 /**
  * A session is one piece of work inside a project: a terminal, an agent, and a
  * set of checkouts. A **checkout** is one repository checked out for one session
- * on its own branch, and a session has zero or more of them — zero is a real
- * session working in `sessions/<slug>/` with no git at all.
- *
- * This file is the fields the routes accept and the constraints that are
- * decidable from the body alone. It is deliberately not where the sessions
- * module's behaviour is written down.
+ * on its own branch; the MVP takes exactly one (`checkouts` below).
  */
 
 export { codingAgentSchema, SESSION_EFFORTS, SESSION_PERMISSIONS };
@@ -107,11 +102,10 @@ const createSessionFields = z.object({
   projectId: z.string().uuid().optional(),
   name: displayNameSchema.optional(),
   /**
-   * Exactly one in the MVP: a runner makes one worktree per session, so a
-   * second repository, or none, is refused here, before a row is written and
-   * the first prompt spent on a session no host can make (#56, 00). A session
-   * with no git at all was allowed until 2026-09-27; the runner refused it at
-   * launch, so it is refused here instead until a runner can make one (10).
+   * Exactly one in the MVP: a runner makes one worktree per session and
+   * cannot launch one with no git, so a second repository, or none, is refused
+   * here, before a row is written and the first prompt spent on a session no
+   * host can make (#56, 00, 10).
    */
   checkouts: z.array(sessionCheckoutInputSchema).min(1).max(MAX_SESSION_CHECKOUTS),
   /** Which checkout the agent is launched inside. Must be one of `checkouts`. */
@@ -122,8 +116,8 @@ const createSessionFields = z.object({
    * The first task, as typed into the composer.
    *
    * It is recorded as the log's `prompt.first` and carried to the host on the
-   * launch, so the agent is started and then given it — never a second message
-   * racing the first. It also names the session where a namer is configured.
+   * launch, so the agent starts with it — never a second message racing the
+   * first. It also names the session where a namer is configured.
    */
   prompt: promptSchema.optional(),
   /**
@@ -192,9 +186,8 @@ export type RenameSessionDto = z.infer<typeof renameSessionSchema>;
  * event log, never a second truth.
  *
  * It is one of three vocabularies and the narrowest of them. The agent's own
- * observations (`working`, `blocked`, `idle`, `done`, `unknown`) are inputs
- * reported as events and never a session state: mapping `done` and `unknown`
- * onto this union was the error an earlier draft made.
+ * observations (`OBSERVED_AGENT_STATES` in `../protocol/primitives`) are inputs
+ * reported as events, never a session state.
  */
 export const SESSION_STATES = ['starting', 'open', 'failed', 'resolved'] as const;
 
@@ -209,7 +202,8 @@ export type SessionState = z.infer<typeof sessionStateSchema>;
  * `waiting-on-you` has four sources — the session failed, the agent has been
  * blocked for ≥ 30 s, a launch has sat in a non-ready state for ≥ 60 s, or the
  * pane is gone with no report. `landing` is the phase after the agent stops:
- * branch pushed, pull request open and approved, not yet merged.
+ * branch pushed, pull request open and approved, not yet merged. The pane-gone
+ * source and `landing` have no writer yet (the API's `session-group.policy.ts`).
  * `ready-for-review` versus `idle` is not a state at all but a hash comparison.
  */
 export const SESSION_GROUPS = [
@@ -229,10 +223,10 @@ export type SessionGroup = z.infer<typeof sessionGroupSchema>;
  * A tmux window index — tabs are tmux windows, so an attach ticket authorises
  * one window.
  *
- * Written out rather than imported from `../protocol`, which the root barrel
- * deliberately does not re-export: pulling the wire vocabulary in here would put
- * it in every browser bundle that imports a session schema. Keep the two in
- * step; there is one number to keep.
+ * Written out rather than imported from `../protocol/primitives`, whose schema
+ * objects are `zod/v4` and cannot be used from a classic `zod` schema (see
+ * `./primitives`), and whose load registers JSON-Schema ids, a side effect no
+ * browser bundle should carry. Keep the two in step; there is one number to keep.
  */
 const sessionWindowSchema = z.number().int().min(0);
 
@@ -332,7 +326,7 @@ export type SessionSortDto = z.infer<typeof sessionSortSchema>;
  * `cursor` is the previous page's `meta.nextCursor`, opaque, for the same
  * `sort`. With it the list is walked by key instead of by page: no count, and a
  * session is never returned twice in one walk however the list moves under it.
- * Without it, `page` works as it always has.
+ * Without it, the list pages by `page`.
  */
 export const listSessionsQuerySchema = paginationSchema.extend({
   projectId: z.string().uuid().optional(),

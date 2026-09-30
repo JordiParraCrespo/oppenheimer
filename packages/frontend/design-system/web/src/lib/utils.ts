@@ -6,9 +6,9 @@ import { extendTailwindMerge } from 'tailwind-merge';
  * `@theme inline`.
  *
  * tailwind-merge only knows Tailwind's default `text-*` sizes and reads any
- * other as a *colour*: `cn('text-operate text-fg')` returned `text-fg` alone,
- * silently dropping the size wherever a colour followed it. Declaring the names
- * here keeps a size and a colour in one class list apart.
+ * other as a *colour*: `cn('text-operate text-fg')` would return `text-fg`
+ * alone, silently dropping the size wherever a colour followed it. Declaring
+ * the names here keeps a size and a colour in one class list apart.
  *
  * `@shadcn/lint` has the same blind spot, so `oxlint.design.json` lists the
  * ladder's names as allowed under `no-raw-colors`: keep the two in step.

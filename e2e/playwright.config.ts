@@ -72,7 +72,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   // The rate-limit test deliberately trips the per-IP throttle, which would
   // then refuse every other test sharing that IP. Run it on its own with
-  // `pnpm test:ratelimit`.
+  // `pnpm --filter @oppenheimer/e2e e2e:ratelimit`.
   grepInvert: process.env.RUN_RATE_LIMIT ? undefined : /@ratelimit/,
   use: {
     trace: 'retain-on-failure',

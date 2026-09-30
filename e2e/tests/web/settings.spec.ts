@@ -5,7 +5,7 @@ import { provisionedUser, signInAs } from '../../support/web';
  * Settings, in a browser: its own chrome beside the console
  * (`design/version1/Settings.dc.html`). What this holds is the router setup
  * — the account menu's link, the sections and their URLs, the way back —
- * rather than any section's rows, which arrive with their slices.
+ * rather than any section's rows, which their own specs cover.
  */
 test('settings opens from the account menu, walks its sections and comes back', async ({
   page,

@@ -22,7 +22,8 @@ const PENDING_SOCIAL_LOGIN_KEY = 'oppenheimer.pending-social-login';
 @injectable()
 export class AuthService {
   /**
-   * Bumped whenever the current identity stops being valid, i.e. on logout.
+   * Bumped whenever the current identity stops being valid: logout or session
+   * expiry.
    *
    * `trackAuthenticated` resolves the user asynchronously and is deliberately
    * not awaited, so a fast logout can land while that lookup is still in
@@ -58,12 +59,6 @@ export class AuthService {
     this.trackAuthenticated(ANALYTICS_EVENTS.USER_SIGNED_UP, 'password');
   }
 
-  /**
-   * `intent` decides whether the round-trip may create an account: the API
-   * refuses an unknown provider identity on a plain `'sign-in'`, so only the
-   * register screens pass `'sign-up'`. Either way an identity that already
-   * exists — including one that so far only had a password — is signed in.
-   */
   async socialLogin(provider: SocialProvider, intent?: SocialAuthIntent): Promise<void> {
     // Written before the redirect, consumed by `restoreSession()` when the
     // provider sends the user back. Best-effort: if storage is unavailable the

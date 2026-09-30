@@ -45,9 +45,7 @@ export function SocialLoginButtons({
 
   return (
     <div className="flex flex-col gap-2.5">
-      {/* Starting the round-trip can fail before the redirect ever happens —
-          the API unreachable, the provider rejected server-side. It used to
-          fail silently: the button simply stopped spinning. */}
+      {/* Starting the round-trip can fail before any redirect: the API unreachable, the provider rejected. */}
       <ErrorAlert error={social.error} fallback={t('auth.login.socialFailed')} />
       {/* The provider in flight is pending; the other is locked beside it,
           since one sign-in at a time is all a redirect can carry. */}

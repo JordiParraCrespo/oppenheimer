@@ -26,9 +26,8 @@ const EVERY = [...UNGATED, '/settings'];
 
 /**
  * The sidebar's promise: a row is offered when the reader's ability satisfies
- * its policies. The failure branches matter as much as the happy one: while
- * permissions load a gated row must not flash in, and a permissions request
- * that failed must not empty the product — the guards are the real gate.
+ * its policies. The loading and failed branches matter as much as the happy
+ * one (`useAuthorizedNav` says what each owes).
  */
 
 vi.mock('@oppenheimer/frontend-core/react', () => ({ useMyPermissions: vi.fn() }));

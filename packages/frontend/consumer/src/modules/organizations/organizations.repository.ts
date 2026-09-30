@@ -20,16 +20,15 @@ function toEntity(organization: OrganizationResponseDto): OrganizationEntity {
 }
 
 /**
- * The personal workspace, and only that. The API still serves the starter's
- * members and invitations endpoints; the console does not call them, so they
- * have no repository method here — a roster is the teams slice's to add.
+ * The personal workspace, and only that (`product/versions/mvp/08-auth.md`).
+ * The API still serves the starter's members and invitations endpoints; the
+ * console does not call them, so they have no repository method or hook — a
+ * roster is the teams slice's to add.
  */
 @injectable()
 export class OrganizationsRepository {
   @MapApiError(OrganizationsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<OrganizationEntity[]> {
-    // An absent body is a failed read, not an empty collection — returning `[]`
-    // here would render "no workspace" over a request that never succeeded.
     const result = await unwrapBody(
       heyApiSdk.listOrganizations(),
       OrganizationsErrors.FETCH_LIST_FAILED,

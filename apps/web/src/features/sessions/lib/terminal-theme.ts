@@ -4,7 +4,7 @@ import type { ITheme } from '@xterm/xterm';
  * The bridge between the design system's terminal ramp and xterm.js. xterm
  * paints to a canvas and takes literal colours, not CSS variables, so the
  * `--term-*` tokens are resolved against the document. The values differ per
- * theme, so the caller re-reads them whenever `theme-provider.tsx` toggles
+ * theme, so the caller re-reads them whenever `useAppliedTheme` toggles
  * `.dark` / `.light` on `<html>`.
  */
 
@@ -73,7 +73,7 @@ function toHex(color: string): string {
 }
 
 /**
- * The ten-token ramp mapped onto the sixteen ANSI slots a PTY can address.
+ * The terminal ramp mapped onto the sixteen ANSI slots a PTY can address.
  *
  * Two liberties, both deliberate:
  *
@@ -81,7 +81,8 @@ function toHex(color: string): string {
  *   black and white. In light mode the terminal is paper, so a program asking
  *   for "black" wants the darkest readable ink, and one asking for "white"
  *   wants the quietest — inverting them would make half of `ls` invisible.
- * - The bright slots repeat their normal counterparts. A separate bright ramp
+ * - The bright slots repeat their normal counterparts (bright black and bright
+ *   white take the two inks the other way round). A separate bright ramp
  *   is a design decision the tokens do not carry yet; `minimumContrastRatio`
  *   in the terminal options keeps output legible until it does.
  */

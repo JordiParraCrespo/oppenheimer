@@ -1,12 +1,6 @@
 import type { ProblemDetails } from '@oppenheimer/shared';
 
-/**
- * Local twin of `@oppenheimer/shared`'s `isProblemDetails`.
- *
- * Kept local from when `@oppenheimer/shared` shipped only CommonJS and the web
- * tier could import nothing but types from it. The package tree-shakes now, so
- * importing the shared one would also do.
- */
+/** Local twin of `@oppenheimer/shared`'s `isProblemDetails`. */
 function isProblemDetails(value: unknown): value is ProblemDetails {
   if (typeof value !== 'object' || value === null) return false;
   const candidate = value as Record<string, unknown>;
@@ -30,7 +24,7 @@ export interface AppErrorOptions {
  * A failure surfaced to the presentation layer.
  *
  * When the API is the source, the error keeps its RFC 7807 problem document so
- * a screen can show the server's `detail`, highlight the fields listed in
+ * a screen can translate its `code`, highlight the fields listed in
  * `invalidParams`, and quote the `correlationId` in a bug report — instead of
  * a generic "Failed to fetch users".
  */
@@ -60,9 +54,9 @@ export class AppError extends Error {
 }
 
 /**
- * The generated api-client throws `ApiError` with the parsed response on
- * `body`; when that is a problem document, the server's explanation wins over
- * the caller's fallback.
+ * {@link unwrap} hands a generated SDK call's failure over as
+ * `{ status, body }`; when the body is a problem document, the server's
+ * explanation wins over the caller's fallback.
  *
  * Better Auth's client rejects through `@oppenheimer/auth`'s `AuthRequestError`
  * instead, with a `status` and `code` but no problem document, so both are read

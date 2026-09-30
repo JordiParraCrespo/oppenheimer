@@ -42,8 +42,6 @@ export class EnforceRunLimitsCommandHandler
 
   async execute(command: EnforceRunLimitsCommand): Promise<number> {
     const now = command.now.getTime();
-    // A run live past the platform's ceiling plus a grace is one the stop could
-    // not end: it is no longer retried, so it cannot hold every slot of the batch.
     const candidates = await this.runs.findLiveDispatchedBefore(
       new Date(now - SHORTEST_RUN_LIMIT_MS),
       new Date(now - (this.limits.maxRunCeilingMs + ZOMBIE_GRACE_MS)),

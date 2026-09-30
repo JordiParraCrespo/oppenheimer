@@ -3,9 +3,8 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { UserDeletedDomainEvent } from '../../domain/events/user-deleted.domain-event';
 
 /**
- * Kept intentionally small — downstream cleanup (revoking sessions, purging
- * files, analytics) hangs off this handler so the deletion flow stays
- * decoupled from those concerns.
+ * Only logs: what goes with the account is erased by `DeleteUserCommandHandler`
+ * (`AccountErasureRegistry`, then the user row's cascade) before this runs.
  */
 @Injectable()
 export class UserDeletedDomainEventHandler {

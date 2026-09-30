@@ -11,7 +11,8 @@ export interface RepositoryToken {
 }
 
 /**
- * What `sessions/` and `relay/` inject to exercise a workspace's GitHub access.
+ * What `sessions/`, `automations/`, `projects/` and `relay/` inject to exercise
+ * a workspace's GitHub access.
  *
  * It is the one door out of this module for that purpose: a caller names a
  * connected installation and one repository, and gets either a credential for
@@ -37,8 +38,8 @@ export interface RepositoryAccessPort {
   /**
    * `installationId` is the **control-plane row's uuid**, not GitHub's number:
    * what a checkout records, read by the caller under its own tenant scope. No
-   * access scope, because a mint runs for a host; `sessions/` asserts the
-   * installation matches the session it mints for.
+   * access scope, because a mint runs for a host; the relay takes the
+   * installation from the live checkout it mints for.
    *
    * Every call is a live mint, never cached or stored: GitHub gives the token
    * an hour and the runner holds it for that hour. So a repository removed from

@@ -49,11 +49,7 @@ export interface HostRegistration {
   name: string;
   publicKey: string;
   publicKeyFingerprint: string;
-  /**
-   * The machine's facts, already validated against `hostFactsSchema` — the same
-   * shape the link's `hello` and `heartbeat` carry, so pairing and the link
-   * describe one machine.
-   */
+  /** The machine's facts, already validated (see `RegisterHostCommand.facts`). */
   facts: HostFactsDto | undefined;
   pairingTokenId: string;
 }
@@ -382,11 +378,6 @@ function toNumber(value: string | number | null): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-/**
- * The platform column: the family the runner installs a service for, plus the
- * release when it could determine one — `macos 15.2` reads better on a host row
- * than `macos` alone. The same rule `hostPlatformOf` applies to fresh facts.
- */
 function platformLabel(inventory: StoredHostInventory): string {
   return platformLabelOf(inventory.platform, inventory.osVersion);
 }

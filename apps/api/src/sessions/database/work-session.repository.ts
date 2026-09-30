@@ -22,6 +22,7 @@ import type {
   HostSessionRow,
   NewSessionEvent,
   SessionAppendOutcome,
+  SessionCreateOutcome,
   SessionEventPage,
   SessionFilters,
   SessionListCursor,
@@ -31,17 +32,12 @@ import type {
 import { WorkSessionEventOrmEntity } from './work-session-event.orm-entity';
 
 /**
- * **The append is one transaction, and `seq` is allocated under a row lock.** Every
- * appender takes `SELECT … FOR UPDATE` on the session row first, so they serialise
- * and the log can neither gap nor regress. A batch lands in **one** `INSERT` that
- * skips keys already logged and numbers the rest consecutively; `ON CONFLICT DO
- * NOTHING` is the backstop, not the mechanism. The fold runs over exactly the rows
- * that landed and the row update commits with them, so the sidebar is never
- * eventually-consistent with its own log.
+ * The append's locking and batching rules are the port's (`appendEvents`) and
+ * `insertBatch`'s.
  *
  * **The reads carry no tenant clause of their own**: `ScopedRepositoryBase` with
  * `SessionResource` is the whole of it, so a query and `ability.can()` cannot
- * disagree about a scope. The children are read through their session only.
+ * disagree about a scope.
  */
 @Injectable()
 export class WorkSessionRepository
@@ -64,7 +60,7 @@ export class WorkSessionRepository
   async createIfUnclaimed(
     session: WorkSessionEntity,
     events: NewSessionEvent[],
-  ): Promise<{ session: WorkSessionEntity; created: boolean; projectArchived: boolean }> {
+  ): Promise<SessionCreateOutcome> {
     const record = this.mapper.toPersistence(session);
 
     const created = await this.outbox.transaction(async (manager) => {
@@ -85,6 +81,15 @@ export class WorkSessionRepository
         [record.projectId, record.organizationId],
       );
       if (active.length === 0) return 'project-archived' as const;
+      // The same for the host, whose unpair is an update of this row: an unpair
+      // that commits first turns this into zero rows, and one that arrives second
+      // waits for the session, which the unpair then stops like any other and an
+      // account's erasure, a step after its unpair, deletes.
+      const paired: { id: string }[] = await manager.query(
+        `SELECT "id" FROM "host" WHERE "id" = $1 AND "unpairedAt" IS NULL FOR SHARE`,
+        [record.hostId],
+      );
+      if (paired.length === 0) return 'host-unpaired' as const;
 
       // The conflict target is the client's own key, so the statement itself
       // answers whether this request created the session — no second query that
@@ -131,20 +136,19 @@ export class WorkSessionRepository
       for (const checkout of session.checkouts) {
         await checkouts.insert(this.mapper.checkoutToPersistence(checkout));
       }
-      // The fold, the row update and the outbox rows all happen in here, in this
-      // transaction: the session's first log entries and the columns they produce
-      // commit together or not at all.
       await this.appendWithin(manager, session, events);
       return 'created' as const;
     });
 
-    if (created === 'project-archived') return { session, created: false, projectArchived: true };
+    if (created === 'project-archived' || created === 'host-unpaired') {
+      return { session, created: false, refused: created };
+    }
     if (created === 'taken') {
       const existing: Option<WorkSessionEntity> = session.idempotencyKey
         ? await this.findOneByKeyUnscoped(session.organizationId, session.idempotencyKey)
         : None;
       if (existing.isSome()) {
-        return { session: existing.unwrap(), created: false, projectArchived: false };
+        return { session: existing.unwrap(), created: false, refused: null };
       }
       // No key to read back by: the insert cannot have been refused for any other
       // reason, so this is a fault rather than a retry.
@@ -152,7 +156,7 @@ export class WorkSessionRepository
     }
 
     session.clearEvents();
-    return { session, created: true, projectArchived: false };
+    return { session, created: true, refused: null };
   }
 
   async appendEvents(
@@ -269,14 +273,12 @@ export class WorkSessionRepository
     const sort = filters.sort ?? 'recent';
     const key = SORT_KEYS[sort];
     applySort(query, sort);
-    // The sort key as Postgres prints it, for the next cursor: text round-trips a
-    // `timestamptz` to the microsecond, which a JavaScript `Date` does not.
+    // The sort key as Postgres prints it, for the next cursor (see `toListCursor`).
     query.addSelect(`(${key.expression})::text`, 'sortKey');
 
     if (filters.cursor) {
       // A row comparison, so the walk resumes exactly after the last row it
-      // returned and never counts: `(key, id)` is unique and both halves sort in
-      // the same direction.
+      // returned and never counts: `(key, id)` is unique.
       query.andWhere(
         `(${key.expression}, "session"."id") ${key.after} (CAST(:cursorKey AS ${key.type}), CAST(:cursorId AS uuid))`,
         { cursorKey: filters.cursor.key, cursorId: filters.cursor.id },
@@ -395,6 +397,16 @@ export class WorkSessionRepository
 
   async eraseWorkspace(organizationId: string): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
+      // The locks the writers take, in their order and in id order: the projects
+      // a create or a move holds `FOR SHARE`, then the rows an append holds.
+      await manager.query(
+        `SELECT "id" FROM "project" WHERE "organizationId" = $1 ORDER BY "id" FOR UPDATE`,
+        [organizationId],
+      );
+      await manager.query(
+        `SELECT "id" FROM "work_session" WHERE "organizationId" = $1 ORDER BY "id" FOR UPDATE`,
+        [organizationId],
+      );
       // Children first: the log and the checkouts refuse to lose their session.
       await manager
         .createQueryBuilder()
@@ -454,11 +466,8 @@ export class WorkSessionRepository
     if (!locked) {
       throw new Error(`Session ${session.id} disappeared while appending to its log`);
     }
-    // Fold onto what the **locked row** says, not onto the instance the caller
-    // loaded. Two requests can hold separate aggregates: a close commits
-    // `resolved` while a stop waits here, and folding onto the stop's stale `open`
-    // would write a projection the log does not support. The lock is what makes
-    // this read final.
+    // Fold onto the **locked row**, not the instance the caller loaded: see
+    // `reseatFold`.
     session.reseatFold(this.mapper.foldOf(locked));
     return this.appendLocked(manager, session, events);
   }
@@ -511,9 +520,8 @@ export class WorkSessionRepository
       seen.add(event.idempotencyKey);
       return true;
     });
-    // Every key that was not refused is accepted: it landed now, or an earlier
-    // attempt landed it. `DO NOTHING` cannot tell those apart, and for the writer
-    // both mean the same thing: stop resending it.
+    // Every key not refused is accepted, landed now or earlier: see
+    // `SessionAppendOutcome`.
     const accepted = candidates.map((event) => event.idempotencyKey);
 
     const appended = fresh.length > 0 ? await this.insertBatch(manager, session.id, fresh) : [];
@@ -527,12 +535,10 @@ export class WorkSessionRepository
     }
 
     if (appended.length > 0) {
-      // **Every column the fold projects**, and nothing else. The list is the
-      // one in `SessionFold`, spelled once: a hand-picked subset here is a
-      // column the fold silently stops maintaining, which is what happened to
-      // the four observation columns — the inputs the sidebar's own debounce
-      // reads — and then to the launch options. The row is the projection or it
-      // is a second truth.
+      // **Every column the fold projects**, and nothing else: each field of
+      // `SessionFold`. The list is spelled by hand, so a field missing here is a
+      // column the fold silently stops maintaining, and the row becomes a second
+      // truth.
       const record = this.mapper.toPersistence(session);
       await manager.query(
         `UPDATE "work_session"
@@ -775,10 +781,8 @@ const SORT_KEYS: Record<
 /**
  * The list's order. `recent` is last activity first, with sessions nothing has
  * happened in yet by their creation; the id breaks every tie so a page boundary
- * is stable. The tie-break runs the same way as the key — descending for
- * `recent`, ascending otherwise — because that is what lets one row comparison
- * resume a cursor walk. It only ever orders sessions whose key is equal, so no
- * caller depends on which way it runs.
+ * is stable, in the key's own direction (see `SORT_KEYS`). It only orders equal
+ * keys, so no caller depends on which way it runs.
  */
 function applySort(
   query: SelectQueryBuilder<WorkSessionOrmEntity>,

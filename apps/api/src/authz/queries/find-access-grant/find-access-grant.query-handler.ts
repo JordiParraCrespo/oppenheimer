@@ -7,10 +7,6 @@ import type { AccessGrantEntity } from '../../domain/access-grant.entity';
 import { AccessGrantErrors } from '../../domain/access-grant.errors';
 import { FindAccessGrantQuery } from './find-access-grant.query';
 
-/**
- * Reads one grant back by id. Scoped to the organization, like revoke, so a
- * grant in another tenant reports as not found and ids stay un-probeable.
- */
 @QueryHandler(FindAccessGrantQuery)
 export class FindAccessGrantQueryHandler
   implements IQueryHandler<FindAccessGrantQuery, AccessGrantEntity>

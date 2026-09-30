@@ -54,7 +54,6 @@ export class AuthzResourceGroupDto {
   resources!: AuthzResourceDto[];
 }
 
-/** A single `(action, subject)` pair. */
 export class AuthzRuleDto {
   @ApiProperty({ example: 'read' })
   action!: string;

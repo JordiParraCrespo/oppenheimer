@@ -90,7 +90,7 @@ type Rule struct {
 
 // Pattern is a regular expression in a manifest. It is a named type so that
 // compiling happens once, at load, and a broken pattern is a load error
-// rather than a surprise on some host at three in the morning.
+// rather than a miss on some host mid-session.
 type Pattern string
 
 // Region names a part of the captured terminal.
@@ -136,8 +136,8 @@ func (r Region) parse() (kind Region, n int, err error) {
 }
 
 // knownStates are the states a rule may conclude. Lifecycle states
-// (`starting`, `stopped`, `closed`) are the runner's business, never a
-// screen's.
+// (`creating`, `starting`, `stopped`, `closed`) are the runner's business,
+// never a screen's.
 var knownStates = map[domain.State]bool{
 	domain.StateWorking: true,
 	domain.StateBlocked: true,

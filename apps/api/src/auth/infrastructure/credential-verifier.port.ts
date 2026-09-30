@@ -33,7 +33,7 @@ export interface CredentialVerifierPort {
 
   /**
    * The session these headers carry — a session cookie, or a session token
-   * presented as a bearer credential (the mobile app and the CLI) — or `null`.
+   * presented as a bearer credential — or `null`.
    *
    * The session is returned rather than a yes/no so it is verified once per
    * request: the guard that authenticates the request reuses this answer

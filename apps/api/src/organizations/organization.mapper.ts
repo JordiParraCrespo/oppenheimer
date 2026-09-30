@@ -51,9 +51,7 @@ function parseMetadata(value: unknown): Record<string, unknown> | null {
 /**
  * Maps what the Better Auth organization plugin returns, and rows of its
  * tables read straight from Postgres, onto this module's read models and
- * DTOs. Every method accepts `unknown` and narrows once via `asRecord`, so the
- * gateways stay cast-free; all response normalization (coercion, envelope
- * unwrapping, date parsing) lives here.
+ * DTOs.
  */
 export class OrganizationMapper {
   static toOrganization(input: unknown): OrganizationResponseDto {

@@ -165,8 +165,7 @@ describe('DelegatedSessionAdapter', () => {
 
   it('persists the ten-minute expiry instead of Better Auth’s day', async () => {
     // The bug behind issue #122: without `overrideAll` the requested expiry is
-    // spread, then overwritten, and the row outlives its purpose by 143
-    // minutes short of a day.
+    // spread, then overwritten, and the row lives a day instead of ten minutes.
     const token = await service.resolveSessionToken(OPTIONS);
 
     const lifetimeMinutes = (rowFor(token).expiresAt.getTime() - Date.now()) / 60_000;
@@ -232,12 +231,8 @@ describe('DelegatedSessionAdapter', () => {
   });
 
   it('leaves a sibling minted moments ago alone', async () => {
-    // Two requests for one credential can miss the cache at the same instant —
-    // at expiry, or throughout a Redis outage. If each sweep read the other's
-    // row as superseded, both could be deleted while the cache still served one
-    // of those tokens, and every façade call through the credential would fail
-    // for the next nine minutes. Age is what tells a superseded row from a
-    // sibling, so neither is touched here.
+    // Two concurrent misses: why age, not order, marks a row superseded is
+    // `RETIREMENT_GRACE_SECONDS`.
     const first = await service.resolveSessionToken(OPTIONS);
     await service.invalidate('cred-1', 'user-1');
     const second = await service.resolveSessionToken(OPTIONS);
@@ -253,9 +248,6 @@ describe('DelegatedSessionAdapter', () => {
   });
 
   it('re-mints for every credential the user holds after a bulk revocation', async () => {
-    // The revoked session rows are gone; serving a cached token would fail
-    // every façade call until the entry expired on its own. The generation
-    // stamp reaches them all without enumerating API tokens and OAuth grants.
     await service.resolveSessionToken(OPTIONS);
     await service.resolveSessionToken({ ...OPTIONS, credentialId: 'cred-2' });
     expect(createSession).toHaveBeenCalledTimes(2);
@@ -288,9 +280,6 @@ describe('DelegatedSessionAdapter', () => {
   });
 
   it('does not trust an entry written while the generation could not be read', async () => {
-    // With the read failed, the adapter cannot know which generation is
-    // current. Tagging the entry with the initial generation could hand back a
-    // token a bump had already retired; it is tagged so the next read misses.
     cache.mget.mockRejectedValueOnce(new Error('redis down'));
     expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-1');
     // Written, but under a tag the next successful read (no stamp stored, so

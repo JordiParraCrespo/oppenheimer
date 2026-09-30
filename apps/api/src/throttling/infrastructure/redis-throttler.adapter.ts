@@ -24,9 +24,9 @@ interface ThrottleRedis extends Redis {
 
 /**
  * Rate-limit counters in Redis, so a limit means the same however many API replicas
- * run: the default in-process `Map` multiplies every limit by the replica count ("120
- * per minute" becomes 360 across three pods). Redis is already a hard dependency
- * (BullMQ, the cache).
+ * run: the default in-process `Map` multiplies every limit by the replica count (the
+ * default 100 per minute becomes 300 across three pods). Redis is already a hard
+ * dependency (BullMQ, the cache).
  *
  * Not `CacheService`: a counter built from a get then a set is the race this class
  * removes; the increment is one atomic round trip. It runs on the shared
@@ -111,8 +111,7 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
       /*
        * Fail open: a rate limiter sheds abusive load and must not be a second thing that
        * takes the API down, so an unreachable Redis serves the request. The counter is a
-       * courtesy backstop; authentication and the edge's proof-of-human check are the
-       * controls, and neither depends on it.
+       * courtesy backstop; authentication is the control, and it does not depend on it.
        */
       this.logger.error(
         { message: 'Rate-limit counter unavailable; allowing the request', throttlerName },

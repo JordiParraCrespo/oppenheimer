@@ -130,8 +130,7 @@ type Facts struct {
 	// The machine beyond what a session needs: what the console shows on a
 	// host row and what a rollout counts
 	// (product/versions/mvp/15-host-metadata.md). Every field is omitted when
-	// the prober could not read it, so an older control plane never sees the
-	// key and a newer one reads absence as unknown.
+	// the prober could not read it, for the reason CPUs is.
 	Machine
 	// DiskTotalBytes is the size of the workspace filesystem, beside
 	// DiskFreeBytes.
@@ -142,7 +141,7 @@ type Facts struct {
 
 // Machine is what the operating system says about the hardware and itself.
 // It changes on a reboot, an upgrade or a move, not between heartbeats, which
-// is why the prober reads it once and caches it.
+// is why the prober reads it at most hourly and caches it.
 type Machine struct {
 	// OSName is the distribution's own name for itself: "Ubuntu 24.04.1 LTS",
 	// "macOS 15.2".

@@ -16,9 +16,10 @@ export class RunnerReleaseConfig {
   constructor(private readonly configService: ConfigService) {}
 
   /**
-   * Whether a machine can actually be paired with this deployment. False leaves
-   * every host route answering "not configured" and changes nothing else. It is
-   * the same predicate the `hosts` capability is computed from.
+   * Whether a machine can actually be paired with this deployment. False makes
+   * minting a token and registering a machine answer "not configured" and
+   * changes nothing else. It is the same predicate the `hosts` capability is
+   * computed from.
    */
   get isConfigured(): boolean {
     return hostsAreConfigured(this.configService);

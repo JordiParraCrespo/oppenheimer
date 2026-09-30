@@ -132,12 +132,8 @@ describe('hostFactsSchema agrees across the two Zod entry points', () => {
 });
 
 /**
- * The prompt bound, on both Zod entry points.
- *
- * It is a **byte** bound, and that is the whole point of testing it: the event
- * log caps a payload at 8 KiB of serialized JSON and `02-runner.md` §7 caps
- * `prompt.first` at 2 KB, so a character bound would accept a multibyte prompt
- * the log then refuses — committing a session whose task nothing recorded.
+ * The prompt bound, on both Zod entry points. It is a **byte** bound
+ * (`FIELD_BOUNDS.prompt` says why), and that is the whole point of testing it.
  */
 describe('promptSchema agrees across the two Zod entry points', () => {
   const at = (bytes: number, char = 'a') => char.repeat(bytes);

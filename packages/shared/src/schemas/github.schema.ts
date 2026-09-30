@@ -22,10 +22,8 @@ export const installStateSchema = z
  * `POST /installations`.
  *
  * The field is `githubInstallationId`, not `installationId`: this is GitHub's
- * own numeric id from the App redirect, while a session checkout's
- * `installationId` is the UUID of our own row. A connect-then-create flow
- * touches both, and one name for two universes is how the wrong one gets passed
- * through.
+ * own numeric id from the App redirect, not the UUID of our own row
+ * (`./primitives` says why the two never share a name).
  *
  * `code` is not optional plumbing: it is the only proof the caller can see the
  * installation they are claiming. Without it a forged id would hand them

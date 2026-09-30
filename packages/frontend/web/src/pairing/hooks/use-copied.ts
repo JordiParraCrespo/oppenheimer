@@ -15,7 +15,6 @@ export function useCopied<Key extends string>() {
   const [copied, setCopied] = useState<Key | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // The timeout is a thing outside React; clearing it is what unmount owes it.
   useEffect(() => () => clearTimeout(timer.current), []);
 
   async function copy(key: Key, text: string) {
@@ -25,7 +24,7 @@ export function useCopied<Key extends string>() {
       clearTimeout(timer.current);
       timer.current = setTimeout(() => setCopied(null), COPIED_FOR_MS);
     } catch {
-      // Clipboard denied: the text is still readable in the Inspect fold.
+      // Clipboard denied: the instruction is still readable in its code block.
     }
   }
 

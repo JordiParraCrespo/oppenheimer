@@ -3,8 +3,7 @@
 // that has neither installed and without spawning a process per assertion.
 //
 // The adapters against the real tools live next door and are exercised by
-// their own tests, which skip when the tool is missing. This package is what
-// keeps the lifecycle itself fast and deterministic.
+// their own tests, which skip when the tool is missing.
 package fake
 
 import (
@@ -37,8 +36,7 @@ type Terminals struct {
 	Titles map[string]string
 
 	sessions map[string]*fakeSession
-	// Attached counts live attachments, so a test can prove that detaching
-	// does not end a session.
+	// Attached counts live attachments.
 	Attached int
 	// Pastes is every text pasted, in order.
 	Pastes []string

@@ -106,11 +106,9 @@ test.describe('Sessions', () => {
     // a second one beside it.
     expect(entries.filter((entry) => entry.kind === 'session.stopped')).toHaveLength(1);
 
-    // Closing is a **request**: it has to push branches and remove worktrees, and
-    // only the host can say that happened. So the lifecycle does not move — and
-    // what it does not move *to* is the assertion, because where it stays
-    // depends on whether a host ever answered. With no relay this session never
-    // left `starting`; the rule is that closing did not resolve it.
+    // Closing is a **request**: only the host can say branches were pushed and
+    // worktrees removed. Where the lifecycle stays depends on whether a host ever
+    // answered, so the assertion is only that closing did not resolve it.
     const closed = await api.delete(`/api/v1/sessions/${session.id}`, { failOnStatusCode: false });
     expect(closed.status()).toBe(200);
     expect((await closed.json()).lifecycle, 'closing is a request, not an outcome').not.toBe(

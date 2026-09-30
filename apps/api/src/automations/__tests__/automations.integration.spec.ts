@@ -31,14 +31,12 @@ const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 
 /**
- * The automations firing paths and the runs list, against a real Postgres.
- *
- * The unit tests prove each handler decides from what it is handed. This is
- * the layer that proves the **caps hold under concurrency** — that a tick
- * counts the runs it has just queued, that concurrent events for one workspace
- * serialise on its firing lock, and that a tick and a burst of events together
- * never fire past the workspace's hourly cap — and that the runs list, now
- * scoped on the run itself, still answers the same totals and counts.
+ * The unit tests prove each handler decides from what it is handed. This
+ * suite, against a real Postgres, proves the **caps hold under concurrency**
+ * — that a tick counts the runs it has just queued, that concurrent events
+ * for one workspace serialise on its firing lock, and that a tick and a burst
+ * of events together never fire past the workspace's hourly cap — and that the runs list,
+ * scoped on the run itself, answers the right totals and counts.
  */
 describe('automations: firing under the caps, and the runs list (integration)', () => {
   let pgContainer: StartedTestContainer;
@@ -408,8 +406,8 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       await everyStatus(second, 2);
       await everyStatus(foreign, 1); // another workspace
       const since = new Date(Date.now() - 30 * DAY);
-      // Per automation in the window: queued 2, running 2, completed 1, failed 1,
-      // cancelled 1, skipped 1, expired 1.
+      // Each `everyStatus` in the window lists seven: queued 2, running 2,
+      // completed 1, failed 1, cancelled 1; skipped and expired only when asked.
       const listed = await runs.page(scope(), { since }, 1, 10);
       expect(listed.total).toBe(3 * 7);
       expect(listed.items).toHaveLength(10);

@@ -20,7 +20,7 @@ import { CreateSessionCommand } from '../create-session.command';
 import { CreateSessionCommandHandler } from '../create-session.command-handler';
 
 /**
- * The create path's three refusals and its one retry, which is the whole of what
+ * The create path's refusals and its one retry, which is the whole of what
  * this handler decides. Everything else — the directory name, the branch, the
  * repository's own name — belongs to the factory and is tested where it lives.
  */
@@ -118,7 +118,7 @@ describe('CreateSessionCommandHandler', () => {
       createIfUnclaimed: vi.fn().mockImplementation(async (session: WorkSessionEntity) => ({
         session,
         created: true,
-        projectArchived: false,
+        refused: null,
       })),
     } as unknown as WorkSessionRepositoryPort;
     hosts = { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) };
@@ -178,8 +178,8 @@ describe('CreateSessionCommandHandler', () => {
     expect(events.map((event) => event.kind)).toEqual(['session.requested', 'session.cwd_set']);
     expect(events.every((event) => event.source === 'api')).toBe(true);
     expect(dispatch.create).toHaveBeenCalledOnce();
-    // Nothing reached a host, and the response says so rather than a second log
-    // entry saying it.
+    // An undelivered job is never a second log entry; the response carries only
+    // the hints the dispatcher raised, here none.
     expect(hints).toEqual([]);
   });
 
@@ -187,8 +187,8 @@ describe('CreateSessionCommandHandler', () => {
     vi.mocked(dispatch.create).mockResolvedValue({ delivered: false, hints: ['host_offline'] });
 
     await expect(handler.execute(command())).resolves.toMatchObject({ hints: ['host_offline'] });
-    // And appends nothing for it: one action is one entry, and "we could not reach
-    // the host just now" is about this request, not about the session's history.
+    // And appends nothing for it: "we could not reach the host just now" is about
+    // this request, not about the session's history.
     expect(vi.mocked(sessions.createIfUnclaimed).mock.calls[0][1]).toHaveLength(2);
   });
 
@@ -205,10 +205,28 @@ describe('CreateSessionCommandHandler', () => {
         agent: 'claude-code',
       }),
       created: false,
-      projectArchived: true,
+      refused: 'project-archived',
     });
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'SESSIONS_006' });
+    expect(dispatch.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses when the host was unpaired while it was being planned', async () => {
+    vi.mocked(sessions.createIfUnclaimed).mockResolvedValue({
+      session: WorkSessionEntity.request({
+        organizationId: 'org-acme',
+        projectId: 'project-1',
+        createdByUserId: 'user-1',
+        hostId: 'host-1',
+        slug: 'bold-otter-3f9a7k',
+        agent: 'claude-code',
+      }),
+      created: false,
+      refused: 'host-unpaired',
+    });
+
+    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_001' });
     expect(dispatch.create).not.toHaveBeenCalled();
   });
 
@@ -245,7 +263,7 @@ describe('CreateSessionCommandHandler', () => {
     vi.mocked(sessions.createIfUnclaimed).mockResolvedValue({
       session: other,
       created: false,
-      projectArchived: false,
+      refused: null,
     });
 
     await expect(handler.execute(command())).resolves.toMatchObject({ sessionId: other.id });
@@ -369,7 +387,7 @@ describe('CreateSessionCommandHandler', () => {
    * The composer's foot row and its first task, which is what the create request
    * grew for the New session screen (`product/versions/mvp/03-control-plane.md`).
    *
-   * All three assertions are about the same rule from different sides: the launch
+   * The launch assertions are about the same rule from different sides: the launch
    * is *stated in the log*, because the columns that carry it are a projection of
    * that log and writing them any other way would be a second truth.
    */

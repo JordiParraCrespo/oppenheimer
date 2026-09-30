@@ -33,6 +33,13 @@ export interface SessionAppendOutcome {
   appended: WorkSessionEventEntity[];
 }
 
+/** What {@link WorkSessionRepositoryPort.createIfUnclaimed} did. */
+export interface SessionCreateOutcome {
+  session: WorkSessionEntity;
+  created: boolean;
+  refused: 'project-archived' | 'host-unpaired' | null;
+}
+
 /**
  * Where a keyset walk of the list stands: the sort it was issued for, the last
  * row's sort key as Postgres printed it, and the last row's id.
@@ -80,9 +87,9 @@ export interface SessionEventPage {
 }
 
 /**
- * A session on a host as the link's hello reconciliation reads it: the row,
- * and the first prompt if the
- * log holds one — everything a re-dispatched `session.create` needs.
+ * A session on a host as the link's hello reconciliation reads it: the row, and
+ * the first prompt if the log holds one — everything a re-dispatched
+ * `session.create` needs.
  */
 export interface HostSessionRow {
   session: WorkSessionEntity;
@@ -132,16 +139,16 @@ export interface WorkSessionRepositoryPort {
 
   /**
    * Insert the session, its checkouts and its first log entries in one transaction,
-   * unless the caller's `Idempotency-Key` already created it or the project was
-   * archived out from under it. `created: false, projectArchived: false` is the retry
-   * after a lost response and returns the existing session, never a second directory
-   * and branch. `projectArchived: true` is the race the project row lock decides: the
-   * archive committed first.
+   * unless the caller's `Idempotency-Key` already created it or its project or host
+   * went out from under it. `created: false, refused: null` is the retry after a
+   * lost response and returns the existing session, never a second directory and
+   * branch. `refused` is the race a row lock decides: the project's archive or the
+   * host's unpair committed first.
    */
   createIfUnclaimed(
     session: WorkSessionEntity,
     events: NewSessionEvent[],
-  ): Promise<{ session: WorkSessionEntity; created: boolean; projectArchived: boolean }>;
+  ): Promise<SessionCreateOutcome>;
 
   /**
    * Append to the log and fold onto the row, in one transaction.
@@ -215,10 +222,9 @@ export interface WorkSessionRepositoryPort {
   findOneByIdempotencyKey(scope: AccessScope, key: string): Promise<Option<WorkSessionEntity>>;
 
   /**
-   * The session a runner is reporting about. Unscoped by necessity: the writer is a
-   * machine proving its own identity, and there is no person on the request to
-   * scope by. The caller must check the session belongs to the host that presented
-   * the credential.
+   * The session an attach ticket or a runner's credential ask names. Unscoped by
+   * necessity: the proof is the ticket or the host's credential, not a person's
+   * scope. The caller must check the session against what that proof covers.
    */
   findOneByIdForMachine(id: string): Promise<Option<WorkSessionEntity>>;
 
@@ -230,9 +236,8 @@ export interface WorkSessionRepositoryPort {
   ): Promise<SessionEventPage>;
 
   /**
-   * The one question archiving a project has to ask, and the reason archiving
-   * ships with this module rather than with `projects/`: a placeholder answering
-   * "none" would be fail-open on a destructive path.
+   * The one question archiving a project has to ask (`SessionProjectUsage`): a
+   * placeholder answering "none" would be fail-open on a destructive path.
    */
   countUnresolvedForProject(scope: AccessScope, projectId: string): Promise<number>;
 }

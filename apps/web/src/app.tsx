@@ -63,13 +63,11 @@ export function App() {
   // `prefers-color-scheme` while the rest of the product follows the toggle.
   const { resolvedTheme } = useTheme();
   const { isAuthenticated } = useAuthState();
-  // Rehydrate the persisted session query (the credential is a cookie) before the router's
-  // route guards run, so a returning/refreshing authenticated user isn't bounced
-  // to /login. `isPending`, not `isLoading`: under `PersistQueryClientProvider`
-  // a query sits idle while the persisted cache is restored, and `isLoading`
-  // (pending *and* fetching) is false for that window. Gating on it mounted the
-  // router before the session was known, so every signed-in cold load bounced
-  // to /login and back. `isPending` holds until the answer is in.
+  // Rehydrate the persisted session query (the credential is a cookie) before
+  // the route guards run, so a signed-in reload isn't bounced to /login.
+  // `isPending`, not `isLoading`: under `PersistQueryClientProvider` a query
+  // sits idle while the persisted cache is restored, and `isLoading` (pending
+  // *and* fetching) is false for that window.
   const { isPending, isError, isFetching, refetch } = useSessionRestore();
 
   return (

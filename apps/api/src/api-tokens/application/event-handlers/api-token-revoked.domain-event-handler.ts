@@ -5,10 +5,10 @@ import type { DelegatedSessionPort } from '../../../auth/infrastructure/delegate
 import { ApiTokenRevokedDomainEvent } from '../../domain/events/api-token-revoked.domain-event';
 
 /**
- * Drops the delegated Better Auth session cached for a revoked token.
- *
- * Without this, a revoked credential would keep working through its cached
- * session until the ten-minute window elapsed. Reacting to the domain event
+ * Drops the delegated Better Auth session cached for a revoked token. The
+ * token itself is refused from its next request on, since
+ * `ApiTokenCredentialResolver` reads the row every time; this clears what the
+ * cache still holds for it. Reacting to the domain event
  * (rather than calling the auth layer from the revoke handler) keeps the
  * revoke use case free of any knowledge of sessions, and it lives here rather
  * than in `auth` because the auth kernel does not know this module exists —

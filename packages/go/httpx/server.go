@@ -26,9 +26,9 @@ type ServerOptions struct {
 }
 
 // Serve runs the handler until ctx is cancelled, then drains connections for
-// at most ShutdownTimeout. onShutdown hooks run after the listener closes
-// and before the HTTP drain, giving long-lived connections (WebSockets)
-// a chance to say goodbye.
+// at most ShutdownTimeout. onShutdown hooks run first, before the listener
+// closes and the HTTP drain starts, giving long-lived connections
+// (WebSockets) a chance to say goodbye.
 func Serve(ctx context.Context, logger *slog.Logger, opts ServerOptions, h http.Handler, onShutdown ...func(context.Context)) error {
 	srv := &http.Server{
 		Addr:              opts.Addr,

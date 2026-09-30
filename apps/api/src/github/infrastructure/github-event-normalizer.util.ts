@@ -24,7 +24,7 @@ import {
  * | `mention`       | any of those, or a submitted review, whose body mentions us    |
  * | `push`          | `push` to a branch, not a tag and not a branch deletion        |
  * | `issue_labeled` | `issues` / `pull_request` `labeled`, one event per label       |
- * | `check_failed`  | `check_suite` completed failing, or a `status` of failure      |
+ * | `check_failed`  | `check_suite` completed failing, or a `status` failure/error   |
  * | `issue_opened`  | `issues` `opened` (reopened is a different action)             |
  * | `release`       | `release` `published`, pre-releases excluded                   |
  *

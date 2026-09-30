@@ -17,20 +17,17 @@ import { PROTOCOL_VERSION } from './version.js';
 /**
  * Emit the link's JSON Schema from the Zod union.
  *
- * **Build-only.** This module is not re-exported from `./index.ts`: the emitter
- * runs as part of `pnpm --filter @oppenheimer/shared build`, which writes
- * `protocol-schema/protocol.schema.json`, and nothing at runtime should pull
- * `z.toJSONSchema` in behind it.
+ * **Build-only** (`./index.ts` says why it is not re-exported): the emitter runs
+ * as part of `pnpm --filter @oppenheimer/shared build`, which writes
+ * `protocol-schema/protocol.schema.json`.
  *
  * The artifact is committed because the Go structs are generated from it
  * (`scripts/emit-link-protocol.cjs` → `apps/runner/internal/link/protocol.gen.go`),
- * so a wire change is a reviewable diff. The emission is part of `build` so it
- * cannot be the step someone forgets.
+ * so a wire change is a reviewable diff.
  *
  * The link's constants ride along under `x-constants`, a vendor keyword JSON
- * Schema ignores: the close codes, the refusal header, the frame header, the
- * credit window and the frame cap are part of the contract too, and the Go side
- * is generated from this artifact alone rather than from a second hand-kept list.
+ * Schema ignores: they are part of the contract too, and the Go side is
+ * generated from this artifact alone rather than from a second hand-kept list.
  *
  * `io: 'input'` because the schema describes what a peer may **send**: it is what
  * a defaulted field looks like before the default applies. `reused: 'ref'` puts

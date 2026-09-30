@@ -93,9 +93,9 @@ describe('useHostPairing', () => {
   });
 
   /**
-   * The flow used to tick once a second to count the token down, which
-   * re-rendered every surface running it — the dialog, its code blocks — for a
-   * number one line shows. It renders when something it hands out changes.
+   * A per-second tick here re-rendered every surface running the flow — the
+   * dialog, its code blocks — for a number one line shows. It renders when
+   * something it hands out changes.
    */
   it('does not re-render while the token counts down', async () => {
     const { wrapper } = setup([unredeemed], [OWNED]);
@@ -116,9 +116,8 @@ describe('useHostPairing', () => {
   });
 
   it('never reads a fresh token as expired, not even for the render it arrives in', async () => {
-    // The count used to be set by the effect after the render that first held
-    // the token, so that render said `expired` — and switched the poll off —
-    // for a frame. Every render is recorded, not just the last one.
+    // A fresh token read as expired for one render switches the poll off, so
+    // every render is recorded, not just the last one.
     const { wrapper } = setup([unredeemed], [OWNED]);
     const seen: { hasPairing: boolean; expired: boolean }[] = [];
     const { result } = renderHook(

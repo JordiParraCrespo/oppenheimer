@@ -7,8 +7,8 @@ import { WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
 /**
  * This module's answer to the one question archiving a project has to ask.
  *
- * `starting` and `failed` count as open: both still have a directory on somebody's
- * host, and retiring the project's directory under either is what the refusal is for.
+ * `starting` and `failed` count as open: both still have work on somebody's host,
+ * and archiving a project with work still listed under it is what the refusal is for.
  *
  * Contributed through `ProjectsModule.contributeUsage([...])` rather than exported as
  * a token: a session needs its project, so `projects/` cannot import this module.

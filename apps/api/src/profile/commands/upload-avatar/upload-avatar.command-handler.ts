@@ -12,13 +12,11 @@ import { AVATAR_STORAGE } from '../../profile.di-tokens';
 import { UploadAvatarCommand } from './upload-avatar.command';
 
 /**
- * The new image is written under its own key, the profile is saved, and only
- * then is the old object retired. Every step of that order matters: the new
- * object never overwrites the live one, so a failed save leaves the user
- * looking at exactly the avatar they had; and the old object outlives the write
- * that stopped referencing it, so a failed save never strands the profile on a
- * deleted file. Cleanup itself is best-effort — an orphaned object costs
- * storage, a failed request costs the user their picture.
+ * The new image is written under its own key (see `AvatarStorageAdapter.store`),
+ * the profile is saved, and only then is the old object retired, so a failed
+ * save never strands the profile on a deleted file. Cleanup itself is
+ * best-effort — an orphaned object costs storage, a failed request costs the
+ * user their picture.
  */
 @CommandHandler(UploadAvatarCommand)
 export class UploadAvatarCommandHandler

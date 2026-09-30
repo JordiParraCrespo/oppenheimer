@@ -4,12 +4,7 @@ import { OutboxService } from '../outbox.service';
 import type { OutboxMessageRecord } from '../outbox-message';
 import { OutboxRelay } from '../outbox-relay';
 
-/**
- * The relay's contract: claim → publish → mark the batch processed, with
- * failures marked (not dropped), one drain at a time, and wakes that never wait
- * for delivery. The claim/mark SQL itself is exercised
- * by the integration suite against a real Postgres.
- */
+/** The claim/mark SQL itself is exercised by the integration suite against a real Postgres. */
 describe('OutboxRelay', () => {
   const message = (overrides: Partial<OutboxMessageRecord> = {}): OutboxMessageRecord => ({
     id: 'msg-1',
@@ -66,7 +61,6 @@ describe('OutboxRelay', () => {
 
     expect(delivered).toBe(2);
     expect(published).toEqual(['a', 'b']);
-    // The whole batch in one call.
     expect(outbox.markProcessed).toHaveBeenCalledTimes(1);
     expect(outbox.markProcessed).toHaveBeenCalledWith(['a', 'b'], 'test:1');
     expect(outbox.markFailed).not.toHaveBeenCalled();

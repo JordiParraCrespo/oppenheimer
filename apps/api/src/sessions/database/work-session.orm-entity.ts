@@ -16,17 +16,18 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
  *
  * Three constraints are not checks a handler could forget. `uq (organizationId, id)`
  * lets `session_checkout` reference a session **with its workspace in the key**.
- * `uq (organizationId, slug)` is a permanent tombstone: rows are never hard-deleted,
- * so a retired session's directory name and branch are never reissued, and it is per
- * workspace because the directory is `workspaces/<org>/sessions/<slug>` (a project is
- * metadata; `projectId` is only where the session is listed). The migration's
+ * `uq (organizationId, slug)` is a tombstone: rows are hard-deleted only with their
+ * workspace, so a retired session's directory name and branch are never reissued,
+ * and it is per workspace because the directory is `workspaces/<org>/sessions/<slug>`
+ * (a project is metadata; `projectId` is only where the session is listed). The migration's
  * `(organizationId, projectId)` composite foreign key makes a session in another
  * workspace's project unrepresentable.
  *
- * `hostId` is the one reference a handler guards instead: a host belongs to a person,
- * with no workspace column, and a grant is a row, so no composite key can reference
- * it. Create loads the host through the own-or-grant-scoped repository and refuses on
- * a miss (`product/versions/mvp/03-control-plane.md`).
+ * `hostId` is the one reference whose scope a handler guards instead: a host belongs
+ * to a person, with no workspace column, and a grant is a row, so no composite key can
+ * reference it (its plain foreign key only proves the host exists). Create loads the
+ * host through the own-or-grant-scoped repository and refuses on a miss
+ * (`product/versions/mvp/03-control-plane.md`).
  */
 @Entity('work_session')
 @Index('IDX_work_session_project_state', ['projectId', 'state'])
@@ -36,8 +37,8 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
 @Unique('UQ_work_session_organization_id', ['organizationId', 'id'])
 export class WorkSessionOrmEntity {
   /**
-   * Unguessable by construction, and also the tmux session name on the host, so
-   * one id names the row and the thing it controls.
+   * Unguessable by construction, and also (prefixed) the tmux session name on the
+   * host, so one id names the row and the thing it controls.
    */
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -119,11 +120,7 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   lastObservedState!: AgentObservedState | null;
 
-  /**
-   * When the transition **into** that state was recorded. Null after a single
-   * report, which is what makes the group's debounce unfakeable: one sighting is
-   * not evidence of having been stuck.
-   */
+  /** When the transition **into** that state was recorded; see `SessionFold.observedSince`. */
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   observedSince!: Date | null;
 

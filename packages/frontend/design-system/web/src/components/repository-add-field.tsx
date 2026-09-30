@@ -58,8 +58,7 @@ function RepositoryAddField({
   emptyText?: (query: string) => React.ReactNode;
   removeLabel?: (name: string) => string;
 }) {
-  // Defaulted here, not in the signature: the React Compiler skips a component
-  // whose default parameter is a function.
+  // Not a default parameter: the React Compiler skips a function-valued one.
   const emptyText = emptyTextProp ?? defaultEmptyText;
   const removeLabel = removeLabelProp ?? ((name: string) => `Remove ${name}`);
   const [open, setOpen] = React.useState(false);

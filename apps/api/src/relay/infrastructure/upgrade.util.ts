@@ -2,12 +2,7 @@ import { STATUS_CODES } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { RUNNER_LINK_REFUSAL_HEADER } from '@oppenheimer/shared/protocol';
 
-/**
- * Names a refusal the runner acts on rather than retries. A bare status is not
- * enough for that: any proxy in front of the control plane can answer `410`,
- * and a runner that took a stranger's `410` as "you were unpaired" would stop
- * dialling for good. The name is the protocol's, shared with the runner.
- */
+/** The protocol's `RUNNER_LINK_REFUSAL_HEADER`, which says why a bare status is not enough. */
 export const REFUSAL_HEADER = RUNNER_LINK_REFUSAL_HEADER;
 
 /**

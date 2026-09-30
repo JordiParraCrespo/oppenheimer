@@ -4,9 +4,9 @@
 // Each case in `cases.json` is a small change to `apps/web` (the files under
 // `cases/<id>/`, laid over the repo at their own paths) committed on top of
 // HEAD in a throwaway worktree, the way a day's merge lands before the routine
-// runs. Nine cases plant one rule break each; three are decoys that look like
-// one and are not. `scripts/evals` is deleted from the worktree first, so the
-// expectations are out of the auditor's reach.
+// runs. Nine cases plant rule breaks (one of them two); three are decoys that
+// look like one and are not. `scripts/evals` is deleted from the worktree
+// first, so the expectations are out of the auditor's reach.
 //
 // The auditor runs the skill exactly as the routine does, in diff mode against
 // the commit before the case, and must end with the skill's JSON block. The

@@ -1,10 +1,6 @@
 import { TOKENS as KERNEL_TOKENS } from '@oppenheimer/frontend-core';
 
-/**
- * DI tokens of the consumer product, on top of the kernel's. A consumer
- * service injects `TOKENS.AnalyticsService` (kernel) and
- * `TOKENS.SessionsRepository` (its own) through the one object.
- */
+/** DI tokens of the consumer product, on top of the kernel's. */
 export const TOKENS = {
   ...KERNEL_TOKENS,
   PermissionsRepository: Symbol.for('PermissionsRepository'),

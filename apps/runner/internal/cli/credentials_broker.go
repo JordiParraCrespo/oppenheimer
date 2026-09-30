@@ -23,7 +23,7 @@ const askTimeout = 10 * time.Second
 const tokenRefreshMargin = 5 * time.Minute
 
 // credentialBroker answers the credential helper: one installation token per
-// session, pulled from the control plane on the link before it is needed and
+// session, asked of the control plane on the link when git first needs it and
 // held in memory until it expires or is revoked (02-runner §8; F21). Nothing
 // is written to disk and nothing is logged.
 type credentialBroker struct {
@@ -184,7 +184,7 @@ func (b *credentialBroker) Revoke(sessionID string) {
 	b.mu.Unlock()
 }
 
-// Forget drops every token: what a closed session and a new link call for.
+// Forget drops a session's token as it closes.
 func (b *credentialBroker) Forget(sessionID string) { b.Revoke(sessionID) }
 
 func (b *credentialBroker) deliver(requestID string, reply grantReply) bool {

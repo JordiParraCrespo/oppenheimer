@@ -20,7 +20,7 @@ import { GlobalRoleRegistry } from './global-role.registry';
 /** Minimal shape of the authenticated principal the guard hands to the factory. */
 export interface AuthenticatedUser {
   id?: string;
-  /** Legacy single-role column, used as a fallback before migration. */
+  /** Better Auth's `user.role`: platform role names, comma-separated. */
   role?: string;
   [key: string]: unknown;
 }
@@ -72,7 +72,7 @@ interface RoleSet {
  * Builds a CASL ability for an authenticated user from the union of every role
  * assigned to them: roles through the `user_role` join, then the Better Auth
  * `user.role` column (the global role of that name, then the seeded system-role
- * permissions), so users that predate the join keep working.
+ * permissions).
  *
  * Every resolution first reads three version counters in one query
  * (`AuthzVersionRepositoryPort`): the organization's `roleVersion`, the global role
@@ -189,10 +189,9 @@ export class AbilityFactory implements AbilityPort {
   }
 
   /**
-   * Roles assigned through the `user_role` join (dynamic RBAC), narrowed to
-   * the organization. The repository unions the caller's global assignments
-   * with the ones scoped to that organization, so a role granted in one tenant
-   * has no effect in another.
+   * Roles assigned through the `user_role` join: global assignments plus those
+   * scoped to the organization, so a role granted in one tenant has no effect
+   * in another.
    */
   private async assignedRoles(
     userId: string,
@@ -239,9 +238,8 @@ export class AbilityFactory implements AbilityPort {
   ): Promise<PermissionDefinition[]> {
     if (!role) return [];
 
-    // Better Auth stores multiple platform roles as a comma-separated value.
-    // Resolve each name independently so `user,admin` receives the same
-    // control-plane permissions as a single `admin` role.
+    // Each name resolves independently, so `user,admin` receives the same
+    // permissions as a single `admin` role.
     const names = role
       .split(',')
       .map((name) => name.trim())

@@ -45,12 +45,12 @@ export class HostOrmEntity {
 
   /**
    * Null from registration on: presence lives in `host_presence.lastSeenAt`,
-   * which the mapper reads instead whenever the host has a presence row.
+   * which the mapper reads instead whenever it loads the side tables.
    */
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   lastSeenAt!: Date | null;
 
-  /** Set when the host is unpaired. Rows are never hard-deleted. */
+  /** Set when the host is unpaired. Unpairing never deletes the row. */
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   unpairedAt!: Date | null;
 

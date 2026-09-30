@@ -63,8 +63,8 @@ export class MemberRepository implements MemberRepositoryPort {
             .where('account.name ILIKE :needle')
             .orWhere('account.email ILIKE :needle')
             .orWhere('member.role ILIKE :needle')
-            // The team table's Role column shows an assigned role in preference
-            // to the organization role, so a name on screen must be findable.
+            // An assigned role's name matches too, not only the organization
+            // role: a member is found by any role they hold here.
             .orWhere(
               (sub: SelectQueryBuilder<MemberOrmEntity>) =>
                 `EXISTS ${this.assignedRoles(sub)

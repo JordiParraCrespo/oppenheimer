@@ -9,9 +9,7 @@ import { AssignDefaultRoleCommand } from './assign-default-role.command';
 
 /**
  * Assigns the default `user` role through the `user_role` join, so a new
- * sign-up draws its permissions from the same source as everyone else rather
- * than from the legacy `user.role` column the `AbilityFactory` only falls back
- * to.
+ * sign-up draws its permissions from the same source as everyone else.
  *
  * Additive and repeatable: it grants one role and never revokes another, and
  * granting it twice is a no-op.

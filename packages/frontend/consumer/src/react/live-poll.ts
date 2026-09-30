@@ -16,8 +16,7 @@
  *   past that, a request every two seconds can only answer "still open".
  * - `pairing`: whether a pairing token has been spent and its machine is online.
  * - `liveRun`: an automation run, queued for seconds and running for minutes.
- * - `hostPresence`: a host going on or offline (Settings → Hosts); heartbeats
- *   are not streamed to the console yet.
+ * - `hostPresence`: a host going on or offline (Settings → Hosts).
  */
 export const LIVE_POLL = {
   sessionStarting: { interval: 2000, inBackground: true },

@@ -13,8 +13,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
-// The lifecycle runs on in-memory adapters so it is fast and needs neither
-// tmux nor git installed; the real adapters have their own tests next door.
+// fakeHarness runs the service on the in-memory adapters (package fake).
 type fakeHarness struct {
 	svc       *app.Service
 	terminals *fake.Terminals
@@ -182,7 +181,6 @@ func TestAdoptTakesBackLiveSessionsAndStopsTheRest(t *testing.T) {
 	if stopped.State != domain.StateStopped {
 		t.Fatalf("a session whose tmux is gone is stopped, not lost: %q", stopped.State)
 	}
-	// Its worktree is untouched, which is what Restart needs.
 	if _, ok := h.worktrees.Paths[stopped.Worktree]; !ok {
 		t.Fatal("the worktree must survive a stopped session")
 	}

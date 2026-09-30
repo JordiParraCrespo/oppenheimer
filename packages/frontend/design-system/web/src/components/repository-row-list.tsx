@@ -67,8 +67,7 @@ function RepositoryRowList({
   branchEmptyText?: (query: string) => React.ReactNode;
   branchLabel?: (name: string) => string;
 }) {
-  // Defaulted here, not in the signature: the React Compiler skips a component
-  // whose default parameter is a function.
+  // Not a default parameter: the React Compiler skips a function-valued one.
   const branchEmptyText = branchEmptyTextProp ?? defaultBranchEmptyText;
   const branchLabel = branchLabelProp ?? defaultBranchLabel;
   const byId = new Map(repositories.map((repo) => [repo.id, repo]));

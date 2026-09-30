@@ -8431,7 +8431,7 @@
         "tags": ["Sessions"]
       },
       "post": {
-        "description": "Several repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the working branch is always `oppenheimer/<project>/<session>`. The project is the one whose origin is the first checkout’s repository, created on the spot if that repository has never had a session.",
+        "description": "Several repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the control plane names the working branch (`sessionBranchName`) and each checkout on the response carries it. Without a `projectId` the session lands in the workspace’s Unassigned project (`product/versions/mvp/03-control-plane.md`).",
         "operationId": "createSession",
         "parameters": [
           {
@@ -14901,7 +14901,7 @@
           "branch": {
             "type": "string",
             "description": "Always the session’s own branch, never the base.",
-            "example": "oppenheimer/xrp-mobile/bold-otter-3f9a7k"
+            "example": "oppenheimer/bold-otter-3f9a7k"
           }
         },
         "required": [
@@ -14964,7 +14964,7 @@
               "idle",
               "resolved"
             ],
-            "description": "The derived group — what the sidebar dot shows, computed from the row and organised by what needs you: the session failed, the agent has been blocked for 30 s, or a launch has sat unready for 60 s. Two arms have no writer until the relay and the pull-request flow land: `landing`, and the fourth `waiting-on-you` source (the pane is gone with no report)."
+            "description": "The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/versions/mvp/03-control-plane.md`)."
           },
           "lifecycle": {
             "type": "string",

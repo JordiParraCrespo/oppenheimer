@@ -50,9 +50,8 @@ class PostHogAnalyticsClient implements IAnalyticsClient {
 
       posthog.init(this.apiKey, {
         api_host: this.host,
-        // Page views are driven from the router via `usePageView`. PostHog's
-        // automatic capture only fires on hard loads, which in a SPA means
-        // every client-side navigation would go uncounted.
+        // `PageViewTracker` sends them per navigation; PostHog's own capture
+        // sees only the first hard load of a SPA.
         capture_pageview: false,
         persistence: 'localStorage+cookie',
         before_send: stripUrlSecrets,

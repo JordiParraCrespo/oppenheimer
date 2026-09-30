@@ -60,8 +60,6 @@ describe('createQueryPersistOptions', () => {
 
     expect(options.maxAge).toBe(QUERY_PERSIST_MAX_AGE);
     expect(options.buster).toBe('1.2.3:3');
-    // The predicate is bound to the app's non-persisted features, so it is
-    // checked by behaviour.
     const { shouldDehydrateQuery: dehydrate } = options.dehydrateOptions;
     expect(dehydrate(query(authKeys.session()))).toBe(false);
     expect(dehydrate(query(organizationsList))).toBe(true);

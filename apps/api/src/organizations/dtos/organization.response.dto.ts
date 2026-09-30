@@ -73,7 +73,6 @@ export class MemberResponseDto {
   user!: MemberUserResponseDto | null;
 }
 
-/** A pending invitation to join an organization. */
 export class InvitationResponseDto {
   @ApiProperty()
   id!: string;

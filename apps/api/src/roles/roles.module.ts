@@ -69,13 +69,10 @@ const repositories: Provider[] = [
 ];
 
 /**
- * Roles / RBAC module. Marked `@Global` so the {@link AbilityFactory} (used by
- * the auth `PoliciesGuard` from every feature module) and the repository ports
- * are available application-wide without circular module imports.
- *
- * The same factory is bound to the auth kernel's `ABILITY` token: the guard
- * asks "what may this principal do" through a port so that `auth` names no
- * feature module, and this module is the one that answers.
+ * Roles / RBAC module. Marked `@Global` so the {@link AbilityFactory}, bound
+ * here to the auth kernel's `ABILITY` port that `PoliciesGuard` reads in every
+ * feature module, and the repository ports are available application-wide
+ * without circular module imports.
  */
 @Global()
 @Module({

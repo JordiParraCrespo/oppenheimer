@@ -28,7 +28,6 @@ export {
 } from './hosts.queries';
 export {
   type ConnectInstallationVariables,
-  type RepositoryRef,
   useConnectInstallation,
   useInstallationRepositories,
   useInstallationRepositoriesFor,

@@ -53,8 +53,6 @@ describe('I18nService', () => {
 
   it('renders the compact stamp from the copy tree, not from code', () => {
     const subject = service();
-    // Spanish abbreviates minutes differently — which is exactly why the label
-    // is a translation rather than a formatter concern.
     expect(subject.for('en').relativeShort(new Date('2026-08-08T11:48:00Z'))).toBe('12m');
     expect(subject.for('es').relativeShort(new Date('2026-08-08T11:48:00Z'))).toBe('12min');
     expect(subject.for('en').relativeShort(new Date('2026-08-07T12:00:00Z'))).toBe('1d');

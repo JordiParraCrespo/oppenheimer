@@ -88,8 +88,7 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
    * The pairing check rides the insert: the row to write is selected from
    * `host` by primary key with `"unpairedAt" IS NULL`, so an unpaired or
    * unknown host yields no row to insert, nothing is written, and `RETURNING`
-   * comes back empty. That is the whole of what a heartbeat used to read the
-   * host row for.
+   * comes back empty.
    */
   async recordVitalsIfPaired(hostId: string, report: VitalsReport, at: Date): Promise<boolean> {
     const written: unknown[] = await this.dataSource.query(
@@ -322,8 +321,9 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
   }
 
   /**
-   * Append timeline entries inside a transaction someone else owns — the
-   * host's own save, so a rename and its entry commit together.
+   * Append timeline entries on the caller's transaction — the host's own save
+   * or registration, or an inventory or network write — so a change and its
+   * entry commit together.
    */
   async insertTimeline(
     manager: EntityManager,

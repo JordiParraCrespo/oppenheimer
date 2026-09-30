@@ -115,9 +115,8 @@ export const auth = betterAuth({
   // authenticated request costs one Redis GET rather than a session-and-user
   // query on this pool. Postgres stays the record (`storeSessionInDatabase`
   // below): the session list, the sign-in hook and the foreign keys read it,
-  // and a Redis miss or outage falls back to it. Keys are hashed, and every
-  // write the app makes to a user or session row outside Better Auth goes
-  // through `SESSION_CACHE` so the copy never outlives the row it mirrors.
+  // and a Redis miss or outage falls back to it. Writes the app makes to a user
+  // or session row outside Better Auth go through `SESSION_CACHE`.
   //
   // `session.cookieCache` is deliberately not enabled: a signed cookie cannot
   // be revoked, so a ban, a deletion or "sign out other devices" would wait out
@@ -157,8 +156,6 @@ export const auth = betterAuth({
     },
   },
   session: {
-    // Written to Postgres as well as Redis, and deleted from both on
-    // revocation (`preserveSessionInDatabase: false`, today's behaviour).
     storeSessionInDatabase: true,
     preserveSessionInDatabase: false,
     /**
@@ -283,8 +280,8 @@ export const auth = betterAuth({
     },
   },
   user: {
-    // Declared in @oppenheimer/auth so the web/mobile clients' `inferAdditionalFields`
-    // consume the same schema and cannot drift from the server.
+    // Declared in @oppenheimer/auth so the web client's `inferAdditionalFields`
+    // consumes the same schema and cannot drift from the server.
     additionalFields: userAdditionalFields,
     // Settings → Profile's Change. With no `sendChangeEmailConfirmation` and
     // no `updateEmailWithoutVerification`, Better Auth takes one path for
@@ -346,12 +343,11 @@ export const auth = betterAuth({
               teamId: string | null;
             }>(
               // Which organization a returning user lands in: the one they last
-              // had open, then the most recently joined. Oldest-first sent an
-              // invitee back to the personal workspace sign-up provisioned
-              // seconds before the acceptance, without the invitation's
-              // org-scoped role, and the dashboard answered 403. An explicit
-              // sign-out deletes the session row that remembers, hence the
-              // most-recently-joined fallback.
+              // had open, then the most recently joined. Not the oldest: that is
+              // an invitee's personal workspace, provisioned seconds before the
+              // acceptance and without the invitation's org-scoped role, so the
+              // dashboard would answer 403. An explicit sign-out deletes the
+              // session row that remembers, hence the fallback.
               //
               // The workspace is one the user belongs to, falling back to the
               // organization's default, so the session never points at a team
@@ -400,15 +396,15 @@ export const auth = betterAuth({
               },
             };
           } catch {
-            // Organization tables not migrated yet — leave the session as-is.
+            // Any failure leaves the session as-is: sign-in never fails over
+            // which organization it lands in.
             return;
           }
         },
       },
       delete: {
         // Every session row Better Auth deletes — one revocation, a bulk
-        // sign-out, a ban, a password reset — takes its cached copy with it,
-        // since Better Auth's per-user index of copies is itself a cache entry
+        // sign-out, a ban, a password reset — takes its cached copy with it
         // (`sessionDeleteHooks`). A failure here aborts the delete, so a
         // revocation that cannot reach Redis fails loudly instead of
         // succeeding in Postgres alone.
@@ -467,8 +463,9 @@ export const auth = betterAuth({
     }),
     // Accepts `Authorization: Bearer <session token>`. Used by the API's own
     // auth guard, which mints a short-lived delegated session for a scoped
-    // credential so the organization/admin façades — which resolve the caller
-    // through Better Auth — keep working for API tokens and MCP clients.
+    // credential so the organization, admin and profile façades — which
+    // resolve the caller through Better Auth — keep working for API tokens and
+    // MCP clients.
     bearer(),
     // Turns the app into an OAuth 2.1 provider for MCP clients: discovery
     // metadata, dynamic client registration, authorization and token endpoints.
@@ -505,8 +502,8 @@ export type Auth = typeof auth;
 /**
  * Release everything importing this module holds open.
  *
- * Configuring `auth` is a side effect of the import: it opens its own `pg` pool
- * (above), and `./email-queue` constructs a BullMQ `Queue`, whose Redis client
+ * Configuring `auth` is a side effect of the import: it opens its own `pg` pool,
+ * and `./email-queue.util` constructs a BullMQ `Queue`, whose Redis client
  * connects eagerly. Both keep the Node event loop alive, so a **short-lived
  * script** that imports `auth` — the seed — finishes its work and then hangs
  * forever instead of exiting. Long-running processes never need this: the API

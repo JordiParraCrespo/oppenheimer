@@ -7,22 +7,12 @@ import {
 import type { IAuthClient } from '@oppenheimer/frontend-core';
 import { createAuthClient } from 'better-auth/react';
 
-/**
- * Better Auth browser client. Authentication is cookie-based: the API sets an
- * httpOnly session cookie which the browser sends automatically on subsequent
- * requests (`credentials: include`). The Vite dev server proxies `/api` to the
- * API, keeping web and API same-origin so the cookie is sent without
- * cross-site restrictions.
- */
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? '';
 
 /**
- * Better Auth rejects a relative `baseURL`, but same-origin is this app's
- * intended default — with no `VITE_API_URL` the path is just `/api/auth`,
- * which threw `Invalid base URL` and left the page blank before any UI
- * mounted. Resolving against the current origin keeps the zero-config path
- * working and still lets an absolute `VITE_API_URL` win, since `new URL()`
- * ignores the base when the input is already absolute.
+ * Better Auth rejects a relative `baseURL` (`Invalid base URL`, a blank page),
+ * so the same-origin default is resolved against the current origin; an
+ * absolute `VITE_API_URL` still wins, since `new URL()` ignores the base then.
  */
 const authBaseUrl = new URL(`${apiBaseUrl}/api/auth`, window.location.origin).toString();
 
@@ -53,10 +43,9 @@ export const webAuthClient: IAuthClient = {
   async signInSocial(provider, intent = 'sign-in') {
     const url = (path: string) => new URL(path, window.location.origin).toString();
 
-    // Redirects the browser to the provider and back to /sessions — but only
-    // when the call to start the round-trip succeeds. It is the one method
-    // here that used to skip `unwrap`, so a provider the API rejected resolved
-    // as if it had worked and the screen had nothing to show.
+    // Redirects the browser to the provider and back, but only when the call
+    // to start the round-trip succeeds: without `unwrap` a provider the API
+    // rejected resolves as if it had worked and the screen has nothing to show.
     unwrap(
       await authClient.signIn.social({
         provider,

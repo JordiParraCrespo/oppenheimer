@@ -14,7 +14,8 @@ import {
  * Better Auth owns writes to identity columns (sign-up, OAuth, verification);
  * the application reads/updates the profile columns through TypeORM for the
  * `/users` endpoints. `firstName`, `lastName`, `phone`, `jobTitle`, `role` and
- * `isActive` are Better Auth "additional fields" declared in `auth.ts`.
+ * `isActive` are Better Auth "additional fields" declared in `@oppenheimer/auth`
+ * (`userAdditionalFields`).
  */
 @Entity('user')
 @Unique('UQ_user_email', ['email'])

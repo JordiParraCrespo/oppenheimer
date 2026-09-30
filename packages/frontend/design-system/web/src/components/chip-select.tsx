@@ -346,7 +346,7 @@ function ChipSelectEmpty({
  *
  * The list is the only part of a pane that scrolls, so the back row, search and
  * action band never move and no row slides under them; scrolling the whole
- * popup left rows visible in its padding above the sticky search.
+ * popup would show rows in its padding above the sticky search.
  */
 function ChipSelectList({
   density = 'chip',
@@ -489,11 +489,9 @@ function PlusGlyph() {
 /**
  * One option row of `ChipSelect`, memoised on purpose.
  *
- * The highlight moves on every row the pointer crosses and on every arrow key,
- * and it lived in the picker: each move re-ran the whole list, so crossing a
- * branch chip of a hundred rows re-rendered a hundred rows per row crossed. A
- * row takes its own `highlighted` flag and two callbacks whose identity holds,
- * so a move re-renders the row it left and the row it reached.
+ * The highlight moves on every row the pointer crosses and on every arrow key.
+ * A row takes its own `highlighted` flag and two callbacks whose identity holds,
+ * so a move re-renders the row it left and the row it reached, not the list.
  */
 const ChipSelectOptionRow = React.memo(function ChipSelectOptionRow({
   option,
@@ -527,16 +525,12 @@ const ChipSelectOptionRow = React.memo(function ChipSelectOptionRow({
 });
 
 /**
- * ChipSelect — a scope decision stated as a chip: "Run X on host **mac-studio**,
- * repo **xrp-mobile**, branch **main**, with **Claude Code**". Four in a row on
- * New session, so the row reads as a sentence instead of a form.
+ * ChipSelect — a scope decision stated as a chip: "Run X in **XRP Mobile**
+ * on host **mac-studio**, repo **xrp-mobile**, branch **main**". Four in a
+ * row on New session, so the row reads as a sentence instead of a form.
  *
- * Every one filters. The trigger is a 34px chip at the 14px radius on the
- * control fill (leading icon, value, chevron), with the blue ring when open.
- * The popup is a 248px listbox: a sticky search row, options with an optional
- * leading mark and muted second line, a check on the selected one, a centred
- * empty line, and, when the list can grow, a pinned action band ("Add host…")
- * with a plus and a chevron, because it opens something rather than choosing.
+ * Every one filters. When the list can grow, a pinned action band ("Add
+ * host…") ends in a chevron, because it opens something rather than choosing.
  *
  * Built on Popover because Base UI Select has no filtering. The parts are
  * exported so a multi-pane picker such as `RepositorySelect` is the same chip

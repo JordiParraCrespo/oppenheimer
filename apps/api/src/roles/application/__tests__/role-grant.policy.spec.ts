@@ -50,8 +50,6 @@ describe('RoleGrantPolicy', () => {
   });
 
   it('blocks a role editor from writing themselves `manage all`', async () => {
-    // Without this, `update Role` is effectively `manage all`: compose the
-    // role, assign it to yourself, done.
     const policy = policyFor([{ action: 'manage', subject: 'Role' }]);
 
     await expect(
@@ -161,8 +159,6 @@ describe('RoleGrantPolicy', () => {
   });
 
   it('trusts an internal caller with no actor', async () => {
-    // Seeds and migration backfills are the code that defines the system roles;
-    // there is no ability to check them against.
     const policy = policyFor([]);
 
     await expect(

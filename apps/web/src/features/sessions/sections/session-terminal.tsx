@@ -23,10 +23,6 @@ const AGENT_WINDOW = 0;
  * agent draws its own prompt inside the grid, and a second field gave the pane
  * two carets; the agent's has the history, slash commands and mode, so the
  * grid keeps the input.
- *
- * **An image pasted or dropped onto the grid** goes to the host rather than
- * to xterm: the agent reads its host's clipboard, never the browser's, so the
- * runner saves the file and pastes its path into the prompt (05).
  */
 export function SessionTerminal({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
@@ -47,18 +43,12 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
           xterm owns everything inside the inner element, scrollbar included. */}
       <div className="relative min-h-0 flex-1 overflow-hidden px-5 py-4">
         <div ref={containerRef} className="size-full" />
-        {/* A live link with an empty grid behind it.
-            Two things arrive here and the reader cannot tell them apart, which
-            is why the copy names both. A new session: the host reports it
-            "started" once tmux holds it, which is before the agent inside has
-            drawn anything — a few seconds cold, tens of them on a loaded
-            machine — and the provisioning pane has handed over by then. An
-            older one: the attachment replays its scrollback, and on a busy
-            host that took seconds here.
-            Either way the question is "is this broken", and the answer is no.
-            It covers the grid rather than replacing it, so the terminal stays
-            mounted and keeps its size, and the first chunk that would put a
-            glyph on it takes this away. */}
+        {/* A live link with an empty grid behind it: a new session whose agent
+            has not drawn yet (the provisioning pane has handed over), or an
+            older one replaying its scrollback. Either way the reader cannot
+            tell a slow start from a broken session without this. It covers
+            the grid rather than replacing it, so the terminal stays mounted
+            and keeps its size, and the first glyph takes it away. */}
         {status === 'live' && !hasOutput ? (
           <div className="absolute inset-0 flex items-center justify-center bg-term-bg">
             <EmptyState>

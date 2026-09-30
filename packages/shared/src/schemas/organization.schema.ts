@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { ORGANIZATION_ROLES } from '../constants/index.js';
 
 /**
- * Request contracts for the organization / members / invitations / workspaces
- * REST modules (`apps/api/src/organizations`), which delegate to the Better Auth
+ * Request contracts for the organization, member, invitation and workspace
+ * routes of `apps/api/src/organizations`, which delegate to the Better Auth
  * organization plugin. Also usable for client-side form validation. Path
  * parameters (org id, member id, invitation id, team id) are validated as UUIDs
  * by the controllers, so only request bodies are modelled here.
@@ -21,8 +21,8 @@ export const createOrganizationSchema = z.object({
     .string()
     .min(2)
     .max(48)
-    // No message: Zod 3's `regex` takes no params, so a form words it from the
-    // issue code (`validation.format`) rather than from English pinned here.
+    // No message: a form words it from the issue code (`validation.format`)
+    // rather than from English pinned here.
     .regex(/^[a-z0-9-]+$/)
     .optional(),
   logo: z.string().url().optional(),
@@ -53,12 +53,12 @@ export const checkSlugSchema = z.object({
 });
 
 /**
- * How the team table narrows the member list, answered by the server.
+ * How the member list is narrowed, answered by the server.
  *
  * Both facets are here rather than in the browser because the endpoint is the
- * only place that can see the whole list: the table pages what it is given, so
- * a filter applied after the response narrows one page and leaves the rest of
- * the matches on the pages nobody looked at.
+ * only place that can see the whole list: a filter applied after a paged
+ * response narrows one page and leaves the rest of the matches on the pages
+ * nobody looked at.
  */
 export const listMembersSchema = z.object({
   /** Case-insensitive match on name, email, organization role or assigned role name. */

@@ -8,10 +8,9 @@ import { asRecord, DEFAULT_MAX_TOKENS, usageFrom } from '../parse';
 /**
  * Any server that speaks OpenAI's `POST {baseUrl}/chat/completions`.
  *
- * **One class, most of the field.** Groq, Together, Fireworks, DeepInfra,
- * OpenRouter, a vLLM deployment and a local Ollama all accept the same body, so
- * a new one is a base URL rather than a class. `OpenRouterLlmService` and
- * `TogetherLlmService` are that: this class with the URL filled in.
+ * A new server that accepts this body is a base URL rather than a class:
+ * `OpenRouterLlmService` and `TogetherLlmService` are this class with the URL
+ * filled in.
  *
  * The key is optional here and required by the presets: a model served on your
  * own machine wants none, and sending `Authorization: Bearer ` with nothing

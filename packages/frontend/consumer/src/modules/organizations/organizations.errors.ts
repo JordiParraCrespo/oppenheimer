@@ -1,11 +1,10 @@
 import type { ErrorDefinition } from '@oppenheimer/frontend-core';
 
 /**
- * Client-side fallbacks for the organizations module. These are used only when
- * the API could not be reached, or answered with something that is not a
- * problem document — whenever the server sent one, `toAppError` keeps the
- * server's `code`, `title` and `detail` instead (see `ORG_*` in the API's error
- * reference).
+ * Client-side fallbacks for the organizations module, used only when the API
+ * could not be reached or answered with something that is not a problem
+ * document. Whenever the server sent one, `toAppError` keeps its `code`,
+ * `title` and `detail` instead — see `ORG_*` in the API's error reference.
  */
 export const OrganizationsErrors = {
   FETCH_LIST_FAILED: {

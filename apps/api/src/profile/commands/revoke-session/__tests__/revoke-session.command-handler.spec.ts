@@ -51,8 +51,6 @@ describe('RevokeSessionCommandHandler', () => {
   });
 
   it('refuses to revoke the session making the request', async () => {
-    // Signing yourself out mid-request is indistinguishable from a failure;
-    // that is what the sign-out endpoint is for.
     const error = await service
       .execute(command({ sessionId: 'session-1' }))
       .catch((e) => e as AppError);
@@ -71,7 +69,6 @@ describe('RevokeSessionCommandHandler', () => {
   });
 
   it('reports someone else’s session as not found, not forbidden', async () => {
-    // Distinguishing the two would confirm that a session id exists.
     sessions.findOneById = vi.fn().mockResolvedValue(Some({ ...OWNED, userId: 'someone-else' }));
 
     const error = await service.execute(command()).catch((e) => e as AppError);

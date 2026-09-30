@@ -5,9 +5,8 @@
  * refusal the same condition gets when it is caught before the upgrade: an
  * unpaired host is refused with `410` at the handshake and closed with `4410`
  * when it is unpaired while its link is open. The runner does not keep a twin:
- * the schema artifact carries every constant in this file under `x-constants`,
- * and `scripts/emit-link-protocol.cjs` writes them into
- * `apps/runner/internal/link/protocol.gen.go`.
+ * every constant in this file reaches `protocol.gen.go` through the schema's
+ * `x-constants` (`./json-schema.ts`).
  *
  * The handshake's `410` is terminal only with {@link RUNNER_LINK_REFUSAL_HEADER}.
  * A `4410` needs no such proof — proxies do not invent codes in the private range.

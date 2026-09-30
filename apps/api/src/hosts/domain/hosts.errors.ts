@@ -42,8 +42,8 @@ export const HostErrors = {
     httpStatus: 401,
   },
   /**
-   * Every unspent token is a live way to add a machine to the account for an
-   * hour, so one person may hold only a few at once.
+   * Every unspent token is a live way to add a machine to the account until it
+   * expires, so one person may hold only a few at once.
    */
   TOO_MANY_PAIRING_TOKENS: {
     code: 'HOSTS_006',

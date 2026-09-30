@@ -62,7 +62,7 @@ func ExitCode(err error) int {
 }
 
 // printer writes the CLI's output and remembers the first failure, so a
-// closed pipe is reported once instead of ignored eight times.
+// closed pipe is reported once instead of ignored at every line.
 type printer struct {
 	w   io.Writer
 	err error

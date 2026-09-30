@@ -73,8 +73,8 @@ type Size struct {
 // Attachment is one PTY attached to a window: the bytes a browser sees.
 type Attachment interface {
 	io.ReadWriteCloser
-	// Resize sets the PTY's size; tmux sizes the window to the smallest
-	// attached client.
+	// Resize sets the PTY's size; tmux sizes the window to the client that
+	// resized last (`window-size latest`, tmux.Config).
 	Resize(size Size) error
 }
 
@@ -110,9 +110,8 @@ type Images interface {
 type Screen struct {
 	// Body is the visible text of the pane.
 	Body string
-	// Title is what the program set through an OSC escape sequence. It is
-	// the most trustworthy signal available: the agent controls it, and
-	// nothing a person types into their prompt can appear in it.
+	// Title is what the program set through an OSC escape sequence; why it
+	// is the signal to trust is manifest.RegionTitle.
 	Title string
 }
 
@@ -131,13 +130,13 @@ type Store interface {
 	Save([]domain.Session) error
 }
 
-// Publisher receives state changes. The link will forward them to the control
-// plane; until it exists, the composition root supplies a logger.
+// Publisher receives state changes; the link forwards them to the control
+// plane.
 type Publisher interface {
 	SessionChanged(session domain.Session)
 }
 
-// NopPublisher drops events, for tests and for a runner with no link yet.
+// NopPublisher drops events: the service's publisher until the link is set.
 type NopPublisher struct{}
 
 // SessionChanged implements Publisher.

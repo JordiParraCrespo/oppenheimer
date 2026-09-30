@@ -12,7 +12,7 @@ import type { WorkspaceAuthPort } from '../../infrastructure/workspace-auth.port
 import { ORGANIZATION_AUTH, WORKSPACE_AUTH } from '../../organizations.di-tokens';
 import { CreateOrganizationCommand } from './create-organization.command';
 
-/** The workspace every new organization starts with, named as sign-up names it. */
+/** The workspace (Better Auth team) an organization created here starts with. */
 const DEFAULT_WORKSPACE = 'General';
 
 /**
@@ -20,11 +20,11 @@ const DEFAULT_WORKSPACE = 'General';
  *
  * Better Auth writes the organization and an `owner` membership; neither is
  * what the app's routes check. `MembershipAccessPolicy.admit` grants the
- * org-scoped role beside them, and discards the organization if it cannot —
- * an organization its owner cannot read is how a self-service registration
- * used to land on a 403 (issue #106). The default workspace and the
- * announcement that follow are best-effort: failing the request over them
- * would tell the caller an organization they own does not exist.
+ * org-scoped role beside them, and discards the organization if it cannot: an
+ * organization its owner cannot read answers them 403 (issue #106). The
+ * default workspace and the announcement that follow are best-effort: failing
+ * the request over them would tell the caller an organization they own does
+ * not exist.
  */
 @CommandHandler(CreateOrganizationCommand)
 export class CreateOrganizationCommandHandler
@@ -77,7 +77,7 @@ export class CreateOrganizationCommandHandler
     }
   }
 
-  /** Tell the API the organization exists, so it gets its Unassigned project. */
+  /** Announce the organization in process, so it gets its Unassigned project. */
   private async announce(organizationId: string, creatorId: string): Promise<void> {
     try {
       await this.events.emitAsync(

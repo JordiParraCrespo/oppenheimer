@@ -102,12 +102,12 @@ export class HostPresenceResolver implements HostPresencePort {
   }
 
   /**
-   * The handshake refuses a banned or
-   * deactivated owner's host; this is what closes a link that was already open
-   * when the ban landed, on whichever replica holds it. Asked on every hello
-   * and at most once per `OWNER_RECHECK_MS` on heartbeats, so the common beat
-   * stays the one statement it is; the owner id is remembered, because a host
-   * never changes owner.
+   * The handshake refuses a banned or deactivated owner's host; this is what
+   * closes a link that was already open when the ban landed, on whichever
+   * replica holds it. Asked on every hello and at most once per
+   * `OWNER_RECHECK_MS` on heartbeats, so the common beat stays the one
+   * statement it is; the owner id is remembered, because a host never changes
+   * owner.
    */
   private async ownerStanding(hostId: string, at: Date, hello: boolean): Promise<PresenceOutcome> {
     const memo = this.ownerChecks.get(hostId);

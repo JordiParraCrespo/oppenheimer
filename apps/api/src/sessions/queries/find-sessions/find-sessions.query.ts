@@ -4,8 +4,8 @@ import type { SessionSortDto, SessionState } from '@oppenheimer/shared';
 
 /**
  * `state` is the **stored lifecycle**, not the derived group the sidebar shows: the
- * group is computed on read from things that are not columns, so it cannot be an
- * index and filtering on it would mean reading every row.
+ * group is computed on read against the clock, so no index holds it and filtering on
+ * it would mean reading every row.
  */
 export class FindSessionsQuery extends QueryBase {
   readonly scope: AccessScope;

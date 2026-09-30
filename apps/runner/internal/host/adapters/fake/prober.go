@@ -1,5 +1,5 @@
-// Package fake is an in-memory Prober: the default in tests and the reason
-// nothing in this context needs a Debian box to be exercised.
+// Package fake is an in-memory Prober and Updater: the default in tests and
+// the reason nothing in this context needs a Debian box to be exercised.
 package fake
 
 import (

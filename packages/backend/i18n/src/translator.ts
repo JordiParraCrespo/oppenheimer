@@ -15,12 +15,12 @@ export interface TranslatorOptions {
 /**
  * Dotted-key message lookup with interpolation and plural selection.
  *
- * Deliberately not i18next: the server needs a fraction of it, and a
- * fifty-line implementation that never throws is worth more here than a
- * feature-complete one that can. **`t()` always returns a string** — a missing
+ * Deliberately not i18next: the server needs a fraction of it, and a small
+ * implementation that never throws is worth more here than a feature-complete
+ * one that can. **`t()` always returns a string** — a missing
  * key renders its own path, which is ugly in a way that gets noticed and
- * fixed, where a thrown error would take down a whole inbox page over one
- * untranslated notification.
+ * fixed, where a thrown error would take down a whole page over one
+ * untranslated string.
  */
 export class Translator {
   private readonly bundles: MessageBundles;
@@ -89,9 +89,9 @@ export class Translator {
 
   /**
    * Like {@link t}, but returns `undefined` instead of the key path when the
-   * message does not exist. For optional copy — a notification's `note`, a
-   * fact label that falls back to its own key — where "absent" is a real state
-   * the caller wants to branch on.
+   * message does not exist. For optional copy (an invitation's localized role
+   * name, which falls back to the raw role), where "absent" is a real state the
+   * caller wants to branch on.
    */
   optional(locale: string, key: string, vars: TranslationVars = {}): string | undefined {
     const template = this.resolveTemplate(locale, key, vars.count);

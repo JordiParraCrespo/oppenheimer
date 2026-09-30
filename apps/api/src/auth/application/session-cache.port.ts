@@ -27,9 +27,7 @@ export interface SessionCachePort {
 
   /**
    * Revoke every session of this user except `keepSessionId`, rows and cached
-   * copies alike, judged from the database rather than the cache's own index
-   * of the user's sessions — which knows nothing of a session written before
-   * the cache existed.
+   * copies alike.
    */
   revokeOtherSessions(userId: string, keepSessionId: string): Promise<void>;
 }

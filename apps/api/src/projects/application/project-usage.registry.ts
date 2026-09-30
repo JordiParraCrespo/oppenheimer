@@ -36,7 +36,6 @@ export class ProjectUsageRegistry {
     return false;
   }
 
-  /** Empty means nothing can answer, which is what makes the archive refuse. */
   canAnswer(): boolean {
     return this.usages.length > 0;
   }

@@ -6,10 +6,9 @@ import {
 } from '../queue-options.config';
 
 /**
- * `@nestjs/bullmq` merges the root and a queue's options shallowly: a queue's
- * `defaultJobOptions` replace the root's whole. So every set a queue can be
- * given must carry the removal policy itself, or that queue keeps its jobs in
- * Redis for ever. Each set is pinned whole below, removal policy included.
+ * A queue's `defaultJobOptions` replace the root's whole (see
+ * `DEFAULT_JOB_OPTIONS`), so each set is pinned whole below, removal policy
+ * included.
  */
 describe('queue job options', () => {
   it('keeps an hour of completed jobs and a week of failed ones by default', () => {

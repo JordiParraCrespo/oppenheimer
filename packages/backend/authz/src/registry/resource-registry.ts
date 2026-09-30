@@ -10,14 +10,13 @@ export interface ResourceGroup {
 /**
  * Every resource the application has declared, collected at boot.
  *
- * This is the extension point that replaces editing a central literal: a
- * feature module registers its own declaration through
- * `AuthzModule.forFeature`, and the catalog endpoint, the scope engine, the
- * role builder and the coverage tests all read from here.
+ * A feature module registers its own declaration through
+ * `AuthzModule.forFeature`; the catalog endpoint the role builder renders and
+ * the access-grant command read from here.
  *
  * Registration is idempotent by subject so a module imported twice does not
  * duplicate entries, but a *conflicting* redeclaration throws — two modules
- * disagreeing about what `Lead` means is a bug, not a merge.
+ * disagreeing about what `Project` means is a bug, not a merge.
  */
 @Injectable()
 export class ResourceRegistry {
@@ -43,8 +42,8 @@ export class ResourceRegistry {
 
   /**
    * Like {@link get}, but throws. Use from code that cannot proceed without the
-   * declaration (the scope engine), so a missing one surfaces as a clear error
-   * rather than an unfiltered query.
+   * declaration, so a missing one surfaces as a clear error rather than an
+   * unfiltered query.
    */
   getOrThrow(subject: string): ResourceDefinition {
     const definition = this.resources.get(subject);

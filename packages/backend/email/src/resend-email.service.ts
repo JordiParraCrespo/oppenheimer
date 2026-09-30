@@ -31,10 +31,8 @@ export class ResendEmailService extends EmailService {
 
   /**
    * `resend.emails.send()` resolves with `{ data, error }` instead of throwing,
-   * so a failure (misconfigured sender domain, rate limit, invalid recipient)
-   * would otherwise be silently swallowed. Inspect the response and throw so the
-   * failure propagates to the caller (e.g. the email queue processor) instead of
-   * being reported as a successful send.
+   * so without the throw here a failure (misconfigured sender domain, rate
+   * limit, invalid recipient) would reach the caller as a successful send.
    */
   private async send(options: CreateEmailOptions): Promise<void> {
     const { data, error } = await this.resend.emails.send(options);

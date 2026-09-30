@@ -10,8 +10,9 @@ export interface SessionDispatchOutcome {
    * Structured hints for the caller. `host_offline` is the one the console has a
    * use for; a runner must not be able to say it about itself, which is why the
    * link's hint vocabulary and this one are two schemas. `not_supported` is the
-   * other: the host is reachable and the operation has no frame on the wire yet,
-   * so nothing was sent and the row is ahead of the host.
+   * other: the host is reachable but cannot take the operation (no frame on the
+   * wire yet, or a runner whose `hello` did not name the capability), so nothing
+   * was sent.
    */
   hints: string[];
 }
@@ -20,9 +21,7 @@ export interface SessionDispatchOutcome {
  * What the host is told to make. Every path segment is a unique-constrained
  * column, so the runner derives `workspaces/<organizationSlug>/sessions/<sessionSlug>/`
  * without asking — and only the names it cannot read off the session travel
- * here. The workspace's slug is one of them: it belongs to the organization row,
- * which this module asks `organizations/` for through its published port, so the
- * dispatcher never reads another module's table.
+ * here.
  */
 export interface SessionLaunchSpec {
   /** The workspace's slug: a path segment on the host, read through `WORKSPACE_LOOKUP`. */
@@ -74,9 +73,9 @@ export interface SessionImageSpec {
  * durable, so there is no `jobs` table and nothing here promises delivery. An
  * implementation says whether it got the job onto a link; the log records the answer.
  *
- * **An implementation never writes the log.** One user action is one entry, appended
+ * **An implementation never writes the log.** A user action's entries are appended
  * by the command handler in the same transaction as its row change; a dispatcher that
- * also appended would make a click two entries in two transactions.
+ * also appended would split one click across two transactions.
  */
 export interface SessionDispatchPort {
   /** Make the directories, the checkouts and window 0, then launch the agent. */

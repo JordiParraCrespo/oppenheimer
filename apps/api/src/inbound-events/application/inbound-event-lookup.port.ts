@@ -9,7 +9,7 @@ export interface MatchingEventsQuery {
   since: Date;
   /**
    * The attribute a trigger's filter narrows on and the value it wants —
-   * equal, or among the values when the attribute is a list (labels) — the
+   * equal, or among the values when the attribute is a list — the
    * same rule as `matchesTriggerFilter`. Absent matches every event.
    */
   attribute?: { field: string; value: string };

@@ -87,9 +87,7 @@ export interface AttachTicket {
  *
  * Two state words, because the API has two and they answer different questions:
  * `state` is the derived group the sidebar dot shows, and `lifecycle` is the
- * stored fold of the log. Collapsing them was the error an earlier version of
- * this file made — it carried one `running | idle | stopped` union that the API
- * had already stopped sending.
+ * stored fold of the log.
  */
 export class SessionEntity {
   constructor(

@@ -55,7 +55,7 @@ export interface IssueApiTokenProps {
   now?: Date;
 }
 
-/** Why a credential was refused. `null` means it is usable. */
+/** Why a credential was refused; see `rejectionReason`. */
 export type ApiTokenRejection = 'revoked' | 'expired' | 'ip-not-allowed';
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -182,7 +182,7 @@ export class ApiTokenEntity extends AggregateRoot<ApiTokenProps> {
     return null;
   }
 
-  /** Revoke the token. Idempotent: revoking twice keeps the first timestamp. */
+  /** Idempotent: revoking twice keeps the first timestamp. */
   revoke(now: Date = new Date()): void {
     if (this.isRevoked()) return;
     this.props.revokedAt = now;

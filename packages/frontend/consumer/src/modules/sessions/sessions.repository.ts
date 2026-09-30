@@ -23,7 +23,7 @@ import { SessionsErrors } from './sessions.errors';
  * The wire shapes come from the generated client (`pnpm generate:api-client`,
  * from the API's own OpenAPI), so a field the API renames cannot stay right
  * here and wrong there. Call the generated operations rather than composing
- * URLs by hand: a hand-written shape here once drifted from the API unnoticed.
+ * URLs by hand.
  */
 
 function toCheckout(data: SessionCheckoutResponseDto): SessionCheckoutEntity {
@@ -105,8 +105,6 @@ export class SessionsRepository {
     const sessions: SessionEntity[] = [];
     let cursor: string | undefined;
     for (;;) {
-      // An absent body is a failed read, not an empty collection — returning
-      // `[]` would render "no sessions" over a request that never succeeded.
       const data = await unwrapBody(
         heyApiSdk.findSessions({
           query: { limit: PAGINATION.MAX_LIMIT, ...(cursor ? { cursor } : {}) },
@@ -124,9 +122,7 @@ export class SessionsRepository {
 
   /**
    * The failure keeps the response's status, as every call here does, and this
-   * read leans on it: the console's session route has to tell a mistyped or
-   * closed session id — a 404, and a destination that will never exist — from
-   * a read that failed and is worth retrying.
+   * read leans on it: `isSessionNotFound` tells a 404 from a read worth retrying.
    */
   @MapApiError(SessionsErrors.FETCH_ONE_FAILED)
   async findById(id: string): Promise<SessionEntity> {
@@ -138,11 +134,11 @@ export class SessionsRepository {
   }
 
   /**
-   * The `Idempotency-Key` is not optional in practice and so is minted here
-   * rather than asked of the caller: a session is directories, a git checkout
-   * and a process on somebody's machine, and a retry after a lost response must
-   * hand back the session already created instead of building a second worktree
-   * and a second branch.
+   * The `Idempotency-Key` is not optional in practice: a session is
+   * directories, a git checkout and a process on somebody's machine, and a
+   * retry after a lost response must hand back the session already created
+   * instead of building a second worktree and a second branch. The key is the
+   * caller's to mint (`CreateSessionVariables`).
    */
   @MapApiError(SessionsErrors.CREATE_FAILED)
   async create(input: CreateSessionInput, idempotencyKey: string): Promise<SessionEntity> {
@@ -238,11 +234,8 @@ export class SessionsRepository {
   }
 
   /**
-   * A pass to open one window's terminal.
-   *
-   * Never cached and never retried on its own: the ticket is single use and
-   * sixty seconds, so the only right time to mint one is the moment a socket is
-   * about to be opened with it.
+   * A pass to open one window's terminal. Never cached and never retried on
+   * its own: the ticket is single use and sixty seconds.
    */
   @MapApiError(SessionsErrors.ATTACH_TICKET_FAILED)
   async issueAttachTicket(id: string, window = 0): Promise<AttachTicket> {

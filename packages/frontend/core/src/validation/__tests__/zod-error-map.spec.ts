@@ -41,8 +41,6 @@ describe('createZodErrorMap', () => {
   });
 
   it('cannot override a message the schema states explicitly', () => {
-    // Zod short-circuits the error map when the check carries its own message.
-    // This is why the schemas in `@oppenheimer/shared` deliberately omit them.
     expect(messageFor(z.string().email('Invalid email address'), 'nope')).toBe(
       'Invalid email address',
     );

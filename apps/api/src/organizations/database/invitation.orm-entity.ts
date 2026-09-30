@@ -2,7 +2,7 @@ import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 'typeorm';
 
 /**
- * Persistence model for the Better Auth `invitation` table — a pending
+ * Persistence model for the Better Auth `invitation` table — an
  * invitation to join an organization (optionally scoped to a team/workspace).
  * Owned by Better Auth. Its foreign keys live in the migrations: `organizationId`
  * and `inviterId` cascade from `organization` and `user`, `teamId` is set null

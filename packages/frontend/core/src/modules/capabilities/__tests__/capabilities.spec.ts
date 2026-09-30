@@ -44,8 +44,6 @@ describe('CapabilitiesRepository', () => {
   });
 
   it('fails rather than reporting an unreachable API as "nothing configured"', async () => {
-    // The distinction this whole file exists for. Swallowing this into `{}`
-    // renders a login page with every provider hidden.
     api.deploymentCapabilities.mockResolvedValue(ok(undefined));
 
     const error = await repository.get().catch((thrown: AppError) => thrown);

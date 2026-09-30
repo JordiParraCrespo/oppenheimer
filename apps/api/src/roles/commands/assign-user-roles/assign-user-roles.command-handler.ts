@@ -43,8 +43,8 @@ export class AssignUserRolesCommandHandler
 
     // No privilege escalation: assigning a role grants its permissions to the
     // target, so the caller must already hold everything those roles confer.
-    // `RoleGrantPolicy` guards role *definitions*; this closes the parallel
-    // escalation path where a lesser admin assigns a role that outranks them.
+    // Role writes make the same check; this is the other path, a lesser admin
+    // assigning a role that outranks them.
     await this.grantPolicy.assertGrantable(
       command.actorId
         ? {

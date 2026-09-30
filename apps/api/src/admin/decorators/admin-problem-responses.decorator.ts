@@ -2,10 +2,10 @@ import { applyDecorators } from '@nestjs/common';
 import { ApiProblemResponse } from '@oppenheimer/backend-core';
 
 /**
- * The problems every admin route can answer with, documented once. Each admin
- * route is its own controller now, and each carries the whole set: any call
- * into the admin plugin can be refused for the same reasons (the account is
- * gone, the caller may not do this to it, the plugin rejected or failed it).
+ * The problems every admin route can answer with, documented once and carried
+ * by each admin controller: any call into the admin plugin can be refused for
+ * the same reasons (the account is gone, the caller may not do this to it, the
+ * plugin rejected or failed it).
  */
 export const AdminProblemResponses = () =>
   applyDecorators(

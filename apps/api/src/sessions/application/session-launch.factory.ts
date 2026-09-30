@@ -30,8 +30,6 @@ export class SessionLaunchSpecFactory {
     if (!organizationSlug) throw new Error(`workspace ${session.organizationId} has no slug`);
     return {
       organizationSlug,
-      // The branch the checkouts recorded wins: a session from before the flat
-      // layout keeps the name its worktrees are already on.
       branch: session.branch ?? sessionBranchName(session.slug),
       ...(extra.prompt ? { prompt: extra.prompt } : {}),
       ...(extra.images?.length ? { images: extra.images } : {}),

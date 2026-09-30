@@ -92,11 +92,10 @@ export const REAUTHORIZE_INTERVAL_MS = 60_000;
  * established socket**, never a refused upgrade: a browser sees a refused upgrade
  * only as a 1006, which it takes for a dropped radio and retries. Only a request with
  * no ticket, or from an origin this API does not serve, is refused before the
- * upgrade; a browser this app serves sends neither. The socket is unauthenticated
- * until judged, so it gets an error listener before anything is awaited.
+ * upgrade; a browser this app serves sends neither.
  *
- * A host with no link gets `host_offline` and a close: that hint is the ticket's,
- * not the link's, and this is the one place it is said.
+ * A host with no link gets the `host_offline` hint and a close, at redemption
+ * and again when an open attachment's link is lost.
  */
 @Injectable()
 export class BrowserAttachGateway {

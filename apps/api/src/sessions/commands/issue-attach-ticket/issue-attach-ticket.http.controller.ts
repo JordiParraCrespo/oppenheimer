@@ -36,10 +36,7 @@ export class IssueAttachTicketHttpController {
 
   @Post(':id/attach-ticket')
   @Version('1')
-  // Opening a terminal is `update Session` behind `sessions:write`. There is no
-  // `attach` action: the scope split is what keeps a read-only credential out of a
-  // PTY, and a verb that lived only in the token picker would be a second
-  // vocabulary.
+  // Opening a terminal is `update Session`; `SessionResource` says why.
   @CheckPolicies({ action: 'update', subject: 'Session' })
   @RequireScopes('sessions:write')
   // Every reconnect mints a fresh ticket, so this is called more often than the

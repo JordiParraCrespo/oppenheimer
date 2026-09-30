@@ -30,10 +30,8 @@ vi.mock('../../auth/infrastructure/email-queue.util', () => ({
 const SRC = resolve(__dirname, '../..');
 
 /**
- * A second `BullModule.registerQueue` for a queue already registered with
- * other options becomes a second `Queue` instance, and `@InjectQueue` hands a
- * provider the one its own module imported: the inbound-events processor got
- * a queue with no retention that way. So a queue is registered in one place.
+ * Why is `QueueModule`'s doc; the regression was the inbound-events processor
+ * handed a second `Queue` instance with no retention.
  */
 describe('queue registration', () => {
   it('happens in QueueModule and nowhere else', () => {

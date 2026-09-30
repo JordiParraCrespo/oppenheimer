@@ -17,7 +17,7 @@ import { ConnectInstallationCommand } from './connect-installation.command';
  * in this workspace (see `InstallStateResolver`). The OAuth `code` proves
  * which GitHub account can see the installation: exchanging it and asking
  * GitHub is the only thing that stops a forged id handing out one-hour tokens
- * to another account's repositories (`product/versions/mvp/00-scope.md`).
+ * to another account's repositories (`product/versions/mvp/10-api-modules-and-data-model.md`).
  *
  * A claim is something a workspace *holds*: a live row elsewhere is a
  * conflict, this workspace's own disconnected row is revived, and another

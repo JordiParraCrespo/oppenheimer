@@ -92,8 +92,6 @@ describe('AuthService analytics', () => {
     });
   });
 
-  // Restoring a session happens on every page load; counting it as a sign-in
-  // would inflate the metric badly.
   it('identifies on session restore without emitting a sign-in', async () => {
     const { service, analytics } = setup();
 
@@ -153,10 +151,6 @@ describe('AuthService analytics', () => {
     expect(analytics.capture).not.toHaveBeenCalled();
   });
 
-  // A logout that lands while the post-login session lookup is still in flight
-  // must win: otherwise the late continuation re-identifies the browser as the
-  // user who just left, and on a shared device the next person's activity is
-  // attributed to them.
   it('discards a pending identify when logout wins the race', async () => {
     const { service, analytics, repository } = setup();
     let resolveSession: (value: AuthSession) => void = () => {};

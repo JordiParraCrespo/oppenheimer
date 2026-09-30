@@ -27,7 +27,7 @@ export const CheckPolicies = (...rules: PolicyRule[]) => SetMetadata(CHECK_POLIC
 export const NoPolicy = (reason: string) => SetMetadata(NO_POLICY_KEY, reason);
 
 /**
- * Instance-level authorization — "may you update **this** lead" — is not a
+ * Instance-level authorization — "may you update **this** project" — is not a
  * decorator here.
  *
  * It is enforced at the data layer instead: `ScopedRepositoryBase` filters

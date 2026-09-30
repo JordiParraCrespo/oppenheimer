@@ -64,8 +64,8 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
 
   /**
    * A guarded raw update rather than `repository.update`: that would also bump
-   * `updatedAt` (it is an `@UpdateDateColumn`), which the token list reads as
-   * "when this token was changed", and it would write every time.
+   * `updatedAt` (it is an `@UpdateDateColumn`), which means "when this token was
+   * changed", and it would write every time.
    */
   async touchLastUsedAt(id: string, at: Date): Promise<void> {
     await this.repository.query(

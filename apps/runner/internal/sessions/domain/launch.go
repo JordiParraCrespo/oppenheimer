@@ -261,8 +261,9 @@ func (l Launch) CommandLine(agent Agent) string {
 	return strings.Join(quoted, " ")
 }
 
-// shellQuote single-quotes a word for sh; the only character a single-quoted
-// word cannot contain is the quote itself, which is spelled '\”.
+// shellQuote single-quotes a word for sh. The only character a single-quoted
+// word cannot contain is the quote itself, so each one closes the quote,
+// adds an escaped quote and reopens it.
 func shellQuote(word string) string {
 	if word == "" {
 		return "''"

@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { LocalStorageService } from './storage';
 
 /**
- * The browser half of `IStorageService`, injected into `@oppenheimer/frontend`'s
- * container. Thin, but it is the seam the shared auth and settings code writes
- * through, and `localStorage.getItem` returning `null` for a missing key is a
- * contract the interface promises rather than an accident of the DOM API.
+ * The browser half of `IStorageService`, injected into
+ * `@oppenheimer/frontend-core`'s container. Thin, but it is the seam the
+ * kernel's auth code writes through, and `null` for a missing key is a contract
+ * the interface promises rather than an accident of the DOM API.
  */
 
 describe('LocalStorageService', () => {

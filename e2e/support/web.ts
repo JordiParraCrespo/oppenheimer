@@ -57,11 +57,8 @@ export async function provisionedUser(prefix = 'user') {
 }
 
 /**
- * Registers through the UI and walks first-run as far as Connect GitHub.
- *
- * Three specs want an account that has just claimed its address, and typing
- * the name into the same two fields three times hid where they actually
- * differ.
+ * Names the workspace on first-run's workspace step, for an account that has
+ * just registered, and walks on as far as Connect GitHub.
  *
  * It stops on step 3 on purpose: the claim is the moment the account becomes
  * finished, so everything the shown-once rule has to say starts here.

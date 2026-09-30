@@ -53,10 +53,9 @@ func (a *App) CreateSession(ctx context.Context, out io.Writer, opts CreateSessi
 // ListSessions prints what this host is running.
 func (a *App) ListSessions(ctx context.Context, out io.Writer) error {
 	// Refresh live sessions so the state is what the screen says now, not
-	// what it said when the runner last looked: one pass for the host (one
-	// `list-panes`, then one capture per live session), not a round of tmux
-	// calls per session. A failed pass still returns the recorded list, and a
-	// listing that could not ask tmux is better than none.
+	// what it said when the runner last looked. A failed pass still returns
+	// the recorded list, and a listing that could not ask tmux is better than
+	// none.
 	sessions, _ := a.Sessions.RefreshAll(ctx)
 	if len(sessions) == 0 {
 		p := newPrinter(out)

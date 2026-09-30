@@ -44,7 +44,7 @@ type Config struct {
 	DatabaseURL string
 
 	// JWT is present when service tokens are enabled. Nil disables the
-	// service-token verifier and issuing endpoint; /capabilities says so.
+	// service-token verifier and issuing endpoint; /health/capabilities says so.
 	JWT *JWTConfig
 }
 

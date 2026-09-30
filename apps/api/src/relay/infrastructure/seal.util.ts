@@ -79,7 +79,7 @@ function mod(value: bigint): bigint {
 }
 
 function modInverse(value: bigint, modulus: bigint): bigint {
-  // Extended Euclid; `value` is never 0 for a valid key (y = 1 is not on the curve's prime-order subgroup).
+  // Extended Euclid; `value` is 0 only for y = 1, the identity point, which is no valid public key.
   let [a, m, x0, x1] = [mod(value), modulus, 0n, 1n];
   if (a === 0n) throw new RangeError('no inverse');
   while (a > 1n) {

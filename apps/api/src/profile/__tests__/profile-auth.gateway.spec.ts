@@ -42,8 +42,6 @@ describe('ProfileAuthGateway', () => {
 
   describe('changePassword', () => {
     it('hands back the reissued session cookie', async () => {
-      // Revoking the others replaces this session too; without the cookie the
-      // browser that changed the password is signed out.
       const cookies = await facade.changePassword(
         {},
         { userId: 'user-1', currentPassword: 'old', newPassword: 'new', revokeOtherSessions: true },
@@ -54,9 +52,6 @@ describe('ProfileAuthGateway', () => {
     });
 
     it('evicts the caller’s delegated sessions when it revoked the others', async () => {
-      // Better Auth deletes the delegated session rows along with the rest; a
-      // credential still holding the cached token would fail every façade call
-      // for the next ten minutes.
       await facade.changePassword(
         {},
         {
@@ -111,8 +106,6 @@ describe('ProfileAuthGateway', () => {
     });
 
     it('sweeps the sessions Better Auth’s cache index missed, sparing this one', async () => {
-      // Better Auth lists "the other sessions" from its cache's own index, which
-      // knows nothing of a session signed in before the cache existed.
       await facade.revokeOtherSessions({}, 'user-1', 'session-1');
 
       expect(revokeOtherSessions).toHaveBeenCalled();
@@ -128,8 +121,6 @@ describe('ProfileAuthGateway', () => {
 
   describe('revokeSession', () => {
     it('evicts nothing', async () => {
-      // One revocation names a device session. A delegated session is minted
-      // per credential and is not something the user chose to sign out.
       await facade.revokeSession({}, 'session-token');
 
       expect(delegatedSessions.invalidateForUser).not.toHaveBeenCalled();

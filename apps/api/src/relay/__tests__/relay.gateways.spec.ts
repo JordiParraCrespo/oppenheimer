@@ -53,7 +53,7 @@ import {
  * browser that redeems a ticket and is attached on that runner's link; PTY
  * bytes one way and keystrokes the other; and every way in that is refused.
  *
- * These are the coverage the HTTP surface gets from `route-policy-coverage`:
+ * This is the coverage the HTTP surface gets from `route-policy-coverage`:
  * a socket with no credential must be closed before any frame is handled.
  */
 
@@ -393,8 +393,6 @@ describe('runner link', () => {
   });
 
   it("closes, but not as unpaired, when a heartbeat finds the host's owner may not act", async () => {
-    // A ban can be lifted: 4410 would make the runner stop dialling for good,
-    // so this is a plain policy close and the handshake refuses the redial.
     const runner = await runnerUp(h);
     sockets.push(runner);
     vi.mocked(h.presence.observe).mockResolvedValueOnce('owner_refused');
@@ -476,10 +474,6 @@ describe('runner link', () => {
   });
 
   it('applies the batches queued behind one for the same session as one append, in arrival order, acked per batch', async () => {
-    // A runner sends one event per batch, so this is what makes the batched
-    // insert pay off: whatever queued while an append ran lands in the next one.
-    // The log's order is the order they are recorded in: a start's `running`
-    // must not land after its `done`.
     vi.mocked(h.events.record).mockImplementation(async (batch: RunnerEventBatch) => {
       if (batch.batchId === 'b1') await new Promise((resolve) => setTimeout(resolve, 50));
       return {
@@ -955,10 +949,7 @@ describe('browser attach socket', () => {
   });
 
   it('keeps a viewport the browser sent while its ticket was still being redeemed', async () => {
-    // Redemption is a cache take and two reads; the browser does not wait for
-    // them before saying its size. A resize that landed before the attachment
-    // listened used to be dropped, and the relay attached at 80x24 two seconds
-    // later instead.
+    // The browser says its size without waiting for redemption to finish.
     vi.mocked(h.workspaces.isMember).mockImplementationOnce(
       () => new Promise((resolve) => setTimeout(() => resolve(true), 150)),
     );
@@ -1157,8 +1148,7 @@ describe('browser attach socket', () => {
     expect((await why).text).toEqual({ type: 'closed', reason: 'forbidden' });
     await expect(gone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.FORBIDDEN });
     expect(h.registry.find(HOST)?.attachmentCount).toBe(0);
-    // Judged as the claimant, in the ticket's workspace, and never as a
-    // platform admin: a superadmin gets no shell through a ticket either.
+    // Judged as the claimant, in the ticket's workspace, never as a platform admin.
     expect(h.scopes.resolve).toHaveBeenCalledWith({
       userId: USER,
       organizationId: ORG,
@@ -1283,7 +1273,6 @@ describe('browser attach socket', () => {
     });
 
     it('is re-checked only every REAUTHORIZE_INTERVAL_MS by default', () => {
-      // One minute bounds how long a revocation takes on every replica.
       expect(REAUTHORIZE_INTERVAL_MS).toBe(60_000);
       expect(
         new BrowserAttachGateway(

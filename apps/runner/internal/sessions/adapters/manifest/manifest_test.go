@@ -181,8 +181,6 @@ func TestTrailingBlankLinesDoNotPushTheStateOutOfTheWindow(t *testing.T) {
 }
 
 func TestADirectoryManifestOverridesTheBundledOne(t *testing.T) {
-	// This is how the control plane ships a fix for an agent's new spinner
-	// without a runner release.
 	dir := t.TempDir()
 	newer := manifestJSON(t, `"rules":[{"id":"new-spinner","state":"working","priority":900,"region":"screen","any":["◐◓◑◒"]}]`)
 	if err := os.WriteFile(filepath.Join(dir, "claude.json"), newer, 0o600); err != nil {
@@ -218,8 +216,7 @@ func TestABadFileIsSkippedAndTheRestStillWork(t *testing.T) {
 
 	c := classifier(t, dir)
 
-	// The broken override is ignored and the bundled rules stay in force —
-	// one bad file must not stop a host classifying its sessions.
+	// The broken override is ignored and the bundled rules stay in force.
 	state, _ := c.Classify(app.Screen{Body: "⠹ Thinking… (2s · esc to interrupt)"}, domain.AgentClaude)
 	if state != domain.StateWorking {
 		t.Fatalf("state = %q, want the bundled rules still working", state)
@@ -270,10 +267,8 @@ func TestBundledManifestsLoad(t *testing.T) {
 	}
 }
 
-// The login allowlist is code rather than manifest data, because what the
-// console may turn into a clickable link must never arrive over the network.
-// It is generated per agent from the catalog, so each agent offers only its
-// own vendors' logins.
+// The login allowlist is generated per agent from the catalog, so each agent
+// offers only its own vendors' logins.
 
 func TestOnlyVendorLoginHostsAreOffered(t *testing.T) {
 	opencode := domain.AgentOpenCode.LoginTargets()

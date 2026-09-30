@@ -21,10 +21,9 @@ export const DEFAULT_CACHE_KEY_PREFIX = 'cache:';
  * - **Keys are prefixed here**, per command, not with ioredis's client-level
  *   `keyPrefix`: that option would rewrite every other user's keys on the
  *   shared client too, including the rate limiter's Lua `KEYS`.
- * - **There is no flush.** The database holds queued jobs and rate-limit
- *   counters as well. If "drop the cache" is ever needed it must be
- *   `SCAN MATCH <prefix>* COUNT 500` and `UNLINK` in batches, never a flush of
- *   the whole database.
+ * - **There is no flush** (see `CacheService`). If "drop the cache" is ever
+ *   needed it must be `SCAN MATCH <prefix>* COUNT 500` and `UNLINK` in
+ *   batches, never a flush of the whole database.
  */
 export class RedisCacheService extends CacheService {
   private readonly prefix: string;

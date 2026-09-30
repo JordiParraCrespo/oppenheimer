@@ -4,8 +4,8 @@ import type { AppAbility } from '@oppenheimer/shared';
 /**
  * Check an action against a **concrete row**, not just its type.
  *
- * `ability.can('update', 'Lead')` answers "may you update leads at all".
- * This answers "may you update *this* lead", which is what evaluates the
+ * `ability.can('update', 'Project')` answers "may you update projects at all".
+ * This answers "may you update *this* project", which is what evaluates the
  * `conditions` on a permission (own-resource, team, grant scoping).
  *
  * The cast is the one place in the codebase that needs it. CASL parameterizes

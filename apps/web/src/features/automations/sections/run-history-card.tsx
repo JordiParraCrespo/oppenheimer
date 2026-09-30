@@ -15,7 +15,7 @@ function dayLabel(date: string | undefined, locale: string): string {
 /**
  * Run history: the last thirty local days as one bar each, the viewer's days
  * because the zone travels with the request. The overview's Automations tab
- * shows a "65 runs ›" link to the Runs tab where the Runs tab and an
+ * shows a "65 runs ›" link to the Runs tab, while the Runs tab and an
  * automation's page show the legend. It is always drawn, a new workspace's
  * thirty empty days included, so the page keeps its shape from the first
  * visit; a card-sized placeholder holds the place while it loads.

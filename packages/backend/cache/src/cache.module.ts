@@ -10,11 +10,7 @@ import { CacheService } from './cache.service';
 import { type RedisCacheOptions, RedisCacheService } from './redis-cache.service';
 
 export interface CacheModuleOptions extends RedisCacheOptions {
-  /**
-   * The Redis client to run on. The module never builds, configures or closes
-   * it: the connection belongs to the app, which shares it with other Redis
-   * users and closes it on shutdown.
-   */
+  /** The Redis client to run on; the app owns and closes it (see `RedisCacheService`). */
   client: Redis;
 }
 

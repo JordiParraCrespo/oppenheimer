@@ -24,7 +24,7 @@ type ControlPlane struct {
 	RevokeErr error
 }
 
-// New returns a control plane that accepts one registration.
+// New returns a control plane that accepts every registration.
 func New() *ControlPlane {
 	return &ControlPlane{Response: app.RegisterResponse{
 		HostID:      "host_01HZ",

@@ -52,8 +52,8 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
 
   return (
     <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas-recessed">
-      {/* The export's provisioning pane: a 420px column centred in whatever
-          room the shell gives it (`.op-provision__inner`). */}
+      {/* A 420px column centred in whatever room the shell gives it
+          (`.op-provision__inner`). */}
       <div className="m-auto w-full max-w-105 p-8">
         <p className="figures text-micro text-fg-muted uppercase">{host}</p>
         <h1 className="mt-2 font-display text-h2 font-semibold text-fg">

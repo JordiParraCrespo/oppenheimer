@@ -19,9 +19,9 @@ import {
  * is the failure this guards: `HostsRepository` once read `state` for a field
  * the API sends as `online`, and nothing called it.
  *
- * GitHub and the host step are optional and cannot be driven here (one needs
- * an App on a real account, the other a runner release), so what is asserted
- * is that skipping them works and Ready says so rather than inventing a summary.
+ * The walk skips GitHub and the host step (Connect GitHub has its own test
+ * below; the host step needs a runner release), so what is asserted is that
+ * skipping them works and Ready says so rather than inventing a summary.
  */
 test('a new account walks the first-run flow into the console', async ({ page }) => {
   const user = newUser('firstrunwalk');
@@ -74,10 +74,9 @@ test('a new account walks the first-run flow into the console', async ({ page })
  * Without it, every visit to the flow re-opens the slug form over an address
  * `check-slug` now counts as taken — its own.
  *
- * And that redirect is the path that used to leave the flow half-open. Step
- * 3's Back is a link to this step, so a mid-walk reader lands in the console
- * through it on the happy path — after which Ready must be shut too, or
- * shown-once holds only for readers who left by the button.
+ * Ready is shut with it: step 3's Back links to this step, so a mid-walk
+ * reader reaches the console through that redirect, and shown-once must hold
+ * for them too, not only for readers who left by the button.
  */
 test('a named workspace is not sent back through the slug form', async ({ page }) => {
   const user = newUser('firstrunagain');
@@ -98,9 +97,6 @@ test('a named workspace is not sent back through the slug form', async ({ page }
  * A finished account could press Back into Ready and be congratulated again.
  * Being finished cannot be the test, since every legitimate arrival at Ready is
  * finished too (the address is claimed by step 2); having walked there is.
- *
- * Connect GitHub stays open on purpose: New session's repository chip sends a
- * finished account there to install the App (`new-session.spec.ts`).
  */
 test('a finished account cannot walk back into the flow', async ({ page }) => {
   const user = newUser('firstrunover');
@@ -111,8 +107,7 @@ test('a finished account cannot walk back into the flow', async ({ page }) => {
   // Mid-walk the landing is reachable, claimed address and all.
   await page.getByRole('link', { name: /skip for now/i }).click();
   await expect(page).toHaveURL(/\/onboarding\/host/, { timeout: 30_000 });
-  // The address moves before the step draws: wait for the host step itself, or
-  // the next click lands on the GitHub step's own Skip link still on screen.
+  // Wait for the host step to draw, as in the walk above.
   await expect(page.getByRole('heading', { name: /add your first host/i })).toBeVisible();
   await page.getByRole('link', { name: /skip for now/i }).click();
   await expect(page).toHaveURL(/\/onboarding\/ready/, { timeout: 30_000 });
@@ -136,21 +131,17 @@ test('a finished account cannot walk back into the flow', async ({ page }) => {
   await page.goto('/onboarding/host');
   await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
 
-  // Connect GitHub is the one step that stays open, because New session's
-  // repository chip still sends a finished account to it — `new-session.spec.ts`
-  // drives that path.
+  // Connect GitHub is the one step that stays open, because every App install
+  // returns to it, including one a finished account starts from New session's
+  // repository chip (`new-session.spec.ts`).
   await page.goto('/onboarding/github');
   await expect(page).toHaveURL(/\/onboarding\/github/, { timeout: 30_000 });
 });
 
 /**
- * A GitHub callback this console did not start is never posted.
- *
- * The install redirect's `code` binds a claim to a GitHub account, not to the
- * reader whose browser opens it — so a callback URL someone stopped halfway
- * through their own install, forwarded to a signed-in reader, used to connect
- * the sender's installation to the reader's workspace the moment it loaded.
- * Without a state minted here, the step says so and posts nothing.
+ * A GitHub callback this console did not start is never posted (why:
+ * `tests/api/github-install-state.spec.ts`). Without a state minted here, the
+ * step says so and posts nothing.
  */
 test('a GitHub callback without a state is refused on screen, not posted', async ({ page }) => {
   const owner = await provisionedUser('ghunstarted');

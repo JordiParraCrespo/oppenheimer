@@ -10,8 +10,8 @@ import { SessionErrors } from '../domain/sessions.errors';
  *
  * The two refusals must stay different. A project the caller cannot see (missing, or
  * another workspace's) is **not found**: "archived" would mislead and confirm the id
- * exists. A genuinely retired project is a **conflict**: the caller sees it, and its
- * directory is out of use on every host that held it. That is why the lookup returns
+ * exists. A genuinely retired project is a **conflict**: the caller sees it, and
+ * nothing new may be listed under it. That is why the lookup returns
  * archived rows: only a caller holding the row can tell the two apart.
  */
 export async function requireActiveProject(

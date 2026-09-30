@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { searchFlag, searchPage, searchText } from './search-params';
 
-/** A URL is typed by people and by other sites: a wrong shape reads as absent, never as a failed route. */
 describe('search params', () => {
   const schema = z.object({ q: searchText, on: searchFlag, page: searchPage });
 

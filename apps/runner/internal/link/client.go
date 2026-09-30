@@ -23,11 +23,11 @@ import (
 // Path is where the control plane mounts the runner link, under its `/api/v1`.
 const Path = "/api/v1/relay/runner"
 
-// HeartbeatInterval is 01's 15 s.
+// HeartbeatInterval is the protocol's 15 s (`product/versions/mvp/01-protocol.md`).
 const HeartbeatInterval = 15 * time.Second
 
 // Ladder is the reconnect ladder, with jitter applied on top
-// (`12-lessons-from-grok-bot.md`).
+// (`product/12-lessons-from-grok-bot.md`).
 var Ladder = []time.Duration{500 * time.Millisecond, time.Second, 2 * time.Second, 5 * time.Second, 10 * time.Second, 30 * time.Second}
 
 // PingInterval is how often the runner pings the control plane, and
@@ -59,8 +59,8 @@ type Handler interface {
 	Disconnected(epoch uint64)
 	// Message is one control frame from the control plane.
 	Message(ctx context.Context, msg Message)
-	// Frame is one binary frame (keystrokes never travel this way today, but
-	// the layout is symmetric and a peer may use it).
+	// Frame is one binary frame: a browser's keystrokes for the attachment
+	// the id names.
 	Frame(ctx context.Context, attachmentID uint32, bytes []byte)
 }
 

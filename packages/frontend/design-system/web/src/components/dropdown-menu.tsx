@@ -14,13 +14,14 @@ const ITEM_CLASSES =
  * shadow, a 4px rise plus fade over 140ms. Items are 14px rows at the 10px
  * radius with a hover wash.
  *
- * The console has three menus and they share every part here:
+ * The console's menus share every part here, among them:
  * - filters: `DropdownMenuSubTrigger` rows with a `DropdownMenuValue`
  *   ("Repository · All repositories ›"), a separator, a disabled "Clear filters"
  * - account: a `DropdownMenuHeader` with the e-mail, icon rows with submenus for
  *   appearance and language, and a `variant="destructive"` "Log out"
- * - model: a `DropdownMenuLabel` eyebrow ("CLAUDE CODE"), two-line
- *   `DropdownMenuRadioItem`s with a `description`, an Effort submenu row
+ * - a session row's: a `DropdownMenuPaneItem` into a pane headed by
+ *   `DropdownMenuBack` ("Move to project…")
+ * - permissions: two-line `DropdownMenuRadioItem`s with a `description`
  */
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
@@ -69,7 +70,7 @@ function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
   return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
 }
 
-/** The 11px uppercase eyebrow over a group ("CLAUDE CODE"). */
+/** The 11px uppercase eyebrow over a group ("SCHEDULE"). */
 function DropdownMenuLabel({
   className,
   inset,
@@ -220,7 +221,7 @@ function DropdownMenuRadioGroup({ ...props }: MenuPrimitive.RadioGroup.Props) {
  *
  * A density on the row rather than a class list in `PermissionMenu`, because
  * every number is *this row* in another size; kept in the consumer, the
- * indicator's offset had to be reached through a slot selector.
+ * indicator's offset would be reached through a slot selector.
  */
 type DropdownMenuDensity = 'default' | 'compact';
 
@@ -316,11 +317,10 @@ function DropdownMenuSeparator({ className, ...props }: MenuPrimitive.Separator.
 }
 
 /**
- * A row that leads into a pane inside the same menu — the account menu's
- * Appearance and Language, the row menu's Move to project… — rather than a
- * submenu beside it: an icon, the label, the current `value` right-aligned,
- * a chevron. It does not close the menu; the caller swaps the content for
- * the pane, whose first row is a `DropdownMenuBack`.
+ * A row that leads into a pane inside the same menu — the row menu's Move to
+ * project… — rather than a submenu beside it: an icon, the label, the current
+ * `value` right-aligned, a chevron. It does not close the menu; the caller
+ * swaps the content for the pane, whose first row is a `DropdownMenuBack`.
  */
 function DropdownMenuPaneItem({
   className,

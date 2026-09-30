@@ -48,8 +48,6 @@ export function shouldRetryQuery(failureCount: number, error: unknown): boolean 
 }
 
 /**
- * `AuthService.expireSession` flips the auth store, and the router's guards
- * send the user to /login from it.
  * Forgetting the cache keeps the next person to sign in on this tab from
  * seeing the previous account's sessions and projects before their own
  * arrive — a logout clears it too. The session query is spared, as

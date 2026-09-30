@@ -13,11 +13,12 @@ import { mintPairingToken } from './sessions';
  *
  * Each host is a Debian container with its own Unix account, home, tmux server
  * and host key (`e2e/fleet/Dockerfile`), which is the shape the product assumes
- * — one runner per machine. Nothing about a host is faked except the agent:
- * `claude` is a shim that prints its argv and hands the pane to a shell. Git is
- * a `git daemon` container seeded with the repositories the GitHub stub lists,
- * which the hosts reach through `url.insteadOf`, so the runner still clones
- * `https://github.com/<owner>/<repo>.git` as far as it knows.
+ * — one runner per machine. Nothing about a host is faked except the agents:
+ * `claude` and `grok` are shims that print their argv and hand the pane to a
+ * shell. Git is a `git daemon` container seeded with the repositories the
+ * GitHub stub lists, which the hosts reach through `url.insteadOf`, so the
+ * runner still clones `https://github.com/<owner>/<repo>.git` as far as it
+ * knows.
  *
  * Plain `docker`, not Compose: CI's runner has the daemon but not the plugin,
  * and a test wants to start and break hosts one at a time anyway.

@@ -49,8 +49,8 @@ export interface AutomationRunRepositoryPort {
 
   /**
    * Fire under the workspace's rate caps: in one transaction, take the
-   * workspace's firing lock, count the last hour's firings (skipped ones do
-   * not count), let `decide` build the run from that count, and insert it —
+   * workspace's firing lock, count the last hour's firings (skipped and
+   * expired ones do not count), let `decide` build the run from that count, and insert it —
    * with its dispatch staged when pending. Serialised with every other firing
    * in the workspace, the scheduler's included, so two events cannot both
    * take the last slot. A duplicate cause inserts nothing and answers with the

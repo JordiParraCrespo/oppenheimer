@@ -8,8 +8,8 @@ type HostCardStatus = 'running' | 'idle' | 'offline';
  * HostCard — one card per host on the Settings page: a status dot on the
  * left (green running, grey idle, a hollow grey ring when offline), the
  * mono name and a meta line (OS, size, region, runner version), the state
- * and last-seen on the right in mono, and an ellipsis whose menu holds
- * Rename, Copy host ID and Remove host. Measured against
+ * and last-seen on the right in mono, and an ellipsis for the host's menu
+ * (Rename, Remove host). Measured against
  * `design/version1/Components.dc.html` ("Host card").
  */
 function HostCard({

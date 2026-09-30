@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { sanitizeUrlProperties } from '../sanitize-url-properties';
 
 describe('sanitizeUrlProperties', () => {
-  // The case that motivates this: providers attach the current location to
-  // every event, so a token in the query string reaches them for free.
   it('strips a password-reset token from the current URL', () => {
     const result = sanitizeUrlProperties({
       $current_url: 'https://app.oppenheimer.dev/reset-password?token=super-secret',

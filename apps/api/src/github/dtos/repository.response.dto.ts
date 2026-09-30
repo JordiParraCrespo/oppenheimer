@@ -1,10 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 /**
- * Nothing here is stored: the list is the installation's, GitHub owns it, and a
- * repository that leaves the installation simply stops appearing
- * (`product/versions/mvp/03-control-plane.md`). `githubRepoId` is therefore the
- * only durable handle — a checkout records that, not the name.
+ * Nothing here is stored, so `githubRepoId` is the only durable handle: a
+ * checkout keys on it and keeps the name only as a display snapshot.
  */
 export class RepositoryResponseDto {
   @ApiProperty({ description: 'GitHub’s own repository id.', example: 831004242 })

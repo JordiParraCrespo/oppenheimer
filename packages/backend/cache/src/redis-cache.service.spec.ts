@@ -37,9 +37,6 @@ describe('RedisCacheService', () => {
   });
 
   describe('key namespace', () => {
-    // The cache shares its Redis database with BullMQ (`bull:*`) and the rate
-    // limiter (`throttle:*`). Every command must land under the cache's own
-    // prefix, while callers keep writing their unprefixed keys.
     it('prefixes every key with cache: by default', async () => {
       redis.set.mockResolvedValue('OK');
       redis.get.mockResolvedValue(null);
@@ -101,8 +98,7 @@ describe('RedisCacheService', () => {
     });
 
     it('reports a key someone else already claimed', async () => {
-      // Redis answers `null` when NX refuses, which is the whole point: the
-      // loser of the race learns it lost rather than overwriting the winner.
+      // Redis answers `null` when NX refuses.
       redis.set.mockResolvedValue(null);
 
       await expect(service().setIfAbsent('jti:abc', 1, 300)).resolves.toBe(false);
@@ -126,9 +122,8 @@ describe('RedisCacheService', () => {
 
   describe('getOrSet', () => {
     it('runs the loader once for concurrent callers of one key', async () => {
-      // The stampede: an entry expires while ten requests want it, and each of
-      // them used to recompute it (for the repository picker, ten paginated
-      // GitHub listings).
+      // The stampede: an entry expires while ten requests want it (for the
+      // repository picker, ten paginated GitHub listings).
       redis.get.mockResolvedValue(null);
       redis.set.mockResolvedValue('OK');
       const gate = deferred<string[]>();
@@ -220,8 +215,6 @@ describe('RedisCacheService', () => {
   });
 
   it('offers no way to flush the database it shares with the queues', () => {
-    // `reset()` used to flush the whole database, the one BullMQ's jobs and the
-    // rate-limit counters also live in.
     expect('reset' in service()).toBe(false);
     expect('reset' in CacheService.prototype).toBe(false);
   });

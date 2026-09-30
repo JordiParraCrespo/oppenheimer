@@ -13,7 +13,7 @@ import { findResetToken, findSessionsForUser } from '../../support/db';
 
 test.describe('session security', () => {
   // The reset is the remedy for a session someone else is holding, so it has to
-  // end that session — `revokeSessionsOnPasswordReset` in `auth.ts`.
+  // end that session — `revokeSessionsOnPasswordReset` in `better-auth.config.ts`.
   test('a session opened before the reset no longer authenticates', async () => {
     const { api, user, userId } = await signedUpContext('stolensession');
     expect((await api.get('/api/v1/users/me', { failOnStatusCode: false })).status()).toBe(200);
@@ -99,7 +99,8 @@ test.describe('session security', () => {
       ),
     );
 
-    // The global ThrottlerModule allows 100 requests per minute per IP.
+    // The global throttle allows 100 requests per minute per IP by default
+    // (`RATE_LIMIT_DEFAULT_LIMIT`), so 140 must trip it.
     expect(
       statuses.some((status) => status === 429),
       'a global rate limit is configured, so a flood must eventually be refused',

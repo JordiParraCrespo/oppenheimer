@@ -112,12 +112,7 @@ const adapters: Provider[] = [
   { provide: SESSION_RECONCILIATION, useClass: SessionReconciliationResolver },
 ];
 
-/**
- * Sessions: the row, its checkouts, its append-only log and the fold of that log.
- *
- * `SESSION_DISPATCH` is bound by `links/` over the runner link. The published surface
- * is the three exported ports `relay/` calls; the repository stays inside.
- */
+/** Sessions: the row, its checkouts, its append-only log and the fold of that log. */
 @Module({
   imports: [
     CqrsModule,
@@ -130,9 +125,9 @@ const adapters: Provider[] = [
     AuthzKernelModule.forFeature([SessionResource]),
     // The three modules this one is built on, imported rather than assumed: the
     // project a session belongs to, the machine it may run on, and what a
-    // repository is called. The one edge that runs the other way — the answer to
-    // "is this project still in use" — is contributed from this module's own
-    // providers, so `projects/` never has to import this module.
+    // repository is called. The edges that run the other way — "is this project
+    // still in use", "what runs on this host" — are contributed from this module's
+    // own providers, so neither module has to import this one.
     ProjectsModule,
     HostsModule,
     GithubModule,
@@ -140,7 +135,8 @@ const adapters: Provider[] = [
     // Importing it is what makes the port's implementation the relay's rather
     // than this module's, without this module knowing a socket exists.
     LinksModule,
-    // The workspace's slug for a launch, and nothing else of organizations'.
+    // The workspace's slug for a launch and the workspaces an account owns for
+    // its erasure, and nothing else of organizations'.
     OrganizationsModule,
   ],
   controllers: [...httpControllers],

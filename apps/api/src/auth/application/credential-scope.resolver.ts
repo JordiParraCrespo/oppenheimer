@@ -134,9 +134,8 @@ export class CredentialScopeResolver implements CredentialScopePort {
     const grant = await this.credentials.verifyOAuthGrant(request.headers);
 
     // Not an OAuth access token. It may still be a session token presented as
-    // a bearer credential — that is how the mobile app and the CLI's sign-in
-    // flow authenticate. Those carry no scopes, so hand them back to the
-    // session path rather than rejecting them.
+    // a bearer credential (Better Auth's `bearer` plugin). Those carry no
+    // scopes, so hand them back to the session path rather than rejecting them.
     //
     // OAuth is asked first on purpose. A session lookup that misses the cache
     // falls back to Postgres, so asking it first would add a query to every
@@ -165,9 +164,7 @@ export class CredentialScopeResolver implements CredentialScopePort {
 
   /**
    * A bearer credential no contribution recognised and that is not an OAuth
-   * grant is only acceptable if the provider recognises it as a session token;
-   * anything else is rejected rather than ignored, so a stale token can never
-   * fall through to a cookie session's full rights. The session is kept: it is
+   * grant is only acceptable as a session token. The session is kept: it is
    * the one `ApiAuthGuard` authenticates the request with.
    */
   private async requireSession(request: ScopedRequest): Promise<VerifiedSession> {

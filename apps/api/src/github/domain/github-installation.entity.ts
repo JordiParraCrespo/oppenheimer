@@ -19,8 +19,8 @@ export type AccountType = 'User' | 'Organization';
 export interface GithubInstallationProps {
   /** Tenant the installation belongs to. Immutable — a claim never moves. */
   organizationId: string;
-  /** GitHub's own installation id. Globally unique, which is what makes a
-   *  second workspace's claim a conflict rather than a silent takeover. */
+  /** GitHub's own installation id. Unique among live rows, which is what makes
+   *  a second workspace's claim a conflict rather than a silent takeover. */
   githubInstallationId: number;
   /** The user or organization the App is installed on. */
   accountLogin: string;
@@ -134,10 +134,6 @@ export class GithubInstallationEntity extends AggregateRoot<GithubInstallationPr
    * GitHub now reports about a live one. Re-running the install redirect
    * arrives with the same `githubInstallationId`, so this workspace's row is
    * revived rather than duplicated.
-   *
-   * `suspendedAt` comes from GitHub's answer rather than being cleared, or
-   * re-posting the redirect would mark a suspended installation usable until a
-   * webhook said otherwise.
    */
   reconnect(props: RefreshInstallationProps): void {
     const wasDisconnected = this.props.deletedAt !== null;

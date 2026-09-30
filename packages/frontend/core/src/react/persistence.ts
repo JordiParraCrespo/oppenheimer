@@ -12,11 +12,11 @@ import { authKeys, userSettingsKeys } from './query-keys';
 export const QUERY_PERSIST_MAX_AGE = 24 * 60 * 60 * 1000;
 
 /**
- * Features whose queries never reach storage, whatever the product. The
- * session is the kernel's own; a product adds its sensitive features (a
- * credential list, a profile) through `nonPersistedFeatures` when the app
+ * Features whose queries never reach storage, whatever the product: the
+ * session and the user's settings. A product adds its sensitive features
+ * (sessions, hosts, a profile) through `nonPersistedFeatures` when the app
  * builds its persist options — `CONSUMER_NON_PERSISTED_FEATURES` in
- * `@oppenheimer/frontend-consumer` is the list the consumer apps pass.
+ * `@oppenheimer/frontend-consumer` is the list `apps/web` passes.
  */
 const KERNEL_NON_PERSISTED_FEATURES: readonly string[] = [authKeys.all[0], userSettingsKeys.all[0]];
 
@@ -28,8 +28,9 @@ export interface QueryPersistConfig {
 /**
  * Only successful queries are persisted — restoring an error or a pending
  * fetch would replay a failure the user has already moved past. The feature
- * segment is the first entry of every key factory (see the "React Query keys"
- * guide), which is what makes a per-feature deny-list possible.
+ * segment is the first entry of every key factory
+ * (`apps/docs/docs/architecture/query-keys.md`), which is what makes a
+ * per-feature deny-list possible.
  */
 export function shouldDehydrateQuery(
   query: Query,
@@ -56,8 +57,8 @@ export const cacheOwnerKey = ['cacheOwner'] as const;
  * So each session restore reconciles the cache against the signed-in user:
  * same user, keep it; anyone else, nobody, or no owner recorded, drop every
  * non-`auth` entry (`auth` holds the session query driving this call). Called
- * from `useSessionRestore`'s `queryFn`, before either app's gate renders, so
- * no component ever observes another user's data.
+ * from `useSessionRestore`'s `queryFn`, before the app's gate renders, so no
+ * component ever observes another user's data.
  */
 export function reconcileCacheOwner(queryClient: QueryClient, ownerId: string | null): void {
   const previousOwnerId = queryClient.getQueryData<string>(cacheOwnerKey) ?? null;
@@ -73,10 +74,7 @@ export function reconcileCacheOwner(queryClient: QueryClient, ownerId: string | 
 /**
  * Increment when the persistence policy changes in a way that makes an
  * already-stored cache unsafe to hydrate, or changes the shape of a persisted
- * key so an old entry would sit in storage that nothing reads. Revision 2
- * dropped profile/session entities written before they were excluded from
- * persistence; revision 3 drops the `['capabilities']` entry written before
- * the query moved to `capabilitiesKeys.deployment()`.
+ * key so an old entry would sit in storage that nothing reads.
  */
 const QUERY_PERSIST_REVISION = 3;
 

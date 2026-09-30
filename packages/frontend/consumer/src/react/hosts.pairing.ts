@@ -19,8 +19,8 @@ export interface HostPairingFlow {
   pairing: HostPairing | undefined;
   /**
    * When that token runs out. A countdown is the surface's to draw, in the
-   * leaf that shows it (the kit's `TokenCountdown`): a tick held here
-   * re-rendered the whole dialog or step every second.
+   * leaf that shows it (the kit's `TokenCountdown`), so its per-second tick
+   * re-renders that leaf and not the whole dialog or step.
    */
   expiresAt: Date | null;
   /** Whether the token has run out, so the surface can offer a new one. */
@@ -39,9 +39,9 @@ export interface HostPairingFlow {
 }
 
 /**
- * The pairing flow: one token, its clock, and the host that token paired. Both
- * the onboarding step and the console's Add host dialog run it rather than
- * polling the host list themselves.
+ * The pairing flow: one token, its clock, and the host that token paired.
+ * Every pairing surface (onboarding's step, the Add host dialog and screen)
+ * runs it rather than polling the host list itself.
  *
  * **Correlation is the point.** An account that already owns a machine has a
  * non-empty host list the moment the dialog opens, which would offer a machine
@@ -49,9 +49,6 @@ export interface HostPairingFlow {
  * `redeemedHostId` once a runner spends it, and only then is the host looked
  * up. A regenerated token is a different id, so the host it offered goes with
  * it.
- *
- * One effect, synchronised with the clock at the token's expiry, which stops
- * the poll and offers a new token.
  */
 export function useHostPairing(hostName: string): HostPairingFlow {
   const { data: pairing, isPending, error } = useCurrentPairing(hostName);

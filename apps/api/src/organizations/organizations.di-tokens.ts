@@ -1,7 +1,3 @@
-/**
- * Application code injects each port through its token, so it depends on the
- * repository port or the Better Auth port, never on the adapter behind it.
- */
 export const PERSONAL_WORKSPACE_REPOSITORY = Symbol('PERSONAL_WORKSPACE_REPOSITORY');
 export const WORKSPACE_LOOKUP = Symbol('WORKSPACE_LOOKUP');
 export const MEMBER_REPOSITORY = Symbol('MEMBER_REPOSITORY');

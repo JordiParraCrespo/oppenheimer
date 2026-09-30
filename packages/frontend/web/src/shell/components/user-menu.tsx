@@ -38,8 +38,8 @@ const THEMES: readonly ThemePreference[] = ['light', 'dark', 'system'];
  * rows carry the export's 15px moon and globe, and "Log out" the 15px door in
  * the one tone the menu may colour.
  *
- * Appearance and language open sideways, so the menu stays four rows tall and
- * the console needs no chrome bar for a theme toggle.
+ * Appearance and language open sideways, so the menu stays a few rows tall
+ * and the console needs no chrome bar for a theme toggle.
  */
 export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avatar' }) {
   const { t, i18n } = useTranslation();
@@ -171,8 +171,7 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
             <LogOut />
             {t('nav.logOut')}
           </DropdownMenuItem>
-          {/* The menu stays open on a failure, so the sentence sits under Log out.
-              A `Callout`, not `ErrorAlert`: that card is drawn for a form or a
+          {/* A `Callout`, not `ErrorAlert`: that card is drawn for a form or a
               page, and this menu is 250px of rows. */}
           {logout.error ? (
             <Callout tone="danger" className="mx-1 mt-1 mb-1">

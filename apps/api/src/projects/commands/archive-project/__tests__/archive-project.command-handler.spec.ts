@@ -81,9 +81,7 @@ describe('ArchiveProjectCommandHandler', () => {
   });
 
   it('refuses when nothing has contributed an answer', async () => {
-    // A deployment built without the module that owns sessions. Nothing is
-    // registered, so there is no implementation and the archive refuses — rather
-    // than assuming the answer it would prefer on a destructive path.
+    // A deployment built without the module that owns sessions.
     handler = new ArchiveProjectCommandHandler(projects, new ProjectUsageRegistry());
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_003' });
@@ -101,8 +99,6 @@ describe('ArchiveProjectCommandHandler', () => {
   it.each([
     // A project the caller cannot see reads as missing.
     ['not-found', { result: 'not-found' } as const, 'PROJECTS_001'],
-    // Sessions that name no project are listed in Unassigned; retiring it would
-    // leave that work nowhere to go.
     ['unassigned', { result: 'unassigned', project: project() } as const, 'PROJECTS_008'],
   ])('reports a %s outcome as its own problem', async (_result, outcome, code) => {
     vi.mocked(projects.archiveIfUnused).mockResolvedValue(outcome);

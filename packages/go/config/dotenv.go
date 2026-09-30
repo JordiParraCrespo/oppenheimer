@@ -13,7 +13,7 @@ import (
 )
 
 // workspaceMarker identifies the monorepo root: the file that declares the
-// pnpm workspace is exactly what `@oppenheimer/env` looks for.
+// pnpm workspace is what `@oppenheimer/env` looks for first.
 const workspaceMarker = "pnpm-workspace.yaml"
 
 // FindWorkspaceRoot walks up from dir until it finds the marker.

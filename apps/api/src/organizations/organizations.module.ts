@@ -199,7 +199,7 @@ const adapters: Provider[] = [
  * per operation. The app's own rules: `MembershipAccessPolicy` keeps
  * application roles aligned with the roster, and the personal workspace is an
  * aggregate provisioned by `commands/provision-personal-workspace/`, dispatched
- * by the sign-up hook through `auth/infrastructure/auth-command-bus.util.ts`.
+ * on sign-up by the auth module's `CompleteSignUpCommandHandler`.
  */
 @Module({
   imports: [
@@ -229,9 +229,9 @@ const adapters: Provider[] = [
     MembershipAccessPolicy,
     ...UsersModule.contributeAccountErasure([WorkspaceAccountErasure]),
   ],
-  // The one published port: two facts about a workspace, for the modules that
-  // put its slug on a host or re-check a membership at a socket. The tables
-  // stay inside.
+  // The one published port: facts about a workspace for the modules that put
+  // its slug on a host, re-check a membership (a socket, an automation run) or
+  // erase an account. The tables stay inside.
   exports: [WORKSPACE_LOOKUP],
 })
 export class OrganizationsModule {}

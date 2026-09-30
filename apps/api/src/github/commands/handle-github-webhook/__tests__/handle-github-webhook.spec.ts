@@ -11,13 +11,10 @@ import { HandleGithubWebhookCommand } from '../handle-github-webhook.command';
 import { HandleGithubWebhookCommandHandler } from '../handle-github-webhook.command-handler';
 
 /**
- * The webhook writes through a conditional update rather than the aggregate.
- *
- * A delivery that loaded the row, mutated it and saved it back would write the
- * whole row again — `deletedAt` included — so a suspend or unsuspend that
- * arrived while a disconnect was committing would resurrect a claim the
- * workspace had given up. These tests pin the shape of the write; the
- * integration spec pins that the SQL actually refuses a disconnected row.
+ * The webhook writes through a conditional update rather than the aggregate
+ * (why: `GithubInstallationRepositoryPort.applyStatusChange`). These tests pin
+ * the shape of the write; the integration spec pins that the SQL actually
+ * refuses a disconnected row.
  */
 
 const SECRET = 'a-webhook-signing-secret';

@@ -94,10 +94,6 @@ import { UsersModule } from './users/user.module';
         throttlingConfig,
       ],
     }),
-    // Request logging with hardened defaults (credential redaction, no
-    // headers/query/bodies) plus the interceptor that attaches userId and
-    // scopes to every request's log context. See `LoggingModule` in
-    // `@oppenheimer/backend-core`.
     LoggingModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
@@ -149,9 +145,9 @@ import { UsersModule } from './users/user.module';
       // build (`manualInitialization`).
       dataSourceFactory: bootDataSourceFactory(),
     }),
-    // The one Redis command connection the cache, the rate limiter and the
-    // health probe share (`REDIS_CLIENT`), closed on shutdown. BullMQ opens its
-    // own from the same `redisConnectionOptions` below.
+    // The one Redis command connection (`REDIS_CLIENT`) everything but BullMQ
+    // shares, closed on shutdown. BullMQ opens its own from the same
+    // `redisConnectionOptions` below.
     RedisModule,
     ThrottlerModule.forRootAsync({
       imports: [ThrottlingModule],
@@ -221,8 +217,6 @@ import { UsersModule } from './users/user.module';
       defaultLocale: 'en',
       defaultTimeZone: 'UTC',
     }),
-    // The kernel's registry is global; feature modules contribute their
-    // resource declarations via AuthzModule.forFeature().
     AuthzKernelModule.forRoot(),
     AuthModule,
     AuthzModule,

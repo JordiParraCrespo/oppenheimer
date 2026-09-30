@@ -24,8 +24,8 @@ type Options struct {
 	// Layout is where repositories and worktrees live on this host.
 	Layout domain.Layout
 	// Env is added to every session's tmux environment, inherited by every
-	// window: the session id and the runner's socket, so the git credential
-	// helper called from that shell can ask who it is answering for.
+	// window: what the git credential helper called from that shell needs to
+	// know which session it is answering for.
 	Env func(session domain.Session) map[string]string
 	// Gate holds a launch while its agent is being updated; nil launches
 	// at once.
@@ -112,7 +112,7 @@ func (s *Service) SetPublisher(publisher Publisher) {
 	s.publisher = publisher
 }
 
-// CreateInput is what the console sends to open a session.
+// CreateInput is what opening a session takes, from the link or the CLI.
 type CreateInput struct {
 	// ID is the control plane's session id when the create arrives over the
 	// link, so an attach that names it finds it; the CLI leaves it empty and
@@ -436,11 +436,9 @@ func (s *Service) recordedAt(id string) (domain.Session, uint64, error) {
 	return domain.Session{}, 0, domain.ErrNotFound.WithDetail("no session %q on this host", id)
 }
 
-// OpenWindow adds a tab: a plain shell in the same worktree.
-//
-// It writes through the same revision-bumping path as every command, and a
-// refresh applies what it saw to the stored record rather than to its own
-// copy, so a window opened while a refresh was looking is kept.
+// OpenWindow adds a tab: a plain shell in the same worktree. It holds the
+// session like every command, so a refresh running meanwhile keeps the
+// window (see observe).
 func (s *Service) OpenWindow(ctx context.Context, id string) (domain.Window, error) {
 	defer s.hold(id)()
 	session, err := s.recorded(id)
@@ -491,7 +489,7 @@ func (s *Service) CloseWindow(ctx context.Context, id string, index int) error {
 }
 
 // Attach opens a PTY onto one window. Several devices may attach to the same
-// window; tmux sizes it to the smallest attached client.
+// window; tmux sizes it to the one that resized last.
 func (s *Service) Attach(ctx context.Context, id string, window int, size Size) (Attachment, error) {
 	session, err := s.recorded(id)
 	if err != nil {
@@ -810,10 +808,9 @@ func (s *Service) Orphans(ctx context.Context) ([]string, error) {
 }
 
 // Running names every tmux session this runner owns that is up right now —
-// recorded sessions and orphans alike — without changing a single record. It
-// is what `uninstall` must not leave behind unattended: an agent in one of
-// these keeps working after the runner is gone, with no control plane and no
-// console to see it. A host with no tmux has nothing running.
+// recorded sessions and orphans alike — without changing a single record:
+// what `uninstall` refuses to leave running (see App.Uninstall). A host with no
+// tmux has nothing running.
 func (s *Service) Running(ctx context.Context) ([]string, error) {
 	if err := s.terminals.Available(ctx); err != nil {
 		return nil, nil //nolint:nilerr // no tmux means no sessions, which is the answer
@@ -834,7 +831,8 @@ func (s *Service) Running(ctx context.Context) ([]string, error) {
 
 // EndAll kills every tmux session Running names and records the sessions it
 // knows as stopped. Checkouts stay on disk: ending the agents is what
-// `uninstall --force` asks for, deleting someone's work is not.
+// `uninstall --force` and an unpaired host ask for, deleting someone's work
+// is not.
 func (s *Service) EndAll(ctx context.Context) ([]string, error) {
 	running, err := s.Running(ctx)
 	if err != nil {
@@ -950,8 +948,8 @@ func (s *Service) observe(session domain.Session, seen uint64, state domain.Stat
 
 // discardImages drops a session's pasted images. They were for the agent in
 // the tmux session; once it is gone (stopped, closed, lost to a reboot)
-// nothing will read them. decide and observe call it as a session stops,
-// and only then.
+// nothing will read them. decide and observe call it as a session stops, and
+// a create whose agent never started drops what it saved.
 func (s *Service) discardImages(id string) {
 	if s.images != nil {
 		_ = s.images.Discard(id)

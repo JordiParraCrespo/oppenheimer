@@ -52,17 +52,16 @@ type App struct {
 	Updates *updapp.Service
 	// Binaries is the versioned layout, exposed for `status`.
 	Binaries *binaries.Store
-	// StatePath is update.json's location, for `status`.
+	// StatePath is update.json's location.
 	StatePath string
-	// UnitPath is the service unit's location, for `status` and `uninstall`.
+	// UnitPath is the service unit's location.
 	UnitPath string
-	// Terminals is the tmux server, exposed so `sessions attach` can hand
-	// the terminal over to tmux directly.
+	// Terminals is the runner's tmux server.
 	Terminals *tmux.Server
 	// Worktrees is the sessions' git, kept for waiting on the spare worktree
 	// it makes after a create (CreateSession).
 	Worktrees *gitadapter.Client
-	// Link is the control-plane link while `run` holds one, for `status`.
+	// Link is the control-plane link while `run` holds one.
 	Link *link.Client
 	// Credentials answers the git credential helper while `run` holds a link.
 	Credentials *credentialBroker
@@ -166,8 +165,6 @@ func New(version string) (*App, error) {
 	}
 	app.Binaries = binStore
 
-	// The update context needs the identity: a host that is not paired has
-	// no release URL, no channel and nothing to update towards.
 	if identity, err := pairingSvc.Identity(); err == nil {
 		app.Updates = updapp.New(updapp.Options{
 			Releases: release.New(release.Options{BaseURL: releaseBaseURL(identity)}),
@@ -194,8 +191,7 @@ func releaseBaseURL(identity pairdomain.Identity) string {
 	return DefaultReleaseBaseURL
 }
 
-// serviceManager picks the init system. An unsupported platform gets a nil
-// manager, and every service use case reports SVC_001 rather than pretending.
+// serviceManager picks the init system; an unsupported platform gets nil.
 func serviceManager(paths Paths) svcapp.Manager {
 	switch runtime.GOOS {
 	case "darwin":
@@ -230,13 +226,11 @@ func unit(paths Paths) svcdomain.Unit {
 		env[EnvAgentUpdates] = updates
 	}
 	// The installer's PATH, carried onto the service: launchd hands a job
-	// `/usr/bin:/bin:/usr/sbin:/sbin` and systemd little more, and neither
-	// contains `/opt/homebrew/bin` — so on a stock Homebrew Mac the installed
-	// runner cannot see tmux, git or the agent, and every session fails with
-	// "a required tool is missing" while `runner status`, which inherits the
-	// caller's shell, reports all of them present. Taking the PATH from the
-	// install is what makes those two agree: the tools the installer verified
-	// are the tools the service can reach.
+	// `/usr/bin:/bin:/usr/sbin:/sbin` and systemd little more, neither with
+	// `/opt/homebrew/bin`, so on a stock Homebrew Mac the service could not
+	// see the tmux, git and agent that `runner status`, run from the caller's
+	// shell, reports present. The tools the installer verified are then the
+	// tools the service can reach.
 	if path := ServicePATH(os.Getenv("PATH")); path != "" {
 		env["PATH"] = path
 	}
@@ -335,6 +329,6 @@ func accountName() string {
 	return os.Getenv("LOGNAME")
 }
 
-// RequiredTools is re-exported for the status output, so the CLI does not
-// reach into another context's domain for a constant.
+// RequiredTools re-exports the host context's list, so the CLI does not reach
+// into another context's domain for a constant.
 var RequiredTools = hostdomain.RequiredTools

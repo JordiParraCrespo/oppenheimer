@@ -28,9 +28,6 @@ describe('resolveCapabilities', () => {
   });
 
   it('only reports a session namer once a model can actually be called', () => {
-    // A provider switched on without its key is not configured: sessions are
-    // then named from their prompt's words, which is a supported outcome. The
-    // capability is how that shows up in the startup log.
     const noKey = configWith({ 'llm.provider': 'openrouter', 'llm.model': 'a-model-id' });
     expect(resolveCapabilities(noKey).session_namer).toBe(false);
 
@@ -75,10 +72,7 @@ describe('resolveCapabilities', () => {
   it('reports hosts from the same predicate the host routes refuse on', () => {
     // Two of the three is not a working pairing flow: without the install URL
     // there is no command to print, and without a usable signing key there is no
-    // fingerprint for the runner to pin. The key is validated when the config is
-    // parsed, so what is read here is the fingerprint — a capability that said
-    // yes while every route answered HOSTS_004 would be the second source of
-    // truth the console reads first.
+    // fingerprint for the runner to pin.
     const partial = configWith({
       'hosts.signingKeyFingerprint': 'f'.repeat(64),
       'hosts.releaseBaseUrl': 'https://releases.example.com',

@@ -74,12 +74,12 @@ const queryHandlers: Provider[] = [
 const adapters: Provider[] = [{ provide: ADMIN_AUTH, useClass: AdminAuthGateway }];
 
 /**
- * Super-admin user management: `/v1/admin/users` (list, get, create, update,
- * set-role, ban, unban, impersonate, remove, sessions, set-password), gated by
- * CASL `manage User`. Better Auth's admin plugin owns the accounts, so there
- * is no aggregate; a port (`infrastructure/admin-auth.port.ts`), a gateway
- * over `auth.api.*` and a slice per operation give the generated api-client
- * the same typed, Swagger-documented surface as every other module.
+ * Platform user management under `/v1/admin`, gated by CASL `manage User`
+ * (all but `stop-impersonating`, which the impersonated session calls). Better
+ * Auth's admin plugin owns the accounts, so there is no aggregate; a port
+ * (`infrastructure/admin-auth.port.ts`), a gateway over `auth.api.*` and a
+ * slice per operation give the generated api-client the same typed,
+ * Swagger-documented surface as every other module.
  */
 @Module({
   imports: [CqrsModule],

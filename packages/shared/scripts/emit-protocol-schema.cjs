@@ -3,7 +3,7 @@
  * Write `protocol-schema/protocol.schema.json` from the Zod union, and
  * `protocol-schema/samples.json` from `src/protocol/samples.ts`.
  *
- * This runs as the second half of `pnpm --filter @oppenheimer/shared build`, not
+ * This runs in `pnpm --filter @oppenheimer/shared build`, right after `tsc`, not
  * as a script somebody has to remember: the artifact is what the Go structs are
  * generated from (`emit-link-protocol.cjs`, which runs next), so leaving it
  * behind a separate command is how it goes stale while `tsc` alone reports
@@ -17,8 +17,8 @@
  * `protocol-schema/` is excluded in `biome.json` for the same reason.
  *
  * `require()`-ing this file has no side effect: the specs compare the committed
- * files with `renderSchema()` / `renderSamples()`, and a require that rewrote
- * them first would make that comparison always pass.
+ * files with a fresh render, and a require that rewrote them first would make
+ * that comparison always pass.
  */
 const { mkdirSync, readFileSync, writeFileSync } = require('node:fs');
 const { dirname, join, relative } = require('node:path');

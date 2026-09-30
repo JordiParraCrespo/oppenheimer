@@ -514,7 +514,7 @@ func (h *linkHandler) snapshots() []link.SessionSnapshot {
 }
 
 // observedOf maps the runner's states onto the five the log's
-// `agent.observed` takes; the lifecycle ones never reach here.
+// `agent.observed` takes; `starting` reads as `unknown`.
 func observedOf(state sessionsdomain.State) string {
 	switch state {
 	case sessionsdomain.StateWorking, sessionsdomain.StateBlocked, sessionsdomain.StateIdle, sessionsdomain.StateDone:

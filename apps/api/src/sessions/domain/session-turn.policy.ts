@@ -49,7 +49,7 @@ export type TurnDrive = (typeof TURN_DRIVES)[number];
 export const SESSION_ORIGINS = ['person', 'automation'] as const;
 export type SessionOrigin = (typeof SESSION_ORIGINS)[number];
 
-/** The kinds a headless runner and the follow-up path write. */
+/** The kinds a headless runner and the follow-up path will write; nothing appends them yet. */
 export const TURN_EVENT_KINDS = {
   /** A follow-up prompt for the next turn. Payload `{ prompt, origin? }`. */
   REQUESTED: 'turn.requested',

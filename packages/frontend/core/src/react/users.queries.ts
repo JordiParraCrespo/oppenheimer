@@ -6,10 +6,7 @@ import type { UserEntity } from '../modules/users/user.entity';
 import { useOppenheimerApp } from './context';
 import { useQuery } from './query';
 
-/**
- * Each level is derived from the one above. See the "React Query keys" guide
- * in the docs for the rationale.
- */
+/** Each level is derived from the one above (`apps/docs/docs/architecture/query-keys.md`). */
 export const usersKeys = {
   all: ['users'] as const,
   me: () => [...usersKeys.all, 'me'] as const,

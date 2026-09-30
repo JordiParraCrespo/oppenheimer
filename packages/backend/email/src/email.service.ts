@@ -24,12 +24,13 @@ export type PasswordResetEmailParams = ActionEmailParams;
 export type EmailVerificationEmailParams = ActionEmailParams;
 /**
  * A machine was paired with the account. A security notice, not a welcome:
- * its one action is the host list, where a pairing nobody recognises is undone.
+ * its one action opens the console, and its closing names the host id to
+ * unpair.
  */
 export type HostPairedEmailParams = ActionEmailParams;
 /**
  * A host connected from another country or network operator than before. A
- * security notice like the pairing one: its one action is the host's page.
+ * security notice like the pairing one: its one action opens the console.
  */
 export type HostNetworkChangedEmailParams = ActionEmailParams;
 

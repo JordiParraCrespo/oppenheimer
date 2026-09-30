@@ -9,8 +9,9 @@ import type { RepositoryAccessPort, RepositoryToken } from './repository-access.
 
 /**
  * It lives in `application/` rather than in a slice because no route reaches it:
- * it is what the relay calls when a runner asks for a credential, and what the
- * session dispatcher seals into a job. It needs ports, it is not a use case.
+ * it is what the relay mints a runner's credential through, and what a session,
+ * automation or project reads a repository through. It needs ports, it is not a
+ * use case.
  */
 @Injectable()
 export class RepositoryAccessResolver implements RepositoryAccessPort {

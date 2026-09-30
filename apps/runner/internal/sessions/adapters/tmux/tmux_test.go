@@ -126,8 +126,6 @@ func TestTheEnvironmentIsInheritedByEveryWindow(t *testing.T) {
 	s := server(t)
 	ctx := context.Background()
 	dir := t.TempDir()
-	// The session id and the runner's socket are set once, at creation, so
-	// a git credential helper called from any tab knows who it answers for.
 	env := map[string]string{"OPPENHEIMER_SESSION": "abc123"}
 	if err := s.Create(ctx, "opp-env", dir, "", env); err != nil {
 		t.Fatal(err)
@@ -306,10 +304,6 @@ func TestPasteIsABracketedPasteForAProgramThatAskedForOne(t *testing.T) {
 	}
 }
 
-// A session nobody has attached to still has to be a plausible terminal: tmux
-// would start it at 80x24, and the agent inside lays its turn out for whatever
-// it is told, so the size a detached session launches at is the size the first
-// reader's scrollback was written for.
 func TestASessionLaunchesWiderThanTmuxsDefault(t *testing.T) {
 	s := server(t)
 	ctx := context.Background()

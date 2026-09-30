@@ -43,7 +43,7 @@ export type DeploymentCapabilities = Record<DeploymentCapability, boolean>;
 /**
  * The subset of capabilities clients have a UI decision hanging on — served by
  * `GET /health/capabilities`. Server-internal capabilities (`s3_storage`,
- * `email_delivery`) are deliberately not on the wire: no client renders
+ * `email_delivery`, …) are deliberately not on the wire: no client renders
  * anything differently for them, and a public endpoint should not describe a
  * deployment's infrastructure beyond what its UI already reveals.
  */

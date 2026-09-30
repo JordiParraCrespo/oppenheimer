@@ -348,7 +348,7 @@ describe('AbilityFactory', () => {
     it('falls back to the seeded system-role permissions when the role is not in the DB', async () => {
       const ability = await factory.createForUser({ id: 'user-1', role: 'user' });
 
-      // The seeded `user` set grants its own API tokens and nothing else, so
+      // The seeded `user` set grants its own API tokens but nothing on `User`, so
       // that rule is what proves the fallback was taken rather than an empty
       // ability being returned.
       expect(ability.can('read', 'ApiToken')).toBe(true);

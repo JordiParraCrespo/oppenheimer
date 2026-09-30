@@ -12,8 +12,7 @@ import { type ErrorDefinition, toAppError } from './errors';
  * export class UsersRepository {
  *   @MapApiError(UsersErrors.FETCH_FAILED)
  *   async me(): Promise<UserEntity> {
- *     const data = await UsersApi.me();
- *     if (!data) throw new AppError(UsersErrors.FETCH_FAILED);
+ *     const data = await unwrapBody(heyApiSdk.getMe(), UsersErrors.FETCH_FAILED);
  *     return toEntity(data);
  *   }
  * }

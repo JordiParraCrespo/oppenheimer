@@ -2,8 +2,7 @@ package domain
 
 import "time"
 
-// Stage is one of the stages Create runs, in order. Each is observable on
-// disk, which is what makes a failure half-way something a person can look at.
+// Stage is one of the stages Create runs, in order.
 type Stage string
 
 const (

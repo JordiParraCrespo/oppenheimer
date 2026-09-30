@@ -7,10 +7,7 @@ import { RoleErrors } from '../../domain/role.errors';
 import { ROLE_REPOSITORY } from '../../roles.di-tokens';
 import { DeleteRoleCommand } from './delete-role.command';
 
-/**
- * System roles are protected. Existing assignments in the `user_role` join
- * are removed by the database cascade.
- */
+/** Existing assignments in the `user_role` join go with the role, by the database cascade. */
 @CommandHandler(DeleteRoleCommand)
 export class DeleteRoleCommandHandler implements ICommandHandler<DeleteRoleCommand, void> {
   constructor(

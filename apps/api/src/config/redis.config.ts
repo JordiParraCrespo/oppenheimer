@@ -43,7 +43,6 @@ export function redisConnectionOptions(config: RedisConfig): RedisOptions {
   return {
     host: config.host,
     port: config.port,
-    // `undefined` when unset (a blank `REDIS_PASSWORD=` is unset, see `parseEnv`).
     password: config.password,
   };
 }

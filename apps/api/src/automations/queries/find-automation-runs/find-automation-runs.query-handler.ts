@@ -7,8 +7,8 @@ import type { RunPage } from '../../domain/automation-read.types';
 import { FindAutomationRunsQuery } from './find-automation-runs.query';
 
 /**
- * The Runs tab, and one automation's runs: a page of ten, newest first, with the
- * total for "1–10 of 65" and the per-tab counts under the same facets.
+ * The Runs tab, and one automation's runs: a page (ten by default), newest first,
+ * with the total for "1–10 of 65" and the per-tab counts under the same facets.
  */
 @QueryHandler(FindAutomationRunsQuery)
 export class FindAutomationRunsQueryHandler

@@ -26,7 +26,7 @@ export const FLAG_BUCKETS = 10_000;
 /**
  * UTF-8 bytes of a string. Written out rather than `TextEncoder` because this
  * package targets no runtime in particular — no DOM lib, no Node types — and
- * the encoding is fifteen lines.
+ * the encoding is a few lines.
  */
 function utf8(input: string): number[] {
   const bytes: number[] = [];

@@ -39,8 +39,6 @@ function clockFor(intervalMs: number): Clock {
       listeners.add(listener);
       if (!timer) {
         now = Date.now();
-        // The timer: one tick per interval for every reader, cleared when the
-        // last one unmounts.
         timer = setInterval(() => {
           now = Date.now();
           for (const notify of listeners) notify();

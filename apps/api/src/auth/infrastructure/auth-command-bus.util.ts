@@ -24,9 +24,9 @@ let commandBus: CommandBus | undefined;
  *
  * Best-effort: Better Auth does not await `databaseHooks.*.after`, so a
  * rejection would be unhandled, and failing the sign-up is wrong anyway. An
- * account whose workspace did not land can still sign in, and provisioning is
- * idempotent, so the seed repairs it. It must not fail quietly: every failure
- * is logged with the account it was owed to.
+ * account whose workspace did not land can still sign in and create one on
+ * `/onboarding`. It must not fail quietly: every failure is logged with the
+ * account it was owed to.
  */
 export async function dispatchFromAuthHook(
   command: CommandBase,

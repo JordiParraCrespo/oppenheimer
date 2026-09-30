@@ -88,9 +88,8 @@ export function useDeleteAvatar(options?: UseMutationOptions<ProfileEntity, Erro
 }
 
 /**
- * Named apart from `useChangePassword` in `auth.queries`, which goes through
- * Better Auth's client. This one is the REST endpoint, and it defaults to
- * revoking the other sessions — so the session list is invalidated on success.
+ * The REST endpoint defaults to revoking the other sessions, so the session
+ * list is invalidated on success.
  */
 export function useChangeOwnPassword(
   options?: UseMutationOptions<void, Error, ChangeOwnPasswordDto>,

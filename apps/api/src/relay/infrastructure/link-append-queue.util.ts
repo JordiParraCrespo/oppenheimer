@@ -24,7 +24,10 @@ export interface AppendQueueLimits {
   closeAt: number;
   /** Close the link when a pause has lasted this long. */
   maxPauseMs: number;
-  /** The most events one coalesced append takes: the protocol's own batch cap. */
+  /**
+   * The most events one coalesced append takes: the protocol's own batch cap,
+   * so a coalesced append is a batch the log already takes.
+   */
   maxEventsPerAppend: number;
 }
 

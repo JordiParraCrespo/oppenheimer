@@ -12,7 +12,7 @@ import { UpdateProjectCommand } from './update-project.command';
  * Changes a project's name, its repositories as a whole set and its defaults. Never the
  * slug, the project's stable handle, and never the Unassigned project's name
  * (`PROJECTS_008`). A session's checkout rows are its own, so an edit never reaches
- * one. Returns the saved aggregate the handler already holds, sparing the controller a
+ * one. Returns the aggregate the scoped write read back, sparing the controller a
  * second scoped read.
  */
 @CommandHandler(UpdateProjectCommand)

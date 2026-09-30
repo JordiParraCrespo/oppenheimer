@@ -35,10 +35,7 @@ export abstract class DomainEvent {
 
   public readonly aggregateId: string;
 
-  /**
-   * Why this event's side effects are owed, in words. Recorded on the outbox
-   * row so a queued item is self-explaining when someone opens the table.
-   */
+  /** Why this event's side effects are owed, in words: its outbox row's `reason`. */
   public readonly reason?: string;
 
   public readonly metadata: DomainEventMetadata;

@@ -11,7 +11,7 @@ export interface RoleProps {
   /** Unique, immutable, machine-readable name (e.g. `editor`, `support`). */
   name: string;
   description: string | null;
-  /** System roles (`admin`, `user`) are seeded and cannot be deleted/renamed. */
+  /** The `SYSTEM_ROLES`, installed by the migrations; they cannot be deleted. */
   isSystem: boolean;
   /** Owning organization, or `null` for a global/system role template. */
   organizationId: string | null;

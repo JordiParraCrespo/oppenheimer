@@ -37,8 +37,6 @@ function toEntity(data: HostDto): HostEntity {
 export class HostsRepository {
   @MapApiError(HostsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<HostEntity[]> {
-    // An absent body is a failed read, not an empty collection — returning `[]`
-    // would render "no hosts" over a request that never succeeded.
     const data = await unwrapBody(heyApiSdk.findHosts(), HostsErrors.FETCH_LIST_FAILED);
     return data.map(toEntity);
   }
@@ -67,11 +65,6 @@ export class HostsRepository {
     };
   }
 
-  /**
-   * Add host polls this to learn whether *its* token was spent, and on which
-   * machine. "The host list is non-empty" is a different question — an account
-   * that already owns a machine would answer it the moment the step opened.
-   */
   @MapApiError(HostsErrors.FETCH_LIST_FAILED)
   async pairings(): Promise<HostPairingToken[]> {
     const data = await unwrapBody(heyApiSdk.findPairingTokens(), HostsErrors.FETCH_LIST_FAILED);

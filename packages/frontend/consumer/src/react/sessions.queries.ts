@@ -18,10 +18,6 @@ import type { SessionStartProgress } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
 import { CLOSE_WATCH_MS, type PollKeys, pollWhile, RESTART_WATCH_MS } from './live-poll';
 
-/**
- * Query key factory for the `sessions` feature, from the most generic (`all`)
- * to the most specific so a whole subtree can be invalidated with one key.
- */
 export const sessionsKeys = {
   all: ['sessions'] as const,
   lists: () => [...sessionsKeys.all, 'list'] as const,
@@ -40,8 +36,7 @@ export const sessionsKeys = {
  * A close is answered by the host, not by the request, so the row stays `open`
  * for a beat after Delete — "not settled, and nothing pushes it", like a
  * starting session, and the list polls for it on `LIVE_POLL.sessionStarting`.
- * An id leaves when its row leaves the list, or after {@link CLOSE_WATCH_MS}
- * for a host that is offline and will answer only when it is back.
+ * An id leaves when its row leaves the list, or after {@link CLOSE_WATCH_MS}.
  */
 const closeWatches = new WeakMap<QueryClient, Map<string, ReturnType<typeof setTimeout>>>();
 
@@ -217,11 +212,9 @@ export interface CreateSessionVariables {
   input: CreateSessionInput;
   /**
    * The caller's `Idempotency-Key`. It belongs to the **attempt**, not to this
-   * hook: a lost response leaves somebody looking at an error over a session
-   * that was in fact created, and pressing send again must return that session
-   * rather than build a second worktree. Only the screen holding the draft
-   * knows the second press is the same attempt, so it mints the key and keeps
-   * it until one succeeds.
+   * hook: only the screen holding the draft knows that a second press after a
+   * lost response is the same attempt, so it mints the key and keeps it until
+   * one succeeds.
    */
   idempotencyKey: string;
 }
@@ -253,8 +246,7 @@ export interface MoveSessionVariables {
 
 /**
  * A write to one session's row that the API answers with the row: the detail
- * takes the answer and the list is re-read. Rename and move are this shape,
- * and the next patch will be too.
+ * takes the answer and the list is re-read.
  */
 function useSessionPatch<TVariables>(
   patch: (app: ReturnType<typeof useConsumerApp>, variables: TVariables) => Promise<SessionEntity>,

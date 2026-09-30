@@ -5,6 +5,7 @@ import type { HostAccessPort } from '../../../hosts/application/host-access.port
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import { requireLaunchableHost } from '../../application/require-launchable-host.policy';
 import { SessionAttachmentsResolver } from '../../application/session-attachments.resolver';
+import { throwIfRefused } from '../../application/session-create-refusal.policy';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../application/session-launch.factory';
 import { SessionNamingResolver } from '../../application/session-naming.resolver';
@@ -23,10 +24,10 @@ import { CreateSessionCommand } from './create-session.command';
  * log, and the job the host is owed.
  *
  * The order matters. The host is checked **first**: `hostId` is the one reference
- * a constraint cannot hold (a host is a person's, with no workspace column), so a
- * foreign host is refused before anything is written; then the attached images,
- * then the project, whose slug the branch needs. The row, its checkouts and its log
- * commit together, and only a session genuinely created is dispatched.
+ * no composite key can scope (a host is a person's, with no workspace column), so a
+ * foreign host is refused before anything is written; then the project, the
+ * checkouts and the attached images. The row, its checkouts and its log commit
+ * together, and only a session genuinely created is dispatched.
  */
 @CommandHandler(CreateSessionCommand)
 export class CreateSessionCommandHandler
@@ -89,19 +90,11 @@ export class CreateSessionCommandHandler
         cwdCheckoutId: this.plan.cwdCheckoutIdFor(session, input.cwdGithubRepoId),
       }),
     );
-    // The project was retired between the lookup and the insert; the locked
-    // project row decides that race rather than detecting it afterwards.
-    if (created.projectArchived) {
-      throw new AppError(SessionErrors.PROJECT_ARCHIVED, {
-        detail: `Project ${project.slug} is archived`,
-      });
-    }
+    throwIfRefused(created, { projectSlug: project.slug, hostId: input.hostId });
     if (!created.created) return { sessionId: created.session.id, hints: [] };
 
     // The name is asked for *while* the host is told about the session, so the
-    // model's round trip overlaps the dispatch rather than following it. It
-    // resolves within the namer's deadline and never rejects: a slow model is
-    // replaced by the prompt's own words, so the response carries a readable name.
+    // model's round trip overlaps the dispatch rather than following it.
     const naming = input.prompt ? this.naming.propose(created.session, input.prompt) : null;
 
     const { hints } = await this.dispatch.create(

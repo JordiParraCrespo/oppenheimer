@@ -6,8 +6,6 @@ import type { GithubAppPort } from '../../infrastructure/github-app.port';
 import { RepositoryAccessResolver } from '../repository-access.resolver';
 
 /**
- * The seam `sessions/` and `relay/` will inject.
- *
  * A repository token is the one credential this platform hands to a machine it
  * does not run, so the properties worth pinning are: it is narrowed to the one
  * repository asked for, it is **never stored or cached**, and an installation

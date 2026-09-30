@@ -123,9 +123,9 @@ export class GithubRestAdapter implements GithubAppPort {
   /**
    * One predicate, shared with the capability.
    *
-   * Asking `CapabilitiesService` rather than re-reading config is the point: the
-   * two used to be different subsets, so a deployment with no `GITHUB_APP_SLUG`
-   * reported `github_app: false` and still answered `POST /installations` 201.
+   * Asking `CapabilitiesService` rather than re-reading config is the point: a
+   * deployment with no `GITHUB_APP_SLUG` reports `github_app: false`, and must
+   * not then answer `POST /installations` 201.
    */
   isConfigured(): boolean {
     return this.capabilities.has('github_app');
@@ -155,9 +155,6 @@ export class GithubRestAdapter implements GithubAppPort {
   async listUserInstallations(code: string): Promise<GithubInstallationRef[]> {
     this.assertConfigured();
 
-    // The code is exchanged once, here, and never stored. What it buys is the one
-    // thing a forged installation id cannot fake: GitHub's own answer to "which
-    // installations can this account see".
     const userToken = await this.exchangeCode(code);
     const installations = await this.paginate<RawInstallation>(
       `${this.api}/user/installations`,
@@ -208,7 +205,10 @@ export class GithubRestAdapter implements GithubAppPort {
     return toRepository(await this.rawRepository(token, githubRepoId));
   }
 
-  /** The raw row, so the two readers above cannot drift on the refusal mapping. */
+  /**
+   * The raw row, so `readRepository` and `listRepositoryBranches` cannot drift
+   * on the refusal mapping.
+   */
   private async rawRepository(token: string, githubRepoId: number): Promise<RawRepository> {
     const { body } = await this.request<RawRepository>(`${this.api}/repositories/${githubRepoId}`, {
       token,
@@ -252,9 +252,6 @@ export class GithubRestAdapter implements GithubAppPort {
     githubInstallationId: number,
     githubRepoId: number,
   ): Promise<GithubRepositoryToken> {
-    // Narrowed to one repository with contents and metadata only, and a live call
-    // every time — so it fails the moment that repository leaves the installation
-    // (`product/versions/mvp/03-control-plane.md`).
     return this.createInstallationToken(githubInstallationId, {
       repositoryIds: [githubRepoId],
       permissions: { contents: 'write', metadata: 'read' },

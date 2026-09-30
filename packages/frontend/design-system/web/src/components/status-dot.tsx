@@ -15,8 +15,7 @@ const dotVariants = cva('inline-block size-1.5 shrink-0 rounded-pill', {
       idle: 'bg-fg-subtle',
       pending: 'bg-border-strong',
       // The routine vocabulary: active and paused are a routine's own states,
-      // beside the run states above. Running pulses; paused is muted, not
-      // coloured.
+      // beside the run states above. Paused is muted, not coloured.
       active: 'bg-success',
       paused: 'bg-fg-subtle',
     },
@@ -41,7 +40,7 @@ const STATUS_LABEL: Record<StatusState, string> = {
 /**
  * StatusDot — status is a dot, not an icon. A 6px coloured dot plus a word,
  * which is how run state reads everywhere: the session list, the host pairing
- * step, the terminal tab. The six states are the vocabulary; do not invent
+ * step, the terminal tab. These states are the vocabulary; do not invent
  * "In progress" or "Error" alongside them.
  *
  * `completed` swaps the dot for a small green check (the connected-host and

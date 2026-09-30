@@ -14,7 +14,7 @@ export type Catalog = Record<string, unknown>;
  *
  * Written out rather than built from a template string: the bundler needs a
  * statically analysable specifier to know which files to split out, and a
- * computed `import(\`./${locale}/index.json\`)` would either bundle every
+ * computed `import(\`./${locale}/browser.json\`)` would either bundle every
  * match or resolve nothing at all.
  *
  * The default locale is listed too, even though the web app bundles it eagerly

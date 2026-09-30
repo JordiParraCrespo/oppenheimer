@@ -31,8 +31,6 @@ describe('UserMapper.toPersistence', () => {
   const mapper = new UserMapper();
 
   it('derives the Better Auth display name from the first and last name', () => {
-    // Member lists and invitation emails read `user.name`; a profile update
-    // that saved only firstName/lastName kept the old name on every one of them.
     const record = mapper.toPersistence(makeUser('Adrián', 'Rodrigo'));
 
     expect(record.name).toBe('Adrián Rodrigo');
@@ -47,8 +45,6 @@ describe('UserMapper.toPersistence', () => {
   });
 
   it('never writes the ban columns, which the admin plugin owns', () => {
-    // A profile save racing a ban would otherwise write the stale
-    // `banned = false` back over it.
     const record = mapper.toPersistence(
       makeUser('A', 'B', { banned: true, banExpires: new Date('2030-01-01T00:00:00.000Z') }),
     );

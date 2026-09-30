@@ -130,9 +130,8 @@ func TestServeAcceptsAProvidedListener(t *testing.T) {
 	// its own user can reach.
 	//
 	// Not `t.TempDir()`: it builds the directory name out of the test's, and a
-	// socket path is capped at 104 bytes on macOS (108 on Linux) — so this one
-	// came to 108 and `net.Listen` failed with a bare `bind: invalid argument`
-	// on a developer's machine while CI, on a shorter TMPDIR, stayed green.
+	// socket path is capped at 104 bytes on macOS (108 on Linux), past which
+	// `net.Listen` fails with a bare `bind: invalid argument`.
 	dir, err := os.MkdirTemp("", "opp")
 	if err != nil {
 		t.Fatal(err)

@@ -21,7 +21,6 @@ export function useDebouncedValue<T>(value: T, delay: number): T {
   const [settled, setSettled] = useState(value);
 
   useEffect(() => {
-    // The timer: restarted by every change, cancelled on unmount.
     const timer = setTimeout(() => setSettled(value), delay);
     return () => clearTimeout(timer);
   }, [value, delay]);

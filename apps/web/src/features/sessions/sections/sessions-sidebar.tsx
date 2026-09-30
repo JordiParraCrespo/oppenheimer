@@ -48,9 +48,8 @@ export function SessionsSidebar() {
   const navigate = useNavigate();
   const { data: sessions, isPending, error } = useSessions();
   const projects = useProjects();
-  // Named by the host list, because a session carries only the host's id and
-  // an id is not a filter anyone can read. Selected down to plain pairs, which
-  // the query keeps by reference across a refetch that changes no name.
+  // Selected down to plain pairs, which the query keeps by reference across a
+  // refetch that changes no name.
   const { data: hosts } = useHosts({
     select: (rows) => rows.map((host) => ({ id: host.id, name: host.name })),
   });

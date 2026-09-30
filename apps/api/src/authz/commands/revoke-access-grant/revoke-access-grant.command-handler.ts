@@ -21,8 +21,6 @@ export class RevokeAccessGrantCommandHandler
       throw new AppError(AccessGrantErrors.NO_ACTIVE_ORGANIZATION);
     }
 
-    // Scoped to the organization, so a grant in another tenant reports as not
-    // found rather than forbidden — ids stay un-probeable.
     const found = await this.grants.findOneInOrganization(scope.organizationId, command.grantId);
     if (found.isNone()) {
       throw new AppError(AccessGrantErrors.NOT_FOUND, {

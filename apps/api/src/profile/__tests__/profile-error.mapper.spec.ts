@@ -4,8 +4,6 @@ import { mapProfileError } from '../profile-error.mapper';
 
 describe('mapProfileError', () => {
   it('maps a wrong current password onto its own code', () => {
-    // Better Auth reports this with its generic credentials code; without the
-    // mapping the form could not point at the right field.
     expect(
       mapProfileError({
         upstreamCode: 'INVALID_EMAIL_OR_PASSWORD',
@@ -41,8 +39,6 @@ describe('mapProfileError', () => {
   });
 
   it('is total: an unknown code still lands in the catalog', () => {
-    // A code added by a future Better Auth release must produce a documented
-    // problem, not an unhandled 500.
     expect(mapProfileError({ upstreamCode: 'SOMETHING_NEW', status: 404 })).toBe(
       ProfileErrors.NOT_FOUND,
     );

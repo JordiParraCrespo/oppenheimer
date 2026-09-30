@@ -33,7 +33,7 @@ type Manager struct {
 
 // Options configure the manager.
 type Options struct {
-	// Dir is where user units live; defaults to ~/.config/systemd/user.
+	// Dir is where user units live: ~/.config/systemd/user.
 	Dir string
 	// User is whose lingering is enabled.
 	User string

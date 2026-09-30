@@ -16,8 +16,7 @@ const EXPIRES_AT = new Date('2026-09-20T12:05:00.000Z');
 /**
  * Stands in for the real verifier. What matters here is that the resolver
  * reaches it through the port at all: it is bound to `HOST_ASSERTION`, which
- * `HostsModule` publishes to its own injector and no longer has to publish
- * application-wide.
+ * `HostsModule` publishes to its own injector, not application-wide.
  */
 const assertions: HostAssertionPort = {
   recognises: (bearer) => bearer.split('.').length === 3,

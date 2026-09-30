@@ -6,7 +6,8 @@ import { TokenCountdown } from './token-countdown';
 
 /**
  * A machine as the pairing chrome names it. Structural rather than
- * `HostEntity`: the kit imports no product package (`kit-knows-no-product`), and these three fields are all a status row reads.
+ * `HostEntity`: the kit imports no product package (`kit-knows-no-product`),
+ * and these three fields are all a status row reads.
  */
 export interface PairedMachine {
   name: string;
@@ -20,9 +21,8 @@ export interface PairedMachine {
  * replace it, the instruction behind its fold, a rule, and the status line
  * that resolves in place when a runner spends the token.
  *
- * Kit because two features draw it (the onboarding step and the console's Add
- * a host dialog) and a feature may not import another. `layout` is the
- * export's two sizes: the step's large buttons and 12px line
+ * The onboarding step and the console's Add a host dialog draw it. `layout`
+ * is the export's two sizes: the step's large buttons and 12px line
  * (`design/version1/AddHost.dc.html`), the dialog's medium buttons and 11.5px
  * line (`SessionsConsole.dc.html`). Settings shows the instruction outright,
  * so it composes `PairingToken`, `PairingInstruction` and `PairingStatus`.
@@ -144,8 +144,6 @@ export function PairingStatus({
       <div data-slot="host-pairing-status" className="flex min-h-10.5 flex-col justify-center">
         {host ? (
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* The dot follows what the API reports, not the row appearing:
-                  a runner that registered may still be starting. */}
             <span
               aria-hidden
               className={cn(

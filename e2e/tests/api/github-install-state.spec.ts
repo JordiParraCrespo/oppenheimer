@@ -8,10 +8,11 @@ import { GITHUB_STUB_URL, mintInstallState, STUB_INSTALL_URL } from '../../suppo
  * The GitHub App install callback is bound to the person who started it.
  *
  * The OAuth `code` on GitHub's redirect proves which GitHub account can see an
- * installation, not which console user's browser posts it — so a callback URL
- * someone stopped halfway through their own install used to connect their
- * installation to whoever opened it. `POST /installations` now requires a
- * state the API minted for this caller in this workspace, and spends it.
+ * installation, not which console user's browser posts it — so without a
+ * state, a callback URL someone stopped halfway through their own install
+ * would connect their installation to whoever opened it. `POST /installations`
+ * requires a state the API minted for this caller in this workspace, and
+ * spends it.
  */
 
 /** A fresh installation the stub lists for the code, so only the state decides. */

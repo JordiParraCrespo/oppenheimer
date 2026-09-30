@@ -30,8 +30,6 @@ import { FindProjectQueryHandler } from './queries/find-project/find-project.que
 import { FindProjectsHttpController } from './queries/find-projects/find-projects.http.controller';
 import { FindProjectsQueryHandler } from './queries/find-projects/find-projects.query-handler';
 
-// Static routes before parameterized ones, so `GET /projects` is not shadowed by
-// `GET /projects/:id`.
 const httpControllers = [
   FindProjectsHttpController,
   FindProjectHttpController,
@@ -74,13 +72,10 @@ const repositories: Provider[] = [{ provide: PROJECT_REPOSITORY, useClass: Proje
     { provide: PROJECT_LOOKUP, useClass: ProjectLookupResolver },
     ...UsersModule.contributeAccountErasure([ProjectAccountErasure]),
   ],
-  // `PROJECT_LOOKUP` is the module's whole published surface: what owns sessions
-  // injects it to resolve the project a session is listed under — the one it
-  // named, or the workspace's Unassigned project. The repository stays inside so no consumer can read rows past the
-  // scoped lookup. `ProjectUsageRegistry` is the other half of that surface, and it
-  // is a class rather than a token because it is a kernel-style registry: the one
-  // thing another module reaches across to contribute the answer this module cannot
-  // give itself — whether archiving a project would strand work.
+  // The repository stays inside, so no consumer reads rows past the scoped
+  // lookup. `ProjectUsageRegistry` is a class, not a token, because it is a
+  // kernel-style registry: the one thing another module reaches across to
+  // contribute the answer this module cannot give itself.
   exports: [PROJECT_LOOKUP, ProjectUsageRegistry],
 })
 export class ProjectsModule {
@@ -101,10 +96,8 @@ export class ProjectsModule {
     return [
       ...usages,
       {
-        // Constructing this provider *is* the registration: the implementations are
-        // instantiated as its dependencies and handed to the registry. The token is
-        // unique per call so two contributions in one module cannot overwrite one
-        // another.
+        // Unique per call, so two contributions in one module cannot overwrite
+        // one another.
         provide: Symbol('PROJECT_USAGE_CONTRIBUTION'),
         inject: [ProjectUsageRegistry, ...usages],
         useFactory: (registry: ProjectUsageRegistry, ...contributed: ProjectUsagePort[]) => {

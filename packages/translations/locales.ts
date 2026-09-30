@@ -3,9 +3,9 @@ import type en from './en';
 /**
  * Locale metadata, deliberately free of catalog imports.
  *
- * `index.ts` imports every locale's JSON eagerly, which is what the API wants.
- * A browser needs one catalog, and importing `locales` or `Messages` from the
- * root barrel drags every catalog into the web app's entry chunk.
+ * `index.ts` imports every locale's JSON eagerly. A browser needs one catalog,
+ * and importing `locales` or `Messages` from the root barrel drags every
+ * catalog into the web app's entry chunk.
  *
  * Anything that only needs the list, the default, the namespace or the *shape*
  * of a catalog imports it from here; the catalogs themselves come from

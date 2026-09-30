@@ -14,7 +14,7 @@ export const HOST_ONLINE_WINDOW_SECONDS = 30;
  * A host as a list reads it: the row, plus whether it is attached right now.
  *
  * `online` is not a column. It is a comparison against the heartbeat, made by
- * the database inside the same query that returns the rows — so every host in
+ * the database in the one presence read for the whole list — so every host in
  * one response is judged against one clock, and the list needs no call into the
  * relay to answer it.
  */
@@ -65,9 +65,9 @@ export interface RedeemAndRegisterInput {
 /**
  * Every read a *person* makes takes an {@link AccessScope}, so "this query is
  * authorized" is something the compiler asks for rather than something a
- * handler remembers. The two exceptions are named for what they are: a machine
- * authenticating itself has no access scope, and a redemption is matched by a
- * secret rather than by an identity.
+ * handler remembers. The exceptions are named for what they are: a machine
+ * authenticating itself has no access scope, a redemption is matched by a
+ * secret rather than by an identity, and deleting an account is the system's.
  */
 export interface HostRepositoryPort {
   /**

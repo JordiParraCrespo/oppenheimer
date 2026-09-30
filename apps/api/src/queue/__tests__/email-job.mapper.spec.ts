@@ -157,7 +157,6 @@ describe('EmailJobMapper', () => {
     expect(params.url).toBe('https://app.oppenheimer.dev');
     // A security email: the footer says why it cannot be turned off.
     expect(params.footer).toContain('security email');
-    // No console verb version 1 lacks: the closing names what actually works.
     expect(params.closingText).toContain('uninstall command');
     expect(params.closingText).toContain('DELETE /v1/hosts/host-1');
   });

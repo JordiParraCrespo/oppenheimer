@@ -15,9 +15,9 @@ import { CONSUMER_CONFIG } from '../../../config';
  */
 
 /**
- * `offline` is the ticket's own hint (`host_offline`): the session's host holds
- * no link right now. The stream keeps trying behind it, so it is a state rather
- * than an end.
+ * `offline` is the relay's `host_offline` on the attach socket (a hint, or
+ * the close code): the session's host holds no link right now. The stream
+ * keeps trying behind it, so it is a state rather than an end.
  */
 export type StreamStatus = 'connecting' | 'live' | 'offline' | 'closed';
 

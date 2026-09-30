@@ -9,11 +9,9 @@ const MIGRATIONS_DIR = resolve(__dirname, '../migrations');
  * Integration suites build their schema here rather than with `synchronize`, so
  * a mistake in a migration fails a suite rather than production.
  *
- * Migrations are discovered from the directory rather than listed by hand.
- * A hand-maintained list silently drifts the moment someone adds a migration
- * and forgets this file: the suite then runs against a schema that is missing
- * columns the entities declare, and every affected route fails with an opaque
- * 500 rather than pointing at the omission.
+ * Discovered from the directory, not listed by hand: a forgotten entry would run
+ * the suites against a schema missing columns the entities declare, failing as
+ * opaque 500s rather than pointing at the omission.
  */
 export async function runAllMigrations(): Promise<void> {
   const migrations = await loadMigrations();

@@ -8,10 +8,7 @@ import type { Actions, Subjects } from '../permissions/index.js';
 export const SCOPE_ACCESS_LEVELS = ['read', 'write'] as const;
 export type ScopeAccessLevel = (typeof SCOPE_ACCESS_LEVELS)[number];
 
-/**
- * The resources a credential can be scoped to. One entry per permission group
- * shown on the token-creation and OAuth consent screens.
- */
+/** The resources a credential can be scoped to: one per permission group. */
 export const SCOPE_RESOURCES = [
   'profile',
   'users',
@@ -63,17 +60,17 @@ export interface PermissionGroup {
   description: string;
   /**
    * Marks groups that grant account-takeover-adjacent powers (impersonation,
-   * password resets, minting further credentials). Consent and token screens
-   * call these out; nothing in the enforcement path treats them differently.
+   * password resets, minting further credentials). The OAuth consent screen
+   * calls these out; nothing in the enforcement path treats them differently.
    */
   sensitive?: boolean;
   levels: Record<ScopeAccessLevel, ScopeLevelDefinition>;
 }
 
 /**
- * The permission catalog — the single source of truth shared by the API guard
- * and the web permission picker. Adding a resource here is the only step
- * needed for it to appear on every surface.
+ * The permission catalog — the single source of truth for the API guard and
+ * the catalog the API serves to the OAuth consent screen. A group here, with
+ * its resource in `SCOPE_RESOURCES`, is all a resource needs to appear on both.
  */
 export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
   {
@@ -386,8 +383,8 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     description: 'GitHub App installations and the repositories they grant access to.',
     // The scope keeps the name a token holder thinks in — they are granting
     // access to repositories — but every level is backed by `Installation`
-    // policies alone. There is no `Repository` subject: a repository has no row,
-    // and the installation is what carries the tenant and the allowlist.
+    // policies alone: there is no `Repository` subject (`KNOWN_SUBJECTS` says
+    // why).
     levels: {
       read: {
         scope: 'repositories:read',

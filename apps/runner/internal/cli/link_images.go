@@ -19,8 +19,9 @@ import (
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
-// imagePullTimeout bounds one pull and paste; the control plane keeps a
-// parked image for about as long.
+// imagePullTimeout bounds one pull and paste, and all of a create's pulls
+// together; it is shorter than the two minutes the control plane keeps a
+// parked paste (PARKED_IMAGE_TTL_SECONDS).
 const imagePullTimeout = 60 * time.Second
 
 func (h *linkHandler) image(ctx context.Context, m link.SessionImage) {

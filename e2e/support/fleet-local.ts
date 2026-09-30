@@ -21,7 +21,7 @@ import type { FleetHost } from './fleet';
  *
  * Everything that makes a host a host is the container transport's: the same
  * runner build, `e2e/fleet/git-server.sh` seeding the same repositories, the
- * same `claude` shim, and pairing through the real API by `support/fleet.ts`'s
+ * same agent shims, and pairing through the real API by `support/fleet.ts`'s
  * callers. What differs is only where it runs:
  *
  * - as root, each host is a Unix account of its own, because `runner register`
@@ -32,9 +32,6 @@ import type { FleetHost } from './fleet';
  *   of its own, so hosts never share an identity or a tmux server;
  * - the git server binds loopback, and a host's `PATH` is its own bin dir in
  *   front of the caller's, so tools found here are found by the runner too.
- *
- * A host here cannot lose its network alone (`cutLink`): the tests that need
- * that run on containers.
  */
 const ROOT = process.env.FLEET_LOCAL_DIR ?? join(tmpdir(), 'oppenheimer-fleet-local');
 /**
@@ -91,8 +88,7 @@ function runAs(record: Pick<LocalRecord, 'user' | 'home'>, argv: string[]): stri
  * address, F5) rather than failing on it. Every local host registers from this
  * machine's one address, so a suite with more than five pairings in a minute
  * reaches the limit here, where container hosts each have an address of their
- * own. The throttle is the product's rule; this only waits for it to allow the
- * next one. The same token is good again: a 429 never reaches its redemption.
+ * own. The same token is good again: a 429 never reaches its redemption.
  */
 function register(record: Pick<LocalRecord, 'user' | 'home'>, argv: string[]): void {
   const [command, args] = asHost(record, argv);

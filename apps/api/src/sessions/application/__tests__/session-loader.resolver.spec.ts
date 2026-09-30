@@ -6,8 +6,8 @@ import { WorkSessionEntity } from '../../domain/work-session.entity';
 import { SessionLoaderResolver } from '../session-loader.resolver';
 
 /**
- * Every session command loads its session through here, so these are the
- * problem documents a missing or closed session answers with, byte for byte.
+ * Every person's command on an existing session loads it through here, so these
+ * are the problem documents a missing or closed session answers with, byte for byte.
  */
 
 const SCOPE = {

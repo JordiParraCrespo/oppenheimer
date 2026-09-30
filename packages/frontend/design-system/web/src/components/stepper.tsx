@@ -21,7 +21,7 @@ type Step = {
  * Each step: an 18px mark on a rail (an empty ring while pending, a spinning
  * ring while running, a green check when done), a 14px label that lifts to
  * full ink as it runs, and a mono meta line. The rail between steps turns
- * green as steps complete. The footer carries a mono elapsed time ("1.4s")
+ * green as steps complete. The footer carries a mono elapsed time ("00:12")
  * and a status word ("Working…"). Pending steps are not numbered: the order
  * is the rail's, and a number would read as a count of what is left.
  */

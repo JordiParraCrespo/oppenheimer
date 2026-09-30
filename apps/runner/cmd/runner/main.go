@@ -7,7 +7,7 @@
 //	runner uninstall    stop the service, revoke the host, erase the identity
 //	runner status       what a person needs to answer "is this host working"
 //	runner sessions     list, create, attach to and close sessions on this host
-//	runner workspaces   the workspace roots sessions are checked out under
+//	runner workspaces   where sessions' checkouts live, or move it
 //	runner update       check, apply, pin or roll back a version
 //	runner agents       keep the agent CLIs (claude, codex, …) current
 //	runner credential-helper  git's credential helper, over the local socket
@@ -265,7 +265,7 @@ func agents(ctx context.Context, args []string) (int, error) {
 }
 
 // sessions dispatches the session subcommands. They are what a person uses on
-// the host itself; the console will drive the same use cases over the link.
+// the host itself; the console drives the same use cases over the link.
 func sessions(ctx context.Context, args []string) (int, error) {
 	sub := "ls"
 	if len(args) > 0 {

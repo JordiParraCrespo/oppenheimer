@@ -48,8 +48,8 @@ let errors = [];
 const fail = (path, kind, message) => errors.push({ path, kind, message });
 
 /**
- * Directories under `apps/api/src` that are not modules: the composition root,
- * the schema history, and the test suites that span modules.
+ * Directories under `apps/api/src` that are not modules: configuration, the
+ * seed, the schema history, and the test suites that span modules.
  */
 const NON_MODULES = new Set(['config', 'database', 'migrations', '__tests__']);
 
@@ -453,8 +453,7 @@ function checkModule(name) {
  * Check one source tree against the contract.
  *
  * Exported so the fixture suite can drive it over a tree it built, which is the
- * only way to assert on a violation the repository does not currently have —
- * and the only way a wording change can be told apart from a paid-off one.
+ * only way to assert on a violation the repository does not currently have.
  *
  * @param {string} dir the `src` directory to check
  * @param {{ root?: string, ledger?: Array<{path: string, kind: string}> }} [options]

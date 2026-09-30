@@ -22,9 +22,8 @@ export interface SessionTerminalOptions {
    */
   agentWindow?: boolean;
   /**
-   * An image was pasted or dropped onto the terminal. The agent cannot read
-   * the browser's clipboard, so the caller uploads it and the runner pastes
-   * its path into the prompt (05). Without a handler, images are left to
+   * An image was pasted or dropped onto the terminal, for the caller to upload
+   * to the host (`bindImageGestures`). Without a handler, images are left to
    * xterm, which pastes nothing for them.
    */
   onImage?: (image: File) => void;
@@ -62,10 +61,6 @@ export function mountSessionTerminal(
     // A few thousand lines of build output is the normal case; the runner
     // replays its own tail on attach, so this is only what the tab keeps.
     scrollback: 5000,
-    // The ramp's bright slots repeat their normal counterparts today. This
-    // keeps a program's own colour choice readable until they diverge — at
-    // a floor that depends on the terminal's background, because one number
-    // cannot serve both themes (see `terminalMinimumContrastRatio`).
     minimumContrastRatio: terminalMinimumContrastRatio(),
     // Unicode11Addon is a proposed API; box drawing and emoji width in
     // agent output are wrong without it.
@@ -172,7 +167,7 @@ export function mountSessionTerminal(
   };
   document.fonts?.addEventListener('loadingdone', onFontsLoaded);
 
-  // `theme-provider.tsx` toggles `.dark` / `.light` on <html>. xterm holds
+  // `useAppliedTheme` toggles `.dark` / `.light` on <html>. xterm holds
   // resolved colour strings, not the tokens, so the ramp is re-read here.
   const themeObserver = new MutationObserver(() => {
     term.options.theme = readTerminalTheme();
@@ -181,26 +176,19 @@ export function mountSessionTerminal(
   });
   themeObserver.observe(document.documentElement, { attributeFilter: ['class'] });
 
-  // xterm's write callback fires once the parser has drained the chunk:
-  // that is the moment the bytes are consumed, and the credit goes with it.
-  // A TUI's hide, draw, show painted as one frame (02 §6).
   const cursorFrames = new CursorFrames((data) => term.write(data));
-  // Announced from the chunk rather than from the write callback: what the
-  // reader is waiting for is the far end having something to say, and the
-  // parser draining it a frame later does not change the answer.
-  //
-  // "Something to say" is not "some bytes". An attachment opens with tmux's
-  // own preamble — a device-attributes query, the cursor put at home, the
-  // screen cleared — which is several dozen bytes that paint nothing. Taking
-  // any non-empty chunk as output made this fire on the first frame of every
-  // session, which is the bug it exists to catch. So a chunk counts once it
-  // carries a glyph: anything outside the escape sequences and the C0 controls.
+  // Announced from the chunk rather than from the write callback: the reader
+  // waits on the far end having something to say, not on the parser draining
+  // it. A chunk counts once it carries a glyph (`hasVisibleText`), since an
+  // attachment opens with tmux's preamble, which paints nothing.
   let announcedOutput = false;
   const offData = stream.onData((chunk, consumed) => {
     if (!announcedOutput && hasVisibleText(chunk)) {
       announcedOutput = true;
       options.onFirstOutput?.();
     }
+    // xterm's write callback fires once the parser has drained the chunk:
+    // that is the moment the bytes are consumed, and the credit goes with it.
     term.write(cursorFrames.frame(chunk), consumed);
   });
   // The replay a fresh attachment opens with is written into the buffer the
@@ -286,11 +274,7 @@ function wheelLines(event: WheelEvent, rows: number): number {
 
 const VISIBLE_TEXT_DECODER = new TextDecoder('utf-8', { fatal: false });
 
-/**
- * The escape grammar, in the order it has to be unwound. Every one of these
- * names a control character on purpose — that is what an escape sequence is —
- * so the rule against them is switched off for the block rather than the line.
- */
+/** The escape grammar, in the order it has to be unwound (see `hasVisibleText`). */
 /* biome-ignore-start lint/suspicious/noControlCharactersInRegex: an escape sequence is control characters by definition */
 const ESCAPE_PATTERNS = [
   // OSC: ESC ] ... BEL, or ... ST
@@ -324,7 +308,7 @@ export function hasVisibleText(chunk: string | Uint8Array): boolean {
   // first, because their payload may contain anything, then CSI, which ends at
   // its final byte and *not* at the next escape — reading it as "up to the
   // next ESC" swallowed the text after a colour change, which is most of what
-  // an agent prints. What is left of an escape is the two-character kind.
+  // an agent prints.
   let withoutEscapes = text;
   for (const pattern of ESCAPE_PATTERNS) withoutEscapes = withoutEscapes.replace(pattern, '');
   return withoutEscapes.trim().length > 0;

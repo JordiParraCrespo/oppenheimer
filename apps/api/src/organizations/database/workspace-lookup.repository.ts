@@ -7,9 +7,10 @@ import { MemberOrmEntity } from './member.orm-entity';
 import { OrganizationOrmEntity } from './organization.orm-entity';
 
 /**
- * The read-only adapter behind `WORKSPACE_LOOKUP`: two indexed lookups, no
- * scope, because the callers hold a credential that already named the
- * workspace (a session row, an attach ticket) and are asking a fact about it.
+ * The read-only adapter behind `WORKSPACE_LOOKUP`: indexed lookups with no
+ * scope, because the callers already hold what names the workspace or account
+ * (a session row, an attach ticket, the account being erased) and are asking
+ * a fact about it.
  */
 @Injectable()
 export class WorkspaceLookupRepository implements WorkspaceLookupPort {

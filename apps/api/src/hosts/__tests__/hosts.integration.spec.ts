@@ -63,8 +63,8 @@ describe('Hosts & pairing (integration)', () => {
     process.env.REDIS_PORT = redisContainer.getMappedPort(6379).toString();
     process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
 
-    // Without these three the host routes answer HOSTS_004 and nothing else
-    // works, which is the deployment story — here they are all set.
+    // Without the key, the release base and the installer, minting and
+    // registering answer HOSTS_004 and no machine can pair.
     process.env.CONTROL_PLANE_SIGNING_KEY = controlPlane.privateKey
       .export({ format: 'der', type: 'pkcs8' })
       .toString('base64');
@@ -219,7 +219,7 @@ describe('Hosts & pairing (integration)', () => {
       JSON.stringify({
         iss: hostId,
         sub: hostId,
-        // `BETTER_AUTH_URL` is the control plane URL this deployment answers to.
+        // With no `CONTROL_PLANE_URL` set, the control plane URL is `BETTER_AUTH_URL`.
         aud: process.env.BETTER_AUTH_URL ?? 'http://localhost:3001',
         jti,
         iat: now,
@@ -353,8 +353,8 @@ describe('Hosts & pairing (integration)', () => {
         Array.from({ length: 8 }, () => mintAs(owner, { name: 'Race' })),
       );
 
-      // The count and the insert are one serialised write, so eight at once
-      // cannot all find room for a fifth.
+      // The count and the insert are one serialised write, so of eight at once
+      // only the cap of five find room.
       expect(results.filter((r) => r.status === 201)).toHaveLength(5);
       for (const refused of results.filter((r) => r.status !== 201)) {
         expect(refused.status).toBe(429);
@@ -381,7 +381,6 @@ describe('Hosts & pairing (integration)', () => {
 
       const refused = await mintAs(stranger, { name: 'Theirs', replaces: mine.body?.id });
 
-      // Someone else's token is not found, and nothing was minted or revoked.
       expect(refused.status).toBe(404);
       expect(refused.body?.code).toBe('HOSTS_002');
       expect(await revokedAt(mine.body?.id as string)).toBeNull();
@@ -611,7 +610,7 @@ describe('Hosts & pairing (integration)', () => {
   });
 
   /**
-   * The four side tables a host's metadata lives in since the switch-over
+   * The four side tables a host's metadata lives in
    * (`product/versions/mvp/15-host-metadata.md`). Their writes are raw SQL —
    * upserts, keyset reads, batched deletes — so nothing but a real Postgres
    * checks them. The heartbeat and the connect go through `HostPresencePort`,

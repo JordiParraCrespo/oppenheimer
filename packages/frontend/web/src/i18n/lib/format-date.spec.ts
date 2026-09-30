@@ -118,8 +118,7 @@ describe('compactAge', () => {
 
 describe('dateFormatter', () => {
   it('returns the same instance for the same locale and options', () => {
-    // The tables were constructing one formatter per row. The cache is the fix,
-    // and identity is the only way to assert it is working.
+    // Identity is the only way to assert the formatter cache holds.
     const options = { month: 'short', day: 'numeric' } as const;
 
     expect(dateFormatter('en-GB', options)).toBe(dateFormatter('en-GB', options));

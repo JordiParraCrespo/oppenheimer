@@ -89,10 +89,8 @@ function PermissionMenu({
               tone={option.value === 'full' ? 'warning' : 'default'}
               description={option.description}
               density="compact"
-              // Picking a level is a decision, not a comparison, so the menu
-              // closes behind it — Base UI keeps a radio item's menu open by
-              // default, which left the composer's send button behind an inert
-              // backdrop until somebody clicked away.
+              // Base UI keeps a radio item's menu open by default, which leaves
+              // the composer's send button behind an inert backdrop.
               closeOnClick
             >
               {option.label}

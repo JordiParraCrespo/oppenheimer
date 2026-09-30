@@ -13,9 +13,9 @@ import { RegisterHostCommand } from '../register-host.command';
 import { RegisterHostCommandHandler } from '../register-host.command-handler';
 
 /**
- * Redemption, and the three ways it can end.
+ * Redemption: a first pairing, a retry, and the refusals.
  *
- * The one worth the most attention is the middle one: a machine that never saw
+ * The one worth the most attention is the retry: a machine that never saw
  * the response retries, the burn claims nothing, and it must still be handed the
  * host it already created — proved by the key it presents, not by asking it.
  */

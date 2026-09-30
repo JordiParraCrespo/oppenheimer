@@ -6,7 +6,7 @@
  * organization once the org-scoped application role is written beside it.
  * `owner` and `admin` on the roster become the tenant-scoped `owner` role,
  * never the global `admin`: that one is `manage all`, and assigned org-scoped
- * it unioned into the caller's ability whenever the organization was active —
+ * it would union into the caller's ability whenever the organization is active,
  * reaching every non-tenant route, including deleting platform accounts.
  *
  * `role` may be Better Auth's comma-separated list of several.

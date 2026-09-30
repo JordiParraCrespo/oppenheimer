@@ -87,7 +87,7 @@ export function useUpdateProject(
   });
 }
 
-/** Archive: the row stays so its directory name is never reissued, and the listing leaves it out. */
+/** Archive: the row stays so its slug is never reissued, and the listing leaves it out. */
 export function useArchiveProject(options?: UseMutationOptions<ProjectEntity, Error, string>) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();

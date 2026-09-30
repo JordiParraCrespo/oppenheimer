@@ -44,8 +44,8 @@ export class MembershipAccessPolicy {
    * neither. `write` is Better Auth's roster write; if the role that opens the
    * organization cannot be granted after it (the system role is missing, the
    * store failed), `undo` reverts the roster and the original error is raised.
-   * Every door into an organization goes through here: creating it, adding a
-   * member, changing their role, accepting an invitation.
+   * Every Better Auth door into an organization goes through here: creating it,
+   * adding a member, changing their role, accepting an invitation.
    */
   async admit<Entry extends RosterEntry>(
     write: () => Promise<Entry>,

@@ -13,7 +13,7 @@ import { pad2, viewerTimeZone, wallClock, weekdayDate } from './time';
  * A trigger in words, the way the frames say it: "Weekdays at 08:30",
  * "Every Mon, Wed at 09:00", "On pull request opened". The words are the
  * locale's; the structure is here once, for the table, the page header, the
- * sidebar's filter and the runs facet alike.
+ * runs facet and the editor's trigger cards alike.
  */
 
 /** The shape the words read: a saved trigger or an editor card. */

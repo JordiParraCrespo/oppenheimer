@@ -14,7 +14,7 @@ const SCHEDULER_ID = 'host-retention-daily';
  * Deletes what `product/versions/mvp/15-host-metadata.md` says is not kept: networks
  * unseen for `retention.hostNetworkDays` (never a host's current one) and timeline
  * entries past `retention.hostTimelineDays`, in batches through their own index, as
- * the migration's Q7 and Q8.
+ * the note's Q7 and Q8.
  *
  * A BullMQ job scheduler, not a timer per process: one entry in Redis, so however
  * many replicas run, the purge runs once a day. Upserting it at boot is idempotent.

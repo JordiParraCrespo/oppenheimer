@@ -25,7 +25,7 @@ export const emailQueue = new Queue(QUEUE_NAMES.EMAIL, {
 // A BullMQ queue is an EventEmitter, so an `error` from its Redis connection —
 // a restart, a failover, a dropped idle socket — is an unhandled `error` event
 // and would take the process down. The queue reconnects on its own, so log and
-// carry on. This queue lives outside the DI container, so nothing else owns it.
+// carry on.
 emailQueue.on('error', (error: Error) => {
   new Logger('EmailQueue').warn(`Redis connection error: ${error.message}`);
 });

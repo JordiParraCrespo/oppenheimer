@@ -9,7 +9,7 @@ export const ProfileErrors = {
     code: 'PROFILE_CLIENT_002',
     message: 'Failed to update profile',
   },
-  // PROFILE_CLIENT_003 and _004 belong to the kernel's user-settings module.
+  // PROFILE_CLIENT_003 belongs to the kernel's user-settings module; _004 is unused.
   UPLOAD_AVATAR_FAILED: {
     code: 'PROFILE_CLIENT_005',
     message: 'Failed to upload avatar',
@@ -19,9 +19,8 @@ export const ProfileErrors = {
     message: 'Failed to remove avatar',
   },
   /**
-   * Raised before an upload starts, so the user is told immediately rather than
-   * after spending the transfer. The server's PROFILE_004 / PROFILE_005 remain
-   * the decisive checks.
+   * Raised before an upload starts (`ProfileService`); the server's
+   * PROFILE_004 / PROFILE_005 remain the decisive checks.
    */
   AVATAR_TYPE_REJECTED: {
     code: 'PROFILE_CLIENT_010',

@@ -41,15 +41,11 @@ describe('webhook signature', () => {
   });
 
   it('refuses a re-serialized body, byte for byte', () => {
-    // Same object, different bytes: key order and whitespace are part of what
-    // was signed. This is why the raw body has to reach the handler.
     const reserialized = JSON.stringify({ installation: { id: 42 }, action: 'suspend' });
     expect(verifyWebhookSignature(SECRET, reserialized, sign(body))).toBe(false);
   });
 
   it('refuses a missing or malformed signature without throwing', () => {
-    // `timingSafeEqual` throws on a length mismatch, so a short header would be
-    // a 500 rather than a refusal if the lengths were not compared first.
     expect(verifyWebhookSignature(SECRET, body, undefined)).toBe(false);
     expect(verifyWebhookSignature(SECRET, body, '')).toBe(false);
     expect(verifyWebhookSignature(SECRET, body, 'sha256=short')).toBe(false);
@@ -112,7 +108,6 @@ describe('installation event parsing', () => {
     expect(at('unsuspend', { id: 42, updated_at: '2026-09-01T10:00:00Z' })).toMatchObject({
       occurredAt: new Date('2026-09-01T10:00:00Z'),
     });
-    // A suspend names its own moment; `updated_at` is the fallback.
     expect(
       at('suspend', {
         id: 42,

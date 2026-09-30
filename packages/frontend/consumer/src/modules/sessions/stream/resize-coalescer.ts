@@ -1,8 +1,9 @@
 /**
  * The PTY's size, told once a drag has settled rather than on every frame of
- * it. The console is the one place resizes are coalesced (02 §5): every size
- * reaches the program as a SIGWINCH and an agent answers one by redrawing its
- * whole screen, so the runner applies what arrives as it arrives.
+ * it. The console is the one place resizes are coalesced
+ * (`product/versions/mvp/02-runner.md` §5): every size reaches the program as
+ * a SIGWINCH and an agent answers one by redrawing its whole screen, so the
+ * runner applies what arrives as it arrives.
  *
  * The first size goes straight out — it is the viewport the attach is opened
  * with — and a size equal to the last one sent is not sent again.

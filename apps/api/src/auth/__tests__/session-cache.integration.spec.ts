@@ -78,7 +78,7 @@ describe('Session cache (integration)', () => {
   interface Account {
     id: string;
     email: string;
-    /** The session as a bearer token (the CLI and mobile path): the signed cookie value. */
+    /** The session as a bearer token: the signed cookie value. */
     sessionToken: string;
     /** The same session as the browser's cookie. */
     cookie: string;

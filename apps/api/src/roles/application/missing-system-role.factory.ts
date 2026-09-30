@@ -3,8 +3,8 @@ import { RoleErrors } from '../domain/role.errors';
 
 /**
  * The one way to report a system role the database does not have, for sign-up's
- * default `user` grant, the personal workspace's `owner` grant and the same grant on
- * the hand-create path (`organizations/application/membership-access.policy.ts`).
+ * default `user` grant, the personal workspace's `owner` grant and the `owner` or `user`
+ * grant every roster change makes (`organizations/application/membership-access.policy.ts`).
  *
  * In `application/` because it builds an `AppError`, which the domain may not reach
  * for; the catalog entry stays in `domain/role.errors.ts`. The role name goes in

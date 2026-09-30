@@ -118,8 +118,6 @@ describe('Formatter', () => {
     });
 
     it('falls through to text for a format it does not know', () => {
-      // Unknown formats are rejected at boot by defineNotificationType; at read
-      // time degrading beats throwing.
       expect(formatter.format('en', 42, 'nonsense' as never)).toBe('42');
     });
   });

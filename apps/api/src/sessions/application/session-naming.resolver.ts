@@ -22,17 +22,16 @@ export interface SessionNameProposal {
  *
  * **Model first, the prompt's own words if it is not quick.** `LlmService` gets a
  * short deadline (`SESSION_NAMER_TIMEOUT_MS`); on no provider, a timeout, a rate
- * limit or an empty answer the title is the prompt's opening words, which need no
- * network and name the same prompt the same way every time.
+ * limit or an empty answer the title is `titleFromPrompt`, which needs no network.
  *
  * {@link propose} and {@link record} are separate so the create path can ask the
  * model *while* it dispatches, then write onto the aggregate it holds (the repository
  * takes the row lock and folds the entry onto that instance).
  *
- * **Two writers reach it**: the console's create request, and the runner's
+ * **Two writers reach it**: the console's create request, and a runner's
  * `prompt.first` off the transcript (the only path for a prompt typed into the
- * terminal). {@link alreadyNamed} stops the second renaming: a session named by
- * anybody has had its first prompt.
+ * terminal; no runner sends it yet). {@link alreadyNamed} stops the second
+ * renaming: a session named by anybody has had its first prompt.
  *
  * Nothing here throws: a title is not worth failing a create or an acknowledgement.
  */

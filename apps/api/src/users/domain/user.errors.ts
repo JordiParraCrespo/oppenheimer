@@ -1,9 +1,5 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
-/**
- * `httpStatus` is a plain status code so the domain stays free of any HTTP
- * framework.
- */
 export const UserErrors = {
   NOT_FOUND: {
     code: 'USER_001',

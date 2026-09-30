@@ -35,8 +35,6 @@ afterEach(async () => {
 describe('LocalStorageService', () => {
   describe('upload', () => {
     it('writes the file and returns its key, not a URL', async () => {
-      // The same contract as S3: callers persist the key and ask `getUrl` for a
-      // URL at read time.
       const stored = await storage().upload(
         Buffer.from('hello'),
         'avatars/user-1.png',
@@ -110,12 +108,9 @@ describe('LocalStorageService', () => {
     });
 
     it('does not guard getUrl, which only builds a string', async () => {
-      // Deliberately different from upload/delete: `getUrl` touches no
-      // filesystem, so there is no path to escape. It interpolates the key into
-      // a URL, and the traversal is resolved by whatever serves `/uploads` —
-      // `main.ts` mounts a static handler, which normalises the request path
-      // itself. Pinned here so the asymmetry reads as deliberate rather than an
-      // oversight someone "fixes" with a guard that would reject valid keys.
+      // `getUrl` touches no filesystem, so there is no path to escape: the
+      // static handler `main.ts` mounts under `/uploads/avatars` normalises the
+      // request path itself. A guard here would only reject valid keys.
       await expect(storage().getUrl('../../secret')).resolves.toBe(
         'https://api.example.com/uploads/../../secret',
       );

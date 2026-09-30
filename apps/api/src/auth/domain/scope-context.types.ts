@@ -95,7 +95,7 @@ export function isHostCredential(
  */
 export interface ScopedRequest {
   headers: IncomingHttpHeaders;
-  /** Route, body and query values the scope guards read to find an org id. */
+  /** Route, body and query values `REQUEST_TENANT` reads an `@OrganizationScoped` id from. */
   params?: Record<string, unknown>;
   query?: Record<string, unknown>;
   body?: unknown;
@@ -106,7 +106,7 @@ export interface ScopedRequest {
   session?: Record<string, unknown> | null;
   ability?: unknown;
   scopeContext?: ScopeContext | null;
-  /** The organization the request acts in, stamped once by `ApiAuthGuard`. */
+  /** The organization the request acts in, stamped once through `REQUEST_TENANT`. */
   tenant?: RequestTenant;
 }
 

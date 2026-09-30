@@ -76,7 +76,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
     response.status(problem.status).contentType(PROBLEM_JSON_CONTENT_TYPE).json(problem);
   }
 
-  /** Exposed for tests and for filters that want to reuse the mapping. */
   toProblemDetails(
     exception: unknown,
     context: { instance?: string; correlationId?: string } = {},

@@ -14,7 +14,7 @@ export interface CaptureEventVariables {
 /**
  * ```ts
  * const { mutate: capture } = useCaptureEvent();
- * <Button onPress={() => capture({ event: ANALYTICS_EVENTS.USER_SIGNED_UP })} />
+ * <Button onClick={() => capture({ event: ANALYTICS_EVENTS.USER_SIGNED_UP })} />
  * ```
  *
  * `mutate` has a stable identity, unlike `capture` read off the service, which
@@ -49,10 +49,9 @@ export function useCaptureEvent(
 export function useCaptureOnMount(event: AnalyticsEvent, properties?: AnalyticsProperties): void {
   const { mutate } = useCaptureEvent();
 
-  // Read through a ref so a fresh object literal each render doesn't re-fire
-  // the effect, while the capture still sends the latest values. Kept current
-  // by an effect, not in render: a ref written during render makes the React
-  // Compiler skip the whole hook. Declared first, so it runs before the capture.
+  // Kept current by an effect, not in render: a ref written during render makes
+  // the React Compiler skip the whole hook. Declared first, so it runs before
+  // the capture.
   const latestProperties = useRef(properties);
   useEffect(() => {
     latestProperties.current = properties;
@@ -71,8 +70,8 @@ export function useCaptureOnMount(event: AnalyticsEvent, properties?: AnalyticsP
 /**
  * Call this once, high in the tree, wired to the router's current location.
  * A single-page app doesn't emit navigations the provider can see on its own,
- * so without this only the first load is ever counted. The app wires it up in
- * its own analytics module (`PageViewTracker` on web).
+ * so without this only the first load is ever counted. On web it is
+ * `PageViewTracker` (`@oppenheimer/frontend-web`), rendered at the root route.
  */
 export function usePageView(path: string): void {
   const app = useOppenheimerApp();

@@ -225,7 +225,6 @@ describe('the migrated schema (integration)', () => {
     );
     const unindexed = rows.map((row) => row.name);
     expect(unindexed.filter((name) => !FOREIGN_KEYS_WITHOUT_THEIR_INDEX.has(name))).toEqual([]);
-    // An entry whose key has since been indexed (or dropped) comes off the list.
     expect(
       [...FOREIGN_KEYS_WITHOUT_THEIR_INDEX.keys()].filter((name) => !unindexed.includes(name)),
     ).toEqual([]);
