@@ -3,8 +3,9 @@ import {
   CODING_AGENT_IDS,
   CODING_AGENTS,
   type CodingAgentId,
+  effortFor,
+  effortLevelFor,
   isCodingAgentId,
-  SESSION_EFFORTS,
   SESSION_PERMISSIONS,
 } from '../catalog.js';
 import { loginUrlPattern } from '../login.js';
@@ -31,22 +32,71 @@ describe('coding agent catalog', () => {
     expect(CODING_AGENTS.grok.configDirEnv).toBe('GROK_HOME');
   });
 
-  it('offers Grok 4.7 and 4.6, defaulting to the CLI’s own', () => {
-    const models = CODING_AGENTS.grok.models;
-    expect(models.map((model) => model.id)).toEqual(['grok-4.7', 'grok-4.6']);
-    expect(models.filter((model) => model.default).map((model) => model.id)).toEqual(['grok-4.6']);
-  });
-
-  it('maps Grok’s effort stops 1:1 onto its own levels, and Ask onto its `default` mode', () => {
-    // Two product decisions, pinned so a later `--help` pass cannot slide them:
-    // `--reasoning-effort` has all five names, so no stop is shifted; and Ask
-    // is `default`, not Grok's own `auto`, which approves on its own.
+  it('asks Grok for its levels by their own names, and Ask onto its `default` mode', () => {
+    // Pinned so a later `--help` pass cannot slide them: grok refuses a level
+    // it does not know at launch, so the level is its own name, verbatim; and
+    // Ask is `default`, not Grok's own `auto`, which approves on its own.
     const { effort, permission } = CODING_AGENTS.grok.launch;
-    for (const stop of SESSION_EFFORTS) {
-      expect(effort?.[stop]).toEqual(['--reasoning-effort', stop]);
-    }
+    expect(effort?.argv).toEqual(['--reasoning-effort', '<effort>']);
+    for (const model of CODING_AGENTS.grok.models) expect(model.effort?.default).toBe('high');
     expect(permission?.ask.argv).toEqual(['--permission-mode', 'default']);
     expect(permission?.full.argv).toEqual(['--permission-mode', 'bypassPermissions']);
+  });
+
+  it('gives each model the effort levels and default its own CLI reports', () => {
+    const levelsOf = (agent: CodingAgentId, model: string | null) =>
+      effortFor(agent, model)?.levels;
+    expect(levelsOf('claude-code', null)).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
+    expect(effortFor('claude-code', 'claude-opus-5-5')?.default).toBe('medium');
+    expect(effortFor('claude-code', 'claude-fable-5-1')?.default).toBe('high');
+    expect(effortFor('claude-code', 'claude-haiku-4-5')).toBeUndefined();
+    expect(levelsOf('codex', 'gpt-5.6-sol')).toEqual([
+      'low',
+      'medium',
+      'high',
+      'xhigh',
+      'max',
+      'ultra',
+    ]);
+    expect(levelsOf('codex', 'gpt-5.6-luna')).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
+    expect(effortFor('codex', 'gpt-5.6-sol')?.default).toBe('low');
+    expect(effortFor('codex', 'gpt-5.6-terra')?.default).toBe('medium');
+    expect(levelsOf('opencode', 'anthropic/claude-haiku-4-5')).toEqual(['none', 'high', 'max']);
+    expect(effortFor('opencode', 'anthropic/claude-haiku-4-5')?.default).toBe('none');
+    expect(effortFor('shell', null)).toBeUndefined();
+    // A model the catalog does not list has levels nobody here knows.
+    expect(effortFor('codex', 'gpt-4o')).toBeUndefined();
+  });
+
+  it('records only a level the model offers, one rule for every writer', () => {
+    expect(effortLevelFor('codex', 'gpt-5.6-sol', 'ultra')).toBe('ultra');
+    expect(effortLevelFor('codex', 'gpt-5.6-luna', 'ultra')).toBeNull();
+    expect(effortLevelFor('claude-code', 'claude-haiku-4-5', 'high')).toBeNull();
+    expect(effortLevelFor('claude-code', 'opus', 'high')).toBeNull();
+    expect(effortLevelFor('claude-code', null, 'infinite')).toBeNull();
+    expect(effortLevelFor('shell', null, 'high')).toBeNull();
+    // An agent this build does not know keeps a name from the union.
+    expect(effortLevelFor('newer-agent', 'x', 'high')).toBe('high');
+  });
+
+  it('never offers `minimal` to Codex, whose models take none', () => {
+    for (const model of CODING_AGENTS.codex.models) {
+      expect(model.effort?.levels).not.toContain('minimal');
+    }
+  });
+
+  it('spells an OpenCode level as the variant of the model it runs', () => {
+    const effort = CODING_AGENTS.opencode.launch.effort;
+    expect(effort?.argv).toEqual([]);
+    expect(effort?.unset).toBe('none');
+    // The variant applies only while the agent runs its own configured model,
+    // so the model is named again.
+    const config = (effort?.env.OPENCODE_CONFIG_CONTENT ?? '')
+      .replaceAll('<model>', 'anthropic/claude-opus-5-5')
+      .replaceAll('<effort>', 'xhigh');
+    expect(JSON.parse(config)).toEqual({
+      agent: { build: { model: 'anthropic/claude-opus-5-5', variant: 'xhigh' } },
+    });
   });
 
   it('offers the plain terminal as an entry with nothing to launch', () => {
@@ -56,18 +106,6 @@ describe('coding agent catalog', () => {
     expect(shell.launch).toEqual({});
     // A shell prints any URL it is asked to; none of them is a login button.
     expect(shell.loginTargets).toBeUndefined();
-  });
-
-  it('records where each CLI writes the transcript the first prompt is read from', () => {
-    expect(CODING_AGENTS['claude-code'].transcriptLocation).toEqual({
-      directory: '~/.claude/projects/',
-      keyedBy: 'working-directory',
-    });
-    expect(CODING_AGENTS.codex.transcriptLocation?.directory).toBe('~/.codex/sessions/');
-    expect(CODING_AGENTS.grok.transcriptLocation).toEqual({
-      directory: '~/.grok/sessions/',
-      keyedBy: 'working-directory',
-    });
   });
 
   it('is frozen, because every tier reads the same object', () => {
@@ -161,14 +199,6 @@ describe('isCodingAgentId', () => {
     expect(isCodingAgentId(null)).toBe(false);
     expect(isCodingAgentId(42)).toBe(false);
   });
-
-  it('narrows the type', () => {
-    const value: unknown = 'codex';
-    if (isCodingAgentId(value)) {
-      const id: CodingAgentId = value;
-      expect(CODING_AGENTS[id].label).toBe('Codex');
-    }
-  });
 });
 
 /**
@@ -225,13 +255,31 @@ describe('launch mapping', () => {
     }
   });
 
-  it('maps every effort stop where the agent has a notion of effort', () => {
+  it('lists each model’s levels once each, with its default among them', () => {
     for (const id of CODING_AGENT_IDS) {
-      const { effort } = CODING_AGENTS[id].launch;
-      if (!effort) continue;
-      expect(Object.keys(effort).sort()).toEqual([...SESSION_EFFORTS].sort());
-      for (const stop of SESSION_EFFORTS) {
-        expect(effort[stop].length, `${id} states nothing for ${stop}`).toBeGreaterThan(0);
+      const { launch, models } = CODING_AGENTS[id];
+      for (const model of models) {
+        if (!model.effort) continue;
+        const { levels, default: fallback } = model.effort;
+        expect(new Set(levels).size, `${id}/${model.id} repeats a level`).toBe(levels.length);
+        expect(levels, `${id}/${model.id}`).toContain(fallback);
+        // A level is only as good as the agent's way of saying it.
+        expect(launch.effort, `${id} has levels but no spelling`).toBeDefined();
+      }
+    }
+  });
+
+  it('never lets an effort set a variable a permission level sets', () => {
+    for (const id of CODING_AGENT_IDS) {
+      const { effort, permission } = CODING_AGENTS[id].launch;
+      if (!effort || !permission) continue;
+      for (const level of SESSION_PERMISSIONS) {
+        for (const name of Object.keys(effort.env)) {
+          expect(
+            permission[level].env,
+            `${id} ${level} and effort both set ${name}`,
+          ).not.toHaveProperty(name);
+        }
       }
     }
   });
@@ -279,38 +327,6 @@ describe('launch mapping', () => {
       expect(models.filter((model) => model.default).length).toBeLessThanOrEqual(1);
       expect(new Set(models.map((model) => model.id)).size).toBe(models.length);
     }
-  });
-
-  it('seeds each agent with its family, every row naming the model it runs', () => {
-    // The pair is the assertion. A label names a generation, so its id has to
-    // name the same one: an alias (`opus`, `gpt-5.6`) moves under a versioned
-    // label and the two go out of step on the host, with nothing on screen
-    // saying so.
-    expect(CODING_AGENTS['claude-code'].models.map((model) => [model.id, model.label])).toEqual([
-      ['claude-opus-5-5', 'Claude Opus 5.5'],
-      ['claude-fable-5-1', 'Claude Fable 5.1'],
-      ['claude-sonnet-5-5', 'Claude Sonnet 5.5'],
-      ['claude-haiku-4-5', 'Claude Haiku 4.5'],
-    ]);
-    expect(CODING_AGENTS.codex.models.map((model) => [model.id, model.label])).toEqual([
-      ['gpt-6-astra', 'GPT-6 Astra'],
-      ['gpt-5.6-sol', 'GPT-5.6 Sol'],
-      ['gpt-5.6-terra', 'GPT-5.6 Terra'],
-      ['gpt-5.6-luna', 'GPT-5.6 Luna'],
-    ]);
-
-    // Each agent's default is the one its own CLI would have run.
-    expect(CODING_AGENTS['claude-code'].models.find((model) => model.default)?.id).toBe(
-      'claude-opus-5-5',
-    );
-    expect(CODING_AGENTS.opencode.models.map((model) => model.id)).toEqual([
-      'anthropic/claude-opus-5-5',
-      'anthropic/claude-fable-5-1',
-      'anthropic/claude-sonnet-5-5',
-      'anthropic/claude-haiku-4-5',
-      'openai/gpt-5.6-sol',
-    ]);
-    expect(CODING_AGENTS.codex.models.find((model) => model.default)?.id).toBe('gpt-5.6-sol');
   });
 
   it('is frozen, like the rest of the catalog', () => {

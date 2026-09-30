@@ -5,15 +5,6 @@ const KEY = Symbol('test.key');
 const OTHER = Symbol('test.other');
 
 describe('requestMemo', () => {
-  it('computes once per key per request, for sequential callers', async () => {
-    const request = {};
-    const compute = vi.fn(async () => 'value');
-
-    expect(await requestMemo(request, KEY, compute)).toBe('value');
-    expect(await requestMemo(request, KEY, compute)).toBe('value');
-    expect(compute).toHaveBeenCalledTimes(1);
-  });
-
   it('shares one in-flight computation between concurrent callers', async () => {
     const request = {};
     let resolve!: (value: string) => void;

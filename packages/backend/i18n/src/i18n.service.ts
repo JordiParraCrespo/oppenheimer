@@ -77,14 +77,6 @@ export class I18nService {
     this.now = options.now ?? (() => new Date());
   }
 
-  get locales(): readonly string[] {
-    return this.translator.locales();
-  }
-
-  supports(locale: string | null | undefined): boolean {
-    return this.translator.supports(locale);
-  }
-
   /**
    * Pick the first candidate with a bundle, falling back to the default.
    * Callers pass candidates in priority order and get back a locale that is

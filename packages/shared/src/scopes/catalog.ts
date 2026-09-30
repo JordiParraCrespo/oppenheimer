@@ -440,13 +440,3 @@ export const SCOPES: readonly Scope[] = PERMISSION_GROUPS.flatMap((group) =>
  * narrowest useful grant: identify the user, nothing more.
  */
 export const DEFAULT_OAUTH_SCOPES: readonly Scope[] = ['profile:read'];
-
-const GROUPS_BY_RESOURCE = new Map<ScopeResource, PermissionGroup>(
-  PERMISSION_GROUPS.map((group) => [group.resource, group]),
-);
-
-export function getPermissionGroup(resource: ScopeResource): PermissionGroup {
-  const group = GROUPS_BY_RESOURCE.get(resource);
-  if (!group) throw new Error(`Unknown permission group: ${resource}`);
-  return group;
-}

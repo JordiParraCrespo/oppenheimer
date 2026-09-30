@@ -1363,7 +1363,7 @@ export type SessionLaunchResponseDto = {
     /**
      * How hard the agent may think. Null leaves the agent its own default.
      */
-    effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max' | null;
+    effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
 };
 
 export type SessionCheckoutResponseDto = {
@@ -1494,7 +1494,7 @@ export type CreateSessionRequest = {
     launch?: {
         model?: string;
         permission?: 'ask' | 'auto' | 'full';
-        effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
+        effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
     };
     prompt?: string;
     attachmentIds?: Array<string>;
@@ -1762,7 +1762,7 @@ export type CreateAutomationRequest = {
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
-        effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
+        effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
     };
     active?: boolean;
     overlap?: 'skip' | 'queue' | null;
@@ -1836,7 +1836,7 @@ export type UpdateAutomationRequest = {
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
-        effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
+        effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
     };
     overlap?: 'skip' | 'queue' | null;
     maxRunsPerHour?: number | null;

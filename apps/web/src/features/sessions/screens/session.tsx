@@ -63,8 +63,9 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
        around a 1040px card, so mono output keeps a readable measure on a wide
        display. The frame has **no radius** (`SessionsConsole.dc.html` sets
        `border-radius: 0`): rounded, it reads as a widget tucked into a card
-       rather than the console surface `terminal.css` asks for. */
-    <div className="flex min-h-0 flex-1 flex-col p-3.5">
+       rather than the console surface `terminal.css` asks for. It is the
+       terminal's colour, so frame and pane read as one surface in dark mode. */
+    <div className="flex min-h-0 flex-1 flex-col bg-term-bg p-3.5">
       <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
         <SessionTerminal sessionId={session.id} />
       </div>

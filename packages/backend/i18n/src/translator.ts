@@ -44,12 +44,7 @@ export class Translator {
       });
   }
 
-  /** Locales that actually have a bundle, in declaration order. */
-  locales(): readonly string[] {
-    return Object.keys(this.bundles);
-  }
-
-  supports(locale: string | null | undefined): boolean {
+  private supports(locale: string | null | undefined): boolean {
     return !!locale && locale in this.bundles;
   }
 

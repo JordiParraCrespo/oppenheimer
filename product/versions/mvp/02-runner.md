@@ -272,10 +272,27 @@ started last is the one that failed:
    agent's `launch` map in `packages/shared/src/agents/catalog.ts`. The
    maps hold argument *vectors*, so the runner concatenates and never
    parses, and a value that would need quoting cannot become a second
-   word. It **drops** a stop it has no entry for rather than failing the
-   launch: a thinking budget is never worth refusing a session over, and
-   the console has already hidden a control the catalog declares nothing
-   for. The table is `launch_catalog.gen.go`, generated from the catalog
+   word. It **drops** a choice it has no entry for rather than failing
+   the launch: a thinking budget is never worth refusing a session over,
+   and the console has already hidden a control the catalog declares
+   nothing for.
+
+   **Effort is keyed by model** (changed 2026-09-29). The agent's
+   `launch.effort` is how it spells *any* level — `--effort <effort>`,
+   `-c model_reasoning_effort=<effort>`, `--reasoning-effort <effort>`,
+   OpenCode's `OPENCODE_CONFIG_CONTENT` naming the build agent's model
+   and variant — with `<effort>` and `<model>` replaced inside each word;
+   which levels exist is the model row's list. The runner spells a level
+   only when the launch's model (the agent's default when none is named)
+   lists it, so a model id is spliced in only once the catalog knows it,
+   and a level it lacks is dropped, never forwarded to a CLI that would
+   refuse it or pass it to an API that would. A launch saved before this
+   carries an old product stop and no `effortIsLevel` mark; on restart its
+   effort is not sent and the CLI runs at its own default, rather than
+   reading `medium` with a meaning nobody chose. An effort's environment
+   never names a variable a permission level sets (the catalog spec holds
+   it); if one ever did, the permission level wins, because an effort must
+   not loosen what the agent may do. The table is `launch_catalog.gen.go`, generated from the catalog
    and checked against it, and the runner's own agent list is one map
    from its agent names to catalog ids; an id it does not know launches
    nothing and is never read as Claude Code.

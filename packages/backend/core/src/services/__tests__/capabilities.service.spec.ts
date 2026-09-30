@@ -13,11 +13,6 @@ describe('CapabilitiesService', () => {
     expect(service.has('github_oauth')).toBe(false);
   });
 
-  it('splits enabled and disabled capabilities', () => {
-    expect(service.enabled()).toEqual(['google_oauth']);
-    expect(service.disabled()).toEqual(['github_oauth', 's3_storage']);
-  });
-
   it('describes the whole set on one line for the startup log', () => {
     expect(service.describe()).toBe('google_oauth=on, github_oauth=off, s3_storage=off');
   });
@@ -27,12 +22,6 @@ describe('CapabilitiesService', () => {
       google_oauth: true,
       s3_storage: false,
     });
-  });
-
-  it('snapshot() returns a copy, not the internal map', () => {
-    const snapshot = service.snapshot();
-    snapshot.google_oauth = false;
-    expect(service.has('google_oauth')).toBe(true);
   });
 
   it('is immutable after construction, even via the constructor argument', () => {

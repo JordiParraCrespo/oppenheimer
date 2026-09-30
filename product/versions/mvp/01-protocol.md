@@ -121,6 +121,15 @@ runner does with it and point back.
   control plane fills an absent level in as `ask` for every such agent
   and records none for one without, so the blank terminal is sent no
   level rather than whatever the composer last held.
+  `effort` is a level name from `SESSION_EFFORTS`, the union of every
+  name any CLI here takes, and is legal only where the session's
+  **model** offers it (`CODING_AGENTS[agent].models[].effort`); absent
+  means the CLI's own default. A level the model does not offer is never
+  forwarded: the control plane records none (03) and the runner, reading
+  the same catalog, drops one it is sent (02 §5). The union is a
+  vocabulary, not a scale — which names a launch may carry, and their
+  order, are the model's (changed 2026-09-29: it was five product stops
+  every agent mapped onto its own flag).
 
   **No project travels** (2026-09-26). The slugs are the workspace's
   and the session's, the directory is `workspaces/<org>/sessions/<slug>`

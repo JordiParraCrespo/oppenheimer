@@ -8,10 +8,12 @@ import { bindImageGestures } from './terminal-images';
 import { classifyKey } from './terminal-keys';
 import {
   readTerminalTheme,
+  readUserTurnColors,
   TERMINAL_FONT,
   TERMINAL_FONT_FAMILIES,
   terminalMinimumContrastRatio,
 } from './terminal-theme';
+import { bindUserTurns } from './user-turns';
 
 export interface SessionTerminalOptions {
   /**
@@ -93,6 +95,10 @@ export function mountSessionTerminal(
     return false;
   });
 
+  // The reader's messages drawn as the artboard draws them. Only the agent's
+  // window: the pointer-on-grey it looks for is Claude Code's.
+  const userTurns = options.agentWindow ? bindUserTurns(term, readUserTurnColors) : null;
+
   const unbindImages = options.onImage ? bindImageGestures(container, options.onImage) : () => {};
 
   // The wheel scrolls the session, not the program: tmux runs with `mouse on`,
@@ -167,6 +173,7 @@ export function mountSessionTerminal(
   const themeObserver = new MutationObserver(() => {
     term.options.theme = readTerminalTheme();
     term.options.minimumContrastRatio = terminalMinimumContrastRatio();
+    userTurns?.repaint();
   });
   themeObserver.observe(document.documentElement, { attributeFilter: ['class'] });
 
@@ -208,6 +215,7 @@ export function mountSessionTerminal(
   return () => {
     if (frame !== null) cancelAnimationFrame(frame);
     unbindImages();
+    userTurns?.dispose();
     offData();
     offStatus();
     input.dispose();

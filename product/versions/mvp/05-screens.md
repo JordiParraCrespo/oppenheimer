@@ -141,29 +141,28 @@
   and agent win over the last visit's choice when it names them. The
   agent lives in the engine button, not a chip: opening it
   lists the harnesses, choosing one slides to its models with a search,
-  and a blank terminal is picked outright. Effort is a five-stop slider
-  (Minimal to Max) in a popover, not a list.
+  and a blank terminal is picked outright. Effort is a slider over the
+  model's own levels in a popover, not a list (changed 2026-09-29; it
+  was five product stops, Minimal to Max, for every agent).
 
   **What each agent offers**, from the shared catalog (`CODING_AGENTS`)
   and never a list kept in the console:
 
   | Agent | Models (default first in bold) | Permission chip | Effort |
   |---|---|---|---|
-  | Claude Code | **Opus 5.5**, Fable 5.1, Sonnet 5.5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | yes |
-  | Codex | GPT-6 Astra, **GPT-5.6 Sol**, Terra, Luna | yes | yes |
-  | OpenCode | Claude's four under `anthropic/` (**`anthropic/claude-opus-5-5`**), `openai/gpt-5.6-sol` | yes | no: OpenCode has no effort flag |
-  | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default) | yes | yes |
-
-  **The effort stops are the product's, and each agent's catalog entry
-  says what they mean.** Where a CLI has a level of each name, a stop is
-  the level of that name: Grok's `--reasoning-effort` has all five, so
-  Minimal is `minimal` and Max is `max`, and the Grok models' own
-  default, `high`, sits one stop above the slider's middle — a Grok
-  session left on Medium thinks less than Grok would unasked. Where a
-  CLI has fewer, the stops shift so the middle is its default: Claude
-  Code has no `minimal`, so its Minimal is `low` and its Medium is
-  `high`.
+  | Claude Code | **Opus 5.5**, Fable 5.1, Sonnet 5.5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | the model's levels; none for Haiku |
+  | Codex | GPT-6 Astra, **GPT-5.6 Sol**, Terra, Luna | yes | the model's levels |
+  | OpenCode | Claude's four under `anthropic/` (**`anthropic/claude-opus-5-5`**), `openai/gpt-5.6-sol` | yes | the model's levels |
+  | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default) | yes | the model's levels |
   | Blank terminal | none, picked outright | no | no |
+
+  **The effort slider draws the model's own levels** under its CLI's
+  names, starts on the level that CLI runs unasked, and **sends nothing
+  until it is moved**, so an untouched session runs exactly as the CLI
+  would. It is hidden for a model with no effort. A pick is kept per
+  agent; on a model that does not offer it the slider shows the model's
+  default and sends nothing, and the pick waits for a model that has it.
+  Which levels exist is the catalog's (01, 02 §5).
 
   A control the agent does not take is **hidden, and not sent**: the
   composer keeps what was chosen for the last agent (a permission level
@@ -229,15 +228,14 @@
   level is the product's own three words (`ask` / `auto` / `full`
   stored; "Ask for approval" / "Approve for me" / "Full access" on the
   control), and each agent's catalog entry says what they mean to its
-  CLI. Effort is the five stops the slider draws; an agent whose own
-  vocabulary is coarser collapses the ones it cannot express, and one
+  CLI. Effort is the model's own levels, under its CLI's names; a model
   that has no notion of effort hides the control. **Chips remember the
   last choice, except `full`**: a permission level that escalated itself
   because it was used once is the failure
   [`../../04-security-review.md`](../../04-security-review.md) exists to
   prevent, so a stored `full` reads back as `ask` and every new session
   starts there. The memory is the browser's — the host, the agent, the
-  model and the effort, in `localStorage`, on the device that chose
+  model and each agent's effort, in `localStorage`, on the device that chose
   them. It is a convenience, not a record: the scope is never
   remembered, because the repositories one visit is about are not the
   next visit's. The project a visit starts on outranks the memory where it
@@ -277,6 +275,21 @@
   gets one, and tmux sets it back to steady each time it shows the cursor
   (`cnorm`). Either way a program's hide, draw, show is painted as one
   frame (02 §6), so a working agent's status line does not flicker it.
+- The session grid is 13px mono at a **line height of 1.3**, not the
+  export's 1.55. xterm multiplies the cell rather than adding leading, and
+  its WebGL renderer draws block and box characters to fill the cell, so
+  1.55 elongates Claude Code's mark while 1 packs a turn into a wall.
+  `terminal.css`'s 1.55 stays: it is the HTML terminal the showcase, empty
+  states and replayed logs draw, not the session canvas, so neither is
+  fixed from the other.
+- **The reader's own messages read as the export's `op-term__you`**: a
+  rounded, full-width tint (`--hover-surface`) with a blue chevron, on the
+  agent window only. Claude Code marks a user message itself, a pointer
+  (`❯`) and the text on its `userMessageBackground`, which arrives through
+  tmux as colour 237 (dark theme) or 255/253 (light); a row that opens on the
+  pointer on that grey is a turn. Those cells are repainted in the
+  terminal's own ramp, because Claude's theme is not the console's (its dark
+  grey on a light console is a black bar), and the tint is laid over them.
 - **An image pasted or dropped onto the terminal becomes a path in the
   prompt**, as a drag-and-drop does in a local terminal (01
   `session.image`). The status bar says while it travels; a refusal
