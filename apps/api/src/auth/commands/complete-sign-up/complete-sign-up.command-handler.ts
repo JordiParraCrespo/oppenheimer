@@ -11,9 +11,7 @@ import { CompleteSignUpCommand } from './complete-sign-up.command';
  * whole arrangement exists to avoid. Then the personal workspace itself.
  *
  * This is the only place that knows sign-up is fulfilled by the roles and
- * organizations modules. A handler can inject `CommandBus`; the hook that
- * raises the command cannot inject anything, which is the whole reason the
- * orchestration lives here rather than there.
+ * organizations modules.
  */
 @CommandHandler(CompleteSignUpCommand)
 export class CompleteSignUpCommandHandler implements ICommandHandler<CompleteSignUpCommand, void> {

@@ -5,14 +5,7 @@ import {
   ArgumentOutOfRangeException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
-import {
-  hasAllScopes,
-  isOrganizationAllowed,
-  type ResourceScope,
-  type Scope,
-  sortScopes,
-  toResourceScope,
-} from '@oppenheimer/shared';
+import { type ResourceScope, type Scope, sortScopes, toResourceScope } from '@oppenheimer/shared';
 import { generateApiTokenSecret } from './api-token-secret.factory';
 import { ApiTokenRevokedDomainEvent } from './events/api-token-revoked.domain-event';
 import { isIpAllowed } from './ip-allowlist.policy';
@@ -24,11 +17,15 @@ import { isIpAllowed } from './ip-allowlist.policy';
  */
 export const LAST_USED_GRANULARITY_MS = 60_000;
 
+/** Whether a use at `now` is worth recording, at {@link LAST_USED_GRANULARITY_MS}. */
+export function isLastUseStale(lastUsedAt: Date | null, now: Date): boolean {
+  return !lastUsedAt || now.getTime() - lastUsedAt.getTime() >= LAST_USED_GRANULARITY_MS;
+}
+
 export interface ApiTokenProps {
   /** Owner. The token's reach is re-derived from this user on every request. */
   userId: string;
   name: string;
-  /** Non-secret display prefix. */
   prefix: string;
   /** SHA-256 digest of the secret. The secret itself is never stored. */
   tokenHash: string;
@@ -37,6 +34,11 @@ export interface ApiTokenProps {
   organizationIds: string[] | null;
   ipAllowlist: string[] | null;
   expiresAt: Date | null;
+  /**
+   * A read-model fact, rehydrated from the row: the aggregate never records a
+   * use. The repository stamps it (`touchLastUsedAt`) when
+   * {@link isLastUseStale} says a use is worth recording.
+   */
   lastUsedAt: Date | null;
   revokedAt: Date | null;
 }
@@ -60,8 +62,6 @@ const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 const MAX_EXPIRY_DAYS = 3650;
 
 /**
- * API token aggregate root.
- *
  * A token carries a set of {@link Scope}s and an optional organization
  * restriction. It never carries authority of its own: what it can actually do
  * is the intersection of its scopes with whatever its owner's roles still
@@ -152,12 +152,6 @@ export class ApiTokenEntity extends AggregateRoot<ApiTokenProps> {
     return this.props.lastUsedAt;
   }
 
-  /** Whether a use at `now` is worth recording, at {@link LAST_USED_GRANULARITY_MS}. */
-  isLastUseStale(now: Date): boolean {
-    const last = this.props.lastUsedAt;
-    return !last || now.getTime() - last.getTime() >= LAST_USED_GRANULARITY_MS;
-  }
-
   get revokedAt(): Date | null {
     return this.props.revokedAt;
   }
@@ -188,16 +182,6 @@ export class ApiTokenEntity extends AggregateRoot<ApiTokenProps> {
     return null;
   }
 
-  /** Does this token carry every one of `required` (honouring write ⇒ read)? */
-  grants(required: readonly Scope[]): boolean {
-    return hasAllScopes(this.props.scopes, required);
-  }
-
-  /** May this token act on `organizationId`? */
-  allowsOrganization(organizationId: string | null | undefined): boolean {
-    return isOrganizationAllowed(this.resourceScope, organizationId);
-  }
-
   /** Revoke the token. Idempotent: revoking twice keeps the first timestamp. */
   revoke(now: Date = new Date()): void {
     if (this.isRevoked()) return;
@@ -211,11 +195,6 @@ export class ApiTokenEntity extends AggregateRoot<ApiTokenProps> {
           'Token was revoked; its cached delegated session must be dropped so the credential stops working immediately',
       }),
     );
-  }
-
-  /** Record that the token authenticated a request. */
-  markUsed(at: Date = new Date()): void {
-    this.props.lastUsedAt = at;
   }
 
   validate(): void {

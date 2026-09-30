@@ -17,14 +17,10 @@ import type {
 class CapReached extends Error {}
 
 /**
- * TypeORM adapter for the pairing-token aggregate.
- *
- * Scope-enforced against **`HostResource`**, not a declaration of its own: a
- * pairing token is how a host comes to exist, the routes that mint and revoke
- * one are `create Host` and `delete Host`, and the column it is filtered by is
- * the same `ownerUserId` a host carries. A second resource would be a column
- * map masquerading as a noun, and the day a host is shared by `access_grant`
- * the two listings would diverge with nothing in the policy table to explain it.
+ * The routes that mint and revoke a token are `create Host` and `delete Host`.
+ * A second resource would be a column map masquerading as a noun, and the day a
+ * host is shared by `access_grant` the two listings would diverge with nothing
+ * in the policy table to explain it.
  */
 @Injectable()
 export class HostPairingTokenRepository

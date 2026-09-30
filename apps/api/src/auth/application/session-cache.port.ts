@@ -1,16 +1,12 @@
 /**
  * Keeps the cached copies of a person's sessions true to the database.
  *
- * Better Auth caches each session with the user it belongs to (`{ session,
- * user }`, in Redis) and keeps that copy current for the writes it makes
- * itself. A write the application makes to a `user` or `session` row outside
- * Better Auth — a deactivation, a profile edit, a removed membership, a
- * provisioned workspace — leaves the copy as it was, and the request pipeline
- * reads the copy: a deactivated account would keep acting, a removed member
- * would keep their old organization, for as long as the session lives.
- *
- * So every such write is followed by one of these calls. The database stays
- * the record; this only makes the cache agree with it.
+ * Better Auth caches `{ session, user }` in Redis and keeps it current for its
+ * own writes only. A write the app makes to a `user` or `session` row outside
+ * Better Auth (a deactivation, a profile edit, a removed membership, a
+ * provisioned workspace) leaves the copy stale, and the request pipeline reads
+ * the copy: a deactivated account would keep acting for the session's life. So
+ * every such write is followed by one of these calls.
  */
 export interface SessionCachePort {
   /**

@@ -49,16 +49,11 @@ function parseMetadata(value: unknown): Record<string, unknown> | null {
 }
 
 /**
- * Maps what the Better Auth organization plugin returns — and the rows of the
- * tables it owns, read straight from Postgres — onto this module's read models
- * and response DTOs: organizations, their members and invitations, and
- * workspaces (Better Auth teams).
- *
- * Better Auth owns and writes these tables, so there is no aggregate to map to
- * and from — the personal workspace, the one rule the app owns here, has its
- * own mapper. Every method accepts `unknown` and narrows once via `asRecord`,
- * so the gateways stay cast-free; this is where all response normalization
- * (coercion, envelope unwrapping, date parsing) lives.
+ * Maps what the Better Auth organization plugin returns, and rows of its
+ * tables read straight from Postgres, onto this module's read models and
+ * DTOs. Every method accepts `unknown` and narrows once via `asRecord`, so the
+ * gateways stay cast-free; all response normalization (coercion, envelope
+ * unwrapping, date parsing) lives here.
  */
 export class OrganizationMapper {
   static toOrganization(input: unknown): OrganizationResponseDto {
@@ -117,7 +112,6 @@ export class OrganizationMapper {
     };
   }
 
-  /** A member row joined to its account, as the members list reads it. */
   static toMembership(row: MembershipRow): Membership {
     return {
       id: row.id,
@@ -138,7 +132,6 @@ export class OrganizationMapper {
     };
   }
 
-  /** The account behind a membership, from the users table. */
   static toMembershipUser(user: {
     id: string;
     name: string;

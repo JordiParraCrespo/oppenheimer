@@ -7,6 +7,18 @@ import { cn } from '../lib/utils';
 import { ComposerToolButton } from './composer';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
+type EffortStop = { value: string; label: string };
+
+const DEFAULT_STOPS: EffortStop[] = [
+  { value: 'minimal', label: 'Minimal' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'max', label: 'Max' },
+];
+
+const KNOB = 30;
+
 /**
  * EffortSlider — how long the agent may think, as a stepped track rather
  * than a list: five stops from Minimal to Max, a 30px knob in full ink, the
@@ -20,18 +32,6 @@ import { Popover, PopoverContent, PopoverTrigger } from './popover';
  * header, an info glyph explaining the trade, "Faster" and "Smarter" at the
  * ends, and the slider.
  */
-type EffortStop = { value: string; label: string };
-
-const DEFAULT_STOPS: EffortStop[] = [
-  { value: 'minimal', label: 'Minimal' },
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
-  { value: 'max', label: 'Max' },
-];
-
-const KNOB = 30;
-
 function EffortSlider({
   stops = DEFAULT_STOPS,
   value,

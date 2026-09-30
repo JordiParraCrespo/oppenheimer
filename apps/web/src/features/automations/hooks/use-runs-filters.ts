@@ -21,11 +21,9 @@ const overview = getRouteApi('/_authenticated/automations/runs');
 const automation = getRouteApi('/_authenticated/automations/$automationId');
 
 /**
- * The runs list's facets and page, in the URL (`runsSearchSchema`): a filtered
- * list is a link someone can send, and Back undoes a filter. The search is
- * read from the route that draws the list, as its schema left it. A default
- * is written as no key, so an unfiltered list is a clean URL, and narrowing
- * any facet goes back to page one.
+ * The search is read from the route that draws the list, as its schema left
+ * it (`runsSearchSchema`). A default is written as no key, so an unfiltered
+ * list is a clean URL, and narrowing any facet goes back to page one.
  */
 export function useRunsFilters(scope: { automationId?: string }) {
   const route = scope.automationId ? automation : overview;

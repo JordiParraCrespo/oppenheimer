@@ -9,31 +9,23 @@
  * ```
  *
  * No project in either: a project is metadata, so a session listed under another
- * project names the same directory and the same branch
- * (`product/versions/mvp/10-api-modules-and-data-model.md`).
- *
- * Nothing here asks the filesystem anything. Both names are functions of rows the
- * control plane already holds, so two runner versions cannot disagree about them
- * and a path is never an identity — identity is the UUID, and the path is a
- * derived attribute.
+ * project names the same directory and branch
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`). Both are functions of
+ * rows the control plane holds, never of the filesystem, so two runner versions
+ * cannot disagree and a path is never an identity (the UUID is).
  */
 
-/** The prefix every branch this product creates lives under. */
 const BRANCH_NAMESPACE = 'oppenheimer';
 
 /**
- * The working branch: always the session's own, created from each checkout's
- * base and never the base itself.
+ * The working branch: always the session's own, created from each checkout's base,
+ * never the base itself (git refuses a worktree on a branch another worktree holds,
+ * so two sessions "on main" would fail at the second).
  *
- * `uq (organizationId, slug)` on the session makes it collision-free inside a
- * workspace, and the slug's random tail makes it so across workspaces sharing a
- * repository. Two sessions can never want the same branch, which needs no
- * pre-flight check against GitHub and has no race — and git refuses a worktree
- * on a branch another worktree already holds, so two sessions "on main" would
- * fail at the second.
- *
- * A session created before this rule keeps the branch its checkouts recorded
- * (`oppenheimer/<project>/<session>`); nothing re-derives a branch that exists.
+ * `uq (organizationId, slug)` makes it collision-free inside a workspace and the
+ * slug's random tail across workspaces sharing a repository: no pre-flight check
+ * against GitHub, no race. A session created before this rule keeps the branch its
+ * checkouts recorded (`oppenheimer/<project>/<session>`); nothing re-derives it.
  */
 export function sessionBranchName(sessionSlug: string): string {
   return `${BRANCH_NAMESPACE}/${sessionSlug}`;
@@ -41,16 +33,14 @@ export function sessionBranchName(sessionSlug: string): string {
 
 /**
  * A checkout's directory inside the session: the repository's own name, or
- * `<owner>--<repo>` when another checkout of this session already holds that
- * name, then `<owner>--<repo>-<githubRepoId>`.
+ * `<owner>--<repo>` when another checkout of this session already holds that name,
+ * then `<owner>--<repo>-<githubRepoId>`.
  *
- * Deterministic, like the project's own candidates: every one is derived from the
- * repository, so the directory can always be read back to what created it, and
- * the list cannot be exhausted because the last candidate carries GitHub's id. A
- * name is never reused inside a session — `uq (sessionId, directoryName)` is the
- * tombstone — because the coding agents key their conversation state by working
- * directory, so a new checkout landing on a retired name would inherit a
- * stranger's history.
+ * Every candidate derives from the repository, so a directory can always be read
+ * back to what created it. A name is never reused inside a session
+ * (`uq (sessionId, directoryName)` is the tombstone): the coding agents key
+ * conversation state by working directory, so a checkout on a retired name would
+ * inherit a stranger's history.
  */
 export function checkoutDirectoryCandidates(repositoryFullName: string, githubRepoId: string) {
   const [owner, repo] = splitFullName(repositoryFullName);
@@ -58,15 +48,13 @@ export function checkoutDirectoryCandidates(repositoryFullName: string, githubRe
 }
 
 /**
- * Pick the first candidate no name in `taken` holds. `taken` is every directory
- * name the session has ever used, including retired ones.
+ * The first candidate no name in `taken` holds; `taken` is every directory name the
+ * session has ever used, retired ones included.
  *
  * `null` when all three are taken, and the caller refuses. **It never reissues the
- * last one.** A session that added, retired and re-added the same repository through
- * all three names would otherwise land on a retired directory, which is exactly the
- * inherited-conversation bug the tombstone exists to prevent — and the caller
- * refusing is a sentence somebody can read, where a silent reuse is a stranger's
- * history in a fresh agent.
+ * last one**: that would land a thrice re-added repository on a retired directory,
+ * the inherited-conversation bug the tombstone prevents. A refusal is a sentence
+ * somebody can read; a silent reuse is a stranger's history in a fresh agent.
  */
 export function checkoutDirectoryName(
   repositoryFullName: string,

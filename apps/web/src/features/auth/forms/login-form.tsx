@@ -19,7 +19,6 @@ export function LoginForm({
 }: {
   defaultEmail?: string;
   isPending: boolean;
-  /** The resolved failure message, if the last attempt failed. */
   error?: ResolvedErrorMessage;
   /** The "Forgot password?" link, rendered beside the password label. */
   forgotPasswordLink: ReactNode;

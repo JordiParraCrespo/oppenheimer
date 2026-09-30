@@ -17,7 +17,6 @@ const schema = z.object({
   /** Failed credentials one address may present in a window before it is blocked. */
   authFailureLimit: positiveInt(30),
   authFailureWindowSeconds: positiveInt(60),
-  /** How long a blocked address stays blocked. */
   authFailureBlockSeconds: positiveInt(60),
 });
 

@@ -11,10 +11,6 @@ import {
 } from './dtos/feature-flag.response.dto';
 import { FlagChangeResponseDto } from './dtos/flag-change.response.dto';
 
-/**
- * Maps flag targeting between its domain, persistence and response shapes,
- * and joins it to the catalog entry for the control plane's view of a flag.
- */
 @Injectable()
 export class FeatureFlagMapper
   implements Mapper<FeatureFlagEntity, FeatureFlagOrmEntity, FeatureFlagConfigResponseDto>

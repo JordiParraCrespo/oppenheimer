@@ -69,7 +69,6 @@ const DEFAULT_BATCH_SIZE = 20;
  */
 export class OutboxRelay {
   private timer?: ReturnType<typeof setInterval>;
-  /** The drain in progress, if any. */
   private running?: Promise<number>;
   /** Set when a drain was requested while one was running: run one more pass. */
   private again = false;

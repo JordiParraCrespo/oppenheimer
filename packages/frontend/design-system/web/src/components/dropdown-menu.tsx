@@ -6,6 +6,9 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
+const ITEM_CLASSES =
+  "group/dropdown-menu-item relative flex w-full cursor-default items-center gap-2.5 rounded-sm px-2.5 py-2 text-operate text-fg outline-hidden select-none transition-colors duration-instant data-highlighted:bg-hover-surface data-disabled:pointer-events-none data-disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.75 [&>svg]:text-fg-subtle";
+
 /**
  * DropdownMenu — the popover tier: 14px radius, 4px padding, the popover
  * shadow, a 4px rise plus fade over 140ms. Items are 14px rows at the 10px
@@ -19,9 +22,6 @@ import { cn } from '../lib/utils';
  * - model: a `DropdownMenuLabel` eyebrow ("CLAUDE CODE"), two-line
  *   `DropdownMenuRadioItem`s with a `description`, an Effort submenu row
  */
-const ITEM_CLASSES =
-  "group/dropdown-menu-item relative flex w-full cursor-default items-center gap-2.5 rounded-sm px-2.5 py-2 text-operate text-fg outline-hidden select-none transition-colors duration-instant data-highlighted:bg-hover-surface data-disabled:pointer-events-none data-disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.75 [&>svg]:text-fg-subtle";
-
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
 }
@@ -213,16 +213,14 @@ function DropdownMenuRadioGroup({ ...props }: MenuPrimitive.RadioGroup.Props) {
 /**
  * The two shapes a two-line choice row is drawn in.
  *
- * `default` is the console's menus, which hang off the sidebar and the account
- * button. `compact` is the composer's: it hangs off a 30px button in a foot row
- * and the export draws it a size down throughout — 5px of padding, a 13px label
- * over an 11.5px line, a 16px glyph, the check on that first line, and a right
- * gutter the width of the tick rather than of a menu's.
+ * `default` is the console's menus, off the sidebar and the account button.
+ * `compact` is the composer's, off a 30px foot-row button, drawn a size down
+ * throughout: 5px padding, a 13px label over an 11.5px line, a 16px glyph, the
+ * check on the first line, and a right gutter the width of the tick.
  *
- * It is a density on the row rather than a class list in `PermissionMenu`
- * because every one of those numbers is *this row* in another size, and the
- * last time they lived in the consumer, the indicator's offset had to be
- * reached through a slot selector to keep up.
+ * A density on the row rather than a class list in `PermissionMenu`, because
+ * every number is *this row* in another size; kept in the consumer, the
+ * indicator's offset had to be reached through a slot selector.
  */
 type DropdownMenuDensity = 'default' | 'compact';
 

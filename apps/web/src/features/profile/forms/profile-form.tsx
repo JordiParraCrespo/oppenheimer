@@ -59,11 +59,9 @@ export function ProfileForm({
   isPending: boolean;
   /** The last save went through; shown as Saved while nothing is edited. */
   saved: boolean;
-  /** The resolved failure message, if the last save failed. */
   error?: ResolvedErrorMessage;
   onSubmit: (dto: UpdateProfileDto) => void;
   onDiscard: () => void;
-  /** The card's rows above the fields, which save on their own. */
   children?: React.ReactNode;
 }) {
   const { t } = useTranslation();

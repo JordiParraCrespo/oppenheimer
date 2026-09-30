@@ -9,19 +9,17 @@ import { SESSION_DISPATCH } from '../../sessions.di-tokens';
 import { PasteSessionImageCommand } from './paste-session-image.command';
 
 /**
- * Hands an image to a session's window: the runner pulls it, saves it on the
- * host and pastes its path into the prompt, because the agent reads its
- * host's clipboard and never the browser's (05).
+ * Hands an image to a session's window: the runner pulls it, saves it on the host and
+ * pastes its path into the prompt, because the agent reads its host's clipboard, never
+ * the browser's (05).
  *
- * **Nothing is appended.** A pasted image is input, like a keystroke, and
- * input is not a log entry; what the reader sees is the path in the prompt. A
- * runner that refuses the image is the one thing worth writing down, and the
- * relay writes its `command.failed` when it comes back.
+ * **Nothing is appended**: a pasted image is input, like a keystroke. A runner's
+ * refusal is the one thing worth writing down, and the relay writes its
+ * `command.failed` when it comes back.
  *
- * The order is the point: the bytes are judged before the session is read,
- * the session before anything is parked, and a host that cannot take the
- * image — offline, or a runner that predates it — is an error rather than an
- * accepted paste that will never land.
+ * Order matters: the bytes are judged before the session is read, the session before
+ * anything is parked, and a host that cannot take the image (offline, or a runner that
+ * predates it) is an error rather than an accepted paste that will never land.
  */
 @CommandHandler(PasteSessionImageCommand)
 export class PasteSessionImageCommandHandler

@@ -3,6 +3,16 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
+type StepState = 'pending' | 'running' | 'done' | 'failed';
+
+type Step = {
+  id: string;
+  label: React.ReactNode;
+  /** Mono detail under the label ("cloning 41 MB", "1.2s"). */
+  meta?: React.ReactNode;
+  state: StepState;
+};
+
 /**
  * Stepper — the provisioning pane. A session is not instant: the host has to
  * be reached, the repo cloned, the branch checked out and the harness started.
@@ -15,16 +25,6 @@ import { cn } from '../lib/utils';
  * and a status word ("Working…"). Pending steps are not numbered: the order
  * is the rail's, and a number would read as a count of what is left.
  */
-type StepState = 'pending' | 'running' | 'done' | 'failed';
-
-type Step = {
-  id: string;
-  label: React.ReactNode;
-  /** Mono detail under the label ("cloning 41 MB", "1.2s"). */
-  meta?: React.ReactNode;
-  state: StepState;
-};
-
 function Stepper({
   steps,
   elapsed,

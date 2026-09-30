@@ -5,18 +5,10 @@ import { ConsoleDialogProvider } from '@/lib/console';
 import { NewSessionForm } from '../sections/new-session-form';
 
 /**
- * New session's render budget, across all three of its clocks.
- *
- * The draft used to be one `useState` object in the section that also held
- * five reads, so an effort pick re-rendered the host chip, the repository
- * picker and the branch pane, and a settle of the host list re-rendered the
- * effort picker. It is a React Hook Form store behind a context now, and each
- * chip binds its own field and its own read. These assertions are what keep it
- * that way: a pick renders the chip that was picked, a settle renders the chip
- * that draws the list, a keystroke renders neither.
- *
- * Runs in the `render-budget` project, without the React Compiler, so what it
- * measures is the structure rather than the memoisation that would hide it.
+ * New session's render budget across its three clocks: a pick renders the
+ * chip picked, a list settle the chip drawing it, a keystroke neither. It
+ * guards against a draft in section state, where an effort pick re-rendered
+ * the host chip, the repository picker and the branch pane.
  */
 
 vi.mock('react-i18next', () => ({
@@ -27,7 +19,6 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), useSearch: () => ({}) }));
 
-/** Every chip, counted by name, with a button that makes the chip's pick. */
 const renders = vi.hoisted(() => new Map<string, number>());
 
 vi.mock('../components/project-select', () => ({
@@ -92,7 +83,6 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useInstallations: () => ({ data: [], isPending: false }),
   useInstallationRepositoriesFor: () => ({ repositories: [], isPending: false }),
   useRepositoryBranchesFor: () => ({ byRepository: new Map(), isPending: false }),
-  // "Manage repository access" mints on click; nothing here clicks it.
   useStartInstallation: () => ({ mutate: vi.fn(), error: null, reset: vi.fn() }),
   // Called once per render of NewSessionSend, so it doubles as that section's count.
   useCreateSession: () => {
@@ -106,7 +96,6 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
       submittedAt: 0,
     };
   },
-  // Nothing here attaches a file, so nothing is uploaded.
   useUploadSessionAttachment: () => ({
     mutateAsync: vi.fn(),
     reset: vi.fn(),
@@ -155,7 +144,6 @@ function chip(name: string, pick: unknown, others: Record<string, unknown> = {})
   };
 }
 
-/** Which chips rendered since the last call, and resets the count. */
 function rendered(): string[] {
   const names = [...renders.keys()].filter((name) => (renders.get(name) ?? 0) > 0).sort();
   renders.clear();
@@ -188,7 +176,6 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual(['permission']);
   });
 
-  /** The send gate re-renders when a host is picked; the chips beside it must not. */
   it('renders only the host chip and the send gate when a host is picked', () => {
     fireEvent.click(screen.getByRole('button', { name: 'host' }));
     expect(rendered()).toEqual(['host', 'send']);
@@ -228,7 +215,6 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual([]);
   });
 
-  /** The line under the title says what sending will do once a project is picked. */
   it('summarises the picked project under the title', () => {
     cleanup();
     render(

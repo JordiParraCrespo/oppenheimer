@@ -1,8 +1,6 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 /**
- * The sessions catalog.
- *
  * The prefix is plural because the Go runner owns `SESS_00x` in the same
  * `apps/docs/docs/errors.md` and a code may only be claimed once.
  *

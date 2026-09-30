@@ -16,9 +16,8 @@ import { invokeOrganizationApi } from './organization-error.util';
 
 /**
  * The organization port, over the Better Auth organization plugin's server API
- * (`auth.api.*`). Better Auth remains the single source of truth for the
- * organization and member tables; every call goes through
- * `invokeOrganizationApi`, which folds its errors onto this module's catalog.
+ * (`auth.api.*`). Every call goes through `invokeOrganizationApi` (see
+ * `betterAuthInvoker`).
  */
 @Injectable()
 export class OrganizationAuthGateway implements OrganizationAuthPort {

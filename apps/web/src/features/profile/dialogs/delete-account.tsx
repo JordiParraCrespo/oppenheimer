@@ -8,15 +8,11 @@ import { DeleteAccountForm } from '../forms/delete-account-form';
 const FORM_ID = 'delete-account';
 
 /**
- * Delete account: what goes with it, and the email typed out to confirm.
- * The destructive button submits the form, so the typed email is checked
- * before anything is sent.
- *
- * Once the API has deleted it there is no account to be signed in to, so
- * the dialog signs out — which clears the cookie and every cached query —
- * and lands on sign-in whether or not that sign-out answered, since there
- * is nothing left behind it to show. It stays locked from the delete until
- * then.
+ * Delete account, confirmed by typing the email; the destructive button
+ * submits the form so the email is checked before anything is sent. After the
+ * delete there is no account left, so the dialog signs out (clearing the
+ * cookie and the query cache) and lands on sign-in whether or not the sign-out
+ * answered, locked from the delete until then.
  */
 export function DeleteAccountDialog({ email, onClose }: { email: string; onClose: () => void }) {
   const { t } = useTranslation();

@@ -10,17 +10,14 @@ import { SessionErrors } from '../domain/sessions.errors';
 import { requireImageCapableHost } from './require-image-capable-host.policy';
 
 /**
- * Turns a create's `attachmentIds` into the images its host will pull, or
- * refuses the create.
+ * Turns a create's `attachmentIds` into the images its host will pull, or refuses
+ * the create.
  *
- * It runs after the session's id is minted and **before** its row is written:
- * a task that talks about a screenshot must not start without it. The host is
- * asked first (`requireImageCapableHost`), then each upload is parked for this
- * session on this host. What comes back is recorded on the log's
- * `prompt.first`, so the ids outlive the request: a create that reaches its
- * host late, or again after a reconnect, still names images that are waiting.
- * The uploads themselves stay staged until they expire, so a create that fails
- * after this can be sent again as it was.
+ * It runs after the session's id is minted and **before** its row is written: a task
+ * that talks about a screenshot must not start without it. The result is recorded on
+ * the log's `prompt.first`, so a create that reaches its host late, or again after a
+ * reconnect, still names images that are waiting. Uploads stay staged until they
+ * expire, so a create that fails after this can be sent again as it was.
  */
 @Injectable()
 export class SessionAttachmentsResolver {

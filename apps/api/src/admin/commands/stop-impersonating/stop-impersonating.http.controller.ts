@@ -37,8 +37,6 @@ export class StopImpersonatingHttpController {
       StopImpersonatingCommand,
       IssuedSession
     >(new StopImpersonatingCommand({ headers: req.headers }));
-    // Better Auth issued a session for the caller; the browser only moves onto
-    // it if it stores the cookie.
     if (cookies.length > 0) res.setHeader('set-cookie', cookies);
     return user;
   }

@@ -69,7 +69,6 @@ export function useAutomations<TData = AutomationEntity[]>(
   });
 }
 
-/** One automation, for its page. */
 export function useAutomation(
   id: string | undefined,
   options?: Omit<UseQueryOptions<AutomationEntity, Error>, 'queryKey' | 'queryFn' | PollKeys>,

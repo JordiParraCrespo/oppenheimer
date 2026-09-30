@@ -68,8 +68,6 @@ export class HostsRepository {
   }
 
   /**
-   * The caller's pairing tokens.
-   *
    * Add host polls this to learn whether *its* token was spent, and on which
    * machine. "The host list is non-empty" is a different question — an account
    * that already owns a machine would answer it the moment the step opened.

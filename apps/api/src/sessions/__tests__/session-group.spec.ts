@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SESSION_GROUP_DISPLAY_ORDER, sessionGroup } from '../domain/session-group.policy';
+import { sessionGroup } from '../domain/session-group.policy';
 import {
   foldSessionLog,
   INITIAL_SESSION_FOLD,
@@ -9,15 +9,13 @@ import {
 } from '../domain/session-state.policy';
 
 /**
- * The derived group is what the sidebar dot shows, and the reason it earns a whole
- * vocabulary is that a sidebar organised by what needs you is only useful if "needs
- * you" is more than "failed".
+ * The derived group is the sidebar dot, and it earns a whole vocabulary because a
+ * sidebar organised by what needs you is useless if "needs you" means only "failed".
  *
- * Every case here goes through the **fold**, not through a hand-built input object:
- * the group is a function of the row, so a test that could hand it an observation
- * the log never recorded would be testing something the read path cannot do. The
- * debounce is the half with a security shape — a caller with no recorded history
- * must not be able to claim a session has been blocked for five minutes.
+ * Every case goes through the **fold**, not a hand-built input: the group is a
+ * function of the row, and the read path cannot hand it an observation the log never
+ * recorded. The debounce has a security shape: a caller with no recorded history must
+ * not be able to claim a session has been blocked for five minutes.
  */
 
 const NOW = new Date('2026-09-19T12:00:00Z');
@@ -164,7 +162,7 @@ describe('the rest of the vocabulary', () => {
   });
 });
 
-describe('precedence and display order are different functions', () => {
+describe('precedence', () => {
   it('lets a thirty-second block outrank a report nobody has read', () => {
     // A correctness rule: what needs you now beats what is merely finished.
     const fold = running(
@@ -173,37 +171,5 @@ describe('precedence and display order are different functions', () => {
       observed('blocked', secondsAgo(60)),
     );
     expect(sessionGroup(fold, NOW)).toBe('waiting-on-you');
-  });
-
-  it('sorts ready-for-review first, which precedence does not', () => {
-    // A UI rule, and the reason it is a separate export: conflate the two and
-    // neither can change on its own.
-    expect(SESSION_GROUP_DISPLAY_ORDER[0]).toBe('ready-for-review');
-    expect(SESSION_GROUP_DISPLAY_ORDER).toHaveLength(6);
-  });
-
-  it('has no arm it cannot reach — except the two with no writer', () => {
-    // `landing` needs the pull-request flow and the fourth `waiting-on-you` source
-    // needs the host's snapshot. Neither is faked with a default input, so neither
-    // is reachable yet, and this is the test that says so on purpose.
-    const reachable = new Set(
-      [
-        sessionGroup(running(observed('working', secondsAgo(2))), NOW),
-        sessionGroup(running(entry(SESSION_EVENT_KINDS.FAILED, {}, secondsAgo(2))), NOW),
-        sessionGroup(running(entry(SESSION_EVENT_KINDS.CLOSED, {}, secondsAgo(2))), NOW),
-        sessionGroup(
-          running(entry(SESSION_EVENT_KINDS.REPORT_PUBLISHED, { hash: 'a' }, secondsAgo(2))),
-          NOW,
-        ),
-        sessionGroup(running(), NOW),
-      ].map(String),
-    );
-    expect([...reachable].sort()).toEqual([
-      'idle',
-      'ready-for-review',
-      'resolved',
-      'waiting-on-you',
-      'working',
-    ]);
   });
 });

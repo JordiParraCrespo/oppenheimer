@@ -8,12 +8,6 @@ import { type ApiTokenEntity, LAST_USED_GRANULARITY_MS } from '../domain/api-tok
 import { ApiTokenOrmEntity } from './api-token.orm-entity';
 import type { ApiTokenRepositoryPort } from './api-token.repository.port';
 
-/**
- * TypeORM-backed adapter for the API token aggregate. Translates between the
- * domain entity and the persistence model via `ApiTokenMapper` and stages
- * collected domain events on the transactional outbox, atomically with the
- * write that raised them.
- */
 @Injectable()
 export class ApiTokenRepository implements ApiTokenRepositoryPort {
   constructor(
@@ -71,9 +65,7 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
   /**
    * A guarded raw update rather than `repository.update`: that would also bump
    * `updatedAt` (it is an `@UpdateDateColumn`), which the token list reads as
-   * "when this token was changed", and it would write every time. The `WHERE`
-   * makes a stamp inside the granularity a no-op, so replicas racing on one
-   * busy token write it once between them.
+   * "when this token was changed", and it would write every time.
    */
   async touchLastUsedAt(id: string, at: Date): Promise<void> {
     await this.repository.query(

@@ -88,8 +88,6 @@ export function useDeleteAvatar(options?: UseMutationOptions<ProfileEntity, Erro
 }
 
 /**
- * Changing your own password.
- *
  * Named apart from `useChangePassword` in `auth.queries`, which goes through
  * Better Auth's client. This one is the REST endpoint, and it defaults to
  * revoking the other sessions — so the session list is invalidated on success.
@@ -145,9 +143,9 @@ export function useRevokeOtherProfileSessions(options?: UseMutationOptions<void,
 }
 
 /**
- * Asking to move the account to another address. Nothing is cached: the
- * profile keeps its current address until the link sent to the new one is
- * followed, and that lands back on Settings with a fresh load.
+ * Nothing is cached: the profile keeps its current address until the link
+ * sent to the new one is followed, and that lands back on Settings with a
+ * fresh load.
  */
 export function useChangeEmail(options?: UseMutationOptions<void, Error, ChangeEmailDto>) {
   const app = useConsumerApp();
@@ -159,9 +157,9 @@ export function useChangeEmail(options?: UseMutationOptions<void, Error, ChangeE
 }
 
 /**
- * Deleting the account. Leaves the cache alone: the caller signs out next,
- * and signing out is what clears it — clearing here would re-fetch every
- * mounted query as a 401 in the moment between the two.
+ * Leaves the cache alone: the caller signs out next, and signing out is what
+ * clears it — clearing here would re-fetch every mounted query as a 401 in the
+ * moment between the two.
  */
 export function useDeleteAccount(options?: UseMutationOptions<void, Error, DeleteAccountDto>) {
   const app = useConsumerApp();

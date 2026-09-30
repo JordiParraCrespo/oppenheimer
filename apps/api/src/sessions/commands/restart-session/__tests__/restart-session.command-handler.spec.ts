@@ -9,6 +9,7 @@ import type { SessionDispatchPort } from '../../../application/session-dispatch.
 import type { SessionLaunchSpecFactory } from '../../../application/session-launch.factory';
 import { SessionLoaderResolver } from '../../../application/session-loader.resolver';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
+import { SESSION_EVENT_KINDS } from '../../../domain/session-state.policy';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
 import { RestartSessionCommand } from '../restart-session.command';
 import { RestartSessionCommandHandler } from '../restart-session.command-handler';
@@ -89,7 +90,10 @@ describe('RestartSessionCommandHandler', () => {
     await expect(handler.execute(command())).resolves.toEqual({ sessionId: work.id, hints: [] });
 
     expect(hosts.assertUsable).toHaveBeenCalledWith(SCOPE, 'host-1');
-    expect(sessions.appendEvents).toHaveBeenCalledOnce();
+    // A request, not an outcome: the session opens when the host says it did.
+    expect(sessions.appendEvents).toHaveBeenCalledWith(work, [
+      expect.objectContaining({ kind: SESSION_EVENT_KINDS.RESTART_REQUESTED, source: 'api' }),
+    ]);
     expect(dispatch.restart).toHaveBeenCalledOnce();
   });
 

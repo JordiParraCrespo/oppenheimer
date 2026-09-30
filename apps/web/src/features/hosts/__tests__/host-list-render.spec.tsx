@@ -12,8 +12,7 @@ import { HostList } from '../sections/host-list';
  * renders no card; a minute renders the "last seen" line (`RelativeTime` owns
  * its tick) and no card.
  *
- * Runs in the `render-budget` project, without the React Compiler. The cards
- * are counted at `HostCard`, the design system's card.
+ * The cards are counted at `HostCard`, the design system's card.
  */
 
 vi.mock('react-i18next', () => ({

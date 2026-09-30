@@ -124,10 +124,7 @@ func New(version string) (*App, error) {
 	}
 	layout := sessionsdomain.Layout{Root: paths.Workspaces}
 	worktrees := gitadapter.New(gitadapter.Options{
-		Layout: layout,
-		// git asks the runner over the local socket when it needs a
-		// token; nothing is written to disk and nothing is passed on a
-		// command line.
+		Layout:           layout,
 		CredentialHelper: credentialHelper(),
 		// A create takes a worktree checked out ahead of it and leaves
 		// the next one behind (02-runner §5).
@@ -232,15 +229,14 @@ func unit(paths Paths) svcdomain.Unit {
 	if updates := os.Getenv(EnvAgentUpdates); updates != "" {
 		env[EnvAgentUpdates] = updates
 	}
-	// The PATH the installer was run with, carried onto the service.
-	//
-	// launchd hands a job `/usr/bin:/bin:/usr/sbin:/sbin` and systemd little
-	// more, and neither contains `/opt/homebrew/bin` — so on a stock Homebrew
-	// Mac the installed runner cannot see tmux, git or the agent, and every
-	// session fails with "a required tool is missing" while `runner status`,
-	// which inherits the caller's shell, reports all of them present. Taking
-	// the PATH from the install is what makes those two agree: the tools the
-	// installer verified are the tools the service can reach.
+	// The installer's PATH, carried onto the service: launchd hands a job
+	// `/usr/bin:/bin:/usr/sbin:/sbin` and systemd little more, and neither
+	// contains `/opt/homebrew/bin` — so on a stock Homebrew Mac the installed
+	// runner cannot see tmux, git or the agent, and every session fails with
+	// "a required tool is missing" while `runner status`, which inherits the
+	// caller's shell, reports all of them present. Taking the PATH from the
+	// install is what makes those two agree: the tools the installer verified
+	// are the tools the service can reach.
 	if path := ServicePATH(os.Getenv("PATH")); path != "" {
 		env["PATH"] = path
 	}
@@ -291,9 +287,6 @@ func utf8Locale(current string) string {
 	return "C.UTF-8"
 }
 
-// credentialHelper is the command git calls for a password: this binary's own
-// subcommand, resolved to an absolute path so git finds it whatever PATH a
-// session's shell ends up with.
 // shellCredentialHelper is git configuration, as environment, that points
 // the git in a session's shell at the runner's helper for GitHub (02-runner
 // §8). The store is blobless, so a `git log -p` or `blame` there fetches
@@ -318,6 +311,9 @@ func shellCredentialHelper(paths Paths) map[string]string {
 	}
 }
 
+// credentialHelper is the command git calls for a password: this binary's own
+// subcommand, resolved to an absolute path so git finds it whatever PATH a
+// session's shell ends up with.
 func credentialHelper() string {
 	executable, err := os.Executable()
 	if err != nil {

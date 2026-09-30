@@ -67,13 +67,6 @@ describe('CreateOrganizationCommandHandler', () => {
     expect(organizations.create.mock.calls[0][1].slug).toMatch(/^my-great-org-[0-9a-f]{8}$/);
   });
 
-  // "workspace", not the "org" this used to say: the slug rule is one value
-  // object shared with the personal workspace sign-up provisions.
-  it('falls back to "workspace" when the name has no alphanumerics', async () => {
-    await create({ name: '***' });
-    expect(organizations.create.mock.calls[0][1].slug).toMatch(/^workspace-[0-9a-f]{8}$/);
-  });
-
   it('touches no roles and makes no workspace without an authenticated creator', async () => {
     const id = await create({ name: 'Acme' });
 

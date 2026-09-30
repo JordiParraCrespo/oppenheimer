@@ -19,7 +19,6 @@ test('settings opens from the account menu, walks its sections and comes back', 
     .click();
   await page.getByRole('menuitem', { name: 'Settings' }).click();
 
-  // `/settings` is no page of its own: it lands on Profile.
   await expect(page).toHaveURL(/\/settings\/profile$/);
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
   await expect(page.getByText(owner.user.email)).toBeVisible();

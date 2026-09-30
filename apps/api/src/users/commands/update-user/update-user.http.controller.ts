@@ -53,10 +53,8 @@ export class UpdateUserHttpController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateUserRequest,
   ): Promise<UserResponseDto> {
-    // Load before writing. `PoliciesGuard` cleared "may update *a* User", but
-    // the default role's rule is scoped to `{ id: '${user.id}' }` and only the
-    // loaded row can answer that. Checking after the command would authorize a
-    // write that had already happened.
+    // Load before writing: checking after the command would authorize a write
+    // that had already happened.
     const target = await this.queryBus.execute<FindUserByIdQuery, UserEntity>(
       new FindUserByIdQuery(id),
     );

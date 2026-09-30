@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { expectProblemDocument, signedUpContext } from '../../support/auth';
 import { claimInstallation } from '../../support/github-stub';
@@ -13,12 +14,9 @@ import { GITHUB_STUB_URL, mintInstallState, STUB_INSTALL_URL } from '../../suppo
  * state the API minted for this caller in this workspace, and spends it.
  */
 
-let counter = 0;
-
 /** A fresh installation the stub lists for the code, so only the state decides. */
 async function freshInstallation(): Promise<number> {
-  counter += 1;
-  return claimInstallation(GITHUB_STUB_URL, 700_000 + (process.pid % 1000) * 100 + counter);
+  return claimInstallation(GITHUB_STUB_URL, randomInt(1_000_000, 2 ** 40));
 }
 
 test.describe('GitHub install state', () => {
@@ -63,7 +61,6 @@ test.describe('GitHub install state', () => {
     });
     await expectProblemDocument(response, { status: 400, code: 'GITHUB_011' });
 
-    // Nothing landed in the victim's workspace.
     const listed = await victor.api.get('/api/v1/installations');
     expect((await listed.json()) as unknown[]).toHaveLength(0);
 

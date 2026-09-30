@@ -11,8 +11,7 @@ import { CONSUMER_CONFIG } from '../../../config';
  * `product/versions/mvp/01-protocol.md` decides the wire: PTY bytes as binary
  * WebSocket frames, control messages as JSON on the same socket, the browser
  * acking consumed bytes. This interface is that shape with the socket left
- * out, so the screen holds a stream and never a socket — and so the replay in
- * `fake-session-stream.ts` and the real transport below are interchangeable.
+ * out, so the screen holds a stream and never a socket.
  */
 
 /**
@@ -49,7 +48,6 @@ export interface SessionStream {
   onStatus(listener: (status: StreamStatus) => void): () => void;
   /** Keystrokes, already encoded by the terminal. */
   send(data: string): void;
-  /** The grid changed shape; the PTY needs to know. */
   resize(cols: number, rows: number): void;
   /**
    * Skip the rest of the wait before the next reconnect and dial now: the
@@ -112,7 +110,6 @@ function endOfMintFailure(error: unknown): StreamEnd | null {
   }
 }
 
-/** Turn the ticket's path into the socket URL on the API's origin. */
 export function attachSocketUrl(path: string, apiBaseUrl: string | undefined): string {
   const base = apiBaseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
   const url = new URL(path, base);
@@ -124,17 +121,15 @@ type DataListener = (chunk: Uint8Array | string, consumed: () => void) => void;
 
 /**
  * The real transport: one attach socket per stream, reconnected through the
- * ladder with a fresh ticket each time, and an epoch counter so a frame or a
- * callback from a socket that has since been replaced is dropped.
+ * ladder with a fresh ticket each time, and an epoch counter so a frame or
+ * callback from a replaced socket is dropped.
  *
- * Output is delivered as the bytes the socket carried; the terminal decodes
- * them, which keeps a multi-byte character that straddles two PTY reads whole.
- * Input goes the other way as bytes too. The viewport is sent first, before
- * the relay dispatches the attach, so the pane is not resized a frame later;
- * a resize that arrives before the socket is open waits for it.
+ * Output is delivered as raw bytes and the terminal decodes them, which keeps a
+ * multi-byte character straddling two PTY reads whole. The viewport is sent
+ * before the relay dispatches the attach, so the pane is not resized a frame
+ * later; a resize that arrives before the socket opens waits for it.
  *
- * Constructing one dials: a stream exists to be connected, and the hook that
- * owns it disposes it with the terminal.
+ * Constructing one dials; the hook that owns it disposes it with the terminal.
  */
 export class AttachSessionStream implements SessionStream {
   private readonly dataListeners = new Set<DataListener>();
@@ -289,7 +284,6 @@ export class AttachSessionStream implements SessionStream {
 
     ws.onopen = () => {
       if (thisEpoch !== this.epoch) return;
-      // The viewport first, so the attach the relay dispatches carries it.
       if (this.viewport) this.tell({ type: 'resize', ...this.viewport });
     };
     ws.onmessage = (event: MessageEvent) => {

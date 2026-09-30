@@ -6,11 +6,6 @@ import { SessionResource } from '../sessions.resource';
 /**
  * The proof that a session is workspace-owned and nothing more.
  *
- * Two halves, because both have to hold and they fail independently: the SQL
- * predicate decides which rows a query returns, the CASL ability decides what
- * `can()` reports to a caller and to the console. They are generated from the same
- * declaration, and these tests are what keep that true.
- *
  * What makes this resource worth its own spec is the contrast with the host it runs
  * on. A host is a **person's** — own-or-grant, no tenant clause — and a session is
  * the **workspace's**. `work_session.organizationId` is the tenant boundary in this
@@ -29,7 +24,6 @@ function scope(overrides: Partial<AccessScope> = {}): AccessScope {
   };
 }
 
-/** Records the clauses a query would carry, without needing a database. */
 function fakeQueryBuilder() {
   const calls: { clause: string; parameters?: Record<string, unknown> }[] = [];
   const qb = {

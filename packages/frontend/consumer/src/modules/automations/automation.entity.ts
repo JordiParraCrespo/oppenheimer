@@ -251,7 +251,6 @@ export interface TriggerPreview {
   matches: TriggerPreviewMatch[];
 }
 
-/** A trigger as the editor saves it: no id, no computed next fire. */
 /**
  * A trigger as the editor saves it: the shared schema's own input type, so
  * the console and the API validate one vocabulary.

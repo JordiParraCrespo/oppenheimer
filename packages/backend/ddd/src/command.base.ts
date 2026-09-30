@@ -4,7 +4,6 @@ import { Guard } from './guard';
 import { RequestContextService } from './request-context.service';
 
 export interface CommandMetadata {
-  /** Correlation id used for log correlation. */
   readonly correlationId: string;
 
   /** Causation id used to reconstruct execution order if needed. */

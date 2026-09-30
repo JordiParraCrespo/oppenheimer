@@ -8,8 +8,6 @@ import { PROFILE_AUTH, SESSION_READER } from '../../profile.di-tokens';
 import { RevokeSessionCommand } from './revoke-session.command';
 
 /**
- * Signs one of the caller's devices out.
- *
  * Someone else's session is reported as **not found** rather than forbidden, so
  * the endpoint cannot be used to confirm that a session id exists — the same
  * reasoning as the api-tokens module's ownership check.

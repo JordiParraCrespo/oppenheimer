@@ -1,14 +1,9 @@
 /**
- * What goes with an account, answered by whoever owns it.
- *
- * Deleting a user is this module's use case, and the user row is this
- * module's aggregate — but the hosts, sessions, projects and the personal
- * workspace that must not outlive it are other modules' tables, several of
- * them `ON DELETE RESTRICT` towards the user or the workspace. The dependency
- * runs the other way (they all know the user), so the question is a port this
- * module **declares** and each owning module **implements**, contributed
- * through `UsersModule.contributeAccountErasure` — the shape
- * `HostsModule.contributeUsage` has for the same reason.
+ * What goes with an account, answered by whoever owns it. Deleting a user is this
+ * module's use case, but the hosts, sessions, projects and personal workspace that
+ * must not outlive it are other modules' tables, several `ON DELETE RESTRICT` towards
+ * the user or the workspace. They all know the user, so this module declares the port
+ * and each owner implements it through `UsersModule.contributeAccountErasure`.
  */
 export interface AccountErasurePort {
   /** When this contribution runs; see {@link ACCOUNT_ERASURE_STEPS}. */

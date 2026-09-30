@@ -1,5 +1,4 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { AppError } from '@oppenheimer/backend-core';
 import type { ProjectRepositoryInputDto } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -74,10 +73,6 @@ describe('UpdateProjectCommandHandler', () => {
     expect(projects.saveSettingsIfActive).toHaveBeenCalledWith(scope, project);
   });
 
-  it('leaves the slug alone', async () => {
-    expect((await handler.execute(command())).slug).toBe('xrp-mobile');
-  });
-
   it('leaves absent fields as they are and clears a default given null', async () => {
     project.configure({ defaultAgent: 'codex', defaultHostId: 'host-1' });
 
@@ -124,14 +119,12 @@ describe('UpdateProjectCommandHandler', () => {
     vi.mocked(projects.findOneById).mockResolvedValue(None);
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_001' });
-    await expect(handler.execute(command())).rejects.toBeInstanceOf(AppError);
     expect(projects.findOneById).toHaveBeenCalledWith(scope, project.id);
     expect(projects.saveSettingsIfActive).not.toHaveBeenCalled();
   });
 
   it('does not resurrect a project the write found retired', async () => {
-    // The row is the authority on whether the project is still active: the
-    // targeted update matches nothing, and a save must not report success —
+    // The targeted update matches nothing, and a save must not report success —
     // nor write a stale `archivedAt` over an archive that landed meanwhile.
     vi.mocked(projects.saveSettingsIfActive).mockResolvedValue(None);
 

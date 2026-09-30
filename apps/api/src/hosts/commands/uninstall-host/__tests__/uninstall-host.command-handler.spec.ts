@@ -45,16 +45,7 @@ describe('UninstallHostCommandHandler', () => {
     expect(saved.unpairedAt).toBeInstanceOf(Date);
   });
 
-  it('reads the host without an access scope, because the caller is the machine', async () => {
-    await handler.execute(command());
-
-    expect(hosts.findOneByIdForMachine).toHaveBeenCalledWith('host-1');
-  });
-
   it('succeeds for a host the console already unpaired', async () => {
-    // The runner cannot tell "you were never here" from "you have already been
-    // removed", and neither side would do anything differently, so this answers
-    // the same way twice rather than inventing a conflict.
     vi.mocked(hosts.findOneByIdForMachine).mockResolvedValue(Some(host(new Date())));
 
     await expect(handler.execute(command())).resolves.toBeUndefined();

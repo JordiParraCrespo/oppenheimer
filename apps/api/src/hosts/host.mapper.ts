@@ -67,7 +67,6 @@ export interface HostResponseView {
   network?: HostNetwork | null;
 }
 
-/** Maps the host aggregate between its domain, persistence and response shapes. */
 /**
  * What a host answers as `capabilities`: the report the inventory kept, with
  * the live readings replaced by presence's newer ones once a heartbeat has
@@ -86,8 +85,6 @@ function capabilitiesOf(
 @Injectable()
 export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostResponseDto> {
   /**
-   * Registration payload → the props the aggregate is created from.
-   *
    * The four facts worth a column of their own are pulled out — what the machine
    * calls itself, its platform, its architecture and the version of the runner
    * reporting them — and the whole inventory is kept on `capabilities` as it
@@ -142,7 +139,7 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
   }
 
   /**
-   * ORM → domain. What the machine is and when it was last seen come from the
+   * What the machine is and when it was last seen come from the
    * side tables when they are loaded (`metadata`), and from the row's own
    * columns only for a read that did not load them. Those columns are the
    * expand step's leftovers: the heartbeat no longer writes them, and a later
@@ -264,13 +261,9 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
   }
 
   /**
-   * Domain → response.
-   *
-   * `online` is not a column and is never derived here: it is
-   * `lastSeenAt > now() − 2 × heartbeat`, computed by the read query in the
-   * database so the list cannot disagree with itself between rows. The running
-   * session count belongs to the module that owns sessions. Both arrive as the
-   * `view` for that reason, and `status` is read off the three.
+   * `online` is never derived here: the read query computes it in the database
+   * (see `HostPresence`). The running session count belongs to the module that
+   * owns sessions. Both arrive as the `view`, and `status` is read off the three.
    *
    * The public key itself stays on the server. What identifies a machine to a
    * person is its fingerprint, and that is what the console shows.

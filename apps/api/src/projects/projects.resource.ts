@@ -1,19 +1,14 @@
 import { defineResource } from '@oppenheimer/backend-authz';
 
 /**
- * Projects are workspace-owned, and that is the whole of their scoping.
+ * Projects are workspace-owned, and that is the whole of their scoping: no `team`,
+ * `own` or `grant` dimension, because every member sees every project, so the tenant
+ * clause `applyAccessScope` writes from `keys.organization` is the only predicate.
+ * Adding a dimension later means adding a column here, not in each query.
  *
- * No `team`, `own` or `grant` dimension: a project is a body of work the
- * workspace shares, and every member of the workspace sees all of them. The
- * tenant clause `applyAccessScope` writes from `keys.organization` is therefore
- * the only predicate, and — because no narrowing dimension is declared — the
- * query is not narrowed further. Adding a dimension later means adding a column,
- * which is the point of declaring the mapping here rather than in each query.
- *
- * Three actions. A person creates projects (`POST /projects`), and the API also
- * creates one for a repository when a session names no project
- * (`product/versions/mvp/10-api-modules-and-data-model.md`). Archiving is `update`, because nothing
- * is deleted: the row outlives the project so its slug is never reissued.
+ * A person creates projects (`POST /projects`); a session that names none lands in the
+ * workspace's Unassigned project, and nothing derives a project from a repository.
+ * Archiving is `update`: the row outlives the project so its slug is never reissued.
  */
 export const ProjectResource = defineResource({
   subject: 'Project',
@@ -26,7 +21,6 @@ export const ProjectResource = defineResource({
     { name: 'update', label: 'Change and archive projects' },
   ],
 
-  /** The columns each scope dimension filters on. */
   keys: {
     organization: 'organizationId',
     id: 'id',

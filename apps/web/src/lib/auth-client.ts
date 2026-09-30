@@ -110,7 +110,6 @@ export const webAuthClient: IAuthClient = {
     return toAuthSession(await authClient.getSession());
   },
 
-  // On web the browser sends the session cookie automatically.
   async getAuthHeaders() {
     return {};
   },

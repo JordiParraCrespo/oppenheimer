@@ -1,17 +1,14 @@
 import { z } from 'zod';
 
 /**
- * Normalizes unset AND blank (`FOO=`, or whitespace-only) env vars to
- * `undefined`, so optional schema keys (`z.string().optional()`,
- * `.url().optional()`) treat both the same and absence stays representable in
- * the parsed config.
+ * Normalizes unset and blank (`FOO=`, whitespace-only) env vars to `undefined`, so
+ * optional schema keys treat both the same.
  *
- * Whitespace decides *blankness only* — a value that survives is returned
- * verbatim, never trimmed. A credential may legitimately carry leading or
- * trailing whitespace (`DB_PASSWORD`, `S3_SECRET_ACCESS_KEY`, `RESEND_API_KEY`),
- * and silently altering it would hand the database or provider a credential
- * nobody set. Both Postgres pools (TypeORM's and Better Auth's) read the same
- * parsed `database` config, so neither may rewrite it on the way.
+ * Whitespace decides blankness only: a surviving value is returned verbatim, never
+ * trimmed, because a credential may legitimately carry leading or trailing whitespace
+ * (`DB_PASSWORD`, `S3_SECRET_ACCESS_KEY`, `RESEND_API_KEY`). Both Postgres pools
+ * (TypeORM's and Better Auth's) read the same parsed `database` config, so neither may
+ * rewrite it on the way.
  */
 export const orUndefined = (value: string | undefined): string | undefined =>
   value?.trim() ? value : undefined;
@@ -28,21 +25,14 @@ export const positiveInt = (fallback: number) =>
  * Reads a config section from the environment and validates it, failing with a
  * message a human can act on.
  *
- * The reason this exists rather than a bare `schema.parse()`: a `ZodError` is
- * not safely printable. Nest logs a failed boot through `util.inspect`, and on
- * Node >= 23 inspecting a `ZodError` throws `Cannot read properties of
- * undefined (reading 'value')`. That secondary throw becomes the initialization
- * error, `NestFactory` calls `process.abort()`, and the process core-dumps with
- * no message at all — so "BETTER_AUTH_SECRET is missing" surfaced as an
- * `Aborted (core dumped)` with a native stack trace.
+ * Not a bare `schema.parse()`, because a `ZodError` is not safely printable: Nest logs
+ * a failed boot through `util.inspect`, which on Node >= 23 throws on a `ZodError`
+ * (`Cannot read properties of undefined (reading 'value')`); `NestFactory` then calls
+ * `process.abort()` and a missing `BETTER_AUTH_SECRET` surfaces as a bare
+ * `Aborted (core dumped)`. A plain `Error` stays loud (`api-config.md`) and legible.
  *
- * Collapsing the issues into a plain `Error` keeps the failure loud, as
- * `api-config.md` requires, and legible on every Node version.
- *
- * Taking the env var names here (rather than reading `process.env` at the call
- * site) is what lets the message name the variable to set: config keys are
- * camelCase and their variables are not derivable from them (`host` is
- * `DB_HOST`, not `HOST`).
+ * The env var names are passed in so the message can name the variable to set: they
+ * are not derivable from the camelCase config keys (`host` is `DB_HOST`).
  */
 export function parseEnv<T extends z.ZodTypeAny>(
   section: string,

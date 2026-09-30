@@ -8,7 +8,6 @@ import type {
   StoredExternalEvent,
 } from './domain/external-event.types';
 
-/** Translates the hub's two rows into the shapes the domain and its consumers read. */
 @Injectable()
 export class InboundEventMapper {
   deliveryToDomain(record: InboundDeliveryOrmEntity): InboundDelivery {

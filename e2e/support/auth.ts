@@ -133,9 +133,3 @@ export async function expectProblemDocument(
   if (expected.code) expect(body.code).toBe(expected.code);
   return body;
 }
-
-/** The session cookie as the browser would see it, for attribute assertions. */
-export async function sessionCookie(api: APIRequestContext) {
-  const { cookies } = await api.storageState();
-  return cookies.find((cookie) => cookie.name.includes('session_token'));
-}

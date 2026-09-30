@@ -5,7 +5,6 @@ import type { AdminUserListResponseDto } from '../../dtos/admin-user.response.dt
 import type { AdminAuthPort } from '../../infrastructure/admin-auth.port';
 import { ListUsersQuery } from './list-users.query';
 
-/** A page of the platform's accounts, searched and sorted as asked. */
 @QueryHandler(ListUsersQuery)
 export class ListUsersQueryHandler
   implements IQueryHandler<ListUsersQuery, AdminUserListResponseDto>

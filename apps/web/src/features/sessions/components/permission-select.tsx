@@ -2,18 +2,12 @@ import { type PermissionLevel, PermissionMenu } from '@oppenheimer/design-system
 import { useTranslation } from 'react-i18next';
 
 /**
- * What the agent may do on the host without asking.
- *
- * Three levels, and the third is the one that matters: `full` runs everything
- * without asking, on a machine somebody owns, unattended. The design system
- * gives that row and the button a warning tone on its own; what this file adds
- * is the sentence under each label, because a person choosing between these is
- * choosing what a program may do to their laptop and the labels alone do not
- * say it.
- *
- * The copy is translated here rather than in the design system, which is why
- * the levels are passed in: a primitive that carried English would be a
- * primitive nobody could ship in a second language.
+ * What the agent may do on the host without asking. `full` runs everything
+ * unattended on a machine somebody owns (the design system gives it a warning
+ * tone), so each level carries a sentence under its label: the labels alone do
+ * not say what a program may do to a laptop. The copy is translated here,
+ * which is why the levels are passed in: a primitive carrying English could
+ * not ship in a second language.
  */
 export function PermissionSelect({
   value,

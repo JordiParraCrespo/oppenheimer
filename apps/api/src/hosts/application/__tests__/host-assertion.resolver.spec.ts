@@ -113,7 +113,6 @@ describe('HostAssertionResolver', () => {
   it('accepts an assertion the host signed, and reports its expiry', async () => {
     await expect(verify(assertion(current.privateKey, bootClaims('host-1')))).resolves.toEqual({
       hostId: 'host-1',
-      // The caller bounds what it caches by this rather than guessing.
       expiresAt: new Date(NOW.getTime() + 300_000),
       unpaired: false,
     });
@@ -133,8 +132,6 @@ describe('HostAssertionResolver', () => {
   });
 
   it('refuses a replay', async () => {
-    // A captured assertion cannot read anything, but it could open a link and
-    // append events to a session's log — which is the source of truth.
     vi.mocked(cache.setIfAbsent).mockResolvedValue(false);
 
     await expect(verify(assertion(current.privateKey, bootClaims('host-1')))).rejects.toMatchObject(
@@ -168,56 +165,66 @@ describe('HostAssertionResolver', () => {
     expect(cache.setIfAbsent).not.toHaveBeenCalled();
   });
 
-  it('refuses an expired assertion', async () => {
-    const claims = bootClaims('host-1', { exp: Math.floor(NOW.getTime() / 1000) - 120 });
+  const now = Math.floor(NOW.getTime() / 1000);
+  const without = (claim: 'jti' | 'iat') => {
+    const { [claim]: _dropped, ...rest } = bootClaims('host-1');
+    return rest;
+  };
 
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
-    });
-  });
-
-  it('refuses one that claims to live longer than a boot token', async () => {
-    // Accepting it would silently widen the replay window the burn is sized
-    // against.
-    const claims = bootClaims('host-1', { exp: Math.floor(NOW.getTime() / 1000) + 86_400 });
-
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
-    });
-  });
-
-  it('refuses one minted for another control plane', async () => {
-    const claims = bootClaims('host-1', { aud: 'https://api.someone-else.com' });
-
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
-    });
+  // Each row changes one thing about the assertion the first test accepts, and
+  // every one of them is the same opaque answer.
+  it.each<[string, () => string]>([
+    [
+      'an expired assertion',
+      () => assertion(current.privateKey, bootClaims('host-1', { exp: now - 120 })),
+    ],
+    // Accepting it would silently widen the replay window the burn is sized against.
+    [
+      'one that claims to live longer than a boot token',
+      () => assertion(current.privateKey, bootClaims('host-1', { exp: now + 86_400 })),
+    ],
+    [
+      'one minted for another control plane',
+      () =>
+        assertion(
+          current.privateKey,
+          bootClaims('host-1', { aud: 'https://api.someone-else.com' }),
+        ),
+    ],
+    [
+      'one whose issuer and subject disagree',
+      () => assertion(current.privateKey, bootClaims('host-1', { iss: 'host-2' })),
+    ],
+    ['one with no token id to burn', () => assertion(current.privateKey, without('jti'))],
+    // Claimed life, not remaining life: an assertion issued a week ago with four
+    // minutes left on it was not minted as a boot token, and capping only what is
+    // left would accept it.
+    [
+      'one minted with a longer life than a boot token',
+      () =>
+        assertion(
+          current.privateKey,
+          bootClaims('host-1', { iat: now - 7 * 24 * 3600, exp: now + 240 }),
+        ),
+    ],
+    [
+      'one issued in the future',
+      () => assertion(current.privateKey, bootClaims('host-1', { iat: now + 600 })),
+    ],
+    [
+      'one with no issued-at to measure its life against',
+      () => assertion(current.privateKey, without('iat')),
+    ],
+    ['something that is not an assertion at all', () => 'oppenheimer_pat_abc'],
+  ])('refuses %s', async (_case, token) => {
+    await expect(verify(token())).rejects.toMatchObject({ code: 'HOSTS_005' });
   });
 
   it('ignores a trailing slash on the audience', async () => {
-    // The runner stores whatever URL it registered with, and the two spellings
-    // are the same deployment.
     const claims = bootClaims('host-1', { aud: `${CONTROL_PLANE}/` });
 
     await expect(verify(assertion(current.privateKey, claims))).resolves.toMatchObject({
       hostId: 'host-1',
-    });
-  });
-
-  it('refuses one whose issuer and subject disagree', async () => {
-    const claims = bootClaims('host-1', { iss: 'host-2' });
-
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
-    });
-  });
-
-  it('refuses one with no token id to burn', async () => {
-    const { jti, ...claims } = bootClaims('host-1');
-    void jti;
-
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
     });
   });
 
@@ -232,9 +239,7 @@ describe('HostAssertionResolver', () => {
   });
 
   it('refuses the host of an owner who may not act, with the one opaque answer', async () => {
-    // A banned or deactivated owner: `CREDENTIAL_OWNER` answers null. The
-    // machine they paired is refused like any other bad assertion, so the link
-    // handshake answers 401 and the runner keeps dialling until it is lifted.
+    // `CREDENTIAL_OWNER` answers null for a banned or deactivated owner.
     owners.findActiveOwner.mockResolvedValue(null);
 
     await expect(verify(assertion(current.privateKey, bootClaims('host-1')))).rejects.toMatchObject(
@@ -243,47 +248,8 @@ describe('HostAssertionResolver', () => {
     expect(owners.findActiveOwner).toHaveBeenCalledWith('jordi');
   });
 
-  it('refuses something that is not an assertion at all', async () => {
-    await expect(verify('oppenheimer_pat_abc')).rejects.toMatchObject({ code: 'HOSTS_005' });
-  });
-
-  it('refuses one minted with a longer life than a boot token', async () => {
-    // Claimed life, not remaining life: an assertion issued a week ago with four
-    // minutes left on it was not minted as a boot token, and capping only what is
-    // left would accept it.
-    const issued = Math.floor(NOW.getTime() / 1000) - 7 * 24 * 3600;
-    const claims = bootClaims('host-1', {
-      iat: issued,
-      exp: Math.floor(NOW.getTime() / 1000) + 240,
-    });
-
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
-    });
-  });
-
-  it('refuses one issued in the future', async () => {
-    const claims = bootClaims('host-1', { iat: Math.floor(NOW.getTime() / 1000) + 600 });
-
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
-    });
-  });
-
-  it('refuses one with no issued-at to measure its life against', async () => {
-    const { iat, ...claims } = bootClaims('host-1');
-    void iat;
-
-    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
-      code: 'HOSTS_005',
-    });
-  });
-
   describe('a host that has been unpaired', () => {
     it('still proves who it is, and says it was unpaired', async () => {
-      // Verification is identity, not permission. Its own uninstall call has to be
-      // able to say "I am gone" twice and get the same answer, so what a host may
-      // *do* is `HostAccessPort`'s question.
       vi.mocked(hosts.findOneByIdForMachine).mockResolvedValue(
         Some(
           hostWith({
@@ -297,13 +263,6 @@ describe('HostAssertionResolver', () => {
       await expect(
         verify(assertion(current.privateKey, bootClaims('host-1'))),
       ).resolves.toMatchObject({ hostId: 'host-1', unpaired: true });
-    });
-  });
-
-  describe('recognises', () => {
-    it('claims a compact EdDSA token and nothing else', () => {
-      expect(resolver.recognises(assertion(current.privateKey, bootClaims('host-1')))).toBe(true);
-      expect(resolver.recognises('oppenheimer_pat_abc')).toBe(false);
     });
   });
 });

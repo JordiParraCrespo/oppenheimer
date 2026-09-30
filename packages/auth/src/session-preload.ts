@@ -37,8 +37,6 @@ function isSessionBody(value: unknown): value is PreloadedSessionBody {
 }
 
 /**
- * Takes the preloaded session, if there is one to take.
- *
  * Returns the session, `null` for a confirmed anonymous visitor, or `undefined`
  * when there is nothing usable and the caller should go through the auth client
  * as before. Anything unrecognised is treated as `undefined` rather than as

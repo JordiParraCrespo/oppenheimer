@@ -4,7 +4,6 @@ import { type ChangeEmailDto, changeEmailSchema } from '@oppenheimer/shared/sche
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-/** The new address, and the button that sends the link to it. */
 export function ChangeEmailForm({
   isPending,
   onSubmit,

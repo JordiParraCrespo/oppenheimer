@@ -115,7 +115,6 @@ export class HostNetworkResponseDto {
   lastSeenAt!: Date;
 }
 
-/** One entry of a host's timeline. */
 export class HostTimelineEntryResponseDto {
   @ApiProperty({ description: 'Opaque; increases with time.' })
   id!: string;

@@ -17,21 +17,11 @@ import { HandleGithubWebhookCommand } from './handle-github-webhook.command';
 
 /**
  * The App's one webhook endpoint, verified once, then split in two.
- *
- * **`installation`** — suspend, unsuspend, uninstall — is this module's own:
- * the three facts about an installation that change without us and that a
- * token mint has to respect. Each is a status write, idempotent to repeat and
- * ordered by GitHub's own time, so a late retry cannot undo a newer change.
- *
- * **Every other event** is handed to the inbound-events hub
- * (`product/versions/mvp/16-automations-architecture.md` §Q6), which stores it
- * keyed by GitHub's delivery id and normalizes it for automations. One
- * endpoint and one secret for the App, whatever consumes its events.
- *
- * It writes through a **conditional update rather than the aggregate**. Loading
- * the row, mutating it and saving it back would let a delivery that read the
- * world a moment before a disconnect committed write the whole row again,
- * `deletedAt` included, and resurrect a claim the workspace had given up.
+ * `installation` (suspend, unsuspend, uninstall) is this module's own; see
+ * `github-webhook.util.ts`. Every other event goes to the inbound-events hub
+ * (`product/versions/mvp/16-automations-architecture.md` §Q6), keyed by
+ * GitHub's delivery id and normalized for automations: one endpoint and one
+ * secret for the App, whatever consumes its events.
  */
 @CommandHandler(HandleGithubWebhookCommand)
 export class HandleGithubWebhookCommandHandler
@@ -71,9 +61,6 @@ export class HandleGithubWebhookCommandHandler
         ...facts,
       });
     }
-    // Keyed by GitHub's own id and matched across every workspace: a delivery
-    // arrives with no notion of our tenants. Only a live row is touched — a
-    // disconnected one is history, and GitHub's news about it changes nothing.
     const result = await this.installations.applyStatusChange(
       installationStatusChange(delivery, new Date()),
     );

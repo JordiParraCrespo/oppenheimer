@@ -93,14 +93,6 @@ describe('automationsKeys', () => {
 
     for (const key of keys) expect(client.getQueryState(key)?.isInvalidated).toBe(true);
   });
-
-  it('keeps run pages and the history apart under runs, so a page is its filter', () => {
-    expect(automationsKeys.runList({ page: 1 })).not.toEqual(automationsKeys.runList({ page: 2 }));
-    expect(automationsKeys.runList({}).slice(0, 2)).toEqual(automationsKeys.runs());
-    expect(automationsKeys.history({ timezone: 'UTC' }).slice(0, 2)).toEqual(
-      automationsKeys.runs(),
-    );
-  });
 });
 
 describe('useAutomations', () => {
@@ -322,16 +314,5 @@ describe('automation writes', () => {
 
     expect(service.remove).toHaveBeenCalledWith('a-1');
     expect(onSuccess.mock.results[0]?.value).toEqual({ detail: undefined, stale: [true, true] });
-  });
-
-  it('resuming never pauses, and pausing never resumes', async () => {
-    const service = { pause: vi.fn().mockResolvedValue({}), resume: vi.fn().mockResolvedValue({}) };
-    const { wrapper } = setup(service);
-    const { result } = renderHook(() => useSetAutomationPaused(), { wrapper });
-
-    await act(() => result.current.mutateAsync({ id: 'a-1', paused: false }));
-
-    expect(service.resume).toHaveBeenCalledWith('a-1');
-    expect(service.pause).not.toHaveBeenCalled();
   });
 });

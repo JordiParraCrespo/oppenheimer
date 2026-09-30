@@ -106,20 +106,15 @@ describe('AuthService analytics', () => {
   // The API refuses a provider identity it has never seen unless the caller
   // asks to register, so an intent dropped on the way through would turn the
   // register screen's Google button into one that can only ever fail.
-  it('passes the sign-up intent through to the client', async () => {
+  it.each([
+    ['sign-up', 'sign-up'],
+    ['a plain sign-in', undefined],
+  ] as const)('passes the intent of %s through to the client', async (_, intent) => {
     const { service, repository } = setup();
 
-    await service.socialLogin('google', 'sign-up');
+    await service.socialLogin('google', intent);
 
-    expect(repository.socialLogin).toHaveBeenCalledWith('google', 'sign-up');
-  });
-
-  it('leaves the intent unset for a plain sign-in', async () => {
-    const { service, repository } = setup();
-
-    await service.socialLogin('google');
-
-    expect(repository.socialLogin).toHaveBeenCalledWith('google', undefined);
+    expect(repository.socialLogin).toHaveBeenCalledWith('google', intent);
   });
 
   it('captures the sign-in when an OAuth round-trip completes', async () => {
@@ -145,7 +140,6 @@ describe('AuthService analytics', () => {
     expect(analytics.capture).not.toHaveBeenCalled();
   });
 
-  // An abandoned OAuth attempt must not relabel a later password login.
   it('drops the pending marker when the user signs in with a password instead', async () => {
     const { service, analytics } = setup();
 

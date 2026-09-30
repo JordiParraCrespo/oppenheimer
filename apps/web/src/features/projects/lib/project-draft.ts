@@ -10,15 +10,11 @@ import { createProjectSchema } from '@oppenheimer/shared/schemas/project';
 import { z } from 'zod';
 
 /**
- * The project dialog's draft, in one place: the form's shape, what it starts
- * from, when it can be saved, and what it sends.
- *
- * The form holds the name the API validates and what is picked rather than
- * typed — the rows added, the default host, the default agent — as fields of
- * the same form, so each picker binds its own field and the one that shows an
- * answer is the one that subscribes to it. A row's branch is never empty: an
- * added row takes its repository's default branch, and a saved one has its
- * base.
+ * The project dialog's draft: the form's shape, its start, when it can be
+ * saved and what it sends. What is picked (rows, default host, default agent)
+ * lives in the same form so each picker subscribes to its own field. A row's
+ * branch is never empty: an added row takes its repository's default branch,
+ * a saved one its base.
  */
 export const projectFormSchema = createProjectSchema.pick({ name: true }).extend({
   rows: z.array(z.object({ id: z.string(), isDefault: z.boolean(), branch: z.string() })),
@@ -33,13 +29,9 @@ export type ProjectBlock = 'name' | 'repositories' | 'default';
 /**
  * The export's rule for a project that can be saved
  * (`design/version1/SessionsConsole.dc.html`, `projSaveBlocked`): a name, at
- * least one repository, at least one of them default. A base branch is never
- * empty on this side, because a row without a choice reads the repository's
- * own default.
- *
- * The workspace's Unassigned project (`holdsNone`) may hold no repository at
- * all — it is where work that names no project goes — so an empty list does
- * not block it; one it does hold still needs a default.
+ * least one repository, at least one of them default. The workspace's
+ * Unassigned project (`holdsNone`) is where work naming no project goes, so it
+ * may hold no repository; one it does hold still needs a default.
  */
 export function projectBlock(
   name: string,
@@ -52,7 +44,6 @@ export function projectBlock(
   return null;
 }
 
-/** The form's starting values: the project's, or an empty one. */
 export function projectDraftOf(project: ProjectEntity | undefined): ProjectFormValues {
   return {
     name: project?.name ?? '',

@@ -15,7 +15,6 @@ export function ForgotPasswordForm({
   onSubmit,
 }: {
   isPending: boolean;
-  /** The resolved failure message, if the last attempt failed. */
   error?: ResolvedErrorMessage;
   onSubmit: (values: ForgotPasswordDto) => void;
 }) {

@@ -4,7 +4,7 @@ import type { FlagDefinition, FlagValue } from './types.js';
  * The feature-flag catalog — every flag the code may read, and the only place
  * one is declared.
  *
- * A key here is what `useFlag`, `FeatureFlagsService.isEnabled` and
+ * A key here is what `useFeatureFlag`, `FlagEvaluatorPort.isEnabled` and
  * `@RequireFlag` accept, so a typo is a compile error and deleting a flag
  * breaks every reader that still names it. The database holds only targeting
  * for these keys; it cannot invent a flag the code does not know about, and a
@@ -56,7 +56,6 @@ export type BooleanFeatureFlagKey = {
   [K in FeatureFlagKey]: Catalog[K]['type'] extends 'boolean' ? K : never;
 }[FeatureFlagKey];
 
-/** Keys a client may read. */
 export type ClientFeatureFlagKey = {
   [K in FeatureFlagKey]: Catalog[K]['client'] extends true ? K : never;
 }[FeatureFlagKey];
@@ -89,7 +88,6 @@ export function getFlagDefinition(key: FeatureFlagKey): FlagDefinition {
   return FEATURE_FLAGS[key] as FlagDefinition;
 }
 
-/** Whether `value` is one a flag of this definition may take. */
 export function isValidFlagValue(definition: FlagDefinition, value: unknown): value is FlagValue {
   if (definition.type === 'boolean') return typeof value === 'boolean';
   return typeof value === 'string' && definition.variants.includes(value);

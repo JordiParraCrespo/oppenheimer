@@ -154,8 +154,6 @@ describe('RegisterHostCommandHandler', () => {
     const result = await handler.execute(command());
 
     expect(result).toMatchObject({
-      // The id the redemption statement recorded, so the response names the row
-      // that statement wrote.
       hostId: 'host-new',
       fingerprint: CONTROL_PLANE_FINGERPRINT,
       channel: 'stable',
@@ -164,8 +162,6 @@ describe('RegisterHostCommandHandler', () => {
   });
 
   it('adopts the name the token carried, not the one the runner detected', async () => {
-    // The console names the machine before it exists, so nobody has to rename a
-    // box that defaulted to its hostname.
     await handler.execute(command({ name: 'devbox.local' }));
 
     const [{ host }] = vi.mocked(hosts.redeemAndRegister).mock.calls[0];
@@ -182,24 +178,11 @@ describe('RegisterHostCommandHandler', () => {
 
     expect(registered).toMatchObject({
       hostname: 'devbox.local',
-      // The family the runner installs a service for, plus the release when it
-      // determined one.
       os: 'macos 15.2',
       arch: 'arm64',
       runnerVersion: '0.3.1',
     });
-    // The whole inventory as it arrived, tools included: an agent is a probed
-    // tool, so there is no second list to keep in step.
     expect(registered.capabilities).toEqual(FACTS);
-  });
-
-  it('builds no aggregate for a token the burn refused', async () => {
-    // The callback is the whole point: a forged token never constructs a host,
-    // because the statement that decides it may be spent is what calls it.
-    vi.mocked(hosts.redeemAndRegister).mockResolvedValue(None);
-    vi.mocked(tokens.findOneByHash).mockResolvedValue(None);
-
-    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_003' });
   });
 
   it('spends the token by digest, and never by the secret', async () => {
@@ -224,8 +207,6 @@ describe('RegisterHostCommandHandler', () => {
         Some(existingHost(key.fingerprint, key.base64)),
       );
 
-      // Proved by the key it presents, so a dropped answer never pairs a machine
-      // twice and never needs a second token.
       await expect(handler.execute(command())).resolves.toMatchObject({ hostId: 'host-existing' });
     });
 
@@ -239,20 +220,15 @@ describe('RegisterHostCommandHandler', () => {
     });
   });
 
-  it('refuses a token that was revoked, used or expired with one answer', async () => {
-    // The burn's WHERE is the authority — this handler cannot and does not tell
-    // the three apart, which is the point.
+  // The burn's WHERE is the authority: it claimed nothing, and the one read
+  // after it finds no host the token paired. This handler cannot and does not
+  // tell revoked, used, expired or never-minted apart, which is the point.
+  it.each([
+    ['was revoked, used or expired', Some(token({ revokedAt: new Date() }))],
+    ['nobody ever minted', None],
+  ])('refuses a token that %s with one answer', async (_case, found) => {
     vi.mocked(hosts.redeemAndRegister).mockResolvedValue(None);
-    vi.mocked(tokens.findOneByHash).mockResolvedValue(Some(token({ revokedAt: new Date() })));
-
-    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_003' });
-  });
-
-  it('refuses a token nobody ever minted', async () => {
-    // One read, not two: the burn is the only thing that looks the token up
-    // before deciding, and the second read below happens only on the retry path.
-    vi.mocked(hosts.redeemAndRegister).mockResolvedValue(None);
-    vi.mocked(tokens.findOneByHash).mockResolvedValue(None);
+    vi.mocked(tokens.findOneByHash).mockResolvedValue(found);
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_003' });
   });

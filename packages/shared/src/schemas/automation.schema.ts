@@ -27,8 +27,6 @@ import {
  * preview make. The constraints decidable from the body alone are here; whether
  * the project holds the repositories, whether the host is the owner's and
  * whether the agent can run unattended are the API's to answer.
- *
- * Schemas state the constraint only, never a message (`.agents/rules/forms.md`).
  */
 
 /** How many triggers one automation may hold. The editor draws each as a card. */

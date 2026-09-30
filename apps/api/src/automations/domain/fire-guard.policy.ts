@@ -84,7 +84,6 @@ export function staleGuard(
     : ALLOW;
 }
 
-/** Another run of the same automation is still live. */
 export function overlapGuard(
   otherLiveRuns: number,
   limits: Pick<AutomationLimits, 'overlap'>,
@@ -95,7 +94,6 @@ export function overlapGuard(
     : { kind: 'skip', reason: 'overlapping' };
 }
 
-/** The host already runs as many automation runs as it takes at once. */
 export function capacityGuard(
   liveOnHost: number,
   limits: Pick<AutomationLimits, 'liveRunsPerHost'>,

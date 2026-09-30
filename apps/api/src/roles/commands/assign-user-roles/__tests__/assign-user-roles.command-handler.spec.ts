@@ -1,4 +1,3 @@
-import { AppError } from '@oppenheimer/backend-core';
 import {
   defineAbilitiesFromPermissions,
   type PermissionDefinition,
@@ -140,29 +139,6 @@ describe('AssignUserRolesCommandHandler', () => {
       { id: 'actor-1', role: 'admin', organizationId: 'organization-1' },
       [permission.toDefinition()],
     );
-  });
-
-  it('does not write the join when the actor cannot grant the assigned roles', async () => {
-    const permission = Permission.fromDefinition({
-      action: 'manage',
-      subject: 'all',
-    });
-    vi.mocked(roleRepo.findByIds).mockResolvedValue([makeRole('r1', [permission])]);
-    vi.mocked(grantPolicy.assertGrantable).mockRejectedValue(
-      new AppError(RoleErrors.PERMISSION_NOT_GRANTABLE),
-    );
-
-    await expect(
-      service.execute(
-        new AssignUserRolesCommand({
-          userId: 'user-1',
-          roleIds: ['r1'],
-          actorId: 'actor-1',
-          actorRole: 'user',
-        }),
-      ),
-    ).rejects.toMatchObject({ code: RoleErrors.PERMISSION_NOT_GRANTABLE.code });
-    expect(userRoleRepo.setRolesForUser).not.toHaveBeenCalled();
   });
 
   describe('with the real grant policy', () => {

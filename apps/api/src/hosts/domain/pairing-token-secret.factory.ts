@@ -24,8 +24,6 @@ export interface GeneratedPairingTokenSecret {
 }
 
 /**
- * Mint a registration token.
- *
  * The secret is 256 random bits, so a fast digest is the right hash: a password
  * KDF exists to slow down guessing of low-entropy inputs, and using one here
  * would only add latency to a redemption. What matters is that the digest is all

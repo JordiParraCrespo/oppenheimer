@@ -6,11 +6,9 @@
 // reads, the patterns that make it match, the patterns that veto it, and a
 // priority so that adding a rule cannot silently reorder the others.
 //
-// Manifests are data, not code, for two reasons. Agents change their screens
-// often — a new spinner glyph in a point release breaks detection — and a data
-// file can be replaced without building, signing and rolling out a binary to
-// every host. And one agent is a rule set, while five agents are a treadmill:
-// keeping that current should not be a release.
+// Manifests are data, not code, because agents change their screens often —
+// a new spinner glyph in a point release breaks detection — and a data file
+// can be replaced without building, signing and rolling out a binary.
 //
 // The format is ours. The shape of it — regions, priorities, negative guards,
 // the terminal title as the most trustworthy signal — is what reading herdr's
@@ -98,7 +96,6 @@ type Pattern string
 // Region names a part of the captured terminal.
 type Region string
 
-// Regions.
 const (
 	// RegionTitle is the terminal title the agent sets with an escape
 	// sequence. It is the most trustworthy signal there is: the agent

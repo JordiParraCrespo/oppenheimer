@@ -10,6 +10,5 @@
  * `HostAssertionResolver.burn` then.
  */
 export interface LegacyReplayMarkerPort {
-  /** True when the unprefixed marker for `hostId`/`jti` is still in Redis. */
   isBurned(hostId: string, jti: string): Promise<boolean>;
 }

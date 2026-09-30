@@ -2,16 +2,10 @@ import { useTranslation } from 'react-i18next';
 import { NewSessionForm } from '../sections/new-session-form';
 
 /**
- * New session: the console's pane when nothing is open.
- *
- * The column is the export's `.op-newsession__inner` — 720px centred, 48px of
- * air over 32px of gutter — and what lands in it is the chip row and the
- * composer (`product/versions/mvp/05-screens.md`). It sits on the grey
- * `canvas-recessed` ground, as `.op-newsession` does, so the white composer
- * reads as the one surface; an open session's terminal is white edge to edge.
- *
- * The screen composes and nothing else. Every read this pane makes belongs to
- * the section below it, which is the component that renders the result.
+ * New session, the console's pane when nothing is open
+ * (`product/versions/mvp/05-screens.md`, the export's `.op-newsession`). It
+ * sits on the grey `canvas-recessed` ground so the white composer reads as the
+ * one surface. The screen only composes; every read belongs to the section.
  */
 export function NewSessionScreen() {
   const { t } = useTranslation();

@@ -19,7 +19,6 @@ export interface Invitation {
   createdAt: Date;
 }
 
-/** Who is answering an invitation: the authenticated caller's id and email. */
 export interface InvitationCaller {
   id: string;
   email: string;

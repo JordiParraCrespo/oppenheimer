@@ -6,10 +6,7 @@ import { PermissionsErrors } from './permissions.errors';
 
 @injectable()
 export class PermissionsRepository {
-  /**
-   * The permission catalog plus the subset the caller may grant. Only the
-   * server can answer the second part — it depends on the caller's roles.
-   */
+  /** Only the server can answer the grantable subset: it depends on the caller's roles. */
   @MapApiError(PermissionsErrors.FETCH_CATALOG_FAILED)
   async catalog(): Promise<PermissionCatalog> {
     const result = await unwrapBody(

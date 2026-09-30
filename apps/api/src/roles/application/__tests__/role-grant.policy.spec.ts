@@ -5,6 +5,7 @@ import {
   SYSTEM_ROLE_PERMISSIONS,
 } from '@oppenheimer/shared';
 import { describe, expect, it, vi } from 'vitest';
+import { RoleEntity } from '../../domain/role.entity';
 import type { AbilityFactory } from '../ability.factory';
 import { RoleGrantPolicy } from '../role-grant.policy';
 
@@ -203,6 +204,50 @@ describe('RoleGrantPolicy', () => {
 
     it('trusts an internal caller with no actor', async () => {
       await expect(policyFor([]).assertCanCreateGlobal(undefined)).resolves.toBeUndefined();
+    });
+  });
+
+  describe('assertCanModify', () => {
+    const roleIn = (organizationId: string | null) =>
+      RoleEntity.create({
+        id: 'role-1',
+        props: {
+          name: 'user',
+          description: null,
+          isSystem: false,
+          organizationId,
+          permissions: [],
+        },
+      });
+
+    it("lets the tenant owner modify their own organization's role", async () => {
+      const { policy } = policyInContext(SYSTEM_ROLE_PERMISSIONS.owner);
+
+      await expect(policy.assertCanModify(ACTOR, roleIn('org-1'))).resolves.toBeUndefined();
+    });
+
+    // A role lookup in an organization also returns the platform's global
+    // roles: without this, an owner could rewrite `user` for every tenant.
+    it.each([
+      ['a global role', null, 'Global roles are managed by the platform'],
+      ["another organization's role", 'org-2', 'belongs to another organization'],
+    ])('refuses the tenant owner %s (ROLE_006)', async (_label, organizationId, detail) => {
+      const { policy } = policyInContext(SYSTEM_ROLE_PERMISSIONS.owner);
+
+      await expect(policy.assertCanModify(ACTOR, roleIn(organizationId))).rejects.toMatchObject({
+        code: 'ROLE_006',
+        detail: expect.stringContaining(detail),
+      });
+    });
+
+    it('lets `manage all` modify a global role', async () => {
+      const { policy } = policyInContext([{ action: 'manage', subject: 'all' }]);
+
+      await expect(policy.assertCanModify(ACTOR, roleIn(null))).resolves.toBeUndefined();
+    });
+
+    it('trusts an internal caller with no actor', async () => {
+      await expect(policyFor([]).assertCanModify(undefined, roleIn(null))).resolves.toBeUndefined();
     });
   });
 });

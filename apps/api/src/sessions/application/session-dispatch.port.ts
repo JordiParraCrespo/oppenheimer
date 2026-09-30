@@ -3,22 +3,6 @@ import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionLaunchImage } from '../domain/session-launch-image.types';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 
-/**
- * What the module that owns the runner link implements so a session's work reaches
- * a host.
- *
- * It is a port, not a queue: the desired state is already the session row and the
- * outbox is already a durable queue, so there is no `jobs` table and nothing here
- * promises delivery. An implementation says whether it got the job onto a link, and
- * the session's log is where that answer is written down.
- *
- * **An implementation never writes the log.** One user action is one entry,
- * appended by the command handler in the same transaction as the row change it
- * implies. A dispatcher that also appended would make a click two entries in two
- * transactions. Until the relay exists this is bound to an adapter that answers
- * `{ delivered: false, hints: ['host_offline'] }` and does nothing else, which is
- * why every method returns the same small outcome rather than a job id.
- */
 export interface SessionDispatchOutcome {
   /** Whether the job reached a live link to the host. */
   delivered: boolean;
@@ -82,6 +66,18 @@ export interface SessionImageSpec {
   data: Buffer;
 }
 
+/**
+ * What the module that owns the runner link implements so a session's work reaches a
+ * host.
+ *
+ * A port, not a queue: the desired state is the session row and the outbox is already
+ * durable, so there is no `jobs` table and nothing here promises delivery. An
+ * implementation says whether it got the job onto a link; the log records the answer.
+ *
+ * **An implementation never writes the log.** One user action is one entry, appended
+ * by the command handler in the same transaction as its row change; a dispatcher that
+ * also appended would make a click two entries in two transactions.
+ */
 export interface SessionDispatchPort {
   /** Make the directories, the checkouts and window 0, then launch the agent. */
   create(session: WorkSessionEntity, spec: SessionLaunchSpec): Promise<SessionDispatchOutcome>;
@@ -91,7 +87,6 @@ export interface SessionDispatchPort {
   restart(session: WorkSessionEntity, spec: SessionLaunchSpec): Promise<SessionDispatchOutcome>;
   /** Push each branch, then remove the worktrees and prune. */
   close(session: WorkSessionEntity, spec: SessionCloseSpec): Promise<SessionDispatchOutcome>;
-  /** Add a repository to a session that is already running. */
   addCheckout(
     session: WorkSessionEntity,
     checkout: SessionCheckoutEntity,
