@@ -122,7 +122,6 @@ test.describe('deleting the account', () => {
   });
 
   test('removes the account, its hosts, its workspace and the work in it', async () => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const { api, user, userId } = await signedUpContext('deleteme');
     const hostId = await pairHost(api, 'Doomed box');

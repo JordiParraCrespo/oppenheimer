@@ -12,8 +12,7 @@ import { DevicesSection } from '../sections/devices';
  * refetch that changed nothing renders no row; a minute renders the "last
  * active" lines (`RelativeTime` owns its tick) and no row.
  *
- * Runs in the `render-budget` project, without the React Compiler. The rows
- * are counted at `SettingsRow`, the design system's row.
+ * The rows are counted at `SettingsRow`, the design system's row.
  */
 
 vi.mock('react-i18next', () => ({

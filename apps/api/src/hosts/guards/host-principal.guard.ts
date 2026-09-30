@@ -7,19 +7,17 @@ import { HOST_PRINCIPAL, type HostPrincipalRequest } from '../decorators/current
 import { HostErrors } from '../domain/hosts.errors';
 
 /**
- * Admits a request only when the credential on it is a host's own boot
- * assertion, and leaves the host it named where `@CurrentHost()` can read it.
+ * Admits a request only when its credential is a host's own boot assertion, and
+ * leaves the named host where `@CurrentHost()` can read it.
  *
- * There is no person behind such a request — no session, no roles, no scopes —
- * so the routes it guards carry `@NoPolicy` and this guard is the whole of their
- * authorization. Everyone else is refused here, including a perfectly valid API
- * token: a route that exists for a machine to call about itself is not a route a
- * person's credential should reach.
+ * No person is behind such a request (no session, roles or scopes), so its routes
+ * carry `@NoPolicy` and this guard is their whole authorization. Everyone else is
+ * refused, a valid API token included: a route for a machine to call about itself is
+ * not one a person's credential should reach.
  *
- * The credential is resolved through the same port every other guard uses, and
- * the resolution is memoized per request — which matters more than it looks:
- * verifying an assertion burns its `jti`, so a second verification of the same
- * token would refuse itself as a replay.
+ * Resolution goes through the shared port, memoized per request, and that matters:
+ * verifying an assertion burns its `jti`, so a second verification would refuse the
+ * token as a replay.
  */
 @Injectable()
 export class HostPrincipalGuard implements CanActivate {

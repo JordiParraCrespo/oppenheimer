@@ -12,15 +12,13 @@ const PLATFORM_ROLES: readonly string[] = [ROLES.SUPERADMIN, ROLES.ADMIN];
 
 /**
  * Resolves the caller's {@link AccessScope} and attaches it to the request.
+ * Per controller rather than global: it costs two queries, and only routes
+ * touching a scoped resource need it.
  *
- * Applied per controller rather than globally: resolving membership costs two
- * queries (team membership, then grants), and only routes touching a scoped
- * resource need it.
- *
- * Order matters — this runs after the auth guards have populated
- * `request.user` and stamped `request.tenant`. The scope is resolved in that
- * tenant, the same organization the ability was built in, so the CASL
- * conditions and the SQL predicate always name one organization.
+ * It runs after the auth guards have populated `request.user` and stamped
+ * `request.tenant`, and resolves in that tenant, so the CASL conditions and
+ * the SQL predicate name one organization. The controller puts the scope on
+ * the command or query; a handler never reaches outside the bus for it.
  */
 @Injectable()
 export class AccessScopeInterceptor implements NestInterceptor {

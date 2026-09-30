@@ -34,7 +34,6 @@ async function mintToken(
   }
 }
 
-/** A context that authenticates purely with a bearer API token. */
 async function tokenContext(secret: string): Promise<APIRequestContext> {
   const { request } = await import('@playwright/test');
   return request.newContext({

@@ -1,8 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 /**
- * A repository as GitHub answered for it a moment ago.
- *
  * Nothing here is stored: the list is the installation's, GitHub owns it, and a
  * repository that leaves the installation simply stops appearing
  * (`product/versions/mvp/03-control-plane.md`). `githubRepoId` is therefore the
@@ -36,7 +34,6 @@ export class RepositoryResponseDto {
   pushedAt!: string | null;
 }
 
-/** A branch of one repository, offered as a checkout's base. */
 export class RepositoryBranchResponseDto {
   @ApiProperty({ example: 'main' })
   name!: string;

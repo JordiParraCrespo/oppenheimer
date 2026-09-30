@@ -93,8 +93,6 @@ function headerOf(init: RequestInit, name: string): string | undefined {
 
 describe('configuration', () => {
   it('asks the capability rather than re-deriving one of its own', () => {
-    // The two used to be different subsets, so a deployment with no App slug
-    // reported `github_app: false` and still answered `POST /installations` 201.
     expect(build([]).adapter.isConfigured()).toBe(true);
     expect(build([], { configured: false }).adapter.isConfigured()).toBe(false);
   });
@@ -201,7 +199,6 @@ describe('minting a repository token', () => {
   });
 
   it('reports a rejected App credential as a configuration problem', async () => {
-    // A 401 is never the caller's fault: the App key did not verify.
     await expect(
       build([{ status: 401 }]).adapter.mintRepositoryToken(45678901, 831004242),
     ).rejects.toMatchObject({ code: 'GITHUB_002' });
@@ -226,7 +223,6 @@ describe('minting a repository token', () => {
       failing,
     );
 
-    // A timeout is never a 4xx, whatever the call site nominated for one.
     await expect(adapter.mintRepositoryToken(45678901, 831004242)).rejects.toMatchObject({
       code: 'GITHUB_009',
     });
@@ -330,8 +326,6 @@ describe('the installation claim proof', () => {
   });
 
   it('refuses a code GitHub rejects with a 200 and an error field', async () => {
-    // The one failure that matters here does not come back as a 4xx, so a status
-    // check alone would read it as success.
     const { adapter, http } = build([{ body: { error: 'bad_verification_code' } }]);
 
     await expect(adapter.listUserInstallations('stale')).rejects.toMatchObject({
@@ -353,14 +347,11 @@ describe('the installation claim proof', () => {
       accountLogin: 'acme-labs',
       accountType: 'Organization',
       repositorySelection: 'selected',
-      // The part a redirect cannot be trusted for.
       suspendedAt: new Date('2026-09-19T09:00:00.000Z'),
     });
   });
 
   it('refuses an installation GitHub describes without an account', async () => {
-    // Inventing 'unknown' / 'Organization' here would put a fiction in a column
-    // the console shows, and pass the aggregate's checks by luck of the string.
     await expect(
       build([{ body: { ...INSTALLATION, account: null } }]).adapter.readInstallation(45678901),
     ).rejects.toMatchObject({ code: 'GITHUB_009' });

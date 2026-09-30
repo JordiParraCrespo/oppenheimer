@@ -10,7 +10,7 @@ import { AutomationErrors } from '../../domain/automations.errors';
 import { CreateAutomationCommand } from './create-automation.command';
 
 /**
- * Create automation. What it names is confirmed as the caller — who becomes its
+ * What it names is confirmed as the caller — who becomes its
  * owner — and it starts listening the moment it is saved: its schedule
  * triggers get their first `nextFireAt` in the same write.
  */

@@ -34,24 +34,16 @@ export function RouteNotFound({ children }: { children?: ReactNode }) {
 
 /**
  * A thrown render error, with the one action that has ever fixed one: try
- * again. `router.invalidate()` re-runs the failed match rather than reloading
- * the document, so a failure that was the network's costs a retry and not the
- * whole app's state.
+ * again. `router.invalidate()` re-runs the failed match rather than reloading,
+ * so a network failure costs a retry, not the whole app's state. `error` is
+ * `unknown`, as a route's `errorComponent` is handed, so it assigns without a
+ * cast.
  *
- * `error` is `unknown`, which is what a route's `errorComponent` is handed and
- * what a `throw` is worth: anything at all can be thrown, and a component that
- * declares `Error` is one `throw 'nope'` away from reading `.message` off a
- * string. Typing it honestly is also what makes this assignable to
- * `errorComponent` without a cast.
- *
- * The message shown is never the error's own: what a bundler throws is not a
- * sentence anyone can act on. A failure from a request — one carrying the
- * status the server answered, or the code a repository names it by — is
- * resolved like any other, so an answered failure reads by its code and an
- * unanswered one as "could not reach the server"; its code and correlation id
- * are shown so a bug report can quote them. A plain render throw carries
- * neither and gets the fallback sentence: the resolver would otherwise read
- * its missing status as the connection's fault.
+ * The message is never the error's own. A request failure (it carries the
+ * server's status or a repository's code) is resolved like any other, and its
+ * code and correlation id are shown for a bug report. A plain render throw
+ * carries neither and gets the fallback sentence, since the resolver would
+ * read its missing status as the connection's fault.
  */
 export function RouteError({ error }: { error: unknown }) {
   const { t } = useTranslation();
@@ -89,7 +81,6 @@ export function RouteError({ error }: { error: unknown }) {
   );
 }
 
-/** Whether a throw came from a request: it carries an HTTP status or a named code. */
 function isRequestFailure(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) return false;
   const { status, code } = error as { status?: unknown; code?: unknown };

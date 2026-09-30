@@ -5,7 +5,6 @@ import type { InvitationAuthPort } from '../../infrastructure/invitation-auth.po
 import { INVITATION_AUTH } from '../../organizations.di-tokens';
 import { RejectInvitationCommand } from './reject-invitation.command';
 
-/** Declines an invitation the caller was sent. */
 @CommandHandler(RejectInvitationCommand)
 export class RejectInvitationCommandHandler
   implements ICommandHandler<RejectInvitationCommand, AggregateID>

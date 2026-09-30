@@ -68,8 +68,6 @@ describe('the session fold', () => {
   });
 
   it('leaves the lifecycle alone when a session is stopped', () => {
-    // Stopping ends the processes and leaves the worktrees, so the work is exactly
-    // as unfinished as it was. `stoppedAt` is the whole of what changes.
     const fold = foldSessionLog([
       entry(SESSION_EVENT_KINDS.REQUESTED),
       entry(SESSION_EVENT_KINDS.STARTED),

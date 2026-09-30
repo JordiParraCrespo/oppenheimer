@@ -7,16 +7,12 @@ import type { AutomationRunOrmEntity } from '../database/automation-run.orm-enti
 import { AutomationRunRepository } from '../database/automation-run.repository';
 
 /**
- * The sweep reads an `UPDATE … RETURNING`, and TypeORM does not hand those
- * back the way it hands back a `SELECT`: `PostgresQueryRunner.query` answers
- * `[rows, affected]` for `UPDATE` and `DELETE`, and the rows alone for
- * everything else. Read as rows, the sweep looped over an array and a number,
- * staged two jobs carrying `runId: undefined` on every tick — which the
- * processor logged as an unknown job and dropped — and never re-dispatched a
- * single run that was actually due.
- *
- * So the harness answers in the driver's shape rather than the convenient
- * one; a sweep written against the convenient shape fails here.
+ * TypeORM's `PostgresQueryRunner.query` answers `[rows, affected]` for `UPDATE` and
+ * `DELETE` and the rows alone for everything else, and the sweep reads an
+ * `UPDATE … RETURNING`. Read as rows, the sweep staged two jobs carrying
+ * `runId: undefined` on every tick and never re-dispatched a run that was due. So the
+ * harness answers in the driver's shape; a sweep written against the convenient one
+ * fails here.
  */
 function harness(rows: { id: string; automationId: string; cause: string }[]) {
   const staged: { queue: string; jobName: string; payload: Record<string, unknown> }[] = [];

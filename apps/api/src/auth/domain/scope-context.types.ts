@@ -32,7 +32,6 @@ export interface UserCredentialContext {
   kind: string;
   /** Id of the token record (API token id, or a digest of the OAuth token). */
   credentialId: string;
-  /** The user the credential acts on behalf of. */
   userId: string;
   /**
    * The owner's current record. Resolved with the credential so that a
@@ -50,15 +49,12 @@ export interface UserCredentialContext {
 /**
  * What a credential acting **for a machine** authorizes: a host's boot
  * assertion, verified by the `hosts` module against the key that host
- * registered with and contributed to this kernel as the `host` kind.
+ * registered with, and contributed as the `host` kind.
  *
- * A kind's *shape* is kernel vocabulary even when its resolution is not, and
- * this one is a variant of its own rather than a user credential with empty
- * fields: a host acts for nobody, so there is no `owner` to read off it and the
- * compiler is what says so. It carries no scopes at all, which is the whole of
- * what the guards need to know — every route that declares a scope refuses it by
- * the ordinary rule, and the only routes open to it are the ones that declare
- * none and say so with `@AllowAnyScope()`.
+ * A variant of its own rather than a user credential with empty fields: a host
+ * acts for nobody, so there is no `owner`, and the compiler says so. It carries
+ * no scopes, so every route that declares one refuses it; only routes marked
+ * `@AllowAnyScope()` are open to it.
  */
 export interface HostCredentialContext {
   kind: 'host';
@@ -68,7 +64,6 @@ export interface HostCredentialContext {
   /** Always empty. A machine holds no permissions of its own. */
   scopes: Scope[];
   resourceScope: ResourceScope;
-  /** When the presented assertion stops being valid. */
   expiresAt: Date | null;
 }
 
@@ -93,12 +88,10 @@ export function isHostCredential(
  * A request as the auth layer sees it: the headers a credential arrives in,
  * plus what the guards attach once they have resolved it.
  *
- * Deliberately **structural rather than an `express.Request`**. Every
- * use-case controller in the app names this type, and making it extend the
- * framework's request would drag express into each of them — and into the
- * layer this file sits in. Express's `Request` satisfies this shape, so
- * `@Req() request: ScopedRequest` and `getRequest<ScopedRequest>()` both work
- * unchanged; nothing here depends on a member express alone provides.
+ * Structural rather than an `express.Request`, so neither this layer nor the
+ * use-case controllers that name it depend on express. Express's `Request`
+ * satisfies it, so `@Req() request: ScopedRequest` and
+ * `getRequest<ScopedRequest>()` work unchanged.
  */
 export interface ScopedRequest {
   headers: IncomingHttpHeaders;

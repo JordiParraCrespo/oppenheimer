@@ -1,7 +1,6 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiProblemResponse } from '@oppenheimer/backend-core';
 
-/** The problems every workspace (Better Auth team) route can answer with. */
 export const WorkspaceProblemResponses = () =>
   applyDecorators(
     ApiProblemResponse({

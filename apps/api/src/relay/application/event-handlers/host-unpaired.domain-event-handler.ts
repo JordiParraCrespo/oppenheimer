@@ -6,15 +6,11 @@ import type { LinkRegistryPort } from '../../../links/application/link-registry.
 import { LINK_REGISTRY } from '../../../links/links.di-tokens';
 
 /**
- * Closes the link of a host the moment it is unpaired.
- *
- * Unpairing is a row in the hosts module; the socket is here. Without this the
- * machine would keep its link until its next heartbeat found it unpaired — and
- * on an instance that does not hold the link, that heartbeat check is still what
- * closes it, because the registry this reads is per process.
- *
- * The code is terminal: the runner records that it was unpaired and stops
- * dialling, rather than walking its reconnect ladder forever.
+ * Closes the link of a host the moment it is unpaired, rather than at its next
+ * heartbeat. The registry is per process, so on an instance not holding the link
+ * that heartbeat check is still what closes it. The close code is terminal: the
+ * runner records that it was unpaired and stops dialling instead of walking its
+ * reconnect ladder forever.
  */
 @Injectable()
 export class HostUnpairedDomainEventHandler {

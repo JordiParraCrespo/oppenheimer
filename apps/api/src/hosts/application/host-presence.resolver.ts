@@ -69,11 +69,8 @@ export class HostPresenceResolver implements HostPresencePort {
       return standing;
     }
     // Presence first: it is the write every beat owes, and the one `online`
-    // reads. The host row itself is not touched — a heartbeat is not a change
-    // to the host (`product/versions/mvp/15-host-metadata.md`). Unscoped, by
-    // design: the machine proved who it is with a signature on the link, and
-    // there is no person on a heartbeat to scope by. The statement is also the
-    // pairing check, so an unpaired host is answered without a separate read.
+    // reads. The statement is also the pairing check, so an unpaired host is
+    // answered without a separate read.
     const paired = await this.metadata.recordVitalsIfPaired(
       hostId,
       {
@@ -105,8 +102,7 @@ export class HostPresenceResolver implements HostPresencePort {
   }
 
   /**
-   * Whether the host's owner may still act (`isAccessAllowed`, through the
-   * port every credential kind asks). The handshake refuses a banned or
+   * The handshake refuses a banned or
    * deactivated owner's host; this is what closes a link that was already open
    * when the ban landed, on whichever replica holds it. Asked on every hello
    * and at most once per `OWNER_RECHECK_MS` on heartbeats, so the common beat
@@ -118,8 +114,6 @@ export class HostPresenceResolver implements HostPresencePort {
     if (!hello && memo && at.getTime() - memo.checkedAt < OWNER_RECHECK_MS) return 'recorded';
     let ownerUserId = memo?.ownerUserId;
     if (!ownerUserId) {
-      // Unscoped, by design: the machine proved who it is with a signature on
-      // the link, and there is no person on a heartbeat to scope by.
       const found = await this.hosts.findOneByIdForMachine(hostId);
       if (found.isNone() || found.unwrap().isUnpaired) return 'unpaired';
       ownerUserId = found.unwrap().ownerUserId;

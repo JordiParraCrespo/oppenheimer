@@ -73,12 +73,10 @@ export class AuthService {
   }
 
   /**
-   * Restores the session on app start by asking the auth client whether a
-   * valid session exists, and syncs the `isAuthenticated` store accordingly.
-   *
-   * Returns the restored user's id, or `null` when there is no session. The
-   * caller uses it to decide whether a persisted query cache from an earlier
-   * run still belongs to the person now sitting in front of the app.
+   * Runs on app start. Returns the restored user's id, or `null` when there
+   * is no session. The caller uses it to decide whether a persisted query
+   * cache from an earlier run still belongs to the person now sitting in
+   * front of the app.
    */
   async restoreSession(): Promise<string | null> {
     const session = await this.authRepository.getSession();
@@ -121,13 +119,12 @@ export class AuthService {
   }
 
   /**
-   * The server stopped honouring the session — it expired, or was revoked from
-   * another device — while the app still believed in it.
+   * The server stopped honouring the session (expired, or revoked from another
+   * device) while the app still believed in it.
    *
-   * Not a logout: the server has already forgotten the session, so there is
-   * nothing to sign out of, and the analytics identity is kept because the
-   * same person will most likely sign straight back in. Flipping the store is
-   * what matters: the router's guards read it and send the user to /login.
+   * Not a logout: there is nothing left to sign out of, and the analytics
+   * identity is kept because the same person will most likely sign back in.
+   * The router's guards read the flipped store and send the user to /login.
    *
    * Returns whether the store changed, so a burst of failing queries expires
    * the session once.
@@ -140,8 +137,6 @@ export class AuthService {
   }
 
   /**
-   * Emits the sign-in event for an OAuth round-trip, if one just completed.
-   *
    * The marker is cleared first so a reload can't double-count it. Note this
    * reports `USER_SIGNED_IN` for both new and returning users — the OAuth
    * callback carries nothing that distinguishes them; providers derive
@@ -167,8 +162,6 @@ export class AuthService {
   }
 
   /**
-   * Resolves who just authenticated and reports it.
-   *
    * Deliberately not awaited: learning the user id costs a `getSession()`
    * round-trip, and analytics must never sit in the critical path of a login.
    * The caller's promise resolves as soon as auth itself is done; the identify
@@ -180,7 +173,6 @@ export class AuthService {
     void this.authRepository
       .getSession()
       .then((session) => {
-        // Superseded by a logout that happened while this was in flight.
         if (epoch !== this.identityEpoch) return;
 
         if (session) {

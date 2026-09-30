@@ -10,7 +10,6 @@ import { Permission } from '../../domain/value-objects/permission.value-object';
 import { ROLE_REPOSITORY } from '../../roles.di-tokens';
 import { CreateRoleCommand } from './create-role.command';
 
-/** Creates a new custom role with its initial permission set. */
 @CommandHandler(CreateRoleCommand)
 export class CreateRoleCommandHandler implements ICommandHandler<CreateRoleCommand, AggregateID> {
   constructor(
@@ -37,8 +36,6 @@ export class CreateRoleCommandHandler implements ICommandHandler<CreateRoleComma
       await this.grantPolicy.assertCanCreateGlobal(actor);
     }
 
-    // No privilege escalation: the author must already hold everything they
-    // are putting on the role.
     await this.grantPolicy.assertGrantable(actor, command.permissions);
 
     const existing = await this.roleRepository.findOneByName(command.name, organizationId);
@@ -47,8 +44,6 @@ export class CreateRoleCommandHandler implements ICommandHandler<CreateRoleComma
     const role = RoleEntity.createNew({
       name: command.name,
       description: command.description,
-      // A role created inside an organization belongs to it. Global roles are
-      // created only on purpose (`global`), by a platform admin or an internal caller.
       organizationId,
       permissions: command.permissions.map((permission) => Permission.fromDefinition(permission)),
     });

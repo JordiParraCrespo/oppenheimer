@@ -103,7 +103,7 @@ export abstract class Entity<EntityProps> {
     return Object.freeze(result);
   }
 
-  /** Invariant validation. Called on construction and after mutations. */
+  /** Called on construction and after mutations. */
   public abstract validate(): void;
 
   private setId(id: AggregateID): void {

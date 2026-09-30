@@ -64,7 +64,6 @@ export class FlagRuleDto {
   serve!: FlagServeDto;
 }
 
-/** A flag's targeting on this deployment. */
 export class FeatureFlagConfigResponseDto {
   @ApiProperty({ description: 'The master switch. Off serves the default to everyone.' })
   enabled!: boolean;
@@ -145,7 +144,6 @@ export class FlagEvaluationResponseDto {
   ruleId?: string;
 }
 
-/** The caller's evaluated client flags. */
 export class ClientFeatureFlagsResponseDto {
   @ApiProperty({ description: 'Changes whenever any flag or segment configuration does.' })
   version!: string;

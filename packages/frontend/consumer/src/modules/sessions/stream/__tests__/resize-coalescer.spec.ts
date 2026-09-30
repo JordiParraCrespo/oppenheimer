@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createResizeCoalescer } from '../resize-coalescer';
 
-/** A clock the test advances by hand. */
 function manualClock() {
   let now = 0;
   let timers: { at: number; fn: () => void }[] = [];

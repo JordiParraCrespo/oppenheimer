@@ -87,8 +87,6 @@ export class FireEventTriggersCommandHandler
         automation.id,
         since,
         (recent) => {
-          // Our own App's event — a run's push, its comment — never starts
-          // another run, and is recorded as a skip so the Runs tab can say why.
           const verdict = firstRefusal(
             () => loopGuard(command.actorIsOwnApp),
             () => rateGuard(limits, recent, false),

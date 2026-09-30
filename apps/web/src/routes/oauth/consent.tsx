@@ -3,8 +3,6 @@ import { consentSearchSchema } from '@/features/auth/lib/consent';
 import { OAuthConsentScreen } from '@/features/auth/screens/oauth-consent';
 
 /**
- * OAuth consent screen.
- *
  * Signing in first is required, so an unauthenticated visitor is bounced to
  * the login page and returned here.
  */

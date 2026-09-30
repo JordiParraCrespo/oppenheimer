@@ -1,4 +1,3 @@
-export * from './attach.js';
 /**
  * The wire, and only the wire.
  *
@@ -8,6 +7,7 @@ export * from './attach.js';
  * would drag `z.toJSONSchema` into every runtime peer that only needs to parse a
  * message.
  */
+export * from './attach.js';
 export * from './hint.js';
 export * from './link.js';
 export * from './messages.js';

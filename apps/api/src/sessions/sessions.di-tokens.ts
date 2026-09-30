@@ -1,6 +1,4 @@
 /**
- * DI tokens for the sessions module.
- *
  * Three of them are published surface. `SESSION_DISPATCH` is what `links/` binds
  * to send a session's work to a host over the runner link; this module imports
  * that binding rather than providing one. `RECORD_SESSION_EVENTS` is the other

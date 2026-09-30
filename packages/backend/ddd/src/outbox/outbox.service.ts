@@ -21,7 +21,6 @@ export interface OutboxServiceOptions {
 export interface StageJobParams {
   /** BullMQ queue name the relay should hand this row to. */
   queue: string;
-  /** BullMQ job name. */
   jobName: string;
   payload: Record<string, unknown>;
   /** Why this job is owed — recorded on the row so it is self-explaining. */
@@ -349,10 +348,11 @@ export class OutboxService {
   /**
    * Ask the relay to drain soon, if one is registered. `transaction()` and
    * `writeWithEvents()` call it after their commit; call it yourself only
-   * after a transaction you opened some other way. Never waits for delivery and never throws: the rows
-   * are durable and the relay's next poll retries them, so neither the
-   * delivery backlog nor a delivery hiccup reaches the request whose state
-   * change already committed. A caller does not know when its listeners run.
+   * after a transaction you opened some other way. Never waits for delivery
+   * and never throws: the rows are durable and the relay's next poll retries
+   * them, so neither the delivery backlog nor a delivery hiccup reaches the
+   * request whose state change already committed. A caller does not know
+   * when its listeners run.
    */
   wake(): void {
     if (!this.drainer) return;

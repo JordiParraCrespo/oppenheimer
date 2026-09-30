@@ -5,12 +5,9 @@ import { ACCOUNT_SESSIONS } from '../../user.di-tokens';
 import type { AccountSessionsPort } from '../account-sessions.port';
 
 /**
- * Revokes a deactivated account's sessions and cached delegated sessions.
- *
- * The access rule refuses the account from its next request on; this clears
- * what it left behind. It runs off the outbox, so "the flag was written" and
- * "the revocation is owed" commit together and a failed revocation is retried
- * by the relay, and the deactivation use case knows nothing about sessions. The relay hands over the
+ * Runs off the outbox, so "the flag was written" and "the revocation is owed"
+ * commit together and a failed revocation is retried by the relay, and the
+ * deactivation use case knows nothing about sessions. The relay hands over the
  * event's payload, a plain object, so only its fields are read.
  */
 @Injectable()

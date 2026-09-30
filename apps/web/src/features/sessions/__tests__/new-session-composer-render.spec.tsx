@@ -3,19 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NewSessionComposer } from '../components/new-session-composer';
 
 /**
- * The composer's render budget.
- *
- * Not a test of what New session shows — of what it *costs*. The screen holds a
- * host chip, a repository picker with a branch pane, an agent-and-model button,
- * a permission menu and an effort slider, and every one of them is a sibling of
- * the textarea. If the draft lived in the section above them, every keystroke
- * would re-render all five, plus whatever the three queries feeding them
- * produced.
- *
- * This assertion is what keeps the draft where it is. It runs under the app's
- * `render-budget` project, which does **not** enable the React Compiler — so
- * what it measures is the structure rather than the build step that would
- * otherwise hide it.
+ * The composer's render budget: what New session *costs*, not what it shows.
+ * The chips are siblings of the textarea, so a draft held above them would
+ * re-render all of them on every keystroke. This keeps the draft where it is.
  */
 
 vi.mock('react-i18next', () => ({
@@ -24,7 +14,6 @@ vi.mock('react-i18next', () => ({
 
 afterEach(cleanup);
 
-/** A foot-row control that counts how often it is asked to render. */
 function Chip({ onRender, label }: { onRender: () => void; label: string }) {
   onRender();
   return <button type="button">{label}</button>;
@@ -77,10 +66,6 @@ describe('NewSessionComposer', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  /**
-   * A failed create leaves the sentence on screen. Clearing on submit would
-   * throw away a paragraph somebody wrote because the network dropped it.
-   */
   it('keeps the draft after submitting, so a failure loses nothing', () => {
     render(<NewSessionComposer onSubmit={vi.fn()} />);
 

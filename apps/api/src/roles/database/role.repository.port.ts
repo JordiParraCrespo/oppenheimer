@@ -9,10 +9,6 @@ export interface FindRolesParams {
   organizationId?: string | null;
 }
 
-/**
- * Port for persisting and querying the role aggregate. Implemented by the
- * TypeORM adapter in `role.repository.ts`.
- */
 export interface RoleRepositoryPort extends RepositoryPort<RoleEntity> {
   findOneById(id: string, organizationId?: string | null): Promise<Option<RoleEntity>>;
   findOneByName(name: string, organizationId?: string | null): Promise<Option<RoleEntity>>;

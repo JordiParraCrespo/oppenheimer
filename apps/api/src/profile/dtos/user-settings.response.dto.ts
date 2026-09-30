@@ -2,8 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { LOCALES, TABLE_DENSITIES, THEMES } from '@oppenheimer/shared';
 
 /**
- * A user's workspace preferences. Returned with the defaults filled in when the
- * user has never saved any, so a client never has to decide what "unset" means.
+ * Returned with the defaults filled in when the user has never saved any, so a
+ * client never has to decide what "unset" means.
  */
 export class UserSettingsResponseDto {
   @ApiProperty()

@@ -8,5 +8,4 @@ export interface FeatureFlagView {
   entity: FeatureFlagEntity | undefined;
 }
 
-/** Every flag in the catalog, joined to its targeting on this deployment. */
 export class FindFeatureFlagsQuery extends QueryBase {}

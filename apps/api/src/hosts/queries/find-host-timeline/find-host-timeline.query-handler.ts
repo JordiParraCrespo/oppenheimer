@@ -11,9 +11,9 @@ import { HOST_METADATA_REPOSITORY, HOST_REPOSITORY } from '../../hosts.di-tokens
 import { FindHostTimelineQuery } from './find-host-timeline.query';
 
 /**
- * A host's timeline. The host is read through the scoped repository first, so
- * the timeline of a host the caller cannot see is not found rather than empty,
- * and an unpaired host's history stays readable to its owner.
+ * The host is read through the scoped repository first, so the timeline of a
+ * host the caller cannot see is not found rather than empty, and an unpaired
+ * host's history stays readable to its owner.
  */
 @QueryHandler(FindHostTimelineQuery)
 export class FindHostTimelineQueryHandler

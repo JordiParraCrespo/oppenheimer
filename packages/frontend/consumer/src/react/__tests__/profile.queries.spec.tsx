@@ -57,7 +57,6 @@ interface CallRecorder {
   mock: { calls: unknown[][] };
 }
 
-/** Did anything invalidate exactly `key`? */
 function invalidated(spy: CallRecorder, key: readonly unknown[]): boolean {
   return spy.mock.calls.some(([filters]) => {
     const queryKey = (filters as { queryKey?: readonly unknown[] })?.queryKey ?? [];

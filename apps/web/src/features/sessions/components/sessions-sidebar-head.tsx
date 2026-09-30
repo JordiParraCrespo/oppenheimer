@@ -8,15 +8,11 @@ import { SessionFilterChips } from './session-filter-chips';
 import { SessionsFilterMenu } from './sessions-filter-menu';
 
 /**
- * The sidebar's head: New session, the Projects line (count, New project,
- * the filter menu), the live search and the active-filter chips.
- *
- * Props in, choice out: the filters and the settled query are the section's
- * state, because the list under the head is what they narrow; the half-typed
- * query is the search box's own. `projectCount` is
- * absent until the projects have settled — a zero under a request that has
- * not answered reads as "you have none", which is a different thing from
- * "not yet known" — and the filter menu waits for the sessions the same way.
+ * The sidebar's head. The filters and the settled query are the section's
+ * state, because the list below is what they narrow; the half-typed query is
+ * the search box's own. `projectCount` is absent until the projects settle,
+ * since a zero before the answer reads as "you have none"; the filter menu
+ * waits for the sessions the same way.
  */
 export function SessionsSidebarHead({
   newSession,
@@ -41,7 +37,6 @@ export function SessionsSidebarHead({
   onFiltersChange: (patch: Partial<SessionFilters>) => void;
   onFiltersClear: () => void;
   onFacetClear: (key: SessionFacet) => void;
-  /** The settled search, once per burst of typing. */
   onQueryChange: (query: string) => void;
   onNewProject: () => void;
 }) {

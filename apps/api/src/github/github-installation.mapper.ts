@@ -47,7 +47,6 @@ export class GithubInstallationMapper
     const record = new GithubInstallationOrmEntity();
     record.id = entity.id;
     record.organizationId = entity.organizationId;
-    // A bigint column, which the driver exchanges as a string.
     record.githubInstallationId = String(entity.githubInstallationId);
     record.accountLogin = entity.accountLogin;
     record.accountType = entity.accountType;
@@ -91,7 +90,6 @@ export class GithubInstallationMapper
     return dto;
   }
 
-  /** What GitHub reported about a claim → what the aggregate takes to refresh. */
   toRefreshProps(
     claim: GithubInstallationClaim,
     installedByUserId: string,
@@ -101,8 +99,6 @@ export class GithubInstallationMapper
       accountType: claim.accountType,
       repositorySelection: claim.repositorySelection,
       installedByUserId,
-      // GitHub's own answer, carried through rather than cleared: a reconnect
-      // must not be a way to unsuspend an installation GitHub still holds.
       suspendedAt: claim.suspendedAt,
     };
   }

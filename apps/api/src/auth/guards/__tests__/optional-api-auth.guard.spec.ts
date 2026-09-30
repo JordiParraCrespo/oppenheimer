@@ -26,7 +26,6 @@ describe('OptionalApiAuthGuard', () => {
 
     await expect(guard.canActivate(contextFor(request))).resolves.toBe(true);
     expect(request).toMatchObject({ user: null, session: null, scopeContext: null });
-    // An anonymous caller still acts in the organization a route names.
     expect(tenants.stamp).toHaveBeenCalledWith(expect.anything(), request);
   });
 
