@@ -92,7 +92,9 @@ describe('RelayDispatchAdapter', () => {
     expect(parsed.sessionId).toBe(entity.id);
     expect(parsed.organizationSlug).toBe('jordi');
     expect(parsed.sessionSlug).toBe('bold-otter-3f9a7k');
-    expect(parsed.launch).toEqual({ permission: 'ask' });
+    // The conversation is the session's own id: it is what lets the agent's
+    // transcript be reopened once the pane is gone.
+    expect(parsed.launch).toEqual({ permission: 'ask', conversation: entity.id });
     expect(parsed.prompt).toBe('Fix the wallet list empty state');
     expect(parsed.checkouts).toEqual([
       expect.objectContaining({ githubRepoId: 42, repositoryFullName: 'acme/xrp-mobile' }),

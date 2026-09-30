@@ -86,7 +86,15 @@ export class AutomationRunMapper {
     });
   }
 
-  toRecord(run: AutomationRunEntity): Omit<AutomationRunOrmEntity, 'createdAt' | 'updatedAt'> {
+  /**
+   * `claimedAt` is left out on purpose: the reservation is the repository's,
+   * written and read by its own statements under the host lock, and the run
+   * aggregate does not model it. Leaving it unset is what keeps a save from
+   * clobbering a slot another dispatch is holding.
+   */
+  toRecord(
+    run: AutomationRunEntity,
+  ): Omit<AutomationRunOrmEntity, 'createdAt' | 'updatedAt' | 'claimedAt'> {
     return {
       id: run.id,
       organizationId: run.organizationId,

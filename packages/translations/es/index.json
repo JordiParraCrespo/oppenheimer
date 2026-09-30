@@ -409,8 +409,12 @@
       "details": "Detalles del host: {{detail}}"
     },
     "closed": {
-      "description": "Esta sesión se ha detenido. Su trabajo está en su rama.",
-      "deleted": "Esta sesión se eliminó. Su worktree ya no está en el host; los commits ya enviados siguen en el remoto."
+      "description": "Esta sesión se ha detenido. Su trabajo está en {{branch}}, y al reiniciarla el terminal vuelve donde lo dejó.",
+      "deleted": "Esta sesión se eliminó. Su worktree ya no está en el host; los commits ya enviados siguen en el remoto.",
+      "descriptionNoBranch": "Esta sesión se ha detenido. Al reiniciarla el terminal vuelve donde lo dejó.",
+      "restart": "Reiniciar",
+      "restarting": "Reiniciando",
+      "restartFailed": "No se ha podido reiniciar la sesión."
     },
     "new": {
       "title": "Nueva sesión",
@@ -526,8 +530,8 @@
         "refused": "El host se ha negado a abrir este terminal."
       },
       "starting": {
-        "title": "Esperando al agente",
-        "description": "La sesión está en marcha. El agente dibuja su primera pantalla en cuanto termina de arrancar."
+        "title": "Todavía no hay nada en pantalla",
+        "description": "La conexión está activa. Esto se llena en cuanto el agente dibuja: una sesión nueva cuando termina de arrancar, y una anterior cuando se reenvía su historial."
       }
     },
     "sidebar": {
@@ -881,6 +885,14 @@
       "confirm": "Eliminar",
       "deleting": "Eliminando…",
       "failed": "No se pudo eliminar la automatización."
+    },
+    "runClosed": {
+      "title": "El turno de esta ejecución ha terminado",
+      "description": "Su trabajo está en {{branch}}. Al abrirla en el terminal, la sesión continúa donde la ejecución la dejó.",
+      "descriptionNoBranch": "Al abrirla en el terminal, la sesión continúa donde la ejecución la dejó.",
+      "open": "Abrir en el terminal",
+      "opening": "Abriendo",
+      "backToAutomation": "Volver a la automatización"
     }
   },
   "hosts": {

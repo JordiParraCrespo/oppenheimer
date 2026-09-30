@@ -19,6 +19,16 @@ type Launch struct {
 	// with the levels' meaning it would restart at a level nobody chose, so it
 	// is not sent and the CLI runs at its own default.
 	EffortIsLevel bool `json:"effortIsLevel,omitempty"`
+	// Conversation names the agent's own conversation, so the transcript the
+	// CLI keeps can be found and reopened later. It is the session's id: one
+	// name both sides agree on, rather than the id the CLI would have picked
+	// for itself and never told anyone.
+	//
+	// Resume reopens that conversation instead of starting one. The prompt is
+	// dropped when it is set — a resumed session continues what was said, and
+	// re-sending the first task would replay it.
+	Conversation string `json:"conversation,omitempty"`
+	Resume       bool   `json:"resume,omitempty"`
 	// Prompt is the first task, appended as the trailing positional so it is
 	// in the process's arguments before it starts (02-runner §5). It is kept
 	// for restart only and never logged.
@@ -34,7 +44,10 @@ type Launch struct {
 // next catalog edit reaches this host or fails the build — never drifts.
 type launchMap struct {
 	command string
-	model   []string
+	// always is what every launch of this agent carries, before any choice:
+	// how the session is run rather than what it is asked to do.
+	always []string
+	model  []string
 	// defaultModel is the model a launch that names none runs, which is the
 	// one whose effort levels apply.
 	defaultModel string
@@ -47,6 +60,14 @@ type launchMap struct {
 	effortUnset  string
 	effortLevels map[string][]string
 	prompt       []string
+	// How the agent's own conversation is named at launch and reopened
+	// afterwards. These CLIs keep the transcript themselves, so what a resume
+	// needs is a name both sides agree on: the session's id, pinned here.
+	conversationCreate []string
+	conversationResume []string
+	// The resume form is a subcommand, so it leads the argv instead of
+	// following it.
+	conversationResumeLeads bool
 }
 
 // launchLevel is one permission or effort level: the argv appended to the
@@ -82,12 +103,35 @@ func (l Launch) Args(agent Agent) []string {
 	if !ok {
 		return nil
 	}
-	var args []string
+	args := append([]string(nil), m.always...)
 	if l.Model != "" && m.model != nil {
 		args = append(args, substitute(m.model, "<model>", l.Model)...)
 	}
 	args = append(args, m.permission[l.Permission].argv...)
 	args = append(args, l.effortLevel(m).argv...)
+	// Reopening the conversation, and then there is no first task to send: the
+	// conversation already holds it, and sending it again would ask for the
+	// same work twice.
+	//
+	// An agent that names its own conversation is reopened without an id:
+	// Codex and OpenCode both scope "the last one" to the directory they were
+	// started in, and a session's worktree is its own and never reused, so
+	// that is this session's conversation. Only a resume that asks for an id
+	// needs one.
+	if l.Resume && m.conversationResume != nil && (l.Conversation != "" || !namesConversation(m.conversationResume)) {
+		resume := substitute(m.conversationResume, "<conversation>", l.Conversation)
+		if m.conversationResumeLeads {
+			return append(resume, args...)
+		}
+		return append(args, resume...)
+	}
+	// Naming it, on a create. Never on a resume: an agent that can be told an
+	// id but not reopen one would be handed an id that already exists, which
+	// its CLI refuses — so such an agent restarts the way it always did, with
+	// a fresh conversation and the first task sent again.
+	if !l.Resume && l.Conversation != "" && m.conversationCreate != nil {
+		args = append(args, substitute(m.conversationCreate, "<conversation>", l.Conversation)...)
+	}
 	if l.Prompt != "" && m.prompt != nil {
 		args = append(args, substitute(m.prompt, "<prompt>", l.Prompt)...)
 	}
@@ -154,6 +198,17 @@ func PromptWithImages(prompt string, paths []string) string {
 		return list
 	}
 	return prompt + "\n\n" + list
+}
+
+// namesConversation reports whether a form asks for the conversation's id.
+// A form that does not is reopened by the directory it is started in.
+func namesConversation(vector []string) bool {
+	for _, word := range vector {
+		if word == "<conversation>" {
+			return true
+		}
+	}
+	return false
 }
 
 func substitute(vector []string, placeholder, value string) []string {

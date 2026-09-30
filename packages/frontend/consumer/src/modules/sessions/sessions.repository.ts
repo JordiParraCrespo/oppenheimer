@@ -213,6 +213,19 @@ export class SessionsRepository {
    * not pushed refuses the close unless the caller accepts losing it.
    */
   @MapApiError(SessionsErrors.CLOSE_FAILED)
+  /**
+   * Bring a stopped session's terminal back. The host recreates window 0 in the
+   * worktrees the session already has and reopens the agent's own conversation,
+   * so what comes back is the session as it was rather than a second one.
+   */
+  async restart(id: string): Promise<SessionEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.restartSession({ path: { id } }),
+      SessionsErrors.RESTART_FAILED,
+    );
+    return toEntity(data);
+  }
+
   async close(id: string, acceptUnpushedWork = false): Promise<SessionEntity> {
     const data = await unwrapBody(
       heyApiSdk.closeSession({

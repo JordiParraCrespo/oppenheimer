@@ -54,6 +54,10 @@ export class SessionsService {
     return this.repository.move(id, projectId);
   }
 
+  restart(id: string): Promise<SessionEntity> {
+    return this.repository.restart(id);
+  }
+
   close(id: string, acceptUnpushedWork = false): Promise<SessionEntity> {
     return this.repository.close(id, acceptUnpushedWork);
   }

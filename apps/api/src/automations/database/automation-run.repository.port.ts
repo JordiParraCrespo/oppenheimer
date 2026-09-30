@@ -78,6 +78,22 @@ export interface AutomationRunRepositoryPort {
   countLiveOnHost(hostId: string, excludingRunId: string, since: Date): Promise<number>;
 
   /**
+   * Reserve the run's slot on `hostId`, atomically, or answer false when there
+   * is none. Counts and writes under one lock, so concurrent dispatches cannot
+   * all pass the same count — see the adapter.
+   */
+  claimSlot(params: {
+    runId: string;
+    automationId: string;
+    hostId: string;
+    liveRunsPerHost: number;
+    overlap: string;
+    liveSince: Date;
+    claimFloor: Date;
+    now: Date;
+  }): Promise<boolean>;
+
+  /**
    * Runs still live that were dispatched between `notBefore` and `before`,
    * oldest first: the candidates the run-limit sweep weighs against each
    * workspace's limit. A run live since before `notBefore` is one the stop

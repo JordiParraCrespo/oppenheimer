@@ -48,15 +48,17 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
       <div className="relative min-h-0 flex-1 overflow-hidden px-5 py-4">
         <div ref={containerRef} className="size-full" />
         {/* A live link with an empty grid behind it.
-            The host reports a session "started" once tmux holds it, which is
-            before the agent inside has drawn anything — a few seconds cold,
-            tens of them on a loaded machine. The provisioning pane has handed
-            over by then, so without this the reader gets a white rectangle and
-            no way to tell a slow start from a broken session. It covers the
-            grid rather than replacing it: the terminal stays mounted, keeps
-            its size, and the first byte the agent writes takes this away.
-            A reconnect replays the scrollback, so a session that has run
-            before never shows it. */}
+            Two things arrive here and the reader cannot tell them apart, which
+            is why the copy names both. A new session: the host reports it
+            "started" once tmux holds it, which is before the agent inside has
+            drawn anything — a few seconds cold, tens of them on a loaded
+            machine — and the provisioning pane has handed over by then. An
+            older one: the attachment replays its scrollback, and on a busy
+            host that took seconds here.
+            Either way the question is "is this broken", and the answer is no.
+            It covers the grid rather than replacing it, so the terminal stays
+            mounted and keeps its size, and the first chunk that would put a
+            glyph on it takes this away. */}
         {status === 'live' && !hasOutput ? (
           <div className="absolute inset-0 flex items-center justify-center bg-term-bg">
             <EmptyState>

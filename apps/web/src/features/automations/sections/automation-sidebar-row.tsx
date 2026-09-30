@@ -62,7 +62,18 @@ export function AutomationSidebarRow({
               <RoutineRun
                 key={run.id}
                 title={run.title}
-                ago={formatAge(run.createdAt, now, t)}
+                // A run that started a session is placed in time; one that
+                // never started says why instead. The reason is the more
+                // useful of the two facts here and the only one the reader
+                // cannot get by opening the row, because there is nothing to
+                // open — the runs table, which has a column for each, shows
+                // both. The title truncates in a sidebar this narrow, so the
+                // words go in this slot rather than onto the end of it.
+                ago={
+                  run.sessionId
+                    ? formatAge(run.createdAt, now, t)
+                    : t(`automations.runStatus.${run.status}`)
+                }
                 state={runState(run.status)}
                 disabled={!run.sessionId}
                 active={Boolean(run.sessionId) && run.sessionId === selection}
