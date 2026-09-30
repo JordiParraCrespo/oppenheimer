@@ -126,9 +126,14 @@ describe('betterAuthInvoker', () => {
     expect(err.extensions).toEqual({});
   });
 
-  it('maps a non-APIError onto the catalog as an upstream failure', async () => {
-    const cause = new Error('socket hang up');
-    const err = await invoke(() => Promise.reject(cause)).catch((e: AppError) => e);
+  const hangUp = new Error('socket hang up');
+
+  // AppError keeps only an `Error` as its cause.
+  it.each([
+    ['a non-APIError', hangUp, hangUp],
+    ['a thrown non-Error value', 'string failure', undefined],
+  ])('maps %s onto the catalog as an upstream failure', async (_label, thrown, cause) => {
+    const err = await invoke(() => Promise.reject(thrown)).catch((e: AppError) => e);
 
     expect(err).toBeInstanceOf(AppError);
     expect(err.code).toBe('ORG_016');
@@ -136,12 +141,5 @@ describe('betterAuthInvoker', () => {
     // The underlying message is for the log only — never the response.
     expect(err.detail).toBeUndefined();
     expect(err.cause).toBe(cause);
-  });
-
-  it('maps a thrown non-Error value the same way', async () => {
-    const err = await invoke(() => Promise.reject('string failure')).catch((e: AppError) => e);
-
-    expect(err).toBeInstanceOf(AppError);
-    expect(err.code).toBe('ORG_016');
   });
 });

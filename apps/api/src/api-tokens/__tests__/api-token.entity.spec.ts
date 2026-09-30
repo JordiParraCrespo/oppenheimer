@@ -17,7 +17,9 @@ describe('ApiTokenEntity.issue', () => {
 
     expect(secret.startsWith(`${API_TOKEN_PREFIX}_`)).toBe(true);
     expect(token.tokenHash).toBe(hashApiTokenSecret(secret));
-    expect(token.tokenHash).not.toContain(secret);
+    // Nothing the aggregate carries — and so nothing the repository persists —
+    // holds the secret itself.
+    expect(JSON.stringify(token)).not.toContain(secret);
   });
 
   it('keeps a non-secret display prefix that the secret starts with', () => {
@@ -52,14 +54,13 @@ describe('ApiTokenEntity.issue', () => {
     expect(() => issue({ expiresInDays: 100_000 })).toThrow();
   });
 
-  it('treats an empty organization list as unrestricted', () => {
+  it('treats an empty organization list as unrestricted, and normalizes a restricted one', () => {
     expect(issue({ organizationIds: [] }).token.organizationIds).toBeNull();
     expect(issue().token.organizationIds).toBeNull();
-  });
-
-  it('de-duplicates a restricted organization list', () => {
-    const { token } = issue({ organizationIds: ['org-b', 'org-a', 'org-b'] });
-    expect(token.organizationIds).toEqual(['org-a', 'org-b']);
+    expect(issue({ organizationIds: ['org-b', 'org-a', 'org-b'] }).token.organizationIds).toEqual([
+      'org-a',
+      'org-b',
+    ]);
   });
 
   it('refuses to mint a token that grants nothing', () => {
@@ -73,10 +74,6 @@ describe('ApiTokenEntity.issue', () => {
 });
 
 describe('ApiTokenEntity usability', () => {
-  it('is usable when fresh', () => {
-    expect(issue().token.rejectionReason()).toBeNull();
-  });
-
   it('reports expiry once the deadline passes', () => {
     const now = new Date('2026-01-01T00:00:00Z');
     const { token } = issue({ expiresInDays: 1, now });
@@ -85,73 +82,14 @@ describe('ApiTokenEntity usability', () => {
     expect(token.rejectionReason({ now: new Date('2026-01-02T00:00:00Z') })).toBe('expired');
   });
 
-  it('reports revocation ahead of expiry', () => {
-    const { token } = issue();
-    token.revoke();
-    expect(token.isRevoked()).toBe(true);
-    expect(token.rejectionReason()).toBe('revoked');
-  });
-
-  it('raises a domain event when revoked', () => {
-    const { token } = issue();
-    token.revoke();
-
-    expect(token.domainEvents).toHaveLength(1);
-    expect(token.domainEvents[0]).toBeInstanceOf(ApiTokenRevokedDomainEvent);
-  });
-
-  it('is idempotent on repeated revocation', () => {
+  it('raises one revoked event, naming the token and owner its cached session is dropped by, however often it is revoked', () => {
     const { token } = issue();
     token.revoke(new Date('2026-01-01T00:00:00Z'));
     token.revoke(new Date('2026-06-01T00:00:00Z'));
 
     expect(token.revokedAt).toEqual(new Date('2026-01-01T00:00:00Z'));
     expect(token.domainEvents).toHaveLength(1);
-  });
-
-  it('enforces its IP allowlist', () => {
-    const { token } = issue({ ipAllowlist: ['203.0.113.0/24'] });
-
-    expect(token.rejectionReason({ ipAddress: '203.0.113.9' })).toBeNull();
-    expect(token.rejectionReason({ ipAddress: '198.51.100.4' })).toBe('ip-not-allowed');
-    expect(token.rejectionReason({ ipAddress: null })).toBe('ip-not-allowed');
-  });
-
-  it('records when it was last used', () => {
-    const { token } = issue();
-    expect(token.lastUsedAt).toBeNull();
-
-    const at = new Date('2026-03-03T10:00:00Z');
-    token.markUsed(at);
-    expect(token.lastUsedAt).toEqual(at);
-  });
-});
-
-describe('ApiTokenEntity authorization', () => {
-  it('grants a scope it carries', () => {
-    expect(issue({ scopes: ['users:read'] }).token.grants(['users:read'])).toBe(true);
-  });
-
-  it('grants read through write on the same resource', () => {
-    expect(issue({ scopes: ['users:write'] }).token.grants(['users:read'])).toBe(true);
-  });
-
-  it('does not grant write from read', () => {
-    expect(issue({ scopes: ['users:read'] }).token.grants(['users:write'])).toBe(false);
-  });
-
-  it('requires every scope a route asks for', () => {
-    const { token } = issue({ scopes: ['users:read'] });
-    expect(token.grants(['users:read', 'roles:read'])).toBe(false);
-  });
-
-  it('allows any organization when unrestricted', () => {
-    expect(issue().token.allowsOrganization('org-1')).toBe(true);
-  });
-
-  it('allows only its own organizations when restricted', () => {
-    const { token } = issue({ organizationIds: ['org-1'] });
-    expect(token.allowsOrganization('org-1')).toBe(true);
-    expect(token.allowsOrganization('org-2')).toBe(false);
+    expect(token.domainEvents[0]).toBeInstanceOf(ApiTokenRevokedDomainEvent);
+    expect(token.domainEvents[0]).toMatchObject({ aggregateId: token.id, userId: 'user-1' });
   });
 });

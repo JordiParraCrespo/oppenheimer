@@ -44,19 +44,9 @@ describe('RedisAuthFailureLimiter', () => {
     limiter = build();
   });
 
-  it('counts a refusal on the rate limiter’s own counter, 30 a minute then a minute’s block', () => {
-    limiter.recordFailure('6.6.6.6');
-
-    expect(storage.increment).toHaveBeenCalledWith(
-      'ip:6.6.6.6',
-      60_000,
-      30,
-      60_000,
-      'auth-failures',
-    );
-  });
-
-  it('counts against a deployment’s own limit, window and block', () => {
+  it('counts a refusal on the rate limiter’s own counter, with the deployment’s limit, window and block', () => {
+    // Distinct numbers, so a window read as the block (or the reverse) fails;
+    // the defaults themselves are `tuning.config.spec.ts`'s.
     limiter = build(
       configStub({
         throttling: {

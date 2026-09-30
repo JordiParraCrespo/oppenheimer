@@ -5,14 +5,7 @@ import {
   ArgumentOutOfRangeException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
-import {
-  hasAllScopes,
-  isOrganizationAllowed,
-  type ResourceScope,
-  type Scope,
-  sortScopes,
-  toResourceScope,
-} from '@oppenheimer/shared';
+import { type ResourceScope, type Scope, sortScopes, toResourceScope } from '@oppenheimer/shared';
 import { generateApiTokenSecret } from './api-token-secret.factory';
 import { ApiTokenRevokedDomainEvent } from './events/api-token-revoked.domain-event';
 import { isIpAllowed } from './ip-allowlist.policy';
@@ -188,16 +181,6 @@ export class ApiTokenEntity extends AggregateRoot<ApiTokenProps> {
     return null;
   }
 
-  /** Does this token carry every one of `required` (honouring write ⇒ read)? */
-  grants(required: readonly Scope[]): boolean {
-    return hasAllScopes(this.props.scopes, required);
-  }
-
-  /** May this token act on `organizationId`? */
-  allowsOrganization(organizationId: string | null | undefined): boolean {
-    return isOrganizationAllowed(this.resourceScope, organizationId);
-  }
-
   /** Revoke the token. Idempotent: revoking twice keeps the first timestamp. */
   revoke(now: Date = new Date()): void {
     if (this.isRevoked()) return;
@@ -211,11 +194,6 @@ export class ApiTokenEntity extends AggregateRoot<ApiTokenProps> {
           'Token was revoked; its cached delegated session must be dropped so the credential stops working immediately',
       }),
     );
-  }
-
-  /** Record that the token authenticated a request. */
-  markUsed(at: Date = new Date()): void {
-    this.props.lastUsedAt = at;
   }
 
   validate(): void {

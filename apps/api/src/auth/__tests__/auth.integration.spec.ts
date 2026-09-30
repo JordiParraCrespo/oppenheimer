@@ -77,10 +77,6 @@ describe('Auth (integration)', () => {
     await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);
   });
 
-  it('should be defined', () => {
-    expect(app).toBeDefined();
-  });
-
   describe('the session sign-up returns', () => {
     /**
      * Sign-up provisions the personal workspace, and the session it hands back

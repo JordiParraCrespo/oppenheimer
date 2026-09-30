@@ -41,15 +41,26 @@ describe('ApiTokenCredentialResolver', () => {
     resolver = new ApiTokenCredentialResolver(apiTokens, owners);
   });
 
-  const stored = (overrides: Partial<Parameters<typeof ApiTokenEntity.issue>[0]> = {}) => {
-    const { token, secret } = ApiTokenEntity.issue({
+  const stored = (
+    overrides: Partial<Parameters<typeof ApiTokenEntity.issue>[0]> = {},
+    lastUsedAt: Date | null = null,
+  ) => {
+    const issued = ApiTokenEntity.issue({
       userId: owner.id,
       name: 'CI deploy',
       scopes: ['users:read'],
       ...overrides,
     });
+    // Rehydrated the way the repository loads it, so a prior use can be set.
+    const { id, createdAt, updatedAt, ...props } = issued.token.getProps();
+    const token = ApiTokenEntity.create({
+      id,
+      createdAt,
+      updatedAt,
+      props: { ...props, lastUsedAt },
+    });
     vi.mocked(apiTokens.findOneByHash).mockResolvedValue(Some(token));
-    return { token, secret };
+    return { token, secret: issued.secret };
   };
 
   it('claims the secrets this module mints, and nothing else', () => {
@@ -94,32 +105,25 @@ describe('ApiTokenCredentialResolver', () => {
   describe('lastUsedAt', () => {
     const second = 1000;
 
-    it('skips the stamp when the token was used moments ago', async () => {
-      // Regression: every request wrote the row, ten row versions a second for
-      // a token polled ten times a second.
-      const { token, secret } = stored();
-      token.markUsed(new Date(Date.now() - 10 * second));
+    // Regression: every request wrote the row, ten row versions a second for a
+    // token polled ten times a second.
+    it.each([
+      ['skips the stamp when the token was used moments ago', 10 * second, false],
+      ['stamps a token last used more than a minute ago', 2 * 60 * second, true],
+      ['stamps a token never used before', null, true],
+    ] as const)('%s', async (_label, usedAgo, stamps) => {
+      const { token, secret } = stored(
+        {},
+        usedAgo === null ? null : new Date(Date.now() - usedAgo),
+      );
 
       await resolver.resolve(secret, request());
 
-      expect(apiTokens.touchLastUsedAt).not.toHaveBeenCalled();
-    });
-
-    it('stamps a token last used more than a minute ago', async () => {
-      const { token, secret } = stored();
-      token.markUsed(new Date(Date.now() - 2 * 60 * second));
-
-      await resolver.resolve(secret, request());
-
-      expect(apiTokens.touchLastUsedAt).toHaveBeenCalledWith(token.id, expect.any(Date));
-    });
-
-    it('stamps a token never used before', async () => {
-      const { token, secret } = stored();
-
-      await resolver.resolve(secret, request());
-
-      expect(apiTokens.touchLastUsedAt).toHaveBeenCalledWith(token.id, expect.any(Date));
+      if (stamps) {
+        expect(apiTokens.touchLastUsedAt).toHaveBeenCalledWith(token.id, expect.any(Date));
+      } else {
+        expect(apiTokens.touchLastUsedAt).not.toHaveBeenCalled();
+      }
     });
   });
 

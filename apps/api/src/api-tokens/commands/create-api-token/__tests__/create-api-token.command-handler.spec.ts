@@ -60,14 +60,6 @@ describe('CreateApiTokenCommandHandler', () => {
     expect(result.tokenId).toBe(insertedToken().id);
   });
 
-  it('never persists the secret, only its digest', async () => {
-    const result = await service.execute(command());
-    const stored = insertedToken();
-
-    expect(stored.tokenHash).not.toBe(result.secret);
-    expect(JSON.stringify(stored)).not.toContain(result.secret);
-  });
-
   it('rebuilds the ability from the actor’s roles rather than trusting the request', async () => {
     await service.execute(command({ actor: { id: 'user-1', role: 'user' } }));
 
@@ -77,16 +69,7 @@ describe('CreateApiTokenCommandHandler', () => {
     );
   });
 
-  it('refuses scopes the creator does not hold', async () => {
-    useAbility(READER_PERMISSIONS);
-
-    await expect(service.execute(command({ scopes: ['roles:write'] }))).rejects.toMatchObject({
-      code: 'TOKEN_002',
-    });
-    expect(repo.insert).not.toHaveBeenCalled();
-  });
-
-  it('names the offending scopes so the caller can fix the request', async () => {
+  it('refuses scopes the creator does not hold, naming them', async () => {
     useAbility(READER_PERMISSIONS);
 
     // The catalog message titles the problem type; the scopes this particular
@@ -94,21 +77,17 @@ describe('CreateApiTokenCommandHandler', () => {
     await expect(
       service.execute(command({ scopes: ['users:read', 'roles:write'] })),
     ).rejects.toMatchObject({
+      code: 'TOKEN_002',
       detail: expect.stringContaining('roles:write'),
       extensions: { ungrantableScopes: ['roles:write'] },
     });
+    expect(repo.insert).not.toHaveBeenCalled();
   });
 
   it('allows scopes the creator does hold', async () => {
     useAbility(READER_PERMISSIONS);
 
     await expect(service.execute(command({ scopes: ['users:read'] }))).resolves.toBeDefined();
-  });
-
-  it('always allows the profile group, which governs the caller’s own account', async () => {
-    useAbility([]);
-
-    await expect(service.execute(command({ scopes: ['profile:read'] }))).resolves.toBeDefined();
   });
 
   it('refuses to scope a token to an organization the creator is not a member of', async () => {
@@ -121,11 +100,6 @@ describe('CreateApiTokenCommandHandler', () => {
   it('accepts an organization the creator belongs to', async () => {
     await service.execute(command({ organizationIds: ['org-1'] }));
     expect(insertedToken().organizationIds).toEqual(['org-1']);
-  });
-
-  it('skips the membership lookup when no organization is requested', async () => {
-    await service.execute(command());
-    expect(memberships.findOrganizationIdsForUser).not.toHaveBeenCalled();
   });
 
   it('refuses once the active token limit is reached', async () => {

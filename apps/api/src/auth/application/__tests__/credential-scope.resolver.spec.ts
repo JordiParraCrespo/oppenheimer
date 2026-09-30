@@ -266,6 +266,10 @@ describe('CredentialScopeResolver', () => {
         headers: { 'x-api-key': 'opaque' },
       } as unknown as ScopedRequest);
 
+      // A credential no contribution recognises still gets its own bucket:
+      // `null` would drop it to the IP bucket (two nulls also compare equal).
+      expect(bearer).toMatch(/^cred:[0-9a-f]{32}$/);
+      expect(bearer).not.toContain('opaque');
       expect(bearer).toBe(header);
       expect(credentials.verifyOAuthGrant).not.toHaveBeenCalled();
     });

@@ -257,28 +257,20 @@ describe('DelegatedSessionAdapter', () => {
     await expect(service.resolveSessionToken(OPTIONS)).resolves.toBe('session-token-1');
   });
 
-  it('re-mints for the whole user after a bulk revocation', async () => {
-    // The revoked session row is gone; serving the cached token would fail
-    // every façade call until the entry expired on its own.
-    await service.resolveSessionToken(OPTIONS);
-
-    await service.invalidateForUser('user-1');
-
-    expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-2');
-    expect(createSession).toHaveBeenCalledTimes(2);
-  });
-
-  it('evicts every credential the user holds, not just one', async () => {
-    // The point of the generation stamp: no enumeration of API tokens and OAuth
-    // grants is needed to reach them all.
+  it('re-mints for every credential the user holds after a bulk revocation', async () => {
+    // The revoked session rows are gone; serving a cached token would fail
+    // every façade call until the entry expired on its own. The generation
+    // stamp reaches them all without enumerating API tokens and OAuth grants.
     await service.resolveSessionToken(OPTIONS);
     await service.resolveSessionToken({ ...OPTIONS, credentialId: 'cred-2' });
     expect(createSession).toHaveBeenCalledTimes(2);
 
     await service.invalidateForUser('user-1');
 
-    await service.resolveSessionToken(OPTIONS);
-    await service.resolveSessionToken({ ...OPTIONS, credentialId: 'cred-2' });
+    expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-3');
+    expect(await service.resolveSessionToken({ ...OPTIONS, credentialId: 'cred-2' })).toBe(
+      'session-token-4',
+    );
     expect(createSession).toHaveBeenCalledTimes(4);
   });
 
@@ -300,12 +292,12 @@ describe('DelegatedSessionAdapter', () => {
     expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-2');
   });
 
-  it('does not resurrect a retired entry when the cache read fails', async () => {
-    // Falling back to the initial generation here would serve a token a bump
-    // had already retired.
-    await service.resolveSessionToken(OPTIONS);
-    await service.invalidateForUser('user-1');
-    cache.mget.mockRejectedValue(new Error('redis down'));
+  it('does not trust an entry written while the generation could not be read', async () => {
+    // With the read failed, the adapter cannot know which generation is
+    // current. Tagging the entry with the initial generation could hand back a
+    // token a bump had already retired; it is tagged so the next read misses.
+    cache.mget.mockRejectedValueOnce(new Error('redis down'));
+    expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-1');
 
     expect(await service.resolveSessionToken(OPTIONS)).toBe('session-token-2');
   });

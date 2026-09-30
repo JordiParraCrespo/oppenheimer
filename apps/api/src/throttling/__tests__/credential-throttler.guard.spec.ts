@@ -1,7 +1,6 @@
 import type { ExecutionContext } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { AppError } from '@oppenheimer/backend-core';
-import { toResourceScope } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuthFailureLimiterPort } from '../../auth/application/auth-failure-limiter.port';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
@@ -23,6 +22,12 @@ import { CredentialThrottlerGuard } from '../guards/credential-throttler.guard';
  * The guard runs against the real kernel resolver here, with every lookup it
  * could make spied on: deriving the bucket must cost no database and no
  * identity-provider call, or the limiter does its work before it limits.
+ *
+ * How each kind of credential becomes a bucket (bearer, `x-api-key`, signed
+ * cookie, single-use host assertion, a refused one) is
+ * `CredentialScopeResolver.rateLimitKey`'s, and its spec owns those cases.
+ * This suite owns what the guard adds: that it asks for that key at all, the
+ * user and IP fallbacks, the auth-failure budget and the RATE_001 answer.
  */
 describe('CredentialThrottlerGuard', () => {
   let verifier: { [K in keyof CredentialVerifierPort]: ReturnType<typeof vi.fn> };
@@ -30,7 +35,6 @@ describe('CredentialThrottlerGuard', () => {
   let registry: CredentialResolverRegistry;
   let failures: { [K in keyof AuthFailureLimiterPort]: ReturnType<typeof vi.fn> };
   let apiTokenResolve: ReturnType<typeof vi.fn>;
-  let hostResolve: ReturnType<typeof vi.fn>;
   let guard: CredentialThrottlerGuard;
 
   const tracker = (req: Record<string, unknown>) =>
@@ -54,25 +58,11 @@ describe('CredentialThrottlerGuard', () => {
     };
     registry = new CredentialResolverRegistry();
     apiTokenResolve = vi.fn();
-    hostResolve = vi.fn(async () => ({
-      kind: 'host',
-      credentialId: 'host:host-1',
-      hostId: 'host-1',
-      scopes: [],
-      resourceScope: toResourceScope(null),
-      expiresAt: null,
-    }));
     registry.registerAll([
       {
         kind: 'api-token',
         recognises: (presented) => presented.startsWith('oppenheimer_pat_'),
         resolve: apiTokenResolve as CredentialResolverPort['resolve'],
-      },
-      {
-        kind: 'host',
-        singleUse: true,
-        recognises: (presented) => presented.startsWith('eyJ'),
-        resolve: hostResolve as CredentialResolverPort['resolve'],
       },
     ]);
 
@@ -108,31 +98,6 @@ describe('CredentialThrottlerGuard', () => {
     expectNoLookups();
   });
 
-  it('keys an opaque bearer (OAuth or session token) the same way', async () => {
-    const key = await tracker({ ip: '1.2.3.4', headers: { authorization: 'Bearer opaque-xyz' } });
-
-    expect(key).toMatch(/^cred:[0-9a-f]{32}$/);
-    expect(key).not.toContain('opaque-xyz');
-    expectNoLookups();
-  });
-
-  it('keys a signed-in browser on its session cookie, not on its office’s IP', async () => {
-    const key = await tracker({
-      ip: '1.2.3.4',
-      headers: { cookie: 'better-auth.session_token=signed' },
-    });
-
-    expect(key).toMatch(/^session:[0-9a-f]{32}$/);
-    expect(key).not.toContain('session-token-value');
-    expectNoLookups();
-  });
-
-  it('keys a forged cookie on the IP: an unsigned cookie opens no bucket', async () => {
-    expect(
-      await tracker({ ip: '1.2.3.4', headers: { cookie: 'better-auth.session_token=forged' } }),
-    ).toBe('ip:1.2.3.4');
-  });
-
   it('gives one credential one bucket regardless of what the body claims', async () => {
     // The site is attacker-controlled body content. Including it in the key
     // would let a caller mint an unlimited number of buckets by rotating
@@ -145,27 +110,6 @@ describe('CredentialThrottlerGuard', () => {
     expect(first).toBe(second);
   });
 
-  it('does not let the whole fleet share one bucket just because it shares an egress IP', async () => {
-    const one = await tracker({
-      ip: '9.9.9.9',
-      headers: { authorization: 'Bearer oppenheimer_pat_a' },
-    });
-    const two = await tracker({
-      ip: '9.9.9.9',
-      headers: { authorization: 'Bearer oppenheimer_pat_b' },
-    });
-
-    expect(one).not.toBe(two);
-  });
-
-  it('buckets a host by the host its single-use assertion resolves to', async () => {
-    const first = await tracker({ ip: '1.2.3.4', headers: { authorization: 'Bearer eyJone' } });
-    const second = await tracker({ ip: '1.2.3.4', headers: { authorization: 'Bearer eyJtwo' } });
-
-    expect(first).toBe('cred:host:host-1');
-    expect(second).toBe(first);
-  });
-
   it('falls back to the IP for an anonymous caller', async () => {
     expect(await tracker({ ip: '1.2.3.4', headers: {} })).toBe('ip:1.2.3.4');
   });
@@ -174,16 +118,6 @@ describe('CredentialThrottlerGuard', () => {
     // Only populated when the guard is applied at route level, after auth.
     expect(await tracker({ ip: '1.2.3.4', headers: {}, user: { id: 'user-3' } })).toBe(
       'user:user-3',
-    );
-  });
-
-  it('treats a refused single-use credential as anonymous instead of throwing', async () => {
-    // Rejecting it is `ApiAuthGuard`'s job, with the catalog error and the
-    // opaque wording that keeps ids from being probed.
-    hostResolve.mockRejectedValue(new Error('replayed'));
-
-    expect(await tracker({ ip: '1.2.3.4', headers: { authorization: 'Bearer eyJold' } })).toBe(
-      'ip:1.2.3.4',
     );
   });
 
