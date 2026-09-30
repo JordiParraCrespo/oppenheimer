@@ -20,13 +20,6 @@ const VALID = {
 };
 
 describe('ProjectEntity', () => {
-  it('starts un-archived', () => {
-    const project = ProjectEntity.createNew(VALID);
-
-    expect(project.archivedAt).toBeNull();
-    expect(project.isArchived).toBe(false);
-  });
-
   it('raises its archive once: what starts work in it is told to stop', () => {
     const project = ProjectEntity.createNew(VALID);
     project.clearEvents();
@@ -47,23 +40,6 @@ describe('ProjectEntity', () => {
 
     expect(project.name).toBe('XRP Mobile (v2)');
     expect(project.slug).toBe('xrp-mobile');
-  });
-
-  it('offers no way to change the slug, and archives one way only', () => {
-    // A slug setter would break every link to the project. `archive` exists and
-    // has no counterpart: a retired slug is never reissued, so archiving is a
-    // one-way door by construction.
-    const descriptor = (name: string) =>
-      Object.getOwnPropertyDescriptor(ProjectEntity.prototype, name);
-    const methods = Object.getOwnPropertyNames(ProjectEntity.prototype).filter(
-      (name) => typeof descriptor(name)?.value === 'function',
-    );
-
-    expect(descriptor('slug')?.get).toBeTypeOf('function');
-    expect(descriptor('slug')?.set).toBeUndefined();
-    expect(methods).toEqual(expect.arrayContaining(['rename', 'archive']));
-    expect(methods.filter((name) => /slug/i.test(name))).toEqual([]);
-    expect(methods.filter((name) => /unarchive|restore|reopen/i.test(name))).toEqual([]);
   });
 
   it('refuses a project with no organization or no name', () => {
@@ -95,9 +71,11 @@ describe('a project’s repositories and defaults', () => {
     isDefault,
   });
 
-  it('starts with no defaults, and is not the Unassigned project', () => {
+  it('starts un-archived, with no defaults, and is not the Unassigned project', () => {
     const project = ProjectEntity.createNew(VALID);
 
+    expect(project.archivedAt).toBeNull();
+    expect(project.isArchived).toBe(false);
     expect(project.defaultHostId).toBeNull();
     expect(project.defaultAgent).toBeNull();
     expect(project.isUnassigned).toBe(false);

@@ -137,8 +137,9 @@ describe('FireEventTriggersCommandHandler', () => {
   });
 
   it("records our own App's event as a skip before the caps are weighed", async () => {
-    const { handler, decided } = setup({ automation: 0, workspace: 0 });
+    // At the workspace cap, so the rate guard would refuse too: the loop guard wins.
+    const { handler, decided } = setup({ automation: 0, workspace: 7 });
     expect(await handler.execute(command(true))).toBe(0);
-    expect(decided.every((run) => run.skipReason === 'own_event')).toBe(true);
+    expect(decided.map((run) => run.skipReason)).toEqual(['own_event', 'own_event', 'own_event']);
   });
 });

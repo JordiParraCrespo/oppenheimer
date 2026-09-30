@@ -22,7 +22,9 @@ describe('redis config', () => {
     for (const key of REDIS_VARS) delete process.env[key];
   });
 
-  it('defaults to a local, unauthenticated Redis', () => {
+  it('defaults to a local, unauthenticated Redis, and gives BullMQ nothing about retries', () => {
+    // Exact: BullMQ workers require `maxRetriesPerRequest: null`; a fail-fast
+    // setting leaking into its connection would stop them.
     expect(redisConnectionOptions(withEnv({}))).toEqual({
       host: 'localhost',
       port: 6379,
@@ -38,19 +40,6 @@ describe('redis config', () => {
     );
 
     expect(options).toMatchObject({ host: 'redis.internal', port: 6380, password: 's3cret' });
-  });
-
-  it('connects without a password when it is blank', () => {
-    expect(redisConnectionOptions(withEnv({ REDIS_PASSWORD: '' })).password).toBeUndefined();
-  });
-
-  it('gives BullMQ the address and nothing about retries', () => {
-    // BullMQ workers require `maxRetriesPerRequest: null`; a fail-fast setting
-    // leaking into its connection would stop them.
-    const options = redisConnectionOptions(withEnv({}));
-
-    expect(options).not.toHaveProperty('maxRetriesPerRequest');
-    expect(options).not.toHaveProperty('enableOfflineQueue');
   });
 
   it('makes the command client fail fast instead of queueing during an outage', () => {

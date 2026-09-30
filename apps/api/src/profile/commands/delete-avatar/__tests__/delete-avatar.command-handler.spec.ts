@@ -49,7 +49,9 @@ describe('DeleteAvatarCommandHandler', () => {
     );
   });
 
-  it('refreshes the cached sessions after the row is written', async () => {
+  it('saves the profile, refreshes the cached sessions, then removes the object', async () => {
+    // Removing the object first could leave a profile pointing at a file that
+    // is gone.
     const order: string[] = [];
     vi.mocked(repo.save).mockImplementation(async (entity) => {
       order.push('save');
@@ -58,11 +60,14 @@ describe('DeleteAvatarCommandHandler', () => {
     sessionCache.refreshUser.mockImplementation(async () => {
       order.push('refresh');
     });
+    avatars.remove.mockImplementation(async () => {
+      order.push('remove');
+    });
 
     await service.execute(new DeleteAvatarCommand({ userId: 'user-uuid' }));
 
     expect(sessionCache.refreshUser).toHaveBeenCalledWith('user-uuid');
-    expect(order).toEqual(['save', 'refresh']);
+    expect(order).toEqual(['save', 'refresh', 'remove']);
   });
 
   it('clears the profile and removes the object', async () => {
@@ -70,22 +75,6 @@ describe('DeleteAvatarCommandHandler', () => {
 
     expect(user.avatarUrl).toBeNull();
     expect(avatars.remove).toHaveBeenCalledWith('avatars/user-uuid.png');
-  });
-
-  it('saves the profile before removing the object', async () => {
-    // The other order can leave a profile pointing at a file that is gone.
-    const order: string[] = [];
-    repo.save = vi.fn().mockImplementation(async (entity) => {
-      order.push('save');
-      return entity;
-    });
-    avatars.remove.mockImplementation(async () => {
-      order.push('remove');
-    });
-
-    await service.execute(new DeleteAvatarCommand({ userId: 'user-uuid' }));
-
-    expect(order).toEqual(['save', 'remove']);
   });
 
   it('succeeds when there is no avatar to clear', async () => {

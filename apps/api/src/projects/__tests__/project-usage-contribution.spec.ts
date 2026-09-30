@@ -49,7 +49,7 @@ const SCOPE = {
 } as AccessScope;
 
 describe('ProjectsModule.contributeUsage', () => {
-  it('registers the contribution at boot, with nothing injecting it', async () => {
+  it('registers at boot, building the implementation in the contributing module’s injector', async () => {
     const moduleRef = await Test.createTestingModule({ imports: [FeatureModule] }).compile();
     await moduleRef.init();
 
@@ -58,14 +58,6 @@ describe('ProjectsModule.contributeUsage', () => {
     // Nothing asked for the contribution provider; constructing it *is* the
     // registration, so a module that is never imported contributes nothing.
     expect(registry.canAnswer()).toBe(true);
-  });
-
-  it('builds the implementation in the contributing module’s injector', async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [FeatureModule] }).compile();
-    await moduleRef.init();
-
-    const registry = moduleRef.get(ProjectUsageRegistry, { strict: false });
-
     // Answered from a provider only `FeatureModule` declares.
     await expect(registry.isInUse(SCOPE, 'project-busy')).resolves.toBe(true);
     await expect(registry.isInUse(SCOPE, 'project-quiet')).resolves.toBe(false);
