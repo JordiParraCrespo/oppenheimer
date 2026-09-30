@@ -31,7 +31,7 @@ describe('resolveCorrelationId', () => {
     ).toMatch(UUID);
   });
 
-  it.each(['has space', 'line\nbreak', 'tab\tchar', 'nul\u0000', '', 'semi;colon'])(
+  it.each(['has space', 'line\nbreak', 'tab\tchar', 'nul\u0000', '', 'semi;colon', 'abc/123'])(
     'replaces %j with a UUID',
     (value) => {
       expect(resolveCorrelationId({ headers: { 'x-correlation-id': value } })).toMatch(UUID);

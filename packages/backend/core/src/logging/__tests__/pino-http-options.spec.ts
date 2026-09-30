@@ -83,6 +83,21 @@ describe('buildPinoHttpOptions', () => {
     expect(setHeader).toHaveBeenCalledWith('x-correlation-id', 'client-id');
   });
 
+  it('replaces an invalid inbound correlation id with a fresh UUID', () => {
+    // The request-context middleware re-validates and overwrites the response
+    // header, so only this proves pino never logs the raw inbound value.
+    const genReqId = buildPinoHttpOptions().genReqId as unknown as (
+      req: Record<string, unknown>,
+      res: { setHeader: (name: string, value: string) => void },
+    ) => string;
+    const setHeader = vi.fn();
+
+    const id = genReqId({ headers: { 'x-correlation-id': 'x'.repeat(16_000) } }, { setHeader });
+
+    expect(id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(setHeader).toHaveBeenCalledWith('x-correlation-id', id);
+  });
+
   it('only enables pretty transport when asked to', () => {
     expect(buildPinoHttpOptions().transport).toBeUndefined();
     expect(buildPinoHttpOptions({ pretty: true }).transport).toEqual({
