@@ -15,6 +15,9 @@ import {
 } from './terminal-theme';
 import { bindUserTurns } from './user-turns';
 
+/** The platform test xterm itself uses to pick its Mac behaviour. */
+const IS_MAC = typeof navigator !== 'undefined' && /^Mac/.test(navigator.platform);
+
 export interface SessionTerminalOptions {
   /**
    * The pane shows the agent's window (window 0), whose prompt takes
@@ -89,8 +92,14 @@ export function mountSessionTerminal(
     const verdict = classifyKey(event, {
       hasSelection: term.hasSelection(),
       agentWindow: options.agentWindow ?? false,
+      mac: IS_MAC,
     });
     if (verdict.kind === 'terminal') return true;
+    if (verdict.kind === 'copy') {
+      event.preventDefault();
+      if (term.hasSelection()) void navigator.clipboard?.writeText(term.getSelection());
+      return false;
+    }
     if (verdict.kind === 'send') {
       // Stops the keypress and the textarea input that would follow.
       event.preventDefault();

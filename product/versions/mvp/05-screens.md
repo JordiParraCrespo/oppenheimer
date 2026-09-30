@@ -264,12 +264,19 @@
   agent, the rest shells in the same worktree), thin status line with host,
   branch, account, state, measured echo latency; login URLs as a
   button; phone layout with a key bar.
-- The terminal's keymap is the program's, except three chords the
+- The terminal's keymap is the program's, except the chords the
   console answers: **Shift+Enter** is a newline in the agent's prompt
   (window 0 only; a shell window gets the chord as typed), **Ctrl+C**
-  copies when text is selected and interrupts otherwise, and
-  **Ctrl+Shift+V** pastes. Selecting text needs Shift-drag (Option-drag
-  on macOS), because tmux owns plain drags.
+  copies when text is selected and interrupts otherwise,
+  **Ctrl+Shift+C** copies and **Ctrl+Shift+V** pastes (off the Mac,
+  where the browser would otherwise open its inspector on the first). On
+  the Mac the system's editing chords do what a Mac terminal does (VS
+  Code's, iTerm's natural text editing): **⌘←/⌘→** go to the start and
+  end of the line (^A, ^E), **⌘⌫** deletes to its start (^U), and
+  **⌥←/⌥→** move by word (ESC b, ESC f). Selecting text needs Shift-drag
+  (Option-drag on macOS), because tmux owns plain drags. Chords the
+  browser keeps for itself (Ctrl+W, Ctrl+T, Ctrl+N off the Mac) never
+  reach the page.
 - The session cursor is a **steady block**. It is the default, not a
   fence: a program that asks for a blinking cursor (DECSET 12, DECSCUSR)
   gets one, and tmux sets it back to steady each time it shows the cursor
