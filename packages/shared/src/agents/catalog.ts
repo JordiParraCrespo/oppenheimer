@@ -159,7 +159,39 @@ export interface CodingAgentLaunchLevel {
  */
 export interface CodingAgentLaunch {
   /** Absent: this agent takes no model. */
+  /**
+   * Flags every launch of this agent carries, before anything a caller chose.
+   * They are how the session is run rather than what it is asked to do, so
+   * they are not a level and nothing in the console offers them.
+   */
+  readonly always?: readonly string[];
   readonly model?: readonly string[];
+  /**
+   * How the agent's own conversation is named and reopened, with
+   * `<conversation>` substituted whole.
+   *
+   * These CLIs already keep the transcript — `transcriptLocation` is where —
+   * so a session that ends does not lose what was said; what was missing is a
+   * name both sides agree on. `create` pins the agent's conversation to the
+   * session's own id, and `resume` reopens that conversation in the same
+   * worktree, so a stopped session is continued rather than read back.
+   *
+   * `create` absent, `resume` present: the CLI cannot be told an id but can
+   * reopen one it chose (Codex, OpenCode), so the id is discovered from the
+   * transcript rather than assigned.
+   *
+   * Both absent: this agent has no conversation to resume (a plain shell).
+   */
+  readonly conversation?: {
+    readonly create?: readonly string[];
+    readonly resume: readonly string[];
+    /**
+     * The resume form is a subcommand, so it leads the argv instead of
+     * following it: `codex resume --last --model …`, never `codex --model …
+     * resume --last`.
+     */
+    readonly resumeLeads?: boolean;
+  };
   /**
    * Absent: this agent has no notion of approvals (a plain shell). The console
    * hides the permission chip and sends no level, and the session records none.
@@ -319,6 +351,13 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
+      // `--session-id` takes a UUID and refuses one that already exists, which
+      // is exactly the property wanted: the session's own id names the
+      // conversation once, and `--resume` reopens it by that name afterwards.
+      conversation: Object.freeze({
+        create: Object.freeze(['--session-id', '<conversation>']),
+        resume: Object.freeze(['--resume', '<conversation>']),
+      }),
       permission: Object.freeze({
         // `--permission-mode` choices, read off claude 2.1.278's own `--help`.
         ask: Object.freeze({
@@ -401,7 +440,28 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       }),
     ]),
     launch: Object.freeze({
+      // A session is a terminal nobody is watching, so it cannot depend on
+      // the state of a server shared with whatever else the host runs. Codex
+      // reuses a background app-server across invocations, and when the one
+      // already running is a different release it refuses with a modal — "run
+      // without daemon this time", offered to a reader who is not there —
+      // which hangs the session for good. Measured on a host with a stale
+      // 0.159.0 daemon beside 0.159.2: every codex session stopped on that
+      // dialog until a key was pressed. `--no-daemon` answers it up front,
+      // and each session is its own process either way.
+      always: Object.freeze(['--no-daemon']),
       model: Object.freeze(['--model', '<model>']),
+      // Codex names its own conversation, so there is nothing to pin on a
+      // create — but it does not need one. `codex resume` filters by working
+      // directory (that is what `--all` turns off, read off 0.159.2's own
+      // `--help`), and a session's worktree is its own directory that is never
+      // reused, so "the most recent conversation here" is this session's and
+      // no other's. With nothing to resume it opens a fresh Codex rather than
+      // failing, which is what a session whose agent never got going needs.
+      conversation: Object.freeze({
+        resume: Object.freeze(['resume', '--last']),
+        resumeLeads: true,
+      }),
       permission: Object.freeze({
         // Read off codex-cli 0.155.1's own `--help`. `--approve-for-me` is that
         // CLI's own name for the middle level, and is more than the flag pair it
@@ -502,6 +562,14 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
+      // OpenCode keys its sessions by project, and a project is the directory
+      // it was started in — which for a session is its own worktree, never
+      // reused — so `--continue` ("continue the last session", 1.18.33's own
+      // `--help`) reopens this session's conversation and nobody else's. Like
+      // Codex it names its own conversation, so there is nothing to pin on a
+      // create, and with nothing to continue it opens a fresh OpenCode rather
+      // than failing.
+      conversation: Object.freeze({ resume: Object.freeze(['--continue']) }),
       // Read off opencode 1.18.32's own `--help` and `debug agent build`.
       //
       // The TUI has one approval flag, `--auto` ("auto-approve permissions
@@ -603,6 +671,14 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
+      // The same shape as Claude Code's, and the same constraint read off grok
+      // 1.0.44's `--help`: `--session-id` names a **new** conversation and
+      // refuses a UUID that already exists, so it is only ever sent on create;
+      // `--resume` takes that id back.
+      conversation: Object.freeze({
+        create: Object.freeze(['--session-id', '<conversation>']),
+        resume: Object.freeze(['--resume', '<conversation>']),
+      }),
       // `--permission-mode` choices, read off grok 1.0.41's own `--help`:
       // `default | acceptEdits | auto | dontAsk | bypassPermissions | plan`,
       // Claude Code's vocabulary. `default` asks before edits and commands.

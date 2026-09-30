@@ -36,8 +36,20 @@ const LIVE_TURN = `('queued', 'in_progress', 'requires_action')`;
 const LIVE_JOINS = `
   LEFT JOIN "work_session" ws ON ws."id" = run."sessionId"
   LEFT JOIN "session_turn" turn ON turn."sessionId" = run."sessionId" AND turn."seq" = 1`;
-const LIVE_WHERE = `(turn."state" IN ${LIVE_TURN}
-  OR (turn."state" IS NULL AND ws."state" IN ('starting', 'open')))`;
+/**
+ * A run is live while its session is.
+ *
+ * `ws."stoppedAt"` is the half that is easy to miss: stopping a session ends
+ * its processes and leaves the worktree, so the lifecycle deliberately does
+ * *not* move — a stopped session is still `open`, with `stoppedAt` set, and
+ * can be restarted (`session-state.policy`). Counted as live, every stopped
+ * session held one of its host's slots for ever: measured, six of them on one
+ * host filled a `liveRunsPerHost` of two, and every automation pointed at that
+ * host stopped dispatching, deferring for ever behind panes that had not
+ * existed for hours.
+ */
+const LIVE_WHERE = `(ws."stoppedAt" IS NULL AND (turn."state" IN ${LIVE_TURN}
+  OR (turn."state" IS NULL AND ws."state" IN ('starting', 'open'))))`;
 
 /**
  * A run's status, derived once, here (§Q4): the firing's own outcome until it
@@ -158,6 +170,28 @@ export async function lockWorkspaceFiring(
     `SELECT pg_advisory_xact_lock(hashtext('automation-firing:' || ordered."id"))
        FROM (SELECT DISTINCT "id" FROM unnest($1::text[]) AS "id" ORDER BY "id") ordered`,
     [[...organizationIds]],
+  );
+}
+
+/**
+ * Take a host's dispatch lock for the rest of the caller's transaction.
+ *
+ * The firing lock above keeps two firings from taking the same hourly slot.
+ * This is its counterpart one step later: the overlap and capacity guards
+ * count what is live on a host, and without a lock every dispatch the queue
+ * runs at once reads the same count and every one of them passes. Measured, a
+ * cap of one live run per automation let four through — the processor's
+ * concurrency, exactly.
+ *
+ * The host is the scope because `liveRunsPerHost` is the host-wide guard and a
+ * run carries its revision's host, so two runs that could contend always share
+ * one. Dispatch to other hosts is untouched. Same namespaced, transaction
+ * scoped advisory lock, for the same reasons written above it.
+ */
+export async function lockHostDispatch(manager: EntityManager, hostId: string): Promise<void> {
+  await manager.query(
+    `SELECT pg_advisory_xact_lock(hashtext('automation-dispatch:' || $1::text))`,
+    [hostId],
   );
 }
 
@@ -382,6 +416,64 @@ export class AutomationRunRepository
       sessionId: row.sessionId,
       dispatchedAt: new Date(row.dispatchedAt),
     }));
+  }
+
+  /**
+   * Reserve the run's slot on its host, or answer that there is none.
+   *
+   * `decide` weighed the overlap and capacity guards a moment ago, against
+   * counts that anything could act on before this run did — and the queue runs
+   * four dispatches at once, so all four read the same counts and all four
+   * passed. Ten manual runs of an automation capped at one live run started
+   * four sessions; the number was the worker count.
+   *
+   * So the counts are read again here, under the host's lock, and the run
+   * writes `claimedAt` before its session exists. A claim counts towards both
+   * guards from that moment, so whoever loses the race sees the winner. The run
+   * stays `pending`: the reservation is not a state, so every client's view of
+   * the run — and "dispatched implies a session" — is untouched.
+   *
+   * `claimFloor` is how fresh a claim has to be to count, which is what makes a
+   * process dying between the claim and the session self-correcting.
+   *
+   * Nothing here leaves the process, so the lock is held for one count and one
+   * update.
+   */
+  async claimSlot(params: {
+    runId: string;
+    automationId: string;
+    hostId: string;
+    liveRunsPerHost: number;
+    overlap: string;
+    liveSince: Date;
+    claimFloor: Date;
+    now: Date;
+  }): Promise<boolean> {
+    return this.outbox.transaction(async (manager) => {
+      await lockHostDispatch(manager, params.hostId);
+      const countable = `(${LIVE_WHERE} OR (run."outcome" = 'pending' AND run."claimedAt" >= $5))`;
+      const [counts]: { automation: string; host: string }[] = await manager.query(
+        `SELECT
+           count(*) FILTER (WHERE run."automationId" = $1) AS "automation",
+           count(*) FILTER (WHERE rev."hostId" = $2) AS "host"
+           FROM "automation_run" run
+           JOIN "automation_revision" rev ON rev."id" = run."revisionId"
+           ${LIVE_JOINS}
+          WHERE run."id" <> $3
+            AND (run."dispatchedAt" >= $4 OR run."claimedAt" >= $5)
+            AND ${countable}`,
+        [params.automationId, params.hostId, params.runId, params.liveSince, params.claimFloor],
+      );
+      if (params.overlap === 'skip' && Number(counts.automation) > 0) return false;
+      if (Number(counts.host) >= params.liveRunsPerHost) return false;
+
+      const [, affected]: [unknown[], number] = await manager.query(
+        `UPDATE "automation_run" SET "claimedAt" = $2, "updatedAt" = now()
+          WHERE "id" = $1 AND "outcome" = 'pending'`,
+        [params.runId, params.now],
+      );
+      return affected > 0;
+    });
   }
 
   private async countLive(where: string, parameters: unknown[]): Promise<number> {

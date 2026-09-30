@@ -58,6 +58,9 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 		Agent:      agent,
 		Launch: sessionsdomain.Launch{
 			Model: m.Launch.Model, Permission: m.Launch.Permission, Effort: m.Launch.Effort, Prompt: m.Prompt,
+			// The name the agent's conversation takes, so what it says can be
+			// reopened after the session stops.
+			Conversation: m.Launch.Conversation, Resume: m.Launch.Resume,
 		},
 		CheckoutID: first.CheckoutID, GithubRepoID: first.GithubRepoID,
 		Images:   images,

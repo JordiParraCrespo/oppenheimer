@@ -16,7 +16,7 @@ import type {
 } from '../modules/sessions/session.entity';
 import type { SessionStartProgress } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
-import { CLOSE_WATCH_MS, type PollKeys, pollWhile } from './live-poll';
+import { CLOSE_WATCH_MS, type PollKeys, pollWhile, RESTART_WATCH_MS } from './live-poll';
 
 export const sessionsKeys = {
   all: ['sessions'] as const,
@@ -66,6 +66,39 @@ function unwatchClose(queryClient: QueryClient, id: string): void {
 }
 
 /**
+ * Sessions whose restart this console asked for and whose host has not
+ * answered yet. The same shape as the close watch above, and for the same
+ * reason: the row does not move until the host moves it.
+ */
+const restartWatches = new WeakMap<QueryClient, Map<string, ReturnType<typeof setTimeout>>>();
+
+function restartsOf(queryClient: QueryClient): Map<string, ReturnType<typeof setTimeout>> {
+  let watches = restartWatches.get(queryClient);
+  if (!watches) {
+    watches = new Map();
+    restartWatches.set(queryClient, watches);
+  }
+  return watches;
+}
+
+function watchRestart(queryClient: QueryClient, id: string): void {
+  const watches = restartsOf(queryClient);
+  clearTimeout(watches.get(id));
+  watches.set(
+    id,
+    setTimeout(() => watches.delete(id), RESTART_WATCH_MS),
+  );
+}
+
+function unwatchRestart(queryClient: QueryClient, id: string): void {
+  const watches = restartsOf(queryClient);
+  clearTimeout(watches.get(id));
+  watches.delete(id);
+}
+
+/**
+ * The sessions in the caller's workspace: the sidebar and the sessions list.
+ *
  * A resolved session is a tombstone the API keeps so its directory and branch
  * are never reissued; the list leaves it out, though its detail is still
  * written for a screen that has it open. It polls while a row is starting or a
@@ -119,11 +152,24 @@ export function useSession(
 ) {
   const app = useConsumerApp();
 
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: sessionsKeys.detail(id),
-    queryFn: id ? () => app.sessions.findById(id) : skipToken,
+    queryFn: id
+      ? async () => {
+          const session = await app.sessions.findById(id);
+          // The host answered: the terminal is back, so stop watching.
+          if (session.isLive) unwatchRestart(queryClient, id);
+          return session;
+        }
+      : skipToken,
     ...options,
-    ...pollWhile<SessionEntity>('sessionStarting', (session) => session?.isProvisioning ?? false),
+    ...pollWhile<SessionEntity>(
+      'sessionStarting',
+      (session) =>
+        (session?.isProvisioning ?? false) || (id ? restartsOf(queryClient).has(id) : false),
+    ),
   });
 }
 
@@ -236,6 +282,31 @@ export function useMoveSession(
 export interface CloseSessionVariables {
   id: string;
   acceptUnpushedWork?: boolean;
+}
+
+/** The row stays `open` until the host resolves it, so the list watches for that. */
+/**
+ * Bring a stopped session's terminal back.
+ *
+ * The host recreates window 0 in the worktrees the session already has and
+ * reopens the agent's own conversation, so the pane comes back with what was
+ * said in it rather than empty. The session's own row is refreshed and the
+ * lists with it: what changes is the lifecycle, which every list draws.
+ */
+export function useRestartSession(options?: UseMutationOptions<SessionEntity, Error, string>) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => app.sessions.restart(id),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+      // A restart is a request; the row is still stopped until the host says
+      // otherwise, so the detail reads until it does.
+      watchRestart(queryClient, session.id);
+    }),
+  });
 }
 
 export function useCloseSession(

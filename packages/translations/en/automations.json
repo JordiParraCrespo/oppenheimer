@@ -295,5 +295,13 @@
     "confirm": "Delete",
     "deleting": "Deleting…",
     "failed": "The automation could not be deleted."
+  },
+  "runClosed": {
+    "title": "This run's turn has ended",
+    "description": "Its work is on {{branch}}. Opening it in the terminal picks the session up where the run left off.",
+    "descriptionNoBranch": "Opening it in the terminal picks the session up where the run left off.",
+    "open": "Open in terminal",
+    "opening": "Opening",
+    "backToAutomation": "Back to the automation"
   }
 }

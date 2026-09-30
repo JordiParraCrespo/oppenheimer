@@ -295,9 +295,11 @@ type SessionCreate struct {
 
 // LaunchOptions is SessionCreate.Launch.
 type LaunchOptions struct {
-	Model      string `json:"model,omitempty"`
-	Permission string `json:"permission,omitempty"`
-	Effort     string `json:"effort,omitempty"`
+	Model        string `json:"model,omitempty"`
+	Permission   string `json:"permission,omitempty"`
+	Effort       string `json:"effort,omitempty"`
+	Conversation string `json:"conversation,omitempty"`
+	Resume       bool   `json:"resume,omitempty"`
 }
 
 // SessionCreateImages is SessionCreate.Images.

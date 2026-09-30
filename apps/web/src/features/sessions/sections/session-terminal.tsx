@@ -43,11 +43,12 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
           xterm owns everything inside the inner element, scrollbar included. */}
       <div className="relative min-h-0 flex-1 overflow-hidden px-5 py-4">
         <div ref={containerRef} className="size-full" />
-        {/* A live link with an empty grid behind it: the agent is still
-            starting (`onFirstOutput`), the provisioning pane has handed over,
-            and without this the reader cannot tell a slow start from a broken
-            session. It covers the grid rather than replacing it, so the
-            terminal stays mounted and keeps its size. */}
+        {/* A live link with an empty grid behind it: a new session whose agent
+            has not drawn yet (the provisioning pane has handed over), or an
+            older one replaying its scrollback. Either way the reader cannot
+            tell a slow start from a broken session without this. It covers
+            the grid rather than replacing it, so the terminal stays mounted
+            and keeps its size, and the first glyph takes it away. */}
         {status === 'live' && !hasOutput ? (
           <div className="absolute inset-0 flex items-center justify-center bg-term-bg">
             <EmptyState>

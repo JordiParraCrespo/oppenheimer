@@ -74,6 +74,7 @@ export {
   useMoveSession,
   usePasteSessionImage,
   useRenameSession,
+  useRestartSession,
   useSession,
   useSessionStartProgress,
   useSessions,

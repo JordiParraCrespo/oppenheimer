@@ -662,8 +662,21 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	} else if alive {
 		return session, nil
 	}
+	// A restart continues the conversation rather than starting a second one.
+	//
+	// Two reasons, and either alone would be enough. The agent keeps the
+	// transcript, so reopening it is what the person pressing Restart means:
+	// the pane came back, not the work. And the id that names it was already
+	// used at create — `claude --session-id` refuses an id that exists — so
+	// replaying the create arguments would simply fail.
+	//
+	// Resuming also drops the stored first task, which is right: the
+	// conversation already holds it, and sending it again would ask for the
+	// same work twice.
+	launch := session.Launch
+	launch.Resume = true
 	release := s.holdLaunch(ctx, session.Agent)
-	err = s.terminals.Create(ctx, session.TmuxName(), session.Worktree, session.Launch.CommandLine(session.Agent), s.env(session))
+	err = s.terminals.Create(ctx, session.TmuxName(), session.Worktree, launch.CommandLine(session.Agent), s.env(session))
 	release()
 	if err != nil {
 		return domain.Session{}, err

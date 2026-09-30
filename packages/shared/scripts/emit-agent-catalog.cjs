@@ -113,8 +113,8 @@ function render() {
     '',
     "// launchCatalog is each agent's `launch` entry of the catalog, and the effort",
     '// levels its models offer: the argument vectors a structured launch becomes.',
-    '// `<model>` and `<prompt>` are substituted whole; an effort spelling has',
-    '// `<effort>` and `<model>` replaced inside each word.',
+    '// `<model>`, `<prompt>` and `<conversation>` are substituted whole; an effort',
+    '// spelling has `<effort>` and `<model>` replaced inside each word.',
     'var launchCatalog = map[string]launchMap{',
   ];
   for (const id of CODING_AGENT_IDS) {
@@ -123,6 +123,7 @@ function render() {
     lines.push(`\t${JSON.stringify(id)}: {`);
     // Single-line fields align as a run; each multi-line map stands alone.
     const head = [['command', JSON.stringify(agent.command)]];
+    if (launch.always) head.push(['always', goStrings(launch.always)]);
     if (launch.model) head.push(['model', goStrings(launch.model)]);
     const defaultModel = agent.models.find((model) => model.default);
     if (defaultModel) head.push(['defaultModel', JSON.stringify(defaultModel.id)]);
@@ -134,7 +135,21 @@ function render() {
       lines.push(...aligned(spelling, '\t\t'));
       lines.push(`\t\teffortLevels: ${goEffortLevels(agent.models)},`);
     }
-    if (launch.prompt) lines.push(`\t\tprompt: ${goStrings(launch.prompt)},`);
+    // gofmt aligns a run of consecutive single-line fields, so these are
+    // emitted as one run rather than a line each — otherwise the generated
+    // file is not gofmt-clean and the Go linter fails on it.
+    const tail = [];
+    if (launch.prompt) tail.push(['prompt', goStrings(launch.prompt)]);
+    if (launch.conversation?.create) {
+      tail.push(['conversationCreate', goStrings(launch.conversation.create)]);
+    }
+    if (launch.conversation?.resume) {
+      tail.push(['conversationResume', goStrings(launch.conversation.resume)]);
+    }
+    if (launch.conversation?.resumeLeads) {
+      tail.push(['conversationResumeLeads', 'true']);
+    }
+    if (tail.length > 0) lines.push(...aligned(tail, '\t\t'));
     lines.push('\t},');
   }
   lines.push('}', '');

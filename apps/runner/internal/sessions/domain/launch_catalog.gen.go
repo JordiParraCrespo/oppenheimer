@@ -5,8 +5,8 @@ package domain
 
 // launchCatalog is each agent's `launch` entry of the catalog, and the effort
 // levels its models offer: the argument vectors a structured launch becomes.
-// `<model>` and `<prompt>` are substituted whole; an effort spelling has
-// `<effort>` and `<model>` replaced inside each word.
+// `<model>`, `<prompt>` and `<conversation>` are substituted whole; an effort
+// spelling has `<effort>` and `<model>` replaced inside each word.
 var launchCatalog = map[string]launchMap{
 	"claude-code": {
 		command:      "claude",
@@ -23,10 +23,13 @@ var launchCatalog = map[string]launchMap{
 			"claude-fable-5-1":  {"low", "medium", "high", "xhigh", "max"},
 			"claude-sonnet-5-5": {"low", "medium", "high", "xhigh", "max"},
 		},
-		prompt: []string{"<prompt>"},
+		prompt:             []string{"<prompt>"},
+		conversationCreate: []string{"--session-id", "<conversation>"},
+		conversationResume: []string{"--resume", "<conversation>"},
 	},
 	"codex": {
 		command:      "codex",
+		always:       []string{"--no-daemon"},
 		model:        []string{"--model", "<model>"},
 		defaultModel: "gpt-5.6-sol",
 		permission: map[string]launchLevel{
@@ -41,7 +44,9 @@ var launchCatalog = map[string]launchMap{
 			"gpt-5.6-terra": {"low", "medium", "high", "xhigh", "max", "ultra"},
 			"gpt-5.6-luna":  {"low", "medium", "high", "xhigh", "max"},
 		},
-		prompt: []string{"<prompt>"},
+		prompt:                  []string{"<prompt>"},
+		conversationResume:      []string{"resume", "--last"},
+		conversationResumeLeads: true,
 	},
 	"opencode": {
 		command:      "opencode",
@@ -61,7 +66,8 @@ var launchCatalog = map[string]launchMap{
 			"anthropic/claude-haiku-4-5":  {"none", "high", "max"},
 			"openai/gpt-5.6-sol":          {"low", "medium", "high", "xhigh", "max"},
 		},
-		prompt: []string{"--prompt", "<prompt>"},
+		prompt:             []string{"--prompt", "<prompt>"},
+		conversationResume: []string{"--continue"},
 	},
 	"grok": {
 		command:      "grok",
@@ -77,7 +83,9 @@ var launchCatalog = map[string]launchMap{
 			"grok-4.7": {"minimal", "low", "medium", "high", "xhigh", "max"},
 			"grok-4.6": {"minimal", "low", "medium", "high", "xhigh", "max"},
 		},
-		prompt: []string{"<prompt>"},
+		prompt:             []string{"<prompt>"},
+		conversationCreate: []string{"--session-id", "<conversation>"},
+		conversationResume: []string{"--resume", "<conversation>"},
 	},
 	"shell": {
 		command: "",

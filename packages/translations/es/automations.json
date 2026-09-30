@@ -297,5 +297,13 @@
     "confirm": "Eliminar",
     "deleting": "Eliminando…",
     "failed": "No se pudo eliminar la automatización."
+  },
+  "runClosed": {
+    "title": "El turno de esta ejecución ha terminado",
+    "description": "Su trabajo está en {{branch}}. Al abrirla en el terminal, la sesión continúa donde la ejecución la dejó.",
+    "descriptionNoBranch": "Al abrirla en el terminal, la sesión continúa donde la ejecución la dejó.",
+    "open": "Abrir en el terminal",
+    "opening": "Abriendo",
+    "backToAutomation": "Volver a la automatización"
   }
 }

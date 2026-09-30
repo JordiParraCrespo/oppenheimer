@@ -407,8 +407,12 @@
       "details": "Details from the host: {{detail}}"
     },
     "closed": {
-      "description": "This session has stopped. Its work is on its branch.",
-      "deleted": "This session was deleted. Its worktree is gone from the host; commits already pushed stay on the remote."
+      "description": "This session has stopped. Its work is on {{branch}}, and restarting brings the terminal back where it left off.",
+      "deleted": "This session was deleted. Its worktree is gone from the host; commits already pushed stay on the remote.",
+      "descriptionNoBranch": "This session has stopped. Restarting brings the terminal back where it left off.",
+      "restart": "Restart",
+      "restarting": "Restarting",
+      "restartFailed": "The session could not be restarted."
     },
     "new": {
       "title": "New session",
@@ -524,8 +528,8 @@
         "refused": "The host refused to open this terminal."
       },
       "starting": {
-        "title": "Waiting for the agent",
-        "description": "The session is running. The agent draws its first screen once it has finished starting."
+        "title": "Nothing on the grid yet",
+        "description": "The link is up. This fills as soon as the agent draws — a new session once it has started, an older one once its history has replayed."
       }
     },
     "sidebar": {
@@ -877,6 +881,14 @@
       "confirm": "Delete",
       "deleting": "Deleting…",
       "failed": "The automation could not be deleted."
+    },
+    "runClosed": {
+      "title": "This run's turn has ended",
+      "description": "Its work is on {{branch}}. Opening it in the terminal picks the session up where the run left off.",
+      "descriptionNoBranch": "Opening it in the terminal picks the session up where the run left off.",
+      "open": "Open in terminal",
+      "opening": "Opening",
+      "backToAutomation": "Back to the automation"
     }
   },
   "hosts": {

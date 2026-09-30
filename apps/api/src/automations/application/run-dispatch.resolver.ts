@@ -38,6 +38,20 @@ export type DispatchDecision =
  * to start and as whom. A run a guard turns away never reads its event or
  * composes a prompt.
  */
+/**
+ * How long a run waits after losing the race for a slot. Short, because what it
+ * lost to is another run starting right now rather than a busy host: the next
+ * attempt reads a settled count.
+ */
+const CLAIM_LOST_DELAY_MS = 5_000;
+
+/**
+ * How long a reservation counts for. Long enough that a slow launch is not
+ * double-booked, short enough that a process dying between the claim and the
+ * session frees the slot without anything having to clean up.
+ */
+const CLAIM_TTL_MS = 2 * 60_000;
+
 @Injectable()
 export class RunDispatchResolver {
   constructor(
@@ -86,6 +100,28 @@ export class RunDispatchResolver {
     if (verdict.kind === 'skip') return { kind: 'skip', reason: verdict.reason, pause: null };
     if (verdict.kind === 'defer') {
       return { kind: 'defer', until: new Date(now.getTime() + verdict.delayMs) };
+    }
+
+    // The counts above are a moment old, and the queue dispatches four runs at
+    // once: every one of them read the same counts and every one passed, so a
+    // cap of one live run per automation launched four. The slot is taken here
+    // instead, under the host's lock and against counts read inside it, and the
+    // run counts as live from that moment — so the workers that lose the race
+    // see it and wait their turn.
+    const claimed = await this.runs.claimSlot({
+      runId: run.id,
+      automationId: automation.id,
+      hostId: revision.hostId,
+      liveRunsPerHost: limits.liveRunsPerHost,
+      overlap: limits.overlap,
+      liveSince,
+      // A claim is only honoured while it is fresher than the run limit, so a
+      // process that died between claiming and launching frees its slot.
+      claimFloor: new Date(now.getTime() - CLAIM_TTL_MS),
+      now,
+    });
+    if (!claimed) {
+      return { kind: 'defer', until: new Date(now.getTime() + CLAIM_LOST_DELAY_MS) };
     }
 
     return this.launchOf(run, automation, scope);

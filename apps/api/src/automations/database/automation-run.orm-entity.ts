@@ -36,6 +36,9 @@ import {
 })
 @Index('IDX_automation_run_pending', ['availableAt'], { where: `"outcome" = 'pending'` })
 @Index('IDX_automation_run_dispatched', ['dispatchedAt'], { where: `"outcome" = 'dispatched'` })
+@Index('IDX_automation_run_claimed', ['claimedAt'], {
+  where: `"outcome" = 'pending' AND "claimedAt" IS NOT NULL`,
+})
 // BRIN on "createdAt" for the retention purge (`InitialSchema`).
 @Index('IDX_automation_run_created_brin', { synchronize: false })
 export class AutomationRunOrmEntity {
@@ -89,6 +92,15 @@ export class AutomationRunOrmEntity {
 
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   dispatchedAt!: Date | null;
+
+  /**
+   * When this run reserved its slot, before it had a session to be counted by.
+   * Still `pending` while it holds one — the reservation is not a state, so
+   * "dispatched implies a session" keeps holding. Stale claims are ignored
+   * rather than cleaned up; see the migration.
+   */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  claimedAt!: Date | null;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
