@@ -41,10 +41,9 @@ func (c *tallyTerminals) Panes(ctx context.Context) ([]sessionsapp.Pane, error) 
 	return c.Terminals.Panes(ctx)
 }
 
-// `runner sessions` refreshes the host in one pass: one `list-panes` for
-// every session, never a `has-session` and a `capture-pane` round per
-// session, and a tmux session killed behind the runner's back is listed as
-// stopped.
+// One `list-panes` for every session, never a `has-session` and a
+// `capture-pane` round per session; a tmux session killed behind the runner's
+// back is listed as stopped.
 func TestListSessionsRefreshesTheHostInOnePass(t *testing.T) {
 	terminals := &tallyTerminals{Terminals: fake.NewTerminals()}
 	app, _ := hostApp(t, terminals, fake.NewWorktrees())

@@ -117,7 +117,6 @@ describe('UpdateProfileCommandHandler', () => {
   });
 
   it('lets a taken username surface as the repository reports it', async () => {
-    // The unique constraint is the rule; there is no lookup to race.
     repo.save = vi.fn().mockRejectedValue(new AppError(UserErrors.USERNAME_TAKEN));
 
     const error = await service

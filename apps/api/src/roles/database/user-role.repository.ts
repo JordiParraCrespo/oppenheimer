@@ -37,10 +37,8 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
   async findRolesForUser(userId: string, organizationId?: string | null): Promise<RoleEntity[]> {
     const roleIds = await this.findRoleIdsForUser(userId, organizationId);
     if (roleIds.length === 0) return [];
-    // Ordered, because callers index into this. Without it Postgres answers in
-    // whatever physical order the rows happen to sit in, so two users holding
-    // the *same* roles came back in different orders — and the team table,
-    // which labelled a row with the first one, showed them different roles.
+    // Ordered, because callers index into this: two users holding the same
+    // roles must get them in the same order, not Postgres's physical row order.
     const records = await this.roleRepository.find({
       where: { id: In(roleIds) },
       order: { name: 'ASC' },
@@ -73,8 +71,6 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
       .values({ userId, roleId, organizationId })
       .orIgnore()
       .execute();
-    // The organization's version for a scoped grant, the user's for a global
-    // one (it applies in every organization).
     await bumpForAssignment(manager, userId, organizationId);
   }
 
@@ -116,9 +112,8 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
     organizationId: string | null = null,
     manager?: EntityManager,
   ): Promise<void> {
-    // Replace the full set for this scope atomically. Assignments in other
-    // organizations are left alone: replacing a user's roles in one tenant must
-    // not silently revoke them in another.
+    // Assignments in other organizations are left alone: replacing a user's
+    // roles in one tenant must not silently revoke them in another.
     const uniqueRoleIds = [...new Set(roleIds)];
     const replace = async (tx: EntityManager) => {
       await tx.delete(UserRoleOrmEntity, {

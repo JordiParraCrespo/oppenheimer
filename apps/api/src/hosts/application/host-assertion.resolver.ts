@@ -27,7 +27,6 @@ import type { HostAssertionPort, HostPrincipalIdentity } from './host-assertion.
  */
 const MAX_LIFETIME_SECONDS = 5 * 60;
 
-/** Clock skew tolerated on the expiry, in seconds. */
 const CLOCK_SKEW_SECONDS = 30;
 
 /** Namespace of the burned-`jti` markers in Redis. */
@@ -82,9 +81,7 @@ export class HostAssertionResolver implements HostAssertionPort {
     if (found.isNone()) throw this.rejected('no such host');
 
     const host = found.unwrap();
-    // One key, because nothing can rotate one yet. The verifier takes a list so
-    // that the retired key joins it, and nothing else changes, when the link can
-    // carry a rotation (09 §3).
+    // One key until the link can carry a rotation (09 §3).
     if (!assertionIsSignedBy(decoded, [host.publicKey])) {
       throw this.rejected('not signed by this host');
     }
@@ -122,11 +119,11 @@ export class HostAssertionResolver implements HostAssertionPort {
     const secondsLeft = (expiresAt.getTime() - now.getTime()) / 1000;
     if (secondsLeft <= -CLOCK_SKEW_SECONDS) throw this.rejected('expired');
 
-    // **Claimed life, not remaining life.** The protocol says a boot token is
-    // minted with a five-minute expiry, so a token issued last week with four
-    // minutes left on it was not minted as one — and capping only what is left
-    // would accept it. Both bounds matter: the first is what the token says about
-    // itself, the second is what the replay window below is sized against.
+    // **Claimed life, not remaining life.** A token issued last week with four
+    // minutes left on it was not minted as a boot token, and capping only what
+    // is left would accept it. Both bounds matter: the first is what the token
+    // says about itself, the second is what the replay window below is sized
+    // against.
     const claimedLifetime = (expiresAt.getTime() - issuedAt.getTime()) / 1000;
     if (claimedLifetime > MAX_LIFETIME_SECONDS + CLOCK_SKEW_SECONDS) {
       throw this.rejected('minted with a longer life than a boot token');
@@ -163,13 +160,10 @@ export class HostAssertionResolver implements HostAssertionPort {
    * assertion has already been used, which is a replay whether or not the first
    * use was legitimate.
    *
-   * TODO(remove after #162 has been live once): the marker a replica wrote
-   * before the cache prefixed its keys sits at the unprefixed key, which
-   * `setIfAbsent` no longer sees, so an assertion used in the five and a half
-   * minutes before that deploy could otherwise be used once more after it.
-   * The legacy key is checked first and honoured. Every such marker has
-   * expired by the next release; remove this check and
-   * `LegacyReplayMarkerPort` then.
+   * TODO(remove after #162 has been live once): a marker written before the
+   * cache prefixed its keys is invisible to `setIfAbsent`, so an assertion used
+   * in the five and a half minutes before that deploy could otherwise be used
+   * once more after it. See `LegacyReplayMarkerPort`.
    */
   private async burn(hostId: string, jti: string, expiresAt: Date, now: Date): Promise<void> {
     if (await this.legacyMarkers.isBurned(hostId, jti)) throw this.rejected('already used');

@@ -20,10 +20,9 @@ type FlagAudience = 'signed-in' | 'anonymous';
 /**
  * The flags are evaluated for whoever is calling, so the key separates a
  * signed-in caller from an anonymous one: the set fetched on the login page
- * must not be what the dashboard renders after sign-in. Switching organization
- * needs nothing here — the organization switch invalidates every query — and a
- * different user is handled by the cache-owner reconciliation on session
- * restore and the cache clear on logout.
+ * must not be what the dashboard renders after sign-in. A different user is
+ * handled by the cache-owner reconciliation on session restore and the cache
+ * clear on logout.
  */
 export const featureFlagKeys = {
   all: ['featureFlags'] as const,
@@ -79,9 +78,8 @@ export interface FeatureFlagReadOptions {
   /**
    * Keep the first loaded value for as long as the component stays mounted
    * and reads the same key as the same audience (signed in or out), ignoring
-   * later refetches. For a flow a flag must not flip in the middle of
-   * — a checkout, a transfer, a multi-step form — which is what a mobile banking
-   * app does with every flag on a payment screen. Off by default: a kill switch
+   * later refetches. For a flow a flag must not flip in the middle of — a
+   * checkout, a transfer, a multi-step form. Off by default: a kill switch
    * should reach a screen that is already open.
    */
   sticky?: boolean;
@@ -115,8 +113,6 @@ export function useFeatureFlagValue<K extends ClientFeatureFlagKey>(
   if (sticky && isSuccess && !holds) setLatched({ key, audience, value: live });
   const value = sticky && holds ? (latched as Latch<FeatureFlagValueOf<K>>).value : live;
 
-  // Exposure is analytics — a system outside React — reported once the value
-  // shown is the server's, not the pre-load default.
   useEffect(() => {
     if (isSuccess) app.featureFlags.recordExposure(key, value);
   }, [app, key, value, isSuccess]);

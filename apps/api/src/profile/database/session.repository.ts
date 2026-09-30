@@ -9,11 +9,10 @@ import type { OwnedSession, SessionReaderPort } from './session.repository.port'
  * Expired rows are filtered out: Better Auth leaves them until cleanup, and a
  * device that can no longer authenticate needs no "sign out" button.
  *
- * Delegated rows are filtered out because they are not devices: listing
- * `DelegatedSessionAdapter`'s bridges turned two real sign-ins into 23 (issue
- * #122). Both methods exclude them, so the revoke command finds such an id
- * "not found": a credential is revoked where it is managed, not by signing out
- * a bridge it would rebuild on its next request.
+ * Delegated rows (`DelegatedSessionAdapter`'s bridges, issue #122) are filtered
+ * out by both methods, so the revoke command finds such an id "not found": a
+ * credential is revoked where it is managed, not by signing out a bridge it
+ * would rebuild on its next request.
  */
 @Injectable()
 export class SessionRepository implements SessionReaderPort {

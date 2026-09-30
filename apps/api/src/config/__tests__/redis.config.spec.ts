@@ -5,11 +5,6 @@ import {
   redisConnectionOptions,
 } from '../redis.config';
 
-/**
- * There is one place the address and password are read, so a `requirepass`
- * Redis cannot accept the queue and refuse the cache again.
- */
-
 const REDIS_VARS = ['REDIS_HOST', 'REDIS_PORT', 'REDIS_PASSWORD'];
 
 function withEnv(values: Record<string, string>) {

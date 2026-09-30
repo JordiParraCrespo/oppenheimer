@@ -7,8 +7,7 @@ import { z } from 'zod/v4';
  * kinds, and says the two sockets share only the kinds they both need. An
  * attach ticket needs a fourth — the host has no link right now — and that one
  * is meaningless on the link itself: a runner that is connected enough to send
- * a frame cannot coherently report itself offline. Keeping one union for both
- * let it.
+ * a frame cannot coherently report itself offline.
  */
 
 /** The link's closed vocabulary. */

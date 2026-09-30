@@ -8,11 +8,7 @@ export class CreateSessionCommand extends CommandBase {
   /** Whose session it is. A host is a person's, and so is the work put on it. */
   readonly userId: string;
   readonly input: CreateSessionDto;
-  /**
-   * The caller's `Idempotency-Key` header, stored on the row so a retry after a lost
-   * response returns the session already created rather than minting a second
-   * directory and a second branch. Absent header, absent protection.
-   */
+  /** The caller's `Idempotency-Key` header, stored on the row so a retry returns this session. */
   readonly idempotencyKey: string | null;
   /**
    * Who asked for it: a person at the console, or an automation's run, which

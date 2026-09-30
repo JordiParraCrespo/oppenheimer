@@ -12,12 +12,6 @@ import { OrganizationOrmEntity } from './organization.orm-entity';
 import type { PersonalWorkspaceRepositoryPort } from './personal-workspace.repository.port';
 
 /**
- * One transaction on the transactional outbox holds the membership test, the
- * organization, the membership and the role grant: the workspace, its owner
- * and the grant that opens it commit together or not at all, and a concurrent
- * provision for the same account sees the first one's membership rather than
- * racing past a stale check.
- *
  * The grant goes through `UserRoleRepositoryPort` with this transaction's
  * manager, so the roles module stays the one writer of `user_role`.
  *
@@ -67,14 +61,12 @@ export class PersonalWorkspaceRepository implements PersonalWorkspaceRepositoryP
         manager,
       );
 
-      // The account's existing sessions were opened before this workspace
-      // existed. Better Auth picks a session's organization when the row is
-      // written (`session.create.before`), and the `user.create.after` hook
-      // this command comes from runs after the sign-up commits, so sign-up's
-      // session keeps `activeOrganizationId = null`. `AbilityFactory` narrows
-      // role grants to the active organization, so the `owner` role granted
-      // here would be missing and every org-scoped route would answer 403
-      // until the next sign-in.
+      // Better Auth picks a session's organization when the row is written
+      // (`session.create.before`), and the `user.create.after` hook this
+      // command comes from runs after sign-up commits, so sign-up's session
+      // holds `activeOrganizationId = null`: without this, the `owner` grant
+      // stays out of its ability and every org-scoped route answers 403 until
+      // the next sign-in.
       //
       // Only sessions that chose nothing are touched, and the team column is
       // left alone: a personal workspace has no team.

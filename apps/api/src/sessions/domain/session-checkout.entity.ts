@@ -5,7 +5,6 @@ import {
   Entity,
 } from '@oppenheimer/backend-ddd';
 
-/** How the repository got onto the host, because cleanup differs. */
 export type CheckoutMode = 'worktree' | 'clone';
 
 export interface SessionCheckoutProps {

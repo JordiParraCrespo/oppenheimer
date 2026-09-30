@@ -91,8 +91,6 @@ describe('ProfileMapper', () => {
 
   describe('toProfileResponse', () => {
     it('takes the avatar URL from the caller, not the stored key', () => {
-      // What is persisted is a storage key; only the caller has resolved it
-      // against the storage back-end.
       const dto = mapper.toProfileResponse(makeUser(), 'https://cdn.example.com/a.png?sig=1');
 
       expect(dto.avatarUrl).toBe('https://cdn.example.com/a.png?sig=1');
@@ -113,13 +111,10 @@ describe('ProfileMapper', () => {
     });
 
     it('reports two-factor authentication as off', () => {
-      // The plugin is not enabled on this deployment; the field exists so a
-      // client can render the control without probing for it.
       expect(mapper.toProfileResponse(makeUser(), null).twoFactorEnabled).toBe(false);
     });
 
     it('never falls back to the stored key when the caller resolved no URL', () => {
-      // The user holds a storage key; a key is not something a browser can load.
       expect(mapper.toProfileResponse(makeUser(), null).avatarUrl).toBeNull();
     });
   });

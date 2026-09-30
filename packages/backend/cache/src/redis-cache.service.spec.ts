@@ -101,17 +101,14 @@ describe('RedisCacheService', () => {
     });
 
     it('reports a key someone else already claimed', async () => {
-      // Redis answers `null` when NX refuses, which is the whole point: the
-      // loser of the race learns it lost rather than overwriting the winner.
+      // Redis answers `null` when NX refuses.
       redis.set.mockResolvedValue(null);
 
       await expect(service().setIfAbsent('jti:abc', 1, 300)).resolves.toBe(false);
     });
 
     it('has exactly one winner when two callers race', async () => {
-      // The property the replay guard is built on, and the reason this is not
-      // get-then-set: whichever call reaches Redis second is told so, rather than
-      // both reading "absent" and both proceeding.
+      // Get-then-set would let both read "absent" and both proceed.
       const cache = service();
       let claimed = false;
       redis.set.mockImplementation(async () => {
@@ -146,9 +143,8 @@ describe('RedisCacheService', () => {
 
   describe('getOrSet', () => {
     it('runs the loader once for concurrent callers of one key', async () => {
-      // The stampede: an entry expires while ten requests want it, and each of
-      // them used to recompute it (for the repository picker, ten paginated
-      // GitHub listings).
+      // The stampede: an entry expires while ten requests want it (for the
+      // repository picker, ten paginated GitHub listings).
       redis.get.mockResolvedValue(null);
       redis.set.mockResolvedValue('OK');
       const gate = deferred<string[]>();
@@ -241,8 +237,7 @@ describe('RedisCacheService', () => {
   });
 
   it('offers no way to flush the database it shares with the queues', () => {
-    // `reset()` used to flush the whole database, the one BullMQ's jobs and the
-    // rate-limit counters also live in.
+    // A flush would take BullMQ's jobs and the rate-limit counters with it.
     expect('reset' in service()).toBe(false);
     expect('reset' in CacheService.prototype).toBe(false);
   });

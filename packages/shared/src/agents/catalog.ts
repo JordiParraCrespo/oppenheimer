@@ -11,13 +11,10 @@
  * Whether *this machine* actually has the agent on PATH is the other half and
  * is a host fact (`host.capabilities`), reported by the runner and shown as a
  * hint on the agent chip — never a gate.
- *
- * This module is data. The only function is the type guard, because a closed
- * union needs one at every boundary a string arrives at.
  */
 
 /**
- * Every agent id, in display order. Extend the tuple as agents are added.
+ * Every agent id, in display order.
  *
  * `shell` is the plain terminal: no agent at all, window 0 is the host's own
  * login shell in the worktree. It lives here rather than beside the list
@@ -188,8 +185,9 @@ export interface CodingAgentDefinition {
    * outright and the button names the agent itself, which is what a blank
    * terminal wants. Every agent here carries a **seed** — the models its CLI
    * documents, not ids invented for the picker — and which of them a given
-   * machine's CLI actually knows is the probe still open in
-   * `product/versions/mvp/05-screens.md`.
+   * machine's CLI actually knows is open question 6 in
+   * `product/versions/mvp/05-screens.md`; until it is probed, an unknown id
+   * fails in the session's own terminal, where the person can see it.
    */
   readonly models: readonly CodingAgentModel[];
   /** What the person's three choices mean to this CLI. */
@@ -229,11 +227,6 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // `sonnet`, `fable`): a row's label names a generation, and the day an alias
     // moves the button would keep its label while the host runs something else.
     // A pinned id can only go stale in the open.
-    //
-    // This is the **seed**. Whether a host's `claude` knows an id is a host
-    // fact, and its probe is open question 6 in `product/versions/mvp/05-screens.md`;
-    // until then an unknown id fails in the session's own terminal, where the
-    // person can see it.
     //
     // The newest of each line, in the order Claude's own model picker lists
     // them; Opus 5.5, the everyday model of the four, is the default.
@@ -299,10 +292,6 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // (`model = "gpt-5.6-sol"` in the documented starting `config.toml`), and
     // Astra is not: it wants Codex 0.153.1 and Trusted Access, so defaulting to
     // it would hand most hosts a row their CLI refuses.
-    //
-    // Same seed argument as Claude Code above, and the same limit: a probe is
-    // still what would tell the console which of these *this* machine's codex
-    // knows (`product/versions/mvp/05-screens.md`, open question 6).
     models: Object.freeze([
       Object.freeze({ id: 'gpt-6-astra', label: 'GPT-6 Astra' }),
       Object.freeze({ id: 'gpt-5.6-sol', label: 'GPT-5.6 Sol', default: true as const }),
@@ -405,7 +394,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // `permission` block, and its rules land *after* the build agent's
       // default `"*": "allow"`, so they win. That default is also why the env
       // is not optional: an Ask started without it would be Full access under
-      // another name, which is why a level is one object and never half-sent.
+      // another name.
       //
       // Ask asks before edits, commands and anything that reaches the
       // internet; Approve for me lets edits through and still asks for the
@@ -466,9 +455,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // The two Grok generations the CLI offers, with the ids `grok --model`
     // takes. 4.6 is the default because it is the CLI's own (`grok models`
     // on 1.0.41 reads "grok-4.6 (default)"); 4.7 is xAI's newest, first in
-    // capability order as Codex's list is. Same seed argument as the others:
-    // whether a given account's `grok` offers 4.7 is the probe still open in
-    // `product/versions/mvp/05-screens.md`.
+    // capability order as Codex's list is.
     models: Object.freeze([
       Object.freeze({ id: 'grok-4.7', label: 'Grok 4.7' }),
       Object.freeze({ id: 'grok-4.6', label: 'Grok 4.6', default: true as const }),

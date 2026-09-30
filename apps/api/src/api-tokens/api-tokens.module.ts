@@ -66,7 +66,6 @@ const repositories: Provider[] = [
     ...queryHandlers,
     ...repositories,
     ApiTokenMapper,
-    // This module's credential kind, registered with the kernel by being built.
     ...AuthModule.contributeCredentials([ApiTokenCredentialResolver]),
     // Revoking a token has to reach the session cached for it; the kernel
     // publishes the port, this module knows when to call it.

@@ -53,8 +53,7 @@ export function checkoutDirectoryCandidates(repositoryFullName: string, githubRe
  *
  * `null` when all three are taken, and the caller refuses. **It never reissues the
  * last one**: that would land a thrice re-added repository on a retired directory,
- * the inherited-conversation bug the tombstone prevents. A refusal is a sentence
- * somebody can read; a silent reuse is a stranger's history in a fresh agent.
+ * the inherited-conversation bug the tombstone prevents.
  */
 export function checkoutDirectoryName(
   repositoryFullName: string,

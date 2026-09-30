@@ -61,9 +61,8 @@ export class EmailJobMapper {
    * fingerprint is shown: enough to compare with the `key` line of
    * `oppenheimer-runner status` on the machine, which prints the full value.
    * The machine line is the hostname and platform the runner reported, when it
-   * reported them. The closing names the host id because, until the console
-   * has an unpair control, the API is the way to retire a machine nobody can
-   * reach.
+   * reported them. The closing names the host id, for unpairing it through
+   * the API (`DELETE /v1/hosts/:id`).
    */
   toHostPaired(input: unknown, t: LocalizedFormatter): HostPairedEmailParams {
     const data = this.record(input);

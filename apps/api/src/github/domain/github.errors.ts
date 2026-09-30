@@ -1,10 +1,5 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
-/**
- * The prefix is plural-noun `GITHUB_` and the numbering starts at 001 because
- * the Go runner owns its own `HOST_00x` / `PAIR_00x` / `SESS_00x` ranges in the
- * same catalog; a reused code fails `error-catalog-coverage.spec.ts`.
- */
 export const GithubErrors = {
   /**
    * Also raised for an installation that exists but belongs to another
@@ -28,9 +23,9 @@ export const GithubErrors = {
     httpStatus: 503,
   },
   /**
-   * `githubInstallationId` is globally unique, so a second workspace claiming
-   * an installation is a conflict rather than a constraint violation surfacing
-   * as a 500.
+   * `githubInstallationId` is unique among live rows, so a second workspace
+   * claiming an installation is a conflict rather than a constraint violation
+   * surfacing as a 500.
    */
   INSTALLATION_ALREADY_CONNECTED: {
     code: 'GITHUB_003',

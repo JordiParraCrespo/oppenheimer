@@ -10,7 +10,6 @@ import { OutboxRetentionProcessor } from './infrastructure/outbox-retention.proc
  * Global because every repository stages its
  * aggregate's domain events through `OutboxService` — inside the same TypeORM
  * transaction as the aggregate write — instead of emitting them directly.
- * `OutboxRetentionProcessor` purges delivered rows daily.
  */
 @Global()
 @Module({

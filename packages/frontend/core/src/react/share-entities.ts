@@ -2,9 +2,9 @@
  * TanStack Query's `structuralSharing` for data made of entity classes.
  *
  * The default (`replaceEqualDeep`) keeps identity only for plain objects and
- * arrays, and every frontend entity is a class, so each refetch handed readers
- * a new object per row: a sessions sidebar re-rendered every row on each
- * two-second provisioning poll.
+ * arrays, and every frontend entity is a class, so without this each refetch
+ * hands readers a new object per row and a list re-renders every row on every
+ * poll.
  *
  * This extends the same walk: a class instance is compared field by field when
  * both sides share a prototype, a `Date` by its time. What is equal keeps the

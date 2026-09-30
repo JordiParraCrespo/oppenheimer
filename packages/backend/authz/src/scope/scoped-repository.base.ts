@@ -11,10 +11,6 @@ import { applyAccessScope } from './apply-access-scope';
  * built through {@link scopedQuery} carries the caller's scope, derived from the
  * same column mapping the CASL conditions use, so the query and the ability can
  * never disagree.
- *
- * The point is that forgetting is not an option. `scopedQuery` **throws**
- * without a scope rather than quietly returning everything, and the deliberate
- * way out is named and requires a reason.
  */
 export abstract class ScopedRepositoryBase<Orm extends ObjectLiteral> {
   /** The declaration whose `keys` drive the generated predicate. */

@@ -83,10 +83,8 @@ func TestSystemdInstallWritesTheUnitEnablesLingeringAndStarts(t *testing.T) {
 	if !strings.Contains(string(written), "KillMode=process") {
 		t.Fatal("the installed unit must not kill the tmux server")
 	}
-	// Lingering before enable: a unit enabled first would not survive the
-	// next reboot until someone logged in. Then restart, not `enable --now`:
-	// a re-run on a host whose unit is already active must run the release
-	// it just linked, and `enable --now` would leave the old process in place.
+	// The order is systemd.Manager.Install's rule: lingering before enable,
+	// then restart rather than `enable --now`.
 	want := []string{
 		"loginctl enable-linger jordi",
 		"systemctl --user daemon-reload",

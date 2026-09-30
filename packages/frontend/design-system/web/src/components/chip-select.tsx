@@ -489,11 +489,9 @@ function PlusGlyph() {
 /**
  * One option row of `ChipSelect`, memoised on purpose.
  *
- * The highlight moves on every row the pointer crosses and on every arrow key,
- * and it lived in the picker: each move re-ran the whole list, so crossing a
- * branch chip of a hundred rows re-rendered a hundred rows per row crossed. A
- * row takes its own `highlighted` flag and two callbacks whose identity holds,
- * so a move re-renders the row it left and the row it reached.
+ * The highlight moves on every row the pointer crosses and on every arrow key.
+ * A row takes its own `highlighted` flag and two callbacks whose identity holds,
+ * so a move re-renders the row it left and the row it reached, not the list.
  */
 const ChipSelectOptionRow = React.memo(function ChipSelectOptionRow({
   option,

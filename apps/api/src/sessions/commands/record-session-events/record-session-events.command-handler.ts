@@ -32,8 +32,6 @@ export class RecordSessionEventsCommandHandler
   ) {}
 
   async execute(command: RecordSessionEventsCommand): Promise<RunnerEventAck> {
-    // The wire carries each payload as a JSON string, so the 8 KB cap survives into
-    // the generated Go. It is parsed here, at the boundary, and stored as jsonb.
     const appended = await this.sessions.appendEventsForHost(
       command.hostId,
       command.sessionId,

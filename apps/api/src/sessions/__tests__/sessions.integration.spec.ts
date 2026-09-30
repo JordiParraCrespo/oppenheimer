@@ -472,9 +472,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       const first = await repository.appendEvents(work, batch);
       const replay = await repository.appendEvents(work, batch);
 
-      // Both attempts accept the key — `DO NOTHING` cannot tell a row it just wrote
-      // from one a previous attempt wrote, and for the runner both mean "stop
-      // resending this".
+      // Both attempts accept the key: see `SessionAppendOutcome`.
       expect(first.accepted).toEqual(['run-1:1']);
       expect(replay.accepted).toEqual(['run-1:1']);
       expect(replay.appended).toHaveLength(0);
@@ -702,8 +700,6 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       );
       expect(created.cwdCheckoutId).toBe(first.id);
 
-      // The event is what retires it: folding `session.checkout_removed` nulls the
-      // column and marks the child, so the row and the log cannot disagree.
       await repository.retireCheckout(work, first, [
         {
           idempotencyKey: 'remove:1',
@@ -936,8 +932,6 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       const archived = archive.status === 'fulfilled' && archive.value.result === 'archived';
       const inserted = create.status === 'fulfilled' && create.value.created;
 
-      // Exactly one of them won: either the project is archived and no session was
-      // inserted, or the session exists and the archive refused.
       expect(archived).not.toBe(inserted);
       const [{ count }] = await dataSource.query(
         `SELECT count(*)::int FROM "work_session" WHERE "projectId" = $1 AND "state" <> 'resolved'`,

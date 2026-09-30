@@ -96,8 +96,8 @@ export function formatAge(date: Date, now: Date | number, t: TFunction): string 
 }
 
 /**
- * `Intl.DateTimeFormat` is expensive to construct and the tables were building
- * one per row. Formatters are pure for a given (locale, options), so they are
+ * `Intl.DateTimeFormat` is expensive to construct and a table formats a date
+ * per row. Formatters are pure for a given (locale, options), so they are
  * cached here and every helper below goes through this.
  */
 const formatterCache = new Map<string, Intl.DateTimeFormat>();

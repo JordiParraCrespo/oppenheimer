@@ -1,6 +1,6 @@
 // Package memory is the in-process Repository. It is the default store so
-// the service runs with no external dependency; swap it for a database
-// adapter by implementing app.Repository.
+// the service runs with no external dependency; the postgres adapter
+// replaces it when a database URL is configured.
 package memory
 
 import (

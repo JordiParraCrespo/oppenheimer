@@ -65,8 +65,8 @@ module.exports = function frontendDomain({ role }) {
     options: {
       doNotFollow: { path: 'node_modules|^../' },
       tsConfig: { fileName: 'tsconfig.json' },
-      // 'specify' keeps type-only imports apart from value imports, so a lib/
-      // file may name `ReactNode` without being told it renders.
+      // 'specify' keeps type-only imports apart from value imports, which
+      // no-circular's `dependencyTypesNot: ['type-only']` depends on.
       tsPreCompilationDeps: 'specify',
       enhancedResolveOptions: {
         exportsFields: ['exports'],

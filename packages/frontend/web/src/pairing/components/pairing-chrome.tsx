@@ -144,8 +144,6 @@ export function PairingStatus({
       <div data-slot="host-pairing-status" className="flex min-h-10.5 flex-col justify-center">
         {host ? (
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* The dot follows what the API reports, not the row appearing:
-                  a runner that registered may still be starting. */}
             <span
               aria-hidden
               className={cn(

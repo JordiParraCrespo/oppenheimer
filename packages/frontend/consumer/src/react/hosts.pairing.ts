@@ -49,9 +49,6 @@ export interface HostPairingFlow {
  * `redeemedHostId` once a runner spends it, and only then is the host looked
  * up. A regenerated token is a different id, so the host it offered goes with
  * it.
- *
- * One effect, synchronised with the clock at the token's expiry, which stops
- * the poll and offers a new token.
  */
 export function useHostPairing(hostName: string): HostPairingFlow {
   const { data: pairing, isPending, error } = useCurrentPairing(hostName);

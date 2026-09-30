@@ -17,9 +17,8 @@ describe('orUndefined', () => {
   });
 
   it('returns a nonblank value verbatim, whitespace and all', () => {
-    // A credential may legitimately carry surrounding whitespace. Trimming it
-    // here would hand a different password to TypeORM than the one Better
-    // Auth's pool reads straight off `process.env`.
+    // A credential may legitimately carry surrounding whitespace; trimming it
+    // would hand Postgres a password nobody set.
     expect(orUndefined('  s3cr3t  ')).toBe('  s3cr3t  ');
     expect(orUndefined('\tpa ss\n')).toBe('\tpa ss\n');
   });
@@ -74,9 +73,7 @@ describe('parseEnv', () => {
   });
 
   it('throws a plain Error, so logging it cannot crash the logger', () => {
-    // A ZodError is not safely printable: on Node >= 23 `util.inspect` throws
-    // on one, and that secondary throw is what turned a missing env var into
-    // an `Aborted (core dumped)` with no message. See the note in env.ts.
+    // A ZodError is not safely printable on Node >= 23; see `parseEnv`.
     let thrown: unknown;
     try {
       parseEnv('app', schema, envKeys);

@@ -113,8 +113,6 @@ describe('MintPairingTokenCommandHandler', () => {
     const token = inserted();
     const secret = /--token (\S+)/.exec(result.installCommand)?.[1] as string;
 
-    // The runner checks the prefix before spending a token, so a user who pasted
-    // the wrong secret is told which one they pasted.
     expect(secret).toMatch(/^opr_reg_/);
     expect(token.tokenHash).toBe(hashPairingTokenSecret(secret));
     // Nothing anywhere holds the secret itself, so nothing can hand it out twice.

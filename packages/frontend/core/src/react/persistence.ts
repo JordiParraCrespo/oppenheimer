@@ -56,8 +56,8 @@ export const cacheOwnerKey = ['cacheOwner'] as const;
  * So each session restore reconciles the cache against the signed-in user:
  * same user, keep it; anyone else, nobody, or no owner recorded, drop every
  * non-`auth` entry (`auth` holds the session query driving this call). Called
- * from `useSessionRestore`'s `queryFn`, before either app's gate renders, so
- * no component ever observes another user's data.
+ * from `useSessionRestore`'s `queryFn`, before the app's gate renders, so no
+ * component ever observes another user's data.
  */
 export function reconcileCacheOwner(queryClient: QueryClient, ownerId: string | null): void {
   const previousOwnerId = queryClient.getQueryData<string>(cacheOwnerKey) ?? null;
@@ -73,10 +73,7 @@ export function reconcileCacheOwner(queryClient: QueryClient, ownerId: string | 
 /**
  * Increment when the persistence policy changes in a way that makes an
  * already-stored cache unsafe to hydrate, or changes the shape of a persisted
- * key so an old entry would sit in storage that nothing reads. Revision 2
- * dropped profile/session entities written before they were excluded from
- * persistence; revision 3 drops the `['capabilities']` entry written before
- * the query moved to `capabilitiesKeys.deployment()`.
+ * key so an old entry would sit in storage that nothing reads.
  */
 const QUERY_PERSIST_REVISION = 3;
 

@@ -13,7 +13,8 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/packages/go/httpx"
 )
 
-// Module bundles the context's wiring. main builds one and mounts it.
+// Module bundles the context's wiring. The composition root builds one and
+// mounts it.
 type Module struct {
 	Service *app.Service
 	handler *httpadapter.Handler

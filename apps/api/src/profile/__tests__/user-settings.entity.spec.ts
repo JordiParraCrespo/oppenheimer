@@ -73,9 +73,6 @@ describe('UserSettingsEntity', () => {
   });
 
   it('rejects an unknown value coming back out of the database', () => {
-    // The columns are plain varchar, so a hand-edited row is the realistic way
-    // an unknown value reaches the aggregate — validation on construction is
-    // what stops it reaching a client that branches on the value.
     expect(() =>
       UserSettingsEntity.create({
         id: 'user-uuid',

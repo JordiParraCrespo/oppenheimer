@@ -116,7 +116,7 @@ export class DelegatedSessionAdapter implements DelegatedSessionPort {
         // over it — 24 hours, for `dontRememberMe` — and only re-applies the
         // override when told to override all of it. Without this flag the ten
         // minutes above are silently ignored and every remint leaves a
-        // day-long row behind: the reason one account came to show 23 devices.
+        // day-long row behind.
         true,
       );
 

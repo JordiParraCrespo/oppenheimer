@@ -230,13 +230,11 @@ func unit(paths Paths) svcdomain.Unit {
 		env[EnvAgentUpdates] = updates
 	}
 	// The installer's PATH, carried onto the service: launchd hands a job
-	// `/usr/bin:/bin:/usr/sbin:/sbin` and systemd little more, and neither
-	// contains `/opt/homebrew/bin` — so on a stock Homebrew Mac the installed
-	// runner cannot see tmux, git or the agent, and every session fails with
-	// "a required tool is missing" while `runner status`, which inherits the
-	// caller's shell, reports all of them present. Taking the PATH from the
-	// install is what makes those two agree: the tools the installer verified
-	// are the tools the service can reach.
+	// `/usr/bin:/bin:/usr/sbin:/sbin` and systemd little more, neither with
+	// `/opt/homebrew/bin`, so on a stock Homebrew Mac the service could not
+	// see the tmux, git and agent that `runner status`, run from the caller's
+	// shell, reports present. The tools the installer verified are then the
+	// tools the service can reach.
 	if path := ServicePATH(os.Getenv("PATH")); path != "" {
 		env["PATH"] = path
 	}

@@ -66,9 +66,6 @@ describe('createErrorMessageResolver', () => {
   });
 
   it('keeps the screen’s copy for a server failure carrying no problem document', () => {
-    // Better Auth's client rejects a wrong password through `AuthRequestError`:
-    // a real 401, but no problem document. Treating "no document" as "could not
-    // connect" told a user who mistyped their password to check their wifi.
     const wrongPassword = Object.assign(new Error('Invalid email or password'), {
       status: 401,
     });
@@ -90,7 +87,7 @@ describe('createErrorMessageResolver', () => {
   });
 
   it('reports a request that never reached the API as unreachable', () => {
-    // No problem document: the caller's copy would describe the wrong failure.
+    // No status: the caller's copy would describe the wrong failure.
     const resolved = resolve(new TypeError('Failed to fetch'), 'Incorrect email or password.');
 
     expect(resolved.message).toBe('Could not reach the server.');

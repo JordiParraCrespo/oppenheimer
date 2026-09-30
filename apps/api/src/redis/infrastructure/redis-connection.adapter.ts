@@ -4,10 +4,9 @@ import Redis from 'ioredis';
 import { type RedisConfig, redisCommandClientOptions } from '../../config/redis.config';
 
 /**
- * One owner is what makes the lifecycle hold. Every consumer used to open its
- * own client, and two of the three never closed theirs, so `app.close()` left
- * sockets behind. It closes in `onApplicationShutdown`, which Nest runs after
- * every module's `onModuleDestroy`, so nothing still using it sees it go away.
+ * One owner, so `app.close()` leaves no socket behind. It closes in
+ * `onApplicationShutdown`, which Nest runs after every module's
+ * `onModuleDestroy`, so nothing still using it sees it go away.
  */
 @Injectable()
 export class RedisConnectionAdapter implements OnApplicationShutdown {

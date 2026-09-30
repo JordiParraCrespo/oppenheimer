@@ -2,14 +2,6 @@ import { getQueueToken } from '@nestjs/bullmq';
 import type { INestApplication } from '@nestjs/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-/**
- * Bull Board is an admin surface over live queues. Two things about the wiring
- * matter and neither is visible at a glance: that it resolves each queue by the
- * BullMQ DI token (resolving by name silently yields nothing), and that the
- * router is mounted under the same base path the adapter was told about — a
- * mismatch renders a dashboard whose own asset and API URLs 404.
- */
-
 const createBullBoard = vi.fn();
 const setBasePath = vi.fn();
 const getRouter = vi.fn(() => 'the-router');

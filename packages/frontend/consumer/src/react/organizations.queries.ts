@@ -20,8 +20,7 @@ import { useConsumerApp } from './context';
  * The personal workspace's hooks: read it, rename it, and create one for an
  * account that ended up without. Members and invitations have no hook here on
  * purpose — the workspace is personal (`product/versions/mvp/08-auth.md`), and
- * a roster is the teams slice's to add, not something to wire from a hook that
- * happened to be sitting here.
+ * a roster is the teams slice's to add.
  */
 export const organizationsKeys = {
   all: ['organizations'] as const,

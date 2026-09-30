@@ -10,8 +10,7 @@ function clock(seconds: number): string {
 /**
  * "Token expires in 12:34", ticking once a second.
  *
- * Its own leaf so only this line re-renders every second; when the flow
- * ticked, the Add host dialog and onboarding step re-rendered whole. The count
+ * Its own leaf so only this line re-renders every second. The count
  * is derived from `expiresAt` and the clock rather than decremented, so a
  * backgrounded tab shows the right number when it returns.
  */

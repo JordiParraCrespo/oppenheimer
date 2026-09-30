@@ -14,8 +14,7 @@ import { CreateAccessGrantCommand } from './create-access-grant.command';
  * Issues an access grant, subject to two checks in this order:
  *
  * 1. **Containment** — the granter may only pass on reach they already hold.
- *    Without it these endpoints are a self-service escalation path, which is
- *    why they could not ship before the check did.
+ *    Without it these endpoints are a self-service escalation path.
  * 2. **Principal residency** — the user, team or role must belong to the
  *    organization, or a grant could name an outsider and bridge two tenants.
  */

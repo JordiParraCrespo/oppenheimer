@@ -8,7 +8,7 @@ import type { NavItem, NavLink, ShellWorkspace } from '../lib/nav';
  */
 export interface ShellConfig {
   nav: readonly NavItem[];
-  /** Links shown in the account menu above the language list. */
+  /** Links shown in the account menu above the appearance and language rows. */
   userMenuLinks?: readonly NavLink[];
   workspace?: ShellWorkspace;
   /**

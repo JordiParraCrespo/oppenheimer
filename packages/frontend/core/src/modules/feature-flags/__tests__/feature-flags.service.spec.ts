@@ -50,8 +50,6 @@ describe('FeatureFlagsService', () => {
     expect(repository.get).toHaveBeenCalledWith({ platform: 'ios', appVersion: '2.1.0' });
   });
 
-  // Rejecting is what lets the query keep the last good answer; resolving to
-  // defaults would turn a pulled kill switch back on during a network blip.
   it('lets a failure reject rather than resolving to defaults', async () => {
     repository.get.mockRejectedValue(new Error('offline'));
     await expect(service.get()).rejects.toThrow('offline');

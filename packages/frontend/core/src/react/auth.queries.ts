@@ -30,10 +30,6 @@ export function useSessionRestore(
     queryKey: authKeys.session(),
     queryFn: async () => {
       const userId = await app.auth.restoreSession();
-
-      // A persisted cache can outlive the session it was written under, so
-      // check it still belongs to whoever is signed in now — before this
-      // resolves and either app's gate renders anything from it.
       reconcileCacheOwner(queryClient, userId);
 
       // Start the flags request now that we know who is asking, so it runs
@@ -47,10 +43,8 @@ export function useSessionRestore(
       return userId;
     },
     // `restoreSession()` only rejects when the session lookup itself fails
-    // (network/server error) — a genuinely unauthenticated user resolves
-    // successfully, so retries never fire for them. Without this a single
-    // network blip masquerades as "logged out" and silently bounces the user
-    // to /login.
+    // (network/server error); a signed-out user resolves, so retries never
+    // fire for them.
     retry: CORE_CONFIG.session.restoreRetries,
     retryDelay: (attempt) =>
       Math.min(
@@ -64,8 +58,7 @@ export function useSessionRestore(
 
 /**
  * What a social button hands the mutation. The `intent` is what separates the
- * login screen's button from the register screen's: the API refuses a provider
- * identity it has never seen unless the caller asked for a sign-up.
+ * login screen's button from the register screen's ({@link SocialAuthIntent}).
  */
 export interface SocialLoginVariables {
   provider: SocialProvider;

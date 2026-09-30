@@ -21,7 +21,7 @@ import { gzipSync } from 'node:zlib';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Budget in KB of gzipped bytes on the critical path. */
+/** Each app's critical-path budget, in KB of gzipped bytes. */
 const APPS = [
   // oppenheimer:begin web
   {

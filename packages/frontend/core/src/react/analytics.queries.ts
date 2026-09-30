@@ -49,10 +49,9 @@ export function useCaptureEvent(
 export function useCaptureOnMount(event: AnalyticsEvent, properties?: AnalyticsProperties): void {
   const { mutate } = useCaptureEvent();
 
-  // Read through a ref so a fresh object literal each render doesn't re-fire
-  // the effect, while the capture still sends the latest values. Kept current
-  // by an effect, not in render: a ref written during render makes the React
-  // Compiler skip the whole hook. Declared first, so it runs before the capture.
+  // Kept current by an effect, not in render: a ref written during render makes
+  // the React Compiler skip the whole hook. Declared first, so it runs before
+  // the capture.
   const latestProperties = useRef(properties);
   useEffect(() => {
     latestProperties.current = properties;

@@ -199,7 +199,7 @@ const adapters: Provider[] = [
  * per operation. The app's own rules: `MembershipAccessPolicy` keeps
  * application roles aligned with the roster, and the personal workspace is an
  * aggregate provisioned by `commands/provision-personal-workspace/`, dispatched
- * by the sign-up hook through `auth/infrastructure/auth-command-bus.util.ts`.
+ * on sign-up by the auth module's `CompleteSignUpCommandHandler`.
  */
 @Module({
   imports: [

@@ -152,10 +152,7 @@ const DEFAULT_SEED_PASSWORDS = new Set(['superadmin123456', 'admin123456', 'user
 const MIN_PRODUCTION_SEED_PASSWORD_LENGTH = 12;
 
 async function seed() {
-  // Never seed a production database with these well-known accounts. The
-  // published default passwords would be an instant account-takeover; a
-  // deliberate override (ALLOW_PRODUCTION_SEED=true, with strong SEED_*
-  // passwords set) is required to proceed.
+  // The published default passwords would be an instant account takeover.
   if (process.env.NODE_ENV === 'production') {
     if (process.env.ALLOW_PRODUCTION_SEED !== 'true') {
       throw new Error(
@@ -235,10 +232,9 @@ async function seed() {
     console.log(`Created ${seedUser.role} user: ${seedUser.email}`);
   }
 
-  // What sign-up owes every account: the default `user` role, and the personal
-  // workspace — one organization, one owner member, no team. Run for all seed
-  // accounts, not only the ones just created, so a database seeded before
-  // either existed is repaired. Both handlers are idempotent.
+  // For every seed account, not only the ones just created, so a database
+  // seeded before the default role or personal workspace existed is repaired.
+  // Both handlers are idempotent.
   for (const seedUser of seedUsers) {
     const user = await userRepo.findOneBy({ email: seedUser.email });
     if (!user) continue;

@@ -251,8 +251,7 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 // no client attached nobody is watching a dot change, and `capture-pane` on a
 // busy host is not free. Each tick is one `list-panes` for the whole host plus
 // one `capture-pane` per live session, and writes the session map only when a
-// state changed. The link will make this adaptive — a second while a browser
-// is attached — when it lands.
+// state changed.
 func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()

@@ -433,11 +433,9 @@ func (s *Service) recordedAt(id string) (domain.Session, uint64, error) {
 	return domain.Session{}, 0, domain.ErrNotFound.WithDetail("no session %q on this host", id)
 }
 
-// OpenWindow adds a tab: a plain shell in the same worktree.
-//
-// It writes through the same revision-bumping path as every command, and a
-// refresh applies what it saw to the stored record rather than to its own
-// copy, so a window opened while a refresh was looking is kept.
+// OpenWindow adds a tab: a plain shell in the same worktree. It holds the
+// session like every command, so a refresh running meanwhile keeps the
+// window (see observe).
 func (s *Service) OpenWindow(ctx context.Context, id string) (domain.Window, error) {
 	defer s.hold(id)()
 	session, err := s.recorded(id)
@@ -794,10 +792,9 @@ func (s *Service) Orphans(ctx context.Context) ([]string, error) {
 }
 
 // Running names every tmux session this runner owns that is up right now —
-// recorded sessions and orphans alike — without changing a single record. It
-// is what `uninstall` must not leave behind unattended: an agent in one of
-// these keeps working after the runner is gone, with no control plane and no
-// console to see it. A host with no tmux has nothing running.
+// recorded sessions and orphans alike — without changing a single record:
+// what `uninstall` refuses to leave running (see App.Uninstall). A host with no
+// tmux has nothing running.
 func (s *Service) Running(ctx context.Context) ([]string, error) {
 	if err := s.terminals.Available(ctx); err != nil {
 		return nil, nil //nolint:nilerr // no tmux means no sessions, which is the answer
@@ -934,8 +931,8 @@ func (s *Service) observe(session domain.Session, seen uint64, state domain.Stat
 
 // discardImages drops a session's pasted images. They were for the agent in
 // the tmux session; once it is gone (stopped, closed, lost to a reboot)
-// nothing will read them. decide and observe call it as a session stops,
-// and only then.
+// nothing will read them. decide and observe call it as a session stops, and
+// a create whose agent never started drops what it saved.
 func (s *Service) discardImages(id string) {
 	if s.images != nil {
 		_ = s.images.Discard(id)

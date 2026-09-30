@@ -42,8 +42,6 @@ export function AppSidebar() {
     select: (state) => state.location.pathname,
   });
 
-  // Only the routes this user's permissions actually reach — a restricted user
-  // never sees a row that would answer with "No tienes permiso para hacer eso".
   const entries = useAuthorizedNav();
   // What the app calls the workspace: the console passes the caller's
   // organization (from the same query General Settings reads, so a saved name

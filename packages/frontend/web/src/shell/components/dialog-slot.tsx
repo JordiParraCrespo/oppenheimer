@@ -22,8 +22,8 @@ export interface DialogSlot<TRequest> {
  *
  * Actions and request are two contexts because they change at different
  * rates: every opener reads `open`, which never changes, and only the owner
- * reads the request. One context re-rendered every sidebar and row that could
- * open a dialog each time one did.
+ * reads the request. One context would re-render every sidebar and row that
+ * can open a dialog each time one opens.
  */
 export function createDialogSlot<TRequest>(name: string): DialogSlot<TRequest> {
   const ActionsContext = createContext<DialogSlotActions<TRequest> | null>(null);

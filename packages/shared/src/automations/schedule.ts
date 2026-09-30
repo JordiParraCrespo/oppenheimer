@@ -216,8 +216,7 @@ export function nextScheduleOccurrence(rule: ScheduleRule, after: Date): Date | 
 
 /**
  * The zone's short name at an instant (`CEST`, `GMT+2`), for the sentence the
- * editor prints after the time. The frames hard-code "CEST"; this is what
- * replaces it.
+ * editor prints after the time.
  */
 export function timeZoneAbbreviation(timezone: string, at: Date = new Date()): string {
   const part = new Intl.DateTimeFormat('en-US', { timeZone: timezone, timeZoneName: 'short' })

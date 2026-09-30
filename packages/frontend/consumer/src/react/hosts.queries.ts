@@ -102,8 +102,8 @@ export function useHostsSnapshot(): () => HostEntity[] | undefined {
  *
  * A query, though minting writes: the step needs exactly one token while it is
  * open, fetched once on mount and replaced by `useReplacePairing` on request.
- * Minting from an effect needed a ref to survive StrictMode and left the old
- * command on screen until the next one resolved.
+ * Minting from an effect would need a ref to survive StrictMode and would
+ * leave the old command on screen until the next one resolved.
  *
  * Never cached beyond the visit: a token is single-use and hour-long, so a
  * second visit must not show a secret that no longer pairs anything.
@@ -127,9 +127,8 @@ export function useCurrentPairing(
 
 /**
  * Add host's "New token": mint a replacement for the token on screen and put
- * it where `useCurrentPairing(name)` reads it. The replaced token is revoked by
- * the same API write, so a refused mint (the cap, a network error) leaves the
- * one on screen spendable and unchanged.
+ * it where `useCurrentPairing(name)` reads it. A refused mint (the cap, a
+ * network error) leaves the one on screen spendable and unchanged.
  */
 export function useReplacePairing(name: string) {
   const app = useConsumerApp();
@@ -145,8 +144,7 @@ export function useReplacePairing(name: string) {
 
 /**
  * The caller's pairing tokens. Add host polls this to find out whether the
- * token it minted has been spent, and on which machine — a question the host
- * list cannot answer for an account that already owns one.
+ * token it minted has been spent, and on which machine.
  */
 export function usePairingTokens(
   options?: Omit<UseQueryOptions<HostPairingToken[], Error>, 'queryKey' | 'queryFn' | PollKeys>,

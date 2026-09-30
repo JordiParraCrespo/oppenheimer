@@ -20,11 +20,11 @@ const (
 	DirRun   = "run"
 	DirState = "state"
 	// DirManifests holds agent manifests newer than the ones compiled in.
-	// The control plane writes here; an empty directory is the normal case
-	// and means the bundled rules are in force.
+	// Nothing on the link writes here yet; an empty directory is the normal
+	// case and means the bundled rules are in force.
 	DirManifests = "manifests"
 	// DirImages holds the pictures pasted into sessions' prompts, one
-	// directory per session, dropped when the session closes.
+	// directory per session, dropped when the session stops or closes.
 	DirImages = "images"
 )
 

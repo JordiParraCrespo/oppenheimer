@@ -46,8 +46,7 @@ export function withCacheOnSuccess<TData, TError, TVariables, TOnMutateResult = 
  * Refetch every cached read, because the caller now stands somewhere else.
  *
  * Only a write that changes which workspace the caller is in may do this —
- * creating their first one (`useCreateOrganization`, and
- * `useClaimPersonalWorkspace` with no row to claim) — since the shell, the
+ * claiming their first one (`useClaimPersonalWorkspace`) — since the shell, the
  * nav's permissions and every org-scoped list answered "who are you and
  * where". Anything else invalidates by the narrowest key; the name is here so
  * a bare `invalidateQueries()` is never copied from one of those.

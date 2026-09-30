@@ -83,8 +83,6 @@ describe('session capabilities (CASL)', () => {
     expectAbility(WORKSPACE_SESSIONS, { user: { id: 'member-1' }, scope: scope() })
       .canOn('read', 'Session', { organizationId: 'org-acme' })
       .canOn('create', 'Session', { organizationId: 'org-acme' })
-      // Opening a terminal is `update`, which is why there is no `attach` action to
-      // assert here: the scope split is what separates a reader from a shell.
       .canOn('update', 'Session', { organizationId: 'org-acme' })
       .canOn('delete', 'Session', { organizationId: 'org-acme' });
   });

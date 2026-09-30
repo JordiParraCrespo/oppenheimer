@@ -94,9 +94,7 @@ export class CreateSessionCommandHandler
     if (!created.created) return { sessionId: created.session.id, hints: [] };
 
     // The name is asked for *while* the host is told about the session, so the
-    // model's round trip overlaps the dispatch rather than following it. It
-    // resolves within the namer's deadline and never rejects: a slow model is
-    // replaced by the prompt's own words, so the response carries a readable name.
+    // model's round trip overlaps the dispatch rather than following it.
     const naming = input.prompt ? this.naming.propose(created.session, input.prompt) : null;
 
     const { hints } = await this.dispatch.create(

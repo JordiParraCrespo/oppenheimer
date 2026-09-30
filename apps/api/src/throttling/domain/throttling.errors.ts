@@ -1,9 +1,8 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 /**
- * The limiter is global, so any route can answer with this; without a catalog
- * entry a 429 went out as Nest's own `ThrottlerException` with no `code`, and
- * clients had nothing to branch on.
+ * The limiter is global, so any route can answer with this: a coded 429
+ * clients can branch on, where Nest's own `ThrottlerException` has no `code`.
  */
 export const ThrottlingErrors = {
   TOO_MANY_REQUESTS: {

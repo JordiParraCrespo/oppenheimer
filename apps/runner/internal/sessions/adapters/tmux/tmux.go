@@ -31,13 +31,11 @@ var _ app.Terminals = (*Server)(nil)
 const commandTimeout = 10 * time.Second
 
 // launchCols and launchRows are the grid a session starts on, before any
-// browser has attached and said how wide it really is.
-//
-// tmux's detached default is 80x24, and an agent lays its turn out for the
-// size it is told: a session nobody has opened yet (every automation's) worked
-// in 80 columns, then reflowed into the ~130 the console shows — wrapped
-// tables, broken box drawing. A laptop-width console keeps that reflow small;
-// `window-size latest` hands the window over once a real viewport attaches.
+// browser has attached and said how wide it really is: a laptop-width
+// console. An agent lays its turn out for the size it is told, and tmux's
+// detached 80x24 made a session nobody had opened yet (every automation's)
+// reflow into the console's ~130 columns with wrapped tables and broken box
+// drawing.
 const (
 	launchCols = 132
 	launchRows = 40
@@ -113,13 +111,10 @@ func (s *Server) Available(ctx context.Context) error {
 // args prefixes every invocation with the socket and the config.
 //
 // `-u` tells tmux the terminal is UTF-8 rather than letting it infer that from
-// the locale. A service has no locale to infer from: launchd passes neither
-// LANG nor LC_ALL, and a tmux client that cannot prove UTF-8 replaces every
-// non-ASCII character it writes with `_`. The pane keeps the real bytes — it
-// is the client that downgrades — so a session looked right in `capture-pane`
-// and arrived in the browser with an underscore where each agent's turn
-// marker, spinner and prompt chevron should be. The unit carries a UTF-8
-// locale as well, and this does not depend on it having one.
+// the locale, which a service lacks: launchd passes neither LANG nor LC_ALL,
+// and a tmux client that cannot prove UTF-8 writes every non-ASCII character
+// as `_`. The pane keeps the real bytes, so `capture-pane` looks right while
+// the attached browser does not. The unit's UTF-8 locale is not relied on.
 func (s *Server) args(rest ...string) []string {
 	args := []string{"-u", "-L", s.socket}
 	if s.config != "" {

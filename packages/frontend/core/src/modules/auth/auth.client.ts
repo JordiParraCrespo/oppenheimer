@@ -31,6 +31,7 @@ export type SocialProvider = 'google' | 'github';
  * an identity that already exists — including one that only exists as an
  * email/password account, which the API links on the way through. The intent
  * decides one thing: whether an unknown identity may become a new account.
+ * Only the register screens pass `'sign-up'`.
  */
 export type SocialAuthIntent = 'sign-in' | 'sign-up';
 
@@ -47,10 +48,7 @@ export interface IAuthClient {
   signUp(params: SignUpParams): Promise<void>;
   /**
    * Start the OAuth flow for a social provider. On web this redirects the
-   * browser to the provider and back.
-   *
-   * `intent` defaults to `'sign-in'`, which the API refuses for an identity
-   * that has no account here. Only the register screens pass `'sign-up'`.
+   * browser to the provider and back. `intent` defaults to `'sign-in'`.
    */
   signInSocial(provider: SocialProvider, intent?: SocialAuthIntent): Promise<void>;
   signOut(): Promise<void>;

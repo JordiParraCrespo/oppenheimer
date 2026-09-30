@@ -40,9 +40,8 @@ export const SessionErrors = {
   },
   /**
    * Raised on a stop, restart, rename or checkout change against a session that
-   * has already been closed. Closing is final: the row stays for ever so its
-   * directory name and branch are never reissued, which is exactly why it cannot
-   * be reopened.
+   * has already been closed. Closing is final: the row is a tombstone that keeps
+   * its directory name and branch from being reissued.
    */
   ALREADY_RESOLVED: {
     code: 'SESSIONS_005',
@@ -88,11 +87,8 @@ export const SessionErrors = {
     httpStatus: 409,
   },
   /**
-   * An agent the host's runner was built without. A runner probes the command of
-   * every agent it can launch (`ProbedTools`), found or not, so an inventory with
-   * no entry for this agent's command is a runner older than the agent, and it
-   * would refuse `session.create`. Refused here, before a row is written, rather
-   * than recorded and then failed by the host.
+   * An agent the host's runner was built without (`runnerCanStart`). Refused
+   * before a row is written, rather than recorded and then failed by the host.
    */
   AGENT_UNSUPPORTED_BY_RUNNER: {
     code: 'SESSIONS_011',

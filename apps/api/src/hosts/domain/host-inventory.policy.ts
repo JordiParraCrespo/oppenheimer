@@ -5,7 +5,7 @@ import type { HostInventory, HostTimelineEntry } from './host-metadata.types';
 /**
  * The facts that change between heartbeats. They are presence, not inventory,
  * and are left out of the hash — otherwise every beat would be a "change" and
- * the inventory would be rewritten as often as the old `host` row was.
+ * rewrite the inventory.
  */
 const LIVE_FACTS = ['diskFreeBytes'] as const;
 

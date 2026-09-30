@@ -29,11 +29,8 @@ const CROSS_MODULE_PUBLIC_SURFACE = [
   // caller that may not name it — it asks through its own `ABILITY` port,
   // which this module binds to the same factory (see `auth-is-a-kernel`).
   '^src/roles/application/ability\\.factory\\.ts$',
-  // The one way to report a system role the database does not have. Three
-  // paths raise it — sign-up's default `user` grant, the personal workspace's
-  // org-scoped `owner` grant, and the same grant on the hand-create path —
-  // and only one of them lives in `roles`. Published so the other two do not
-  // each invent their own answer to one fault.
+  // The one way to report a system role the database does not have: two of
+  // the three paths that raise it live outside `roles`.
   '^src/roles/application/missing-system-role\\.factory\\.ts$',
   '\\.di-tokens\\.ts$', // the token a port is bound to
   '\\.repository\\.port\\.ts$', // the port itself
@@ -71,8 +68,6 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/[^/]+/domain/' },
       to: {
-        // Ignore node built-ins; flag everything else that is not an allowed
-        // workspace package or another domain file in the same layer.
         dependencyTypesNot: ['core'],
         pathNot: ['^src/[^/]+/domain/', 'packages/(backend/ddd|backend/authz|shared)/'],
       },

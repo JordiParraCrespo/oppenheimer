@@ -34,8 +34,6 @@ export const FIELD_BOUNDS = {
 } as const;
 
 /**
- * **Two different ids that used to share a name.**
- *
  * A control-plane row is a UUID we minted; GitHub's own ids are numbers it
  * minted. A connect-then-create flow touches both within a minute, so they are
  * never both called `installationId`.
@@ -50,7 +48,6 @@ export const githubInstallationIdSchema = z.number().int().positive();
 /** GitHub's repository id. The picker is a live listing, so no row need exist yet. */
 export const githubRepoIdSchema = z.number().int().positive();
 
-/** The agent a session runs. The catalog is the closed union; see `../agents/catalog`. */
 export const codingAgentSchema = z.enum(CODING_AGENT_IDS);
 
 export const hostNameSchema = z
@@ -65,13 +62,7 @@ export const displayNameSchema = z
 
 export const gitRefSchema = z.string().min(FIELD_BOUNDS.gitRef.min).max(FIELD_BOUNDS.gitRef.max);
 
-/**
- * How long a prompt is, as the event log counts it: UTF-8 bytes.
- *
- * Exported because the wire schema is built on a different Zod entry point and
- * cannot share the schema object — only the rule.
- * `src/__tests__/cross-version-primitives.spec.ts` holds the two to the same answer.
- */
+/** How long a prompt is, as the event log counts it: UTF-8 bytes. */
 export function promptByteLength(value: string): number {
   let bytes = 0;
   // `for…of` walks code points, so a surrogate pair counts once, as four bytes.
@@ -149,15 +140,11 @@ export type HostToolDto = z.infer<typeof hostToolSchema>;
  * `POST /hosts/register` and into `hello`/`heartbeat`. The register JSON is the
  * runner's to define; this schema follows it, or a real registration is a 400.
  *
- * Installed agents are read from `tools` (the names `ProbedTools` in `facts.go`
- * reports, an agent's being its catalog `command`); there is no agents key.
- *
  * Two deliberate loosenings, both so that a truthful runner cannot be refused:
  *
  * - the non-`omitempty` strings accept `''`. Go always emits those keys, and
  *   `workspacePath` genuinely can be empty (`service.go` guards `s.workspace != ""`
- *   before measuring disk), so a `min(1)` here would 400 exactly the host this
- *   change exists to admit;
+ *   before measuring disk), so a `min(1)` here would 400 a truthful host;
  * - `tools` accepts `null`. A nil Go slice marshals to `null`, not `[]`, and the
  *   field has no `omitempty`; it is normalised to an empty array so consumers
  *   never branch on it.

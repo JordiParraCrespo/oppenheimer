@@ -2,7 +2,7 @@ import type { Role } from '@oppenheimer/shared';
 
 /**
  * Platform-agnostic session shapes produced by `toAuthSession`. They mirror
- * the `IAuthClient` contract in `@oppenheimer/frontend` structurally, without this
+ * the `IAuthClient` contract in `@oppenheimer/frontend-core` structurally, without this
  * package depending on the frontend layer.
  */
 export interface AuthSessionUser {

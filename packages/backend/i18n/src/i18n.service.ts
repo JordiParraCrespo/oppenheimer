@@ -74,7 +74,6 @@ export class I18nService {
       onMissingKey: options.onMissingKey,
     });
     this.defaultTimeZone = options.defaultTimeZone ?? 'UTC';
-    // Injectable so tests can freeze time without stubbing globals.
     this.now = options.now ?? (() => new Date());
   }
 
@@ -88,11 +87,8 @@ export class I18nService {
 
   /**
    * Pick the first candidate with a bundle, falling back to the default.
-   *
-   * Callers pass the chain in priority order — explicit query parameter, then
-   * `Accept-Language`, then the user's stored preference, then the
-   * organization's default — and get back a locale that is guaranteed to
-   * render.
+   * Callers pass candidates in priority order and get back a locale that is
+   * guaranteed to render.
    */
   negotiate(...candidates: (string | null | undefined)[]): string {
     return this.translator.negotiate(...candidates);

@@ -46,7 +46,6 @@ function service() {
 
 describe('I18nService', () => {
   it('negotiates through the candidate chain in priority order', () => {
-    // Query param wins over header wins over stored preference.
     expect(service().negotiate('es', 'en-GB', 'en')).toBe('es');
     expect(service().negotiate(null, 'en-GB', 'es')).toBe('en');
     expect(service().negotiate(null, null, 'es')).toBe('es');
@@ -60,8 +59,6 @@ describe('I18nService', () => {
 
   it('renders the compact stamp from the copy tree, not from code', () => {
     const subject = service();
-    // Spanish abbreviates minutes differently — which is exactly why the label
-    // is a translation rather than a formatter concern.
     expect(subject.for('en').relativeShort(new Date('2026-08-08T11:48:00Z'))).toBe('12m');
     expect(subject.for('es').relativeShort(new Date('2026-08-08T11:48:00Z'))).toBe('12min');
     expect(subject.for('en').relativeShort(new Date('2026-08-07T12:00:00Z'))).toBe('1d');

@@ -119,11 +119,7 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   lastObservedState!: AgentObservedState | null;
 
-  /**
-   * When the transition **into** that state was recorded. Null after a single
-   * report, which is what makes the group's debounce unfakeable: one sighting is
-   * not evidence of having been stuck.
-   */
+  /** When the transition **into** that state was recorded; see `SessionFold.observedSince`. */
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   observedSince!: Date | null;
 

@@ -19,12 +19,9 @@ const VOUCHER_REFRESH_MS = 5 * 60_000;
 const VOUCHER_MEMORY = 10_000;
 
 /**
- * {@link AuthFailureLimiterPort} on the rate limiter's own Redis counters. A refusal
- * increments `throttle:auth-failures:ip:<ip>` through the same atomic script every
- * rate limit uses; past `throttling.authFailureLimit` in its window the script sets
- * its `:blocked` key for `throttling.authFailureBlockSeconds`. Asking is one `MULTI`:
- * the block's remaining time and whether this credential holds a recent voucher.
- * Fails open throughout, like the limiter itself.
+ * {@link AuthFailureLimiterPort} on the rate limiter's own Redis counters: a refusal
+ * goes through the same atomic script every rate limit uses, whose `:blocked` key is
+ * the block. Fails open throughout, like the limiter itself.
  */
 @Injectable()
 export class RedisAuthFailureLimiter implements AuthFailureLimiterPort {

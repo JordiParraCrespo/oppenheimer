@@ -210,7 +210,7 @@ describe('host facts on the link', () => {
         version: '2.45.0',
         required: true,
       });
-      // The three fields the heartbeat used to duplicate now live on `host`.
+      // These live on `host` only; the heartbeat keeps no copies of its own.
       expect(parsed).not.toHaveProperty('tools');
       expect(parsed).not.toHaveProperty('runnerVersion');
       expect(parsed.load).not.toHaveProperty('workspacesFreeBytes');

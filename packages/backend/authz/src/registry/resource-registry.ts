@@ -10,8 +10,7 @@ export interface ResourceGroup {
 /**
  * Every resource the application has declared, collected at boot.
  *
- * This is the extension point that replaces editing a central literal: a
- * feature module registers its own declaration through
+ * A feature module registers its own declaration through
  * `AuthzModule.forFeature`, and the catalog endpoint, the scope engine, the
  * role builder and the coverage tests all read from here.
  *

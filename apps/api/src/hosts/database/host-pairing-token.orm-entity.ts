@@ -2,9 +2,8 @@ import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 /**
- * Persistence model for `host_pairing_token` — the registration token, which is
- * a row because F5 wants it revocable, expiring and traceable to a source
- * address, and none of the three is possible without persistence.
+ * `host_pairing_token`: why a registration token is a row is on
+ * `HostPairingTokenEntity`.
  *
  * Only the digest of the secret is stored. `tokenHash` is unique and is the
  * lookup key of the one statement that spends a token.

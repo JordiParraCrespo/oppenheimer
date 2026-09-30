@@ -41,11 +41,7 @@ export interface WorkSessionProps extends SessionFold {
    */
   projectId: string;
   createdByUserId: string;
-  /**
-   * The host the work runs on. It is the one reference in the schema a handler
-   * guards rather than a constraint: a host belongs to a person and has no
-   * workspace column, so a composite key cannot express it.
-   */
+  /** Guarded by a handler, not a key: see `WorkSessionOrmEntity`. */
   hostId: string;
   slug: string;
   agent: SessionAgent;
@@ -341,9 +337,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
   recordEvent(entry: SessionLogEntry): void {
     const before = this.props.state;
     this.reseatFold(foldSessionEvent(this.fold, entry));
-    // A retired checkout is a row in another table, so the fold cannot reach it —
-    // but its retirement is a consequence of this event, so it happens here rather
-    // than in a setter somebody could call without one.
     if (entry.kind === SESSION_EVENT_KINDS.CHECKOUT_REMOVED) {
       const checkoutId = checkoutIdOf(entry.payload);
       const checkout = this.props.checkouts.find((candidate) => candidate.id === checkoutId);

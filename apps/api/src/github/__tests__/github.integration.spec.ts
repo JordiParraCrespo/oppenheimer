@@ -201,7 +201,7 @@ describe('GitHub installations schema (integration)', () => {
 
     it('lets a webhook change a live row and never a disconnected one', async () => {
       await connect(ORG_ONE, 10000006);
-      // The exact shape the webhook handler writes.
+      // The webhook's write, reduced to its live-row predicate.
       const statusChange = (suspended: string) =>
         dataSource.query(
           `UPDATE "github_installation" SET "suspendedAt" = ${suspended}, "updatedAt" = now()
@@ -214,8 +214,7 @@ describe('GitHub installations schema (integration)', () => {
           WHERE "githubInstallationId" = 10000006`,
       );
       // An unsuspend that arrives after a disconnect matches nothing, so it
-      // cannot resurrect the claim. A load-mutate-save of the whole aggregate
-      // would have written `deletedAt` back to null.
+      // cannot resurrect the claim.
       await statusChange('NULL');
 
       const [row] = await dataSource.query(

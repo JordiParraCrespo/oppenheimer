@@ -22,8 +22,7 @@ export interface SessionNameProposal {
  *
  * **Model first, the prompt's own words if it is not quick.** `LlmService` gets a
  * short deadline (`SESSION_NAMER_TIMEOUT_MS`); on no provider, a timeout, a rate
- * limit or an empty answer the title is the prompt's opening words, which need no
- * network and name the same prompt the same way every time.
+ * limit or an empty answer the title is `titleFromPrompt`, which needs no network.
  *
  * {@link propose} and {@link record} are separate so the create path can ask the
  * model *while* it dispatches, then write onto the aggregate it holds (the repository

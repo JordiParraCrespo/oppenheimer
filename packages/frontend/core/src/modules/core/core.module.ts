@@ -12,10 +12,6 @@ export interface CoreModuleConfig {
   storage: IStorageService;
   authClient: IAuthClient;
   analytics?: IAnalyticsClient;
-  /**
-   * The platform and build this app reports when it asks for its flags. The
-   * API targets on both; identity comes from the session, not from here.
-   */
   featureFlags?: FeatureFlagsClientContext;
 }
 

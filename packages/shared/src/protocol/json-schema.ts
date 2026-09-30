@@ -17,10 +17,9 @@ import { PROTOCOL_VERSION } from './version.js';
 /**
  * Emit the link's JSON Schema from the Zod union.
  *
- * **Build-only.** This module is not re-exported from `./index.ts`: the emitter
- * runs as part of `pnpm --filter @oppenheimer/shared build`, which writes
- * `protocol-schema/protocol.schema.json`, and nothing at runtime should pull
- * `z.toJSONSchema` in behind it.
+ * **Build-only** (`./index.ts` says why it is not re-exported): the emitter runs
+ * as part of `pnpm --filter @oppenheimer/shared build`, which writes
+ * `protocol-schema/protocol.schema.json`.
  *
  * The artifact is committed because the Go structs are generated from it
  * (`scripts/emit-link-protocol.cjs` → `apps/runner/internal/link/protocol.gen.go`),

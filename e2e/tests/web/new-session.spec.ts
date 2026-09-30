@@ -173,8 +173,8 @@ test.describe('New session', () => {
     await signInAs(page, owner.user);
     await page.goto('/sessions/new');
 
-    // The empty screens are gone: an account with nothing connected still gets
-    // the composer, and the way out is inside the chip that is empty.
+    // An account with nothing connected still gets the composer; the way out
+    // is inside the chip that is empty.
     await page.getByRole('button', { name: 'Repositories' }).click();
     // A button that mints the install state on click, then points a new tab
     // at GitHub with it: there is no address to hold in an `href` at render.
@@ -189,7 +189,7 @@ test.describe('New session', () => {
     const tab = await popup;
     await tab.waitForURL((url) => url.href.startsWith(`${STUB_INSTALL_URL}?state=`));
     expect(new URL(tab.url()).searchParams.get('state')).toMatch(/^[A-Za-z0-9_-]{43}$/);
-    // Cut from the console, as the `rel="noopener"` link it replaced was.
+    // Cut from the console, so GitHub's page cannot reach back into it.
     expect(await tab.evaluate(() => window.opener)).toBeNull();
 
     await owner.api.dispose();

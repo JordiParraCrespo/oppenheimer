@@ -34,8 +34,7 @@ export class ProfileAuthGateway implements ProfileAuthPort {
   ): Promise<string[]> {
     // `returnHeaders`: revoking the other sessions deletes this one too and
     // issues a replacement, and the replacement only exists as a `Set-Cookie`
-    // on Better Auth's response. Dropping it signed the browser out of the
-    // device it had just changed the password on.
+    // on Better Auth's response.
     const { headers: outHeaders } = await invokeProfileApi(() =>
       auth.api.changePassword({
         body: {
@@ -48,8 +47,6 @@ export class ProfileAuthGateway implements ProfileAuthPort {
       }),
     );
 
-    // Only when the call actually swept the other sessions — a password change
-    // that keeps them has nothing to evict.
     if (input.revokeOtherSessions) {
       await this.delegatedSessions.invalidateForUser(input.userId);
     }

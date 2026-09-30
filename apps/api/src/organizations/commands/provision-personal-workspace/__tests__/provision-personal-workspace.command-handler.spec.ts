@@ -45,11 +45,9 @@ describe('ProvisionPersonalWorkspaceCommandHandler', () => {
     expect(workspace.id).toBe(organizationId);
     expect(workspace.name).toBe('Ada Lovelace');
     expect(workspace.slug.value).toMatch(/^ada-lovelace-[0-9a-f]{8}$/);
-    // The membership, with an identity of its own.
     expect(workspace.ownerId).toBe('user-uuid');
     expect(workspace.membershipId).toBeTruthy();
     expect(workspace.membershipId).not.toBe(workspace.id);
-    // The grant without which the owner cannot open it.
     expect(workspace.ownerRoleId).toBe('owner-role-uuid');
     // Staged on the outbox by the repository, inside the same transaction.
     expect(workspace.domainEvents).toHaveLength(1);

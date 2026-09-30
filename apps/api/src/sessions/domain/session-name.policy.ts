@@ -1,11 +1,7 @@
 /**
- * What a session is called once its first prompt exists.
- *
- * Two ways to get there, and both end in this file's rules. A model is asked for
- * a title first, and what it answers is cleaned by {@link cleanModelTitle}. When
- * no model is configured, or its answer does not arrive in time, the title is
- * {@link titleFromPrompt}: the prompt's own opening words, which needs no network
- * and gives the same prompt the same name every time.
+ * What a session is called once its first prompt exists: a model's title, cleaned
+ * by {@link cleanModelTitle}, or {@link titleFromPrompt} when no model is configured
+ * or its answer does not arrive in time.
  */
 
 /** Six words is the brief; forty characters is what a sidebar row can show. */

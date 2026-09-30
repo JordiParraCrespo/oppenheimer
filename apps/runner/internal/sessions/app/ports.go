@@ -131,13 +131,13 @@ type Store interface {
 	Save([]domain.Session) error
 }
 
-// Publisher receives state changes. The link will forward them to the control
-// plane; until it exists, the composition root supplies a logger.
+// Publisher receives state changes; the link forwards them to the control
+// plane.
 type Publisher interface {
 	SessionChanged(session domain.Session)
 }
 
-// NopPublisher drops events, for tests and for a runner with no link yet.
+// NopPublisher drops events: the service's publisher until the link is set.
 type NopPublisher struct{}
 
 // SessionChanged implements Publisher.

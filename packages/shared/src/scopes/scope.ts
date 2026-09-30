@@ -146,13 +146,8 @@ export function scopesForPolicy(policy: ScopePolicy): Scope[] {
 
 /**
  * The scopes a principal is allowed to put on a credential they mint: a token
- * may never exceed its creator's own reach. A level is grantable when the
- * creator's ability satisfies at least one of its backing rules; per-request
- * checks then narrow the token further to whatever the owner can still do at
- * the time of the call.
- *
- * Levels with no backing rules (the caller's own profile) are always
- * grantable — every authenticated principal has access to their own account.
+ * may never exceed its creator's own reach (`ScopeLevelDefinition.policies`
+ * states the rule).
  */
 export function grantableScopes(ability: AppAbility): Scope[] {
   const grantable: Scope[] = [];

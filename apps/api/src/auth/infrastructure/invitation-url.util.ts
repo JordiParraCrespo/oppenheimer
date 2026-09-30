@@ -5,7 +5,6 @@ export interface InvitationLinkData {
   inviterName: string;
 }
 
-/** Build the public registration link carried by an organization invitation. */
 export function buildInvitationUrl(frontendUrl: string, data: InvitationLinkData): string {
   const url = new URL('/accept-invitation', frontendUrl);
   url.searchParams.set('id', data.id);

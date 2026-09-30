@@ -37,9 +37,7 @@ export interface UpdateFlagSegmentProps {
  * A named audience flags can target (`staff`, `beta-customers`).
  *
  * Where long ID lists live: written once here, referenced by key from any
- * number of rules, and changed in one place when the audience does. Stripe's
- * early flag records carried their ID lists inline, which is the version of
- * this that does not scale.
+ * number of rules, and changed in one place when the audience does.
  */
 export class FlagSegmentEntity extends AggregateRoot<FlagSegmentProps> {
   static create(create: CreateEntityProps<FlagSegmentProps>): FlagSegmentEntity {

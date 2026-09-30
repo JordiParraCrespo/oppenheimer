@@ -57,10 +57,8 @@ export class PairingTokenResponseDto {
  * Returned only by `POST /v1/hosts/pairing`. This is the single moment the
  * secret exists outside the caller's hands: it is embedded in the install
  * command and only its digest is stored, so nothing can recover it afterwards.
- *
- * The command and the prompt are templated from deploy-owned configuration, not
- * from anything a workspace can write — a workspace-writable install string
- * would be remote code execution on somebody's laptop.
+ * The command and the prompt come from deploy-owned configuration; why is on
+ * `RunnerReleaseConfig`.
  */
 export class MintedPairingTokenResponseDto extends PairingTokenResponseDto {
   @ApiProperty({

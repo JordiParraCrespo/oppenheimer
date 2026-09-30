@@ -1,6 +1,6 @@
 /**
  * A locale's message catalog: an arbitrarily nested tree of strings, addressed
- * by dotted key path (`inbox.types.lead.created.title`).
+ * by dotted key path (`emails.invitation.roles.admin`).
  *
  * This is deliberately structural rather than a named import of the app's
  * bundles: the package translates, it does not own copy. Callers hand it the
@@ -15,10 +15,7 @@ export type TranslationVars = Record<string, string | number | null | undefined>
 /** Bundles keyed by locale tag, e.g. `{ en: {...}, es: {...} }`. */
 export type MessageBundles = Readonly<Record<string, MessageBundle>>;
 
-/**
- * The formats a declaration may ask for by name. Anything a notification's
- * fact table needs to show as something other than a raw string.
- */
+/** The formats `Formatter.format` accepts by name. */
 export type ValueFormat =
   | 'text'
   | 'number'
@@ -37,7 +34,7 @@ export interface FormatOptions {
   now?: Date;
 }
 
-/** The coarse buckets the inbox groups its feed into. */
+/** The coarse day headings `Formatter.dayBucket` sorts an instant into. */
 export type DayBucket = 'today' | 'yesterday' | 'earlier';
 
 /**

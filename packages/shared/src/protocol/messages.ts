@@ -49,11 +49,7 @@ export const helloSchema = z.object({
   type: z.literal('hello'),
   runnerVersion: z.string().min(1).max(64),
   protocol: protocolRangeSchema,
-  /**
-   * A random id the runner mints at process start. Event idempotency keys are
-   * `<runId>:<n>`, so they depend on nothing the control plane hands out and
-   * survive any reconnect.
-   */
+  /** A random id the runner mints at process start; event idempotency keys are `<runId>:<n>`. */
   runId: z.string().min(1).max(64),
   host: hostFactsSchema,
   /** Every session this host holds, however the control plane thinks they stand. */
@@ -78,13 +74,9 @@ export const heartbeatSchema = z.object({
   channel: z.string().min(1).max(64),
   /**
    * The host's facts, re-read — **the same `Facts` shape registration sends**, not
-   * a thinner summary of it.
-   *
-   * This carries `tools`, `diskFreeBytes` and `runnerVersion`, which is why the
-   * heartbeat no longer has its own copies of those three: a second, narrower
-   * host-facts variant here is how the two descriptions of one machine drift. A
-   * tool the person has just installed, or a disk that has filled, becomes visible
-   * without waiting for a re-registration.
+   * a thinner summary: a second, narrower host-facts variant is how two
+   * descriptions of one machine drift. A tool just installed, or a disk that has
+   * filled, shows without waiting for a re-registration.
    */
   host: hostFactsSchema,
   load: z.object({
@@ -129,8 +121,7 @@ export const sessionEventSchema = z.object({
    * That is what makes the 8 KB cap real in both languages: `maxLength` on a
    * string survives the trip to JSON Schema, so the generated Go refuses an
    * oversized payload exactly where the control plane does. As a nested object
-   * the cap could only be a Zod `refine`, which does not survive emission at all
-   * — leaving the runner and the API to disagree about the limit on day two. The
+   * the cap could only be a Zod `refine`, which does not survive emission. The
    * control plane parses this and stores jsonb; the wire carries text.
    */
   payload: z.string().max(PROTOCOL_MAX_EVENT_PAYLOAD_BYTES),
@@ -214,9 +205,8 @@ export const sessionCreateSchema = z
     agent: protocolAgentSchema,
     /**
      * How the agent is started: the model, the permission level and the effort
-     * somebody chose in the composer's foot row. Structured rather than argv —
-     * the host owns the mapping to its own flags, from the same catalog
-     * (`launchOptionsSchema`).
+     * somebody chose in the composer's foot row; structured rather than argv
+     * (`launchOptionsSchema` says why).
      *
      * The fold keeps them on the session so a restart reproduces the launch
      * (`product/versions/mvp/01-protocol.md`).
@@ -620,8 +610,7 @@ export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;
  *
  * **Derived, never listed.** The type comes off `ProtocolMessage` and the values
  * come off the union's own members, so a message added above cannot land in one
- * place and not the other — which is exactly how a hand-written twin of this
- * list would drift.
+ * place and not the other.
  */
 export type ProtocolMessageType = ProtocolMessage['type'];
 

@@ -65,8 +65,6 @@ describe('UploadAvatarCommandHandler', () => {
   });
 
   it('saves the profile, refreshes the cached sessions, then removes the previous object', async () => {
-    // Removing first leaves a profile pointing at a deleted file if the save
-    // fails.
     const order: string[] = [];
     vi.mocked(repo.save).mockImplementation(async (entity) => {
       order.push('save');

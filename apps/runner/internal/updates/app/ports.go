@@ -56,8 +56,8 @@ type Activities interface {
 	Snapshot() domain.Activity
 }
 
-// IdleActivity is the default until the sessions context exists: a host with
-// no sessions is quiet, which is the truth on an MVP runner.
+// IdleActivity is the default while nothing reports session activity: every
+// host reads as quiet.
 type IdleActivity struct{}
 
 // Snapshot implements Activities.

@@ -62,18 +62,12 @@ export const APPEND_QUEUE_LIMITS: AppendQueueLimits = {
    * and the runner's own bounded queue is where the rest should wait.
    */
   pauseAt: 64,
-  /** Waiting batches at which it is read again. */
   resumeAt: 16,
-  /**
-   * The hard ceiling. Only frames the socket had already read before the pause
-   * can take the queue past `pauseAt`; reaching this closes the link with 1013.
-   */
   closeAt: 256,
   /**
-   * How long a pause may last before the link is closed with 1013. The runner
-   * redials and resends every unacked batch after its hello, so a database that
-   * is stuck costs a reconnect rather than a socket held open forever — and the
-   * keepalive, which cannot read a pong while paused, is not what ends it.
+   * A database that is stuck costs a reconnect rather than a socket held open
+   * forever, and the keepalive, which cannot read a pong while paused, is not
+   * what ends it.
    */
   maxPauseMs: 10_000,
   /** The protocol's own cap on one `events.append`, so a coalesced append is a batch the log already takes. */
@@ -323,8 +317,6 @@ export class RunnerLinkGateway {
   }
 
   private async onControl(link: SocketRunnerLink, data: Buffer): Promise<void> {
-    // No size check here: `maxPayload` has already refused anything larger than
-    // `MAX_RUNNER_FRAME_BYTES` with 1009, before buffering it.
     const parsed = protocolMessageSchema.safeParse(parseJson(data));
     if (!parsed.success) {
       this.logger.warn({ message: 'unparseable control frame from runner', hostId: link.hostId });

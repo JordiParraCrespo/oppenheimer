@@ -176,7 +176,7 @@ function triggersWithinRepositories(value: {
   );
 }
 
-/** `POST /automations` — Create automation. */
+/** `POST /automations`. */
 export const createAutomationSchema = automationFields.refine(triggersWithinRepositories, {
   path: ['triggers'],
 });

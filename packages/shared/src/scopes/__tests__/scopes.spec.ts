@@ -140,14 +140,6 @@ describe('the control plane’s scopes', () => {
     expect(grantable).toContain('hosts:write');
   });
 
-  /**
-   * The seed changes exactly two roles, and this is the whole story rather than
-   * half of it. A plain account can grant its own hosts and nothing else new; an
-   * owner can grant the workspace's work but not a machine. There is **no
-   * `member` entry in `SYSTEM_ROLE_PERMISSIONS` at all**, so a teammate invited
-   * into a workspace is granted nothing by the seed — asserted here so the gap
-   * is a recorded fact and not a discovery.
-   */
   it('tells the three roles apart, and records that `member` is not seeded', () => {
     const workspaceScopes = ['projects:read', 'sessions:read', 'repositories:read'] as const;
 

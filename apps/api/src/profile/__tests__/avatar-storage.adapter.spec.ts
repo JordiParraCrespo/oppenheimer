@@ -34,9 +34,6 @@ describe('AvatarStorageAdapter', () => {
     });
 
     it('never writes over the object the profile currently points at', async () => {
-      // A deterministic key would replace the live image before the profile
-      // write that adopts it, so a failed save would leave the user with a
-      // picture they did not keep.
       const first = await avatars.store('user-uuid', Buffer.from('a'), 'image/png', 1);
       const second = await avatars.store('user-uuid', Buffer.from('b'), 'image/png', 1);
 
@@ -85,8 +82,6 @@ describe('AvatarStorageAdapter', () => {
     });
 
     it('swallows a failure to delete', async () => {
-      // An orphaned object costs storage; a thrown error costs the user the
-      // request they made.
       storage.delete.mockRejectedValue(new Error('gone'));
 
       await expect(avatars.remove('avatars/user-uuid.png')).resolves.toBeUndefined();

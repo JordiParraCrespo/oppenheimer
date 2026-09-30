@@ -82,10 +82,10 @@ export function useInstallations(
 export type ConnectInstallationVariables = InstallationCallback;
 
 /**
- * Start a GitHub App install: mint the single-use state and get the App's
- * install URL carrying it. A mutation, fired from a click, because every call
- * is a write — minting on render would put one in Redis for every paint of a
- * button nobody pressed. Nothing is cached: the state is spent on the way back.
+ * Start a GitHub App install. A mutation, fired from a click, because every
+ * call is a write — minting on render would put one in Redis for every paint
+ * of a button nobody pressed. Nothing is cached: the state is spent on the way
+ * back.
  */
 export function useStartInstallation(options?: UseMutationOptions<InstallationStart, Error, void>) {
   const app = useConsumerApp();
@@ -176,9 +176,8 @@ export function useRepositoryBranchesFor(repositories: readonly RepositoryRef[])
 /**
  * A workspace may have the App installed on more than one account — a personal
  * one and an organisation's — and the picker is one list rather than one per
- * account. Each row carries the installation it came from, because
- * `githubRepoId` alone is not unique across two installations and the create
- * call names a repository by the pair.
+ * account. Each row carries the installation it came from: a repository is
+ * named by the pair (`repository-key.ts`).
  */
 export function useInstallationRepositoriesFor(installationIds: readonly string[]) {
   const app = useConsumerApp();

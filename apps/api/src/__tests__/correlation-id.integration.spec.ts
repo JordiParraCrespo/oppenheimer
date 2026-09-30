@@ -6,11 +6,9 @@ import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainer
 import { runAllMigrations } from './run-migrations';
 
 /**
- * Guards run before interceptors, so while the correlation id was opened in an
- * interceptor, every 401/403/429 a guard threw went out with no
- * `correlationId`: exactly the answers people report. The id is now opened in
- * middleware and echoed as `x-correlation-id`; these go through the whole
- * pipeline to prove a guard's refusal carries it.
+ * Guards run before interceptors, so the correlation id is opened in middleware:
+ * a guard's 401/403/429 is exactly the answer people report. These go through
+ * the whole pipeline to prove it carries the id, echoed as `x-correlation-id`.
  */
 describe('Correlation id (integration)', () => {
   let app: INestApplication;

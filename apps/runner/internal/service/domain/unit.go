@@ -61,7 +61,7 @@ func (u Unit) Validate() error {
 	return nil
 }
 
-// StdoutPath and StderrPath are where the daemon's output lands.
+// StdoutPath is where the daemon's standard output lands.
 func (u Unit) StdoutPath() string { return filepath.Join(u.LogDir, "runner.log") }
 
 // StderrPath is the error stream's file.

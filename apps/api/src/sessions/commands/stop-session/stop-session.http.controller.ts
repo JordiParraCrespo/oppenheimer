@@ -44,8 +44,6 @@ export class StopSessionHttpController {
   // session that already exists and answers with that session.
   @HttpCode(HttpStatus.OK)
   @Version('1')
-  // `update Session`, not a verb of its own: the CASL model stays CRUD plus
-  // `manage`, and what separates this from a read is the `sessions:write` scope.
   @CheckPolicies({ action: 'update', subject: 'Session' })
   @RequireScopes('sessions:write')
   @ApiOperation({

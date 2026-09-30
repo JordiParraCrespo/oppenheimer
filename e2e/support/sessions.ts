@@ -44,10 +44,9 @@ export async function mintInstallState(api: APIRequestContext): Promise<string> 
 /**
  * Connect a GitHub installation to the caller's workspace.
  *
- * Each call claims a **fresh** id from the stub: an installation belongs to one
- * workspace and a second claim is `GITHUB_003`, which is the product's rule and
- * not something a test should work around. And each mints a fresh state first,
- * the way the console does on Connect: a state is spent by one attempt.
+ * Each call claims a **fresh** id from the stub (`claimInstallation` says why)
+ * and mints a fresh state first, the way the console does on Connect: a state
+ * is spent by one attempt.
  */
 export async function connectInstallation(api: APIRequestContext): Promise<string> {
   // Random over 2^40, not derived from the pid: parallel workers and earlier
@@ -116,7 +115,6 @@ const FACTS = {
 const THROTTLE_RETRY_MS = 5_000;
 const THROTTLE_WINDOW_MS = 65_000;
 
-/** Make a throttled call, waiting the limiter out rather than working around it. */
 async function withoutTripping(call: () => Promise<APIResponse>): Promise<APIResponse> {
   const deadline = Date.now() + THROTTLE_WINDOW_MS;
   let response = await call();
@@ -127,12 +125,7 @@ async function withoutTripping(call: () => Promise<APIResponse>): Promise<APIRes
   return response;
 }
 
-/**
- * `POST /hosts/register`, retried while the throttle is closed.
- *
- * Exported so every spec that redeems a token shares one answer to the limit
- * rather than four.
- */
+/** `POST /hosts/register`, retried while the throttle is closed. */
 export function registerHost(
   anonymous: APIRequestContext,
   body: Record<string, unknown>,

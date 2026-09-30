@@ -184,7 +184,7 @@ func (b *credentialBroker) Revoke(sessionID string) {
 	b.mu.Unlock()
 }
 
-// Forget drops every token: what a closed session and a new link call for.
+// Forget drops a session's token as it closes.
 func (b *credentialBroker) Forget(sessionID string) { b.Revoke(sessionID) }
 
 func (b *credentialBroker) deliver(requestID string, reply grantReply) bool {

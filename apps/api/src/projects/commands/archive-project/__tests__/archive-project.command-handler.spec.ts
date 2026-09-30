@@ -81,9 +81,7 @@ describe('ArchiveProjectCommandHandler', () => {
   });
 
   it('refuses when nothing has contributed an answer', async () => {
-    // A deployment built without the module that owns sessions. Nothing is
-    // registered, so there is no implementation and the archive refuses — rather
-    // than assuming the answer it would prefer on a destructive path.
+    // A deployment built without the module that owns sessions.
     handler = new ArchiveProjectCommandHandler(projects, new ProjectUsageRegistry());
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_003' });

@@ -130,10 +130,8 @@ func New(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*Server,
 	return &Server{Handler: root, Hub: hub, APIKeys: keys, Health: healthModule, pool: pool, logger: logger}, nil
 }
 
-// authorizeEvents is the topic rule for the event stream until a product
-// context (sessions, hosts) owns topics of its own: every topic needs
-// events:read. When a context arrives it supplies its own ws.Authorizer and
-// the composition root chains them here.
+// authorizeEvents is the topic rule for the event stream until a context owns
+// topics of its own: every topic needs events:read.
 func authorizeEvents(_ context.Context, p *auth.Principal, topic string) error {
 	if !p.Can(scopes.EventsRead) {
 		return problem.ErrForbidden.WithDetail("topic %q needs %s", topic, scopes.EventsRead)

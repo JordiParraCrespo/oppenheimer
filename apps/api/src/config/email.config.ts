@@ -3,9 +3,7 @@ import { z } from 'zod';
 import { parseEnv } from './env';
 
 // Optional-capability config: with no transport settings the console provider
-// prints emails to stdout. Transport keys are genuinely optional — a blank or
-// whitespace-only env var normalizes to undefined so the capability registry
-// never reports email delivery as configured on an unusable transport.
+// prints emails to stdout.
 const schema = z.object({
   provider: z.enum(['console', 'nodemailer', 'resend']).default('console'),
   from: z.string().default('noreply@oppenheimer.dev'),

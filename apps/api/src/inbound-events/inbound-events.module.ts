@@ -29,7 +29,7 @@ import { InboundEventsProcessor } from './infrastructure/inbound-events.processo
     CqrsModule,
     TypeOrmModule.forFeature([InboundDeliveryOrmEntity, InboundEventOrmEntity]),
     // The inbound-events queue: the processor's sweep and purge, and the
-    // relay's deliveries, all go through its single registration.
+    // outbox relay's deliveries, all go through its single registration.
     QueueModule,
   ],
   providers: [

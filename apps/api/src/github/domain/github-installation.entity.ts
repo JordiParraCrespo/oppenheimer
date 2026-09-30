@@ -19,8 +19,8 @@ export type AccountType = 'User' | 'Organization';
 export interface GithubInstallationProps {
   /** Tenant the installation belongs to. Immutable — a claim never moves. */
   organizationId: string;
-  /** GitHub's own installation id. Globally unique, which is what makes a
-   *  second workspace's claim a conflict rather than a silent takeover. */
+  /** GitHub's own installation id. Unique among live rows, which is what makes
+   *  a second workspace's claim a conflict rather than a silent takeover. */
   githubInstallationId: number;
   /** The user or organization the App is installed on. */
   accountLogin: string;

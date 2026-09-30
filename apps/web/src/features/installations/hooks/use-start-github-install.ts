@@ -7,8 +7,7 @@ import { useStartInstallation } from '@oppenheimer/frontend-consumer/react';
  * renders the offer to anyone who opens it. The URL is the API's — the App's
  * install page with `state` already on it — and `installUrlFor` is the
  * caller's say over it (the first-run walk prefixes that state so it survives
- * the round trip). The page is left in this tab, as the plain link before it
- * was.
+ * the round trip). The page is left in this tab.
  */
 export function useStartGithubInstall(installUrlFor: (installUrl: string) => string) {
   const { mutate, isPending, error } = useStartInstallation();

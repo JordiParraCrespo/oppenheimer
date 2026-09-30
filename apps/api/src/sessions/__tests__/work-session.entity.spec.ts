@@ -123,8 +123,6 @@ describe('the checkouts the aggregate holds', () => {
   });
 
   it('steps the agent out of a checkout the log retires', () => {
-    // Folding the event is what nulls the column and marks the child, so a replay
-    // rebuilds both.
     const work = session();
     const first = checkout(work, 'xrp-mobile', '1');
     work.attachCheckout(first);
@@ -169,8 +167,6 @@ describe('the two derived names', () => {
   });
 
   it('never reuses a directory name inside a session, retired ones included', () => {
-    // The agents key their conversation state by working directory, so a new
-    // checkout on a retired name would inherit a stranger's history.
     expect(checkoutDirectoryName('other/xrp-mobile', '99', ['xrp-mobile'])).toBe(
       'other--xrp-mobile',
     );
@@ -181,9 +177,7 @@ describe('the two derived names', () => {
 
   it('runs out rather than recycling the last candidate', () => {
     // A session that added, retired and re-added the same repository through all
-    // three names has no name left. Reissuing one would put a fresh agent in a
-    // retired agent's working directory, which is the whole bug the tombstone
-    // exists to prevent, so the answer is `null` and the caller refuses.
+    // three names has no name left.
     expect(
       checkoutDirectoryName('other/xrp-mobile', '99', [
         'xrp-mobile',

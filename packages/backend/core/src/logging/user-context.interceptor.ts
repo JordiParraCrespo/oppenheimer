@@ -13,9 +13,6 @@ import type { Observable } from 'rxjs';
  * effective `scopes` when the credential is scoped (API token / OAuth). Runs
  * as an interceptor because interceptors execute after every guard, which is
  * the first moment `request.user` exists.
- *
- * With `assignResponse` enabled on the logger module, the fields also land on
- * the request-completion line pino-http emits — the line that matters.
  */
 @Injectable()
 export class UserContextInterceptor implements NestInterceptor {

@@ -18,7 +18,7 @@ test('the console is a rail, a sidebar and a pane, with no chrome bar over them'
   // The brand row names the product: the workspace is personal in version 1.
   await expect(page.getByText('Oppenheimer', { exact: false }).first()).toBeVisible();
   await expect(page.getByRole('link', { name: 'New session', exact: true })).toBeVisible();
-  // The list is grouped by project now, under a head that counts them; the
+  // The list is grouped by project, under a head that counts them; the
   // rail to the left of it is where the console's lists are switched.
   await expect(page.getByText('Projects', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Sessions', exact: true })).toBeVisible();
@@ -32,7 +32,6 @@ test('the console is a rail, a sidebar and a pane, with no chrome bar over them'
     )
     .toBeGreaterThanOrEqual((rail?.x ?? 0) + (rail?.width ?? 0));
 
-  // The starter's chrome bar and its search trigger are gone with it.
   await expect(page.getByRole('button', { name: 'Search' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Toggle sidebar' })).toHaveCount(0);
 
@@ -55,8 +54,8 @@ test('the account menu holds appearance, language and the way out — and nothin
   await expect(menu.getByRole('menuitem', { name: 'Appearance' })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Language' })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Log out' })).toBeVisible();
-  // Settings is the menu's one link since the 2026-09-26 export drew it there;
-  // Profile is not hidden behind a permission — it is not a page.
+  // Settings is the menu's one link (the 2026-09-26 export); Profile is not
+  // hidden behind a permission — it is not a page.
   await expect(menu.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'View profile' })).toHaveCount(0);
 

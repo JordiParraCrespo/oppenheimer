@@ -87,9 +87,9 @@ export interface SessionEventPage {
 }
 
 /**
- * A session on a host as the link's hello reconciliation reads it: the row,
- * and the first prompt if the
- * log holds one — everything a re-dispatched `session.create` needs.
+ * A session on a host as the link's hello reconciliation reads it: the row, and
+ * the first prompt if the log holds one — everything a re-dispatched
+ * `session.create` needs.
  */
 export interface HostSessionRow {
   session: WorkSessionEntity;
@@ -237,9 +237,8 @@ export interface WorkSessionRepositoryPort {
   ): Promise<SessionEventPage>;
 
   /**
-   * The one question archiving a project has to ask, and the reason archiving
-   * ships with this module rather than with `projects/`: a placeholder answering
-   * "none" would be fail-open on a destructive path.
+   * The one question archiving a project has to ask (`SessionProjectUsage`): a
+   * placeholder answering "none" would be fail-open on a destructive path.
    */
   countUnresolvedForProject(scope: AccessScope, projectId: string): Promise<number>;
 }

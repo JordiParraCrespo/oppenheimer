@@ -112,12 +112,7 @@ const adapters: Provider[] = [
   { provide: SESSION_RECONCILIATION, useClass: SessionReconciliationResolver },
 ];
 
-/**
- * Sessions: the row, its checkouts, its append-only log and the fold of that log.
- *
- * `SESSION_DISPATCH` is bound by `links/` over the runner link. The published surface
- * is the three exported ports `relay/` calls; the repository stays inside.
- */
+/** Sessions: the row, its checkouts, its append-only log and the fold of that log. */
 @Module({
   imports: [
     CqrsModule,

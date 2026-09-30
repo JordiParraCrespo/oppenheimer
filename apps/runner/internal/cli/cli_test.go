@@ -60,8 +60,6 @@ func TestEnsureCreatesPrivateDirectories(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", dir, err)
 		}
-		// Everything here is a secret, a binary or a log of what the user's
-		// agent is doing. None of it is anyone else's business.
 		if perm := info.Mode().Perm(); perm != 0o700 {
 			t.Fatalf("%s is %#o, want 0700", dir, perm)
 		}
@@ -76,8 +74,6 @@ func TestLockRefusesASecondRunner(t *testing.T) {
 		t.Fatalf("first lock: %v", err)
 	}
 
-	// Two runners on one host would fight over the tmux server and the
-	// worktrees; the second must fail rather than share.
 	if _, err := cli.Lock(path); err == nil {
 		t.Fatal("a second runner must not be able to take the lock")
 	}

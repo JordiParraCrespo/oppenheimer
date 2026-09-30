@@ -34,8 +34,9 @@ export interface ProjectRepositoryPort {
    */
   insert(entity: ProjectEntity): Promise<ProjectInsertOutcome>;
   /**
-   * Write what a person may change — the name, the defaults and the repositories as a whole set — to a project that is still active, returning
-   * the stored project.
+   * Write what a person may change — the name, the defaults and the
+   * repositories as a whole set — to a project that is still active,
+   * returning the stored project.
    *
    * `None` when nothing was updated: the project is gone or archived. A targeted
    * `UPDATE … WHERE "archivedAt" IS NULL` rather than writing the whole

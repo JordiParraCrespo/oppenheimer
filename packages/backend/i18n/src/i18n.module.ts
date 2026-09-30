@@ -3,12 +3,9 @@ import { I18N_OPTIONS, type I18nModuleOptions } from './i18n.options';
 import { I18nService } from './i18n.service';
 
 /**
- * Server-side translation.
- *
- * Global because rendering is a cross-cutting concern: the inbox renders
- * notifications, the email package renders subjects, and a future digest job
- * renders both — none of them should have to thread an import chain to reach
- * the same bundles.
+ * Server-side translation. Global because rendering is cross-cutting: any
+ * module that renders copy (the email jobs today) reaches the same bundles
+ * without threading an import chain.
  */
 @Global()
 @Module({})

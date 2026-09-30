@@ -22,10 +22,8 @@ export default defineConfig({
       autoCodeSplitting: true,
     }),
     react({
-      // The React Compiler memoises components and hooks at build time, so
-      // nothing here needs `useMemo`, `useCallback` or `memo` by hand. React 19
-      // ships the runtime it needs; `babel-plugin-react-compiler` is the
-      // plugin's peer and the only addition.
+      // React 19 ships the runtime the React Compiler needs;
+      // `babel-plugin-react-compiler` is the plugin's peer and the only addition.
       compiler: true,
     }),
     tailwindcss(),

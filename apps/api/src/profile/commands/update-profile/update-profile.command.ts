@@ -5,7 +5,9 @@ import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
  * alone; an explicit `null` clears `phone` / `jobTitle`.
  *
  * Note what is absent: email, role and active state. Those are not the user's
- * to change about themselves — they belong to the admin surface on `/users`.
+ * to change about themselves — they belong to the admin surface on `/users` —
+ * and a field the command lacks cannot be reached, rather than being filtered
+ * out somewhere downstream.
  */
 export class UpdateProfileCommand extends CommandBase {
   readonly userId: string;

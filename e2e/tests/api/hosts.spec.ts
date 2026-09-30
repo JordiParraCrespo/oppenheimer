@@ -232,14 +232,10 @@ test.describe('Hosts', () => {
   });
 
   test('a made-up registration token is refused, and says no more than that', async () => {
-    // The guard every other pairing test here carries, asked the same way.
-    // Whether a deployment can pair is not something an anonymous caller can
-    // read — `hosts` is a server-internal capability and `GET
-    // /health/capabilities` does not report it — so it is read from minting,
-    // which answers `HOSTS_004` when there is no runner release, signing key or
-    // install URL. Registration refuses on that same configuration before it
-    // ever looks at a token, and a red test there would be reporting the
-    // deployment rather than the code.
+    // Registration refuses an unconfigured deployment before it looks at a
+    // token, and an anonymous caller cannot ask whether pairing is configured
+    // (`GET /health/capabilities` does not report `hosts`), so the guard is
+    // read from minting, as every other pairing test here reads it.
     const { api } = await signedUpContext('hostbogus');
     const minted = await mintPairingToken(api);
     test.skip(

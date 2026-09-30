@@ -32,8 +32,7 @@ export type SessionAgent = CreateSessionDto['agent'];
 
 /**
  * What the screen manifest reports. An **input** to the derived group, never a
- * session state: mapping `done` and `unknown` onto `SessionState` was the error
- * an earlier draft made. `done` folds in with `idle` as "ready for a prompt";
+ * session state. `done` folds in with `idle` as "ready for a prompt";
  * `unknown` counts as not-ready and is what makes a launch look stuck.
  */
 export const AGENT_OBSERVED_STATES = ['working', 'blocked', 'idle', 'done', 'unknown'] as const;
@@ -110,7 +109,6 @@ export interface SessionLaunchFold {
   effort: SessionEffortDto | null;
 }
 
-/** One entry of the log, as the fold reads it. */
 export interface SessionLogEntry {
   seq: number;
   kind: string;
@@ -215,7 +213,6 @@ export function runnerCanStart(agent: string, probedTools: readonly string[] | n
   return command === '' || probedTools.includes(command);
 }
 
-/** Reads a string field off a payload of unknown shape, without casting at call sites. */
 function stringField(payload: unknown, field: string): string | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const value = (payload as Record<string, unknown>)[field];
@@ -374,9 +371,8 @@ function opened(fold: SessionFold, event: SessionLogEntry): SessionFold {
 /**
  * Move to a state, bumping `stateSeq` only when the state actually changed.
  *
- * `resolved` is terminal. The row is a permanent tombstone — it is what stops a
- * new session inheriting a retired session's directory name and therefore a
- * stranger's agent conversation state — so nothing brings a closed session back.
+ * `resolved` is terminal: the row is the tombstone `WorkSessionEntity` describes,
+ * so nothing brings a closed session back.
  */
 function transition(fold: SessionFold, state: SessionState): SessionFold {
   if (fold.state === 'resolved' || fold.state === state) return fold;

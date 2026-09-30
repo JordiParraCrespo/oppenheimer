@@ -17,11 +17,9 @@ export { type Namespace, namespaces } from './namespaces';
 export const messages = { en, es } as const;
 
 /**
- * Resources ready to be passed to `i18next.init({ resources })`.
- *
- * The merged catalog lives under {@link defaultNS} so existing `t('auth.login')`
- * calls keep working. Each area is also registered as its own namespace so a
- * screen can load `auth` without the rest of the tree.
+ * Resources ready to be passed to `i18next.init({ resources })`: the merged
+ * catalog under {@link defaultNS}, and each area as its own namespace (see
+ * `namespaces.ts`).
  */
 function toResources(catalog: typeof en) {
   return {

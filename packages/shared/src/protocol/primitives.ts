@@ -42,7 +42,6 @@ export const windowIndexSchema = z.number().int().min(0);
 /** GitHub's own numeric repository id. */
 export const githubRepoIdSchema = z.number().int().positive();
 
-/** The agent a session runs. The catalog is the closed union; see `../agents/catalog`. */
 export const protocolAgentSchema = z.enum(CODING_AGENT_IDS);
 
 /**
@@ -180,16 +179,13 @@ export type ObservedAgentState = (typeof OBSERVED_AGENT_STATES)[number];
 export const observedAgentStateSchema = z.enum(OBSERVED_AGENT_STATES);
 
 /**
- * One session as the host currently holds it. Sent in bulk at hello, where the
- * control plane reconciles against its own state rather than replaying a queue,
- * and per session on every heartbeat.
+ * One session as the host currently holds it: in bulk at hello, per session on
+ * every heartbeat.
  *
  * **`loginUrl` is validated against the reporting agent's own login pattern**,
- * not merely as a URL. A free-form URL here would be F3 straight through: this
- * is the one field the console turns into a clickable button, and
- * `https://claude.ai.attacker.test/oauth` parses as a perfectly good URL. The
- * catalog's anchored pattern is therefore enforced on the wire, which is what
- * makes it a control rather than a comment.
+ * not merely as a URL (F3): it is the one field the console turns into a
+ * clickable button, and `https://claude.ai.attacker.test/oauth` parses as a
+ * perfectly good URL.
  */
 export const sessionSnapshotSchema = z
   .object({
@@ -222,10 +218,10 @@ export const sessionSnapshotSchema = z
      * The vendor login URL the classifier saw.
      *
      * Two checks, on purpose. The `regex` is the union of every catalog pattern,
-     * so it **survives emission to JSON Schema** and the generated Go refuses
-     * `https://claude.ai.attacker.test/oauth` exactly where the control plane
-     * does. The `superRefine` below then narrows it to the *reporting agent's*
-     * own vendor, which depends on a sibling field and so can only live in Zod.
+     * so it **survives emission to JSON Schema** and the generated Go refuses a
+     * foreign host exactly where the control plane does. The `superRefine` below
+     * narrows it to the *reporting agent's* own vendor, which depends on a
+     * sibling field and so can only live in Zod.
      */
     loginUrl: z.string().regex(ANY_VENDOR_LOGIN_URL).nullable(),
   })
@@ -247,9 +243,6 @@ export type SessionSnapshot = z.infer<typeof sessionSnapshotSchema>;
  * ids those become `__schema0`, `__schema1`, … — which is what the Go generator
  * would name the types it produces. Naming them here is the difference between
  * `SessionSnapshot` and `Schema0` on the other side of the contract.
- *
- * The snapshot is the one that matters for correctness: named and `$ref`'d, a
- * field added to it cannot land in `hello` and miss `heartbeat`.
  */
 for (const [id, schema] of [
   ['sessionSnapshot', sessionSnapshotSchema],

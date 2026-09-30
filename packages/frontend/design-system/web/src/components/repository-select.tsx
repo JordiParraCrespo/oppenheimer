@@ -112,8 +112,7 @@ function RepositorySelect({
   className?: string;
   'aria-label'?: string;
 }) {
-  // Defaulted here, not in the signature: the React Compiler skips a component
-  // whose default parameter is a function.
+  // Not a default parameter: the React Compiler skips a function-valued one.
   const branchPaneTitle = branchPaneTitleProp ?? defaultBranchPaneTitle;
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');

@@ -9,12 +9,9 @@ import {
 import { shareEntities } from './share-entities';
 
 /**
- * TanStack Query's `useQuery`, sharing entities across refetches by default.
- *
- * Entities are classes, which the default structural sharing does not look
- * into, so a query without `structuralSharing: shareEntities` handed readers a
- * new object per row on every refetch. Every query hook in a product package's
- * React layer goes through this; `pnpm check:structure` fences TanStack's own
+ * TanStack Query's `useQuery`, sharing entities across refetches by default
+ * ({@link shareEntities}). Every query hook in a product package's React layer
+ * goes through this; `pnpm check:structure` fences TanStack's own
  * `useQuery` and `useQueries` out of those files. A query that must not share
  * passes `structuralSharing: false`.
  */

@@ -19,9 +19,8 @@ export const ProfileErrors = {
     message: 'Failed to remove avatar',
   },
   /**
-   * Raised before an upload starts, so the user is told immediately rather than
-   * after spending the transfer. The server's PROFILE_004 / PROFILE_005 remain
-   * the decisive checks.
+   * Raised before an upload starts (`ProfileService`); the server's
+   * PROFILE_004 / PROFILE_005 remain the decisive checks.
    */
   AVATAR_TYPE_REJECTED: {
     code: 'PROFILE_CLIENT_010',

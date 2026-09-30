@@ -17,8 +17,7 @@ module.exports = function frontendKit({ leaves, middle, top }) {
         name: 'no-circular',
         severity: 'error',
         from: {},
-        // A type-only edge (a route importing the app's `RouterContext` type)
-        // cannot cause a runtime cycle; only value imports count.
+        // A type-only edge cannot cause a runtime cycle; only value imports count.
         to: { circular: true, viaOnly: { dependencyTypesNot: ['type-only'] } },
       },
       {

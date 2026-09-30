@@ -196,9 +196,6 @@ describe('HostAssertionResolver', () => {
       () => assertion(current.privateKey, bootClaims('host-1', { iss: 'host-2' })),
     ],
     ['one with no token id to burn', () => assertion(current.privateKey, without('jti'))],
-    // Claimed life, not remaining life: an assertion issued a week ago with four
-    // minutes left on it was not minted as a boot token, and capping only what is
-    // left would accept it.
     [
       'one minted with a longer life than a boot token',
       () =>

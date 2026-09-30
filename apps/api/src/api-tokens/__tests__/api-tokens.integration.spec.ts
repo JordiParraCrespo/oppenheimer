@@ -256,13 +256,8 @@ describe('API tokens & scopes (integration)', () => {
     });
 
     it('leaves the user role holding its own tokens and its workspaces, and nothing else', async () => {
-      // This used to assert that `Article` survived `AddApiTokenPermissions`,
-      // as the marker that the migration added its rules without clobbering
-      // what was already there. `Article` has since been removed on purpose —
-      // it had no resource, module or table behind it — so the assertion is
-      // now the stronger one it was standing in for: after the migrations, the
-      // default role grants exactly this set. Anything else
-      // appearing here is a grant nobody decided to give a plain account.
+      // After the migrations the default role grants exactly this set: anything
+      // else appearing here is a grant nobody decided to give a plain account.
       const [role]: {
         permissions: { action: string; subject: string; conditions?: unknown }[];
       }[] = await dataSource.query(`SELECT permissions FROM "role" WHERE name = 'user'`);
@@ -293,13 +288,10 @@ describe('API tokens & scopes (integration)', () => {
 
   describe('minting a token', () => {
     // These two are about the secret — returned once, stored as a digest — and
-    // the scope on them is incidental. It is `tokens:read` rather than
-    // `users:read` because they are the only tests here that mint as a plain
-    // seeded user, with no `grantOwnerPermissions` call ahead of them, and
-    // `TightenDefaultUserRole` deliberately took the unconditional `read User`
-    // rule off that role. `users:read` is therefore ungrantable to it and the
-    // mint is refused with 403 — correctly. `tokens:read` needs
-    // `read ApiToken`, which the seeded role does still hold.
+    // the scope on them is incidental. It is `tokens:read` because they mint as
+    // a plain seeded user with no `grantOwnerPermissions` call ahead of them:
+    // that role holds `read ApiToken` but not the unconditional `read User`
+    // (`TightenDefaultUserRole`), so `users:read` would be refused with 403.
     it('returns the secret exactly once and never again', async () => {
       const created = await mintToken({
         name: 'read-only',
@@ -807,9 +799,9 @@ describe('API tokens & scopes (integration)', () => {
         { action: 'create', subject: 'ApiToken' },
       ]);
 
-      // Sign-up provisions no organization any more — an account belongs
-      // nowhere until it creates one or is invited — so give the owner a
-      // membership to scope the token to.
+      // A membership of an organization with a known id, to scope the token to
+      // (the personal workspace sign-up provisions has an id the test does not
+      // know).
       const organizationId = '44444444-4444-4444-8444-444444444444';
       await dataSource.query(
         `INSERT INTO "organization" ("id", "name", "slug", "createdAt")

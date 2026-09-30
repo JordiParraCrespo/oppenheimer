@@ -50,8 +50,6 @@ describe('DeleteAvatarCommandHandler', () => {
   });
 
   it('saves the profile, refreshes the cached sessions, then removes the object', async () => {
-    // Removing the object first could leave a profile pointing at a file that
-    // is gone.
     const order: string[] = [];
     vi.mocked(repo.save).mockImplementation(async (entity) => {
       order.push('save');
@@ -78,7 +76,6 @@ describe('DeleteAvatarCommandHandler', () => {
   });
 
   it('succeeds when there is no avatar to clear', async () => {
-    // The caller asked for a state, not for an event.
     user = makeUser(null);
     repo.findOneById = vi.fn().mockResolvedValue(Some(user));
 

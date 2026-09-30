@@ -76,7 +76,7 @@ const (
 // agentCatalogIDs is the runner's view of the catalog's `CODING_AGENT_IDS`:
 // each agent it can start and the catalog id the control plane names it by.
 // It is the one table; Valid, CatalogID, AgentFromCatalogID and Command all
-// read it, so a fifth agent is one row here and one in the catalog, and a
+// read it, so a new agent is one row here and one in the catalog, and a
 // test fails when the generated launch table has an id this map lacks.
 var agentCatalogIDs = map[Agent]string{
 	AgentClaude:   "claude-code",

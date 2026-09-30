@@ -60,10 +60,6 @@ export function mountSessionTerminal(
     // A few thousand lines of build output is the normal case; the runner
     // replays its own tail on attach, so this is only what the tab keeps.
     scrollback: 5000,
-    // The ramp's bright slots repeat their normal counterparts today. This
-    // keeps a program's own colour choice readable until they diverge — at
-    // a floor that depends on the terminal's background, because one number
-    // cannot serve both themes (see `terminalMinimumContrastRatio`).
     minimumContrastRatio: terminalMinimumContrastRatio(),
     // Unicode11Addon is a proposed API; box drawing and emoji width in
     // agent output are wrong without it.
@@ -278,11 +274,7 @@ function wheelLines(event: WheelEvent, rows: number): number {
 
 const VISIBLE_TEXT_DECODER = new TextDecoder('utf-8', { fatal: false });
 
-/**
- * The escape grammar, in the order it has to be unwound. Every one of these
- * names a control character on purpose — that is what an escape sequence is —
- * so the rule against them is switched off for the block rather than the line.
- */
+/** The escape grammar, in the order it has to be unwound (see `hasVisibleText`). */
 /* biome-ignore-start lint/suspicious/noControlCharactersInRegex: an escape sequence is control characters by definition */
 const ESCAPE_PATTERNS = [
   // OSC: ESC ] ... BEL, or ... ST
@@ -316,7 +308,7 @@ export function hasVisibleText(chunk: string | Uint8Array): boolean {
   // first, because their payload may contain anything, then CSI, which ends at
   // its final byte and *not* at the next escape — reading it as "up to the
   // next ESC" swallowed the text after a colour change, which is most of what
-  // an agent prints. What is left of an escape is the two-character kind.
+  // an agent prints.
   let withoutEscapes = text;
   for (const pattern of ESCAPE_PATTERNS) withoutEscapes = withoutEscapes.replace(pattern, '');
   return withoutEscapes.trim().length > 0;

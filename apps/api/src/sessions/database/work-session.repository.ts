@@ -32,17 +32,12 @@ import type {
 import { WorkSessionEventOrmEntity } from './work-session-event.orm-entity';
 
 /**
- * **The append is one transaction, and `seq` is allocated under a row lock.** Every
- * appender takes `SELECT … FOR UPDATE` on the session row first, so they serialise
- * and the log can neither gap nor regress. A batch lands in **one** `INSERT` that
- * skips keys already logged and numbers the rest consecutively; `ON CONFLICT DO
- * NOTHING` is the backstop, not the mechanism. The fold runs over exactly the rows
- * that landed and the row update commits with them, so the sidebar is never
- * eventually-consistent with its own log.
+ * The append's locking and batching rules are the port's (`appendEvents`) and
+ * `insertBatch`'s.
  *
  * **The reads carry no tenant clause of their own**: `ScopedRepositoryBase` with
  * `SessionResource` is the whole of it, so a query and `ability.can()` cannot
- * disagree about a scope. The children are read through their session only.
+ * disagree about a scope.
  */
 @Injectable()
 export class WorkSessionRepository
@@ -140,9 +135,6 @@ export class WorkSessionRepository
       for (const checkout of session.checkouts) {
         await checkouts.insert(this.mapper.checkoutToPersistence(checkout));
       }
-      // The fold, the row update and the outbox rows all happen in here, in this
-      // transaction: the session's first log entries and the columns they produce
-      // commit together or not at all.
       await this.appendWithin(manager, session, events);
       return 'created' as const;
     });
@@ -475,11 +467,8 @@ export class WorkSessionRepository
     if (!locked) {
       throw new Error(`Session ${session.id} disappeared while appending to its log`);
     }
-    // Fold onto what the **locked row** says, not onto the instance the caller
-    // loaded. Two requests can hold separate aggregates: a close commits
-    // `resolved` while a stop waits here, and folding onto the stop's stale `open`
-    // would write a projection the log does not support. The lock is what makes
-    // this read final.
+    // Fold onto the **locked row**, not the instance the caller loaded: see
+    // `reseatFold`.
     session.reseatFold(this.mapper.foldOf(locked));
     return this.appendLocked(manager, session, events);
   }
@@ -532,9 +521,8 @@ export class WorkSessionRepository
       seen.add(event.idempotencyKey);
       return true;
     });
-    // Every key that was not refused is accepted: it landed now, or an earlier
-    // attempt landed it. `DO NOTHING` cannot tell those apart, and for the writer
-    // both mean the same thing: stop resending it.
+    // Every key not refused is accepted, landed now or earlier: see
+    // `SessionAppendOutcome`.
     const accepted = candidates.map((event) => event.idempotencyKey);
 
     const appended = fresh.length > 0 ? await this.insertBatch(manager, session.id, fresh) : [];
@@ -550,10 +538,8 @@ export class WorkSessionRepository
     if (appended.length > 0) {
       // **Every column the fold projects**, and nothing else. The list is the
       // one in `SessionFold`, spelled once: a hand-picked subset here is a
-      // column the fold silently stops maintaining, which is what happened to
-      // the four observation columns — the inputs the sidebar's own debounce
-      // reads — and then to the launch options. The row is the projection or it
-      // is a second truth.
+      // column the fold silently stops maintaining, and the row becomes a second
+      // truth.
       const record = this.mapper.toPersistence(session);
       await manager.query(
         `UPDATE "work_session"

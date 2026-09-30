@@ -19,9 +19,6 @@ describe('unwrap', () => {
   });
 
   it('preserves the status and code so callers can tell why it failed', () => {
-    // Without these a UI cannot distinguish "wrong password" (the server
-    // answered 401) from "the server is unreachable" (no status at all), and
-    // ends up telling someone who mistyped their password to check their wifi.
     const error = (() => {
       try {
         unwrap({

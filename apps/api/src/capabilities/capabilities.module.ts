@@ -11,9 +11,8 @@ import { sessionNamerIsConfigured } from '../config/sessions.config';
  * installation claim, the webhook secret to trust a suspension, the slug the console
  * builds the install link from), so a partial set is off.
  *
- * Exported because this must be the one predicate: a second, five-key check in the
- * GitHub adapter let a deployment with no `GITHUB_APP_SLUG` report
- * `github_app: false` and still answer `POST /installations` with a 201.
+ * The one predicate: the GitHub adapter asks the `github_app` capability rather
+ * than checking keys of its own (see `GithubRestAdapter.isConfigured`).
  */
 export function hasGithubApp(configService: ConfigService): boolean {
   return Boolean(
@@ -56,10 +55,9 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
     // re-derived: a capability that says yes while every route answers
     // HOSTS_004 is a second source of truth, and the console reads this one.
     hosts: hostsAreConfigured(configService),
-    // The same predicate the namer adapter checks. With no provider, or one
-    // whose key or model is missing, sessions are named from their prompt's own
-    // words instead — a supported configuration, which is why this exists to
-    // answer "why are titles never a model's" from the log.
+    // The same predicate the namer adapter checks. Without it sessions are
+    // named from their prompt's words, a supported configuration; this answers
+    // "why are titles never a model's" from the log.
     session_namer: sessionNamerIsConfigured(configService),
     // A database on disk to place a host's network with. Without it networks
     // are recorded by address only, and no new-network email can be judged.

@@ -9,7 +9,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-/** An automation's identity and state. */
 @Entity('automation')
 @Unique('UQ_automation_organization_id', ['organizationId', 'id'])
 @Index('IDX_automation_project', ['organizationId', 'projectId'])

@@ -27,9 +27,9 @@ export function resolveFlagValue<K extends ClientFeatureFlagKey>(
 }
 
 /**
- * Only `true` is on: a variant
- * flag has no off state (its control arm is a variant like any other), so it
- * is read with `useFeatureFlagValue` and branched on by name.
+ * Only `true` is on: a variant flag has no off state (its control arm is a
+ * variant like any other), so it is read with `useFeatureFlagValue` and
+ * branched on by name.
  */
 export function isFlagEnabled(value: FlagValue | undefined): boolean {
   return value === true;

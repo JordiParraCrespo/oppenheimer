@@ -131,12 +131,10 @@ function Composer({
         placeholder={placeholder}
         disabled={disabled}
         rows={minRows}
-        // `min-h`, not `rows`: `field-sizing-content` sizes the box to what is
-        // typed and overrides the `rows` attribute outright, so an empty
-        // composer collapsed to a single line. The export's floor is 112px
-        // (`.op-composer__input`), which is the prompt box having "real
-        // presence" before anyone has typed into it — the whole point of the
-        // control. `rows` stays for the no-`field-sizing` fallback.
+        // `min-h`, not `rows`: `field-sizing-content` overrides `rows`, so an
+        // empty composer would collapse to one line. The floor is the export's
+        // 112px (`.op-composer__input`); `rows` stays for the no-`field-sizing`
+        // fallback.
         className={cn(
           'field-sizing-content max-h-[40svh] w-full resize-none bg-transparent px-[18px] py-4 text-fg outline-none placeholder:text-field-placeholder',
           scope ? 'min-h-32 text-[15px] leading-normal' : 'min-h-28 text-compose',

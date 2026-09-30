@@ -10,13 +10,13 @@ const YEAR = 365 * DAY;
 /**
  * Locale- and timezone-aware value formatting, built on `Intl`.
  *
- * Everything a notification shows that is not a plain string goes through
- * here: money, counts, dates and relative times. The point of centralizing it
+ * Everything shown that is not a plain string goes through here: money,
+ * counts, dates and relative times. The point of centralizing it
  * is that "€31,400.00" and "31.400,00 €" are the *same* stored value — the
  * difference is entirely the reader's, and no call site should be deciding it.
  *
  * Formatter instances are cached per (locale, options) because constructing an
- * `Intl.NumberFormat` is the expensive part and a feed page formats dozens of
+ * `Intl.NumberFormat` is the expensive part and a page formats dozens of
  * values through the same handful of configurations.
  */
 export class Formatter {
@@ -25,12 +25,9 @@ export class Formatter {
   private readonly relativeFormats = new Map<string, Intl.RelativeTimeFormat>();
 
   /**
-   * Format by name, as a declaration's fact table asks for it.
-   *
-   * Unknown formats fall through to `text` rather than throwing: a fact that
-   * renders as a plain number is a cosmetic defect, and taking the page down
-   * over one is not a trade worth making at read time. `defineNotificationType`
-   * rejects unknown formats at boot, which is where that mistake belongs.
+   * Format by name. Unknown formats fall through to `text` rather than
+   * throwing: a value that renders as a plain number is a cosmetic defect, and
+   * taking the page down over one is not a trade worth making at read time.
    */
   format(
     locale: string,
@@ -110,13 +107,7 @@ export class Formatter {
     return this.relativeFormat(locale).format(-count, unit);
   }
 
-  /**
-   * The unit and count behind a relative time, without the words.
-   *
-   * The compact list-column label (`12m`, `2h`, `1d`) is a *translation*, not a
-   * calculation — Spanish may well want `12min` — so the caller pairs these
-   * parts with a copy key instead of receiving a pre-built string.
-   */
+  /** The unit and count behind a relative time, without the words (see `RelativeParts`). */
   relativeParts(value: Date, now: Date = new Date()): RelativeParts {
     const elapsed = Math.max(0, now.getTime() - value.getTime());
 
@@ -130,9 +121,9 @@ export class Formatter {
   }
 
   /**
-   * Which day-heading a notification belongs under, **in the reader's zone**.
+   * Which day-heading an instant belongs under, **in the reader's zone**.
    *
-   * A notification created at 23:30 in Madrid is "today" to a Madrid reader and
+   * An instant at 23:30 in Madrid is "today" to a Madrid reader and
    * "yesterday" to a UTC one. Computing this on the server, from the resolved
    * timezone, is what stops the client re-deriving date boundaries it does not
    * have the timezone to get right.

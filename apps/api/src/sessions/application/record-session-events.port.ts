@@ -6,10 +6,9 @@
  * a package's `exports` map, so the protocol subpath is unreachable here. The caller
  * parses the wire message with that schema first, so what crosses is validated.
  *
- * `seq` is deliberately absent: the control plane assigns it under a row lock, so a
- * buggy or hostile host cannot create gaps or regress the log. `payload` is the JSON
- * **string** the wire carries, which makes the 8 KB cap enforceable in TypeScript and
- * in the Go generated from the same schema.
+ * `seq` is deliberately absent: the control plane assigns it (see
+ * `WorkSessionEventEntity`). `payload` is the JSON **string** the wire carries, so
+ * `SESSION_EVENT_PAYLOAD_MAX_BYTES` holds on both sides.
  */
 export interface RunnerSessionEvent {
   idempotencyKey: string;

@@ -4,11 +4,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 /** Where `AccessScopeInterceptor` leaves the resolved scope. */
 export const ACCESS_SCOPE_KEY = 'accessScope';
 
-/**
- * Only populated on routes whose controller applies `AccessScopeInterceptor`;
- * resolving it for every request would spend two queries on routes that never
- * touch a scoped resource.
- */
+/** Only populated on routes whose controller applies `AccessScopeInterceptor`. */
 export const CurrentAccessScope = createParamDecorator(
   (_data: unknown, context: ExecutionContext): AccessScope => {
     const request = context.switchToHttp().getRequest();

@@ -165,10 +165,8 @@ describe('AllExceptionsFilter', () => {
   });
 
   it('gives a bare HttpException no code — a code requires a catalog entry', () => {
-    // Documented, deliberate behaviour, and the reason the Better Auth façades
-    // throw `AppError` rather than passing an upstream `{ message, code }` body
-    // through: only curated catalog codes are part of the public contract, so
-    // the filter will not lift one off an arbitrary exception body.
+    // Only curated catalog codes are part of the public contract, so the filter
+    // never lifts one off an arbitrary exception body.
     const problem = handle(
       new HttpException({ message: 'Organization slug already taken', code: 'SLUG_TAKEN' }, 409),
     ).problem();

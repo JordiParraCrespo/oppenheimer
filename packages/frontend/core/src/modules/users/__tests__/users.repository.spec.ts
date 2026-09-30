@@ -50,9 +50,6 @@ describe('UserEntity', () => {
   });
 
   it('is a getter, so it does not survive the persisted query cache', () => {
-    // Documented rather than fixed: the cache is rehydrated from JSON, where a
-    // getter is gone, so a name read from a cached user is built from the
-    // plain fields, which do survive.
     const rehydrated = JSON.parse(JSON.stringify(user()));
 
     expect(rehydrated.fullName).toBeUndefined();
@@ -99,8 +96,6 @@ describe('UsersRepository', () => {
 
   describe('myPermissions', () => {
     it('returns the raw CASL rules, not an entity', async () => {
-      // The app rebuilds an ability from these with
-      // `defineAbilitiesFromPermissions`, so they have to arrive unshaped.
       api.getMyPermissions.mockResolvedValue(
         ok({
           permissions: [{ action: 'read', subject: 'Project' }],

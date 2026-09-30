@@ -59,13 +59,10 @@ const ports: Provider[] = [
 ];
 
 /**
- * Marked `@Global` for one reason: the auth kernel resolves an OAuth grant
- * itself, in `AuthModule`'s injector, and it asks this module who the grant
- * belongs to through `CREDENTIAL_OWNER`. The kernel may not import this module
- * (`auth-is-a-kernel` in `.dependency-cruiser.cjs`), so the binding has to be
- * resolvable application-wide. A contributed credential resolver does *not*
- * need this — it is built in its own module's injector — so this is about the
- * kernel's own path, nothing else.
+ * `@Global` for one binding: the auth kernel resolves an OAuth grant in
+ * `AuthModule`'s injector and asks who it belongs to through
+ * `CREDENTIAL_OWNER`, but may not import this module (`auth-is-a-kernel` in
+ * `.dependency-cruiser.cjs`).
  */
 @Global()
 @Module({

@@ -43,8 +43,7 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
  * `data-[side=right]:sm:max-w-[720px]`, not a bare `sm:max-w-[720px]`. The
  * default below is variant-qualified, so tailwind-merge files a bare override
  * under a different key, keeps both, and source order hands the win to the
- * default — silently. Two drawers in `apps/web` sat at 24rem for months while
- * their class lists said 560px and 620px, which is how this note came to exist.
+ * default — silently.
  */
 function SheetContent({
   className,

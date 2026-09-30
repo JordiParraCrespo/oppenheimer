@@ -13,9 +13,8 @@ import type { CheckoutMode } from '../domain/session-checkout.entity';
  * installation is GitHub's to say, at every token mint.
  *
  * `(sessionId, githubRepoId) WHERE removedAt IS NULL` lets a repository be re-added
- * after removal; `(sessionId, directoryName)` is unconditional, because the coding
- * agents key conversation state by working directory, so a checkout on a retired name
- * would inherit a stranger's history.
+ * after removal; `(sessionId, directoryName)` is unconditional, because a directory
+ * name is never reissued (`checkoutDirectoryCandidates`).
  */
 @Entity('session_checkout')
 @Index('IDX_session_checkout_installation', ['organizationId', 'installationId'])

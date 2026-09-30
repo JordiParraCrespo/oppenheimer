@@ -35,9 +35,11 @@ const KINDS = [
   '__tests__',
 ];
 const ROUTE_LINE_CAP = 120;
-/** What an app keeps beside its routes and features: configuration, nothing else. */
-// `console.ts` names the console's dialogs and lists, which the kit's generic
-// dialog slot and every feature that opens one share.
+/**
+ * What an app keeps beside its routes and features: configuration, nothing
+ * else. `console.ts` names the console's dialogs and lists, which the kit's
+ * generic dialog slot and every feature that opens one share.
+ */
 const APP_CONFIG_FILES = ['oppenheimer.ts', 'auth-client.ts', 'nav.ts', 'query.ts', 'console.ts'];
 
 const modulesOf = (pkg) => {
@@ -375,11 +377,10 @@ for (const { app, routes, features, product, allow, kit } of APPS) {
 
 // One component per file, in an app. Biome's `noNestedComponentDefinitions`
 // only sees a component declared inside another; two declared side by side
-// pass it, and the second one is always the one nobody finds. A component is
-// a top-level `function Name`, `const Name = (…) =>` (typed or not) or
-// `const Name = memo(…)`/`forwardRef(…)` with a capital first letter. It is a
-// tripwire on those shapes, not a parser. The kit is exempt: a primitives file there exports a family meant to
-// be read together (`AuthLink`, `AuthBackLink`, …).
+// pass it, and the second one is always the one nobody finds. The pattern is a
+// tripwire on the usual top-level shapes, not a parser. The kit is exempt: a
+// primitives file there exports a family meant to be read together
+// (`AuthLink`, `AuthBackLink`, …).
 const TOP_LEVEL_COMPONENT =
   /^(?:export\s+)?(?:default\s+)?(?:function\s+([A-Z]\w*)|const\s+([A-Z]\w*)\s*(?::[^=]+)?=\s*(?:\([^)]*\)\s*(?::[^=]*)?=>|\w+\s*=>|(?:memo|forwardRef)\())/gm;
 for (const { app } of APPS) {
@@ -400,11 +401,8 @@ for (const { app } of APPS) {
 }
 
 // Every query a frontend package's React layer declares shares entities across
-// refetches. The entities are classes, which TanStack Query's default
-// structural sharing does not look into, so a query without `shareEntities`
-// hands every reader a new object per row on every refetch and every memo keyed
-// on them misses. The core's `useQuery` and `useQueries` apply it, so the fence
-// is on the import: TanStack's own two are not used here.
+// refetches (why: `packages/frontend/core/src/react/query.ts`). The core's
+// `useQuery` and `useQueries` apply it, so the fence is on the import.
 const QUERY_HOOK_IMPORT = /import\s*\{([^}]*)\}\s*from\s*'@tanstack\/react-query'/g;
 const FENCED_HOOKS = ['useQuery', 'useQueries', 'useSuspenseQuery', 'useSuspenseQueries'];
 for (const pkg of readdirSync(join(root, 'packages/frontend'))) {
@@ -426,12 +424,8 @@ for (const pkg of readdirSync(join(root, 'packages/frontend'))) {
 }
 
 // How the console polls is one policy, `LIVE_POLL` in the product package's
-// `live-poll.ts`: the interval and whether it survives a hidden tab, spread
-// into a query hook by `pollWhile()`. That file is the only one that names
-// TanStack's polling options. An app that sets `refetchInterval` is a second
-// policy nobody finds: it asks the product package for the read that polls
-// (`useHostPresence`) instead. A package hook that sets it by hand is one
-// that skipped the catalog.
+// `live-poll.ts`, the only file that names TanStack's polling options. A
+// `refetchInterval` anywhere else is a second policy nobody finds.
 const sources = (dir) =>
   [...walk(dir)].filter(
     (file) =>

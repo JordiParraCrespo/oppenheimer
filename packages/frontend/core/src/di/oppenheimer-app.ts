@@ -25,13 +25,12 @@ export interface OppenheimerAppConfig {
   authClient: IAuthClient;
   /**
    * Platform-specific analytics adapter. Omit it and the app runs against a
-   * no-op client — events are dropped. Feature flags do not depend on it: they
-   * come from the API.
+   * no-op client — events are dropped.
    */
   analytics?: IAnalyticsClient;
   /**
    * What this app reports about itself when it asks for its feature flags —
-   * `{ platform: 'web', appVersion: '2.1.0' }`. The API can target on both.
+   * `{ platform: 'web', appVersion: '2.1.0' }`.
    */
   featureFlags?: FeatureFlagsClientContext;
   /**
@@ -51,7 +50,6 @@ export class OppenheimerApp {
 
     container.load(createCoreModule(config));
 
-    // Kernel modules, shared by every product
     container.load(AnalyticsModule);
     container.load(AuthModule);
     container.load(CapabilitiesModule);
@@ -59,7 +57,6 @@ export class OppenheimerApp {
     container.load(UsersModule);
     container.load(UserSettingsModule);
 
-    // The product's modules, and anything else the app adds
     if (config.modules) {
       for (const mod of config.modules) {
         container.load(mod);

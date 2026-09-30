@@ -12,8 +12,8 @@ test.describe('web auth UI', () => {
 
     await registerThroughUi(page, user);
 
-    // Registering creates an account, not a workspace: the only honest next
-    // screen is the one that makes a workspace.
+    // Registering provisions a workspace whose address nobody has chosen yet,
+    // so the next screen is the first-run step that names it.
     await expect(page).toHaveURL(/\/onboarding/, { timeout: 20_000 });
     expect(await findUserByEmail(user.email), 'the account really exists').toBeTruthy();
   });

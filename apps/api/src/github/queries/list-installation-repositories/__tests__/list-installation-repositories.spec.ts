@@ -129,8 +129,7 @@ describe('list installation repositories', () => {
       new ListInstallationRepositoriesQuery({ scope, installationId: other.id }),
     );
 
-    // Two installations' listings must never collide, and the TTL is short
-    // enough that a repository created a minute ago is there.
+    // Two installations' listings must never collide.
     expect(subject.github.listInstallationRepositories.mock.calls).toEqual([
       [45678901],
       [99999999],

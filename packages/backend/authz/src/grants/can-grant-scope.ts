@@ -15,8 +15,7 @@ export interface AccessGrantInput {
  * null` ("every row of this type") is the strongest thing the table can
  * express, so only someone who already holds `'all'` may mint it.
  *
- * Without this, the grant endpoints are a self-service escalation path — which
- * is why they must not ship before this check does.
+ * Without it, the grant endpoints are a self-service escalation path.
  */
 export function canGrantScope(actorScope: AccessScope, grant: AccessGrantInput): boolean {
   if (actorScope.bypass) return true;

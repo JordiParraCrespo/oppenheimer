@@ -20,8 +20,7 @@ const capabilitiesKeys = {
  * Which client-facing optional features (OAuth providers) the deployment has
  * configured, from `GET /health/capabilities`, to hide UI this install cannot
  * serve. It changes only on reconfigure and restart, so it is static for a
- * page's lifetime. The read is public: it gates the login screen, before any
- * session exists.
+ * page's lifetime.
  *
  * An *error* means the API was unreachable, not that a capability is missing:
  * treating it as an empty set would hide every provider on a deployment that

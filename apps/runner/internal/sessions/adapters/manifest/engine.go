@@ -33,9 +33,9 @@ type Classifier struct {
 
 // Options configure loading.
 type Options struct {
-	// Dir holds manifests that override the bundled ones by agent id, which
-	// is how the control plane ships a fix for an agent's new spinner
-	// without a runner release. A missing directory is not an error.
+	// Dir holds manifests that override the bundled ones by agent id, so a
+	// fix for an agent's new spinner can reach a host without a runner
+	// release. A missing directory is not an error.
 	Dir string
 	// Logger reports a manifest that was skipped and why; nil discards.
 	Logger *slog.Logger

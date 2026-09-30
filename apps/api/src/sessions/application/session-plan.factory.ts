@@ -47,9 +47,8 @@ export class SessionPlanFactory {
 
   /**
    * The directory name is derived over every name the session has **ever** used,
-   * retired ones included, so a name is never reissued inside a session: the coding
-   * agents key their conversation state by working directory, and a new checkout
-   * landing on a retired name would inherit a stranger's history.
+   * retired ones included, so a name is never reissued inside a session
+   * (`checkoutDirectoryCandidates` says why).
    */
   async attachCheckout(
     scope: AccessScope,
@@ -78,8 +77,6 @@ export class SessionPlanFactory {
       // The base defaults to the repository's default branch; the session's own
       // branch is created from it and is never the base itself.
       baseBranch: input.baseBranch ?? repository.defaultBranch,
-      // Every checkout of a session is on its one branch; a session that already
-      // has one keeps the name it recorded.
       branch: session.branch ?? sessionBranchName(session.slug),
     });
     session.attachCheckout(checkout);

@@ -6,8 +6,7 @@ import { useState } from 'react';
  * The search-field policy, in one place: the half-typed word is local, it
  * leaves once typing settles, and the field ignores the echo of its own commit.
  * Every search field runs on this; a field that should feel different gets
- * different markup, not a second copy (a second copy is how a stray debounce
- * once survived a refactor).
+ * different markup, not a second copy.
  *
  * `value` is for a field whose settled value lives outside it (the URL, for
  * the table). A followed link, cleared filter or back button changes it

@@ -26,8 +26,8 @@ export interface WorkSessionEventProps {
   /** Assigned by the control plane under a row lock, so the log has no gaps. */
   seq: number;
   /**
-   * The writer's own key: `<runId>:<n>` from a runner, the command id from the
-   * API. It depends on nothing the control plane hands out, so it survives any
+   * The writer's own key: `<runId>:<n>` from a runner, `<kind>:<commandId>` from
+   * the API. It depends on nothing the control plane hands out, so it survives any
    * reconnect, and `uq (sessionId, idempotencyKey)` is what makes a replayed
    * batch append only what was not yet seen.
    */

@@ -17,8 +17,8 @@ export interface LoggingModuleAsyncOptions extends Pick<ModuleMetadata, 'imports
  * `buildPinoHttpOptions`) plus the `UserContextInterceptor` that attaches the
  * authenticated subject to every request's log context.
  *
- * The app decides only what it legitimately varies — pretty printing — through
- * the async factory; the safety configuration is not overridable.
+ * The app decides only what it legitimately varies (pretty printing, level)
+ * through the async factory; the safety configuration is not overridable.
  */
 @Module({})
 export class LoggingModule {

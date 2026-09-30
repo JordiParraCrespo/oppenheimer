@@ -27,7 +27,6 @@ describe('UpdateUserSettingsCommandHandler', () => {
   });
 
   it('creates the record on a first save', async () => {
-    // No row is provisioned at sign-up, so the first save has nothing to load.
     const id = await service.execute(COMMAND);
 
     expect(id).toBe('user-uuid');

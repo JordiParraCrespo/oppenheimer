@@ -16,8 +16,6 @@ describe('GetUserSettingsQueryHandler', () => {
   });
 
   it('answers with the defaults when nothing is saved', async () => {
-    // A 404 here would push the same "not found means defaults" branch, and a
-    // copy of the default values, into every client.
     const settings = await handler.execute(new GetUserSettingsQuery('user-uuid'));
 
     expect(settings.userId).toBe('user-uuid');

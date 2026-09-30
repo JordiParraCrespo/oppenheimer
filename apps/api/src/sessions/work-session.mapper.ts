@@ -209,8 +209,6 @@ export class WorkSessionMapper
       ackedReportHash: record.ackedReportHash,
       launch: {
         model: record.launchModel,
-        // Null is a session whose agent has no approvals; for any other agent
-        // a missing level reads as the one that asks before every action.
         permission: launchPermissionFor(record.agent, record.launchPermission),
         effort: record.launchEffort,
       },

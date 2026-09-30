@@ -265,7 +265,7 @@ func agents(ctx context.Context, args []string) (int, error) {
 }
 
 // sessions dispatches the session subcommands. They are what a person uses on
-// the host itself; the console will drive the same use cases over the link.
+// the host itself; the console drives the same use cases over the link.
 func sessions(ctx context.Context, args []string) (int, error) {
 	sub := "ls"
 	if len(args) > 0 {

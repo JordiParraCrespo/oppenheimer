@@ -178,11 +178,9 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
     return this.outbox.transaction(async (manager) => {
       // Both statements are destructured: TypeORM hands an UPDATE's result
       // back as `[rows, affected]` and only a SELECT's as the rows themselves
-      // (`PostgresQueryRunner.query`). Read as rows, `abandoned.length` was
-      // the constant 2 and the loop below ran twice over an array and a
-      // number, staging two jobs whose `inboundDeliveryId` was `undefined` —
-      // which the processor logged as an unknown job — while the deliveries
-      // that were actually stuck were never restaged.
+      // (`PostgresQueryRunner.query`); read as rows, this staged jobs with no
+      // `inboundDeliveryId` and never restaged a stuck delivery
+      // (`inbound-event-restage-unprocessed.repository.spec.ts`).
       const [abandoned]: [{ id: string }[], number] = await manager.query(
         `UPDATE "inbound_delivery"
             SET "status" = 'failed', "lastError" = 'not processed after its retries and a day of sweeps'

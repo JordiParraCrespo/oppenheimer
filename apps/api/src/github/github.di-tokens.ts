@@ -1,9 +1,6 @@
 export const GITHUB_INSTALLATION_REPOSITORY = Symbol('GITHUB_INSTALLATION_REPOSITORY');
 export const GITHUB_APP = Symbol('GITHUB_APP');
-/**
- * What `sessions/` and `relay/` inject to turn a checkout into a one-hour,
- * one-repository token.
- */
+/** `RepositoryAccessPort`: a checkout's repository, and its one-hour token. */
 export const REPOSITORY_ACCESS = Symbol('REPOSITORY_ACCESS');
 
 /**

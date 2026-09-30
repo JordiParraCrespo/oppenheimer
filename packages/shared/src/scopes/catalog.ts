@@ -386,8 +386,8 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     description: 'GitHub App installations and the repositories they grant access to.',
     // The scope keeps the name a token holder thinks in — they are granting
     // access to repositories — but every level is backed by `Installation`
-    // policies alone. There is no `Repository` subject: a repository has no row,
-    // and the installation is what carries the tenant and the allowlist.
+    // policies alone: there is no `Repository` subject (`KNOWN_SUBJECTS` says
+    // why).
     levels: {
       read: {
         scope: 'repositories:read',

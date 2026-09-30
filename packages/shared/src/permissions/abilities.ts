@@ -251,9 +251,7 @@ function denyLast(permissions: readonly PermissionDefinition[]): PermissionDefin
 
 /**
  * Build a CASL ability from a flat list of permission definitions — typically
- * the union of every role assigned to a user. This is the single source of
- * truth for authorization now that roles and their permissions live in the
- * database.
+ * the union of every role assigned to a user.
  */
 export function defineAbilitiesFromPermissions(
   permissions: PermissionDefinition[],
@@ -293,9 +291,9 @@ const OWN_USER_ID = '${user.id}';
 const ACTIVE_ORGANIZATION_ID = '${activeOrganizationId}';
 
 /**
- * Permissions granted to the seeded **system roles**. Used by the migration /
- * seed to provision `admin` and `user`, and as the fallback for the legacy
- * single-role column before a user is migrated to the join table.
+ * Permissions granted to the seeded **system roles**. The seed installs them,
+ * and the API's ability factory falls back to them for a `user.role` name that
+ * has no role row.
  */
 export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
   superadmin: [{ action: 'manage', subject: 'all' }],
@@ -328,15 +326,13 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     // on to keep the platform's own roles out of a tenant admin's reach.
     { action: 'manage', subject: 'Role', conditions: { organizationId: ACTIVE_ORGANIZATION_ID } },
     // The control plane's workspace-owned resources. `Host` is deliberately
-    // absent: a host belongs to the *person* who paired it and workspaces
-    // borrow it, so it sits on the `user` role below. The tenant boundary for
-    // what runs on a host is `work_session.organizationId`, not the host row.
+    // absent: it is person-owned and sits on the `user` role below. The tenant
+    // boundary for what runs on a host is `work_session.organizationId`, not
+    // the host row.
     //
-    // These grant the workspace *owner*. A workspace **member** is granted
-    // nothing here and therefore cannot yet read the workspace's projects,
-    // sessions or installations from the seed: there is no `member` entry in
-    // this constant at all, and adding one is its own change with its own
-    // migration. The product surface is not finished by this block.
+    // A workspace **member** is granted none of these: there is no `member`
+    // entry in this constant, and adding one is its own change with its own
+    // migration.
     {
       action: 'manage',
       subject: 'Project',
@@ -358,23 +354,23 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
       conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
     },
   ],
+  /**
+   * Deliberately small: a plain account holds nothing until it creates an
+   * organization or an invitation puts it in one, and whichever of those
+   * happens is what grants the org-scoped role for that workspace. No rule on
+   * `User`: an unconditional one lets every account list and edit every other
+   * across tenants. Profile editing goes through `/profile`; colleagues come
+   * from the `Member` resource.
+   */
   user: [
-    /**
-     * Deliberately small: a plain account holds nothing until it creates an
-     * organization or an invitation puts it in one, and whichever of those
-     * happens is what grants the org-scoped role for that workspace. No rule on
-     * `User`: an unconditional one lets every account list and edit every other
-     * across tenants. Profile editing goes through `/profile`; colleagues come
-     * from the `Member` resource.
-     */
     // Which organizations this account belongs to, and nothing else about
     // them. Better Auth answers the read from the caller's own memberships, so
     // it discloses no organization they are not in — it is what lets the app
     // tell "you are in a workspace" from "you are waiting for an invitation".
     { action: 'read', subject: 'Organization' },
     // Self-service sign-up: a fresh account creates its first workspace from
-    // onboarding. `OrganizationsService.create` grants the creator the
-    // org-scoped `admin` role in the same act, so this is the one door into a
+    // onboarding. `CreateOrganizationCommandHandler` grants the creator the
+    // org-scoped `owner` role in the same act, so this is the one door into a
     // workspace besides an invitation.
     { action: 'create', subject: 'Organization' },
     // Every user manages their own API tokens; the condition keeps them off
@@ -408,10 +404,9 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
 };
 
 /**
- * Backwards-compatible helper that builds an ability from a single role name
- * using the seeded system-role permissions. Prefer
- * {@link defineAbilitiesFromPermissions} with the user's real, DB-backed
- * permissions; this remains for the legacy fallback path and the frontend.
+ * Legacy: an ability from a single role name, using the seeded system-role
+ * permissions. Prefer {@link defineAbilitiesFromPermissions} with the user's
+ * DB-backed permissions.
  */
 export function defineAbilitiesFor(role: Role, context: AbilityContext = {}): AppAbility {
   return defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS[role] ?? [], context);

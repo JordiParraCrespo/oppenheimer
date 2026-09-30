@@ -20,11 +20,11 @@ const DEFAULT_WORKSPACE = 'General';
  *
  * Better Auth writes the organization and an `owner` membership; neither is
  * what the app's routes check. `MembershipAccessPolicy.admit` grants the
- * org-scoped role beside them, and discards the organization if it cannot —
- * an organization its owner cannot read is how a self-service registration
- * used to land on a 403 (issue #106). The default workspace and the
- * announcement that follow are best-effort: failing the request over them
- * would tell the caller an organization they own does not exist.
+ * org-scoped role beside them, and discards the organization if it cannot: an
+ * organization its owner cannot read answers them 403 (issue #106). The
+ * default workspace and the announcement that follow are best-effort: failing
+ * the request over them would tell the caller an organization they own does
+ * not exist.
  */
 @CommandHandler(CreateOrganizationCommand)
 export class CreateOrganizationCommandHandler

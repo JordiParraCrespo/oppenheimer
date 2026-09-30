@@ -20,9 +20,7 @@ export interface SessionDispatchOutcome {
  * What the host is told to make. Every path segment is a unique-constrained
  * column, so the runner derives `workspaces/<organizationSlug>/sessions/<sessionSlug>/`
  * without asking — and only the names it cannot read off the session travel
- * here. The workspace's slug is one of them: it belongs to the organization row,
- * which this module asks `organizations/` for through its published port, so the
- * dispatcher never reads another module's table.
+ * here.
  */
 export interface SessionLaunchSpec {
   /** The workspace's slug: a path segment on the host, read through `WORKSPACE_LOOKUP`. */

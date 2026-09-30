@@ -20,10 +20,7 @@ function toNumberOrNull(value: unknown): number | null {
  * Maps what the Better Auth admin plugin returns onto this module's response
  * DTOs. Better Auth owns the `user` and `session` tables, so there is no
  * aggregate here to map to and from — only the plugin's untyped results to
- * narrow. Every method accepts `unknown` and narrows once via `asRecord` /
- * `unwrap`, so the gateway carries no `as`-casts; all response normalization
- * (coercion, `{ user }` / `{ sessions }` envelope unwrapping, date parsing)
- * lives here.
+ * narrow.
  */
 export class AdminUserMapper {
   static toResponse(input: unknown): AdminUserResponseDto {

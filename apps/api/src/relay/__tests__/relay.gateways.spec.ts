@@ -1283,7 +1283,6 @@ describe('browser attach socket', () => {
     });
 
     it('is re-checked only every REAUTHORIZE_INTERVAL_MS by default', () => {
-      // One minute bounds how long a revocation takes on every replica.
       expect(REAUTHORIZE_INTERVAL_MS).toBe(60_000);
       expect(
         new BrowserAttachGateway(

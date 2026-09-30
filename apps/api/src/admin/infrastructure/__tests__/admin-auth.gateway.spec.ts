@@ -1,8 +1,8 @@
 import type { IncomingHttpHeaders } from 'node:http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// `../auth/auth` opens a real Postgres pool at import time, so mock it before
-// the gateway pulls it in. Each `auth.api.*` method is a vi.fn we can assert on.
+// `better-auth.config` opens a real Postgres pool at import time, so mock it
+// before the gateway pulls it in.
 const findMany = vi.hoisted(() => vi.fn());
 const findOne = vi.hoisted(() => vi.fn());
 

@@ -31,8 +31,7 @@ export function useDebouncedCallback<TArgs extends unknown[]>(
 
   useEffect(() => {
     void cancelKey;
-    // The timer: cancelled when its owner invalidates the pending work, and on
-    // unmount so a settled value never lands on a component that has gone.
+    // The timer: cancelled when `cancelKey` changes, and on unmount.
     clearTimeout(timer.current);
     return () => clearTimeout(timer.current);
   }, [cancelKey]);

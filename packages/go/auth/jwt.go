@@ -82,8 +82,8 @@ func (j *JWT) Verify(_ context.Context, token string) (*Principal, error) {
 	}, nil
 }
 
-// Issue mints a token for subject with the scopes, valid for ttl. Callers
-// (the api-keys use case, an agent-bootstrap flow) decide who deserves one.
+// Issue mints a token for subject with the scopes, valid for ttl. The caller
+// (the api-keys use case) decides who deserves one.
 func (j *JWT) Issue(subject, name string, granted scope.Set, ttl time.Duration, now time.Time) (string, error) {
 	claims := Claims{
 		RegisteredClaims: jwt.RegisteredClaims{

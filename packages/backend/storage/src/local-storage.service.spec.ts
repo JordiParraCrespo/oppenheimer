@@ -110,12 +110,9 @@ describe('LocalStorageService', () => {
     });
 
     it('does not guard getUrl, which only builds a string', async () => {
-      // Deliberately different from upload/delete: `getUrl` touches no
-      // filesystem, so there is no path to escape. It interpolates the key into
-      // a URL, and the traversal is resolved by whatever serves `/uploads` —
-      // `main.ts` mounts a static handler, which normalises the request path
-      // itself. Pinned here so the asymmetry reads as deliberate rather than an
-      // oversight someone "fixes" with a guard that would reject valid keys.
+      // `getUrl` touches no filesystem, so there is no path to escape: the
+      // static handler `main.ts` mounts under `/uploads` normalises the request
+      // path itself. A guard here would only reject valid keys.
       await expect(storage().getUrl('../../secret')).resolves.toBe(
         'https://api.example.com/uploads/../../secret',
       );

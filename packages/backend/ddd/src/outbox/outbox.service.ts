@@ -73,8 +73,8 @@ export class OutboxService {
   private drainer?: () => Promise<unknown>;
   /**
    * The managers of the transactions `transaction()` has open, each with
-   * whether anything was staged on it yet. A manager that is not a key (one a
-   * caller opened itself) is never recorded, so it behaves as it always did.
+   * whether anything was staged on it yet. A manager a caller opened itself is
+   * not a key and is never recorded.
    */
   private readonly staged = new WeakMap<EntityManager, boolean>();
 
@@ -157,11 +157,7 @@ export class OutboxService {
     return result;
   }
 
-  /**
-   * Write the aggregate's collected domain events to the outbox using the
-   * caller's transactional `EntityManager`, making the events atomic with the
-   * aggregate write: both commit or neither does.
-   */
+  /** Stage events on the caller's transaction, so they commit or roll back with its write. */
   async stageEvents(manager: EntityManager, events: readonly DomainEvent[]): Promise<void> {
     if (events.length === 0) return;
     const rows = events.map((event) => {

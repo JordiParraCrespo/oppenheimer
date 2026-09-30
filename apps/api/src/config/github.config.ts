@@ -30,8 +30,8 @@ const schema = z.object({
    *
    * The variable is `GITHUB_APP_API_URL`, never `GITHUB_API_URL`: GitHub Actions sets
    * `GITHUB_API_URL=https://api.github.com` in every step and `@oppenheimer/env` lets a
-   * real env var win over `.env`, so inside Actions the stub URL was silently overridden
-   * and the e2e suite talked to the real github.com.
+   * real env var win over `.env`, so inside Actions that name would silently replace an
+   * e2e stub with the real github.com.
    */
   apiBaseUrl: z.string().url().default('https://api.github.com'),
   /**

@@ -8,8 +8,8 @@ interface Queryable {
 }
 
 /**
- * The bump helpers below are the other half: every writer that changes
- * effective permissions calls one with **its own transaction's manager**.
+ * The bump helpers below are the write side of `read`: every writer that
+ * changes effective permissions calls one with **its own transaction's manager**.
  * Routing invalidation through the outbox or a Redis counter bumped after
  * commit would be eventually consistent (`OutboxService.wake()` swallows
  * delivery failures; a process can die between commit and delete), and

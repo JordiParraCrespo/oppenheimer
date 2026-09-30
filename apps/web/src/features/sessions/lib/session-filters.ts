@@ -73,9 +73,8 @@ function distinct<T extends string>(values: T[]): T[] {
 export function repositoryOptions(sessions: SessionEntity[], allLabel: string): FilterOption[] {
   return [
     { value: ALL, label: allLabel },
-    // Every checkout, not one per session: a session is several repositories
-    // now, and a repository is worth filtering by whether or not it is the one
-    // the agent happens to be launched in.
+    // Every checkout, not one per session: a repository is worth filtering by
+    // whether or not it is the one the agent happens to be launched in.
     ...distinct(
       sessions.flatMap((session) =>
         session.checkouts.map((checkout) => checkout.repositoryFullName),

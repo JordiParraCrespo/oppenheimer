@@ -1,12 +1,6 @@
 import type { ProblemDetails } from '@oppenheimer/shared';
 
-/**
- * Local twin of `@oppenheimer/shared`'s `isProblemDetails`.
- *
- * Kept local from when `@oppenheimer/shared` shipped only CommonJS and the web
- * tier could import nothing but types from it. The package tree-shakes now, so
- * importing the shared one would also do.
- */
+/** Local twin of `@oppenheimer/shared`'s `isProblemDetails`. */
 function isProblemDetails(value: unknown): value is ProblemDetails {
   if (typeof value !== 'object' || value === null) return false;
   const candidate = value as Record<string, unknown>;

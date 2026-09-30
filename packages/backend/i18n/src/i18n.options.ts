@@ -14,7 +14,7 @@ export interface I18nModuleOptions {
   bundles: MessageBundles;
   /** Locale used when nothing else resolves. Defaults to `en`. */
   defaultLocale?: string;
-  /** IANA zone used when neither the user nor the organization set one. */
+  /** IANA zone `I18nService.for()` uses when the caller passes none. Defaults to UTC. */
   defaultTimeZone?: string;
   /** Called once per missing key per process. */
   onMissingKey?: (locale: string, key: string) => void;

@@ -41,11 +41,7 @@ export interface HostProps {
 }
 
 export interface RegisterHostProps {
-  /**
-   * The id the redemption statement recorded for this host. It is minted by the
-   * repository because the statement that claims the token writes it, and the
-   * row this aggregate becomes has to be the row that statement named.
-   */
+  /** The id the redemption statement recorded (see `RedeemedPairingToken.redeemedHostId`). */
   id: string;
   ownerUserId: string;
   name: string;
