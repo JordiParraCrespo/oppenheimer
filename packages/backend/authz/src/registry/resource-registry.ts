@@ -37,7 +37,6 @@ export class ResourceRegistry {
     for (const definition of definitions) this.register(definition);
   }
 
-  /** The definition for a subject, or `undefined` if it was never declared. */
   get(subject: string): ResourceDefinition | undefined {
     return this.resources.get(subject);
   }
@@ -74,7 +73,6 @@ export class ResourceRegistry {
       .sort((a, b) => a.group.localeCompare(b.group));
   }
 
-  /** Every `(action, subject)` pair the application knows about. */
   knownRules(): readonly { action: string; subject: string }[] {
     return this.all().flatMap((resource) =>
       resource.actions.map((action) => ({

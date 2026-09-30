@@ -3,14 +3,10 @@ import { useMatchRoute } from '@tanstack/react-router';
 
 /**
  * The console's dialogs, named by what opens them
- * (`product/versions/mvp/05-screens.md`, `13-automations.md`): New project
- * and Project settings, Add a host, New and Edit automation. A surface — a chip's
- * foot row, a sidebar button, a header's plus — only says which one to
- * open; one owner at the authenticated layout mounts it
- * (`providers/console-dialogs.tsx`).
- *
- * The callbacks carry what the dialog hands back to the surface that asked:
- * the project saved, the host paired.
+ * (`product/versions/mvp/05-screens.md`, `13-automations.md`). A surface only
+ * says which one to open; one owner at the authenticated layout mounts it
+ * (`providers/console-dialogs.tsx`). The callbacks carry what the dialog hands
+ * back to the surface that asked.
  */
 export type ConsoleDialogRequest =
   | {

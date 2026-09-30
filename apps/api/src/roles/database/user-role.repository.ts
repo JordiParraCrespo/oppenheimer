@@ -9,11 +9,6 @@ import { RoleOrmEntity } from './role.orm-entity';
 import { UserRoleOrmEntity } from './user-role.orm-entity';
 import type { UserRoleRepositoryPort } from './user-role.repository.port';
 
-/**
- * TypeORM-backed adapter for the user ↔ role join. Reads resolve to domain
- * `RoleEntity` instances (via `RoleMapper`) so callers — notably the
- * `AbilityFactory` — work in domain terms.
- */
 @Injectable()
 export class UserRoleRepository implements UserRoleRepositoryPort {
   constructor(
@@ -39,14 +34,6 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
     return [...new Set(links.map((link) => link.roleId))];
   }
 
-  /**
-   * The roles in effect for a user.
-   *
-   * Passing an organization returns their global assignments plus the ones
-   * scoped to that organization — the union that makes a role granted in one
-   * tenant inert in another. Omitting it returns every assignment regardless of
-   * scope, which is what role-management screens need.
-   */
   async findRolesForUser(userId: string, organizationId?: string | null): Promise<RoleEntity[]> {
     const roleIds = await this.findRoleIdsForUser(userId, organizationId);
     if (roleIds.length === 0) return [];

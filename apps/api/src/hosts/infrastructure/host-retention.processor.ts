@@ -11,15 +11,13 @@ import { HOST_METADATA_REPOSITORY } from '../hosts.di-tokens';
 const SCHEDULER_ID = 'host-retention-daily';
 
 /**
- * Deletes what `product/versions/mvp/15-host-metadata.md` says is not kept:
- * networks unseen for `retention.hostNetworkDays` (never a host's current
- * one) and timeline entries past `retention.hostTimelineDays`; the periods and
- * batch sizes are the `retention` config section. Both go in batches through
- * their own index, as the migration's Q7 and Q8.
+ * Deletes what `product/versions/mvp/15-host-metadata.md` says is not kept: networks
+ * unseen for `retention.hostNetworkDays` (never a host's current one) and timeline
+ * entries past `retention.hostTimelineDays`, in batches through their own index, as
+ * the migration's Q7 and Q8.
  *
- * Scheduled through BullMQ rather than a timer in each process: the job
- * scheduler is one entry in Redis, so however many API replicas run, the
- * purge runs once a day. Upserting it at boot is idempotent.
+ * A BullMQ job scheduler, not a timer per process: one entry in Redis, so however
+ * many replicas run, the purge runs once a day. Upserting it at boot is idempotent.
  */
 @Processor(QUEUE_NAMES.HOST_RETENTION)
 export class HostRetentionProcessor extends WorkerHost implements OnApplicationBootstrap {

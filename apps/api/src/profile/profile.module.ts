@@ -80,8 +80,6 @@ const repositories: Provider[] = [
   { provide: SESSION_READER, useClass: SessionRepository },
 ];
 
-// Every outbound dependency is bound to the token its port is named by, so a
-// handler names the port and the choice of adapter is made once, here.
 const adapters: Provider[] = [
   { provide: AVATAR_STORAGE, useClass: AvatarStorageAdapter },
   { provide: PROFILE_AUTH, useClass: ProfileAuthGateway },

@@ -12,17 +12,13 @@ import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Queue } from 'bullmq';
 
 /**
- * NestJS host for the `OutboxRelay` from `@oppenheimer/backend-ddd`. Delivers
- * claimed rows to their real destination: `event` rows are re-emitted on the
- * in-process `EventEmitter2` bus (keyed by event class name, exactly as the
- * repositories used to emit them directly), `queue` rows are added to the
- * BullMQ queue named by `topic`.
+ * NestJS host for the `OutboxRelay` from `@oppenheimer/backend-ddd`: `event` rows are
+ * re-emitted on the in-process `EventEmitter2` bus keyed by event class name, `queue`
+ * rows are added to the BullMQ queue named by `topic`.
  *
- * The relay drains on two triggers: repositories `wake()` it right after their
- * staging transaction commits (keeping happy-path latency at in-process
- * levels, without the request waiting for delivery), and a background poll
- * reclaims rows whose process died between commit and delivery — the case the
- * outbox exists for.
+ * Repositories `wake()` it right after their staging transaction commits, so delivery
+ * stays in-process fast without the request waiting on it; a background poll reclaims
+ * rows whose process died between commit and delivery, the case the outbox exists for.
  */
 @Injectable()
 export class OutboxRelayService implements OnApplicationBootstrap, OnApplicationShutdown {

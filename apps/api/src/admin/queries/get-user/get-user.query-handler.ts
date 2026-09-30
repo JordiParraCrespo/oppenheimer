@@ -5,7 +5,6 @@ import type { AdminUserResponseDto } from '../../dtos/admin-user.response.dto';
 import type { AdminAuthPort } from '../../infrastructure/admin-auth.port';
 import { GetUserQuery } from './get-user.query';
 
-/** One account, as an administrator sees it. */
 @QueryHandler(GetUserQuery)
 export class GetUserQueryHandler implements IQueryHandler<GetUserQuery, AdminUserResponseDto> {
   constructor(

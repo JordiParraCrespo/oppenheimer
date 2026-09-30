@@ -31,23 +31,17 @@ import type {
 import { WorkSessionEventOrmEntity } from './work-session-event.orm-entity';
 
 /**
- * TypeORM adapter for the work-session aggregate.
+ * **The append is one transaction, and `seq` is allocated under a row lock.** Every
+ * appender takes `SELECT … FOR UPDATE` on the session row first, so they serialise
+ * and the log can neither gap nor regress. A batch lands in **one** `INSERT` that
+ * skips keys already logged and numbers the rest consecutively; `ON CONFLICT DO
+ * NOTHING` is the backstop, not the mechanism. The fold runs over exactly the rows
+ * that landed and the row update commits with them, so the sidebar is never
+ * eventually-consistent with its own log.
  *
- * Two things are worth reading closely.
- *
- * **The append is one transaction, and `seq` is allocated under a row lock.**
- * Every appender takes `SELECT … FOR UPDATE` on the session row first, so they
- * serialise: the log cannot develop a gap, and it cannot regress. A batch then
- * lands in **one** `INSERT`, which skips the keys already in the log and numbers
- * the rest consecutively, so a replayed batch appends only what was not yet seen —
- * the `ON CONFLICT DO NOTHING` stays as the backstop rather than as the
- * mechanism. The fold runs over exactly the rows that landed and the row update
- * commits with them, so the sidebar is never eventually-consistent with its own log.
- *
- * **The reads carry no tenant clause of their own.** Extending
- * `ScopedRepositoryBase` and naming `SessionResource` is the whole of it, so a query
- * and an `ability.can()` cannot disagree about what a scope means. The children are
- * read through their session, never on their own.
+ * **The reads carry no tenant clause of their own**: `ScopedRepositoryBase` with
+ * `SessionResource` is the whole of it, so a query and `ability.can()` cannot
+ * disagree about a scope. The children are read through their session only.
  */
 @Injectable()
 export class WorkSessionRepository
@@ -450,10 +444,6 @@ export class WorkSessionRepository
   /**
    * The append itself, inside whatever transaction the caller owns: the lock, the
    * rows, the fold, the row update and the outbox entries the fold owes.
-   *
-   * `FOR UPDATE` on the session row is what serialises appenders. The keys already
-   * in the log are skipped under that lock, so the rows that are genuinely new get
-   * consecutive `seq` values and the fold runs over exactly those.
    */
   private async appendWithin(
     manager: EntityManager,
@@ -582,23 +572,20 @@ export class WorkSessionRepository
   }
 
   /**
-   * The batch in **one statement**: skip the keys already in the log, number the
-   * rest after the current maximum in the caller's order, insert them, and say
-   * which landed. Returns the new entries in `seq` order.
+   * The batch in **one statement**: skip the keys already logged, number the rest
+   * after the current maximum in the caller's order, insert them, and return the new
+   * entries in `seq` order.
    *
-   * It must be a statement of its own, issued **after** the `FOR UPDATE` one has
-   * returned — never folded into the locking statement. Under READ COMMITTED a
-   * statement's snapshot is taken before it blocks on a row lock, so a `MAX("seq")`
-   * read in the same statement as the `FOR UPDATE` returns the value from before
-   * the appender ahead of us committed — and every waiter would allocate the same
-   * numbers. This statement starts once the lock is held, so its snapshot sees
-   * every appender that went before, and its `MAX`, its "already present" check
-   * and its insert all read that one snapshot.
+   * It must run **after** the `FOR UPDATE` statement has returned, never folded into
+   * it. Under READ COMMITTED a statement's snapshot is taken before it blocks on a row
+   * lock, so a `MAX("seq")` in the locking statement would miss the appender ahead of
+   * us, and every waiter would allocate the same numbers. Started once the lock is
+   * held, its `MAX`, "already present" check and insert all read one snapshot that
+   * sees every earlier appender.
    *
-   * Under the lock nobody else can insert this session's keys, and the batch has
-   * no duplicate of its own, so `ON CONFLICT` should never fire. If it did, a
-   * number would have been handed out and not used — a gap in `seq` — so a short
-   * count throws and the transaction rolls back instead of committing the gap.
+   * Under the lock nobody else inserts this session's keys and the batch has no
+   * duplicates, so `ON CONFLICT` should never fire; if it did, `seq` would gap, so a
+   * short count throws and the transaction rolls back.
    */
   private async insertBatch(
     manager: EntityManager,
@@ -729,7 +716,6 @@ export class WorkSessionRepository
     return this.withCheckouts(record);
   }
 
-  /** Checkouts for a page of sessions, in one query rather than one per row. */
   /**
    * "Running" as the host list and host removal mean it: the agent is up, so
    * the lifecycle is `starting` or `open` and nobody has stopped it. Served by
@@ -741,6 +727,7 @@ export class WorkSessionRepository
       .andWhere('session.stoppedAt IS NULL');
   }
 
+  /** Checkouts for a page of sessions, in one query rather than one per row. */
   private async checkoutsFor(
     sessionIds: string[],
   ): Promise<Map<string, SessionCheckoutOrmEntity[]>> {
@@ -762,16 +749,15 @@ export class WorkSessionRepository
 }
 
 /**
- * Each order's sort key: the expression, the type its printed text casts back
- * to, and which side of the cursor the next page is on. Both halves of `(key,
- * id)` sort the same way, so one row comparison resumes a walk.
+ * Each order's sort key: the expression, the type its printed text casts back to, and
+ * which side of the cursor the next page is on. Both halves of `(key, id)` sort the
+ * same way, so one row comparison resumes a walk.
  *
- * No index serves these, deliberately. `lastEventAt` is rewritten by every fold,
- * and an index on it would turn every append into a non-HOT update of
- * `work_session`. A page is a top-N sort over one workspace's sessions, found by
- * the organization prefix of `UQ_work_session_organization_slug`: a few thousand
- * rows at the very most for a personal workspace, which Postgres sorts in memory
- * in well under a millisecond per page.
+ * No index serves these, deliberately: `lastEventAt` is rewritten by every fold, and
+ * an index on it would make every append a non-HOT update of `work_session`. A page is
+ * a top-N sort over one workspace's sessions (found by the organization prefix of
+ * `UQ_work_session_organization_slug`), a few thousand rows at most, sorted in memory
+ * in well under a millisecond.
  */
 const SORT_KEYS: Record<
   NonNullable<SessionFilters['sort']>,

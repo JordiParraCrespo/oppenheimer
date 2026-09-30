@@ -35,9 +35,7 @@ export function AutomationEditorDialog({
   onClose,
   onSaved,
 }: {
-  /** Present edits this automation; absent creates one. */
   automationId?: string;
-  /** The project a header's plus opened it for. */
   projectId?: string;
   onClose: () => void;
   onSaved: (automation: { id: string }) => void;

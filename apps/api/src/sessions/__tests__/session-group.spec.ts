@@ -9,15 +9,13 @@ import {
 } from '../domain/session-state.policy';
 
 /**
- * The derived group is what the sidebar dot shows, and the reason it earns a whole
- * vocabulary is that a sidebar organised by what needs you is only useful if "needs
- * you" is more than "failed".
+ * The derived group is the sidebar dot, and it earns a whole vocabulary because a
+ * sidebar organised by what needs you is useless if "needs you" means only "failed".
  *
- * Every case here goes through the **fold**, not through a hand-built input object:
- * the group is a function of the row, so a test that could hand it an observation
- * the log never recorded would be testing something the read path cannot do. The
- * debounce is the half with a security shape — a caller with no recorded history
- * must not be able to claim a session has been blocked for five minutes.
+ * Every case goes through the **fold**, not a hand-built input: the group is a
+ * function of the row, and the read path cannot hand it an observation the log never
+ * recorded. The debounce has a security shape: a caller with no recorded history must
+ * not be able to claim a session has been blocked for five minutes.
  */
 
 const NOW = new Date('2026-09-19T12:00:00Z');

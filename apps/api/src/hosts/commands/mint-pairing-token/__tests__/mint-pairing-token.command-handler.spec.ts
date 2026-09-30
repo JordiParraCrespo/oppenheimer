@@ -157,8 +157,6 @@ describe('MintPairingTokenCommandHandler', () => {
   });
 
   it('refuses to mint what nobody could spend', async () => {
-    // With no runner release configured there is no install command, and a
-    // credential that cannot be redeemed is worse than a clear refusal.
     release.isConfigured = false;
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_004' });

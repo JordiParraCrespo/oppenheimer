@@ -13,22 +13,11 @@ import { useTranslation } from 'react-i18next';
 import { usePairing } from '../hooks/use-pairing';
 
 /**
- * Add a host — pairing a machine without leaving the console
- * (`product/versions/mvp/05-screens.md`).
- *
- * The dialog behind the host chip's foot row: one sentence, then the kit's
- * pairing column — the two copy buttons, the token line, the instruction
- * behind its fold, and the status line that resolves in place when a
- * runner spends the token. The onboarding step draws the same column at
- * its larger size, and the flow under both is `usePairing`.
- *
- * The footer's primary arms on a **registered** host rather than an online
- * one, unlike onboarding's Continue (`usePairing`'s two rules). Settings
- * pairs on its own page (`/settings/hosts/new`), inside its frame.
- *
- * Both forms of the instruction come from the API with the secret already
- * in them: it is shown once, the server is the only place that knows it, so
- * neither string is assembled here.
+ * Add a host, pairing a machine without leaving the console
+ * (`product/versions/mvp/05-screens.md`), behind the host chip's foot row. The
+ * footer's primary arms on a **registered** host rather than an online one,
+ * unlike onboarding's Continue (`usePairing`'s two rules). Settings pairs on
+ * its own page (`/settings/hosts/new`).
  */
 export function AddHostDialog({
   onClose,

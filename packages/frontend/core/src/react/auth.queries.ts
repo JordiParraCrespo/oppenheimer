@@ -46,11 +46,11 @@ export function useSessionRestore(
 
       return userId;
     },
-    // Retry transient failures on startup. `restoreSession()` only rejects when
-    // the session lookup itself fails (network/server error) — a genuinely
-    // unauthenticated user resolves successfully, so retries never fire for
-    // them. Without this a single network blip masquerades as "logged out" and
-    // silently bounces the user to /login.
+    // `restoreSession()` only rejects when the session lookup itself fails
+    // (network/server error) — a genuinely unauthenticated user resolves
+    // successfully, so retries never fire for them. Without this a single
+    // network blip masquerades as "logged out" and silently bounces the user
+    // to /login.
     retry: CORE_CONFIG.session.restoreRetries,
     retryDelay: (attempt) =>
       Math.min(
@@ -69,7 +69,7 @@ export function useSessionRestore(
  */
 export interface SocialLoginVariables {
   provider: SocialProvider;
-  /** Defaults to `'sign-in'`, which refuses an identity with no account here. */
+  /** Defaults to `'sign-in'`. */
   intent?: SocialAuthIntent;
 }
 

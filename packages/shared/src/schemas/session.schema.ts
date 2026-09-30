@@ -19,8 +19,6 @@ import {
 } from './primitives.js';
 
 /**
- * Session shapes.
- *
  * A session is one piece of work inside a project: a terminal, an agent, and a
  * set of checkouts. A **checkout** is one repository checked out for one session
  * on its own branch, and a session has zero or more of them — zero is a real
@@ -29,8 +27,6 @@ import {
  * This file is the fields the routes accept and the constraints that are
  * decidable from the body alone. It is deliberately not where the sessions
  * module's behaviour is written down.
- *
- * Schemas state the constraint only, never a message (`.agents/rules/forms.md`).
  */
 
 export { codingAgentSchema, SESSION_EFFORTS, SESSION_PERMISSIONS };
@@ -46,26 +42,20 @@ export type SessionEffortDto = z.infer<typeof sessionEffortSchema>;
 /**
  * How the agent is started: the composer's foot row, as one object.
  *
- * Four controls that always travel together — the route body, the log payload,
- * `session.create` and the response all carry this same shape — so it is named
- * once rather than spelled four times in four places
- * (`product/versions/mvp/03-control-plane.md`).
+ * The route body, the log payload, `session.create` and the response all carry
+ * this same shape, so it is named once (`product/versions/mvp/03-control-plane.md`).
  *
  * `agent` is deliberately **not** in here. The agent is what the session is;
  * the launch is how it was started, and only the second is something a later
  * slice changes without making a different session.
  *
- * `permission` absent means `ask` and nothing else, for every agent that has
- * approvals: it is the level that asks before every action, and a default that
- * escalates is the one mistake this field must not make. The console never
- * seeds `full` from a remembered choice either, for the same reason. The
- * default is applied where the agent is known (the API's launch mapping), not
- * here, because an agent with no approvals — the blank terminal — records no
- * level at all.
+ * `permission` absent means `ask` for every agent that has approvals: a default
+ * that escalates is the one mistake this field must not make, which is also why
+ * the console never seeds `full` from a remembered choice. The default is
+ * applied where the agent is known (the API's launch mapping), not here, because
+ * an agent with no approvals — the blank terminal — records no level at all.
  *
- * What each value means to a given CLI is catalog data, beside that agent's
- * command (`../agents/catalog`), because the answer differs per agent and a
- * column here would state it once per agent.
+ * What each value means to a given CLI is catalog data (`../agents/catalog`).
  */
 export const sessionLaunchSchema = z.object({
   /** An id or alias the agent's own CLI takes; absent runs that agent's default. */
@@ -86,7 +76,7 @@ export type SessionLaunchDto = z.infer<typeof sessionLaunchSchema>;
  *
  * `baseBranch` is what the session's branch is created *from*, defaulting to the
  * repository's default branch when absent. There is no branch field: the working
- * branch is always `oppenheimer/<project.slug>/<work_session.slug>`, never the
+ * branch is always `oppenheimer/<work_session.slug>`, never the
  * base itself — git refuses a worktree on a branch another worktree already
  * holds, so two sessions "on main" would fail at the second.
  *
@@ -321,7 +311,6 @@ export const moveSessionSchema = z.object({
 
 export type MoveSessionDto = z.infer<typeof moveSessionSchema>;
 
-/** The orders the session list can come back in. */
 export const SESSION_SORTS = ['recent', 'oldest', 'name'] as const;
 
 export const sessionSortSchema = z.enum(SESSION_SORTS);

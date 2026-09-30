@@ -22,7 +22,8 @@ export interface ProjectRepository {
  * It is metadata: a session's directory and branch never name it, so a session
  * moves between projects freely. `slug` is a stable handle that never changes;
  * `name` is free — except the Unassigned project's, the one every workspace has
- * for sessions that name none, which also cannot be deleted.
+ * for sessions that name none, which also cannot be deleted. Its `name` is the
+ * API's English spelling: the console shows it under its translated name.
  */
 export class ProjectEntity {
   constructor(

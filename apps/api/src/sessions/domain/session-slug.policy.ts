@@ -3,16 +3,14 @@ import { randomInt } from 'node:crypto';
 /**
  * A session's slug: `<adjective>-<noun>-<6 base36>`.
  *
- * It is minted at create, before anything has been typed, because the directory
- * and the branch have to exist first — and because a session's directory name is
- * never reused, a name-derived slug would have to be right the first time. The
- * shape is the one Claude Code on the web gives its branches
- * (`claude/amazing-clarke-p631o4`), which is where it reads well: opaque enough
- * to be a path, pronounceable enough to say out loud.
+ * Minted at create, before anything is typed, because the directory and branch must
+ * exist first, and a directory name is never reused, so a name-derived slug would
+ * get no second try. The shape is the one Claude Code on the web gives its branches
+ * (`claude/amazing-clarke-p631o4`): opaque enough to be a path, pronounceable enough
+ * to say out loud.
  *
- * The display name starts equal to the slug and is replaced by a title derived
- * from the first prompt; the slug never changes
- * (`product/versions/mvp/03-control-plane.md`).
+ * The display name starts as the slug and is replaced by a title from the first
+ * prompt; the slug never changes (`product/versions/mvp/03-control-plane.md`).
  */
 
 /**
@@ -102,7 +100,7 @@ const SUFFIX_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyz';
  */
 export const SESSION_SLUG_PATTERN = /^[a-z]+-[a-z]+-[0-9a-z]{6}$/;
 
-/** Mint a slug. The randomness is `node:crypto`'s, not `Math.random`'s. */
+/** The randomness is `node:crypto`'s, not `Math.random`'s. */
 export function mintSessionSlug(): string {
   const adjective = ADJECTIVES[randomInt(ADJECTIVES.length)];
   const noun = NOUNS[randomInt(NOUNS.length)];

@@ -64,8 +64,6 @@ describe('HostEntity.register', () => {
       pairingTokenId: 'token-1',
     });
 
-    // The id is the one the redemption statement recorded, not one the aggregate
-    // minted for itself — the row the statement named has to be this row.
     expect(registered.id).toBe('host-1');
     expect(registered.publicKey).toBe(current.base64);
     expect(registered.hasFingerprint(current.fingerprint)).toBe(true);
@@ -81,8 +79,6 @@ describe('unpair', () => {
     subject.unpair(at);
     subject.unpair(new Date('2026-09-20T12:00:00Z'));
 
-    // The console and the machine itself both unpair, and neither knows whether
-    // the other already did; the first answer is the one that stands.
     expect(subject.unpairedAt).toEqual(at);
     expect(subject.isUnpaired).toBe(true);
   });

@@ -9,7 +9,6 @@ import type {
   FlagChangeRepositoryPort,
 } from './flag-change.repository.port';
 
-/** TypeORM adapter for the flag audit trail. */
 @Injectable()
 export class FlagChangeRepository implements FlagChangeRepositoryPort {
   constructor(
@@ -33,7 +32,6 @@ export class FlagChangeRepository implements FlagChangeRepositoryPort {
     // `QueryDeepPartialEntity` cannot represent free-form jsonb; see RoleRepository.
     await insert
       .values(record as Parameters<typeof insert.values>[0])
-      // At-least-once delivery: a redelivered event lands on the same id.
       .orIgnore()
       .execute();
   }

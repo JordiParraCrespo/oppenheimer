@@ -1,9 +1,6 @@
 /**
- * Policy decorators now live in the authorization kernel
- * (`@oppenheimer/backend-authz`) so the registry, guards and containment checks can
- * share one definition of a policy rule. This module re-exports them from the
- * path the application already imports, keeping the kernel move invisible to
- * call sites.
+ * Re-exported from `@oppenheimer/backend-authz`, which owns the one definition
+ * of a policy rule, so call sites keep importing them from this path.
  */
 export {
   CHECK_POLICIES_KEY,

@@ -7,9 +7,9 @@ import { ProfileForm } from '../forms/profile-form';
 
 /**
  * The profile card: its rows, then full name and username and the save row
- * under them. The write answers
- * with the whole profile, which the hook puts in the cache; the form takes
- * those values back, so after a save the card is clean and reads Saved.
+ * under them. The write answers with the whole profile, which the hook puts in
+ * the cache; the form takes those values back, so after a save the card is
+ * clean and reads Saved.
  */
 export function ProfileNameSection({
   profile,

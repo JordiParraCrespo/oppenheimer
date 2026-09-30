@@ -20,10 +20,6 @@ export interface AuthzVersions {
   user: string;
 }
 
-/**
- * Port for reading the authorization version counters. Implemented by the
- * TypeORM adapter in `authz-version.repository.ts`.
- */
 export interface AuthzVersionRepositoryPort {
   /** Three primary-key lookups in one query. */
   read(userId: string | null, organizationId: string | null): Promise<AuthzVersions>;

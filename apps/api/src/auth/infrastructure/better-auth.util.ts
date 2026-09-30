@@ -11,7 +11,6 @@ import { fromNodeHeaders } from 'better-auth/node';
  * than re-implementing writes to the Better-Auth-owned tables.
  */
 
-/** Convert incoming Express request headers into the `Headers` object the Better Auth server API expects (for session resolution). */
 export function betterAuthHeaders(headers: IncomingHttpHeaders): Headers {
   return fromNodeHeaders(headers);
 }
@@ -60,9 +59,8 @@ export interface BetterAuthFailure {
 export type BetterAuthErrorMapper = (failure: BetterAuthFailure) => ErrorDefinition;
 
 /**
- * Narrow an `APIError` to the fields we need. It carries an HTTP `statusCode`
- * and a `body` (`{ message, code }`), neither of which its public type
- * surfaces, so read them through `asRecord`.
+ * An `APIError` carries an HTTP `statusCode` and a `body` (`{ message, code }`),
+ * neither of which its public type surfaces, so read them through `asRecord`.
  */
 function readApiError(err: APIError): BetterAuthFailure {
   const e = asRecord(err);
@@ -83,16 +81,12 @@ function readApiError(err: APIError): BetterAuthFailure {
 /**
  * Builds the `invoke` helper a façade module wraps every `auth.api.*` call in.
  *
- * Better Auth raises `APIError`s carrying its own code; the mapper folds one
- * onto a catalog {@link ErrorDefinition} so the response is a first-class
- * problem document with a documented `code` and a dereferenceable `type` — the
- * same contract as any hand-thrown `AppError`. Throwing a bare `HttpException`
- * here would not do: `AllExceptionsFilter` reads no `code` off one, so the
- * response would degrade to a bare status phrase ("Conflict") with nothing for
- * a client to branch on.
- *
- * Nothing Better Auth said is lost — its code becomes the `upstreamCode`
- * extension member and its message the problem `detail`.
+ * The mapper folds Better Auth's `APIError` onto a catalog
+ * {@link ErrorDefinition}, so the response is a problem document with a
+ * documented `code`, like any `AppError`. A bare `HttpException` would not do:
+ * `AllExceptionsFilter` reads no `code` off one, leaving a client nothing to
+ * branch on. Better Auth's code becomes the `upstreamCode` extension member and
+ * its message the problem `detail`.
  *
  * ```ts
  * const invokeOrganizationApi = betterAuthInvoker(mapOrganizationError);

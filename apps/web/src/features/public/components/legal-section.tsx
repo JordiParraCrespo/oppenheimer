@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 
-/** One titled section of a legal page. */
 export function LegalSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section>

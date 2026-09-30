@@ -17,23 +17,16 @@ let commandBus: CommandBus | undefined;
 /**
  * Run one of the app's use cases from a Better Auth hook.
  *
- * Better Auth is configured at module scope (`better-auth.config.ts`) — it has
- * to be,
- * because the HTTP handler is mounted on the adapter before Nest builds its
- * injector — so its hooks cannot inject anything. That used to mean the work
- * sign-up owes a new account was written where the hook could reach it: raw
- * SQL, in the infrastructure layer, with the product's rules spelled out in
- * `INSERT` statements no domain object knew about. This is the one narrow hole
- * through that wall, and what crosses it is a command object — exactly what a
- * controller would send.
+ * Better Auth is configured at module scope because its HTTP handler is
+ * mounted before Nest builds its injector, so its hooks cannot inject
+ * anything; this is the one hole through that wall, and what crosses it is a
+ * command, exactly what a controller would send.
  *
- * Best-effort by design, and the design is Better Auth's: it does not await
- * `databaseHooks.*.after`, so a rejection here would surface as an unhandled
- * rejection rather than as a failed sign-up — and failing the sign-up is the
- * wrong answer anyway. An account whose workspace did not land still exists and
- * can sign in, and provisioning is idempotent, so the seed repairs it. What
- * must not happen is that it fails *quietly*, so every failure is logged with
- * the account it was owed to.
+ * Best-effort: Better Auth does not await `databaseHooks.*.after`, so a
+ * rejection would be unhandled, and failing the sign-up is wrong anyway. An
+ * account whose workspace did not land can still sign in, and provisioning is
+ * idempotent, so the seed repairs it. It must not fail quietly: every failure
+ * is logged with the account it was owed to.
  */
 export async function dispatchFromAuthHook(
   command: CommandBase,
@@ -41,9 +34,6 @@ export async function dispatchFromAuthHook(
 ): Promise<void> {
   const account = { email: context.email, userId: context.userId };
   if (!commandBus) {
-    // Not an error: the only processes that configure `auth` without building
-    // the injector are scripts, and a script that signs someone up owes itself
-    // these side effects (see `database/seed.ts`).
     logger.debug({
       message: `No command bus registered; the caller must ${context.description} itself`,
       ...account,

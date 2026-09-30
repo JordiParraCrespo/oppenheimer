@@ -59,8 +59,6 @@ describe('ProfileRepository', () => {
   });
 
   it('maps a session’s updatedAt onto lastSeenAt', async () => {
-    // The wire calls it `updatedAt`; every screen would otherwise repeat the
-    // translation to "last seen".
     vi.mocked(heyApiSdk.findProfileSessions).mockResolvedValue(
       ok([
         {

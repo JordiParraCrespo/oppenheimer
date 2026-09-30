@@ -113,7 +113,6 @@ describe('HostAssertionResolver', () => {
   it('accepts an assertion the host signed, and reports its expiry', async () => {
     await expect(verify(assertion(current.privateKey, bootClaims('host-1')))).resolves.toEqual({
       hostId: 'host-1',
-      // The caller bounds what it caches by this rather than guessing.
       expiresAt: new Date(NOW.getTime() + 300_000),
       unpaired: false,
     });
@@ -133,8 +132,6 @@ describe('HostAssertionResolver', () => {
   });
 
   it('refuses a replay', async () => {
-    // A captured assertion cannot read anything, but it could open a link and
-    // append events to a session's log — which is the source of truth.
     vi.mocked(cache.setIfAbsent).mockResolvedValue(false);
 
     await expect(verify(assertion(current.privateKey, bootClaims('host-1')))).rejects.toMatchObject(
@@ -224,8 +221,6 @@ describe('HostAssertionResolver', () => {
   });
 
   it('ignores a trailing slash on the audience', async () => {
-    // The runner stores whatever URL it registered with, and the two spellings
-    // are the same deployment.
     const claims = bootClaims('host-1', { aud: `${CONTROL_PLANE}/` });
 
     await expect(verify(assertion(current.privateKey, claims))).resolves.toMatchObject({
@@ -244,9 +239,7 @@ describe('HostAssertionResolver', () => {
   });
 
   it('refuses the host of an owner who may not act, with the one opaque answer', async () => {
-    // A banned or deactivated owner: `CREDENTIAL_OWNER` answers null. The
-    // machine they paired is refused like any other bad assertion, so the link
-    // handshake answers 401 and the runner keeps dialling until it is lifted.
+    // `CREDENTIAL_OWNER` answers null for a banned or deactivated owner.
     owners.findActiveOwner.mockResolvedValue(null);
 
     await expect(verify(assertion(current.privateKey, bootClaims('host-1')))).rejects.toMatchObject(
@@ -257,9 +250,6 @@ describe('HostAssertionResolver', () => {
 
   describe('a host that has been unpaired', () => {
     it('still proves who it is, and says it was unpaired', async () => {
-      // Verification is identity, not permission. Its own uninstall call has to be
-      // able to say "I am gone" twice and get the same answer, so what a host may
-      // *do* is `HostAccessPort`'s question.
       vi.mocked(hosts.findOneByIdForMachine).mockResolvedValue(
         Some(
           hostWith({

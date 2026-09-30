@@ -26,13 +26,11 @@ export interface IssuedSession {
 /**
  * What the admin use cases need done to other people's accounts.
  *
- * The identity provider owns the `user` and `session` tables, the password
+ * The identity provider owns the `user` and `session` tables, password
  * hashing, bans and impersonation, and checks the caller may administer
- * accounts at all; every method takes the incoming request's headers so it
- * can. That a ban also has to evict the cached delegated sessions of the
- * account, or that a session list is read from Postgres rather than the
- * provider's cache index, are facts about the adapter — a handler names
- * neither.
+ * accounts at all, so every method takes the incoming request's headers.
+ * Evicting a banned account's delegated sessions, or reading sessions from
+ * Postgres, is the adapter's business; a handler names neither.
  */
 export interface AdminAuthPort {
   listUsers(

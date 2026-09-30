@@ -9,7 +9,6 @@ import type { OrganizationRepositoryPort } from './organization.repository.port'
 import { TeamOrmEntity } from './team.orm-entity';
 import { TeamMemberOrmEntity } from './team-member.orm-entity';
 
-/** TypeORM adapter behind `ORGANIZATION_REPOSITORY`. */
 @Injectable()
 export class OrganizationRepository implements OrganizationRepositoryPort {
   constructor(

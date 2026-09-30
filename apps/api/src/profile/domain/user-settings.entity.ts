@@ -72,11 +72,6 @@ export class UserSettingsEntity extends AggregateRoot<UserSettingsProps> {
     return this.props.productUpdates;
   }
 
-  /**
-   * Replace every preference at once. The settings pane always holds the full
-   * set, and a wholesale replace means a client cannot half-apply a form it
-   * rendered from a now-stale read.
-   */
   update(props: UserSettingsProps): void {
     this.props.theme = props.theme;
     this.props.locale = props.locale;

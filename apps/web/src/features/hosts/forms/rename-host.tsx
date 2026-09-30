@@ -21,7 +21,6 @@ export function RenameHostForm({
 }: {
   defaultName: string;
   pending: boolean;
-  /** The failed save's message, translated by the caller. */
   error?: string;
   onSubmit: (name: string) => void;
   onCancel: () => void;

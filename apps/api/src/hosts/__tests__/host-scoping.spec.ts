@@ -4,20 +4,10 @@ import { describe, expect, it } from 'vitest';
 import { HostResource } from '../hosts.resource';
 
 /**
- * A host is person-owned, and this is the proof that the kernel treats it that
- * way.
- *
- * The interesting assertion is a **negative** one: there is no tenant clause.
- * `applyAccessScope` writes one for every resource that declares an organization
- * key, and `host` deliberately has no such column — one laptop is paired once and
- * every workspace its owner is in borrows it. If a later edit gave the resource
- * an organization key, the same laptop would become invisible from the second
- * workspace. Nothing asserts that absence on its own: both SQL tests below
- * compare the exact clause list, so a tenant clause added to either fails them.
- *
- * Both halves are covered because both have to hold and they fail
- * independently: the **SQL predicate** decides which rows a query returns, and
- * the **CASL ability** decides what `can()` reports to a caller and to the UI.
+ * A host is person-owned (see `hosts.resource.ts`). The key assertion is a
+ * **negative** one: no tenant clause. Give the resource an organization key and the
+ * same laptop vanishes from its owner's second workspace; the first test fails.
+ * The SQL predicate and the CASL ability fail independently, so both are tested.
  */
 
 function scope(overrides: Partial<AccessScope> = {}): AccessScope {
@@ -31,7 +21,6 @@ function scope(overrides: Partial<AccessScope> = {}): AccessScope {
   };
 }
 
-/** Records the clauses a query would carry, without needing a database. */
 function fakeQueryBuilder(alias: string) {
   const calls: { clause: string; parameters?: Record<string, unknown> }[] = [];
   const qb = {

@@ -13,15 +13,13 @@ import { RecordSessionEventsCommand } from './record-session-events.command';
  * Writes a runner's batch into a session's log, folds it onto the row, and answers
  * what is now durable.
  *
- * It has no controller: the batch arrives over the runner link. What makes that
- * safe is here rather than in the transport — the session is **checked against the
- * host that presented the credential**, by the row lock the append takes, so
- * nothing is read before the transaction — and the payload cap and the `seq`
- * allocation are the repository's.
+ * No controller: the batch arrives over the runner link, and the safety is here, not
+ * in the transport. The session is **checked against the host that presented the
+ * credential** by the row lock the append takes, so nothing is read before the
+ * transaction; the payload cap and `seq` allocation are the repository's.
  *
- * A refusal is per row, not per batch: an event the log will never accept is
- * rejected so the runner stops resending it, and a key in neither list means the
- * batch was not accounted for and should be sent again.
+ * Refusal is per row, not per batch: an event the log will never accept is rejected
+ * so the runner stops resending it, and a key in neither list should be sent again.
  */
 @CommandHandler(RecordSessionEventsCommand)
 export class RecordSessionEventsCommandHandler

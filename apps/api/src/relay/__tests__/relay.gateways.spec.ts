@@ -1253,7 +1253,6 @@ describe('browser attach socket', () => {
             (entry as { message?: string }).message ===
             'could not re-check an open attachment; keeping it',
         ).length;
-      // Two failed checks in a row, and the terminal is still there.
       await vi.waitFor(() => expect(kept()).toBeGreaterThanOrEqual(2));
       expect(browser.readyState).toBe(WebSocket.OPEN);
       expect(h.registry.find(HOST)?.attachmentCount).toBe(1);

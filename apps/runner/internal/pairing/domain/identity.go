@@ -27,7 +27,6 @@ const BootTokenTTL = 5 * time.Minute
 // Channel is the release channel a host follows.
 type Channel string
 
-// Channels.
 const (
 	ChannelStable Channel = "stable"
 	ChannelBeta   Channel = "beta"
@@ -69,7 +68,6 @@ type Identity struct {
 // Revoked reports whether the control plane has unpaired this host.
 func (i Identity) Revoked() bool { return i.RevokedAt != nil }
 
-// Sentinel conditions of this context.
 var (
 	ErrNotPaired      = errors.New("host is not paired")
 	ErrAlreadyPaired  = errors.New("host is already paired")

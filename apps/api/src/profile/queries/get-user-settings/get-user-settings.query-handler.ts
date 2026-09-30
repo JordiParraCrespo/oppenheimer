@@ -6,9 +6,6 @@ import { USER_SETTINGS_REPOSITORY } from '../../profile.di-tokens';
 import { GetUserSettingsQuery } from './get-user-settings.query';
 
 /**
- * Reads a user's preferences, falling back to the defaults when they have never
- * saved any.
- *
  * The fallback is deliberate: no row is created at sign-up, so returning a 404
  * here would make every client implement the same "not found means defaults"
  * branch, and each would have to keep its own copy of what the defaults are.

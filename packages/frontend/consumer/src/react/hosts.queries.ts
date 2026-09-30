@@ -100,16 +100,13 @@ export function useHostsSnapshot(): () => HostEntity[] | undefined {
 /**
  * The token Add host is showing.
  *
- * A query rather than a mutation fired from an effect, even though minting
- * writes: the step needs exactly one token for as long as it is open, which is
- * what a query keyed to the screen gives — fetched once on mount, returned
- * from cache on a re-render, and replaced by `useReplacePairing` when the
- * reader asks for a new one. Minting from an effect needed a ref to survive
- * StrictMode and left the old command on screen until the next one resolved.
+ * A query, though minting writes: the step needs exactly one token while it is
+ * open, fetched once on mount and replaced by `useReplacePairing` on request.
+ * Minting from an effect needed a ref to survive StrictMode and left the old
+ * command on screen until the next one resolved.
  *
- * Never cached beyond the visit: a token is single-use and hour-long, so
- * handing a second visit the first one's command would show a secret that no
- * longer pairs anything.
+ * Never cached beyond the visit: a token is single-use and hour-long, so a
+ * second visit must not show a secret that no longer pairs anything.
  */
 export function useCurrentPairing(
   name: string,
@@ -178,8 +175,8 @@ export function useRemoveHost(options?: UseMutationOptions<void, Error, string>)
 }
 
 /**
- * Rename a host. The list is refreshed rather than patched: the row's status
- * and counts come back from the same read, so one source says what a host is.
+ * The list is refreshed rather than patched: the row's status and counts come
+ * back from the same read, so one source says what a host is.
  */
 export function useRenameHost(
   options?: UseMutationOptions<HostEntity, Error, { id: string; name: string }>,

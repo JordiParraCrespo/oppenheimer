@@ -4,16 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { toEffortStops } from '../lib/session-options';
 
 /**
- * How hard the agent may think: the five-stop slider, in a popover.
- *
- * A slider rather than a list because the stops are ordered and somebody
- * setting one is comparing rather than picking a name
- * (`product/versions/mvp/05-screens.md`). The stops are the product's five;
- * what each means to a given CLI is catalog data, and an agent whose
- * vocabulary is coarser says so there rather than here.
- *
- * The section above renders this only for an agent that has a notion of effort
- * at all, so there is no disabled state to explain.
+ * How hard the agent may think: a five-stop slider in a popover, because the
+ * stops are ordered and the reader compares rather than picks a name
+ * (`product/versions/mvp/05-screens.md`). What each stop means to a CLI is
+ * catalog data. Only an agent with a notion of effort renders this, so there
+ * is no "unsupported" state to explain.
  */
 export function EffortSelect({
   value,

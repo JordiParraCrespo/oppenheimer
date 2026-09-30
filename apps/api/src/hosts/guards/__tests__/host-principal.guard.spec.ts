@@ -37,7 +37,6 @@ describe('HostPrincipalGuard', () => {
     vi.mocked(credentials.resolve).mockResolvedValue(host());
 
     await expect(guard.canActivate(context())).resolves.toBe(true);
-    // Under a module-local symbol, so the rest of the API never sees it.
     expect(request[HOST_PRINCIPAL]).toEqual({ hostId: 'host-1' });
   });
 
@@ -49,8 +48,6 @@ describe('HostPrincipalGuard', () => {
   });
 
   it('refuses a perfectly valid API token', async () => {
-    // A route that exists for a machine to call about itself is not a route a
-    // person's credential should reach, however well scoped it is.
     vi.mocked(credentials.resolve).mockResolvedValue({
       kind: 'api-token',
       credentialId: 'token-1',
@@ -73,8 +70,6 @@ describe('HostPrincipalGuard', () => {
   });
 
   it('lets the resolver’s own rejection through', async () => {
-    // An unrecognisable bearer is refused where every other credential is
-    // refused, with the same opaque answer.
     vi.mocked(credentials.resolve).mockRejectedValue(new Error('invalid credential'));
 
     await expect(guard.canActivate(context())).rejects.toThrow('invalid credential');

@@ -1,7 +1,6 @@
 /**
- * DI tokens for the profile module. The repository is injected through a token
- * so application code depends on the `UserSettingsRepositoryPort` abstraction,
- * not the concrete TypeORM adapter.
+ * Application code injects each port through its token, so it depends on
+ * `UserSettingsRepositoryPort`, never on the TypeORM adapter behind it.
  */
 export const USER_SETTINGS_REPOSITORY = Symbol('USER_SETTINGS_REPOSITORY');
 

@@ -12,18 +12,14 @@ import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../../sessions.di-tok
 import { RemoveCheckoutCommand } from './remove-checkout.command';
 
 /**
- * Retires one checkout: `git worktree remove` on the host, with the same
- * refuse-on-unpushed-work posture as closing a session, then `removedAt` here.
+ * Retires one checkout: `git worktree remove` on the host, refusing on unpushed work
+ * as closing a session does, then `removedAt` here.
  *
- * The row is never deleted, which is what keeps `uq (sessionId, directoryName)` a
- * tombstone: the repository may be added again later, and it will take the next
- * directory name rather than the one it had.
- *
- * If the agent was launched inside this checkout, the session steps out of it — but
- * the fold is what does that, from `session.checkout_removed`, rather than a setter
- * beside the write. The foreign key's `ON DELETE SET NULL` never fires, because
- * nothing is deleted; the session degrades to its own directory, and a replay of
- * the log rebuilds that too.
+ * The row is never deleted, so `uq (sessionId, directoryName)` stays a tombstone: a
+ * repository added again takes the next directory name, not its old one. If the agent
+ * was launched inside this checkout, the fold steps the session out of it from
+ * `session.checkout_removed` (not a setter beside the write), so a replay rebuilds it;
+ * the foreign key's `ON DELETE SET NULL` never fires, since nothing is deleted.
  */
 @CommandHandler(RemoveCheckoutCommand)
 export class RemoveCheckoutCommandHandler

@@ -44,8 +44,6 @@ describe('UpdateProfileCommandHandler', () => {
   });
 
   it('refreshes the cached sessions after the row is written', async () => {
-    // Better Auth caches each session with a copy of the user; the session path
-    // reads that copy, so a write behind its back must be followed by this.
     const order: string[] = [];
     vi.mocked(repo.save).mockImplementation(async (entity) => {
       order.push('save');

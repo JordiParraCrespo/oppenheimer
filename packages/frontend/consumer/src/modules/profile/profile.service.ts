@@ -1,6 +1,3 @@
-// The narrow subpath, not the package root: it names what this service depends
-// on, and the entry reaches nothing but Zod.
-
 import { AppError } from '@oppenheimer/frontend-core';
 import {
   AVATAR_MAX_BYTES,
@@ -32,8 +29,6 @@ export class ProfileService {
   }
 
   /**
-   * Upload a new avatar.
-   *
    * Type and size are checked here as well as on the server so the user is told
    * immediately, without spending an upload to find out — the server check is
    * still the one that decides.

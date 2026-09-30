@@ -97,8 +97,7 @@ type Client struct {
 	conn  *websocket.Conn
 	out   *outbox
 	epoch atomic.Uint64
-	// connected is closed-and-replaced per link so callers can wait for one.
-	live atomic.Bool
+	live  atomic.Bool
 }
 
 // New builds a client; Run dials.

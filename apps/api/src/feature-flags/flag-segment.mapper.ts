@@ -4,7 +4,6 @@ import { FlagSegmentOrmEntity } from './database/flag-segment.orm-entity';
 import { FlagSegmentEntity } from './domain/flag-segment.entity';
 import { FlagSegmentResponseDto } from './dtos/flag-segment.response.dto';
 
-/** Maps the segment aggregate between its domain, persistence and response shapes. */
 @Injectable()
 export class FlagSegmentMapper
   implements Mapper<FlagSegmentEntity, FlagSegmentOrmEntity, FlagSegmentResponseDto>

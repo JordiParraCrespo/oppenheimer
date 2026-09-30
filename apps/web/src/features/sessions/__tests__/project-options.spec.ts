@@ -4,8 +4,8 @@ import { projectPrefill, repositoryKey, toProjectOptions } from '../lib/session-
 
 /**
  * What picking a project sets on the other chips
- * (`product/versions/mvp/05-screens.md`). The rule that
- * matters: a default the workspace no longer has is skipped, never written.
+ * (`product/versions/mvp/05-screens.md`). The rule that matters: a default the
+ * workspace no longer has is skipped, never written.
  */
 const repo = (githubRepoId: string, fullName: string, isDefault: boolean, baseBranch: string) => ({
   id: `row-${githubRepoId}`,

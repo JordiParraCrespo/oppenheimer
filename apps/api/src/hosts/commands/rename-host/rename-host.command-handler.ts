@@ -8,9 +8,8 @@ import { HOST_REPOSITORY } from '../../hosts.di-tokens';
 import { RenameHostCommand } from './rename-host.command';
 
 /**
- * Renames a host. Display only: no directory, branch or path on any machine is
- * derived from a host's name, so this is free and needs no coordination with the
- * runner.
+ * Display only: no directory, branch or path on any machine is derived from a
+ * host's name, so this is free and needs no coordination with the runner.
  */
 @CommandHandler(RenameHostCommand)
 export class RenameHostCommandHandler implements ICommandHandler<RenameHostCommand, AggregateID> {

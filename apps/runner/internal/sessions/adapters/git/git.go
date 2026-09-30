@@ -91,7 +91,6 @@ func New(opts Options) *Client {
 	}
 }
 
-// lock takes the repository's lock and returns its release.
 func (c *Client) lock(repo string) func() {
 	c.mu.Lock()
 	m, ok := c.repos[repo]
@@ -106,8 +105,7 @@ func (c *Client) lock(repo string) func() {
 
 // Ensure makes sure the repository's store exists and that ref is fresh in
 // it; an empty ref fetches every branch. The first call clones; later ones
-// fetch. A clone lands whole or not at all: it is made beside the store and
-// renamed into place. The store is blobless and has no working tree
+// fetch. The store is blobless and has no working tree
 // (02-runner §5): a file's contents arrive when a checkout or a command first
 // reads them, through the same credential helper.
 func (c *Client) Ensure(ctx context.Context, repo, remote, ref string) error {
@@ -319,8 +317,6 @@ func (c *Client) run(ctx context.Context, how command, args ...string) (string, 
 
 	full := []string{"-c", "advice.detachedHead=false"}
 	if c.credentialHelper != "" {
-		// The helper is the runner's own subcommand over the local socket;
-		// no token is ever written to a config file or a command line.
 		full = append(full, "-c", "credential.helper=", "-c", "credential.helper="+c.credentialHelper)
 	}
 	full = append(full, args...)

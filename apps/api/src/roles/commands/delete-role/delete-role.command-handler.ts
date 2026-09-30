@@ -8,8 +8,8 @@ import { ROLE_REPOSITORY } from '../../roles.di-tokens';
 import { DeleteRoleCommand } from './delete-role.command';
 
 /**
- * Deletes a custom role. System roles are protected. Existing assignments in
- * the `user_role` join are removed by the database cascade.
+ * System roles are protected. Existing assignments in the `user_role` join
+ * are removed by the database cascade.
  */
 @CommandHandler(DeleteRoleCommand)
 export class DeleteRoleCommandHandler implements ICommandHandler<DeleteRoleCommand, void> {

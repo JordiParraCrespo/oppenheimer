@@ -9,8 +9,6 @@ export interface CurrentCredentialScopes {
 }
 
 /**
- * Computes what the calling credential can actually do.
- *
  * A scope is effective only if the credential carries it *and* the owner's
  * roles still permit it, so revoking a role immediately narrows the answer —
  * and, through it, the tools an MCP client is offered.

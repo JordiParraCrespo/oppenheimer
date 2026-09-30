@@ -13,19 +13,12 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * A session row's ellipsis menu: Rename, Move to project…, Delete.
- *
- * Move slides the same menu to a pane rather than opening a submenu — the
- * pick belongs to the row, the way the account menu's Appearance does
- * (`packages/frontend/design-system/AGENTS.md`). The pane lists only the
- * projects that can take the session; the section computes which, because it
- * is the one holding both lists. An empty pane says why.
- *
- * No key hints: the export draws R, M and D beside the rows, and nothing
- * listens for them yet. A painted key that does nothing is a claim, so they
- * come back with the handler.
- *
- * Props in, choice out: the mutations are the section's and the dialog's.
+ * A session row's ellipsis menu. Move slides the menu to a pane rather than a
+ * submenu, like the account menu's Appearance
+ * (`packages/frontend/design-system/AGENTS.md`); the section computes which
+ * projects can take the session, since it holds both lists. No key hints: the
+ * export draws R, M and D, but nothing listens for them yet, and a painted key
+ * that does nothing is a claim.
  */
 export function SessionRowMenu({
   open,
@@ -40,7 +33,6 @@ export function SessionRowMenu({
   onRename: () => void;
   onMove: (projectId: string) => void;
   onDelete: () => void;
-  /** Where the session may move: every other project holding its repository. */
   projects: { id: string; name: string; isUnassigned?: boolean }[];
 }) {
   const { t } = useTranslation();

@@ -11,9 +11,7 @@ export interface ResolvedLocale {
 }
 
 /**
- * Which language to write to someone who is not making a request — a queued
- * email has no `Accept-Language` to read, so the only signal is the locale the
- * recipient saved in their settings. Falls back to the deployment default
+ * Falls back to the deployment default
  * (`I18nModule.forRoot`'s `defaultLocale`) for an account that never chose,
  * and for an invitee who has no account yet.
  *
@@ -36,10 +34,6 @@ export class LocaleResolver {
     return this.resolved(found.isSome() ? found.unwrap().locale : null);
   }
 
-  /**
-   * Resolve an email address: an invitee may already be a user with a saved
-   * language, or a brand-new address that gets the default.
-   */
   async resolveForEmailRecipient(email: string): Promise<ResolvedLocale> {
     const found = await this.users.findOneByEmail(email);
     return found.isSome() ? this.resolveForRecipient(found.unwrap().id) : this.resolved(null);

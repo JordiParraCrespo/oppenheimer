@@ -37,7 +37,6 @@ function isKnownPausedReason(reason: string): reason is AutomationPausedReason {
   return (AUTOMATION_PAUSED_REASONS as readonly string[]).includes(reason);
 }
 
-/** Why a run never started, in words. */
 function skipReasonText(reason: string, t: TFunction): string {
   return isKnownSkipReason(reason)
     ? t(`automations.skipReason.${reason}`)
@@ -52,7 +51,6 @@ export function pausedReasonText(reason: string | null, t: TFunction): string {
     : t('automations.pausedReasonOther');
 }
 
-/** A run's title with why it never started, when it did not. */
 export function runTitle(run: AutomationRunEntity, t: TFunction): string {
   return run.skipReason ? `${run.title} · ${skipReasonText(run.skipReason, t)}` : run.title;
 }
@@ -118,7 +116,6 @@ export function sidebarMeta(automation: AutomationEntity, now: number, t: TFunct
   return automation.runCount ? String(automation.runCount) : '';
 }
 
-/** The agent's name as the catalog has it. */
 function agentLabel(agent: string): string {
   return isCodingAgentId(agent) ? CODING_AGENTS[agent].label : agent;
 }

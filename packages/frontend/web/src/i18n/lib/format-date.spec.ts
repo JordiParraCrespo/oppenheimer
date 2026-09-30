@@ -42,7 +42,6 @@ describe('formatMonthYear', () => {
 
 describe('formatRelativeTime', () => {
   it('returns null inside the just-now window so the caller can say "now"', () => {
-    // A session list wants presence, not a stopwatch reading "0 minutes ago".
     expect(formatRelativeTime(ago(30 * SECOND), 'en', NOW)).toBeNull();
     expect(formatRelativeTime(NOW, 'en', NOW)).toBeNull();
   });
@@ -196,7 +195,6 @@ describe('formatMessageTime', () => {
   });
 
   it('shows a weekday for the rest of the week', () => {
-    // "Mon" places a message without the reader doing arithmetic on a date.
     expect(formatMessageTime(at(11, 10), 'en-GB', now)).toMatch(/^[A-Z][a-z]{2}$/);
   });
 

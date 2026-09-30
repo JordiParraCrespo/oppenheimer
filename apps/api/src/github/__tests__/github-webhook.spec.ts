@@ -82,8 +82,6 @@ describe('installation event parsing', () => {
   });
 
   it('ignores every other event', () => {
-    // Nothing here mirrors the repository set, so there is nothing for
-    // `installation_repositories` to keep current.
     expect(parseInstallationEvent('installation_repositories', payload('added'))).toEqual({
       type: 'ignored',
     });

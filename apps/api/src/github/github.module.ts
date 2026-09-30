@@ -72,10 +72,6 @@ const adapters: Provider[] = [
  * two facts that would otherwise drift — what access exists, and what it covers —
  * both have their owner on GitHub's side
  * (`product/versions/mvp/03-control-plane.md`).
- *
- * `REPOSITORY_ACCESS` is the one thing exported, because it is the seam
- * `sessions/` and `relay/` use: they name a connected installation and a
- * repository, and get a credential for exactly that repository.
  */
 @Module({
   imports: [

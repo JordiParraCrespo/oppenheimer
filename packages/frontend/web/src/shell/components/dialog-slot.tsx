@@ -16,15 +16,14 @@ export interface DialogSlot<TRequest> {
 }
 
 /**
- * One slot for an app's dialogs: at most one is up, a surface anywhere below
- * the provider asks for one by request, and one owner mounts it. The app names
- * the requests (`TRequest`); the kit knows none of them.
+ * One slot for an app's dialogs: at most one is up, any surface below the
+ * provider requests one, and one owner mounts it. The app names the requests
+ * (`TRequest`); the kit knows none of them.
  *
- * The actions and the request are two contexts because they change at two
- * rates. Every button that opens a dialog reads `open`, which never changes;
- * only the owner reads the request, which changes on every open and close. One
- * context held both, and every sidebar and row that could open a dialog
- * re-rendered each time one did.
+ * Actions and request are two contexts because they change at different
+ * rates: every opener reads `open`, which never changes, and only the owner
+ * reads the request. One context re-rendered every sidebar and row that could
+ * open a dialog each time one did.
  */
 export function createDialogSlot<TRequest>(name: string): DialogSlot<TRequest> {
   const ActionsContext = createContext<DialogSlotActions<TRequest> | null>(null);
@@ -33,8 +32,6 @@ export function createDialogSlot<TRequest>(name: string): DialogSlot<TRequest> {
 
   function DialogSlotProvider({ children }: { children: ReactNode }) {
     const [request, setRequest] = useState<TRequest | null>(null);
-    // A lazy initial state: the actions close over the setter, which React
-    // keeps stable, so they are built once and never change.
     const [actions] = useState<DialogSlotActions<TRequest>>(() => ({
       open: (next) => setRequest(() => next),
       close: () => setRequest(null),

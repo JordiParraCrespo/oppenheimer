@@ -1,18 +1,12 @@
 import type { ScopeContext, ScopedRequest } from '../domain/scope-context.types';
 
 /**
- * One kind of bearer credential, contributed by the module that owns it.
- *
- * The auth module is a kernel: it knows how a credential arrives (a bearer
- * header, `x-api-key`), what a resolved one authorizes ({@link ScopeContext}),
- * and the two kinds it issues itself — a Better Auth session and an OAuth
- * grant. It deliberately does **not** know the kinds built on top of it. An
- * API token is the api-tokens module's concept; a runner's key will be the
- * runner module's. Each contributes a resolver through
- * `AuthModule.contributeCredentials`, and the kernel asks them in turn.
- *
- * Implementations live in the owning module's `application/` layer, where they
- * may inject that module's repository ports.
+ * One kind of bearer credential, contributed by the module that owns it
+ * through `AuthModule.contributeCredentials`. The kernel itself issues only
+ * Better Auth sessions and OAuth grants; an API token is the api-tokens
+ * module's kind, a host's boot assertion the hosts module's. Implementations
+ * live in the owning module's `application/` layer, where they may inject its
+ * repository ports.
  */
 export interface CredentialResolverPort {
   /** The `ScopeContext['kind']` this resolver produces; unique across contributions. */

@@ -16,7 +16,6 @@ export function PageShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** The page title at h1 over a lead line in the muted colour. */
 export function PageHead({
   eyebrow,
   title,

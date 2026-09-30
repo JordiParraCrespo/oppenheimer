@@ -7,7 +7,7 @@
  * problem document that names it rather than a generic invalid argument.
  */
 
-/** How many repositories one project may hold. Kept equal to the shared schema's. */
+/** Kept equal to the shared schema's `MAX_PROJECT_REPOSITORIES`. */
 export const MAX_PROJECT_REPOSITORIES = 20;
 
 /** One repository a project holds. `githubRepoId` is the string a bigint travels as. */

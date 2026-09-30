@@ -27,21 +27,18 @@ export interface ClaimedImage {
 }
 
 /**
- * Where an image waits for the runner that will pull it — one store, in two
- * states.
+ * Where an image waits for the runner that will pull it: one store, two states.
  *
- * **Staged** is an image a person uploaded for a first task, owned by them and
- * named by its content, so the same bytes staged twice are one image with one
- * id and a retry of the create names what the first try named. **Parked** is an
- * image a host owns: the link carries `session.image` and `session.create`
- * without their bytes — control frames stay small, and one paste must not queue
- * ahead of every pane on the host — so the runner pulls each once over HTTPS
+ * **Staged**: uploaded by a person for a first task, owned by them and named by its
+ * content, so the same bytes staged twice are one id and a retried create names what
+ * the first named. **Parked**: owned by a host. `session.image` and `session.create`
+ * travel without bytes, keeping control frames small so one paste never queues ahead
+ * of every pane on the host, and the runner pulls each once over HTTPS
  * (`GET /hosts/self/images/{imageId}`).
  *
- * A claim copies staged images to parked ones for a session **before** its row
- * is written, and the session's log records the parked ids, so a create that
- * reaches its host late — a dropped link, a reconnect — still names images
- * that are waiting. Nothing here is durable past its expiry.
+ * A claim parks staged images for a session **before** its row is written, and the
+ * log records the parked ids, so a create reaching its host late (a dropped link, a
+ * reconnect) still names waiting images. Nothing here is durable past its expiry.
  */
 export interface ParkedImagePort {
   park(commandId: string, image: ParkedImage): Promise<void>;

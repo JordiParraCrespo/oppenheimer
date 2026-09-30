@@ -16,20 +16,13 @@ import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { toCheckouts, toLaunchInput } from '../lib/session-options';
 
 /**
- * The composer of New session, and the requests the draft makes: an upload
- * per attached image, then the create that names them.
- *
- * What this section reads during render is only what it must: whether a host
- * is picked and still paired, and whether the pick names one repository the
- * request can carry — the composer cannot send without both (05) — and the
- * request's state. The rest of the draft, and the projects, are read once,
- * when the task is sent — so a pick of effort or a refetch of the projects
- * never reaches it.
- *
- * `scope`, `tools` and `engine` are the chips, built by the section above and
- * placed here untouched. They arrive as elements rather than being built here
- * so that picking a host, which re-renders this section, does not re-render
- * them.
+ * The composer of New session and the requests the draft makes: an upload per
+ * image, then the create that names them. During render it reads only whether
+ * a host is picked and paired, whether the pick names one repository (the
+ * composer cannot send without both, 05) and the request's state; the rest of
+ * the draft and the projects are read once, on send, so an effort pick or a
+ * projects refetch never reaches it. The chips arrive as elements so a host
+ * pick, which re-renders this section, does not re-render them.
  */
 export function NewSessionSend({
   scope,
@@ -57,9 +50,8 @@ export function NewSessionSend({
   const { data: hostKnown } = useHosts({
     select: (hosts) => hosts.some((host) => host.id === hostId),
   });
-  // Read at send time, not subscribed to: the list is only needed to send a
-  // remembered project the workspace no longer has as none, and a subscription
-  // would re-render the composer on every refetch of a list it never draws.
+  // Needed only to send a remembered project the workspace no longer has as
+  // none.
   const projects = useProjectsSnapshot();
 
   /**

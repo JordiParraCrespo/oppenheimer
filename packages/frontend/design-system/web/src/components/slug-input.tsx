@@ -6,25 +6,23 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 import { Input, type InputProps } from './input';
 
+type SlugStatus = 'idle' | 'checking' | 'ok' | 'taken';
+
 /**
- * SlugInput — an Input for an address that is checked as you type: the
- * workspace URL on CreateWorkspace. In the `PasswordInput` mould, it owns the
- * two things every such field rebuilds: the mono prefix inside the border
- * ("oppenheimer.dev/") and the trailing verdict, which cycles through
- * `checking` (a spinning ring), `ok` (a green check) and `taken` (a red ×).
- * The value itself is mono at 13px, like the address it becomes.
+ * SlugInput — an Input for an address checked as you type (the workspace URL
+ * on CreateWorkspace). It owns the mono prefix inside the border
+ * ("oppenheimer.dev/") and the trailing verdict: `checking` (a spinning ring),
+ * `ok` (a green check) or `taken` (a red ×, which also marks the input
+ * invalid). The value is mono at 13px, like the address it becomes.
  *
- * A real check is a round trip, so show `checking` for at least a beat before
- * the verdict; a verdict that appears instantly reads as no check at all.
- * `taken` also marks the input invalid, so the field's red ring and error line
- * follow. Pair with `FieldDescription tone="success"` for the green hint.
+ * Show `checking` for at least a beat: a verdict that appears instantly reads
+ * as no check at all. Pair with `FieldDescription tone="success"` for the
+ * green hint.
  *
  * ```tsx
  * <SlugInput size="lg" prefix="oppenheimer.dev/" status={status} {...register('slug')} />
  * ```
  */
-type SlugStatus = 'idle' | 'checking' | 'ok' | 'taken';
-
 function SlugInput({
   prefix,
   status = 'idle',

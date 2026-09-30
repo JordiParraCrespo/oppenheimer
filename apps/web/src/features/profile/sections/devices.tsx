@@ -86,7 +86,6 @@ export function DevicesSection() {
                   )}
                 </SettingsRow>
               ))}
-              {/* The rule and padding belong to the failure: no failure, no row. */}
               {failure.error ? (
                 <div className="border-t border-border-subtle px-5 py-3">
                   <ErrorAlert
