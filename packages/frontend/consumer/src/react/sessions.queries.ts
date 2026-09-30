@@ -252,6 +252,27 @@ export interface CloseSessionVariables {
 }
 
 /** The row stays `open` until the host resolves it, so the list watches for that. */
+/**
+ * Bring a stopped session's terminal back.
+ *
+ * The host recreates window 0 in the worktrees the session already has and
+ * reopens the agent's own conversation, so the pane comes back with what was
+ * said in it rather than empty. The session's own row is refreshed and the
+ * lists with it: what changes is the lifecycle, which every list draws.
+ */
+export function useRestartSession(options?: UseMutationOptions<SessionEntity, Error, string>) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => app.sessions.restart(id),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    }),
+  });
+}
+
 export function useCloseSession(
   options?: UseMutationOptions<SessionEntity, Error, CloseSessionVariables>,
 ) {

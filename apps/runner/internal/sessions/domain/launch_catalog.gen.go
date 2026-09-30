@@ -69,6 +69,8 @@ var launchCatalog = map[string]launchMap{
 			"max":     {"--reasoning-effort", "max"},
 		},
 		prompt: []string{"<prompt>"},
+		conversationCreate: []string{"--session-id", "<conversation>"},
+		conversationResume: []string{"--resume", "<conversation>"},
 	},
 	"shell": {
 		command: "",

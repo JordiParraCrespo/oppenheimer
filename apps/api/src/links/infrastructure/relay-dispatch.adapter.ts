@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import type {
   ProtocolMessage,
   SessionCloseMessage,

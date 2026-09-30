@@ -512,6 +512,14 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
+      // The same shape as Claude Code's, and the same constraint read off grok
+      // 1.0.44's `--help`: `--session-id` names a **new** conversation and
+      // refuses a UUID that already exists, so it is only ever sent on create;
+      // `--resume` takes that id back.
+      conversation: Object.freeze({
+        create: Object.freeze(['--session-id', '<conversation>']),
+        resume: Object.freeze(['--resume', '<conversation>']),
+      }),
       // `--permission-mode` choices, read off grok 1.0.41's own `--help`:
       // `default | acceptEdits | auto | dontAsk | bypassPermissions | plan`,
       // Claude Code's vocabulary. `default` asks before edits and commands.

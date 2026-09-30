@@ -88,14 +88,17 @@ func (l Launch) Args(agent Agent) []string {
 	if v, ok := m.effort[l.Effort]; ok {
 		args = append(args, v...)
 	}
-	// Naming the conversation, or reopening it. A resume carries no prompt:
-	// the conversation already holds the first task, and sending it again
-	// would ask for the same work twice.
-	switch {
-	case l.Resume && l.Conversation != "" && m.conversationResume != nil:
-		args = append(args, substitute(m.conversationResume, "<conversation>", l.Conversation)...)
-		return args
-	case l.Conversation != "" && m.conversationCreate != nil:
+	// Reopening the conversation, and then there is no first task to send: the
+	// conversation already holds it, and sending it again would ask for the
+	// same work twice.
+	if l.Resume && l.Conversation != "" && m.conversationResume != nil {
+		return append(args, substitute(m.conversationResume, "<conversation>", l.Conversation)...)
+	}
+	// Naming it, on a create. Never on a resume: an agent that can be told an
+	// id but not reopen one would be handed an id that already exists, which
+	// its CLI refuses — so such an agent restarts the way it always did, with
+	// a fresh conversation and the first task sent again.
+	if !l.Resume && l.Conversation != "" && m.conversationCreate != nil {
 		args = append(args, substitute(m.conversationCreate, "<conversation>", l.Conversation)...)
 	}
 	if l.Prompt != "" && m.prompt != nil {

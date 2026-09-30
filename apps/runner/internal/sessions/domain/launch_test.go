@@ -175,3 +175,18 @@ func containsValue(args []string, value string) bool {
 	}
 	return false
 }
+
+// An agent the catalog gives no way to reopen a conversation restarts the way
+// it always did: a fresh conversation and the first task sent again. The one
+// thing it must never do is offer an id that already exists.
+func TestResumeFallsBackForAnAgentThatCannotReopen(t *testing.T) {
+	const id = "17a57597-65a4-4517-84e3-b4010c7b8ed9"
+	resumed := Launch{Conversation: id, Prompt: "Do the thing.", Resume: true}.Args(AgentCodex)
+
+	if containsValue(resumed, id) {
+		t.Fatalf("offered a conversation id to an agent that cannot take one: %v", resumed)
+	}
+	if !containsValue(resumed, "Do the thing.") {
+		t.Fatalf("dropped the first task with nothing to resume: %v", resumed)
+	}
+}

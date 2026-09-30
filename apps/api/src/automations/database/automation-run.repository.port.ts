@@ -77,7 +77,6 @@ export interface AutomationRunRepositoryPort {
   /** Live automation runs on a host, across workspaces: capacity is the machine's. */
   countLiveOnHost(hostId: string, excludingRunId: string, since: Date): Promise<number>;
 
-
   /**
    * Reserve the run's slot on `hostId`, atomically, or answer false when there
    * is none. Counts and writes under one lock, so concurrent dispatches cannot

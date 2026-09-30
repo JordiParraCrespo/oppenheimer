@@ -35,8 +35,12 @@
     "details": "Detalles del host: {{detail}}"
   },
   "closed": {
-    "description": "Esta sesión se ha detenido. Su trabajo está en su rama.",
-    "deleted": "Esta sesión se eliminó. Su worktree ya no está en el host; los commits ya enviados siguen en el remoto."
+    "description": "Esta sesión se ha detenido. Su trabajo está en {{branch}}, y al reiniciarla el terminal vuelve donde lo dejó.",
+    "deleted": "Esta sesión se eliminó. Su worktree ya no está en el host; los commits ya enviados siguen en el remoto.",
+    "descriptionNoBranch": "Esta sesión se ha detenido. Al reiniciarla el terminal vuelve donde lo dejó.",
+    "restart": "Reiniciar",
+    "restarting": "Reiniciando",
+    "restartFailed": "No se ha podido reiniciar la sesión."
   },
   "new": {
     "title": "Nueva sesión",
