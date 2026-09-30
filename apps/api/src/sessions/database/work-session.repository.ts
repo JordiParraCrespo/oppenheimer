@@ -395,10 +395,12 @@ export class WorkSessionRepository
 
   async eraseWorkspace(organizationId: string): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
-      // The appenders' lock, taken first and in id order: an append already
-      // holding a row commits before its events are deleted, and a later one
-      // waits and then finds no session. Without it an event lands between the
-      // deletes and the RESTRICT key refuses the session's.
+      // The locks the writers take, in their order and in id order: the projects
+      // a create or a move holds `FOR SHARE`, then the rows an append holds.
+      await manager.query(
+        `SELECT "id" FROM "project" WHERE "organizationId" = $1 ORDER BY "id" FOR UPDATE`,
+        [organizationId],
+      );
       await manager.query(
         `SELECT "id" FROM "work_session" WHERE "organizationId" = $1 ORDER BY "id" FOR UPDATE`,
         [organizationId],
