@@ -26,8 +26,6 @@ export class AvatarStorageAdapter implements AvatarStoragePort {
   constructor(private readonly storage: StorageService) {}
 
   /**
-   * Validate and store an avatar, returning the key to persist.
-   *
    * Size is checked here as well as by multer's own limit: multer truncates at
    * its ceiling and reports it through a different error shape, and a caller
    * that streams straight to this service (a test, a future queue consumer)
@@ -58,19 +56,12 @@ export class AvatarStorageAdapter implements AvatarStoragePort {
     return this.storage.upload(file, key, mimeType);
   }
 
-  /**
-   * Remove a stored avatar. Best-effort: a key that is already gone, or one
-   * that turns out to be a provider URL rather than something we stored, must
-   * not fail the request that is trying to clear it.
-   */
   async remove(key: string | null): Promise<void> {
     if (!key || isAbsoluteUrl(key)) return;
     await this.storage.delete(key).catch(() => {});
   }
 
   /**
-   * Turn a stored value into something a client can load.
-   *
    * A value that is already an absolute URL came from a social provider at
    * sign-up and is passed straight through — only keys we wrote are resolved
    * against storage.

@@ -33,10 +33,8 @@ test.describe('Public pages, signed out', () => {
     await expect(
       page.getByRole('heading', { level: 2, name: 'What the workspace gives your team' }),
     ).toBeVisible();
-    // The three feature cards are the body of the page.
     await expect(page.getByRole('article')).toHaveCount(3);
 
-    // The call to action is the way in.
     await page.getByRole('link', { name: 'Sign in to the workspace' }).click();
     await expect(page).toHaveURL(/\/login/);
 
@@ -82,7 +80,6 @@ test.describe('Public pages, signed out', () => {
     await expect(page).toHaveURL(/\/privacy$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Privacy policy' })).toBeVisible();
 
-    // The logo is the way home.
     await page.getByRole('link', { name: 'Home' }).click();
     await expect(page).toHaveURL(/\/about$/);
 

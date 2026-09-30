@@ -77,8 +77,6 @@ export class Translator {
   }
 
   /**
-   * Translate `key` into `locale`.
-   *
    * Pass `count` in `vars` to select a plural form: the lookup then prefers
    * `<key>_one` / `<key>_other` (whatever `Intl.PluralRules` selects for the
    * locale) and falls back to the bare key.

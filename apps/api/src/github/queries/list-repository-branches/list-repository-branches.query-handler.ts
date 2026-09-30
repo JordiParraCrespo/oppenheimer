@@ -8,10 +8,6 @@ import type { GithubAppPort, GithubBranch } from '../../infrastructure/github-ap
 import { ListRepositoryBranchesQuery } from './list-repository-branches.query';
 
 /**
- * Live, and deliberately uncached: a branch list is read once when a checkout is
- * being created, and a branch pushed seconds ago is exactly the one the person is
- * looking for.
- *
  * Coverage is GitHub's answer, not ours. The installation is loaded here under
  * the caller's scope and checked for usability; whether it covers *this*
  * repository is decided by GitHub refusing the repository read, which is what

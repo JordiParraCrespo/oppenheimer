@@ -1,25 +1,18 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 
 /**
- * A stand-in for GitHub, for the one part of the console that cannot be real
- * here.
+ * A stand-in for GitHub, the one part of the run that cannot be real here.
  *
- * Repositories and branches are answered live by GitHub through a GitHub App
- * installation, and creating a session validates its repository the same way.
- * A deployment with no App therefore cannot exercise the create path at all —
- * which is why `tests/api/sessions.spec.ts` skips it, and why the web spec
- * beside it would have nothing to click.
- *
- * So this serves the six endpoints the REST adapter calls, and the API is
- * pointed at it with `GITHUB_APP_API_URL` / `GITHUB_APP_OAUTH_URL`
- * (`product/versions/mvp/03-control-plane.md`). **Everything else in the run
- * is the real thing**: a browser, the built console, the API with its guards,
- * its Zod pipe and its problem-document filter, and a real Postgres. The fake
- * stops at the network boundary the product does not own.
+ * Repositories and branches are answered live through a GitHub App
+ * installation, and creating a session validates its repository the same way,
+ * so a deployment with no App cannot exercise the create path at all. The API
+ * is pointed here with `GITHUB_APP_API_URL` / `GITHUB_APP_OAUTH_URL`
+ * (`product/versions/mvp/03-control-plane.md`); the fake stops at the network
+ * boundary the product does not own.
  *
  * The shapes are GitHub's own, copied from its REST reference rather than from
- * the adapter's readers — a stub written to suit the parser would pass while
- * the real API failed, which is the one thing a stub must not do.
+ * the adapter's readers: a stub written to suit the parser would pass while
+ * the real API failed.
  */
 export interface StubRepository {
   id: number;
@@ -91,13 +84,9 @@ export async function startGithubStub(
   const options: GithubStubOptions = { ...DEFAULTS, ...overrides };
 
   /**
-   * The installation ids this stub currently knows about.
-   *
-   * A workspace may connect an installation only once — a second workspace
-   * claiming it is `GITHUB_003`, which is the rule, not a limitation — so tests
-   * that each sign up a fresh account need an installation each. They add one
-   * with `PUT /__stub/installations/{id}` before they connect it, which is what
-   * `claimInstallation` below does.
+   * The installation ids this stub currently knows about. Each test adds its own
+   * with `PUT /__stub/installations/{id}` before connecting it
+   * (`claimInstallation` below says why).
    */
   const installations = new Map<number, ReturnType<typeof installationOf>>();
 
@@ -122,8 +111,6 @@ export async function startGithubStub(
       return json(response, 200, { access_token: 'stub-user-token', token_type: 'bearer' });
     }
 
-    // What the account installing the App can see. The connect call trusts this
-    // over the installation id it was handed, which is the check being exercised.
     // The one endpoint GitHub does not have: a test saying which installation
     // it is about to connect. Everything below answers GitHub's own shapes.
     const claim = /^\/__stub\/installations\/(\d+)$/.exec(path);
@@ -133,6 +120,8 @@ export async function startGithubStub(
       return json(response, 200, { installations: [...installations.keys()] });
     }
 
+    // What the account installing the App can see. The connect call trusts this
+    // over the installation id it was handed, which is the check being exercised.
     if (path === '/user/installations') {
       const known = [...installations.values()];
       return json(response, 200, { total_count: known.length, installations: known });
@@ -198,13 +187,6 @@ export async function startGithubStub(
 }
 
 /**
- * Run it on its own: `node --experimental-strip-types e2e/support/github-stub.ts`.
- *
- * The API has to be started **with** `GITHUB_APP_API_URL` already pointing at this,
- * so the stub cannot be something a test spins up after the fact — it is part
- * of standing the stack up, like the database.
- */
-/**
  * Tell a running stub about an installation id, then hand it back.
  *
  * Each test claims its own, because connecting one is exclusive to a workspace
@@ -222,6 +204,13 @@ export async function claimInstallation(
   return githubInstallationId;
 }
 
+/**
+ * Run it on its own: `node --experimental-strip-types e2e/support/github-stub.ts`.
+ *
+ * The API has to be started **with** `GITHUB_APP_API_URL` already pointing at this,
+ * so the stub cannot be something a test spins up after the fact — it is part
+ * of standing the stack up, like the database.
+ */
 if (process.argv[1]?.endsWith('github-stub.ts')) {
   const port = Number(process.env.GITHUB_STUB_PORT ?? 4319);
   startGithubStub({ port }).then((stub) => {

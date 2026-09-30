@@ -15,7 +15,6 @@ import type {
   AuthzRuleDto,
 } from './dtos/authz-catalog.response.dto';
 
-/** Maps the access-grant aggregate between its three shapes. */
 @Injectable()
 export class AccessGrantMapper
   implements Mapper<AccessGrantEntity, AccessGrantOrmEntity, AccessGrantResponseDto>
@@ -66,12 +65,7 @@ export class AccessGrantMapper
   }
 }
 
-/**
- * Registry declarations → the catalog wire shape.
- *
- * Pure and DI-free: the query handler resolves the ability and delegates the
- * shaping here.
- */
+/** Registry declarations → the catalog wire shape. */
 export function toResourceDto(resource: ResourceDefinition): AuthzResourceDto {
   return {
     subject: resource.subject,

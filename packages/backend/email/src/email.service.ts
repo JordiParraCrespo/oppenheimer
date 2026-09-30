@@ -42,7 +42,6 @@ export interface WelcomeEmailParams extends EmailFrameParams {
   signoff: string;
 }
 
-/** Data needed to render/send an organization invitation email. */
 export interface InvitationEmailParams extends EmailFrameParams {
   heroLabel: string;
   heading: string;

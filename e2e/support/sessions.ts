@@ -1,4 +1,4 @@
-import { createHash, generateKeyPairSync } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomInt } from 'node:crypto';
 import { type APIRequestContext, type APIResponse, expect } from '@playwright/test';
 import { newContext } from './auth';
 import githubApp from './github-app.json' with { type: 'json' };
@@ -8,18 +8,12 @@ import { claimInstallation } from './github-stub';
  * What a New session spec needs standing behind it: a paired host and a
  * connected GitHub installation.
  *
- * Both are set up through the real API rather than by writing rows — the point
- * of an end-to-end run is that the path a person takes is the path under test,
- * and a seeded row proves nothing about pairing or about the App.
- *
- * The GitHub half needs a stub (`support/github-stub.ts`), because repositories
- * and branches are answered live by GitHub and this deployment has no App. The
- * API is pointed at it with `GITHUB_APP_API_URL`; everything else in the run is
- * real.
+ * Both are set up through the real API rather than by writing rows: a seeded
+ * row proves nothing about pairing or about the App. The GitHub half is
+ * `support/github-stub.ts`, which the API reaches through `GITHUB_APP_API_URL`.
  */
 export const GITHUB_STUB_URL = process.env.GITHUB_STUB_URL ?? 'http://127.0.0.1:4319';
 
-/** The repositories the stub serves, as the picker will show them. */
 export const STUB_REPOSITORIES = {
   mobile: { githubRepoId: 821374923, name: 'xrp-mobile', defaultBranch: 'main' },
   web: { githubRepoId: 821374924, name: 'xrp-web', defaultBranch: 'trunk' },
@@ -33,8 +27,6 @@ export const STUB_INSTALL_URL = `https://github.com/apps/${githubApp.slug}/insta
 
 /** A branch of `xrp-mobile` that is not its default, so picking one is visible. */
 export const STUB_BRANCH = 'fix/wallet-empty-state';
-
-let installationCounter = 0;
 
 /**
  * Start a GitHub App install as the caller: the single-use state
@@ -58,8 +50,9 @@ export async function mintInstallState(api: APIRequestContext): Promise<string> 
  * the way the console does on Connect: a state is spent by one attempt.
  */
 export async function connectInstallation(api: APIRequestContext): Promise<string> {
-  installationCounter += 1;
-  const githubInstallationId = 100_000 + process.pid * 100 + installationCounter;
+  // Random over 2^40, not derived from the pid: parallel workers and earlier
+  // runs against the same database must never draw an id already claimed.
+  const githubInstallationId = randomInt(1_000_000, 2 ** 40);
   await claimInstallation(GITHUB_STUB_URL, githubInstallationId);
 
   const response = await withoutTripping(async () =>
@@ -123,13 +116,7 @@ const FACTS = {
 const THROTTLE_RETRY_MS = 5_000;
 const THROTTLE_WINDOW_MS = 65_000;
 
-/**
- * Make a throttled call, waiting the limiter out rather than working around it.
- *
- * A 429 here is the product working. The only correct response from a test is
- * patience, so this retries until the window has rolled and returns whatever
- * the route says then.
- */
+/** Make a throttled call, waiting the limiter out rather than working around it. */
 async function withoutTripping(call: () => Promise<APIResponse>): Promise<APIResponse> {
   const deadline = Date.now() + THROTTLE_WINDOW_MS;
   let response = await call();
@@ -156,16 +143,6 @@ export function registerHost(
 }
 
 /**
- * Spend a registration token the way a runner does — anonymously, with its own
- * keypair.
- *
- * Exported apart from {@link pairHost} because a token is not always minted
- * through the API: the Add host dialog mints its own and prints it inside the
- * install command, and the spec that drives it redeems *that* secret, which is
- * the only way the dialog's status line can be shown to be watching the token
- * it minted rather than the host list.
- */
-/**
  * Try to spend a registration token and answer only the status, for a spec
  * that expects a refusal — a token the dialog revoked when it minted the next.
  */
@@ -182,6 +159,16 @@ export async function redemptionStatus(secret: string, name: string): Promise<nu
   return status;
 }
 
+/**
+ * Spend a registration token the way a runner does — anonymously, with its own
+ * keypair.
+ *
+ * Exported apart from {@link pairHost} because a token is not always minted
+ * through the API: the Add host dialog mints its own and prints it inside the
+ * install command, and the spec that drives it redeems *that* secret, which is
+ * the only way the dialog's status line can be shown to be watching the token
+ * it minted rather than the host list.
+ */
 export async function redeemPairingToken(secret: string, name: string): Promise<string> {
   const anonymous = await newContext();
   const registered = await registerHost(anonymous, {
@@ -208,8 +195,8 @@ export function tokenFrom(installCommand: string): string {
 }
 
 /**
- * Pair a machine: mint the token the install command carries, then redeem it
- * the way a runner does — anonymously, with its own keypair.
+ * Mint and redeem a pairing token. Both routes are throttled by address (see
+ * `THROTTLE_WINDOW_MS`), so a test that calls this is `test.slow()`.
  */
 export async function pairHost(api: APIRequestContext, name: string): Promise<string> {
   return redeemPairingToken(await mintPairingToken(api, name), name);
@@ -300,7 +287,6 @@ export async function createSession(
  */
 export type SessionLifecycle = 'starting' | 'open' | 'failed' | 'resolved';
 
-/** What the specs read off a session row. */
 export interface SessionRow {
   id: string;
   name: string;
@@ -309,7 +295,6 @@ export interface SessionRow {
   checkouts: { branch: string; directoryName: string }[];
 }
 
-/** Wait until the session's stored lifecycle is `lifecycle`, and return the row. */
 export async function waitForLifecycle(
   api: APIRequestContext,
   sessionId: string,

@@ -60,7 +60,6 @@ test.describe('web auth UI', () => {
     await page.goto('/sessions');
 
     await expect(page).toHaveURL(/\/login/, { timeout: 20_000 });
-    // The redirect remembers where the visitor was heading.
     expect(page.url()).toContain('redirect=');
   });
 
@@ -240,7 +239,6 @@ test.describe('web auth UI', () => {
   });
 });
 
-/** Waits for the reset row to appear, then hands back the token. */
 async function waitForResetToken(email: string): Promise<string> {
   const deadline = Date.now() + 15_000;
   while (Date.now() < deadline) {

@@ -15,17 +15,13 @@ import { ProvisionPersonalWorkspaceCommand } from './provision-personal-workspac
 /**
  * Creates the personal workspace a new account lives in: one organization with
  * the account as its single owner, plus the org-scoped `owner` application role
- * that opens it. No team, no roster, no invitation — the MVP is one user per
+ * that opens it. No team, no roster, no invitation: the MVP is one user per
  * workspace (`product/versions/mvp/00-scope.md`).
  *
  * Answers the new organization's id, or `null` when the account already
- * belonged to one and nothing was written. "Already had one" is a success for
- * every caller: sign-up and the seed both provision, and the seed is also the
- * repair path for an account whose sign-up hook did not land.
- *
- * The decision not to write is the repository's, inside the transaction that
- * would have done it — a check here could only be stale by the time the write
- * ran.
+ * belonged to one. That is a success for every caller: sign-up and the seed
+ * both provision, and the seed repairs an account whose sign-up hook did not
+ * land. The repository decides not to write, inside its transaction.
  */
 @CommandHandler(ProvisionPersonalWorkspaceCommand)
 export class ProvisionPersonalWorkspaceCommandHandler

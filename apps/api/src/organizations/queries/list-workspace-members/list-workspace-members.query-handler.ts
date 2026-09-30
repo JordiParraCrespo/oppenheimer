@@ -5,7 +5,6 @@ import type { WorkspaceAuthPort } from '../../infrastructure/workspace-auth.port
 import { WORKSPACE_AUTH } from '../../organizations.di-tokens';
 import { ListWorkspaceMembersQuery } from './list-workspace-members.query';
 
-/** Who is in a workspace. */
 @QueryHandler(ListWorkspaceMembersQuery)
 export class ListWorkspaceMembersQueryHandler
   implements IQueryHandler<ListWorkspaceMembersQuery, WorkspaceMemberResponseDto[]>

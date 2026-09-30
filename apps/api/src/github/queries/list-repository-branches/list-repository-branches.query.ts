@@ -1,7 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
 
-/** Asks GitHub for one repository's branches, to offer as a checkout's base. */
 export class ListRepositoryBranchesQuery extends QueryBase {
   readonly scope: AccessScope;
   readonly installationId: string;

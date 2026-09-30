@@ -2,10 +2,8 @@ import { z } from 'zod';
 import { hostFactsSchema, hostNameSchema } from './primitives.js';
 
 /**
- * Host shapes. A host belongs to a **person**, not a workspace: one laptop is
- * paired once and every workspace its owner is in borrows it.
- *
- * Schemas state the constraint only, never a message (`.agents/rules/forms.md`).
+ * A host belongs to a **person**, not a workspace: one laptop is paired once
+ * and every workspace its owner is in borrows it.
  */
 
 /**

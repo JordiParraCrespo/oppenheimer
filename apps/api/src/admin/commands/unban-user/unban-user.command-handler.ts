@@ -5,7 +5,6 @@ import { ADMIN_AUTH } from '../../admin.di-tokens';
 import type { AdminAuthPort } from '../../infrastructure/admin-auth.port';
 import { UnbanUserCommand } from './unban-user.command';
 
-/** Lifts a ban. */
 @CommandHandler(UnbanUserCommand)
 export class UnbanUserCommandHandler implements ICommandHandler<UnbanUserCommand, AggregateID> {
   constructor(

@@ -43,7 +43,6 @@ export class BetterAuthSessionCacheAdapter implements SessionCachePort {
     const now = Date.now();
     await Promise.all(
       sessions.map(async (session) => {
-        // Not cached: the next read already comes from the database.
         if (!(await sessionStore.get(session.token))) return;
 
         const ttlSeconds = Math.floor((new Date(session.expiresAt).getTime() - now) / 1000);

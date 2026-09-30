@@ -26,7 +26,6 @@ export interface ApiTokenProps {
   /** Owner. The token's reach is re-derived from this user on every request. */
   userId: string;
   name: string;
-  /** Non-secret display prefix. */
   prefix: string;
   /** SHA-256 digest of the secret. The secret itself is never stored. */
   tokenHash: string;
@@ -63,8 +62,6 @@ const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 const MAX_EXPIRY_DAYS = 3650;
 
 /**
- * API token aggregate root.
- *
  * A token carries a set of {@link Scope}s and an optional organization
  * restriction. It never carries authority of its own: what it can actually do
  * is the intersection of its scopes with whatever its owner's roles still

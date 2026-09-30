@@ -30,8 +30,6 @@ export class ResendEmailService extends EmailService {
   }
 
   /**
-   * Send an email through Resend.
-   *
    * `resend.emails.send()` resolves with `{ data, error }` instead of throwing,
    * so a failure (misconfigured sender domain, rate limit, invalid recipient)
    * would otherwise be silently swallowed. Inspect the response and throw so the

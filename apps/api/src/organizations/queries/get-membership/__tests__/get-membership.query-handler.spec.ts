@@ -22,7 +22,6 @@ const membership: Membership = {
   },
 };
 
-/** A member repository that answers `findMembership` and nothing else. */
 function membersAnswering(found: Option<Membership>) {
   return {
     findMembership: vi.fn().mockResolvedValue(found),

@@ -5,21 +5,15 @@ import type { AbilityRequest } from '../../roles/application/ability.factory';
 import type { UserEntity } from '../domain/user.entity';
 
 /**
- * Row-level authorization for a single user record.
+ * Row-level authorization for a single user record. `PoliciesGuard` only answers "may
+ * this caller read/update a User?" without the row, and a granted rule may be scoped to
+ * `{ id: '${user.id}' }`, decidable only once the record is loaded. So every handler
+ * that returns or writes one user asks again with the row in hand; skipping it reopens
+ * the IDOR the conditions exist to close. Admins' `manage all` has no conditions.
  *
- * `PoliciesGuard` can only answer "may this caller read/update *a* User?" — it
- * never sees the row. An explicitly granted rule may be scoped to
- * `{ id: '${user.id}' }`, and a condition like that is only decidable once the
- * record is loaded, so every handler that returns or writes one user must ask
- * again with the row in hand. Skipping this call reopens the IDOR the
- * conditions exist to close.
- *
- * Admins hold `manage all`, which has no conditions, so they pass unchanged.
- *
- * The failure is `AUTH_002`, the same code the guard raises for a type-level
- * denial. Distinguishing "no permission at all" from "not your record" would
- * confirm that a given id exists, which is the probing oracle the auth catalog
- * deliberately refuses to hand out.
+ * The failure is `AUTH_002`, the guard's code for a type-level denial: telling "no
+ * permission" from "not your record" would confirm the id exists, the probing oracle
+ * the auth catalog refuses to hand out.
  */
 export function assertCanAccessUser(
   request: AbilityRequest,

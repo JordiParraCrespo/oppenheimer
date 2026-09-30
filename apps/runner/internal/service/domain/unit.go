@@ -21,7 +21,6 @@ import (
 // Kind is the init system a host registers the runner with.
 type Kind string
 
-// Kinds.
 const (
 	KindLaunchd Kind = "launchd"
 	KindSystemd Kind = "systemd"
@@ -34,7 +33,6 @@ const (
 	SystemdUnit = "oppenheimer-runner.service"
 )
 
-// Sentinel conditions.
 var (
 	ErrUnsupportedKind = errors.New("no service manager for this platform")
 	ErrExecPath        = errors.New("the unit needs an absolute path to the runner")

@@ -19,10 +19,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// `fileURLToPath`, not `new URL(...).pathname`: a pathname is URL-encoded, so a
-// checkout under a directory with a space in it resolves to `/Macintosh%20SSD/...`
-// and every `readdirSync` below it fails — or, worse, still relativises, and the
-// paths silently match nothing they are compared against.
+// `fileURLToPath`, not `.pathname`, for a checkout path with a space: see check-api-structure.mjs.
 const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
 const errors = [];
 const fail = (message) => errors.push(message);
@@ -52,7 +49,6 @@ const modulesOf = (pkg) => {
 };
 const kernel = modulesOf('core');
 
-/** Each frontend app: where its routes and features are, which product it is, what else it may name. */
 const APPS = [
   // oppenheimer:begin web
   {
@@ -95,25 +91,19 @@ const kitBasenames = (kit) => {
 };
 
 /**
- * One render-topology check: a query belongs where its result is drawn.
- *
- * Everything above this point is about where a file sits. This is about what a
- * component *does*, and it is the only such rule worth a source scan — the
+ * One render-topology check: a query belongs where its result is drawn. The
  * mistake it catches (subscribe on the page, thread the result down) is a
  * placement mistake wearing a hook, and placement is what this script reads.
  *
- * What a component *costs* is not checked here. It was, briefly, as a line cap
- * per kind; a cap is a formatter, not a model — a section that still owns the
- * query, the column factory, six dialogs and the row menu passes it at 149
- * lines, and the pressure it creates is to shard files rather than to name the
- * jobs. The `*-render.spec.tsx` files, with the React Compiler off, are the
- * check for cost. See .agents/rules/frontend-architecture.md.
+ * What a component *costs* is not checked here: a line cap per kind pushes
+ * people to shard files rather than name the jobs. The `*-render.spec.tsx`
+ * files, with the React Compiler off, are the check for cost
+ * (.agents/rules/frontend-architecture.md).
  *
- * This scan is deliberately narrow and easy to walk around: it reads named
- * imports from a product package's React entrypoint and a single local JSX
- * consumer, so two dummy readers, a default import, a query hook re-exported by
- * the kit, or a `Map` that arrived as a prop all pass it. It is a tripwire on
- * the shape that actually recurred, not a proof.
+ * The scan is deliberately narrow: it reads named imports from a product
+ * package's React entrypoint and a single local JSX consumer, so a default
+ * import, a hook re-exported by the kit or a `Map` that arrived as a prop all
+ * pass it. It is a tripwire on the shape that actually recurred, not a proof.
  */
 
 /** What a React Query result exposes. Reading any of these makes a value derived from it. */
@@ -231,22 +221,18 @@ function queryBindingsOf(source, hooks) {
   return bound;
 }
 
+const FETCHING_KINDS = new Set(['screens', 'sections', 'dialogs']);
+
 /**
  * A query result may not be handed down to its only consumer.
  *
  * Passing rows to the section that renders them is the intended flow, and so
- * is handing a mutation's pending flag to a `forms/` child, which is forbidden to fetch. What this catches is narrower:
- * a screen that subscribes to a query so that exactly one sibling below it can
- * render the result. That sibling can call the hook itself, and until it does,
- * every settle of that query re-renders everything else on the page.
- *
- * `api-tokens.tsx` held `usePermissionCatalog()` for `CreateTokenCard` alone,
- * which forwarded all three of its props to the form below it and read none.
- * Two siblings genuinely sharing one result is a different thing and passes:
- * `profile.tsx` fetches the profile once for its hero and its details pane.
+ * is handing a mutation's pending flag to a `forms/` child, which may not
+ * fetch. What this catches is a screen that subscribes to a query so exactly
+ * one sibling below it can render the result: every settle of that query then
+ * re-renders the rest of the page. Two siblings genuinely sharing one result
+ * pass (`profile.tsx` fetches the profile once for its hero and details pane).
  */
-const FETCHING_KINDS = new Set(['screens', 'sections', 'dialogs']);
-
 function checkQueryStaysHome(source, label) {
   const hooks = queryHooksOf(source);
   if (hooks.size === 0) return;

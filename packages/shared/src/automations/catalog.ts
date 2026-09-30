@@ -115,9 +115,7 @@ export type TriggerFilterOp = (typeof TRIGGER_FILTER_OPS)[number];
 export const RUN_CHECKOUT_RULES = [
   /** A fresh worktree on the repository's default branch. */
   'default_branch',
-  /** The pull request's head branch. */
   'pull_request_head',
-  /** The branch that was pushed. */
   'pushed_branch',
 ] as const;
 export type RunCheckoutRule = (typeof RUN_CHECKOUT_RULES)[number];
@@ -266,7 +264,6 @@ const BY_TYPE: ReadonlyMap<string, ExternalEventDefinition> = new Map(
   ]),
 );
 
-/** The catalog row for `(source, type)`, or `undefined` for one no build defines. */
 export function externalEventDefinition(
   source: string,
   type: string,
@@ -334,7 +331,6 @@ export const AUTOMATION_SKIP_REASONS = [
 ] as const;
 export type AutomationSkipReason = (typeof AUTOMATION_SKIP_REASONS)[number];
 
-/** What started a run. */
 export const AUTOMATION_RUN_CAUSES = ['schedule', 'event', 'manual'] as const;
 export type AutomationRunCause = (typeof AUTOMATION_RUN_CAUSES)[number];
 

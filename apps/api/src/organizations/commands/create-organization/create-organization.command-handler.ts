@@ -42,7 +42,6 @@ export class CreateOrganizationCommandHandler
   ) {}
 
   async execute({ headers, input, creatorId }: CreateOrganizationCommand): Promise<AggregateID> {
-    // The slug rule is the value object's, shared with the personal workspace.
     const slug = input.slug ?? OrganizationSlug.derive(input.name).value;
     const create = () => this.organizations.create(headers, { ...input, slug });
     // No authenticated caller: Better Auth's membership stands, no roles move.

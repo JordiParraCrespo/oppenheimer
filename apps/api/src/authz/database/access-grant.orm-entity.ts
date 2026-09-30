@@ -3,8 +3,6 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 
 import type { AccessGrantPrincipalType } from '../domain/access-grant.entity';
 
 /**
- * An explicit grant of access to rows a caller would not otherwise reach.
- *
  * This is the generic form of "these specific records, for this person": one
  * table serves every module, so a second scoping axis never means a second
  * half-tested scoping system.
@@ -29,7 +27,6 @@ export class AccessGrantOrmEntity {
   @Column({ type: 'uuid' })
   principalId!: string;
 
-  /** A registry subject, e.g. `Project`. */
   @Column({ type: 'varchar' })
   resourceType!: string;
 

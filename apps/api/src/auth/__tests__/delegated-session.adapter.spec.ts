@@ -34,15 +34,12 @@ const WEEK_SECONDS = 7 * DAY_SECONDS;
 
 /**
  * Reproduces Better Auth 1.6.25's `internalAdapter.createSession` precedence
- * rather than echoing back whatever it was handed.
- *
- * That distinction is the whole point: the real implementation spreads the
- * override, then writes its **own** `expiresAt` over it — 24 hours when
- * `dontRememberMe` is set — and re-applies the override only when
- * `overrideAll` is true. A mock that returned the requested values passed
- * happily while production persisted day-long rows (issue #122), so this one
- * applies the same order of operations, including the additional-field
- * defaults (`delegated: false`) that land after the override too.
+ * rather than echoing back what it was handed: it spreads the override, writes
+ * its own `expiresAt` over it (24 hours with `dontRememberMe`), and re-applies
+ * the override only when `overrideAll` is true. An echoing mock passed while
+ * production persisted day-long rows (issue #122), so this one applies the same
+ * order, including the additional-field defaults (`delegated: false`) that land
+ * after the override.
  */
 function fakeAdapter() {
   let minted = 0;
@@ -82,7 +79,6 @@ function fakeAdapter() {
   });
 }
 
-/** An in-memory stand-in for the Redis-backed cache. */
 function fakeCache() {
   const store = new Map<string, unknown>();
   return {
@@ -251,7 +247,6 @@ describe('DelegatedSessionAdapter', () => {
   });
 
   it('still hands back the token when the sweep fails', async () => {
-    // A tidy table is not worth a failed request.
     listSessions.mockRejectedValue(new Error('database down'));
 
     await expect(service.resolveSessionToken(OPTIONS)).resolves.toBe('session-token-1');
@@ -317,7 +312,6 @@ describe('DelegatedSessionAdapter', () => {
   });
 
   it('reports no token when a session cannot be minted', async () => {
-    // Callers fall back to scope-only access rather than failing the request.
     createSession.mockRejectedValue(new Error('database down'));
 
     await expect(service.resolveSessionToken(OPTIONS)).resolves.toBeNull();

@@ -3,7 +3,7 @@ import type { ClientDeployment } from '@oppenheimer/shared';
 
 /**
  * The client-facing capabilities of this deployment, resolved from config once
- * at boot. `false` means "not configured on this install", not an outage.
+ * at boot; `DeploymentCapabilities` says what `false` means.
  *
  * Deliberately a subset of the full registry: only capabilities a client hides
  * or shows UI for belong on this public wire response. Server-internal ones

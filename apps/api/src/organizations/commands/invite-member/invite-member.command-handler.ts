@@ -5,7 +5,6 @@ import type { InvitationAuthPort } from '../../infrastructure/invitation-auth.po
 import { INVITATION_AUTH } from '../../organizations.di-tokens';
 import { InviteMemberCommand } from './invite-member.command';
 
-/** Invites someone, by email, to join an organization in the role given. */
 @CommandHandler(InviteMemberCommand)
 export class InviteMemberCommandHandler
   implements ICommandHandler<InviteMemberCommand, AggregateID>

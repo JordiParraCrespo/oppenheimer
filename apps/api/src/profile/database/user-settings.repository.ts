@@ -7,17 +7,6 @@ import { ProfileMapper } from '../profile.mapper';
 import { UserSettingsOrmEntity } from './user-settings.orm-entity';
 import type { UserSettingsRepositoryPort } from './user-settings.repository.port';
 
-/**
- * TypeORM-backed adapter for a user's preferences. Translates between the
- * domain `UserSettingsEntity` and its persistence model via `ProfileMapper`,
- * and stages any domain events the aggregate collected on the transactional
- * outbox, atomically with the write that raised them.
- *
- * The row is keyed by `userId`, which is also the aggregate's id, so `save` is
- * an upsert: it creates the row on a first save and updates it thereafter.
- * That is what lets the read side hand out unsaved defaults without the write
- * side caring.
- */
 @Injectable()
 export class UserSettingsRepository
   extends TypeOrmRepositoryBase<UserSettingsEntity, UserSettingsOrmEntity>

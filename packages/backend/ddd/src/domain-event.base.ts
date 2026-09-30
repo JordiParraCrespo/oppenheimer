@@ -10,7 +10,6 @@ export interface DomainEventMetadata {
    */
   readonly timestamp: number;
 
-  /** Correlation id (integration events, log correlation, etc). */
   readonly correlationId: string;
 
   /** Causation id used to reconstruct execution order if needed. */

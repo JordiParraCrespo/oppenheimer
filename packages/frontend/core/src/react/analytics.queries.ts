@@ -12,22 +12,17 @@ export interface CaptureEventVariables {
 }
 
 /**
- * Captures a product event.
- *
  * ```ts
  * const { mutate: capture } = useCaptureEvent();
  * <Button onPress={() => capture({ event: ANALYTICS_EVENTS.USER_SIGNED_UP })} />
  * ```
  *
- * `mutate` has a stable identity, so it's safe to pass to a memoized child or
- * list in a dependency array — which `capture` read off the service is not,
- * since it loses its `this` binding.
+ * `mutate` has a stable identity, unlike `capture` read off the service, which
+ * loses its `this` binding.
  *
- * Note that the mutation always succeeds: `AnalyticsService` guards every
- * provider call, so a blocked or failing SDK is swallowed and warned rather
- * than surfaced. `isPending` and `error` are there for interface consistency
- * with the other mutations, not because a capture is expected to fail — analytics
- * must never sit in a critical path.
+ * The mutation always succeeds: `AnalyticsService` swallows and warns on every
+ * provider failure, because analytics must never sit in a critical path.
+ * `isPending` and `error` exist only for consistency with the other mutations.
  */
 export function useCaptureEvent(
   options?: Omit<UseMutationOptions<void, Error, CaptureEventVariables>, 'mutationFn'>,
@@ -43,8 +38,6 @@ export function useCaptureEvent(
 }
 
 /**
- * Captures an event once, when the component mounts.
- *
  * For the "this was shown" family of events — an upsell appeared, an empty
  * state was reached — where the trigger is a render rather than an interaction.
  *
@@ -76,8 +69,6 @@ export function useCaptureOnMount(event: AnalyticsEvent, properties?: AnalyticsP
 }
 
 /**
- * Records a page view whenever `path` changes.
- *
  * Call this once, high in the tree, wired to the router's current location.
  * A single-page app doesn't emit navigations the provider can see on its own,
  * so without this only the first load is ever counted. The app wires it up in
@@ -86,7 +77,6 @@ export function useCaptureOnMount(event: AnalyticsEvent, properties?: AnalyticsP
 export function usePageView(path: string): void {
   const app = useOppenheimerApp();
 
-  // The analytics provider: one page view per path the router settles on.
   useEffect(() => {
     app.analytics.pageView(path);
   }, [app, path]);

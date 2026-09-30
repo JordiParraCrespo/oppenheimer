@@ -9,15 +9,11 @@ export interface RequestTenant {
   readonly organizationId: string | null;
 }
 
-/** A request that may carry its tenant. */
 export interface TenantRequest {
   tenant?: RequestTenant;
 }
 
-/**
- * The organization this request acts in. A request nothing stamped acts in
- * none — `null`, so only the caller's global roles apply.
- */
+/** A request nothing stamped acts in no organization. */
 export function tenantOrganizationIdOf(request: TenantRequest): string | null {
   return request.tenant?.organizationId ?? null;
 }

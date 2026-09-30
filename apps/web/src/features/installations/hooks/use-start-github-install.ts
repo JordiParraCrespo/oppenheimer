@@ -9,9 +9,6 @@ import { useStartInstallation } from '@oppenheimer/frontend-consumer/react';
  * caller's say over it (the first-run walk prefixes that state so it survives
  * the round trip). The page is left in this tab, as the plain link before it
  * was.
- *
- * No effect: it is an event handler's call, and the navigation it ends in is
- * the browser's, not the router's.
  */
 export function useStartGithubInstall(installUrlFor: (installUrl: string) => string) {
   const { mutate, isPending, error } = useStartInstallation();

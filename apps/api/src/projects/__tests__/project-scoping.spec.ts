@@ -6,10 +6,9 @@ import { ProjectResource } from '../projects.resource';
 /**
  * The proof that a project is workspace-owned and nothing more.
  *
- * Two halves, because both have to hold and they fail independently: the SQL
- * predicate decides which rows a query returns, the CASL ability decides what
- * `can()` reports to a caller and to the console. They are generated from the
- * same declaration, and these tests are what keep that true.
+ * Two halves, because they fail independently: the SQL predicate decides which
+ * rows a query returns, the CASL ability what `can()` reports. Both are
+ * generated from the same declaration, and these tests keep that true.
  *
  * The interesting case for this resource is the *absence* of narrowing: a
  * project declares no team, own or grant dimension, so every member of the
@@ -28,7 +27,6 @@ function scope(overrides: Partial<AccessScope> = {}): AccessScope {
   };
 }
 
-/** Records the clauses a query would carry, without needing a database. */
 function fakeQueryBuilder() {
   const calls: { clause: string; parameters?: Record<string, unknown> }[] = [];
   const qb = {
@@ -118,16 +116,15 @@ describe('project capabilities (CASL)', () => {
 
 describe('the declaration itself', () => {
   it('names a column for every scope dimension it claims', () => {
-    // defineResource enforces this at boot; asserting it here means a later
-    // edit that drops a key fails in CI rather than at deploy.
+    // defineResource enforces this at boot; this fails in CI instead.
     expect(ProjectResource.scopes).toEqual(['organization']);
     expect(ProjectResource.keys.organization).toBe('organizationId');
     expect(ProjectResource.keys.id).toBe('id');
   });
 
   it('declares only the actions a route or a credential can exercise', () => {
-    // `create` is `POST /projects`; archiving is `update`, because nothing is
-    // deleted. No `delete`: it would be a permission with nothing behind it.
+    // No `delete` (see `ProjectResource`): it would be a permission with nothing
+    // behind it.
     expect(ProjectResource.actions.map((action) => action.name)).toEqual([
       'read',
       'create',
@@ -136,8 +133,7 @@ describe('the declaration itself', () => {
   });
 
   it('is reachable by scoped credentials', () => {
-    // Without a credentialScope the resource is invisible to API tokens and
-    // MCP, which is a silent failure rather than a loud one.
+    // Without it the resource is silently invisible to API tokens and MCP.
     expect(ProjectResource.credentialScope).toBe('projects');
   });
 });

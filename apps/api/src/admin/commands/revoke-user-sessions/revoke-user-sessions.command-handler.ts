@@ -5,7 +5,6 @@ import type { AdminSuccessResponseDto } from '../../dtos/admin-user.response.dto
 import type { AdminAuthPort } from '../../infrastructure/admin-auth.port';
 import { RevokeUserSessionsCommand } from './revoke-user-sessions.command';
 
-/** Signs an account out everywhere. */
 @CommandHandler(RevokeUserSessionsCommand)
 export class RevokeUserSessionsCommandHandler
   implements ICommandHandler<RevokeUserSessionsCommand, AdminSuccessResponseDto>

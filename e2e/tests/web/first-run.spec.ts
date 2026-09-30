@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { newUser } from '../../support/auth';
 import { findOrganizationsForUser, findUserByEmail, query } from '../../support/db';
@@ -14,18 +15,13 @@ import {
  * The walk a new account actually takes: register → name the workspace →
  * Connect GitHub → Add host → Ready → the console.
  *
- * Every step here talks to the API. That is the point: the screens were
- * scaffolds that looked right and wrote nothing, and the repositories under
- * them were written against a design note rather than the built endpoints —
- * `HostsRepository` read `state` for a field the API sends as `online`, and
- * `SessionsRepository` mapped a paginated envelope as if it were an array.
- * Neither was caught, because nothing called them. A green unit suite over the
- * wrong wire is the failure this spec exists to prevent.
+ * Every step talks to the API, because a green unit suite over the wrong wire
+ * is the failure this guards: `HostsRepository` once read `state` for a field
+ * the API sends as `online`, and nothing called it.
  *
- * GitHub and the host step are skipped: both are optional by design, and
- * neither can be driven here — one installs an App on a real GitHub account,
- * the other needs a runner release to fetch. What is asserted is that skipping
- * them is possible and that Ready says so rather than inventing a summary.
+ * GitHub and the host step are optional and cannot be driven here (one needs
+ * an App on a real account, the other a runner release), so what is asserted
+ * is that skipping them works and Ready says so rather than inventing a summary.
  */
 test('a new account walks the first-run flow into the console', async ({ page }) => {
   const user = newUser('firstrunwalk');
@@ -99,17 +95,12 @@ test('a named workspace is not sent back through the slug form', async ({ page }
 /**
  * Shown once, and the whole flow — not just the step that names the workspace.
  *
- * Ready is where it showed: an account that had finished days ago could press
- * Back out of the console, or type the URL, and be congratulated all over
- * again on a walk it had no way to re-take. Being finished cannot be the test,
- * because every legitimate arrival at Ready is finished too — the address is
- * claimed by the end of step 2. Having walked there is.
+ * A finished account could press Back into Ready and be congratulated again.
+ * Being finished cannot be the test, since every legitimate arrival at Ready is
+ * finished too (the address is claimed by step 2); having walked there is.
  *
- * Connect GitHub stays open on purpose: New session's repository chip still
- * sends a finished account there to install the App, which
- * `new-session.spec.ts` drives. Add host used to be open for the same reason
- * and no longer is — the console pairs a machine in its own dialog
- * (`add-host.spec.ts`), so nothing links at step 4 any more.
+ * Connect GitHub stays open on purpose: New session's repository chip sends a
+ * finished account there to install the App (`new-session.spec.ts`).
  */
 test('a finished account cannot walk back into the flow', async ({ page }) => {
   const user = newUser('firstrunover');
@@ -199,7 +190,7 @@ test('Connect GitHub carries a minted state through the install round trip', asy
   await signInAs(page, owner.user);
   const githubInstallationId = await claimInstallation(
     GITHUB_STUB_URL,
-    800_000 + (process.pid % 1000) * 100 + 1,
+    randomInt(1_000_000, 2 ** 40),
   );
 
   await page.route('https://github.com/**', (route) =>

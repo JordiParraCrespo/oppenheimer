@@ -2,19 +2,13 @@ import { Injectable } from '@nestjs/common';
 import type { CredentialResolverPort } from './credential-resolver.port';
 
 /**
- * Every credential kind the running application accepts, collected at boot.
+ * Every credential kind the running application accepts, collected at boot
+ * from `AuthModule.contributeCredentials`; a module never imported contributes
+ * nothing.
  *
- * This is the extension point that replaces the kernel hard-coding the list:
- * a module registers its resolver through `AuthModule.contributeCredentials`,
- * and
- * `CredentialScopeResolver` asks whoever is registered. A module that is never
- * imported contributes nothing, so the registry describes the application that
- * is actually running.
- *
- * Order is registration order, which is module-import order — the kernel takes
- * the first resolver that recognises a credential, so two kinds that could
- * claim the same string would be decided by wiring. A duplicate `kind` is
- * therefore refused at startup rather than silently shadowed.
+ * Order is module-import order, and the kernel takes the first resolver that
+ * recognises a credential, so two kinds that could claim the same string would
+ * be decided by wiring. A duplicate `kind` is therefore refused at startup.
  */
 @Injectable()
 export class CredentialResolverRegistry {
@@ -35,7 +29,6 @@ export class CredentialResolverRegistry {
     for (const resolver of resolvers) this.register(resolver);
   }
 
-  /** The registered resolvers, in registration order. */
   all(): readonly CredentialResolverPort[] {
     return this.resolvers;
   }

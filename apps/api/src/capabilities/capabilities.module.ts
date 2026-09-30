@@ -6,16 +6,14 @@ import { hostsAreConfigured, ipGeolocationIsConfigured } from '../config/hosts.c
 import { sessionNamerIsConfigured } from '../config/sessions.config';
 
 /**
- * Whether the sessions GitHub App is usable on this deployment.
+ * Whether the sessions GitHub App is usable on this deployment. All six values are
+ * needed together (the id and key to mint tokens, the OAuth pair to prove an
+ * installation claim, the webhook secret to trust a suspension, the slug the console
+ * builds the install link from), so a partial set is off.
  *
- * All six values are needed together — the id and key to mint tokens, the OAuth
- * pair to prove an installation claim, the webhook secret to trust a suspension,
- * the slug the console builds the install link from — so a partial set is off.
- *
- * Exported because this must be **one** predicate. It used to be two: this
- * function's six keys and the GitHub adapter's own five-key check, which meant a
- * deployment with no `GITHUB_APP_SLUG` reported `github_app: false` and still
- * answered `POST /installations` with a 201.
+ * Exported because this must be the one predicate: a second, five-key check in the
+ * GitHub adapter let a deployment with no `GITHUB_APP_SLUG` report
+ * `github_app: false` and still answer `POST /installations` with a 201.
  */
 export function hasGithubApp(configService: ConfigService): boolean {
   return Boolean(
@@ -58,10 +56,10 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
     // re-derived: a capability that says yes while every route answers
     // HOSTS_004 is a second source of truth, and the console reads this one.
     hosts: hostsAreConfigured(configService),
-    // The same predicate the namer adapter checks, called rather than re-derived.
-    // With no provider, or one whose key or model is missing, sessions are named
-    // from their prompt's own words instead — a supported configuration, which is
-    // why this exists to answer "why are titles never a model's" from the log.
+    // The same predicate the namer adapter checks. With no provider, or one
+    // whose key or model is missing, sessions are named from their prompt's own
+    // words instead — a supported configuration, which is why this exists to
+    // answer "why are titles never a model's" from the log.
     session_namer: sessionNamerIsConfigured(configService),
     // A database on disk to place a host's network with. Without it networks
     // are recorded by address only, and no new-network email can be judged.

@@ -1,8 +1,6 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 /**
- * The hosts catalog.
- *
  * The prefix is plural because the Go runner owns `HOST_00x` and `PAIR_00x` in
  * the same `apps/docs/docs/errors.md`, and a code may only be claimed once.
  *

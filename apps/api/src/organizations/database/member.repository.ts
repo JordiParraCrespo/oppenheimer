@@ -15,7 +15,6 @@ function containsPattern(search: string): string {
   return `%${search.replace(/[\\%_]/g, (character) => `\\${character}`)}%`;
 }
 
-/** TypeORM adapter behind `MEMBER_REPOSITORY`. */
 @Injectable()
 export class MemberRepository implements MemberRepositoryPort {
   constructor(

@@ -89,8 +89,6 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 		logger.Info("sessions adopted", slog.Int("count", len(adopted)))
 	}
 	if orphans, err := a.Sessions.Orphans(ctx); err == nil && len(orphans) > 0 {
-		// Reported, never killed here: an orphan holds someone's work, and
-		// ending it is a decision, not a side effect of booting.
 		logger.Warn("tmux sessions this runner does not recognise", slog.Any("sessions", orphans))
 	}
 	loops.Add(1)

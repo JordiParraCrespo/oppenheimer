@@ -11,8 +11,6 @@ export interface MintFence {
 }
 
 /**
- * Port for the pairing-token aggregate.
- *
  * Scoped by `HostResource`, exactly as hosts are: a token belongs to the person
  * who minted it, under the same `ownerUserId` column, and pairing is a Host
  * verb rather than a noun of its own.

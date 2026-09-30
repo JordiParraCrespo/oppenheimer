@@ -3,8 +3,7 @@ import type { ScopeContext, ScopedRequest } from '../domain/scope-context.types'
 
 /**
  * Injects the request's {@link ScopeContext}, or `null` when the caller is a
- * browser session rather than a scoped credential. Handlers use it to tailor
- * responses (for example, to show which token performed an action).
+ * browser session rather than a scoped credential.
  */
 export const CurrentScope = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): ScopeContext | null => {

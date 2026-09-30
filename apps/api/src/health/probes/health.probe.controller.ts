@@ -53,8 +53,6 @@ export class HealthProbeController {
       'Which client-relevant optional features (sign-in providers, the GitHub App) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.',
   })
   deploymentCapabilities(): CapabilitiesResponseDto {
-    // Only the client-facing subset goes over the wire; the full registry
-    // (S3, email transport, …) stays in the startup log and in-process.
     const flags = this.capabilities.pick(CLIENT_CAPABILITIES);
     const slug = this.configService.get<string>('githubApp.slug');
 

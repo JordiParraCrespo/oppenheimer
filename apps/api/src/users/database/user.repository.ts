@@ -14,12 +14,6 @@ const UNIQUE_VIOLATION = '23505';
 /** The name `UserOrmEntity` and the migration give the constraint. */
 const USERNAME_CONSTRAINT = 'UQ_user_username';
 
-/**
- * TypeORM-backed adapter for the user aggregate. Translates between the domain
- * `UserEntity` and the `UserOrmEntity` persistence model via `UserMapper`, and
- * stages any domain events the aggregate collected on the transactional
- * outbox, atomically with the write that raised them.
- */
 @Injectable()
 export class UserRepository
   extends TypeOrmRepositoryBase<UserEntity, UserOrmEntity>
@@ -35,8 +29,6 @@ export class UserRepository
   }
 
   override async save(entity: UserEntity): Promise<UserEntity> {
-    // Only profile columns are written (see UserMapper.toPersistence); `name`
-    // and `image` stay under Better Auth's control.
     try {
       return await super.save(entity);
     } catch (error) {

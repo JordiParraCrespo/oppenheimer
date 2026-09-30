@@ -1,16 +1,12 @@
 import { SESSION_IMAGE_MEDIA_TYPES } from '@oppenheimer/shared/protocol';
 
 /**
- * The image in a paste or a drop, if there is one.
- *
- * An agent reads its host's clipboard, never the browser's, so a screenshot
- * pasted into the terminal would reach it as nothing. The terminal takes the
- * image out of the event instead and hands it to the upload that puts the
- * file on the host (05).
- *
- * The browser's `type` only decides whether to try: the API judges the image
- * by its bytes. A transfer carrying text as well as an image (a copy from a
- * web page) is taken as the image — the text is usually its alt or its URL.
+ * The image in a paste or a drop, if any. The agent reads its host's
+ * clipboard, never the browser's, so the terminal takes the image out of the
+ * event for the upload that puts it on the host (05). The browser's `type`
+ * only decides whether to try; the API judges the bytes. A transfer with text
+ * as well (a copy from a web page) is taken as the image, since the text is
+ * usually its alt or URL.
  */
 export function imageFromTransfer(transfer: DataTransfer | null): File | null {
   if (!transfer) return null;

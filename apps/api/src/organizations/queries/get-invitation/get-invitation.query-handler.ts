@@ -5,7 +5,6 @@ import type { InvitationAuthPort } from '../../infrastructure/invitation-auth.po
 import { INVITATION_AUTH } from '../../organizations.di-tokens';
 import { GetInvitationQuery } from './get-invitation.query';
 
-/** One invitation the caller was sent. */
 @QueryHandler(GetInvitationQuery)
 export class GetInvitationQueryHandler
   implements IQueryHandler<GetInvitationQuery, InvitationResponseDto>

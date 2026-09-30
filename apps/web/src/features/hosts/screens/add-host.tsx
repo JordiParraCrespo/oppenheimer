@@ -21,27 +21,12 @@ import { useTranslation } from 'react-i18next';
 import { usePairing } from '../hooks/use-pairing';
 
 /**
- * Settings → Hosts → Add a host: pairing a machine from Settings
- * (`design/version1/Settings.dc.html`, `product/versions/mvp/05-screens.md`).
- *
- * A page inside the Settings frame, built like the automation editor once
- * was: a page header with Cancel and Done on its right and one fact under
- * the title — nothing on the host is exposed to the internet — then two
- * numbered steps. Install is the kit's instruction panel shown outright,
- * the Command / Agent prompt pills in its band beside Copy, then the token
- * line; Connect is the status row that resolves in place when a runner
- * spends the token. Both steps tick themselves done on the same event,
- * because installing is what connects. Back, the crumb, Cancel and Done all
- * return to the list.
- *
- * The console pairs a machine in a dialog instead
- * (`hosts/dialogs/add-host.tsx`, the 2026-09-27 export); this page is
- * Settings' own, because its frame keeps Settings around it. Both finish on
- * a registered host (`usePairing`'s rules).
- *
- * Both forms of the instruction come from the API with the secret already in
- * them: it is shown once, the server is the only place that knows it, so
- * neither string is assembled here.
+ * Settings → Hosts → Add a host (`design/version1/Settings.dc.html`,
+ * `product/versions/mvp/05-screens.md`), a page so the Settings frame stays
+ * around it; the console pairs in a dialog instead (`hosts/dialogs/add-host.tsx`).
+ * The Install and Connect steps tick done on the same event, because
+ * installing is what connects. Both finish on a registered host
+ * (`usePairing`'s rules).
  */
 export function AddHostScreen() {
   const { t } = useTranslation();

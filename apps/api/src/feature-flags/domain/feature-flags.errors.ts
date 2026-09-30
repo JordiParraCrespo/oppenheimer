@@ -1,9 +1,5 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
-/**
- * Feature-flag error catalog. Surfaced as RFC 7807 problem documents by the
- * global `AllExceptionsFilter` via `AppError`.
- */
 export const FeatureFlagErrors = {
   /** The key is not in the code's catalog — the database cannot invent a flag. */
   UNKNOWN_FLAG: {

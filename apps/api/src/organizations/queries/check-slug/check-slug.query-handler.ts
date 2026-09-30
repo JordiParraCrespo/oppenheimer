@@ -5,7 +5,6 @@ import type { OrganizationAuthPort } from '../../infrastructure/organization-aut
 import { ORGANIZATION_AUTH } from '../../organizations.di-tokens';
 import { CheckSlugQuery } from './check-slug.query';
 
-/** Whether a slug is free to give a new organization. */
 @QueryHandler(CheckSlugQuery)
 export class CheckSlugQueryHandler
   implements IQueryHandler<CheckSlugQuery, SlugAvailabilityResponseDto>

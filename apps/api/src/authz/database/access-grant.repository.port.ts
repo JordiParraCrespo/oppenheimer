@@ -3,8 +3,6 @@ import type { Option } from 'oxide.ts';
 import type { AccessGrantEntity } from '../domain/access-grant.entity';
 
 /**
- * Port for the access-grant aggregate.
- *
  * Lookups are organization-bound rather than by bare id: a grant in another
  * tenant must read as missing, not forbidden, so ids cannot be probed.
  */

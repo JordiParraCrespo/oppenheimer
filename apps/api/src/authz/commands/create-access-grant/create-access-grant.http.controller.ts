@@ -58,7 +58,6 @@ export class CreateAccessGrantHttpController {
       new CreateAccessGrantCommand({ ...body, scope }),
     );
 
-    // Commands return only the aggregate id; read the row back for the DTO.
     const grant = await this.queryBus.execute<FindAccessGrantQuery, AccessGrantEntity>(
       new FindAccessGrantQuery({ scope, grantId }),
     );

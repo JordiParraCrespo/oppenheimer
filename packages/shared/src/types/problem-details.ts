@@ -40,11 +40,9 @@ export interface ProblemDetails {
 export interface InvalidParam {
   /** Dotted path to the offending field, e.g. `address.postalCode`. */
   name: string;
-  /** Why it was rejected. */
   reason: string;
 }
 
-/** Media type every problem document is served with. */
 export const PROBLEM_JSON_CONTENT_TYPE = 'application/problem+json';
 
 /** Value of {@link ProblemDetails.type} when a problem carries no extra semantics. */

@@ -20,7 +20,6 @@ export function RegisterForm({
   onSubmit,
 }: {
   isPending: boolean;
-  /** The resolved failure message, if the last attempt failed. */
   error?: ResolvedErrorMessage;
   onSubmit: (values: RegisterDto) => void;
 }) {

@@ -49,7 +49,6 @@ export class EnforceRunLimitsCommandHandler
       new Date(now - (this.limits.maxRunCeilingMs + ZOMBIE_GRACE_MS)),
       BATCH,
     );
-    // What several runs of one workspace, one automation or one owner share is read once.
     const limitByWorkspace = new Map<string, number>();
     const automationById = new Map<string, AutomationEntity | null>();
     const scopeByOwner = new Map<string, AccessScope | null>();

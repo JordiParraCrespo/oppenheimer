@@ -118,7 +118,7 @@ const repositories: Provider[] = [
   // writes the timeline inside its own transactions through the class.
   HostMetadataRepository,
   { provide: HOST_METADATA_REPOSITORY, useExisting: HostMetadataRepository },
-  // Offline: DB-IP Lite on disk. No database configured is an answer of all-null.
+  // Offline: DB-IP Lite on disk.
   { provide: IP_GEOLOCATION, useClass: DbipGeolocationAdapter },
   // TODO(remove after #162 has been live once): replay markers burned before
   // the cache prefixed its keys. See `LegacyReplayMarkerPort`.
@@ -134,19 +134,14 @@ const resolvers: Provider[] = [
 ];
 
 /**
- * The machines a person has paired, how they prove they are one of them, and
- * what each last reported about itself.
+ * The machines a person has paired, how they prove they are one of them, and what
+ * each last reported about itself.
  *
- * A host's boot assertion is a credential kind this module **contributes** to
- * the auth kernel: `HostCredentialResolver` goes in the providers below, so it
- * is constructed in this module's own injector and injects this module's
- * `HOST_ASSERTION` port. That is why nothing here is `@Global` — the kernel
- * reaches only its own registry, and recognising a machine costs this module no
- * application-wide publication.
- *
- * Only `HostResource` is contributed to the authorization kernel. The pairing
- * token's declaration exists to scope its rows and is deliberately not
- * registered — see `host-pairing-token.resource.ts`.
+ * A host's boot assertion is a credential kind this module **contributes** to the
+ * auth kernel: `HostCredentialResolver` is built in this module's injector and
+ * injects its `HOST_ASSERTION` port, so nothing here is `@Global`. Only `HostResource`
+ * is registered with the authorization kernel; the pairing token's declaration only
+ * scopes its rows (see `host-pairing-token.resource.ts`).
  */
 @Module({
   imports: [
@@ -184,7 +179,7 @@ const resolvers: Provider[] = [
     HostNetworkChangedDomainEventHandler,
     HostRetentionProcessor,
   ],
-  // The two application ports, and nothing else. A consumer that could inject
+  // The application ports, and nothing else. A consumer that could inject
   // the repository could skip `assertUsable` and read unpaired rows unscoped,
   // which is exactly the check the port exists to make unavoidable.
   //
@@ -195,16 +190,10 @@ const resolvers: Provider[] = [
 export class HostsModule {
   /**
    * The providers a module adds to say what is running on a host:
-   *
-   * ```ts
-   * providers: [...HostsModule.contributeUsage([SessionHostUsage])]
-   * ```
-   *
-   * The same shape as `ProjectsModule.contributeUsage`, for the same reason: the
-   * implementation is constructed in the injector of the module that owns the
-   * work, so it injects that module's own repository without anything being
-   * published application-wide, and a module that is never imported contributes
-   * nothing.
+   * `providers: [...HostsModule.contributeUsage([SessionHostUsage])]`. Same shape and
+   * reason as `ProjectsModule.contributeUsage`: built in the owning module's injector,
+   * it injects that module's repository with nothing published application-wide, and
+   * a module never imported contributes nothing.
    */
   static contributeUsage(usages: Type<HostUsagePort>[]): Provider[] {
     return [

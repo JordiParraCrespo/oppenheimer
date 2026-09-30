@@ -47,9 +47,6 @@ describe('UnpairHostCommandHandler', () => {
     await handler.execute(command());
 
     const [saved] = vi.mocked(hosts.save).mock.calls[0];
-    // Never a delete: the sessions that ran on this machine reference the row,
-    // and its own runner still needs something to authenticate against to be
-    // told it is gone.
     expect(saved.unpairedAt).toBeInstanceOf(Date);
     expect(saved.id).toBe('host-1');
   });

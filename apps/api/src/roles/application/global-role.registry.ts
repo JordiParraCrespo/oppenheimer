@@ -6,28 +6,22 @@ import { ROLE_REPOSITORY } from '../roles.di-tokens';
 /** The global roles as they stood at one catalog version. */
 interface Snapshot {
   version: string;
-  /** Permission definitions by role name. */
   byName: ReadonlyMap<string, readonly PermissionDefinition[]>;
 }
 
 /**
- * Every global role (`organizationId IS NULL`), held in this process and
- * tagged with the `role_catalog_version` it was loaded at.
+ * Every global role (`organizationId IS NULL`), held in this process and tagged with
+ * the `role_catalog_version` it was loaded at, so the platform roles on `user.role`
+ * resolve from memory rather than a query per name per request.
  *
- * The platform roles on Better Auth's `user.role` column (`user`, `admin`,
- * `superadmin`, …) are global rows that change a few times a year, yet were
- * read one query per name on every request. Here they resolve from memory.
+ * No polling timer: the caller hands in the catalog version it just read, and a
+ * snapshot at any other version is reloaded first. A global role edit bumps that
+ * version in its transaction, so no replica applies a revoked permission past its next
+ * request.
  *
- * There is no polling timer: the caller hands in the catalog version it has
- * just read for the request, and a snapshot at any other version is reloaded
- * before it is used. A global role edit bumps that version in its own
- * transaction, so every replica sees the change on its next request — no
- * window in which a revoked permission still applies elsewhere.
- *
- * A reload is single-flight: concurrent requests at the same version share
- * one load. A failed load is not remembered, and the stale snapshot is never
- * served in its place — it is exactly what the version says is out of date —
- * so the request fails as a database error would, and the next one retries.
+ * Reloads are single-flight per version. A failed load is not remembered and the stale
+ * snapshot is never served in its place, so the request fails as a database error would
+ * and the next one retries.
  */
 @Injectable()
 export class GlobalRoleRegistry {

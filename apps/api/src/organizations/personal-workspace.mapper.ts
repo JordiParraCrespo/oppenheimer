@@ -13,18 +13,13 @@ export interface PersonalWorkspaceRecords {
 
 /**
  * Translates the personal-workspace aggregate into the rows it is stored as.
- * A function rather than an injectable class, because `AGENTS.md` asks mappers
- * to be pure and framework-free — and because the seed constructs this path by
- * hand, where a provider would only be something else to wire.
+ * A pure function, as `AGENTS.md` asks of mappers, and because the seed wires
+ * this path by hand. No `toDomain`: nothing loads this aggregate, and a reverse
+ * mapping with no reader drifts unnoticed.
  *
- * There is no `toDomain`: nothing loads this aggregate (see the repository
- * port), and a reverse mapping with no reader is a shape that drifts unnoticed
- * from the one that is used. It arrives with the first read.
- *
- * Only the columns the app owns are written. `logo`, `metadata` and
- * `roleVersion` carry their database defaults and `createdAt` is the
- * database's: Better Auth writes these same tables, and a column claimed here
- * is one the two writers could disagree about.
+ * Only the columns the app owns are written; `logo`, `metadata`, `roleVersion`
+ * and `createdAt` keep their database defaults. Better Auth writes these same
+ * tables, and a column claimed here is one the two writers could disagree on.
  */
 export function toPersonalWorkspaceRecords(
   entity: PersonalWorkspaceEntity,

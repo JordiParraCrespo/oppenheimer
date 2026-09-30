@@ -101,7 +101,6 @@ export function mentions(body: unknown, handle: string): boolean {
   return new RegExp(`(^|[^\\w/])@${escaped}(?![\\w-])`, 'i').test(text);
 }
 
-/** Normalize one verified GitHub delivery into zero or more catalog events. */
 export function normalizeGithubDelivery(
   delivery: Pick<InboundDelivery, 'deliveryId' | 'eventName' | 'payload' | 'receivedAt'>,
   options: GithubNormalizerOptions,

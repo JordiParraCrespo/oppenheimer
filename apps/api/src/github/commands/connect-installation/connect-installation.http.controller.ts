@@ -82,8 +82,6 @@ export class ConnectInstallationHttpController {
       }),
     );
 
-    // Commands return only the aggregate id; the full DTO comes from a follow-up
-    // query, which also re-applies the caller's scope.
     const installation = await this.queryBus.execute<
       FindInstallationQuery,
       GithubInstallationEntity

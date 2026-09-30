@@ -7,9 +7,6 @@ import { changePasswordSchema } from './auth.schema.js';
  * Identity (email, password, OAuth links) stays owned by Better Auth and is not
  * part of the profile update: the email moves through its own request
  * (`changeEmailSchema`), which proves the new address before it is used.
- *
- * Schemas state the constraint only, never a message: an explicit string would
- * pin every consumer to English (see `.agents/rules/forms.md`).
  */
 
 /** How the workspace is painted. `system` follows the OS setting. */

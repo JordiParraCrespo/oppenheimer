@@ -10,7 +10,6 @@
 export interface WorkspaceLookupPort {
   /** The organization's slug, or `null` for an id that names no workspace. */
   slugOf(organizationId: string): Promise<string | null>;
-  /** Whether `userId` holds a membership row in `organizationId` right now. */
   isMember(organizationId: string, userId: string): Promise<boolean>;
   /**
    * The workspaces `userId` owns — in the MVP, the one personal workspace

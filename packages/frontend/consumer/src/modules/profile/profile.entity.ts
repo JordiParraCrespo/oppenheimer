@@ -13,7 +13,7 @@ export class ProfileEntity {
     public readonly lastName: string,
     public readonly phone: string | null,
     public readonly jobTitle: string | null,
-    /** The handle session logs and commit trailers carry; `null` until chosen. */
+    /** `null` until chosen. */
     public readonly username: string | null,
     public readonly avatarUrl: string | null,
     public readonly role: string,
