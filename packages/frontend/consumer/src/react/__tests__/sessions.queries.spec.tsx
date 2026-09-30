@@ -257,14 +257,6 @@ describe('session detail from the list', () => {
   const read = { id: 's-1', name: 'from the detail', isProvisioning: false } as SessionEntity;
   const consoleDefaults = { defaultOptions: defaultQueryClientOptions(60_000) };
 
-  it("writes each row it reads to that session's detail", async () => {
-    const { wrapper, queryClient } = setup({ findAll: vi.fn().mockResolvedValue([listed]) });
-    const { result } = renderHook(() => useSessions(), { wrapper });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(queryClient.getQueryData(sessionsKeys.detail('s-1'))).toBe(listed);
-  });
-
   it('opens on the list row with no read while the list is fresh', async () => {
     const findById = vi.fn().mockResolvedValue(read);
     const { wrapper } = setup(

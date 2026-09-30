@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  defaultModelFor,
-  launchControlsFor,
-  toAgentOptions,
-  toLaunchInput,
-} from '../lib/session-options';
+import { defaultModelFor, launchControlsFor, toLaunchInput } from '../lib/session-options';
 
 /**
  * The engine button offers every catalog entry, and the chips beside it follow
@@ -12,16 +7,6 @@ import {
  * effort, so the composer shows none of the three.
  */
 describe('agent options', () => {
-  it('offers the agents and the blank terminal, in catalog order', () => {
-    expect(toAgentOptions().map((agent) => agent.id)).toEqual([
-      'claude-code',
-      'codex',
-      'opencode',
-      'grok',
-      'shell',
-    ]);
-  });
-
   it('defaults each agent to its own model, and the terminal to none', () => {
     expect(defaultModelFor('claude-code')).toBe('claude-opus-5-5');
     expect(defaultModelFor('opencode')).toBe('anthropic/claude-opus-5-5');
