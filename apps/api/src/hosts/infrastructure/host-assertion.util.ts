@@ -103,7 +103,7 @@ export function keyFingerprint(base64PublicKey: string): string | null {
   return createHash('sha256').update(raw).digest('hex');
 }
 
-export function publicKeyFromBase64(base64PublicKey: string): KeyObject | null {
+function publicKeyFromBase64(base64PublicKey: string): KeyObject | null {
   const raw = rawKeyFromBase64(base64PublicKey);
   if (!raw) return null;
   try {

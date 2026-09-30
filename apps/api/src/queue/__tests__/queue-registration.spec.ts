@@ -95,27 +95,18 @@ describe('queue registration', () => {
       expect(queue).toBe(moduleRef.get(getQueueToken(QUEUE_NAMES.INBOUND_EVENTS)));
     });
 
-    it('retries email and removes it from Redis once done', () => {
-      const queue = moduleRef.get<Queue>(getQueueToken(QUEUE_NAMES.EMAIL));
-
-      expect(queue.opts.defaultJobOptions).toEqual(EMAIL_JOB_OPTIONS);
-      expect(queue.opts.defaultJobOptions?.attempts).toBe(5);
-    });
-
     it.each([
-      QUEUE_NAMES.HOST_RETENTION,
-      QUEUE_NAMES.AUTOMATION_SCHEDULES,
-      QUEUE_NAMES.AUTOMATION_RETENTION,
-    ])('gives the scheduler queue %s the root removal policy', (name) => {
+      [QUEUE_NAMES.EMAIL, EMAIL_JOB_OPTIONS],
+      [QUEUE_NAMES.AUTOMATION_RUNS, DURABLE_JOB_OPTIONS],
+      // Scheduler-driven queues keep the root removal policy.
+      [QUEUE_NAMES.HOST_RETENTION, DEFAULT_JOB_OPTIONS],
+      [QUEUE_NAMES.AUTOMATION_SCHEDULES, DEFAULT_JOB_OPTIONS],
+      [QUEUE_NAMES.AUTOMATION_RETENTION, DEFAULT_JOB_OPTIONS],
+      [QUEUE_NAMES.OUTBOX_RETENTION, DEFAULT_JOB_OPTIONS],
+    ])('gives the %s queue its options', (name, options) => {
       const queue = moduleRef.get<Queue>(getQueueToken(name));
 
-      expect(queue.opts.defaultJobOptions).toEqual(DEFAULT_JOB_OPTIONS);
-    });
-
-    it('keeps the durable options on automation runs', () => {
-      const queue = moduleRef.get<Queue>(getQueueToken(QUEUE_NAMES.AUTOMATION_RUNS));
-
-      expect(queue.opts.defaultJobOptions).toEqual(DURABLE_JOB_OPTIONS);
+      expect(queue.opts.defaultJobOptions).toEqual(options);
     });
   });
 });

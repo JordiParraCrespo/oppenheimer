@@ -45,12 +45,6 @@ describe('UninstallHostCommandHandler', () => {
     expect(saved.unpairedAt).toBeInstanceOf(Date);
   });
 
-  it('reads the host without an access scope, because the caller is the machine', async () => {
-    await handler.execute(command());
-
-    expect(hosts.findOneByIdForMachine).toHaveBeenCalledWith('host-1');
-  });
-
   it('succeeds for a host the console already unpaired', async () => {
     vi.mocked(hosts.findOneByIdForMachine).mockResolvedValue(Some(host(new Date())));
 

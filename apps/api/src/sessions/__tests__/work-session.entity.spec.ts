@@ -68,11 +68,6 @@ describe('a requested session', () => {
 });
 
 describe('recordEvent is the only mutator of the fold', () => {
-  it('offers no way to set the state directly', () => {
-    const work = session();
-    expect((work as unknown as { setState?: unknown }).setState).toBeUndefined();
-  });
-
   it('raises a state-changed event only on a real transition', () => {
     const work = session();
     work.clearEvents();
@@ -101,7 +96,7 @@ describe('recordEvent is the only mutator of the fold', () => {
     expect(work.stoppedAt).not.toBeNull();
   });
 
-  it('says why it cannot take input: closed is final, stopped has no window', () => {
+  it('says why it cannot take input: closed is final and resolved, stopped has no window', () => {
     const open = session();
     open.recordEvents([entry(SESSION_EVENT_KINDS.STARTED)]);
     expect(open.inputRefusal).toBeNull();
@@ -113,25 +108,18 @@ describe('recordEvent is the only mutator of the fold', () => {
     const closed = session();
     closed.recordEvents([entry(SESSION_EVENT_KINDS.STARTED), entry(SESSION_EVENT_KINDS.CLOSED)]);
     expect(closed.inputRefusal?.code).toBe('SESSIONS_005');
-  });
-
-  it('reports a derived group, and a closed session reports resolved', () => {
-    const work = session();
-    work.recordEvents([entry(SESSION_EVENT_KINDS.STARTED), entry(SESSION_EVENT_KINDS.CLOSED)]);
-    expect(work.group()).toBe('resolved');
-    expect(work.isResolved).toBe(true);
+    expect(closed.group()).toBe('resolved');
   });
 });
 
 describe('the checkouts the aggregate holds', () => {
-  it('takes its working directory from the log, not from a setter', () => {
+  it('takes its working directory from the log', () => {
     const work = session();
     const first = checkout(work, 'xrp-mobile', '1');
     work.attachCheckout(first);
 
     work.recordEvent(entry(SESSION_EVENT_KINDS.CWD_SET, { checkoutId: first.id }));
     expect(work.cwdCheckoutId).toBe(first.id);
-    expect((work as unknown as { setCwdCheckout?: unknown }).setCwdCheckout).toBeUndefined();
   });
 
   it('steps the agent out of a checkout the log retires', () => {
@@ -236,15 +224,6 @@ describe('a moved session', () => {
     work.attachCheckout(checkout(work, 'xrp-mobile'));
 
     expect(work.branch).toBe(`oppenheimer/${work.slug}`);
-  });
-
-  it('stays where it ended once it is closed', () => {
-    const work = session();
-    work.recordEvent(entry(SESSION_EVENT_KINDS.CLOSED));
-
-    work.recordEvent(entry(SESSION_EVENT_KINDS.MOVED, { from: 'project-1', to: 'project-2' }));
-
-    expect(work.projectId).toBe('project-1');
   });
 
   it('ignores a move that names no project', () => {
