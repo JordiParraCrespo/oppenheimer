@@ -296,23 +296,3 @@ export function evaluateFlag(
 
   return serve(config.fallthrough, 'FALLTHROUGH');
 }
-
-/**
- * Evaluates a set of flags against one context. `configs` and `segments` are
- * keyed by flag and segment key — the in-memory snapshot the API holds.
- */
-export function evaluateFlags(
-  definitions: Readonly<Record<string, FlagDefinition>>,
-  keys: readonly string[],
-  configs: ReadonlyMap<string, FlagConfig>,
-  context: FlagEvaluationContext,
-  segments: ReadonlyMap<string, FlagSegment> = new Map(),
-): Record<string, FlagEvaluation> {
-  const result: Record<string, FlagEvaluation> = {};
-  for (const key of keys) {
-    const definition = definitions[key];
-    if (!definition) continue;
-    result[key] = evaluateFlag(key, definition, configs.get(key), context, segments);
-  }
-  return result;
-}

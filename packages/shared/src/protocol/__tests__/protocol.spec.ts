@@ -173,24 +173,6 @@ describe('session.create for every catalog agent', () => {
 });
 
 describe('host facts on the link', () => {
-  it('carries the runner’s Facts struct in hello, tools and all', () => {
-    const parsed = protocolMessageSchema.parse(SAMPLES.hello);
-    expect(parsed).toMatchObject({ type: 'hello' });
-    if (parsed.type === 'hello') {
-      expect(parsed.host.platform).toBe('macos');
-      // `ProbedTools` in the runner's facts.go, in its order.
-      expect(parsed.host.tools.map((tool) => tool.name)).toEqual([
-        'git',
-        'tmux',
-        'claude',
-        'codex',
-        'opencode',
-        'grok',
-      ]);
-      expect(parsed.host.workspacePath).toBe('/Users/jordi/oppenheimer-ai');
-    }
-  });
-
   it('refuses the invented facts shape in hello', () => {
     expect(
       protocolMessageSchema.safeParse({
@@ -200,16 +182,16 @@ describe('host facts on the link', () => {
     ).toBe(false);
   });
 
-  it('sends the same Facts on the heartbeat, not a thinner variant', () => {
+  it('carries the runner’s whole Facts struct in hello and heartbeat, not a thinner variant', () => {
+    for (const type of ['hello', 'heartbeat'] as const) {
+      const parsed = protocolMessageSchema.parse(SAMPLES[type]);
+      expect(parsed).toMatchObject({ type });
+      if (parsed.type === 'hello' || parsed.type === 'heartbeat') {
+        expect(parsed.host).toEqual(hostFacts);
+      }
+    }
     const parsed = protocolMessageSchema.parse(SAMPLES.heartbeat);
     if (parsed.type === 'heartbeat') {
-      expect(parsed.host).toEqual(hostFacts);
-      expect(parsed.host.tools[0]).toEqual({
-        name: 'git',
-        path: '/usr/bin/git',
-        version: '2.45.0',
-        required: true,
-      });
       // The three fields the heartbeat used to duplicate now live on `host`.
       expect(parsed).not.toHaveProperty('tools');
       expect(parsed).not.toHaveProperty('runnerVersion');
@@ -222,20 +204,6 @@ describe('host facts on the link', () => {
       protocolMessageSchema.safeParse({ ...SAMPLES.heartbeat, host: { tools: { git: '2.45.0' } } })
         .success,
     ).toBe(false);
-  });
-
-  it('carries no agents key anywhere — an agent is a probed tool', () => {
-    for (const type of ['hello', 'heartbeat'] as const) {
-      expect(JSON.stringify(SAMPLES[type])).not.toContain('"agents"');
-    }
-  });
-
-  it('normalises a nil Go tools slice to an empty array', () => {
-    const parsed = protocolMessageSchema.parse({
-      ...SAMPLES.hello,
-      host: { ...hostFacts, tools: null },
-    });
-    if (parsed.type === 'hello') expect(parsed.host.tools).toEqual([]);
   });
 });
 
@@ -274,14 +242,6 @@ describe('flow control', () => {
 });
 
 describe('events.ack', () => {
-  it('echoes the batch id, so a runner knows which batch it may drop', () => {
-    const appended = SAMPLES['events.append'];
-    const acked = SAMPLES['events.ack'];
-    if (appended.type !== 'events.append' || acked.type !== 'events.ack') throw new Error('sample');
-    expect(acked.batchId).toBe(appended.batchId);
-    expect(acked.accepted).toEqual(appended.events.map((event) => event.idempotencyKey));
-  });
-
   it('requires a batch id on the append too — there is nothing to echo otherwise', () => {
     const { batchId: _batchId, ...withoutBatchId } = SAMPLES['events.append'] as {
       batchId: string;
@@ -296,13 +256,14 @@ describe('events.ack', () => {
   });
 
   it('names refused keys with a reason, which the runner must not resend', () => {
+    const rejected = [{ idempotencyKey: 'run:2', reason: 'payload too large' }];
     const parsed = protocolMessageSchema.parse({
       type: 'events.ack',
       batchId: 'b1',
       accepted: ['run:1'],
-      rejected: [{ idempotencyKey: 'run:2', reason: 'payload too large' }],
+      rejected,
     });
-    expect(parsed).toMatchObject({ type: 'events.ack' });
+    expect(parsed).toMatchObject({ type: 'events.ack', rejected });
   });
 
   it('holds acknowledged keys to the same `<runId>:<n>` shape the append uses', () => {

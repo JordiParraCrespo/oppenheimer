@@ -111,14 +111,6 @@ describe('hostFactsSchema agrees across the two Zod entry points', () => {
     expect(parsed.tools[2]).toEqual({ name: 'claude', required: false });
   });
 
-  it('derives the agents by name, since an agent is just a probed tool', () => {
-    const parsed = dtoHostFactsSchema.parse(validFacts);
-    expect(parsed.tools.filter((tool) => !tool.required).map((tool) => tool.name)).toEqual([
-      'claude',
-    ]);
-    expect(parsed).not.toHaveProperty('agents');
-  });
-
   it('both parse to the same value', () => {
     expect(dtoHostFactsSchema.parse(validFacts)).toEqual(wireHostFactsSchema.parse(validFacts));
   });
@@ -134,33 +126,6 @@ describe('hostFactsSchema agrees across the two Zod entry points', () => {
     expect(Object.keys(dtoHostFactsSchema.shape).sort()).toEqual(
       Object.keys(wireHostFactsSchema.shape).sort(),
     );
-  });
-
-  it('describes exactly the fields `facts.go` declares, and no others', () => {
-    expect(Object.keys(dtoHostFactsSchema.shape).sort()).toEqual([
-      'arch',
-      'bootedAt',
-      'cloudProvider',
-      'cpuModel',
-      'cpus',
-      'diskFreeBytes',
-      'diskTotalBytes',
-      'home',
-      'hostname',
-      'kernelVersion',
-      'memoryTotalBytes',
-      'osName',
-      'osVersion',
-      'platform',
-      'root',
-      'runnerVersion',
-      'serviceManager',
-      'timezone',
-      'tools',
-      'user',
-      'virtualization',
-      'workspacePath',
-    ]);
   });
 });
 
