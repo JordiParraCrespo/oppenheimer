@@ -49,4 +49,36 @@ describe('UpdateUserSettingsCommandHandler', () => {
     expect(repo.save).toHaveBeenCalledWith(existing);
     expect(existing.theme).toBe('dark');
   });
+
+  it('writes defaults back over saved non-default preferences', async () => {
+    // The reset path: switching back to comfortable, or opting out of product
+    // updates, must replace the saved value rather than leave it stuck.
+    const existing = UserSettingsEntity.create({
+      id: 'user-uuid',
+      props: {
+        theme: 'light',
+        locale: 'es',
+        density: 'compact',
+        weeklyDigest: true,
+        productUpdates: true,
+      },
+    });
+    repo.findOneById = vi.fn().mockResolvedValue(Some(existing));
+
+    await service.execute(
+      new UpdateUserSettingsCommand({
+        userId: 'user-uuid',
+        theme: 'system',
+        locale: 'es',
+        density: 'comfortable',
+        weeklyDigest: false,
+        productUpdates: false,
+      }),
+    );
+
+    expect(repo.save).toHaveBeenCalledWith(existing);
+    expect(existing.density).toBe('comfortable');
+    expect(existing.weeklyDigest).toBe(false);
+    expect(existing.productUpdates).toBe(false);
+  });
 });

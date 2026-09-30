@@ -34,14 +34,18 @@ describe('FeatureFlagGuard', () => {
     expect(evaluator.isEnabled).not.toHaveBeenCalled();
   });
 
-  it('serves a gated route to a caller the flag is on for', () => {
-    const { guard } = guardFor('org-1');
+  it('serves a gated route to a caller the flag is on for, evaluated on their identity', () => {
+    const { guard, evaluator } = guardFor('org-1');
     const request = {
       user: { id: 'u1', email: 'ada@acme.com', role: 'user' },
       tenant: { organizationId: 'org-1' },
     };
 
     expect(guard.canActivate(contextFor(gated, request))).toBe(true);
+    expect(evaluator.isEnabled).toHaveBeenCalledWith(
+      'api_token_creation',
+      expect.objectContaining({ userId: 'u1', organizationId: 'org-1', email: 'ada@acme.com' }),
+    );
   });
 
   it.each([

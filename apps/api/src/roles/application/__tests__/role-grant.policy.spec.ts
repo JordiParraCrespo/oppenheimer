@@ -234,12 +234,10 @@ describe('RoleGrantPolicy', () => {
     ])('refuses the tenant owner %s (ROLE_006)', async (_label, organizationId, detail) => {
       const { policy } = policyInContext(SYSTEM_ROLE_PERMISSIONS.owner);
 
-      const error = await policy
-        .assertCanModify(ACTOR, roleIn(organizationId))
-        .catch((thrown: AppError) => thrown);
-
-      expect(error).toMatchObject({ code: 'ROLE_006' });
-      expect((error as AppError).detail).toContain(detail);
+      await expect(policy.assertCanModify(ACTOR, roleIn(organizationId))).rejects.toMatchObject({
+        code: 'ROLE_006',
+        detail: expect.stringContaining(detail),
+      });
     });
 
     it('lets `manage all` modify a global role', async () => {

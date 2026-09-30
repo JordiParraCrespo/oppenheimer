@@ -1,3 +1,4 @@
+import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RoleGrantPolicy } from '../../../application/role-grant.policy';
@@ -52,27 +53,42 @@ describe('UpdateRoleCommandHandler', () => {
     );
   });
 
-  // No privilege escalation (ROLE_005) and no writing another tenant's or the
-  // platform's role (ROLE_006): either refusal leaves the role unsaved.
-  it.each([
-    ['assertGrantable', RoleErrors.PERMISSION_NOT_GRANTABLE.code],
-    ['assertCanModify', RoleErrors.CROSS_ORGANIZATION_ROLE.code],
-  ] as const)('saves nothing when %s refuses the actor', async (check, code) => {
-    policy[check].mockRejectedValue(Object.assign(new Error('refused'), { code }));
+  const ACTOR = { id: 'actor-1', role: undefined, organizationId: 'org-1' };
 
-    await expect(
-      service.execute(
-        new UpdateRoleCommand({
-          roleId: 'role-1',
-          permissions: [MANAGE_ALL],
-          actorId: 'actor-1',
-          organizationId: 'org-1',
-        }),
-      ),
-    ).rejects.toMatchObject({ code });
-    expect(policy[check]).toHaveBeenCalledWith(
-      { id: 'actor-1', role: undefined, organizationId: 'org-1' },
-      expect.anything(),
+  function execute() {
+    return service.execute(
+      new UpdateRoleCommand({
+        roleId: 'role-1',
+        permissions: [MANAGE_ALL],
+        actorId: 'actor-1',
+        organizationId: 'org-1',
+      }),
+    );
+  }
+
+  // No privilege escalation: the author must hold every permission they put on
+  // the role, so the policy is asked about the command's permissions.
+  it('saves nothing when the actor cannot grant the permissions (ROLE_005)', async () => {
+    policy.assertGrantable.mockRejectedValue(new AppError(RoleErrors.PERMISSION_NOT_GRANTABLE));
+
+    await expect(execute()).rejects.toMatchObject({
+      code: RoleErrors.PERMISSION_NOT_GRANTABLE.code,
+    });
+    expect(policy.assertGrantable).toHaveBeenCalledWith(ACTOR, [MANAGE_ALL]);
+    expect(repo.save).not.toHaveBeenCalled();
+  });
+
+  // No writing another tenant's or the platform's role: the policy is asked
+  // about the role that was loaded, not the permissions.
+  it('saves nothing when the actor cannot modify the loaded role (ROLE_006)', async () => {
+    policy.assertCanModify.mockRejectedValue(new AppError(RoleErrors.CROSS_ORGANIZATION_ROLE));
+
+    await expect(execute()).rejects.toMatchObject({
+      code: RoleErrors.CROSS_ORGANIZATION_ROLE.code,
+    });
+    expect(policy.assertCanModify).toHaveBeenCalledWith(
+      ACTOR,
+      expect.objectContaining({ id: 'role-1' }),
     );
     expect(repo.save).not.toHaveBeenCalled();
   });

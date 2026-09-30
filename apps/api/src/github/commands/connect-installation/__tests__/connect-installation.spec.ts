@@ -149,6 +149,16 @@ describe('the install state', () => {
     expect(subject.installations.insert).not.toHaveBeenCalled();
   });
 
+  it('spends the state: a second post with it is refused', async () => {
+    const subject = build();
+
+    await expect(subject.handler.execute(command())).resolves.toBeTruthy();
+    await expect(subject.handler.execute(command())).rejects.toMatchObject({
+      code: 'GITHUB_011',
+    });
+    expect(subject.github.listUserInstallations).toHaveBeenCalledTimes(1);
+  });
+
   it('spends the state even when GitHub then refuses the claim', async () => {
     const subject = build({ visible: [] });
 

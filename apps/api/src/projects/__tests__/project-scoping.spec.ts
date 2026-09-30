@@ -91,3 +91,21 @@ describe('project capabilities (CASL)', () => {
     }
   });
 });
+
+describe('the declaration itself', () => {
+  it('declares only the actions a route or a credential can exercise', () => {
+    // `create` is `POST /projects`; archiving is `update`, because nothing is
+    // deleted. No `delete`: it would be a permission with nothing behind it.
+    expect(ProjectResource.actions.map((action) => action.name)).toEqual([
+      'read',
+      'create',
+      'update',
+    ]);
+  });
+
+  it('is reachable by scoped credentials', () => {
+    // Without a credentialScope the resource is invisible to API tokens and
+    // MCP, which is a silent failure rather than a loud one.
+    expect(ProjectResource.credentialScope).toBe('projects');
+  });
+});

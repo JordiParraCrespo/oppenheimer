@@ -90,3 +90,12 @@ describe('installation capabilities (CASL)', () => {
     );
   });
 });
+
+describe('the declaration itself', () => {
+  it('is reachable by scoped credentials under the repositories group', () => {
+    // Without a credentialScope the resource is invisible to API tokens and
+    // MCP, which is a silent failure rather than a loud one. The group is named
+    // for what a caller asks for, not for the vendor.
+    expect(InstallationResource.credentialScope).toBe('repositories');
+  });
+});
