@@ -63,18 +63,14 @@ func newRealHarness(t *testing.T) *realHarness {
 	return &realHarness{svc: svc, layout: layout, terminal: terminal, store: store, images: images, remote: origin(t)}
 }
 
-// requireWorkingTmux skips unless a tmux server can actually be started.
-// Checking PATH is not enough: a container without a usable pty layer has the
-// binary and cannot fork a server, and that is the environment's problem, not
-// this package's.
+// requireWorkingTmux skips unless a tmux server can actually be started; why
+// PATH is not enough, and why the probe gets its own socket: `server` in
+// adapters/tmux/tmux_test.go.
 func requireWorkingTmux(t *testing.T) string {
 	t.Helper()
 	if _, err := exec.LookPath("tmux"); err != nil {
 		t.Skip("tmux is not installed")
 	}
-	// Probe on a socket of its own: `-f` is read when a server starts, so
-	// starting one here would leave the test talking to a server that never
-	// read the config the runner passes.
 	probe := "opp-probe-" + strings.ReplaceAll(t.Name(), "/", "-")
 	if out, err := exec.Command("tmux", "-L", probe, "start-server").CombinedOutput(); err != nil {
 		t.Skipf("tmux cannot start a server here (%s): %v", strings.TrimSpace(string(out)), err)

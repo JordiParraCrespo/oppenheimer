@@ -28,8 +28,6 @@ export function CommandPalette({
 
   useHotkey(() => onOpenChange(!open));
 
-  // Same authorized set the sidebar renders, so the palette can never jump to a
-  // route the user is not allowed to open.
   const entries = useAuthorizedNav();
 
   return (

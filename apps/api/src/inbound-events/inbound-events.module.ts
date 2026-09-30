@@ -23,9 +23,6 @@ import { InboundEventsProcessor } from './infrastructure/inbound-events.processo
  * contribute a source adapter and dispatch `ReceiveInboundDeliveryCommand` from
  * their own verified endpoint; consumers (`automations/`) listen for
  * `ExternalEventReceivedDomainEvent` and read through `INBOUND_EVENT_LOOKUP`.
- *
- * Nest modules are singletons, so every module that imports this one — each
- * provider, to contribute its adapter — shares the one registry.
  */
 @Module({
   imports: [
@@ -54,14 +51,10 @@ export class InboundEventsModule {
    * providers: [...InboundEventsModule.contributeSources([GithubEventSource])]
    * ```
    *
-   * Constructed in the contributing module's injector, so the adapter injects
-   * that module's own ports (the installation lookup) without publishing them;
-   * the only thing reached across is the registry. Same pattern as
-   * `ProjectsModule.contributeUsage`.
-   *
-   * Each adapter registers under a token named for it, so the injector shows
-   * which sources the application has; the registry refuses a second adapter
-   * for a source id at boot.
+   * Constructed in the contributing module's injector, so the adapter injects that
+   * module's own ports without publishing them (as `ProjectsModule.contributeUsage`).
+   * Each adapter gets a token named for it so the injector shows which sources exist;
+   * the registry refuses a second adapter for a source id at boot.
    */
   static contributeSources(sources: Type<ExternalEventSourcePort>[]): Provider[] {
     return sources.flatMap((source) => [

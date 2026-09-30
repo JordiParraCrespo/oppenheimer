@@ -1,16 +1,14 @@
 import { createHash, createPublicKey, type KeyObject, verify } from 'node:crypto';
 
 /**
- * The Ed25519 half of the host credential, in `node:crypto` alone.
+ * The Ed25519 half of the host credential, in `node:crypto` alone: a boot assertion
+ * is a compact JWS signed with the key the runner generated at pairing
+ * (`apps/runner/internal/pairing/domain/identity.go`), verified against the raw
+ * 32-byte key the host registered.
  *
- * A boot assertion is a compact JWS the runner signs with the key it generated
- * at pairing (`apps/runner/internal/pairing/domain/identity.go`), and this file
- * is everything needed to check one: split it, insist the header says `EdDSA`,
- * and verify the signature against the raw 32-byte key the host registered.
- *
- * `alg` is not read to *choose* an algorithm — it is asserted, and the key is
- * always Ed25519 — so the algorithm-confusion family of attacks has nothing to
- * work with here.
+ * `alg` is asserted to be `EdDSA`, never read to *choose* an algorithm, and the key
+ * is always Ed25519, so the algorithm-confusion family of attacks has nothing to work
+ * with.
  */
 
 /** DER prefix of an Ed25519 SubjectPublicKeyInfo, which wraps the raw 32 bytes. */
@@ -36,11 +34,8 @@ export interface DecodedHostAssertion {
 }
 
 /**
- * Does this bearer value even look like an EdDSA JWS?
- *
- * This is the question the credential resolver asks before handing a bearer to
- * the hosts module: three dot-separated base64url segments whose header decodes
- * to `{"alg":"EdDSA",…}`. Cheap, and wrong only in the direction of asking the
+ * Three dot-separated base64url segments whose header decodes to
+ * `{"alg":"EdDSA",…}`. Cheap, and wrong only in the direction of asking the
  * verifier about something it will then refuse.
  */
 export function looksLikeHostAssertion(value: string): boolean {
@@ -78,8 +73,6 @@ export function decodeHostAssertion(assertion: string): DecodedHostAssertion | n
 }
 
 /**
- * Is this assertion signed by one of these keys?
- *
  * Takes a list because a host may hold two valid keys during a rotation window,
  * and a boot that arrives on either is the same host.
  */
@@ -110,8 +103,7 @@ export function keyFingerprint(base64PublicKey: string): string | null {
   return createHash('sha256').update(raw).digest('hex');
 }
 
-/** Turn the runner's base64 public key into something `verify` accepts. */
-export function publicKeyFromBase64(base64PublicKey: string): KeyObject | null {
+function publicKeyFromBase64(base64PublicKey: string): KeyObject | null {
   const raw = rawKeyFromBase64(base64PublicKey);
   if (!raw) return null;
   try {

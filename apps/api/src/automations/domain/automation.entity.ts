@@ -152,7 +152,6 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
   get isDeleted(): boolean {
     return this.props.deletedAt !== null;
   }
-  /** Whether the repository owes a new `automation_revision` row. */
   get hasNewRevision(): boolean {
     return this.revised;
   }

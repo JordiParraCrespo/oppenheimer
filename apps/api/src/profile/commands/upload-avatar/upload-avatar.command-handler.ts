@@ -12,8 +12,6 @@ import { AVATAR_STORAGE } from '../../profile.di-tokens';
 import { UploadAvatarCommand } from './upload-avatar.command';
 
 /**
- * Stores a new avatar and points the user's profile at it.
- *
  * The new image is written under its own key, the profile is saved, and only
  * then is the old object retired. Every step of that order matters: the new
  * object never overwrites the live one, so a failed save leaves the user
@@ -51,8 +49,6 @@ export class UploadAvatarCommandHandler
 
     user.updateProfile({ avatarUrl: key });
     await this.userRepository.save(user);
-    // Better Auth caches each session with a copy of the user; bring the
-    // copies in line with the row just written.
     await this.sessionCache.refreshUser(user.id);
 
     if (previousKey && previousKey !== key) {

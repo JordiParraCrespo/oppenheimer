@@ -32,17 +32,27 @@ into an identifier (`CURVE25519_P`).
      | grep -vE '^[+-]\s*(//|/\*\*?|\*|\*/|\{/\*.*\*/\})' | grep -vE '^[+-]\s*$'
    ```
 
-   prints nothing. Then `pnpm ci:local`, green.
-4. **Record.** Update `ledger.md`: per area, the pass, files changed, lines
-   removed, and anything reported rather than fixed. Commit the ledger with
-   the pass.
+   prints nothing. Then re-read every removed sentence, in deleted and in
+   rewritten blocks alike, and restore the ones whose reason now lives nowhere
+   a reader of that code would find it (grep for it; do not assume); check
+   every corrected comment against the code. Then any eval planter
+   (`.agents/routines/evals/*/plant.mjs`) still finds its anchors, and
+   `pnpm ci:local` is green.
+4. **Record.** Add the pass's column to `ledger.md`: net comment lines removed
+   per area. The ledger is that table and nothing else.
 5. **Ship.** One pull request per pass (or per area, when a pass is too big to
-   review), driven by `.agents/skills/steward/SKILL.md`; the body lists what
-   was reported.
+   review), driven by `.agents/skills/steward/SKILL.md`. Code findings the pass
+   could not touch go in its body.
 
 ## The rubric, by pass
 
 Each pass applies everything the passes before it did, plus its own cut.
+
+Every pass fixes a comment that is **wrong**: one that names a module that
+now exists as missing, a writer that is gone, a format or count the code does
+not have. Correct it to what the code does, or cut the false sentence. That is
+a comment edit, so it is in scope; never park it in the ledger or the pull
+request for someone else, because the next reader meets the comment first.
 
 - **Pass 1: restatement.** Comments that repeat the next line or the name
   they sit on; dividers that repeat the heading below them; doc comments on
@@ -73,4 +83,5 @@ regression a test guards, or a pointer to a product note. Directives
 (`biome-ignore`, `@ts-expect-error`, `//go:`, `//nolint`,
 `oppenheimer:begin/end`), Go doc comments on exported identifiers, TODOs,
 license headers, generated files, and the eval fixtures under
-`scripts/evals/*/cases/` whose comments are part of the case.
+`scripts/evals/*/cases/` whose comments are part of the case. An eval planter
+anchors on code, never on a comment, so a pass cannot silently break it.

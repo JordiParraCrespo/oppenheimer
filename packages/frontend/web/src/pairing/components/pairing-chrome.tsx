@@ -20,22 +20,17 @@ export interface PairedMachine {
  * replace it, the instruction behind its fold, a rule, and the status line
  * that resolves in place when a runner spends the token.
  *
- * One place because two surfaces draw the same column — the onboarding
- * step (`apps/web/.../hosts/screens/onboarding-host.tsx`) and the console's
- * Add a host dialog (`.../hosts/dialogs/add-host.tsx`) — and a feature
- * may not import another feature. `layout` is the export's two sizes: the
- * step's large buttons and 12px line (`design/version1/AddHost.dc.html`),
- * the dialog's medium buttons and 11.5px line (`SessionsConsole.dc.html`).
- * Settings pairs on a page of its own with the instruction shown outright,
- * so it composes the parts — `PairingToken`, `PairingInstruction`
- * with its panel layout, `PairingStatus` — rather than this column.
+ * Kit because two features draw it (the onboarding step and the console's Add
+ * a host dialog) and a feature may not import another. `layout` is the
+ * export's two sizes: the step's large buttons and 12px line
+ * (`design/version1/AddHost.dc.html`), the dialog's medium buttons and 11.5px
+ * line (`SessionsConsole.dc.html`). Settings shows the instruction outright,
+ * so it composes `PairingToken`, `PairingInstruction` and `PairingStatus`.
  *
- * The status word says what the API said: a host row exists once the runner
- * registers, and `online` is the only thing the control plane reports about it.
- * The step's artboard draws a capability card — ✓ git, ✓ tmux — and that is not
- * this component's to invent: nothing on the wire carries the host's tools yet,
- * so the row says the runner is up or that it is still coming up, and the card
- * arrives with the capabilities themselves.
+ * The status word says only what the API reports: a host row exists once the
+ * runner registers, and `online` is all the control plane says about it. The
+ * artboard's capability card (✓ git, ✓ tmux) waits for the wire to carry the
+ * host's tools.
  */
 export function PairingChrome({
   pairing,
@@ -87,7 +82,6 @@ export function PairingChrome({
   );
 }
 
-/** The token's clock and the way to replace it. */
 export function PairingToken({
   expiresAt,
   expired,
@@ -132,7 +126,6 @@ export function PairingToken({
   );
 }
 
-/** The status line that resolves in place when a runner spends the token. */
 export function PairingStatus({
   host,
   layout = 'dialog',

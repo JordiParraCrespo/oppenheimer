@@ -235,16 +235,16 @@ function parseEnv(file) {
 }
 
 /**
- * What the API runs with on top of the checkout's `.env`: the stubs'
- * configuration, with its keys kept per `.stack/`. A checkout with no `.env` gets
- * `.env.example`'s defaults the same way — as environment, never as a file.
- */
-/**
  * The keys a stack keeps across `up`s: a paired host pinned the control
  * plane's key, and the GitHub stub trusts the App key it was handed.
  */
 const KEPT_KEYS = ['CONTROL_PLANE_SIGNING_KEY', 'GITHUB_APP_PRIVATE_KEY'];
 
+/**
+ * What the API runs with on top of the checkout's `.env`: the stubs'
+ * configuration, with its keys kept per `.stack/`. A checkout with no `.env` gets
+ * `.env.example`'s defaults the same way — as environment, never as a file.
+ */
 function apiEnv() {
   // Regenerated on every `up`, so a change to `stub-env.ts` (a new stub, a new
   // variable) is never missed, with the previous run's keys carried over.

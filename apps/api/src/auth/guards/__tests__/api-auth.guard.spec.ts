@@ -103,8 +103,6 @@ describe('ApiAuthGuard, session path', () => {
   });
 
   it('asks for the session once, through the per-request resolution', async () => {
-    // The guard verifies nothing itself: a bearer session was verified while
-    // the credential was resolved, and a cookie is looked up once and shared.
     credentials.resolveSession.mockResolvedValue(sessionFor({}));
 
     await guard.canActivate(contextFor(request));

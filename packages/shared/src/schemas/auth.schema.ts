@@ -3,13 +3,6 @@ import { z } from 'zod';
 import { PASSWORD_LEGACY_MIN_LENGTH, PASSWORD_MIN_LENGTH } from '../constants/index.js';
 
 /**
- * Auth DTOs. These carry no failure messages on purpose: an explicit message
- * wins over any error map Zod is handed, which would pin every consumer to
- * English. The apps translate from the issue code instead — see
- * `createZodErrorMap` in `@oppenheimer/frontend/validation`.
- */
-
-/**
  * Signing in keeps the old minimum on purpose. `PASSWORD_MIN_LENGTH` governs
  * passwords being *set*; an account created before it still holds an
  * eight-character one, and refusing to submit it would lock its owner out of

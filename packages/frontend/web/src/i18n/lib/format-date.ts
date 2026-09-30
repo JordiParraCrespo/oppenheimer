@@ -7,14 +7,6 @@ import { formatShortDuration } from './format-duration';
  * here needs a translation key.
  */
 
-/** "Jun 2026" — how a join date is written on a profile card. */
-export function formatMonthYear(date: Date, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
-    month: 'short',
-    year: 'numeric',
-  }).format(date);
-}
-
 /** Anything inside this window reads as "right now" rather than "0 minutes ago". */
 const JUST_NOW_MS = 60_000;
 
@@ -52,20 +44,17 @@ export function formatRelativeTime(date: Date, locale: string, now = new Date())
 }
 
 /**
- * The age of something, as a unit and a count — "2 hours old" as
+ * The age of something as a unit and a count: "2 hours old" is
  * `{ unit: 'hour', count: 2 }`.
  *
- * Returns the pieces rather than a string because the compact rendering the
- * product wants ("2h", "3d") is not one `Intl.RelativeTimeFormat` produces:
- * its `narrow` style still says "2 hr. ago". The words live in
- * `common.relative.*` instead, so the caller translates and this stays pure
- * date arithmetic. `null` means "less than a minute", which the caller words
- * itself — a thread list says "now", a session list says "Active now".
+ * Pieces rather than a string because `Intl.RelativeTimeFormat` cannot say
+ * "2h" (`narrow` still says "2 hr. ago"); the words live in `common.relative.*`
+ * and the caller translates. `null` means "less than a minute", which the
+ * caller words itself ("now", "Active now").
  *
- * `now` is required, and a timestamp from a ticking clock (`useNow`) is what
- * a component passes. It used to default to `new Date()`, which read the clock
- * during render where nobody could see it: the React Compiler cached the age
- * on `date` alone, and "5m" stayed "5m".
+ * `now` is required and should come from a ticking clock (`useNow`): read
+ * during render, the React Compiler caches the age on `date` alone, and "5m"
+ * stays "5m".
  */
 export function compactAge(
   date: Date,
@@ -138,52 +127,18 @@ function relativeFormatter(locale: string): Intl.RelativeTimeFormat {
   return formatter;
 }
 
-/** "Jun 12" — a day inside the current year, as the tables and charts write it. */
-export function formatShortDate(date: Date, locale: string): string {
-  return dateFormatter(locale, { month: 'short', day: 'numeric' }).format(date);
-}
-
-/** "12 Jun 2026" — a date that needs its year, in the reader's order. */
+/**
+ * "12 Jun 2026" — a date that needs its year, in the reader's order.
+ * Kept with no caller yet because `/scaffold-feature` names it for new screens.
+ */
 export function formatMediumDate(date: Date, locale: string): string {
   return dateFormatter(locale, { dateStyle: 'medium' }).format(date);
 }
 
-const DAY_MS = 86_400_000;
-
 /**
- * The timestamp beside a message in a mailbox: the clock time for today, the
- * word for yesterday, the weekday for the rest of the week, then the date.
- *
- * Every branch resolves through `Intl`, including "yesterday" — which
- * `RelativeTimeFormat` writes in the reader's language with `numeric: 'auto'`
- * — so a mail list needs no translation keys of its own.
+ * "12 Jun 2026, 14:30" — the stamp on a session, a token or an audit entry.
+ * Kept with no caller yet because `/scaffold-feature` names it for new screens.
  */
-export function formatMessageTime(date: Date, locale: string, now = new Date()): string {
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const time = date.getTime();
-
-  if (time >= startOfToday) {
-    return dateFormatter(locale, { hour: 'numeric', minute: '2-digit' }).format(date);
-  }
-  if (time >= startOfToday - DAY_MS) {
-    return relativeFormatter(locale).format(-1, 'day');
-  }
-  // Inside the last week a weekday is the most readable thing a row can say —
-  // "Mon" places a message without the reader doing arithmetic on a date.
-  if (time >= startOfToday - 6 * DAY_MS) {
-    return dateFormatter(locale, { weekday: 'short' }).format(date);
-  }
-  if (date.getFullYear() !== now.getFullYear()) {
-    return dateFormatter(locale, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }).format(date);
-  }
-  return formatShortDate(date, locale);
-}
-
-/** "12 Jun 2026, 14:30" — the stamp on a session, a token or an audit entry. */
 export function formatDateTime(date: Date, locale: string): string {
   return dateFormatter(locale, {
     dateStyle: 'medium',

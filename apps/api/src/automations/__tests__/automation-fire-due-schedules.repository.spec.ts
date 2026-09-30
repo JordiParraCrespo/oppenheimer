@@ -182,7 +182,6 @@ describe('AutomationRepository.fireDueSchedules', () => {
     });
     expect(contexts[1].recent).toEqual({ automation: 0, workspace: 3 });
     expect(queued.map((run) => run.automationId)).toEqual(automations.map((a) => a.id));
-    // One transaction for the tick, and a dispatch staged in it per queued run.
     expect(outbox.transaction).toHaveBeenCalledTimes(1);
     expect(outbox.stageJob).toHaveBeenCalledTimes(2);
   });

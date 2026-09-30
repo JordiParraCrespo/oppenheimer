@@ -1,18 +1,13 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 /**
- * API token domain error catalog. Surfaced as HTTP responses by the global
- * `AllExceptionsFilter` via `AppError`.
- *
- * These are the rules this module owns: what a token is, who may mint one and
- * how far it may be scoped. The refusals the auth kernel raises about a
- * *credential* — `TOKEN_003` for one it will not accept and `TOKEN_005`–`007`
- * for one that asks for more than it holds — belong to the kernel's catalog
- * (`auth/domain/auth.errors.ts`), because the kernel is what raises them and a
- * code may be declared only once. `TOKEN_003` stays deliberately opaque:
- * telling a caller whether a token is unknown, revoked or expired hands an
- * attacker a probing oracle. Authorization failures are specific — the caller
- * holds a valid credential and needs to know what it is short of.
+ * The rules this module owns: what a token is, who may mint one and how far it
+ * may be scoped. The kernel's refusals of a *credential* (`TOKEN_003`,
+ * `TOKEN_005`–`007`) are declared in `auth/domain/auth.errors.ts`, since the
+ * kernel raises them and a code is declared once; `TOKEN_003` stays opaque
+ * because unknown versus revoked versus expired is a probing oracle. These
+ * authorization failures are specific: the caller holds a valid credential
+ * and needs to know what it is short of.
  */
 export const ApiTokenErrors = {
   NOT_FOUND: {

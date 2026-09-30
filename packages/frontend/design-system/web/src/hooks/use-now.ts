@@ -1,19 +1,17 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * The time, as a timestamp that moves every `intervalMs`.
+ * The time, as a timestamp that moves every `intervalMs`, for anything that
+ * renders relative to now ("5m" beside a session, a countdown).
  *
- * For anything that renders relative to now — "5m" beside a session, a
- * countdown. Reading `Date.now()` or `new Date()` during render instead looks
- * the same and is wrong: the React Compiler caches the result on the inputs it
- * can see, so an age computed from `createdAt` alone stops moving until
- * something unrelated changes. Passing this value in makes the clock an input.
+ * Reading `Date.now()` during render instead is wrong: the React Compiler
+ * caches the result on the inputs it can see, so an age computed from
+ * `createdAt` alone stops moving. Passing this value in makes the clock an
+ * input.
  *
- * The outside system is the timer, and there is one per interval, shared by
- * every reader: forty groups on a minute clock are one `setInterval` and one
- * batched commit, not forty. So put the hook in the lowest component that reads
- * the time — every tick re-renders the component that owns it — without
- * weighing how many of them there are.
+ * The outside system is the timer, one per interval shared by every reader
+ * (forty groups on a minute clock are one `setInterval` and one batched
+ * commit), so put the hook in the lowest component that reads the time.
  */
 export function useNow(intervalMs: number): number {
   const clock = clockFor(intervalMs);

@@ -39,15 +39,12 @@ export interface MintHostPairingTokenProps {
 /**
  * A registration token: host identity **before the host exists**.
  *
- * It is a row rather than a column for the reason `verification` is a table in
- * Better Auth's own schema — a token minted before its subject exists cannot
- * hang off that subject, and most rows never become a host. It is also the only
- * way F5's "revocable, expiring, with the source IP shown" can be true: all
- * three are things you can only act on if they persist.
+ * A row, not a column, as `verification` is a table in Better Auth: a token minted
+ * before its subject cannot hang off it, and most never become a host. Persisting is
+ * also what lets F5's "revocable, expiring, with the source IP shown" be true.
  *
- * Nothing here decides whether the token may be spent. That is one atomic
- * statement in the repository, because a check followed by a write is a race two
- * machines can both win — see `HostRepositoryPort.redeemAndRegister`.
+ * Whether it may be spent is one atomic statement in the repository, since check then
+ * write is a race two machines can both win (`HostRepositoryPort.redeemAndRegister`).
  */
 export class HostPairingTokenEntity extends AggregateRoot<HostPairingTokenProps> {
   /** Rehydrate an existing token (used by the mapper). */
@@ -55,7 +52,7 @@ export class HostPairingTokenEntity extends AggregateRoot<HostPairingTokenProps>
     return new HostPairingTokenEntity(create);
   }
 
-  /** Mint a token. The caller holds the secret; only its digest lands here. */
+  /** The caller holds the secret; only its digest lands here. */
   static mint(props: MintHostPairingTokenProps): HostPairingTokenEntity {
     return new HostPairingTokenEntity({
       id: randomUUID(),
@@ -115,8 +112,6 @@ export class HostPairingTokenEntity extends AggregateRoot<HostPairingTokenProps>
   }
 
   /**
-   * Revoke the token and nothing else.
-   *
    * The column is load-bearing: the redemption statement requires
    * `revokedAt IS NULL`, so without this write "revocable" would be a column
    * nobody reads and a revoked token would still pair a machine.

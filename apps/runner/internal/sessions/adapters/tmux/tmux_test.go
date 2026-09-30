@@ -84,7 +84,6 @@ func TestListOnAHostWithNoServerIsEmptyNotAnError(t *testing.T) {
 }
 
 func TestKillingASessionThatIsAlreadyGoneSucceeds(t *testing.T) {
-	// The caller wanted it gone, and it is gone.
 	if err := server(t).Kill(context.Background(), "opp-never-existed"); err != nil {
 		t.Fatalf("kill: %v", err)
 	}

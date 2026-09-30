@@ -11,9 +11,6 @@ import {
 } from 'typeorm';
 
 /**
- * Persistence model for the Better Auth `user` table. This is infrastructure —
- * the domain `UserEntity` is mapped to/from this record by `UserMapper`.
- *
  * Better Auth owns writes to identity columns (sign-up, OAuth, verification);
  * the application reads/updates the profile columns through TypeORM for the
  * `/users` endpoints. `firstName`, `lastName`, `phone`, `jobTitle`, `role` and

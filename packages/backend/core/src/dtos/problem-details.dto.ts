@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-/** One field-level validation failure inside a problem document. */
 export class InvalidParamDto {
   @ApiProperty({
     example: 'email',

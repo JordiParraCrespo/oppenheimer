@@ -49,7 +49,7 @@ export class Session {
    * token or OAuth client can reach the Better Auth façades. They are bridges,
    * not devices, so the profile session list leaves them out.
    *
-   * Declared to Better Auth as a session `additionalField` in `auth.ts` — it
+   * Declared to Better Auth as a session `additionalField` in `better-auth.config.ts` — it
    * owns every write to this table, and a column it does not know about would
    * be dropped on the way in.
    */

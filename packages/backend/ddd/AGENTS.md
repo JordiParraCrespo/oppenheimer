@@ -58,4 +58,5 @@ src/
 ```bash
 pnpm --filter @oppenheimer/backend-ddd build
 pnpm --filter @oppenheimer/backend-ddd dev
+pnpm --filter @oppenheimer/backend-ddd test
 ```

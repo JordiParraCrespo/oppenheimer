@@ -91,16 +91,11 @@ export class ProjectsModule {
    * providers: [...ProjectsModule.contributeUsage([SessionProjectUsage])]
    * ```
    *
-   * They go in the **contributing module's** `providers`, not in an imported module
-   * of this one's, and that placement is the whole point: the implementation is
-   * constructed in the injector of the module that owns the work, so it injects that
-   * module's own repository ports without anything having to be published
-   * application-wide. The only thing reached across is the registry.
-   *
-   * Registration happens when that module is instantiated — Nest constructs every
-   * provider a module declares, so the factory below runs although nothing injects
-   * it — which means a module that is never imported contributes nothing, and the
-   * registry describes the application that is actually running.
+   * They go in the contributing module's `providers`, so the implementation is built in
+   * the injector that owns the work and injects its repository ports without publishing
+   * them; only the registry is reached across. Nest constructs every declared provider,
+   * so the factory runs although nothing injects it, and a module never imported
+   * contributes nothing.
    */
   static contributeUsage(usages: Type<ProjectUsagePort>[]): Provider[] {
     return [

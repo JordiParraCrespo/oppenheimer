@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-/** A user as seen by the admin (super-admin) API. */
 export class AdminUserResponseDto {
   @ApiProperty()
   id!: string;
@@ -34,7 +33,6 @@ export class AdminUserResponseDto {
   createdAt!: Date;
 }
 
-/** Paginated list of users. */
 export class AdminUserListResponseDto {
   @ApiProperty({ type: [AdminUserResponseDto] })
   users!: AdminUserResponseDto[];
@@ -49,7 +47,6 @@ export class AdminUserListResponseDto {
   offset!: number | null;
 }
 
-/** A user session (admin session listing). */
 export class AdminSessionResponseDto {
   @ApiProperty()
   id!: string;
@@ -75,7 +72,6 @@ export class AdminSessionResponseDto {
   createdAt!: Date;
 }
 
-/** Result of a generic admin mutation that only reports success. */
 export class AdminSuccessResponseDto {
   @ApiProperty()
   success!: boolean;

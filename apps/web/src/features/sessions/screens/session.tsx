@@ -10,17 +10,10 @@ import { SessionProvisioning } from '../sections/session-provisioning';
 import { SessionTerminal } from '../sections/session-terminal';
 
 /**
- * One session, in whichever of its states the URL lands on.
- *
- * The screen is the branch point because the branch *is* the route: a session
- * id resolves to a terminal, to a pane watching a host start one, to a
- * finished session, or to nothing at all. Each branch is somebody's bookmark,
- * so each answers on its own rather than the terminal opening over a session
- * that has no PTY behind it.
- *
- * The query is subscribed to here and read by every branch below, which is the
- * shared-result case: the pane, its heading and its clock are all this one
- * session.
+ * One session, in whichever state the URL lands on: a terminal, a pane
+ * watching a host start one, a finished session, or nothing. Each is somebody's
+ * bookmark, so each answers on its own rather than a terminal opening over a
+ * session with no PTY. The query is subscribed here and shared by every branch.
  */
 export function SessionScreen({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();

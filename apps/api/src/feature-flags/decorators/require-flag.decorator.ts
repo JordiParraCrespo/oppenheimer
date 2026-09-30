@@ -5,11 +5,8 @@ import { FeatureFlagGuard, REQUIRE_FLAG_KEY } from '../guards/feature-flag.guard
 
 /**
  * Serves a route only while a flag is on for the caller; otherwise it answers
- * `FLAG_003` (403).
- *
- * The server half of a flag the UI also reads. Hiding a button is not a
- * rollout — the endpoint behind it is reachable by anyone with a token — so a
- * flag that gates a capability gates it here too, from the same catalog key:
+ * `FLAG_003` (403). Hiding a button is not a rollout, so a flag that gates a capability
+ * in the UI gates its endpoint here too, from the same catalog key:
  *
  * ```ts
  * @Post()
@@ -17,16 +14,10 @@ import { FeatureFlagGuard, REQUIRE_FLAG_KEY } from '../guards/feature-flag.guard
  * create() {}
  * ```
  *
- * Boolean flags only — a capability gate needs an off. A variant flag's
- * control arm is a variant like any other; branch on `valueOf` instead.
- *
- * Only the caller's identity reaches the gate, never what a client reports
- * about its platform or build: a rule on `platform` or `appVersion` does not
- * match here, so gate on flags that target identity.
- *
- * Method-level, so it runs after the controller's `ApiAuthGuard` has resolved
- * who is calling and a per-user or per-organization rollout sees them.
- * Evaluation is in memory; the decorator adds no I/O to the route.
+ * Boolean flags only: a capability gate needs an off, and a variant flag's control arm
+ * is just another variant (branch on `valueOf`). Only the caller's identity reaches the
+ * gate, so a rule on `platform` or `appVersion` never matches here. Method-level, so it
+ * runs after the controller's `ApiAuthGuard` has resolved who is calling.
  */
 export function RequireFlag(key: BooleanFeatureFlagKey) {
   return applyDecorators(

@@ -1,11 +1,10 @@
 package cli
 
-// Images for a window's prompt. `session.image` carries no bytes: control
-// frames stay small, and one paste must not queue ahead of every pane on the
-// host. The runner pulls the image the control plane parked for the command,
-// once, over HTTPS with its own boot assertion — off the goroutine that reads
-// the link, so a slow download never stalls a pane — then hands it to the
-// session service, which saves it and pastes its path.
+// Images for a window's prompt. `session.image` carries no bytes (why:
+// `sessionImageSchema` in packages/shared/src/protocol/messages.ts). The runner
+// pulls the parked image off the goroutine that reads the link, so a slow
+// download never stalls a pane, then hands it to the session service, which
+// saves it and pastes its path.
 
 import (
 	"context"

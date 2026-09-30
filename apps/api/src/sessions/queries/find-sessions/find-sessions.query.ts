@@ -3,8 +3,6 @@ import { QueryBase } from '@oppenheimer/backend-ddd';
 import type { SessionSortDto, SessionState } from '@oppenheimer/shared';
 
 /**
- * Asks for the sessions a caller can reach.
- *
  * `state` is the **stored lifecycle**, not the derived group the sidebar shows: the
  * group is computed on read from things that are not columns, so it cannot be an
  * index and filtering on it would mean reading every row.

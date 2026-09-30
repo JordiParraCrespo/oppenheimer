@@ -37,8 +37,6 @@ const PANE = {
 export function AppShell({ children, ...config }: ShellConfig & { children: ReactNode }) {
   const chrome = config.chrome ?? true;
   const [commandOpen, setCommandOpen] = useState(false);
-  // The saved theme and language become this device's defaults — once, and
-  // only where the device has not chosen for itself.
   useApplyUserSettings();
   const pane = PANE[useMatches({ select: resolveContentPane })];
 

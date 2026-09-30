@@ -1,17 +1,12 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * Apply an id named in the address once the list can answer it.
- *
- * The external system is the URL: the sidebar's "New session here" names a
- * project in `/sessions/new?project=`, and a link may name a machine in
- * `?host=`; the project chip also hands it the id the project dialog just
- * made. The chip has to start on it, which needs the
- * entity and not just the id — and, for a project, the host list, since a
- * default host the list has not answered for yet would be skipped as if it
- * were gone. The pick runs once per address: a value the reader then changes
- * by hand stays changed, and an id the list does not hold is ignored rather
- * than written.
+ * Apply an id named in the address once the list can answer it: the sidebar's
+ * `/sessions/new?project=`, a link's `?host=`, or the id the project dialog
+ * just made. The chip needs the entity, not the id, and a project also needs
+ * the host list, or a default host not yet listed is skipped as gone. The pick
+ * runs once per address: a later change by hand stays, and an id the list
+ * does not hold is ignored rather than written.
  */
 export function useSearchPick<T extends { id: string }>(
   id: string | undefined,

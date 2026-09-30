@@ -13,9 +13,7 @@ import (
 //
 // It is evidence, not proof: a long-lived container someone runs on purpose
 // is a legitimate host, which is what `register --allow-container` is for.
-// An empty answer means nothing looked temporary. The environment is read
-// through getenv, which the composition root passes, so this adapter reads
-// no globals of its own.
+// An empty answer means nothing looked temporary.
 func Ephemeral(getenv func(string) string) []string {
 	return ephemeral(fileExists, os.ReadFile, getenv)
 }

@@ -2,10 +2,8 @@ import { SetMetadata } from '@nestjs/common';
 
 export const ORGANIZATION_PARAM_KEY = 'organization_param';
 
-/** Where a route carries the organization it acts on. */
 export type OrganizationSource = 'path' | 'query' | 'body';
 
-/** What `@OrganizationScoped` records on a route. */
 export interface OrganizationScope {
   param: string;
   from: OrganizationSource;

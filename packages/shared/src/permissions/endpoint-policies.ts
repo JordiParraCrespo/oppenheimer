@@ -14,19 +14,14 @@ export interface EndpointPolicy {
  * What each guarded endpoint demands, keyed by **method and route** (the path
  * Nest mounts it at, less the `/api/v1` prefix).
  *
- * This is one declaration of a rule that would otherwise be written twice: once
- * as `@CheckPolicies` on the controller, once as the policies a client hides a
- * destination behind. Nothing keeps two declarations in step, and when they drift
- * the sidebar hands a plain member a link that can only answer 403. A client
- * gating a row reads `ENDPOINT_POLICIES['GET /tokens']`; it never writes the
- * rules out again.
+ * One declaration of a rule that would otherwise be written twice — as
+ * `@CheckPolicies` on the controller and as the policies a client hides a
+ * destination behind — and that, drifted, hands a plain member a link that can
+ * only answer 403. A client gating a row reads `ENDPOINT_POLICIES['GET /tokens']`;
+ * it never writes the rules out again.
  *
- * **The key carries the method, and that is what makes the catalog one thing.**
- * Keyed by path alone it had to be two: a list of sidebar destinations, plus a
- * handful of write paths whose whole path is one action — and the destructive
- * ones (closing a session, archiving a project) fell between the two, because
- * they share a path with a read. An endpoint is a method and a route, so that is
- * the key, and every entry means the same thing.
+ * **The key carries the method**: destructive endpoints (closing a session,
+ * archiving a project) share a path with a read, so a path alone cannot name them.
  *
  * `apps/api/src/auth/__tests__/endpoint-policies.spec.ts` asserts that each
  * endpoint below carries exactly the rules named here, and that the handler it
@@ -45,9 +40,8 @@ export const ENDPOINT_POLICIES = {
   'GET /admin/users': [{ action: 'manage', subject: 'User' }],
   'GET /feature-flags/admin': [{ action: 'read', subject: 'FeatureFlag' }],
 
-  // The control plane's projects. Archiving is `update Project`, not `delete`,
-  // because nothing is deleted: the row outlives the project so its slug is
-  // never reissued.
+  // The control plane's projects. Archiving is `update Project`, not `delete`
+  // (see `ProjectResource` in apps/api/src/projects/projects.resource.ts).
   'GET /projects': [{ action: 'read', subject: 'Project' }],
   'GET /projects/:id': [{ action: 'read', subject: 'Project' }],
   'POST /projects': [{ action: 'create', subject: 'Project' }],

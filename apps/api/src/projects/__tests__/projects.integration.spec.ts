@@ -11,15 +11,10 @@ import { ProjectEntity } from '../domain/project.entity';
 import { ProjectMapper } from '../project.mapper';
 
 /**
- * Projects against a real Postgres: the slug constraint, the repository set and
- * its composite keys, the scoped writes and the archive.
- *
- * The unit tests double the constraints; this is the layer that proves Postgres
- * behaves the way the doubles claim, and that the migration created what the
- * statements name.
- *
- * The schema is built by running the migrations, not `synchronize`, so a
- * mistake in a migration fails here rather than in production.
+ * Projects against a real Postgres: the slug constraint, the repository set and its
+ * composite keys, the scoped writes and the archive. This proves Postgres behaves the
+ * way the unit tests' doubles claim. The schema is built by running the migrations,
+ * not `synchronize`, so a mistake in a migration fails here rather than in production.
  */
 describe('projects: the saved scope (integration)', () => {
   let pgContainer: StartedTestContainer;
@@ -168,7 +163,6 @@ describe('projects: the saved scope (integration)', () => {
     );
     expect(row.archivedAt).not.toBeNull();
     expect(row.name).toBe('xrp-mobile');
-    // And the listing leaves a retired project out.
     expect(await repository.findAll(caller)).toEqual([]);
   });
 

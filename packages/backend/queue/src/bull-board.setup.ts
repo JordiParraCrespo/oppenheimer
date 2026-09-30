@@ -19,7 +19,6 @@ const DEFAULT_FAILURE_WINDOW_MS = 15 * 60_000;
 /** Addresses the limiter remembers at once, so it is no memory-exhaustion vector itself. */
 const DEFAULT_MAX_TRACKED_CLIENTS = 10_000;
 
-/** HTTP Basic credentials guarding the dashboard. Both fields are required. */
 export interface BullBoardAuth {
   username: string;
   password: string;

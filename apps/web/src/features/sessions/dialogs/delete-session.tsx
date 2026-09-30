@@ -6,20 +6,14 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Delete a session, from the row's menu.
+ * Delete a session: the console's word for the API's close. The worktree and
+ * transcript go, and the row stays resolved so its directory name and branch
+ * are never reissued, which is why the list drops it rather than the API.
  *
- * "Delete" is the console's word for the API's close: the session stops,
- * its worktree leaves the host, the transcript is gone, and the row stays
- * resolved so its directory name and branch are never reissued — which is
- * why the list drops it rather than the API.
- *
- * The close refuses a worktree with work that is not pushed unless the
- * caller accepts losing it, and this dialog is where that is accepted: a
- * sentence and a box, not a hidden flag. Unticked, the copy says the delete
- * stops on such work, so a refusal is the expected answer rather than a
- * surprise. The dialog owns the mutation; a failure stays on screen next to
- * the button, never a toast. An accepted delete toasts that it was asked
- * for, not that it happened: the host does the work and may still refuse.
+ * The close refuses unpushed work unless the caller accepts losing it; this
+ * dialog's box is where that is accepted, not a hidden flag. A failure stays
+ * next to the button, never a toast. An accepted delete toasts that it was
+ * asked for, not that it happened: the host may still refuse.
  */
 export function DeleteSessionDialog({
   session,

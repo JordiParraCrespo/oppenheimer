@@ -17,15 +17,14 @@ import {
 } from '@oppenheimer/shared/automations';
 import { localDate } from './time';
 
-/**
- * The editor's state apart from the two typed fields (name and prompt, which
- * React Hook Form holds): what is picked, not typed. It is saved whole.
- */
-
 export type ScheduleCard = Extract<TriggerInput, { source: 'schedule' }> & { key: string };
 export type GithubCard = Extract<TriggerInput, { source: 'github' }> & { key: string };
 export type TriggerCard = ScheduleCard | GithubCard;
 
+/**
+ * The editor's state apart from the two typed fields (name and prompt, which
+ * React Hook Form holds): what is picked, not typed. It is saved whole.
+ */
 export interface AutomationDraft {
   projectId: string | null;
   /** `repositoryKey`s: the installation and GitHub's id, together. */
@@ -48,7 +47,6 @@ function nextKey(): string {
   return `card-${cardSequence}`;
 }
 
-/** The project's repositories, as the draft's keys. */
 function projectRepositoryKeys(project: ProjectEntity | undefined): string[] {
   return (project?.repositories ?? []).map((repository) =>
     repositoryKey({
@@ -91,7 +89,6 @@ export function emptyDraft(
   };
 }
 
-/** The draft an existing automation opens with. */
 export function draftOf(automation: AutomationEntity): AutomationDraft {
   const { revision } = automation;
   return {
@@ -157,7 +154,6 @@ export function defaultFilter(event: GithubEventType): TriggerFilter {
   return externalEventDefinition('github', event)?.defaultFilter ?? { op: 'any' };
 }
 
-/** A new GitHub card, listening on every repository the automation works in. */
 export function githubCard(event: GithubEventType, repositories: number[]): GithubCard {
   return {
     source: 'github',
@@ -202,7 +198,6 @@ function repositoriesOf(draft: AutomationDraft): AutomationInput['repositories']
   });
 }
 
-/** The create request for a complete draft. */
 export function toCreateInput(
   draft: AutomationDraft,
   task: { name: string; prompt: string },

@@ -32,7 +32,6 @@ export interface HostPresence {
 /** What the burn hands back about the token it claimed, and nothing more. */
 export interface RedeemedPairingToken {
   id: string;
-  /** The person the host belongs to. */
   ownerUserId: string;
   /** The name the console gave the machine before it existed. */
   intendedName: string;
@@ -64,8 +63,6 @@ export interface RedeemAndRegisterInput {
 }
 
 /**
- * Port for the host aggregate.
- *
  * Every read a *person* makes takes an {@link AccessScope}, so "this query is
  * authorized" is something the compiler asks for rather than something a
  * handler remembers. The two exceptions are named for what they are: a machine
@@ -99,15 +96,12 @@ export interface HostRepositoryPort {
   findOwnedBySystem(ownerUserId: string): Promise<HostEntity[]>;
   save(entity: HostEntity): Promise<HostEntity>;
   /**
-   * Spend a pairing token and create the host it pairs, in **one transaction**.
-   *
-   * The burn is a single statement whose `WHERE` carries every reason a token
-   * may not be spent, so two machines racing on the same secret produce one host
-   * and one rejection rather than two hosts. It returns the owner and the
-   * intended name with the row it claimed, so the host is built from what was
-   * spent rather than from a second read of the same row. `None` means the
-   * statement claimed nothing — used, expired, revoked or never real,
-   * deliberately indistinguishable from each other.
+   * Spend a pairing token and create the host it pairs, in **one transaction**. The
+   * burn is one statement whose `WHERE` carries every reason a token may not be spent,
+   * so two machines racing on one secret get one host and one rejection. It returns
+   * the owner and intended name with the claimed row, so the host is built from what
+   * was spent, not a second read. `None` means it claimed nothing: used, expired,
+   * revoked or never real, deliberately indistinguishable.
    */
   redeemAndRegister(input: RedeemAndRegisterInput): Promise<Option<HostEntity>>;
 }

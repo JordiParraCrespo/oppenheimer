@@ -148,8 +148,6 @@ func TestListAndGetHandOutIndependentSessions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Copying the struct alone would share the Windows backing array, and a
-	// caller editing a window would be editing the service's own state.
 	listed := h.svc.List()[0]
 	listed.Windows[0].Name = "mutated by a caller"
 	held, err := h.svc.Get(session.ID)

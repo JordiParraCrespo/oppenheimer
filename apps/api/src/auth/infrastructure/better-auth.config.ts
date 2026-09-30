@@ -96,7 +96,6 @@ function splitName(name?: string | null): {
   return { firstName, lastName: rest.join(' ') };
 }
 
-/** The `session.delete` hooks; see `sessionDeleteHooks`. */
 const sessionDeletion = sessionDeleteHooks({
   tokensOf: async (userId) =>
     (
@@ -164,20 +163,13 @@ export const auth = betterAuth({
     preserveSessionInDatabase: false,
     /**
      * Two columns on Better Auth's `session` table that say a row is not a
-     * device.
-     *
-     * `DelegatedSessionAdapter` mints internal sessions so an API token or an
-     * OAuth client can reach the façades that resolve their caller through
-     * Better Auth. Those rows are bridges, not sign-ins, and the profile and
-     * security "Active sessions" lists read `delegated` to leave them out. It
-     * is a persisted fact rather than the `userAgent` prefix they also carry:
-     * a user agent is a label a client chooses, and a browser that sent
-     * `oppenheimer-api-token/...` would otherwise hide itself from the very screen
-     * that exists to expose it.
-     *
-     * `delegatedCredentialId` names the credential the row was minted for, so
-     * re-minting one after its cache entry expires can delete the row it
-     * supersedes instead of leaving a day of them behind.
+     * device. `DelegatedSessionAdapter` mints bridge sessions for API tokens
+     * and OAuth clients, and the "Active sessions" lists read `delegated` to
+     * leave them out. It is a persisted fact rather than the `userAgent` prefix
+     * they also carry: a client chooses its user agent, and a browser sending
+     * `oppenheimer-api-token/...` would otherwise hide itself from the screen
+     * that exists to expose it. `delegatedCredentialId` lets a remint delete
+     * the row it supersedes.
      */
     additionalFields: {
       delegated: {
@@ -303,10 +295,8 @@ export const auth = betterAuth({
     changeEmail: { enabled: true },
   },
   hooks: {
-    // A ban or unban made straight through the admin plugin
-    // (`/api/auth/admin/ban-user`) bypasses the admin module's gateway, which is what
-    // rotates the account's cached delegated sessions. Awaited by Better Auth,
-    // and best-effort like every dispatch from a hook.
+    // See `RotateDelegatedSessionsCommand`. Awaited by Better Auth, and
+    // best-effort like every dispatch from a hook.
     after: createAuthMiddleware(async (ctx) => {
       const userId = standingChangeOf({
         path: ctx.path,
@@ -329,12 +319,8 @@ export const auth = betterAuth({
             userId: user.id,
             name: user.name,
           });
-          // Sign-up finished; the application decides what that owes. This
-          // file says only that, and names no module that fulfils it — the
-          // orchestration is `CompleteSignUpCommandHandler`, which can inject a
-          // command bus where this hook cannot inject anything. See
-          // `auth-command-bus.util.ts` for why that seam exists and why the
-          // dispatch is best-effort.
+          // Names no module that fulfils sign-up; see `auth-command-bus.util.ts`
+          // for why that seam exists and why the dispatch is best-effort.
           await dispatchFromAuthHook(
             new CompleteSignUpCommand({
               userId: user.id,
@@ -359,27 +345,17 @@ export const auth = betterAuth({
               organizationId: string;
               teamId: string | null;
             }>(
-              // Which organization a returning user lands in.
+              // Which organization a returning user lands in: the one they last
+              // had open, then the most recently joined. Oldest-first sent an
+              // invitee back to the personal workspace sign-up provisioned
+              // seconds before the acceptance, without the invitation's
+              // org-scoped role, and the dashboard answered 403. An explicit
+              // sign-out deletes the session row that remembers, hence the
+              // most-recently-joined fallback.
               //
-              // Ordered by "the one they last had open", then by the most
-              // recently joined. It used to be the *oldest* membership, which
-              // was whichever workspace they happened to reach first — for an
-              // invitee that was the personal organization sign-up provisioned
-              // a second or two before the invitation was accepted, so they
-              // signed back in to an empty workspace of their own instead of
-              // the one that invited them, without the org-scoped role the
-              // invitation granted, and the dashboard answered 403.
-              //
-              // The session row is the memory, and an explicit sign-out
-              // deletes it; that is why the fallback is most-recently-joined
-              // rather than oldest. Someone invited to a second workspace does
-              // land there on their next sign-in, which is the same answer the
-              // acceptance itself gave them and the one they can change with
-              // the organization switcher.
-              //
-              // The workspace is chosen the same way: one the user actually
-              // belongs to, falling back to the organization's own default, so
-              // the session never points at a team they are not in.
+              // The workspace is one the user belongs to, falling back to the
+              // organization's default, so the session never points at a team
+              // they are not in.
               `SELECT m."organizationId",
                       COALESCE(mine."id", fallback."id") AS "teamId"
                  FROM "member" m
@@ -431,16 +407,11 @@ export const auth = betterAuth({
       },
       delete: {
         // Every session row Better Auth deletes — one revocation, a bulk
-        // sign-out, a ban, a password reset — takes its cached copy with it.
-        // Better Auth deletes the copies it finds through its per-user index,
-        // but that index is itself a cache entry, rewritten on every sign-in: a
-        // session whose index entry was lost to a failed read or write would
-        // stay live in Redis after its row was gone. The row is the record, so its
-        // deletion is what clears the copy. A failure here aborts the delete,
-        // so a revocation that cannot reach Redis fails loudly instead of
-        // succeeding in Postgres alone. Better Auth hands the hook at most 100
-        // rows of a bulk delete; for a user holding more, the hook evicts the
-        // copy of every row they hold (`sessionDeleteHooks`).
+        // sign-out, a ban, a password reset — takes its cached copy with it,
+        // since Better Auth's per-user index of copies is itself a cache entry
+        // (`sessionDeleteHooks`). A failure here aborts the delete, so a
+        // revocation that cannot reach Redis fails loudly instead of
+        // succeeding in Postgres alone.
         before: (session) => sessionDeletion.before(session),
         after: async (session) => sessionDeletion.after(session),
       },
@@ -450,9 +421,7 @@ export const auth = betterAuth({
     admin({
       // Users whose `role` is one of these can call the admin plugin endpoints
       // (list/ban/impersonate/set-role/...). CASL still governs the app's own
-      // REST routes; this only gates `/api/auth/admin/*`. Every admin role must
-      // be defined in `roles` below (the built-in `admin`/`user` reuse Better
-      // Auth's own access-control roles; `superadmin` gets the full statement set).
+      // REST routes; this only gates `/api/auth/admin/*`.
       roles: { superadmin: superadminAc, admin: adminAc, user: userAc },
       adminRoles: ['superadmin', 'admin'],
       defaultRole: 'user',

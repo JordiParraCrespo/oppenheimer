@@ -7,14 +7,7 @@ import { HostErrors } from '../../domain/hosts.errors';
 import { HOST_PAIRING_TOKEN_REPOSITORY } from '../../hosts.di-tokens';
 import { RevokePairingTokenCommand } from './revoke-pairing-token.command';
 
-/**
- * Revokes a pairing token: one column, and the record stays so the history of
- * what was minted from where survives.
- *
- * That column is the whole of revocation, because the redemption statement
- * requires `revokedAt IS NULL` — a token revoked here cannot be spent even by
- * someone holding the secret.
- */
+/** The record stays, so the history of what was minted from where survives. */
 @CommandHandler(RevokePairingTokenCommand)
 export class RevokePairingTokenCommandHandler
   implements ICommandHandler<RevokePairingTokenCommand, AggregateID>

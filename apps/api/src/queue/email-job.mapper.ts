@@ -15,8 +15,6 @@ export interface EmailLocaleTarget {
 }
 
 /**
- * Pure queue-payload → email-template mapper.
- *
  * The processor resolves one recipient locale, binds a formatter to it, and
  * hands both to this mapper. Templates therefore receive finished copy and do
  * not depend on Nest, the translation package, or whichever delivery provider

@@ -1,10 +1,6 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 /**
- * Profile domain error catalog. Surfaced as RFC 7807 problem documents by the
- * global `AllExceptionsFilter` via `AppError`; `httpStatus` is a plain status
- * code so the domain stays free of any HTTP framework.
- *
  * Every code here also needs a row in `apps/docs/docs/errors.md` and a message
  * in each locale — `src/__tests__/error-catalog-coverage.spec.ts` fails the
  * build otherwise.
@@ -60,7 +56,6 @@ export const ProfileErrors = {
     message: 'The account service could not complete that request',
     httpStatus: 502,
   },
-  /** The new address is the one the account already uses. */
   EMAIL_UNCHANGED: {
     code: 'PROFILE_009',
     message: 'That is already your email address',

@@ -47,27 +47,18 @@ class KernelStubModule {}
 class FeatureModule {}
 
 describe('AuthModule.contributeCredentials', () => {
-  it('registers the contribution at boot, with nothing injecting it', async () => {
+  it('registers the contribution at boot, built in the contributing module’s injector', async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [KernelStubModule, FeatureModule],
     }).compile();
     await moduleRef.init();
 
-    const registry = moduleRef.get(CredentialResolverRegistry);
+    const resolvers = moduleRef.get(CredentialResolverRegistry).all();
 
-    expect(registry.all().map((resolver) => resolver.kind)).toEqual(['feature-credential']);
-  });
-
-  it('builds the resolver in the contributing module’s injector', async () => {
-    const moduleRef = await Test.createTestingModule({
-      imports: [KernelStubModule, FeatureModule],
-    }).compile();
-    await moduleRef.init();
-
-    const [resolver] = moduleRef.get(CredentialResolverRegistry).all();
-
+    // Nothing injects it, yet it is registered — and nothing else is.
+    expect(resolvers.map((resolver) => resolver.kind)).toEqual(['feature-credential']);
     // Resolved from a provider only `FeatureModule` declares.
-    expect(resolver.recognises('feature_secret')).toBe(true);
-    expect(resolver.recognises('something_else')).toBe(false);
+    expect(resolvers[0].recognises('feature_secret')).toBe(true);
+    expect(resolvers[0].recognises('something_else')).toBe(false);
   });
 });

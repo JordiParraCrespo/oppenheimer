@@ -10,18 +10,16 @@ import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../../sessions.di-tok
 import { StopSessionCommand } from './stop-session.command';
 
 /**
- * Stops a session: the agent and the tmux session end, and **every checkout stays
- * on disk**, so a restart recreates window 0 in the same worktrees.
+ * Stops a session: the agent and the tmux session end, and **every checkout stays on
+ * disk**, so a restart recreates window 0 in the same worktrees.
  *
- * Stopping is not closing, and the stored lifecycle does not move: it answers
- * whether the work is finished, and a stopped session is exactly as unfinished as
- * it was. `stoppedAt` is the whole of what changes.
+ * The stored lifecycle does not move: it answers whether the work is finished, and a
+ * stopped session is as unfinished as it was. `stoppedAt` is all that changes.
  *
- * **One append.** Stopping is a control-plane decision, not an outcome a host
- * reports: the session will not be dispatched again, so it is stopped whether or
- * not anything is listening. The entry is the decision, the host is told after it,
- * and what could not be delivered comes back as a hint on the response rather than
- * as a second entry in a second transaction.
+ * **One append.** Stopping is a control-plane decision, not a reported outcome: the
+ * session will not be dispatched again, listening or not. The host is told after the
+ * entry, and what could not be delivered is a hint on the response rather than a
+ * second entry in a second transaction.
  */
 @CommandHandler(StopSessionCommand)
 export class StopSessionCommandHandler

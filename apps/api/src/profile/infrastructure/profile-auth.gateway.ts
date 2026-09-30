@@ -9,20 +9,15 @@ import { invokeProfileApi } from '../profile-error.mapper';
 import type { ChangePasswordInput, ProfileAuthPort } from './profile-auth.port';
 
 /**
- * Delegating façade over the Better Auth operations that act on the caller's
- * own credentials: changing a password, and revoking sessions.
+ * Façade over the Better Auth operations on the caller's own credentials:
+ * changing a password and revoking sessions. Better Auth owns the `account`
+ * and `session` tables and the hashing, so writing them here would own
+ * password hashing and session invalidation twice. Calls go through
+ * `invokeProfileApi` (see `betterAuthInvoker`).
  *
- * Better Auth owns the `account` and `session` tables and the hashing scheme,
- * so these are delegated rather than re-implemented — writing the tables here
- * would mean owning password hashing and session invalidation in two places.
- * Every call goes through `invokeProfileApi`, which folds Better Auth's errors
- * onto this module's catalog.
- *
- * Bulk revocation additionally evicts the caller's cached delegated sessions.
- * Better Auth deletes the session rows, but `DelegatedSessionAdapter` holds the
- * token for a scoped credential for ten minutes; without the eviction the
- * credential keeps presenting a token that no longer exists and every façade
- * call fails until the cache expires.
+ * Bulk revocation also evicts the caller's cached delegated sessions: Better
+ * Auth deletes the rows, and without the eviction a scoped credential keeps
+ * presenting a dead token and every façade call fails until the cache expires.
  */
 @Injectable()
 export class ProfileAuthGateway implements ProfileAuthPort {
@@ -62,10 +57,6 @@ export class ProfileAuthGateway implements ProfileAuthPort {
   }
 
   /**
-   * Revoke one session by its token. The token is never accepted from a client
-   * — the caller names a session by id and the repository resolves it, after
-   * the handler has checked the session is theirs.
-   *
    * No eviction here: a single revocation names a device session, and a
    * delegated session is not one — it is minted per credential and never
    * appears to the user as a device they chose to sign out.
@@ -80,8 +71,6 @@ export class ProfileAuthGateway implements ProfileAuthPort {
   }
 
   /**
-   * Revoke every session except the one this request was made with.
-   *
    * Better Auth finds "the other sessions" through its session cache's own
    * index, which knows nothing of a session signed in before the cache existed
    * or one whose index entry was lost — and those still work, from Postgres.

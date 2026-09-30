@@ -1,15 +1,13 @@
-/** Query keys of the signed-in user's own preferences. */
 export const userSettingsKeys = {
   all: ['userSettings'] as const,
   me: () => [...userSettingsKeys.all, 'me'] as const,
 };
 
 /**
- * Query key factory for the `auth` feature. Defined here rather than in
- * `auth.queries.ts` because `persistence.ts` needs it at module load, and
- * `auth.queries.ts` imports `persistence.ts`: keeping it here breaks the cycle.
- * Every key is derived from `all` so the whole subtree can be invalidated/cleared with a single key. See the
- * "React Query keys" guide in the docs for the rationale.
+ * Defined here rather than in `auth.queries.ts` because `persistence.ts` needs
+ * it at module load, and `auth.queries.ts` imports `persistence.ts`: keeping it
+ * here breaks the cycle. Every key is derived from `all` so the whole subtree
+ * can be invalidated or cleared with a single key.
  */
 export const authKeys = {
   all: ['auth'] as const,

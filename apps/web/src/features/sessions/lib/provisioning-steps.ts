@@ -3,11 +3,6 @@ import type { SessionStartStep } from '@oppenheimer/frontend-consumer';
 import { SESSION_START_STEPS } from '@oppenheimer/shared/protocol';
 import type { TFunction } from 'i18next';
 
-/**
- * The start steps as `Stepper` rows: a label naming what the step acts on, and
- * a meta line that reads as an action while it runs and as a result once it
- * lands — the time the host measured, the branch, "Connected", "Ready".
- */
 export interface ProvisioningContext {
   host: string;
   /** The row's `host_offline` hint: the start is waiting on a machine that is away. */
@@ -26,6 +21,11 @@ export const PENDING_START: SessionStartStep[] = SESSION_START_STEPS.map((id) =>
   durationMs: null,
 }));
 
+/**
+ * The start steps as `Stepper` rows: a label naming what the step acts on, and
+ * a meta line that reads as an action while it runs and as a result once it
+ * lands — the time the host measured, the branch, "Connected", "Ready".
+ */
 export function provisioningSteps(
   steps: readonly SessionStartStep[],
   context: ProvisioningContext,

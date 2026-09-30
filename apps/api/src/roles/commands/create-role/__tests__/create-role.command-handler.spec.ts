@@ -40,11 +40,36 @@ describe('CreateRoleCommandHandler', () => {
       }),
     );
 
+    // The name is unique within the active organization, and the role belongs to it.
+    expect(repo.findOneByName).toHaveBeenCalledWith('editor', 'organization-1');
     expect(repo.insert).toHaveBeenCalledTimes(1);
     const created = vi.mocked(repo.insert).mock.calls[0][0] as RoleEntity;
     expect(created.name).toBe('editor');
     expect(created.isSystem).toBe(false);
+    expect(created.organizationId).toBe('organization-1');
     expect(created.permissions).toHaveLength(1);
+  });
+
+  it('writes nothing when the author cannot grant the permissions', async () => {
+    policy.assertGrantable.mockRejectedValue(
+      Object.assign(new Error('no'), { code: RoleErrors.PERMISSION_NOT_GRANTABLE.code }),
+    );
+
+    await expect(
+      service.execute(
+        new CreateRoleCommand({
+          name: 'escalator',
+          permissions: [{ action: 'manage', subject: 'all' }],
+          actorId: 'user-1',
+          organizationId: 'organization-1',
+        }),
+      ),
+    ).rejects.toMatchObject({ code: RoleErrors.PERMISSION_NOT_GRANTABLE.code });
+    expect(policy.assertGrantable).toHaveBeenCalledWith(
+      { id: 'user-1', role: undefined, organizationId: 'organization-1' },
+      [{ action: 'manage', subject: 'all' }],
+    );
+    expect(repo.insert).not.toHaveBeenCalled();
   });
 
   it('throws NAME_TAKEN when a role with the same name exists', async () => {
@@ -73,20 +98,6 @@ describe('CreateRoleCommandHandler', () => {
       ),
     ).rejects.toMatchObject({ code: RoleErrors.NAME_TAKEN.code });
     expect(repo.insert).not.toHaveBeenCalled();
-  });
-
-  it('creates and checks custom roles inside the active organization', async () => {
-    await service.execute(
-      new CreateRoleCommand({
-        name: 'Content Lead',
-        permissions: [],
-        organizationId: 'organization-1',
-      }),
-    );
-
-    expect(repo.findOneByName).toHaveBeenCalledWith('Content Lead', 'organization-1');
-    const created = vi.mocked(repo.insert).mock.calls[0][0] as RoleEntity;
-    expect(created.organizationId).toBe('organization-1');
   });
 
   describe('with no organization', () => {

@@ -49,7 +49,6 @@ export class OppenheimerApp {
   static create(config: OppenheimerAppConfig): OppenheimerApp {
     const container = new Container();
 
-    // Core: storage + analytics client + API client
     container.load(createCoreModule(config));
 
     // Kernel modules, shared by every product

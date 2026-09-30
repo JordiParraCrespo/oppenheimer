@@ -64,6 +64,8 @@ describe('AcceptInvitationCommandHandler', () => {
     );
   });
 
+  // The fixture above carries the default role, so only this row catches a
+  // handler that stops reading the invitation's role.
   it('passes an invited admin’s organization role for the policy to scope', async () => {
     invitationAuth.accept.mockResolvedValue({
       invitation: { ...invitation, role: 'admin' },

@@ -6,17 +6,11 @@ import { useTranslation } from 'react-i18next';
 import { useConsoleList } from '@/lib/console';
 
 /**
- * The console's rail: the strip left of the sidebar that switches between
- * its lists (`product/versions/mvp/05-screens.md`,
- * `…/13-automations.md`).
- *
- * Two lists, two links: Sessions with its count, and Automations. Which is
- * current is `useConsoleList`'s answer, the one the shell picks the sidebar
- * by: the automations list is everything under `/automations`, and the
- * sessions list is everything else the console shows.
- *
- * A section rather than kit, because the count is a product read; it is the
- * same list the sidebar subscribes to, so the read costs nothing extra.
+ * The console's rail, switching the sidebar between its lists
+ * (`product/versions/mvp/05-screens.md`, `…/13-automations.md`). The current
+ * one is `useConsoleList`'s answer, the same the shell picks the sidebar by.
+ * A section rather than kit because the count is a product read; it is the
+ * list the sidebar already subscribes to, so it costs nothing extra.
  */
 export function ConsoleRail() {
   const { t } = useTranslation();

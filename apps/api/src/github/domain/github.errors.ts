@@ -1,8 +1,6 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 /**
- * Failures the `github/` module can produce.
- *
  * The prefix is plural-noun `GITHUB_` and the numbering starts at 001 because
  * the Go runner owns its own `HOST_00x` / `PAIR_00x` / `SESS_00x` ranges in the
  * same catalog; a reused code fails `error-catalog-coverage.spec.ts`.

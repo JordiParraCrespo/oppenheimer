@@ -25,8 +25,6 @@ const schema = z.object({
 });
 
 /**
- * Whether a model names sessions on this deployment.
- *
  * One function, called by the capability and the namer adapter — the shape
  * `hostsAreConfigured` already set. It needs a configured provider and a model
  * to ask; without either, sessions are still named, from their prompt.

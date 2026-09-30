@@ -11,9 +11,7 @@ import { GithubInstallationMapper } from '../github-installation.mapper';
  *
  * This is the layer unit tests cannot reach: constraint names, the check
  * constraint, the composite unique a later slice's foreign key depends on, and
- * the owner role's rule — none of which a mock can be wrong about. The schema is
- * built by running the migrations rather than `synchronize`, so a mistake in a
- * migration fails here rather than in production.
+ * the owner role's rule — none of which a mock can be wrong about.
  *
  * It deliberately does not boot the application: what is under test is SQL.
  */

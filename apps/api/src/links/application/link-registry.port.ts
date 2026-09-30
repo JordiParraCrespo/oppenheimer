@@ -1,14 +1,5 @@
 import type { ProtocolMessage, RunnerCapability } from '@oppenheimer/shared/protocol';
 
-/**
- * A live runner link, as the rest of the control plane sees it: something a
- * control message or a PTY frame can be sent down, and a table of the
- * attachments open on it.
- *
- * The socket itself stays inside the relay module. What crosses this port is
- * already-shaped protocol messages (`@oppenheimer/shared/protocol`) and bytes,
- * which is what lets the dispatcher and the tests exist without `ws`.
- */
 export interface AttachmentSink {
   /** One PTY read, bare bytes. */
   deliver(bytes: Uint8Array): void;
@@ -26,6 +17,15 @@ export interface SentSessionCommand {
   sessionId: string;
 }
 
+/**
+ * A live runner link, as the rest of the control plane sees it: something a
+ * control message or a PTY frame can be sent down, and a table of the
+ * attachments open on it.
+ *
+ * The socket itself stays inside the relay module. What crosses this port is
+ * already-shaped protocol messages (`@oppenheimer/shared/protocol`) and bytes,
+ * which is what lets the dispatcher and the tests exist without `ws`.
+ */
 export interface RunnerLink {
   readonly hostId: string;
   /** The runner's process id for idempotency keys; new on every runner start. */

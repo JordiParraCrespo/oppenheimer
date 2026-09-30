@@ -69,7 +69,6 @@ export function useAutomations<TData = AutomationEntity[]>(
   });
 }
 
-/** One automation, for its page. */
 export function useAutomation(
   id: string | undefined,
   options?: Omit<UseQueryOptions<AutomationEntity, Error>, 'queryKey' | 'queryFn' | PollKeys>,
@@ -185,13 +184,21 @@ export function useDuplicateAutomation(
   });
 }
 
-/** Delete: its triggers stop now, and its past runs are kept. */
+/**
+ * Delete: its triggers stop now, and its past runs are kept. The deleted
+ * automation's own read is dropped rather than left stale, so nothing asks
+ * the API again for a row that is gone.
+ */
 export function useDeleteAutomation(options?: UseMutationOptions<void, Error, string>) {
   const app = useConsumerApp();
+  const queryClient = useQueryClient();
   const invalidate = useInvalidateAutomations();
   return useMutation({
     mutationFn: (id: string) => app.automations.remove(id),
-    ...withCacheOnSuccess(options, invalidate),
+    ...withCacheOnSuccess(options, (_data, id) => {
+      queryClient.removeQueries({ queryKey: automationsKeys.detail(id), exact: true });
+      return invalidate();
+    }),
   });
 }
 

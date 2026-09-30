@@ -2,6 +2,8 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
+type HostCardStatus = 'running' | 'idle' | 'offline';
+
 /**
  * HostCard — one card per host on the Settings page: a status dot on the
  * left (green running, grey idle, a hollow grey ring when offline), the
@@ -10,8 +12,6 @@ import { cn } from '../lib/utils';
  * Rename, Copy host ID and Remove host. Measured against
  * `design/version1/Components.dc.html` ("Host card").
  */
-type HostCardStatus = 'running' | 'idle' | 'offline';
-
 function HostCard({
   name,
   meta,

@@ -129,7 +129,6 @@ import { UsersModule } from './users/user.module';
           // idle-in-transaction timeouts, tagged `api` in `pg_stat_activity`.
           extra: poolOptions(configService.get('database') as DatabaseConfig, 'api'),
           autoLoadEntities: true,
-          // Schema is managed through versioned migrations, never auto-sync.
           synchronize: false,
           migrations: isTest ? [] : [`${__dirname}/migrations/*{.ts,.js}`],
           // Never on this DataSource: its pool carries the request timeouts.
@@ -213,10 +212,10 @@ import { UsersModule } from './users/user.module';
       }),
     }),
     OutboxModule,
-    // Server-side translation. The bundles are the same JSON the web and
-    // mobile apps load, so a string is written once and a translator edits one
-    // file — and an email, which has no request to negotiate a language from,
-    // renders from the recipient's stored preference instead.
+    // The bundles are the same JSON the web app loads, so a string
+    // is written once and a translator edits one file — and an email, which
+    // has no request to negotiate a language from, renders from the
+    // recipient's stored preference instead.
     I18nModule.forRoot({
       bundles: { en, es },
       defaultLocale: 'en',
@@ -233,26 +232,15 @@ import { UsersModule } from './users/user.module';
     RolesModule,
     // The Better Auth organization row is the personal workspace
     // (`product/versions/mvp/00-scope.md`); the roster and invitation routes
-    // it ships stay until the teams slice needs them. The product contexts
-    // (hosts, installations, projects, sessions, relay) follow it here as they
-    // land.
+    // it ships stay until the teams slice needs them.
     OrganizationsModule,
-    // What external systems tell us, stored once and normalized: the hub the
-    // providers below feed and automations consume.
     InboundEventsModule,
-    // What GitHub grants a workspace, and how the platform exercises it. The
-    // first of the product contexts named above.
     GithubModule,
-    // The control plane's own modules. `hosts` is first of them: the machines a
-    // person paired, and the credential a runner authenticates with.
     HostsModule,
     AdminModule,
     FeatureFlagsModule,
     ProjectsModule,
-    // The module the other three feed into: the sessions themselves, their
-    // checkouts, and the append-only log the row is a fold of.
     SessionsModule,
-    // Saved prompts and their triggers, whose every run is a session above.
     AutomationsModule,
     RelayModule,
     HealthModule,

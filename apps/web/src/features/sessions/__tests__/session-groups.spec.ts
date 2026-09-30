@@ -4,9 +4,9 @@ import { groupByProject, matchesQuery, projectsForMove } from '../lib/session-gr
 
 /**
  * The sidebar's groups and the move pane's targets
- * (`product/versions/mvp/05-screens.md`): every project is a
- * group even when empty, a session whose project is gone still shows, and a
- * session may move only where its repository already is.
+ * (`product/versions/mvp/05-screens.md`): every project is a group even when
+ * empty, a session whose project is gone still shows, and a session may move
+ * to any other project.
  */
 const project = (id: string, repos: string[]) =>
   new ProjectEntity(

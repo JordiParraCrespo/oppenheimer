@@ -11,20 +11,18 @@ import type { ScopeContext, ScopedRequest } from '../domain/scope-context.types'
 
 /**
  * Enforces what a scoped credential may reach. Registered globally, so it
- * applies to every route whether or not the route remembered to ask for it.
+ * applies to every route whether or not the route asked for it.
  *
- * Requests authenticated by a browser session pass straight through — they are
- * governed by the user's roles via `PoliciesGuard`. Requests carrying an API
- * token or OAuth access token must satisfy three things:
+ * Browser sessions pass straight through; the user's roles govern them via
+ * `PoliciesGuard`. An API token or OAuth access token needs:
  *
- * 1. the route declares `@RequireScopes` (a route that declares nothing is
- *    closed to tokens — new endpoints are not silently reachable);
- * 2. the credential carries every declared scope;
- * 3. the organization the route acts on is within the credential's restriction.
+ * 1. `@RequireScopes` on the route (or `@AllowAnyScope()`); a route that
+ *    declares nothing is closed to tokens;
+ * 2. every declared scope on the credential;
+ * 3. the route's organization within the credential's restriction.
  *
- * This is only half of the check. The credential's owner still has to be
- * allowed to perform the operation at all, which `PoliciesGuard` evaluates
- * against their live roles — so the effective permission is the intersection.
+ * `PoliciesGuard` still checks the owner's live roles, so the effective
+ * permission is the intersection.
  */
 @Injectable()
 export class ScopesGuard implements CanActivate {

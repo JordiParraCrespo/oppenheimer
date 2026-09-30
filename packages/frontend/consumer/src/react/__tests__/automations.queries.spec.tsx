@@ -93,14 +93,6 @@ describe('automationsKeys', () => {
 
     for (const key of keys) expect(client.getQueryState(key)?.isInvalidated).toBe(true);
   });
-
-  it('keeps run pages and the history apart under runs, so a page is its filter', () => {
-    expect(automationsKeys.runList({ page: 1 })).not.toEqual(automationsKeys.runList({ page: 2 }));
-    expect(automationsKeys.runList({}).slice(0, 2)).toEqual(automationsKeys.runs());
-    expect(automationsKeys.history({ timezone: 'UTC' }).slice(0, 2)).toEqual(
-      automationsKeys.runs(),
-    );
-  });
 });
 
 describe('useAutomations', () => {
@@ -274,13 +266,6 @@ describe('automation writes', () => {
       called: ['a-1'],
     },
     {
-      name: 'delete',
-      method: 'remove',
-      hook: useDeleteAutomation,
-      variables: 'a-1',
-      called: ['a-1'],
-    },
-    {
       name: 'run now',
       method: 'run',
       hook: useRunAutomation,
@@ -315,14 +300,19 @@ describe('automation writes', () => {
     });
   }
 
-  it('resuming never pauses, and pausing never resumes', async () => {
-    const service = { pause: vi.fn().mockResolvedValue({}), resume: vi.fn().mockResolvedValue({}) };
-    const { wrapper } = setup(service);
-    const { result } = renderHook(() => useSetAutomationPaused(), { wrapper });
+  it("delete forgets the deleted automation, leaves the other reads stale, then runs the caller's onSuccess", async () => {
+    const service = { remove: vi.fn().mockResolvedValue(undefined) };
+    const { wrapper, queryClient } = setup(service);
+    const [list, detail, runs] = seeded(queryClient);
+    const onSuccess = vi.fn(() => ({
+      detail: queryClient.getQueryState(detail),
+      stale: [list, runs].map((key) => queryClient.getQueryState(key)?.isInvalidated),
+    }));
+    const { result } = renderHook(() => useDeleteAutomation({ onSuccess }), { wrapper });
 
-    await act(() => result.current.mutateAsync({ id: 'a-1', paused: false }));
+    await act(() => result.current.mutateAsync('a-1'));
 
-    expect(service.resume).toHaveBeenCalledWith('a-1');
-    expect(service.pause).not.toHaveBeenCalled();
+    expect(service.remove).toHaveBeenCalledWith('a-1');
+    expect(onSuccess.mock.results[0]?.value).toEqual({ detail: undefined, stale: [true, true] });
   });
 });

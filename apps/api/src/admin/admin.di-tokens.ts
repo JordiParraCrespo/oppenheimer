@@ -1,5 +1,5 @@
 /**
- * DI tokens for the admin module. The use cases inject the port through its
- * token, so they depend on `AdminAuthPort`, not on the Better Auth gateway.
+ * Use cases inject the port through this token, so they depend on
+ * `AdminAuthPort`, never on the Better Auth gateway behind it.
  */
 export const ADMIN_AUTH = Symbol('ADMIN_AUTH');

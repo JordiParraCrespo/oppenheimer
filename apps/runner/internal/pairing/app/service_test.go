@@ -381,7 +381,6 @@ func TestAChosenWorkspacesDirectorySurvivesARepair(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Where this machine keeps code is the machine's setting, not the pairing's.
 	if identity.WorkspacesPath != "/srv/code" {
 		t.Fatalf("workspacesPath = %q after re-pairing", identity.WorkspacesPath)
 	}
