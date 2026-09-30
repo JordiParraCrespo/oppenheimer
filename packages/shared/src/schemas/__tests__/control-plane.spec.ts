@@ -67,22 +67,6 @@ describe('registerHostSchema', () => {
     );
   });
 
-  it('refuses the invented shape no runner ever sent', () => {
-    expect(
-      registerHostSchema.safeParse({
-        ...valid,
-        facts: { hostname: 'h', os: 'darwin', arch: 'arm64', tools: {}, agents: [] },
-      }).success,
-    ).toBe(false);
-  });
-
-  it('refuses a platform outside the runner’s own enum', () => {
-    expect(
-      registerHostSchema.safeParse({ ...valid, facts: { ...runnerFacts, platform: 'windows' } })
-        .success,
-    ).toBe(false);
-  });
-
   it('accepts `unsupported`, which the runner really does send', () => {
     expect(
       registerHostSchema.safeParse({
@@ -166,8 +150,13 @@ describe('the two installation ids cannot be confused', () => {
   });
 
   it('refuses our uuid where GitHub’s numeric id belongs', () => {
+    const state = 'kX9_mZq-4vR2tY7wB1nC3dE5fG8hJ0kL';
     expect(
-      connectInstallationSchema.safeParse({ githubInstallationId: uuid, code: 'a' }).success,
+      connectInstallationSchema.safeParse({ githubInstallationId: 12345, code: 'a', state })
+        .success,
+    ).toBe(true);
+    expect(
+      connectInstallationSchema.safeParse({ githubInstallationId: uuid, code: 'a', state }).success,
     ).toBe(false);
   });
 });

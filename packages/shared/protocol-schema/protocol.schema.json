@@ -401,11 +401,14 @@
             "effort": {
               "type": "string",
               "enum": [
+                "none",
                 "minimal",
                 "low",
                 "medium",
                 "high",
-                "max"
+                "xhigh",
+                "max",
+                "ultra"
               ]
             }
           }

@@ -47,7 +47,7 @@ function goStrings(vector) {
   return `[]string{${vector.map((word) => JSON.stringify(word)).join(', ')}}`;
 }
 
-/** Inside a `map[string][]string` literal `gofmt -s` elides the element type. */
+/** Inside a composite literal `gofmt -s` elides the element type. */
 function goElided(vector) {
   return `{${vector.map((word) => JSON.stringify(word)).join(', ')}}`;
 }
@@ -63,14 +63,6 @@ function aligned(entries, indent) {
   return entries.map(
     ([key, value]) => `${indent}${key}:${' '.repeat(width - key.length + 1)}${value},`,
   );
-}
-
-function goMap(record) {
-  const entries = Object.entries(record).map(([key, vector]) => [
-    JSON.stringify(key),
-    goElided(vector),
-  ]);
-  return `map[string][]string{\n${aligned(entries, '\t\t\t').join('\n')}\n\t\t}`;
 }
 
 /** One permission level: its argv and its env, each omitted when empty. */
@@ -93,6 +85,19 @@ function goLevels(record) {
   return `map[string]launchLevel{\n${aligned(entries, '\t\t\t').join('\n')}\n\t\t}`;
 }
 
+/**
+ * The effort levels each model offers, keyed by model id: which names a
+ * launch on that model may carry. A model with no effort has no row, so the
+ * runner drops a level asked of it. How a level is spelled is the agent's one
+ * `effort` level, beside this.
+ */
+function goEffortLevels(models) {
+  const rows = models
+    .filter((model) => model.effort)
+    .map((model) => [JSON.stringify(model.id), goElided(model.effort.levels)]);
+  return `map[string][]string{\n${aligned(rows, '\t\t\t').join('\n')}\n\t\t}`;
+}
+
 /** One login target: a host, and a path prefix when there is one. */
 function goTarget(target) {
   const fields = [`Host: ${JSON.stringify(target.host)}`];
@@ -107,9 +112,10 @@ function render() {
     '',
     'package domain',
     '',
-    "// launchCatalog is each agent's `launch` entry of the catalog: the argument",
-    '// vectors a structured launch becomes. `<model>` and `<prompt>` are the two',
-    '// placeholders, substituted whole.',
+    "// launchCatalog is each agent's `launch` entry of the catalog, and the effort",
+    '// levels its models offer: the argument vectors a structured launch becomes.',
+    '// `<model>` and `<prompt>` are substituted whole; an effort spelling has',
+    '// `<effort>` and `<model>` replaced inside each word.',
     'var launchCatalog = map[string]launchMap{',
   ];
   for (const id of CODING_AGENT_IDS) {
@@ -119,9 +125,16 @@ function render() {
     // Single-line fields align as a run; each multi-line map stands alone.
     const head = [['command', JSON.stringify(agent.command)]];
     if (launch.model) head.push(['model', goStrings(launch.model)]);
+    const defaultModel = agent.models.find((model) => model.default);
+    if (defaultModel) head.push(['defaultModel', JSON.stringify(defaultModel.id)]);
     lines.push(...aligned(head, '\t\t'));
     if (launch.permission) lines.push(`\t\tpermission: ${goLevels(launch.permission)},`);
-    if (launch.effort) lines.push(`\t\teffort: ${goMap(launch.effort)},`);
+    if (launch.effort) {
+      const spelling = [['effort', `launchLevel${goLevel(launch.effort)}`]];
+      if (launch.effort.unset) spelling.push(['effortUnset', JSON.stringify(launch.effort.unset)]);
+      lines.push(...aligned(spelling, '\t\t'));
+      lines.push(`\t\teffortLevels: ${goEffortLevels(agent.models)},`);
+    }
     if (launch.prompt) lines.push(`\t\tprompt: ${goStrings(launch.prompt)},`);
     lines.push('\t},');
   }

@@ -7,6 +7,7 @@ import {
   type SessionAttachmentDto,
   type SessionSortDto,
 } from '@oppenheimer/shared';
+import { effortLevelFor } from '@oppenheimer/shared/agents';
 import {
   SESSION_IMAGE_MEDIA_TYPES,
   type SessionImageMediaType,
@@ -304,7 +305,8 @@ export class WorkSessionMapper
    * An absent level is `ask` — the one that asks before every action — and never
    * anything else: a default that escalated is the single mistake this field must
    * not make (`product/versions/mvp/03-control-plane.md`). An agent with no
-   * approvals records no level at all (`launchPermissionFor`).
+   * approvals records no level at all (`launchPermissionFor`), and an effort
+   * the model does not offer is not recorded (`effortLevelFor`).
    */
   toLaunch(
     agent: CreateSessionDto['agent'],
@@ -313,7 +315,7 @@ export class WorkSessionMapper
     return {
       model: launch?.model ?? null,
       permission: launchPermissionFor(agent, launch?.permission),
-      effort: launch?.effort ?? null,
+      effort: effortLevelFor(agent, launch?.model ?? null, launch?.effort),
     };
   }
 

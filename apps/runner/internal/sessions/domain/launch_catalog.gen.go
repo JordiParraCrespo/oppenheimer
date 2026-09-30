@@ -3,68 +3,79 @@
 
 package domain
 
-// launchCatalog is each agent's `launch` entry of the catalog: the argument
-// vectors a structured launch becomes. `<model>` and `<prompt>` are the two
-// placeholders, substituted whole.
+// launchCatalog is each agent's `launch` entry of the catalog, and the effort
+// levels its models offer: the argument vectors a structured launch becomes.
+// `<model>` and `<prompt>` are substituted whole; an effort spelling has
+// `<effort>` and `<model>` replaced inside each word.
 var launchCatalog = map[string]launchMap{
 	"claude-code": {
-		command: "claude",
-		model:   []string{"--model", "<model>"},
+		command:      "claude",
+		model:        []string{"--model", "<model>"},
+		defaultModel: "claude-opus-5-5",
 		permission: map[string]launchLevel{
 			"ask":  {argv: []string{"--permission-mode", "manual"}},
 			"auto": {argv: []string{"--permission-mode", "acceptEdits"}},
 			"full": {argv: []string{"--permission-mode", "bypassPermissions"}},
 		},
-		effort: map[string][]string{
-			"minimal": {"--effort", "low"},
-			"low":     {"--effort", "medium"},
-			"medium":  {"--effort", "high"},
-			"high":    {"--effort", "xhigh"},
-			"max":     {"--effort", "max"},
+		effort: launchLevel{argv: []string{"--effort", "<effort>"}},
+		effortLevels: map[string][]string{
+			"claude-opus-5-5":   {"low", "medium", "high", "xhigh", "max"},
+			"claude-fable-5-1":  {"low", "medium", "high", "xhigh", "max"},
+			"claude-sonnet-5-5": {"low", "medium", "high", "xhigh", "max"},
 		},
 		prompt: []string{"<prompt>"},
 	},
 	"codex": {
-		command: "codex",
-		model:   []string{"--model", "<model>"},
+		command:      "codex",
+		model:        []string{"--model", "<model>"},
+		defaultModel: "gpt-5.6-sol",
 		permission: map[string]launchLevel{
 			"ask":  {argv: []string{"--ask-for-approval", "on-request", "--sandbox", "workspace-write"}},
 			"auto": {argv: []string{"--approve-for-me"}},
 			"full": {argv: []string{"--dangerously-bypass-approvals-and-sandbox"}},
 		},
-		effort: map[string][]string{
-			"minimal": {"-c", "model_reasoning_effort=minimal"},
-			"low":     {"-c", "model_reasoning_effort=low"},
-			"medium":  {"-c", "model_reasoning_effort=medium"},
-			"high":    {"-c", "model_reasoning_effort=high"},
-			"max":     {"-c", "model_reasoning_effort=xhigh"},
+		effort: launchLevel{argv: []string{"-c", "model_reasoning_effort=<effort>"}},
+		effortLevels: map[string][]string{
+			"gpt-6-astra":   {"low", "medium", "high", "xhigh", "max", "ultra"},
+			"gpt-5.6-sol":   {"low", "medium", "high", "xhigh", "max", "ultra"},
+			"gpt-5.6-terra": {"low", "medium", "high", "xhigh", "max", "ultra"},
+			"gpt-5.6-luna":  {"low", "medium", "high", "xhigh", "max"},
 		},
 		prompt: []string{"<prompt>"},
 	},
 	"opencode": {
-		command: "opencode",
-		model:   []string{"--model", "<model>"},
+		command:      "opencode",
+		model:        []string{"--model", "<model>"},
+		defaultModel: "anthropic/claude-opus-5-5",
 		permission: map[string]launchLevel{
 			"ask":  {env: map[string]string{"OPENCODE_PERMISSION": "{\"edit\":\"ask\",\"bash\":\"ask\",\"webfetch\":\"ask\",\"websearch\":\"ask\",\"codesearch\":\"ask\"}"}},
 			"auto": {env: map[string]string{"OPENCODE_PERMISSION": "{\"edit\":\"allow\",\"bash\":\"ask\",\"webfetch\":\"ask\",\"websearch\":\"ask\",\"codesearch\":\"ask\"}"}},
 			"full": {argv: []string{"--auto"}},
 		},
+		effort:      launchLevel{env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"<model>\",\"variant\":\"<effort>\"}}}"}},
+		effortUnset: "none",
+		effortLevels: map[string][]string{
+			"anthropic/claude-opus-5-5":   {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-fable-5-1":  {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-sonnet-5-5": {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-haiku-4-5":  {"none", "high", "max"},
+			"openai/gpt-5.6-sol":          {"low", "medium", "high", "xhigh", "max"},
+		},
 		prompt: []string{"--prompt", "<prompt>"},
 	},
 	"grok": {
-		command: "grok",
-		model:   []string{"--model", "<model>"},
+		command:      "grok",
+		model:        []string{"--model", "<model>"},
+		defaultModel: "grok-4.6",
 		permission: map[string]launchLevel{
 			"ask":  {argv: []string{"--permission-mode", "default"}},
 			"auto": {argv: []string{"--permission-mode", "acceptEdits"}},
 			"full": {argv: []string{"--permission-mode", "bypassPermissions"}},
 		},
-		effort: map[string][]string{
-			"minimal": {"--reasoning-effort", "minimal"},
-			"low":     {"--reasoning-effort", "low"},
-			"medium":  {"--reasoning-effort", "medium"},
-			"high":    {"--reasoning-effort", "high"},
-			"max":     {"--reasoning-effort", "max"},
+		effort: launchLevel{argv: []string{"--reasoning-effort", "<effort>"}},
+		effortLevels: map[string][]string{
+			"grok-4.7": {"minimal", "low", "medium", "high", "xhigh", "max"},
+			"grok-4.6": {"minimal", "low", "medium", "high", "xhigh", "max"},
 		},
 		prompt: []string{"<prompt>"},
 	},

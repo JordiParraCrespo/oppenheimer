@@ -485,11 +485,14 @@
       },
       "effort": {
         "label": "Esfuerzo",
+        "none": "Desactivado",
         "minimal": "Mínimo",
         "low": "Bajo",
         "medium": "Medio",
         "high": "Alto",
+        "xhigh": "Muy alto",
         "max": "Máximo",
+        "ultra": "Ultra",
         "faster": "Más rápido",
         "smarter": "Más inteligente",
         "hint": "Cuánto puede pensar el agente antes de responder. Más esfuerzo cuesta más y tarda más."

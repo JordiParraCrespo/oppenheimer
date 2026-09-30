@@ -220,7 +220,7 @@ entry from a second writer.
 the MVP, 10) and an optional name, plus two fields the composer's foot row and text area set:
 
 ```ts
-launch?: { model?: string, permission?: 'ask' | 'auto' | 'full', effort?: Effort }
+launch?: { model?: string, permission?: 'ask' | 'auto' | 'full', effort?: SessionEffort }  // effort: a level the model offers (01)
 prompt?: string                         // ≤ 2 KB of UTF-8, the cap 02 §7 already states
 ```
 
@@ -266,6 +266,17 @@ projection of its log — so `launchModel`, `launchPermission` and
 existing rows are `ask` with no model, which is what they were launched
 with. Changing them on a live session is a later slice and brings its own
 event kind with its writer, never before.
+
+An effort is recorded only when the session's model offers it
+(`effortLevelFor` in the catalog, 01): the create, the fold of
+`session.requested` and an automation's revision all ask that one
+function, so a replay lands on what the create recorded and a revision
+never names a level no run starts at — a revision is judged whole, so a
+model switch drops a level the new model lacks. Stored efforts were
+rewritten once to the level each launch had run at, in the column, the
+`session.requested` entry and the revision alike, with the originals
+kept so the migration's `down()` restores them exactly (changed
+2026-09-29).
 
 **The first task is written once, by whichever end has it.** A `prompt`
 on the create is appended as `prompt.first` in the same transaction as

@@ -28,17 +28,17 @@ describe('initialDraft', () => {
       agent: 'claude-code',
       model: defaultModelFor('claude-code'),
       permission: 'ask',
-      effort: 'medium',
+      efforts: {},
     });
   });
 
-  it('restores the project, host, agent, model and effort', () => {
+  it('restores the project, host, agent, model and each agent’s effort', () => {
     store({
       projectId: 'p1',
       hostId: 'h1',
       agent: 'codex',
       model: 'gpt-6-astra',
-      effort: 'high',
+      efforts: { codex: 'ultra', 'claude-code': 'xhigh' },
     });
 
     expect(initialDraft()).toMatchObject({
@@ -46,8 +46,16 @@ describe('initialDraft', () => {
       hostId: 'h1',
       agent: 'codex',
       model: 'gpt-6-astra',
-      effort: 'high',
+      efforts: { codex: 'ultra', 'claude-code': 'xhigh' },
     });
+  });
+
+  it('keeps each known agent’s pick as left, and drops the old single stop', () => {
+    // Whether a pick is one of the model's levels is decided when the slider
+    // is drawn, not when storage is read.
+    store({ effort: 'medium', efforts: { codex: 'infinite', 'gone-agent': 'high', grok: 7 } });
+
+    expect(initialDraft().efforts).toEqual({ codex: 'infinite' });
   });
 
   it('never restores a permission level or a scope, whatever storage holds', () => {
@@ -87,19 +95,23 @@ describe('rememberDraft', () => {
       hostId: 'h1',
       agent: 'codex',
       model: 'gpt-6-astra',
-      effort: 'low',
+      efforts: { codex: 'low' },
       // A caller holding the whole draft passes it; the rest must not be written.
       ...({ permission: 'full', scope: [{ id: 'x', branch: 'y' }] } as object),
     });
 
     expect(Object.keys(JSON.parse(window.localStorage.getItem(KEY) ?? '{}')).sort()).toEqual([
       'agent',
-      'effort',
+      'efforts',
       'hostId',
       'model',
       'projectId',
     ]);
-    expect(initialDraft()).toMatchObject({ projectId: 'p1', agent: 'codex', effort: 'low' });
+    expect(initialDraft()).toMatchObject({
+      projectId: 'p1',
+      agent: 'codex',
+      efforts: { codex: 'low' },
+    });
   });
 
   it('swallows a storage that refuses the write', () => {
@@ -113,7 +125,7 @@ describe('rememberDraft', () => {
         hostId: null,
         agent: 'claude-code',
         model: null,
-        effort: 'medium',
+        efforts: {},
       }),
     ).not.toThrow();
   });

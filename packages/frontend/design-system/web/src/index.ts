@@ -117,7 +117,7 @@ export {
   EditorPageTop,
 } from './components/editor-page';
 export type { EffortStop } from './components/effort-slider';
-export { EFFORT_STOPS, EffortPicker, EffortSlider } from './components/effort-slider';
+export { EffortPicker, EffortSlider } from './components/effort-slider';
 export { EmptyState } from './components/empty-state';
 export {
   Field,

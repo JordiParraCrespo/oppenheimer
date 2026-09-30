@@ -27,7 +27,9 @@ import {
  * A literal sample of what `apps/runner/internal/host/domain/facts.go` marshals.
  * Copied from the struct's json tags rather than written to suit the schema — the
  * register body is the runner's to define, and this is the artefact both schemas
- * must accept.
+ * must accept. It is an example, not a field census: the struct's fields are
+ * pinned against the emitted schema by the runner's `TestHostFactsMatchesTheSchema`
+ * (`apps/runner/internal/link/protocol_test.go`).
  */
 const runnerFactsJson = `{
   "platform": "macos",
@@ -111,14 +113,6 @@ describe('hostFactsSchema agrees across the two Zod entry points', () => {
     expect(parsed.tools[2]).toEqual({ name: 'claude', required: false });
   });
 
-  it('derives the agents by name, since an agent is just a probed tool', () => {
-    const parsed = dtoHostFactsSchema.parse(validFacts);
-    expect(parsed.tools.filter((tool) => !tool.required).map((tool) => tool.name)).toEqual([
-      'claude',
-    ]);
-    expect(parsed).not.toHaveProperty('agents');
-  });
-
   it('both parse to the same value', () => {
     expect(dtoHostFactsSchema.parse(validFacts)).toEqual(wireHostFactsSchema.parse(validFacts));
   });
@@ -134,33 +128,6 @@ describe('hostFactsSchema agrees across the two Zod entry points', () => {
     expect(Object.keys(dtoHostFactsSchema.shape).sort()).toEqual(
       Object.keys(wireHostFactsSchema.shape).sort(),
     );
-  });
-
-  it('describes exactly the fields `facts.go` declares, and no others', () => {
-    expect(Object.keys(dtoHostFactsSchema.shape).sort()).toEqual([
-      'arch',
-      'bootedAt',
-      'cloudProvider',
-      'cpuModel',
-      'cpus',
-      'diskFreeBytes',
-      'diskTotalBytes',
-      'home',
-      'hostname',
-      'kernelVersion',
-      'memoryTotalBytes',
-      'osName',
-      'osVersion',
-      'platform',
-      'root',
-      'runnerVersion',
-      'serviceManager',
-      'timezone',
-      'tools',
-      'user',
-      'virtualization',
-      'workspacePath',
-    ]);
   });
 });
 

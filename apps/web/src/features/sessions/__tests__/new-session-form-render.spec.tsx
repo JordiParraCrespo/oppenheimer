@@ -263,7 +263,7 @@ describe('NewSessionForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'permission' }));
 
     const stored = JSON.parse(window.localStorage.getItem('oppenheimer.new-session.draft') ?? '{}');
-    expect(stored.effort).toBe('high');
+    expect(stored.efforts).toEqual({ 'claude-code': 'high' });
     expect(stored).not.toHaveProperty('permission');
   });
 });

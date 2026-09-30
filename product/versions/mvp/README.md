@@ -515,6 +515,13 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `github_app_install_url` stays as the capability that says an App
   exists. The first-run walk rides as the state's prefix,
   `first-run.<nonce>`.
+- 2026-09-29: **Effort is each CLI's own levels, per model** (01, 02,
+  03, 05). The slider was five product stops that each agent mapped
+  onto its flag, which put "Medium" on a Claude Code launch of `--effort
+  high` and sent Codex a `minimal` no model takes. The catalog now spells
+  effort once per agent and lists each model's levels and default; the
+  slider draws those, starts on the default and sends nothing until
+  moved, and OpenCode takes a level as the model's variant.
 - 2026-09-30: **The session grid's line height is 1.3** (05). A departure
   from the export's 1.55 and from the earlier xterm value of 1: xterm
   stretches block and box glyphs to its cell, so 1.55 elongated Claude
