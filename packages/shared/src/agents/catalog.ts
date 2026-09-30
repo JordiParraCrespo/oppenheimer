@@ -94,8 +94,8 @@ export interface CodingAgentLaunchLevel {
  *
  * Every argv is the **argument vector** to append to `command`, so the runner
  * concatenates rather than parses, and a value that would need quoting cannot
- * become a second word by accident. `<model>` is the one placeholder, and it is
- * substituted whole.
+ * become a second word by accident. `<model>` and `<prompt>` are the
+ * placeholders, each substituted whole.
  *
  * The maps are total on purpose. An agent whose own vocabulary is coarser than
  * the five stops says so by repeating itself — which is a fact about that CLI,

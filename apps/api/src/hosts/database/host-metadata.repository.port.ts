@@ -91,7 +91,8 @@ export interface HostMetadataRepositoryPort {
   ): Promise<RecordedNetwork>;
   /** A host's timeline, newest first, keyset-paginated. */
   findTimeline(hostId: string, before: TimelineCursor | null, limit: number): Promise<TimelinePage>;
-  /** Retention: batches of networks unseen since `cutoff` and not current, events older than theirs. */
+  /** Retention, one batch per call: networks unseen since `cutoff` and current for no host. */
   deleteNetworksUnseenSince(cutoff: Date, batch: number): Promise<number>;
+  /** Retention, one batch per call: timeline entries that occurred before `cutoff`. */
   deleteTimelineBefore(cutoff: Date, batch: number): Promise<number>;
 }

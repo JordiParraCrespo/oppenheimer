@@ -73,8 +73,8 @@ type Size struct {
 // Attachment is one PTY attached to a window: the bytes a browser sees.
 type Attachment interface {
 	io.ReadWriteCloser
-	// Resize sets the PTY's size; tmux sizes the window to the smallest
-	// attached client.
+	// Resize sets the PTY's size; tmux sizes the window to the client that
+	// resized last (`window-size latest`, tmux.Config).
 	Resize(size Size) error
 }
 

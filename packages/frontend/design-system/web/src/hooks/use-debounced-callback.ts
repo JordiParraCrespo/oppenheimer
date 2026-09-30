@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef } from 'react';
  * make the field a re-render path for everything above it.
  *
  * `cancelKey` drops a pending call whenever it changes (`useSearchDraft` passes
- * a revision it bumps when the URL changes under the field). To read the
+ * a revision it bumps when its settled `value` changes under the field). To read the
  * settled value during render, use `useDebouncedValue`.
  */
 export function useDebouncedCallback<TArgs extends unknown[]>(

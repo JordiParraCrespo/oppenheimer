@@ -36,8 +36,7 @@ type Terminals struct {
 	Titles map[string]string
 
 	sessions map[string]*fakeSession
-	// Attached counts live attachments, so a test can prove that detaching
-	// does not end a session.
+	// Attached counts live attachments.
 	Attached int
 	// Pastes is every text pasted, in order.
 	Pastes []string

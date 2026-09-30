@@ -86,7 +86,7 @@ export class HostRepository
   /**
    * The row, the outbox entries its events owe, and the timeline entries they
    * stand for, in one transaction. An unpaired host's current network stops
-   * being current in the same breath, so the 90-day retention can reach it.
+   * being current in the same breath, so the network retention can reach it.
    */
   async save(entity: HostEntity): Promise<HostEntity> {
     const entries = this.mapper.toTimelineEntries(entity.domainEvents);

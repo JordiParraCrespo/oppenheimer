@@ -135,7 +135,8 @@ const adapters: Provider[] = [
     // Importing it is what makes the port's implementation the relay's rather
     // than this module's, without this module knowing a socket exists.
     LinksModule,
-    // The workspace's slug for a launch, and nothing else of organizations'.
+    // The workspace's slug for a launch and the workspaces an account owns for
+    // its erasure, and nothing else of organizations'.
     OrganizationsModule,
   ],
   controllers: [...httpControllers],

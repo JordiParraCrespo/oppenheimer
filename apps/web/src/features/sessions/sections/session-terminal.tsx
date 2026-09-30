@@ -23,10 +23,6 @@ const AGENT_WINDOW = 0;
  * agent draws its own prompt inside the grid, and a second field gave the pane
  * two carets; the agent's has the history, slash commands and mode, so the
  * grid keeps the input.
- *
- * **An image pasted or dropped onto the grid** goes to the host rather than
- * to xterm: the agent reads its host's clipboard, never the browser's, so the
- * runner saves the file and pastes its path into the prompt (05).
  */
 export function SessionTerminal({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();

@@ -48,8 +48,8 @@ let errors = [];
 const fail = (path, kind, message) => errors.push({ path, kind, message });
 
 /**
- * Directories under `apps/api/src` that are not modules: the composition root,
- * the schema history, and the test suites that span modules.
+ * Directories under `apps/api/src` that are not modules: configuration, the
+ * seed, the schema history, and the test suites that span modules.
  */
 const NON_MODULES = new Set(['config', 'database', 'migrations', '__tests__']);
 

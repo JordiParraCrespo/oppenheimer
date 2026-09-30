@@ -41,8 +41,8 @@ import { GetProfileQueryHandler } from './queries/get-profile/get-profile.query-
 import { GetUserSettingsHttpController } from './queries/get-user-settings/get-user-settings.http.controller';
 import { GetUserSettingsQueryHandler } from './queries/get-user-settings/get-user-settings.query-handler';
 
-// Registration order matters: every static sub-route (`settings`, `avatar`,
-// `sessions`, `email`) must be matched before `sessions/:id`, and the bare
+// Registration order matters: a static sub-route before a parameterised one on
+// the same method (`DELETE sessions` before `DELETE sessions/:id`), and the bare
 // `GET`/`PATCH` on the collection last.
 const httpControllers = [
   GetUserSettingsHttpController,

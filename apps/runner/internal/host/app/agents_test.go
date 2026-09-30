@@ -20,7 +20,6 @@ func TestUpdateAgentsRunsEachInstalledAgentsOwnUpdater(t *testing.T) {
 	u := &fake.Updater{Run: func(path string, _ []string) error {
 		switch path {
 		case "/home/jordi/.local/bin/claude":
-			// A model that needs a newer CLI.
 			p.Tools[domain.ToolClaude] = domain.Tool{Path: path, Version: "2.1.284 (Claude Code)"}
 		case "/usr/local/bin/codex":
 			return errors.New("npm error EACCES: permission denied")

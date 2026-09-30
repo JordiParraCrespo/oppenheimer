@@ -5,18 +5,17 @@ import { useState } from 'react';
 /**
  * The search-field policy, in one place: the half-typed word is local, it
  * leaves once typing settles, and the field ignores the echo of its own commit.
- * Every search field runs on this; a field that should feel different gets
- * different markup, not a second copy.
+ * A search field that hands a list its query runs on this; one that should
+ * feel different gets different markup, not a second copy.
  *
- * `value` is for a field whose settled value lives outside it (the URL, for
- * the table). A followed link, cleared filter or back button changes it
- * without typing, and the field follows; the echo of its own commit looks
- * identical, so the hook remembers what it last sent up and ignores that one
- * string. Without that, a delayed echo lands the old burst on a reader who
+ * `value` is for a field whose settled value lives outside it (a URL param).
+ * A followed link, cleared filter or back button changes it without typing,
+ * and the field follows; the echo of its own commit looks identical, so the
+ * hook remembers what it last sent up and ignores that one string. Without that, a delayed echo lands the old burst on a reader who
  * kept typing and the caret snaps backwards.
  *
- * Omit `value` when nothing feeds a settled value back down (a dialog that
- * filters a list it holds); `draft` is then the field's own from first render.
+ * Omit `value` when nothing feeds a settled value back down
+ * (`SidebarSearchField`); `draft` is then the field's own from first render.
  */
 export function useSearchDraft({
   value,

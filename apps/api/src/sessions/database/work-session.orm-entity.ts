@@ -16,10 +16,10 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
  *
  * Three constraints are not checks a handler could forget. `uq (organizationId, id)`
  * lets `session_checkout` reference a session **with its workspace in the key**.
- * `uq (organizationId, slug)` is a permanent tombstone: rows are never hard-deleted,
- * so a retired session's directory name and branch are never reissued, and it is per
- * workspace because the directory is `workspaces/<org>/sessions/<slug>` (a project is
- * metadata; `projectId` is only where the session is listed). The migration's
+ * `uq (organizationId, slug)` is a tombstone: rows are hard-deleted only with their
+ * workspace, so a retired session's directory name and branch are never reissued,
+ * and it is per workspace because the directory is `workspaces/<org>/sessions/<slug>`
+ * (a project is metadata; `projectId` is only where the session is listed). The migration's
  * `(organizationId, projectId)` composite foreign key makes a session in another
  * workspace's project unrepresentable.
  *
@@ -37,8 +37,8 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
 @Unique('UQ_work_session_organization_id', ['organizationId', 'id'])
 export class WorkSessionOrmEntity {
   /**
-   * Unguessable by construction, and also the tmux session name on the host, so
-   * one id names the row and the thing it controls.
+   * Unguessable by construction, and also (prefixed) the tmux session name on the
+   * host, so one id names the row and the thing it controls.
    */
   @PrimaryGeneratedColumn('uuid')
   id!: string;

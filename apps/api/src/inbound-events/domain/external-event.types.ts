@@ -13,7 +13,10 @@ export interface ExternalEvent {
   source: ExternalTriggerSource;
   /** A type from the trigger catalog (`pr_opened`, `push`, …). */
   type: string;
-  /** The provider-stable id of this event, unique per source: the delivery id plus the type. */
+  /**
+   * The provider-stable id of this event, unique per source. GitHub's is the
+   * delivery id plus the type, and the label, check suite or status context.
+   */
   externalId: string;
   /** What it happened to. A repository today; a Slack channel later. */
   subject: { kind: 'repository'; ref: string; name: string };

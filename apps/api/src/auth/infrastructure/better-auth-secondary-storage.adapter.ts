@@ -6,7 +6,7 @@ import type Redis from 'ioredis';
 
 type SecondaryStorage = NonNullable<BetterAuthOptions['secondaryStorage']>;
 
-/** Namespace of every key Better Auth writes, apart from `cache:`, `throttle:` and `bull:`. */
+/** Namespace of every key Better Auth writes, beside the API's `cache:`, `throttle:` and `bull:`. */
 export const SESSION_STORE_KEY_PREFIX = 'ba:';
 
 /**

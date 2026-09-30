@@ -64,7 +64,7 @@ export const SESSION_EVENT_KINDS = {
   RESTART_REQUESTED: 'session.restart_requested',
   /** Window 0 was recreated in the same worktrees after a stop or a host reboot. */
   RESTARTED: 'session.restarted',
-  /** Somebody asked to close. Payload `{ acceptUnpushedWork }`, which the runner reads. */
+  /** Somebody asked to close. Payload `{ acceptUnpushedWork }`, as the close sent the runner. */
   CLOSE_REQUESTED: 'session.close_requested',
   /** Branches pushed, worktrees removed. The row is kept for ever as a tombstone. */
   CLOSED: 'session.closed',

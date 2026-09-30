@@ -18,7 +18,7 @@ import {
  * and keeps doing so when its network drops or its process dies. Every host
  * here runs the real binary (`support/fleet.ts`).
  *
- * The hosts are started by `fleet.setup.ts`'s image, one fresh set per test, so
+ * The hosts run what `fleet.setup.ts` built, one fresh set per test, so
  * a test that breaks a host breaks only its own.
  */
 

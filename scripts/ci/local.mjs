@@ -13,7 +13,8 @@
  * request carries and the scheduled run are the same program. A new CI step
  * goes here and nowhere else. The jobs, chosen by `affected.mjs`:
  *
- *   lint         Biome, the design-system lint, architecture, structure, flags
+ *   lint         Biome, the design-system lint, architecture, structure, flags,
+ *                compiler bail-outs, unused code, eval anchors, starter manifest
  *   go           vet, golangci-lint, tests, the runner for every target
  *   test         build, generated files committed, unit tests, bundle budget
  *   integration  the API's suite (Testcontainers, so Docker)

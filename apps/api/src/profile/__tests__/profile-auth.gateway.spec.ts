@@ -52,9 +52,6 @@ describe('ProfileAuthGateway', () => {
     });
 
     it('evicts the caller’s delegated sessions when it revoked the others', async () => {
-      // Better Auth deletes the delegated session rows along with the rest; a
-      // credential still holding the cached token would fail every façade call
-      // for the next ten minutes.
       await facade.changePassword(
         {},
         {

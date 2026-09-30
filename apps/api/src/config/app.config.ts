@@ -21,8 +21,9 @@ const schema = z.object({
   // proxies (`true`), which lets a client spoof `X-Forwarded-For`.
   trustProxy: z.coerce.number().int().min(0).default(0),
   // **Optional capability** — the Bull Board queue dashboard at `/admin/queues`
-  // is mounted only when BOTH credentials are set, and then behind HTTP Basic
-  // auth. Absent credentials mean the dashboard is not exposed at all: its job
+  // is mounted only when BOTH credentials are set and the password is at least
+  // `BULL_BOARD_MIN_PASSWORD_LENGTH` long, and then behind HTTP Basic auth.
+  // Otherwise the dashboard is not exposed at all: its job
   // payloads carry tokenized password-reset/invitation URLs, so it must never
   // be public.
   bullBoardUsername: z.string().optional(),

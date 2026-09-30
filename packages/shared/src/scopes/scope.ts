@@ -100,11 +100,7 @@ export function sortScopes(scopes: readonly Scope[]): Scope[] {
   return [...scopes].sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
 }
 
-/**
- * Group scopes by resource, e.g. `{ users: ['read'], roles: ['read','write'] }`.
- * This is the storage shape for a token's permissions and what the permission
- * picker binds to.
- */
+/** Group scopes by resource, e.g. `{ users: ['read'], roles: ['read','write'] }`. */
 export function scopesToRecord(
   scopes: Iterable<Scope>,
 ): Partial<Record<ScopeResource, ScopeAccessLevel[]>> {

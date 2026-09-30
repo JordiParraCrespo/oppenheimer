@@ -20,8 +20,6 @@ type RegisteredHost = Pick<
  * the owner can tell their pairing from one they did not make (GitHub mails on a new
  * SSH key for the same reason). A security email, so always sent.
  *
- * Machine details come from the event; the only read is the owner's address.
- *
  * Queued with the host id as job id, so an outbox redelivery is not a second email.
  * The id is joined with `-`, never `:`: BullMQ reserves `:` for its own keys and
  * refuses a custom id containing it, and a refused add is an email never sent.

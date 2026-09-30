@@ -6,7 +6,7 @@ import type { GithubFetch } from '../github-rest.adapter';
 import { GithubRestAdapter } from '../github-rest.adapter';
 
 /**
- * The adapter is the only thing in the repository that talks to GitHub, and it
+ * The adapter is the only thing in this module that talks to GitHub, and it
  * owns two things a client library would otherwise: the App JWT and pagination.
  * Both are asserted here against a `fetch` double, so these tests never touch
  * the network.
@@ -123,8 +123,6 @@ describe('the App JWT', () => {
 
     expect(header).toEqual({ alg: 'RS256', typ: 'JWT' });
     expect(payload.iss).toBe('1234567');
-    // GitHub refuses a JWT living longer than ten minutes, and one whose `iat`
-    // is in its own future — which an unsynchronised clock makes routine.
     expect(payload.exp - payload.iat).toBeLessThanOrEqual(600);
     expect(payload.iat).toBeLessThanOrEqual(now);
     expect(payload.exp).toBeGreaterThan(now);
@@ -139,8 +137,6 @@ describe('the App JWT', () => {
       http.impl,
     );
 
-    // A PEM from a one-line .env or a container secret arrives like this, and
-    // the signer would otherwise throw an opaque parse error.
     await expect(adapter.mintRepositoryToken(45678901, 831004242)).resolves.toMatchObject({
       token: 'ghs_minted',
     });
@@ -176,8 +172,6 @@ describe('minting a repository token', () => {
     expect(headerOf(init, 'accept')).toBe('application/vnd.github+json');
     expect(headerOf(init, 'x-github-api-version')).toBe('2022-11-28');
     expect(headerOf(init, 'user-agent')).toBeTruthy();
-    // The credential travels in a header. In a URL it would reach every log,
-    // proxy and error message that ever names the request.
     expect(url).not.toContain('Bearer');
     expect(init.signal).toBeDefined();
   });

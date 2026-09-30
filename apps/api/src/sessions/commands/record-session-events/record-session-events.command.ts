@@ -5,8 +5,8 @@ import type { RunnerSessionEvent } from '../../application/record-session-events
  * A runner's batch for one session's log.
  *
  * There is no `AccessScope` on it, and that is deliberate: the writer is a machine
- * that proved its own identity, not a person. `hostId` is what the handler checks
- * the session against, which is the machine equivalent of a tenant clause — a host
+ * that proved its own identity, not a person. `hostId` is what the session is
+ * checked against, which is the machine equivalent of a tenant clause — a host
  * may only write to sessions it was given.
  */
 export class RecordSessionEventsCommand extends CommandBase {

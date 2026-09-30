@@ -1,6 +1,6 @@
 import type { SchemaSlice } from './schema-slice';
 
-/** `account`, `oauthAccessToken`, `oauthApplication`, `oauthConsent`, `rateLimit`, `session`, `verification`. See each table's ORM entity under `src/auth/` for why it is shaped this way. */
+/** `account`, `oauthAccessToken`, `oauthApplication`, `oauthConsent`, `rateLimit`, `session`, `verification`. See each table's ORM entity under `src/auth/` for why it is shaped this way; `rateLimit` has none, it is Better Auth's `rateLimit.storage: 'database'` store (`better-auth.config.ts`). */
 export const auth: SchemaSlice = {
   tables: {
     account: [

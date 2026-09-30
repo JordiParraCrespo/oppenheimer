@@ -75,8 +75,8 @@ export const hostStatusSchema = z.enum(HOST_STATUSES);
 /**
  * `GET /hosts`. Unpaired hosts are left out unless asked for: Settings lists
  * the machines a session can still start on, and a removed host there reads
- * as one that came back. The sidebar asks for them, because a session that ran
- * on a host removed since still needs that host's name.
+ * as one that came back. `include=unpaired` is for a reader that still needs a
+ * removed host's name, such as a session that ran on it.
  */
 export const listHostsQuerySchema = z.object({
   include: z.literal('unpaired').optional(),

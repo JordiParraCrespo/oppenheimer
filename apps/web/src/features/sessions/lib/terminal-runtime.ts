@@ -20,9 +20,8 @@ export interface SessionTerminalOptions {
    */
   agentWindow?: boolean;
   /**
-   * An image was pasted or dropped onto the terminal. The agent cannot read
-   * the browser's clipboard, so the caller uploads it and the runner pastes
-   * its path into the prompt (05). Without a handler, images are left to
+   * An image was pasted or dropped onto the terminal, for the caller to upload
+   * to the host (`bindImageGestures`). Without a handler, images are left to
    * xterm, which pastes nothing for them.
    */
   onImage?: (image: File) => void;

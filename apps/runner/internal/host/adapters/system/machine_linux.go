@@ -132,7 +132,7 @@ func AvailableMemory() uint64 {
 }
 
 // readTrimmed reads one /proc, /sys or /etc file; only Linux reads the
-// machine from files, so it lives beside the one caller.
+// machine from files, so it lives in this file.
 func readTrimmed(path string) string {
 	raw, err := os.ReadFile(path) //nolint:gosec // fixed system paths
 	if err != nil {

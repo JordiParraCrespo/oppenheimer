@@ -131,9 +131,9 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     _checkout: SessionCheckoutEntity,
     _spec: SessionLaunchSpec,
   ): Promise<SessionDispatchOutcome> {
-    // There is no frame for this on the wire yet (01 lists none), so nothing
-    // is sent and the caller is told so rather than handed a delivery that did
-    // not happen: the row is ahead of the host until the launch is re-sent.
+    // There is no frame for this on the wire yet (`01-protocol.md` lists none),
+    // so nothing is sent and the caller is told so rather than handed a delivery
+    // that did not happen: the row is ahead of the host until the launch is re-sent.
     return this.withLink(session, () => NOT_SUPPORTED);
   }
 

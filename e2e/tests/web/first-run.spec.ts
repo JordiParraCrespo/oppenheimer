@@ -131,9 +131,9 @@ test('a finished account cannot walk back into the flow', async ({ page }) => {
   await page.goto('/onboarding/host');
   await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
 
-  // Connect GitHub is the one step that stays open, because New session's
-  // repository chip still sends a finished account to it — `new-session.spec.ts`
-  // drives that path.
+  // Connect GitHub is the one step that stays open, because every App install
+  // returns to it, including one a finished account starts from New session's
+  // repository chip (`new-session.spec.ts`).
   await page.goto('/onboarding/github');
   await expect(page).toHaveURL(/\/onboarding\/github/, { timeout: 30_000 });
 });

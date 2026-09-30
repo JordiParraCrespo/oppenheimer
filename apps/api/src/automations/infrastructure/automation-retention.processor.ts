@@ -12,8 +12,8 @@ const SCHEDULER_ID = 'automation-retention-daily';
 
 /**
  * The nightly purge of runs past `retention.automationRunDays`, in batches
- * through the time index. The chart shows 30 days; the rest is for debugging
- * and audit.
+ * through the time index. The chart reads 90 days at most; the rest is for
+ * debugging and audit.
  */
 @Processor(QUEUE_NAMES.AUTOMATION_RETENTION)
 export class AutomationRetentionProcessor extends WorkerHost implements OnApplicationBootstrap {

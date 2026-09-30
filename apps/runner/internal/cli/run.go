@@ -112,7 +112,7 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 		// The control plane unpaired this host. Dialling again would be refused
 		// the same way, and exiting would only have the service manager restart
 		// us into the same refusal every few seconds — so the daemon stays up,
-		// quiet, and keeps serving its local socket for `status` and `sessions`.
+		// quiet, and keeps serving its local socket.
 		logger.Warn("this host was unpaired; the link stays down until it is paired again",
 			slog.Time("revokedAt", *identity.RevokedAt))
 	} else {
@@ -178,8 +178,8 @@ func (a *App) listen(ctx context.Context) (net.Listener, error) {
 	return listener, nil
 }
 
-// localRouter is the runner's only HTTP surface: the credential helper and
-// the CLI reach it over the socket, and nothing else can.
+// localRouter is the runner's only HTTP surface, on the local socket: the
+// credential helper asks it for tokens, and nothing off this host can reach it.
 func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Handler {
 	problems := &problem.Writer{TypeBaseURL: errorTypeBaseURL, Logger: logger}
 	router := httpx.NewRouter(problems)

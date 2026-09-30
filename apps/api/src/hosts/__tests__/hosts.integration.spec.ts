@@ -353,8 +353,8 @@ describe('Hosts & pairing (integration)', () => {
         Array.from({ length: 8 }, () => mintAs(owner, { name: 'Race' })),
       );
 
-      // The count and the insert are one serialised write, so eight at once
-      // cannot all find room for a fifth.
+      // The count and the insert are one serialised write, so of eight at once
+      // only the cap of five find room.
       expect(results.filter((r) => r.status === 201)).toHaveLength(5);
       for (const refused of results.filter((r) => r.status !== 201)) {
         expect(refused.status).toBe(429);
@@ -381,7 +381,6 @@ describe('Hosts & pairing (integration)', () => {
 
       const refused = await mintAs(stranger, { name: 'Theirs', replaces: mine.body?.id });
 
-      // Someone else's token is not found, and nothing was minted or revoked.
       expect(refused.status).toBe(404);
       expect(refused.body?.code).toBe('HOSTS_002');
       expect(await revokedAt(mine.body?.id as string)).toBeNull();

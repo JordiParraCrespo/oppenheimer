@@ -14,7 +14,7 @@ import {
  * Persistence model for `host_network`: one row per public address a host has
  * connected from, as the API saw it on the link, with the geography resolved
  * then. A dimension bounded by where a machine actually goes, kept 90 days
- * past its last use unless it is the current one.
+ * (by default) past its last use unless it is the current one.
  */
 @Entity('host_network')
 @Unique('UQ_host_network_host_ip', ['hostId', 'ip'])

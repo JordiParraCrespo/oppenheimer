@@ -223,8 +223,6 @@ describe('OrganizationMapper.toPendingInvitations', () => {
   });
 
   it('keeps only pending invitations and drops resolved ones', () => {
-    // Better Auth returns cancelled/rejected rows from listInvitations; the
-    // pending list must not surface them.
     const result = OrganizationMapper.toPendingInvitations([
       invitation('pending'),
       invitation('canceled'),

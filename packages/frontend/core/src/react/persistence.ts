@@ -12,9 +12,9 @@ import { authKeys, userSettingsKeys } from './query-keys';
 export const QUERY_PERSIST_MAX_AGE = 24 * 60 * 60 * 1000;
 
 /**
- * Features whose queries never reach storage, whatever the product. The
- * session is the kernel's own; a product adds its sensitive features (a
- * credential list, a profile) through `nonPersistedFeatures` when the app
+ * Features whose queries never reach storage, whatever the product: the
+ * session and the user's settings. A product adds its sensitive features
+ * (sessions, hosts, a profile) through `nonPersistedFeatures` when the app
  * builds its persist options — `CONSUMER_NON_PERSISTED_FEATURES` in
  * `@oppenheimer/frontend-consumer` is the list `apps/web` passes.
  */

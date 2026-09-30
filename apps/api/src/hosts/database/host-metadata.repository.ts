@@ -321,8 +321,9 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
   }
 
   /**
-   * Append timeline entries inside a transaction someone else owns — the
-   * host's own save, so a rename and its entry commit together.
+   * Append timeline entries on the caller's transaction — the host's own save
+   * or registration, or an inventory or network write — so a change and its
+   * entry commit together.
    */
   async insertTimeline(
     manager: EntityManager,

@@ -72,9 +72,9 @@ export interface SessionImageSpec {
  * durable, so there is no `jobs` table and nothing here promises delivery. An
  * implementation says whether it got the job onto a link; the log records the answer.
  *
- * **An implementation never writes the log.** One user action is one entry, appended
+ * **An implementation never writes the log.** A user action's entries are appended
  * by the command handler in the same transaction as its row change; a dispatcher that
- * also appended would make a click two entries in two transactions.
+ * also appended would split one click across two transactions.
  */
 export interface SessionDispatchPort {
   /** Make the directories, the checkouts and window 0, then launch the agent. */

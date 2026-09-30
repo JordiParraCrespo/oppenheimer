@@ -354,8 +354,8 @@ export type AutomationOverlapPolicy = (typeof AUTOMATION_OVERLAP_POLICIES)[numbe
 /**
  * What a run reads as, anywhere it is listed: one word derived on read from the
  * firing's outcome and, once dispatched, the session's turn (§Q4). The console
- * draws `running`, `completed` and `failed`; the rest are the states the frames
- * do not draw yet and the API still reports honestly.
+ * draws three glyphs, `running`, `completed` and `failed`, and folds the rest
+ * into them; the API still reports each one honestly.
  */
 export const AUTOMATION_RUN_STATUSES = [
   'queued',

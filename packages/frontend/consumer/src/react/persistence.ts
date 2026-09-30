@@ -8,10 +8,11 @@ import { sessionsKeys } from './sessions.queries';
 /**
  * Consumer features that never reach the persisted query cache: a session
  * record names a host, a repository and a branch, a host list names the
- * machines someone owns, a project names its repositories and its host, and a
- * profile is not a thing to leave in a browser's storage either, nor an
- * automation's prompt or the events its runs were started by. A consumer app passes this to
- * `createQueryPersistOptions`.
+ * machines someone owns, an installation names GitHub accounts and their
+ * repositories, a project names its repositories and its host, and a profile
+ * is not a thing to leave in a browser's storage either, nor an automation's
+ * prompt or the events its runs were started by. A consumer app passes this
+ * to `createQueryPersistOptions`.
  */
 export const CONSUMER_NON_PERSISTED_FEATURES: readonly string[] = [
   sessionsKeys.all[0],

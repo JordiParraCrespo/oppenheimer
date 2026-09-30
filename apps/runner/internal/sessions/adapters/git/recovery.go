@@ -3,8 +3,8 @@ package git
 // What an earlier attempt left at a worktree's path, and what Add does about
 // it. A create can be cut short anywhere — a runner killed, a context ended —
 // and the next attempt for the same session arrives at the same path, since
-// the path is derived from the session id. Add inspects the path and then
-// adopts, recreates, refuses, or finds it vacant.
+// the path is derived from the session id; pathKind is what Add can find
+// there.
 
 import (
 	"context"

@@ -53,7 +53,8 @@ function read(name: string): string {
  *   black and white. In light mode the terminal is paper, so a program asking
  *   for "black" wants the darkest readable ink, and one asking for "white"
  *   wants the quietest — inverting them would make half of `ls` invisible.
- * - The bright slots repeat their normal counterparts. A separate bright ramp
+ * - The bright slots repeat their normal counterparts (bright black and bright
+ *   white take the two inks the other way round). A separate bright ramp
  *   is a design decision the tokens do not carry yet; `minimumContrastRatio`
  *   in the terminal options keeps output legible until it does.
  */

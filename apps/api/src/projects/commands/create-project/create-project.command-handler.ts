@@ -51,8 +51,6 @@ export class CreateProjectCommandHandler
       if ((await this.projects.insert(project)) === 'inserted') return project;
     }
 
-    // The last candidate carries the project's own id, so this is not a name
-    // somebody else is using by accident; report it rather than loop.
     throw new AppError(ProjectErrors.SLUG_UNAVAILABLE, {
       detail: `Every slug derived from “${input.name}” is taken`,
     });

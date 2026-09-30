@@ -63,7 +63,7 @@ func New(opts Options) *Service {
 
 // Check asks what this host is offered and decides what to do about it,
 // without changing anything. It is what `runner update --check` prints and
-// what the periodic loop calls.
+// the first step of Apply.
 func (s *Service) Check(ctx context.Context) (domain.Plan, error) {
 	release, err := s.releases.Fetch(ctx, s.channel)
 	if err != nil {
@@ -261,8 +261,9 @@ func (s *Service) State() (domain.State, error) {
 	return state, nil
 }
 
-// errNoState lets State treat "never updated" as an empty record.
 var errNoState = errors.New("no update has been recorded")
 
-// ErrNoState is returned by a StateStore that has nothing recorded yet.
+// ErrNoState is what a StateStore may return for a host that never updated;
+// State reads it as an empty record. The file store answers an empty record
+// instead.
 func ErrNoState() error { return errNoState }

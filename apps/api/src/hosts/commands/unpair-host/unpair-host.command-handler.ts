@@ -11,7 +11,7 @@ import { UnpairHostCommand } from './unpair-host.command';
  * Unpairs a host at the owner's request (`DELETE /v1/hosts/{id}`): the person
  * no longer wants this machine to be given work.
  *
- * The row is kept, with `unpairedAt` set. Hosts are never hard-deleted — the
+ * The row is kept, with `unpairedAt` set. Unpairing never deletes a host — the
  * pairing history, the key that was trusted and the sessions that ran on it all
  * reference this row, and a machine whose runner is still running needs
  * something to authenticate against in order to be told it is gone.

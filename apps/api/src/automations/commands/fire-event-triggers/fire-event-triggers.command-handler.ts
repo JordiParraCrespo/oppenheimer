@@ -80,8 +80,6 @@ export class FireEventTriggersCommandHandler
         scheduledFor: null,
         requestedByUserId: null,
       };
-      // Counted and inserted under the workspace's firing lock, so concurrent
-      // events — and a tick — cannot all take the last slot.
       const { run, inserted } = await this.runs.fireUnderCaps(
         automation.organizationId,
         automation.id,

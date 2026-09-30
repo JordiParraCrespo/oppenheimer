@@ -112,7 +112,7 @@ func (s *Service) SetPublisher(publisher Publisher) {
 	s.publisher = publisher
 }
 
-// CreateInput is what the console sends to open a session.
+// CreateInput is what opening a session takes, from the link or the CLI.
 type CreateInput struct {
 	// ID is the control plane's session id when the create arrives over the
 	// link, so an attach that names it finds it; the CLI leaves it empty and
@@ -486,7 +486,7 @@ func (s *Service) CloseWindow(ctx context.Context, id string, index int) error {
 }
 
 // Attach opens a PTY onto one window. Several devices may attach to the same
-// window; tmux sizes it to the smallest attached client.
+// window; tmux sizes it to the one that resized last.
 func (s *Service) Attach(ctx context.Context, id string, window int, size Size) (Attachment, error) {
 	session, err := s.recorded(id)
 	if err != nil {
@@ -815,7 +815,8 @@ func (s *Service) Running(ctx context.Context) ([]string, error) {
 
 // EndAll kills every tmux session Running names and records the sessions it
 // knows as stopped. Checkouts stay on disk: ending the agents is what
-// `uninstall --force` asks for, deleting someone's work is not.
+// `uninstall --force` and an unpaired host ask for, deleting someone's work
+// is not.
 func (s *Service) EndAll(ctx context.Context) ([]string, error) {
 	running, err := s.Running(ctx)
 	if err != nil {

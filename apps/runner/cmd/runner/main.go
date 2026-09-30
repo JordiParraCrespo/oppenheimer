@@ -7,7 +7,7 @@
 //	runner uninstall    stop the service, revoke the host, erase the identity
 //	runner status       what a person needs to answer "is this host working"
 //	runner sessions     list, create, attach to and close sessions on this host
-//	runner workspaces   the workspace roots sessions are checked out under
+//	runner workspaces   where sessions' checkouts live, or move it
 //	runner update       check, apply, pin or roll back a version
 //	runner agents       keep the agent CLIs (claude, codex, …) current
 //	runner credential-helper  git's credential helper, over the local socket

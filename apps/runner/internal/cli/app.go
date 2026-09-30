@@ -52,17 +52,16 @@ type App struct {
 	Updates *updapp.Service
 	// Binaries is the versioned layout, exposed for `status`.
 	Binaries *binaries.Store
-	// StatePath is update.json's location, for `status`.
+	// StatePath is update.json's location.
 	StatePath string
-	// UnitPath is the service unit's location, for `status` and `uninstall`.
+	// UnitPath is the service unit's location.
 	UnitPath string
-	// Terminals is the tmux server, exposed so `sessions attach` can hand
-	// the terminal over to tmux directly.
+	// Terminals is the runner's tmux server.
 	Terminals *tmux.Server
 	// Worktrees is the sessions' git, kept for waiting on the spare worktree
 	// it makes after a create (CreateSession).
 	Worktrees *gitadapter.Client
-	// Link is the control-plane link while `run` holds one, for `status`.
+	// Link is the control-plane link while `run` holds one.
 	Link *link.Client
 	// Credentials answers the git credential helper while `run` holds a link.
 	Credentials *credentialBroker
@@ -330,6 +329,6 @@ func accountName() string {
 	return os.Getenv("LOGNAME")
 }
 
-// RequiredTools is re-exported for the status output, so the CLI does not
-// reach into another context's domain for a constant.
+// RequiredTools re-exports the host context's list, so the CLI does not reach
+// into another context's domain for a constant.
 var RequiredTools = hostdomain.RequiredTools

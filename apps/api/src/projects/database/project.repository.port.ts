@@ -9,9 +9,9 @@ import type { ProjectEntity } from '../domain/project.entity';
 export type ProjectInsertOutcome = 'inserted' | 'slug-taken';
 
 /**
- * What archiving came back with. `in-use` and `archived` both carry the project,
- * because the caller reports on it either way; `not-found` covers a project that is
- * missing and one in another workspace alike.
+ * What archiving came back with. Every result but `not-found` carries the project,
+ * because the caller reports on it; `not-found` covers a project that is missing and
+ * one in another workspace alike.
  */
 export type ArchiveOutcome =
   | { result: 'archived' | 'in-use' | 'unassigned'; project: ProjectEntity }

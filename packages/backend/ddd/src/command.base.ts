@@ -23,7 +23,6 @@ export type CommandProps<T> = Omit<T, 'id' | 'metadata'> & Partial<CommandBase>;
  * through the CQRS command bus to its handler.
  */
 export class CommandBase {
-  /** Command id, used for distributed tracing & idempotency. */
   readonly id: string;
 
   readonly metadata: CommandMetadata;

@@ -58,9 +58,8 @@ export class CreateRoleHttpController {
         actorId: actor.id,
         actorRole: actor.role,
         organizationId,
-        // With no active organization, a platform admin (`manage all`) creates
-        // a global role; anyone else gets ROLE_008. The handler
-        // checks `manage all` again before writing it.
+        // Anyone else with no tenant gets ROLE_008; the handler checks
+        // `manage all` again before writing a global role.
         global: organizationId === null && request.ability?.can('manage', 'all') === true,
       }),
     );

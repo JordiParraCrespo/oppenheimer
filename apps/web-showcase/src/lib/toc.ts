@@ -58,8 +58,9 @@ import {
 
 /**
  * `components` names the files in the design system's `src/components/` that
- * the section shows. Every file there is listed exactly once, and the package's
- * `test` holds the two to each other: this list is the inventory.
+ * the section shows. Every file there is listed exactly once, and the design
+ * system's `test` (`scripts/check-exports.mjs`) holds the two to each other:
+ * this list is the inventory.
  */
 export type TocItem = { id: string; label: string; icon: LucideIcon; components: string[] };
 export type TocGroup = { group: string; items: TocItem[] };

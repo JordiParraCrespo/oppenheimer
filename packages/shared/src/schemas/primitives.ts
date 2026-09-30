@@ -9,8 +9,9 @@ import { CODING_AGENT_IDS } from '../agents/catalog.js';
  * but it can and does build its own from the same numbers and tuples, and
  * `src/__tests__/cross-version-primitives.spec.ts` asserts the two agree.
  *
- * Every schema in this folder states the constraint only, never a message:
- * a stated message defeats the translated error map (`.agents/rules/forms.md`).
+ * A schema in this folder states the constraint only, never a message: a
+ * stated message defeats the translated error map (`.agents/rules/forms.md`).
+ * `ipOrCidrSchema`'s refine is the one that still carries English.
  */
 
 /** Bounds shared with the wire. Change them here and the conformance spec follows. */

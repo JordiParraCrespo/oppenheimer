@@ -17,8 +17,8 @@
  * `protocol-schema/` is excluded in `biome.json` for the same reason.
  *
  * `require()`-ing this file has no side effect: the specs compare the committed
- * files with `renderSchema()` / `renderSamples()`, and a require that rewrote
- * them first would make that comparison always pass.
+ * files with a fresh render, and a require that rewrote them first would make
+ * that comparison always pass.
  */
 const { mkdirSync, readFileSync, writeFileSync } = require('node:fs');
 const { dirname, join, relative } = require('node:path');

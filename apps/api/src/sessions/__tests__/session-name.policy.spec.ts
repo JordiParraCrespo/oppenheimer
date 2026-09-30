@@ -98,7 +98,7 @@ describe('sessionTitleRequest', () => {
     expect(request.maxTokens).toBe(32);
     expect(request.temperature).toBe(0);
     expect(request.system).toContain(`At most ${SESSION_NAME_MAX_LENGTH} characters`);
-    // Only what is worth sending of a long prompt leaves the host.
+    // Only what is worth sending of a long prompt goes to the model.
     expect(request.messages[0].content).toHaveLength(2_000);
   });
 });

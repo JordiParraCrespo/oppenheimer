@@ -205,7 +205,10 @@ export class GithubRestAdapter implements GithubAppPort {
     return toRepository(await this.rawRepository(token, githubRepoId));
   }
 
-  /** The raw row, so the two readers above cannot drift on the refusal mapping. */
+  /**
+   * The raw row, so `readRepository` and `listRepositoryBranches` cannot drift
+   * on the refusal mapping.
+   */
   private async rawRepository(token: string, githubRepoId: number): Promise<RawRepository> {
     const { body } = await this.request<RawRepository>(`${this.api}/repositories/${githubRepoId}`, {
       token,

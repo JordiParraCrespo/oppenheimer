@@ -42,7 +42,7 @@ export function NewSessionForm({ heading }: { heading?: ReactNode }) {
         scope={
           // A fieldset rather than a div with `role="group"`: the chips are
           // one decision — where this session runs — and a screen reader
-          // announces the legend once for all of them. Pending is `loading`,
+          // announces the group's label once for all of them. Pending is `loading`,
           // settled-and-empty is the empty line plus the chip's own foot
           // action, and `disabled` is only for a chip this screen forbids —
           // which none of these are.

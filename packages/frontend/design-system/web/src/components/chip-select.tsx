@@ -525,9 +525,9 @@ const ChipSelectOptionRow = React.memo(function ChipSelectOptionRow({
 });
 
 /**
- * ChipSelect — a scope decision stated as a chip: "Run X on host **mac-studio**,
- * repo **xrp-mobile**, branch **main**, with **Claude Code**". Four in a row on
- * New session, so the row reads as a sentence instead of a form.
+ * ChipSelect — a scope decision stated as a chip: "Run X in **XRP Mobile**
+ * on host **mac-studio**, repo **xrp-mobile**, branch **main**". Four in a
+ * row on New session, so the row reads as a sentence instead of a form.
  *
  * Every one filters. When the list can grow, a pinned action band ("Add
  * host…") ends in a chevron, because it opens something rather than choosing.
