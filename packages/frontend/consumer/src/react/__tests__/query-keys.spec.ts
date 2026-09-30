@@ -5,7 +5,8 @@ import { installationsKeys } from '../installations.queries';
 
 /**
  * What invalidating or removing a key reaches, asked of a real `QueryClient`,
- * so the answer is React Query's own matcher rather than a key's spelling.
+ * so the answer is React Query's own matcher rather than a key's spelling; and
+ * that an id nobody chose stays `undefined`, since the hook gates on it.
  */
 
 function cacheWith(...keys: (readonly unknown[])[]) {
@@ -18,6 +19,11 @@ const invalidated = (client: QueryClient, key: readonly unknown[]) =>
   client.getQueryState(key)?.isInvalidated ?? false;
 
 describe('installationsKeys', () => {
+  it('keeps an id nobody chose as undefined rather than a made-up one', () => {
+    expect(installationsKeys.repositoryList(undefined)).toContain(undefined);
+    expect(installationsKeys.branches('inst-1', undefined)).toContain(undefined);
+  });
+
   it('refreshes a repository list without refetching every branch under it', async () => {
     const list = installationsKeys.repositoryList('inst-1');
     const branches = installationsKeys.branches('inst-1', 42);

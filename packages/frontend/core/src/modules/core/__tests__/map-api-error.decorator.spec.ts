@@ -12,13 +12,6 @@ const UPDATE_FAILED = {
   message: 'Failed to update user',
 };
 
-/**
- * The decorator's own contract: it passes a result through, maps a failure
- * through `toAppError` with the fallback it declares, and refuses a non-method.
- * What `toAppError` makes of a problem document or an `AppError` is
- * `errors.spec.ts`'s.
- */
-
 class Repository {
   readonly name = 'repository';
 
@@ -45,8 +38,6 @@ describe('@MapApiError', () => {
     expect((error as AppError).message).toBe('Failed to fetch user');
   });
 
-  // The one proof that the method's own failure reaches `toAppError` rather
-  // than being replaced by the fallback.
   it('leaves an AppError thrown by the method itself untouched', async () => {
     const error = await repository.findById('known').catch((thrown: unknown) => thrown);
 

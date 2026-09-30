@@ -284,8 +284,6 @@ describe('automation writes', () => {
   for (const { name, method, hook, variables, called } of cases) {
     it(`${name} calls the repository, leaves every automations read stale, then runs the caller's onSuccess`, async () => {
       const answer = { id: 'a-1' } as unknown as AutomationRunEntity;
-      // The service holds only the method this case expects, so a hook that
-      // called another one (pause for resume, say) fails the write.
       const service = { [method]: vi.fn().mockResolvedValue(answer) };
       const { wrapper, queryClient } = setup(service);
       const keys = seeded(queryClient);

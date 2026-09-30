@@ -150,6 +150,18 @@ describe('useHostPairing', () => {
     expect(result.current.host?.name).toBe('New host');
   });
 
+  it('mints once per visit, and again only when asked', async () => {
+    const { wrapper, service } = setup([unredeemed], [OWNED]);
+    const { result, rerender } = renderHook(() => useHostPairing('New host'), { wrapper });
+
+    await waitFor(() => expect(result.current.pairing).toEqual(PAIRING));
+    rerender();
+    expect(service.pair).toHaveBeenCalledTimes(1);
+
+    result.current.regenerate();
+    await waitFor(() => expect(service.pair).toHaveBeenCalledTimes(2));
+  });
+
   it('drops the host it was offering when the reader takes a new token', async () => {
     // Use this host must not stay armed under a command that has been thrown
     // away: the new token has not been spent, so nothing is paired yet.

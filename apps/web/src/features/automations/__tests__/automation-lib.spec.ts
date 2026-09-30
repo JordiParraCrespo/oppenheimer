@@ -1,7 +1,7 @@
 import {
   AutomationEntity,
   type AutomationTrigger,
-  type HostEntity,
+  HostEntity,
   ProjectEntity,
 } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
@@ -31,6 +31,37 @@ const t = ((key: string, args?: Record<string, unknown>) =>
 
 const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 const NOW = Date.UTC(2026, 8, 28, 10, 0); // Mon 28 Sep 2026, 10:00Z
+
+function host(id: string): HostEntity {
+  return new HostEntity(id, id, true, null, null, null, null, null, new Date(NOW));
+}
+
+function project({ id, defaultHostId = null }: { id: string; defaultHostId?: string | null }) {
+  const repository = {
+    id: `${id}-r`,
+    installationId: 'i-1',
+    githubRepoId: '101',
+    fullName: 'acme/mobile',
+    isDefault: true,
+    baseBranch: 'main',
+  };
+  const name = id;
+  const slug = id;
+  const isUnassigned = false;
+  const defaultAgent = 'codex';
+  const createdAt = new Date(NOW);
+  return new ProjectEntity(
+    id,
+    name,
+    slug,
+    isUnassigned,
+    defaultHostId,
+    defaultAgent,
+    [repository],
+    createdAt,
+    createdAt,
+  );
+}
 
 function automation(
   overrides: Partial<{
@@ -205,37 +236,18 @@ describe('the draft', () => {
   });
 
   it('prefills a new automation from the project it was opened for', () => {
-    const project = (id: string, hostId: string | null) =>
-      new ProjectEntity(
-        id,
-        id,
-        id,
-        false,
-        hostId,
-        'codex',
-        [
-          {
-            id: `${id}-r`,
-            installationId: 'i-1',
-            githubRepoId: '101',
-            fullName: 'acme/mobile',
-            isDefault: true,
-            baseBranch: 'main',
-          },
-        ],
-        new Date(NOW),
-        new Date(NOW),
-      );
-    const hosts = [{ id: 'h-9' }] as unknown as HostEntity[];
+    const projects = [project({ id: 'p-1' }), project({ id: 'p-2', defaultHostId: 'h-2' })];
 
-    expect(emptyDraft([project('p-1', null), project('p-2', 'h-2')], hosts, 'p-2')).toMatchObject({
+    expect(emptyDraft(projects, [host('h-9')], 'p-2')).toMatchObject({
       projectId: 'p-2',
       hostId: 'h-2',
       agent: 'codex',
       repositoryKeys: ['i-1:101'],
     });
-    // A project with no default host takes the first host there is.
-    expect(emptyDraft([project('p-1', null)], hosts, 'p-1').hostId).toBe('h-9');
+  });
+
+  it('takes the first host there is for a project with no default host', () => {
+    expect(emptyDraft([project({ id: 'p-1' })], [host('h-9')], 'p-1').hostId).toBe('h-9');
   });
 
   it('opens with nothing to send when there is no project', () => {

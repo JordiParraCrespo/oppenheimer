@@ -88,14 +88,15 @@ describe('submitConsent', () => {
     return fetchMock;
   }
 
-  it.each([true, false])(
-    'posts accept: %s with the consent code and returns the redirect',
-    async (accept) => {
-      const fetchMock = answer(200, { redirectURI: 'https://client.example/cb?code=x' });
+  it.each([
+    [true, 'https://client.example/cb?code=x'],
+    [false, 'https://client.example/cb?error=access_denied'],
+  ])(
+    'posts accept: %s with the consent code and returns its redirect',
+    async (accept, redirectURI) => {
+      const fetchMock = answer(200, { redirectURI });
 
-      await expect(submitConsent(accept, 'code-1')).resolves.toBe(
-        'https://client.example/cb?code=x',
-      );
+      await expect(submitConsent(accept, 'code-1')).resolves.toBe(redirectURI);
 
       const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
       expect(url).toBe('/api/auth/oauth2/consent');

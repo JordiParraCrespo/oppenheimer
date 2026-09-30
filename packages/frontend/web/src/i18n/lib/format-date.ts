@@ -130,12 +130,18 @@ function relativeFormatter(locale: string): Intl.RelativeTimeFormat {
   return formatter;
 }
 
-/** "12 Jun 2026" — a date that needs its year, in the reader's order. */
+/**
+ * "12 Jun 2026" — a date that needs its year, in the reader's order.
+ * Kept with no caller yet because `/scaffold-feature` names it for new screens.
+ */
 export function formatMediumDate(date: Date, locale: string): string {
   return dateFormatter(locale, { dateStyle: 'medium' }).format(date);
 }
 
-/** "12 Jun 2026, 14:30" — the stamp on a session, a token or an audit entry. */
+/**
+ * "12 Jun 2026, 14:30" — the stamp on a session, a token or an audit entry.
+ * Kept with no caller yet because `/scaffold-feature` names it for new screens.
+ */
 export function formatDateTime(date: Date, locale: string): string {
   return dateFormatter(locale, {
     dateStyle: 'medium',
