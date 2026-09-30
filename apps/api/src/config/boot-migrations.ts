@@ -15,20 +15,15 @@ export const MIGRATOR_POOL_OPTIONS = {
 };
 
 /**
- * `dataSourceFactory` for `TypeOrmModule.forRootAsync`: runs pending
- * migrations on a separate, short-lived DataSource, then hands back the app's
- * own one for `@nestjs/typeorm` to initialize.
+ * `dataSourceFactory` for `TypeOrmModule.forRootAsync`: runs pending migrations on a
+ * separate, short-lived DataSource, then hands back the app's own. The app DataSource
+ * carries request-time timeouts in `extra` (`poolOptions` in `database.config.ts`),
+ * and a deploy's migrations must not run under a request's statement limit, so it sets
+ * `migrationsRun: false`.
  *
- * The app DataSource carries the request-time timeouts in `extra`
- * (`poolOptions` in `database.config.ts`). Running migrations on it through
- * `migrationsRun` would put a deploy's migrations under the same statement
- * limit as a request, so the app DataSource sets `migrationsRun: false` and
- * this runs them instead.
- *
- * Nothing runs when the options list no migrations (the test runner) or ask
- * for `manualInitialization` (the OpenAPI build, which has no database).
- *
- * `createDataSource` is a seam for the unit test; the app passes nothing.
+ * Nothing runs when the options list no migrations (the test runner) or ask for
+ * `manualInitialization` (the OpenAPI build, which has no database).
+ * `createDataSource` is a seam for the unit test.
  */
 export function bootDataSourceFactory(
   createDataSource: (options: DataSourceOptions) => DataSource = (options) =>

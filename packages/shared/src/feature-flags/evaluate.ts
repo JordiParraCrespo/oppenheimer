@@ -223,7 +223,6 @@ function pickArm(
   return undefined;
 }
 
-/** The unit a flag's rollout is bucketed on for this caller. */
 export function bucketUnitOf(
   definition: FlagDefinition,
   context: FlagEvaluationContext,
@@ -244,8 +243,6 @@ export function offValueOf(definition: FlagDefinition): FlagValue {
 }
 
 /**
- * Evaluates one flag.
- *
  * Order: no config → default; switched off → the off value; first matching rule;
  * otherwise the fallthrough. A split that cannot bucket the caller (an
  * anonymous visitor has no unit) serves the default — the one answer that is

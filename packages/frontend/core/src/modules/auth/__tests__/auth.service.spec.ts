@@ -145,7 +145,6 @@ describe('AuthService analytics', () => {
     expect(analytics.capture).not.toHaveBeenCalled();
   });
 
-  // An abandoned OAuth attempt must not relabel a later password login.
   it('drops the pending marker when the user signs in with a password instead', async () => {
     const { service, analytics } = setup();
 

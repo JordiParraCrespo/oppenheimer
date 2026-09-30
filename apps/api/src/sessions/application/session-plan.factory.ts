@@ -15,17 +15,13 @@ import type { WorkSessionEntity } from '../domain/work-session.entity';
 import { requireActiveProject } from './require-active-project.policy';
 
 /**
- * Turns "start a session on these repositories" into the rows that describe it.
+ * Turns "start a session on these repositories" into the rows that describe it. It is
+ * in `application/` because it needs ports and is no use case: `POST /sessions` and
+ * `POST /sessions/{id}/checkouts` share it so the project, the directory name and the
+ * branch name are decided once.
  *
- * It lives in `application/` because it needs ports and is not a use case: both
- * `POST /sessions` and `POST /sessions/{id}/checkouts` build a checkout the same
- * way, and the rules they share — which project the work belongs to, what the
- * directory is called, what the branch is called — are the ones that must not be
- * written twice.
- *
- * The repository's own name comes from GitHub, live, one repository at a time.
- * There is no repository table to look it up in: GitHub owns the list, and what a
- * checkout keeps is a display snapshot of the name it had when it was created.
+ * The repository's name comes from GitHub, live, one at a time: GitHub owns the list,
+ * and a checkout keeps only a display snapshot of the name it had at creation.
  */
 @Injectable()
 export class SessionPlanFactory {
@@ -50,8 +46,6 @@ export class SessionPlanFactory {
   }
 
   /**
-   * Build a checkout and attach it to the session.
-   *
    * The directory name is derived over every name the session has **ever** used,
    * retired ones included, so a name is never reissued inside a session: the coding
    * agents key their conversation state by working directory, and a new checkout

@@ -4,7 +4,6 @@ import { HostPairingTokenOrmEntity } from './database/host-pairing-token.orm-ent
 import { HostPairingTokenEntity } from './domain/host-pairing-token.entity';
 import { PairingTokenResponseDto } from './dtos/pairing-token.response.dto';
 
-/** Maps the pairing-token aggregate between its three shapes. */
 @Injectable()
 export class HostPairingTokenMapper
   implements Mapper<HostPairingTokenEntity, HostPairingTokenOrmEntity, PairingTokenResponseDto>

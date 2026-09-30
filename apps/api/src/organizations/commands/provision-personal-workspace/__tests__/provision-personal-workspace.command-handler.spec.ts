@@ -21,7 +21,6 @@ describe('ProvisionPersonalWorkspaceCommandHandler', () => {
   let roles: Pick<RoleRepositoryPort, 'findOneByName'>;
   let sessionCache: SessionCachePort;
 
-  /** The aggregate handed to the repository by the last call. */
   const written = () => vi.mocked(workspaces.provision).mock.calls[0][0] as PersonalWorkspaceEntity;
 
   beforeEach(() => {
@@ -44,7 +43,6 @@ describe('ProvisionPersonalWorkspaceCommandHandler', () => {
 
     const workspace = written();
     expect(workspace.id).toBe(organizationId);
-    // The organization.
     expect(workspace.name).toBe('Ada Lovelace');
     expect(workspace.slug.value).toMatch(/^ada-lovelace-[0-9a-f]{8}$/);
     // The membership, with an identity of its own.
@@ -83,8 +81,6 @@ describe('ProvisionPersonalWorkspaceCommandHandler', () => {
   it('answers null when the repository declined to write', async () => {
     vi.mocked(workspaces.provision).mockResolvedValue(false);
 
-    // "Already had one" is a success for every caller: sign-up and the seed
-    // both provision the same account, and the seed is the repair path.
     await expect(service.execute(command)).resolves.toBeNull();
   });
 

@@ -7,9 +7,8 @@ import { useOppenheimerApp } from './context';
 import { useQuery } from './query';
 
 /**
- * Query key factory for the `users` feature: the signed-in user and their
- * permissions, each level derived from the one above. See the "React Query
- * keys" guide in the docs for the rationale.
+ * Each level is derived from the one above. See the "React Query keys" guide
+ * in the docs for the rationale.
  */
 export const usersKeys = {
   all: ['users'] as const,
@@ -18,9 +17,8 @@ export const usersKeys = {
 };
 
 /**
- * The caller's own effective permissions (CASL rules), used to gate which
- * routes appear in the app's navigation. Kept alongside the profile query so
- * the shell can build the signed-in user's ability once and share it.
+ * Kept alongside the profile query so the shell can build the signed-in
+ * user's ability once and share it.
  */
 export function useMyPermissions(
   options?: Omit<UseQueryOptions<PermissionDefinition[], Error>, 'queryKey' | 'queryFn'>,

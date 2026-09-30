@@ -89,7 +89,6 @@ export class AcceptInvitationCommandHandler
   }
 }
 
-/** The membership an invitation makes: its organization, in the role it names. */
 function rosterEntry(userId: string, invitation: Invitation) {
   return { userId, organizationId: invitation.organizationId, role: invitation.role ?? 'member' };
 }

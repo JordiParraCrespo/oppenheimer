@@ -3,11 +3,8 @@ import { RedisConnectionAdapter } from './infrastructure/redis-connection.adapte
 import { REDIS_CLIENT } from './redis.di-tokens';
 
 /**
- * The shared Redis command connection, bound to `REDIS_CLIENT`.
- *
  * Global because it is infrastructure every Redis-backed adapter needs (the
- * cache, the throttler, the health probe) and none of them owns. Built from the
- * one `redis` config section; see `config/redis.config.ts`.
+ * cache, the throttler, the health probe) and none of them owns.
  */
 @Global()
 @Module({

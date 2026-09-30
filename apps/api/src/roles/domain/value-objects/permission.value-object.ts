@@ -16,10 +16,6 @@ export interface PermissionProps {
   reason?: string;
 }
 
-/**
- * A permission is an immutable value object: an `(action, subject)` pair plus
- * optional CASL refinements. Roles own a collection of these.
- */
 export class Permission extends ValueObject<PermissionProps> {
   get action(): string {
     return this.props.action;

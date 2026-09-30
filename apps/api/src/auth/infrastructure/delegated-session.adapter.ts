@@ -15,22 +15,17 @@ const CACHE_TTL_SECONDS = SESSION_TTL_SECONDS - 60;
  * How recently a delegated row must have been created to be left alone by the
  * sweep below.
  *
- * Two requests for the same credential can miss the cache at the same instant —
- * at expiry, after an invalidation, or throughout a Redis outage — and each
- * mints a session. Without this window each one's sweep would read the other's
- * row as superseded and delete it, and if both list before either deletes,
- * *both* rows go while the cache still serves one of those tokens: every façade
- * call through that credential then fails until the entry expires nine minutes
- * later. A lock would be the other answer, but the cache offers no atomic
- * primitive to build one from.
+ * Two requests for the same credential can miss the cache at once (at expiry,
+ * after an invalidation, through a Redis outage) and each mints a session.
+ * Without this window each sweep would delete the other's row, and if both
+ * list before either deletes, both go while the cache still serves one of the
+ * tokens: every façade call through it fails until the entry expires. The
+ * cache offers no atomic primitive to build a lock from.
  *
- * Age is what actually separates the two cases. The row a remint supersedes was
- * created when its cache entry was written, so it is {@link CACHE_TTL_SECONDS}
- * old by the time anything replaces it; a sibling from a concurrent miss is
- * milliseconds old, as is a row a request in flight is still presenting. A
- * minute sits far from both. Concurrent duplicates are left to expire on their
- * own ten-minute schedule and to be swept by the next remint — bounded, unlike
- * the day-long accumulation this sweep exists to stop.
+ * A superseded row is {@link CACHE_TTL_SECONDS} old when replaced; a concurrent
+ * sibling or an in-flight row is milliseconds old, and a minute sits far from
+ * both. Concurrent duplicates expire on their own ten-minute schedule or go
+ * with the next remint.
  */
 const RETIREMENT_GRACE_SECONDS = 60;
 
@@ -58,28 +53,19 @@ interface CachedDelegatedSession {
 /**
  * Bridges scoped credentials to the Better Auth session world.
  *
- * Several modules (organizations, members, invitations, workspaces, admin) are
- * façades over Better Auth's server API, which resolves the caller from their
- * session. An API token or OAuth access token carries no such session, so this
- * service mints a short-lived one for the credential's owner and hands back its
- * token; the auth guard then presents it as `Authorization: Bearer <token>`,
- * which the Better Auth `bearer` plugin accepts.
+ * The façade modules (organizations, members, invitations, workspaces, admin)
+ * call Better Auth's server API, which resolves the caller from a session. An
+ * API token or OAuth access token has none, so this mints a short-lived one for
+ * the credential's owner; the auth guard presents it as
+ * `Authorization: Bearer <token>` to the Better Auth `bearer` plugin. Only
+ * routes marked `@UsesBetterAuthSession()` ask for one.
  *
- * Sessions are cached per credential so a busy token creates one session every
- * ten minutes rather than one per request, and each remint deletes the row it
- * supersedes so an active credential holds one row, not a day's worth. A
- * lookup is one Redis round trip: the credential's entry and the user's
- * generation, read together.
- *
- * Only routes that call Better Auth as the caller ask for one
- * (`@UsesBetterAuthSession()`); every other route a scoped credential reaches
- * never touches this class.
- *
- * The rows are marked `delegated` (see `auth.ts`), which keeps them out of the
- * profile and security "Active sessions" lists: they are bridges, not devices,
- * and offering someone a "Sign out" button for one would promise a revocation
- * it cannot deliver — the credential mints another on its next request. API
- * tokens and OAuth grants are revoked where they are managed.
+ * Sessions are cached per credential (one mint per ten minutes; a lookup is one
+ * Redis round trip for the entry and the user's generation), and each remint
+ * deletes the row it supersedes. Rows are marked `delegated` to keep them out
+ * of "Active sessions": a "Sign out" button there would promise a revocation it
+ * cannot deliver, since the credential mints another on its next request.
+ * Tokens and grants are revoked where they are managed.
  */
 @Injectable()
 export class DelegatedSessionAdapter implements DelegatedSessionPort {
@@ -87,12 +73,6 @@ export class DelegatedSessionAdapter implements DelegatedSessionPort {
 
   constructor(private readonly cache: CacheService) {}
 
-  /**
-   * A Better Auth session token acting as `userId`, reused across requests
-   * from the same credential. Returns `null` if a session could not be minted
-   * — callers fall back to scope-only access rather than failing the request,
-   * since most routes never touch the Better Auth API.
-   */
   async resolveSessionToken(options: DelegatedSessionRequest): Promise<string | null> {
     const key = this.cacheKey(options.credentialId);
     let generation: string;
@@ -156,20 +136,12 @@ export class DelegatedSessionAdapter implements DelegatedSessionPort {
   }
 
   /**
-   * Delete the rows this credential's new session supersedes.
-   *
-   * A cached token is dropped a minute before its session expires, so a
-   * credential in steady use mints a new one every nine minutes. Without this
-   * the superseded rows stayed until they expired — one live row per remint,
-   * all of them the same credential, none of them reachable by anything.
-   *
-   * Only rows older than {@link RETIREMENT_GRACE_SECONDS} are touched: a
-   * younger one is a sibling from a concurrent cache miss, or a row a request
-   * still in flight is presenting, and deleting either breaks a request to tidy
-   * a table.
-   *
-   * Best-effort: the new session is already minted and cached, and a sweep that
-   * could fail the request would trade a tidy table for a broken one.
+   * Delete the rows this credential's new session supersedes: a credential in
+   * steady use remints every nine minutes, and the old rows would otherwise
+   * live until expiry, unreachable. Rows younger than
+   * {@link RETIREMENT_GRACE_SECONDS} are a concurrent miss's sibling or still in
+   * flight, and are left alone. Best-effort: the new session is already minted
+   * and cached, so a failed sweep must not fail the request.
    */
   private async retireSuperseded(
     credentialId: string,
@@ -201,7 +173,6 @@ export class DelegatedSessionAdapter implements DelegatedSessionPort {
     }
   }
 
-  /** Drop the cached session for a credential (used when it is revoked). */
   async invalidate(credentialId: string, _userId: string): Promise<void> {
     await this.cache
       .del(this.cacheKey(credentialId))
@@ -211,20 +182,13 @@ export class DelegatedSessionAdapter implements DelegatedSessionPort {
   }
 
   /**
-   * Drop every delegated session cached for a user, without needing to know
-   * which credentials they hold.
-   *
-   * Needed whenever their sessions are revoked in bulk — signing out other
-   * devices, or changing a password, which revokes them by default. Those
-   * delete the delegated session *rows*, and a credential still presenting the
-   * cached token then fails every facade call until the entry expires on its
-   * own.
-   *
-   * Rotating a generation stamp rather than deleting keys is what makes this
-   * possible: the cache offers no wildcard delete, and the credential ids are
-   * spread across API tokens and OAuth grants. One write moves the user onto a
-   * new generation, and every entry minted under the old one stops answering
-   * at once.
+   * Drop every delegated session cached for a user, without knowing which
+   * credentials they hold. Bulk revocations (signing out other devices, a
+   * password change) delete the delegated rows, and a credential still
+   * presenting the cached token would fail every façade call until the entry
+   * expired. The cache has no wildcard delete and the credential ids span API
+   * tokens and OAuth grants, so one write rotates the user's generation stamp
+   * and every entry minted under the old one stops answering.
    */
   async invalidateForUser(userId: string): Promise<void> {
     await this.cache

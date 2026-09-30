@@ -11,12 +11,10 @@ import {
 
 const SCOPE_SET = new Set<string>(SCOPES);
 
-/** Type guard: is `value` a scope in the catalog? */
 export function isScope(value: unknown): value is Scope {
   return typeof value === 'string' && SCOPE_SET.has(value);
 }
 
-/** Split a scope into its resource and access level. Throws if unknown. */
 export function parseScope(scope: Scope): {
   resource: ScopeResource;
   access: ScopeAccessLevel;
@@ -45,14 +43,12 @@ export function hasScope(granted: Iterable<Scope>, required: Scope): boolean {
   return expandScopes(granted).has(required);
 }
 
-/** Does the granted set satisfy every one of `required`? */
 export function hasAllScopes(granted: Iterable<Scope>, required: readonly Scope[]): boolean {
   if (required.length === 0) return true;
   const expanded = expandScopes(granted);
   return required.every((scope) => expanded.has(scope));
 }
 
-/** The subset of `required` that the granted set does *not* cover. */
 export function missingScopes(
   granted: Iterable<Scope>,
   required: readonly Scope[],
@@ -174,7 +170,6 @@ export function grantableScopes(ability: AppAbility): Scope[] {
   return grantable;
 }
 
-/** Scopes in `requested` that `ability` may not grant. */
 export function ungrantableScopes(ability: AppAbility, requested: readonly Scope[]): Scope[] {
   const grantable = new Set(grantableScopes(ability));
   return requested.filter((scope) => !grantable.has(scope));

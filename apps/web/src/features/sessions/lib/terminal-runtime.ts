@@ -27,38 +27,25 @@ export interface SessionTerminalOptions {
    */
   onImage?: (image: File) => void;
   /**
-   * The first byte the far end has sent, ever, on this attachment. Called
-   * once.
-   *
-   * A session is "started" the moment the host has a tmux session, which is
-   * before the agent inside it has drawn anything: Claude Code takes a few
-   * seconds cold, and tens of them on a loaded machine. The console swaps its
-   * provisioning pane for the terminal at "started", so the reader is handed
-   * an empty white rectangle with a live link behind it and no way to tell a
-   * slow start from a broken one. The caller uses this to say which it is.
+   * The first chunk on this attachment that puts a glyph on the grid; called
+   * once. A session is "started" once the host has a tmux session, before the
+   * agent has drawn anything (seconds cold, tens on a loaded machine), so the
+   * caller uses this to tell a slow start from a broken one.
    */
   onFirstOutput?: () => void;
 }
 
 /**
  * One session terminal: xterm.js in `container`, wired to `stream`, until the
- * returned function disposes it.
+ * returned function disposes it. Everything that talks to xterm lives here;
+ * the stream is the caller's and this never disposes it.
  *
- * Everything that talks to xterm lives here — the fit and the PTY size, the
- * console's keys, the renderer, fonts and theme — so the hook that mounts it
- * holds only a React lifetime and two pieces of state. The stream is the
- * caller's; this never disposes it.
- *
- * **Nothing moves the picture of the grid**, which is what decides where a
- * prompt sits, and the two agents land differently on purpose. Claude Code
- * lays its turn out across the whole terminal it is told about, so its prompt
- * and status band come to rest on the last rows and the pane reads as full.
- * Codex prints its output and puts the prompt straight after it, so a short
- * conversation sits at the top with the rest of the pane empty — the ordinary
- * behaviour of a terminal, and what Orca shows too: it reads `.xterm-screen`
- * for cell metrics and mouse maths and never transforms it. A console that
- * translated the grid down by its empty rows made Codex float at the bottom
- * under a tall blank band, and hid a PTY that had been left at 80x24.
+ * **Nothing moves the picture of the grid.** Claude Code lays its turn out
+ * across the whole terminal, so its prompt rests on the last rows; Codex puts
+ * its prompt straight after its output, so a short conversation sits at the
+ * top. That is ordinary terminal behaviour and Orca's too (it never transforms
+ * `.xterm-screen`). Translating the grid down by its empty rows floated Codex
+ * under a tall blank band and hid a PTY left at 80x24.
  */
 export function mountSessionTerminal(
   container: HTMLElement,
@@ -110,23 +97,14 @@ export function mountSessionTerminal(
     return false;
   });
 
-  // Images, pasted or dropped, go to the caller rather than to xterm.
   const unbindImages = options.onImage ? bindImageGestures(container, options.onImage) : () => {};
 
-  // The wheel scrolls the session, not the program.
-  //
-  // tmux runs with `mouse on`, so it turns mouse tracking on and xterm
-  // faithfully forwards every wheel tick to it as a mouse report. Codex reads
-  // those and moves its own cursor, so a reader trying to look back over a
-  // session drove the agent's UI instead of the scrollback — and Claude Code,
-  // which ignores them, simply did nothing.
-  //
-  // The rule is the buffer, not the agent: on the normal buffer the wheel is
-  // the reader's, and scrolls what has been printed. On the alternate buffer
-  // it is the program's, because a full-screen application — an editor, a
-  // pager, tmux's own copy mode — has no scrollback for us to move and draws
-  // its own idea of a viewport. Nothing here is per-agent; the two land
-  // differently because they use the terminal differently.
+  // The wheel scrolls the session, not the program: tmux runs with `mouse on`,
+  // so xterm would forward every tick as a mouse report and Codex would move
+  // its own cursor instead of the reader scrolling back. The rule is the
+  // buffer, not the agent: on the normal buffer the wheel scrolls what was
+  // printed; on the alternate buffer it is the program's, since a full-screen
+  // application (an editor, a pager, tmux's copy mode) has no scrollback.
   term.attachCustomWheelEventHandler((event) => {
     if (term.buffer.active.type !== 'normal') return true;
     const lines = wheelLines(event, term.rows);
@@ -226,25 +204,13 @@ export function mountSessionTerminal(
   // back afterwards is the reader's, and nothing here fights it.
   const offStatus = stream.onStatus((next) => {
     if (next !== 'live') return;
-    // The viewport, asserted on every connect.
-    //
-    // The size is otherwise sent once, from the first fit that succeeds — and
-    // the first `fit()` throws, because React has only just attached the ref
-    // and the pane has no layout yet, so the first real measurement lands a
-    // frame later. Minting an attach ticket is one request, which on a local
-    // API can finish inside that frame: the socket opens with no viewport to
-    // announce, the relay waits two seconds and attaches the classic 80x24,
-    // and the coalescer never sends the size again because it has not changed.
-    //
-    // Everything downstream then compounds it. The agent lays its turn out for
-    // the terminal it was told about, so Claude Code fills 24 rows of a
-    // 56-row grid, and the anchor below — correctly — pushes those 24 rows to
-    // the bottom, leaving a tall blank band where the session should start.
-    // The anchor was not the fault; this was.
-    //
-    // Saying it here costs one message per connect and is what a reconnect
-    // needs anyway: the relay opens a fresh attachment, and it should be
-    // opened at the size the reader is actually looking at.
+    // The size is otherwise sent once, from the first fit that succeeds, and
+    // the first `fit()` throws (the pane has no layout when React attaches the
+    // ref). On a local API the attach ticket can land inside that frame: the
+    // relay waits two seconds, attaches at 80x24, and the coalescer never
+    // resends an unchanged size, so the agent lays its turn out for 24 rows of
+    // a taller grid. A reconnect needs this anyway: the relay opens a fresh
+    // attachment, which should be at the size the reader is looking at.
     stream.resize(term.cols, term.rows);
     term.scrollToBottom();
   });
@@ -333,18 +299,11 @@ const ESCAPE_PATTERNS = [
 /* biome-ignore-end lint/suspicious/noControlCharactersInRegex: an escape sequence is control characters by definition */
 
 /**
- * Whether a chunk from the far end would put a glyph on the grid.
- *
- * Escape sequences and the C0 controls move the cursor, set a colour, clear a
- * line; they are how a terminal is driven and none of them is something a
- * reader can see. What is left after taking them out is the text. Whitespace
- * does not count either: a cleared screen arrives as spaces and newlines, and
- * a pane of those still reads as blank.
- *
- * Deliberately a scan, not a parse. It runs on chunks until the first one that
- * has text in it and never again, so the cost is bounded by one session's
- * start, and an escape sequence it fails to recognise can only make it answer
- * late — the waiting state stays a moment longer, which is the safe way to be
+ * Whether a chunk from the far end would put a glyph on the grid: anything
+ * left once escape sequences, C0 controls and whitespace are taken out (a
+ * cleared screen arrives as spaces and newlines). Deliberately a scan, not a
+ * parse: it runs only until the first chunk with text, and an escape it fails
+ * to recognise can only make it answer late, which is the safe way to be
  * wrong.
  */
 export function hasVisibleText(chunk: string | Uint8Array): boolean {

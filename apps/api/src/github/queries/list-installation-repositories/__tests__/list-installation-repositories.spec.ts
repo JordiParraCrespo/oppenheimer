@@ -105,8 +105,6 @@ describe('list installation repositories', () => {
   });
 
   it('shares one GitHub listing between concurrent requests', async () => {
-    // The picker queries on every keystroke: when the entry expires, the
-    // requests in flight must not each paginate the whole installation.
     const subject = build(connected);
     const query = new ListInstallationRepositoriesQuery({ scope, installationId: connected.id });
 

@@ -8,7 +8,6 @@ import { ProjectErrors } from '../domain/projects.errors';
 import { PROJECT_REPOSITORY } from '../projects.di-tokens';
 import type { ProjectLookupPort } from './project-lookup.port';
 
-/** Reads a project for another module, through the caller's scope. */
 @Injectable()
 export class ProjectLookupResolver implements ProjectLookupPort {
   constructor(

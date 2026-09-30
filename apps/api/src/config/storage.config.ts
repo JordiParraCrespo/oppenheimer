@@ -37,9 +37,9 @@ export const storageConfig = registerAs('storage', () => {
 
   return {
     ...config,
-    // Fall back to the API's own public URL. `BETTER_AUTH_URL` is the one
-    // canonical "where this API is reachable" value the deployment already sets,
-    // and it shares the same dev default, so local files need no extra config.
+    // `BETTER_AUTH_URL` is the one canonical "where this API is reachable" value
+    // the deployment already sets, and it shares the same dev default, so local
+    // files need no extra config.
     publicUrl: config.publicUrl ?? process.env.BETTER_AUTH_URL ?? 'http://localhost:3001',
   };
 });

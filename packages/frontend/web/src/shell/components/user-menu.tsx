@@ -30,20 +30,16 @@ import { useShell } from '../hooks/use-shell';
 const THEMES: readonly ThemePreference[] = ['light', 'dark', 'system'];
 
 /**
- * The account row at the foot of the sidebar, and the menu it opens.
+ * The account row at the foot of the sidebar, and the menu it opens, both from
+ * `product/versions/mvp/design/version1/SessionsConsole.dc.html`: a 32px
+ * `.op-navitem` of 22px accent avatar, name and a 14px chevron (no role line:
+ * the role under your own name is a fact you know) over a 250px
+ * `.op-accountmenu` of e-mail, appearance, language and "Log out". The middle
+ * rows carry the export's 15px moon and globe, and "Log out" the 15px door in
+ * the one tone the menu may colour.
  *
- * Both are the artboard's, down to the measurements
- * (`product/versions/mvp/design/version1/SessionsConsole.dc.html`): a 32px
- * `.op-navitem` of 22px accent avatar, name and a 14px chevron — no second
- * line, because the role under someone's own name is a fact about them they
- * already know — over a 250px `.op-accountmenu` that is the account's e-mail,
- * appearance, language and the way out. The two middle rows carry the 15px
- * moon and globe the export draws in the `.op-menu__icon` slot, and "Log out"
- * the 15px door, in the one tone the menu is allowed to colour.
- *
- * Appearance and language open sideways rather than unrolling in place, so
- * the menu is four rows tall whatever is in it, and the console loses nothing
- * by having no chrome bar to put a theme toggle in.
+ * Appearance and language open sideways, so the menu stays four rows tall and
+ * the console needs no chrome bar for a theme toggle.
  */
 export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avatar' }) {
   const { t, i18n } = useTranslation();

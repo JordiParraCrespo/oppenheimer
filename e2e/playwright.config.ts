@@ -1,22 +1,16 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * End-to-end coverage for the authentication surface.
+ * `api` drives the REST routes with `request` only; `web` drives `apps/web` in
+ * Chromium; the opt-in `fleet` projects pair real runners (below).
  *
- * Two projects share one runner:
- *   - `api` drives the Better Auth endpoints and the REST routes behind them
- *     with `request` only, so it needs no browser.
- *   - `web` drives `apps/web` in Chromium, exercising the same flows through
- *     the UI a user actually sees.
- *
- * Both assume the API on `API_URL` and the web app on `WEB_URL`, with the
- * Postgres from `docker compose up` reachable at `DATABASE_URL` — the tests
- * read reset/verification tokens straight out of the database and the API log
- * rather than needing a mailbox.
+ * All assume the API on `API_URL`, the web app on `WEB_URL` and the Postgres
+ * the root `.env`'s `DB_*` variables name (`support/db.ts`): tests read
+ * reset and verification tokens from the database and the API log rather than
+ * a mailbox.
  */
 export const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 export const WEB_URL = process.env.WEB_URL ?? 'http://localhost:3000';
-/** A Chromium the environment already has, for images that ship one. */
 const CHROMIUM_PATH = process.env.PLAYWRIGHT_CHROMIUM_PATH;
 /**
  * The browser every project that opens a page uses. An environment that

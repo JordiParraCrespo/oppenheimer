@@ -5,17 +5,14 @@ import { EMAIL_JOB_OPTIONS } from '../../config/queue-options.config';
 import { redisConfigFromEnv, redisConnectionOptions } from '../../config/redis.config';
 
 /**
- * Standalone BullMQ queue used by the Better Auth instance to enqueue
- * transactional emails (password reset, email verification, welcome).
+ * BullMQ queue the Better Auth instance enqueues transactional emails on,
+ * consumed by the `EmailProcessor` worker in `QueueModule`. Better Auth cannot
+ * inject the `@nestjs/bullmq` queue (see `dispatchFromAuthHook`).
  *
- * Better Auth is configured outside of the NestJS DI container, so it cannot
- * inject the queue provided by `@nestjs/bullmq`. Instead it pushes jobs onto
- * the same Redis queue, which is consumed by the existing `EmailProcessor`
- * worker registered in `QueueModule`.
- *
- * Job options are per producer, so this queue carries the same
- * `EMAIL_JOB_OPTIONS` (retries, then quick removal from Redis) as the
- * DI-registered one; the two must not drift.
+ * Job options are per producer, so this carries the same `EMAIL_JOB_OPTIONS`
+ * as the DI-registered queue; the two must not drift. Outside the DI container
+ * `app.close()` does not reach it: a test closes it before its Redis container
+ * stops, or in-flight ioredis commands reject into nothing.
  */
 export const emailQueue = new Queue(QUEUE_NAMES.EMAIL, {
   // Read from the environment rather than `ConfigService`, which does not exist

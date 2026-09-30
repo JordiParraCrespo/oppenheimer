@@ -20,9 +20,9 @@ type WherePatch = Partial<
 /**
  * The editor's Where it runs step: Code (the project and which of its
  * repositories), then Runs on (the host, the agent, its model), each a
- * hairline card of rows with the pick on the right. A run clones
- * only from the project, so the repositories offered are the project's; a new
- * project picks all of them.
+ * hairline card of rows with the pick on the right. A run clones only from
+ * the project, so the repositories offered are the project's; a new project
+ * picks all of them.
  */
 export function EditorWhereStep({
   draft,

@@ -49,8 +49,6 @@ describe('useCaptureEvent', () => {
     );
   });
 
-  // `mutate` must stay referentially stable, or it can't be passed to a
-  // memoized child or listed in a dependency array.
   it('keeps a stable mutate identity across re-renders', () => {
     const { wrapper } = setup();
     const { result, rerender } = renderHook(() => useCaptureEvent(), {
@@ -63,8 +61,6 @@ describe('useCaptureEvent', () => {
     expect(result.current.mutate).toBe(first);
   });
 
-  // The service swallows provider failures, so the mutation should never land
-  // in an error state — analytics must not surface as a broken UI.
   it('settles successfully even though the provider is fire-and-forget', async () => {
     const { wrapper } = setup();
     const { result } = renderHook(() => useCaptureEvent(), { wrapper });
@@ -120,8 +116,6 @@ describe('useCaptureOnMount', () => {
     );
   });
 
-  // A component reused across events — the same banner rendering a different
-  // event key — should report the new one.
   it('captures again when the event name changes', async () => {
     const { wrapper, capture } = setup();
     const { rerender } = renderHook(

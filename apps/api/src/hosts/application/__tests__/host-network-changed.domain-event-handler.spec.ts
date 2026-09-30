@@ -44,7 +44,6 @@ describe('HostNetworkChangedDomainEventHandler', () => {
     expect(queue.add).toHaveBeenCalledWith(
       'host-network-changed',
       {
-        // `to` is the recipient on every email job; the networks are named apart.
         to: 'jordi@example.com',
         userId: 'user-1',
         hostId: 'host-1',

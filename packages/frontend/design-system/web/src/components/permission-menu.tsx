@@ -12,19 +12,6 @@ import {
   DropdownMenuTrigger,
 } from './dropdown-menu';
 
-/**
- * PermissionMenu — what the agent may do on the host without asking, as a
- * muted tool button in the composer's foot row and a menu of three two-line
- * options, each with its glyph: a hand for "Ask for approval", a shield for
- * "Approve for me", an alert ring for "Full access". Full access is the one
- * level that can change a machine unattended, so it is the only one that
- * takes the warning tone, on the button and on its row, label and all.
- *
- * The levels are the product's; pass them in so the copy is translated where
- * the call site is. Picking one closes the menu: unlike the appearance and
- * language menus a radio group is usually built for, this is a decision made
- * once on the way to sending a task, not a setting somebody flips to compare.
- */
 type PermissionLevel = 'ask' | 'auto' | 'full';
 
 type PermissionOption = {
@@ -44,6 +31,17 @@ const ICONS: Record<PermissionLevel, React.ReactNode> = {
   full: <CircleAlertIcon />,
 };
 
+/**
+ * PermissionMenu — what the agent may do on the host without asking: a muted
+ * tool button in the composer's foot row and a menu of three two-line options,
+ * each with its glyph (a hand for "Ask for approval", a shield for "Approve for
+ * me", an alert ring for "Full access"). Full access alone can change a machine
+ * unattended, so it alone takes the warning tone, on the button and its row.
+ *
+ * The levels are passed in so the call site translates them. Picking one
+ * closes the menu: a decision made once on the way to sending a task, not a
+ * setting somebody flips to compare.
+ */
 function PermissionMenu({
   options,
   value,

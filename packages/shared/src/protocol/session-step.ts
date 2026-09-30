@@ -12,7 +12,6 @@ import { z } from 'zod/v4';
  * build failure rather than a step that stays pending forever.
  */
 
-/** The kind a start step is logged as. */
 export const SESSION_STEP_EVENT_KIND = 'session.step';
 
 /** The kind a failed start is logged as; its payload is {@link sessionFailedPayloadSchema}. */

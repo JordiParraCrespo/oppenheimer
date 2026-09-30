@@ -19,8 +19,6 @@ export interface GeneratedApiTokenSecret {
 }
 
 /**
- * Mint a new token secret.
- *
  * The secret is high-entropy and random, so a fast digest is the right hash
  * here: password KDFs exist to slow down guessing of low-entropy inputs, and
  * using one would put a deliberate delay on every authenticated request. What

@@ -18,8 +18,6 @@ const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
  */
 export class OrganizationSlug extends ValueObject<string> {
   /**
-   * Derive a slug from what the organization is called.
-   *
    * The display name is reduced to URL characters and capped, then a random
    * suffix is appended: `slug` is unique in the database, and two people who
    * name their workspace the same thing must not collide on it. A name with

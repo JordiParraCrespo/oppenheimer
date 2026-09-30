@@ -135,9 +135,8 @@ describe('the checkouts the aggregate holds', () => {
   });
 
   it('steps the agent out of a checkout the log retires', () => {
-    // The foreign key's `ON DELETE SET NULL` never fires, because checkout rows are
-    // not deleted. Folding the event is what nulls the column and marks the child,
-    // so a replay rebuilds both.
+    // Folding the event is what nulls the column and marks the child, so a replay
+    // rebuilds both.
     const work = session();
     const first = checkout(work, 'xrp-mobile', '1');
     work.attachCheckout(first);

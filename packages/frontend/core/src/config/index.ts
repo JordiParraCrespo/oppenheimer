@@ -1,15 +1,12 @@
 /**
- * The kernel's tunables: the decisions about time and retries that more than
- * one screen lives with — how long data stays fresh, how often a clock on
- * screen moves, how long a search waits, how many times a request is retried.
- * A package or an app reads the value from here rather than writing the number
- * where it is used, so changing one is one edit.
+ * The kernel's tunables: decisions about time and retries that more than one
+ * screen lives with (freshness, clock ticks, search waits, retries). Read them
+ * from here rather than writing the number where it is used.
  *
- * A unit is not a decision: `MINUTE = 60_000` stays a constant where it is
- * used, and so do protocol facts (escape codes, close codes, `setTimeout`'s
- * ceiling, the API's page maximum) and small values with one reader that are
- * part of how that code works (a "Copied" flash, a resize settle). A decision
- * about the product (a poll, the terminal's reconnect ladder) is the product
+ * A unit is not a decision: `MINUTE = 60_000` stays where it is used, and so do
+ * protocol facts (escape codes, close codes, `setTimeout`'s ceiling, the API's
+ * page maximum) and one-reader values (a "Copied" flash, a resize settle). A
+ * product decision (a poll, the terminal's reconnect ladder) is the product
  * package's `CONSUMER_CONFIG`, because the kernel never names a product.
  */
 export const CORE_CONFIG = {

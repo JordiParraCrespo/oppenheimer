@@ -78,9 +78,6 @@ function exportedNames(source) {
   for (const match of source.matchAll(/export\s+(?:type|interface|enum)\s+([A-Za-z0-9_$]+)/g)) {
     names.add(match[1]);
   }
-  // `export * from './x'` re-exports names this file cannot enumerate, and
-  // `export default` publishes something the barrel cannot name at all.
-  // Both defeat the check, so they are refused outright rather than passed over.
   if (/export\s+\*/.test(source)) names.add(WILDCARD_REEXPORT);
   if (/export\s+default\b/.test(source)) names.add(DEFAULT_EXPORT);
 
@@ -180,7 +177,6 @@ if (unusedInternals.length > 0) {
 const showcaseDir = join(root, '..', '..', '..', '..', 'apps', 'web-showcase', 'src');
 const tocPath = join(showcaseDir, 'lib', 'toc.ts');
 
-/** Every source file under `dir`, recursively. */
 function sourceFiles(dir) {
   const files = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {

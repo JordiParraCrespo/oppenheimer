@@ -79,7 +79,6 @@ test('a machine that loses its network goes offline alone and comes back to the 
 
   cutLink();
   await waitForHost(api, flaky.host, false);
-  // Only the machine that lost its cable: the other is still online.
   await waitForHost(api, steady.host, true, 5_000);
 
   restoreLink();
@@ -142,6 +141,5 @@ test('another account neither sees a machine nor runs a session on it', async ()
   });
   expect(refused.status()).toBeGreaterThanOrEqual(400);
   expect(refused.status()).toBeLessThan(500);
-  // …and nothing started on the machine.
   expect(box.host.exec('tmux -L oppenheimer list-sessions 2>/dev/null || true')).toBe('');
 });

@@ -68,8 +68,6 @@ describe('error catalog coverage', () => {
   });
 
   it('documents every code in errors.md', () => {
-    // The problem `type` URI is an anchor on that page, so an undocumented
-    // code points clients at a dead link.
     const documented = documentedCodes();
     expect(codes.filter((code) => !documented.has(code))).toEqual([]);
   });

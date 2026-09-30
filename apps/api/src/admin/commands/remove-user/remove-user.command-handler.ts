@@ -5,7 +5,6 @@ import type { AdminSuccessResponseDto } from '../../dtos/admin-user.response.dto
 import type { AdminAuthPort } from '../../infrastructure/admin-auth.port';
 import { RemoveUserCommand } from './remove-user.command';
 
-/** Deletes an account. */
 @CommandHandler(RemoveUserCommand)
 export class RemoveUserCommandHandler
   implements ICommandHandler<RemoveUserCommand, AdminSuccessResponseDto>

@@ -16,18 +16,14 @@ import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../../sessions.di-tok
 import { RestartSessionCommand } from './restart-session.command';
 
 /**
- * Restarts a session in the worktrees it already has.
+ * Restarts a session in the worktrees it already has: after a host reboot every
+ * session shows stopped with Restart, which recreates window 0 in the same
+ * directories rather than a second set. Slug, directory and branch never change,
+ * which is why the launch spec is derived rather than stored.
  *
- * This is what a host reboot needs: every session shows as stopped with a Restart
- * button, and pressing it recreates window 0 in the same directories rather than
- * building a second set. Nothing about the session's identity changes — same slug,
- * same directory, same branch — which is why the launch spec is derived rather than
- * stored.
- *
- * What it records is a **request**, not an outcome: the session becomes `open` when
- * the host says it did, not when somebody asked. That is the difference from
- * stopping, where the control plane's decision is itself the fact. One append, and
- * what could not be delivered is a hint on the response.
+ * It records a **request**, not an outcome: the session becomes `open` when the host
+ * says it did. Stopping differs because there the control plane's decision is the
+ * fact. One append; what could not be delivered is a hint on the response.
  */
 @CommandHandler(RestartSessionCommand)
 export class RestartSessionCommandHandler

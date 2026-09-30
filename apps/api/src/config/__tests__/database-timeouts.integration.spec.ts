@@ -132,7 +132,6 @@ describe('database pool timeouts (integration)', () => {
   });
 
   it('fails a query that waits longer than DB_CONNECTION_TIMEOUT_MS for a free client', async () => {
-    // A pool of one, built from the same config the app reads.
     process.env.DB_POOL_MAX = '1';
     process.env.DB_CONNECTION_TIMEOUT_MS = '500';
     const small = new DataSource({

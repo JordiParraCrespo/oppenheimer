@@ -28,7 +28,6 @@ export interface ApiTokenProps {
   /** Owner. The token's reach is re-derived from this user on every request. */
   userId: string;
   name: string;
-  /** Non-secret display prefix. */
   prefix: string;
   /** SHA-256 digest of the secret. The secret itself is never stored. */
   tokenHash: string;
@@ -60,8 +59,6 @@ const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 const MAX_EXPIRY_DAYS = 3650;
 
 /**
- * API token aggregate root.
- *
  * A token carries a set of {@link Scope}s and an optional organization
  * restriction. It never carries authority of its own: what it can actually do
  * is the intersection of its scopes with whatever its owner's roles still
@@ -193,7 +190,6 @@ export class ApiTokenEntity extends AggregateRoot<ApiTokenProps> {
     return hasAllScopes(this.props.scopes, required);
   }
 
-  /** May this token act on `organizationId`? */
   allowsOrganization(organizationId: string | null | undefined): boolean {
     return isOrganizationAllowed(this.resourceScope, organizationId);
   }
@@ -213,7 +209,6 @@ export class ApiTokenEntity extends AggregateRoot<ApiTokenProps> {
     );
   }
 
-  /** Record that the token authenticated a request. */
   markUsed(at: Date = new Date()): void {
     this.props.lastUsedAt = at;
   }

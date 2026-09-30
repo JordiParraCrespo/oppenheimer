@@ -6,9 +6,8 @@ import {
 } from '../redis.config';
 
 /**
- * The `redis` section and the two option sets every Redis client in the API is
- * built from. There is one place the address and password are read, so a
- * `requirepass` Redis cannot accept the queue and refuse the cache again.
+ * There is one place the address and password are read, so a `requirepass`
+ * Redis cannot accept the queue and refuse the cache again.
  */
 
 const REDIS_VARS = ['REDIS_HOST', 'REDIS_PORT', 'REDIS_PASSWORD'];

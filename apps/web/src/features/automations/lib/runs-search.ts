@@ -17,7 +17,7 @@ const RUN_WINDOW_PARAMS = ['24h', '7d', '30d'] as const satisfies readonly RunWi
 
 /**
  * The runs list's facets and page, in the URL: a filtered list is a link
- * someone can send, and Back undoes a filter. Declared on each route that
+ * someone can send. Declared on each route that
  * shows the list, and the only reading of it: a value it does not accept
  * reads as absent, which is the default.
  */

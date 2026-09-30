@@ -19,9 +19,8 @@ import (
 //     session left out of it is recorded stopped — with no windows and no
 //     optional fields (under 190 bytes each, room for about 2,800);
 //  3. truncated: as many compact snapshots as fit, in the handler's order,
-//     logged as an error, because the control plane's reconciliation records
-//     a session a hello leaves out as stopped. No host gets near it in
-//     practice; the step exists so that one that does still has a link.
+//     logged as an error for the sessions it leaves out. No host gets near it
+//     in practice; the step exists so that one that does still has a link.
 
 // SnapshotFit is how a session list was fitted to a frame.
 type SnapshotFit int

@@ -135,9 +135,6 @@ describe('resolveCapabilities', () => {
     };
     expect(resolveCapabilities(configWith(configured)).github_app).toBe(true);
 
-    // A partial set is off rather than half-on: the token mint needs the key,
-    // the claim proof needs the OAuth pair, and a suspension is only trustworthy
-    // with the webhook secret. Any one missing removes the whole feature.
     for (const key of Object.keys(configured)) {
       const partial = { ...configured, [key]: undefined };
       expect(resolveCapabilities(configWith(partial)).github_app).toBe(false);

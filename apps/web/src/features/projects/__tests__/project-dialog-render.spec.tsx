@@ -8,8 +8,6 @@ import { ProjectEditorDialog } from '../dialogs/project-editor';
  * button, and none of the pickers below — the repositories, the hosts, the
  * agents, the cloned-by-default list — that used to redraw on every character
  * under a dialog-wide `useWatch`.
- *
- * Runs in the `render-budget` project, without the React Compiler.
  */
 
 vi.mock('react-i18next', () => ({

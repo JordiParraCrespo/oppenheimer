@@ -32,15 +32,13 @@ export const organizationsKeys = {
 };
 
 /**
- * Whether a workspace address is free. The onboarding step asks this while the
- * reader types, so callers debounce the value they pass — this hook is a plain
- * query over whatever it is handed.
+ * Whether a workspace address is free. The onboarding step asks while the
+ * reader types, so callers debounce the value they pass.
  *
- * `undefined` is "no question yet" — the caller passes it for an empty or
- * still-changing address, and the query does not fetch (`skipToken`). The step
- * shows its neutral hint for it rather than a verdict.
+ * `undefined` means no question yet (an empty or still-changing address), and
+ * the query does not fetch (`skipToken`).
  *
- * Deliberately not cached for long. An address is free until somebody takes
+ * Deliberately not cached for long: an address is free until somebody takes
  * it, and a stale `true` sends the reader into a create that then fails.
  */
 export function useCheckSlug(
@@ -83,13 +81,11 @@ export interface ClaimPersonalWorkspaceVariables {
  * Claim the personal workspace — name the row sign-up provisioned, or create
  * one for the account that has none.
  *
- * With no row to name, this creates the workspace, which changes where the
- * caller stands: the shell, the nav's permission set and every org-scoped list
- * were answers to "who are you and where", so every cached read is refetched —
- * a narrow invalidation would leave the app reading a cached "you belong
- * nowhere" and bounce the reader back to onboarding. The reply is seeded into
- * the list first, so even a failed refetch no longer says that. Naming an
- * existing row changes only that row, so it is patched into the list.
+ * Creating moves the caller, so it refetches everything
+ * ({@link refetchEverythingForNewIdentity}): a narrow invalidation would leave a
+ * cached "you belong nowhere" and bounce the reader back to onboarding. The
+ * reply is seeded into the list first, so even a failed refetch no longer says
+ * that. Naming an existing row changes only that row, so it is patched in.
  */
 export function useClaimPersonalWorkspace(
   options?: UseMutationOptions<OrganizationEntity, Error, ClaimPersonalWorkspaceVariables>,

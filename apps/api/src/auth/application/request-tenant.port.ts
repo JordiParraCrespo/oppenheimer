@@ -2,7 +2,6 @@ import type { ExecutionContext } from '@nestjs/common';
 import type { RequestTenant, TenantRequest } from '../domain/request-tenant.types';
 import type { ScopeContext } from '../domain/scope-context.types';
 
-/** The request members the tenant is read from and written to. */
 export interface TenantSourceRequest extends TenantRequest {
   params?: Record<string, unknown>;
   query?: Record<string, unknown>;

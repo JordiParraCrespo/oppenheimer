@@ -43,9 +43,6 @@ function isValidationMessageKey(value: unknown): value is ValidationMessageKey {
 const WRONG_BRANCH = new Set<string>(['invalid_type', 'invalid_literal']);
 
 /**
- * Derives form validation messages from Zod issue codes instead of the literal
- * strings baked into the schemas.
- *
  * The schemas in `@oppenheimer/shared` are shared with the API, so they state
  * constraints, not messages. Forms need those constraints worded in the user's
  * language, so every issue code is mapped onto a `validation.*` key at parse

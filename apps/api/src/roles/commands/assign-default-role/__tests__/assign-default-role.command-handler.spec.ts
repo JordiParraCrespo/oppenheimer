@@ -54,8 +54,6 @@ describe('AssignDefaultRoleCommandHandler', () => {
   it('reports a missing system role as a deployment fault, not a 404', async () => {
     vi.mocked(roles.findOneByName).mockResolvedValue(None);
 
-    // Nobody named this role in a request, so `ROLE_001 Role not found` would
-    // describe a caller mistake that did not happen. The migrations install it.
     const error = await service.execute(command).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(AppError);
     expect((error as AppError).code).toBe(RoleErrors.SYSTEM_ROLE_MISSING.code);

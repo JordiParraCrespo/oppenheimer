@@ -1,8 +1,6 @@
 import { DomainEvent, type DomainEventProps } from '@oppenheimer/backend-ddd';
 
 /**
- * A new account was given the organization it works in.
- *
  * Raised by {@link PersonalWorkspaceEntity.provisionFor} and staged on the
  * transactional outbox by the repository, inside the same transaction as the
  * three rows it describes — so nothing can observe a workspace that exists

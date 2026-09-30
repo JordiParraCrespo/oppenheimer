@@ -1,4 +1,4 @@
-import { createHmac, randomUUID } from 'node:crypto';
+import { createHmac, randomInt, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { type APIRequestContext, expect, test } from '@playwright/test';
 import { newContext, signedUpContext } from '../../support/auth';
@@ -30,11 +30,10 @@ const { slug: APP_SLUG } = JSON.parse(
   readFileSync(new URL('../../support/github-app.json', import.meta.url), 'utf8'),
 ) as { slug: string };
 const MOBILE = STUB_REPOSITORIES.mobile;
-let installationCounter = 0;
 
 async function connect(api: APIRequestContext): Promise<{ id: string; githubId: number }> {
-  installationCounter += 1;
-  const githubId = 900_000 + (process.pid % 1000) * 100 + installationCounter;
+  // Random, like `connectInstallation`: a pid-derived id collides across workers.
+  const githubId = randomInt(1_000_000, 2 ** 40);
   await claimInstallation(GITHUB_STUB_URL, githubId);
   const response = await api.post('/api/v1/installations', {
     data: {

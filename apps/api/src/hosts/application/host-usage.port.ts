@@ -1,17 +1,11 @@
 /**
- * What is running on a host, answered by whoever owns the thing that runs.
+ * What is running on a host, answered by whoever owns the thing that runs: the
+ * Settings list's "Running · 2 sessions" and what the remove dialog says it stops.
+ * `sessions/` imports this module and never the reverse, so this module **declares**
+ * the port and another **implements** it, as `projects/` does with `ProjectUsagePort`.
  *
- * The Settings hosts list says "Running · 2 sessions" beside a machine, and the
- * remove dialog says what removing it stops. This module cannot count that:
- * sessions are somebody else's aggregate, and the dependency only runs one way —
- * a session needs the host it runs on, so `sessions/` imports this module and
- * never the reverse. So the question is a port this module **declares** and
- * another module **implements**, the shape `projects/` uses for the same reason
- * (`ProjectUsagePort`).
- *
- * The answer is a display count, not a gate, so an empty registry is not
- * fail-closed the way an archive's is: it reads as nothing running, which is
- * the truth for a deployment built without sessions.
+ * A display count, not a gate: an empty registry reads as nothing running, the truth
+ * for a deployment without sessions, rather than failing closed as an archive does.
  */
 export interface HostUsagePort {
   /**

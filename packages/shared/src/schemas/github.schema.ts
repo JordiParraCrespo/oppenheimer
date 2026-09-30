@@ -5,8 +5,6 @@ import { githubInstallationIdSchema } from './primitives.js';
  * GitHub App installation shapes. There is no repository schema and no
  * repository table: the installation *is* the allowlist and GitHub answers it,
  * so the picker lists repositories live and a checkout records the ids it took.
- *
- * Schemas state the constraint only, never a message (`.agents/rules/forms.md`).
  */
 
 /**
