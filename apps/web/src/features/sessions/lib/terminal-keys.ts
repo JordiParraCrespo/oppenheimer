@@ -1,11 +1,7 @@
 /**
- * The console's keymap (05), decided before xterm encodes the key.
- *
- * xterm encodes every key it is given, which is right for almost all of them
- * and wrong for a few: a copy the reader meant for the clipboard, a paste the
- * browser should perform, the newline an agent's prompt wants inside a
- * message, and the Mac's line and word editing chords, which a Mac terminal
- * turns into the control keys a shell reads. Everything else is the program's.
+ * The console's keymap (05), decided before xterm encodes the key: the chords
+ * the console answers are rows of `CHORDS`, and every other key is the
+ * program's.
  */
 
 /**
@@ -25,66 +21,68 @@ export type KeyChord = Pick<
   'type' | 'key' | 'shiftKey' | 'ctrlKey' | 'altKey' | 'metaKey'
 >;
 
+export interface KeyContext {
+  hasSelection: boolean;
+  agentWindow: boolean;
+  mac: boolean;
+}
+
+type Modifier = 'ctrl' | 'shift' | 'alt' | 'meta';
+
+interface ChordRow {
+  /** `mac` or `other` fences a row to one side; absent, it holds on both. */
+  platform?: 'mac' | 'other';
+  /** Exactly these modifiers are down, and no others. */
+  mods: Modifier[];
+  key: string;
+  /** The row holds only in window 0, the agent's (Shift+Enter). */
+  agentWindow?: true;
+  /** The row holds only while text is selected (Ctrl+C). */
+  selection?: true;
+  verdict: KeyVerdict;
+}
+
 const TERMINAL: KeyVerdict = { kind: 'terminal' };
 const BROWSER: KeyVerdict = { kind: 'browser' };
 
-/**
- * In the agent's window, Shift+Enter is a newline in the message rather than
- * sending it: Claude Code and Codex both read a line feed (Ctrl+J) that way,
- * and it is what their own `/terminal-setup` binds the chord to. A shell
- * window gets the chord as typed — a line feed is not what a shell or an
- * editor asked for.
- */
-const NEWLINE_IN_PROMPT = '\n';
+/** 05's chords, first match wins. */
+const CHORDS: ChordRow[] = [
+  // A line feed is a newline in Claude Code's and Codex's prompt.
+  { mods: ['shift'], key: 'Enter', agentWindow: true, verdict: { kind: 'send', data: '\n' } },
+  { mods: ['ctrl'], key: 'c', selection: true, verdict: BROWSER },
+  { platform: 'other', mods: ['ctrl', 'shift'], key: 'c', verdict: { kind: 'copy' } },
+  { mods: ['ctrl', 'shift'], key: 'v', verdict: BROWSER },
+  { platform: 'mac', mods: ['meta'], key: 'ArrowLeft', verdict: { kind: 'send', data: '\x01' } },
+  { platform: 'mac', mods: ['meta'], key: 'ArrowRight', verdict: { kind: 'send', data: '\x05' } },
+  { platform: 'mac', mods: ['meta'], key: 'Backspace', verdict: { kind: 'send', data: '\x15' } },
+  { platform: 'mac', mods: ['alt'], key: 'ArrowLeft', verdict: { kind: 'send', data: '\x1bb' } },
+  { platform: 'mac', mods: ['alt'], key: 'ArrowRight', verdict: { kind: 'send', data: '\x1bf' } },
+];
 
-/**
- * What a Mac terminal sends for the system's text-editing chords (VS Code's
- * terminal and iTerm's "natural text editing" agree): ⌘←/⌘→ go to the start
- * and end of the line, ⌘⌫ deletes to its start, ⌥←/⌥→ move by word. xterm
- * sends nothing for ⌘, and CSI 1;3 for ⌥ arrows, which neither bash nor zsh
- * binds; and ⌘← unclaimed is Chrome's Back, which leaves the session.
- */
-const MAC_COMMAND = new Map([
-  ['ArrowLeft', '\x01'],
-  ['ArrowRight', '\x05'],
-  ['Backspace', '\x15'],
-]);
-const MAC_OPTION = new Map([
-  ['ArrowLeft', '\x1bb'],
-  ['ArrowRight', '\x1bf'],
-]);
+function held(event: KeyChord): Set<Modifier> {
+  const mods = new Set<Modifier>();
+  if (event.ctrlKey) mods.add('ctrl');
+  if (event.shiftKey) mods.add('shift');
+  if (event.altKey) mods.add('alt');
+  if (event.metaKey) mods.add('meta');
+  return mods;
+}
 
-export function classifyKey(
-  event: KeyChord,
-  context: { hasSelection: boolean; agentWindow: boolean; mac: boolean },
-): KeyVerdict {
-  const onlyMeta = event.metaKey && !event.shiftKey && !event.ctrlKey && !event.altKey;
-  const onlyAlt = event.altKey && !event.shiftKey && !event.ctrlKey && !event.metaKey;
-  const onlyShift = event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey;
-  const onlyCtrl = event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey;
-  const ctrlShift = event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey;
-  const key = event.key.toLowerCase();
+function matches(row: ChordRow, event: KeyChord, down: Set<Modifier>, context: KeyContext) {
+  if (row.platform && row.platform !== (context.mac ? 'mac' : 'other')) return false;
+  if (row.agentWindow && !context.agentWindow) return false;
+  if (row.selection && !context.hasSelection) return false;
+  if (row.key.toLowerCase() !== event.key.toLowerCase()) return false;
+  return row.mods.length === down.size && row.mods.every((mod) => down.has(mod));
+}
 
-  if (event.key === 'Enter' && onlyShift && context.agentWindow) {
-    // Every phase of the key is claimed, not just keydown, or the keypress
-    // that follows still reaches xterm and submits the prompt.
-    return event.type === 'keydown' ? { kind: 'send', data: NEWLINE_IN_PROMPT } : BROWSER;
-  }
-  const macChord = context.mac
-    ? (onlyMeta && MAC_COMMAND.get(event.key)) || (onlyAlt && MAC_OPTION.get(event.key))
-    : undefined;
-  if (macChord) return event.type === 'keydown' ? { kind: 'send', data: macChord } : BROWSER;
-  // Ctrl+C is an interrupt unless something is selected, in which case it is
-  // the copy a reader on Linux or Windows expects. Cmd+C on a Mac never
-  // reaches the PTY, so it needs nothing here.
-  if (onlyCtrl && key === 'c' && context.hasSelection) return BROWSER;
-  // Ctrl+Shift+C is the terminal copy on Linux and Windows. Left to the
-  // browser it opens Chrome's element inspector; with nothing selected it does
-  // nothing, as in a desktop terminal.
-  if (!context.mac && ctrlShift && key === 'c') {
-    return event.type === 'keydown' ? { kind: 'copy' } : BROWSER;
-  }
-  // Ctrl+Shift+V is the terminal paste on Linux; xterm would send ^V.
-  if (ctrlShift && key === 'v') return BROWSER;
-  return TERMINAL;
+export function classifyKey(event: KeyChord, context: KeyContext): KeyVerdict {
+  const down = held(event);
+  const row = CHORDS.find((candidate) => matches(candidate, event, down, context));
+  if (!row) return TERMINAL;
+  // A verdict that acts (writes the PTY or the clipboard) acts once, on
+  // keydown; the keypress and keyup of the same chord are claimed too, or
+  // xterm encodes the keypress after the console has already answered it.
+  const acts = row.verdict.kind === 'send' || row.verdict.kind === 'copy';
+  return acts && event.type !== 'keydown' ? BROWSER : row.verdict;
 }

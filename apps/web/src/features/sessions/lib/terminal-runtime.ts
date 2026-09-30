@@ -97,7 +97,7 @@ export function mountSessionTerminal(
     if (verdict.kind === 'terminal') return true;
     if (verdict.kind === 'copy') {
       event.preventDefault();
-      if (term.hasSelection()) void navigator.clipboard?.writeText(term.getSelection());
+      copyToClipboard(term.getSelection());
       return false;
     }
     if (verdict.kind === 'send') {
@@ -246,6 +246,16 @@ export function mountSessionTerminal(
     ptySize.dispose();
     term.dispose();
   };
+}
+
+/**
+ * The console's own copy (05): nothing selected copies nothing, and a copy
+ * the browser refuses (no clipboard API outside a secure context, a denied
+ * permission) is a no-op rather than an error.
+ */
+function copyToClipboard(text: string) {
+  if (!text || !navigator.clipboard) return;
+  navigator.clipboard.writeText(text).catch(() => {});
 }
 
 /**

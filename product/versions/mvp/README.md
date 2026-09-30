@@ -535,8 +535,5 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   lighter terminal read as a slab on a darker page; the artboard paints the
   session's frame in the terminal colour too, so the console now does the same
   and matches it.
-- 2026-09-30: **The terminal answers the Mac's editing chords and
-  Ctrl+Shift+C** (05). Measured key by key through tmux, the console sent
-  what a terminal sends for everything but ⌘←/⌘→/⌘⌫ (nothing, and ⌘← was
-  Chrome's Back), ⌥←/⌥→ (CSI 1;3, which no shell binds) and Ctrl+Shift+C
-  (Chrome's inspector); those now send what VS Code's terminal does.
+- 2026-09-30: **The terminal answers the Mac's line and word chords, and
+  Ctrl+Shift+C copies off the Mac** (05).
