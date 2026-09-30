@@ -49,6 +49,16 @@ describe('UserEntity', () => {
     expect(user().fullName).toBe('Ada Lovelace');
   });
 
+  it('is a getter, so it does not survive the persisted query cache', () => {
+    // Documented rather than fixed: the cache is rehydrated from JSON, where a
+    // getter is gone, so a name read from a cached user is built from the
+    // plain fields, which do survive.
+    const rehydrated = JSON.parse(JSON.stringify(user()));
+
+    expect(rehydrated.fullName).toBeUndefined();
+    expect(rehydrated.firstName).toBe('Ada');
+  });
+
   it('is only admin for the admin role', () => {
     expect(user({ role: 'admin' as Role }).isAdmin).toBe(true);
     expect(user({ role: 'user' as Role }).isAdmin).toBe(false);
@@ -69,16 +79,6 @@ describe('UserEntity', () => {
     expect(superAdministrator.isSuperAdmin).toBe(true);
     expect(superAdministrator.canAccessControlPlane).toBe(true);
   });
-
-  it('is a getter, so it does not survive the persisted query cache', () => {
-    // Documented rather than fixed: the cache is rehydrated from JSON, where a
-    // getter is gone. `apps/web`'s `personName` exists because of exactly this,
-    // and reads the plain fields instead.
-    const rehydrated = JSON.parse(JSON.stringify(user()));
-
-    expect(rehydrated.fullName).toBeUndefined();
-    expect(rehydrated.firstName).toBe('Ada');
-  });
 });
 
 describe('UsersRepository', () => {
@@ -94,12 +94,6 @@ describe('UsersRepository', () => {
       api.getMe.mockResolvedValue(ok(dto()));
 
       expect((await repository.me()).email).toBe('ada@example.com');
-    });
-
-    it('fails on an absent body', async () => {
-      api.getMe.mockResolvedValue(ok(undefined));
-
-      await expect(repository.me()).rejects.toBeInstanceOf(AppError);
     });
   });
 

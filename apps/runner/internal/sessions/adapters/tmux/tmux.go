@@ -268,12 +268,12 @@ func (s *Server) Panes(ctx context.Context) ([]app.Pane, error) {
 		}
 		return nil, domain.ErrTmuxCommand.WithDetail("tmux list-panes: %s", firstLine(out, err)).WithCause(err)
 	}
-	return ParsePanes(out), nil
+	return parsePanes(out), nil
 }
 
-// ParsePanes reads list-panes output in paneFormat. Lines it cannot read are
+// parsePanes reads list-panes output in paneFormat. Lines it cannot read are
 // skipped rather than failing the listing.
-func ParsePanes(out string) []app.Pane {
+func parsePanes(out string) []app.Pane {
 	var panes []app.Pane
 	for _, line := range strings.Split(out, "\n") {
 		fields := strings.SplitN(line, "\t", 5)

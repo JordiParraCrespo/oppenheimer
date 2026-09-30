@@ -28,10 +28,10 @@ func (p *Prober) Machine(ctx context.Context) domain.Machine {
 	return p.machine
 }
 
-// DMI is the handful of firmware strings Linux exposes under
+// dmi is the handful of firmware strings Linux exposes under
 // /sys/class/dmi/id, which is where a hypervisor and a cloud name
 // themselves without a network call.
-type DMI struct {
+type dmi struct {
 	SysVendor        string
 	ProductName      string
 	BIOSVendor       string
@@ -44,10 +44,10 @@ type DMI struct {
 // string is the same "Microsoft Corporation" a Hyper-V desktop VM reports.
 const azureAssetTag = "7783-7084-3265-9085-8269-3286-77"
 
-// Classify turns DMI strings into the virtualization kind and the cloud
-// vendor. It is exported and pure so the table is testable without the
-// machines it describes.
-func Classify(d DMI) (virtualization, cloud string) {
+// classify turns DMI strings into the virtualization kind and the cloud
+// vendor. It is pure so the table is testable without the machines it
+// describes.
+func classify(d dmi) (virtualization, cloud string) {
 	joined := strings.ToLower(strings.Join([]string{d.SysVendor, d.ProductName, d.BIOSVendor}, " "))
 	switch {
 	case strings.Contains(joined, "amazon ec2"):
@@ -93,9 +93,9 @@ func containsAny(s string, words ...string) bool {
 	return false
 }
 
-// TimezoneFrom names the IANA zone from TZ, or from where /etc/localtime
+// timezoneFrom names the IANA zone from TZ, or from where /etc/localtime
 // points. Both Linux and macOS keep the zone name in that link's target.
-func TimezoneFrom(tz, localtimeTarget string) string {
+func timezoneFrom(tz, localtimeTarget string) string {
 	if tz = strings.TrimPrefix(tz, ":"); tz != "" && !strings.HasPrefix(tz, "/") {
 		return tz
 	}
@@ -107,7 +107,7 @@ func TimezoneFrom(tz, localtimeTarget string) string {
 
 func timezone() string {
 	target, _ := os.Readlink("/etc/localtime")
-	if zone := TimezoneFrom(os.Getenv("TZ"), filepath.ToSlash(target)); zone != "" {
+	if zone := timezoneFrom(os.Getenv("TZ"), filepath.ToSlash(target)); zone != "" {
 		return zone
 	}
 	raw, err := os.ReadFile("/etc/timezone")

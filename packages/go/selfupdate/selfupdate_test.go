@@ -253,26 +253,17 @@ func layoutWithVersion(t *testing.T, version string) selfupdate.Layout {
 	return l
 }
 
-func TestActivatePointsCurrentAtAVersion(t *testing.T) {
-	l := layoutWithVersion(t, "1.0.0")
-
-	if err := l.Activate("1.0.0"); err != nil {
-		t.Fatalf("activate: %v", err)
-	}
-	got, err := l.Current()
-	if err != nil || got != "1.0.0" {
-		t.Fatalf("current = %q, err = %v", got, err)
-	}
-	body, err := os.ReadFile(l.CurrentPath())
-	if err != nil || string(body) != "1.0.0" {
-		t.Fatalf("current resolves to %q, err = %v", body, err)
-	}
-}
-
 func TestActivateReplacesAnExistingCurrent(t *testing.T) {
 	l := layoutWithVersion(t, "1.0.0")
 	if err := l.Activate("1.0.0"); err != nil {
-		t.Fatal(err)
+		t.Fatalf("activate: %v", err)
+	}
+	if got, err := l.Current(); err != nil || got != "1.0.0" {
+		t.Fatalf("current = %q, err = %v", got, err)
+	}
+	// `current` is what the service executes: it must resolve to the binary.
+	if body, err := os.ReadFile(l.CurrentPath()); err != nil || string(body) != "1.0.0" {
+		t.Fatalf("current resolves to %q, err = %v", body, err)
 	}
 	staged := filepath.Join(l.StagingDir(), "next")
 	if err := os.WriteFile(staged, []byte("2.0.0"), 0o600); err != nil {
@@ -285,9 +276,8 @@ func TestActivateReplacesAnExistingCurrent(t *testing.T) {
 	if err := l.Activate("2.0.0"); err != nil {
 		t.Fatalf("activate: %v", err)
 	}
-	got, _ := l.Current()
-	if got != "2.0.0" {
-		t.Fatalf("current = %q, want 2.0.0", got)
+	if got, err := l.Current(); err != nil || got != "2.0.0" {
+		t.Fatalf("current = %q, err = %v, want 2.0.0", got, err)
 	}
 
 	// Rolling back is the same operation the other way, and the old binary
@@ -295,8 +285,8 @@ func TestActivateReplacesAnExistingCurrent(t *testing.T) {
 	if err := l.Activate("1.0.0"); err != nil {
 		t.Fatalf("rollback: %v", err)
 	}
-	if got, _ := l.Current(); got != "1.0.0" {
-		t.Fatalf("after rollback current = %q", got)
+	if got, err := l.Current(); err != nil || got != "1.0.0" {
+		t.Fatalf("after rollback current = %q, err = %v", got, err)
 	}
 }
 

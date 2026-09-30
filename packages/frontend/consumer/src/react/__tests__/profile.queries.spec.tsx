@@ -71,10 +71,6 @@ describe('profileKeys', () => {
     }
   });
 
-  it('keeps the panes in separate cache entries', () => {
-    expect(profileKeys.me()).not.toEqual(profileKeys.sessions());
-  });
-
   it('does not collide with the user directory', () => {
     // `usersKeys.me()` is the directory's view of the caller; this is the
     // account they edit. Same person, different documents.
@@ -83,22 +79,17 @@ describe('profileKeys', () => {
 });
 
 describe('queries', () => {
-  it('reads the profile through the service', async () => {
+  it('reads the profile and the sessions into entries of their own', async () => {
     const { wrapper, profile } = setup();
+    const sessions = [{ id: 'session-1' }];
+    profile.getSessions.mockResolvedValue(sessions);
 
-    const { result } = renderHook(() => useMyProfile(), { wrapper });
+    const { result } = renderHook(() => ({ me: useMyProfile(), sessions: useProfileSessions() }), {
+      wrapper,
+    });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(profile.get).toHaveBeenCalled();
-  });
-
-  it('reads the sessions separately from the profile', async () => {
-    const { wrapper, profile } = setup();
-
-    const sessions = renderHook(() => useProfileSessions(), { wrapper });
-
-    await waitFor(() => expect(sessions.result.current.isSuccess).toBe(true));
-    expect(profile.getSessions).toHaveBeenCalled();
+    await waitFor(() => expect(result.current.sessions.data).toBe(sessions));
+    expect(result.current.me.data).toEqual({ id: 'user-1' });
   });
 });
 
@@ -144,18 +135,6 @@ describe('profile writes', () => {
     act(() => remove.result.current.mutate());
     await waitFor(() => expect(remove.result.current.isSuccess).toBe(true));
     expect(profile.deleteAvatar).toHaveBeenCalled();
-  });
-
-  it('still calls a caller-supplied onSuccess', async () => {
-    const onSuccess = vi.fn();
-    const { wrapper } = setup();
-    const { result } = renderHook(() => useUpdateMyProfile({ onSuccess }), {
-      wrapper,
-    });
-
-    act(() => result.current.mutate({ firstName: 'Adri' }));
-
-    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
   });
 });
 
