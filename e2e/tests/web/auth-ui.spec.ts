@@ -35,7 +35,7 @@ test.describe('web auth UI', () => {
 
     await loginThroughUi(page, user.email, 'DefinitelyWrong123!');
 
-    await expect(page.getByRole('alert').first()).toContainText(/invalid email or password/i, {
+    await expect(page.getByRole('alert').first()).toContainText(/incorrect email or password/i, {
       timeout: 20_000,
     });
     await expect(page).toHaveURL(/\/login/);
@@ -136,7 +136,7 @@ test.describe('web auth UI', () => {
     await expect(page.getByRole('heading', { name: /password updated/i })).toBeVisible({
       timeout: 20_000,
     });
-    await page.getByRole('button', { name: /continue to workspace/i }).click();
+    await page.getByRole('link', { name: /continue to workspace/i }).click();
     await expect(page).toHaveURL(/\/login/, { timeout: 20_000 });
 
     await loginThroughUi(page, user.email, NEW_PASSWORD);
@@ -163,7 +163,7 @@ test.describe('web auth UI', () => {
 
     await loginThroughUi(page, user.email, VALID_PASSWORD);
 
-    await expect(page.getByRole('alert').first()).toContainText(/invalid email or password/i, {
+    await expect(page.getByRole('alert').first()).toContainText(/incorrect email or password/i, {
       timeout: 20_000,
     });
   });
@@ -224,16 +224,13 @@ test.describe('web auth UI', () => {
 
   test('social sign-in is absent or explained when no provider is configured', async ({ page }) => {
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
 
     const googleButton = page.getByRole('button', { name: /google/i });
     const explanation = page.getByText(/social sign-in is not configured/i);
-    const hasButton = (await googleButton.count()) > 0;
-    const hasExplanation = (await explanation.count()) > 0;
 
     // Either is fine; a dead button that throws on click is not.
-    expect(hasButton || hasExplanation).toBe(true);
-    if (hasButton) {
+    await expect(googleButton.or(explanation).first()).toBeVisible({ timeout: 20_000 });
+    if ((await googleButton.count()) > 0) {
       await expect(googleButton.first()).toBeEnabled();
     }
   });

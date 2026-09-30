@@ -20,7 +20,7 @@ test('a Google account with no user here is sent to register, not left on login'
   // The redirect is the behaviour: the login screen cannot create an account,
   // so it must not be where a person who needs one ends up.
   await expect(page).toHaveURL(/\/register/);
-  await expect(page.getByRole('heading', { name: /create an account/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /create your account/i })).toBeVisible();
   await expect(page.getByText(/no account here for that sign-in yet/i)).toBeVisible();
 });
 
