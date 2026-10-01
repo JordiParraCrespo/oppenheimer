@@ -10,23 +10,29 @@
  * the reader leaves the tab while it runs, and each stops once the thing
  * settles. Presence never settles, so it pauses.
  *
- * - `sessionStarting`: a session a host is still building, or one the caller
- *   deleted whose row stays `open` until its host answers the close (watched
- *   for at most {@link CLOSE_WATCH_MS}). It is the one poll with an `opening`
- *   phase, because the two things it waits for are on different scales. A host
- *   builds the terminal *before* it clones (the pane is attachable about thirty
- *   milliseconds in), so the answer this poll exists for is usually there
- *   within a second — and asking every two seconds spent most of that second
- *   waiting for a tick, with the console showing a stepper over a pane that was
- *   already live. After `openingForMs` the thing being waited on is a clone, or
- *   a close a host may answer only when it is back, and a request every two
- *   seconds can only answer "still open".
+ * - `sessionStarting`: the session list, where a row is still being built or a
+ *   deleted row stays `open` until its host answers the close (watched for at
+ *   most {@link CLOSE_WATCH_MS}). One pace: the list is a sidebar, not the
+ *   thing a reader is waiting on.
+ * - `sessionOpening`: **one** session's own row, while it is starting. It is
+ *   the only poll with an `opening` phase, because it is the only one someone
+ *   is watching. A host builds the terminal *before* it clones, so the answer
+ *   is usually there within a second, and asking every two seconds spent most
+ *   of that second waiting for a tick with a stepper drawn over a pane that was
+ *   already live. After `openingForMs` what is left is a clone, or a restart a
+ *   host may answer only when it is back, and two seconds is pace enough.
+ *
+ *   The opening phase belongs here and not on the list because its clock is
+ *   kept per query, and the list is **one** query for every session: a second
+ *   session started while the first was still cloning would inherit the first
+ *   one's settled tick. A detail query is per session, so each gets its own.
  * - `pairing`: whether a pairing token has been spent and its machine is online.
  * - `liveRun`: an automation run, queued for seconds and running for minutes.
  * - `hostPresence`: a host going on or offline (Settings → Hosts).
  */
 export const LIVE_POLL = {
-  sessionStarting: {
+  sessionStarting: { interval: 2000, inBackground: true },
+  sessionOpening: {
     interval: 2000,
     openingInterval: 300,
     openingForMs: 3000,

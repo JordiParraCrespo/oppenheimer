@@ -335,7 +335,10 @@ func TestCreateReportsEachStageAsItStartsAndLands(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
+	// The terminal leads: it is made before the repository is there, which is
+	// what lets a console attach while the clone is still running.
 	want := []string{
+		"terminal:started", "terminal:landed",
 		"clone:started", "clone:landed",
 		"worktree:started", "worktree:landed",
 		"agent:started", "agent:landed",
@@ -358,8 +361,19 @@ func TestCreateThatFailsLeavesTheFailingStageUnlanded(t *testing.T) {
 	if err == nil {
 		t.Fatal("create succeeded over a failed clone")
 	}
-	if len(seen) != 1 || seen[0].Stage != domain.StageClone || seen[0].Done {
-		t.Fatalf("stages = %+v, want only clone started", seen)
+	// The terminal landed, then the clone started and never landed: the stage
+	// that started last is the one that failed.
+	var names []string
+	for _, ev := range seen {
+		state := "started"
+		if ev.Done {
+			state = "landed"
+		}
+		names = append(names, string(ev.Stage)+":"+state)
+	}
+	want := []string{"terminal:started", "terminal:landed", "clone:started"}
+	if strings.Join(names, " ") != strings.Join(want, " ") {
+		t.Fatalf("stages = %v, want %v", names, want)
 	}
 }
 

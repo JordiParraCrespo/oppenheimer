@@ -9,10 +9,15 @@ import (
 // for one session run one at a time in the order they arrived, commands for
 // different sessions side by side.
 //
-// A create is the first command in its session's lane, so an attach, input
-// or stop sent right after it waits for the session instead of finding none,
-// and a create the control plane redelivers after a reconnect runs once the
-// first has ended — finding the session it made, or taking over what it left.
+// A create is the first command in its session's lane, so an input or a stop
+// sent right after it waits for the session instead of finding none, and a
+// create the control plane redelivers after a reconnect runs once the first
+// has ended — finding the session it made, or taking over what it left.
+//
+// An attach is **not** queued here. It needs the session's tmux name and
+// nothing else, and that exists long before the create lands; it waits on the
+// session's own pane instead (`Service.Attach`), so a reader is not made to
+// sit out a clone their terminal does not depend on.
 // The read loop itself never waits: pongs and the `credentials.grant` a
 // private clone is waiting on arrive on it.
 //
@@ -47,30 +52,6 @@ func (l *lanes) run(key string, job func()) {
 	l.running.Add(1)
 	l.mu.Unlock()
 	go l.drain(key, job)
-}
-
-// detach runs rest outside any lane, counted like a lane's own work so
-// {@link close} still waits for it. It is how a job hands its lane back before
-// it has finished: a create holds its session's lane only until the pane
-// exists, because what queues behind a create is an attach and the pane is
-// what an attach needs. The clone that follows would otherwise keep the
-// browser waiting for work it does not depend on.
-//
-// Ordering is unchanged for everything that queued: they still run one at a
-// time, in arrival order. What changes is that they no longer wait for the
-// detached remainder.
-func (l *lanes) detach(rest func()) {
-	l.mu.Lock()
-	if l.closed {
-		l.mu.Unlock()
-		return
-	}
-	l.running.Add(1)
-	l.mu.Unlock()
-	go func() {
-		defer l.running.Done()
-		rest()
-	}()
 }
 
 // close drops everything queued and anything that arrives later, then waits

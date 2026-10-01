@@ -9,13 +9,13 @@ import type { GithubAppPort, GithubRepository } from '../infrastructure/github-a
 import type { RepositoryAccessPort, RepositoryToken } from './repository-access.port';
 
 /**
- * How long GitHub's answer about a repository is reused. Short enough that a
- * rename or a new default branch is picked up while someone is still looking at
- * the console, long enough that a burst of session starts costs one call.
+ * How long GitHub's answer about a repository is reused: long enough that a
+ * burst of session starts costs one call, short enough that a rename or a new
+ * default branch is picked up while someone is still looking at the console.
  */
 const REPOSITORY_TTL_SECONDS = 60;
 
-function repositoryCacheKey(githubInstallationId: string | number, githubRepoId: number): string {
+function repositoryCacheKey(githubInstallationId: string, githubRepoId: number): string {
   return `github:repository:${githubInstallationId}:${githubRepoId}`;
 }
 
@@ -52,18 +52,12 @@ export class RepositoryAccessResolver implements RepositoryAccessPort {
         detail: `Installation ${installation.accountLogin} is suspended or no longer installed`,
       });
     }
-    // A repository's name and default branch, from GitHub, was the single
-    // most expensive step of starting a session: about seven hundred
-    // milliseconds of the second the console spent before the host heard
-    // anything, spent on two fields that change about never.
-    //
-    // What authorises this read is the installation lookup above, and that
-    // stays live on every call: the cache holds only GitHub's answer about the
-    // repository, keyed by the installation that may see it. `getOrSet` also
-    // collapses concurrent asks for the same repository into one call, which
-    // is what two sessions started together do.
+    // The installation lookup above authorises the read and stays live on every
+    // call; only GitHub's answer about the repository is reused, keyed by the
+    // installation that may see it. `getOrSet` also collapses concurrent asks
+    // for one repository into a single call.
     return this.cache.getOrSet(
-      repositoryCacheKey(installation.githubInstallationId, githubRepoId),
+      repositoryCacheKey(String(installation.githubInstallationId), githubRepoId),
       REPOSITORY_TTL_SECONDS,
       () => this.github.readRepository(installation.githubInstallationId, githubRepoId),
     );

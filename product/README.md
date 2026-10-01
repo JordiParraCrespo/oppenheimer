@@ -303,3 +303,12 @@ earlier note:
   `RATE_LIMIT_*`), with the product's numbers as the defaults (2026-09-29).
 - 05's composer drew a paperclip wired to nothing; it now attaches images
   to the first task (03) (2026-09-28).
+- `versions/mvp/02-runner.md` had the runner build a session's tmux session
+  last, after the stores and the worktree, and `session.started` therefore
+  meant "the agent is up". Every second of the clone was then a spinner, and
+  the console's attach either waited for the whole create or was refused. On
+  2026-10-01 the terminal became the first stage: `session.started` means the
+  session has a pane, an attach is served while the create is still running,
+  and the worktree moved into a hidden directory so Spotlight stops indexing
+  it while the agent boots. Recorded in 01, 02, 05 and the MVP decision log.
+

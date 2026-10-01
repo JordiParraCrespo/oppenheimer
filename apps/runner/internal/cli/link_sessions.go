@@ -7,7 +7,6 @@ package cli
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
@@ -17,25 +16,33 @@ import (
 )
 
 func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
-	steps := newStartSteps(func(p link.SessionStepPayload) {
-		h.reporter.Append(m.SessionID, link.SessionStepKind, p)
-	}, time.Now)
-	agent, ok := sessionsdomain.AgentFromCatalogID(m.Agent)
-	if !ok {
-		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("unknown agent %q", m.Agent))
-		return
-	}
-	// One checkout, exactly: this runner's session service makes one worktree
-	// (its layout is still `<repo>/worktrees/<slug>`, not yet note 10's), so a
-	// frame with none has nothing to check out and a frame with several would
-	// have its extra rows silently dropped. Both are refused with the reason, so
-	// the control plane records a failed launch rather than a partial one.
+	// `first` is read by the started reporter below, so the checkout is
+	// resolved before the steps are.
 	if len(m.Checkouts) != 1 {
 		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail(
 			"this runner makes sessions with exactly one checkout; the frame carried %d", len(m.Checkouts)))
 		return
 	}
 	first := m.Checkouts[0]
+	steps := newStartSteps(
+		func(p link.SessionStepPayload) { h.reporter.Append(m.SessionID, link.SessionStepKind, p) },
+		// The terminal exists, so the session can be attached to: the worktree's
+		// path is known from the start, so the checkout this reports is true
+		// before it is on disk.
+		func(session sessionsdomain.Session) {
+			h.reporter.Append(session.ID, "session.started", map[string]any{
+				"checkouts": []map[string]any{{
+					"checkoutId": first.CheckoutID, "branch": session.Branch, "path": session.Worktree, "mode": "worktree",
+				}},
+			})
+		},
+		time.Now,
+	)
+	agent, ok := sessionsdomain.AgentFromCatalogID(m.Agent)
+	if !ok {
+		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("unknown agent %q", m.Agent))
+		return
+	}
 	// A create sent again for a session this host already holds (a redelivery,
 	// a reconnect) makes nothing new, so it pulls nothing: its images were
 	// pulled once, and a parked image is handed over only once.
@@ -49,54 +56,28 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 		h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))
 		return
 	}
-	// The lane is held only until the pane exists. Everything after that — the
-	// clone, the worktree, the agent — is work an attach does not depend on,
-	// and holding the lane through it made the browser wait for the clone
-	// before its attach was even read: the whole point of building the
-	// terminal first, given back. `ready` is closed by `Ready` below, or by a
-	// create that ended before it got there.
-	ready := make(chan struct{})
-	var once sync.Once
-	settle := func() { once.Do(func() { close(ready) }) }
-
-	h.lanes.detach(func() {
-		defer settle()
-		if _, err := h.app.Sessions.Create(ctx, sessionsapp.CreateInput{
-			ID:         m.SessionID,
-			Repo:       first.RepositoryFullName,
-			Remote:     "https://github.com/" + first.RepositoryFullName + ".git",
-			BaseBranch: first.BaseBranch,
-			Branch:     m.Branch,
-			Name:       m.SessionSlug,
-			Agent:      agent,
-			Launch: sessionsdomain.Launch{
-				Model: m.Launch.Model, Permission: m.Launch.Permission, Effort: m.Launch.Effort, Prompt: m.Prompt,
-				// The name the agent's conversation takes, so what it says can be
-				// reopened after the session stops.
-				Conversation: m.Launch.Conversation, Resume: m.Launch.Resume,
-			},
-			CheckoutID: first.CheckoutID, GithubRepoID: first.GithubRepoID,
-			Images:   images,
-			Progress: steps.stage,
-			// The pane exists before the clone does, and this is what lets the
-			// console attach to it then rather than when the agent lands: the
-			// worktree's path is known from the start, so the checkouts it
-			// reports are true before they are on disk.
-			Ready: func(session sessionsdomain.Session) {
-				h.reporter.Append(session.ID, "session.started", map[string]any{
-					"checkouts": []map[string]any{{
-						"checkoutId": first.CheckoutID, "branch": session.Branch, "path": session.Worktree, "mode": "worktree",
-					}},
-				})
-				// Attach may run from here: the pane is real.
-				settle()
-			},
-		}); err != nil {
-			h.fail(m.CommandID, err)
-			h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))
-		}
+	_, err = h.app.Sessions.Create(ctx, sessionsapp.CreateInput{
+		ID:         m.SessionID,
+		Repo:       first.RepositoryFullName,
+		Remote:     "https://github.com/" + first.RepositoryFullName + ".git",
+		BaseBranch: first.BaseBranch,
+		Branch:     m.Branch,
+		Name:       m.SessionSlug,
+		Agent:      agent,
+		Launch: sessionsdomain.Launch{
+			Model: m.Launch.Model, Permission: m.Launch.Permission, Effort: m.Launch.Effort, Prompt: m.Prompt,
+			// The name the agent's conversation takes, so what it says can be
+			// reopened after the session stops.
+			Conversation: m.Launch.Conversation, Resume: m.Launch.Resume,
+		},
+		CheckoutID: first.CheckoutID, GithubRepoID: first.GithubRepoID,
+		Images:   images,
+		Progress: steps.stage,
 	})
-	<-ready
+	if err != nil {
+		h.fail(m.CommandID, err)
+		h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))
+	}
 }
 
 // lifecycleCommand is what lifecycle reads of stop, restart, close,

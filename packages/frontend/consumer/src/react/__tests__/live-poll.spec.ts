@@ -8,7 +8,7 @@ import { LIVE_POLL, pollWhile } from '../live-poll';
 describe('pollWhile', () => {
   it('asks at the catalog pace while the predicate holds, and stops when it does not', () => {
     const poll = pollWhile<{ isProvisioning: boolean }>(
-      'sessionStarting',
+      'sessionOpening',
       (session) => session?.isProvisioning ?? false,
     );
     const at = (data?: { isProvisioning: boolean }, queryHash = 'q') =>
@@ -16,7 +16,7 @@ describe('pollWhile', () => {
         ? poll.refetchInterval({ queryHash, state: { data } })
         : null;
 
-    expect(at({ isProvisioning: true })).toBe(LIVE_POLL.sessionStarting.openingInterval);
+    expect(at({ isProvisioning: true })).toBe(LIVE_POLL.sessionOpening.openingInterval);
     expect(at({ isProvisioning: false })).toBe(false);
     expect(at(undefined)).toBe(false);
   });
@@ -31,7 +31,7 @@ describe('pollWhile', () => {
     vi.useFakeTimers();
     try {
       const poll = pollWhile<{ isProvisioning: boolean }>(
-        'sessionStarting',
+        'sessionOpening',
         (session) => session?.isProvisioning ?? false,
       );
       const at = () =>
@@ -42,9 +42,9 @@ describe('pollWhile', () => {
             })
           : null;
 
-      expect(at()).toBe(LIVE_POLL.sessionStarting.openingInterval);
-      vi.advanceTimersByTime(LIVE_POLL.sessionStarting.openingForMs + 1);
-      expect(at()).toBe(LIVE_POLL.sessionStarting.interval);
+      expect(at()).toBe(LIVE_POLL.sessionOpening.openingInterval);
+      vi.advanceTimersByTime(LIVE_POLL.sessionOpening.openingForMs + 1);
+      expect(at()).toBe(LIVE_POLL.sessionOpening.interval);
     } finally {
       vi.useRealTimers();
     }
@@ -55,7 +55,7 @@ describe('pollWhile', () => {
     vi.useFakeTimers();
     try {
       const poll = pollWhile<{ isProvisioning: boolean }>(
-        'sessionStarting',
+        'sessionOpening',
         (session) => session?.isProvisioning ?? false,
       );
       const call = (isProvisioning: boolean) =>
@@ -63,11 +63,11 @@ describe('pollWhile', () => {
           ? poll.refetchInterval({ queryHash: 'restarted', state: { data: { isProvisioning } } })
           : null;
 
-      expect(call(true)).toBe(LIVE_POLL.sessionStarting.openingInterval);
-      vi.advanceTimersByTime(LIVE_POLL.sessionStarting.openingForMs + 1);
-      expect(call(true)).toBe(LIVE_POLL.sessionStarting.interval);
+      expect(call(true)).toBe(LIVE_POLL.sessionOpening.openingInterval);
+      vi.advanceTimersByTime(LIVE_POLL.sessionOpening.openingForMs + 1);
+      expect(call(true)).toBe(LIVE_POLL.sessionOpening.interval);
       expect(call(false)).toBe(false);
-      expect(call(true)).toBe(LIVE_POLL.sessionStarting.openingInterval);
+      expect(call(true)).toBe(LIVE_POLL.sessionOpening.openingInterval);
     } finally {
       vi.useRealTimers();
     }
@@ -80,5 +80,38 @@ describe('pollWhile', () => {
       refetchIntervalInBackground: false,
     });
     expect(pollWhile('liveRun', false).refetchInterval).toBe(false);
+  });
+});
+
+/**
+ * The regression the split catalog exists for: the opening clock is kept per
+ * query, and the session **list** is one query for every session. Given an
+ * opening phase, a second session started while the first was still cloning
+ * would inherit the first one's settled tick. The list has no opening phase,
+ * so there is no clock to inherit.
+ */
+describe('the session list', () => {
+  it("has one pace, so no session inherits another session's clock", () => {
+    vi.useFakeTimers();
+    try {
+      const poll = pollWhile<{ isProvisioning: boolean }[]>('sessionStarting', (rows) =>
+        (rows ?? []).some((row) => row.isProvisioning),
+      );
+      const at = () =>
+        typeof poll.refetchInterval === 'function'
+          ? poll.refetchInterval({
+              queryHash: 'the-one-list',
+              state: { data: [{ isProvisioning: true }] },
+            })
+          : null;
+
+      // The same pace at the first tick and long after: no opening phase to inherit.
+      expect(at()).toBe(LIVE_POLL.sessionStarting.interval);
+      vi.advanceTimersByTime(10_000);
+      expect(at()).toBe(LIVE_POLL.sessionStarting.interval);
+      expect('openingInterval' in LIVE_POLL.sessionStarting).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

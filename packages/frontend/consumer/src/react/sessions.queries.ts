@@ -166,7 +166,7 @@ export function useSession(
       : skipToken,
     ...options,
     ...pollWhile<SessionEntity>(
-      'sessionStarting',
+      'sessionOpening',
       (session) =>
         (session?.isProvisioning ?? false) || (id ? restartsOf(queryClient).has(id) : false),
     ),
@@ -204,7 +204,7 @@ export function useSessionStartProgress(
     queryFn:
       id && (starting || failed) ? () => app.sessions.startProgress(id, { failed }) : skipToken,
     ...options,
-    ...pollWhile<SessionStartProgress>('sessionStarting', (progress) => !progress?.settled),
+    ...pollWhile<SessionStartProgress>('sessionOpening', (progress) => !progress?.settled),
   });
 }
 
