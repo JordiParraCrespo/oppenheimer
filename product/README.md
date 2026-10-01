@@ -196,6 +196,13 @@ earlier note:
   model list is the harness's own" and holds no roster; the list lives
   in `CODING_AGENTS`. The probe (05, open question 6) is still open, and
   pinning raises what it is worth.
+- `versions/mvp/05-screens.md` started every new session on `ask`
+  ("Ask for approval") and never remembered `full`, after
+  `04-security-review.md`. New session now starts on `full` ("Full
+  access", Claude Code's `bypassPermissions`), because sessions run on a
+  host the person owns and stopping for every approval defeated the point
+  of driving them from the browser. The level is still not remembered: a
+  narrower pick holds for that session only (2026-10-01).
 - `versions/mvp/01-protocol.md` said the epoch was "a counter bumped on
   every successful connect". The in-process counter restarted at 1 with
   the API. The runner refuses an epoch that is not newer than its last,

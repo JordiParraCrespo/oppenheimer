@@ -166,7 +166,7 @@
 
   A control the agent does not take is **hidden, and not sent**: the
   composer keeps what was chosen for the last agent (a permission level
-  is still never remembered as `full`), but only the controls the picked
+  is still never remembered; every visit starts on `full`), but only the controls the picked
   agent has go into the request, so a blank terminal is created with no
   permission level at all rather than one carried over, and the API
   records none. The option set is read off the catalog entry once
@@ -230,11 +230,14 @@
   control), and each agent's catalog entry says what they mean to its
   CLI. Effort is the model's own levels, under its CLI's names; a model
   that has no notion of effort hides the control. **Chips remember the
-  last choice, except `full`**: a permission level that escalated itself
-  because it was used once is the failure
+  last choice, except the permission level**: every new session starts
+  on `full` (changed 2026-10-01; it started on `ask`, on the argument
+  that a level escalating itself because it was used once is the failure
   [`../../04-security-review.md`](../../04-security-review.md) exists to
-  prevent, so a stored `full` reads back as `ask` and every new session
-  starts there. The memory is the browser's — the host, the agent, the
+  prevent). Sessions run on a host the person owns, in a worktree, and
+  stopping for every approval defeated the point of starting one from
+  the browser; a narrower pick holds for that session and is not
+  carried to the next. The memory is the browser's — the host, the agent, the
   model and each agent's effort, in `localStorage`, on the device that chose
   them. It is a convenience, not a record: the scope is never
   remembered, because the repositories one visit is about are not the

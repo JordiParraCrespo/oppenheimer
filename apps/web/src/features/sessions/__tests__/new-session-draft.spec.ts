@@ -3,10 +3,10 @@ import { initialDraft, rememberDraft } from '../lib/new-session-draft';
 import { defaultModelFor } from '../lib/session-options';
 
 /**
- * What New session remembers between visits. The rule that matters is the one
- * the security review asked for: a permission level is never restored, so
- * `full` cannot come back because it was used once. Scope never comes back
- * either, and anything in storage the catalog does not recognise is ignored.
+ * What New session remembers between visits. A permission level is never
+ * restored: every visit opens on `full`, whatever the last one picked. Scope
+ * never comes back either, and anything in storage the catalog does not
+ * recognise is ignored.
  */
 
 const KEY = 'oppenheimer.new-session.draft';
@@ -27,7 +27,7 @@ describe('initialDraft', () => {
       scope: [],
       agent: 'claude-code',
       model: defaultModelFor('claude-code'),
-      permission: 'ask',
+      permission: 'full',
       efforts: {},
     });
   });
@@ -59,10 +59,10 @@ describe('initialDraft', () => {
   });
 
   it('never restores a permission level or a scope, whatever storage holds', () => {
-    store({ permission: 'full', scope: [{ id: 'inst:1', branch: 'main' }] });
+    store({ permission: 'ask', scope: [{ id: 'inst:1', branch: 'main' }] });
 
     const draft = initialDraft();
-    expect(draft.permission).toBe('ask');
+    expect(draft.permission).toBe('full');
     expect(draft.scope).toEqual([]);
   });
 
