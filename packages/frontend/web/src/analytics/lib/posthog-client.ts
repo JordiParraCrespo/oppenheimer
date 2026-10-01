@@ -35,6 +35,7 @@ function stripUrlSecrets(result: CaptureResult | null): CaptureResult | null {
  */
 class PostHogAnalyticsClient implements IAnalyticsClient {
   private posthog: PostHog | null = null;
+  private failed = false;
   private pending: Array<(posthog: PostHog) => void> = [];
 
   constructor(
@@ -62,9 +63,12 @@ class PostHogAnalyticsClient implements IAnalyticsClient {
       for (const call of this.pending) call(posthog);
       this.pending = [];
     } catch (error) {
-      // A blocked or failed SDK load must not break the app. Every subsequent
-      // call stays queued against a client that never arrives, which is
-      // functionally the no-op client.
+      // A blocked or failed SDK load must not break the app, and it is never
+      // retried: drop what was queued and every call after it, so a
+      // long-lived tab behaves as the no-op client instead of holding events
+      // for a client that never arrives.
+      this.failed = true;
+      this.pending = [];
       console.warn('[analytics] PostHog failed to load', error);
     }
   }
@@ -72,7 +76,7 @@ class PostHogAnalyticsClient implements IAnalyticsClient {
   private enqueue(call: (posthog: PostHog) => void): void {
     if (this.posthog) {
       call(this.posthog);
-    } else {
+    } else if (!this.failed) {
       this.pending.push(call);
     }
   }

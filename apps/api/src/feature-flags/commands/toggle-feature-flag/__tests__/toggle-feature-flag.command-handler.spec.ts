@@ -36,7 +36,11 @@ describe('ToggleFeatureFlagCommandHandler', () => {
     vi.mocked(flags.serialized).mockImplementation(async () => 'held');
 
     const result = await handler.execute(
-      new ToggleFeatureFlagCommand({ key: 'kill_switch', enabled: false, actorId: 'admin-1' }),
+      new ToggleFeatureFlagCommand({
+        key: 'api_token_creation',
+        enabled: false,
+        actorId: 'admin-1',
+      }),
     );
 
     expect(result).toBe('held');

@@ -167,16 +167,12 @@ describe('OutboxRelay', () => {
     expect(published).toEqual(['event', 'job']);
   });
 
-  it('a drain asked for by a handler\'s detached work after its delivery ended still waits', async () => {
-    outbox.claim
-      .mockResolvedValueOnce([message({ id: 'event' })])
-      .mockResolvedValue([]);
+  it("a drain asked for by a handler's detached work after its delivery ended still waits", async () => {
+    outbox.claim.mockResolvedValueOnce([message({ id: 'event' })]).mockResolvedValue([]);
     let detached: Promise<number> | undefined;
     const relay = relayWith(async () => {
       // Unawaited: runs after the publisher has returned.
-      detached = new Promise<number>((resolve) =>
-        setTimeout(() => resolve(relay.drainOnce()), 0),
-      );
+      detached = new Promise<number>((resolve) => setTimeout(() => resolve(relay.drainOnce()), 0));
     });
 
     await relay.drainOnce();
