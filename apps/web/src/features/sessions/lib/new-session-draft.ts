@@ -9,11 +9,8 @@ import { defaultModelFor, type EffortPicks } from './session-options';
 
 /**
  * What New session has been set to and remembers between visits, except that
- * **the permission level is never remembered**: every visit opens on `full`
- * (Full access, Claude Code's `bypassPermissions`), the level sessions here
- * are meant to run at, and a visit that picked a narrower one does not carry
- * it into the next. Nothing here is
- * validated against the lists; the chips do that once their queries answer,
+ * **the permission level is never remembered**: every visit opens on `full`.
+ * Nothing here is validated against the lists; the chips do that once their queries answer,
  * when "that host is gone" is a fact rather than a list not yet loaded.
  */
 const STORAGE_KEY = 'oppenheimer.new-session.draft';

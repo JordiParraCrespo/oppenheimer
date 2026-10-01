@@ -58,13 +58,16 @@ describe('initialDraft', () => {
     expect(initialDraft().efforts).toEqual({ codex: 'infinite' });
   });
 
-  it('never restores a permission level or a scope, whatever storage holds', () => {
-    store({ permission: 'ask', scope: [{ id: 'inst:1', branch: 'main' }] });
+  it.each(['ask', 'auto', 'full'])(
+    'never restores a permission level or a scope, whatever storage holds (%s)',
+    (permission) => {
+      store({ permission, scope: [{ id: 'inst:1', branch: 'main' }] });
 
-    const draft = initialDraft();
-    expect(draft.permission).toBe('full');
-    expect(draft.scope).toEqual([]);
-  });
+      const draft = initialDraft();
+      expect(draft.permission).toBe('full');
+      expect(draft.scope).toEqual([]);
+    },
+  );
 
   it("drops a model that is not the remembered agent's, taking that agent's default", () => {
     store({ agent: 'codex', model: 'claude-opus-5-5' });
