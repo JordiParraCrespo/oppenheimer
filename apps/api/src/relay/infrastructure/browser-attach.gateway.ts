@@ -5,7 +5,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SCOPE_RESOLVER, type ScopeResolverPort } from '@oppenheimer/backend-authz';
 import { CacheService } from '@oppenheimer/backend-cache';
-import { AppError, traceSession } from '@oppenheimer/backend-core';
+import { AppError } from '@oppenheimer/backend-core';
 import {
   ATTACH_CLOSE_CODES,
   type AttachServerMessage,
@@ -179,25 +179,20 @@ export class BrowserAttachGateway {
   private async judge(ws: WebSocket, ticket: string, early: EarlyFrame[]): Promise<void> {
     const claim = await this.cache.take<AttachTicket>(`${ATTACH_TICKET_PREFIX}${ticket}`);
     if (!claim) {
-      traceSession('attach.no-claim');
       this.end(ws, 'unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
       return;
     }
-    traceSession('attach.claim', { session: claim.sessionId });
     const verdict = await this.authorize(claim);
     if (!verdict.allowed) {
-      traceSession('attach.refused', { session: claim.sessionId, reason: verdict.reason });
       this.end(ws, verdict.reason, verdict.code);
       return;
     }
     const link = this.links.find(verdict.hostId);
     if (!link) {
-      traceSession('attach.host-offline', { session: claim.sessionId, host: verdict.hostId });
       this.tell(ws, { type: 'hint', kind: 'host_offline' });
       ws.close(ATTACH_CLOSE_CODES.HOST_OFFLINE, 'host offline');
       return;
     }
-    traceSession('attach.dispatch', { session: claim.sessionId, host: verdict.hostId });
     // A browser that left while the ticket was judged has nothing to attach,
     // and its `close` has already fired: an attachment opened now would never
     // be detached.
@@ -299,8 +294,6 @@ class BrowserAttachment implements AttachmentSink {
   private recheckTimer: NodeJS.Timeout | null = null;
   private rechecking = false;
   private attached = false;
-  /** Whether any PTY byte has reached this browser yet, so the first is marked once. */
-  private sawOutput = false;
   private finished = false;
 
   constructor(
@@ -359,13 +352,6 @@ class BrowserAttachment implements AttachmentSink {
 
   deliver(bytes: Uint8Array): void {
     if (this.ws.readyState !== this.ws.OPEN) return;
-    if (!this.sawOutput) {
-      this.sawOutput = true;
-      traceSession('attach.first-output', {
-        session: this.claim.sessionId,
-        bytes: bytes.byteLength,
-      });
-    }
     if (this.ws.bufferedAmount > BROWSER_MAX_BUFFERED_BYTES) {
       // A client that cannot keep up is disconnected, never allowed to stall
       // the relay (02 §7).
@@ -463,10 +449,6 @@ class BrowserAttachment implements AttachmentSink {
       this.closed('link_lost');
       return;
     }
-    traceSession('attach.sent-to-host', {
-      session: this.claim.sessionId,
-      window: this.claim.window,
-    });
     this.tell({ type: 'attached', window: this.claim.window });
   }
 

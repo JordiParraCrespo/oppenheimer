@@ -4,7 +4,6 @@ import {
   attachServerMessageSchema,
 } from '@oppenheimer/shared/protocol';
 import { CONSUMER_CONFIG } from '../../../config';
-import { trace } from '../../../trace';
 
 /**
  * The contract between the console and whatever is feeding a terminal.
@@ -77,8 +76,6 @@ export interface SessionStreamOptions {
   socketFactory?: (url: string, protocols: string[]) => WebSocket;
   /** Injected in tests; `setTimeout` otherwise. */
   schedule?: (fn: () => void, ms: number) => () => void;
-  /** The session this stream is for, so its marks join the other tiers' logs. */
-  sessionId?: string;
 }
 
 /**
@@ -169,8 +166,6 @@ export class AttachSessionStream implements SessionStream {
   private viewport: { cols: number; rows: number } | null = null;
   /** The reason a `closed` control frame named, read back when the close follows. */
   private closedReason: StreamEnd | null = null;
-  /** Whether any PTY byte has arrived yet, so the first one is marked once. */
-  private sawBytes = false;
 
   constructor(private readonly options: SessionStreamOptions) {
     this.socketFactory =
@@ -181,7 +176,6 @@ export class AttachSessionStream implements SessionStream {
         const timer = setTimeout(fn, ms);
         return () => clearTimeout(timer);
       });
-    trace('stream.construct', { session: options.sessionId });
     void this.connect();
   }
 
@@ -226,7 +220,6 @@ export class AttachSessionStream implements SessionStream {
 
   dispose(): void {
     if (this.disposed) return;
-    trace('stream.dispose', { session: this.options.sessionId });
     this.disposed = true;
     this.epoch += 1;
     this.cancelRetry?.();
@@ -266,12 +259,6 @@ export class AttachSessionStream implements SessionStream {
     const base = ladder[Math.min(this.attempt, ladder.length - 1)];
     this.attempt += 1;
     const jitter = base * (Math.random() * 0.4 - 0.2);
-    trace('stream.retry', {
-      session: this.options.sessionId,
-      attempt: this.attempt,
-      waitMs: Math.max(0, Math.round(base + jitter)),
-      after,
-    });
     this.waiting = true;
     this.cancelRetry = this.schedule(
       () => {
@@ -287,17 +274,11 @@ export class AttachSessionStream implements SessionStream {
     const thisEpoch = ++this.epoch;
     this.attached = false;
     this.closedReason = null;
-    trace('stream.dial', { session: this.options.sessionId, attempt: this.attempt });
     let ticket: { ticket: string; url: string };
     try {
       ticket = await this.options.issueTicket();
-      trace('stream.ticket', { session: this.options.sessionId });
     } catch (error) {
       if (this.disposed || thisEpoch !== this.epoch) return;
-      trace('stream.ticket-failed', {
-        session: this.options.sessionId,
-        error: error instanceof Error ? error.message : String(error),
-      });
       const final = endOfMintFailure(error);
       if (final) {
         this.end(final);
@@ -318,7 +299,6 @@ export class AttachSessionStream implements SessionStream {
 
     ws.onopen = () => {
       if (thisEpoch !== this.epoch) return;
-      trace('stream.socket-open', { session: this.options.sessionId });
       if (this.viewport) this.tell({ type: 'resize', ...this.viewport });
     };
     ws.onmessage = (event: MessageEvent) => {
@@ -329,10 +309,6 @@ export class AttachSessionStream implements SessionStream {
       }
       const bytes = new Uint8Array(event.data as ArrayBuffer);
       if (bytes.byteLength === 0) return;
-      if (!this.sawBytes) {
-        this.sawBytes = true;
-        trace('stream.first-byte', { session: this.options.sessionId, bytes: bytes.byteLength });
-      }
       // The credit is the terminal's to give, once it has drained the chunk;
       // a socket that has since been replaced gives none.
       let credited = false;
@@ -348,11 +324,6 @@ export class AttachSessionStream implements SessionStream {
       this.socket = null;
       this.attached = false;
       if (this.disposed) return;
-      trace('stream.socket-close', {
-        session: this.options.sessionId,
-        code: event.code,
-        reason: this.closedReason,
-      });
       const final = this.closedReason ?? FINAL_CLOSE_CODES.get(event.code);
       if (final) {
         this.end(final);
@@ -379,15 +350,12 @@ export class AttachSessionStream implements SessionStream {
       case 'attached':
         this.attached = true;
         this.attempt = 0;
-        trace('stream.attached', { session: this.options.sessionId });
         this.setStatus('live');
         return;
       case 'hint':
-        trace('stream.hint', { session: this.options.sessionId, kind: message.data.kind });
         if (message.data.kind === 'host_offline') this.setStatus('offline');
         return;
       case 'refused':
-        trace('stream.refused', { session: this.options.sessionId });
         this.closedReason = 'refused';
         return;
       case 'closed':

@@ -41,7 +41,6 @@ export {
   buildPinoHttpOptions,
   type LoggingOptions,
 } from './logging/pino-http-options';
-export { traceSession } from './logging/session-trace';
 export { UserContextInterceptor } from './logging/user-context.interceptor';
 export { RequestContextMiddleware } from './middleware/request-context.middleware';
 export { SanitizePipe } from './pipes/sanitize.pipe';

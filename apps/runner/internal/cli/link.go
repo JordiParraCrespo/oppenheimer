@@ -104,9 +104,6 @@ type attachment struct {
 	// input is the keystrokes waiting for the PTY. inputPump writes them, so
 	// a PTY that stops taking them never blocks the read loop.
 	input chan []byte
-	// sawOutput marks the first PTY read on the trace, once. Read and written
-	// by pump alone.
-	sawOutput bool
 }
 
 // newRunID mints the id every event key of this process starts with.

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
-	"github.com/jordiparracrespo/oppenheimer/packages/go/core/trace"
 )
 
 // Options configure the session service.
@@ -274,16 +273,13 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 	//
 	// It starts in the directory the worktree will be made in — the worktree
 	// itself is not there yet — and the agent is sent once it is.
-	trace.Mark("create.prepare-start", map[string]any{"session": session.ID})
 	parent, err := s.worktrees.Prepare(ctx, in.Repo)
 	if err != nil {
 		return domain.Session{}, err
 	}
-	trace.Mark("create.prepared", map[string]any{"session": session.ID})
 	if err := s.terminals.Create(ctx, session.TmuxName(), parent, "", s.env(session)); err != nil {
 		return domain.Session{}, err
 	}
-	trace.Mark("create.tmux-made", map[string]any{"session": session.ID})
 	// A stage that fails from here leaves no pane behind: the session never
 	// became one, and a terminal nothing is running in is not a session.
 	abandon := func(err error) (domain.Session, error) {

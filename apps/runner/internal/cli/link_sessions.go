@@ -14,12 +14,9 @@ import (
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	updapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/app"
-	"github.com/jordiparracrespo/oppenheimer/packages/go/core/trace"
 )
 
 func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
-	trace.Mark("create.frame", map[string]any{"session": m.SessionID})
-	defer trace.Mark("create.handler-returned", map[string]any{"session": m.SessionID})
 	steps := newStartSteps(func(p link.SessionStepPayload) {
 		h.reporter.Append(m.SessionID, link.SessionStepKind, p)
 	}, time.Now)
@@ -86,7 +83,6 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 			// worktree's path is known from the start, so the checkouts it
 			// reports are true before they are on disk.
 			Ready: func(session sessionsdomain.Session) {
-				trace.Mark("create.pane-ready", map[string]any{"session": session.ID})
 				h.reporter.Append(session.ID, "session.started", map[string]any{
 					"checkouts": []map[string]any{{
 						"checkoutId": first.CheckoutID, "branch": session.Branch, "path": session.Worktree, "mode": "worktree",
