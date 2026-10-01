@@ -141,8 +141,9 @@ type CreateInput struct {
 	// Each is saved outside the worktree just before the agent starts, and
 	// its path appended to the prompt the agent is launched with.
 	Images []CreateImage
-	// Progress, when set, hears each stage start and land, in order. It must
-	// not block.
+	// Progress, when set, hears each stage start and land, in order, with the
+	// session as it stands at each. StageTerminal landing is what says the
+	// session has a pane to attach to. It must not block.
 	Progress func(domain.StageEvent)
 }
 
@@ -247,26 +248,57 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 	run := func(stage domain.Stage, fn func() error) error {
 		started := s.now()
 		if in.Progress != nil {
-			in.Progress(domain.StageEvent{Stage: stage})
+			in.Progress(domain.StageEvent{Stage: stage, Session: session.Clone()})
 		}
 		if err := fn(); err != nil {
 			return err
 		}
 		if in.Progress != nil {
-			in.Progress(domain.StageEvent{Stage: stage, Done: true, Took: s.now().Sub(started)})
+			in.Progress(domain.StageEvent{
+				Stage: stage, Done: true, Took: s.now().Sub(started), Session: session.Clone(),
+			})
 		}
 		return nil
 	}
 
+	// The terminal comes first, before the repository exists. A create spends
+	// its seconds on the clone and the worktree, and every one of them used to
+	// be a spinner: the pane was made last, so there was nothing to look at
+	// until everything was done. Made first, the reader is in the session at
+	// once and watches it being built, which is the whole difference between
+	// waiting and working.
+	//
+	// It starts in the directory the worktree will be made in — the worktree
+	// itself is not there yet — and the agent is sent once it is.
+	if err := run(domain.StageTerminal, func() error {
+		parent, err := s.worktrees.Prepare(ctx, in.Repo)
+		if err != nil {
+			return err
+		}
+		return s.terminals.Create(ctx, session.TmuxName(), parent, "", s.env(session))
+	}); err != nil {
+		return domain.Session{}, err
+	}
+	// A stage that fails from here leaves no pane behind: the session never
+	// became one, and a terminal nothing is running in is not a session.
+	abandon := func(err error) (domain.Session, error) {
+		_ = s.terminals.Kill(context.WithoutCancel(ctx), session.TmuxName())
+		return domain.Session{}, err
+	}
+	// The pane exists, so an attach waiting on it may go. Nothing else changes:
+	// the create holds its lane to the end, so a stop, a list or an unpair
+	// still see the session only once it has landed.
+	s.paneReady(session)
+
 	if err := run(domain.StageClone, func() error {
 		return s.worktrees.Ensure(ctx, in.Repo, in.Remote, in.fetchRef())
 	}); err != nil {
-		return domain.Session{}, err
+		return abandon(err)
 	}
 	if err := run(domain.StageWorktree, func() error {
 		return s.worktrees.Add(ctx, in.Repo, session.Worktree, session.Branch, session.BaseBranch, !in.Existing)
 	}); err != nil {
-		return domain.Session{}, err
+		return abandon(err)
 	}
 	session.State = domain.StateStarting
 	if err := run(domain.StageAgent, func() error {
@@ -275,7 +307,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 			return err
 		}
 		defer s.holdLaunch(ctx, session.Agent)()
-		if err := s.terminals.Create(ctx, session.TmuxName(), session.Worktree, launch.CommandLine(session.Agent), s.env(session)); err != nil {
+		if err := s.terminals.SendKeys(ctx, session.TmuxName(), enterWorktree(session.Worktree, launch.CommandLine(session.Agent))); err != nil {
 			s.discardImages(session.ID)
 			return err
 		}
@@ -283,9 +315,28 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 	}); err != nil {
 		// Leave the worktree: it is on disk, it is the user's, and a
 		// half-created session they can see beats one that vanished.
-		return domain.Session{}, err
+		return abandon(err)
 	}
 	return session, nil
+}
+
+// enterWorktree is the line window 0 is sent once the worktree is there: move
+// into it, then become the agent. `exec` is what makes the agent the pane's
+// own process rather than a child of a shell, so the window ends when the
+// agent does and every reader of a pane's process still reads the agent. A
+// session with no agent (a plain terminal) is left at its shell, in place.
+func enterWorktree(worktree, command string) string {
+	cd := "cd " + shellQuote(worktree)
+	if command == "" {
+		return cd + "\n"
+	}
+	return cd + " && exec " + command + "\n"
+}
+
+// shellQuote wraps a path for the shell window 0 runs, so a directory with a
+// space or a quote in it is one word.
+func shellQuote(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", `'\''`) + "'"
 }
 
 // checkImages refuses a first task's images before anything is made: too
@@ -344,6 +395,10 @@ type creation struct {
 	done    chan struct{}
 	result  domain.Session
 	err     error
+	// pane is closed once the session's tmux session exists, which is well
+	// before the create lands: the terminal is made before the clone runs. An
+	// attach waits on it; nothing else does.
+	pane chan struct{}
 }
 
 // begin registers a create, or finds what is already there for its id: a
@@ -358,7 +413,7 @@ func (s *Service) begin(session domain.Session) (c *creation, first bool, existi
 	if running, ok := s.creating[session.ID]; ok {
 		return running, false, nil
 	}
-	c = &creation{session: session, done: make(chan struct{})}
+	c = &creation{session: session, done: make(chan struct{}), pane: make(chan struct{})}
 	s.creating[session.ID] = c
 	return c, true, nil
 }
@@ -366,6 +421,85 @@ func (s *Service) begin(session domain.Session) (c *creation, first bool, existi
 // end records a create's outcome — the session, when it landed — and wakes
 // every create that joined it. The record is written before the pending entry
 // goes, so Get never finds neither.
+// paneReady releases the attaches waiting on this session's terminal: its tmux
+// session exists, whatever the clone behind it is still doing. It also
+// refreshes the copy the creation holds, so what an attach reads is the
+// session as it is.
+func (s *Service) paneReady(session domain.Session) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	c, creating := s.creating[session.ID]
+	if !creating {
+		return
+	}
+	c.session = session
+	select {
+	case <-c.pane:
+	default:
+		close(c.pane)
+	}
+}
+
+// awaitAttachable is the session an attach may use, waiting if the host is
+// still making its terminal.
+//
+// This is the one command a session being created can serve, and waiting is
+// what makes that true without a second notion of "recorded". The terminal is
+// built before the clone, so an attach sent the moment the console hears about
+// the session arrives while the create is still running: refusing it would
+// send the browser into its reconnect ladder to wait out a clone its terminal
+// never depended on, and queueing it behind the create would do the same thing
+// more quietly.
+//
+// Only an attach waits here. Stop, List and the rest still ask for a recorded
+// session, so a create that has not landed is still not a session to act on.
+func (s *Service) awaitAttachable(ctx context.Context, id string) (domain.Session, error) {
+	s.mu.Lock()
+	if recorded, ok := s.sessions[id]; ok {
+		session := recorded.Clone()
+		s.mu.Unlock()
+		if !session.State.Live() {
+			return domain.Session{}, domain.ErrNotRunning.WithDetail(
+				"session %s is %s; restart it to attach", id, session.State)
+		}
+		return session, nil
+	}
+	c, creating := s.creating[id]
+	s.mu.Unlock()
+	if !creating {
+		return domain.Session{}, domain.ErrNotFound.WithDetail("no session %q on this host", id)
+	}
+
+	select {
+	case <-c.pane:
+	case <-c.done:
+	case <-ctx.Done():
+		return domain.Session{}, domain.ErrNotRunning.WithDetail(
+			"session %q was still being created when the attach gave up", id)
+	}
+
+	// The create may have landed while waiting, so the record is asked first:
+	// it is the session as it finally stands. A create that ended without ever
+	// making a pane leaves neither, and that is a refusal.
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if recorded, ok := s.sessions[id]; ok {
+		session := recorded.Clone()
+		if !session.State.Live() {
+			return domain.Session{}, domain.ErrNotRunning.WithDetail(
+				"session %s is %s; restart it to attach", id, session.State)
+		}
+		return session, nil
+	}
+	select {
+	case <-c.pane:
+		return c.session.Clone(), nil
+	default:
+		return domain.Session{}, domain.ErrNotRunning.WithDetail(
+			"session %q never got a terminal", id)
+	}
+}
+
 func (s *Service) end(c *creation, session domain.Session, err error) {
 	if err == nil {
 		s.record(session)
@@ -491,13 +625,9 @@ func (s *Service) CloseWindow(ctx context.Context, id string, index int) error {
 // Attach opens a PTY onto one window. Several devices may attach to the same
 // window; tmux sizes it to the one that resized last.
 func (s *Service) Attach(ctx context.Context, id string, window int, size Size) (Attachment, error) {
-	session, err := s.recorded(id)
+	session, err := s.awaitAttachable(ctx, id)
 	if err != nil {
 		return nil, err
-	}
-	if !session.State.Live() {
-		return nil, domain.ErrNotRunning.WithDetail(
-			"session %s is %s; restart it to attach", id, session.State)
 	}
 	if _, ok := session.Window(window); !ok {
 		return nil, domain.ErrNotFound.WithDetail("%v: %d", domain.ErrNoSuchWindow, window)

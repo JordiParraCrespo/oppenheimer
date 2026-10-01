@@ -537,3 +537,33 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   and matches it.
 - 2026-09-30: **The terminal answers the line, word and select-all chords
   a desktop terminal does, and Ctrl+Shift+C copies off the Mac** (05).
+- 2026-10-01: **`session.started` means the session has a terminal, not that
+  its agent is up** (01, 02). The host builds the tmux session before it
+  clones, so the pane exists about thirty milliseconds in and the clone, the
+  worktree and the agent follow it. The console attaches on this, which puts
+  the reader in the terminal while the repository is still arriving; the
+  `agent` step is what says the agent was launched. The terminal is a stage
+  like the others but has no step on the wire — the stepper stays
+  `host/clone/worktree/agent`.
+- 2026-10-01: **An attach is served while its create is still running, and is
+  the only command that does not use the session's lane** (01, 02). It needs
+  the tmux name and nothing else. Queued behind the create it sat out the
+  clone and the agent launch — the cost that building the terminal first
+  exists to remove — so it waits on the session's own terminal instead.
+  Everything else still waits for the create to land: a stop sent during a
+  create is answered after it, which is what keeps stop, list and unpair
+  seeing one consistent set of sessions.
+- 2026-10-01: **A session's worktree lives in a hidden directory**
+  (`<repo>/.worktrees/<slug>`, 02). Spotlight does not descend into a dotted
+  directory, and a worktree is a whole checkout written at once: left
+  visible it is indexed while the agent starts, and the agent's file reads
+  queue behind the scan. Two worktrees of the same commit in one parent, run
+  interleaved: `wt` 30.2s, `.wt` 5.7s, `wt2` 31.5s to the agent's first
+  token. `.metadata_never_index` at the workspaces root does not work —
+  `mdls` still returns indexed metadata underneath it.
+- 2026-10-01: **One session's row polls faster than the session list while it
+  is starting** (05). The list keeps one pace; the row a reader is watching
+  opens at 300ms and settles to 2s after 3s. The opening phase belongs to the
+  row and not the list because its clock is kept per query and the list is one
+  query for every session — a second session started during the first one's
+  clone would otherwise inherit the first one's settled tick.

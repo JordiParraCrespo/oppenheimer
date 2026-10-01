@@ -260,6 +260,27 @@ describe('AttachSessionStream', () => {
     expect(h.timers).toHaveLength(0);
   });
 
+  it('mints again when the ticket did not resolve, rather than stranding the pane', async () => {
+    // A ticket is single-use and short-lived, so a 4401 says the ticket was
+    // stale or already spent — not that this person may not attach, which is
+    // settled at the mint. Treated as final it left the terminal on
+    // "Disconnected" with no alert and no Retry: a dead canvas until a reload.
+    const h = harness();
+    await h.flush();
+    h.sockets[0].open();
+    h.sockets[0].drop(ATTACH_CLOSE_CODES.UNAUTHORIZED);
+
+    expect(h.ends).toEqual([]);
+    expect(h.statuses.at(-1)).toBe('connecting');
+    expect(h.timers).toHaveLength(1);
+
+    h.timers[0].fn();
+    await h.flush();
+    expect(h.tickets).toHaveBeenCalledTimes(2);
+    expect(h.sockets).toHaveLength(2);
+    expect(h.sockets[1].protocols).toEqual(['t-2']);
+  });
+
   it('retries when the API cannot be reached to mint a ticket, and never says offline', async () => {
     let calls = 0;
     const h = harness({

@@ -78,9 +78,24 @@ export interface SessionStreamOptions {
   schedule?: (fn: () => void, ms: number) => () => void;
 }
 
-/** Close codes after which reconnecting cannot help: the answer would be the same. */
+/**
+ * Close codes after which reconnecting cannot help: the answer would be the same.
+ *
+ * `UNAUTHORIZED` is deliberately not one of them. A ticket is single-use and
+ * short-lived — the gateway *takes* it — so "this ticket did not resolve" is a
+ * fact about the ticket, not about the session or the person: it is stale,
+ * spent, or expired before the socket opened. Every attempt mints a fresh one,
+ * so the ladder is exactly the remedy. Whether the person may attach at all is
+ * decided at the mint, where a 401 does end the stream for good
+ * ({@link endOfMintFailure}).
+ *
+ * Listing it here stranded the terminal: the status went to `closed`
+ * ("Disconnected"), which draws no recovery alert — only `forbidden` and
+ * `refused` do — and the status bar offers Retry only while connecting or
+ * offline. The pane became a dead canvas that nothing but a page reload could
+ * revive, which reads as a terminal that has stopped scrolling.
+ */
 const FINAL_CLOSE_CODES = new Map<number, StreamEnd>([
-  [ATTACH_CLOSE_CODES.UNAUTHORIZED, 'unauthorized'],
   [ATTACH_CLOSE_CODES.FORBIDDEN, 'forbidden'],
   [ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE, 'resolved'],
   [ATTACH_CLOSE_CODES.SESSION_STOPPED, 'stopped'],

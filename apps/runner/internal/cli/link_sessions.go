@@ -16,25 +16,33 @@ import (
 )
 
 func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
-	steps := newStartSteps(func(p link.SessionStepPayload) {
-		h.reporter.Append(m.SessionID, link.SessionStepKind, p)
-	}, time.Now)
-	agent, ok := sessionsdomain.AgentFromCatalogID(m.Agent)
-	if !ok {
-		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("unknown agent %q", m.Agent))
-		return
-	}
-	// One checkout, exactly: this runner's session service makes one worktree
-	// (its layout is still `<repo>/worktrees/<slug>`, not yet note 10's), so a
-	// frame with none has nothing to check out and a frame with several would
-	// have its extra rows silently dropped. Both are refused with the reason, so
-	// the control plane records a failed launch rather than a partial one.
+	// `first` is read by the started reporter below, so the checkout is
+	// resolved before the steps are.
 	if len(m.Checkouts) != 1 {
 		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail(
 			"this runner makes sessions with exactly one checkout; the frame carried %d", len(m.Checkouts)))
 		return
 	}
 	first := m.Checkouts[0]
+	steps := newStartSteps(
+		func(p link.SessionStepPayload) { h.reporter.Append(m.SessionID, link.SessionStepKind, p) },
+		// The terminal exists, so the session can be attached to: the worktree's
+		// path is known from the start, so the checkout this reports is true
+		// before it is on disk.
+		func(session sessionsdomain.Session) {
+			h.reporter.Append(session.ID, "session.started", map[string]any{
+				"checkouts": []map[string]any{{
+					"checkoutId": first.CheckoutID, "branch": session.Branch, "path": session.Worktree, "mode": "worktree",
+				}},
+			})
+		},
+		time.Now,
+	)
+	agent, ok := sessionsdomain.AgentFromCatalogID(m.Agent)
+	if !ok {
+		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("unknown agent %q", m.Agent))
+		return
+	}
 	// A create sent again for a session this host already holds (a redelivery,
 	// a reconnect) makes nothing new, so it pulls nothing: its images were
 	// pulled once, and a parked image is handed over only once.
@@ -48,7 +56,7 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 		h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))
 		return
 	}
-	session, err := h.app.Sessions.Create(ctx, sessionsapp.CreateInput{
+	_, err = h.app.Sessions.Create(ctx, sessionsapp.CreateInput{
 		ID:         m.SessionID,
 		Repo:       first.RepositoryFullName,
 		Remote:     "https://github.com/" + first.RepositoryFullName + ".git",
@@ -69,13 +77,7 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 	if err != nil {
 		h.fail(m.CommandID, err)
 		h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))
-		return
 	}
-	h.reporter.Append(session.ID, "session.started", map[string]any{
-		"checkouts": []map[string]any{{
-			"checkoutId": first.CheckoutID, "branch": session.Branch, "path": session.Worktree, "mode": "worktree",
-		}},
-	})
 }
 
 // lifecycleCommand is what lifecycle reads of stop, restart, close,

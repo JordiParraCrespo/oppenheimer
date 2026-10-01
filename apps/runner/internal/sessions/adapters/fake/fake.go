@@ -345,6 +345,8 @@ type Worktrees struct {
 	PushErr error
 	// EnsureErr, when set, is what Ensure returns: a clone that failed.
 	EnsureErr error
+	// Prepared records the repositories a terminal's directory was asked for.
+	Prepared []string
 	// Pushed records the branches that reached the remote.
 	Pushed []string
 	// PushedFor records the session each push was done for (domain.SessionOf),
@@ -379,6 +381,15 @@ func (w *Worktrees) Ensure(_ context.Context, repo, _, ref string) error {
 	w.Mirrors[repo]++
 	w.Fetched = append(w.Fetched, ref)
 	return nil
+}
+
+// Prepare implements app.Worktrees. Nothing is made on disk: a fake session's
+// terminal is a fake too, and the directory is only somewhere to start it.
+func (w *Worktrees) Prepare(_ context.Context, repo string) (string, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.Prepared = append(w.Prepared, repo)
+	return "/" + repo + "/worktrees", nil
 }
 
 // Add implements app.Worktrees.

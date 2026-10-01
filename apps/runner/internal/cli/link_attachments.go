@@ -38,7 +38,13 @@ func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach, epoch ui
 	}
 	previous := h.attachments[m.AttachmentID]
 	h.attachments[m.AttachmentID] = att
+	early, hadEarly := h.earlyResize[m.AttachmentID]
+	delete(h.earlyResize, m.AttachmentID)
 	h.mu.Unlock()
+	// The viewport the browser sent while this attachment was still opening.
+	if hadEarly {
+		_ = pty.Resize(sessionsapp.Size{Cols: clampSize(early.Cols), Rows: clampSize(early.Rows)})
+	}
 	if previous != nil {
 		previous.flow.close()
 		previous.cancel()
@@ -125,6 +131,24 @@ func (h *linkHandler) input(ctx context.Context, m link.SessionInput) {
 }
 
 // resize sizes an open attachment's PTY, and reports whether there was one.
+// holdResize keeps a viewport for an attachment that is still being opened,
+// so the attach can apply it as soon as it exists. Only the newest is kept:
+// the browser resends on every change, and what the pane needs is the latest.
+func (h *linkHandler) holdResize(m link.SessionResize) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if _, open := h.attachments[m.AttachmentID]; open {
+		return
+	}
+	// Made here rather than only at construction: the handler is also built as
+	// a literal in tests, and a viewport dropped on a nil map would be a pane
+	// stuck at 80x24 rather than a failure anybody sees.
+	if h.earlyResize == nil {
+		h.earlyResize = map[uint32]link.SessionResize{}
+	}
+	h.earlyResize[m.AttachmentID] = m
+}
+
 func (h *linkHandler) resize(m link.SessionResize) bool {
 	att := h.attachmentByID(m.AttachmentID)
 	if att == nil {
