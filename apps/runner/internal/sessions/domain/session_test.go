@@ -94,3 +94,29 @@ func TestOnlyLiveStatesExpectATmuxSession(t *testing.T) {
 		}
 	}
 }
+
+// A session's worktree lives in a **hidden** directory, and that is a
+// performance decision rather than a tidiness one: Spotlight does not descend
+// into a dotted directory, and a visible worktree is indexed while the agent is
+// starting, which measured 30s to the agent's first token against 5.7s for the
+// same checkout one dot away. Tidying the dot out would quietly make every
+// session start five times slower on macOS, with nothing else to show for it —
+// so the layout says so here.
+func TestAWorktreeLivesInAHiddenDirectorySoSpotlightLeavesItAlone(t *testing.T) {
+	layout := domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"}
+
+	worktree := layout.Worktree("acme-labs/xrp-mobile", "oppenheimer-amber-delta")
+
+	want := "/home/jordi/oppenheimer-ai/workspaces/acme-labs/xrp-mobile/.worktrees/oppenheimer-amber-delta"
+	if worktree != want {
+		t.Fatalf("worktree = %q, want %q", worktree, want)
+	}
+	if !strings.Contains(worktree, "/.worktrees/") {
+		t.Fatalf("worktree %q is not in a hidden directory; Spotlight will index it", worktree)
+	}
+	// The mirror is not a worktree: nothing is launched in it, so it is not
+	// part of this decision and stays where it is.
+	if mirror := layout.Mirror("acme-labs/xrp-mobile"); strings.Contains(mirror, "/.") {
+		t.Fatalf("mirror = %q; only the worktrees are hidden", mirror)
+	}
+}

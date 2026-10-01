@@ -144,9 +144,15 @@ What belongs here is what the runner does with it:
   read loop hands each one to a lane per session and goes back to
   reading, so a slow create never holds up the pongs that keep the link
   up, or the `credentials.grant` its own clone is waiting on. A lane runs
-  its session's commands one at a time, in arrival order: an attach,
-  input or stop sent right after a create waits for the session, and a
-  redelivered create runs once the first has ended. The context those
+  its session's commands one at a time, in arrival order: an input or a
+  stop sent right after a create waits for the session, and a
+  redelivered create runs once the first has ended. **An attach is the
+  one command that does not use the lane.** It needs the session's tmux
+  name and nothing else, and that exists long before the create lands, so
+  it waits on the session's own terminal instead; queued, it would sit
+  out the clone and the agent launch for work it does not depend on,
+  which is what building the terminal first exists to avoid. Nothing else
+  is let past: a stop sent during a create is still answered after it. The context those
   commands run on is the daemon's, so a link that drops mid-clone does
   not take the clone with it; their outcomes reach the control plane
   through the event log, which is resent on the next link. The one
@@ -204,9 +210,22 @@ is no project level: a project is metadata the control plane keeps, and
 one is observable on disk, and each reported as a `session.step` (01)
 as it starts and lands: `host` running when the frame arrives and done
 once create accepts it, then `clone` (the stores), `worktree` (the
-checkouts) and `agent` (tmux and window 0), each landing with the time
+checkouts) and `agent` (window 0's program), each landing with the time
 it took on the host. A failure is `session.failed`; the step that
-started last is the one that failed:
+started last is the one that failed.
+
+**The terminal is made first, before the stores.** It is a stage like the
+others but has no step on the wire — the stepper stays
+`host/clone/worktree/agent` — because what it reports is
+`session.started`: the moment the session has a pane to attach to (01).
+It starts in the directory the worktree will occupy, which does not exist
+yet, and the agent is sent into it once it does. A create spends its
+seconds on the clone and the worktree, and with the pane made last every
+one of them was a spinner; made first, the reader is in the session
+watching it being built. A stage that fails after it kills the pane: a
+terminal with nothing running in it is not a session.
+
+Then, in order:
 
 1. Write the `.oppenheimer` marker into
    `sessions/<slug>/` **before** anything else. Only

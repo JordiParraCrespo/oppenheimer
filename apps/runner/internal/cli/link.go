@@ -80,6 +80,11 @@ type linkHandler struct {
 
 	mu          sync.Mutex
 	attachments map[uint32]*attachment
+	// earlyResize holds a viewport that arrived before its attachment was
+	// registered, by attachment id. The browser sends its size the moment the
+	// socket opens, which is while the host is still opening the PTY; applied
+	// by attach once the attachment exists, so the pane is not left at 80x24.
+	earlyResize map[uint32]link.SessionResize
 	epoch       uint64
 	// linkUp is whether epoch's link is still up. Disconnected clears it
 	// without a new epoch, so an attach finishing after the drop sees that
@@ -125,7 +130,8 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 	life, endLife := context.WithCancel(ctx)
 	defer endLife()
 	handler := &linkHandler{
-		app: a, identity: identity, logger: logger, attachments: map[uint32]*attachment{}, decided: map[string]bool{},
+		app: a, identity: identity, logger: logger, attachments: map[uint32]*attachment{}, earlyResize: map[uint32]link.SessionResize{},
+		decided:   map[string]bool{},
 		bootToken: a.Pairing.BootToken, life: life, endLife: endLife, lanes: newLanes(),
 	}
 	client, err := link.New(link.Options{
@@ -348,12 +354,16 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			// queued past that link's end is dropped, and the browser
 			// reattaches through the next. attach checks again once its PTY
 			// is open, since the link can drop while tmux attaches.
+			// Off the lane: an attach waits on the session's pane, not on the
+			// create that is making it. Queued, it would sit behind the clone
+			// and the agent launch for work it does not need — which is the
+			// whole of what building the terminal first was meant to avoid.
 			epoch := h.currentEpoch()
-			h.lanes.run(m.SessionID, func() {
+			go func() {
 				if h.liveEpoch(epoch) {
 					h.attach(h.life, m, epoch)
 				}
-			})
+			}()
 		}
 	case "session.input":
 		var m link.SessionInput
@@ -370,10 +380,10 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		if msg.Decode(&m) == nil {
 			// An ioctl on an open PTY, done here like a credit, so a resize
 			// never waits behind an image paste in the session's lane. One
-			// for an attachment still being opened keeps its place behind
-			// the attach, in the lane.
+			// for an attachment still being opened is kept for it: the attach
+			// runs off the lane now, so there is no queue to hold its place.
 			if !h.resize(m) {
-				h.lanes.run(m.SessionID, func() { h.resize(m) })
+				h.holdResize(m)
 			}
 		}
 	case "session.detach":
