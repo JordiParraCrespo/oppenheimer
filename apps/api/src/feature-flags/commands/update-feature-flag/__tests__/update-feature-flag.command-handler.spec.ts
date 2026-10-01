@@ -1,12 +1,17 @@
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FeatureFlagRepositoryPort } from '../../../database/feature-flag.repository.port';
+import type {
+  FeatureFlagRepositoryPort,
+  FlagTransaction,
+} from '../../../database/feature-flag.repository.port';
 import type { FlagSegmentRepositoryPort } from '../../../database/flag-segment.repository.port';
 import { FeatureFlagEntity } from '../../../domain/feature-flag.entity';
 import { FeatureFlagErrors } from '../../../domain/feature-flags.errors';
 import { FlagSegmentEntity } from '../../../domain/flag-segment.entity';
 import { UpdateFeatureFlagCommand } from '../update-feature-flag.command';
 import { UpdateFeatureFlagCommandHandler } from '../update-feature-flag.command-handler';
+
+const manager = {} as FlagTransaction;
 
 describe('UpdateFeatureFlagCommandHandler', () => {
   let flags: Pick<FeatureFlagRepositoryPort, 'findOneByKey' | 'save' | 'serialized'>;
@@ -17,7 +22,7 @@ describe('UpdateFeatureFlagCommandHandler', () => {
     flags = {
       findOneByKey: vi.fn().mockResolvedValue(None),
       save: vi.fn().mockImplementation(async (flag) => flag),
-      serialized: vi.fn((work) => work()),
+      serialized: vi.fn((work) => work(manager)),
     };
     segments = {
       findAll: vi.fn().mockResolvedValue([
@@ -69,6 +74,9 @@ describe('UpdateFeatureFlagCommandHandler', () => {
     expect(saved.key).toBe('api_token_creation');
     expect(saved.rules).toHaveLength(1);
     expect(saved.domainEvents).toHaveLength(1);
+    // Read and written on the transaction that holds the lock.
+    expect(segments.findAll).toHaveBeenCalledWith(manager);
+    expect(flags.save).toHaveBeenCalledWith(saved, manager);
   });
 
   it('updates the existing row, keeping its salt', async () => {

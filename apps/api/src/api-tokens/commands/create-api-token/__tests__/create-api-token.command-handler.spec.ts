@@ -34,7 +34,7 @@ describe('CreateApiTokenCommandHandler', () => {
 
   beforeEach(() => {
     repo = {
-      insertWithinLimit: vi.fn().mockResolvedValue(true),
+      insertWithinLimit: vi.fn().mockResolvedValue('inserted'),
     };
     memberships = {
       findOrganizationIdsForUser: vi.fn().mockResolvedValue(['org-1']),
@@ -121,7 +121,7 @@ describe('CreateApiTokenCommandHandler', () => {
   });
 
   it('refuses once the active token limit is reached', async () => {
-    vi.mocked(repo.insertWithinLimit).mockResolvedValue(false);
+    vi.mocked(repo.insertWithinLimit).mockResolvedValue('limit_reached');
 
     await expect(service.execute(command())).rejects.toMatchObject({
       code: 'TOKEN_009',

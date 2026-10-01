@@ -3,59 +3,57 @@ import type { EntityManager, Repository } from 'typeorm';
 import { describe, expect, it, vi } from 'vitest';
 import type { FeatureFlagOrmEntity } from '../database/feature-flag.orm-entity';
 import { FeatureFlagRepository } from '../database/feature-flag.repository';
+import { FeatureFlagEntity } from '../domain/feature-flag.entity';
 import type { FeatureFlagMapper } from '../feature-flag.mapper';
 
-/** A repository whose transactions record the lock they take, and nothing else. */
+/** A repository whose transaction is one fake manager that records what runs on it. */
 function repository() {
   const locks: unknown[] = [];
+  const saved: unknown[] = [];
   const manager = {
-    transaction: vi.fn(async (work: (manager: EntityManager) => Promise<unknown>) =>
-      work({
-        query: async (_sql: string, params: unknown[]) => {
-          locks.push(params[0]);
-        },
-      } as unknown as EntityManager),
-    ),
+    query: vi.fn(async (_sql: string, params: unknown[]) => {
+      locks.push(params[0]);
+    }),
+    getRepository: vi.fn(() => ({
+      save: vi.fn(async (record: unknown) => {
+        saved.push(record);
+        return record;
+      }),
+    })),
+  } as unknown as EntityManager;
+  const outbox = {
+    transaction: vi.fn((work: (manager: EntityManager) => Promise<unknown>) => work(manager)),
+    stageEvents: vi.fn(async () => {}),
   };
+  const mapper = { toPersistence: vi.fn((e) => ({ key: e.key })), toDomain: vi.fn((r) => r) };
   const flags = new FeatureFlagRepository(
-    { manager } as unknown as Repository<FeatureFlagOrmEntity>,
-    {} as FeatureFlagMapper,
-    {} as OutboxService,
+    {} as Repository<FeatureFlagOrmEntity>,
+    mapper as unknown as FeatureFlagMapper,
+    outbox as unknown as OutboxService,
   );
-  return { flags, locks };
+  return { flags, manager, locks, saved, outbox };
 }
 
 describe('FeatureFlagRepository.serialized', () => {
-  it('holds the flag write lock around the work', async () => {
-    const { flags, locks } = repository();
+  it('hands the work the transaction that holds the flag write lock', async () => {
+    const { flags, manager, locks } = repository();
 
-    expect(await flags.serialized(async () => 'done')).toBe('done');
+    const received = await flags.serialized(async (m) => m);
+
+    expect(received).toBe(manager);
     expect(locks).toEqual([0x666c6167]);
   });
 
-  it('runs one write at a time on this replica, in order', async () => {
-    const { flags } = repository();
-    const order: string[] = [];
-    let release: () => void = () => {};
-    const first = flags.serialized(
-      () =>
-        new Promise<void>((resolve) => {
-          order.push('first starts');
-          release = () => {
-            order.push('first ends');
-            resolve();
-          };
-        }),
-    );
-    const second = flags.serialized(async () => {
-      order.push('second starts');
-    });
+  it('writes and stages events on the manager it is given, not on a second transaction', async () => {
+    const { flags, manager, saved, outbox } = repository();
+    const flag = FeatureFlagEntity.createFor('api_token_creation', true);
+    flag.setEnabled(false, { actorId: 'admin-1' });
 
-    await vi.waitFor(() => expect(order).toEqual(['first starts']));
-    release();
-    await Promise.all([first, second]);
+    await flags.serialized((m) => flags.save(flag, m));
 
-    expect(order).toEqual(['first starts', 'first ends', 'second starts']);
+    expect(saved).toHaveLength(1);
+    expect(outbox.stageEvents).toHaveBeenCalledWith(manager, flag.domainEvents);
+    expect(outbox.transaction).toHaveBeenCalledTimes(1);
   });
 
   it('lets the next write run after one fails', async () => {

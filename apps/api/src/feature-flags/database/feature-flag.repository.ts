@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OutboxService, TypeOrmRepositoryBase } from '@oppenheimer/backend-ddd';
 import type { Option } from 'oxide.ts';
-import type { Repository } from 'typeorm';
+import type { EntityManager, Repository } from 'typeorm';
 import type { FeatureFlagEntity } from '../domain/feature-flag.entity';
 import { FeatureFlagMapper } from '../feature-flag.mapper';
 import { FeatureFlagOrmEntity } from './feature-flag.orm-entity';
@@ -25,15 +25,12 @@ export class FeatureFlagRepository
     super();
   }
 
-  /** The writes this replica has queued, so each holds one connection at a time. */
-  private queue: Promise<unknown> = Promise.resolve();
-
-  async findOneByKey(key: string): Promise<Option<FeatureFlagEntity>> {
-    return this.toOption(await this.repository.findOneBy({ key }));
+  async findOneByKey(key: string, manager?: EntityManager): Promise<Option<FeatureFlagEntity>> {
+    return this.toOption(await this.on(manager).findOneBy({ key }));
   }
 
-  async findAll(): Promise<FeatureFlagEntity[]> {
-    const records = await this.repository.find({ order: { key: 'ASC' } });
+  async findAll(manager?: EntityManager): Promise<FeatureFlagEntity[]> {
+    const records = await this.on(manager).find({ order: { key: 'ASC' } });
     return records.map((record) => this.mapper.toDomain(record));
   }
 
@@ -46,19 +43,27 @@ export class FeatureFlagRepository
     return (row as { digest: string } | undefined)?.digest ?? '';
   }
 
-  serialized<T>(work: () => Promise<T>): Promise<T> {
-    // Queued here first: a write waiting on the lock holds a pooled
-    // connection, and the one holding it needs another for its own queries,
-    // so replica-wide waiters could otherwise starve the pool. The lock is
-    // transaction-scoped: it is released when the transaction ends, after
-    // `work` has committed its writes.
-    const run = this.queue.then(() =>
-      this.repository.manager.transaction(async (manager) => {
-        await manager.query('SELECT pg_advisory_xact_lock($1)', [FLAG_WRITE_LOCK]);
-        return work();
-      }),
-    );
-    this.queue = run.catch(() => undefined);
-    return run;
+  async save(entity: FeatureFlagEntity, manager?: EntityManager): Promise<FeatureFlagEntity> {
+    if (!manager) return super.save(entity);
+    const record = await manager
+      .getRepository(FeatureFlagOrmEntity)
+      .save(this.mapper.toPersistence(entity));
+    // Events commit or roll back with the caller's transaction. The caller
+    // discards the aggregate afterwards, so they are not cleared here.
+    await this.outbox.stageEvents(manager, entity.domainEvents);
+    return this.mapper.toDomain(record);
+  }
+
+  serialized<T>(work: (manager: EntityManager) => Promise<T>): Promise<T> {
+    // The lock is transaction-scoped: it is released when the transaction
+    // ends, after `work` has committed its writes.
+    return this.outbox.transaction(async (manager) => {
+      await manager.query('SELECT pg_advisory_xact_lock($1)', [FLAG_WRITE_LOCK]);
+      return work(manager);
+    });
+  }
+
+  private on(manager?: EntityManager): Repository<FeatureFlagOrmEntity> {
+    return manager ? manager.getRepository(FeatureFlagOrmEntity) : this.repository;
   }
 }

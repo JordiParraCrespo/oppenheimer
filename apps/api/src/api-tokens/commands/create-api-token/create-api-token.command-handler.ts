@@ -66,12 +66,12 @@ export class CreateApiTokenCommandHandler
       expiresInDays: command.expiresInDays,
     });
 
-    const inserted = await this.apiTokenRepository.insertWithinLimit(
+    const outcome = await this.apiTokenRepository.insertWithinLimit(
       token,
       MAX_ACTIVE_TOKENS_PER_USER,
       new Date(),
     );
-    if (!inserted) throw new AppError(ApiTokenErrors.LIMIT_REACHED);
+    if (outcome === 'limit_reached') throw new AppError(ApiTokenErrors.LIMIT_REACHED);
 
     return { tokenId: token.id, secret };
   }

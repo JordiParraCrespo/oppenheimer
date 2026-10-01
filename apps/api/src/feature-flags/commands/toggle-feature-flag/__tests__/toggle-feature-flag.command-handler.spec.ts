@@ -1,9 +1,14 @@
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FeatureFlagRepositoryPort } from '../../../database/feature-flag.repository.port';
+import type {
+  FeatureFlagRepositoryPort,
+  FlagTransaction,
+} from '../../../database/feature-flag.repository.port';
 import { FeatureFlagEntity } from '../../../domain/feature-flag.entity';
 import { ToggleFeatureFlagCommand } from '../toggle-feature-flag.command';
 import { ToggleFeatureFlagCommandHandler } from '../toggle-feature-flag.command-handler';
+
+const manager = {} as FlagTransaction;
 
 describe('ToggleFeatureFlagCommandHandler', () => {
   let flags: Pick<FeatureFlagRepositoryPort, 'findOneByKey' | 'save' | 'serialized'>;
@@ -13,7 +18,7 @@ describe('ToggleFeatureFlagCommandHandler', () => {
     flags = {
       findOneByKey: vi.fn().mockResolvedValue(None),
       save: vi.fn().mockImplementation(async (flag) => flag),
-      serialized: vi.fn((work) => work()),
+      serialized: vi.fn((work) => work(manager)),
     };
     handler = new ToggleFeatureFlagCommandHandler(flags as FeatureFlagRepositoryPort);
   });
@@ -30,6 +35,9 @@ describe('ToggleFeatureFlagCommandHandler', () => {
     const saved = vi.mocked(flags.save).mock.calls[0]?.[0] as FeatureFlagEntity;
     expect(saved.enabled).toBe(false);
     expect(saved.domainEvents).toHaveLength(1);
+    // Read and written on the transaction that holds the lock.
+    expect(flags.findOneByKey).toHaveBeenCalledWith('api_token_creation', manager);
+    expect(flags.save).toHaveBeenCalledWith(saved, manager);
   });
 
   it('reads and saves under the flag write lock, so no edit lands in between', async () => {

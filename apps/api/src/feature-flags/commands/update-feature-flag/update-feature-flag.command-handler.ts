@@ -47,8 +47,10 @@ export class UpdateFeatureFlagCommandHandler
     const key = command.key;
     // Under the flag write lock, so a segment these rules name cannot be
     // deleted between the check and the save.
-    return this.flags.serialized(async () => {
-      const knownSegments = new Set((await this.segments.findAll()).map((segment) => segment.key));
+    return this.flags.serialized(async (manager) => {
+      const knownSegments = new Set(
+        (await this.segments.findAll(manager)).map((segment) => segment.key),
+      );
       const problems = targetingProblems(definition, targeting, knownSegments);
       if (problems.length > 0) {
         throw new AppError(FeatureFlagErrors.INVALID_TARGETING, {
@@ -57,13 +59,13 @@ export class UpdateFeatureFlagCommandHandler
         });
       }
 
-      const found = await this.flags.findOneByKey(key);
+      const found = await this.flags.findOneByKey(key, manager);
       const flag = found.isSome()
         ? found.unwrap()
         : FeatureFlagEntity.createFor(key, definition.defaultValue);
 
       flag.replaceTargeting(targeting, { actorId: command.actorId, comment: command.comment });
-      await this.flags.save(flag);
+      await this.flags.save(flag, manager);
       return flag.id;
     });
   }

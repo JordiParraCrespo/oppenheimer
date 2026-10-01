@@ -35,8 +35,8 @@ function stripUrlSecrets(result: CaptureResult | null): CaptureResult | null {
  */
 class PostHogAnalyticsClient implements IAnalyticsClient {
   private posthog: PostHog | null = null;
-  private failed = false;
-  private pending: Array<(posthog: PostHog) => void> = [];
+  /** Calls made before the SDK arrived; `null` once the SDK loaded or failed to. */
+  private pending: Array<(posthog: PostHog) => void> | null = [];
 
   constructor(
     private readonly apiKey: string,
@@ -46,6 +46,7 @@ class PostHogAnalyticsClient implements IAnalyticsClient {
   }
 
   private async load(): Promise<void> {
+    let sdk: PostHog;
     try {
       const { default: posthog } = await import('posthog-js');
 
@@ -59,25 +60,35 @@ class PostHogAnalyticsClient implements IAnalyticsClient {
         advanced_disable_feature_flags: true,
       });
 
-      this.posthog = posthog;
-      for (const call of this.pending) call(posthog);
-      this.pending = [];
+      sdk = posthog;
     } catch (error) {
       // A blocked or failed SDK load must not break the app, and it is never
       // retried: drop what was queued and every call after it, so a
       // long-lived tab behaves as the no-op client instead of holding events
       // for a client that never arrives.
-      this.failed = true;
-      this.pending = [];
+      this.pending = null;
       console.warn('[analytics] PostHog failed to load', error);
+      return;
+    }
+    // Replayed outside the try above: a call that throws is that call's
+    // failure, not a failed load, and the SDK is up.
+    const queued = this.pending ?? [];
+    this.pending = null;
+    this.posthog = sdk;
+    for (const call of queued) {
+      try {
+        call(sdk);
+      } catch (error) {
+        console.warn('[analytics] a queued PostHog call failed', error);
+      }
     }
   }
 
   private enqueue(call: (posthog: PostHog) => void): void {
     if (this.posthog) {
       call(this.posthog);
-    } else if (!this.failed) {
-      this.pending.push(call);
+    } else {
+      this.pending?.push(call);
     }
   }
 

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OutboxService, TypeOrmRepositoryBase } from '@oppenheimer/backend-ddd';
 import type { Option } from 'oxide.ts';
-import type { Repository } from 'typeorm';
+import type { EntityManager, Repository } from 'typeorm';
 import type { FlagSegmentEntity } from '../domain/flag-segment.entity';
 import { FlagSegmentMapper } from '../flag-segment.mapper';
 import { FlagSegmentOrmEntity } from './flag-segment.orm-entity';
@@ -22,13 +22,26 @@ export class FlagSegmentRepository
     super();
   }
 
-  async findOneByKey(key: string): Promise<Option<FlagSegmentEntity>> {
-    return this.toOption(await this.repository.findOneBy({ key }));
+  async findOneByKey(key: string, manager?: EntityManager): Promise<Option<FlagSegmentEntity>> {
+    return this.toOption(await this.on(manager).findOneBy({ key }));
   }
 
-  async findAll(): Promise<FlagSegmentEntity[]> {
-    const records = await this.repository.find({ order: { key: 'ASC' } });
+  async findAll(manager?: EntityManager): Promise<FlagSegmentEntity[]> {
+    const records = await this.on(manager).find({ order: { key: 'ASC' } });
     return records.map((record) => this.mapper.toDomain(record));
+  }
+
+  async delete(entity: FlagSegmentEntity, manager?: EntityManager): Promise<boolean> {
+    if (!manager) return super.delete(entity);
+    const result = await manager.getRepository(FlagSegmentOrmEntity).delete({ id: entity.id });
+    // Events commit or roll back with the caller's transaction. The caller
+    // discards the aggregate afterwards, so they are not cleared here.
+    await this.outbox.stageEvents(manager, entity.domainEvents);
+    return (result.affected ?? 0) > 0;
+  }
+
+  private on(manager?: EntityManager): Repository<FlagSegmentOrmEntity> {
+    return manager ? manager.getRepository(FlagSegmentOrmEntity) : this.repository;
   }
 
   async fingerprint(): Promise<string> {

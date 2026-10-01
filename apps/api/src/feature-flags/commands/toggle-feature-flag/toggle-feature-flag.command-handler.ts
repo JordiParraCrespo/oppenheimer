@@ -34,8 +34,8 @@ export class ToggleFeatureFlagCommandHandler
     }
 
     const key = command.key;
-    return this.flags.serialized(async () => {
-      const found = await this.flags.findOneByKey(key);
+    return this.flags.serialized(async (manager) => {
+      const found = await this.flags.findOneByKey(key, manager);
       const flag = found.isSome()
         ? found.unwrap()
         : FeatureFlagEntity.createFor(key, getFlagDefinition(key).defaultValue);
@@ -44,7 +44,7 @@ export class ToggleFeatureFlagCommandHandler
         actorId: command.actorId,
         comment: command.comment,
       });
-      if (changed) await this.flags.save(flag);
+      if (changed) await this.flags.save(flag, manager);
       return flag.id;
     });
   }

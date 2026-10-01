@@ -125,7 +125,8 @@ export class OutboxRelay {
    * Drain until no due rows remain, and wait for it. Returns the number of rows
    * delivered. Called from inside a delivery, the pass is requested and the
    * call resolves at once with 0, since waiting would mean the drain waiting on
-   * itself.
+   * itself. The flag is relay-wide, not per caller: an unrelated `drainOnce()`
+   * made while a publisher is pending also resolves at once with 0.
    */
   drainOnce(): Promise<number> {
     const run = this.requestDrain();
