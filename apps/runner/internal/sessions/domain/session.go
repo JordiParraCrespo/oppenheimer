@@ -295,9 +295,25 @@ func (l Layout) Mirror(repo string) string {
 	return filepath.Join(l.Root, filepath.FromSlash(repo), "main")
 }
 
-// Worktree is `<root>/<repo>/worktrees/<slug>`.
+// Worktree is `<root>/<repo>/.worktrees/<slug>`.
+//
+// **The leading dot is load-bearing on macOS.** Spotlight does not descend into
+// a hidden directory, and a session's worktree is a whole checkout written in
+// one go: left visible, the indexer walks it while the agent is starting and
+// every file the agent reads queues behind that scan. Measured with a bare
+// `tmux` and agent, no runner involved, two worktrees of the same commit in the
+// same parent directory and run interleaved: `wt` 30.2s, `.wt` 5.7s, `wt2`
+// 31.5s to the agent's first token. The same split held across thirteen runs at
+// machine loads from 14 to 59, which is how it was told apart from load.
+//
+// (`.metadata_never_index` was already present at the workspaces root and does
+// not work there — `mdls` still returns indexed metadata for files underneath
+// it. The dot is what Spotlight actually honours.)
+//
+// A session created before this carries its own absolute path and is
+// unaffected; only new worktrees land here.
 func (l Layout) Worktree(repo, slug string) string {
-	return filepath.Join(l.Root, filepath.FromSlash(repo), "worktrees", slug)
+	return filepath.Join(l.Root, filepath.FromSlash(repo), ".worktrees", slug)
 }
 
 // DefaultBranchName is what a session's own branch is called when the user
