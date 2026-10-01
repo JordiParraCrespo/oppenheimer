@@ -12,7 +12,7 @@ const READER_PERMISSIONS = [{ action: 'read', subject: 'User' }];
 
 describe('CreateApiTokenCommandHandler', () => {
   let service: CreateApiTokenCommandHandler;
-  let repo: Pick<ApiTokenRepositoryPort, 'insert' | 'countActiveForUser'>;
+  let repo: Pick<ApiTokenRepositoryPort, 'insertWithinLimit'>;
   let memberships: OrganizationMembershipReaderPort;
   let abilityFactory: Pick<AbilityFactory, 'createForUser'>;
 
@@ -34,8 +34,7 @@ describe('CreateApiTokenCommandHandler', () => {
 
   beforeEach(() => {
     repo = {
-      insert: vi.fn().mockResolvedValue(undefined),
-      countActiveForUser: vi.fn().mockResolvedValue(0),
+      insertWithinLimit: vi.fn().mockResolvedValue('inserted'),
     };
     memberships = {
       findOrganizationIdsForUser: vi.fn().mockResolvedValue(['org-1']),
@@ -50,12 +49,12 @@ describe('CreateApiTokenCommandHandler', () => {
     );
   });
 
-  const insertedToken = () => vi.mocked(repo.insert).mock.calls[0][0] as ApiTokenEntity;
+  const insertedToken = () => vi.mocked(repo.insertWithinLimit).mock.calls[0][0] as ApiTokenEntity;
 
   it('mints a token and returns the secret exactly once', async () => {
     const result = await service.execute(command());
 
-    expect(repo.insert).toHaveBeenCalledTimes(1);
+    expect(repo.insertWithinLimit).toHaveBeenCalledTimes(1);
     expect(result.secret).toMatch(/^oppenheimer_pat_/);
     expect(result.tokenId).toBe(insertedToken().id);
   });
@@ -89,7 +88,7 @@ describe('CreateApiTokenCommandHandler', () => {
       detail: expect.stringContaining('roles:write'),
       extensions: { ungrantableScopes: ['roles:write'] },
     });
-    expect(repo.insert).not.toHaveBeenCalled();
+    expect(repo.insertWithinLimit).not.toHaveBeenCalled();
   });
 
   it('allows scopes the creator does hold', async () => {
@@ -108,7 +107,7 @@ describe('CreateApiTokenCommandHandler', () => {
     await expect(service.execute(command({ organizationIds: ['org-2'] }))).rejects.toMatchObject({
       code: 'TOKEN_008',
     });
-    expect(repo.insert).not.toHaveBeenCalled();
+    expect(repo.insertWithinLimit).not.toHaveBeenCalled();
   });
 
   it('accepts an organization the creator belongs to', async () => {
@@ -122,12 +121,13 @@ describe('CreateApiTokenCommandHandler', () => {
   });
 
   it('refuses once the active token limit is reached', async () => {
-    vi.mocked(repo.countActiveForUser).mockResolvedValue(50);
+    vi.mocked(repo.insertWithinLimit).mockResolvedValue('limit_reached');
 
     await expect(service.execute(command())).rejects.toMatchObject({
       code: 'TOKEN_009',
     });
-    expect(repo.insert).not.toHaveBeenCalled();
+    // The limit is checked where the token is written, in one step.
+    expect(vi.mocked(repo.insertWithinLimit).mock.calls[0][1]).toBe(50);
   });
 
   it('passes through the requested lifetime and IP allowlist', async () => {

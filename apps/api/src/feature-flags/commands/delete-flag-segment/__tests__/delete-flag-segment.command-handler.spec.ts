@@ -1,6 +1,9 @@
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FeatureFlagRepositoryPort } from '../../../database/feature-flag.repository.port';
+import type {
+  FeatureFlagRepositoryPort,
+  FlagTransaction,
+} from '../../../database/feature-flag.repository.port';
 import type { FlagSegmentRepositoryPort } from '../../../database/flag-segment.repository.port';
 import { FeatureFlagEntity } from '../../../domain/feature-flag.entity';
 import { FeatureFlagErrors } from '../../../domain/feature-flags.errors';
@@ -19,9 +22,11 @@ function staff(): FlagSegmentEntity {
   );
 }
 
+const manager = {} as FlagTransaction;
+
 describe('DeleteFlagSegmentCommandHandler', () => {
   let segments: Pick<FlagSegmentRepositoryPort, 'findOneByKey' | 'delete'>;
-  let flags: Pick<FeatureFlagRepositoryPort, 'findAll'>;
+  let flags: Pick<FeatureFlagRepositoryPort, 'findAll' | 'serialized'>;
   let handler: DeleteFlagSegmentCommandHandler;
 
   beforeEach(() => {
@@ -29,7 +34,7 @@ describe('DeleteFlagSegmentCommandHandler', () => {
       findOneByKey: vi.fn().mockResolvedValue(Some(staff())),
       delete: vi.fn().mockResolvedValue(true),
     };
-    flags = { findAll: vi.fn().mockResolvedValue([]) };
+    flags = { findAll: vi.fn().mockResolvedValue([]), serialized: vi.fn((work) => work(manager)) };
     handler = new DeleteFlagSegmentCommandHandler(
       segments as FlagSegmentRepositoryPort,
       flags as FeatureFlagRepositoryPort,
@@ -40,7 +45,19 @@ describe('DeleteFlagSegmentCommandHandler', () => {
     await handler.execute(new DeleteFlagSegmentCommand({ key: 'staff', actorId: 'admin-1' }));
 
     const deleted = vi.mocked(segments.delete).mock.calls[0]?.[0] as FlagSegmentEntity;
+    expect(segments.delete).toHaveBeenCalledWith(deleted, manager);
+    expect(flags.findAll).toHaveBeenCalledWith(manager);
     expect(deleted.domainEvents.at(-1)).toMatchObject({ action: 'segment_deleted' });
+  });
+
+  it('checks the flags and deletes under the flag write lock', async () => {
+    vi.mocked(flags.serialized).mockImplementation(async () => 'held');
+
+    expect(
+      await handler.execute(new DeleteFlagSegmentCommand({ key: 'staff', actorId: 'admin-1' })),
+    ).toBe('held');
+    expect(flags.findAll).not.toHaveBeenCalled();
+    expect(segments.delete).not.toHaveBeenCalled();
   });
 
   it('refuses while a flag still targets it, naming the flag', async () => {
