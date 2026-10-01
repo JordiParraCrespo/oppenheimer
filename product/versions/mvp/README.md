@@ -535,6 +535,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   lighter terminal read as a slab on a darker page; the artboard paints the
   session's frame in the terminal colour too, so the console now does the same
   and matches it.
+- 2026-09-30: **The terminal answers the line, word and select-all chords
+  a desktop terminal does, and Ctrl+Shift+C copies off the Mac** (05).
 - 2026-10-01: **`session.started` means the session has a terminal, not that
   its agent is up** (01, 02). The host builds the tmux session before it
   clones, so the pane exists about thirty milliseconds in and the clone, the
@@ -565,4 +567,3 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   row and not the list because its clock is kept per query and the list is one
   query for every session — a second session started during the first one's
   clone would otherwise inherit the first one's settled tick.
-
