@@ -77,6 +77,11 @@ function toBytes(address: string): number[] | null {
   return parseIPv4(trimmed);
 }
 
+/** The sixteen bytes of `::ffff:a.b.c.d` for an IPv4 address's four. */
+function mappedIPv6(ipv4: number[]): number[] {
+  return [...new Array(10).fill(0), 0xff, 0xff, ...ipv4];
+}
+
 export function matchesIpRule(entry: string, address: string): boolean {
   const segments = entry.trim().split('/');
   // A rule is `address` or `address/prefix` — anything else is malformed and
@@ -84,16 +89,29 @@ export function matchesIpRule(entry: string, address: string): boolean {
   if (segments.length > 2) return false;
 
   const [network, prefix] = segments;
-  const networkBytes = toBytes(network);
-  const addressBytes = toBytes(address);
-
+  let networkBytes = toBytes(network);
+  let addressBytes = toBytes(address);
   if (!networkBytes || !addressBytes) return false;
+
+  let bits = prefix === undefined ? undefined : Number(prefix);
+  if (bits !== undefined && !Number.isInteger(bits)) return false;
+  // An IPv4-mapped network (`::ffff:203.0.113.0/120`) collapsed to four bytes,
+  // but its prefix counts all 128 bits. From /96 on it is an IPv4 prefix 96
+  // bits longer; shorter, it reaches past the mapped range, so both sides are
+  // compared as the IPv6 addresses they are.
+  if (bits !== undefined && networkBytes.length === 4 && network.includes(':')) {
+    if (bits >= 96) bits -= 96;
+    else {
+      networkBytes = mappedIPv6(networkBytes);
+      if (addressBytes.length === 4) addressBytes = mappedIPv6(addressBytes);
+    }
+  }
   // Never compare an IPv4 rule against IPv6 bytes (or vice versa).
   if (networkBytes.length !== addressBytes.length) return false;
 
   const totalBits = networkBytes.length * 8;
-  const bits = prefix === undefined ? totalBits : Number(prefix);
-  if (!Number.isInteger(bits) || bits < 0 || bits > totalBits) return false;
+  bits ??= totalBits;
+  if (bits < 0 || bits > totalBits) return false;
 
   const wholeBytes = Math.floor(bits / 8);
   for (let index = 0; index < wholeBytes; index += 1) {

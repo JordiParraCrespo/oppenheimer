@@ -53,13 +53,30 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
     return records.map((record) => this.mapper.toDomain(record));
   }
 
-  countActiveForUser(userId: string, now: Date): Promise<number> {
-    return this.repository.count({
-      where: [
-        { userId, revokedAt: IsNull(), expiresAt: IsNull() },
-        { userId, revokedAt: IsNull(), expiresAt: MoreThan(now) },
-      ],
+  async insertWithinLimit(entity: ApiTokenEntity, limit: number, now: Date): Promise<boolean> {
+    const record = this.mapper.toPersistence(entity);
+    const inserted = await this.outbox.transaction(async (manager) => {
+      // One mint per owner at a time: a concurrent request waits on this lock
+      // until the transaction commits, then counts the token it added.
+      await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+        `api_token:${entity.userId}`,
+      ]);
+      const repository = manager.getRepository(ApiTokenOrmEntity);
+      const active = await repository.count({
+        where: [
+          { userId: entity.userId, revokedAt: IsNull(), expiresAt: IsNull() },
+          { userId: entity.userId, revokedAt: IsNull(), expiresAt: MoreThan(now) },
+        ],
+      });
+      if (active >= limit) return false;
+      // Cast around TypeORM's `QueryDeepPartialEntity` recursion, which cannot
+      // represent the jsonb array columns.
+      await repository.insert(record as Parameters<typeof repository.insert>[0]);
+      await this.outbox.stageEvents(manager, entity.domainEvents);
+      return true;
     });
+    if (inserted) entity.clearEvents();
+    return inserted;
   }
 
   /**

@@ -11,8 +11,10 @@ import { ToggleFeatureFlagCommand } from './toggle-feature-flag.command';
 
 /**
  * Flips the master switch and nothing else, so pulling a kill switch in an
- * incident cannot also clobber targeting someone else was editing. Flipping it
- * to where it already is writes nothing and audits nothing.
+ * incident cannot also clobber targeting someone else was editing: it reads
+ * the targeting it keeps and saves it under the flag write lock, where no edit
+ * can land in between. Flipping it to where it already is writes nothing and
+ * audits nothing.
  */
 @CommandHandler(ToggleFeatureFlagCommand)
 export class ToggleFeatureFlagCommandHandler
@@ -31,16 +33,19 @@ export class ToggleFeatureFlagCommandHandler
       });
     }
 
-    const found = await this.flags.findOneByKey(command.key);
-    const flag = found.isSome()
-      ? found.unwrap()
-      : FeatureFlagEntity.createFor(command.key, getFlagDefinition(command.key).defaultValue);
+    const key = command.key;
+    return this.flags.serialized(async () => {
+      const found = await this.flags.findOneByKey(key);
+      const flag = found.isSome()
+        ? found.unwrap()
+        : FeatureFlagEntity.createFor(key, getFlagDefinition(key).defaultValue);
 
-    const changed = flag.setEnabled(command.enabled, {
-      actorId: command.actorId,
-      comment: command.comment,
+      const changed = flag.setEnabled(command.enabled, {
+        actorId: command.actorId,
+        comment: command.comment,
+      });
+      if (changed) await this.flags.save(flag);
+      return flag.id;
     });
-    if (changed) await this.flags.save(flag);
-    return flag.id;
   }
 }

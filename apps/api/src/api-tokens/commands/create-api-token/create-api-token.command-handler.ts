@@ -57,14 +57,6 @@ export class CreateApiTokenCommandHandler
 
     await this.assertMemberOfRequestedOrganizations(command);
 
-    const activeCount = await this.apiTokenRepository.countActiveForUser(
-      command.actor.id,
-      new Date(),
-    );
-    if (activeCount >= MAX_ACTIVE_TOKENS_PER_USER) {
-      throw new AppError(ApiTokenErrors.LIMIT_REACHED);
-    }
-
     const { token, secret } = ApiTokenEntity.issue({
       userId: command.actor.id,
       name: command.name,
@@ -74,7 +66,12 @@ export class CreateApiTokenCommandHandler
       expiresInDays: command.expiresInDays,
     });
 
-    await this.apiTokenRepository.insert(token);
+    const inserted = await this.apiTokenRepository.insertWithinLimit(
+      token,
+      MAX_ACTIVE_TOKENS_PER_USER,
+      new Date(),
+    );
+    if (!inserted) throw new AppError(ApiTokenErrors.LIMIT_REACHED);
 
     return { tokenId: token.id, secret };
   }

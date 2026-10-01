@@ -6,13 +6,14 @@ import { ToggleFeatureFlagCommand } from '../toggle-feature-flag.command';
 import { ToggleFeatureFlagCommandHandler } from '../toggle-feature-flag.command-handler';
 
 describe('ToggleFeatureFlagCommandHandler', () => {
-  let flags: Pick<FeatureFlagRepositoryPort, 'findOneByKey' | 'save'>;
+  let flags: Pick<FeatureFlagRepositoryPort, 'findOneByKey' | 'save' | 'serialized'>;
   let handler: ToggleFeatureFlagCommandHandler;
 
   beforeEach(() => {
     flags = {
       findOneByKey: vi.fn().mockResolvedValue(None),
       save: vi.fn().mockImplementation(async (flag) => flag),
+      serialized: vi.fn((work) => work()),
     };
     handler = new ToggleFeatureFlagCommandHandler(flags as FeatureFlagRepositoryPort);
   });
@@ -29,6 +30,18 @@ describe('ToggleFeatureFlagCommandHandler', () => {
     const saved = vi.mocked(flags.save).mock.calls[0]?.[0] as FeatureFlagEntity;
     expect(saved.enabled).toBe(false);
     expect(saved.domainEvents).toHaveLength(1);
+  });
+
+  it('reads and saves under the flag write lock, so no edit lands in between', async () => {
+    vi.mocked(flags.serialized).mockImplementation(async () => 'held');
+
+    const result = await handler.execute(
+      new ToggleFeatureFlagCommand({ key: 'kill_switch', enabled: false, actorId: 'admin-1' }),
+    );
+
+    expect(result).toBe('held');
+    expect(flags.findOneByKey).not.toHaveBeenCalled();
+    expect(flags.save).not.toHaveBeenCalled();
   });
 
   it('writes nothing when the switch is already where it was asked to go', async () => {

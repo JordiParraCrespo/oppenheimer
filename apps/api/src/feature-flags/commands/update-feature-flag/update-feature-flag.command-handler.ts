@@ -44,22 +44,27 @@ export class UpdateFeatureFlagCommandHandler
       rules: command.rules,
       fallthrough: command.fallthrough,
     };
-    const knownSegments = new Set((await this.segments.findAll()).map((segment) => segment.key));
-    const problems = targetingProblems(definition, targeting, knownSegments);
-    if (problems.length > 0) {
-      throw new AppError(FeatureFlagErrors.INVALID_TARGETING, {
-        detail: problems.join('; '),
-        extensions: { flag: command.key, problems },
-      });
-    }
+    const key = command.key;
+    // Under the flag write lock, so a segment these rules name cannot be
+    // deleted between the check and the save.
+    return this.flags.serialized(async () => {
+      const knownSegments = new Set((await this.segments.findAll()).map((segment) => segment.key));
+      const problems = targetingProblems(definition, targeting, knownSegments);
+      if (problems.length > 0) {
+        throw new AppError(FeatureFlagErrors.INVALID_TARGETING, {
+          detail: problems.join('; '),
+          extensions: { flag: key, problems },
+        });
+      }
 
-    const found = await this.flags.findOneByKey(command.key);
-    const flag = found.isSome()
-      ? found.unwrap()
-      : FeatureFlagEntity.createFor(command.key, definition.defaultValue);
+      const found = await this.flags.findOneByKey(key);
+      const flag = found.isSome()
+        ? found.unwrap()
+        : FeatureFlagEntity.createFor(key, definition.defaultValue);
 
-    flag.replaceTargeting(targeting, { actorId: command.actorId, comment: command.comment });
-    await this.flags.save(flag);
-    return flag.id;
+      flag.replaceTargeting(targeting, { actorId: command.actorId, comment: command.comment });
+      await this.flags.save(flag);
+      return flag.id;
+    });
   }
 }

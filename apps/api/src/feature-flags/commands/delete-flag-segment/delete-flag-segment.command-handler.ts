@@ -11,7 +11,9 @@ import { DeleteFlagSegmentCommand } from './delete-flag-segment.command';
 /**
  * Refuses while any flag still targets the segment: a rule pointing at a
  * segment that no longer exists matches nobody, so deleting it would silently
- * shrink that rule's audience to zero. Remove it from the rules first.
+ * shrink that rule's audience to zero. Remove it from the rules first. The
+ * check and the delete run under the flag write lock, so no rule can start
+ * targeting the segment in between.
  */
 @CommandHandler(DeleteFlagSegmentCommand)
 export class DeleteFlagSegmentCommandHandler
@@ -24,7 +26,11 @@ export class DeleteFlagSegmentCommandHandler
     private readonly flags: FeatureFlagRepositoryPort,
   ) {}
 
-  async execute(command: DeleteFlagSegmentCommand): Promise<AggregateID> {
+  execute(command: DeleteFlagSegmentCommand): Promise<AggregateID> {
+    return this.flags.serialized(() => this.delete(command));
+  }
+
+  private async delete(command: DeleteFlagSegmentCommand): Promise<AggregateID> {
     const found = await this.segments.findOneByKey(command.key);
     if (found.isNone()) {
       throw new AppError(FeatureFlagErrors.SEGMENT_NOT_FOUND, {

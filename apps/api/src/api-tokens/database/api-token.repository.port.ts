@@ -9,8 +9,13 @@ export interface ApiTokenRepositoryPort extends RepositoryPort<ApiTokenEntity> {
   /** Every token belonging to a user, newest first, including revoked ones. */
   findByUserId(userId: string): Promise<ApiTokenEntity[]>;
 
-  /** How many of a user's tokens are still usable (not revoked, not expired). */
-  countActiveForUser(userId: string, now: Date): Promise<number>;
+  /**
+   * Insert the token unless its owner already holds `limit` usable ones (not
+   * revoked, not expired at `now`). The count and the insert are one step: two
+   * requests near the limit cannot both see room and both insert. Resolves
+   * whether it inserted.
+   */
+  insertWithinLimit(token: ApiTokenEntity, limit: number, now: Date): Promise<boolean>;
 
   /**
    * Record a successful authentication without loading and saving the whole
