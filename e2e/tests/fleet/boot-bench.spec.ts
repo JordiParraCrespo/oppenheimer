@@ -3,7 +3,7 @@ import { appendFileSync } from 'node:fs';
 import { expect, type Page, test } from '@playwright/test';
 import { WEB_URL } from '../../playwright.config';
 import { signedUpContext } from '../../support/auth';
-import { BootRecorder } from '../../support/boot-hops';
+import { BootRecorder, CLAUDE_MARKER, SHIM_MARKER } from '../../support/boot-hops';
 import { pairedHosts } from '../../support/fleet';
 import { connectInstallation, STUB_REPOSITORIES } from '../../support/sessions';
 import { signInAs } from '../../support/web';
@@ -65,7 +65,7 @@ test('boot: Send → first agent bytes on the console', async ({ page, context }
       await page.keyboard.press('Escape');
       await page.getByRole('textbox', { name: /Describe a task/ }).fill(`bench run ${run}`);
 
-      const recorder = new BootRecorder(page);
+      const recorder = new BootRecorder(page, AGENT === 'claude' ? CLAUDE_MARKER : SHIM_MARKER);
       recorder.start();
       await page.getByRole('button', { name: /send/i }).click();
       const sessionId = await recorder.navigated();
@@ -78,7 +78,6 @@ test('boot: Send → first agent bytes on the console', async ({ page, context }
       await recorder.settled();
       for (const other of tabs) await other.close();
       const measured = await recorder.finish();
-      if (AGENT === 'shim') expect(measured.hops.shim_drawn, 'the shim never drew').toBeDefined();
 
       const row = { run, agent: AGENT, remote: REMOTE ?? 'local git server', ...measured };
       if (process.env.BENCH_OUT) appendFileSync(process.env.BENCH_OUT, `${JSON.stringify(row)}\n`);

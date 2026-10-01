@@ -17,7 +17,7 @@ export type Hop =
   | 'ticket_ok'
   | 'ws_open'
   | 'first_byte'
-  | 'shim_drawn'
+  | 'agent_drawn'
   | 'settled';
 
 /** What a run must have measured to be a run at all. */
@@ -29,6 +29,7 @@ const REQUIRED_HOPS = [
   'ws_open',
   'poll_open',
   'first_byte',
+  'agent_drawn',
   'settled',
 ] as const satisfies readonly Hop[];
 const REQUIRED_STEPS = ['clone', 'worktree', 'agent'] as const;
@@ -42,7 +43,16 @@ export interface BootRun {
 }
 
 /** What the fleet's `claude` shim prints first (`e2e/fleet/claude`). */
-const SHIM_MARKER = 'CLAUDE-SHIM argv=';
+export const SHIM_MARKER = /CLAUDE-SHIM argv=/;
+/** Claude Code's first screen, signed in or not. */
+export const CLAUDE_MARKER = /Claude ?Code/;
+const ESC = '\u001b';
+const BEL = '\u0007';
+/** CSI and OSC sequences and charset selects: what colours a marker's letters. */
+const ESCAPES = new RegExp(
+  `${ESC}(?:\\[[0-9;?]*[ -/]*[@-~]|\\][^${BEL}${ESC}]*(?:${BEL}|${ESC}\\\\)|[()][0-9A-Za-z])`,
+  'g',
+);
 const QUIET_MS = 1_500;
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 /** The create (POST) and the list (GET) share a path. */
@@ -61,7 +71,15 @@ export class BootRecorder {
   private readonly pending: Promise<void>[] = [];
   private lastFrame = 0;
 
-  constructor(private readonly page: Page) {
+  /**
+   * `agentDrawn` is the agent's own first screen. The pane is up before the
+   * agent is (the host types the agent into it once the worktree exists), so
+   * the first byte is a shell and only the marker says the agent is there.
+   */
+  constructor(
+    private readonly page: Page,
+    private readonly agentDrawn: RegExp,
+  ) {
     page.on('response', this.onResponse);
     page.on('websocket', this.onSocket);
   }
@@ -127,10 +145,11 @@ export class BootRecorder {
       if (typeof frame.payload === 'string') return;
       this.mark('first_byte');
       this.lastFrame = this.at();
-      // The tail keeps a marker split across two frames findable.
-      const text = tail + frame.payload.toString();
-      if (text.includes(SHIM_MARKER)) this.mark('shim_drawn');
-      tail = text.slice(-SHIM_MARKER.length);
+      // Escapes stripped, so a marker drawn with colours between its letters
+      // is found; the tail keeps one split across two frames findable.
+      const text = tail + frame.payload.toString().replace(ESCAPES, '');
+      if (this.agentDrawn.test(text)) this.mark('agent_drawn');
+      tail = text.slice(-64);
     });
   };
 
@@ -147,9 +166,9 @@ export class BootRecorder {
     return id;
   }
 
-  /** Waits for the first bytes and a quiet screen after them. */
+  /** Waits for the agent's first screen and a quiet terminal after it. */
   async settled(timeout = 180_000): Promise<void> {
-    await expect.poll(() => this.hops.first_byte, { timeout }).toBeDefined();
+    await expect.poll(() => this.hops.agent_drawn, { timeout }).toBeDefined();
     await expect.poll(() => this.at() - this.lastFrame > QUIET_MS, { timeout: 60_000 }).toBe(true);
     this.mark('settled', this.lastFrame);
   }
