@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useImagePaste } from '../hooks/use-image-paste';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
+import { HostOfflineNotice } from './host-offline-notice';
 
 /** Window 0 is the agent's (05); the pane shows only that one today. */
 const AGENT_WINDOW = 0;
@@ -24,15 +25,16 @@ const AGENT_WINDOW = 0;
  * two carets; the agent's has the history, slash commands and mode, so the
  * grid keeps the input.
  */
-export function SessionTerminal({ sessionId }: { sessionId: string }) {
+export function SessionTerminal({ sessionId, hostId }: { sessionId: string; hostId: string }) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
   const image = useImagePaste(sessionId, AGENT_WINDOW);
-  const { containerRef, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
+  const { containerRef, status, hasOutput, ended, retryNow, hostName } = useTerminal(createStream, {
     onEnd: refresh,
     agentWindow: true,
     onImage: image.onImage,
+    hostId,
   });
 
   return (
@@ -79,6 +81,15 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
         </div>
       ) : null}
 
+      {/* The relay said the host holds no link. The stream keeps dialling
+          behind this and the host coming back redials at once; the notice is
+          for the reader who has to go and bring it back. */}
+      {status === 'offline' ? (
+        <div className="px-5 pb-3">
+          <HostOfflineNotice hostName={hostName} />
+        </div>
+      ) : null}
+
       {image.failure ? (
         <div className="px-5 pb-3">
           <ErrorAlert
@@ -99,8 +110,10 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
           {t(`sessions.session.status.${status}`)}
         </TerminalStatusItem>
         {/* Between reconnects the ladder may be waiting up to thirty seconds;
-            this skips the wait. */}
-        {status === 'connecting' || status === 'offline' ? (
+            this skips the wait. Not while the host is offline: a dial then
+            meets `host_offline` again, and the host coming back redials on
+            its own (`useTerminal`). */}
+        {status === 'connecting' ? (
           <Button variant="ghost" size="xs" onClick={retryNow}>
             {t('sessions.session.retryNow')}
           </Button>

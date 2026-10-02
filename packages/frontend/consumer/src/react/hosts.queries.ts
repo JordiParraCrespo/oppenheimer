@@ -52,12 +52,20 @@ export function useHosts<TData = HostEntity[]>(options?: HostListOptions<TData>)
 }
 
 /**
- * The hosts, for a view that shows whether each is online (Settings → Hosts).
- * Presence is not streamed to the console yet, so the list polls for as long
- * as such a view is mounted, on `LIVE_POLL.hostPresence`.
+ * The hosts, for a view that shows whether each is online. Presence is not
+ * streamed to the console yet, so the list polls on `LIVE_POLL.hostPresence`
+ * while `watching` holds: for as long as Settings → Hosts is mounted, and for
+ * as long as a session's terminal is told its host is offline. `select` reads
+ * less than the whole list, as on `useHosts`.
  */
-export function useHostPresence() {
-  return useHostList(undefined, pollWhile('hostPresence', true));
+export function useHostPresence<TData = HostEntity[]>({
+  watching = true,
+  select,
+}: {
+  watching?: boolean;
+  select?: (hosts: HostEntity[]) => TData;
+} = {}) {
+  return useHostList<TData>(select ? { select } : undefined, pollWhile('hostPresence', watching));
 }
 
 type HostListOptions<TData> = Omit<
