@@ -532,6 +532,14 @@
       "starting": {
         "title": "Todavía no hay nada en pantalla",
         "description": "La conexión está activa. Esto se llena en cuanto el agente dibuja: una sesión nueva cuando termina de arrancar, y una anterior cuando se reenvía su historial."
+      },
+      "offline": {
+        "title": "{{host}} está desconectado",
+        "titleUnnamed": "El host está desconectado",
+        "description": "El runner de esa máquina no está conectado. Este terminal se vuelve a conectar solo en cuanto el runner vuelva.",
+        "restart": "Si la máquina está encendida, reinicia el runner en ella:",
+        "status": "o revísalo con",
+        "hosts": "Abrir hosts"
       }
     },
     "sidebar": {

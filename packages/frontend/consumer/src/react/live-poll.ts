@@ -29,6 +29,9 @@
  * - `pairing`: whether a pairing token has been spent and its machine is online.
  * - `liveRun`: an automation run, queued for seconds and running for minutes.
  * - `hostPresence`: a host going on or offline (Settings → Hosts).
+ * - `hostReturn`: an offline host coming back, while a session's terminal is
+ *   waiting on it. Faster than presence, because someone is looking at a pane
+ *   that cannot work until it does, and it stops once the terminal is live.
  */
 export const LIVE_POLL = {
   sessionStarting: { interval: 2000, inBackground: true },
@@ -41,6 +44,7 @@ export const LIVE_POLL = {
   pairing: { interval: 3000, inBackground: true },
   liveRun: { interval: 5000, inBackground: true },
   hostPresence: { interval: 15_000, inBackground: false },
+  hostReturn: { interval: 5000, inBackground: false },
 } as const;
 
 export type LivePollKind = keyof typeof LIVE_POLL;

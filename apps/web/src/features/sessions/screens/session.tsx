@@ -108,7 +108,7 @@ export function SessionScreen({
        surface in dark mode. */
     <div className="flex min-h-0 flex-1 flex-col bg-term-bg p-3.5">
       <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
-        <SessionTerminal sessionId={session.id} />
+        <SessionTerminal sessionId={session.id} hostId={session.hostId} />
       </div>
     </div>
   );

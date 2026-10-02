@@ -8,6 +8,8 @@ import {
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { HostOfflineNotice } from '../components/host-offline-notice';
+import { useHostReturn } from '../hooks/use-host-return';
 import { useImagePaste } from '../hooks/use-image-paste';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
@@ -24,7 +26,7 @@ const AGENT_WINDOW = 0;
  * two carets; the agent's has the history, slash commands and mode, so the
  * grid keeps the input.
  */
-export function SessionTerminal({ sessionId }: { sessionId: string }) {
+export function SessionTerminal({ sessionId, hostId }: { sessionId: string; hostId: string }) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
@@ -34,6 +36,7 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
     agentWindow: true,
     onImage: image.onImage,
   });
+  const host = useHostReturn(hostId, status, retryNow);
 
   return (
     <Terminal className="min-h-0 flex-1 overflow-hidden">
@@ -76,6 +79,15 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
               </Button>
             }
           />
+        </div>
+      ) : null}
+
+      {/* The relay said the host holds no link. The stream keeps dialling
+          behind this, and the host coming back redials at once; the notice
+          is for the reader who has to go and bring it back. */}
+      {status === 'offline' ? (
+        <div className="px-5 pb-3">
+          <HostOfflineNotice hostName={host?.name} />
         </div>
       ) : null}
 

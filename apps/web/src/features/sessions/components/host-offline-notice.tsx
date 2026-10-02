@@ -1,0 +1,40 @@
+import { Alert, AlertDescription, AlertTitle } from '@oppenheimer/design-system-web';
+import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
+
+/** The commands a reader runs on the machine; the installer links the binary under this name. */
+const RESTART_COMMAND = 'oppenheimer-runner install';
+const STATUS_COMMAND = 'oppenheimer-runner status';
+
+/**
+ * What the pane says while the relay reports the session's host offline: the
+ * terminal is waiting on a machine, not broken, it comes back on its own, and
+ * what to run on that machine if the runner is what stopped. `install` is the
+ * one command that both writes the unit and (re)starts it, so it is right
+ * whether the service died, was never started after a reboot, or was removed.
+ */
+export function HostOfflineNotice({ hostName }: { hostName: string | undefined }) {
+  const { t } = useTranslation();
+  return (
+    <Alert tone="warning" data-testid="host-offline-notice">
+      <AlertTitle>
+        {hostName
+          ? t('sessions.session.offline.title', { host: hostName })
+          : t('sessions.session.offline.titleUnnamed')}
+      </AlertTitle>
+      <AlertDescription className="grid gap-1.5">
+        <p>{t('sessions.session.offline.description')}</p>
+        <p>
+          {t('sessions.session.offline.restart')}{' '}
+          <code className="font-mono text-[12.5px] text-fg">{RESTART_COMMAND}</code>
+          {', '}
+          {t('sessions.session.offline.status')}{' '}
+          <code className="font-mono text-[12.5px] text-fg">{STATUS_COMMAND}</code>
+        </p>
+        <p>
+          <Link to="/settings/hosts">{t('sessions.session.offline.hosts')}</Link>
+        </p>
+      </AlertDescription>
+    </Alert>
+  );
+}

@@ -60,6 +60,33 @@ export function useHostPresence() {
   return useHostList(undefined, pollWhile('hostPresence', true));
 }
 
+/** What a terminal needs of its host while the link is down. */
+export interface HostReach {
+  name: string;
+  online: boolean;
+}
+
+/**
+ * One host's name and whether it holds a link, for a terminal that has been
+ * told `host_offline`. It polls on `LIVE_POLL.hostReturn` only while
+ * `watching`, so a session pane that is live costs nothing, and the moment the
+ * list says the host is back the pane can dial instead of sitting out the
+ * reconnect ladder's thirty seconds. `undefined` until the list has loaded, or
+ * for a host the list does not hold.
+ */
+export function useHostReach(hostId: string, watching: boolean): HostReach | undefined {
+  const { data } = useHostList(
+    {
+      select: (hosts): HostReach | undefined => {
+        const host = hosts.find((candidate) => candidate.id === hostId);
+        return host ? { name: host.name, online: host.online } : undefined;
+      },
+    },
+    pollWhile('hostReturn', watching),
+  );
+  return data;
+}
+
 type HostListOptions<TData> = Omit<
   UseQueryOptions<HostEntity[], Error, TData>,
   'queryKey' | 'queryFn' | PollKeys
@@ -67,8 +94,8 @@ type HostListOptions<TData> = Omit<
 
 /**
  * The one read of `GET /v1/hosts`, polling as `poll` says. Not in the barrel:
- * a feature reads `useHosts`, which never polls, or `useHostPresence`, and the
- * pairing flow polls it on `LIVE_POLL.pairing`.
+ * a feature reads `useHosts`, which never polls, `useHostPresence` or
+ * `useHostReach`, and the pairing flow polls it on `LIVE_POLL.pairing`.
  */
 export function useHostList<TData = HostEntity[]>(
   options?: HostListOptions<TData>,

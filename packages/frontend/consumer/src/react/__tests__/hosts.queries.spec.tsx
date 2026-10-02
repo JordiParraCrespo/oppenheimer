@@ -9,6 +9,7 @@ import {
   hostsKeys,
   useCurrentPairing,
   useHostPresence,
+  useHostReach,
   useHosts,
   useHostsSnapshot,
   usePairingTokens,
@@ -98,6 +99,25 @@ describe('useHostPresence', () => {
     expect(observerIntervals(queryClient, hostsKeys.list())).toContain(
       LIVE_POLL.hostPresence.interval,
     );
+  });
+});
+
+describe('useHostReach', () => {
+  it('polls for the host coming back only while the terminal waits on it', async () => {
+    const findAll = vi.fn().mockResolvedValue([host('h-1', 'laptop', false)]);
+    const { wrapper, queryClient } = setup({ findAll });
+    const { result, rerender } = renderHook(
+      ({ watching }: { watching: boolean }) => useHostReach('h-1', watching),
+      { wrapper, initialProps: { watching: true } },
+    );
+
+    await waitFor(() => expect(result.current).toEqual({ name: 'laptop', online: false }));
+    expect(observerIntervals(queryClient, hostsKeys.list())).toEqual([
+      LIVE_POLL.hostReturn.interval,
+    ]);
+
+    rerender({ watching: false });
+    expect(observerIntervals(queryClient, hostsKeys.list())).toEqual([false]);
   });
 });
 
