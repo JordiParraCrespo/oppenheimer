@@ -1,8 +1,9 @@
 ---
-"@oppenheimer/runner": minor
+"@oppenheimer/runner": patch
+"@oppenheimer/frontend-consumer": minor
+"@oppenheimer/web": patch
 ---
 
-A session opens on its agent: `session.started` is reported when the agent is
-sent into the pane rather than when the pane exists, so the console shows the
-start's stepper while the repository arrives and then the agent. The line that
-starts the agent clears the screen first.
+A new session opens on its agent. The runner starts the agent in place of the
+pane's shell (`tmux respawn-pane`) instead of typing the line that starts it,
+and the console keeps the start's steps on screen until the agent step lands.

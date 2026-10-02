@@ -65,7 +65,39 @@ describe('deriveSessionStartProgress', () => {
     expect(steps.find((s) => s.id === 'worktree')?.durationMs).toBeNull();
   });
 
-  it('is all done and settled once the session started, even from a runner that logs no steps', () => {
+  it('keeps going after the session started: that is the pane, before the clone', () => {
+    // The row opens here; the start pane must not, or it shows a shell in a
+    // directory with nothing in it while the clone is still running.
+    const progress = deriveSessionStartProgress(
+      [step('host', 'done'), started(), step('clone', 'running')],
+      { failed: false },
+    );
+    expect(progress.steps.map((s) => `${s.id}:${s.state}`)).toEqual([
+      'host:done',
+      'clone:running',
+      'worktree:pending',
+      'agent:pending',
+    ]);
+    expect(progress.settled).toBe(false);
+  });
+
+  it('is all done and settled once the agent step landed', () => {
+    const progress = deriveSessionStartProgress(
+      [
+        step('host', 'done'),
+        started(),
+        step('clone', 'done'),
+        step('worktree', 'done'),
+        step('agent', 'running'),
+        step('agent', 'done', 40),
+      ],
+      { failed: false },
+    );
+    expect(progress.steps.every((s) => s.state === 'done')).toBe(true);
+    expect(progress.settled).toBe(true);
+  });
+
+  it('is settled by the session starting on a runner that logs no steps', () => {
     const progress = deriveSessionStartProgress([started()], { failed: false });
     expect(progress.steps.every((s) => s.state === 'done')).toBe(true);
     expect(progress.settled).toBe(true);
@@ -135,9 +167,15 @@ describe('toStartEntry', () => {
     expect(toStartEntry({ seq: 2, kind: 'agent.observed', payload: {} })).toBeNull();
   });
 
-  it('knows which entries settle a start', () => {
-    expect(settlesStart({ seq: 1, kind: 'started' })).toBe(true);
+  it('knows which entries settle a start: the agent running, or a failure', () => {
+    expect(
+      settlesStart({ seq: 1, kind: 'step', step: 'agent', status: 'done', durationMs: 1 }),
+    ).toBe(true);
     expect(settlesStart({ seq: 1, kind: 'failed', detail: null, code: null })).toBe(true);
+    expect(settlesStart({ seq: 1, kind: 'started' })).toBe(false);
+    expect(
+      settlesStart({ seq: 1, kind: 'step', step: 'agent', status: 'running', durationMs: null }),
+    ).toBe(false);
     expect(
       settlesStart({ seq: 1, kind: 'step', step: 'host', status: 'done', durationMs: 1 }),
     ).toBe(false);

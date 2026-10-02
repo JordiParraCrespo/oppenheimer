@@ -103,16 +103,17 @@ runner does with it and point back.
   `session.started` in its log, an attachment says so with its first
   frame. **`attachment.closed`** is the runner freeing an id whose PTY
   ended on its own.
-- **`session.started` means the agent has been sent into the session's
-  terminal** (changed 2026-10-02; until then it meant the terminal existed).
-  The host still builds the tmux session *before* it clones, so the pane is
-  ready and an attach is served the moment the session opens, but the
-  session opens only once the clone and the worktree have landed and the
-  agent was sent. The console therefore shows the stepper while the
-  repository arrives, rather than a shell waiting for a clone, and opens on
-  the agent. The `agent` step of `session.step` lands just before it.
+- **`session.started` means the session has a terminal, not that its agent
+  is up.** The host builds the tmux session *before* it clones, so the pane
+  is there about thirty milliseconds in and the clone, the worktree and the
+  agent follow it. The checkouts it reports are therefore true before they
+  are on disk: the worktree's path is known from the start. An attach is
+  served from here on. The `agent` step of `session.step` is what says the
+  agent was launched, and a console that watched the start keeps its steps
+  on screen until then (05), so the reader sees the agent and never a shell
+  waiting on a clone.
 - **`session.attach` is served while a create is still running.** It needs
-  the session's tmux name and nothing else, and the pane exists before
+  the session's tmux name and nothing else, and that exists from
   `session.started`; the host makes the attach wait for the pane rather than
   refusing it or queueing it behind the clone. Every other command for that
   session still waits for the create to land, so a `session.stop` sent

@@ -216,16 +216,16 @@ started last is the one that failed.
 
 **The terminal is made first, before the stores.** It is a stage like the
 others but has no step on the wire — the stepper stays
-`host/clone/worktree/agent`. `session.started` is reported when the agent
-stage lands (01): the pane is ready long before, so the session opens on the
-agent with nothing left to wait for. The line that starts the agent clears
-the screen first (`printf`, not `clear`, which a minimal host may lack), so
-the line itself is not the first thing on it.
+`host/clone/worktree/agent` — because what it reports is
+`session.started`: the moment the session has a pane to attach to (01).
 It starts in the directory the worktree will occupy, which does not exist
-yet, and the agent is sent into it once it does. A create spends its
-seconds on the clone and the worktree, and with the pane made last every
-one of them was a spinner; made first, the reader is in the session
-watching it being built. A stage that fails after it kills the pane: a
+yet. Once it does, the pane's shell is replaced by the agent, started in
+the worktree (`tmux respawn-pane`): nothing is typed to start it, so the
+screen opens on what the agent draws, and it runs under the runner's own
+`PATH`, as it did when the agent was the session's first command. A
+create spends its seconds on the clone and the worktree, and with the pane
+made last every one of them was a spinner; made first, an attach waits on
+nothing, and the console shows the steps until the agent runs (05). A stage that fails after it kills the pane: a
 terminal with nothing running in it is not a session.
 
 Then, in order:

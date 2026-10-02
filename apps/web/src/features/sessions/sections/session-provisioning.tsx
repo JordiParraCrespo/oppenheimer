@@ -20,10 +20,9 @@ import { failureReason, PENDING_START, provisioningSteps } from '../lib/provisio
 export function SessionProvisioning({ session }: { session: SessionEntity }) {
   const { t, i18n } = useTranslation();
   const failed = session.lifecycle === 'failed';
-  const progress = useSessionStartProgress(session.id, {
-    starting: session.isProvisioning,
-    failed,
-  });
+  // Mounted while the start is in hand, which outlasts the row's `starting`:
+  // the row opens with the pane, and this pane stays until the agent runs.
+  const progress = useSessionStartProgress(session.id, { starting: !failed, failed });
   // The list is the one place a host's name lives; its presence is the row's.
   // Only that one name is subscribed to, so a refetch of the host list
   // re-renders this pane when the name changes and not otherwise.

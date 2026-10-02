@@ -27,11 +27,14 @@ test('a Grok session starts grok with the model, level, effort and task it was g
   });
 
   const terminal = await attach(api, sessionId);
-  await terminal.waitFor(
-    'GROK-SHIM argv=--model grok-4.7 --permission-mode acceptEdits --reasoning-effort high fix the picker',
+  // The id the runner pins the agent's own conversation to sits between the
+  // flags and the task; it is minted on the host, so only its shape is known.
+  const screen = await terminal.waitFor(
+    'GROK-SHIM argv=--model grok-4.7 --permission-mode acceptEdits --reasoning-effort high --session-id ',
     120_000,
   );
   await terminal.close();
+  expect(screen).toMatch(/--session-id [0-9a-f-]{36} fix the picker/);
 
   const session = await api.get(`/api/v1/sessions/${sessionId}`);
   expect(session.status()).toBe(200);

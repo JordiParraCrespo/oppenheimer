@@ -34,6 +34,8 @@ type Terminals struct {
 	// Titles is the terminal title per target, the signal an agent sets
 	// through an escape sequence.
 	Titles map[string]string
+	// Launches is what each window was last launched with.
+	Launches map[string]Launched
 
 	sessions map[string]*fakeSession
 	// Attached counts live attachments.
@@ -240,6 +242,23 @@ func (t *Terminals) SendKeys(_ context.Context, target, keys string) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.Screens[target] += keys
+	return nil
+}
+
+// Launched is what a window was last launched with.
+type Launched struct {
+	Dir     string
+	Command string
+}
+
+// Launch implements app.Terminals by recording the launch on the target.
+func (t *Terminals) Launch(_ context.Context, target, dir, command string) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.Launches == nil {
+		t.Launches = map[string]Launched{}
+	}
+	t.Launches[target] = Launched{Dir: dir, Command: command}
 	return nil
 }
 

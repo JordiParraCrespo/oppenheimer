@@ -269,7 +269,9 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 	// waiting and working.
 	//
 	// It starts in the directory the worktree will be made in — the worktree
-	// itself is not there yet — and the agent is sent once it is.
+	// itself is not there yet. Once it is, the pane's shell is replaced by
+	// the agent started in the worktree (Terminals.Launch), so nothing typed
+	// to start it is ever on the screen.
 	if err := run(domain.StageTerminal, func() error {
 		parent, err := s.worktrees.Prepare(ctx, in.Repo)
 		if err != nil {
@@ -307,7 +309,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 			return err
 		}
 		defer s.holdLaunch(ctx, session.Agent)()
-		if err := s.terminals.SendKeys(ctx, session.TmuxName(), enterWorktree(session.Worktree, launch.CommandLine(session.Agent))); err != nil {
+		if err := s.terminals.Launch(ctx, session.Target(0), session.Worktree, launch.CommandLine(session.Agent)); err != nil {
 			s.discardImages(session.ID)
 			return err
 		}
@@ -318,30 +320,6 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 		return abandon(err)
 	}
 	return session, nil
-}
-
-// enterWorktree is the line window 0 is sent once the worktree is there: move
-// into it, then become the agent. `exec` is what makes the agent the pane's
-// own process rather than a child of a shell, so the window ends when the
-// agent does and every reader of a pane's process still reads the agent. A
-// session with no agent (a plain terminal) is left at its shell, in place.
-//
-// The screen is cleared before it: the session opens once the agent is sent,
-// and the line typed to start it would otherwise be the first thing on the
-// screen. `printf` rather than `clear`, which is a program a minimal host may
-// not have, and a missing one would end the line before the agent starts.
-func enterWorktree(worktree, command string) string {
-	cd := "cd " + shellQuote(worktree) + ` && printf '\033[H\033[2J'`
-	if command == "" {
-		return cd + "\n"
-	}
-	return cd + " && exec " + command + "\n"
-}
-
-// shellQuote wraps a path for the shell window 0 runs, so a directory with a
-// space or a quote in it is one word.
-func shellQuote(value string) string {
-	return "'" + strings.ReplaceAll(value, "'", `'\''`) + "'"
 }
 
 // checkImages refuses a first task's images before anything is made: too

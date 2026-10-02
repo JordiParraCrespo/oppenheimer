@@ -258,6 +258,12 @@
   under it, and the title to "The session did not start". A refusal
   the console can name reads in its words: `SESS_002` is "This host
   makes sessions with one repository".
+- The provisioning pane stays until the `agent` step lands, not until the
+  row reads `open`. The host makes the session's pane before it clones, so
+  the row opens with the clone still to run (01), and a terminal shown then
+  is a shell in an empty directory. The hold covers a start this console
+  sent or watched; a session opened from a link or a reload after it opened
+  goes straight to its terminal, without reading the log.
 - Session: terminal full-bleed, the agent's prompt on the pane's last
   rows whatever its height (a full screen, or a reader scrolled back,
   stays put), tabs (tmux windows, window 0 the

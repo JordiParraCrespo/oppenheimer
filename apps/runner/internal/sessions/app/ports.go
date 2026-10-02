@@ -42,6 +42,10 @@ type Terminals interface {
 	Windows(ctx context.Context, name string) ([]domain.Window, error)
 	// SendKeys types into a window.
 	SendKeys(ctx context.Context, target, keys string) error
+	// Launch replaces the program in a window with command, run in dir: the
+	// program becomes the pane's own process on a fresh screen, and nothing
+	// is typed to start it. An empty command is a plain shell.
+	Launch(ctx context.Context, target, dir, command string) error
 	// Paste pastes text into a window as a bracketed paste when the program
 	// there asked for one, which is how a dropped file's path reaches an
 	// agent in a local terminal. The id names the paste, so two at once

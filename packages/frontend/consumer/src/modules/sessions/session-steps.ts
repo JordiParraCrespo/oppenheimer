@@ -13,9 +13,13 @@ import {
  * read off the session's log.
  *
  * The runner logs `session.step` (`@oppenheimer/shared/protocol`) as each step
- * starts and lands; `session.started` means every step landed, and
- * `session.failed` carries the host's reason. A step nobody reported is
- * pending: nothing here advances on its own.
+ * starts and lands, and `session.failed` carries the host's reason. A step
+ * nobody reported is pending: nothing here advances on its own.
+ *
+ * `session.started` is not the end of it. It means the session's pane exists,
+ * which is before the clone, so the row reads `open` while the steps are still
+ * running. The start is over when the agent step lands: that is when the agent
+ * is running in the worktree and the terminal has something to show.
  */
 
 export type { SessionStartStepId };
@@ -73,8 +77,12 @@ export function toStartEntry(entry: RawSessionLogEntry): SessionStartEntry | nul
   }
 }
 
+/** The entry that ends a start: the agent step landing, or the host's failure. */
 export function settlesStart(entry: SessionStartEntry): boolean {
-  return entry.kind === 'started' || entry.kind === 'failed';
+  return (
+    (entry.kind === 'step' && entry.step === 'agent' && entry.status === 'done') ||
+    entry.kind === 'failed'
+  );
 }
 
 export type SessionStartStepState = 'pending' | 'running' | 'done' | 'failed';
@@ -90,7 +98,10 @@ export interface SessionStartProgress {
   steps: SessionStartStep[];
   /** The host's reason, once the log carries it; null while it has not arrived. */
   failure: { detail: string | null; code: string | null } | null;
-  /** The log says how the start ended: nothing more will arrive for it. */
+  /**
+   * The log says how the start ended: the agent is running, or the host said
+   * why it is not. Nothing more will arrive for it.
+   */
   settled: boolean;
 }
 
@@ -110,10 +121,12 @@ export function deriveSessionStartProgress(
     SESSION_START_STEPS.map((id) => [id, { id, state: 'pending', durationMs: null }]),
   );
   let started = false;
+  let reported = false;
   let failure: SessionStartProgress['failure'] = null;
 
   for (const entry of [...entries].sort((a, b) => a.seq - b.seq)) {
     if (entry.kind === 'step') {
+      reported = true;
       const step = steps.get(entry.step) as SessionStartStep;
       step.state = entry.status;
       step.durationMs = entry.status === 'done' ? entry.durationMs : null;
@@ -125,7 +138,10 @@ export function deriveSessionStartProgress(
   }
 
   const ordered = SESSION_START_STEPS.map((id) => steps.get(id) as SessionStartStep);
-  if (started) {
+  // A runner older than the steps reports none and logs `session.started`
+  // once everything is up: for it, that is the end.
+  const agentRunning = steps.get('agent')?.state === 'done' || (started && !reported);
+  if (agentRunning) {
     for (const step of ordered) if (step.state !== 'done') step.state = 'done';
     return { steps: ordered, failure: null, settled: true };
   }
