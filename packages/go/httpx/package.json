@@ -1,6 +1,6 @@
 {
   "name": "@oppenheimer/go-httpx",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "net/http router with middleware groups, JSON helpers and server lifecycle",
   "scripts": {
