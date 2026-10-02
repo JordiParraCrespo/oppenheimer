@@ -11,6 +11,7 @@ import {
 } from '@tanstack/react-query';
 import type {
   CreateSessionInput,
+  PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
 } from '../modules/sessions/session.entity';
@@ -239,6 +240,22 @@ export function useCreateSession(
       queryClient.setQueryData(sessionsKeys.detail(session.id), session);
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     }),
+  });
+}
+
+/**
+ * Gets a host ready for the session New session is composing: the draft's
+ * repository cloned or fetched there and a spare worktree made, so pressing
+ * send cuts a branch from a checkout that already exists. Nothing is cached:
+ * the answer is only whether the host was told.
+ */
+export function usePrepareSession(
+  options?: UseMutationOptions<string[], Error, PrepareSessionInput>,
+) {
+  const app = useConsumerApp();
+  return useMutation({
+    mutationFn: (input: PrepareSessionInput) => app.sessions.prepare(input),
+    ...options,
   });
 }
 

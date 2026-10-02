@@ -25,6 +25,7 @@ import { CloseSessionHttpController } from '../../sessions/commands/close-sessio
 import { IssueAttachTicketHttpController } from '../../sessions/commands/issue-attach-ticket/issue-attach-ticket.http.controller';
 import { MoveSessionHttpController } from '../../sessions/commands/move-session/move-session.http.controller';
 import { PasteSessionImageHttpController } from '../../sessions/commands/paste-session-image/paste-session-image.http.controller';
+import { PrepareSessionHttpController } from '../../sessions/commands/prepare-session/prepare-session.http.controller';
 import { RemoveCheckoutHttpController } from '../../sessions/commands/remove-checkout/remove-checkout.http.controller';
 import { RestartSessionHttpController } from '../../sessions/commands/restart-session/restart-session.http.controller';
 import { StopSessionHttpController } from '../../sessions/commands/stop-session/stop-session.http.controller';
@@ -62,6 +63,7 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
   'GET /sessions/:id': { controller: FindSessionHttpController, handler: 'get' },
   'GET /sessions/:id/events': { controller: FindSessionEventsHttpController, handler: 'list' },
   'DELETE /sessions/:id': { controller: CloseSessionHttpController, handler: 'close' },
+  'POST /sessions/prepare': { controller: PrepareSessionHttpController, handler: 'prepare' },
   'POST /sessions/:id/stop': { controller: StopSessionHttpController, handler: 'stop' },
   'POST /sessions/:id/move': { controller: MoveSessionHttpController, handler: 'move' },
   'POST /sessions/:id/restart': { controller: RestartSessionHttpController, handler: 'restart' },

@@ -3,6 +3,7 @@ import { TOKENS } from '../../di/tokens';
 import type {
   AttachTicket,
   CreateSessionInput,
+  PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
 } from './session.entity';
@@ -38,6 +39,10 @@ export class SessionsService {
 
   create(input: CreateSessionInput, idempotencyKey: string): Promise<SessionEntity> {
     return this.repository.create(input, idempotencyKey);
+  }
+
+  prepare(input: PrepareSessionInput): Promise<string[]> {
+    return this.repository.prepare(input);
   }
 
   rename(id: string, name: string): Promise<SessionEntity> {

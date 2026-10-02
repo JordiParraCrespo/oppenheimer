@@ -91,6 +91,8 @@ export type {
   PairingTokenStatusResponseDto,
   PermissionCatalogResponseDto,
   PermissionGroupDto,
+  PrepareSessionRequest,
+  PrepareSessionResponseDto,
   PreviewTriggerRequest,
   ProblemDetailsDto,
   ProfileResponseDto,

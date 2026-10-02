@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -55,7 +56,9 @@ func git(t *testing.T, dir string, args ...string) string {
 func client(t *testing.T) (*gitadapter.Client, domain.Layout) {
 	t.Helper()
 	layout := domain.Layout{Root: t.TempDir()}
-	return gitadapter.New(gitadapter.Options{Layout: layout}), layout
+	c := gitadapter.New(gitadapter.Options{Layout: layout})
+	t.Cleanup(c.Wait)
+	return c, layout
 }
 
 const repo = "jordi/oppenheimer"
@@ -78,10 +81,15 @@ func remoteRef(t *testing.T, mirror, ref string) string {
 	return strings.TrimSpace(string(out))
 }
 
-func TestEnsureClonesBloblessWithNothingCheckedOut(t *testing.T) {
+// A first clone is shallow, so a worktree can be cut before the history
+// arrives, and then becomes the blobless store with the whole history that a
+// session's `git log` reads; nothing is checked out in the mirror itself.
+func TestEnsureClonesShallowThenDeepensToABloblessStore(t *testing.T) {
 	bare := origin(t)
-	// A local path clones by copying the object store, filter or not; the
-	// file transport is how git behaves against a server.
+	advance(t, bare, "main")
+	advance(t, bare, "next")
+	// A local path clones by copying the object store, depth and filter or
+	// not; the file transport is how git behaves against a server.
 	git(t, bare, "config", "uploadpack.allowFilter", "true")
 	c, layout := client(t)
 	ctx := context.Background()
@@ -89,21 +97,38 @@ func TestEnsureClonesBloblessWithNothingCheckedOut(t *testing.T) {
 	if err := c.Ensure(ctx, repo, "file://"+bare, "main"); err != nil {
 		t.Fatalf("ensure: %v", err)
 	}
-
 	mirror := layout.Mirror(repo)
-	if got := strings.TrimSpace(git(t, mirror, "config", "remote.origin.partialclonefilter")); got != "blob:none" {
-		t.Fatalf("partialclonefilter = %q, want blob:none", got)
-	}
 	if _, err := os.Stat(filepath.Join(mirror, "README.md")); !os.IsNotExist(err) {
 		t.Fatalf("the mirror has a working tree: %v", err)
 	}
-	// A worktree cut from it still has every file: the checkout fetches them.
-	worktree := layout.Worktree(repo, "blobless")
-	if err := c.Add(ctx, repo, worktree, "oppenheimer/blobless", "main", true); err != nil {
+	// A worktree can be cut at once, deepened or not.
+	worktree := layout.Worktree(repo, "shallow")
+	if err := c.Add(ctx, repo, worktree, "oppenheimer/shallow", "main", true); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(worktree, "README.md")); err != nil {
 		t.Fatalf("the worktree has no files: %v", err)
+	}
+
+	deadline := time.Now().Add(30 * time.Second)
+	for {
+		_, err := os.Stat(filepath.Join(mirror, ".git", "shallow"))
+		if os.IsNotExist(err) {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("the mirror was never deepened")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if got := strings.TrimSpace(git(t, mirror, "config", "remote.origin.partialclonefilter")); got != "blob:none" {
+		t.Fatalf("partialclonefilter = %q, want blob:none", got)
+	}
+	if got := strings.TrimSpace(git(t, mirror, "rev-list", "--count", "refs/remotes/origin/main")); got != "2" {
+		t.Fatalf("origin/main has %s commits, want the whole history (2)", got)
+	}
+	if remoteRef(t, mirror, "next") == "" {
+		t.Fatal("the deepen did not fetch every branch")
 	}
 }
 

@@ -20,6 +20,7 @@ vi.mock('react-i18next', () => ({
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), useSearch: () => ({}) }));
 
 const renders = vi.hoisted(() => new Map<string, number>());
+const prepared = vi.hoisted(() => vi.fn());
 
 vi.mock('../components/project-select', () => ({
   ProjectSelect: chip('project', 'project-1'),
@@ -84,6 +85,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useInstallationRepositoriesFor: () => ({ repositories: [], isPending: false }),
   useRepositoryBranchesFor: () => ({ byRepository: new Map(), isPending: false }),
   useStartInstallation: () => ({ mutate: vi.fn(), error: null, reset: vi.fn() }),
+  usePrepareSession: () => ({ mutate: prepared }),
   // Called once per render of NewSessionSend, so it doubles as that section's count.
   useCreateSession: () => {
     renders.set('send', (renders.get('send') ?? 0) + 1);
@@ -188,6 +190,23 @@ describe('NewSessionForm', () => {
   it('renders the repository and branch chips and the send gate when a repository is picked', () => {
     fireEvent.click(screen.getByRole('button', { name: 'repositories' }));
     expect(rendered()).toEqual(['branch', 'repositories', 'send']);
+  });
+
+  /**
+   * The host is asked to get the repository ready as soon as the draft names
+   * both, and once: a second pick of the same ones asks nothing more.
+   */
+  it('asks the host to prepare the repository once a host and a repository are picked', () => {
+    prepared.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'host' }));
+    expect(prepared).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'repositories' }));
+    fireEvent.click(screen.getByRole('button', { name: 'repositories' }));
+    expect(prepared).toHaveBeenCalledTimes(1);
+    expect(prepared).toHaveBeenCalledWith({
+      hostId: 'host-2',
+      checkouts: [{ installationId: 'installation-1', githubRepoId: 42, baseBranch: 'main' }],
+    });
   });
 
   /** An agent switch decides which foot controls exist, so those three redraw. */

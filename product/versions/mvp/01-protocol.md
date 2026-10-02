@@ -186,6 +186,19 @@ runner does with it and point back.
   created while its host is offline therefore keeps its task in the log
   and delivers it when the launch is finally dispatched.
 - `host.preflight`, `host.update`
+- `repository.prepare` — get a repository ready on the host before any
+  session asks for it: the store cloned or fetched and a spare worktree
+  made at the base (02 §5). The console sends it through
+  `POST /v1/sessions/prepare` the moment New session has a host and a
+  repository, so the create that follows cuts its branch from a checkout
+  that already exists. No session exists and nothing is recorded, so the
+  token its git needs **travels with the command**, minted for that one
+  repository and sealed to the host's key as `credentials.grant` seals
+  one: a credential ask names a session. The runner holds it under
+  `prepare:<commandId>` for that command's git and drops it when the
+  command ends. Fire and forget; a runner whose `hello` does not name the
+  `repository.prepare` capability is sent nothing, and the create does the
+  work as before.
 - `credentials.token` — the runner asks for the installation token for
   one session's repository; the control plane answers with
   `credentials.grant`, carrying the token sealed to the host's key and

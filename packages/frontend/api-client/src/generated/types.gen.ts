@@ -1574,6 +1574,24 @@ export type AttachTicketResponseDto = {
     window: number;
 };
 
+export type PrepareSessionRequest = {
+    hostId: string;
+    checkouts: [
+        {
+            installationId: string;
+            githubRepoId: number;
+            baseBranch?: string;
+        }
+    ];
+};
+
+export type PrepareSessionResponseDto = {
+    /**
+     * Why the host was not told: `host_offline` (no live link) or `not_supported` (a runner older than the prepare). Empty when it was.
+     */
+    hints: Array<string>;
+};
+
 export type AddCheckoutRequest = {
     installationId: string;
     githubRepoId: number;
@@ -6443,6 +6461,42 @@ export type StopSessionResponses = {
 };
 
 export type StopSessionResponse = StopSessionResponses[keyof StopSessionResponses];
+
+export type PrepareSessionData = {
+    body: PrepareSessionRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/prepare';
+};
+
+export type PrepareSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_010 — That repository is not one this GitHub installation covers
+     *
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type PrepareSessionError = PrepareSessionErrors[keyof PrepareSessionErrors];
+
+export type PrepareSessionResponses = {
+    200: PrepareSessionResponseDto;
+};
+
+export type PrepareSessionResponse = PrepareSessionResponses[keyof PrepareSessionResponses];
 
 export type RestartSessionData = {
     body?: never;

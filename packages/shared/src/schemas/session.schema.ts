@@ -172,6 +172,19 @@ export type CreateSessionDto = z.infer<typeof createSessionSchema>;
  */
 export const addCheckoutSchema = sessionCheckoutInputSchema;
 
+/**
+ * Get a host ready for a session not yet asked for: the repositories it will
+ * check out, cloned or fetched and a spare worktree made, so the create that
+ * follows waits on neither. New session sends it as soon as a host and a
+ * repository are picked. Nothing is recorded.
+ */
+export const prepareSessionSchema = z.object({
+  hostId: z.string().uuid(),
+  checkouts: z.array(sessionCheckoutInputSchema).min(1).max(MAX_SESSION_CHECKOUTS),
+});
+
+export type PrepareSessionInput = z.infer<typeof prepareSessionSchema>;
+
 export type AddCheckoutDto = z.infer<typeof addCheckoutSchema>;
 
 /** `PATCH /sessions/{id}`. */

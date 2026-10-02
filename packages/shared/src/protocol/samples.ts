@@ -162,6 +162,15 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
   'session.stop': { type: 'session.stop', commandId, sessionId },
   'session.restart': { type: 'session.restart', commandId, sessionId },
   'host.preflight': { type: 'host.preflight', commandId },
+  'repository.prepare': {
+    type: 'repository.prepare',
+    commandId,
+    githubRepoId: 821374923,
+    repositoryFullName: 'acme-labs/xrp-mobile',
+    baseBranch: 'main',
+    sealed: 'c2VhbGVkLXRva2Vu',
+    expiresAt: '2026-10-02T12:00:00Z',
+  },
   'host.update': { type: 'host.update', commandId, version: '0.5.0', channel: 'stable' },
   'credentials.token': {
     type: 'credentials.token',
