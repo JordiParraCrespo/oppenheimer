@@ -111,7 +111,7 @@ export function useTerminal(
       offlineSince.current = null;
       return;
     }
-    offlineSince.current ??= Date.now();
+    if (offlineSince.current === null) offlineSince.current = Date.now();
     if (hostOnline && answeredAt > offlineSince.current) streamRef.current?.reconnectNow();
   }, [status, hostOnline, answeredAt]);
 
