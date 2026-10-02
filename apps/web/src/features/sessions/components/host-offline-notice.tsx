@@ -2,9 +2,16 @@ import { Alert, AlertDescription, AlertTitle } from '@oppenheimer/design-system-
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
-/** The commands a reader runs on the machine; the installer links the binary under this name. */
-const RESTART_COMMAND = 'oppenheimer-runner install';
-const STATUS_COMMAND = 'oppenheimer-runner status';
+/**
+ * The commands a reader runs on the machine; the installer links the binary
+ * under this name. Optional so the notice still reads without them.
+ */
+const RUNNER_COMMANDS: { restart?: string; status?: string } = {
+  // oppenheimer:begin runner
+  restart: 'oppenheimer-runner install',
+  status: 'oppenheimer-runner status',
+  // oppenheimer:end runner
+};
 
 /**
  * What the pane says while the relay reports the session's host offline: the
@@ -33,13 +40,15 @@ export function HostOfflineNotice({
       </AlertTitle>
       <AlertDescription className="grid gap-1.5">
         <p>{t('sessions.session.offline.description')}</p>
-        <p>
-          {t('sessions.session.offline.restart')}{' '}
-          <code className="font-mono text-[12.5px] text-fg">{RESTART_COMMAND}</code>
-          {', '}
-          {t('sessions.session.offline.status')}{' '}
-          <code className="font-mono text-[12.5px] text-fg">{STATUS_COMMAND}</code>
-        </p>
+        {RUNNER_COMMANDS.restart && RUNNER_COMMANDS.status ? (
+          <p>
+            {t('sessions.session.offline.restart')}{' '}
+            <code className="font-mono text-[12.5px] text-fg">{RUNNER_COMMANDS.restart}</code>
+            {', '}
+            {t('sessions.session.offline.status')}{' '}
+            <code className="font-mono text-[12.5px] text-fg">{RUNNER_COMMANDS.status}</code>
+          </p>
+        ) : null}
         <p>{hostsLink}</p>
       </AlertDescription>
     </Alert>
