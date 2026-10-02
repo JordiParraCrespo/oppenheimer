@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
 import type { HostKeyPort } from '../../hosts/application/host-key.port';
-import { seal } from '../../hosts/application/seal.util';
+import { seal } from '../../hosts/infrastructure/seal.util';
 import type { RunnerLink } from '../../links/application/link-registry.port';
 import type { SessionLookupPort } from '../../sessions/application/session-lookup.port';
 import { CredentialsProcessor } from '../infrastructure/credentials.processor';

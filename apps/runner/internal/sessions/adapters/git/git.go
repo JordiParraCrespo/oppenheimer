@@ -216,7 +216,9 @@ func (c *Client) deepen(ctx context.Context, repo, mirror string) {
 	c.deepening[repo] = landed
 	c.mu.Unlock()
 
+	c.warming.Add(1)
 	go func() {
+		defer c.warming.Done()
 		defer func() {
 			c.mu.Lock()
 			delete(c.deepening, repo)

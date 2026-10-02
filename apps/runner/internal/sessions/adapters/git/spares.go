@@ -192,7 +192,7 @@ func (c *Client) finished(ctx context.Context, mirror, path string) bool {
 	return err == nil && out == ""
 }
 
-// Wait returns once no spare is being made, for a process about to exit (a
-// one-shot `runner sessions create`) or a test about to remove the
-// directories a spare is written into.
+// Wait returns once no spare is being made and no shallow mirror is being
+// deepened, for a process about to exit (a one-shot `runner sessions create`)
+// or a test about to remove the directories they write into.
 func (c *Client) Wait() { c.warming.Wait() }

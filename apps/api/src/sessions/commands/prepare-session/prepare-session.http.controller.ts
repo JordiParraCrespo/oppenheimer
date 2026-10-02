@@ -19,10 +19,10 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { PrepareSessionResponseDto } from '../../dtos/prepare-session.response.dto';
 import { PrepareSessionCommand } from './prepare-session.command';
 import type { PrepareSessionResult } from './prepare-session.command-handler';
 import { PrepareSessionRequest } from './prepare-session.request.dto';
-import { PrepareSessionResponseDto } from './prepare-session.response.dto';
 
 @ApiTags('Sessions')
 @ApiBearerAuth()

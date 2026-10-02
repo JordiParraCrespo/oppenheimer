@@ -56,7 +56,9 @@ func git(t *testing.T, dir string, args ...string) string {
 func client(t *testing.T) (*gitadapter.Client, domain.Layout) {
 	t.Helper()
 	layout := domain.Layout{Root: t.TempDir()}
-	return gitadapter.New(gitadapter.Options{Layout: layout}), layout
+	c := gitadapter.New(gitadapter.Options{Layout: layout})
+	t.Cleanup(c.Wait)
+	return c, layout
 }
 
 const repo = "jordi/oppenheimer"

@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { HostRepositoryPort } from '../database/host.repository.port';
 import { HOST_REPOSITORY } from '../hosts.di-tokens';
+import { seal } from '../infrastructure/seal.util';
 import type { HostKeyPort } from './host-key.port';
-import { seal } from './seal.util';
 
 @Injectable()
 export class HostKeyResolver implements HostKeyPort {
