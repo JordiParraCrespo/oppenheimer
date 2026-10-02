@@ -736,7 +736,8 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <p>A new session was reported to take about 30 seconds to show a terminal. Note 14 measures each hop from Send to the agent's first screen, from the browser, against a real runner cloning from GitHub.</p>
 <div class="rule">
   <span class="k">was</span><span>On a large repository, the blobless clone and first checkout were the 30 seconds: 33 to 35 s for microsoft/vscode before the agent started, and every session also waited on a 2 s poll.</span>
-  <span class="k">now</span><span>The terminal is built first, and New session asks the host to clone the repository and make a spare worktree as soon as a host and a repository are picked. With ten seconds between the pick and Send, a first session on vscode reaches the agent in under a second.</span>
+  <span class="k">now</span><span>New session asks the host to clone the repository and make a spare worktree as soon as a host and a repository are picked. With ten seconds between the pick and Send, a first session on vscode reaches the agent in under a second.</span>
+  <span class="k">opening</span><span>The terminal is built first, so attaching costs nothing, but the session opens only once the agent is sent: until then the console shows the start's steps (host, clone, worktree, agent), and then the agent, not a shell waiting for a clone.</span>
   <span class="k">clone</span><span>A first clone is shallow at the base, 9 s to a ready worktree on vscode instead of 26, and its history follows in the background into the same blobless store.</span>
   <span class="k">Orca</span><span>Orca never clones. It fetches and prepares spare checkouts while the create composer is open, so pressing create is a move and a branch. Herdr runs <code>git worktree add</code> in a server that is already up.</span>
 </div>

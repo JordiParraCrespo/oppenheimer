@@ -34,9 +34,13 @@ func TestEveryStageOfCreateHasAWireStepExceptTheTerminal(t *testing.T) {
 // a session opens on its agent rather than on a shell waiting for a clone.
 func TestTheAgentLandingReportsTheSessionStarted(t *testing.T) {
 	var started []string
+	var log []string
 	steps := newStartSteps(
-		func(link.SessionStepPayload) {},
-		func(session sessionsdomain.Session) { started = append(started, session.ID) },
+		func(p link.SessionStepPayload) { log = append(log, string(p.Step)+":"+string(p.Status)) },
+		func(session sessionsdomain.Session) {
+			started = append(started, session.ID)
+			log = append(log, "started")
+		},
 		time.Now,
 	)
 
@@ -57,6 +61,11 @@ func TestTheAgentLandingReportsTheSessionStarted(t *testing.T) {
 
 	if len(started) != 1 || started[0] != "s-1" {
 		t.Fatalf("reported started %v, want [s-1] once, on the agent landing", started)
+	}
+	// The console stops reading the log at session.started, so the agent's
+	// own step must be logged before it.
+	if got := strings.Join(log[len(log)-2:], " "); got != "agent:done started" {
+		t.Fatalf("the log ends %q, want the agent's step and then started", got)
 	}
 }
 

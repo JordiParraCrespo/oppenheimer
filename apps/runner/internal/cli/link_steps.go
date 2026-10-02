@@ -52,15 +52,17 @@ func (s *startSteps) stage(ev sessionsdomain.StageEvent) {
 		s.accepted = true
 		s.emit(done(link.SessionStepHost, s.now().Sub(s.arrived)))
 	}
-	if ev.Stage == sessionsdomain.StageAgent && ev.Done && s.started != nil {
-		s.started(ev.Session)
-	}
 	step, ok := wireSteps[ev.Stage]
 	if !ok {
 		return
 	}
 	if ev.Done {
 		s.emit(done(step, ev.Took))
+		// After the step: the console reads the start's log up to
+		// `session.started`, so the agent's tick lands on the stepper first.
+		if ev.Stage == sessionsdomain.StageAgent && s.started != nil {
+			s.started(ev.Session)
+		}
 		return
 	}
 	s.emit(link.SessionStepPayload{Step: step, Status: link.SessionStepRunning})
