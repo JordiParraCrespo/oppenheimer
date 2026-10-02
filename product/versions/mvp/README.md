@@ -580,3 +580,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   history: on microsoft/vscode the store is ready for a spare in 9.3 s
   instead of 25.8 s. The deepen ends at the same blobless store as before, so
   a session's `git log` and `blame` work as they did once it lands.
+
+- 2026-10-02: **`session.started` means the agent was sent, again** (01, 02,
+  05). It had meant "the terminal exists" since 2026-10-01, which opened the
+  console on a shell for as long as the clone took and left the stepper with
+  nothing to show. The pane is still made first, so nothing waits on it: the
+  stepper runs host, clone, worktree and agent, and the session opens on the
+  agent. Measured from the browser on prepared repositories, the agent is on
+  screen at 1.1–1.9 s on facebook/react and 2.4 s on microsoft/vscode.

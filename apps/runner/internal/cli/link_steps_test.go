@@ -12,9 +12,7 @@ import (
 
 // A stage the service runs but the wire cannot name would never reach the
 // console, so every stage has a wire step — except the terminal, which is not
-// a row of the console's stepper. It reports `session.started` instead, and
-// the next test holds that, so a terminal stage that reported nothing at all
-// would not slip through.
+// a row of the console's stepper and is made before the others.
 func TestEveryStageOfCreateHasAWireStepExceptTheTerminal(t *testing.T) {
 	for _, stage := range sessionsdomain.Stages {
 		_, named := wireSteps[stage]
@@ -30,12 +28,11 @@ func TestEveryStageOfCreateHasAWireStepExceptTheTerminal(t *testing.T) {
 	}
 }
 
-// The terminal landing is what says the session can be attached to, so it
-// reports `session.started` — and reports it once, with the session in hand.
-// Before the terminal was a stage this came from a second lifecycle callback;
-// if it stops being reported here, a console would wait for the agent to come
-// up before it showed a pane that already existed.
-func TestTheTerminalStageReportsTheSessionStarted(t *testing.T) {
+// The agent landing is what opens the session, so it reports
+// `session.started` — once, with the session in hand, and not before: the
+// terminal and the clone landing earlier leave the console on its stepper, so
+// a session opens on its agent rather than on a shell waiting for a clone.
+func TestTheAgentLandingReportsTheSessionStarted(t *testing.T) {
 	var started []string
 	steps := newStartSteps(
 		func(link.SessionStepPayload) {},
@@ -43,18 +40,23 @@ func TestTheTerminalStageReportsTheSessionStarted(t *testing.T) {
 		time.Now,
 	)
 
-	steps.stage(sessionsdomain.StageEvent{Stage: sessionsdomain.StageTerminal})
+	for _, stage := range []sessionsdomain.Stage{
+		sessionsdomain.StageTerminal, sessionsdomain.StageClone, sessionsdomain.StageWorktree,
+	} {
+		steps.stage(sessionsdomain.StageEvent{Stage: stage})
+		steps.stage(sessionsdomain.StageEvent{Stage: stage, Done: true, Session: sessionsdomain.Session{ID: "s-1"}})
+	}
+	steps.stage(sessionsdomain.StageEvent{Stage: sessionsdomain.StageAgent})
 	if len(started) != 0 {
-		t.Fatalf("reported started %v before the terminal landed", started)
+		t.Fatalf("reported started %v before the agent landed", started)
 	}
 	steps.stage(sessionsdomain.StageEvent{
-		Stage: sessionsdomain.StageTerminal, Done: true,
+		Stage: sessionsdomain.StageAgent, Done: true,
 		Session: sessionsdomain.Session{ID: "s-1"},
 	})
-	steps.stage(sessionsdomain.StageEvent{Stage: sessionsdomain.StageClone, Done: true})
 
 	if len(started) != 1 || started[0] != "s-1" {
-		t.Fatalf("reported started %v, want [s-1] once, on the terminal landing", started)
+		t.Fatalf("reported started %v, want [s-1] once, on the agent landing", started)
 	}
 }
 

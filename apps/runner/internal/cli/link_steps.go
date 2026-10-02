@@ -11,8 +11,7 @@ import (
 // stages; the wire's names are packages/shared's, generated into link.
 //
 // StageTerminal is deliberately absent: the console's stepper is
-// `host/clone/worktree/agent` and the terminal is not one of its rows. What
-// that stage reports instead is `session.started` — see startSteps.
+// `host/clone/worktree/agent` and the terminal is not one of its rows.
 var wireSteps = map[sessionsdomain.Stage]link.SessionStep{
 	sessionsdomain.StageClone:    link.SessionStepClone,
 	sessionsdomain.StageWorktree: link.SessionStepWorktree,
@@ -24,10 +23,11 @@ var wireSteps = map[sessionsdomain.Stage]link.SessionStep{
 // accepted the session and begun its first stage, then each stage as it
 // starts and lands, with the time it took measured here.
 //
-// It also reports `session.started`, off StageTerminal landing. That is the
-// moment the session has a pane to attach to, which with the terminal built
-// before the clone is seconds before the agent runs — so `session.started`
-// means "there is a terminal here", not "the agent is up" (02 §5, 03).
+// It also reports `session.started`, off StageAgent landing: the agent has
+// been sent into the pane, so the session opens on the agent rather than on a
+// shell waiting for a clone, and the console's stepper has the stages before
+// it to show (02 §5, 03). The pane itself is made first, so an attach is
+// served the moment the session opens.
 type startSteps struct {
 	emit     func(link.SessionStepPayload)
 	started  func(sessionsdomain.Session)
@@ -52,7 +52,7 @@ func (s *startSteps) stage(ev sessionsdomain.StageEvent) {
 		s.accepted = true
 		s.emit(done(link.SessionStepHost, s.now().Sub(s.arrived)))
 	}
-	if ev.Stage == sessionsdomain.StageTerminal && ev.Done && s.started != nil {
+	if ev.Stage == sessionsdomain.StageAgent && ev.Done && s.started != nil {
 		s.started(ev.Session)
 	}
 	step, ok := wireSteps[ev.Stage]

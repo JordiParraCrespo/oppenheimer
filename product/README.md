@@ -312,8 +312,6 @@ earlier note:
   session has a pane, an attach is served while the create is still running,
   and the worktree moved into a hidden directory so Spotlight stops indexing
   it while the agent boots. Recorded in 01, 02, 05 and the MVP decision log.
-
-
 - `versions/mvp/02-runner.md` had a store's first clone be blobless
   (`--filter=blob:none`) and the whole of a create's network work happen
   after Send. On 2026-10-02 the first clone became shallow at the base and
@@ -321,3 +319,9 @@ earlier note:
   started sending `repository.prepare` when a host and a repository are
   picked, so the clone and the spare worktree are made while the prompt is
   written (02 §5, 01, 05; measured in 14).
+- `versions/mvp/01-protocol.md` (2026-10-01) had `session.started` mean the
+  session has a terminal, so the console opened on a shell while the
+  repository was still arriving and its stepper never showed. On 2026-10-02
+  it went back to meaning the agent was sent: the pane is still made first,
+  the stepper shows the start, and the session opens on the agent (01, 02,
+  MVP decision log).

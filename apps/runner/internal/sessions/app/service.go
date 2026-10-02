@@ -325,8 +325,13 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 // own process rather than a child of a shell, so the window ends when the
 // agent does and every reader of a pane's process still reads the agent. A
 // session with no agent (a plain terminal) is left at its shell, in place.
+//
+// The screen is cleared before it: the session opens once the agent is sent,
+// and the line typed to start it would otherwise be the first thing on the
+// screen. `printf` rather than `clear`, which is a program a minimal host may
+// not have, and a missing one would end the line before the agent starts.
 func enterWorktree(worktree, command string) string {
-	cd := "cd " + shellQuote(worktree)
+	cd := "cd " + shellQuote(worktree) + ` && printf '\033[H\033[2J'`
 	if command == "" {
 		return cd + "\n"
 	}
