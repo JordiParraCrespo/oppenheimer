@@ -6,6 +6,7 @@ import { NewSessionBranch } from './new-session-branch';
 import { NewSessionEffort } from './new-session-effort';
 import { NewSessionHost } from './new-session-host';
 import { NewSessionPermission } from './new-session-permission';
+import { NewSessionPrepare } from './new-session-prepare';
 import { NewSessionProject } from './new-session-project';
 import { NewSessionRepositories } from './new-session-repositories';
 import { NewSessionSend } from './new-session-send';
@@ -32,6 +33,7 @@ export function NewSessionForm({ heading }: { heading?: ReactNode }) {
 
   return (
     <NewSessionFormContext.Provider value={form}>
+      <NewSessionPrepare />
       {heading ? (
         <div>
           {heading}

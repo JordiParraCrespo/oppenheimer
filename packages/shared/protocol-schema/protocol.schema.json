@@ -57,7 +57,8 @@
             "type": "string",
             "enum": [
               "session.image",
-              "session.create.images"
+              "session.create.images",
+              "repository.prepare"
             ]
           }
         }
@@ -916,6 +917,47 @@
         "sessionId",
         "checkoutId"
       ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "repository.prepare"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "githubRepoId": {
+          "$ref": "#/$defs/githubRepoId"
+        },
+        "repositoryFullName": {
+          "$ref": "#/$defs/gitRef"
+        },
+        "baseBranch": {
+          "$ref": "#/$defs/gitRef"
+        },
+        "sealed": {
+          "type": "string",
+          "format": "base64",
+          "contentEncoding": "base64",
+          "pattern": "^$|^(?:[0-9a-zA-Z+/]{4})*(?:(?:[0-9a-zA-Z+/]{2}==)|(?:[0-9a-zA-Z+/]{3}=))?$"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "githubRepoId",
+        "repositoryFullName",
+        "baseBranch",
+        "sealed",
+        "expiresAt"
+      ]
     }
   ],
   "$defs": {
@@ -1230,7 +1272,8 @@
     "maxFrameBytes": 524288,
     "capabilities": [
       "session.image",
-      "session.create.images"
+      "session.create.images",
+      "repository.prepare"
     ],
     "maxEventPayloadBytes": 8192
   }

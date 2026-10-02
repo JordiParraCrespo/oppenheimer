@@ -78,7 +78,9 @@ func privateClient(t *testing.T) (*gitadapter.Client, domain.Layout, string) {
 	t.Helper()
 	command, seen := helper(t)
 	layout := domain.Layout{Root: t.TempDir()}
-	return gitadapter.New(gitadapter.Options{Layout: layout, CredentialHelper: command}), layout, seen
+	c := gitadapter.New(gitadapter.Options{Layout: layout, CredentialHelper: command})
+	t.Cleanup(c.Wait)
+	return c, layout, seen
 }
 
 func TestEnsureClonesAPrivateRepositoryForTheSessionItIsFor(t *testing.T) {

@@ -55,6 +55,7 @@ export const ENDPOINT_POLICIES = {
   'GET /sessions/:id': [{ action: 'read', subject: 'Session' }],
   'GET /sessions/:id/events': [{ action: 'read', subject: 'Session' }],
   'DELETE /sessions/:id': [{ action: 'delete', subject: 'Session' }],
+  'POST /sessions/prepare': [{ action: 'create', subject: 'Session' }],
   'POST /sessions/:id/stop': [{ action: 'update', subject: 'Session' }],
   'POST /sessions/:id/move': [{ action: 'update', subject: 'Session' }],
   'POST /sessions/:id/restart': [{ action: 'update', subject: 'Session' }],

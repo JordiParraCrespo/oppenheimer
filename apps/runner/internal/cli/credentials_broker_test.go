@@ -174,3 +174,28 @@ func TestACancelledCallerDoesNotFailTheOthers(t *testing.T) {
 		t.Fatalf("credentials.token sent %d times, want 1", n)
 	}
 }
+
+// A prepare's token arrives with its command: git under the prepare's identity
+// is answered from it without an ask on the link, and nothing is answered once
+// the command has ended.
+func TestAPreparesTokenIsHeldForItsGitAndNoLonger(t *testing.T) {
+	broker, sender := newTestBroker()
+	id := preparePrefix + "cmd-1"
+	broker.Hold(id, "ghs_prepare", time.Now().Add(time.Hour))
+
+	token, err := broker.Get(context.Background(), id)
+	if err != nil || token != "ghs_prepare" {
+		t.Fatalf("Get = %q, %v; want the held token", token, err)
+	}
+	if sender.count() != 0 {
+		t.Fatal("a held token was asked for on the link")
+	}
+
+	broker.Forget(id)
+	if _, err := broker.Get(context.Background(), id); err == nil {
+		t.Fatal("a prepare's token outlived its command")
+	}
+	if sender.count() != 0 {
+		t.Fatal("a prepare with no token asked the link for one")
+	}
+}

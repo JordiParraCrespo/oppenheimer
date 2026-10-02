@@ -38,6 +38,7 @@ const eventRetry = 5 * time.Second
 const (
 	laneHostUpdate    = "host:update"
 	laneHostPreflight = "host:preflight"
+	laneRepoPrepare   = "repo:"
 )
 
 // linkSender is the slice of the link the handler writes through, so a test
@@ -232,7 +233,9 @@ func (h *linkHandler) Hello(ctx context.Context) (link.Hello, error) {
 		RunID:         h.reporter.RunID(),
 		Host:          facts,
 		Sessions:      h.snapshots(),
-		Capabilities:  []string{link.CapabilitySessionImage, link.CapabilitySessionCreateImages},
+		Capabilities: []string{
+			link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilityRepositoryPrepare,
+		},
 	}, nil
 }
 
@@ -416,6 +419,14 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		var m link.HostPreflight
 		if msg.Decode(&m) == nil {
 			h.lanes.run(laneHostPreflight, func() { h.preflight(h.life, m.CommandID) })
+		}
+	case "repository.prepare":
+		var m link.RepositoryPrepare
+		if msg.Decode(&m) == nil {
+			// One lane per repository: a second pick of the same one waits for
+			// the first rather than racing it, and other repositories and
+			// every session go on meanwhile.
+			h.lanes.run(laneRepoPrepare+m.RepositoryFullName, func() { h.prepareRepository(h.life, m) })
 		}
 	case "host.update":
 		var m link.HostUpdate

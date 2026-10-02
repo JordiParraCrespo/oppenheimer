@@ -20,6 +20,7 @@ for the detail and sources.
 | 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: one store per repo per workspace, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
+| 14 | [Session boot time, measured](14-session-boot-time.md) | A measurement note, not `versions/mvp/14`: each hop from Send to the agent's first byte, measured from the browser on one host, beside how Orca prepares a checkout before the click. It decides nothing; its questions are 02 open question 9 and 05 open question 8 |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
 | next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 Kanban, 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
 
@@ -312,3 +313,11 @@ earlier note:
   and the worktree moved into a hidden directory so Spotlight stops indexing
   it while the agent boots. Recorded in 01, 02, 05 and the MVP decision log.
 
+
+- `versions/mvp/02-runner.md` had a store's first clone be blobless
+  (`--filter=blob:none`) and the whole of a create's network work happen
+  after Send. On 2026-10-02 the first clone became shallow at the base and
+  deepened in the background into the same blobless store, and New session
+  started sending `repository.prepare` when a host and a repository are
+  picked, so the clone and the spare worktree are made while the prompt is
+  written (02 §5, 01, 05; measured in 14).

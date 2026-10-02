@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
+	"strings"
 	"sync"
 	"time"
 
@@ -86,6 +87,15 @@ func newCredentialBroker(client sender, unseal func([]byte) ([]byte, error), ses
 func (b *credentialBroker) Get(ctx context.Context, sessionID string) (string, error) {
 	if sessionID == "" {
 		return "", errNoCredential
+	}
+	if strings.HasPrefix(sessionID, preparePrefix) {
+		b.mu.Lock()
+		held, ok := b.tokens[sessionID]
+		b.mu.Unlock()
+		if !ok || !b.now().Before(held.expiresAt) {
+			return "", errNoCredential
+		}
+		return held.token, nil
 	}
 	b.mu.Lock()
 	cached, ok := b.tokens[sessionID]
@@ -175,6 +185,18 @@ func (b *credentialBroker) Grant(m link.CredentialsGrant) {
 // Refuse is a `command.failed` whose command id was a credential ask.
 func (b *credentialBroker) Refuse(requestID string, err error) bool {
 	return b.deliver(requestID, grantReply{err: err})
+}
+
+// preparePrefix marks a credential identity that is a `repository.prepare`
+// command rather than a session. Its token arrives with the command; there is
+// nothing to ask the control plane for.
+const preparePrefix = "prepare:"
+
+// Hold keeps a token handed over with a command, for the git that command runs.
+func (b *credentialBroker) Hold(id, token string, expiresAt time.Time) {
+	b.mu.Lock()
+	b.tokens[id] = cachedToken{token: token, expiresAt: expiresAt}
+	b.mu.Unlock()
 }
 
 // Revoke drops a session's token early, as `credentials.revoke` asks.

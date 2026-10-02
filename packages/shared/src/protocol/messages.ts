@@ -36,7 +36,11 @@ import {
 /* ------------------------------------------------------------------ runner → control plane, and the ack */
 
 /** What a runner can name in `hello.capabilities`. */
-export const RUNNER_CAPABILITIES = ['session.image', 'session.create.images'] as const;
+export const RUNNER_CAPABILITIES = [
+  'session.image',
+  'session.create.images',
+  'repository.prepare',
+] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
 /**
@@ -434,6 +438,31 @@ export const hostPreflightSchema = z.object({
 export type HostPreflightMessage = z.infer<typeof hostPreflightSchema>;
 
 /**
+ * Get a repository ready for a session that has not been asked for yet: clone
+ * it (or fetch its base) and build the spare worktree a create then claims, so
+ * the create that follows waits on neither. The console sends it the moment a
+ * person picks a host and a repository in New session (02 §5, 05).
+ *
+ * Fire and forget: nothing is recorded and no session exists. The token the
+ * clone needs travels **with** the command, minted for this repository alone
+ * and sealed to the host's key as `credentials.grant` seals one, because a
+ * credential ask names a session and there is none. It is used for this
+ * command's git and dropped when it ends.
+ */
+export const repositoryPrepareSchema = z.object({
+  type: z.literal('repository.prepare'),
+  commandId: commandIdSchema,
+  githubRepoId: githubRepoIdSchema,
+  repositoryFullName: gitRefSchema,
+  baseBranch: gitRefSchema,
+  /** The installation token, sealed to the host's Ed25519 identity. Base64. */
+  sealed: z.base64(),
+  expiresAt: z.iso.datetime(),
+});
+
+export type RepositoryPrepareMessage = z.infer<typeof repositoryPrepareSchema>;
+
+/**
  * Install a release. The runner still fetches and verifies the signed manifest
  * itself — this asks, it does not hand over a binary, because the release is
  * signed by an offline key and not trusted because the control plane said so.
@@ -601,6 +630,7 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   credentialsTokenSchema,
   credentialsGrantSchema,
   credentialsRevokeSchema,
+  repositoryPrepareSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

@@ -15,6 +15,7 @@ import type {
   SessionDispatchPort,
   SessionImageSpec,
   SessionLaunchSpec,
+  SessionPrepareSpec,
 } from '../../sessions/application/session-dispatch.port';
 import type { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
@@ -143,6 +144,29 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     _checkout: SessionCheckoutEntity,
   ): Promise<SessionDispatchOutcome> {
     return this.withLink(session, () => NOT_SUPPORTED);
+  }
+
+  prepareRefusal(hostId: string): 'host_offline' | 'not_supported' | null {
+    const link = this.links.find(hostId);
+    if (!link) return 'host_offline';
+    return link.capabilities.includes('repository.prepare') ? null : 'not_supported';
+  }
+
+  prepare(hostId: string, spec: SessionPrepareSpec): SessionDispatchOutcome {
+    const link = this.links.find(hostId);
+    if (!link) return OFFLINE;
+    if (!link.capabilities.includes('repository.prepare')) return NOT_SUPPORTED;
+    // Sealed to the host before it got here, as `credentials.grant` is: the
+    // relay carries the token and cannot read it.
+    return this.deliver(link, {
+      type: 'repository.prepare',
+      commandId: randomUUID(),
+      githubRepoId: spec.githubRepoId,
+      repositoryFullName: spec.repositoryFullName,
+      baseBranch: spec.baseBranch,
+      sealed: spec.sealed,
+      expiresAt: spec.expiresAt.toISOString(),
+    });
   }
 
   /** `send` on the session's host link, or `host_offline` when it holds none. */

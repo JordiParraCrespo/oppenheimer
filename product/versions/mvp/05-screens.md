@@ -318,6 +318,16 @@
 - Web framework open: Vite SPA recommended, Next.js as a client app
   acceptable. Decide at step 3.
 
+- **New session gets the host ready while the prompt is written.** As soon
+  as the draft has a host and a repository — picked, or filled in by a
+  project's defaults — the console sends `POST /v1/sessions/prepare` once
+  for that host, repository and branch, and the host clones or fetches it
+  and makes a spare worktree (02 §5). Nothing on screen changes and a
+  failure says nothing: the create does the same work itself. What it buys
+  is measured in note 14: a first session on a large repository goes from
+  half a minute to about a second when Send comes ten seconds after the
+  pick (2026-10-02).
+
 ## Open questions
 
 1. ~~Session naming: user-typed, derived from the first task, or from
@@ -345,3 +355,10 @@
    terminal, where a probe would have kept the row off the list.
 7. ~~Dark only, like the mockups, or both themes?~~ Both; the version-1
    frames and the design system carry both, "Match system" the default.
+8. **When the session pane attaches.** The pane mounts the terminal once a
+   poll sees `open`. On a warm repository that wait was 1.4–2.1 s of a
+   2.3 s start (note 14 of the top-level series). A shorter interval is
+   not the answer: at 250 ms the three polls tripped the API's rate limit.
+   Should the pane attach as soon as the create returns, which changes
+   01's attach ticket and 03's relay? Or should the console be told of
+   `open` another way?

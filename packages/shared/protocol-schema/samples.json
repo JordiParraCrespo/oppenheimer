@@ -298,6 +298,15 @@
     "type": "host.preflight",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e"
   },
+  "repository.prepare": {
+    "type": "repository.prepare",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "githubRepoId": 821374923,
+    "repositoryFullName": "acme-labs/xrp-mobile",
+    "baseBranch": "main",
+    "sealed": "c2VhbGVkLXRva2Vu",
+    "expiresAt": "2026-10-02T12:00:00Z"
+  },
   "host.update": {
     "type": "host.update",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",

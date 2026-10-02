@@ -67,6 +67,10 @@ type Client struct {
 	prewarm bool
 	spares  map[string]*spare
 	warming sync.WaitGroup
+
+	// deepening holds, under mu, the mirrors cloned shallow whose history is
+	// still being fetched (deepen); the channel closes when it lands.
+	deepening map[string]chan struct{}
 }
 
 // Options configure the client.
@@ -88,6 +92,7 @@ func New(opts Options) *Client {
 	return &Client{
 		layout: opts.Layout, binary: binary, credentialHelper: opts.CredentialHelper,
 		repos: map[string]*sync.Mutex{}, prewarm: opts.Spares, spares: map[string]*spare{},
+		deepening: map[string]chan struct{}{},
 	}
 }
 
@@ -107,7 +112,8 @@ func (c *Client) lock(repo string) func() {
 // it; an empty ref fetches every branch. The first call clones; later ones
 // fetch. The store is blobless and has no working tree
 // (02-runner §5): a file's contents arrive when a checkout or a command first
-// reads them, through the same credential helper.
+// reads them, through the same credential helper. A first clone is shallow at
+// ref and gets its history in the background (deepen).
 func (c *Client) Ensure(ctx context.Context, repo, remote, ref string) error {
 	if err := domain.ValidateRepo(repo); err != nil {
 		return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
@@ -120,7 +126,26 @@ func (c *Client) Ensure(ctx context.Context, repo, remote, ref string) error {
 	defer c.lock(repo)()
 	mirror := c.layout.Mirror(repo)
 	if _, err := os.Stat(filepath.Join(mirror, ".git")); err == nil {
-		return c.fetch(ctx, repo, mirror, ref)
+		if landed := c.deepeningOf(repo); landed != nil {
+			// A deepen is fetching every branch right now, from a clone made
+			// moments ago: a ref the clone brought is current, and a second
+			// fetch beside the deepen would contend for the same refs.
+			if ref == "" || c.hasRemoteBranch(ctx, mirror, ref) {
+				return nil
+			}
+			select {
+			case <-landed:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+		if err := c.fetch(ctx, repo, mirror, ref); err != nil {
+			return err
+		}
+		// A shallow mirror whose deepen was cut short (a runner restart)
+		// gets its history now.
+		c.deepen(ctx, repo, mirror)
+		return nil
 	}
 	if remote == "" {
 		return domain.ErrWorktree.WithDetail(
@@ -143,17 +168,118 @@ func (c *Client) Ensure(ctx context.Context, repo, remote, ref string) error {
 	if err != nil {
 		return domain.ErrWorktree.WithDetail("create a directory to clone into: %v", err).WithCause(err)
 	}
-	// Every branch, and the tags: a clone's refspec is what a bare `git fetch`
-	// in the session's shell uses afterwards, and commits and trees are cheap
-	// next to the blobs this leaves behind.
-	clone := append(append([]string{}, noMaintenance...), "clone", "--filter=blob:none", "--no-checkout", remote, partial)
+	// Shallow first: the base's one commit with its files is what a worktree
+	// needs, and on a large repository it is a third of the time a blobless
+	// clone of the whole history takes (14). The history follows in the
+	// background (deepen), leaving the store blobless as it always was. A
+	// local path ignores --depth, so a test's clone is whole from the start.
+	clone := append(append([]string{}, noMaintenance...), "clone", "--depth=1", "--no-checkout")
+	if ref != "" {
+		clone = append(clone, "--branch", ref)
+	}
+	clone = append(clone, remote, partial)
 	if _, err := c.run(ctx, command{timeout: fetchTimeout, repo: repo}, clone...); err != nil {
+		_ = os.RemoveAll(partial)
+		return err
+	}
+	// Every branch, and the tags: the refspec is what a bare `git fetch` in
+	// the session's shell uses afterwards, and a shallow clone narrows it to
+	// the one branch it fetched.
+	if _, err := c.run(ctx, command{timeout: quickTimeout, dir: partial},
+		"config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"); err != nil {
 		_ = os.RemoveAll(partial)
 		return err
 	}
 	if err := os.Rename(partial, mirror); err != nil {
 		_ = os.RemoveAll(partial)
 		return domain.ErrWorktree.WithDetail("move the clone into %s: %v", mirror, err).WithCause(err)
+	}
+	c.deepen(ctx, repo, mirror)
+	return nil
+}
+
+// deepen fetches, in the background, the history a shallow mirror was cloned
+// without: every branch's commits and trees, the blobs left to arrive when
+// read, as a blobless clone would have had them. It takes no lock, so creates
+// go on beside it; Ensure leaves the fetching to it while it runs. ctx's
+// session rides along for the token; its end does not.
+func (c *Client) deepen(ctx context.Context, repo, mirror string) {
+	if _, err := os.Stat(filepath.Join(mirror, ".git", "shallow")); err != nil {
+		return
+	}
+	c.mu.Lock()
+	if _, running := c.deepening[repo]; running {
+		c.mu.Unlock()
+		return
+	}
+	landed := make(chan struct{})
+	c.deepening[repo] = landed
+	c.mu.Unlock()
+
+	c.warming.Add(1)
+	go func() {
+		defer c.warming.Done()
+		defer func() {
+			c.mu.Lock()
+			delete(c.deepening, repo)
+			c.mu.Unlock()
+			close(landed)
+		}()
+		ctx := context.WithoutCancel(ctx)
+		quick := command{timeout: quickTimeout, dir: mirror}
+		// Promised objects are what a blobless clone records: the blobs of
+		// older commits stay on the remote until something reads them.
+		if _, err := c.run(ctx, quick, "config", "remote.origin.promisor", "true"); err != nil {
+			return
+		}
+		if _, err := c.run(ctx, quick, "config", "remote.origin.partialclonefilter", "blob:none"); err != nil {
+			return
+		}
+		args := append(append([]string{}, noMaintenance...), "fetch", "--unshallow", "--filter=blob:none", "origin")
+		_, _ = c.run(ctx, command{timeout: fetchTimeout, dir: mirror, repo: repo}, args...)
+	}()
+}
+
+// deepeningOf is the channel a running deepen of repo closes, or nil.
+func (c *Client) deepeningOf(repo string) chan struct{} {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.deepening[repo]
+}
+
+// hasRemoteBranch reports origin/<branch> in mirror.
+func (c *Client) hasRemoteBranch(ctx context.Context, mirror, branch string) bool {
+	_, err := c.run(ctx, command{timeout: quickTimeout, dir: mirror},
+		"rev-parse", "--verify", "--quiet", "refs/remotes/origin/"+branch)
+	return err == nil
+}
+
+// PrepareRepository gets repo ready for a create that has not been asked for
+// yet: its mirror cloned or base fetched, and a spare worktree at base made
+// and checked out. It returns once those are done and a first clone's history
+// has landed, so the caller's context (the token its git rides on) is live for
+// all of it; a create takes the spare as soon as it is ready. A spare already
+// there, or being made, is kept.
+func (c *Client) PrepareRepository(ctx context.Context, repo, remote, base string) error {
+	if err := c.Ensure(ctx, repo, remote, base); err != nil {
+		return err
+	}
+	if s := c.warm(ctx, repo, base); s != nil {
+		select {
+		case <-s.done:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	// The history a shallow clone left out is fetched under this context's
+	// identity too: the caller's token must outlive it. A create meanwhile
+	// takes the spare and goes on without it.
+	if landed := c.deepeningOf(repo); landed != nil {
+		select {
+		case <-landed:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
 	return nil
 }
@@ -204,6 +330,9 @@ func sweepPartials(parent string) {
 // session's own, left by an attempt cut short, and a redelivered create takes
 // it over rather than refusing it (recovery.go).
 func (c *Client) Add(ctx context.Context, repo, path, branch, base string, newBranch bool) error {
+	if newBranch {
+		c.awaitSpare(ctx, repo)
+	}
 	defer c.lock(repo)()
 	mirror := c.layout.Mirror(repo)
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
@@ -242,10 +371,13 @@ func (c *Client) Add(ctx context.Context, repo, path, branch, base string, newBr
 	switch {
 	case !newBranch:
 		args = append(args, path, branch)
+	// --no-track: a session's branch is pushed to a branch of its own
+	// (push --set-upstream), never pulled from its base, and git's guess at
+	// tracking the base fails outright when two refspecs map onto it.
 	case c.leftoverBranch(ctx, mirror, branch, startPoint(base)):
-		args = append(args, "-B", branch, path, startPoint(base))
+		args = append(args, "--no-track", "-B", branch, path, startPoint(base))
 	default:
-		args = append(args, "-b", branch, path, startPoint(base))
+		args = append(args, "--no-track", "-b", branch, path, startPoint(base))
 	}
 	if _, err = c.run(ctx, command{timeout: fetchTimeout, dir: mirror}, args...); err != nil {
 		return err
@@ -329,7 +461,9 @@ type command struct {
 func (c *Client) run(ctx context.Context, how command, args ...string) (string, error) {
 	session := domain.SessionOf(ctx)
 
-	full := []string{"-c", "advice.detachedHead=false"}
+	// A checkout writes its files from one worker per core: on a large tree
+	// that halves the step a person waits on for a worktree (14).
+	full := []string{"-c", "advice.detachedHead=false", "-c", "checkout.workers=0"}
 	if c.credentialHelper != "" {
 		full = append(full, "-c", "credential.helper=", "-c", "credential.helper="+c.credentialHelper)
 	}

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
 import type { HostKeyPort } from '../../hosts/application/host-key.port';
+import { seal } from '../../hosts/infrastructure/seal.util';
 import type { RunnerLink } from '../../links/application/link-registry.port';
 import type { SessionLookupPort } from '../../sessions/application/session-lookup.port';
 import { CredentialsProcessor } from '../infrastructure/credentials.processor';
@@ -49,7 +50,13 @@ function harness(target: Awaited<ReturnType<SessionLookupPort['findCredentialTar
       githubRepoId: 42,
     }),
   } as unknown as RepositoryAccessPort;
-  const keys = { publicKeyOf: vi.fn().mockResolvedValue(HOST_KEY) } as unknown as HostKeyPort;
+  // The hosts module's own sealing, so a grant is checked as sealed for real.
+  const keys = {
+    publicKeyOf: vi.fn().mockResolvedValue(HOST_KEY),
+    sealFor: vi.fn(async (_hostId: string, plaintext: Uint8Array) =>
+      seal(HOST_KEY, plaintext).toString('base64'),
+    ),
+  } as unknown as HostKeyPort;
   const owners = { findActiveOwner: vi.fn().mockResolvedValue({ id: USER }) };
   return {
     link,
