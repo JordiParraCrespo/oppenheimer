@@ -313,3 +313,11 @@ earlier note:
   and the worktree moved into a hidden directory so Spotlight stops indexing
   it while the agent boots. Recorded in 01, 02, 05 and the MVP decision log.
 
+
+- `versions/mvp/02-runner.md` had a store's first clone be blobless
+  (`--filter=blob:none`) and the whole of a create's network work happen
+  after Send. On 2026-10-02 the first clone became shallow at the base and
+  deepened in the background into the same blobless store, and New session
+  started sending `repository.prepare` when a host and a repository are
+  picked, so the clone and the spare worktree are made while the prompt is
+  written (02 §5, 01, 05; measured in 14).

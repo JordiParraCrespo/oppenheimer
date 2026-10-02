@@ -57,6 +57,19 @@ export interface SessionCloseSpec {
   acceptUnpushedWork: boolean;
 }
 
+/**
+ * A repository a host is to get ready before any session asks for it: its mirror
+ * cloned or fetched and a spare worktree made at `baseBranch` (02 §5).
+ */
+export interface SessionPrepareSpec {
+  githubRepoId: number;
+  repositoryFullName: string;
+  baseBranch: string;
+  /** An installation token narrowed to this repository, sealed to the host's key. Base64. */
+  sealed: string;
+  expiresAt: Date;
+}
+
 /** A picture for a window's prompt; the runner saves it and pastes its path. */
 export interface SessionImageSpec {
   window: number;
@@ -98,4 +111,12 @@ export interface SessionDispatchPort {
     session: WorkSessionEntity,
     checkout: SessionCheckoutEntity,
   ): Promise<SessionDispatchOutcome>;
+  /**
+   * Why `prepare` would send nothing to this host right now — `host_offline`
+   * or `not_supported` — or null when it would. Asked first, so no token is
+   * minted for a host that cannot take it.
+   */
+  prepareRefusal(hostId: string): 'host_offline' | 'not_supported' | null;
+  /** Get a repository ready on a host for a session not yet asked for. */
+  prepare(hostId: string, spec: SessionPrepareSpec): SessionDispatchOutcome;
 }

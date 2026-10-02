@@ -177,6 +177,12 @@ export interface CreateSessionInput {
   projectId?: string;
 }
 
+/** What a host is asked to get ready while New session is still being written. */
+export interface PrepareSessionInput {
+  hostId: string;
+  checkouts: [CreateSessionCheckout];
+}
+
 /** An image uploaded for a first task, waiting for the create that names it. */
 export interface SessionAttachment {
   id: string;

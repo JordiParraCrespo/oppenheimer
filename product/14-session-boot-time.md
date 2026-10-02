@@ -9,9 +9,9 @@ reports that a new session takes about 30 s to show a terminal. It records:
   HEAD `8dab53fb`);
 - which experimental changes moved the numbers.
 
-It decides nothing. The questions it raises are open in the notes that own
-them: 02 open question 9 (network work before Send) and 05 open question 8
-(when the pane attaches).
+It decides nothing. The questions it raised are in the notes that own them:
+02 open question 9 (network work before Send, decided 2026-10-02 in 02 §5)
+and 05 open question 8 (when the pane attaches). §4 measures what was done.
 
 Every number is from one Linux sandbox with 4 cores, reaching github.com
 through a proxy. The instrument is `e2e/tests/fleet/boot-bench.spec.ts`. It
@@ -105,6 +105,52 @@ Two things were checked:
   out vscode's 19.6k files took 2.0 s with one worker and 0.9 s with four.
   The first checkout after a clone took about 10 s either way, because the
   new pack is not yet in the page cache.
+
+## 4. After: the terminal first, and the repository before Send
+
+Two changes since the first measurement. #218 builds the session's pane
+before the clone, so the terminal is there at once and the agent is typed
+into it once the worktree exists. Then (02 §5, 2026-10-02) New session sends
+`repository.prepare` when a host and a repository are picked, a first clone
+is shallow and deepened in the background, and checkouts run one worker per
+core. The same harness now waits for the agent's own first screen
+(`agent_drawn`), since the first bytes are a shell.
+
+Send → agent on screen, a host that had never seen the repository, measured
+from the browser:
+
+| Repository | Pause between the pick and Send | Before | After |
+|---|---|---|---|
+| facebook/react | 10 s (2 runs) | 7.8 s | 1.04–1.15 s |
+| microsoft/vscode | 10 s (2 runs) | 32–34 s | 0.89–0.93 s |
+| microsoft/vscode | none | 32–34 s | 11.8–12.6 s |
+| facebook/react | none | 7.8 s | 4.2 s |
+
+And the cases that were already warm, after the change (3 sessions each, the
+first one cold with no pause):
+
+| Repository | Later sessions | Tiny repository (shim / real `claude`) |
+|---|---|---|
+| facebook/react | 1.02–1.24 s | 0.78–0.94 s / 0.76–0.93 s |
+| microsoft/vscode | 0.82–2.32 s | |
+
+Herdr's agent on screen was 0.87–0.89 s on react and 3.9–4.5 s on vscode;
+Orca's 2.1–2.7 s and 2.9–4.2 s, both on repositories already on disk.
+
+A first session sent with no pause at all is bounded by the shallow clone and
+the first checkout, which a prepare made at the moment of the pick has not
+finished. Where the vscode prepare goes, with git directly (clone, then a
+spare's checkout):
+
+| Clone | Clone | Spare checkout | Ready |
+|---|---|---|---|
+| `--filter=blob:none` | 18.3 s | 7.5 s | 25.8 s |
+| `--filter=tree:0` | 4.4 s | 8.9 s | 13.4 s |
+| `--depth=1` | 5.4 s | 3.9 s | 9.3 s |
+
+The deepen that follows a shallow clone took 35 s on vscode, off the path,
+and leaves a store with the whole history (166,763 commits; `git log --
+README.md` answered in 171 ms).
 
 ## 4. Reproducing
 

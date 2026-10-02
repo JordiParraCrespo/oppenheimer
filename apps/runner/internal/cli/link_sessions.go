@@ -7,6 +7,7 @@ package cli
 
 import (
 	"context"
+	"encoding/base64"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
@@ -167,6 +168,32 @@ func (h *linkHandler) preflight(ctx context.Context, commandID string) {
 	beat := h.heartbeatFrom(facts)
 	beat.Type = "heartbeat"
 	_ = h.client.Send(beat)
+}
+
+// prepareRepository gets a repository ready for the create a person is about
+// to send: the mirror cloned or fetched and a spare worktree checked out
+// (02 §5). Its git runs as `prepare:<command id>`, an identity the broker
+// holds this command's own token for: there is no session to ask one for.
+func (h *linkHandler) prepareRepository(ctx context.Context, m link.RepositoryPrepare) {
+	sealed, err := base64.StdEncoding.DecodeString(m.Sealed)
+	if err != nil {
+		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("the prepare's token is not base64"))
+		return
+	}
+	token, err := h.app.Pairing.Unseal(sealed)
+	if err != nil {
+		h.fail(m.CommandID, err)
+		return
+	}
+	id := preparePrefix + m.CommandID
+	h.credentials.Hold(id, string(token), m.ExpiresAt)
+	defer h.credentials.Forget(id)
+
+	ctx = sessionsdomain.WithSession(ctx, id)
+	remote := "https://github.com/" + m.RepositoryFullName + ".git"
+	if err := h.app.Worktrees.PrepareRepository(ctx, m.RepositoryFullName, remote, m.BaseBranch); err != nil {
+		h.fail(m.CommandID, err)
+	}
 }
 
 // update applies a version the control plane asks for: the pin and the safe

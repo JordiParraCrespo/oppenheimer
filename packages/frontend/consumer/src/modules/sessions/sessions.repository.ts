@@ -12,6 +12,7 @@ import { CONSUMER_CONFIG } from '../../config';
 import {
   type AttachTicket,
   type CreateSessionInput,
+  type PrepareSessionInput,
   type SessionAttachment,
   SessionCheckoutEntity,
   SessionEntity,
@@ -150,6 +151,20 @@ export class SessionsRepository {
       SessionsErrors.CREATE_FAILED,
     );
     return toEntity(data);
+  }
+
+  /**
+   * Asks the host to clone or fetch the draft's repository and make a spare
+   * worktree, so the create that follows does not wait on git. Answers the
+   * hints only: whether the host was told.
+   */
+  @MapApiError(SessionsErrors.PREPARE_FAILED)
+  async prepare(input: PrepareSessionInput): Promise<string[]> {
+    const data = await unwrapBody(
+      heyApiSdk.prepareSession({ body: input }),
+      SessionsErrors.PREPARE_FAILED,
+    );
+    return data.hints;
   }
 
   /**

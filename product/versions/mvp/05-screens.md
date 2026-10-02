@@ -318,6 +318,16 @@
 - Web framework open: Vite SPA recommended, Next.js as a client app
   acceptable. Decide at step 3.
 
+- **New session gets the host ready while the prompt is written.** As soon
+  as the draft has a host and a repository — picked, or filled in by a
+  project's defaults — the console sends `POST /v1/sessions/prepare` once
+  for that host, repository and branch, and the host clones or fetches it
+  and makes a spare worktree (02 §5). Nothing on screen changes and a
+  failure says nothing: the create does the same work itself. What it buys
+  is measured in note 14: a first session on a large repository goes from
+  half a minute to about a second when Send comes ten seconds after the
+  pick (2026-10-02).
+
 ## Open questions
 
 1. ~~Session naming: user-typed, derived from the first task, or from

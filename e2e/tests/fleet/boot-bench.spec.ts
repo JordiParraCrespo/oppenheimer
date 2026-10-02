@@ -21,6 +21,8 @@ import { signInAs } from '../../support/web';
  *   TLS-inspecting proxy, `GIT_SSL_CAINFO` must name a CA file the host's
  *   account can read, since the runner inherits it;
  * - `BENCH_TABS`: tabs open on the session while it starts;
+ * - `BENCH_THINK_MS`: the pause between picking the repository and pressing
+ *   Send, standing in for writing the prompt;
  * - `BENCH_OUT`: a file to append one JSON line per session to.
  */
 test.skip(process.env.BOOT_BENCH !== '1', 'the boot benchmark is opt-in (BOOT_BENCH=1)');
@@ -30,6 +32,7 @@ test.use({ baseURL: WEB_URL });
 const RUNS = Number(process.env.BENCH_RUNS ?? 4);
 const AGENT = process.env.BENCH_AGENT === 'claude' ? 'claude' : 'shim';
 const TABS = Number(process.env.BENCH_TABS ?? 1);
+const THINK_MS = Number(process.env.BENCH_THINK_MS ?? 0);
 const REMOTE = process.env.BENCH_REMOTE;
 const STUB_URL = `https://github.com/acme-labs/${STUB_REPOSITORIES.mobile.name}.git`;
 
@@ -64,6 +67,8 @@ test('boot: Send → first agent bytes on the console', async ({ page, context }
       await page.getByRole('option', { name: new RegExp(STUB_REPOSITORIES.mobile.name) }).click();
       await page.keyboard.press('Escape');
       await page.getByRole('textbox', { name: /Describe a task/ }).fill(`bench run ${run}`);
+      // Writing the prompt: what a host gets to prepare the repository in.
+      if (THINK_MS > 0) await page.waitForTimeout(THINK_MS);
 
       const recorder = new BootRecorder(page, AGENT === 'claude' ? CLAUDE_MARKER : SHIM_MARKER);
       recorder.start();

@@ -234,8 +234,17 @@ Then, in order:
 2. For each checkout, ensure the workspace's store
    `repos/<store>.git` exists and is fetched (the runner still keeps it
    at `<owner>/<repo>/main`, until note 10's layout lands). The store
-   is blobless and has no working tree: `git clone --filter=blob:none
-   --no-checkout` the first time. A create then fetches only the ref
+   is blobless and has no working tree. The first clone is **shallow at
+   the base** (`git clone --depth=1 --branch <base> --no-checkout`, the
+   refspec then widened to every branch), which is all a worktree needs
+   and on microsoft/vscode a third of a blobless clone's time (5.4 s
+   against 18.3 s, note 14); the history follows in the background
+   (`fetch --unshallow --filter=blob:none`, the store marked a promisor
+   of `blob:none`), which leaves the store exactly the blobless clone it
+   always was. That fetch takes no lock: while it runs, a create uses a
+   base the clone brought rather than fetching beside it, and waits for it
+   only for a branch the clone did not bring. A store left shallow by a
+   restart is deepened by its next fetch. A create then fetches only the ref
    its worktree is made from — the base, or the existing branch it
    checks out — with no tags and git's automatic gc off, and a ref that
    is not a branch on the remote fails the create. Both go through the
@@ -267,9 +276,15 @@ Then, in order:
    fully checked out. A create for a new branch moves it to the
    session's path and checks out the session's branch there, which
    writes only what changed on the base since; the runner then makes
-   the next spare in the background. A spare still being made is not
-   waited for, a finished one on disk is taken after a restart, and
+   the next spare in the background. A spare still being made is waited
+   for — it is already writing the files a plain add would write again
+   beside it — a finished one on disk is taken after a restart, and
    something at `.spare` the store never registered is left alone.
+   `repository.prepare` (01) builds the store and the spare **before** a
+   create is asked for: New session sends it as soon as a host and a
+   repository are picked, so the create that follows only moves the spare
+   and cuts its branch. Session branches are cut `--no-track`: they are
+   pushed to a branch of their own, never pulled from their base.
    A detached worktree at a session's path is a claim cut short
    between the move and the checkout; the next attempt finishes it.
    The cost is one checked-out tree per repository on the host.
@@ -651,13 +666,10 @@ capacity gate, the egress proxy, and the `hypervisor`, `guest` and
 8. Whether `sessions` should split into `sessions` and `workspaces` once
    the VM slice adds a second kind of place a worktree can live. Today
    git is an adapter of `sessions`; then it may want its own context.
-9. **Network work before Send.** The first session on a large repository
-   waits on the clone and the first checkout: 33–35 s for
-   microsoft/vscode, measured in note 14 of the top-level series. A later
-   session on it waits about 1 s. The composer knows the host and the
-   repository before Send. Should the store's fetch and the spare (§5) be
-   built then, and by which existing frame? The same note measured, and
-   did not decide, three things:
-   - a clone with `--filter=tree:0` instead of blobless;
-   - a parallel checkout;
-   - skipping the create's fetch when the store is fresh.
+9. ~~**Network work before Send.**~~ Decided 2026-10-02 (§5): New session
+   sends `repository.prepare` when a host and a repository are picked; the
+   first clone is shallow and deepened in the background; checkouts run one
+   worker per core. Skipping a create's fetch when the store is fresh was
+   measured and **not** taken: a create sees its base as it is now, and the
+   fetch costs about half a second. A treeless clone was measured slower
+   than shallow (13.4 s against 9.3 s to a ready spare on vscode).

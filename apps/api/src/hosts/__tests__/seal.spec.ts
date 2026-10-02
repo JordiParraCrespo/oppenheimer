@@ -7,7 +7,7 @@ import {
   hkdfSync,
 } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { seal } from '../infrastructure/seal.util';
+import { seal } from '../application/seal.util';
 
 /**
  * The half of the sealing scheme the control plane runs. The runner's test

@@ -70,6 +70,7 @@ export {
   type RenameSessionVariables,
   useCloseSession,
   useCreateSession,
+  usePrepareSession,
   useInvalidateSession,
   useMoveSession,
   usePasteSessionImage,

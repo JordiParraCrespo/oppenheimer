@@ -178,3 +178,31 @@ func TestASpareOnDiskIsTakenByANewRunner(t *testing.T) {
 		t.Fatal("the new runner did not take the spare on disk")
 	}
 }
+
+// A prepare does a create's slow half before the create is asked for: the
+// mirror cloned and a spare checked out, so the create that follows takes the
+// spare rather than writing the tree while a person waits.
+func TestAPrepareLeavesASpareTheFirstCreateTakes(t *testing.T) {
+	remote := origin(t)
+	c, layout := spareClient(t)
+	ctx := context.Background()
+
+	if err := c.PrepareRepository(ctx, repo, remote, "main"); err != nil {
+		t.Fatalf("prepare: %v", err)
+	}
+	spare := spareOf(layout)
+	if _, err := os.Stat(filepath.Join(spare, "README.md")); err != nil {
+		t.Fatalf("the prepare left no spare: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(spare, "spare-marker"), nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	one := layout.Worktree(repo, "one")
+	if err := c.Add(ctx, repo, one, "oppenheimer/one", "main", true); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(one, "spare-marker")); err != nil {
+		t.Fatal("the first create did not take the prepared spare")
+	}
+}

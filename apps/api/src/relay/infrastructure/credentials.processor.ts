@@ -9,7 +9,6 @@ import { HOST_KEY } from '../../hosts/hosts.di-tokens';
 import type { RunnerLink } from '../../links/application/link-registry.port';
 import type { SessionLookupPort } from '../../sessions/application/session-lookup.port';
 import { SESSION_LOOKUP } from '../../sessions/sessions.di-tokens';
-import { seal } from './seal.util';
 
 /**
  * `credentials.token` → `credentials.grant`: the runner asks on the link for one
@@ -58,8 +57,8 @@ export class CredentialsProcessor {
       this.refuse(link, ask, 'TOKEN_003', 'the session owner may not act');
       return;
     }
-    const publicKey = await this.keys.publicKeyOf(link.hostId);
-    if (!publicKey) {
+    // The key is read before a token is minted, so a host with none costs no mint.
+    if (!(await this.keys.publicKeyOf(link.hostId))) {
       this.refuse(link, ask, 'HOSTS_001', 'host key unavailable');
       return;
     }
@@ -68,12 +67,17 @@ export class CredentialsProcessor {
         target.installationId,
         target.githubRepoId,
       );
+      const sealed = await this.keys.sealFor(link.hostId, Buffer.from(minted.token, 'utf8'));
+      if (!sealed) {
+        this.refuse(link, ask, 'HOSTS_001', 'host key unavailable');
+        return;
+      }
       link.send({
         type: 'credentials.grant',
         requestId: ask.requestId,
         sessionId: ask.sessionId,
         checkoutId: ask.checkoutId,
-        sealed: seal(publicKey, Buffer.from(minted.token, 'utf8')).toString('base64'),
+        sealed,
         expiresAt: minted.expiresAt.toISOString(),
       });
     } catch (error) {

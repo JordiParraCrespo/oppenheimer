@@ -24,8 +24,28 @@ const spareName = ".spare"
 type spare struct {
 	path string
 	// ready is set once the checkout has finished; a spare still being
-	// made is not taken, the create does a plain add instead.
+	// made is waited for (awaitSpare), not added beside.
 	ready bool
+	// done closes when the making ends, ready or not. A spare found on disk
+	// rather than made here has none.
+	done chan struct{}
+}
+
+// awaitSpare waits, before a create takes the repository's lock, for a spare
+// that is being made: it is already writing the files a plain add would write
+// again beside it, and making it takes that lock for a moment. A context that
+// ends first leaves the create to what is there.
+func (c *Client) awaitSpare(ctx context.Context, repo string) {
+	c.mu.Lock()
+	s := c.spares[repo]
+	c.mu.Unlock()
+	if s == nil || s.done == nil {
+		return
+	}
+	select {
+	case <-s.done:
+	case <-ctx.Done():
+	}
 }
 
 func (c *Client) sparePath(repo string) string {
@@ -76,7 +96,8 @@ func (c *Client) checkoutSession(ctx context.Context, mirror, path, branch, base
 	if c.leftoverBranch(ctx, mirror, branch, startPoint(base)) {
 		flag = "-B"
 	}
-	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: path}, "checkout", "--quiet", flag, branch, startPoint(base))
+	// --no-track for the reason Add gives.
+	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: path}, "checkout", "--quiet", "--no-track", flag, branch, startPoint(base))
 	return err
 }
 
@@ -86,24 +107,26 @@ func (c *Client) discard(ctx context.Context, mirror, path string) {
 }
 
 // warm makes repo a new spare at base, in the background, unless it has one
-// or spares are off. ctx's values ride along (the session a lazy blob fetch
-// asks a token for); its end does not, since the create is already over.
-func (c *Client) warm(ctx context.Context, repo, base string) {
+// or spares are off, and returns the spare being made or already held (nil
+// when spares are off). ctx's values ride along (the session a lazy blob
+// fetch asks a token for); its end does not, since the create is already over.
+func (c *Client) warm(ctx context.Context, repo, base string) *spare {
 	if !c.prewarm {
-		return
+		return nil
 	}
 	c.mu.Lock()
-	if _, ok := c.spares[repo]; ok {
+	if s, ok := c.spares[repo]; ok {
 		c.mu.Unlock()
-		return
+		return s
 	}
-	s := &spare{path: c.sparePath(repo)}
+	s := &spare{path: c.sparePath(repo), done: make(chan struct{})}
 	c.spares[repo] = s
 	c.mu.Unlock()
 
 	c.warming.Add(1)
 	go func() {
 		defer c.warming.Done()
+		defer close(s.done)
 		err := c.prepare(context.WithoutCancel(ctx), repo, base, s.path)
 		c.mu.Lock()
 		defer c.mu.Unlock()
@@ -115,6 +138,7 @@ func (c *Client) warm(ctx context.Context, repo, base string) {
 		}
 		s.ready = true
 	}()
+	return s
 }
 
 // prepare leaves a clean worktree at path, detached at base. A clean one an

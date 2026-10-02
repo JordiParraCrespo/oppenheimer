@@ -49,6 +49,10 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_013',
     message: 'Failed to restart the session',
   },
+  PREPARE_FAILED: {
+    code: 'SESSIONS_CLIENT_014',
+    message: 'Failed to get the host ready',
+  },
   /**
    * The API's own code for an image over the cap, raised here before the
    * upload: a file that would be refused is not worth sending, and the reader
