@@ -1,5 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from '@oppenheimer/design-system-web';
-import { Link } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /** The commands a reader runs on the machine; the installer links the binary under this name. */
@@ -12,8 +12,17 @@ const STATUS_COMMAND = 'oppenheimer-runner status';
  * what to run on that machine if the runner is what stopped. `install` is the
  * one command that both writes the unit and (re)starts it, so it is right
  * whether the service died, was never started after a reboot, or was removed.
+ *
+ * `hostsLink` is the way to Settings → Hosts, rendered by the caller: a
+ * component draws, it does not route.
  */
-export function HostOfflineNotice({ hostName }: { hostName: string | undefined }) {
+export function HostOfflineNotice({
+  hostName,
+  hostsLink,
+}: {
+  hostName: string | undefined;
+  hostsLink: ReactNode;
+}) {
   const { t } = useTranslation();
   return (
     <Alert tone="warning" data-testid="host-offline-notice">
@@ -31,9 +40,7 @@ export function HostOfflineNotice({ hostName }: { hostName: string | undefined }
           {t('sessions.session.offline.status')}{' '}
           <code className="font-mono text-[12.5px] text-fg">{STATUS_COMMAND}</code>
         </p>
-        <p>
-          <Link to="/settings/hosts">{t('sessions.session.offline.hosts')}</Link>
-        </p>
+        <p>{hostsLink}</p>
       </AlertDescription>
     </Alert>
   );

@@ -7,6 +7,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { HostOfflineNotice } from '../components/host-offline-notice';
 import { useHostReturn } from '../hooks/use-host-return';
@@ -87,7 +88,10 @@ export function SessionTerminal({ sessionId, hostId }: { sessionId: string; host
           is for the reader who has to go and bring it back. */}
       {status === 'offline' ? (
         <div className="px-5 pb-3">
-          <HostOfflineNotice hostName={host?.name} />
+          <HostOfflineNotice
+            hostName={host?.name}
+            hostsLink={<Link to="/settings/hosts">{t('sessions.session.offline.hosts')}</Link>}
+          />
         </div>
       ) : null}
 
