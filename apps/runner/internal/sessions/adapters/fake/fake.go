@@ -34,6 +34,8 @@ type Terminals struct {
 	// Titles is the terminal title per target, the signal an agent sets
 	// through an escape sequence.
 	Titles map[string]string
+	// Launches is what each window was last launched with.
+	Launches map[string]Launched
 
 	sessions map[string]*fakeSession
 	// Attached counts live attachments.
@@ -243,6 +245,23 @@ func (t *Terminals) SendKeys(_ context.Context, target, keys string) error {
 	return nil
 }
 
+// Launched is what a window was last launched with.
+type Launched struct {
+	Dir     string
+	Command string
+}
+
+// Launch implements app.Terminals by recording the launch on the target.
+func (t *Terminals) Launch(_ context.Context, target, dir, command string) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.Launches == nil {
+		t.Launches = map[string]Launched{}
+	}
+	t.Launches[target] = Launched{Dir: dir, Command: command}
+	return nil
+}
+
 // Paste implements app.Terminals by appending to the screen and recording
 // the paste, so a test can tell it from typed keys.
 func (t *Terminals) Paste(_ context.Context, target, _ string, text string) error {
@@ -381,6 +400,13 @@ func (w *Worktrees) Ensure(_ context.Context, repo, _, ref string) error {
 	w.Mirrors[repo]++
 	w.Fetched = append(w.Fetched, ref)
 	return nil
+}
+
+// Has implements app.Worktrees: a repository is on the host once Ensure ran for it.
+func (w *Worktrees) Has(repo string) bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.Mirrors[repo] > 0
 }
 
 // Prepare implements app.Worktrees. Nothing is made on disk: a fake session's

@@ -77,6 +77,7 @@ export {
   useRenameSession,
   useRestartSession,
   useSession,
+  useSessionOpening,
   useSessionStartProgress,
   useSessions,
   useUploadSessionAttachment,

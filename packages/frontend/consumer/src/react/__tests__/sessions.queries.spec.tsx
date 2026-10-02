@@ -5,7 +5,14 @@ import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { SessionEntity } from '../../modules/sessions/session.entity';
-import { sessionsKeys, useCloseSession, useSession, useSessions } from '../sessions.queries';
+import {
+  sessionsKeys,
+  useCloseSession,
+  useCreateSession,
+  useSession,
+  useSessionOpening,
+  useSessions,
+} from '../sessions.queries';
 import { fakeKernel } from './fake-kernel';
 
 /**
@@ -20,7 +27,13 @@ const starting = { id: 's-1', isProvisioning: true } as SessionEntity;
 const open = { id: 's-1', isProvisioning: false } as SessionEntity;
 
 function setup(
-  service: { findById?: unknown; findAll?: unknown; close?: unknown },
+  service: {
+    findById?: unknown;
+    findAll?: unknown;
+    close?: unknown;
+    startProgress?: unknown;
+    create?: unknown;
+  },
   // The console's own defaults, for the specs whose rule is its stale window.
   defaultOptions: ConstructorParameters<typeof QueryClient>[0] = {
     defaultOptions: { queries: { retry: false } },
@@ -306,5 +319,56 @@ describe('session detail from the list', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(queryClient.getQueryData(sessionsKeys.detail('s-1'))).toBe(read);
+  });
+});
+
+/**
+ * The row opens when the host has made the session's pane, which is before
+ * the clone. A start the console watched stays on its pane until the agent
+ * step lands, or the reader is shown a shell in an empty directory.
+ */
+describe('useSessionOpening', () => {
+  const live = { id: 's-1', isLive: true } as SessionEntity;
+  const progress = (settled: boolean) => ({ steps: [], failure: null, settled });
+
+  it('holds a watched start that opened until the agent is running, then lets go', async () => {
+    const startProgress = vi
+      .fn()
+      .mockResolvedValueOnce(progress(false))
+      .mockResolvedValue(progress(true));
+    const { wrapper, queryClient } = setup({ startProgress });
+    // What the start pane left in the cache while the row read `starting`.
+    queryClient.setQueryData(sessionsKeys.start('s-1', false), progress(false));
+
+    const { result } = renderHook(() => useSessionOpening(live), { wrapper });
+
+    expect(result.current).toBe(true);
+    await waitFor(() => expect(result.current).toBe(false), { timeout: 5_000 });
+  }, 10_000);
+
+  it('holds a session this console sent, though its row was open before any pane mounted', async () => {
+    // On a warm host the pane is made in milliseconds: the first row the
+    // screen reads can already be `open`, with the clone still to run.
+    const startProgress = vi.fn().mockResolvedValue(progress(false));
+    const create = vi.fn().mockResolvedValue(live);
+    const { wrapper } = setup({ startProgress, create });
+    const { result: send } = renderHook(() => useCreateSession(), { wrapper });
+    await send.current.mutateAsync({ input: {} as never, idempotencyKey: 'k-1' });
+
+    const { result } = renderHook(() => useSessionOpening(live), { wrapper });
+
+    expect(result.current).toBe(true);
+    await waitFor(() => expect(startProgress).toHaveBeenCalled());
+  });
+
+  it('opens a session it never watched start without reading its log', async () => {
+    const startProgress = vi.fn().mockResolvedValue(progress(false));
+    const { wrapper } = setup({ startProgress });
+
+    const { result } = renderHook(() => useSessionOpening(live), { wrapper });
+
+    expect(result.current).toBe(false);
+    await pause(100);
+    expect(startProgress).not.toHaveBeenCalled();
   });
 });

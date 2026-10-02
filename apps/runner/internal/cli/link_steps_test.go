@@ -94,3 +94,17 @@ func TestAStartRefusedBeforeAnyStageLeavesTheHostStepRunning(t *testing.T) {
 		t.Fatalf("logged %q, want only host:running", got)
 	}
 }
+
+// The download flag is what tells the console a first session will take
+// longer; dropped on the wire, the reader is back to an unexplained wait.
+func TestADownloadingCloneSaysSoOnTheWire(t *testing.T) {
+	var sent []link.SessionStepPayload
+	steps := newStartSteps(func(p link.SessionStepPayload) { sent = append(sent, p) }, nil, time.Now)
+
+	steps.stage(sessionsdomain.StageEvent{Stage: sessionsdomain.StageClone, Download: true})
+
+	last := sent[len(sent)-1]
+	if last.Step != link.SessionStepClone || last.Status != link.SessionStepRunning || !last.Download {
+		t.Fatalf("clone running = %+v, want it marked as a download", last)
+	}
+}

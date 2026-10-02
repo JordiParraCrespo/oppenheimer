@@ -16,7 +16,8 @@ const step = (
   id: SessionStartStep['id'],
   state: SessionStartStep['state'],
   durationMs: number | null = null,
-): SessionStartStep => ({ id, state, durationMs });
+  download = false,
+): SessionStartStep => ({ id, state, durationMs, download });
 
 const context = {
   host: 'studio',
@@ -42,6 +43,13 @@ describe('provisioningSteps', () => {
     expect(host.label).toContain('"host":"studio"');
     expect(clone.label).toContain('"repo":"xrp-mobile"');
     expect(agent.label).toContain('"agent":"Claude Code"');
+  });
+
+  it('says a first clone is a download, not the fetch a later session makes', () => {
+    const [first] = provisioningSteps([step('clone', 'running', null, true)], context, t);
+    const [later] = provisioningSteps([step('clone', 'running')], context, t);
+    expect(first.meta).toBe('sessions.provisioning.steps.clone.downloading');
+    expect(later.meta).toBe('sessions.provisioning.steps.clone.doing');
   });
 
   it('says what a running step is doing, and nothing under a pending one', () => {

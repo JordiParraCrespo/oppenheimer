@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionsRepository } from '../sessions.repository';
 
 vi.mock('@oppenheimer/api-client', () => ({
-  heyApiSdk: { findSessions: vi.fn() },
+  heyApiSdk: { findSessions: vi.fn(), findSessionEvents: vi.fn() },
 }));
 
 /** What the generated SDK resolves to on success. */
@@ -71,5 +71,41 @@ describe('SessionsRepository.findAll', () => {
 
     expect(error).toBeInstanceOf(AppError);
     expect((error as AppError).code).toBe('SESSIONS_CLIENT_001');
+  });
+});
+
+describe('SessionsRepository.findStartLog', () => {
+  const stepEntry = (seq: number, step: string, status: string) => ({
+    seq,
+    kind: 'session.step',
+    payload: { step, status },
+  });
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it('reads past session.started, which is the pane, and stops at the agent step', async () => {
+    vi.mocked(heyApiSdk.findSessionEvents)
+      .mockResolvedValueOnce(
+        ok({
+          data: [
+            stepEntry(1, 'host', 'done'),
+            { seq: 2, kind: 'session.started', payload: {} },
+            stepEntry(3, 'clone', 'done'),
+          ],
+          nextSeq: 3,
+        }),
+      )
+      .mockResolvedValueOnce(
+        ok({
+          data: [stepEntry(4, 'worktree', 'done'), stepEntry(5, 'agent', 'done')],
+          nextSeq: 6,
+        }),
+      );
+
+    const entries = await new SessionsRepository().findStartLog('s1');
+
+    expect(entries.map((entry) => entry.seq)).toEqual([1, 2, 3, 4, 5]);
+    // The agent step settled it: no third page is asked for.
+    expect(heyApiSdk.findSessionEvents).toHaveBeenCalledTimes(2);
   });
 });
