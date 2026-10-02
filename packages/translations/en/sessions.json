@@ -161,10 +161,9 @@
     },
     "offline": {
       "title": "{{host}} is offline",
-      "titleUnnamed": "The host is offline",
       "description": "The runner on that machine is not connected. This terminal reconnects on its own as soon as it dials back in.",
-      "restart": "If the machine is on, restart the runner on it:",
-      "status": "or check it with",
+      "install": "If the machine is on, reinstall and start the runner there with",
+      "status": "or see what is wrong with",
       "hosts": "Open hosts"
     }
   },

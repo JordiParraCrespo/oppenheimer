@@ -20,9 +20,7 @@ export {
 // this token spent?".
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
-  type HostReach,
   useHostPresence,
-  useHostReach,
   useHosts,
   useHostsSnapshot,
   useRemoveHost,

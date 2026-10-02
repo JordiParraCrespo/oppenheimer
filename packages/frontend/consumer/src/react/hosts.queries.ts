@@ -52,39 +52,20 @@ export function useHosts<TData = HostEntity[]>(options?: HostListOptions<TData>)
 }
 
 /**
- * The hosts, for a view that shows whether each is online (Settings → Hosts).
- * Presence is not streamed to the console yet, so the list polls for as long
- * as such a view is mounted, on `LIVE_POLL.hostPresence`.
+ * The hosts, for a view that shows whether each is online. Presence is not
+ * streamed to the console yet, so the list polls on `LIVE_POLL.hostPresence`
+ * while `watching` holds: for as long as Settings → Hosts is mounted, and for
+ * as long as a session's terminal is told its host is offline. `select` reads
+ * less than the whole list, as on `useHosts`.
  */
-export function useHostPresence() {
-  return useHostList(undefined, pollWhile('hostPresence', true));
-}
-
-/** What a terminal needs of its host while the link is down. */
-export interface HostReach {
-  name: string;
-  online: boolean;
-}
-
-/**
- * One host's name and whether it holds a link, for a terminal that has been
- * told `host_offline`. It polls on `LIVE_POLL.hostReturn` only while
- * `watching`, so a session pane that is live costs nothing, and the moment the
- * list says the host is back the pane can dial instead of sitting out the
- * reconnect ladder's thirty seconds. `undefined` until the list has loaded, or
- * for a host the list does not hold.
- */
-export function useHostReach(hostId: string, watching: boolean): HostReach | undefined {
-  const { data } = useHostList(
-    {
-      select: (hosts): HostReach | undefined => {
-        const host = hosts.find((candidate) => candidate.id === hostId);
-        return host ? { name: host.name, online: host.online } : undefined;
-      },
-    },
-    pollWhile('hostReturn', watching),
-  );
-  return data;
+export function useHostPresence<TData = HostEntity[]>({
+  watching = true,
+  select,
+}: {
+  watching?: boolean;
+  select?: (hosts: HostEntity[]) => TData;
+} = {}) {
+  return useHostList<TData>(select ? { select } : undefined, pollWhile('hostPresence', watching));
 }
 
 type HostListOptions<TData> = Omit<
@@ -94,8 +75,8 @@ type HostListOptions<TData> = Omit<
 
 /**
  * The one read of `GET /v1/hosts`, polling as `poll` says. Not in the barrel:
- * a feature reads `useHosts`, which never polls, `useHostPresence` or
- * `useHostReach`, and the pairing flow polls it on `LIVE_POLL.pairing`.
+ * a feature reads `useHosts`, which never polls, or `useHostPresence`, and the
+ * pairing flow polls it on `LIVE_POLL.pairing`.
  */
 export function useHostList<TData = HostEntity[]>(
   options?: HostListOptions<TData>,

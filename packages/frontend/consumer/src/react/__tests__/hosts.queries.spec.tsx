@@ -9,7 +9,6 @@ import {
   hostsKeys,
   useCurrentPairing,
   useHostPresence,
-  useHostReach,
   useHosts,
   useHostsSnapshot,
   usePairingTokens,
@@ -100,20 +99,22 @@ describe('useHostPresence', () => {
       LIVE_POLL.hostPresence.interval,
     );
   });
-});
 
-describe('useHostReach', () => {
-  it('polls for the host coming back only while the terminal waits on it', async () => {
-    const findAll = vi.fn().mockResolvedValue([host('h-1', 'laptop', false)]);
+  it('polls only while watching, and reads one host through select', async () => {
+    const findAll = vi.fn().mockResolvedValue([host('h-1', 'laptop', false), host('h-2')]);
     const { wrapper, queryClient } = setup({ findAll });
     const { result, rerender } = renderHook(
-      ({ watching }: { watching: boolean }) => useHostReach('h-1', watching),
+      ({ watching }: { watching: boolean }) =>
+        useHostPresence({
+          watching,
+          select: (hosts) => hosts.find((candidate) => candidate.id === 'h-1')?.online,
+        }),
       { wrapper, initialProps: { watching: true } },
     );
 
-    await waitFor(() => expect(result.current).toEqual({ name: 'laptop', online: false }));
+    await waitFor(() => expect(result.current.data).toBe(false));
     expect(observerIntervals(queryClient, hostsKeys.list())).toEqual([
-      LIVE_POLL.hostReturn.interval,
+      LIVE_POLL.hostPresence.interval,
     ]);
 
     rerender({ watching: false });

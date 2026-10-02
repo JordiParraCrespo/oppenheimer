@@ -7,10 +7,8 @@ import {
 } from '@oppenheimer/design-system-web';
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { HostOfflineNotice } from '../components/host-offline-notice';
-import { useHostReturn } from '../hooks/use-host-return';
 import { useImagePaste } from '../hooks/use-image-paste';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
@@ -32,12 +30,12 @@ export function SessionTerminal({ sessionId, hostId }: { sessionId: string; host
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
   const image = useImagePaste(sessionId, AGENT_WINDOW);
-  const { containerRef, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
+  const { containerRef, status, hasOutput, ended, retryNow, hostName } = useTerminal(createStream, {
     onEnd: refresh,
     agentWindow: true,
     onImage: image.onImage,
+    hostId,
   });
-  const host = useHostReturn(hostId, status, retryNow);
 
   return (
     <Terminal className="min-h-0 flex-1 overflow-hidden">
@@ -84,14 +82,11 @@ export function SessionTerminal({ sessionId, hostId }: { sessionId: string; host
       ) : null}
 
       {/* The relay said the host holds no link. The stream keeps dialling
-          behind this, and the host coming back redials at once; the notice
-          is for the reader who has to go and bring it back. */}
+          behind this and the host coming back redials at once; the notice is
+          for the reader who has to go and bring it back. */}
       {status === 'offline' ? (
         <div className="px-5 pb-3">
-          <HostOfflineNotice
-            hostName={host?.name}
-            hostsLink={<Link to="/settings/hosts">{t('sessions.session.offline.hosts')}</Link>}
-          />
+          <HostOfflineNotice hostName={hostName} />
         </div>
       ) : null}
 
@@ -115,8 +110,10 @@ export function SessionTerminal({ sessionId, hostId }: { sessionId: string; host
           {t(`sessions.session.status.${status}`)}
         </TerminalStatusItem>
         {/* Between reconnects the ladder may be waiting up to thirty seconds;
-            this skips the wait. */}
-        {status === 'connecting' || status === 'offline' ? (
+            this skips the wait. Not while the host is offline: a dial then
+            meets `host_offline` again, and the host coming back redials on
+            its own (`useTerminal`). */}
+        {status === 'connecting' ? (
           <Button variant="ghost" size="xs" onClick={retryNow}>
             {t('sessions.session.retryNow')}
           </Button>

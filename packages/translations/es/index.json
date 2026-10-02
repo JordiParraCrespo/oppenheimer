@@ -535,10 +535,9 @@
       },
       "offline": {
         "title": "{{host}} está desconectado",
-        "titleUnnamed": "El host está desconectado",
         "description": "El runner de esa máquina no está conectado. Este terminal se vuelve a conectar solo en cuanto el runner vuelva.",
-        "restart": "Si la máquina está encendida, reinicia el runner en ella:",
-        "status": "o revísalo con",
+        "install": "Si la máquina está encendida, reinstala y arranca el runner en ella con",
+        "status": "o comprueba qué falla con",
         "hosts": "Abrir hosts"
       }
     },
