@@ -1,4 +1,3 @@
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { DEFAULT_LEASE_MS, type OutboxService } from './outbox.service';
 import type { OutboxMessageRecord } from './outbox-message';
 
@@ -66,8 +65,8 @@ export class OutboxRelay {
   private running?: Promise<number>;
   /** Set when a drain was requested while one was running: run one more pass. */
   private again = false;
-  /** Set while a publisher runs, so a drain requested from inside it is recognised. */
-  private readonly delivering = new AsyncLocalStorage<true>();
+  /** True only while a publisher's promise is pending. */
+  private delivering = false;
 
   constructor(
     private readonly outbox: OutboxService,
@@ -126,11 +125,12 @@ export class OutboxRelay {
    * Drain until no due rows remain, and wait for it. Returns the number of rows
    * delivered. Called from inside a delivery, the pass is requested and the
    * call resolves at once with 0, since waiting would mean the drain waiting on
-   * itself.
+   * itself. The flag is relay-wide, not per caller: an unrelated `drainOnce()`
+   * made while a publisher is pending also resolves at once with 0.
    */
   drainOnce(): Promise<number> {
     const run = this.requestDrain();
-    return this.delivering.getStore() ? Promise.resolve(0) : run;
+    return this.delivering ? Promise.resolve(0) : run;
   }
 
   private async drainBatches(): Promise<number> {
@@ -182,7 +182,12 @@ export class OutboxRelay {
   ): Promise<void> {
     for (const message of batch) {
       try {
-        await this.delivering.run(true, () => this.publisher(message));
+        this.delivering = true;
+        try {
+          await this.publisher(message);
+        } finally {
+          this.delivering = false;
+        }
         published.push(message.id);
       } catch (error) {
         this.options.logger?.warn(

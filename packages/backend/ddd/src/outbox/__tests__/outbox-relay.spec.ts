@@ -167,6 +167,20 @@ describe('OutboxRelay', () => {
     expect(published).toEqual(['event', 'job']);
   });
 
+  it("a drain asked for by a handler's detached work after its delivery ended still waits", async () => {
+    outbox.claim.mockResolvedValueOnce([message({ id: 'event' })]).mockResolvedValue([]);
+    let detached: Promise<number> | undefined;
+    const relay = relayWith(async () => {
+      // Unawaited: runs after the publisher has returned.
+      detached = new Promise<number>((resolve) => setTimeout(() => resolve(relay.drainOnce()), 0));
+    });
+
+    await relay.drainOnce();
+    // Not inside a delivery any more, so this is a real drain, not an early 0.
+    outbox.claim.mockResolvedValueOnce([message({ id: 'late' })]);
+    await expect(detached).resolves.toBe(1);
+  });
+
   it('collapses the requests made during a drain into one more pass', async () => {
     let release: () => void = () => {};
     const gate = new Promise<void>((resolve) => {

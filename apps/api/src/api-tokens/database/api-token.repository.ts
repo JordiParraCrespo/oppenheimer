@@ -6,7 +6,7 @@ import { IsNull, MoreThan, type Repository } from 'typeorm';
 import { ApiTokenMapper } from '../api-tokens.mapper';
 import { type ApiTokenEntity, LAST_USED_GRANULARITY_MS } from '../domain/api-token.entity';
 import { ApiTokenOrmEntity } from './api-token.orm-entity';
-import type { ApiTokenRepositoryPort } from './api-token.repository.port';
+import type { ApiTokenRepositoryPort, InsertOutcome } from './api-token.repository.port';
 
 @Injectable()
 export class ApiTokenRepository implements ApiTokenRepositoryPort {
@@ -16,17 +16,6 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
     private readonly mapper: ApiTokenMapper,
     private readonly outbox: OutboxService,
   ) {}
-
-  async insert(entity: ApiTokenEntity | ApiTokenEntity[]): Promise<void> {
-    const entities = Array.isArray(entity) ? entity : [entity];
-    const records = entities.map((e) => this.mapper.toPersistence(e));
-    await this.outbox.writeWithEvents(entities, (manager) => {
-      const repository = manager.getRepository(ApiTokenOrmEntity);
-      // Cast around TypeORM's `QueryDeepPartialEntity` recursion, which cannot
-      // represent the jsonb array columns.
-      return repository.insert(records as Parameters<typeof repository.insert>[0]);
-    });
-  }
 
   async save(entity: ApiTokenEntity): Promise<ApiTokenEntity> {
     const record = await this.outbox.writeWithEvents([entity], (manager) =>
@@ -53,13 +42,34 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
     return records.map((record) => this.mapper.toDomain(record));
   }
 
-  countActiveForUser(userId: string, now: Date): Promise<number> {
-    return this.repository.count({
-      where: [
-        { userId, revokedAt: IsNull(), expiresAt: IsNull() },
-        { userId, revokedAt: IsNull(), expiresAt: MoreThan(now) },
-      ],
+  async insertWithinLimit(
+    entity: ApiTokenEntity,
+    limit: number,
+    now: Date,
+  ): Promise<InsertOutcome> {
+    const record = this.mapper.toPersistence(entity);
+    const outcome = await this.outbox.transaction(async (manager) => {
+      // One mint per owner at a time: a concurrent request waits on this lock
+      // until the transaction commits, then counts the token it added.
+      await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+        `api_token:${entity.userId}`,
+      ]);
+      const repository = manager.getRepository(ApiTokenOrmEntity);
+      const active = await repository.count({
+        where: [
+          { userId: entity.userId, revokedAt: IsNull(), expiresAt: IsNull() },
+          { userId: entity.userId, revokedAt: IsNull(), expiresAt: MoreThan(now) },
+        ],
+      });
+      if (active >= limit) return 'limit_reached' as const;
+      // Cast around TypeORM's `QueryDeepPartialEntity` recursion, which cannot
+      // represent the jsonb array columns.
+      await repository.insert(record as Parameters<typeof repository.insert>[0]);
+      await this.outbox.stageEvents(manager, entity.domainEvents);
+      return 'inserted' as const;
     });
+    if (outcome === 'inserted') entity.clearEvents();
+    return outcome;
   }
 
   /**

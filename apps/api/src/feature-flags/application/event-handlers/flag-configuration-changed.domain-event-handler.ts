@@ -25,7 +25,9 @@ export class FlagConfigurationChangedDomainEventHandler {
     private readonly snapshot: FlagSnapshotPort,
   ) {}
 
-  @OnEvent(FlagConfigurationChangedDomainEvent.name)
+  // `suppressErrors: false`: by default Nest logs a listener's rejection and
+  // resolves, and the relay would mark the row delivered.
+  @OnEvent(FlagConfigurationChangedDomainEvent.name, { suppressErrors: false })
   async handle(event: FlagConfigurationChangedDomainEvent): Promise<void> {
     await this.changes.record({
       id: event.id,
