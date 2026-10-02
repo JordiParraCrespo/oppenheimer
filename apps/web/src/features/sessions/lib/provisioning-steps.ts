@@ -19,6 +19,7 @@ export const PENDING_START: SessionStartStep[] = SESSION_START_STEPS.map((id) =>
   id,
   state: 'pending',
   durationMs: null,
+  download: false,
 }));
 
 /**
@@ -48,7 +49,8 @@ function meta(step: SessionStartStep, context: ProvisioningContext, t: TFunction
     case 'failed':
       return context.failure ?? t('sessions.provisioning.failed');
     case 'running':
-      return t(`${key}.doing`);
+      // A first download is not the quick fetch every later session makes.
+      return step.download ? t('sessions.provisioning.steps.clone.downloading') : t(`${key}.doing`);
     case 'pending':
       // The one thing worth saying about a step nobody has reported: the
       // machine it waits on is away.

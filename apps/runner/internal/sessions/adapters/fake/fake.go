@@ -402,6 +402,13 @@ func (w *Worktrees) Ensure(_ context.Context, repo, _, ref string) error {
 	return nil
 }
 
+// Has implements app.Worktrees: a repository is on the host once Ensure ran for it.
+func (w *Worktrees) Has(repo string) bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.Mirrors[repo] > 0
+}
+
 // Prepare implements app.Worktrees. Nothing is made on disk: a fake session's
 // terminal is a fake too, and the directory is only somewhere to start it.
 func (w *Worktrees) Prepare(_ context.Context, repo string) (string, error) {

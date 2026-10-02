@@ -245,10 +245,11 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 func (s *Service) create(ctx context.Context, in CreateInput, session domain.Session) (domain.Session, error) {
 	// Every stage runs through run, so "started, then landed or failed" is
 	// the one shape a stage can have, and a new stage cannot report half of it.
-	run := func(stage domain.Stage, fn func() error) error {
-		started := s.now()
+	run := func(start domain.StageEvent, fn func() error) error {
+		stage, started := start.Stage, s.now()
 		if in.Progress != nil {
-			in.Progress(domain.StageEvent{Stage: stage, Session: session.Clone()})
+			start.Session = session.Clone()
+			in.Progress(start)
 		}
 		if err := fn(); err != nil {
 			return err
@@ -272,7 +273,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 	// itself is not there yet. Once it is, the pane's shell is replaced by
 	// the agent started in the worktree (Terminals.Launch), so nothing typed
 	// to start it is ever on the screen.
-	if err := run(domain.StageTerminal, func() error {
+	if err := run(domain.StageEvent{Stage: domain.StageTerminal}, func() error {
 		parent, err := s.worktrees.Prepare(ctx, in.Repo)
 		if err != nil {
 			return err
@@ -292,18 +293,21 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 	// still see the session only once it has landed.
 	s.paneReady(session)
 
-	if err := run(domain.StageClone, func() error {
+	// A repository this host has never held is downloaded, which is the one
+	// stage that can take tens of seconds; the reader is told so.
+	download := !s.worktrees.Has(in.Repo)
+	if err := run(domain.StageEvent{Stage: domain.StageClone, Download: download}, func() error {
 		return s.worktrees.Ensure(ctx, in.Repo, in.Remote, in.fetchRef())
 	}); err != nil {
 		return abandon(err)
 	}
-	if err := run(domain.StageWorktree, func() error {
+	if err := run(domain.StageEvent{Stage: domain.StageWorktree}, func() error {
 		return s.worktrees.Add(ctx, in.Repo, session.Worktree, session.Branch, session.BaseBranch, !in.Existing)
 	}); err != nil {
 		return abandon(err)
 	}
 	session.State = domain.StateStarting
-	if err := run(domain.StageAgent, func() error {
+	if err := run(domain.StageEvent{Stage: domain.StageAgent}, func() error {
 		launch, err := s.saveImages(session.ID, in)
 		if err != nil {
 			return err

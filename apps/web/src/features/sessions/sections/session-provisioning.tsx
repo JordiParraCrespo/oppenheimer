@@ -1,4 +1,4 @@
-import { Stepper } from '@oppenheimer/design-system-web';
+import { Callout, Stepper } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessionStartProgress } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
@@ -61,6 +61,12 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
         <p className="mt-1.5 text-operate text-fg-muted">
           {failed ? t('sessions.provisioning.failedLead') : session.scopeLabel}
         </p>
+
+        {/* The one start that is slow on purpose: said up front, so the wait
+            reads as a first time rather than as something stuck. */}
+        {progress.data?.downloading ? (
+          <Callout className="mt-6.5">{t('sessions.provisioning.downloading')}</Callout>
+        ) : null}
 
         <ErrorAlert
           error={progress.error}

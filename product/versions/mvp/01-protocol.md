@@ -224,10 +224,11 @@ runner does with it and point back.
   database is behind stops reading the link, and a resend then only
   adds to the backlog. The log the batch lands in is 03's; the
   wire that carries it is this note's. While a session starts, the
-  runner logs `session.step`: its kind and `{ step, status, durationMs }`
-  payload are `packages/shared/src/protocol/session-step.ts`, and the Go
-  twin is generated from it. A failure is `session.failed`, not a step
-  status.
+  runner logs `session.step`: its kind and `{ step, status, durationMs,
+  download }` payload are `packages/shared/src/protocol/session-step.ts`,
+  and the Go twin is generated from it. `download` marks the clone step
+  of a repository the host has never held, which is a first download
+  rather than a fetch. A failure is `session.failed`, not a step status.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

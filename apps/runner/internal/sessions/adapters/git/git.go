@@ -108,6 +108,16 @@ func (c *Client) lock(repo string) func() {
 	return m.Unlock
 }
 
+// Has implements app.Worktrees. A clone is made beside the mirror and renamed
+// into place once whole, so a mirror with a `.git` is never half a download.
+func (c *Client) Has(repo string) bool {
+	if domain.ValidateRepo(repo) != nil {
+		return false
+	}
+	_, err := os.Stat(filepath.Join(c.layout.Mirror(repo), ".git"))
+	return err == nil
+}
+
 // Ensure makes sure the repository's store exists and that ref is fresh in
 // it; an empty ref fetches every branch. The first call clones; later ones
 // fetch. The store is blobless and has no working tree

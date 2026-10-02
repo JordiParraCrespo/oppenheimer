@@ -87,6 +87,9 @@ type Worktrees interface {
 	// Ensure makes sure the repository's store exists on this host and that
 	// ref, the branch a worktree is about to be made from, is fresh in it.
 	Ensure(ctx context.Context, repo, remote, ref string) error
+	// Has reports whether the repository's store is on this host, whole: the
+	// difference between an Ensure that fetches and one that downloads it.
+	Has(repo string) bool
 	// Add creates a worktree at path, on branch, cut from base.
 	Add(ctx context.Context, repo, path, branch, base string, newBranch bool) error
 	// Prepare makes the directory this repository's worktrees are created in

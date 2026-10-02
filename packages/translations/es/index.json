@@ -378,6 +378,7 @@
       "failedTitle": "La sesión no se inició",
       "failedLead": "El host no pudo iniciar esta sesión.",
       "working": "Trabajando…",
+      "downloading": "Este host aún no tenía este repositorio, así que primero lo descarga. Esta vez tardará un poco más; las siguientes sesiones arrancan en un segundo.",
       "failed": "Error",
       "took": "{{seconds}} s",
       "steps": {
@@ -390,7 +391,8 @@
         },
         "clone": {
           "label": "Clonar {{repo}}",
-          "doing": "Descargando el repositorio…"
+          "doing": "Descargando el repositorio…",
+          "downloading": "Descargando el repositorio por primera vez…"
         },
         "worktree": {
           "label": "Crear el worktree",

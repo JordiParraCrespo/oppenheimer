@@ -382,6 +382,39 @@ func TestCreateThatFailsLeavesTheFailingStageUnlanded(t *testing.T) {
 	}
 }
 
+// The clone of a repository this host has never held is a download, which on a
+// large repository is the slow part of a first session; the console says so.
+// A later session on the same repository fetches, and must not say it.
+func TestTheFirstCloneOfARepositoryOnAHostIsReportedAsADownload(t *testing.T) {
+	h := newFakeHarness(t)
+	download := func(sessionID string) bool {
+		var clone *domain.StageEvent
+		_, err := h.svc.Create(context.Background(), app.CreateInput{
+			ID: sessionID, Repo: "jordi/oppenheimer",
+			Remote: "https://github.test/jordi/oppenheimer.git", BaseBranch: "main",
+			Progress: func(ev domain.StageEvent) {
+				if ev.Stage == domain.StageClone && !ev.Done {
+					clone = &ev
+				}
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if clone == nil {
+			t.Fatal("the clone stage never started")
+		}
+		return clone.Download
+	}
+
+	if !download("11111111-1111-4111-8111-111111111111") {
+		t.Fatal("the first session on a repository was not reported as a download")
+	}
+	if download("22222222-2222-4222-8222-222222222222") {
+		t.Fatal("a session on a repository already here was reported as a download")
+	}
+}
+
 // A PNG header is all the sniffing reads.
 var png = []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
 

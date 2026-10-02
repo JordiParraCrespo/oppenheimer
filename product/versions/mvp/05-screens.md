@@ -258,6 +258,12 @@
   under it, and the title to "The session did not start". A refusal
   the console can name reads in its words: `SESS_002` is "This host
   makes sessions with one repository".
+- A first session on a repository its host has never held downloads it,
+  and the pane says so above the steps: the host is downloading the
+  repository first, this one takes a bit longer, and later sessions
+  start in about a second. The clone step reads "Downloading the
+  repository…" instead of the fetch's wording. Both come from the
+  clone step's `download` flag (01).
 - The provisioning pane stays until the `agent` step lands, not until the
   row reads `open`. The host makes the session's pane before it clones, so
   the row opens with the clone still to run (01), and a terminal shown then

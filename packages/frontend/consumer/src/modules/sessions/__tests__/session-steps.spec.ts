@@ -17,7 +17,8 @@ const step = (
   id: 'host' | 'clone' | 'worktree' | 'agent',
   status: 'running' | 'done',
   durationMs: number | null = null,
-): SessionStartEntry => ({ seq: ++seq, kind: 'step', step: id, status, durationMs });
+  download = false,
+): SessionStartEntry => ({ seq: ++seq, kind: 'step', step: id, status, durationMs, download });
 const started = (): SessionStartEntry => ({ seq: ++seq, kind: 'started' });
 const failedEntry = (detail: string | null = null): SessionStartEntry => ({
   seq: ++seq,
@@ -103,6 +104,46 @@ describe('deriveSessionStartProgress', () => {
     expect(progress.settled).toBe(true);
   });
 
+  it('says the host is downloading the repository while a first clone runs, and stops once settled', () => {
+    const downloading = deriveSessionStartProgress(
+      [step('host', 'done'), started(), step('clone', 'running', null, true)],
+      { failed: false },
+    );
+    expect(downloading.downloading).toBe(true);
+    expect(downloading.steps[1].download).toBe(true);
+
+    // The checkout after a first download is slow too: still the same wait.
+    const checkingOut = deriveSessionStartProgress(
+      [
+        step('clone', 'running', null, true),
+        step('clone', 'done', 6000),
+        step('worktree', 'running'),
+      ],
+      { failed: false },
+    );
+    expect(checkingOut.downloading).toBe(true);
+
+    const up = deriveSessionStartProgress(
+      [
+        step('clone', 'running', null, true),
+        step('clone', 'done', 6000),
+        step('agent', 'done', 40),
+      ],
+      { failed: false },
+    );
+    expect(up.downloading).toBe(false);
+  });
+
+  it('does not say it is downloading a repository the host already had, or once the start failed', () => {
+    expect(
+      deriveSessionStartProgress([step('clone', 'running')], { failed: false }).downloading,
+    ).toBe(false);
+    expect(
+      deriveSessionStartProgress([step('clone', 'running', null, true)], { failed: true })
+        .downloading,
+    ).toBe(false);
+  });
+
   it('fails the step in hand and carries the host’s reason', () => {
     const progress = deriveSessionStartProgress(
       [step('host', 'done'), step('clone', 'running'), failedEntry('clone refused')],
@@ -149,7 +190,14 @@ describe('toStartEntry', () => {
         kind: 'session.step',
         payload: { step: 'clone', status: 'done', durationMs: 5 },
       }),
-    ).toEqual({ seq: 1, kind: 'step', step: 'clone', status: 'done', durationMs: 5 });
+    ).toEqual({
+      seq: 1,
+      kind: 'step',
+      step: 'clone',
+      status: 'done',
+      durationMs: 5,
+      download: false,
+    });
     expect(
       toStartEntry({ seq: 2, kind: 'session.failed', payload: { detail: ' no repo ' } }),
     ).toEqual({
@@ -158,6 +206,16 @@ describe('toStartEntry', () => {
       detail: 'no repo',
       code: null,
     });
+  });
+
+  it('reads the download flag a first clone carries', () => {
+    expect(
+      toStartEntry({
+        seq: 1,
+        kind: 'session.step',
+        payload: { step: 'clone', status: 'running', download: true },
+      }),
+    ).toMatchObject({ step: 'clone', status: 'running', download: true });
   });
 
   it('drops a step the schema does not know, and every other kind', () => {
@@ -169,15 +227,36 @@ describe('toStartEntry', () => {
 
   it('knows which entries settle a start: the agent running, or a failure', () => {
     expect(
-      settlesStart({ seq: 1, kind: 'step', step: 'agent', status: 'done', durationMs: 1 }),
+      settlesStart({
+        seq: 1,
+        kind: 'step',
+        step: 'agent',
+        status: 'done',
+        durationMs: 1,
+        download: false,
+      }),
     ).toBe(true);
     expect(settlesStart({ seq: 1, kind: 'failed', detail: null, code: null })).toBe(true);
     expect(settlesStart({ seq: 1, kind: 'started' })).toBe(false);
     expect(
-      settlesStart({ seq: 1, kind: 'step', step: 'agent', status: 'running', durationMs: null }),
+      settlesStart({
+        seq: 1,
+        kind: 'step',
+        step: 'agent',
+        status: 'running',
+        durationMs: null,
+        download: false,
+      }),
     ).toBe(false);
     expect(
-      settlesStart({ seq: 1, kind: 'step', step: 'host', status: 'done', durationMs: 1 }),
+      settlesStart({
+        seq: 1,
+        kind: 'step',
+        step: 'host',
+        status: 'done',
+        durationMs: 1,
+        download: false,
+      }),
     ).toBe(false);
   });
 });

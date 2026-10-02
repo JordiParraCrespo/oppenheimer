@@ -32,6 +32,8 @@ export type SessionStartEntry =
       step: SessionStartStepId;
       status: 'running' | 'done';
       durationMs: number | null;
+      /** The clone is the repository's first download to this host, not a fetch. */
+      download: boolean;
     }
   | { seq: number; kind: 'started' }
   | { seq: number; kind: 'failed'; detail: string | null; code: string | null };
@@ -58,6 +60,7 @@ export function toStartEntry(entry: RawSessionLogEntry): SessionStartEntry | nul
         step: parsed.data.step,
         status: parsed.data.status,
         durationMs: parsed.data.durationMs ?? null,
+        download: parsed.data.download ?? false,
       };
     }
     case SESSION_STARTED_EVENT_KIND:
@@ -92,10 +95,17 @@ export interface SessionStartStep {
   state: SessionStartStepState;
   /** How long the step took, as the host measured it; null until it landed. */
   durationMs: number | null;
+  /** The step downloads the repository to a host that never held it. */
+  download: boolean;
 }
 
 export interface SessionStartProgress {
   steps: SessionStartStep[];
+  /**
+   * The host is downloading the repository for the first time, which makes
+   * this start seconds to tens of seconds longer than any later one.
+   */
+  downloading: boolean;
   /** The host's reason, once the log carries it; null while it has not arrived. */
   failure: { detail: string | null; code: string | null } | null;
   /**
@@ -118,7 +128,10 @@ export function deriveSessionStartProgress(
   { failed }: { failed: boolean },
 ): SessionStartProgress {
   const steps = new Map<SessionStartStepId, SessionStartStep>(
-    SESSION_START_STEPS.map((id) => [id, { id, state: 'pending', durationMs: null }]),
+    SESSION_START_STEPS.map((id) => [
+      id,
+      { id, state: 'pending', durationMs: null, download: false },
+    ]),
   );
   let started = false;
   let reported = false;
@@ -130,6 +143,7 @@ export function deriveSessionStartProgress(
       const step = steps.get(entry.step) as SessionStartStep;
       step.state = entry.status;
       step.durationMs = entry.status === 'done' ? entry.durationMs : null;
+      step.download ||= entry.download;
     } else if (entry.kind === 'started') {
       started = true;
     } else {
@@ -143,7 +157,7 @@ export function deriveSessionStartProgress(
   const agentRunning = steps.get('agent')?.state === 'done' || (started && !reported);
   if (agentRunning) {
     for (const step of ordered) if (step.state !== 'done') step.state = 'done';
-    return { steps: ordered, failure: null, settled: true };
+    return { steps: ordered, downloading: false, failure: null, settled: true };
   }
   if (failed || failure) {
     // The step in hand is the one the host last said it started; before it
@@ -153,5 +167,6 @@ export function deriveSessionStartProgress(
       ordered.find((step) => step.state !== 'done');
     if (inHand) inHand.state = 'failed';
   }
-  return { steps: ordered, failure, settled: failure !== null };
+  const downloading = failure === null && !failed && ordered.some((step) => step.download);
+  return { steps: ordered, downloading, failure, settled: failure !== null };
 }
