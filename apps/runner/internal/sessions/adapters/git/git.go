@@ -329,7 +329,9 @@ type command struct {
 func (c *Client) run(ctx context.Context, how command, args ...string) (string, error) {
 	session := domain.SessionOf(ctx)
 
-	full := []string{"-c", "advice.detachedHead=false"}
+	// A checkout writes its files from one worker per core: on a large tree
+	// that halves the step a person waits on for a worktree (14).
+	full := []string{"-c", "advice.detachedHead=false", "-c", "checkout.workers=0"}
 	if c.credentialHelper != "" {
 		full = append(full, "-c", "credential.helper=", "-c", "credential.helper="+c.credentialHelper)
 	}
