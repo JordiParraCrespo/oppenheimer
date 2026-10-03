@@ -95,6 +95,30 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   tones are the only two.
 - **A dialog has three widths**, `md`, `form` and `lg`, and a caller never
   sets one.
+- **A host that goes away is news in the pane, not an error.** The runner
+  dials out, so the console can only wait: scrollback stays, the prompt is
+  disabled with a placeholder that says why, and nothing asks to be pressed.
+  The pane says it in one of two forms over the `Terminal` frame:
+  `TerminalBanner` in the status bar's place (amber wash, time offline, How
+  to fix opening `TerminalDrawer`), or `TerminalNotice`, a card over the
+  `TerminalScrollback fade`d scrollback. Both walk the same phases: offline,
+  Runner is back (catching up), Reconnected. `TerminalStatusLink` has the
+  third state, `offline`: amber and still, where reconnecting pulses. An
+  offline host keeps its place in the host picker as a disabled option whose
+  description says so, and the composer's `sendBlocked` says why send is off.
+- **The fix for a machine is a command to copy, not a block to read.**
+  `CommandRow` is one `$ command` with an icon copy button (Copy command →
+  Copied), stacked in a `CommandRowList`, on the card or the terminal
+  `surface`; it is the same in the drawer, the notice and an offline
+  `HostCard`'s `detail`. `CodeBlock` stays for what is read before it is
+  copied (the install command and agent prompt).
+- **Files are dropped on the pane.** `DropZone` wraps New session and a
+  running terminal: a drag carrying files draws the blue outline and one pill
+  ("Drop to attach"); it listens to the window, so a near miss still lands
+  and the browser never opens the file. `useFileDrag` is the behaviour alone.
+- **A sidebar row's actions are its ellipsis.** `RoutineItem` takes `action`
+  and `menuOpen` as `SessionItem` does, plus `lastRun`, a dot before the meta
+  for how the last run ended.
 
 ## Conventions
 

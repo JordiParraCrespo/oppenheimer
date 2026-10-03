@@ -44,6 +44,10 @@ const DEFAULT_COMPOSER_LABELS: ComposerLabels = {
  * `ComposerToolButton`s. Attachments list under the textarea as removable
  * chips; they are never silently dropped.
  *
+ * `sendBlocked` keeps the box usable but the send off, and says why on the
+ * send button's hover ("fable is offline — pick another host"): the draft
+ * is fine, the scope above it is not.
+ *
  * `scope` is New session's tabbed form: the scope chips (`ChipSelectTrigger`,
  * `tab` variant) sit in a grey band fused to the top of the field (control
  * fill, 18px top radii, inset 18px each side). With a band the field is the
@@ -57,6 +61,7 @@ function Composer({
   onStop,
   busy = false,
   disabled = false,
+  sendBlocked,
   placeholder = 'Describe a task or ask a question',
   attachments,
   onRemoveAttachment,
@@ -77,6 +82,8 @@ function Composer({
   onStop?: () => void;
   busy?: boolean;
   disabled?: boolean;
+  /** Why the draft cannot be sent yet, though it can be written: turns send off and names the reason on hover. */
+  sendBlocked?: string;
   placeholder?: string;
   attachments?: ComposerAttachment[];
   onRemoveAttachment?: (id: string) => void;
@@ -96,7 +103,7 @@ function Composer({
   labels?: Partial<ComposerLabels>;
 }) {
   const label = { ...DEFAULT_COMPOSER_LABELS, ...labels };
-  const canSend = value.trim().length > 0 && !disabled;
+  const canSend = value.trim().length > 0 && !disabled && !sendBlocked;
 
   function submit() {
     if (busy) return onStop?.();
@@ -188,20 +195,25 @@ function Composer({
             <MicIcon className="size-[15px]" />
           </IconButton>
         ) : null}
-        <IconButton
-          aria-label={busy ? label.stop : label.send}
-          variant="primary"
-          size="sm"
-          onClick={submit}
-          disabled={!busy && !canSend}
-          className="size-8"
-        >
-          {busy ? (
-            <SquareIcon className="size-3.5 fill-current" />
-          ) : (
-            <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
-          )}
-        </IconButton>
+        {/* The title sits on a wrapper: a disabled button takes no pointer,
+            so it could never show its own. */}
+        <span title={busy ? undefined : sendBlocked} className="flex">
+          <IconButton
+            aria-label={busy ? label.stop : label.send}
+            aria-description={busy ? undefined : sendBlocked}
+            variant="primary"
+            size="sm"
+            onClick={submit}
+            disabled={!busy && !canSend}
+            className="size-8"
+          >
+            {busy ? (
+              <SquareIcon className="size-3.5 fill-current" />
+            ) : (
+              <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
+            )}
+          </IconButton>
+        </span>
       </div>
     </div>
   );

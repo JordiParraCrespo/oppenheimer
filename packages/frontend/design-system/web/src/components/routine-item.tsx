@@ -11,8 +11,17 @@ import { cn } from '../lib/utils';
  * clock for a schedule, the GitHub mark for an event), the name, and on
  * the right a mono `meta` — the run count, "in 45h" for the next run, or
  * "Paused". A running routine colours the glyph green; a paused one dims
- * its name. The selected routine expands its last runs under it as
- * `RoutineRun` rows: a state dot, the run's title, and its age.
+ * its name. `lastRun` puts a 6px dot before the meta for how the last run
+ * ended (red failed, green running, grey otherwise), named on hover.
+ *
+ * `action` is the row's ellipsis, as on a `SessionItem`: the trigger of a
+ * `DropdownMenu` with Run now, Edit, Pause, Duplicate and Delete, shown on
+ * hover, focus or while open (`menuOpen`), hiding the meta while it shows.
+ *
+ * `RoutineRun` rows list a routine's last runs under it: a state dot, the
+ * run's title, and its age. The 2026-10-03 frames stop expanding them in the
+ * sidebar (the dot and the menu took their place); they stay while the
+ * console still draws them.
  */
 function RoutineItem({
   name,
@@ -21,6 +30,10 @@ function RoutineItem({
   running,
   paused,
   active,
+  lastRun,
+  lastRunLabel,
+  action,
+  menuOpen,
   className,
   ...props
 }: Omit<ButtonPrimitive.Props, 'children'> & {
@@ -31,16 +44,26 @@ function RoutineItem({
   running?: boolean;
   paused?: boolean;
   active?: boolean;
+  /** How the last run ended, as a dot before the meta. */
+  lastRun?: RoutineRunState;
+  /** The dot's name ("Last run: failed"). */
+  lastRunLabel?: string;
+  /** The row's 20px ellipsis: a `DropdownMenu` trigger. */
+  action?: React.ReactNode;
+  /** Keeps the row lit and the action visible while its menu is open. */
+  menuOpen?: boolean;
 }) {
-  return (
+  const withAction = action !== undefined;
+  const button = (
     <ButtonPrimitive
       data-slot="routine-item"
       data-active={active || undefined}
       data-paused={paused || undefined}
-      role="listitem"
+      role={withAction ? undefined : 'listitem'}
       aria-current={active ? 'true' : undefined}
       className={cn(
         'group/routine flex h-[30px] w-full items-center gap-[9px] rounded-sm px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
+        withAction && 'group-hover/row:not-data-active:bg-hover-surface group-data-menu-open/row:not-data-active:bg-hover-surface',
         className,
       )}
       {...props}
@@ -66,10 +89,45 @@ function RoutineItem({
       >
         {name}
       </span>
-      {meta ? <span className="figures shrink-0 text-[11px] text-fg">{meta}</span> : null}
+      {meta || lastRun ? (
+        <span
+          className={cn(
+            'figures flex shrink-0 items-center gap-1.5 text-[11px] text-fg',
+            withAction && 'group-hover/row:invisible group-focus-within/row:invisible group-data-menu-open/row:invisible',
+          )}
+        >
+          {lastRun ? (
+            <span
+              title={lastRunLabel}
+              aria-label={lastRunLabel}
+              role={lastRunLabel ? 'img' : undefined}
+              className={cn('size-1.5 shrink-0 rounded-pill', RUN_DOT[lastRun])}
+            />
+          ) : null}
+          {meta}
+        </span>
+      ) : null}
     </ButtonPrimitive>
   );
+
+  if (!withAction) return button;
+  return (
+    <div role="listitem" data-slot="routine-row" data-menu-open={menuOpen || undefined} className="group/row relative">
+      {button}
+      <span className="absolute top-1/2 right-1.5 flex -translate-y-1/2 opacity-0 transition-opacity duration-fast group-hover/row:opacity-100 group-focus-within/row:opacity-100 group-data-menu-open/row:opacity-100 [&_button]:size-5 [&_button]:rounded-xs [&_button]:text-fg-muted [&_button:hover]:text-fg [&_svg:not([class*=size-])]:size-3.5">
+        {action}
+      </span>
+    </div>
+  );
 }
+
+type RoutineRunState = 'completed' | 'failed' | 'running';
+
+const RUN_DOT: Record<RoutineRunState, string> = {
+  completed: 'bg-fg-subtle',
+  failed: 'bg-danger',
+  running: 'bg-success',
+};
 
 function RoutineRunList({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -93,7 +151,7 @@ function RoutineRun({
   title: React.ReactNode;
   /** Mono ("17h", "2d"). */
   ago?: React.ReactNode;
-  state?: 'completed' | 'failed' | 'running';
+  state?: RoutineRunState;
   active?: boolean;
 }) {
   return (
@@ -137,3 +195,4 @@ function RoutineRunsEmpty({ className, ...props }: React.ComponentProps<'p'>) {
 }
 
 export { RoutineItem, RoutineRun, RoutineRunList, RoutineRunsEmpty };
+export type { RoutineRunState };

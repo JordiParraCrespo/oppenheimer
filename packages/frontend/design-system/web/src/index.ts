@@ -71,6 +71,8 @@ export {
   CommandSeparator,
   CommandShortcut,
 } from './components/command';
+export type { CommandRowSurface } from './components/command-row';
+export { CommandRow, CommandRowList } from './components/command-row';
 export type { ComposerAttachment, ComposerLabels } from './components/composer';
 export { Composer, ComposerToolButton } from './components/composer';
 export {
@@ -89,6 +91,7 @@ export {
   DialogTrigger,
 } from './components/dialog';
 export { Disclosure, DisclosurePanel, DisclosureTrigger } from './components/disclosure';
+export { DropZone } from './components/drop-zone';
 export {
   DropdownMenu,
   DropdownMenuBack,
@@ -136,7 +139,7 @@ export {
 export type { FieldSelectOption } from './components/field-select';
 export { FieldSelect, FieldSelectGroup, FieldSelectRow } from './components/field-select';
 export type { HostCardStatus } from './components/host-card';
-export { HostCard } from './components/host-card';
+export { HostCard, HostCardFoot, HostCardNote } from './components/host-card';
 export type { IconButtonProps } from './components/icon-button';
 export { IconButton, iconButtonVariants } from './components/icon-button';
 export type { CarouselSlide } from './components/image-carousel';
@@ -192,6 +195,7 @@ export type {
   RepositoryScope,
 } from './components/repository-select';
 export { RepositorySelect } from './components/repository-select';
+export type { RoutineRunState } from './components/routine-item';
 export {
   RoutineItem,
   RoutineRun,
@@ -286,7 +290,12 @@ export { TemplateGrid, TemplateItem } from './components/template-grid';
 export type { TerminalLinkState, TerminalTone } from './components/terminal';
 export {
   Terminal,
+  TerminalBanner,
+  TerminalBannerToggle,
+  TerminalDrawer,
+  TerminalDrawerText,
   TerminalLine,
+  TerminalNotice,
   TerminalPrompt,
   TerminalScrollback,
   TerminalSpacer,
@@ -308,6 +317,7 @@ export { Wordmark } from './components/wordmark';
 export { useControlled } from './hooks/use-controlled';
 export { useDebouncedCallback } from './hooks/use-debounced-callback';
 export { useDebouncedValue } from './hooks/use-debounced-value';
+export { useFileDrag } from './hooks/use-file-drag';
 export { useIsMobile } from './hooks/use-mobile';
 export { useNow } from './hooks/use-now';
 export { cn } from './lib/utils';
