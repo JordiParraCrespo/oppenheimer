@@ -7,6 +7,8 @@ import {
 import type { ClipboardEvent, ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useReceiveDrops } from '../hooks/use-new-session-drop';
+import { isSessionImage } from '../lib/session-images';
 
 /** One file the composer holds, keyed so two files with one name stay two chips. */
 interface HeldFile {
@@ -20,10 +22,13 @@ interface HeldFile {
  * re-render the host chip, the repository picker and the branch pane. They
  * leave once, on submit.
  *
- * What a file *is* is the API's to judge by its bytes: a browser's label is
- * often empty for a pasted screenshot, so a file is refused here only for size
- * or count, with the reason under the field, never silently dropped. A paste
- * with no image is left to the field.
+ * Every way in — the paperclip, a paste, a drop on the screen's pane, which
+ * hands its files here (`useReceiveDrops`) — goes through `hold` and one
+ * rule, `isSessionImage`, shared with the running session's terminal: a type
+ * an agent reads, or no type at all (a pasted screenshot often has none; the
+ * API judges the bytes). A file is refused for that, for size or for count,
+ * with the reason under the field, never silently dropped. A paste with no
+ * file is left to the field.
  *
  * `scope`, `tools` and `engine` are passed in because each is a chip bound to
  * the New session draft's store.
@@ -53,7 +58,9 @@ export function NewSessionComposer({
     const accepted: HeldFile[] = [];
     let reason: string | null = null;
     for (const file of incoming) {
-      if (file.size > SESSION_IMAGE_MAX_BYTES) {
+      if (!isSessionImage(file)) {
+        reason = t('sessions.new.composer.attachNotImage', { name: file.name });
+      } else if (file.size > SESSION_IMAGE_MAX_BYTES) {
         reason = t('sessions.new.composer.attachTooLarge', { name: file.name });
       } else if (files.length + accepted.length >= SESSION_CREATE_MAX_IMAGES) {
         reason = t('sessions.new.composer.attachTooMany', { max: SESSION_CREATE_MAX_IMAGES });
@@ -65,14 +72,13 @@ export function NewSessionComposer({
     if (accepted.length > 0) setFiles((held) => [...held, ...accepted]);
   }
 
+  useReceiveDrops(hold);
+
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
-    // Only what could be an image; an unlabelled file is a screenshot more
-    // often than not. Nothing is prevented: text pasted with it still lands
-    // in the field, and a textarea inserts nothing for a file.
-    const images = Array.from(event.clipboardData.files).filter(
-      (file) => file.type === '' || file.type.startsWith('image/'),
-    );
-    if (images.length > 0) hold(images);
+    // Nothing is prevented: text pasted with a file still lands in the field,
+    // and a textarea inserts nothing for a file.
+    const pasted = Array.from(event.clipboardData.files);
+    if (pasted.length > 0) hold(pasted);
   }
 
   return (
