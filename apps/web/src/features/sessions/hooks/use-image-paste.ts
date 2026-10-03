@@ -38,7 +38,7 @@ export function useImagePaste(sessionId: string, window: number) {
       try {
         await paste.mutateAsync(image);
       } catch (error) {
-        failure ??= error instanceof Error ? error : new Error(String(error));
+        if (!failure) failure = error instanceof Error ? error : new Error(String(error));
       }
     }
     setBatch({ ...IDLE, failure });

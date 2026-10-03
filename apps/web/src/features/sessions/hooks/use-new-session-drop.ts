@@ -1,33 +1,44 @@
-import { createContext, type RefObject, useContext, useEffect, useRef } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 type Receive = (files: File[]) => void;
 
+/** The pane's end calls `deliver`; the composer's end `register`s itself. */
+type NewSessionDrop = {
+  deliver: Receive;
+  /** Take the pane's drops; returns the function that stops. */
+  register: (receive: Receive) => () => void;
+};
+
 /**
  * Where New session's pane hands a drop: the screen's `DropZone` wraps the
- * pane and calls the ref; the composer, which holds the task's files,
- * registers itself on it. The files stay in the composer and a keystroke
- * stays in the textarea: the ref's identity never changes, so nothing
- * re-renders through it.
+ * pane and calls `deliver`; the composer, which holds the task's files,
+ * registers itself. The files stay in the composer and a keystroke stays in
+ * the textarea: the object is made once, so nothing re-renders through it.
  */
-export const NewSessionDropContext = createContext<RefObject<Receive | null> | null>(null);
+export const NewSessionDropContext = createContext<NewSessionDrop | null>(null);
 
-/** The screen's end: the ref its `DropZone` calls. */
-export function useNewSessionDrop(): RefObject<Receive | null> {
-  return useRef<Receive | null>(null);
+/** The screen's end, made once for the screen's life. */
+export function useNewSessionDrop(): NewSessionDrop {
+  const [drop] = useState<NewSessionDrop>(() => {
+    let current: Receive | null = null;
+    return {
+      deliver: (files) => current?.(files),
+      register: (receive) => {
+        current = receive;
+        return () => {
+          if (current === receive) current = null;
+        };
+      },
+    };
+  });
+  return drop;
 }
 
 /**
  * The composer's end: take the pane's drops while mounted. The outside
- * system is the screen's ref; registering after render keeps the write out
- * of render, where the React Compiler would refuse it.
+ * system is the screen's drop target, registered after render.
  */
 export function useReceiveDrops(receive: Receive) {
-  const target = useContext(NewSessionDropContext);
-  useEffect(() => {
-    if (!target) return;
-    target.current = receive;
-    return () => {
-      if (target.current === receive) target.current = null;
-    };
-  });
+  const drop = useContext(NewSessionDropContext);
+  useEffect(() => drop?.register(receive));
 }

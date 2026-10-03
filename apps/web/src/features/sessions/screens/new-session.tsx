@@ -20,7 +20,7 @@ export function NewSessionScreen() {
 
   return (
     <NewSessionDropContext value={drop}>
-      <DropZone onFiles={(files) => drop.current?.(files)} className="flex min-h-0 flex-1">
+      <DropZone onFiles={drop.deliver} className="flex min-h-0 flex-1">
         <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas-recessed">
           <div className="m-auto flex w-full max-w-180 flex-col gap-4.5 px-8 py-12">
             <NewSessionForm
