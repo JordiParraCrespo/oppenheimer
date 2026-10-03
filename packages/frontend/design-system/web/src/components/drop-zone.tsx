@@ -11,11 +11,11 @@ import { cn } from '../lib/utils';
  * file is put on the host and its path goes into the input).
  *
  * It wraps the pane and draws nothing until a drag carrying files comes in;
- * then an outline in the action blue lies 8px inside the pane's edge, 3px at
- * the 18px radius over a 7% blue wash, with one pill in the middle saying
- * what the drop will do ("Drop to attach"). The overlay exists only while
- * the drag does, fades in, and never takes the pointer, so the pane under it
- * stays exactly as it was.
+ * then the pane takes a quiet neutral tint 8px inside its edge, at the 18px
+ * radius, with a dashed hairline: enough to say the drop will land, with no
+ * colour and no words, since a file over a composer needs no announcing.
+ * The tint exists only while the drag does, fades in, and never takes the
+ * pointer, so the pane under it stays exactly as it was.
  *
  * The zone is its own box (`listen="self"`, the default), so two zones on a
  * page, or a file input inside one, each get only their own drops.
@@ -26,7 +26,6 @@ import { cn } from '../lib/utils';
  */
 function DropZone({
   onFiles,
-  label = 'Drop to attach',
   listen = 'self',
   disabled = false,
   className,
@@ -34,8 +33,6 @@ function DropZone({
   ...props
 }: React.ComponentProps<'div'> & {
   onFiles: (files: File[]) => void;
-  /** The pill: what dropping does. */
-  label?: React.ReactNode;
   /** `window` only on a page with one zone. */
   listen?: 'self' | 'window';
   disabled?: boolean;
@@ -56,10 +53,8 @@ function DropZone({
         <div
           aria-hidden
           data-slot="drop-zone-overlay"
-          className="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-lg border-3 border-primary bg-[color-mix(in_srgb,var(--primary)_7%,transparent)] motion-safe:animate-label-in"
-        >
-          <span className="rounded-pill bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">{label}</span>
-        </div>
+          className="pointer-events-none absolute inset-2 z-10 rounded-lg border border-dashed border-border-strong bg-hover-surface motion-safe:animate-label-in"
+        />
       ) : null}
     </div>
   );

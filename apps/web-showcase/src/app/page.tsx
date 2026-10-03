@@ -839,8 +839,8 @@ export default function Page() {
         id="dropzone"
         title="DropZone"
         meta="drop-zone.tsx"
-        desc="Files are attached by dropping them on the pane, not only through the paperclip. A drag that carries files lights the whole pane: a 3px outline in the action blue 8px inside its edge, at the 18px radius, over a 7% blue wash, with one pill saying what the drop does. On New session the files join the composer's attachments; in a running session each goes into the prompt as an @path. The overlay exists only during the drag and never takes the pointer. The zone is its own box, so two on a page each get only their own drops; the window listener catches a near miss too, for a page with exactly one zone. A dragged link or text is left alone. Drag a file from your desktop onto either pane."
-        code={`<DropZone onFiles={(files) => attach(files)} label="Drop to attach">
+        desc="Files are attached by dropping them on the pane, not only through the paperclip. A drag that carries files gives the pane a quiet tint: the hover wash 8px inside its edge, at the 18px radius, with a dashed hairline. No colour, no label: it says the drop will land and nothing more. On New session the files join the composer's attachments; in a running session each goes into the prompt as an @path. The tint exists only during the drag and never takes the pointer. The zone is its own box, so two on a page each get only their own drops; the window listener catches a near miss too, for a page with exactly one zone. A dragged link or text is left alone. Drag a file from your desktop onto either pane."
+        code={`<DropZone onFiles={(files) => attach(files)}>
   <NewSessionPane />
 </DropZone>
 <DropZone listen="window" onFiles={attach}>…</DropZone>  // the page's only zone`}
