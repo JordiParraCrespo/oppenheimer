@@ -63,6 +63,17 @@ email, welcome (workspace ready), reset password, password changed,
 change email, new sign-in, session completed, failed and needs input,
 and workspace invite.
 
+The 2026-10-03 export changes the console and Settings only. New session
+opens on a "Ready when you are." heading; the composer takes a dropped
+file ("Drop to attach"); a session whose host drops off shows a card in
+its pane — "<host> is offline", the last time it was seen, and a How to
+fix fold that points at Settings → Hosts — which turns into "Runner is
+back" when it returns. The copy-command buttons, in the console and on a
+Settings host card, are icon buttons labelled Copy command / Copied. The
+export also put a pasted reference screenshot in `version1/`
+(`screenshot-2026-10-01-…png`, a crop of the automations table); it was
+left out with the other uploads.
+
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
 are held in reserve), copied from the Orca repository.
