@@ -33,8 +33,11 @@ First decide which kind of run this is. A **first port** maps a whole
 export onto the package. A **delta sync** is a later export that changes a
 few screens: its README names the delta, the diff against the previous sync
 shows the rest, and the job is the components that delta needs, on top of
-what is there. A delta sync skips the questions already answered in the
-package's AGENTS.md and walks only the changed states (§3).
+what is there. A delta sync walks only the changed states (§3), but still
+asks the questions those states raise. Above all: when the frames offer a
+switch between two drawings of one thing (a prop like `offlineStyle`), ask
+which one the product keeps, and model it as one component with the other
+as a form, never two components.
 
 Users ask for less than the job needs ("just the colours") and widen it
 once they see the screens. Read everything, write a short plan, and ask
@@ -214,11 +217,10 @@ mark that one node `suppressHydrationWarning`, never the section.
   `scripts/starter/features.json`; if the repo tracks the export as a
   design record, the manifest check skips it.
 
-Then build the review page: `scripts/build-compare.mjs --manifest
-compare.json --out <dir>` lays each frame state beside the showcase state
-that ports it, light and dark, with a list of what was added. Publish it
-(the user asked for this page by name before: they review there, not in
-the terminal) and link it from the PR.
+When the person reviewing wants to compare without running anything,
+`scripts/build-compare.mjs --manifest compare.json --out <dir>` lays each
+frame capture beside the showcase capture that ports it, light and dark.
+It is a local helper, not a step: build it when asked.
 
 ## 8. Docs, in the same PR
 

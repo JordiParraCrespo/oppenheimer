@@ -138,8 +138,10 @@ export {
 } from './components/field';
 export type { FieldSelectOption } from './components/field-select';
 export { FieldSelect, FieldSelectGroup, FieldSelectRow } from './components/field-select';
-export type { HostCardStatus } from './components/host-card';
-export { HostCard, HostCardFoot, HostCardNote } from './components/host-card';
+export type { HostCardOffline, HostCardStatus } from './components/host-card';
+export { HostCard } from './components/host-card';
+export type { HostLinkForm, HostLinkLabels, HostLinkPhase } from './components/host-link';
+export { HostLinkChrome } from './components/host-link';
 export type { IconButtonProps } from './components/icon-button';
 export { IconButton, iconButtonVariants } from './components/icon-button';
 export type { CarouselSlide } from './components/image-carousel';
@@ -287,15 +289,10 @@ export { Stepper } from './components/stepper';
 export { SuccessMark } from './components/success-mark';
 export { SummaryCard, SummaryRow } from './components/summary-card';
 export { TemplateGrid, TemplateItem } from './components/template-grid';
-export type { TerminalLinkState, TerminalTone } from './components/terminal';
+export type { TerminalHostLink, TerminalLinkState, TerminalTone } from './components/terminal';
 export {
   Terminal,
-  TerminalBanner,
-  TerminalBannerToggle,
-  TerminalDrawer,
-  TerminalDrawerText,
   TerminalLine,
-  TerminalNotice,
   TerminalPrompt,
   TerminalScrollback,
   TerminalSpacer,
@@ -315,6 +312,7 @@ export {
 } from './components/tooltip';
 export { Wordmark } from './components/wordmark';
 export { useControlled } from './hooks/use-controlled';
+export { useCopy } from './hooks/use-copy';
 export { useDebouncedCallback } from './hooks/use-debounced-callback';
 export { useDebouncedValue } from './hooks/use-debounced-value';
 export { useFileDrag } from './hooks/use-file-drag';

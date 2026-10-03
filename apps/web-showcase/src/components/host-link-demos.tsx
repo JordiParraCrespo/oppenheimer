@@ -3,17 +3,12 @@
 import { Composer, type ComposerAttachment } from '@oppenheimer/design-system-web/composer';
 import { CommandRow, CommandRowList } from '@oppenheimer/design-system-web/command-row';
 import { DropZone } from '@oppenheimer/design-system-web/drop-zone';
+import { HostLinkChrome, type HostLinkForm, type HostLinkPhase } from '@oppenheimer/design-system-web/host-link';
 import { Link } from '@oppenheimer/design-system-web/link';
 import { SegmentedControl, SegmentedControlItem } from '@oppenheimer/design-system-web/segmented-control';
 import {
   Terminal,
-  TerminalBanner,
-  TerminalBannerToggle,
-  TerminalDrawer,
-  TerminalDrawerText,
-  type TerminalLinkState,
   TerminalLine,
-  TerminalNotice,
   TerminalPrompt,
   TerminalScrollback,
   TerminalSpacer,
@@ -25,32 +20,20 @@ import {
 import { useNow } from '@oppenheimer/design-system-web/hooks/use-now';
 import * as React from 'react';
 
-/**
- * The host link's phases, in the order a session lives them: live, a blip
- * the console rides out, the host gone, the runner back and the scrollback
- * catching up, then a quiet "Reconnected" before the bar returns.
- */
-type Phase = 'live' | 'blip' | 'offline' | 'resync' | 'restored';
-
-const PHASES: [Phase, string][] = [
+/** The phases in the order a session lives them, as the control names them. */
+const PHASES: [HostLinkPhase, string][] = [
   ['live', 'Live'],
-  ['blip', 'Reconnecting'],
+  ['reconnecting', 'Reconnecting'],
   ['offline', 'Offline'],
-  ['resync', 'Back'],
-  ['restored', 'Reconnected'],
+  ['catching-up', 'Back'],
+  ['reconnected', 'Reconnected'],
 ];
 
 const HOST = 'optimus';
 
-function linkOf(phase: Phase): TerminalLinkState {
-  if (phase === 'offline') return 'offline';
-  if (phase === 'blip' || phase === 'resync') return 'reconnecting';
-  return 'live';
-}
-
-function Scrollback({ fade }: { fade?: 'soft' | 'strong' }) {
+function Scrollback() {
   return (
-    <TerminalScrollback fade={fade}>
+    <TerminalScrollback>
       <TerminalLine command>gh auth login --web</TerminalLine>
       <TerminalLine tone="dim">Opening github.com/login/device …</TerminalLine>
       <TerminalSpacer />
@@ -65,21 +48,6 @@ function Scrollback({ fade }: { fade?: 'soft' | 'strong' }) {
       <TerminalLine tone="warning">! branch already pushed — only the PR remains</TerminalLine>
     </TerminalScrollback>
   );
-}
-
-function placeholderOf(phase: Phase) {
-  if (phase === 'offline') return `Read-only while ${HOST} is offline`;
-  if (phase === 'resync') return 'Catching up — input opens once live';
-  if (phase === 'blip') return 'Reconnecting — input sends once live';
-  return 'Ask the agent, or run a command';
-}
-
-function labelOf(phase: Phase) {
-  if (phase === 'offline') return 'Host offline';
-  if (phase === 'blip') return `Reconnecting to ${HOST}…`;
-  if (phase === 'resync') return `Catching up on ${HOST}…`;
-  if (phase === 'restored') return 'Reconnected';
-  return 'Live';
 }
 
 /**
@@ -125,29 +93,22 @@ function Elapsed({ since }: { since: number }) {
 }
 
 /**
- * One terminal, every phase of its link to the host, in the form `form`
- * names: the banner (with its drawer) in place of the status bar, or the
- * notice card over the faded scrollback.
+ * One terminal through every phase of its link to the host, in one form.
+ * The demo only steps the phase: what each phase shows is the design
+ * system's phase table.
  */
-export function TerminalHostLinkDemo({ form, initial = 'offline' }: { form: 'banner' | 'notice'; initial?: Phase }) {
-  const [phase, setPhase] = React.useState<Phase>(initial);
-  const [fixOpen, setFixOpen] = React.useState(false);
+export function TerminalHostLinkDemo({ form }: { form: HostLinkForm }) {
+  const [phase, setPhase] = React.useState<HostLinkPhase>('offline');
   // The host dropped 2m 14s before the page opened, as on the frame.
   const [since] = React.useState(() => Date.now() - 134_000);
-
-  const away = phase === 'offline' || phase === 'resync' || phase === 'restored';
-  const banner = form === 'banner' && away;
-  const notice = form === 'notice' && (phase === 'offline' || phase === 'resync');
-  const locked = phase === 'offline' || phase === 'resync';
-
   return (
     <div className="flex w-full flex-col gap-3">
       <SegmentedControl
         aria-label="Host link"
         value={phase}
         onValueChange={(value) => {
-          setPhase(value as Phase);
-          setFixOpen(false);
+          const next = PHASES.find(([p]) => p === value);
+          if (next) setPhase(next[0]);
         }}
         className="self-start"
       >
@@ -158,60 +119,17 @@ export function TerminalHostLinkDemo({ form, initial = 'offline' }: { form: 'ban
         ))}
       </SegmentedControl>
       <div className={`${form === 'notice' ? 'h-140' : 'h-105'} w-full overflow-hidden rounded-lg border border-term-border`}>
-        <Terminal>
-          <Scrollback fade={notice ? (phase === 'offline' ? 'strong' : 'soft') : undefined} />
-          <TerminalPrompt placeholder={placeholderOf(phase)} disabled={locked} />
-          {banner ? (
-            <TerminalBanner
-              state={linkOf(phase)}
-              title={phase === 'offline' ? `${HOST} is offline` : phase === 'resync' ? 'Runner is back' : 'Reconnected'}
-              description={
-                phase === 'offline'
-                  ? 'Reconnects on its own when the runner is back'
-                  : phase === 'resync'
-                    ? `Catching up on output from ${HOST}…`
-                    : 'Scrollback is up to date'
-              }
-              elapsed={phase === 'offline' ? <Elapsed since={since} /> : undefined}
-              action={
-                phase === 'offline' ? (
-                  <TerminalBannerToggle open={fixOpen} onClick={() => setFixOpen((v) => !v)}>
-                    How to fix
-                  </TerminalBannerToggle>
-                ) : undefined
-              }
-            />
-          ) : (
-            <TerminalStatusBar>
-              <TerminalStatusLink state={linkOf(phase)}>{labelOf(phase)}</TerminalStatusLink>
-              <TerminalStatusItem>6% used · 4h 2m</TerminalStatusItem>
-              <TerminalStatusItem>763.4 MB</TerminalStatusItem>
-              <TerminalStatusItem>1 host</TerminalStatusItem>
-            </TerminalStatusBar>
-          )}
-          {banner && phase === 'offline' && fixOpen ? (
-            <TerminalDrawer>
-              <TerminalDrawerText>
-                Scrollback is kept and input is paused. The session picks up on its own the moment the runner on{' '}
-                {HOST} reconnects — nothing to press here.
-              </TerminalDrawerText>
-              <Fix surface="terminal" />
-            </TerminalDrawer>
-          ) : null}
-          {notice ? (
-            <TerminalNotice
-              state={linkOf(phase)}
-              eyebrow={phase === 'offline' ? <>offline · <Elapsed since={since} /></> : 'reconnecting'}
-              title={phase === 'offline' ? `${HOST} is offline` : 'Runner is back'}
-              description={
-                phase === 'offline'
-                  ? 'The runner lost its link to Oppenheimer. Scrollback is kept, and this session reconnects on its own as soon as the runner is back.'
-                  : `Catching up on output from ${HOST}. Input opens once the stream is live.`
-              }
-            >
-              {phase === 'offline' ? <Fix surface="card" /> : null}
-            </TerminalNotice>
-          ) : null}
+        <Terminal hostLink={{ phase, form, host: HOST }}>
+          <Scrollback />
+          <TerminalPrompt />
+          <HostLinkChrome
+            elapsed={<Elapsed since={since} />}
+            fix={<Fix surface={form === 'banner' ? 'terminal' : 'card'} />}
+          >
+            <TerminalStatusItem>6% used · 4h 2m</TerminalStatusItem>
+            <TerminalStatusItem>763.4 MB</TerminalStatusItem>
+            <TerminalStatusItem>1 host</TerminalStatusItem>
+          </HostLinkChrome>
         </Terminal>
       </div>
     </div>
@@ -227,7 +145,6 @@ export function DropZoneNewSessionDemo() {
   const [files, setFiles] = React.useState<ComposerAttachment[]>([]);
   return (
     <DropZone
-      listen="self"
       onFiles={(dropped) =>
         setFiles((f) => [...f, ...dropped.map((file, i) => ({ id: `${Date.now()}-${i}`, name: file.name }))])
       }
@@ -258,7 +175,6 @@ export function DropZoneTerminalDemo() {
   const [draft, setDraft] = React.useState('');
   return (
     <DropZone
-      listen="self"
       onFiles={(dropped) =>
         setDraft((d) => [d, ...dropped.map((file) => `@${file.name}`)].filter(Boolean).join(' '))
       }

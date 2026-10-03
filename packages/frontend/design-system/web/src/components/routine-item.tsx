@@ -4,6 +4,7 @@ import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import { ClockIcon } from 'lucide-react';
 import type * as React from 'react';
 
+import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
 
 /**
@@ -63,7 +64,7 @@ function RoutineItem({
       aria-current={active ? 'true' : undefined}
       className={cn(
         'group/routine flex h-[30px] w-full items-center gap-[9px] rounded-sm px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
-        withAction && 'group-hover/row:not-data-active:bg-hover-surface group-data-menu-open/row:not-data-active:bg-hover-surface',
+        withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
       {...props}
@@ -93,7 +94,7 @@ function RoutineItem({
         <span
           className={cn(
             'figures flex shrink-0 items-center gap-1.5 text-[11px] text-fg',
-            withAction && 'group-hover/row:invisible group-focus-within/row:invisible group-data-menu-open/row:invisible',
+            withAction && META_GIVES_WAY,
           )}
         >
           {lastRun ? (
@@ -112,21 +113,19 @@ function RoutineItem({
 
   if (!withAction) return button;
   return (
-    <div role="listitem" data-slot="routine-row" data-menu-open={menuOpen || undefined} className="group/row relative">
+    <SidebarRow slot="routine-row" action={action} menuOpen={menuOpen}>
       {button}
-      <span className="absolute top-1/2 right-1.5 flex -translate-y-1/2 opacity-0 transition-opacity duration-fast group-hover/row:opacity-100 group-focus-within/row:opacity-100 group-data-menu-open/row:opacity-100 [&_button]:size-5 [&_button]:rounded-xs [&_button]:text-fg-muted [&_button:hover]:text-fg [&_svg:not([class*=size-])]:size-3.5">
-        {action}
-      </span>
-    </div>
+    </SidebarRow>
   );
 }
 
 type RoutineRunState = 'completed' | 'failed' | 'running';
 
+/** How a run ended, as a dot: the sidebar's last-run dot and every `RoutineRun`. */
 const RUN_DOT: Record<RoutineRunState, string> = {
   completed: 'bg-fg-subtle',
   failed: 'bg-danger',
-  running: 'bg-success',
+  running: 'bg-success motion-safe:animate-pulse-dot',
 };
 
 function RoutineRunList({ className, ...props }: React.ComponentProps<'div'>) {
@@ -175,7 +174,7 @@ function RoutineRun({
         aria-hidden
         className={cn(
           'size-1.5 shrink-0 rounded-pill',
-          state === 'failed' ? 'bg-danger' : state === 'running' ? 'bg-success motion-safe:animate-pulse-dot' : 'bg-fg-subtle',
+          RUN_DOT[state],
         )}
       />
       <span className="min-w-0 flex-1 truncate">{title}</span>

@@ -100,8 +100,7 @@ import {
   FieldSelectGroup,
   FieldSelectRow,
 } from '@oppenheimer/design-system-web/field-select';
-import { HostCard, HostCardFoot, HostCardNote } from '@oppenheimer/design-system-web/host-card';
-import { CommandRow, CommandRowList } from '@oppenheimer/design-system-web/command-row';
+import { HostCard } from '@oppenheimer/design-system-web/host-card';
 import { fixCommands } from './host-link-demos';
 import {
   AddRow,
@@ -726,7 +725,7 @@ export function ComposerDemo({ full, blocked }: { full?: boolean; blocked?: stri
         onValueChange={setValue}
         placeholder={full ? 'Describe a task or ask a question' : 'Name or first task'}
         busy={busy}
-        sendBlocked={blocked}
+        sendBlockedReason={blocked}
         onSubmit={() => {
           setBusy(true);
           setTimeout(() => {
@@ -1979,51 +1978,45 @@ export function HostCardsDemo() {
     <div className="flex w-full max-w-170 flex-col gap-2.5">
       <HostCard name="jordis-mac-studio" meta="macOS 15 · local · runner 0.14.2" status="running" state="Running · 2 sessions" seen="connected" action={action} />
       <HostCard name="optimus" meta="Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2" status="idle" state="Idle" seen="connected" action={action} />
-      <HostCard
-        name="fable"
-        meta="Debian 12 · 16 vCPU · us-east · runner 0.13.8"
-        status="offline"
-        state="Offline"
-        seen="last seen 2 days ago"
-        action={action}
-        detail={<OfflineHostDetail />}
-      />
+      <FableHostCard action={action} />
     </div>
   );
 }
 
-/** Fable's offline detail: what waits on it, the fix, and Check again. */
-function OfflineHostDetail() {
+/** Fable, offline: what waits on it, the fix, and Check again. */
+function FableHostCard({ action }: { action: React.ReactNode }) {
   const [checking, setChecking] = React.useState(false);
   const [checked, setChecked] = React.useState(false);
   return (
-    <>
-      <HostCardNote>
-        3 sessions reconnect on their own when its runner is back, and 1 automation run waits as Queued. Its
-        runner (0.13.8) is out of date; installing updates it to 0.14.2.
-      </HostCardNote>
-      <CommandRowList>
-        {fixCommands('fable').map(([lead, command]) => (
-          <CommandRow key={command} lead={lead} command={command} />
-        ))}
-      </CommandRowList>
-      <HostCardFoot note={checked && !checking ? 'still offline · checked just now' : undefined}>
-        <Button
-          variant="secondary"
-          size="sm"
-          pending={checking}
-          pendingLabel="Checking…"
-          onClick={() => {
-            setChecking(true);
-            setTimeout(() => {
-              setChecking(false);
-              setChecked(true);
-            }, 1500);
-          }}
-        >
-          Check again
-        </Button>
-      </HostCardFoot>
-    </>
+    <HostCard
+      name="fable"
+      meta="Debian 12 · 16 vCPU · us-east · runner 0.13.8"
+      status="offline"
+      state="Offline"
+      seen="last seen 2 days ago"
+      action={action}
+      offline={{
+        note: '3 sessions reconnect on their own when its runner is back, and 1 automation run waits as Queued. Its runner (0.13.8) is out of date; installing updates it to 0.14.2.',
+        commands: fixCommands('fable').map(([lead, command]) => ({ lead, command })),
+        action: (
+          <Button
+            variant="secondary"
+            size="sm"
+            pending={checking}
+            pendingLabel="Checking…"
+            onClick={() => {
+              setChecking(true);
+              setTimeout(() => {
+                setChecking(false);
+                setChecked(true);
+              }, 1500);
+            }}
+          >
+            Check again
+          </Button>
+        ),
+        actionNote: checked && !checking ? 'still offline · checked just now' : undefined,
+      }}
+    />
   );
 }

@@ -42,6 +42,9 @@ const missing = [];
 
 /** Copy both themes of one capture; return the published name pattern. */
 function take(pattern, as) {
+  // Without the placeholder both themes would copy one file, and the page
+  // would show the same shot under Light and Dark.
+  if (!pattern.includes('{theme}')) throw new Error(`"${pattern}": a capture path must contain {theme}`);
   for (const theme of ['light', 'dark']) {
     const from = pattern.replaceAll('{theme}', theme);
     if (!existsSync(from)) missing.push(from);
@@ -82,7 +85,7 @@ const html = `<title>${esc(m.title)}</title>
 :root{--bg:#f5f5f7;--card:#fff;--fg:#1d1d1f;--muted:#6e6e73;--subtle:#86868b;--line:#e3e3e8;--accent:#0071e3;--chip:#ececf0;color-scheme:light}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121213;--card:#1a1a1c;--fg:#f5f5f7;--muted:#a1a1a6;--subtle:#86868b;--line:#2c2c30;--accent:#2997ff;--chip:#27272b;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#121213;--card:#1a1a1c;--fg:#f5f5f7;--muted:#a1a1a6;--subtle:#86868b;--line:#2c2c30;--accent:#2997ff;--chip:#27272b;color-scheme:dark}
-body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.47 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;letter-spacing:-.011em}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.47 system-ui,sans-serif;letter-spacing:-.011em}
 .wrap{max-width:1480px;margin:0 auto;padding-inline:16px;padding-block:40px 80px;display:flex;flex-direction:column;gap:40px}
 header{display:flex;flex-direction:column;gap:10px;max-width:760px}
 .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
@@ -99,7 +102,7 @@ p{margin:0;color:var(--muted);max-width:68ch}
 .changes b{font-weight:600;display:block}.changes span{color:var(--muted);font-size:13px}
 .pair{display:flex;flex-direction:column;gap:14px}
 .head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
-.head code{font:12.5px ui-monospace,"SF Mono",Menlo,monospace;color:var(--subtle)}
+.head code{font:12.5px ui-monospace,monospace;color:var(--subtle)}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
 figure{margin:0;display:flex;flex-direction:column;gap:8px;min-width:0}
 figcaption{font-size:12.5px;color:var(--muted);display:flex;gap:8px;align-items:center}

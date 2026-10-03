@@ -174,7 +174,7 @@ export const TOC: TocGroup[] = [
     group: 'Terminal',
     items: [
       { id: 'terminal', label: 'Terminal', icon: TerminalIcon, components: ['terminal'] },
-      { id: 'hostlink', label: 'Host offline · CommandRow', icon: UnplugIcon, components: ['command-row'] },
+      { id: 'hostlink', label: 'HostLinkChrome · CommandRow', icon: UnplugIcon, components: ['host-link', 'command-row'] },
     ],
   },
   {

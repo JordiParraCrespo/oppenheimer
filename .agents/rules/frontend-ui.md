@@ -64,10 +64,10 @@ multi-line, so a grep for `export` misses most of them.
 | A form over the console (New project, Add a host, the automation editor) | a `Dialog` at its `form` or `lg` size, opened through `useConsoleDialog` (`apps/web/src/lib/console.ts`, over the kit's `createDialogSlot`) | a page under a layout route, a `useState` per surface, a width on the caller |
 | A settings page's rows | `SettingsGroup` + `SettingsRow` | a form of `Field`s in a `Card` |
 | A host on Settings | `HostCard` | a `Card`, a table row |
-| What an offline host is holding up, and its fix, on Settings | `HostCard detail` with `HostCardNote`, `CommandRowList`, `HostCardFoot` | an `Alert` under the card |
-| A session whose host went offline | `TerminalBanner` (+ `TerminalDrawer`) or `TerminalNotice` over `TerminalScrollback fade`, with `TerminalPrompt disabled` | an `Alert` or `ErrorAlert` above the terminal |
+| What an offline host is holding up, and its fix, on Settings | `HostCard`'s `offline` | an `Alert` under the card |
+| A session whose host went offline, reconnects or catches up | `Terminal hostLink={{ phase, host }}` with `HostLinkChrome` in the status bar's place (the banner; the notice form only if the product chose it) | an `Alert` or `ErrorAlert` above the terminal, a hand-built banner |
 | A command someone runs on their own machine to fix it | `CommandRow` in a `CommandRowList` | a `CodeBlock` per command, inline `<code>` in a sentence |
-| Attaching files by dropping them on a pane | `DropZone` (or `useFileDrag` for the behaviour alone) | `dragenter` listeners in a feature |
+| Attaching files by dropping them on a pane | `DropZone` | `dragenter` listeners in a feature |
 | A choice that exists but cannot be picked now (an offline host) | a `disabled` `ChipSelect` option whose `description` says why | hiding it, an error after the pick |
 
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat

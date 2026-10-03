@@ -13,19 +13,21 @@ import { cn } from '../lib/utils';
  * It wraps the pane and draws nothing until a drag carrying files comes in;
  * then an outline in the action blue lies 8px inside the pane's edge, 3px at
  * the 18px radius over a 7% blue wash, with one pill in the middle saying
- * what the drop will do ("Drop to attach"). It fades in and out at 140ms and
- * never takes the pointer, so the pane under it stays exactly as it was.
+ * what the drop will do ("Drop to attach"). The overlay exists only while
+ * the drag does, fades in, and never takes the pointer, so the pane under it
+ * stays exactly as it was.
  *
- * `listen="window"` (the default) counts a drop anywhere in the window, so a
- * file let go a little outside the pane still lands, and the browser never
- * opens it in the tab; `listen="self"` keeps the zone to its own box, for a
- * page that holds more than one. Only files count: a dragged link or text is
- * left to the browser.
+ * The zone is its own box (`listen="self"`, the default), so two zones on a
+ * page, or a file input inside one, each get only their own drops.
+ * `listen="window"` counts a drop anywhere in the window, so a near miss
+ * still lands and the browser never opens the file in the tab; use it only
+ * where the page has exactly one zone, since every window zone receives every
+ * drop. Only files count: a dragged link or text is left to the browser.
  */
 function DropZone({
   onFiles,
   label = 'Drop to attach',
-  listen = 'window',
+  listen = 'self',
   disabled = false,
   className,
   children,
@@ -34,7 +36,8 @@ function DropZone({
   onFiles: (files: File[]) => void;
   /** The pill: what dropping does. */
   label?: React.ReactNode;
-  listen?: 'window' | 'self';
+  /** `window` only on a page with one zone. */
+  listen?: 'self' | 'window';
   disabled?: boolean;
 }) {
   const zone = React.useRef<HTMLDivElement>(null);
@@ -49,18 +52,15 @@ function DropZone({
       {...props}
     >
       {children}
-      <div
-        aria-hidden
-        data-slot="drop-zone-overlay"
-        className={cn(
-          'pointer-events-none absolute inset-2 z-50 flex items-center justify-center rounded-lg border-3 border-primary bg-[color-mix(in_srgb,var(--primary)_7%,transparent)] opacity-0 transition-opacity duration-fast ease-standard',
-          dragging && 'opacity-100',
-        )}
-      >
-        <span className="rounded-pill bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
-          {label}
-        </span>
-      </div>
+      {dragging ? (
+        <div
+          aria-hidden
+          data-slot="drop-zone-overlay"
+          className="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-lg border-3 border-primary bg-[color-mix(in_srgb,var(--primary)_7%,transparent)] motion-safe:animate-label-in"
+        >
+          <span className="rounded-pill bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">{label}</span>
+        </div>
+      ) : null}
     </div>
   );
 }

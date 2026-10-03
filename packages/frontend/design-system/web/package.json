@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./*": "./src/components/*.tsx",
     "./hooks/use-controlled": "./src/hooks/use-controlled.ts",
+    "./hooks/use-copy": "./src/hooks/use-copy.ts",
     "./hooks/use-debounced-callback": "./src/hooks/use-debounced-callback.ts",
     "./hooks/use-debounced-value": "./src/hooks/use-debounced-value.ts",
     "./hooks/use-file-drag": "./src/hooks/use-file-drag.ts",

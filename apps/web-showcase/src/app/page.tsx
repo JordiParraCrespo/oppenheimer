@@ -838,12 +838,12 @@ export default function Page() {
       <Spec
         id="dropzone"
         title="DropZone"
-        meta="drop-zone.tsx · hooks/use-file-drag.ts"
-        desc="Files are attached by dropping them on the pane, not only through the paperclip. A drag that carries files lights the whole pane: a 3px outline in the action blue 8px inside its edge, at the 18px radius, over a 7% blue wash, with one pill saying what the drop does. On New session the files join the composer's attachments; in a running session each goes into the prompt as an @path. It fades at 140ms and never takes the pointer. In the console it listens to the whole window, so a file let go a little outside the pane still lands and the browser never opens it in the tab; a dragged link or text is left alone. useFileDrag is the same behaviour without the overlay. Drag a file from your desktop onto either pane."
+        meta="drop-zone.tsx"
+        desc="Files are attached by dropping them on the pane, not only through the paperclip. A drag that carries files lights the whole pane: a 3px outline in the action blue 8px inside its edge, at the 18px radius, over a 7% blue wash, with one pill saying what the drop does. On New session the files join the composer's attachments; in a running session each goes into the prompt as an @path. The overlay exists only during the drag and never takes the pointer. The zone is its own box, so two on a page each get only their own drops; the window listener catches a near miss too, for a page with exactly one zone. A dragged link or text is left alone. Drag a file from your desktop onto either pane."
         code={`<DropZone onFiles={(files) => attach(files)} label="Drop to attach">
   <NewSessionPane />
 </DropZone>
-const dragging = useFileDrag('window', { onFiles });`}
+<DropZone listen="window" onFiles={attach}>…</DropZone>  // the page's only zone`}
       >
         <div className="grid w-full gap-4 lg:grid-cols-2">
           <DropZoneNewSessionDemo />
@@ -1079,15 +1079,17 @@ const dragging = useFileDrag('window', { onFiles });`}
 
       <Spec
         id="hostlink"
-        title="Host offline · CommandRow"
-        meta="terminal.tsx · command-row.tsx"
-        desc="When a session's host drops off, the pane says so where the reader is looking, in one of two forms. TerminalBanner takes the status bar's place on a faint amber wash: the dot, “optimus is offline”, a dim line, the mono time offline and How to fix, which opens TerminalDrawer above it. TerminalNotice is the card form: centred over the scrollback, which fades back (TerminalScrollback fade). Either way scrollback stays, the prompt is disabled and says why, and nothing asks to be pressed: the runner dials out, so the session comes back on its own, through Runner is back (catching up) to Reconnected. The fix is two CommandRows, a $ command with an icon copy button that reads Copy command, then Copied, and a link to Settings → Hosts. Step through the phases with the control above each terminal."
-        code={`<TerminalScrollback fade="strong">…</TerminalScrollback>
-<TerminalPrompt disabled placeholder="Read-only while optimus is offline" />
-<TerminalBanner state="offline" title="optimus is offline" description="Reconnects on its own when the runner is back" elapsed="2m 14s"
-  action={<TerminalBannerToggle open={open} onClick={toggle}>How to fix</TerminalBannerToggle>} />
-<TerminalDrawer><TerminalDrawerText>…</TerminalDrawerText><CommandRowList><CommandRow surface="terminal" lead="To see what went wrong:" command="…" /></CommandRowList></TerminalDrawer>
-<TerminalNotice state="offline" eyebrow="offline · 2m 14s" title="optimus is offline" description="…"><CommandRowList>…</CommandRowList></TerminalNotice>`}
+        title="HostLinkChrome · CommandRow"
+        meta="host-link.tsx · command-row.tsx"
+        desc="Where a session's link to its host stands, as one phase the Terminal is given: live, reconnecting, offline, catching up, reconnected. The terminal acts on it itself: the prompt locks and its placeholder says why, and behind the card the scrollback fades back. HostLinkChrome, in the status bar's place, draws the rest from the same phase table. The banner is the console's form: the bar's place goes to an amber wash with the dot, “optimus is offline”, a dim line and the time offline, and its one control, How to fix, opens the fix above it. The notice is the frames' other drawing of the same phases, a card over the scrollback. The session comes back on its own (the runner dials out), so the fix is the only control. The fix is CommandRows, a $ command with an icon copy button (Copy command, then Copied), and a link to Settings → Hosts. Step through the phases with the control above each terminal."
+        code={`<Terminal hostLink={{ phase, host: 'optimus' }}>
+  <TerminalScrollback>…</TerminalScrollback>
+  <TerminalPrompt />
+  <HostLinkChrome elapsed="2m 14s" fix={<><CommandRowList><CommandRow surface="terminal" lead="To see what went wrong:" command="…" /></CommandRowList><Link to="/settings/hosts">Settings → Hosts</Link></>}>
+    <TerminalStatusItem>1 host</TerminalStatusItem>
+  </HostLinkChrome>
+</Terminal>
+<Terminal hostLink={{ phase, form: 'notice', host: 'optimus' }}>…</Terminal>`}
         bare
       >
         <div className="flex w-full flex-col gap-6">
@@ -1190,7 +1192,7 @@ const dragging = useFileDrag('window', { onFiles });`}
         meta="host-card.tsx"
         desc="One card per host. Running is green, idle is a grey dot, offline is a hollow ring with its last-seen time. The ellipsis holds Rename, Copy host ID (with the id as a mono value) and Remove host. An offline host opens its detail under a hairline: what waits on it (sessions that reconnect on their own, automation runs queued, a runner out of date), the commands that bring it back as CommandRows, and Check again with a mono note of the answer. The console cannot reconnect a runner, so the card explains and looks again."
         code={`<HostCard name="fable" status="offline" state="Offline" seen="last seen 2 days ago" action={…}
-  detail={<><HostCardNote>3 sessions reconnect on their own…</HostCardNote><CommandRowList><CommandRow lead="…" command="…" /></CommandRowList><HostCardFoot note="still offline · checked just now"><Button variant="secondary" size="sm">Check again</Button></HostCardFoot></>} />`}
+  offline={{ note: '3 sessions reconnect on their own…', commands: [{ lead: 'To see what went wrong:', command: '…' }], action: <Button variant="secondary" size="sm">Check again</Button>, actionNote: 'still offline · checked just now' }} />`}
       >
         <HostCardsDemo />
       </Spec>
