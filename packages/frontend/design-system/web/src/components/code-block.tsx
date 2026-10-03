@@ -3,6 +3,7 @@
 import { CheckIcon, CopyIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { useCopy } from '../hooks/use-copy';
 import { cn } from '../lib/utils';
 import { Button } from './button';
 
@@ -65,21 +66,7 @@ function CodeBlock({
   copyLabel?: string;
   copiedLabel?: string;
 }) {
-  const [copied, setCopied] = React.useState(false);
-  const timer = React.useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  React.useEffect(() => () => clearTimeout(timer.current), []);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      clearTimeout(timer.current);
-      timer.current = setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // Clipboard denied: the text is still selectable.
-    }
-  }
+  const { copied, copy } = useCopy(code);
 
   const head = dim && code.endsWith(dim) ? code.slice(0, -dim.length) : code;
   const tail = dim && code.endsWith(dim) ? dim : null;
