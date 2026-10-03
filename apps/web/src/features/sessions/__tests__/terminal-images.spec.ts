@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { carriesFiles, imageFromTransfer } from '../lib/terminal-images';
+import { imageFromTransfer, imagesIn } from '../lib/terminal-images';
 
 /** A DataTransfer-shaped object: jsdom's own does not carry files. */
 function transfer({
@@ -55,10 +55,12 @@ describe('imageFromTransfer', () => {
   });
 });
 
-describe('carriesFiles', () => {
-  it('is true only for a drag with files', () => {
-    expect(carriesFiles(transfer({ types: ['Files'] }))).toBe(true);
-    expect(carriesFiles(transfer({ types: ['text/plain'] }))).toBe(false);
-    expect(carriesFiles(null)).toBe(false);
+describe('imagesIn', () => {
+  it('keeps the dropped images an agent can read, in order, and nothing else', () => {
+    const pdf = new File(['%PDF'], 'spec.pdf', { type: 'application/pdf' });
+    const svg = new File(['<svg/>'], 'a.svg', { type: 'image/svg+xml' });
+    const jpeg = new File([new Uint8Array([0xff, 0xd8])], 'b.jpg', { type: 'image/jpeg' });
+    expect(imagesIn([shot, pdf, svg, jpeg])).toEqual([shot, jpeg]);
+    expect(imagesIn([pdf])).toEqual([]);
   });
 });

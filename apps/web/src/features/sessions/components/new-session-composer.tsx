@@ -1,4 +1,4 @@
-import { Composer, FieldError } from '@oppenheimer/design-system-web';
+import { Composer, DropZone, FieldError } from '@oppenheimer/design-system-web';
 import {
   SESSION_CREATE_MAX_IMAGES,
   SESSION_IMAGE_MAX_BYTES,
@@ -24,6 +24,12 @@ interface HeldFile {
  * often empty for a pasted screenshot, so a file is refused here only for size
  * or count, with the reason under the field, never silently dropped. A paste
  * with no image is left to the field.
+ *
+ * A file dropped anywhere on the page is held the same way. New session is
+ * the page's one drop zone, so the composer listens to the window and the
+ * files land in this state with no one in between; the outline is drawn on
+ * the screen's pane (the nearest positioned box above this one, since the
+ * zone itself is `static`), so it traces the pane the way the frames do.
  *
  * `scope`, `tools` and `engine` are passed in because each is a chip bound to
  * the New session draft's store.
@@ -65,18 +71,20 @@ export function NewSessionComposer({
     if (accepted.length > 0) setFiles((held) => [...held, ...accepted]);
   }
 
-  function onPaste(event: ClipboardEvent<HTMLDivElement>) {
-    // Only what could be an image; an unlabelled file is a screenshot more
-    // often than not. Nothing is prevented: text pasted with it still lands
-    // in the field, and a textarea inserts nothing for a file.
-    const images = Array.from(event.clipboardData.files).filter(
-      (file) => file.type === '' || file.type.startsWith('image/'),
-    );
+  /** Only what could be an image; an unlabelled file is a screenshot more often than not. */
+  function holdImages(incoming: File[]) {
+    const images = incoming.filter((file) => file.type === '' || file.type.startsWith('image/'));
     if (images.length > 0) hold(images);
   }
 
+  function onPaste(event: ClipboardEvent<HTMLDivElement>) {
+    // Nothing is prevented: text pasted with it still lands in the field, and
+    // a textarea inserts nothing for a file.
+    holdImages(Array.from(event.clipboardData.files));
+  }
+
   return (
-    <div className="flex flex-col gap-2">
+    <DropZone listen="window" onFiles={holdImages} className="static flex flex-col gap-2">
       <input
         ref={picker}
         type="file"
@@ -126,6 +134,6 @@ export function NewSessionComposer({
         }}
       />
       {refusal ? <FieldError className="mx-4.5">{refusal}</FieldError> : null}
-    </div>
+    </DropZone>
   );
 }

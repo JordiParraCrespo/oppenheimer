@@ -4,7 +4,7 @@ import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 import { CursorFrames } from './cursor-frames';
-import { bindImageGestures } from './terminal-images';
+import { bindImagePaste } from './terminal-images';
 import { classifyKey } from './terminal-keys';
 import {
   readTerminalTheme,
@@ -25,9 +25,9 @@ export interface SessionTerminalOptions {
    */
   agentWindow?: boolean;
   /**
-   * An image was pasted or dropped onto the terminal, for the caller to upload
-   * to the host (`bindImageGestures`). Without a handler, images are left to
-   * xterm, which pastes nothing for them.
+   * An image was pasted onto the terminal, for the caller to upload to the
+   * host (`bindImagePaste`). Without a handler, images are left to xterm,
+   * which pastes nothing for them. A drop is the pane's `DropZone`.
    */
   onImage?: (image: File) => void;
   /**
@@ -112,7 +112,7 @@ export function mountSessionTerminal(
   // window: the pointer-on-grey it looks for is Claude Code's.
   const userTurns = options.agentWindow ? bindUserTurns(term, readUserTurnColors) : null;
 
-  const unbindImages = options.onImage ? bindImageGestures(container, options.onImage) : () => {};
+  const unbindImages = options.onImage ? bindImagePaste(container, options.onImage) : () => {};
 
   // The wheel scrolls the session, not the program: tmux runs with `mouse on`,
   // so xterm would forward every tick as a mouse report and Codex would move
