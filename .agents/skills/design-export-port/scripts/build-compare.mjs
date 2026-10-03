@@ -124,6 +124,8 @@ figcaption{font-size:12.5px;color:var(--muted);display:flex;gap:8px;align-items:
 let theme = 'light';
 try { const t = localStorage.getItem('cmp-theme'); if (t === 'light' || t === 'dark') theme = t; } catch {}
 function paint() {
+  // The page follows the pick too, so each shot sits on its own theme's ground.
+  document.documentElement.setAttribute('data-theme', theme);
   for (const img of document.querySelectorAll('img[data-src]')) img.src = 'shots/' + img.dataset.src + '-' + theme + '.png';
   for (const b of document.querySelectorAll('[data-pick]')) b.setAttribute('aria-pressed', String(b.dataset.pick === theme));
 }

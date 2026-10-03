@@ -127,10 +127,13 @@ function Banner({
       className="flex h-7 shrink-0 items-center gap-2.5 overflow-hidden border-t border-term-border bg-[color-mix(in_srgb,var(--term-warning)_9%,var(--term-bg))] pr-1.5 pl-5 font-sans text-xs tracking-[-0.004em] text-term-fg"
     >
       <LinkDot state={row.link} />
-      <span key={title} className="shrink-0 font-medium motion-safe:animate-label-in">
+      {/* The title gives way before the time and the fix do: a long host
+          name truncates, and How to fix stays on screen. The dim line has
+          no basis of its own, so it only takes what the title leaves. */}
+      <span key={title} className="min-w-0 truncate font-medium motion-safe:animate-label-in">
         {title}
       </span>
-      <span className="min-w-0 flex-1 truncate text-term-dim">{labels.line[away](host)}</span>
+      <span className="min-w-0 flex-[1_1_0] truncate text-term-dim">{labels.line[away](host)}</span>
       {elapsed ? (
         <span className="figures shrink-0 font-mono text-[11.5px] text-term-dim">{elapsed}</span>
       ) : null}
