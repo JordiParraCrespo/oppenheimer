@@ -1,4 +1,6 @@
+import { DropZone } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
+import { NewSessionDropContext, useNewSessionDrop } from '../hooks/use-new-session-drop';
 import { NewSessionForm } from '../sections/new-session-form';
 
 /**
@@ -7,25 +9,30 @@ import { NewSessionForm } from '../sections/new-session-form';
  * sits on the grey `canvas-recessed` ground so the white composer reads as the
  * one surface. The screen only composes; every read belongs to the section.
  *
- * The outer box is `relative` and does not scroll: it is the pane the
- * composer's drop outline traces while files are dragged over the page.
+ * The pane is the drop zone: files dropped anywhere on it are handed to the
+ * composer, which holds the task's files, and the outline traces the pane
+ * while they are dragged over it. The zone is the box that does not scroll,
+ * so the outline stays flush with the pane however long the form is.
  */
 export function NewSessionScreen() {
   const { t } = useTranslation();
+  const drop = useNewSessionDrop();
 
   return (
-    <div className="relative flex min-h-0 flex-1">
-      <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas-recessed">
-        <div className="m-auto flex w-full max-w-180 flex-col gap-4.5 px-8 py-12">
-          <NewSessionForm
-            heading={
-              <h1 className="font-display text-metric font-semibold text-fg">
-                {t('sessions.new.title')}
-              </h1>
-            }
-          />
+    <NewSessionDropContext value={drop}>
+      <DropZone onFiles={(files) => drop.current?.(files)} className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas-recessed">
+          <div className="m-auto flex w-full max-w-180 flex-col gap-4.5 px-8 py-12">
+            <NewSessionForm
+              heading={
+                <h1 className="font-display text-metric font-semibold text-fg">
+                  {t('sessions.new.title')}
+                </h1>
+              }
+            />
+          </div>
         </div>
-      </div>
-    </div>
+      </DropZone>
+    </NewSessionDropContext>
   );
 }

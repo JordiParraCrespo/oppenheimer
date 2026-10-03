@@ -25,11 +25,11 @@ export interface SessionTerminalOptions {
    */
   agentWindow?: boolean;
   /**
-   * An image was pasted onto the terminal, for the caller to upload to the
+   * Images were pasted onto the terminal, for the caller to upload to the
    * host (`bindImagePaste`). Without a handler, images are left to xterm,
-   * which pastes nothing for them. A drop is the pane's `DropZone`.
+   * which pastes nothing for them.
    */
-  onImage?: (image: File) => void;
+  onImages?: (images: File[]) => void;
   /**
    * The first chunk on this attachment that puts a glyph on the grid; called
    * once. A session is "started" once the host has a tmux session, before the
@@ -112,7 +112,7 @@ export function mountSessionTerminal(
   // window: the pointer-on-grey it looks for is Claude Code's.
   const userTurns = options.agentWindow ? bindUserTurns(term, readUserTurnColors) : null;
 
-  const unbindImages = options.onImage ? bindImagePaste(container, options.onImage) : () => {};
+  const unbindImages = options.onImages ? bindImagePaste(container, options.onImages) : () => {};
 
   // The wheel scrolls the session, not the program: tmux runs with `mouse on`,
   // so xterm would forward every tick as a mouse report and Codex would move

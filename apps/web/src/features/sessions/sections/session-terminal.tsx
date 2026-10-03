@@ -12,7 +12,6 @@ import { useTranslation } from 'react-i18next';
 import { useImagePaste } from '../hooks/use-image-paste';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
-import { imagesIn } from '../lib/terminal-images';
 
 /** Window 0 is the agent's (05); the pane shows only that one today. */
 const AGENT_WINDOW = 0;
@@ -21,10 +20,10 @@ const AGENT_WINDOW = 0;
  * The session's terminal: the scrollback and the status band. No window
  * strip; the design system's tab CSS waits for several windows, a later slice.
  *
- * A file dropped anywhere on the pane goes the way a pasted image does: the
+ * Files dropped anywhere on the pane go the way pasted images do: the
  * `DropZone` around the terminal outlines the pane while the drag is over it
- * and hands each image on to the upload, whose path lands in the agent's
- * prompt. Files an agent cannot read are left out, as they are on paste.
+ * and hands the drop to the same batch upload as a paste (`useImagePaste`),
+ * whose paths land in the agent's prompt.
  *
  * **There is no prompt row of ours.** The artboard draws one, but a real
  * agent draws its own prompt inside the grid, and a second field gave the pane
@@ -39,16 +38,11 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
   const { containerRef, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
     onEnd: refresh,
     agentWindow: true,
-    onImage: image.onImage,
+    onImages: image.send,
   });
 
   return (
-    <DropZone
-      onFiles={(files) => {
-        for (const file of imagesIn(files)) image.onImage(file);
-      }}
-      className="flex min-h-0 flex-1 flex-col"
-    >
+    <DropZone onFiles={image.send} className="flex min-h-0 flex-1 flex-col">
       <Terminal className="min-h-0 flex-1 overflow-hidden">
         {/* The padding is the wrapper's: the fit addon sizes the grid from its
           host element and counts that host's padding as usable space, so a
@@ -92,14 +86,22 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
           </div>
         ) : null}
 
-        {image.failure ? (
+        {image.failure || image.refused ? (
           <div className="px-5 pb-3">
-            <ErrorAlert
-              error={image.failure}
-              fallback={t('errors.fallback')}
-              title={t('sessions.session.image.failedTitle')}
-              onDismiss={image.dismiss}
-            />
+            {image.refused ? (
+              <ErrorAlert
+                message={t('sessions.session.image.notImage')}
+                title={t('sessions.session.image.failedTitle')}
+                onDismiss={image.dismiss}
+              />
+            ) : (
+              <ErrorAlert
+                error={image.failure}
+                fallback={t('errors.fallback')}
+                title={t('sessions.session.image.failedTitle')}
+                onDismiss={image.dismiss}
+              />
+            )}
           </div>
         ) : null}
 

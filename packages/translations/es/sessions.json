@@ -134,7 +134,8 @@
       "attach": "Adjuntar imágenes",
       "removeAttachment": "Quitar {{name}}",
       "attachTooLarge": "{{name}} pesa más de 5 MB. Recórtala o guárdala más pequeña y vuelve a adjuntarla.",
-      "attachTooMany": "Una primera tarea lleva como mucho {{max}} imágenes."
+      "attachTooMany": "Una primera tarea lleva como mucho {{max}} imágenes.",
+      "attachNotImage": "{{name}} no es una imagen que el agente pueda leer. Adjunta un PNG, JPEG, GIF o WebP."
     },
     "failed": "No se pudo crear la sesión."
   },
@@ -147,6 +148,7 @@
     },
     "image": {
       "sending": "Enviando imagen",
+      "notImage": "Ninguno de los archivos soltados es una imagen que el agente pueda leer. Suelta un PNG, JPEG, GIF o WebP.",
       "failedTitle": "La imagen no llegó a la sesión"
     },
     "retryNow": "Reintentar ahora",
