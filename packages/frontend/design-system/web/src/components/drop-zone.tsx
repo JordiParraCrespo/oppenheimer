@@ -11,11 +11,11 @@ import { cn } from '../lib/utils';
  * file is put on the host and its path goes into the input).
  *
  * It wraps the pane and draws nothing until a drag carrying files comes in;
- * then the whole pane takes the frames' 7% wash of the action blue, edge to
- * edge: no inset, no radius, no border and no label. Wrap the pane itself
- * (the main column beside the sidebar), so the wash covers exactly it. It
- * exists only while the drag does, fades in, and never takes the pointer,
- * so the pane under it stays exactly as it was.
+ * then the pane's edge takes the frames' 3px outline in the action blue,
+ * square and flush with the pane: no fill, no radius, no label. Wrap the
+ * pane itself (the main column beside the sidebar), so the outline traces
+ * exactly it. It exists only while the drag does, fades in, and never takes
+ * the pointer, so the pane under it stays exactly as it was.
  *
  * The zone is its own box (`listen="self"`, the default), so two zones on a
  * page, or a file input inside one, each get only their own drops.
@@ -53,7 +53,7 @@ function DropZone({
         <div
           aria-hidden
           data-slot="drop-zone-overlay"
-          className="pointer-events-none absolute inset-0 z-10 bg-[color-mix(in_srgb,var(--primary)_7%,transparent)] motion-safe:animate-label-in"
+          className="pointer-events-none absolute inset-0 z-10 border-3 border-primary motion-safe:animate-label-in"
         />
       ) : null}
     </div>
