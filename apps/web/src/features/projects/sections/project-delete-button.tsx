@@ -1,31 +1,25 @@
 import { Button } from '@oppenheimer/design-system-web';
-import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { useTranslation } from 'react-i18next';
-import { useOpenSessionCount } from '../hooks/use-open-session-count';
+import { useProjectDeleteBlock } from '../hooks/use-project-delete-block';
 
-/**
- * Delete project, on the project dialog's footer: off while the project holds
- * unresolved sessions, because the API refuses exactly that. Why it is off is
- * `ProjectDeleteBlockedNote`'s to say: a disabled button takes no pointer, so
- * a tooltip on it never shows.
- */
+/** Delete project, on the project dialog's footer: off while it is blocked. */
 export function ProjectDeleteButton({
-  project,
+  projectId,
   disabled,
   onDelete,
 }: {
-  project: ProjectEntity;
+  projectId: string;
   disabled: boolean;
   onDelete: () => void;
 }) {
   const { t } = useTranslation();
-  const openSessionCount = useOpenSessionCount(project.id);
+  const { blocked } = useProjectDeleteBlock(projectId);
 
   return (
     <Button
       type="button"
       variant="destructive-ghost"
-      disabled={disabled || openSessionCount > 0}
+      disabled={disabled || blocked}
       onClick={onDelete}
     >
       {t('projects.dialog.delete')}

@@ -1,17 +1,15 @@
 import { Callout } from '@oppenheimer/design-system-web';
-import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { useTranslation } from 'react-i18next';
-import { useOpenSessionCount } from '../hooks/use-open-session-count';
+import { useProjectDeleteBlock } from '../hooks/use-project-delete-block';
 
 /**
- * Why Delete project is off: the project still holds open sessions. Shown in
- * the dialog's body, where it can be read on a touch screen too, and only
- * while it is true.
+ * Why Delete project is off, in the dialog's body. Only once the count is
+ * known: while the list loads the button is off and nothing is claimed.
  */
-export function ProjectDeleteBlockedNote({ project }: { project: ProjectEntity }) {
+export function ProjectDeleteBlockedNote({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
-  const openSessionCount = useOpenSessionCount(project.id);
+  const { openSessions } = useProjectDeleteBlock(projectId);
 
-  if (!openSessionCount) return null;
-  return <Callout>{t('projects.dialog.deleteBlocked', { count: openSessionCount })}</Callout>;
+  if (!openSessions) return null;
+  return <Callout>{t('projects.dialog.deleteBlocked', { count: openSessions })}</Callout>;
 }

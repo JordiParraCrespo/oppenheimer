@@ -63,6 +63,7 @@ export function ProjectEditorDialog({
   // The workspace's Unassigned project: its name is fixed and it cannot be
   // deleted (`PROJECTS_008`); its repositories and defaults edit like any other.
   const fixed = project?.isUnassigned === true;
+  const deletable = project && !fixed ? project : undefined;
   const [deleting, setDeleting] = useState(false);
 
   // The dialog closes on a save, and what it saved is a group in the sidebar
@@ -150,15 +151,15 @@ export function ProjectEditorDialog({
                   </div>
                 </DisclosurePanel>
               </Disclosure>
-              {project && !fixed ? <ProjectDeleteBlockedNote project={project} /> : null}
+              {deletable ? <ProjectDeleteBlockedNote projectId={deletable.id} /> : null}
             </div>
           </DialogBody>
 
           <DialogFooter>
-            {project && !fixed ? (
+            {deletable ? (
               <>
                 <ProjectDeleteButton
-                  project={project}
+                  projectId={deletable.id}
                   disabled={pending}
                   onDelete={() => setDeleting(true)}
                 />
