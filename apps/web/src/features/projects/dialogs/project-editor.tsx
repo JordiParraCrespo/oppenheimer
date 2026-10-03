@@ -34,6 +34,7 @@ import {
 } from '../lib/project-draft';
 import { ProjectClonedField } from '../sections/project-cloned-field';
 import { ProjectDefaultsSummary } from '../sections/project-defaults-summary';
+import { ProjectDeleteBlockedNote } from '../sections/project-delete-blocked-note';
 import { ProjectDeleteButton } from '../sections/project-delete-button';
 import { ProjectHostField } from '../sections/project-host-field';
 import { ProjectRepositoriesField } from '../sections/project-repositories-field';
@@ -149,6 +150,7 @@ export function ProjectEditorDialog({
                   </div>
                 </DisclosurePanel>
               </Disclosure>
+              {project && !fixed ? <ProjectDeleteBlockedNote project={project} /> : null}
             </div>
           </DialogBody>
 
