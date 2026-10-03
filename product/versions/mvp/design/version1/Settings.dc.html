@@ -191,7 +191,8 @@ Listening for this host…
 <sc-if value="{{ hasHosts }}">
 <div style="display:flex;flex-direction:column;gap:10px">
 <sc-for list="{{ hosts }}" as="h" hint-placeholder-count="3">
-<div style="display:flex;align-items:center;gap:14px;padding:18px 16px 18px 20px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<div style="display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<div style="display:flex;align-items:center;gap:14px;padding:18px 16px 18px 20px">
 <span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ h.dot }};box-shadow:{{ h.ring }}"></span>
 <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
 <sc-if value="{{ h.renaming }}">
@@ -219,6 +220,28 @@ Listening for this host…
 </div>
 </sc-if>
 </div>
+</div>
+<sc-if value="{{ h.offline }}">
+<div style="display:flex;flex-direction:column;gap:14px;margin:0 16px 0 41px;padding:18px 0 20px;border-top:1px solid var(--border-subtle)">
+<p style="margin:0;max-width:62ch;font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">{{ h.offText }}</p>
+<div style="display:flex;flex-direction:column;gap:10px;max-width:520px">
+<sc-for list="{{ h.cmds }}" as="c" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12.5px;color:var(--fg-muted)">{{ c.lead }}</span>
+<div style="display:flex;align-items:center;gap:8px;height:34px;padding:0 4px 0 12px;border-radius:10px;background:var(--hover-surface);font-family:var(--font-mono);font-size:12.5px">
+<span style="flex:none;color:var(--fg-subtle)">$</span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.cmd }}</span>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="{{ c.aria }}" title="{{ c.aria }}" onClick="{{ c.copy }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ c.icon }}" size="14" hint-size="14px,14px"></x-import></button>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" disabled="{{ h.checking }}" onClick="{{ h.check }}">{{ h.checkLabel }}</button>
+<span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ h.checkedNote }}</span>
+</div>
+</div>
+</sc-if>
 </div>
 </sc-for>
 </div>
@@ -249,7 +272,7 @@ Listening for this host…
 const SEED_HOSTS = [
   { id: 'h_7f3a', name: 'jordis-mac-studio', meta: 'macOS 15 · local · runner 0.14.2', status: 'running', sessions: 2, seen: 'now' },
   { id: 'h_2c91', name: 'optimus', meta: 'Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2', status: 'idle', sessions: 0, seen: 'now' },
-  { id: 'h_b40e', name: 'fable', meta: 'Debian 12 · 16 vCPU · us-east · runner 0.13.8', status: 'offline', sessions: 0, seen: '2 days ago' },
+  { id: 'h_b40e', name: 'fable', meta: 'Debian 12 · 16 vCPU · us-east · runner 0.13.8', status: 'offline', sessions: 0, seen: '2 days ago', waiting: 3, queued: 1, outdated: true },
 ];
 const PROFILE = { name: 'Jordi Parra Crespo', username: 'jordiparra99' };
 
@@ -257,13 +280,15 @@ class Component extends DCLogic {
   state = {
     section: null, profile: { ...PROFILE }, draft: { ...PROFILE }, saved: false,
     hosts: SEED_HOSTS, menu: null, renameId: null, renameVal: '',
-    removeId: null, addOpen: false, addDone: false, secs: 3581, copied: null, hostTab: 'cmd',
+    removeId: null, checkingId: null, checkedAt: {}, addOpen: false, addDone: false, secs: 3581, copied: null, hostTab: 'cmd',
   };
 
   componentDidMount() {
+    const q = new URLSearchParams(window.location.search).get('section');
+    if (q === 'hosts' || q === 'profile') this.setState({ section: q });
     this._tick = setInterval(() => { if (this.state.addOpen) this.setState(s => ({ secs: Math.max(0, s.secs - 1) })); }, 1000);
   }
-  componentWillUnmount() { clearInterval(this._tick); clearTimeout(this._reg); clearTimeout(this._copy); clearTimeout(this._saved); }
+  componentWillUnmount() { clearInterval(this._tick); clearTimeout(this._chk); clearTimeout(this._reg); clearTimeout(this._copy); clearTimeout(this._saved); }
 
   copy(which) {
     const cmd = 'curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c';
@@ -322,6 +347,22 @@ class Component extends DCLogic {
         ring: h.status === 'offline' ? 'inset 0 0 0 1.5px var(--fg-subtle)' : 'none',
         state: h.status === 'running' ? `Running · ${h.sessions} session${h.sessions === 1 ? '' : 's'}` : h.status === 'idle' ? 'Idle' : 'Offline',
         seen: h.status === 'offline' ? 'last seen ' + h.seen : 'connected',
+        // The runner dials out, so the console can't reconnect it — only look
+        // again. The fix itself is a command run on the machine.
+        offline: h.status === 'offline' ? 'true' : undefined,
+        offText: [
+          (h.waiting ? `${h.waiting} sessions reconnect on their own` : 'Sessions on it reconnect on their own') + ' when its runner is back' + (h.queued ? `, and ${h.queued} automation run waits as Queued.` : '.'),
+          h.outdated ? 'Its runner (' + (h.meta.match(/runner ([\d.]+)/) || [])[1] + ') is out of date; installing updates it to 0.14.2.' : '',
+        ].filter(Boolean).join(' '),
+        cmds: [['install', 'If it stays offline, reinstall and start the runner on ' + h.name + ':', 'oppenheimer-runner install'], ['status', 'To see what went wrong:', 'oppenheimer-runner status']].map(([k, lead, cmd]) => {
+          const key = h.id + ':' + k;
+          return { lead, cmd, aria: s.copied === key ? 'Copied' : 'Copy command', icon: s.copied === key ? 'check' : 'copy',
+            copy: e => { e.stopPropagation(); if (navigator.clipboard) navigator.clipboard.writeText(cmd).catch(() => {}); this.setState({ copied: key }); clearTimeout(this._copy); this._copy = setTimeout(() => this.setState({ copied: null }), 1600); } };
+        }),
+        checking: s.checkingId === h.id,
+        checkLabel: s.checkingId === h.id ? 'Checking…' : 'Check again',
+        checkedNote: s.checkingId === h.id ? '' : s.checkedAt[h.id] ? 'still offline · checked just now' : '',
+        check: e => { e.stopPropagation(); this.setState({ checkingId: h.id }); clearTimeout(this._chk); this._chk = setTimeout(() => this.setState(st => ({ checkingId: null, checkedAt: { ...st.checkedAt, [h.id]: Date.now() } })), 1500); },
         renaming: s.renameId === h.id ? 'true' : undefined,
         showName: s.renameId === h.id ? undefined : 'true',
         menuOpen: s.menu === h.id ? 'true' : undefined,
