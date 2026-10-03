@@ -150,7 +150,7 @@ export function DropZoneNewSessionDemo() {
       }
       className="h-90 w-full"
     >
-      <div className="flex h-full flex-col items-center justify-center gap-6 rounded-lg border border-border-subtle bg-canvas p-6">
+      <div className="flex h-full flex-col items-center justify-center gap-6 border border-border-subtle bg-canvas p-6">
       <h3 className="m-0 text-center font-display text-h2 font-semibold text-balance text-fg">Ready when you are.</h3>
       <div className="w-full max-w-160">
         <Composer
@@ -180,7 +180,7 @@ export function DropZoneTerminalDemo() {
       }
       className="h-90 w-full"
     >
-      <div className="h-full overflow-hidden rounded-lg border border-term-border">
+      <div className="h-full overflow-hidden border border-term-border">
       <Terminal>
         <Scrollback />
         <TerminalPrompt value={draft} onChange={(event) => setDraft(event.target.value)} />

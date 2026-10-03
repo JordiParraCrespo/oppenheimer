@@ -114,8 +114,9 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   before it is copied (the install command and agent prompt). Both copy
   through `useCopy`.
 - **Files are dropped on the pane.** `DropZone` wraps New session and a
-  running terminal: a drag carrying files gives the pane a quiet neutral tint
-  with a dashed hairline, no colour and no label. It is its own box; `listen="window"` only on a page
+  running terminal: a drag carrying files lays the 7% action-blue wash over
+  the whole pane, edge to edge, with no radius, border or label. It is its
+  own box; `listen="window"` only on a page
   with one zone.
 - **A sidebar row's actions are its ellipsis.** `SessionItem` and
   `RoutineItem` take `action` and `menuOpen` through one row shell; a
