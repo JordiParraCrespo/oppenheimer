@@ -15259,7 +15259,7 @@
               "text/csv",
               "application/json"
             ],
-            "description": "What the bytes are by their magic bytes, never the label the browser gave them."
+            "description": "What the bytes are (magic bytes, or text that is only text), never the label the browser gave them."
           },
           "size": {
             "type": "number",

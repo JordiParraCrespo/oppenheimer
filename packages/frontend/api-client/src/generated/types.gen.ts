@@ -1506,7 +1506,7 @@ export type SessionAttachmentResponseDto = {
      */
     id: string;
     /**
-     * What the bytes are by their magic bytes, never the label the browser gave them.
+     * What the bytes are (magic bytes, or text that is only text), never the label the browser gave them.
      */
     mediaType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp' | 'application/pdf' | 'text/plain' | 'text/markdown' | 'text/csv' | 'application/json';
     /**
