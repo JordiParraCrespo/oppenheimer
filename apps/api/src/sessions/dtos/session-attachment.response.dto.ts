@@ -8,7 +8,8 @@ export class SessionAttachmentResponseDto {
 
   @ApiProperty({
     enum: SESSION_FILE_MEDIA_TYPES,
-    description: 'What the bytes are (magic bytes, or text that is only text), never the label the browser gave them.',
+    description:
+      'What the bytes are (magic bytes, or text that is only text), never the label the browser gave them.',
   })
   mediaType!: (typeof SESSION_FILE_MEDIA_TYPES)[number];
 

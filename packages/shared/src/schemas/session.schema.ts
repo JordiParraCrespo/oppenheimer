@@ -275,9 +275,7 @@ export type PasteSessionImageDto = z.infer<typeof pasteSessionImageSchema>;
  */
 export const sessionAttachmentSchema = z.object({
   id: z.string().uuid(),
-  mediaType: z.enum(
-    SESSION_FILE_MEDIA_TYPES as [SessionFileMediaType, ...SessionFileMediaType[]],
-  ),
+  mediaType: z.enum(SESSION_FILE_MEDIA_TYPES as [SessionFileMediaType, ...SessionFileMediaType[]]),
   size: z.number().int().min(1).max(SESSION_FILE_MAX_BYTES),
 });
 
