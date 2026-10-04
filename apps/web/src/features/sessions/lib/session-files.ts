@@ -17,6 +17,26 @@ const TEXT_LIKE_TYPES = new Set([
   'video/mp2t',
 ]);
 
+/** Code a browser may label oddly or not at all; offered by the picker, sent on its name. */
+const CODE_SUFFIXES = [
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.py',
+  '.go',
+  '.rs',
+  '.java',
+  '.rb',
+  '.yaml',
+  '.yml',
+  '.toml',
+  '.sql',
+];
+
+/** Name endings sent whatever the label says: the text types' and the code above. */
+const TEXT_SUFFIXES = [...SESSION_TEXT_TYPES.flatMap((type) => type.suffixes), ...CODE_SUFFIXES];
+
 /** Labels that are text in name but markup a browser runs; the API refuses them. */
 const MARKUP_TYPES = new Set(['text/html', 'text/xml', 'image/svg+xml', 'application/xhtml+xml']);
 
@@ -40,7 +60,11 @@ export function isSessionFile(file: File): boolean {
     (SESSION_FILE_MEDIA_TYPES as readonly string[]).includes(type) ||
     type.startsWith('text/') ||
     type.endsWith('+json') ||
-    TEXT_LIKE_TYPES.has(type)
+    TEXT_LIKE_TYPES.has(type) ||
+    // An OS may label a source file `application/x-ruby` or
+    // `application/octet-stream`; a name the picker offers is still sent, and
+    // the API reads its bytes.
+    TEXT_SUFFIXES.some((suffix) => file.name.toLowerCase().endsWith(suffix))
   );
 }
 

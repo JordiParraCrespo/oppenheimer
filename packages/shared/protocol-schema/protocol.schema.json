@@ -55,12 +55,8 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": [
-              "session.image",
-              "session.create.images",
-              "session.files",
-              "repository.prepare"
-            ]
+            "minLength": 1,
+            "maxLength": 64
           }
         }
       },

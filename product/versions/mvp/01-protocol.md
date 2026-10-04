@@ -162,6 +162,14 @@ runner does with it and point back.
   way `session.image` is capability-gated, never as an optional field an
   older runner silently drops.
 
+  **`hello.capabilities` is open-ended** (since 2026-10-04). It was a closed
+  enum, so a runner naming a capability its control plane had never heard
+  of (a rollback, a runner released first) failed the whole hello and
+  redialled forever. It is a list of strings now, and the control plane
+  keeps the ones it knows (`knownCapabilities`). A control plane that
+  predates this still refuses an unknown name, so the release that adds
+  `session.files` ships the control plane before the runner offers it.
+
   **A new catalog agent does not move the protocol version.** A runner
   probes the command of every agent it can launch (02 §10), so its last
   inventory says which `agent` values it knows. The control plane sends

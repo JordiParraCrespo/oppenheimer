@@ -49,6 +49,18 @@ export const RUNNER_CAPABILITIES = [
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
 /**
+ * The capabilities a hello named that this side knows, in order. The hello
+ * carries plain strings so a runner newer than its control plane (a rollback,
+ * a staggered deploy) still links: what the control plane has never heard of
+ * is dropped here rather than failing the whole hello.
+ */
+export function knownCapabilities(named: readonly string[]): RunnerCapability[] {
+  return named.filter((name): name is RunnerCapability =>
+    (RUNNER_CAPABILITIES as readonly string[]).includes(name),
+  );
+}
+
+/**
  * The first message after the upgrade. The control plane reconciles the
  * snapshot against its own state rather than replaying a queue, and refuses a
  * runner below `min_supported` with an `update_required` hint rather than
@@ -70,7 +82,8 @@ export const helloSchema = z.object({
    * frame it does not know while the console waits for a paste that never
    * comes. Absent is none.
    */
-  capabilities: z.array(z.enum(RUNNER_CAPABILITIES)).max(32).default([]),
+  /** Open-ended on purpose; read through `knownCapabilities`. */
+  capabilities: z.array(z.string().min(1).max(64)).max(32).default([]),
 });
 
 export type HelloMessage = z.infer<typeof helloSchema>;

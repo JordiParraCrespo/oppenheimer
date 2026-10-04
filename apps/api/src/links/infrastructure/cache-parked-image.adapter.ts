@@ -146,7 +146,9 @@ export class CacheParkedImageAdapter implements ParkedImagePort {
  */
 function contentId(image: StagedImage): string {
   const hex = createHash('sha256')
-    .update(`${image.organizationId}:${image.userId}:`)
+    // The type too: the same text staged as notes.md and as data.json is two
+    // uploads, each keeping the type its response named.
+    .update(`${image.organizationId}:${image.userId}:${image.mediaType}:`)
     .update(image.data)
     .digest('hex');
   // Version 8 ("custom") and the RFC 4122 variant, so it parses as a UUID.

@@ -46,6 +46,12 @@ describe('sessionFilesIn', () => {
     ]);
   });
 
+  it('sends a source file the OS labelled oddly, on the name the picker offered', () => {
+    const ruby = new File(['puts 1'], 'a.rb', { type: 'application/x-ruby' });
+    const toml = new File(['a = 1'], 'Cargo.toml', { type: 'application/octet-stream' });
+    expect(sessionFilesIn([ruby, toml])).toEqual([ruby, toml]);
+  });
+
   it('says no at once to what a session never takes, whatever the API would say of the bytes', () => {
     expect(sessionFilesIn([svg, html, zip, video, binary])).toEqual([]);
   });

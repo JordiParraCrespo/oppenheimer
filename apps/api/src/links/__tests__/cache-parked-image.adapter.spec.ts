@@ -65,6 +65,21 @@ describe('CacheParkedImageAdapter', () => {
       await expect(store.stage({ ...png(1), userId: 'user-2' })).resolves.not.toBe(first);
     });
 
+    it('names the same text staged as two types twice, so neither takes the other’s type', async () => {
+      const store = new CacheParkedImageAdapter(memoryCache());
+      const text = { ...owner, data: Buffer.from('a,b\n') };
+
+      const asCsv = await store.stage({ ...text, mediaType: 'text/csv' });
+      const asPlain = await store.stage({ ...text, mediaType: 'text/plain' });
+
+      expect(asPlain).not.toBe(asCsv);
+      const claimed = await store.claim([asCsv as string], owner, {
+        hostId: 'host-1',
+        sessionId: 'session-1',
+      });
+      expect(claimed?.[0]?.mediaType).toBe('text/csv');
+    });
+
     it('refuses an upload past the per-person cap, but not the same bytes again', async () => {
       const store = new CacheParkedImageAdapter(memoryCache());
       for (let i = 0; i < STAGED_IMAGES_PER_OWNER; i += 1) {

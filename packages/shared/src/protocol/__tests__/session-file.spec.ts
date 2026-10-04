@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { pasteSessionImageSchema } from '../../schemas/session.schema.js';
+import { helloSchema, knownCapabilities } from '../messages.js';
 import {
   isSessionImageType,
   SESSION_FILE_TYPES,
@@ -86,6 +87,16 @@ describe('sessionFileIs', () => {
     expect(sessionFileIs(bytes('%PDF-1.4'), 'image/png')).toBe(false);
     expect(sessionFileIs(bytes('#!/bin/sh'), 'text/plain')).toBe(false);
     expect(sessionFileIs(bytes('plain words'), 'application/x-sh')).toBe(false);
+  });
+});
+
+describe('knownCapabilities', () => {
+  it('keeps what this side knows and drops what a newer runner added', () => {
+    expect(knownCapabilities(['session.files', 'session.teleport', 'session.image'])).toEqual([
+      'session.files',
+      'session.image',
+    ]);
+    expect(helloSchema.shape.capabilities.safeParse(['session.teleport']).success).toBe(true);
   });
 });
 
