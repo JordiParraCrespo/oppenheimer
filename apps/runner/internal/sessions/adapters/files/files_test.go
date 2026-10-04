@@ -1,16 +1,16 @@
-package images_test
+package files_test
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/images"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/files"
 )
 
 func TestSaveWritesAPrivateFileAndDiscardDropsTheSession(t *testing.T) {
 	dir := t.TempDir()
-	store := images.New(dir)
+	store := files.New(dir)
 
 	path, err := store.Save("s1", "a.png", []byte("png"))
 	if err != nil {
@@ -36,7 +36,7 @@ func TestSaveWritesAPrivateFileAndDiscardDropsTheSession(t *testing.T) {
 }
 
 func TestSaveRefusesANameThatClimbs(t *testing.T) {
-	store := images.New(t.TempDir())
+	store := files.New(t.TempDir())
 	for _, name := range []string{"../a.png", "a/b.png", "..", ""} {
 		if _, err := store.Save("s1", name, []byte("x")); err == nil {
 			t.Fatalf("Save(%q) was accepted", name)

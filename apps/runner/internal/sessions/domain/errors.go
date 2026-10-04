@@ -24,5 +24,5 @@ var (
 	// the runner stopped waiting, git did not fail — so what it did first may
 	// be on disk.
 	ErrGitAbandoned = problem.New("GIT_005", http.StatusServiceUnavailable, "A git command was abandoned before it finished")
-	ErrImage        = problem.New("SESS_005", http.StatusUnsupportedMediaType, "The file cannot be given to the session")
+	ErrFile         = problem.New("SESS_005", http.StatusUnsupportedMediaType, "The file cannot be given to the session")
 )

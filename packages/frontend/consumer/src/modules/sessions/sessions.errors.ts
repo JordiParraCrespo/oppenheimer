@@ -25,7 +25,7 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_006',
     message: "Failed to load the session's progress",
   },
-  PASTE_IMAGE_FAILED: {
+  PASTE_FILE_FAILED: {
     code: 'SESSIONS_CLIENT_007',
     message: 'Failed to give the file to the session',
   },
@@ -58,7 +58,7 @@ export const SessionsErrors = {
    * upload: a file that would be refused is not worth sending, and the reader
    * sees the same words either way.
    */
-  IMAGE_TOO_LARGE: {
+  FILE_TOO_LARGE: {
     code: 'SESSIONS_012',
     message: 'That file is too large to give the session',
   },

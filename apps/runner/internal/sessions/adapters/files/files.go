@@ -1,6 +1,6 @@
-// Package images keeps the pictures pasted into a session's prompt on disk,
+// Package files keeps the files (images, PDF, text) pasted into a session's prompt on disk,
 // one directory per session under the runner's home.
-package images
+package files
 
 import (
 	"errors"
@@ -8,20 +8,20 @@ import (
 	"path/filepath"
 )
 
-// Store is app.Images over a directory.
+// Store is app.Files over a directory.
 type Store struct {
 	dir string
 }
 
-// New keeps images under dir, `~/.oppenheimer/images` in production.
+// New keeps files under dir, `~/.oppenheimer/images` in production.
 func New(dir string) *Store { return &Store{dir: dir} }
 
-// Save writes one image and returns its absolute path. The directory and the
+// Save writes one file and returns its absolute path. The directory and the
 // file are the runner account's alone: a screenshot can hold anything that
 // was on somebody's screen.
 func (s *Store) Save(sessionID, name string, data []byte) (string, error) {
 	if !plain(sessionID) || !plain(name) {
-		return "", errors.New("an image is named by a plain file name")
+		return "", errors.New("a file is named by a plain file name")
 	}
 	dir := filepath.Join(s.dir, sessionID)
 	if err := os.MkdirAll(dir, 0o700); err != nil {
@@ -37,10 +37,10 @@ func (s *Store) Save(sessionID, name string, data []byte) (string, error) {
 	return path, nil
 }
 
-// Delete removes one image; one that is already gone is not an error.
+// Delete removes one file; one that is already gone is not an error.
 func (s *Store) Delete(sessionID, name string) error {
 	if !plain(sessionID) || !plain(name) {
-		return errors.New("an image is named by a plain file name")
+		return errors.New("a file is named by a plain file name")
 	}
 	err := os.Remove(filepath.Join(s.dir, sessionID, name))
 	if errors.Is(err, os.ErrNotExist) {

@@ -12,6 +12,7 @@ export * from './hint.js';
 export * from './link.js';
 export * from './messages.js';
 export * from './primitives.js';
+export * from './runner-files.js';
 export * from './session-file.js';
 export * from './session-step.js';
 export * from './version.js';

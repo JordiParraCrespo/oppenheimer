@@ -31,7 +31,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import { SessionImageFileInterceptor } from '../../interceptors/session-image-file.interceptor';
+import { SessionFileInterceptor } from '../../interceptors/session-file.interceptor';
 import { PasteSessionImageCommand } from './paste-session-image.command';
 import { PasteSessionImageRequest } from './paste-session-image.request.dto';
 
@@ -57,7 +57,7 @@ export class PasteSessionImageHttpController {
   @RequireScopes('sessions:write')
   // A paste is a person's action: well above a hand, well below a loop.
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
-  @UseInterceptors(SessionImageFileInterceptor)
+  @UseInterceptors(SessionFileInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {

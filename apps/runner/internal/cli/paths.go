@@ -22,9 +22,11 @@ const (
 	// Nothing on the link writes here yet; an empty directory is the normal
 	// case and means the bundled rules are in force.
 	DirManifests = "manifests"
-	// DirImages holds the pictures pasted into sessions' prompts, one
-	// directory per session, dropped when the session stops or closes.
-	DirImages = "images"
+	// DirFiles holds the files pasted into or attached to sessions' prompts
+	// (images, PDF, text), one directory per session, dropped when the
+	// session stops or closes. It keeps its first name on disk, so a runner
+	// updated mid-session still finds, and drops, what it saved before.
+	DirFiles = "images"
 )
 
 // Paths resolves every location the runner uses on a host.
@@ -184,8 +186,8 @@ func (p Paths) State() string { return filepath.Join(p.Home, DirState) }
 // Manifests is where newer agent manifests are dropped.
 func (p Paths) Manifests() string { return filepath.Join(p.Home, DirManifests) }
 
-// Images is where pasted images are kept.
-func (p Paths) Images() string { return filepath.Join(p.Home, DirImages) }
+// Files is where pasted files are kept.
+func (p Paths) Files() string { return filepath.Join(p.Home, DirFiles) }
 
 // Socket is the local Unix socket: the runner's only listener.
 func (p Paths) Socket() string { return filepath.Join(p.Run(), "runner.sock") }

@@ -31,7 +31,7 @@ import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import { SessionAttachmentResponseDto } from '../../dtos/session-attachment.response.dto';
-import { SessionImageFileInterceptor } from '../../interceptors/session-image-file.interceptor';
+import { SessionFileInterceptor } from '../../interceptors/session-file.interceptor';
 import { UploadSessionAttachmentCommand } from './upload-session-attachment.command';
 
 @ApiTags('Sessions')
@@ -52,7 +52,7 @@ export class UploadSessionAttachmentHttpController {
   // A handful per session, a session a few times a minute at most. What bounds
   // the bytes held is the per-person cap on waiting uploads (SESSIONS_020).
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  @UseInterceptors(SessionImageFileInterceptor)
+  @UseInterceptors(SessionFileInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {

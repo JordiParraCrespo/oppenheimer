@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ParkedImagePort } from '../../../../links/application/parked-image.port';
+import type { ParkedFilePort } from '../../../../links/application/parked-file.port';
 import { UploadSessionAttachmentCommand } from '../upload-session-attachment.command';
 import { UploadSessionAttachmentCommandHandler } from '../upload-session-attachment.command-handler';
 
@@ -11,7 +11,7 @@ function harness() {
     stage: vi.fn().mockResolvedValue('staged-1'),
     claim: vi.fn(),
     collect: vi.fn(),
-  } satisfies ParkedImagePort;
+  } satisfies ParkedFilePort;
   return { store, handler: new UploadSessionAttachmentCommandHandler(store) };
 }
 

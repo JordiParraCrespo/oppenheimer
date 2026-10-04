@@ -97,7 +97,7 @@ export const SessionErrors = {
     httpStatus: 409,
   },
   /** An upload over `SESSION_FILE_MAX_BYTES`, refused by multer before it is buffered. */
-  IMAGE_TOO_LARGE: {
+  FILE_TOO_LARGE: {
     code: 'SESSIONS_012',
     message: 'That file is too large to give the session',
     httpStatus: 413,
@@ -106,7 +106,7 @@ export const SessionErrors = {
    * Bytes that are none of the types a session takes (the images, PDF, UTF-8
    * text that is not a script or markup), whatever their label or name.
    */
-  UNSUPPORTED_IMAGE: {
+  UNSUPPORTED_FILE: {
     code: 'SESSIONS_013',
     message: 'That is not a file the session can take',
     httpStatus: 415,
@@ -121,7 +121,7 @@ export const SessionErrors = {
     httpStatus: 409,
   },
   /** A multipart request with no file part: nothing to judge. */
-  IMAGE_MISSING: {
+  FILE_MISSING: {
     code: 'SESSIONS_015',
     message: 'No file was attached',
     httpStatus: 400,
@@ -143,7 +143,7 @@ export const SessionErrors = {
    * text (`session.files`). It predates them, and updating the runner is
    * what fixes it.
    */
-  HOST_CANNOT_TAKE_IMAGES: {
+  HOST_CANNOT_TAKE_FILE: {
     code: 'SESSIONS_017',
     message: 'The host cannot take that file until its runner is updated',
     httpStatus: 409,

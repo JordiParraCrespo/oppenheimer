@@ -57,6 +57,12 @@ var textTypes = []textType{
 	{MediaType: "application/json", Extension: ".json"},
 }
 
+// textControlAllowed are the only control bytes text may hold.
+var textControlAllowed = []byte{0x09, 0x0a, 0x0c, 0x0d}
+
+// textOpeningBytes is how many bytes of an opening are compared.
+const textOpeningBytes = 16
+
 // textRefusedOpenings make text a program rather than a document.
 var textRefusedOpenings = []string{
 	"#!",

@@ -272,10 +272,10 @@ export class SessionsRepository {
    * is refused here, before it is sent; the API judges the type by the bytes.
    */
   @MapApiError(SessionsErrors.UPLOAD_ATTACHMENT_FAILED)
-  async uploadAttachment(image: Blob): Promise<SessionAttachment> {
-    if (image.size > SESSION_FILE_MAX_BYTES) throw new AppError(SessionsErrors.IMAGE_TOO_LARGE);
+  async uploadAttachment(file: Blob): Promise<SessionAttachment> {
+    if (file.size > SESSION_FILE_MAX_BYTES) throw new AppError(SessionsErrors.FILE_TOO_LARGE);
     const data = await unwrapBody(
-      heyApiSdk.uploadSessionAttachment({ body: { file: image } }),
+      heyApiSdk.uploadSessionAttachment({ body: { file: file } }),
       SessionsErrors.UPLOAD_ATTACHMENT_FAILED,
     );
     return { id: data.id, mediaType: data.mediaType, size: data.size };
@@ -288,12 +288,12 @@ export class SessionsRepository {
    * API judges the type by the bytes and answers an unreachable host as an
    * error, so a resolved call means the host has it.
    */
-  @MapApiError(SessionsErrors.PASTE_IMAGE_FAILED)
-  async pasteImage(id: string, image: Blob, window = 0): Promise<void> {
-    if (image.size > SESSION_FILE_MAX_BYTES) throw new AppError(SessionsErrors.IMAGE_TOO_LARGE);
+  @MapApiError(SessionsErrors.PASTE_FILE_FAILED)
+  async pasteFile(id: string, file: Blob, window = 0): Promise<void> {
+    if (file.size > SESSION_FILE_MAX_BYTES) throw new AppError(SessionsErrors.FILE_TOO_LARGE);
     await unwrap(
-      heyApiSdk.pasteSessionImage({ path: { id }, body: { file: image, window } }),
-      SessionsErrors.PASTE_IMAGE_FAILED,
+      heyApiSdk.pasteSessionImage({ path: { id }, body: { file: file, window } }),
+      SessionsErrors.PASTE_FILE_FAILED,
     );
   }
 }

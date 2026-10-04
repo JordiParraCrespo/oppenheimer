@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import { isSessionImageType, sniffSessionFile } from '@oppenheimer/shared/protocol';
+import { sniffSessionFile } from '@oppenheimer/shared/protocol';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionLoaderResolver } from '../../application/session-loader.resolver';
 import { SessionErrors } from '../../domain/sessions.errors';
@@ -34,7 +34,7 @@ export class PasteSessionImageCommandHandler
   async execute(command: PasteSessionImageCommand): Promise<void> {
     const mediaType = sniffSessionFile(command.data, command.hint);
     if (!mediaType) {
-      throw new AppError(SessionErrors.UNSUPPORTED_IMAGE, {
+      throw new AppError(SessionErrors.UNSUPPORTED_FILE, {
         detail:
           'Attach an image, a PDF, or a UTF-8 text file; executables, archives, scripts, SVG and HTML are refused.',
       });
@@ -46,17 +46,15 @@ export class PasteSessionImageCommandHandler
       throw new AppError(refusal, { detail: `Session ${session.slug} cannot take input` });
     }
 
-    const { delivered, hints } = await this.dispatch.pasteImage(session, {
+    const { delivered, hints } = await this.dispatch.pasteFile(session, {
       window: command.window,
       mediaType,
       data: command.data,
     });
     if (delivered) return;
     if (hints.includes('not_supported')) {
-      throw new AppError(SessionErrors.HOST_CANNOT_TAKE_IMAGES, {
-        detail: isSessionImageType(mediaType)
-          ? 'Update the runner on this session’s host to paste images into it.'
-          : 'Update the runner on this session’s host to give it PDFs and text files.',
+      throw new AppError(SessionErrors.HOST_CANNOT_TAKE_FILE, {
+        detail: 'Update the runner on this session’s host to give it this file.',
       });
     }
     throw new AppError(SessionErrors.HOST_OFFLINE, {

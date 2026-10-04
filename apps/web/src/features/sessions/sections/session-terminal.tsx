@@ -9,7 +9,7 @@ import {
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { useImagePaste } from '../hooks/use-image-paste';
+import { useFilePaste } from '../hooks/use-file-paste';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
 
@@ -20,9 +20,9 @@ const AGENT_WINDOW = 0;
  * The session's terminal: the scrollback and the status band. No window
  * strip; the design system's tab CSS waits for several windows, a later slice.
  *
- * Files dropped anywhere on the pane go the way pasted images do: the
+ * Files dropped anywhere on the pane go the way pasted files do: the
  * `DropZone` around the terminal outlines the pane while the drag is over it
- * and hands the drop to the same batch upload as a paste (`useImagePaste`),
+ * and hands the drop to the same batch upload as a paste (`useFilePaste`),
  * whose paths land in the agent's prompt.
  *
  * **There is no prompt row of ours.** The artboard draws one, but a real
@@ -34,15 +34,15 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
-  const image = useImagePaste(sessionId, AGENT_WINDOW);
+  const upload = useFilePaste(sessionId, AGENT_WINDOW);
   const { containerRef, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
     onEnd: refresh,
     agentWindow: true,
-    onImages: image.send,
+    onFiles: upload.send,
   });
 
   return (
-    <DropZone onFiles={image.send} className="flex min-h-0 flex-1 flex-col">
+    <DropZone onFiles={upload.send} className="flex min-h-0 flex-1 flex-col">
       <Terminal className="min-h-0 flex-1 overflow-hidden">
         {/* The padding is the wrapper's: the fit addon sizes the grid from its
           host element and counts that host's padding as usable space, so a
@@ -86,20 +86,20 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
           </div>
         ) : null}
 
-        {image.failure || image.refused ? (
+        {upload.failure || upload.refused ? (
           <div className="px-5 pb-3">
-            {image.refused ? (
+            {upload.refused ? (
               <ErrorAlert
                 message={t('sessions.session.file.notSupported')}
                 title={t('sessions.session.file.failedTitle')}
-                onDismiss={image.dismiss}
+                onDismiss={upload.dismiss}
               />
             ) : (
               <ErrorAlert
-                error={image.failure}
+                error={upload.failure}
                 fallback={t('errors.fallback')}
                 title={t('sessions.session.file.failedTitle')}
-                onDismiss={image.dismiss}
+                onDismiss={upload.dismiss}
               />
             )}
           </div>
@@ -120,7 +120,7 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
               {t('sessions.session.retryNow')}
             </Button>
           ) : null}
-          {image.sending ? (
+          {upload.sending ? (
             <TerminalStatusItem>{t('sessions.session.file.sending')}</TerminalStatusItem>
           ) : null}
           {/* The artboard's other items — context used, rate-limit windows,

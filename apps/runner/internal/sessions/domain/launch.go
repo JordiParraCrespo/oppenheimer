@@ -185,11 +185,11 @@ func (l Launch) Env(agent Agent) map[string]string {
 	return env
 }
 
-// PromptWithImages is the first task followed by the paths of the images
+// PromptWithFiles is the first task followed by the paths of the files
 // attached to it, a blank line after the task and one path to a line: the
 // agent reads them as it reads paths pasted into its prompt. With no paths it
 // is the task unchanged.
-func PromptWithImages(prompt string, paths []string) string {
+func PromptWithFiles(prompt string, paths []string) string {
 	if len(paths) == 0 {
 		return prompt
 	}

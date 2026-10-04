@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
 import { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import type { LinkRegistryPort, RunnerLink } from '../application/link-registry.port';
-import type { ParkedImagePort } from '../application/parked-image.port';
+import type { ParkedFilePort } from '../application/parked-file.port';
 import { RelayDispatchAdapter } from '../infrastructure/relay-dispatch.adapter';
 
 /**
@@ -57,7 +57,7 @@ function harness(withLink: boolean, capabilities: RunnerCapability[] = ['session
     stage: vi.fn(),
     claim: vi.fn(),
     collect: vi.fn(),
-  } satisfies ParkedImagePort;
+  } satisfies ParkedFilePort;
   const links: LinkRegistryPort = {
     register: vi.fn(),
     unregister: vi.fn(),
@@ -144,7 +144,7 @@ describe('RelayDispatchAdapter', () => {
     const data = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     const work = session();
 
-    const outcome = await adapter.pasteImage(work, { window: 0, mediaType: 'image/png', data });
+    const outcome = await adapter.pasteFile(work, { window: 0, mediaType: 'image/png', data });
 
     expect(outcome).toEqual({ delivered: true, hints: [] });
     const sent = sessionImageSchema.strict().parse(vi.mocked(link.send).mock.calls[0]?.[0]);
@@ -159,7 +159,7 @@ describe('RelayDispatchAdapter', () => {
 
   it('parks nothing for a host that is offline', async () => {
     const { adapter, link, images } = harness(false);
-    const outcome = await adapter.pasteImage(session(), {
+    const outcome = await adapter.pasteFile(session(), {
       window: 0,
       mediaType: 'image/png',
       data: Buffer.from([0x89]),
@@ -171,7 +171,7 @@ describe('RelayDispatchAdapter', () => {
 
   it('sends nothing to a runner that did not say it takes images', async () => {
     const { adapter, link, images } = harness(true, []);
-    const outcome = await adapter.pasteImage(session(), {
+    const outcome = await adapter.pasteFile(session(), {
       window: 0,
       mediaType: 'image/png',
       data: Buffer.from([0x89]),
@@ -185,7 +185,7 @@ describe('RelayDispatchAdapter', () => {
     const pdf = { window: 0, mediaType: 'application/pdf' as const, data: Buffer.from('%PDF-1.7') };
 
     const older = harness(true, ['session.image']);
-    expect(await older.adapter.pasteImage(session(), pdf)).toEqual({
+    expect(await older.adapter.pasteFile(session(), pdf)).toEqual({
       delivered: false,
       hints: ['not_supported'],
     });
@@ -193,7 +193,7 @@ describe('RelayDispatchAdapter', () => {
     expect(older.images.park).not.toHaveBeenCalled();
 
     const current = harness(true, ['session.image', 'session.files']);
-    expect(await current.adapter.pasteImage(session(), pdf)).toEqual({
+    expect(await current.adapter.pasteFile(session(), pdf)).toEqual({
       delivered: true,
       hints: [],
     });

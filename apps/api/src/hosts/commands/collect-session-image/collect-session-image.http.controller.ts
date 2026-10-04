@@ -13,7 +13,7 @@ import { NoPolicy } from '@oppenheimer/backend-authz';
 import { ApiProblemResponse } from '@oppenheimer/backend-core';
 import { SESSION_FILE_MEDIA_TYPES } from '@oppenheimer/shared/protocol';
 import { AllowAnyScope } from '../../../auth/decorators/require-scopes.decorator';
-import type { ParkedImage } from '../../../links/application/parked-image.port';
+import type { ParkedFile } from '../../../links/application/parked-file.port';
 import { CurrentHost } from '../../decorators/current-host.decorator';
 import { HostPrincipalGuard } from '../../guards/host-principal.guard';
 import { CollectSessionImageCommand } from './collect-session-image.command';
@@ -55,7 +55,7 @@ export class CollectSessionImageHttpController {
     @CurrentHost() hostId: string,
     @Param('commandId', ParseUUIDPipe) commandId: string,
   ): Promise<StreamableFile> {
-    const image = await this.commandBus.execute<CollectSessionImageCommand, ParkedImage>(
+    const image = await this.commandBus.execute<CollectSessionImageCommand, ParkedFile>(
       new CollectSessionImageCommand({ hostId, commandId }),
     );
     return new StreamableFile(image.data, {

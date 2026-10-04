@@ -32,7 +32,7 @@ func TestPullImageAsksForTheParkedImageWithTheHostsAssertion(t *testing.T) {
 		_, _ = w.Write([]byte("png-bytes"))
 	})
 
-	data, err := h.pullImage(context.Background(), pulledCommand)
+	data, err := h.pullFile(context.Background(), pulledCommand)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestPullImageReadsNoMoreThanTheCap(t *testing.T) {
 		_, _ = w.Write([]byte(strings.Repeat("x", sessionsdomain.FileMaxBytes+1)))
 	})
 
-	if _, err := h.pullImage(context.Background(), pulledCommand); err == nil {
+	if _, err := h.pullFile(context.Background(), pulledCommand); err == nil {
 		t.Fatal("a file over the cap must be refused, not written")
 	}
 }
@@ -59,39 +59,39 @@ func TestPullImageTreatsAnyRefusalAsAFailure(t *testing.T) {
 		http.Error(w, "gone", http.StatusNotFound)
 	})
 
-	_, err := h.pullImage(context.Background(), pulledCommand)
+	_, err := h.pullFile(context.Background(), pulledCommand)
 	if err == nil || !strings.Contains(err.Error(), "404") {
 		t.Fatalf("err = %v, want the control plane's 404 named", err)
 	}
 }
 
-func TestPullCreateImagesFetchesEachAttachedImage(t *testing.T) {
+func TestPullCreateFilesFetchesEachAttachedImage(t *testing.T) {
 	var paths []string
 	h := pullHandler(t, func(w http.ResponseWriter, r *http.Request) {
 		paths = append(paths, r.URL.Path)
 		_, _ = w.Write([]byte("png-bytes"))
 	})
 
-	images, err := h.pullCreateImages(context.Background(), []link.SessionCreateImages{
+	files, err := h.pullCreateFiles(context.Background(), []link.SessionCreateImages{
 		{ImageID: pulledCommand, MediaType: "image/png"},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(images) != 1 || images[0].ID != pulledCommand || string(images[0].Data) != "png-bytes" {
-		t.Fatalf("images = %+v", images)
+	if len(files) != 1 || files[0].ID != pulledCommand || string(files[0].Data) != "png-bytes" {
+		t.Fatalf("files = %+v", files)
 	}
 	if len(paths) != 1 || paths[0] != "/api/v1/hosts/self/images/"+pulledCommand {
 		t.Fatalf("paths = %q", paths)
 	}
 }
 
-func TestPullCreateImagesRefusesAnIDThatIsNotOne(t *testing.T) {
+func TestPullCreateFilesRefusesAnIDThatIsNotOne(t *testing.T) {
 	h := pullHandler(t, func(http.ResponseWriter, *http.Request) {
 		t.Fatal("an id that is not one must not reach the control plane")
 	})
 
-	if _, err := h.pullCreateImages(context.Background(), []link.SessionCreateImages{
+	if _, err := h.pullCreateFiles(context.Background(), []link.SessionCreateImages{
 		{ImageID: "../escape", MediaType: "image/png"},
 	}); err == nil {
 		t.Fatal("want a refusal")

@@ -320,13 +320,7 @@ earlier note:
   deepened in the background into the same blobless store, and New session
   started sending `repository.prepare` when a host and a repository are
   picked, so the clone and the spare worktree are made while the prompt is
-  written (02 §5, 01, 05; measured in 14).- 03, 01 and 05 let a session take images only (PNG, JPEG, GIF, WebP),
-  pasted, dropped or attached to the first task. On 2026-10-04 that became
-  an allowlist of files judged by their bytes: the images, PDF, and UTF-8
-  text (plain, Markdown, CSV, JSON, code, logs) that has no control bytes
-  and opens neither with `#!` nor as HTML, SVG or XML. Executables,
-  archives and scripts are refused at the API and again on the host, the
-  runner names every file itself, and the caps stay 5 MB and five files. A
-  runner announces the wider set with the `session.files` capability, so
-  an older one is still sent images only. Recorded in 01, 02, 03, 05 and
-  07.
+  written (02 §5, 01, 05; measured in 14).
+- 03, 01 and 05 let a session take images only; on 2026-10-04 it takes files
+  (images, PDF, text) judged by their bytes, and a runner that does not
+  announce `session.files` is still sent images only (01, 02, 03, 05, 07).

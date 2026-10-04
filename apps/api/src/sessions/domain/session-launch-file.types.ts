@@ -8,7 +8,7 @@ import type { SessionFileMediaType } from '@oppenheimer/shared/protocol';
  * `prompt.first`, beside the task's text, so a create sent again after a
  * reconnect names the same images.
  */
-export interface SessionLaunchImage {
+export interface SessionLaunchFile {
   imageId: string;
   mediaType: SessionFileMediaType;
 }

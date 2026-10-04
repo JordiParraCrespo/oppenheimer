@@ -1,4 +1,4 @@
-import { usePasteSessionImage } from '@oppenheimer/frontend-consumer/react';
+import { usePasteSessionFile } from '@oppenheimer/frontend-consumer/react';
 import { useState } from 'react';
 import { sessionFilesIn } from '../lib/session-files';
 
@@ -21,22 +21,22 @@ const IDLE: Batch = { sending: false, failure: null, refused: false };
  * Success says nothing here — it is the paths appearing in the agent's
  * prompt, which the terminal already shows.
  */
-export function useImagePaste(sessionId: string, window: number) {
-  const paste = usePasteSessionImage(sessionId, window);
+export function useFilePaste(sessionId: string, window: number) {
+  const paste = usePasteSessionFile(sessionId, window);
   const [batch, setBatch] = useState<Batch>(IDLE);
 
-  async function send(files: File[]) {
-    if (files.length === 0) return;
-    const images = sessionFilesIn(files);
-    if (images.length === 0) {
+  async function send(carried: File[]) {
+    if (carried.length === 0) return;
+    const files = sessionFilesIn(carried);
+    if (files.length === 0) {
       setBatch({ ...IDLE, refused: true });
       return;
     }
     setBatch({ ...IDLE, sending: true });
     let failure: Error | null = null;
-    for (const image of images) {
+    for (const file of files) {
       try {
-        await paste.mutateAsync(image);
+        await paste.mutateAsync(file);
       } catch (error) {
         if (!failure) failure = error instanceof Error ? error : new Error(String(error));
       }

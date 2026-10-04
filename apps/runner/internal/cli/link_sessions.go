@@ -45,12 +45,12 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 		return
 	}
 	// A create sent again for a session this host already holds (a redelivery,
-	// a reconnect) makes nothing new, so it pulls nothing: its images were
-	// pulled once, and a parked image is handed over only once.
-	var images []sessionsapp.CreateImage
+	// a reconnect) makes nothing new, so it pulls nothing: its files were
+	// pulled once, and a parked file is handed over only once.
+	var files []sessionsapp.CreateFile
 	var err error
 	if _, notHeld := h.app.Sessions.Get(m.SessionID); notHeld != nil {
-		images, err = h.pullCreateImages(ctx, m.Images)
+		files, err = h.pullCreateFiles(ctx, m.Images)
 	}
 	if err != nil {
 		h.fail(m.CommandID, err)
@@ -72,7 +72,7 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 			Conversation: m.Launch.Conversation, Resume: m.Launch.Resume,
 		},
 		CheckoutID: first.CheckoutID, GithubRepoID: first.GithubRepoID,
-		Images:   images,
+		Files:    files,
 		Progress: steps.stage,
 	})
 	if err != nil {

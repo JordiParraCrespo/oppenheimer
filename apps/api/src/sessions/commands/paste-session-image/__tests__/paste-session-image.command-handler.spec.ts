@@ -43,7 +43,7 @@ function harness(
     findOneById: vi.fn().mockResolvedValue(Some(session)),
   } as unknown as WorkSessionRepositoryPort;
   const dispatch = {
-    pasteImage: vi.fn().mockResolvedValue(outcome),
+    pasteFile: vi.fn().mockResolvedValue(outcome),
   } as unknown as SessionDispatchPort;
   return {
     dispatch,
@@ -64,7 +64,7 @@ describe('PasteSessionImageCommandHandler', () => {
     const { handler, dispatch } = harness(session);
 
     await expect(handler.execute(paste(session.id, PNG, 1))).resolves.toBeUndefined();
-    expect(dispatch.pasteImage).toHaveBeenCalledWith(session, {
+    expect(dispatch.pasteFile).toHaveBeenCalledWith(session, {
       window: 1,
       mediaType: 'image/png',
       data: PNG,
@@ -77,7 +77,7 @@ describe('PasteSessionImageCommandHandler', () => {
     const csv = Buffer.from('a,b\n1,2\n');
 
     await handler.execute(paste(session.id, csv, 0, { mediaType: '', fileName: 'data.csv' }));
-    expect(dispatch.pasteImage).toHaveBeenCalledWith(session, {
+    expect(dispatch.pasteFile).toHaveBeenCalledWith(session, {
       window: 0,
       mediaType: 'text/csv',
       data: csv,
@@ -96,7 +96,7 @@ describe('PasteSessionImageCommandHandler', () => {
         }),
       ),
     ).rejects.toMatchObject({ code: 'SESSIONS_013' });
-    expect(dispatch.pasteImage).not.toHaveBeenCalled();
+    expect(dispatch.pasteFile).not.toHaveBeenCalled();
   });
 
   it('refuses bytes that are not an image with SESSIONS_013, whatever the browser called them', async () => {
@@ -106,7 +106,7 @@ describe('PasteSessionImageCommandHandler', () => {
     await expect(
       handler.execute(paste(session.id, Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'))),
     ).rejects.toMatchObject({ code: 'SESSIONS_013' });
-    expect(dispatch.pasteImage).not.toHaveBeenCalled();
+    expect(dispatch.pasteFile).not.toHaveBeenCalled();
   });
 
   it('refuses a session that cannot take input, with the reason the session gives', async () => {
@@ -119,7 +119,7 @@ describe('PasteSessionImageCommandHandler', () => {
     await expect(handler.execute(paste(stopped.id, PNG))).rejects.toMatchObject({
       code: 'SESSIONS_014',
     });
-    expect(dispatch.pasteImage).not.toHaveBeenCalled();
+    expect(dispatch.pasteFile).not.toHaveBeenCalled();
   });
 
   it('answers SESSIONS_016 for a host with no link, rather than a paste that never lands', async () => {

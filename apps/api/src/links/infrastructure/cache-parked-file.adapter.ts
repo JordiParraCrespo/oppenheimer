@@ -3,38 +3,40 @@ import { Injectable } from '@nestjs/common';
 import { CacheService } from '@oppenheimer/backend-cache';
 import type { SessionFileMediaType } from '@oppenheimer/shared/protocol';
 import type {
-  ClaimedImage,
-  ParkedImage,
-  ParkedImagePort,
-  StagedImage,
-  StagedImageOwner,
-} from '../application/parked-image.port';
+  ClaimedFile,
+  ParkedFile,
+  ParkedFilePort,
+  StagedFile,
+  StagedFileOwner,
+} from '../application/parked-file.port';
 
+// The keys keep their first name: an entry written before a deploy is still
+// found after it.
 const PARKED = 'session-image:';
 const STAGED = 'session-image:staged:';
 const OWNER = 'session-image:owner:';
 
 /**
  * Two minutes for a paste: long enough for a runner on a slow link to pull the
- * image, short enough that a paste nobody collected is not kept.
+ * file, short enough that a paste nobody collected is not kept.
  */
-export const PARKED_IMAGE_TTL_SECONDS = 120;
+export const PARKED_FILE_TTL_SECONDS = 120;
 
 /**
- * An hour for a first task's images: they must outlast a create that waits for
+ * An hour for a first task's files: they must outlast a create that waits for
  * its host to reconnect, and the log names them until then.
  */
-export const CLAIMED_IMAGE_TTL_SECONDS = 60 * 60;
+export const CLAIMED_FILE_TTL_SECONDS = 60 * 60;
 
 /** Ten minutes: uploads happen when the task is sent, so this only outlasts a create and its retry. */
-export const STAGED_IMAGE_TTL_SECONDS = 10 * 60;
+export const STAGED_FILE_TTL_SECONDS = 10 * 60;
 
 /**
  * How many uploads one person may have waiting. Each is up to 5 MB in the
  * Redis that also backs sign-in and rate limits, so the bound is on bytes held,
- * not on requests made: two tasks' worth of images.
+ * not on requests made: two tasks' worth of files.
  */
-export const STAGED_IMAGES_PER_OWNER = 10;
+export const STAGED_FILES_PER_OWNER = 10;
 
 interface Parked {
   hostId: string;
@@ -43,75 +45,75 @@ interface Parked {
   data: string;
 }
 
-interface Staged extends StagedImageOwner {
+interface Staged extends StagedFileOwner {
   mediaType: SessionFileMediaType;
   data: string;
 }
 
-/** `ParkedImagePort` in the shared cache, where attach tickets also live. */
+/** `ParkedFilePort` in the shared cache, where attach tickets also live. */
 @Injectable()
-export class CacheParkedImageAdapter implements ParkedImagePort {
+export class CacheParkedFileAdapter implements ParkedFilePort {
   constructor(private readonly cache: CacheService) {}
 
-  async park(commandId: string, image: ParkedImage): Promise<void> {
+  async park(commandId: string, file: ParkedFile): Promise<void> {
     await this.cache.set<Parked>(
       PARKED + commandId,
       {
-        hostId: image.hostId,
-        sessionId: image.sessionId,
-        mediaType: image.mediaType,
-        data: image.data.toString('base64'),
+        hostId: file.hostId,
+        sessionId: file.sessionId,
+        mediaType: file.mediaType,
+        data: file.data.toString('base64'),
       },
-      PARKED_IMAGE_TTL_SECONDS,
+      PARKED_FILE_TTL_SECONDS,
     );
   }
 
-  async stage(image: StagedImage): Promise<string | undefined> {
-    const id = contentId(image);
-    const ownerKey = `${OWNER + image.organizationId}:${image.userId}`;
+  async stage(file: StagedFile): Promise<string | undefined> {
+    const id = contentId(file);
+    const ownerKey = `${OWNER + file.organizationId}:${file.userId}`;
     // Only the ids still staged count: an expired one freed its place.
     const listed = (await this.cache.get<string[]>(ownerKey)) ?? [];
     const alive = await this.cache.mget<Staged>(listed.map((staged) => STAGED + staged));
     const waiting = listed.filter((_, i) => alive[i] !== undefined && listed[i] !== id);
     // Staging the same bytes again takes no new place.
-    if (waiting.length >= STAGED_IMAGES_PER_OWNER) return undefined;
+    if (waiting.length >= STAGED_FILES_PER_OWNER) return undefined;
     await this.cache.set<Staged>(
       STAGED + id,
       {
-        organizationId: image.organizationId,
-        userId: image.userId,
-        mediaType: image.mediaType,
-        data: image.data.toString('base64'),
+        organizationId: file.organizationId,
+        userId: file.userId,
+        mediaType: file.mediaType,
+        data: file.data.toString('base64'),
       },
-      STAGED_IMAGE_TTL_SECONDS,
+      STAGED_FILE_TTL_SECONDS,
     );
-    await this.cache.set(ownerKey, [...waiting, id], STAGED_IMAGE_TTL_SECONDS);
+    await this.cache.set(ownerKey, [...waiting, id], STAGED_FILE_TTL_SECONDS);
     return id;
   }
 
   async claim(
     ids: readonly string[],
-    owner: StagedImageOwner,
+    owner: StagedFileOwner,
     target: { hostId: string; sessionId: string },
-  ): Promise<ClaimedImage[] | undefined> {
+  ): Promise<ClaimedFile[] | undefined> {
     const staged = await this.read(ids, owner);
     if (!staged) return undefined;
     return Promise.all(
-      staged.map(async (image) => {
+      staged.map(async (file) => {
         // A fresh id per claim: the same screenshot in two sessions is two
         // pulls by two hosts, never one record they race for.
         const imageId = randomUUID();
         await this.cache.set<Parked>(
           PARKED + imageId,
-          { ...target, mediaType: image.mediaType, data: image.data },
-          CLAIMED_IMAGE_TTL_SECONDS,
+          { ...target, mediaType: file.mediaType, data: file.data },
+          CLAIMED_FILE_TTL_SECONDS,
         );
-        return { imageId, mediaType: image.mediaType };
+        return { imageId, mediaType: file.mediaType };
       }),
     );
   }
 
-  async collect(imageId: string, hostId: string): Promise<ParkedImage | undefined> {
+  async collect(imageId: string, hostId: string): Promise<ParkedFile | undefined> {
     const key = PARKED + imageId;
     const peeked = await this.cache.get<Parked>(key);
     if (!peeked || peeked.hostId !== hostId) return undefined;
@@ -126,15 +128,15 @@ export class CacheParkedImageAdapter implements ParkedImagePort {
     };
   }
 
-  /** Each id's staged image when every one is waiting for `owner`, in order. */
+  /** Each id's staged file when every one is waiting for `owner`, in order. */
   private async read(
     ids: readonly string[],
-    owner: StagedImageOwner,
+    owner: StagedFileOwner,
   ): Promise<Staged[] | undefined> {
     if (ids.length === 0) return [];
     const found = await this.cache.mget<Staged>(ids.map((id) => STAGED + id));
-    const mine = (image: Staged | undefined): image is Staged =>
-      image?.organizationId === owner.organizationId && image.userId === owner.userId;
+    const mine = (file: Staged | undefined): file is Staged =>
+      file?.organizationId === owner.organizationId && file?.userId === owner.userId;
     return found.every(mine) ? found : undefined;
   }
 }
@@ -144,12 +146,12 @@ export class CacheParkedImageAdapter implements ParkedImagePort {
  * same file uploaded again by the same person is the same id, which is what
  * lets a create be retried with the body it was first sent with.
  */
-function contentId(image: StagedImage): string {
+function contentId(file: StagedFile): string {
   const hex = createHash('sha256')
     // The type too: the same text staged as notes.md and as data.json is two
     // uploads, each keeping the type its response named.
-    .update(`${image.organizationId}:${image.userId}:${image.mediaType}:`)
-    .update(image.data)
+    .update(`${file.organizationId}:${file.userId}:${file.mediaType}:`)
+    .update(file.data)
     .digest('hex');
   // Version 8 ("custom") and the RFC 4122 variant, so it parses as a UUID.
   return [

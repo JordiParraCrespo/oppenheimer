@@ -252,7 +252,7 @@ func TestAttachFinishingAfterDisconnectIsDropped(t *testing.T) {
 }
 
 // A resize is an ioctl: it does not wait behind whatever the session's lane
-// is doing — an image paste, a slow input.
+// is doing — a file paste, a slow input.
 func TestResizeIsNotQueuedBehindTheLane(t *testing.T) {
 	pty := newHeldPTY(false)
 	h, _, _ := newAttachHarness(t, pty, nil)

@@ -1,10 +1,14 @@
 import { Composer, FieldError } from '@oppenheimer/design-system-web';
-import { SESSION_CREATE_MAX_FILES, SESSION_FILE_MAX_BYTES } from '@oppenheimer/shared/protocol';
+import {
+  SESSION_CREATE_MAX_FILES,
+  SESSION_FILE_ACCEPT,
+  SESSION_FILE_MAX_BYTES,
+  sessionFileOffered,
+} from '@oppenheimer/shared/protocol';
 import type { ClipboardEvent, ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReceiveDrops } from '../hooks/use-new-session-drop';
-import { isSessionFile, SESSION_FILE_ACCEPT } from '../lib/session-files';
 
 /** One file the composer holds, keyed so two files with one name stay two chips. */
 interface HeldFile {
@@ -20,7 +24,7 @@ interface HeldFile {
  *
  * Every way in — the paperclip, a paste, a drop on the screen's pane, which
  * hands its files here (`useReceiveDrops`) — goes through `hold` and one
- * rule, `isSessionFile`, shared with the running session's terminal: an
+ * rule, `sessionFileOffered`, shared with the running session's terminal: an
  * image, a PDF or text, or no type at all (a pasted screenshot often has
  * none; the API judges the bytes). A file is refused for that, for size or for count,
  * with the reason under the field, never silently dropped. A paste with no
@@ -54,7 +58,7 @@ export function NewSessionComposer({
     const accepted: HeldFile[] = [];
     let reason: string | null = null;
     for (const file of incoming) {
-      if (!isSessionFile(file)) {
+      if (!sessionFileOffered(file)) {
         reason = t('sessions.new.composer.attachNotSupported', { name: file.name });
       } else if (file.size > SESSION_FILE_MAX_BYTES) {
         reason = t('sessions.new.composer.attachTooLarge', { name: file.name });

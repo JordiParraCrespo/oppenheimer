@@ -5,8 +5,11 @@
  * runner judges the bytes it pulled by it again before anything is written.
  * The runner's copy is **generated** from this module
  * (`scripts/emit-session-file.cjs` →
- * `apps/runner/internal/sessions/domain/session_file.gen.go`), so the two can
- * only disagree about what a file is when somebody forgets to build.
+ * `apps/runner/internal/sessions/domain/session_file.gen.go`). The text
+ * verdict is code on both sides, so it has one owner, `isSessionText` here:
+ * the emitter computes its answer on every case in `session-file.vectors.ts`
+ * and writes them into a Go test the runner's `IsText` must pass, and the spec
+ * here fails when either generated file is stale.
  *
  * It is an allowlist, and a file is known by its bytes, never by the label a
  * browser gave it nor by its name:
@@ -25,6 +28,11 @@
  * itself (`<uuid><extension from here>`), so no name a person chose reaches the
  * host's disk or a shell.
  *
+ * What a browser says about a file is a hint for clients only, and its
+ * policy lives here too (`sessionFileOffered`, `SESSION_FILE_ACCEPT`), so the
+ * console refuses a zip before uploading it by the same table the server
+ * judges the bytes against.
+ *
  * The wire still calls these `images` (`session.image`, `images[]`): a field
  * name, kept so a runner and a control plane of different ages agree. Which
  * types a given runner takes is its `hello`: one without `session.files` is
@@ -38,6 +46,12 @@ interface SignaturePart {
 
 export interface SessionFileType {
   mediaType: string;
+  /**
+   * One of the four images every runner takes. A runner that did not name
+   * `session.files` is sent these rows and no others; a later image type is
+   * not one of them until it says so.
+   */
+  image: boolean;
   /** What the runner names the file with, so the agent reads the path as what it is. */
   extension: string;
   signatures: readonly (readonly SignaturePart[])[];
@@ -56,21 +70,25 @@ const ascii = (text: string) => [...text].map((c) => c.charCodeAt(0));
 export const SESSION_FILE_TYPES = [
   {
     mediaType: 'image/png',
+    image: true,
     extension: '.png',
     signatures: [[{ offset: 0, bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] }]],
   },
   {
     mediaType: 'image/jpeg',
+    image: true,
     extension: '.jpg',
     signatures: [[{ offset: 0, bytes: [0xff, 0xd8, 0xff] }]],
   },
   {
     mediaType: 'image/gif',
+    image: true,
     extension: '.gif',
     signatures: [[{ offset: 0, bytes: ascii('GIF87a') }], [{ offset: 0, bytes: ascii('GIF89a') }]],
   },
   {
     mediaType: 'image/webp',
+    image: true,
     extension: '.webp',
     signatures: [
       [
@@ -81,6 +99,7 @@ export const SESSION_FILE_TYPES = [
   },
   {
     mediaType: 'application/pdf',
+    image: false,
     extension: '.pdf',
     signatures: [[{ offset: 0, bytes: ascii('%PDF-') }]],
   },
@@ -88,13 +107,32 @@ export const SESSION_FILE_TYPES = [
 
 /**
  * The text types. `text/plain` is first and is what text with any other
- * label (a log, a `.ts` a browser calls `video/mp2t`) is saved as.
+ * label is saved as: a log, and code — a `.ts`, a `.py` — which is offered by
+ * its ending and saved as `.txt`, because the agent reads it the same and the
+ * host never runs it.
  */
 export const SESSION_TEXT_TYPES = [
   {
     mediaType: 'text/plain',
     extension: '.txt',
-    suffixes: ['.txt', '.log', '.text'],
+    suffixes: [
+      '.txt',
+      '.log',
+      '.text',
+      '.ts',
+      '.tsx',
+      '.js',
+      '.jsx',
+      '.py',
+      '.go',
+      '.rs',
+      '.java',
+      '.rb',
+      '.yaml',
+      '.yml',
+      '.toml',
+      '.sql',
+    ],
   },
   { mediaType: 'text/markdown', extension: '.md', suffixes: ['.md', '.markdown'] },
   { mediaType: 'text/csv', extension: '.csv', suffixes: ['.csv'] },
@@ -112,26 +150,13 @@ export const SESSION_FILE_MEDIA_TYPES = [
 ] as readonly SessionFileMediaType[];
 
 /** The types a runner without `session.files` takes: the images it was built for. */
-export const SESSION_IMAGE_MEDIA_TYPES = SESSION_FILE_TYPES.map((type) => type.mediaType).filter(
-  (mediaType) => mediaType.startsWith('image/'),
+export const SESSION_IMAGE_MEDIA_TYPES = SESSION_FILE_TYPES.filter((type) => type.image).map(
+  (type) => type.mediaType,
 ) as readonly SessionFileMediaType[];
 
 /** Whether a runner without `session.files` takes this type. */
 export function isSessionImageType(mediaType: string): boolean {
   return (SESSION_IMAGE_MEDIA_TYPES as readonly string[]).includes(mediaType);
-}
-
-/**
- * Whether a runner whose `hello` named `capabilities` can save every one of
- * these types: any, once it named `session.files`; the images alone before.
- * Whether it takes files at all is its own capability (`session.image`,
- * `session.create.images`), asked separately.
- */
-export function runnerTakesFiles(
-  capabilities: readonly string[],
-  mediaTypes: readonly string[],
-): boolean {
-  return capabilities.includes('session.files') || mediaTypes.every(isSessionImageType);
 }
 
 /**
@@ -165,72 +190,61 @@ export const SESSION_TEXT_REFUSED_OPENINGS = [
 ] as const;
 
 /** Tab, line feed, form feed, carriage return: the only control bytes text may hold. */
-const TEXT_CONTROL_ALLOWED = new Set([0x09, 0x0a, 0x0c, 0x0d]);
+export const SESSION_TEXT_CONTROL_ALLOWED = [0x09, 0x0a, 0x0c, 0x0d] as const;
 
-/**
- * Whether bytes are well-formed UTF-8: no overlong forms, no surrogates,
- * nothing past U+10FFFF — what Go's `utf8.Valid` accepts, written out because
- * this package runs where `TextDecoder` is not typed.
- */
-function isUtf8(bytes: Uint8Array): boolean {
-  let i = 0;
-  while (i < bytes.length) {
-    const b = bytes[i] as number;
-    if (b < 0x80) {
-      i += 1;
-      continue;
-    }
-    let need: number;
-    let min: number;
-    let max = 0xbf;
-    if (b >= 0xc2 && b <= 0xdf) {
-      need = 1;
-      min = 0x80;
-    } else if (b >= 0xe0 && b <= 0xef) {
-      need = 2;
-      min = b === 0xe0 ? 0xa0 : 0x80;
-      if (b === 0xed) max = 0x9f;
-    } else if (b >= 0xf0 && b <= 0xf4) {
-      need = 3;
-      min = b === 0xf0 ? 0x90 : 0x80;
-      if (b === 0xf4) max = 0x8f;
-    } else {
-      return false;
-    }
-    if (i + need >= bytes.length) return false;
-    const second = bytes[i + 1] as number;
-    if (second < min || second > max) return false;
-    for (let k = 2; k <= need; k++) {
-      const next = bytes[i + k] as number;
-      if (next < 0x80 || next > 0xbf) return false;
-    }
-    i += need + 1;
-  }
-  return true;
+/** How many bytes of an opening are compared, after a BOM and ASCII whitespace. */
+export const SESSION_TEXT_OPENING_BYTES = 16;
+
+interface Utf8Decoder {
+  decode(bytes: Uint8Array): string;
 }
 
-/** The first characters of text, for the opening check: ASCII is all it compares. */
+/**
+ * The platform's strict UTF-8 decoder (Node and every browser have one; this
+ * package's `lib` just does not type it). `fatal` refuses what Go's
+ * `utf8.Valid` refuses: overlong forms, surrogates, past U+10FFFF.
+ */
+function strictUtf8(): Utf8Decoder {
+  const { TextDecoder } = globalThis as unknown as {
+    TextDecoder: new (label: string, options: { fatal: boolean }) => Utf8Decoder;
+  };
+  return new TextDecoder('utf-8', { fatal: true });
+}
+
+/**
+ * The bytes text opens with, as compared with the refused openings: after a
+ * UTF-8 byte-order mark and ASCII whitespace, the first
+ * `SESSION_TEXT_OPENING_BYTES` bytes, A–Z lowered. Bytes, never characters,
+ * so a multibyte character on the cut reads the same on both sides.
+ */
 function openingOf(bytes: Uint8Array): string {
-  let start = 0;
-  if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) start = 3;
-  // ASCII whitespace only, as the runner trims it, so the two agree byte for byte.
+  let start = bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf ? 3 : 0;
   while (start < bytes.length && [0x20, 0x09, 0x0a, 0x0c, 0x0d].includes(bytes[start] as number)) {
     start += 1;
   }
   let opening = '';
-  for (let i = start; i < bytes.length && opening.length < 16; i++) {
-    opening += String.fromCharCode(bytes[i] as number);
+  for (const byte of bytes.subarray(start, start + SESSION_TEXT_OPENING_BYTES)) {
+    opening += String.fromCharCode(byte >= 0x41 && byte <= 0x5a ? byte + 0x20 : byte);
   }
-  return opening.toLowerCase();
+  return opening;
 }
 
-/** Whether bytes are text a session takes (see the module's note). */
+/**
+ * Whether bytes are text a session takes (see the module's note). This is the
+ * verdict's one owner: the runner's `IsText` is held to it by the vectors in
+ * `session-file.vectors.ts`, generated into a Go test.
+ */
 export function isSessionText(bytes: Uint8Array): boolean {
   if (bytes.length === 0) return false;
   for (const byte of bytes) {
-    if ((byte < 0x20 && !TEXT_CONTROL_ALLOWED.has(byte)) || byte === 0x7f) return false;
+    const allowed = (SESSION_TEXT_CONTROL_ALLOWED as readonly number[]).includes(byte);
+    if ((byte < 0x20 && !allowed) || byte === 0x7f) return false;
   }
-  if (!isUtf8(bytes)) return false;
+  try {
+    strictUtf8().decode(bytes);
+  } catch {
+    return false;
+  }
   const opening = openingOf(bytes);
   return !SESSION_TEXT_REFUSED_OPENINGS.some((refused) => opening.startsWith(refused));
 }
@@ -253,6 +267,66 @@ export function sessionTextTypeFor(hint: SessionFileHint = {}): SessionFileMedia
     SESSION_TEXT_TYPES.find((t) => t.suffixes.some((suffix) => name.endsWith(suffix)));
   return type?.mediaType ?? 'text/plain';
 }
+
+/**
+ * Labels browsers give text that is not `text/*` (code, config, and the
+ * `.ts` Chrome and Safari call an MPEG stream). Offered, and judged by their
+ * bytes like everything else.
+ */
+export const SESSION_TEXT_LABELS = [
+  'application/javascript',
+  'application/typescript',
+  'application/x-typescript',
+  'application/x-yaml',
+  'application/yaml',
+  'application/toml',
+  'application/sql',
+  'application/x-ndjson',
+  'video/mp2t',
+] as const;
+
+/** Labels that say text but mean markup a browser runs: refused before any upload. */
+export const SESSION_REFUSED_LABELS = [
+  'text/html',
+  'text/xml',
+  'image/svg+xml',
+  'application/xhtml+xml',
+] as const;
+
+/**
+ * Whether a client should send a file at all, from what the browser says
+ * about it — the first answer, so a zip or a video is refused before 5 MB of
+ * upload. Never the last: the bytes are judged by `sniffSessionFile` on the
+ * server whatever this said. No label at all (a pasted screenshot) is sent; a
+ * markup label is not, even with a text ending; otherwise a type in the
+ * table, any other `text/*` or `+json`, a label in `SESSION_TEXT_LABELS`, or
+ * a name ending a text type lists (an OS may call a `.rb`
+ * `application/x-ruby`, or anything `application/octet-stream`).
+ */
+export function sessionFileOffered(file: { type: string; name: string }): boolean {
+  const label = file.type.split(';')[0]?.trim().toLowerCase() ?? '';
+  if (label === '') return true;
+  if ((SESSION_REFUSED_LABELS as readonly string[]).includes(label)) return false;
+  const name = file.name.toLowerCase();
+  return (
+    (SESSION_FILE_MEDIA_TYPES as readonly string[]).includes(label) ||
+    label.startsWith('text/') ||
+    label.endsWith('+json') ||
+    (SESSION_TEXT_LABELS as readonly string[]).includes(label) ||
+    SESSION_TEXT_TYPES.some((type) =>
+      (type.suffixes as readonly string[]).some((suffix) => name.endsWith(suffix)),
+    )
+  );
+}
+
+/** What a file picker offers: the table's types and endings, and any `text/*`. */
+export const SESSION_FILE_ACCEPT = [
+  ...SESSION_FILE_MEDIA_TYPES,
+  'text/*',
+  '.jpg',
+  '.jpeg',
+  ...SESSION_TEXT_TYPES.flatMap((type) => type.suffixes),
+].join(',');
 
 /**
  * The type a file's bytes declare, or `null` when they declare none a session

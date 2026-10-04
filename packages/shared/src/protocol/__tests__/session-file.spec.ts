@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { pasteSessionImageSchema } from '../../schemas/session.schema.js';
 import { helloSchema, knownCapabilities } from '../messages.js';
+import { missingFileCapability } from '../runner-files.js';
 import {
   isSessionImageType,
   SESSION_FILE_TYPES,
   SESSION_IMAGE_MEDIA_TYPES,
   sessionFileIs,
+  sessionFileOffered,
   sniffSessionFile,
 } from '../session-file.js';
 
@@ -100,6 +102,52 @@ describe('knownCapabilities', () => {
   });
 });
 
+describe('missingFileCapability', () => {
+  const image = ['image/png'];
+  const pdf = ['image/png', 'application/pdf'];
+
+  it('asks the gesture’s own capability first, then session.files for anything past the images', () => {
+    expect(missingFileCapability([], 'paste', image)).toBe('session.image');
+    expect(missingFileCapability(['session.files'], 'paste', image)).toBe('session.image');
+    expect(missingFileCapability(['session.image'], 'paste', image)).toBeNull();
+    expect(missingFileCapability(['session.image'], 'paste', pdf)).toBe('session.files');
+    expect(missingFileCapability(['session.image', 'session.files'], 'paste', pdf)).toBeNull();
+
+    expect(missingFileCapability(['session.image'], 'create', image)).toBe('session.create.images');
+    expect(missingFileCapability(['session.create.images'], 'create', pdf)).toBe('session.files');
+    expect(
+      missingFileCapability(['session.create.images', 'session.files'], 'create', pdf),
+    ).toBeNull();
+  });
+
+  it('asks nothing when no file goes', () => {
+    expect(missingFileCapability([], 'create', [])).toBeNull();
+  });
+});
+
+describe('sessionFileOffered', () => {
+  const offered = (type: string, name: string) => sessionFileOffered({ type, name });
+
+  it('offers the table, other text, odd labels for code, and a text ending under any label', () => {
+    expect(offered('', 'Screenshot')).toBe(true);
+    expect(offered('application/pdf', 'spec.pdf')).toBe(true);
+    expect(offered('text/csv; charset=utf-8', 'a.csv')).toBe(true);
+    expect(offered('text/x-python', 'a.py')).toBe(true);
+    expect(offered('application/ld+json', 'a.jsonld')).toBe(true);
+    expect(offered('video/mp2t', 'a.ts')).toBe(true);
+    expect(offered('application/x-ruby', 'a.rb')).toBe(true);
+    expect(offered('application/octet-stream', 'Cargo.toml')).toBe(true);
+  });
+
+  it('refuses markup labels even with a text ending, and binaries the table does not name', () => {
+    expect(offered('text/html', 'page.txt')).toBe(false);
+    expect(offered('image/svg+xml', 'a.svg')).toBe(false);
+    expect(offered('application/zip', 'a.zip')).toBe(false);
+    expect(offered('video/mp4', 'a.mp4')).toBe(false);
+    expect(offered('application/octet-stream', 'a.exe')).toBe(false);
+  });
+});
+
 describe('the types an older runner takes', () => {
   it('are the images alone', () => {
     expect(SESSION_IMAGE_MEDIA_TYPES).toEqual([
@@ -118,8 +166,15 @@ describe('the runner file table', () => {
     const { readFileSync } = await import('node:fs');
     const { createRequire } = await import('node:module');
     const require = createRequire(import.meta.url);
-    const { outputPath, render } = require('../../../scripts/emit-session-file.cjs');
+    const {
+      outputPath,
+      render,
+      vectorsPath,
+      renderVectors,
+    } = require('../../../scripts/emit-session-file.cjs');
     expect(readFileSync(outputPath, 'utf8')).toBe(render());
+    // And the Go test holding the runner's verdict to this one is current.
+    expect(readFileSync(vectorsPath, 'utf8')).toBe(renderVectors());
   });
 });
 

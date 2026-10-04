@@ -1,7 +1,7 @@
 import { filesIn, sessionFilesIn } from './session-files';
 
 /**
- * Listen for files pasted onto `container` and hand them to `onImages`;
+ * Listen for files pasted onto `container` and hand them to `onFiles`;
  * returns the function that stops listening. The agent reads its host's
  * clipboard, never the browser's, so the terminal takes the files out of
  * the event for the upload that puts them on the host (05). Which files
@@ -13,16 +13,16 @@ import { filesIn, sessionFilesIn } from './session-files';
  * on its textarea: xterm would paste a file as nothing, or as the text
  * copied beside it. A paste without a file is left to xterm.
  */
-export function bindImagePaste(
+export function bindFilePaste(
   container: HTMLElement,
-  onImages: (images: File[]) => void,
+  onFiles: (files: File[]) => void,
 ): () => void {
   const onPaste = (event: ClipboardEvent) => {
-    const images = sessionFilesIn(filesIn(event.clipboardData));
-    if (images.length === 0) return;
+    const files = sessionFilesIn(filesIn(event.clipboardData));
+    if (files.length === 0) return;
     event.preventDefault();
     event.stopPropagation();
-    onImages(images);
+    onFiles(files);
   };
   container.addEventListener('paste', onPaste, { capture: true });
   return () => container.removeEventListener('paste', onPaste, { capture: true });

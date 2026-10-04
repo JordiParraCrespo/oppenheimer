@@ -19,7 +19,7 @@ import type {
 } from './database/work-session.repository.port';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
 import { SessionCheckoutEntity } from './domain/session-checkout.entity';
-import type { SessionLaunchImage } from './domain/session-launch-image.types';
+import type { SessionLaunchFile } from './domain/session-launch-file.types';
 import {
   launchPermissionFor,
   SESSION_EVENT_KINDS,
@@ -229,7 +229,7 @@ export class WorkSessionMapper
     userId: string;
     input: CreateSessionDto;
     /** The first task's images, already parked for the host. */
-    images?: readonly SessionLaunchImage[];
+    images?: readonly SessionLaunchFile[];
     checkouts: number;
     cwdCheckoutId: string | null;
   }): NewSessionEvent[] {
@@ -262,7 +262,7 @@ export class WorkSessionMapper
         kind: SESSION_EVENT_KINDS.PROMPT_FIRST,
         payload: {
           text: input.prompt,
-          ...(props.images?.length ? { images: props.images.map(toImageRecord) } : {}),
+          ...(props.images?.length ? { images: props.images.map(toFileRecord) } : {}),
         },
       });
     }
@@ -274,7 +274,7 @@ export class WorkSessionMapper
    * written before images existed, or one a runner wrote off the transcript,
    * names none; a malformed item is dropped rather than sent to a host.
    */
-  static imagesOf(payload: unknown): SessionLaunchImage[] {
+  static filesOf(payload: unknown): SessionLaunchFile[] {
     const listed = (payload as { images?: unknown } | null)?.images;
     if (!Array.isArray(listed)) return [];
     return listed.flatMap((item: { imageId?: unknown; mediaType?: unknown }) =>
@@ -560,6 +560,6 @@ export class WorkSessionMapper
 /** What `fromListCursor` accepts as a session id, before Postgres casts it. */
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function toImageRecord(image: SessionLaunchImage): SessionLaunchImage {
+function toFileRecord(image: SessionLaunchFile): SessionLaunchFile {
   return { imageId: image.imageId, mediaType: image.mediaType };
 }

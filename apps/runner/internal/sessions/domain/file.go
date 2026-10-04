@@ -2,7 +2,6 @@ package domain
 
 import (
 	"bytes"
-	"strings"
 	"unicode/utf8"
 )
 
@@ -67,29 +66,37 @@ func sniffBinary(data []byte) string {
 	return ""
 }
 
-// IsText reports whether data is text a session takes: valid UTF-8, no
-// control bytes but tab, line feed, form feed and carriage return, and no
-// opening that makes it a script or markup a browser runs.
+// IsText reports whether data is text a session takes. The rule's owner is
+// isSessionText in packages/shared/src/protocol/session-file.ts; this reads
+// the same generated constants, and session_file_vectors_gen_test.go holds
+// it to the TypeScript verdict byte for byte. Everything here is on bytes,
+// never decoded characters, as the TypeScript side is.
 func IsText(data []byte) bool {
 	if len(data) == 0 {
 		return false
 	}
 	for _, b := range data {
-		if (b < 0x20 && b != '\t' && b != '\n' && b != '\f' && b != '\r') || b == 0x7f {
+		if (b < 0x20 && !bytes.Contains(textControlAllowed, []byte{b})) || b == 0x7f {
 			return false
 		}
 	}
 	if !utf8.Valid(data) {
 		return false
 	}
-	text := strings.TrimPrefix(string(data), "\xef\xbb\xbf")
-	text = strings.TrimLeft(text, " \t\n\f\r")
-	if len(text) > 16 {
-		text = text[:16]
+	opening := bytes.TrimPrefix(data, []byte{0xef, 0xbb, 0xbf})
+	opening = bytes.TrimLeft(opening, " \t\n\f\r")
+	if len(opening) > textOpeningBytes {
+		opening = opening[:textOpeningBytes]
 	}
-	text = strings.ToLower(text)
+	lowered := make([]byte, len(opening))
+	for i, b := range opening {
+		if b >= 'A' && b <= 'Z' {
+			b += 'a' - 'A'
+		}
+		lowered[i] = b
+	}
 	for _, refused := range textRefusedOpenings {
-		if strings.HasPrefix(text, refused) {
+		if bytes.HasPrefix(lowered, []byte(refused)) {
 			return false
 		}
 	}
