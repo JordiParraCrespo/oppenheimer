@@ -90,15 +90,15 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
           <div className="px-5 pb-3">
             {image.refused ? (
               <ErrorAlert
-                message={t('sessions.session.image.notImage')}
-                title={t('sessions.session.image.failedTitle')}
+                message={t('sessions.session.file.notSupported')}
+                title={t('sessions.session.file.failedTitle')}
                 onDismiss={image.dismiss}
               />
             ) : (
               <ErrorAlert
                 error={image.failure}
                 fallback={t('errors.fallback')}
-                title={t('sessions.session.image.failedTitle')}
+                title={t('sessions.session.file.failedTitle')}
                 onDismiss={image.dismiss}
               />
             )}
@@ -121,7 +121,7 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
             </Button>
           ) : null}
           {image.sending ? (
-            <TerminalStatusItem>{t('sessions.session.image.sending')}</TerminalStatusItem>
+            <TerminalStatusItem>{t('sessions.session.file.sending')}</TerminalStatusItem>
           ) : null}
           {/* The artboard's other items — context used, rate-limit windows,
             memory, permission mode, host count — are numbers the runner and

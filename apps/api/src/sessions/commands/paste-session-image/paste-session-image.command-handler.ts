@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import { sniffSessionImage } from '@oppenheimer/shared/protocol';
+import { isSessionImageType, sniffSessionFile } from '@oppenheimer/shared/protocol';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionLoaderResolver } from '../../application/session-loader.resolver';
 import { SessionErrors } from '../../domain/sessions.errors';
@@ -9,7 +9,7 @@ import { SESSION_DISPATCH } from '../../sessions.di-tokens';
 import { PasteSessionImageCommand } from './paste-session-image.command';
 
 /**
- * Hands an image to a session's window: the runner pulls it, saves it on the host and
+ * Hands a file (an image, a PDF, text) to a session's window: the runner pulls it, saves it on the host and
  * pastes its path into the prompt, because the agent reads its host's clipboard, never
  * the browser's (05).
  *
@@ -18,8 +18,8 @@ import { PasteSessionImageCommand } from './paste-session-image.command';
  * `command.failed` when it comes back.
  *
  * Order matters: the bytes are judged before the session is read, the session before
- * anything is parked, and a host that cannot take the image (offline, or a runner that
- * predates it) is an error rather than an accepted paste that will never land.
+ * anything is parked, and a host that cannot take the file (offline, or a runner that
+ * predates it or its type) is an error rather than an accepted paste that will never land.
  */
 @CommandHandler(PasteSessionImageCommand)
 export class PasteSessionImageCommandHandler
@@ -32,10 +32,11 @@ export class PasteSessionImageCommandHandler
   ) {}
 
   async execute(command: PasteSessionImageCommand): Promise<void> {
-    const mediaType = sniffSessionImage(command.data);
+    const mediaType = sniffSessionFile(command.data, command.hint);
     if (!mediaType) {
       throw new AppError(SessionErrors.UNSUPPORTED_IMAGE, {
-        detail: 'The file is not one of the image types a session takes.',
+        detail:
+          'Attach an image, a PDF, or a UTF-8 text file; executables, archives, scripts, SVG and HTML are refused.',
       });
     }
 
@@ -53,11 +54,13 @@ export class PasteSessionImageCommandHandler
     if (delivered) return;
     if (hints.includes('not_supported')) {
       throw new AppError(SessionErrors.HOST_CANNOT_TAKE_IMAGES, {
-        detail: 'Update the runner on this session’s host to paste images into it.',
+        detail: isSessionImageType(mediaType)
+          ? 'Update the runner on this session’s host to paste images into it.'
+          : 'Update the runner on this session’s host to give it PDFs and text files.',
       });
     }
     throw new AppError(SessionErrors.HOST_OFFLINE, {
-      detail: 'Nothing was sent: the image is not kept for a host that comes back.',
+      detail: 'Nothing was sent: the file is not kept for a host that comes back.',
     });
   }
 }

@@ -1,24 +1,24 @@
-import { filesIn, imagesIn } from './session-images';
+import { filesIn, sessionFilesIn } from './session-files';
 
 /**
- * Listen for images pasted onto `container` and hand them to `onImages`;
+ * Listen for files pasted onto `container` and hand them to `onImages`;
  * returns the function that stops listening. The agent reads its host's
- * clipboard, never the browser's, so the terminal takes the images out of
+ * clipboard, never the browser's, so the terminal takes the files out of
  * the event for the upload that puts them on the host (05). Which files
- * count is `imagesIn`, the rule every gesture shares; a transfer with text as
- * well (a copy from a web page) is taken as its images, since the text is
- * usually their alt or URL.
+ * count is `sessionFilesIn`, the rule every gesture shares; a transfer with
+ * text as well (a copy from a web page) is taken as its files, since the
+ * text is usually their alt or URL.
  *
  * The paste is caught on the way down (capture), before xterm's own handler
- * on its textarea: xterm would paste an image as nothing, or as the text
- * copied beside it. A paste without an image is left to xterm.
+ * on its textarea: xterm would paste a file as nothing, or as the text
+ * copied beside it. A paste without a file is left to xterm.
  */
 export function bindImagePaste(
   container: HTMLElement,
   onImages: (images: File[]) => void,
 ): () => void {
   const onPaste = (event: ClipboardEvent) => {
-    const images = imagesIn(filesIn(event.clipboardData));
+    const images = sessionFilesIn(filesIn(event.clipboardData));
     if (images.length === 0) return;
     event.preventDefault();
     event.stopPropagation();

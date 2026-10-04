@@ -1,4 +1,4 @@
-import type { SessionImageMediaType } from '@oppenheimer/shared/protocol';
+import type { SessionFileMediaType } from '@oppenheimer/shared/protocol';
 
 /**
  * One image a first task carries: the id its host pulls it by, and what it is.
@@ -10,5 +10,5 @@ import type { SessionImageMediaType } from '@oppenheimer/shared/protocol';
  */
 export interface SessionLaunchImage {
   imageId: string;
-  mediaType: SessionImageMediaType;
+  mediaType: SessionFileMediaType;
 }

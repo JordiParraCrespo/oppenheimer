@@ -401,6 +401,28 @@ func TestPasteImageSavesItAndPastesItsPathIntoTheWindow(t *testing.T) {
 	}
 }
 
+func TestPasteImageTakesAPDFAndTextUnderTheirOwnExtensions(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+
+	files := []struct{ command, mediaType, data, ext string }{
+		{imageCommand, "application/pdf", "%PDF-1.7\n", ".pdf"},
+		{"0198c0de-0000-7000-8000-00000000000b", "text/markdown", "# Notes\n", ".md"},
+	}
+	for _, f := range files {
+		path, err := h.svc.PasteImage(context.Background(), session.ID, 0, f.command, f.mediaType, []byte(f.data))
+		if err != nil {
+			t.Fatalf("%s: %v", f.mediaType, err)
+		}
+		if !strings.HasSuffix(path, "/"+f.command+f.ext) {
+			t.Fatalf("%s: path = %q, want it named by the command id with %s", f.mediaType, path, f.ext)
+		}
+	}
+	if len(h.terminals.Pastes) != 2 {
+		t.Fatalf("pastes = %q", h.terminals.Pastes)
+	}
+}
+
 func TestPasteImageRefusesWhatIsNotTheImageItClaims(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
@@ -410,9 +432,11 @@ func TestPasteImageRefusesWhatIsNotTheImageItClaims(t *testing.T) {
 		data               []byte
 		code               string
 	}{
-		"bytes that are not the type":  {imageCommand, "image/jpeg", png, "SESS_005"},
-		"a type no agent reads":        {imageCommand, "image/svg+xml", []byte("<svg/>"), "SESS_005"},
-		"a window that does not exist": {imageCommand, "image/png", png, "SESS_001"},
+		"bytes that are not the type":    {imageCommand, "image/jpeg", png, "SESS_005"},
+		"a type no agent reads":          {imageCommand, "image/svg+xml", []byte("<svg/>"), "SESS_005"},
+		"a script labelled as text":      {imageCommand, "text/plain", []byte("#!/bin/sh\nrm -rf ~\n"), "SESS_005"},
+		"an executable labelled as text": {imageCommand, "text/plain", []byte("\x7fELF\x02\x01\x01\x00"), "SESS_005"},
+		"a window that does not exist":   {imageCommand, "image/png", png, "SESS_001"},
 	}
 	for name, c := range cases {
 		window := 0

@@ -1,10 +1,10 @@
-import type { SessionImageMediaType } from '@oppenheimer/shared/protocol';
+import type { SessionFileMediaType } from '@oppenheimer/shared/protocol';
 
 /** An image waiting for its host to pull it. */
 export interface ParkedImage {
   hostId: string;
   sessionId: string;
-  mediaType: SessionImageMediaType;
+  mediaType: SessionFileMediaType;
   data: Buffer;
 }
 
@@ -16,14 +16,14 @@ export interface StagedImageOwner {
 
 /** An image uploaded for a session that does not exist yet. */
 export interface StagedImage extends StagedImageOwner {
-  mediaType: SessionImageMediaType;
+  mediaType: SessionFileMediaType;
   data: Buffer;
 }
 
 /** What a staged image became once a session claimed it: the id its host pulls. */
 export interface ClaimedImage {
   imageId: string;
-  mediaType: SessionImageMediaType;
+  mediaType: SessionFileMediaType;
 }
 
 /**

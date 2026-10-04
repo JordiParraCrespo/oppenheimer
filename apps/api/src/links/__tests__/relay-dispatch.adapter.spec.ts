@@ -181,6 +181,26 @@ describe('RelayDispatchAdapter', () => {
     expect(images.park).not.toHaveBeenCalled();
   });
 
+  it('sends a PDF only to a runner that said it takes files beyond images', async () => {
+    const pdf = { window: 0, mediaType: 'application/pdf' as const, data: Buffer.from('%PDF-1.7') };
+
+    const older = harness(true, ['session.image']);
+    expect(await older.adapter.pasteImage(session(), pdf)).toEqual({
+      delivered: false,
+      hints: ['not_supported'],
+    });
+    // Parked bytes would wait for a pull that is refused on arrival.
+    expect(older.images.park).not.toHaveBeenCalled();
+
+    const current = harness(true, ['session.image', 'session.files']);
+    expect(await current.adapter.pasteImage(session(), pdf)).toEqual({
+      delivered: true,
+      hints: [],
+    });
+    const sent = sessionImageSchema.strict().parse(vi.mocked(current.link.send).mock.calls[0]?.[0]);
+    expect(sent.mediaType).toBe('application/pdf');
+  });
+
   describe('a first task with images', () => {
     const imageId = '5b1c2d3e-4f50-4a6b-8c7d-9e0f1a2b3c4d';
     const spec = {
@@ -200,6 +220,29 @@ describe('RelayDispatchAdapter', () => {
       expect(sent.images).toEqual([{ imageId, mediaType: 'image/png' }]);
       // The images were parked when the create claimed them, before the row.
       expect(images.park).not.toHaveBeenCalled();
+    });
+
+    it('sends text to a runner at launch only when it takes files beyond images', async () => {
+      const withText = {
+        ...spec,
+        images: [
+          ...spec.images,
+          { imageId: '6c2d3e4f-5061-4b7c-9d8e-0f1a2b3c4d5e', mediaType: 'text/markdown' as const },
+        ],
+      };
+
+      const older = harness(true, ['session.create.images']);
+      expect(await older.adapter.create(session(), withText)).toEqual({
+        delivered: false,
+        hints: ['not_supported'],
+      });
+      expect(older.link.send).not.toHaveBeenCalled();
+
+      const current = harness(true, ['session.create.images', 'session.files']);
+      expect(await current.adapter.create(session(), withText)).toEqual({
+        delivered: true,
+        hints: [],
+      });
     });
 
     it('sends nothing to a runner that cannot take them at launch', async () => {

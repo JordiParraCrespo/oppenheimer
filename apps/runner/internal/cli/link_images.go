@@ -52,9 +52,9 @@ func (h *linkHandler) pullCreateImages(ctx context.Context, attached []link.Sess
 	if len(attached) == 0 {
 		return nil, nil
 	}
-	if len(attached) > sessionsdomain.CreateMaxImages {
+	if len(attached) > sessionsdomain.CreateMaxFiles {
 		return nil, sessionsdomain.ErrInvalidInput.WithDetail(
-			"a first task carries at most %d images; this one carried %d", sessionsdomain.CreateMaxImages, len(attached))
+			"a first task carries at most %d files; this one carried %d", sessionsdomain.CreateMaxFiles, len(attached))
 	}
 	for _, image := range attached {
 		// The id names the file on disk and the pull's path.
@@ -113,12 +113,12 @@ func (h *linkHandler) pullImage(ctx context.Context, commandID string) ([]byte, 
 	if resp.StatusCode != http.StatusOK {
 		return nil, sessionsdomain.ErrImage.WithDetail("the control plane answered %d for the image", resp.StatusCode)
 	}
-	data, err := io.ReadAll(io.LimitReader(resp.Body, sessionsdomain.ImageMaxBytes+1))
+	data, err := io.ReadAll(io.LimitReader(resp.Body, sessionsdomain.FileMaxBytes+1))
 	if err != nil {
 		return nil, sessionsdomain.ErrImage.WithDetail("read the image: %v", err).WithCause(err)
 	}
-	if len(data) > sessionsdomain.ImageMaxBytes {
-		return nil, sessionsdomain.ErrImage.WithDetail("the image is over %d bytes", sessionsdomain.ImageMaxBytes)
+	if len(data) > sessionsdomain.FileMaxBytes {
+		return nil, sessionsdomain.ErrImage.WithDetail("the file is over %d bytes", sessionsdomain.FileMaxBytes)
 	}
 	return data, nil
 }

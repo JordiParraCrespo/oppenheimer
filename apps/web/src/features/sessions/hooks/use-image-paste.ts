@@ -1,6 +1,6 @@
 import { usePasteSessionImage } from '@oppenheimer/frontend-consumer/react';
 import { useState } from 'react';
-import { imagesIn } from '../lib/session-images';
+import { sessionFilesIn } from '../lib/session-files';
 
 type Batch = { sending: boolean; failure: Error | null; refused: boolean };
 
@@ -11,12 +11,12 @@ const IDLE: Batch = { sending: false, failure: null, refused: false };
  * host as one batch: whether it is still going, and what to tell the reader
  * when it did not all arrive.
  *
- * `send` takes everything the gesture carried and keeps what `imagesIn`
- * keeps, the rule every gesture and both panes share. The images go one
- * after another, so their paths land in the prompt in the order they were
+ * `send` takes everything the gesture carried and keeps what
+ * `sessionFilesIn` keeps (images, PDF, text), the rule every gesture and both
+ * panes share. The files go one after another, so their paths land in the prompt in the order they were
  * dropped, and the batch owns its own state: one upload's outcome never
  * hides another's. The first failure is the one reported; a gesture that
- * carried files but no image is `refused`, rather than nothing happening.
+ * carried files but none a session takes is `refused`, rather than nothing happening.
  *
  * Success says nothing here — it is the paths appearing in the agent's
  * prompt, which the terminal already shows.
@@ -27,7 +27,7 @@ export function useImagePaste(sessionId: string, window: number) {
 
   async function send(files: File[]) {
     if (files.length === 0) return;
-    const images = imagesIn(files);
+    const images = sessionFilesIn(files);
     if (images.length === 0) {
       setBatch({ ...IDLE, refused: true });
       return;

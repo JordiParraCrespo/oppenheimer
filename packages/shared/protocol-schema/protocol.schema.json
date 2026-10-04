@@ -58,6 +58,7 @@
             "enum": [
               "session.image",
               "session.create.images",
+              "session.files",
               "repository.prepare"
             ]
           }
@@ -442,7 +443,12 @@
                   "image/png",
                   "image/jpeg",
                   "image/gif",
-                  "image/webp"
+                  "image/webp",
+                  "application/pdf",
+                  "text/plain",
+                  "text/markdown",
+                  "text/csv",
+                  "application/json"
                 ]
               }
             },
@@ -602,7 +608,12 @@
             "image/png",
             "image/jpeg",
             "image/gif",
-            "image/webp"
+            "image/webp",
+            "application/pdf",
+            "text/plain",
+            "text/markdown",
+            "text/csv",
+            "application/json"
           ]
         }
       },
@@ -1273,6 +1284,7 @@
     "capabilities": [
       "session.image",
       "session.create.images",
+      "session.files",
       "repository.prepare"
     ],
     "maxEventPayloadBytes": 8192

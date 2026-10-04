@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { CacheService } from '@oppenheimer/backend-cache';
-import type { SessionImageMediaType } from '@oppenheimer/shared/protocol';
+import type { SessionFileMediaType } from '@oppenheimer/shared/protocol';
 import type {
   ClaimedImage,
   ParkedImage,
@@ -39,12 +39,12 @@ export const STAGED_IMAGES_PER_OWNER = 10;
 interface Parked {
   hostId: string;
   sessionId: string;
-  mediaType: SessionImageMediaType;
+  mediaType: SessionFileMediaType;
   data: string;
 }
 
 interface Staged extends StagedImageOwner {
-  mediaType: SessionImageMediaType;
+  mediaType: SessionFileMediaType;
   data: string;
 }
 

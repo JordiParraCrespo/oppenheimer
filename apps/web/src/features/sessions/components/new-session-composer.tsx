@@ -1,14 +1,10 @@
 import { Composer, FieldError } from '@oppenheimer/design-system-web';
-import {
-  SESSION_CREATE_MAX_IMAGES,
-  SESSION_IMAGE_MAX_BYTES,
-  SESSION_IMAGE_MEDIA_TYPES,
-} from '@oppenheimer/shared/protocol';
+import { SESSION_CREATE_MAX_FILES, SESSION_FILE_MAX_BYTES } from '@oppenheimer/shared/protocol';
 import type { ClipboardEvent, ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReceiveDrops } from '../hooks/use-new-session-drop';
-import { isSessionImage } from '../lib/session-images';
+import { isSessionFile, SESSION_FILE_ACCEPT } from '../lib/session-files';
 
 /** One file the composer holds, keyed so two files with one name stay two chips. */
 interface HeldFile {
@@ -24,9 +20,9 @@ interface HeldFile {
  *
  * Every way in — the paperclip, a paste, a drop on the screen's pane, which
  * hands its files here (`useReceiveDrops`) — goes through `hold` and one
- * rule, `isSessionImage`, shared with the running session's terminal: a type
- * an agent reads, or no type at all (a pasted screenshot often has none; the
- * API judges the bytes). A file is refused for that, for size or for count,
+ * rule, `isSessionFile`, shared with the running session's terminal: an
+ * image, a PDF or text, or no type at all (a pasted screenshot often has
+ * none; the API judges the bytes). A file is refused for that, for size or for count,
  * with the reason under the field, never silently dropped. A paste with no
  * file is left to the field.
  *
@@ -58,12 +54,12 @@ export function NewSessionComposer({
     const accepted: HeldFile[] = [];
     let reason: string | null = null;
     for (const file of incoming) {
-      if (!isSessionImage(file)) {
-        reason = t('sessions.new.composer.attachNotImage', { name: file.name });
-      } else if (file.size > SESSION_IMAGE_MAX_BYTES) {
+      if (!isSessionFile(file)) {
+        reason = t('sessions.new.composer.attachNotSupported', { name: file.name });
+      } else if (file.size > SESSION_FILE_MAX_BYTES) {
         reason = t('sessions.new.composer.attachTooLarge', { name: file.name });
-      } else if (files.length + accepted.length >= SESSION_CREATE_MAX_IMAGES) {
-        reason = t('sessions.new.composer.attachTooMany', { max: SESSION_CREATE_MAX_IMAGES });
+      } else if (files.length + accepted.length >= SESSION_CREATE_MAX_FILES) {
+        reason = t('sessions.new.composer.attachTooMany', { max: SESSION_CREATE_MAX_FILES });
       } else {
         accepted.push({ id: crypto.randomUUID(), file });
       }
@@ -87,7 +83,7 @@ export function NewSessionComposer({
         ref={picker}
         type="file"
         multiple
-        accept={SESSION_IMAGE_MEDIA_TYPES.join(',')}
+        accept={SESSION_FILE_ACCEPT}
         className="hidden"
         aria-label={t('sessions.new.composer.attach')}
         onChange={(event) => {

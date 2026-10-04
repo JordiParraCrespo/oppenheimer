@@ -57,7 +57,7 @@ export const HostErrors = {
    */
   IMAGE_NOT_PARKED: {
     code: 'HOSTS_007',
-    message: 'No image is waiting for that command',
+    message: 'No file is waiting for that command',
     httpStatus: 404,
   },
 } as const satisfies Record<string, ErrorDefinition>;

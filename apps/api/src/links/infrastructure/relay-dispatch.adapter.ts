@@ -9,6 +9,7 @@ import type {
   SessionRestartMessage,
   SessionStopMessage,
 } from '@oppenheimer/shared/protocol';
+import { runnerTakesFiles } from '@oppenheimer/shared/protocol';
 import type {
   SessionCloseSpec,
   SessionDispatchOutcome,
@@ -61,6 +62,15 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       if (spec.images?.length && !link.capabilities.includes('session.create.images')) {
         return NOT_SUPPORTED;
       }
+      // Nor would one that takes images only be able to save a PDF or text.
+      if (
+        !runnerTakesFiles(
+          link.capabilities,
+          (spec.images ?? []).map((image) => image.mediaType),
+        )
+      ) {
+        return NOT_SUPPORTED;
+      }
       return this.deliver(link, createMessage(session, spec));
     });
   }
@@ -110,6 +120,8 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       // A runner that did not say it takes images would log the frame as
       // unknown and paste nothing, while this answered "delivered".
       if (!link.capabilities.includes('session.image')) return NOT_SUPPORTED;
+      // One that takes images only would refuse a PDF or text after the park.
+      if (!runnerTakesFiles(link.capabilities, [image.mediaType])) return NOT_SUPPORTED;
       const commandId = randomUUID();
       await this.images.park(commandId, {
         hostId: session.hostId,

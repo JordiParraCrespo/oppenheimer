@@ -1,4 +1,4 @@
-import type { SessionImageMediaType } from '@oppenheimer/shared/protocol';
+import type { SessionFileMediaType } from '@oppenheimer/shared/protocol';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionLaunchImage } from '../domain/session-launch-image.types';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
@@ -74,7 +74,7 @@ export interface SessionPrepareSpec {
 export interface SessionImageSpec {
   window: number;
   /** What the bytes are by their magic bytes, never the browser's label. */
-  mediaType: SessionImageMediaType;
+  mediaType: SessionFileMediaType;
   data: Buffer;
 }
 

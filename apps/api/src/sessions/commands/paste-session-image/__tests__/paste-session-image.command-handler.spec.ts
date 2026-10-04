@@ -51,8 +51,12 @@ function harness(
   };
 }
 
-const paste = (sessionId: string, data: Buffer, window = 0) =>
-  new PasteSessionImageCommand({ scope: SCOPE, sessionId, window, data });
+const paste = (
+  sessionId: string,
+  data: Buffer,
+  window = 0,
+  hint: { mediaType?: string; fileName?: string } = {},
+) => new PasteSessionImageCommand({ scope: SCOPE, sessionId, window, data, hint });
 
 describe('PasteSessionImageCommandHandler', () => {
   it('sends the image with the type its bytes declare', async () => {
@@ -65,6 +69,34 @@ describe('PasteSessionImageCommandHandler', () => {
       mediaType: 'image/png',
       data: PNG,
     });
+  });
+
+  it('sends a dropped text file as the text type its name picks', async () => {
+    const session = openSession();
+    const { handler, dispatch } = harness(session);
+    const csv = Buffer.from('a,b\n1,2\n');
+
+    await handler.execute(paste(session.id, csv, 0, { mediaType: '', fileName: 'data.csv' }));
+    expect(dispatch.pasteImage).toHaveBeenCalledWith(session, {
+      window: 0,
+      mediaType: 'text/csv',
+      data: csv,
+    });
+  });
+
+  it('refuses a script labelled as text with SESSIONS_013', async () => {
+    const session = openSession();
+    const { handler, dispatch } = harness(session);
+
+    await expect(
+      handler.execute(
+        paste(session.id, Buffer.from('#!/usr/bin/env python\n'), 0, {
+          mediaType: 'text/plain',
+          fileName: 'notes.txt',
+        }),
+      ),
+    ).rejects.toMatchObject({ code: 'SESSIONS_013' });
+    expect(dispatch.pasteImage).not.toHaveBeenCalled();
   });
 
   it('refuses bytes that are not an image with SESSIONS_013, whatever the browser called them', async () => {

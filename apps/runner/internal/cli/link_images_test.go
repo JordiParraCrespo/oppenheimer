@@ -46,11 +46,11 @@ func TestPullImageAsksForTheParkedImageWithTheHostsAssertion(t *testing.T) {
 
 func TestPullImageReadsNoMoreThanTheCap(t *testing.T) {
 	h := pullHandler(t, func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte(strings.Repeat("x", sessionsdomain.ImageMaxBytes+1)))
+		_, _ = w.Write([]byte(strings.Repeat("x", sessionsdomain.FileMaxBytes+1)))
 	})
 
 	if _, err := h.pullImage(context.Background(), pulledCommand); err == nil {
-		t.Fatal("an image over the cap must be refused, not written")
+		t.Fatal("a file over the cap must be refused, not written")
 	}
 }
 

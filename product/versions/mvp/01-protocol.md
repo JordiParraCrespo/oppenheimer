@@ -87,11 +87,15 @@ runner does with it and point back.
   control frames stay small, and one paste must not queue ahead of every
   pane on the host. The control plane parks the image under the command
   id and the runner pulls it once over HTTPS with its own assertion
-  (`GET /hosts/self/images/{commandId}`); what counts as an image is one
-  table in `packages/shared/src/protocol/session-image.ts` that the
-  runner's copy is generated from. It is sent only to a runner whose
-  `hello` names the `session.image` capability, so an older runner is
-  refused up front rather than sent a frame it ignores.
+  (`GET /hosts/self/images/{commandId}`); what counts as a file a session
+  takes is one table in `packages/shared/src/protocol/session-file.ts`
+  that the runner's copy is generated from. It is sent only to a runner
+  whose `hello` names the `session.image` capability, so an older runner is
+  refused up front rather than sent a frame it ignores. Since 2026-10-04
+  the frame may carry a PDF or UTF-8 text as well as a picture (the names
+  `image`, `images` and `imageId` stay, so runners of either age parse it),
+  and those types go only to a runner whose `hello` also names
+  `session.files`.
 - **`welcome`** is the control plane's answer to `hello`: the protocol
   version the two will speak and the fingerprint of the control plane's
   signing key, which the runner compares against the one it pinned at
@@ -123,7 +127,8 @@ runner does with it and point back.
   `shell` among them for the blank terminal); `launch`
   (`{ model?, permission?, effort? }`); `prompt` (the person's first task,
   optional); `images` (up to five `{ imageId, mediaType }` attached to
-  that task, only with a `prompt`, each once); and the slugs and
+  that task, only with a `prompt`, each once — a PDF or text only for a
+  runner that named `session.files`); and the slugs and
   checkouts the directory layout needs. Like `session.image`, `images`
   carries no bytes: the runner pulls each with
   `GET /hosts/self/images/{imageId}` before it starts the agent. It is

@@ -339,29 +339,30 @@ func shellQuote(value string) string {
 	return "'" + strings.ReplaceAll(value, "'", `'\''`) + "'"
 }
 
-// checkImages refuses a first task's images before anything is made: too
+// checkImages refuses a first task's files before anything is made: too
 // many, a type a session does not take, or bytes that are not the type they
-// claim. A create that would launch the task without its pictures is refused
-// rather than started, since the task talks about them.
+// claim (domain.FileIs: magic bytes, or text that is only text). A create
+// that would launch the task without its files is refused rather than
+// started, since the task talks about them.
 func (s *Service) checkImages(images []CreateImage, prompt string) error {
 	if len(images) == 0 {
 		return nil
 	}
 	if s.images == nil {
-		return domain.ErrImage.WithDetail("this runner keeps no images")
+		return domain.ErrImage.WithDetail("this runner keeps no files")
 	}
 	if prompt == "" {
-		return domain.ErrInvalidInput.WithDetail("attached images ride a first task, and this create has none")
+		return domain.ErrInvalidInput.WithDetail("attached files ride a first task, and this create has none")
 	}
-	if len(images) > domain.CreateMaxImages {
-		return domain.ErrInvalidInput.WithDetail("a first task carries at most %d images; this one carried %d", domain.CreateMaxImages, len(images))
+	if len(images) > domain.CreateMaxFiles {
+		return domain.ErrInvalidInput.WithDetail("a first task carries at most %d files; this one carried %d", domain.CreateMaxFiles, len(images))
 	}
 	for _, image := range images {
-		if _, ok := domain.ImageExtension(image.MediaType); !ok {
-			return domain.ErrImage.WithDetail("%q is not an image type a session takes", image.MediaType)
+		if _, ok := domain.FileExtension(image.MediaType); !ok {
+			return domain.ErrImage.WithDetail("%q is not a type a session takes", image.MediaType)
 		}
-		if domain.SniffImage(image.Data) != image.MediaType {
-			return domain.ErrImage.WithDetail("the bytes are not a %s image", image.MediaType)
+		if !domain.FileIs(image.Data, image.MediaType) {
+			return domain.ErrImage.WithDetail("the bytes are not %s", image.MediaType)
 		}
 	}
 	return nil
@@ -378,11 +379,11 @@ func (s *Service) saveImages(id string, in CreateInput) (domain.Launch, error) {
 	}
 	paths := make([]string, 0, len(in.Images))
 	for _, image := range in.Images {
-		ext, _ := domain.ImageExtension(image.MediaType)
+		ext, _ := domain.FileExtension(image.MediaType)
 		path, err := s.images.Save(id, image.ID+ext, image.Data)
 		if err != nil {
 			s.discardImages(id)
-			return launch, domain.ErrImage.WithDetail("write the image: %v", err).WithCause(err)
+			return launch, domain.ErrImage.WithDetail("write the file: %v", err).WithCause(err)
 		}
 		paths = append(paths, path)
 	}
@@ -648,10 +649,10 @@ func (s *Service) Send(ctx context.Context, id string, window int, keys string) 
 	return s.terminals.SendKeys(ctx, session.Target(window), keys)
 }
 
-// PasteImage gives a window's program an image: it is written to the host
-// and its path pasted into the window, as a drag-and-drop does in a local
-// terminal — the agent reads its host's clipboard, never the browser's. The
-// bytes must be the type they claim to be, the file is named by the command
+// PasteImage gives a window's program a file (an image, a PDF, text): it is
+// written to the host and its path pasted into the window, as a drag-and-drop
+// does in a local terminal — the agent reads its host's clipboard, never the
+// browser's. The bytes must be the type they claim to be, the file is named by the command
 // id (checked at the link, and refused by the store if it is not a plain
 // name), and a paste that does not land takes its file with it.
 func (s *Service) PasteImage(ctx context.Context, id string, window int, commandID, mediaType string, data []byte) (string, error) {
@@ -666,19 +667,19 @@ func (s *Service) PasteImage(ctx context.Context, id string, window int, command
 		return "", domain.ErrNotFound.WithDetail("%v: %d", domain.ErrNoSuchWindow, window)
 	}
 	if s.images == nil {
-		return "", domain.ErrImage.WithDetail("this runner keeps no images")
+		return "", domain.ErrImage.WithDetail("this runner keeps no files")
 	}
-	ext, ok := domain.ImageExtension(mediaType)
+	ext, ok := domain.FileExtension(mediaType)
 	if !ok {
-		return "", domain.ErrImage.WithDetail("%q is not an image type a session takes", mediaType)
+		return "", domain.ErrImage.WithDetail("%q is not a type a session takes", mediaType)
 	}
-	if sniffed := domain.SniffImage(data); sniffed != mediaType {
-		return "", domain.ErrImage.WithDetail("the bytes are not a %s image", mediaType)
+	if !domain.FileIs(data, mediaType) {
+		return "", domain.ErrImage.WithDetail("the bytes are not %s", mediaType)
 	}
 	name := commandID + ext
 	path, err := s.images.Save(session.ID, name, data)
 	if err != nil {
-		return "", domain.ErrImage.WithDetail("write the image: %v", err).WithCause(err)
+		return "", domain.ErrImage.WithDetail("write the file: %v", err).WithCause(err)
 	}
 	if err := s.terminals.Paste(ctx, session.Target(window), commandID, path); err != nil {
 		_ = s.images.Delete(session.ID, name)

@@ -96,16 +96,19 @@ export const SessionErrors = {
     message: "This host's runner cannot start that agent",
     httpStatus: 409,
   },
-  /** An upload over `SESSION_IMAGE_MAX_BYTES`, refused by multer before it is buffered. */
+  /** An upload over `SESSION_FILE_MAX_BYTES`, refused by multer before it is buffered. */
   IMAGE_TOO_LARGE: {
     code: 'SESSIONS_012',
-    message: 'That image is too large to give the session',
+    message: 'That file is too large to give the session',
     httpStatus: 413,
   },
-  /** Bytes that are none of the image types a session takes, whatever their label. */
+  /**
+   * Bytes that are none of the types a session takes (the images, PDF, UTF-8
+   * text that is not a script or markup), whatever their label or name.
+   */
   UNSUPPORTED_IMAGE: {
     code: 'SESSIONS_013',
-    message: 'That is not an image the session can take',
+    message: 'That is not a file the session can take',
     httpStatus: 415,
   },
   /**
@@ -117,16 +120,16 @@ export const SessionErrors = {
     message: 'That session is stopped',
     httpStatus: 409,
   },
-  /** A multipart request with no file part: nothing to judge as an image. */
+  /** A multipart request with no file part: nothing to judge. */
   IMAGE_MISSING: {
     code: 'SESSIONS_015',
-    message: 'No image was attached',
+    message: 'No file was attached',
     httpStatus: 400,
   },
   /**
    * The host holds no link right now: a paste into a session on it, or a
-   * create carrying images for it. Neither is queued for a host that comes
-   * back — the prompt moves on, and the images expire.
+   * create carrying files for it. Neither is queued for a host that comes
+   * back — the prompt moves on, and the files expire.
    */
   HOST_OFFLINE: {
     code: 'SESSIONS_016',
@@ -134,13 +137,15 @@ export const SessionErrors = {
     httpStatus: 503,
   },
   /**
-   * The host is linked but its runner did not say it takes images — pasted
-   * into a session or attached to a first task. It predates them, and updating
-   * the runner is what fixes it.
+   * The host is linked but its runner did not say it takes this file — pasted
+   * into a session or attached to a first task: no files at all
+   * (`session.image`, `session.create.images`), or images only, not PDF or
+   * text (`session.files`). It predates them, and updating the runner is
+   * what fixes it.
    */
   HOST_CANNOT_TAKE_IMAGES: {
     code: 'SESSIONS_017',
-    message: 'The host cannot take images until its runner is updated',
+    message: 'The host cannot take that file until its runner is updated',
     httpStatus: 409,
   },
   /**
@@ -150,7 +155,7 @@ export const SessionErrors = {
    */
   ATTACHMENT_NOT_FOUND: {
     code: 'SESSIONS_019',
-    message: 'An attached image is no longer waiting',
+    message: 'An attached file is no longer waiting',
     httpStatus: 410,
   },
   /**
@@ -159,7 +164,7 @@ export const SessionErrors = {
    */
   TOO_MANY_ATTACHMENTS: {
     code: 'SESSIONS_020',
-    message: 'Too many images are waiting to be sent',
+    message: 'Too many files are waiting to be sent',
     httpStatus: 429,
   },
 } as const satisfies Record<string, ErrorDefinition>;

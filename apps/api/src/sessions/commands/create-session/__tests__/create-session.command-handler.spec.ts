@@ -357,6 +357,27 @@ describe('CreateSessionCommandHandler', () => {
       expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
     });
 
+    it('refuses a PDF for a runner that takes images only, before writing anything', async () => {
+      store = imageStore({
+        'a-1': upload(),
+        'a-2': { ...upload(), mediaType: 'application/pdf', data: Buffer.from('%PDF-1.7') },
+      });
+      handler = rebuild();
+      await expect(handler.execute(attached(['a-1', 'a-2']))).rejects.toMatchObject({
+        code: 'SESSIONS_017',
+      });
+      expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
+
+      links = linksWith(['session.image', 'session.create.images', 'session.files']);
+      handler = rebuild();
+      await handler.execute(attached(['a-1', 'a-2']));
+      const [, spec] = vi.mocked(dispatch.create).mock.calls[0];
+      expect(spec.images?.map((image) => image.mediaType)).toEqual([
+        'image/png',
+        'application/pdf',
+      ]);
+    });
+
     it('asks nothing of the host when nothing is attached', async () => {
       links = linksWith(null);
       handler = rebuild();

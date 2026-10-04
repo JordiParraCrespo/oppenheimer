@@ -234,7 +234,8 @@ func (h *linkHandler) Hello(ctx context.Context) (link.Hello, error) {
 		Host:          facts,
 		Sessions:      h.snapshots(),
 		Capabilities: []string{
-			link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilityRepositoryPrepare,
+			link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
+			link.CapabilityRepositoryPrepare,
 		},
 	}, nil
 }
