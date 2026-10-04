@@ -79,18 +79,10 @@ export class PasteSessionImageHttpController {
   @ApiProblemResponse({ status: 409, description: 'That session is closed', code: 'SESSIONS_005' })
   @ApiProblemResponse({ status: 409, description: 'That session is stopped', code: 'SESSIONS_014' })
   @ApiProblemResponse({ status: 413, description: 'File too large', code: 'SESSIONS_012' })
-  @ApiProblemResponse({
-    status: 415,
-    description: 'Not a type a session takes',
-    code: 'SESSIONS_013',
-  })
+  @ApiProblemResponse({ status: 415, description: 'Not a file it takes', code: 'SESSIONS_013' })
   @ApiProblemResponse({ status: 400, description: 'No file attached', code: 'SESSIONS_015' })
   @ApiProblemResponse({ status: 503, description: 'The host is offline', code: 'SESSIONS_016' })
-  @ApiProblemResponse({
-    status: 409,
-    description: 'The host’s runner cannot take that file',
-    code: 'SESSIONS_017',
-  })
+  @ApiProblemResponse({ status: 409, description: 'Runner cannot take it', code: 'SESSIONS_017' })
   @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async paste(
     @CurrentAccessScope() scope: AccessScope,

@@ -8925,7 +8925,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_017 — The host’s runner cannot take that file\n\nSESSIONS_014 — That session is stopped\n\nSESSIONS_005 — That session is closed",
+            "description": "SESSIONS_017 — Runner cannot take it\n\nSESSIONS_014 — That session is stopped\n\nSESSIONS_005 — That session is closed",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8945,7 +8945,7 @@
             }
           },
           "415": {
-            "description": "SESSIONS_013 — Not a type a session takes",
+            "description": "SESSIONS_013 — Not a file it takes",
             "content": {
               "application/problem+json": {
                 "schema": {

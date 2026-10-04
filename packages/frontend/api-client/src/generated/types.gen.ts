@@ -6392,7 +6392,7 @@ export type PasteSessionImageErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_017 — The host’s runner cannot take that file
+     * SESSIONS_017 — Runner cannot take it
      *
      * SESSIONS_014 — That session is stopped
      *
@@ -6404,7 +6404,7 @@ export type PasteSessionImageErrors = {
      */
     413: ProblemDetailsDto;
     /**
-     * SESSIONS_013 — Not a type a session takes
+     * SESSIONS_013 — Not a file it takes
      */
     415: ProblemDetailsDto;
     /**
