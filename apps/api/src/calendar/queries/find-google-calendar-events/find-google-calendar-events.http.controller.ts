@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards, UseInterceptors, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
@@ -35,6 +35,26 @@ export class FindGoogleCalendarEventsHttpController {
     summary: 'The caller’s Google Calendar between two days',
     description:
       'Read through to Google and not stored; times in `timeZone`. Read-only: these events cannot be changed here.',
+  })
+  @ApiQuery({
+    name: 'from',
+    required: true,
+    type: String,
+    format: 'date',
+    description: 'The first day.',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: true,
+    type: String,
+    format: 'date',
+    description: 'The last day, included.',
+  })
+  @ApiQuery({
+    name: 'timeZone',
+    required: true,
+    type: String,
+    description: 'The IANA zone to read Google’s times in.',
   })
   @ApiResponse({ status: 200, type: [CalendarEventResponseDto] })
   @ApiProblemResponse({ status: 400, description: 'Range too wide', code: 'CALENDAR_003' })

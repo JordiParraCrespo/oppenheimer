@@ -1814,7 +1814,7 @@ export const updateGoal = <ThrowOnError extends boolean = false>(options: Option
  *
  * Both days included, at most 62 of them; by day, all-day first, then by start.
  */
-export const findCalendarEvents = <ThrowOnError extends boolean = false>(options?: Options<FindCalendarEventsData, ThrowOnError>): RequestResult<FindCalendarEventsResponses, FindCalendarEventsErrors, ThrowOnError> => (options?.client ?? client).get<FindCalendarEventsResponses, FindCalendarEventsErrors, ThrowOnError>({
+export const findCalendarEvents = <ThrowOnError extends boolean = false>(options: Options<FindCalendarEventsData, ThrowOnError>): RequestResult<FindCalendarEventsResponses, FindCalendarEventsErrors, ThrowOnError> => (options.client ?? client).get<FindCalendarEventsResponses, FindCalendarEventsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/calendar/events',
     ...options
@@ -1912,7 +1912,7 @@ export const startGoogleCalendarConnection = <ThrowOnError extends boolean = fal
  *
  * Read through to Google and not stored; times in `timeZone`. Read-only: these events cannot be changed here.
  */
-export const findGoogleCalendarEvents = <ThrowOnError extends boolean = false>(options?: Options<FindGoogleCalendarEventsData, ThrowOnError>): RequestResult<FindGoogleCalendarEventsResponses, FindGoogleCalendarEventsErrors, ThrowOnError> => (options?.client ?? client).get<FindGoogleCalendarEventsResponses, FindGoogleCalendarEventsErrors, ThrowOnError>({
+export const findGoogleCalendarEvents = <ThrowOnError extends boolean = false>(options: Options<FindGoogleCalendarEventsData, ThrowOnError>): RequestResult<FindGoogleCalendarEventsResponses, FindGoogleCalendarEventsErrors, ThrowOnError> => (options.client ?? client).get<FindGoogleCalendarEventsResponses, FindGoogleCalendarEventsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/calendar/google/events',
     ...options

@@ -55,21 +55,24 @@ export const updateCalendarEventSchema = z.object({
 
 export type UpdateCalendarEventDto = z.infer<typeof updateCalendarEventSchema>;
 
-/** A range of days, both ends included. */
-export const calendarRangeQuerySchema = z
-  .object({ from: calendarDateSchema, to: calendarDateSchema })
-  .refine((value) => value.to >= value.from, { path: ['to'] });
+/**
+ * A range of days, both ends included. A plain object, so the query parameters
+ * reach the OpenAPI document; the API refuses a backwards or too-wide range
+ * itself (`CALENDAR_003`).
+ */
+export const calendarRangeQuerySchema = z.object({
+  from: calendarDateSchema,
+  to: calendarDateSchema,
+});
 
 export type CalendarRangeQueryDto = z.infer<typeof calendarRangeQuerySchema>;
 
 /** `GET /calendar/google/events`: the range, and the zone to read Google's times in. */
-export const googleCalendarEventsQuerySchema = z
-  .object({
-    from: calendarDateSchema,
-    to: calendarDateSchema,
-    timeZone: z.string().min(1).max(64),
-  })
-  .refine((value) => value.to >= value.from, { path: ['to'] });
+export const googleCalendarEventsQuerySchema = z.object({
+  from: calendarDateSchema,
+  to: calendarDateSchema,
+  timeZone: z.string().min(1).max(64),
+});
 
 export type GoogleCalendarEventsQueryDto = z.infer<typeof googleCalendarEventsQuerySchema>;
 

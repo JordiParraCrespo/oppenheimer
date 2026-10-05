@@ -10696,7 +10696,58 @@
       "get": {
         "description": "In board order: grouped by status, each column by `rank` compared byte by byte. Every filter narrows: a project, a goal, the tasks a session is on, or a range of due dates (the calendar’s layer).",
         "operationId": "findTasks",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "dueTo",
+            "required": false,
+            "in": "query",
+            "description": "Due on or before this day.",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dueFrom",
+            "required": false,
+            "in": "query",
+            "description": "Due on or after this day.",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "required": false,
+            "in": "query",
+            "description": "Only the tasks this session is on.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "goalId",
+            "required": false,
+            "in": "query",
+            "description": "Only this goal’s tasks.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "description": "Only this project’s tasks.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -11373,7 +11424,18 @@
       "get": {
         "description": "Of one project or of the workspace, oldest first. Progress counts the goal’s tasks.",
         "operationId": "findGoals",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "description": "Only this project’s goals.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -11626,7 +11688,28 @@
       "get": {
         "description": "Both days included, at most 62 of them; by day, all-day first, then by start.",
         "operationId": "findCalendarEvents",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "The last day, included.",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "The first day.",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -12092,7 +12175,37 @@
       "get": {
         "description": "Read through to Google and not stored; times in `timeZone`. Read-only: these events cannot be changed here.",
         "operationId": "findGoogleCalendarEvents",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "timeZone",
+            "required": true,
+            "in": "query",
+            "description": "The IANA zone to read Google’s times in.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "The last day, included.",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "The first day.",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",

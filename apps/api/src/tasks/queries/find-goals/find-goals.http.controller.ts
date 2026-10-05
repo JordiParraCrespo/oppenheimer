@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards, UseInterceptors, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
@@ -35,6 +35,13 @@ export class FindGoalsHttpController {
     summary: 'List goals, with their progress',
     description:
       'Of one project or of the workspace, oldest first. Progress counts the goal’s tasks.',
+  })
+  @ApiQuery({
+    name: 'projectId',
+    required: false,
+    type: String,
+    format: 'uuid',
+    description: 'Only this project’s goals.',
   })
   @ApiResponse({ status: 200, type: [GoalResponseDto] })
   async list(

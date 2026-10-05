@@ -1,6 +1,8 @@
 import type { OppenheimerApp } from '@oppenheimer/frontend-core';
 import type { AutomationsRepository } from '../modules/automations';
 import { AutomationsModule } from '../modules/automations';
+import type { CalendarRepository } from '../modules/calendar';
+import { CalendarModule } from '../modules/calendar';
 import type { HostsRepository } from '../modules/hosts';
 import { HostsModule } from '../modules/hosts';
 import type { InstallationsRepository } from '../modules/installations';
@@ -15,6 +17,8 @@ import type { ProjectsRepository } from '../modules/projects';
 import { ProjectsModule } from '../modules/projects';
 import type { SessionsService } from '../modules/sessions';
 import { SessionsModule } from '../modules/sessions';
+import type { TasksRepository } from '../modules/tasks';
+import { TasksModule } from '../modules/tasks';
 import { TOKENS } from './tokens';
 
 /**
@@ -25,6 +29,8 @@ export const consumerModules = [
   SessionsModule,
   ProjectsModule,
   AutomationsModule,
+  TasksModule,
+  CalendarModule,
   HostsModule,
   InstallationsModule,
   PermissionsModule,
@@ -76,6 +82,16 @@ export class ConsumerApp {
   /** Saved prompts that start sessions on a schedule or an event, and the runs they made. */
   get automations(): AutomationsRepository {
     return this.kernel.container.get(TOKENS.AutomationsRepository);
+  }
+
+  /** Plan's board: tasks, the goals over them, and the sessions a task started or links. */
+  get tasks(): TasksRepository {
+    return this.kernel.container.get(TOKENS.TasksRepository);
+  }
+
+  /** Plan's calendar: the workspace's events and the viewer's Google Calendar. */
+  get calendar(): CalendarRepository {
+    return this.kernel.container.get(TOKENS.CalendarRepository);
   }
 
   get hosts(): HostsRepository {

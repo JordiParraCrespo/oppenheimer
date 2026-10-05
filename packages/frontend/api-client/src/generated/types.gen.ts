@@ -7470,7 +7470,28 @@ export type UpdateAutomationSettingsResponse = UpdateAutomationSettingsResponses
 export type FindTasksData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Due on or before this day.
+         */
+        dueTo?: string;
+        /**
+         * Due on or after this day.
+         */
+        dueFrom?: string;
+        /**
+         * Only the tasks this session is on.
+         */
+        sessionId?: string;
+        /**
+         * Only this goal’s tasks.
+         */
+        goalId?: string;
+        /**
+         * Only this project’s tasks.
+         */
+        projectId?: string;
+    };
     url: '/api/v1/tasks';
 };
 
@@ -7788,7 +7809,12 @@ export type LinkTaskSessionResponse = LinkTaskSessionResponses[keyof LinkTaskSes
 export type FindGoalsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Only this project’s goals.
+         */
+        projectId?: string;
+    };
     url: '/api/v1/goals';
 };
 
@@ -7912,7 +7938,16 @@ export type UpdateGoalResponse = UpdateGoalResponses[keyof UpdateGoalResponses];
 export type FindCalendarEventsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query: {
+        /**
+         * The last day, included.
+         */
+        to: string;
+        /**
+         * The first day.
+         */
+        from: string;
+    };
     url: '/api/v1/calendar/events';
 };
 
@@ -8154,7 +8189,20 @@ export type StartGoogleCalendarConnectionResponse = StartGoogleCalendarConnectio
 export type FindGoogleCalendarEventsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query: {
+        /**
+         * The IANA zone to read Google’s times in.
+         */
+        timeZone: string;
+        /**
+         * The last day, included.
+         */
+        to: string;
+        /**
+         * The first day.
+         */
+        from: string;
+    };
     url: '/api/v1/calendar/google/events';
 };
 

@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards, UseInterceptors, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
@@ -34,6 +34,20 @@ export class FindCalendarEventsHttpController {
   @ApiOperation({
     summary: 'List the workspace’s own events between two days',
     description: 'Both days included, at most 62 of them; by day, all-day first, then by start.',
+  })
+  @ApiQuery({
+    name: 'from',
+    required: true,
+    type: String,
+    format: 'date',
+    description: 'The first day.',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: true,
+    type: String,
+    format: 'date',
+    description: 'The last day, included.',
   })
   @ApiResponse({ status: 200, type: [CalendarEventResponseDto] })
   @ApiProblemResponse({ status: 400, description: 'Range too wide', code: 'CALENDAR_003' })
