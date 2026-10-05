@@ -144,6 +144,61 @@ function PageHeaderSep() {
   );
 }
 
+/**
+ * The display form, for a page that opens on its own name rather than a
+ * record's (Plan's Tasks and Calendar): a 34px display title, a line of
+ * facts under it (`PageHeaderStat`s between `PageHeaderSep`s), and the
+ * actions on the right, sitting on the facts' baseline.
+ */
+function PageHeaderDisplay({
+  title,
+  facts,
+  actions,
+  className,
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'title'> & {
+  title: React.ReactNode;
+  facts?: React.ReactNode;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <div
+      data-slot="page-header-display"
+      className={cn('flex flex-wrap items-end gap-5', className)}
+      {...props}
+    >
+      <div className="flex min-w-60 flex-1 flex-col gap-2">
+        <h1 className="m-0 font-display text-[34px] leading-[1.1] font-semibold tracking-[-0.022em] text-fg">{title}</h1>
+        {facts ? <div className="flex flex-wrap items-center gap-2 text-[13px] text-fg-muted">{facts}</div> : null}
+      </div>
+      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+    </div>
+  );
+}
+
+/**
+ * One fact: a number in mono and full ink, then its word ("9 open").
+ * `tone="danger"` is a count that needs attention (overdue), red throughout.
+ */
+function PageHeaderStat({
+  value,
+  tone,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'span'> & { value: React.ReactNode; tone?: 'danger' }) {
+  return (
+    <span
+      data-slot="page-header-stat"
+      data-tone={tone}
+      className={cn(tone === 'danger' && 'text-danger', className)}
+      {...props}
+    >
+      <span className={cn('figures', tone !== 'danger' && 'text-fg')}>{value}</span> {children}
+    </span>
+  );
+}
+
 /** The band under the meta line that explains a state, with one small action on the right. */
 function PageHeaderNote({
   action,
@@ -168,6 +223,8 @@ function PageHeaderNote({
 
 export {
   PageHeader,
+  PageHeaderDisplay,
+  PageHeaderStat,
   PageHeaderCrumbs,
   PageHeaderHere,
   PageHeaderMeta,

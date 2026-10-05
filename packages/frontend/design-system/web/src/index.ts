@@ -26,6 +26,7 @@ export { BrandGlyph } from './components/brand-glyph';
 export { BrandMark } from './components/brand-mark';
 export type { ButtonProps } from './components/button';
 export { Button, buttonVariants } from './components/button';
+export { CalendarLayerItem, CalendarSourceCard } from './components/calendar-source';
 export type { CalloutTone } from './components/callout';
 export { Callout } from './components/callout';
 export {
@@ -75,6 +76,7 @@ export type { CommandRowSurface } from './components/command-row';
 export { CommandRow, CommandRowList } from './components/command-row';
 export type { ComposerAttachment, ComposerLabels } from './components/composer';
 export { Composer, ComposerToolButton } from './components/composer';
+export { DatePicker } from './components/date-picker';
 export {
   Dialog,
   DialogBody,
@@ -91,6 +93,25 @@ export {
   DialogTrigger,
 } from './components/dialog';
 export { Disclosure, DisclosurePanel, DisclosureTrigger } from './components/disclosure';
+export type {
+  DragData,
+  DragItem,
+  DragLabels,
+  DragMove,
+  SortableGroups,
+  SortableOrientation,
+} from './components/drag';
+export {
+  DragProvider,
+  DropSlot,
+  dragIgnore,
+  SortableGroup,
+  SortableItem,
+  useDraggable,
+  useDroppable,
+  useSortableGroups,
+  useSortableItem,
+} from './components/drag';
 export { DropZone } from './components/drop-zone';
 export {
   DropdownMenu,
@@ -138,6 +159,7 @@ export {
 } from './components/field';
 export type { FieldSelectOption } from './components/field-select';
 export { FieldSelect, FieldSelectGroup, FieldSelectRow } from './components/field-select';
+export { GoalCard, GoalEmpty, GoalGrid } from './components/goal-card';
 export type { HostCardOffline, HostCardStatus } from './components/host-card';
 export { HostCard } from './components/host-card';
 export type { HostLinkForm, HostLinkLabels, HostLinkPhase } from './components/host-link';
@@ -159,14 +181,18 @@ export type { InputProps } from './components/input';
 export { Input, inputVariants } from './components/input';
 export { Kbd } from './components/kbd';
 export { Link } from './components/link';
+export type { CalendarEntryData, CalendarEntryKind } from './components/month-calendar';
+export { CalendarEntry, MonthCalendar } from './components/month-calendar';
 export {
   PageHeader,
   PageHeaderCrumbs,
+  PageHeaderDisplay,
   PageHeaderHere,
   PageHeaderMeta,
   PageHeaderNote,
   PageHeaderRow,
   PageHeaderSep,
+  PageHeaderStat,
   PageHeaderTitleInput,
 } from './components/page-header';
 export { PasswordInput } from './components/password-input';
@@ -226,6 +252,7 @@ export { SegmentedControl, SegmentedControlItem } from './components/segmented-c
 export { Separator } from './components/separator';
 export type { SessionRename } from './components/session-item';
 export { SessionItem, SessionList } from './components/session-item';
+export { SessionPaneBack, SessionPaneHeader } from './components/session-pane-header';
 export {
   SettingsForm,
   SettingsGroup,
@@ -288,6 +315,16 @@ export type { Step, StepState } from './components/stepper';
 export { Stepper } from './components/stepper';
 export { SuccessMark } from './components/success-mark';
 export { SummaryCard, SummaryRow } from './components/summary-card';
+export type { TaskDueTone, TaskStatus } from './components/task-board';
+export {
+  TaskBoard,
+  TaskCard,
+  TaskColumn,
+  TaskColumnAdd,
+  TaskComposer,
+  TaskSessionChip,
+  TaskStatusDot,
+} from './components/task-board';
 export { TemplateGrid, TemplateItem } from './components/template-grid';
 export type { TerminalHostLink, TerminalLinkState, TerminalTone } from './components/terminal';
 export {

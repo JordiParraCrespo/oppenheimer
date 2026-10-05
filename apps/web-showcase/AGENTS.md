@@ -17,6 +17,7 @@ src/components/
 ├── foundations.tsx   # colours, type ladder, space, radii, elevation, motion, icons
 ├── demos.tsx         # interactive demos (menus, the Add host dialog, scope chips, slug field, composer, sidebar, terminal, carousel)
 ├── host-link-demos.tsx # a terminal stepping through its host-link phases (banner and notice forms), and the drop zones
+├── plan-demos.tsx    # the drag layer on its own, Plan's board and goals, the month, the date picker, the task and session dialogs, the session pane header
 ├── feedback.tsx      # Alert, Badge, Skeleton, the toast, the command palette's parts
 ├── page-shell.tsx    # PageShell, PageHead, GroupHead, Spec, Swatch, ThemePair
 ├── app-sidebar.tsx   # the TOC with scroll-spy
