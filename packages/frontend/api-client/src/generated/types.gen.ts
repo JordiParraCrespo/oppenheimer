@@ -278,11 +278,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -300,7 +300,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -321,7 +321,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write';
     label: string;
     description: string;
     /**
@@ -336,7 +336,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'repositories' | 'flags';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'tasks' | 'calendar' | 'repositories' | 'flags';
     label: string;
     description: string;
     /**
@@ -354,12 +354,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -375,7 +375,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -1998,6 +1998,206 @@ export type UpdateAutomationSettingsRequest = {
     maxRunSeconds?: number | null;
 };
 
+export type TaskSessionLinkResponseDto = {
+    sessionId: string;
+    /**
+     * `started` from this task, or `linked` to it afterwards.
+     */
+    origin: 'started' | 'linked';
+    linkedAt: string;
+};
+
+export type TaskResponseDto = {
+    id: string;
+    /**
+     * Always set: a task with no project is filed under the Unassigned one.
+     */
+    projectId: string;
+    goalId?: string | null;
+    status: 'later' | 'todo' | 'doing' | 'done';
+    /**
+     * Its place in the column. Compare byte by byte (not with a locale): the board is ordered by it.
+     */
+    rank: string;
+    title: string;
+    /**
+     * Free text; empty when there are none.
+     */
+    notes: string;
+    /**
+     * A calendar day, read in the viewer’s timezone.
+     */
+    dueDate?: string | null;
+    dueTime?: string | null;
+    completedAt?: string | null;
+    /**
+     * Oldest first.
+     */
+    sessions: Array<TaskSessionLinkResponseDto>;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type CreateTaskRequest = {
+    title: string;
+    notes?: string;
+    status?: 'later' | 'todo' | 'doing' | 'done';
+    projectId?: string;
+    goalId?: string | null;
+    dueDate?: string | null;
+    dueTime?: string | null;
+};
+
+export type UpdateTaskRequest = {
+    title?: string;
+    notes?: string;
+    projectId?: string;
+    goalId?: string | null;
+    dueDate?: string | null;
+    dueTime?: string | null;
+};
+
+export type MoveTaskRequest = {
+    status: 'later' | 'todo' | 'doing' | 'done';
+    afterTaskId: string | null;
+};
+
+export type StartTaskSessionRequest = {
+    session: {
+        hostId: string;
+        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+        projectId?: string;
+        name?: string;
+        checkouts: [
+            {
+                installationId: string;
+                githubRepoId: number;
+                baseBranch?: string;
+            }
+        ];
+        cwdGithubRepoId?: number;
+        launch?: {
+            model?: string;
+            permission?: 'ask' | 'auto' | 'full';
+            effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
+        };
+        prompt?: string;
+        attachmentIds?: Array<string>;
+    };
+    seenStatus: 'later' | 'todo' | 'doing' | 'done';
+};
+
+export type StartTaskSessionResponseDto = {
+    task: TaskResponseDto;
+    sessionId: string;
+    /**
+     * What the control plane could not do just now: `host_offline` when the session waits for its host.
+     */
+    hints: Array<string>;
+};
+
+export type LinkTaskSessionRequest = {
+    seenStatus: 'later' | 'todo' | 'doing' | 'done';
+};
+
+export type GoalResponseDto = {
+    id: string;
+    projectId: string;
+    name: string;
+    targetDate?: string | null;
+    /**
+     * Its tasks that are Done.
+     */
+    doneCount: number;
+    /**
+     * All its tasks.
+     */
+    totalCount: number;
+    createdAt: string;
+};
+
+export type CreateGoalRequest = {
+    name: string;
+    projectId: string;
+    targetDate?: string | null;
+};
+
+export type UpdateGoalRequest = {
+    name?: string;
+    projectId?: string;
+    targetDate?: string | null;
+};
+
+export type CalendarEventResponseDto = {
+    /**
+     * Ours a uuid; Google’s its own id, with the day for an all-day event spanning several.
+     */
+    id: string;
+    source: 'personal' | 'google';
+    title: string;
+    /**
+     * Empty for Google’s events, which are read-only here.
+     */
+    notes: string;
+    date: string;
+    allDay: boolean;
+    startTime?: string | null;
+    endTime?: string | null;
+    /**
+     * Busy, or free time drawn muted.
+     */
+    busy: boolean;
+    /**
+     * Where a Google event opens in Google Calendar; null for a personal one.
+     */
+    url?: string | null;
+};
+
+export type CreateCalendarEventRequest = {
+    title: string;
+    notes?: string;
+    date: string;
+    allDay: boolean;
+    startTime?: string | null;
+    endTime?: string | null;
+    busy?: boolean;
+};
+
+export type UpdateCalendarEventRequest = {
+    title?: string;
+    notes?: string;
+    date?: string;
+    allDay?: boolean;
+    startTime?: string | null;
+    endTime?: string | null;
+    busy?: boolean;
+};
+
+export type GoogleCalendarConnectionResponseDto = {
+    /**
+     * Whether the caller has connected, revoked or not.
+     */
+    connected: boolean;
+    accountEmail?: string | null;
+    /**
+     * `revoked` when Google dropped the grant: the card offers Reconnect.
+     */
+    status?: 'active' | 'revoked';
+};
+
+export type GoogleCalendarConnectStartResponseDto = {
+    /**
+     * Google’s consent page, carrying the single-use state.
+     */
+    url: string;
+    expiresAt: string;
+};
+
+export type ConnectGoogleCalendarRequest = {
+    code: string;
+    state: string;
+};
+
 export type CapabilitiesResponseDto = {
     /**
      * Sign-in with Google is configured.
@@ -2011,6 +2211,10 @@ export type CapabilitiesResponseDto = {
      * The sessions GitHub App is configured.
      */
     github_app: boolean;
+    /**
+     * Plan’s calendar can connect a Google Calendar.
+     */
+    google_calendar: boolean;
     /**
      * Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug.
      */
@@ -7262,6 +7466,732 @@ export type UpdateAutomationSettingsResponses = {
 };
 
 export type UpdateAutomationSettingsResponse = UpdateAutomationSettingsResponses[keyof UpdateAutomationSettingsResponses];
+
+export type FindTasksData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/tasks';
+};
+
+export type FindTasksErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindTasksError = FindTasksErrors[keyof FindTasksErrors];
+
+export type FindTasksResponses = {
+    200: Array<TaskResponseDto>;
+};
+
+export type FindTasksResponse = FindTasksResponses[keyof FindTasksResponses];
+
+export type CreateTaskData = {
+    body: CreateTaskRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/tasks';
+};
+
+export type CreateTaskErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_002 — Goal not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * TASKS_007 — Goal of another project
+     *
+     * TASKS_004 — Project archived or missing
+     */
+    409: ProblemDetailsDto;
+};
+
+export type CreateTaskError = CreateTaskErrors[keyof CreateTaskErrors];
+
+export type CreateTaskResponses = {
+    201: TaskResponseDto;
+};
+
+export type CreateTaskResponse = CreateTaskResponses[keyof CreateTaskResponses];
+
+export type DeleteTaskData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}';
+};
+
+export type DeleteTaskErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteTaskError = DeleteTaskErrors[keyof DeleteTaskErrors];
+
+export type DeleteTaskResponses = {
+    204: void;
+};
+
+export type DeleteTaskResponse = DeleteTaskResponses[keyof DeleteTaskResponses];
+
+export type FindTaskData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}';
+};
+
+export type FindTaskErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindTaskError = FindTaskErrors[keyof FindTaskErrors];
+
+export type FindTaskResponses = {
+    200: TaskResponseDto;
+};
+
+export type FindTaskResponse = FindTaskResponses[keyof FindTaskResponses];
+
+export type UpdateTaskData = {
+    body: UpdateTaskRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}';
+};
+
+export type UpdateTaskErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_002 — Goal not found
+     *
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * TASKS_007 — Goal of another project
+     *
+     * TASKS_004 — Project archived or missing
+     */
+    409: ProblemDetailsDto;
+};
+
+export type UpdateTaskError = UpdateTaskErrors[keyof UpdateTaskErrors];
+
+export type UpdateTaskResponses = {
+    200: TaskResponseDto;
+};
+
+export type UpdateTaskResponse = UpdateTaskResponses[keyof UpdateTaskResponses];
+
+export type MoveTaskData = {
+    body: MoveTaskRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}/move';
+};
+
+export type MoveTaskErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * TASKS_006 — Stale position
+     */
+    409: ProblemDetailsDto;
+};
+
+export type MoveTaskError = MoveTaskErrors[keyof MoveTaskErrors];
+
+export type MoveTaskResponses = {
+    200: TaskResponseDto;
+};
+
+export type MoveTaskResponse = MoveTaskResponses[keyof MoveTaskResponses];
+
+export type StartTaskSessionData = {
+    body: StartTaskSessionRequest;
+    headers?: {
+        /**
+         * A retry with the same key returns the session already started.
+         */
+        'Idempotency-Key'?: string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}/sessions';
+};
+
+export type StartTaskSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_006 — Project archived
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type StartTaskSessionError = StartTaskSessionErrors[keyof StartTaskSessionErrors];
+
+export type StartTaskSessionResponses = {
+    201: StartTaskSessionResponseDto;
+};
+
+export type StartTaskSessionResponse = StartTaskSessionResponses[keyof StartTaskSessionResponses];
+
+export type UnlinkTaskSessionData = {
+    body?: never;
+    path: {
+        id: string;
+        sessionId: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}/sessions/{sessionId}';
+};
+
+export type UnlinkTaskSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UnlinkTaskSessionError = UnlinkTaskSessionErrors[keyof UnlinkTaskSessionErrors];
+
+export type UnlinkTaskSessionResponses = {
+    200: TaskResponseDto;
+};
+
+export type UnlinkTaskSessionResponse = UnlinkTaskSessionResponses[keyof UnlinkTaskSessionResponses];
+
+export type LinkTaskSessionData = {
+    body: LinkTaskSessionRequest;
+    path: {
+        id: string;
+        sessionId: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}/sessions/{sessionId}';
+};
+
+export type LinkTaskSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_005 — Session not found
+     *
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type LinkTaskSessionError = LinkTaskSessionErrors[keyof LinkTaskSessionErrors];
+
+export type LinkTaskSessionResponses = {
+    200: TaskResponseDto;
+};
+
+export type LinkTaskSessionResponse = LinkTaskSessionResponses[keyof LinkTaskSessionResponses];
+
+export type FindGoalsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/goals';
+};
+
+export type FindGoalsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindGoalsError = FindGoalsErrors[keyof FindGoalsErrors];
+
+export type FindGoalsResponses = {
+    200: Array<GoalResponseDto>;
+};
+
+export type FindGoalsResponse = FindGoalsResponses[keyof FindGoalsResponses];
+
+export type CreateGoalData = {
+    body: CreateGoalRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/goals';
+};
+
+export type CreateGoalErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_004 — Project archived or missing
+     */
+    409: ProblemDetailsDto;
+};
+
+export type CreateGoalError = CreateGoalErrors[keyof CreateGoalErrors];
+
+export type CreateGoalResponses = {
+    201: GoalResponseDto;
+};
+
+export type CreateGoalResponse = CreateGoalResponses[keyof CreateGoalResponses];
+
+export type DeleteGoalData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/goals/{id}';
+};
+
+export type DeleteGoalErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_002 — Goal not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteGoalError = DeleteGoalErrors[keyof DeleteGoalErrors];
+
+export type DeleteGoalResponses = {
+    204: void;
+};
+
+export type DeleteGoalResponse = DeleteGoalResponses[keyof DeleteGoalResponses];
+
+export type UpdateGoalData = {
+    body: UpdateGoalRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/goals/{id}';
+};
+
+export type UpdateGoalErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_002 — Goal not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * TASKS_004 — Project archived or missing
+     */
+    409: ProblemDetailsDto;
+};
+
+export type UpdateGoalError = UpdateGoalErrors[keyof UpdateGoalErrors];
+
+export type UpdateGoalResponses = {
+    200: GoalResponseDto;
+};
+
+export type UpdateGoalResponse = UpdateGoalResponses[keyof UpdateGoalResponses];
+
+export type FindCalendarEventsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/calendar/events';
+};
+
+export type FindCalendarEventsErrors = {
+    /**
+     * CALENDAR_003 — Range too wide
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindCalendarEventsError = FindCalendarEventsErrors[keyof FindCalendarEventsErrors];
+
+export type FindCalendarEventsResponses = {
+    200: Array<CalendarEventResponseDto>;
+};
+
+export type FindCalendarEventsResponse = FindCalendarEventsResponses[keyof FindCalendarEventsResponses];
+
+export type CreateCalendarEventData = {
+    body: CreateCalendarEventRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/calendar/events';
+};
+
+export type CreateCalendarEventErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type CreateCalendarEventError = CreateCalendarEventErrors[keyof CreateCalendarEventErrors];
+
+export type CreateCalendarEventResponses = {
+    201: CalendarEventResponseDto;
+};
+
+export type CreateCalendarEventResponse = CreateCalendarEventResponses[keyof CreateCalendarEventResponses];
+
+export type DeleteCalendarEventData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/calendar/events/{id}';
+};
+
+export type DeleteCalendarEventErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * CALENDAR_001 — Event not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteCalendarEventError = DeleteCalendarEventErrors[keyof DeleteCalendarEventErrors];
+
+export type DeleteCalendarEventResponses = {
+    204: void;
+};
+
+export type DeleteCalendarEventResponse = DeleteCalendarEventResponses[keyof DeleteCalendarEventResponses];
+
+export type UpdateCalendarEventData = {
+    body: UpdateCalendarEventRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/calendar/events/{id}';
+};
+
+export type UpdateCalendarEventErrors = {
+    /**
+     * CALENDAR_009 — Times do not fit the day
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * CALENDAR_001 — Event not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UpdateCalendarEventError = UpdateCalendarEventErrors[keyof UpdateCalendarEventErrors];
+
+export type UpdateCalendarEventResponses = {
+    200: CalendarEventResponseDto;
+};
+
+export type UpdateCalendarEventResponse = UpdateCalendarEventResponses[keyof UpdateCalendarEventResponses];
+
+export type DisconnectGoogleCalendarData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/calendar/google/connection';
+};
+
+export type DisconnectGoogleCalendarErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type DisconnectGoogleCalendarError = DisconnectGoogleCalendarErrors[keyof DisconnectGoogleCalendarErrors];
+
+export type DisconnectGoogleCalendarResponses = {
+    204: void;
+};
+
+export type DisconnectGoogleCalendarResponse = DisconnectGoogleCalendarResponses[keyof DisconnectGoogleCalendarResponses];
+
+export type FindGoogleCalendarConnectionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/calendar/google/connection';
+};
+
+export type FindGoogleCalendarConnectionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindGoogleCalendarConnectionError = FindGoogleCalendarConnectionErrors[keyof FindGoogleCalendarConnectionErrors];
+
+export type FindGoogleCalendarConnectionResponses = {
+    200: GoogleCalendarConnectionResponseDto;
+};
+
+export type FindGoogleCalendarConnectionResponse = FindGoogleCalendarConnectionResponses[keyof FindGoogleCalendarConnectionResponses];
+
+export type ConnectGoogleCalendarData = {
+    body: ConnectGoogleCalendarRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/calendar/google/connection';
+};
+
+export type ConnectGoogleCalendarErrors = {
+    /**
+     * CALENDAR_006 — Google refused
+     *
+     * CALENDAR_005 — State rejected
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * CALENDAR_004 — Not configured
+     */
+    503: ProblemDetailsDto;
+};
+
+export type ConnectGoogleCalendarError = ConnectGoogleCalendarErrors[keyof ConnectGoogleCalendarErrors];
+
+export type ConnectGoogleCalendarResponses = {
+    201: GoogleCalendarConnectionResponseDto;
+};
+
+export type ConnectGoogleCalendarResponse = ConnectGoogleCalendarResponses[keyof ConnectGoogleCalendarResponses];
+
+export type StartGoogleCalendarConnectionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/calendar/google/connection/start';
+};
+
+export type StartGoogleCalendarConnectionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * CALENDAR_004 — Not configured
+     */
+    503: ProblemDetailsDto;
+};
+
+export type StartGoogleCalendarConnectionError = StartGoogleCalendarConnectionErrors[keyof StartGoogleCalendarConnectionErrors];
+
+export type StartGoogleCalendarConnectionResponses = {
+    200: GoogleCalendarConnectStartResponseDto;
+};
+
+export type StartGoogleCalendarConnectionResponse = StartGoogleCalendarConnectionResponses[keyof StartGoogleCalendarConnectionResponses];
+
+export type FindGoogleCalendarEventsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/calendar/google/events';
+};
+
+export type FindGoogleCalendarEventsErrors = {
+    /**
+     * CALENDAR_003 — Range too wide
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * CALENDAR_007 — Not connected
+     */
+    409: ProblemDetailsDto;
+    /**
+     * CALENDAR_008 — Google did not answer
+     */
+    502: ProblemDetailsDto;
+    /**
+     * CALENDAR_004 — Not configured
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindGoogleCalendarEventsError = FindGoogleCalendarEventsErrors[keyof FindGoogleCalendarEventsErrors];
+
+export type FindGoogleCalendarEventsResponses = {
+    200: Array<CalendarEventResponseDto>;
+};
+
+export type FindGoogleCalendarEventsResponse = FindGoogleCalendarEventsResponses[keyof FindGoogleCalendarEventsResponses];
 
 export type CheckData = {
     body?: never;

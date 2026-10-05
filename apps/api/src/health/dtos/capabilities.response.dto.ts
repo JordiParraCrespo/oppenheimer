@@ -19,6 +19,9 @@ export class CapabilitiesResponseDto implements ClientDeployment {
   @ApiProperty({ description: 'The sessions GitHub App is configured.' })
   github_app!: boolean;
 
+  @ApiProperty({ description: 'Plan’s calendar can connect a Google Calendar.' })
+  google_calendar!: boolean;
+
   @ApiProperty({
     nullable: true,
     type: String,

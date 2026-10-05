@@ -31,10 +31,12 @@ import { auth } from './auth/infrastructure/better-auth.config';
 import { bindSessionStore } from './auth/infrastructure/better-auth-secondary-storage.adapter';
 import { AuthzModule } from './authz/authz.module';
 import { AutomationsModule } from './automations/automations.module';
+import { CalendarModule } from './calendar/calendar.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
 import {
   appConfig,
   automationsConfig,
+  calendarConfig,
   databaseConfig,
   emailConfig,
   githubAppConfig,
@@ -91,6 +93,7 @@ import { UsersModule } from './users/user.module';
         llmConfig,
         sessionsConfig,
         automationsConfig,
+        calendarConfig,
         retentionConfig,
         throttlingConfig,
       ],
@@ -238,6 +241,7 @@ import { UsersModule } from './users/user.module';
     SessionsModule,
     AutomationsModule,
     TasksModule,
+    CalendarModule,
     RelayModule,
     HealthModule,
     QueueModule,

@@ -3,6 +3,7 @@ export * from './api-token.schema.js';
 export * from './auth.schema.js';
 export * from './authz.schema.js';
 export * from './automation.schema.js';
+export * from './calendar.schema.js';
 export * from './github.schema.js';
 export * from './host.schema.js';
 export * from './organization.schema.js';
