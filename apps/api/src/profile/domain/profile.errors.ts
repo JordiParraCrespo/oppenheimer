@@ -30,7 +30,7 @@ export const ProfileErrors = {
     message: 'That file type is not supported for an avatar',
     httpStatus: 415,
   },
-  IMAGE_TOO_LARGE: {
+  FILE_TOO_LARGE: {
     code: 'PROFILE_005',
     message: 'That image is too large',
     httpStatus: 413,

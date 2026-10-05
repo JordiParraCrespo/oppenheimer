@@ -224,7 +224,7 @@ launch?: { model?: string, permission?: 'ask' | 'auto' | 'full', effort?: Sessio
 prompt?: string                         // ≤ 2 KB of UTF-8, the cap 02 §7 already states
 ```
 
-A third field names the images attached to the task:
+A third field names the files attached to the task:
 
 ```ts
 attachmentIds?: string[]                // ≤ 5, only with a prompt, each once
@@ -232,18 +232,22 @@ attachmentIds?: string[]                // ≤ 5, only with a prompt, each once
 
 Each is uploaded first with `POST /sessions/attachments`, which judges the
 bytes (a PNG, JPEG, GIF or WebP of at most 5 MB, whatever the browser
-called it) and **stages** it for its uploader for ten minutes, named by its
+called it; since 2026-10-04 also a PDF, or UTF-8 text with no control
+bytes that opens neither with `#!` nor as HTML, SVG or XML, saved as
+plain text, Markdown, CSV or JSON — executables, archives and scripts are
+refused, and the runner names every file itself) and **stages** it for its uploader for ten minutes, named by its
 owner and its content: the same file uploaded again is the same id, so a
 create retried after a lost response is the body it first was. One person
 has at most ten waiting (`SESSIONS_020`), because the store is the Redis
 that also backs sign-in. The create checks the host — a live link whose
-runner named `session.create.images`, or `SESSIONS_016`/`017` — and then
+runner named `session.create.images`, and `session.files` too for a PDF
+or text, or `SESSIONS_016`/`017` — and then
 **claims** each upload before the row is written: a copy is parked for this
 session on this host under a fresh id, which is what `session.create`'s
 `images` names (01). An id not staged for the caller is `SESSIONS_019`.
 The parked ids go on `prompt.first` beside the task's text, so the hello
 reconciliation sends them again with a create the host never carried out;
-a parked image waits an hour and is handed over once.
+a parked file waits an hour and is handed over once.
 
 `launch` is **one object rather than four fields spelled four times**,
 because the four travel together everywhere — the route body, the

@@ -4,5 +4,5 @@
  */
 export const LINK_REGISTRY = Symbol('LINK_REGISTRY');
 
-/** Where a pasted image waits for its host to pull it (`ParkedImagePort`). */
-export const PARKED_IMAGES = Symbol('PARKED_IMAGES');
+/** Where a pasted image waits for its host to pull it (`ParkedFilePort`). */
+export const PARKED_FILES = Symbol('PARKED_FILES');

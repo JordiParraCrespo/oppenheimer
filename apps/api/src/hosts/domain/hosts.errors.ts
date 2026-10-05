@@ -55,9 +55,9 @@ export const HostErrors = {
    * pulled, it expired, or it was parked for another host — the three are one
    * answer, so the route cannot be used to probe which.
    */
-  IMAGE_NOT_PARKED: {
+  FILE_NOT_PARKED: {
     code: 'HOSTS_007',
-    message: 'No image is waiting for that command',
+    message: 'No file is waiting for that command',
     httpStatus: 404,
   },
 } as const satisfies Record<string, ErrorDefinition>;

@@ -872,9 +872,9 @@ export const uninstallHost = <ThrowOnError extends boolean = false>(options?: Op
 });
 
 /**
- * Collect an image parked for the calling host
+ * Collect a file parked for the calling host
  *
- * Called by the runner when a `session.image` arrives on its link. Answers the image once; a second pull, an expired image and another host’s image are all 404.
+ * Called by the runner when a `session.image` or a `session.create` with files arrives on its link. Answers the file once; a second pull, an expired file and another host’s file are all 404.
  */
 export const collectSessionImage = <ThrowOnError extends boolean = false>(options: Options<CollectSessionImageData, ThrowOnError>): RequestResult<CollectSessionImageResponses, CollectSessionImageErrors, ThrowOnError> => (options.client ?? client).get<CollectSessionImageResponses, CollectSessionImageErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1291,9 +1291,9 @@ export const createSession = <ThrowOnError extends boolean = false>(options: Opt
 });
 
 /**
- * Attach an image to a first task
+ * Attach a file to a first task
  *
- * Kept briefly for the `POST /sessions` that names it in `attachmentIds`; the host saves it and gives the agent its path with the task. Only its uploader can name it, and the same bytes uploaded again answer the same id.
+ * An image (PNG, JPEG, GIF, WebP), a PDF, or UTF-8 text (plain, Markdown, CSV, JSON), judged by its bytes; executables, archives, scripts, SVG and HTML are refused. Kept briefly for the `POST /sessions` that names it in `attachmentIds`; the host saves it under a name of its own and gives the agent its path with the task. Only its uploader can name it, and the same bytes uploaded again answer the same id.
  */
 export const uploadSessionAttachment = <ThrowOnError extends boolean = false>(options: Options<UploadSessionAttachmentData, ThrowOnError>): RequestResult<UploadSessionAttachmentResponses, UploadSessionAttachmentErrors, ThrowOnError> => (options.client ?? client).post<UploadSessionAttachmentResponses, UploadSessionAttachmentErrors, ThrowOnError>({
     ...formDataBodySerializer,
@@ -1333,9 +1333,9 @@ export const issueAttachTicket = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * Paste an image into a session’s prompt
+ * Paste a file into a session’s prompt
  *
- * The agent reads its host’s clipboard, not the browser’s, so a pasted screenshot comes here; the host’s runner pulls it and pastes its path into the window.
+ * The agent reads its host’s clipboard, not the browser’s, so a pasted screenshot or a dropped file comes here: an image, a PDF, or UTF-8 text, judged by its bytes. The host’s runner pulls it, saves it under a name of its own and pastes its path into the window.
  */
 export const pasteSessionImage = <ThrowOnError extends boolean = false>(options: Options<PasteSessionImageData, ThrowOnError>): RequestResult<PasteSessionImageResponses, PasteSessionImageErrors, ThrowOnError> => (options.client ?? client).post<PasteSessionImageResponses, PasteSessionImageErrors, ThrowOnError>({
     ...formDataBodySerializer,

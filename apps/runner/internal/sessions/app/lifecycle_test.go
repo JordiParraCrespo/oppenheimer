@@ -20,7 +20,7 @@ type fakeHarness struct {
 	worktrees *fake.Worktrees
 	events    *recorder
 	store     *memoryStore
-	images    *fake.Images
+	files     *fake.Files
 }
 
 type memoryStore struct {
@@ -39,10 +39,10 @@ func (m *memoryStore) Save(sessions []domain.Session) error {
 func newFakeHarness(t *testing.T) *fakeHarness {
 	t.Helper()
 	terminals, worktrees := fake.NewTerminals(), fake.NewWorktrees()
-	events, store, images := &recorder{}, &memoryStore{}, fake.NewImages()
+	events, store, files := &recorder{}, &memoryStore{}, fake.NewFiles()
 	svc, err := app.New(app.Options{
 		Terminals: terminals, Worktrees: worktrees, Classifier: manifest.New(manifest.Options{}),
-		Store: store, Publisher: events, Images: images,
+		Store: store, Publisher: events, Files: files,
 		Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"},
 		Env: func(s domain.Session) map[string]string {
 			return map[string]string{"OPPENHEIMER_SESSION": s.ID}
@@ -51,7 +51,7 @@ func newFakeHarness(t *testing.T) *fakeHarness {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &fakeHarness{svc: svc, terminals: terminals, worktrees: worktrees, events: events, store: store, images: images}
+	return &fakeHarness{svc: svc, terminals: terminals, worktrees: worktrees, events: events, store: store, files: files}
 }
 
 func (h *fakeHarness) open(t *testing.T) domain.Session {
@@ -380,20 +380,20 @@ func TestCreateThatFailsLeavesTheFailingStageUnlanded(t *testing.T) {
 // A PNG header is all the sniffing reads.
 var png = []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
 
-const imageCommand = "0b6f3f7e-5a3c-4c8e-9a4f-2f1d8c9b7a61"
+const fileCommand = "0b6f3f7e-5a3c-4c8e-9a4f-2f1d8c9b7a61"
 
-func TestPasteImageSavesItAndPastesItsPathIntoTheWindow(t *testing.T) {
+func TestPasteFileSavesItAndPastesItsPathIntoTheWindow(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 
-	path, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png)
+	path, err := h.svc.PasteFile(context.Background(), session.ID, 0, fileCommand, "image/png", png)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasSuffix(path, "/"+session.ID+"/"+imageCommand+".png") {
+	if !strings.HasSuffix(path, "/"+session.ID+"/"+fileCommand+".png") {
 		t.Fatalf("path = %q: named by the command id, under the session", path)
 	}
-	if got := h.images.Saved[session.ID][imageCommand+".png"]; string(got) != string(png) {
+	if got := h.files.Saved[session.ID][fileCommand+".png"]; string(got) != string(png) {
 		t.Fatal("the bytes were not the ones saved")
 	}
 	if len(h.terminals.Pastes) != 1 || h.terminals.Pastes[0] != path {
@@ -401,7 +401,29 @@ func TestPasteImageSavesItAndPastesItsPathIntoTheWindow(t *testing.T) {
 	}
 }
 
-func TestPasteImageRefusesWhatIsNotTheImageItClaims(t *testing.T) {
+func TestPasteFileTakesAPDFAndTextUnderTheirOwnExtensions(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+
+	files := []struct{ command, mediaType, data, ext string }{
+		{fileCommand, "application/pdf", "%PDF-1.7\n", ".pdf"},
+		{"0198c0de-0000-7000-8000-00000000000b", "text/markdown", "# Notes\n", ".md"},
+	}
+	for _, f := range files {
+		path, err := h.svc.PasteFile(context.Background(), session.ID, 0, f.command, f.mediaType, []byte(f.data))
+		if err != nil {
+			t.Fatalf("%s: %v", f.mediaType, err)
+		}
+		if !strings.HasSuffix(path, "/"+f.command+f.ext) {
+			t.Fatalf("%s: path = %q, want it named by the command id with %s", f.mediaType, path, f.ext)
+		}
+	}
+	if len(h.terminals.Pastes) != 2 {
+		t.Fatalf("pastes = %q", h.terminals.Pastes)
+	}
+}
+
+func TestPasteFileRefusesWhatIsNotTheImageItClaims(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 
@@ -410,34 +432,36 @@ func TestPasteImageRefusesWhatIsNotTheImageItClaims(t *testing.T) {
 		data               []byte
 		code               string
 	}{
-		"bytes that are not the type":  {imageCommand, "image/jpeg", png, "SESS_005"},
-		"a type no agent reads":        {imageCommand, "image/svg+xml", []byte("<svg/>"), "SESS_005"},
-		"a window that does not exist": {imageCommand, "image/png", png, "SESS_001"},
+		"bytes that are not the type":    {fileCommand, "image/jpeg", png, "SESS_005"},
+		"a type no agent reads":          {fileCommand, "image/svg+xml", []byte("<svg/>"), "SESS_005"},
+		"a script labelled as text":      {fileCommand, "text/plain", []byte("#!/bin/sh\nrm -rf ~\n"), "SESS_005"},
+		"an executable labelled as text": {fileCommand, "text/plain", []byte("\x7fELF\x02\x01\x01\x00"), "SESS_005"},
+		"a window that does not exist":   {fileCommand, "image/png", png, "SESS_001"},
 	}
 	for name, c := range cases {
 		window := 0
 		if name == "a window that does not exist" {
 			window = 7
 		}
-		_, err := h.svc.PasteImage(context.Background(), session.ID, window, c.command, c.mediaType, c.data)
+		_, err := h.svc.PasteFile(context.Background(), session.ID, window, c.command, c.mediaType, c.data)
 		var prob *problem.Error
 		if !errors.As(err, &prob) || prob.Code != c.code {
 			t.Fatalf("%s: err = %v, want %s", name, err, c.code)
 		}
 	}
-	if len(h.images.Saved) != 0 || len(h.terminals.Pastes) != 0 {
-		t.Fatal("a refused image must leave nothing behind")
+	if len(h.files.Saved) != 0 || len(h.terminals.Pastes) != 0 {
+		t.Fatal("a refused file must leave nothing behind")
 	}
 }
 
-func TestPasteImageRefusesAStoppedSession(t *testing.T) {
+func TestPasteFileRefusesAStoppedSession(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 	if _, err := h.svc.Stop(context.Background(), session.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	_, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png)
+	_, err := h.svc.PasteFile(context.Background(), session.ID, 0, fileCommand, "image/png", png)
 	var prob *problem.Error
 	if !errors.As(err, &prob) || prob.Code != "SESS_003" {
 		t.Fatalf("err = %v, want SESS_003", err)
@@ -449,26 +473,26 @@ func TestAPasteThatDoesNotLandTakesItsFileWithIt(t *testing.T) {
 	session := h.open(t)
 	h.terminals.FailPaste = true
 
-	if _, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png); err == nil {
+	if _, err := h.svc.PasteFile(context.Background(), session.ID, 0, fileCommand, "image/png", png); err == nil {
 		t.Fatal("a paste into a window that went away must fail")
 	}
-	if len(h.images.Saved[session.ID]) != 0 {
-		t.Fatalf("the file stayed behind: %v", h.images.Saved[session.ID])
+	if len(h.files.Saved[session.ID]) != 0 {
+		t.Fatalf("the file stayed behind: %v", h.files.Saved[session.ID])
 	}
 }
 
 func TestStoppingDropsTheSessionsImages(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
-	if _, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png); err != nil {
+	if _, err := h.svc.PasteFile(context.Background(), session.ID, 0, fileCommand, "image/png", png); err != nil {
 		t.Fatal(err)
 	}
 
 	if _, err := h.svc.Stop(context.Background(), session.ID); err != nil {
 		t.Fatal(err)
 	}
-	if len(h.images.Saved[session.ID]) != 0 {
-		t.Fatal("nothing reads an image once the tmux session is gone; stopping must drop them")
+	if len(h.files.Saved[session.ID]) != 0 {
+		t.Fatal("nothing reads a file once the tmux session is gone; stopping must drop them")
 	}
 }
 
@@ -479,22 +503,22 @@ func TestCreateSavesTheFirstTasksImagesAndNamesThemInTheLaunch(t *testing.T) {
 		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
 		BaseBranch: "main", Agent: domain.AgentClaude,
 		Launch: domain.Launch{Permission: "ask", Prompt: "fix this"},
-		Images: []app.CreateImage{{ID: imageCommand, MediaType: "image/png", Data: png}},
+		Files:  []app.CreateFile{{ID: fileCommand, MediaType: "image/png", Data: png}},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := h.images.Saved[session.ID][imageCommand+".png"]; string(got) != string(png) {
-		t.Fatal("the attached image was not saved under the session")
+	if got := h.files.Saved[session.ID][fileCommand+".png"]; string(got) != string(png) {
+		t.Fatal("the attached file was not saved under the session")
 	}
 	// The agent is typed into the pane that already exists, not handed to
-	// tmux at creation, so the task and its images are in those keys.
+	// tmux at creation, so the task and its files are in those keys.
 	command := h.terminals.Screens[session.TmuxName()]
-	if !strings.Contains(command, "fix this") || !strings.Contains(command, "/"+session.ID+"/"+imageCommand+".png") {
-		t.Fatalf("command = %q, want the task followed by the image's path", command)
+	if !strings.Contains(command, "fix this") || !strings.Contains(command, "/"+session.ID+"/"+fileCommand+".png") {
+		t.Fatalf("command = %q, want the task followed by the file's path", command)
 	}
 	if session.Launch.Prompt != "fix this" {
-		t.Fatalf("stored prompt = %q: a restart must not name images that are gone", session.Launch.Prompt)
+		t.Fatalf("stored prompt = %q: a restart must not name files that are gone", session.Launch.Prompt)
 	}
 }
 
@@ -504,14 +528,14 @@ func TestCreateRefusesAttachedImagesThatAreNotWhatTheyClaim(t *testing.T) {
 	_, err := h.svc.Create(context.Background(), app.CreateInput{
 		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
 		BaseBranch: "main", Agent: domain.AgentClaude, Launch: domain.Launch{Prompt: "look"},
-		Images: []app.CreateImage{{ID: imageCommand, MediaType: "image/jpeg", Data: png}},
+		Files: []app.CreateFile{{ID: fileCommand, MediaType: "image/jpeg", Data: png}},
 	})
 	var prob *problem.Error
 	if !errors.As(err, &prob) || prob.Code != "SESS_005" {
 		t.Fatalf("err = %v, want SESS_005", err)
 	}
-	if len(h.worktrees.Paths) != 0 || len(h.images.Saved) != 0 {
-		t.Fatal("a refused image must be refused before anything is made")
+	if len(h.worktrees.Paths) != 0 || len(h.files.Saved) != 0 {
+		t.Fatal("a refused file must be refused before anything is made")
 	}
 }
 
@@ -521,7 +545,7 @@ func TestCreateRefusesImagesWithNoTaskToCarryThem(t *testing.T) {
 	_, err := h.svc.Create(context.Background(), app.CreateInput{
 		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
 		BaseBranch: "main", Agent: domain.AgentClaude,
-		Images: []app.CreateImage{{ID: imageCommand, MediaType: "image/png", Data: png}},
+		Files: []app.CreateFile{{ID: fileCommand, MediaType: "image/png", Data: png}},
 	})
 	var prob *problem.Error
 	if !errors.As(err, &prob) || prob.Code != "SESS_002" {
@@ -532,15 +556,15 @@ func TestCreateRefusesImagesWithNoTaskToCarryThem(t *testing.T) {
 func TestCloseDropsTheSessionsImages(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
-	if _, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png); err != nil {
+	if _, err := h.svc.PasteFile(context.Background(), session.ID, 0, fileCommand, "image/png", png); err != nil {
 		t.Fatal(err)
 	}
 
 	if _, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Force: true}); err != nil {
 		t.Fatal(err)
 	}
-	if len(h.images.Saved[session.ID]) != 0 || len(h.images.Discarded) == 0 {
-		t.Fatalf("discarded = %v, want the session's images dropped on close", h.images.Discarded)
+	if len(h.files.Saved[session.ID]) != 0 || len(h.files.Discarded) == 0 {
+		t.Fatalf("discarded = %v, want the session's files dropped on close", h.files.Discarded)
 	}
 }
 
@@ -627,7 +651,7 @@ func TestCreateAndRestartWaitOnTheAgentsUpdate(t *testing.T) {
 	gate := &gateRecorder{}
 	svc, err := app.New(app.Options{
 		Terminals: h.terminals, Worktrees: h.worktrees, Classifier: manifest.New(manifest.Options{}),
-		Store: &memoryStore{}, Publisher: h.events, Images: h.images,
+		Store: &memoryStore{}, Publisher: h.events, Files: h.files,
 		Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"}, Gate: gate,
 	})
 	if err != nil {

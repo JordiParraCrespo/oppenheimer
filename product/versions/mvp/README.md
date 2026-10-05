@@ -580,3 +580,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   history: on microsoft/vscode the store is ready for a spare in 9.3 s
   instead of 25.8 s. The deepen ends at the same blobless store as before, so
   a session's `git log` and `blame` work as they did once it lands.
+- 2026-10-04: **A session takes files, not only images** (03, 01, 02 §7, 05,
+  07). Images, PDF and UTF-8 text, one allowlist judged by the bytes at the
+  API and again on the host; text is text only when it is valid UTF-8 with
+  no control bytes and opens neither with `#!` nor as HTML, SVG or XML.
+  Executables, archives and scripts are refused whatever they are called,
+  and the runner names every file `<id><extension from the table>`. The
+  wire keeps its `image` names; a runner that takes more says so with
+  `session.files`, and one that does not is sent images only.

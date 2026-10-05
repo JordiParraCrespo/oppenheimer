@@ -88,6 +88,6 @@ function isTooLarge(error: unknown): boolean {
 export const AvatarFileInterceptor = FileUploadInterceptor({
   field: 'file',
   maxBytes: AVATAR_MAX_BYTES,
-  tooLarge: ProfileErrors.IMAGE_TOO_LARGE,
+  tooLarge: ProfileErrors.FILE_TOO_LARGE,
   missing: ProfileErrors.UNSUPPORTED_IMAGE_TYPE,
 });

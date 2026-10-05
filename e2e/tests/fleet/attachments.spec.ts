@@ -8,7 +8,8 @@ import { connectInstallation, STUB_REPOSITORIES } from '../../support/sessions';
 import { signInAs } from '../../support/web';
 
 /**
- * An image attached to the first task, end to end on a real runner: the
+ * Files attached to the first task (an image, a PDF, Markdown), end to end on
+ * a real runner: the
  * console stages it, the create claims it for the host, the runner pulls it
  * before it starts the agent, saves it outside the worktree and launches the
  * agent with its path after the task. The `claude` shim prints its argv, so
@@ -20,9 +21,7 @@ import { signInAs } from '../../support/web';
 test.describe.configure({ timeout: 240_000 });
 test.use({ baseURL: WEB_URL });
 
-test('an image attached to the first task reaches the agent with it', async ({
-  page,
-}, testInfo) => {
+test('files attached to the first task reach the agent with it', async ({ page }, testInfo) => {
   const up = await fetch(WEB_URL).then(
     (response) => response.ok,
     () => false,
@@ -59,10 +58,29 @@ test('an image attached to the first task reaches the agent with it', async ({
   await expect(page.getByRole('alert')).toContainText('too-big.png is over 5 MB');
   await shot('2-refused-too-large');
 
+  // An archive is no file a session takes: refused at once, before any upload.
+  await picker.setInputFiles({
+    name: 'bundle.zip',
+    mimeType: 'application/zip',
+    buffer: Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+  });
+  await expect(page.getByRole('alert')).toContainText(
+    'bundle.zip is not a file the agent can take',
+  );
+
   // A real PNG: a picture of the heading itself.
   const png = await page.getByRole('heading', { name: 'New session', level: 1 }).screenshot();
-  await picker.setInputFiles({ name: 'mockup.png', mimeType: 'image/png', buffer: png });
-  await expect(page.getByText('mockup.png', { exact: true })).toBeVisible();
+  const pdf = Buffer.from('%PDF-1.4\n1 0 obj << >> endobj\ntrailer << >>\n%%EOF\n');
+  const notes = Buffer.from('# Notes\n\n- keep the header sticky\n');
+  await picker.setInputFiles([
+    { name: 'mockup.png', mimeType: 'image/png', buffer: png },
+    { name: 'spec.pdf', mimeType: 'application/pdf', buffer: pdf },
+    // Some systems leave a .md unlabelled; the name picks Markdown.
+    { name: 'notes.md', mimeType: '', buffer: notes },
+  ]);
+  for (const name of ['mockup.png', 'spec.pdf', 'notes.md']) {
+    await expect(page.getByText(name, { exact: true })).toBeVisible();
+  }
   await page.getByRole('textbox', { name: /Describe a task/ }).fill('Match this mockup');
   await shot('3-attached');
 
@@ -79,20 +97,29 @@ test('an image attached to the first task reaches the agent with it', async ({
   await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]{36}$/, { timeout: 30_000 });
   const sessionId = page.url().split('/').pop() as string;
 
-  // The host holds exactly the bytes the console attached, under the session.
-  let saved = '';
-  await expect
-    .poll(
-      () => {
-        saved = box.host
-          .exec(`find "$HOME" -path "*/images/${sessionId}/*.png" 2>/dev/null`)
-          .trim();
-        return saved;
-      },
-      { timeout: 120_000 },
-    )
-    .toMatch(/\.png$/);
+  // The host holds exactly the bytes the console attached, under the session,
+  // each under a name the runner chose with its type's extension.
+  const savedAs = async (ext: string) => {
+    let found = '';
+    await expect
+      .poll(
+        () => {
+          found = box.host
+            .exec(`find "$HOME" -path "*/images/${sessionId}/*${ext}" 2>/dev/null`)
+            .trim();
+          return found;
+        },
+        { timeout: 120_000 },
+      )
+      .toMatch(new RegExp(`/[0-9a-f-]{36}\\${ext}$`));
+    return found;
+  };
+  const saved = await savedAs('.png');
   expect(box.host.exec(`base64 -w0 "${saved}"`).trim()).toBe(png.toString('base64'));
+  const savedPdf = await savedAs('.pdf');
+  expect(box.host.exec(`base64 -w0 "${savedPdf}"`).trim()).toBe(pdf.toString('base64'));
+  const savedNotes = await savedAs('.md');
+  expect(box.host.exec(`base64 -w0 "${savedNotes}"`).trim()).toBe(notes.toString('base64'));
 
   // And the agent was launched with the task, then that path. The terminal
   // draws on a canvas, so what it shows is read off the attach socket.
@@ -101,7 +128,7 @@ test('an image attached to the first task reaches the agent with it', async ({
   const escapes = new RegExp(`${String.fromCharCode(27)}\\[[0-9;?]*[A-Za-z]`, 'g');
   const shown = () => screen.replace(escapes, '').replace(/\s+/g, '');
   await expect.poll(shown, { timeout: 120_000 }).toContain('CLAUDE-SHIMargv=');
-  await expect.poll(shown).toContain(`Matchthismockup${saved}`);
+  await expect.poll(shown).toContain(`Matchthismockup${saved}${savedPdf}${savedNotes}`);
   await expect(page.getByText('Live', { exact: true })).toBeVisible();
   await shot('4-session-terminal');
 });

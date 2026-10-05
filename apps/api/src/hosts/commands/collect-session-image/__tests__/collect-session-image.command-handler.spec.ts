@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ParkedImagePort } from '../../../../links/application/parked-image.port';
+import type { ParkedFilePort } from '../../../../links/application/parked-file.port';
 import { CollectSessionImageCommand } from '../collect-session-image.command';
 import { CollectSessionImageCommandHandler } from '../collect-session-image.command-handler';
 
@@ -16,7 +16,7 @@ describe('CollectSessionImageCommandHandler', () => {
       stage: vi.fn(),
       claim: vi.fn(),
       collect: vi.fn().mockResolvedValue(image),
-    } satisfies ParkedImagePort;
+    } satisfies ParkedFilePort;
 
     await expect(
       new CollectSessionImageCommandHandler(images).execute(
@@ -32,7 +32,7 @@ describe('CollectSessionImageCommandHandler', () => {
       stage: vi.fn(),
       claim: vi.fn(),
       collect: vi.fn().mockResolvedValue(undefined),
-    } satisfies ParkedImagePort;
+    } satisfies ParkedFilePort;
 
     await expect(
       new CollectSessionImageCommandHandler(images).execute(

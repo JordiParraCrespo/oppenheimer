@@ -284,7 +284,7 @@ test.describe('Sessions', () => {
     expect(created.status()).toBe(400);
   });
 
-  test('an image for an unlinked host is refused, and so is what is not an image', async () => {
+  test('a file for an unlinked host is refused, and so is what a session does not take', async () => {
     test.slow();
     const { api } = await signedUpContext('sessionimage');
     const hostId = await pairHost(api, 'Image box');
@@ -324,6 +324,34 @@ test.describe('Sessions', () => {
         failOnStatusCode: false,
       }),
       { status: 415, code: 'SESSIONS_013' },
+    );
+    // Nor does a name: an executable called notes.txt is still an executable.
+    await expectProblemDocument(
+      await api.post(images, {
+        multipart: {
+          file: {
+            name: 'notes.txt',
+            mimeType: 'text/plain',
+            buffer: Buffer.from([0x7f, 0x45, 0x4c, 0x46, 2, 1, 1, 0]),
+          },
+        },
+        failOnStatusCode: false,
+      }),
+      { status: 415, code: 'SESSIONS_013' },
+    );
+    // A PDF is a file a session takes: it gets as far as the host, which is offline.
+    await expectProblemDocument(
+      await api.post(images, {
+        multipart: {
+          file: {
+            name: 'spec.pdf',
+            mimeType: 'application/pdf',
+            buffer: Buffer.from('%PDF-1.7\n'),
+          },
+        },
+        failOnStatusCode: false,
+      }),
+      { status: 503, code: 'SESSIONS_016' },
     );
     await expectProblemDocument(
       await api.post(images, { multipart: { window: '0' }, failOnStatusCode: false }),

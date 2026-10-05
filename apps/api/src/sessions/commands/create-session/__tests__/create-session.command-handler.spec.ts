@@ -6,7 +6,7 @@ import type {
   LinkRegistryPort,
   RunnerLink,
 } from '../../../../links/application/link-registry.port';
-import type { ParkedImagePort, StagedImage } from '../../../../links/application/parked-image.port';
+import type { ParkedFilePort, StagedFile } from '../../../../links/application/parked-file.port';
 import { ProjectEntity } from '../../../../projects/domain/project.entity';
 import { SessionAttachmentsResolver } from '../../../application/session-attachments.resolver';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
@@ -66,7 +66,7 @@ function launches(): SessionLaunchSpecFactory {
 }
 
 /** The image store in memory: staged uploads by id, checked against their owner as the adapter does. */
-function imageStore(uploads: Record<string, StagedImage> = {}) {
+function imageStore(uploads: Record<string, StagedFile> = {}) {
   const staged = new Map(Object.entries(uploads));
   let next = 0;
   const read = (ids: readonly string[], owner: { organizationId: string; userId: string }) => {
@@ -74,7 +74,7 @@ function imageStore(uploads: Record<string, StagedImage> = {}) {
     return found.every(
       (image) => image?.organizationId === owner.organizationId && image.userId === owner.userId,
     )
-      ? (found as StagedImage[])
+      ? (found as StagedFile[])
       : undefined;
   };
   return {
@@ -87,7 +87,7 @@ function imageStore(uploads: Record<string, StagedImage> = {}) {
       })),
     ),
     collect: vi.fn(),
-  } satisfies ParkedImagePort;
+  } satisfies ParkedFilePort;
 }
 
 /** The link registry: the host linked with these capabilities, or not linked at all. */
@@ -295,7 +295,7 @@ describe('CreateSessionCommandHandler', () => {
   });
 
   describe('attached images', () => {
-    const upload = (userId = 'user-1'): StagedImage => ({
+    const upload = (userId = 'user-1'): StagedFile => ({
       organizationId: 'org-acme',
       userId,
       mediaType: 'image/png',
@@ -355,6 +355,27 @@ describe('CreateSessionCommandHandler', () => {
       });
       expect(store.claim).not.toHaveBeenCalled();
       expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
+    });
+
+    it('refuses a PDF for a runner that takes images only, before writing anything', async () => {
+      store = imageStore({
+        'a-1': upload(),
+        'a-2': { ...upload(), mediaType: 'application/pdf', data: Buffer.from('%PDF-1.7') },
+      });
+      handler = rebuild();
+      await expect(handler.execute(attached(['a-1', 'a-2']))).rejects.toMatchObject({
+        code: 'SESSIONS_017',
+      });
+      expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
+
+      links = linksWith(['session.image', 'session.create.images', 'session.files']);
+      handler = rebuild();
+      await handler.execute(attached(['a-1', 'a-2']));
+      const [, spec] = vi.mocked(dispatch.create).mock.calls[0];
+      expect(spec.images?.map((image) => image.mediaType)).toEqual([
+        'image/png',
+        'application/pdf',
+      ]);
     });
 
     it('asks nothing of the host when nothing is attached', async () => {

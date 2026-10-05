@@ -25,9 +25,9 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_006',
     message: "Failed to load the session's progress",
   },
-  PASTE_IMAGE_FAILED: {
+  PASTE_FILE_FAILED: {
     code: 'SESSIONS_CLIENT_007',
-    message: 'Failed to give the image to the session',
+    message: 'Failed to give the file to the session',
   },
   RENAME_FAILED: {
     code: 'SESSIONS_CLIENT_008',
@@ -43,7 +43,7 @@ export const SessionsErrors = {
   },
   UPLOAD_ATTACHMENT_FAILED: {
     code: 'SESSIONS_CLIENT_011',
-    message: 'Failed to attach the image',
+    message: 'Failed to attach the file',
   },
   RESTART_FAILED: {
     code: 'SESSIONS_CLIENT_013',
@@ -54,12 +54,12 @@ export const SessionsErrors = {
     message: 'Failed to get the host ready',
   },
   /**
-   * The API's own code for an image over the cap, raised here before the
+   * The API's own code for a file over the cap, raised here before the
    * upload: a file that would be refused is not worth sending, and the reader
    * sees the same words either way.
    */
-  IMAGE_TOO_LARGE: {
+  FILE_TOO_LARGE: {
     code: 'SESSIONS_012',
-    message: 'That image is too large to give the session',
+    message: 'That file is too large to give the session',
   },
 } as const satisfies Record<string, ErrorDefinition>;

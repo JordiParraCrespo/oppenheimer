@@ -4,7 +4,7 @@ import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 import { CursorFrames } from './cursor-frames';
-import { bindImagePaste } from './terminal-images';
+import { bindFilePaste } from './terminal-files';
 import { classifyKey } from './terminal-keys';
 import {
   readTerminalTheme,
@@ -25,11 +25,11 @@ export interface SessionTerminalOptions {
    */
   agentWindow?: boolean;
   /**
-   * Images were pasted onto the terminal, for the caller to upload to the
-   * host (`bindImagePaste`). Without a handler, images are left to xterm,
+   * Files were pasted onto the terminal, for the caller to upload to the
+   * host (`bindFilePaste`). Without a handler, files are left to xterm,
    * which pastes nothing for them.
    */
-  onImages?: (images: File[]) => void;
+  onFiles?: (files: File[]) => void;
   /**
    * The first chunk on this attachment that puts a glyph on the grid; called
    * once. A session is "started" once the host has a tmux session, before the
@@ -112,7 +112,7 @@ export function mountSessionTerminal(
   // window: the pointer-on-grey it looks for is Claude Code's.
   const userTurns = options.agentWindow ? bindUserTurns(term, readUserTurnColors) : null;
 
-  const unbindImages = options.onImages ? bindImagePaste(container, options.onImages) : () => {};
+  const unbindFiles = options.onFiles ? bindFilePaste(container, options.onFiles) : () => {};
 
   // The wheel scrolls the session, not the program: tmux runs with `mouse on`,
   // so xterm would forward every tick as a mouse report and Codex would move
@@ -275,7 +275,7 @@ export function mountSessionTerminal(
   return () => {
     if (wheelFrame !== null) cancelAnimationFrame(wheelFrame);
     if (frame !== null) cancelAnimationFrame(frame);
-    unbindImages();
+    unbindFiles();
     userTurns?.dispose();
     offData();
     offStatus();

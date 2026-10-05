@@ -2,7 +2,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { SessionSortDto, SessionState } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
-import type { SessionLaunchImage } from '../domain/session-launch-image.types';
+import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import type {
   SessionEventSource,
@@ -95,7 +95,7 @@ export interface HostSessionRow {
   session: WorkSessionEntity;
   prompt?: string;
   /** The images the first task carries, off the same `prompt.first` entry. */
-  images?: SessionLaunchImage[];
+  images?: SessionLaunchFile[];
 }
 
 /**
