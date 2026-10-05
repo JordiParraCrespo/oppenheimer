@@ -55,15 +55,10 @@ import {
   DropZoneTerminalDemo,
   TerminalHostLinkDemo,
 } from '../components/host-link-demos';
-import {
-  DatePickerDemo,
-  DragPrimitivesDemo,
-  MonthCalendarDemo,
-  PlanDialogsDemo,
-  SessionPaneHeaderDemo,
-  TaskBoardDemo,
-  TaskStatusDots,
-} from '../components/plan-demos';
+import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos';
+import { DragPrimitivesDemo } from '../components/drag-demos';
+import { PlanDialogsDemo, SessionPaneHeaderDemo } from '../components/plan-dialog-demos';
+import { TaskBoardDemo, TaskStatusDots } from '../components/task-board-demos';
 import {
   AccountMenuDemo,
 
@@ -1071,7 +1066,7 @@ export default function Page() {
         id="pageheader"
         title="PageHeader"
         meta="page-header.tsx"
-        desc="Every routine page opens with one: a breadcrumb back, the name beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining."
+        desc="Every routine page opens with one: a breadcrumb back, the name beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining. The display size is a page that opens on its own name (Plan's Tasks and Calendar): the ladder's H1, no glyph, and its facts under it as PageHeaderStats in an unindented meta line."
         code={`<PageHeader><PageHeaderCrumbs>…</PageHeaderCrumbs><PageHeaderRow icon={<ClockIcon />} title="Nightly dependency audit" actions={…} /><PageHeaderMeta>…</PageHeaderMeta><PageHeaderNote action={<Button size="sm">Resume</Button>}>Paused.</PageHeaderNote></PageHeader>`}
       >
         <PageHeaderDemo />
@@ -1130,7 +1125,7 @@ export default function Page() {
         id="sessionpane"
         title="SessionPaneHeader"
         meta="session-pane-header.tsx"
-        desc="The 46px bar over a session's terminal, on the pane's card with a hairline under it: the run state's dot, the session in mono, the state's word, and on the right what drives it (agent, model, repository) in small mono. A session opened from a task leads with the way back to it, a quiet link with the task's title and a slash."
+        desc="The bar over a session's terminal, on the pane's card with a hairline under it: the session in mono, its run state on StatusDot, and on the right what drives it (agent, model, repository) in small mono. A session opened from a task leads with the way back to it, a quiet link with the task's title and a slash, no glyph. TerminalStatusBar is the terminal's own band along its bottom."
         code={`<SessionPaneHeader
   state="needs-input"
   name="biometric-unlock"
@@ -1200,7 +1195,7 @@ export default function Page() {
         id="drag"
         title="Drag layer"
         meta="drag.tsx"
-        desc="Headless primitives any surface composes to move things by dragging, built on dnd-kit and wrapped so apps only import these names. DragProvider owns one surface's drag: pointer and keyboard (space to pick up, arrows, space to drop, escape to cancel), scrolling at the edges and what a screen reader hears, in words the caller translates. useDraggable and useDroppable make anything a source or a target, and accepts limits a target to the types it takes. SortableGroup and SortableItem keep things in order across one or more groups: the item's own place becomes the drop slot, its neighbours slide out of the way, and useSortableGroups moves ids between groups as the drag crosses them. The motion is the frames': a press becomes a drag after 5px, the lifted copy tilts and grows a touch on the popover shadow, neighbours slide on 220ms and the copy glides home on 200ms as it settles flat. Reduced motion keeps the moves and drops the motion. Files from the desktop are DropZone's, not this layer's."
+        desc="Headless primitives any surface composes to move things by dragging, built on dnd-kit and wrapped so apps only import these names. DragProvider owns one surface's drag: pointer and keyboard (space to pick up, arrows, space to drop, escape to cancel), scrolling at the edges and what a screen reader hears, in words the caller translates. useDraggable and useDroppable make anything a source or a target, and accepts limits a target to the types it takes. SortableGroup and SortableItem keep things in order across one or more groups: the item's own place becomes the drop slot, its neighbours slide out of the way, and useSortableGroups moves ids between groups as the drag crosses them. The motion is the frames' on the system's ramp: a press becomes a drag after 5px, the lifted copy takes --drag-lift and the popover shadow over the fast duration, neighbours slide on the base duration and the copy glides home on the same as it settles flat. One DragProvider per surface, owned by the page; a component that drags (the month) draws its sources and targets inside it. Reduced motion keeps the moves and drops the motion. Files from the desktop are DropZone's, not this layer's."
         code={`const sortable = useSortableGroups(groups, setGroups, save);
 <DragProvider {...sortable} overlay={(active) => <Card id={active.id} />}>
   <SortableGroup id="todo" items={groups.todo}>
@@ -1218,7 +1213,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="taskboard"
         title="TaskBoard · GoalCard"
         meta="task-board.tsx · goal-card.tsx · page-header.tsx"
-        desc="Plan's tasks by status, on the drag layer. A column is a SortableGroup with its head (the status dot, the name, the count in mono, a + to add) over an 18px tray on the hover wash that tints toward the selected wash while a card would land in it; its foot is Add task or the composer. A card has a round check (green and filled when done, the title struck), the title, two lines of notes, the project and goal, the due date in mono (red when overdue, full ink when due within a day), the linked session as a chip that opens it, and Start session on hover. Goals sit above the board: a 4px bar of the share done, full ink and green at 100%, and the card is a toggle that narrows the board. The page opens on PageHeaderDisplay: a 34px title, its facts in mono, the action on the right. Drag cards within and across columns, check one off, add one, pick a goal."
+        desc="Plan's tasks by status, on the drag layer. A column is a SortableGroup with its head (the status on StatusDot, the count in mono, a + to add) over an 18px tray on the hover wash that tints toward the selected wash while a card would land in it; its foot is Add task or the composer. A card has a round Checkbox (green when done, the title struck), the title, two lines of notes, the project and goal, the due date in mono (red when overdue, full ink when due within a day), the linked session as a chip that opens it, and Start session on hover. The board is one row of however many columns it is given, as wide as its parent. A task's status reads on the run-state dots (TASK_STATUS_STATE: Later pending, To do idle, In progress running, Done completed). Goals sit above the board: a 4px bar of the share done, full ink and green at 100%, and the goal's name is a toggle that narrows the board, its menu beside it. The page opens on PageHeaderRow at its display size. Drag cards within and across columns, check one off, add one, pick a goal."
         code={`<DragProvider {...useSortableGroups(groups, setGroups, save)} overlay={(a) => <TaskCard title={titleOf(a.id)} />}>
   <TaskBoard>
     <TaskColumn id="todo" status="todo" label="To do" count={4} items={groups.todo} onAdd={add} foot={<TaskColumnAdd onClick={add}>Add task</TaskColumnAdd>}>
@@ -1243,8 +1238,10 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="calendar"
         title="MonthCalendar · CalendarSourceCard"
         meta="month-calendar.tsx · calendar-source.tsx"
-        desc="Plan's month: weekday eyebrows over whole weeks, Monday first. Days outside the month sit on the hover wash with their entries faded, today's number is a filled circle, and the 1st reads Oct 1. Entries are a ring for a timed event, a check for a task's due date and a bolt for an automation run, with the time in mono; an all-day event is a filled bar and a free one reads muted. Past four a day shows three and N more, which opens the whole day. Drag an event or a task to another day: it lifts, the day under it takes the selected wash, and escape puts it back. Automation runs keep their schedule. The sidebar lists what the month draws, each source a row that toggles, and the connected calendar's card says when it last synced."
-        code={`<MonthCalendar year={2026} month={9} today={today} entries={entries} onMove={(id, date) => move(id, date)} onOpenEntry={open} onAddDay={add} />
+        desc="Plan's month: weekday eyebrows over whole weeks, Monday first. Days outside the month sit on the hover wash with their entries faded, today's number is a filled circle, and the 1st reads Oct 1. Entries are a ring for a timed event, a check for a task's due date and a bolt for an automation run, with the time in mono; an all-day event is a filled bar and a free one reads muted. Past four a day shows three and N more, which opens the whole day. Drag an event or a task to another day: it lifts, the day under it takes the selected wash, and escape puts it back. The page owns the DragProvider: an entry is a calendar-entry source and a day a target whose id is its date, and N more lists the day to read, not to drag. Automation runs keep their schedule. It shares one month grid with DatePicker. The sidebar lists what the month draws, each source a row with a Checkbox, and the connected calendar's card says when it last synced."
+        code={`<DragProvider overlay={(a) => <CalendarEntry entry={byId(a.id)} lifted />} onDragEnd={({ active, over }) => over && move(active.id, over.id)}>
+  <MonthCalendar year={2026} month={9} today={today} entries={entries} onOpenEntry={open} onAddDay={add} />
+</DragProvider>
 <CalendarLayerItem icon={<CalendarIcon />} checked onCheckedChange={toggle}>Google Calendar</CalendarLayerItem>
 <CalendarSourceCard mark={<BrandGlyph name="google" />} name="Google Calendar" account="me@example.com" status="Synced 2 min ago" />`}
         bare
@@ -1256,7 +1253,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="plandialogs"
         title="Task & session dialogs"
         meta="dialog.tsx · chip.tsx · chip-select.tsx · date-picker.tsx"
-        desc="The task dialog and Start session are compositions, not components: a form-size Dialog with a borderless title and notes, then label and value rows. Values that are fixed (the four statuses, an agent's models) are chips; values that grow with the workspace (projects, goals, hosts, repositories) are ChipSelects that filter. An offline host keeps its place and a neutral Callout says the session will wait as Queued, so the primary button reads Queue session."
+        desc="The task dialog and Start session are compositions, not components: a form-size Dialog with a borderless title and notes, then label and value rows. Values that are fixed (the four statuses, an agent's models) are chips; values that grow with the workspace (projects, goals, hosts, repositories) are ChipSelects that filter. One state each: what a pick means (an offline host, a queued start) is the console's rule, not this page's."
       >
         <PlanDialogsDemo />
       </Spec>

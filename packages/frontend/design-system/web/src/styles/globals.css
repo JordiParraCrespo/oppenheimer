@@ -307,6 +307,8 @@
     --dur-fast: 140ms; /* menus, tooltips */
     --dur-base: 220ms; /* dialogs, sidebar collapse, theme change */
     --dur-slow: 400ms; /* progress and chart fills */
+    /* A dragged item picked up: tilted and a touch larger, as a card off a table. */
+    --drag-lift: rotate(1.6deg) scale(1.025);
     --transition-control:
       background-color var(--dur-fast) var(--ease-standard),
       color var(--dur-fast) var(--ease-standard),
@@ -656,7 +658,7 @@
      terminal): the 4px rise plus fade, at the fast or the base duration. */
   --animate-appear-fast: op-effort-in 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-appear: op-effort-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  --animate-drag-lift: op-drag-lift 160ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-drag-lift: op-drag-lift var(--dur-fast) cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --ease-out: var(--ease-out);
   --ease-in: var(--ease-in);
   /* `duration-*` reads Tailwind's `--transition-duration-*` namespace. */
@@ -923,7 +925,7 @@
     transform: none;
   }
   to {
-    transform: rotate(1.6deg) scale(1.025);
+    transform: var(--drag-lift);
   }
 }
 /* The Ready ring: a scale-and-fade on the out curve. */

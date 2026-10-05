@@ -1,12 +1,14 @@
 'use client';
 
-import { CheckIcon, FolderIcon, LayersIcon, PlayIcon, PlusIcon, TerminalIcon } from 'lucide-react';
+import { FolderIcon, LayersIcon, PlayIcon, PlusIcon, TerminalIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { Checkbox } from './checkbox';
 import { dragIgnore, SortableGroup } from './drag';
 import { Kbd } from './kbd';
-import { dotVariants, type StatusState } from './status-dot';
+import { IconButton } from './icon-button';
+import { StatusDot, type StatusState } from './status-dot';
 
 /**
  * The task board — Plan's tasks by status, one column each, built on the
@@ -15,13 +17,16 @@ import { dotVariants, type StatusState } from './status-dot';
  * columns. These parts only draw; which statuses exist, what a move saves
  * and what a click opens are the caller's.
  *
- * - `TaskBoard`: the row of columns, at least 272px each, scrolling sideways
- *   when the pane is narrower than four.
- * - `TaskColumn`: the head (status dot, name, count in mono, a + to add)
+ * - `TaskBoard`: one row of however many columns it is given, at least
+ *   272px each, scrolling sideways when the parent is narrower. It is as
+ *   wide as its parent; a page that wants it to bleed into its gutter says
+ *   so on its own wrapper.
+ * - `TaskColumn`: the head (the status on `StatusDot`, the count in mono, a
+ *   + to add)
  *   over a tray on the hover wash, 18px round, that tints toward the
  *   selected wash while a card would land in it. Its `foot` is the
  *   `TaskColumnAdd` button or a `TaskComposer`.
- * - `TaskCard`: the card in the tray — a round check (green and filled when
+ * - `TaskCard`: the card in the tray — a round `Checkbox` (green when
  *   done, the title then struck and muted), the title, two lines of notes,
  *   the project and goal, the due date in mono (red when overdue, full ink
  *   when due within a day), the linked session, and Start session on hover.
@@ -29,35 +34,26 @@ import { dotVariants, type StatusState } from './status-dot';
 
 type TaskStatus = 'later' | 'todo' | 'doing' | 'done';
 
-/** A status's dot: Later is a ring; To do grey; In progress amber; Done green. */
-function TaskStatusDot({ status, className }: { status: TaskStatus; className?: string }) {
-  return (
-    <span
-      aria-hidden
-      data-slot="task-status-dot"
-      data-status={status}
-      className={cn(
-        'size-[7px] shrink-0 rounded-pill',
-        status === 'later' && 'shadow-[inset_0_0_0_1.5px_var(--fg-subtle)]',
-        status === 'todo' && 'bg-fg-subtle',
-        status === 'doing' && 'bg-warning',
-        status === 'done' && 'bg-success',
-        className,
-      )}
-    />
-  );
-}
+/**
+ * A task's status on the run-state vocabulary, so a task reads with the
+ * same dot as everything else: Later is pending, To do idle, In progress
+ * running, and Done completed (the check, since a done task is finished).
+ */
+const TASK_STATUS_STATE: Record<TaskStatus, StatusState> = {
+  later: 'pending',
+  todo: 'idle',
+  doing: 'running',
+  done: 'completed',
+};
 
 function TaskBoard({ className, children, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="task-board"
-      className={cn('-mx-8 overflow-x-auto overscroll-x-contain px-8 [scrollbar-width:none]', className)}
+      className={cn('overflow-x-auto overscroll-x-contain [scrollbar-width:none]', className)}
       {...props}
     >
-      <div className="grid w-[max(100%,1124px)] grid-cols-[repeat(4,minmax(272px,1fr))] items-start gap-3">
-        {children}
-      </div>
+      <div className="grid auto-cols-[minmax(272px,1fr)] grid-flow-col items-start gap-3">{children}</div>
     </div>
   );
 }
@@ -93,20 +89,16 @@ function TaskColumn({
 }) {
   return (
     <section data-slot="task-column" data-status={status} className={cn('flex min-w-0 flex-col gap-2.5', className)}>
-      <div className="flex h-7 items-center gap-[9px] pr-1 pl-2.5">
-        <TaskStatusDot status={status} />
-        <span className="text-[13.5px] font-medium whitespace-nowrap text-fg">{label}</span>
+      <div className="flex h-7 items-center gap-2 pr-1 pl-1.5">
+        <StatusDot state={TASK_STATUS_STATE[status]} density="compact" className="font-medium whitespace-nowrap">
+          {label}
+        </StatusDot>
         {count !== undefined ? <span className="figures text-xs text-fg-subtle">{count}</span> : null}
         <span className="flex-1" />
         {onAdd ? (
-          <button
-            type="button"
-            aria-label={addLabel}
-            onClick={onAdd}
-            className="flex size-(--control-h-sm) items-center justify-center rounded-pill text-fg-muted outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface hover:text-fg focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            <PlusIcon className="size-[15px]" aria-hidden />
-          </button>
+          <IconButton size="sm" aria-label={addLabel} onClick={onAdd}>
+            <PlusIcon aria-hidden />
+          </IconButton>
         ) : null}
       </div>
       <SortableGroup
@@ -130,7 +122,7 @@ function TaskColumnAdd({ className, children, ...props }: React.ComponentProps<'
       type="button"
       data-slot="task-column-add"
       className={cn(
-        'flex h-[34px] items-center gap-2 rounded-sm px-2.5 text-[13px] text-fg-subtle outline-none transition-colors duration-fast ease-standard hover:bg-control-hover hover:text-fg-muted focus-visible:outline-2 focus-visible:outline-ring [&_svg]:size-3.5',
+        'flex h-[34px] items-center gap-2 rounded-sm px-2.5 text-sm text-fg-subtle outline-none transition-colors duration-fast ease-standard hover:bg-control-hover hover:text-fg-muted focus-visible:outline-2 focus-visible:outline-ring [&_svg]:size-3.5',
         className,
       )}
       {...props}
@@ -188,19 +180,13 @@ function TaskCard({
       )}
       {...props}
     >
-      <button
-        type="button"
+      <Checkbox
         aria-label={checkLabel}
-        aria-pressed={done}
-        onClick={onToggleDone}
+        checked={done}
+        onCheckedChange={() => onToggleDone?.()}
         {...dragIgnore}
-        className={cn(
-          'mt-px flex size-[18px] shrink-0 cursor-pointer items-center justify-center rounded-pill border-[1.5px] text-white outline-none transition-[background-color,border-color] duration-fast ease-standard focus-visible:outline-2 focus-visible:outline-ring',
-          done ? 'border-success bg-success' : 'border-border-strong hover:border-fg-muted',
-        )}
-      >
-        {done ? <CheckIcon className="size-[11px]" strokeWidth={3} aria-hidden /> : null}
-      </button>
+        className="mt-px cursor-pointer rounded-pill data-checked:border-success data-checked:bg-success"
+      />
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <span
           className={cn(
@@ -211,7 +197,7 @@ function TaskCard({
         >
           {title}
         </span>
-        {notes && !done ? <span className="line-clamp-2 text-[12.5px] leading-[1.45] text-fg-muted">{notes}</span> : null}
+        {notes && !done ? <span className="line-clamp-2 text-xs leading-[1.45] text-fg-muted">{notes}</span> : null}
         {hasMeta ? (
           <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-fg-muted">
             {project ? (
@@ -231,7 +217,7 @@ function TaskCard({
               <span
                 data-tone={dueTone}
                 className={cn(
-                  'figures shrink-0 text-[11.5px]',
+                  'figures shrink-0 text-micro',
                   dueTone === 'overdue' ? 'text-danger' : dueTone === 'soon' ? 'text-fg' : 'text-fg-muted',
                 )}
               >
@@ -290,10 +276,11 @@ function TaskSessionChip({
       )}
       {...props}
     >
-      <span className={dotVariants({ state: state === 'completed' ? 'idle' : state })} aria-hidden />
-      <span className="shrink-0 text-fg-muted">{word}</span>
-      <span className="min-w-0 flex-1 truncate font-mono text-[11.5px]">{name}</span>
-      {more ? <span className="figures shrink-0 text-[11px] text-fg-subtle">+{more}</span> : null}
+      <StatusDot state={state} density="compact" className="shrink-0 text-xs text-fg-muted">
+        {word}
+      </StatusDot>
+      <span className="min-w-0 flex-1 truncate font-mono text-micro">{name}</span>
+      {more ? <span className="figures shrink-0 text-micro text-fg-subtle">+{more}</span> : null}
       <TerminalIcon className="size-3 shrink-0 text-fg-subtle" aria-hidden />
     </button>
   );
@@ -365,5 +352,5 @@ function TaskComposer({
   );
 }
 
-export { TaskBoard, TaskCard, TaskColumn, TaskColumnAdd, TaskComposer, TaskSessionChip, TaskStatusDot };
+export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskColumn, TaskColumnAdd, TaskComposer, TaskSessionChip };
 export type { TaskDueTone, TaskStatus };

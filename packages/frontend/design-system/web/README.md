@@ -49,7 +49,8 @@ Wire the styles into the app's CSS entry alongside Tailwind:
   inventory is the showcase's `apps/web-showcase/src/lib/toc.ts`, which names
   every file under the section that draws it.
 - `src/internal/` — the building blocks only those components import
-  (`Checkbox`, `Label`, `Empty`, `Sheet`, the month helpers); not exported.
+  (`Checkbox`, `Label`, `Empty`, `Sheet`, the month helpers and the one
+  month grid `MonthCalendar` and `DatePicker` share); not exported.
 - `src/lib/utils` — `cn()`.
 
 The rules are in [`../AGENTS.md`](../AGENTS.md); the rendered reference is the

@@ -48,11 +48,12 @@ import { cn } from '../lib/utils';
  *   groups: the item's own slot becomes the drop slot, its neighbours slide
  *   out of the way, and `useSortableGroups` moves ids between groups live.
  *
- * The motion is the frames': a drag starts after 5px (so a click still opens
- * the thing), the lifted copy tilts 1.6° and grows 2.5% with the popover
- * shadow, neighbours slide on 220ms, and the copy glides into its slot on
- * 200ms while the tilt and shadow settle. Under reduced motion the copy
- * neither tilts nor glides and nothing slides.
+ * The motion is the frames' on the system's ramp: a drag starts after 5px
+ * (so a click still opens the thing), the lifted copy takes `--drag-lift`
+ * and the popover shadow over the fast duration, neighbours slide on the
+ * base duration, and the copy glides into its slot on the same while the
+ * lift and shadow settle. Under reduced motion the copy neither lifts nor
+ * glides and nothing slides.
  *
  * Files dragged in from the desktop are not this layer's: that is `DropZone`.
  */
@@ -90,10 +91,9 @@ const DEFAULT_LABELS: DragLabels = {
 
 const EASE_STANDARD = 'cubic-bezier(0.4, 0, 0.2, 1)';
 const EASE_OUT = 'cubic-bezier(0.16, 1, 0.3, 1)';
-/** Neighbours making room. */
+/** Neighbours making room, and the lifted copy into its slot: `--dur-base`. */
 const SLIDE_MS = 220;
-/** The lifted copy into its slot. */
-const DROP_MS = 200;
+const DROP_MS = SLIDE_MS;
 /** Movement before a press becomes a drag. */
 const ACTIVATION_PX = 5;
 /**
@@ -118,27 +118,35 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-function itemOf(entry: { id: string | number; data: { current?: Record<string, unknown> | null } } | null): DragItem | null {
-  if (!entry) return null;
+type DndEntry = { id: string | number; data: { current?: Record<string, unknown> | null } };
+
+function itemOf(entry: DndEntry): DragItem {
   return { id: String(entry.id), data: (entry.data.current ?? {}) as DragData };
 }
 
-function nameOf(entry: { id: string | number; data: { current?: Record<string, unknown> | null } } | null): string {
+function overOf(entry: DndEntry | null): DragItem | null {
+  return entry ? itemOf(entry) : null;
+}
+
+function nameOf(entry: DndEntry | null): string {
   const label = entry?.data.current?.label;
   return typeof label === 'string' ? label : String(entry?.id ?? '');
 }
 
+/** Whether a target takes an item: a target without `accepts` takes anything. */
+function takes(accepts: unknown, type: unknown): boolean {
+  return !Array.isArray(accepts) || (typeof type === 'string' && accepts.includes(type));
+}
+
 /**
- * Only the targets that take the active item: a target without `accepts`
- * takes anything. Under the pointer first; from the keyboard, which has no
- * pointer, the nearest corners.
+ * Only the targets that take the active item. Under the pointer first; from
+ * the keyboard, which has no pointer, the nearest corners.
  */
 const acceptingCollisions: CollisionDetection = (args) => {
   const type = args.active.data.current?.type;
-  const droppableContainers = args.droppableContainers.filter((container) => {
-    const accepts = container.data.current?.accepts as readonly string[] | undefined;
-    return !accepts || (typeof type === 'string' && accepts.includes(type));
-  });
+  const droppableContainers = args.droppableContainers.filter((container) =>
+    takes(container.data.current?.accepts, type),
+  );
   const scoped = { ...args, droppableContainers };
   const under = pointerWithin(scoped);
   return under.length > 0 ? under : closestCorners(scoped);
@@ -207,20 +215,20 @@ function DragProvider({
         measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
         accessibility={{ announcements, screenReaderInstructions: { draggable: labels.instructions } }}
         onDragStart={(event: DndDragStartEvent) => {
-          const item = itemOf(event.active) as DragItem;
+          const item = itemOf(event.active);
           setActive(item);
           onDragStart?.(item);
         }}
         onDragOver={(event: DndDragOverEvent) => {
-          onDragOver?.({ active: itemOf(event.active) as DragItem, over: itemOf(event.over) });
+          onDragOver?.({ active: itemOf(event.active), over: overOf(event.over) });
         }}
         onDragEnd={(event: DndDragEndEvent) => {
           setActive(null);
-          onDragEnd?.({ active: itemOf(event.active) as DragItem, over: itemOf(event.over) });
+          onDragEnd?.({ active: itemOf(event.active), over: overOf(event.over) });
         }}
         onDragCancel={(event) => {
           setActive(null);
-          onDragCancel?.(itemOf(event.active) as DragItem);
+          onDragCancel?.(itemOf(event.active));
         }}
       >
         {children}
@@ -285,9 +293,9 @@ function useDroppable({
   disabled?: boolean;
 }) {
   const { setNodeRef, isOver, active } = useDndDroppable({ id, data: { ...data, accepts }, disabled });
-  const type = active?.data.current?.type;
-  const takes = !accepts || (typeof type === 'string' && accepts.includes(type));
-  return { ref: setNodeRef, isOver: isOver && takes, canDrop: active !== null && takes };
+  const canDrop = active !== null && takes(accepts, active.data.current?.type);
+  // Collision detection never reports a target that refuses the item, so `isOver` already implies it takes it.
+  return { ref: setNodeRef, isOver, canDrop };
 }
 
 type SortableOrientation = 'vertical' | 'horizontal' | 'grid';
@@ -360,10 +368,10 @@ function useSortableItem({ id, data, disabled }: { id: string; data?: DragData; 
 }
 
 /**
- * The item as a box: the whole box is the handle (`handle={false}` leaves
- * the caller to spread `useSortableItem`'s props on a grip instead). While
- * it is the one being dragged its place becomes the drop slot, at its exact
- * size: the content stays laid out, invisible, on the slot's wash.
+ * The item as a box: the whole box is the handle (for a grip instead, use
+ * `useSortableItem` and spread its props on the grip). While it is the one
+ * being dragged its place becomes the drop slot, at its exact size: the
+ * content stays laid out, invisible, on the slot's wash.
  */
 function SortableItem({
   id,
@@ -412,61 +420,73 @@ type SortableGroups = Record<string, readonly string[]>;
  * place on drop, and everything goes back on cancel. Spread the handlers on
  * the `DragProvider`; `onChange` gets each new value, and `onMove` the
  * finished move once, for the caller to save.
+ *
+ * The groups being moved live in a ref for the length of a drag, so an
+ * over and the drop that follow each other before a render never read the
+ * value from before the item crossed.
  */
 function useSortableGroups(
   value: SortableGroups,
   onChange: (next: SortableGroups) => void,
   onMove?: (move: { id: string; from: string; to: string; index: number }) => void,
 ) {
-  const snapshot = React.useRef<{ value: SortableGroups; from: string } | null>(null);
+  const drag = React.useRef<{ start: SortableGroups; from: string; live: SortableGroups } | null>(null);
 
-  const groupOf = (groups: SortableGroups, id: string): string | undefined =>
-    id in groups ? id : Object.keys(groups).find((key) => groups[key]?.includes(id));
+  const itemGroup = (groups: SortableGroups, id: string) =>
+    Object.keys(groups).find((key) => groups[key]?.includes(id));
+  // A group stamps `group: true` on its data; anything else is an item, whatever its id.
+  const targetGroup = (groups: SortableGroups, over: DragItem) =>
+    over.data.group === true ? over.id : itemGroup(groups, over.id);
+
+  const publish = (next: SortableGroups) => {
+    if (drag.current) drag.current.live = next;
+    onChange(next);
+  };
 
   return {
     onDragStart: (active: DragItem) => {
-      const from = groupOf(value, active.id);
-      snapshot.current = from ? { value, from } : null;
+      const from = itemGroup(value, active.id);
+      drag.current = from ? { start: value, from, live: value } : null;
     },
     onDragOver: ({ active, over }: DragMove) => {
-      if (!over) return;
-      const from = groupOf(value, active.id);
-      const to = groupOf(value, over.id);
+      const live = drag.current?.live;
+      if (!live || !over) return;
+      const from = itemGroup(live, active.id);
+      const to = targetGroup(live, over);
       if (!from || !to || from === to) return;
-      const source = value[from] ?? [];
-      const target = value[to] ?? [];
-      const overIndex = target.indexOf(over.id);
+      const target = live[to] ?? [];
+      const overIndex = over.data.group === true ? -1 : target.indexOf(over.id);
       const index = overIndex === -1 ? target.length : overIndex;
-      onChange({
-        ...value,
-        [from]: source.filter((id) => id !== active.id),
+      publish({
+        ...live,
+        [from]: (live[from] ?? []).filter((id) => id !== active.id),
         [to]: [...target.slice(0, index), active.id, ...target.slice(index)],
       });
     },
     onDragEnd: ({ active, over }: DragMove) => {
-      const start = snapshot.current;
-      snapshot.current = null;
-      const to = groupOf(value, active.id);
-      if (!over || !to || !start) {
-        if (start) onChange(start.value);
+      const current = drag.current;
+      drag.current = null;
+      if (!current) return;
+      const { start, from, live } = current;
+      const to = itemGroup(live, active.id);
+      if (!over || !to) {
+        onChange(start);
         return;
       }
-      const list = value[to] ?? [];
-      const from = list.indexOf(active.id);
-      const overIndex = list.indexOf(over.id);
-      const next =
-        overIndex !== -1 && overIndex !== from ? { ...value, [to]: arrayMove([...list], from, overIndex) } : value;
+      const list = live[to] ?? [];
+      const at = list.indexOf(active.id);
+      const overIndex = over.data.group === true ? -1 : list.indexOf(over.id);
+      const next = overIndex !== -1 && overIndex !== at ? { ...live, [to]: arrayMove([...list], at, overIndex) } : live;
       if (next !== value) onChange(next);
       const index = (next[to] ?? []).indexOf(active.id);
-      const original = start.value[start.from] ?? [];
-      if (to !== start.from || index !== original.indexOf(active.id)) {
-        onMove?.({ id: active.id, from: start.from, to, index });
+      if (to !== from || index !== (start[from] ?? []).indexOf(active.id)) {
+        onMove?.({ id: active.id, from, to, index });
       }
     },
     onDragCancel: () => {
-      const start = snapshot.current;
-      snapshot.current = null;
-      if (start) onChange(start.value);
+      const current = drag.current;
+      drag.current = null;
+      if (current) onChange(current.start);
     },
   };
 }

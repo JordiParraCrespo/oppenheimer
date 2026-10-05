@@ -10,7 +10,10 @@ import { cn } from '../lib/utils';
  * one small action.
  *
  * `size="lg"` is the routine page itself (28px title, 44px glyph); `md` is
- * the editor and every other page (24px, 36px).
+ * the editor and every other page (24px, 36px); `display` is a page that
+ * opens on its own name rather than a record's (Plan's Tasks and Calendar):
+ * the ladder's H1, no glyph, and its facts under it in a `PageHeaderMeta`
+ * with `indent={false}`, each a `PageHeaderStat`.
  */
 function PageHeader({ className, ...props }: React.ComponentProps<'header'>) {
   return (
@@ -67,7 +70,7 @@ function PageHeaderRow({
   /** The name, or a `PageHeaderTitleInput` while editing. */
   title: React.ReactNode;
   actions?: React.ReactNode;
-  size?: 'md' | 'lg';
+  size?: 'md' | 'lg' | 'display';
 }) {
   return (
     <div
@@ -76,7 +79,7 @@ function PageHeaderRow({
       className={cn('flex min-w-0 items-center gap-3', size === 'lg' && 'gap-3.5', className)}
       {...props}
     >
-      {icon ? (
+      {icon && size !== 'display' ? (
         <span
           className={cn(
             'flex shrink-0 items-center justify-center rounded-pill bg-card text-fg',
@@ -91,9 +94,11 @@ function PageHeaderRow({
         <h1
           className={cn(
             'm-0 min-w-0 flex-1 truncate font-semibold text-fg',
-            size === 'lg'
-              ? 'text-[28px] leading-[1.15] tracking-[-0.019em]'
-              : 'text-[24px] leading-[1.25] tracking-[-0.018em]',
+            size === 'display'
+              ? 'text-h1'
+              : size === 'lg'
+                ? 'text-[28px] leading-[1.15] tracking-[-0.019em]'
+                : 'text-[24px] leading-[1.25] tracking-[-0.018em]',
           )}
         >
           {title}
@@ -123,14 +128,19 @@ function PageHeaderTitleInput({ className, ...props }: React.ComponentProps<'inp
 
 /**
  * The facts under the title: status, trigger, agent · model · project, separated
- * by dots — indented under the title, past the icon and its gap. A mono fact
- * (`figures`, a countdown) sits a half step smaller than the words.
+ * by dots — indented under the title, past the icon and its gap
+ * (`indent={false}` under a title with no glyph). A mono fact (`figures`, a
+ * countdown) sits a half step smaller than the words.
  */
-function PageHeaderMeta({ className, ...props }: React.ComponentProps<'div'>) {
+function PageHeaderMeta({ indent = true, className, ...props }: React.ComponentProps<'div'> & { indent?: boolean }) {
   return (
     <div
       data-slot="page-header-meta"
-      className={cn('flex flex-wrap items-center gap-1.5 pl-12 text-sm text-fg-muted [&_.figures]:text-[12.5px]', className)}
+      className={cn(
+        'flex flex-wrap items-center gap-1.5 text-sm text-fg-muted [&_.figures]:text-[12.5px]',
+        indent && 'pl-12',
+        className,
+      )}
       {...props}
     />
   );
@@ -141,38 +151,6 @@ function PageHeaderSep() {
     <span aria-hidden className="text-fg-subtle">
       ·
     </span>
-  );
-}
-
-/**
- * The display form, for a page that opens on its own name rather than a
- * record's (Plan's Tasks and Calendar): a 34px display title, a line of
- * facts under it (`PageHeaderStat`s between `PageHeaderSep`s), and the
- * actions on the right, sitting on the facts' baseline.
- */
-function PageHeaderDisplay({
-  title,
-  facts,
-  actions,
-  className,
-  ...props
-}: Omit<React.ComponentProps<'div'>, 'title'> & {
-  title: React.ReactNode;
-  facts?: React.ReactNode;
-  actions?: React.ReactNode;
-}) {
-  return (
-    <div
-      data-slot="page-header-display"
-      className={cn('flex flex-wrap items-end gap-5', className)}
-      {...props}
-    >
-      <div className="flex min-w-60 flex-1 flex-col gap-2">
-        <h1 className="m-0 font-display text-[34px] leading-[1.1] font-semibold tracking-[-0.022em] text-fg">{title}</h1>
-        {facts ? <div className="flex flex-wrap items-center gap-2 text-[13px] text-fg-muted">{facts}</div> : null}
-      </div>
-      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
-    </div>
   );
 }
 
@@ -223,7 +201,6 @@ function PageHeaderNote({
 
 export {
   PageHeader,
-  PageHeaderDisplay,
   PageHeaderStat,
   PageHeaderCrumbs,
   PageHeaderHere,

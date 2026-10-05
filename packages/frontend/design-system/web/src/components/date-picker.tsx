@@ -3,7 +3,8 @@
 import { CalendarIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import * as React from 'react';
 
-import { dateOf, type IsoDate, monthDays, shiftMonth, weekdayNames } from '../internal/month';
+import { dateOf, type IsoDate, shiftMonth } from '../internal/month';
+import { DayNumber, MonthGrid } from '../internal/month-grid';
 import { cn } from '../lib/utils';
 import { Button } from './button';
 import { Chip } from './chip';
@@ -43,8 +44,6 @@ function DatePicker({
   const [open, setOpen] = React.useState(false);
   const start = dateOf(value ?? today);
   const [view, setView] = React.useState({ year: start.getFullYear(), month: start.getMonth() });
-  const days = monthDays(view.year, view.month);
-  const weekdays = weekdayNames(locale, 'narrow');
   const title = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(
     new Date(view.year, view.month, 1),
   );
@@ -94,38 +93,28 @@ function DatePicker({
             <ChevronRightIcon className="size-[15px]" aria-hidden />
           </MonthStep>
         </div>
-        <div className="grid grid-cols-7 pb-1">
-          {weekdays.map((name, i) => (
-            // Narrow names repeat (T, S), so the column is the key.
-            // biome-ignore lint/suspicious/noArrayIndexKey: seven fixed columns.
-            <span key={i} className="py-1 text-center text-[11px] text-fg-subtle">
-              {name}
-            </span>
-          ))}
-        </div>
-        <div className="grid grid-cols-7 gap-y-0.5">
-          {days.map((day) => {
+        <MonthGrid year={view.year} month={view.month} locale={locale} face="picker">
+          {(day) => {
             const selected = day.iso === value;
-            const isToday = day.iso === today;
             return (
               <button
                 key={day.iso}
                 type="button"
                 aria-pressed={selected}
                 onClick={() => pick(day.iso)}
-                className={cn(
-                  'figures mx-auto flex size-[34px] items-center justify-center rounded-pill text-[12.5px] outline-none transition-colors duration-instant ease-standard focus-visible:outline-2 focus-visible:outline-ring',
-                  selected
-                    ? 'bg-fg font-medium text-background'
-                    : cn('hover:bg-hover-surface', day.inMonth ? 'text-fg' : 'text-fg-subtle'),
-                  isToday && !selected && 'shadow-[inset_0_0_0_1.5px_var(--fg-muted)]',
-                )}
+                className="group/day mx-auto rounded-pill outline-none focus-visible:outline-2 focus-visible:outline-ring"
               >
-                {day.day}
+                <DayNumber
+                  day={day}
+                  face="picker"
+                  today={day.iso === today}
+                  selected={selected}
+                  className={cn('transition-colors duration-instant ease-standard', !selected && 'group-hover/day:bg-hover-surface')}
+                />
               </button>
             );
-          })}
-        </div>
+          }}
+        </MonthGrid>
         {quick?.length || value ? (
           <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-border-subtle pt-2.5">
             {quick?.map((option) => (

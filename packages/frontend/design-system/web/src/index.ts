@@ -186,7 +186,6 @@ export { CalendarEntry, MonthCalendar } from './components/month-calendar';
 export {
   PageHeader,
   PageHeaderCrumbs,
-  PageHeaderDisplay,
   PageHeaderHere,
   PageHeaderMeta,
   PageHeaderNote,
@@ -317,13 +316,13 @@ export { SuccessMark } from './components/success-mark';
 export { SummaryCard, SummaryRow } from './components/summary-card';
 export type { TaskDueTone, TaskStatus } from './components/task-board';
 export {
+  TASK_STATUS_STATE,
   TaskBoard,
   TaskCard,
   TaskColumn,
   TaskColumnAdd,
   TaskComposer,
   TaskSessionChip,
-  TaskStatusDot,
 } from './components/task-board';
 export { TemplateGrid, TemplateItem } from './components/template-grid';
 export type { TerminalHostLink, TerminalLinkState, TerminalTone } from './components/terminal';

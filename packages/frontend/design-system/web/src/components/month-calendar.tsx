@@ -4,9 +4,10 @@ import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
 import { CircleCheckIcon, XIcon, ZapIcon } from 'lucide-react';
 import type * as React from 'react';
 
-import { dateOf, type IsoDate, monthDays, weekdayNames } from '../internal/month';
+import { dateOf, type IsoDate, type MonthDay } from '../internal/month';
+import { DayNumber, MonthGrid } from '../internal/month-grid';
 import { cn } from '../lib/utils';
-import { DragProvider, useDraggable, useDroppable } from './drag';
+import { useDraggable, useDroppable } from './drag';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
 /**
@@ -16,11 +17,15 @@ import { Popover, PopoverContent, PopoverTrigger } from './popover';
  * "Oct 1". A day lists its entries in time order; past four it shows three
  * and "N more", which opens the whole day in a popover.
  *
- * Entries move by dragging one onto another day (`onMove`), on the drag
- * layer: the entry lifts and follows, the day under it takes the selected
- * wash, Esc puts it back, and the keyboard can do the same. An entry is
+ * Entries move by dragging one onto another day, on the drag layer, inside
+ * the page's `DragProvider` (the calendar owns no provider, so it shares one
+ * surface with whatever else the page drags). Each entry is a source of type
+ * `calendar-entry`, each day a target whose id is its ISO date, so the
+ * caller's `onDragEnd` reads the move as `active.id` onto `over.id`; draw
+ * the lifted copy with `<CalendarEntry entry={…} lifted />`. An entry is
  * draggable unless `draggable` is false (an automation run, which follows
- * its schedule). Clicking a day's empty space is `onAddDay`.
+ * its schedule). The "N more" popover lists the day to read and open, not
+ * to drag. Clicking a day's empty space is `onAddDay`.
  */
 
 type CalendarEntryKind = 'event' | 'task' | 'automation';
@@ -60,9 +65,15 @@ function entryOrder(entry: CalendarEntryData): number {
 function CalendarEntry({
   entry,
   full = false,
+  lifted = false,
   className,
   ...props
-}: React.ComponentProps<'button'> & { entry: CalendarEntryData; full?: boolean }) {
+}: React.ComponentProps<'button'> & {
+  entry: CalendarEntryData;
+  full?: boolean;
+  /** The copy that follows the pointer: a day's width, on the card. */
+  lifted?: boolean;
+}) {
   const muted = entry.kind === 'automation' || entry.done || (entry.kind === 'event' && !entry.busy);
   return (
     <button
@@ -71,10 +82,11 @@ function CalendarEntry({
       data-kind={entry.kind}
       title={entry.tip ?? entry.title}
       className={cn(
-        'flex h-6 w-full min-w-0 items-center gap-1.5 rounded-xs px-1.5 text-left text-[12.5px] outline-none transition-colors duration-instant ease-standard hover:bg-control-hover focus-visible:outline-2 focus-visible:outline-ring',
+        'flex h-6 w-full min-w-0 items-center gap-1.5 rounded-xs px-1.5 text-left text-xs outline-none transition-colors duration-instant ease-standard hover:bg-control-hover focus-visible:outline-2 focus-visible:outline-ring',
         entry.allDay && 'bg-control',
         muted ? 'text-fg-muted' : 'text-fg',
         full && 'h-[26px] px-2',
+        lifted && 'w-44 bg-card',
         className,
       )}
       {...props}
@@ -96,7 +108,7 @@ function CalendarEntry({
       ) : null}
       {entry.kind === 'automation' ? <ZapIcon aria-hidden className="size-[11px] shrink-0 text-fg-subtle" /> : null}
       {entry.time ? (
-        <span className={cn('figures shrink-0 text-[11px] text-fg-subtle', !full && '@max-[140px]/day:hidden')}>
+        <span className={cn('figures shrink-0 text-micro text-fg-subtle', !full && '@max-[140px]/day:hidden')}>
           {entry.time}
         </span>
       ) : null}
@@ -107,22 +119,13 @@ function CalendarEntry({
   );
 }
 
-function DraggableEntry({
-  entry,
-  full,
-  onOpen,
-}: {
-  entry: CalendarEntryData;
-  full?: boolean;
-  onOpen?: (id: string) => void;
-}) {
+function DraggableEntry({ entry, onOpen }: { entry: CalendarEntryData; onOpen?: (id: string) => void }) {
   const movable = entry.draggable !== false;
   const { ref, handleProps, isDragging } = useDraggable({ id: entry.id, data: { type: 'calendar-entry', label: entry.title }, disabled: !movable });
   return (
     <CalendarEntry
       ref={ref}
       entry={entry}
-      full={full}
       data-dragging={isDragging || undefined}
       className="touch-none data-dragging:opacity-40"
       {...(movable ? handleProps : {})}
@@ -146,7 +149,7 @@ function CalendarDay({
   onOpenEntry,
   onAddDay,
 }: {
-  day: { iso: IsoDate; day: number; inMonth: boolean };
+  day: MonthDay;
   entries: CalendarEntryData[];
   today: boolean;
   last: { row: boolean; first: boolean; end: boolean };
@@ -157,7 +160,7 @@ function CalendarDay({
   onOpenEntry?: (id: string) => void;
   onAddDay?: (date: IsoDate) => void;
 }) {
-  const { ref, isOver } = useDroppable({ id: day.iso, data: { label: dayLabel }, accepts: ['calendar-entry'] });
+  const { ref, isOver } = useDroppable({ id: day.iso, data: { label: dayLabel, date: day.iso }, accepts: ['calendar-entry'] });
   const shown = entries.length > 4 ? entries.slice(0, 3) : entries;
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: adding from a day is also the page's New event button.
@@ -179,14 +182,9 @@ function CalendarDay({
       )}
     >
       <div className="flex h-[26px] items-center px-0.5 pb-0.5">
-        <span
-          className={cn(
-            'figures inline-flex h-6 min-w-6 items-center justify-center rounded-pill px-1.5 text-xs',
-            today ? 'bg-fg font-medium text-background' : day.inMonth ? 'text-fg' : 'text-fg-subtle',
-          )}
-        >
+        <DayNumber day={day} face="calendar" today={today}>
           {day.day === 1 ? monthDayLabel : day.day}
-        </span>
+        </DayNumber>
       </div>
       <div className={cn('flex flex-col gap-0.5', !day.inMonth && 'opacity-55')}>
         {shown.map((entry) => (
@@ -209,12 +207,12 @@ function CalendarDay({
             className="w-62 gap-0.5 rounded-md border-0 p-2 shadow-popover"
           >
             <div className="flex items-center gap-1.5 pt-0.5 pr-0.5 pb-1.5 pl-1.5">
-              <span className="flex-1 text-[13px] font-medium text-fg">{dayLabel}</span>
+              <span className="flex-1 text-sm font-medium text-fg">{dayLabel}</span>
               <CloseButton label={closeLabel} />
             </div>
             <div className="flex max-h-75 flex-col gap-0.5 overflow-y-auto overscroll-contain [scrollbar-width:none]">
               {entries.map((entry) => (
-                <DraggableEntry key={entry.id} entry={entry} full onOpen={onOpenEntry} />
+                <CalendarEntry key={entry.id} entry={entry} full onClick={() => onOpenEntry?.(entry.id)} />
               ))}
             </div>
           </PopoverContent>
@@ -244,7 +242,6 @@ function MonthCalendar({
   entries,
   today,
   locale = 'en',
-  onMove,
   onOpenEntry,
   onAddDay,
   moreLabel = moreInEnglish,
@@ -255,19 +252,16 @@ function MonthCalendar({
   /** 0 for January. */
   month: number;
   entries: readonly CalendarEntryData[];
-  /** Today, to ring; the caller's clock, so a page never reads one in render. */
+  /** Today, to fill; the caller's clock, so a page never reads one in render. */
   today?: IsoDate;
   /** Names the weekdays and the days. */
   locale?: string;
-  onMove?: (id: string, date: IsoDate) => void;
   onOpenEntry?: (id: string) => void;
   onAddDay?: (date: IsoDate) => void;
   moreLabel?: (n: number) => string;
   closeLabel?: string;
   className?: string;
 }) {
-  const days = monthDays(year, month);
-  const weekdays = weekdayNames(locale, 'short');
   const longDay = new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' });
   const monthDay = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' });
   const byDay = new Map<IsoDate, CalendarEntryData[]>();
@@ -276,53 +270,27 @@ function MonthCalendar({
     list.push(entry);
     byDay.set(entry.date, list);
   }
-  const lookup = new Map(entries.map((entry) => [entry.id, entry]));
 
   return (
-    <DragProvider
-      overlay={(active) => {
-        const entry = lookup.get(active.id);
-        return entry ? (
-          <div className="w-44 rounded-xs bg-card">
-            <CalendarEntry entry={entry} tabIndex={-1} />
-          </div>
-        ) : null;
-      }}
-      onDragEnd={({ active, over }) => {
-        const entry = lookup.get(active.id);
-        if (over && entry && over.id !== entry.date) onMove?.(active.id, over.id);
-      }}
-    >
-      <section
-        data-slot="month-calendar"
-        className={cn('rounded-lg border border-border-subtle bg-card', className)}
-      >
-        <div className="grid grid-cols-7 border-b border-border-subtle">
-          {weekdays.map((name) => (
-            <span key={name} className="px-3 py-2.5 text-[11px] font-medium tracking-[0.02em] text-fg-subtle uppercase">
-              {name}
-            </span>
-          ))}
-        </div>
-        <div className="grid grid-cols-7">
-          {days.map((day, i) => (
-            <CalendarDay
-              key={day.iso}
-              day={day}
-              entries={(byDay.get(day.iso) ?? []).slice().sort((a, b) => entryOrder(a) - entryOrder(b))}
-              today={day.iso === today}
-              last={{ row: i >= days.length - 7, first: i % 7 === 0, end: i % 7 === 6 }}
-              dayLabel={longDay.format(dateOf(day.iso))}
-              monthDayLabel={monthDay.format(dateOf(day.iso))}
-              moreLabel={moreLabel}
-              closeLabel={closeLabel}
-              onOpenEntry={onOpenEntry}
-              onAddDay={onAddDay}
-            />
-          ))}
-        </div>
-      </section>
-    </DragProvider>
+    <section data-slot="month-calendar" className={cn('rounded-lg border border-border-subtle bg-card', className)}>
+      <MonthGrid year={year} month={month} locale={locale} face="calendar">
+        {(day, { index, count }) => (
+          <CalendarDay
+            key={day.iso}
+            day={day}
+            entries={(byDay.get(day.iso) ?? []).slice().sort((a, b) => entryOrder(a) - entryOrder(b))}
+            today={day.iso === today}
+            last={{ row: index >= count - 7, first: index % 7 === 0, end: index % 7 === 6 }}
+            dayLabel={longDay.format(dateOf(day.iso))}
+            monthDayLabel={monthDay.format(dateOf(day.iso))}
+            moreLabel={moreLabel}
+            closeLabel={closeLabel}
+            onOpenEntry={onOpenEntry}
+            onAddDay={onAddDay}
+          />
+        )}
+      </MonthGrid>
+    </section>
   );
 }
 
