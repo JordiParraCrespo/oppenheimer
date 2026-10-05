@@ -1,4 +1,4 @@
-import { Button, Skeleton } from '@oppenheimer/design-system-web';
+import { BrandGlyph, Button, CalendarSourceCard, Skeleton } from '@oppenheimer/design-system-web';
 import {
   useDisconnectGoogleCalendar,
   useGoogleCalendarConnection,
@@ -11,9 +11,10 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * The Google Calendar card (`20-plan-calendar.md` §3): read-only, so
- * Connect asks Google for the read scope alone. Connected, it names the
- * account and offers Disconnect; a grant Google revoked asks to reconnect.
- * Nothing on a deployment with no Google credentials.
+ * Connect asks Google for the read scope alone. Connected, it is the design
+ * system's source card with the account, and Disconnect; a grant Google
+ * revoked asks to reconnect. Nothing on a deployment with no Google
+ * credentials.
  */
 export function GoogleCalendarCard() {
   const { t } = useTranslation();
@@ -22,28 +23,34 @@ export function GoogleCalendarCard() {
   });
   const connection = useGoogleCalendarConnection();
   const start = useStartGoogleCalendarConnection();
-  const disconnect = useDisconnectGoogleCalendar({ onSuccess: () => setConfirming(false) });
   const [confirming, setConfirming] = useState(false);
+  const disconnect = useDisconnectGoogleCalendar({ onSuccess: () => setConfirming(false) });
   if (!available) return null;
 
   return (
-    <section className="mx-3 flex flex-col gap-2.5 rounded-lg border border-border-subtle bg-card p-3.5">
-      <h3 className="text-sm font-medium">{t('calendar.google.title')}</h3>
+    <section aria-label={t('calendar.google.title')} className="mx-3 flex flex-col gap-2">
       {connection.isPending ? (
-        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-16 w-full" />
       ) : connection.isError ? (
         <ErrorAlert error={connection.error} fallback={t('calendar.google.loadFailed')} />
       ) : connection.data.isActive ? (
         <>
-          <p className="truncate text-xs text-fg-muted">
-            {t('calendar.google.connectedAs', { email: connection.data.accountEmail ?? '' })}
-          </p>
+          <CalendarSourceCard
+            mark={<BrandGlyph name="google" />}
+            name={t('calendar.google.title')}
+            account={connection.data.accountEmail ?? undefined}
+            status={t('calendar.google.readOnly')}
+          />
           <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>
             {t('calendar.google.disconnect')}
           </Button>
         </>
       ) : (
-        <>
+        <div className="flex flex-col gap-2 rounded-md bg-hover-surface p-3">
+          <span className="flex items-center gap-2 text-sm font-medium text-fg [&_svg]:size-[13px]">
+            <BrandGlyph name="google" />
+            {t('calendar.google.title')}
+          </span>
           <p className="text-xs text-fg-muted">
             {t(
               connection.data.needsReconnect
@@ -68,7 +75,7 @@ export function GoogleCalendarCard() {
                 : 'calendar.google.connect',
             )}
           </Button>
-        </>
+        </div>
       )}
       {confirming ? (
         <ConfirmDialog

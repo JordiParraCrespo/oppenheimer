@@ -1,8 +1,15 @@
-import { Button, Field, FieldError, FieldLabel, Input } from '@oppenheimer/design-system-web';
 import {
-  DateField,
+  Button,
+  DatePicker,
+  Field,
+  FieldError,
+  FieldLabel,
+  Input,
+} from '@oppenheimer/design-system-web';
+import {
   ErrorAlert,
   type ResolvedErrorMessage,
+  useDatePickerCopy,
   useZodResolver,
 } from '@oppenheimer/frontend-web';
 import { type CreateGoalDto, createGoalSchema } from '@oppenheimer/shared/schemas/task';
@@ -49,6 +56,7 @@ export function GoalForm({
     values,
   });
   const quick = targetQuickDays(today);
+  const copy = useDatePickerCopy();
 
   return (
     <form className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -81,9 +89,10 @@ export function GoalForm({
           control={control}
           name="targetDate"
           render={({ field }) => (
-            <DateField
+            <DatePicker
+              {...copy}
               value={field.value ?? null}
-              onChange={field.onChange}
+              onValueChange={field.onChange}
               today={today}
               quick={[
                 { label: t('tasks.dates.endOfMonth'), value: quick.endOfMonth },

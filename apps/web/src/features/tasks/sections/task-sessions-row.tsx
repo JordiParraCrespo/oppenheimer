@@ -1,4 +1,4 @@
-import { Button, dotVariants, IconButton } from '@oppenheimer/design-system-web';
+import { Button, IconButton, StatusDot } from '@oppenheimer/design-system-web';
 import { Link2, Play, X } from '@oppenheimer/design-system-web/icons';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessions, useUnlinkTaskSession } from '@oppenheimer/frontend-consumer/react';
@@ -6,9 +6,8 @@ import { ErrorAlert, RelativeTime } from '@oppenheimer/frontend-web';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SESSION_DOT } from '../components/task-session-line';
 import { LinkSessionPicker } from '../dialogs/link-session';
-import { sessionStateOf } from '../lib/session-state';
+import { SESSION_STATUS, sessionStateOf } from '../lib/session-state';
 
 const board = getRouteApi('/_authenticated/plan/');
 
@@ -43,7 +42,6 @@ export function TaskSessionsRow({ task }: { task: TaskEntity }) {
               key={session.id}
               className="flex min-w-0 items-center gap-2 rounded-sm bg-hover-surface py-1 pr-1 pl-2 text-sm"
             >
-              <span className={dotVariants({ state: SESSION_DOT[state] })} aria-hidden />
               <Link
                 to="/sessions/$sessionId"
                 params={{ sessionId: session.id }}
@@ -51,9 +49,13 @@ export function TaskSessionsRow({ task }: { task: TaskEntity }) {
               >
                 {session.name}
               </Link>
-              <span className="shrink-0 text-xs text-fg-muted">
+              <StatusDot
+                state={SESSION_STATUS[state]}
+                density="compact"
+                className="shrink-0 text-xs text-fg-muted"
+              >
                 {t(`tasks.sessionState.${state}`)}
-              </span>
+              </StatusDot>
               <span className="figures shrink-0 font-mono text-xs text-fg-subtle">
                 <RelativeTime date={link.linkedAt} />
               </span>

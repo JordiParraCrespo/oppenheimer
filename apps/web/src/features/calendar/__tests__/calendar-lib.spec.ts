@@ -1,6 +1,6 @@
 import { AutomationEntity, CalendarEventEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
-import { automationItems, byDay, eventItems } from '../lib/calendar-items';
+import { automationItems, eventItems, toEntry } from '../lib/calendar-items';
 import { calendarSearchSchema, hiddenLayers, toggleLayer } from '../lib/calendar-search';
 
 /** The rule is set in the reader's own zone, so its wall-clock time is the grid's. */
@@ -94,27 +94,45 @@ describe('automation runs on the month', () => {
   });
 });
 
-describe('a day’s items', () => {
-  it('lists all-day items first, then by time', () => {
-    const event = (id: string, allDay: boolean, start: string | null) =>
-      new CalendarEventEntity(
-        id,
-        'personal',
-        id,
-        '',
-        '2026-10-05',
-        allDay,
-        start,
-        start ? '23:00' : null,
-        true,
-        null,
-      );
-    const day = byDay(
-      eventItems(
-        [event('late', false, '18:00'), event('all', true, null), event('early', false, '08:00')],
-        'events',
-      ),
+describe('an item on the month', () => {
+  it('lets personal events and tasks be dragged to another day, and not Google’s or a run', () => {
+    const event = new CalendarEventEntity(
+      'e-1',
+      'personal',
+      'Review',
+      '',
+      '2026-10-05',
+      false,
+      '10:00',
+      '11:00',
+      true,
+      null,
     );
-    expect(day.get('2026-10-05')?.map((item) => item.title)).toEqual(['all', 'early', 'late']);
+    const google = new CalendarEventEntity(
+      'g-1',
+      'google',
+      'Standup',
+      '',
+      '2026-10-05',
+      false,
+      '09:00',
+      '09:15',
+      true,
+      'https://calendar.google.com/x',
+    );
+    const [mine] = eventItems([event], 'events').map(toEntry);
+    const [theirs] = eventItems([google], 'google').map(toEntry);
+    expect(mine).toMatchObject({
+      kind: 'event',
+      date: '2026-10-05',
+      time: '10:00',
+      draggable: true,
+      tip: 'Review · 10:00–11:00',
+    });
+    expect(theirs).toMatchObject({ kind: 'event', draggable: false });
+    const [run] = automationItems([automation('active', 'daily')], '2026-10-05', '2026-10-05').map(
+      toEntry,
+    );
+    expect(run).toMatchObject({ kind: 'automation', draggable: false });
   });
 });

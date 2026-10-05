@@ -23,13 +23,23 @@
       "none": "Sin fecha",
       "previousMonth": "Mes anterior",
       "nextMonth": "Mes siguiente",
-      "clear": "Quitar"
+      "clear": "Quitar",
+      "choose": "Elige una fecha"
     },
     "timeField": {
       "none": "Sin hora",
       "hour": "Hora",
       "minute": "Minuto",
       "clear": "Quitar"
+    },
+    "drag": {
+      "instructions": "Para coger un elemento, pulsa espacio o intro. Muévelo con las flechas, suéltalo con espacio o intro y cancela con escape.",
+      "pickedUp": "Has cogido {{name}}.",
+      "over": "{{name}} está sobre {{target}}.",
+      "nowhere": "{{name}} no está sobre un sitio donde pueda ir.",
+      "dropped": "{{name}} se ha soltado en {{target}}.",
+      "droppedNowhere": "{{name}} se ha soltado.",
+      "cancelled": "Se ha cancelado mover {{name}}."
     }
   },
   "validation": {
@@ -943,16 +953,22 @@
     "board": {
       "title": "Tareas",
       "newTask": "Nueva tarea",
-      "counts": "{{open}} abiertas · {{doing}} en curso · {{done}} hechas",
-      "overdue_one": "{{count}} vencida",
-      "overdue_other": "{{count}} vencidas",
       "addTask": "Añadir tarea",
       "addTo": "Añadir una tarea a {{column}}",
       "quickPlaceholder": "Título de la tarea",
-      "filedUnder": "Se archivará en {{name}}",
+      "filedUnder": "En {{name}}",
       "loadFailed": "No se ha podido cargar el tablero.",
       "moveFailed": "No se ha podido mover la tarea. Ha vuelto a su sitio.",
-      "addFailed": "No se ha podido añadir la tarea."
+      "addFailed": "No se ha podido añadir la tarea.",
+      "stats": {
+        "open": "abiertas",
+        "doing": "en curso",
+        "done": "hechas",
+        "overdue": "vencidas"
+      },
+      "filedAll": "En todos los proyectos",
+      "keyAdd": "añadir",
+      "keyCancel": "cancelar"
     },
     "columns": {
       "later": "Más adelante",
@@ -986,11 +1002,12 @@
       "label": "Objetivos",
       "title": "Objetivos",
       "new": "Nuevo objetivo",
-      "empty": "Aún no hay objetivos. Un objetivo agrupa tareas hacia un mismo resultado.",
+      "empty": "Los objetivos agrupan tareas y cuentan cuántas están hechas.",
       "noTarget": "Sin fecha",
       "progress": "{{done}} / {{total}} tareas",
       "edit": "Editar {{name}}",
-      "loadFailed": "No se han podido cargar tus objetivos."
+      "loadFailed": "No se han podido cargar tus objetivos.",
+      "emptyTitle": "Aún no hay objetivos"
     },
     "goal": {
       "newTitle": "Nuevo objetivo",
@@ -1082,9 +1099,9 @@
     "grid": {
       "more_one": "{{count}} más",
       "more_other": "{{count}} más",
-      "newOn": "Nuevo evento el {{day}}",
       "eventsFailed": "No se han podido cargar tus eventos.",
-      "googleFailed": "No se ha podido leer Google Calendar."
+      "googleFailed": "No se ha podido leer Google Calendar.",
+      "moveFailed": "No se ha podido mover a otro día."
     },
     "event": {
       "newTitle": "Nuevo evento",
@@ -1117,7 +1134,8 @@
       "connecting": "Conectando Google Calendar…",
       "connectFailed": "No se ha podido conectar Google Calendar.",
       "refused": "Google Calendar no se ha conectado: el permiso se canceló o no se completó.",
-      "back": "Volver al calendario"
+      "back": "Volver al calendario",
+      "readOnly": "Solo lectura"
     }
   },
   "hosts": {

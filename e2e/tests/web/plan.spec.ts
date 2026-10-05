@@ -1,12 +1,26 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Locator, type Page, test } from '@playwright/test';
 import { connectInstallation, createProject, pairHost } from '../../support/sessions';
 import { provisionedUser, signInAs } from '../../support/web';
 
+const STATUS = { Later: 'later', 'To do': 'todo', 'In progress': 'doing', Done: 'done' } as const;
 /** A board column, by its heading. */
-const column = (page: Page, name: string) => page.getByRole('region', { name, exact: true });
+const column = (page: Page, name: keyof typeof STATUS) =>
+  page.locator(`[data-slot="task-column"][data-status="${STATUS[name]}"]`);
 /** A card on the board, by its title. */
 const card = (page: Page, title: string) =>
-  page.locator('[data-card]').filter({ has: page.getByText(title, { exact: true }) });
+  page.locator('[data-slot="task-card"]').filter({ has: page.getByText(title, { exact: true }) });
+
+/** Drag on the drag layer: press, pass its 5px threshold, glide over, let go. */
+async function drag(page: Page, from: Locator, to: Locator) {
+  const a = await from.boundingBox();
+  const b = await to.boundingBox();
+  if (!a || !b) throw new Error('nothing to drag');
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(a.x + a.width / 2 + 8, a.y + a.height / 2 + 8, { steps: 4 });
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 12 });
+  await page.mouse.up();
+}
 
 /**
  * Plan, in a browser, against the real control plane
@@ -24,10 +38,10 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
 
   await page.getByRole('link', { name: 'Plan', exact: true }).click();
   await expect(page).toHaveURL(/\/plan$/);
-  for (const name of ['Later', 'To do', 'In progress', 'Done']) {
+  for (const name of ['Later', 'To do', 'In progress', 'Done'] as const) {
     await expect(column(page, name)).toBeVisible();
   }
-  await expect(page.getByText('No goals yet.')).toBeVisible();
+  await expect(page.getByText('No goals yet')).toBeVisible();
 
   // New task: the dialog, with a due date.
   await page.getByRole('button', { name: 'New task', exact: true }).click();
@@ -36,29 +50,31 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
   await dialog.getByRole('button', { name: 'Add task' }).click();
   await expect(dialog).toBeHidden();
   await expect(column(page, 'To do').getByText('Ship the wallet list')).toBeVisible();
-  await expect(page.getByText('1 open · 0 in progress · 0 done')).toBeVisible();
+  await expect(page.getByText('1 open')).toBeVisible();
 
   // Inline: Enter adds and stays open for the next.
   await column(page, 'Later').getByRole('button', { name: 'Add task', exact: true }).click();
-  const quick = column(page, 'Later').getByPlaceholder('Task title');
+  const quick = column(page, 'Later').getByRole('textbox', { name: 'Task title' });
   await quick.fill('Write the release notes');
   await quick.press('Enter');
   await expect(column(page, 'Later').getByText('Write the release notes')).toBeVisible();
   await quick.press('Escape');
 
   // Drag a card into In progress; it stays there after a reload.
-  await card(page, 'Write the release notes').dragTo(
-    column(page, 'In progress').locator('[data-col]'),
+  await drag(
+    page,
+    card(page, 'Write the release notes'),
+    column(page, 'In progress').locator('[data-slot="task-column-add"]'),
   );
   await expect(column(page, 'In progress').getByText('Write the release notes')).toBeVisible();
   await page.reload();
   await expect(column(page, 'In progress').getByText('Write the release notes')).toBeVisible();
 
   // Tick done, and back.
-  await card(page, 'Ship the wallet list').getByRole('button', { name: 'Mark as done' }).click();
+  await card(page, 'Ship the wallet list').getByRole('checkbox', { name: 'Mark as done' }).click();
   await expect(column(page, 'Done').getByText('Ship the wallet list')).toBeVisible();
   await card(page, 'Ship the wallet list')
-    .getByRole('button', { name: 'Mark as not done' })
+    .getByRole('checkbox', { name: 'Mark as not done' })
     .click();
   await expect(column(page, 'To do').getByText('Ship the wallet list')).toBeVisible();
 
@@ -121,7 +137,7 @@ test('a session started from a card moves it to In progress and links back', asy
 
   const moved = column(page, 'In progress');
   await expect(
-    moved.locator('[data-card]').filter({ hasText: 'Fix the empty state' }),
+    moved.locator('[data-slot="task-card"]').filter({ hasText: 'Fix the empty state' }),
   ).toBeVisible();
   const line = moved.getByRole('button', { name: /^Open session / });
   await expect(line).toContainText('Queued');

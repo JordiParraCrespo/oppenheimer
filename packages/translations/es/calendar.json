@@ -17,9 +17,9 @@
   "grid": {
     "more_one": "{{count}} más",
     "more_other": "{{count}} más",
-    "newOn": "Nuevo evento el {{day}}",
     "eventsFailed": "No se han podido cargar tus eventos.",
-    "googleFailed": "No se ha podido leer Google Calendar."
+    "googleFailed": "No se ha podido leer Google Calendar.",
+    "moveFailed": "No se ha podido mover a otro día."
   },
   "event": {
     "newTitle": "Nuevo evento",
@@ -52,6 +52,7 @@
     "connecting": "Conectando Google Calendar…",
     "connectFailed": "No se ha podido conectar Google Calendar.",
     "refused": "Google Calendar no se ha conectado: el permiso se canceló o no se completó.",
-    "back": "Volver al calendario"
+    "back": "Volver al calendario",
+    "readOnly": "Solo lectura"
   }
 }

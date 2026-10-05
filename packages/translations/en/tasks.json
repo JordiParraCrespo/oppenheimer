@@ -15,16 +15,22 @@
   "board": {
     "title": "Tasks",
     "newTask": "New task",
-    "counts": "{{open}} open · {{doing}} in progress · {{done}} done",
-    "overdue_one": "{{count}} overdue",
-    "overdue_other": "{{count}} overdue",
     "addTask": "Add task",
     "addTo": "Add a task to {{column}}",
     "quickPlaceholder": "Task title",
-    "filedUnder": "Filed under {{name}}",
+    "filedUnder": "In {{name}}",
     "loadFailed": "Couldn’t load the board.",
     "moveFailed": "Couldn’t move that task. It’s back where it was.",
-    "addFailed": "Couldn’t add that task."
+    "addFailed": "Couldn’t add that task.",
+    "stats": {
+      "open": "open",
+      "doing": "in progress",
+      "done": "done",
+      "overdue": "overdue"
+    },
+    "filedAll": "In all projects",
+    "keyAdd": "add",
+    "keyCancel": "cancel"
   },
   "columns": {
     "later": "Later",
@@ -58,11 +64,12 @@
     "label": "Goals",
     "title": "Goals",
     "new": "New goal",
-    "empty": "No goals yet. A goal groups tasks toward one outcome.",
+    "empty": "Goals group tasks and track how many are done.",
     "noTarget": "No target",
     "progress": "{{done}} / {{total}} tasks",
     "edit": "Edit {{name}}",
-    "loadFailed": "Couldn’t load your goals."
+    "loadFailed": "Couldn’t load your goals.",
+    "emptyTitle": "No goals yet"
   },
   "goal": {
     "newTitle": "New goal",

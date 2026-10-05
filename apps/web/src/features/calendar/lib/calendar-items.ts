@@ -1,3 +1,4 @@
+import type { CalendarEntryData } from '@oppenheimer/design-system-web';
 import type {
   AutomationEntity,
   CalendarEventEntity,
@@ -23,6 +24,11 @@ export interface CalendarItem {
   /** A Google event's page; nothing else links out. */
   url: string | null;
   done?: boolean;
+  allDay?: boolean;
+  /** An event that blocks time. */
+  busy?: boolean;
+  /** "10:00–11:00", for an event's tooltip. */
+  span?: string;
 }
 
 /** The most runs one automation puts on a month: an hourly rule would bury the grid. */
@@ -40,6 +46,9 @@ export function eventItems(
     time: event.allDay ? null : event.startTime,
     title: event.title,
     url: event.url,
+    allDay: event.allDay,
+    busy: event.busy,
+    span: event.startTime && event.endTime ? `${event.startTime}–${event.endTime}` : undefined,
   }));
 }
 
@@ -100,16 +109,31 @@ export function automationItems(
   });
 }
 
-/** The items of each day, all-day first, then by time. */
-export function byDay(items: readonly CalendarItem[]): Map<string, CalendarItem[]> {
-  const days = new Map<string, CalendarItem[]>();
-  for (const item of items) days.set(item.day, [...(days.get(item.day) ?? []), item]);
-  for (const list of days.values()) {
-    list.sort(
-      (a, b) => (a.time ?? '').localeCompare(b.time ?? '') || a.title.localeCompare(b.title),
-    );
-  }
-  return days;
+const KIND = {
+  events: 'event',
+  google: 'event',
+  tasks: 'task',
+  automations: 'automation',
+} as const;
+
+/**
+ * An item as the design system's month draws it. Personal events and tasks
+ * move to another day by dragging; Google's are read-only here and an
+ * automation run follows its schedule.
+ */
+export function toEntry(item: CalendarItem): CalendarEntryData {
+  return {
+    id: item.key,
+    date: item.day,
+    kind: KIND[item.layer],
+    title: item.title,
+    time: item.time ?? undefined,
+    allDay: item.allDay,
+    busy: item.busy,
+    done: item.done,
+    draggable: item.layer === 'events' || item.layer === 'tasks',
+    tip: item.span ? `${item.title} · ${item.span}` : undefined,
+  };
 }
 
 function pad(value: number): string {

@@ -23,13 +23,23 @@
       "none": "No date",
       "previousMonth": "Previous month",
       "nextMonth": "Next month",
-      "clear": "Clear"
+      "clear": "Clear",
+      "choose": "Choose a date"
     },
     "timeField": {
       "none": "No time",
       "hour": "Hour",
       "minute": "Minute",
       "clear": "Clear"
+    },
+    "drag": {
+      "instructions": "To pick up an item, press space or enter. Use the arrow keys to move it, space or enter to drop it, and escape to cancel.",
+      "pickedUp": "Picked up {{name}}.",
+      "over": "{{name}} is over {{target}}.",
+      "nowhere": "{{name}} is not over a place it can go.",
+      "dropped": "{{name}} was dropped on {{target}}.",
+      "droppedNowhere": "{{name}} was dropped.",
+      "cancelled": "Moving {{name}} was cancelled."
     }
   },
   "validation": {
@@ -939,16 +949,22 @@
     "board": {
       "title": "Tasks",
       "newTask": "New task",
-      "counts": "{{open}} open · {{doing}} in progress · {{done}} done",
-      "overdue_one": "{{count}} overdue",
-      "overdue_other": "{{count}} overdue",
       "addTask": "Add task",
       "addTo": "Add a task to {{column}}",
       "quickPlaceholder": "Task title",
-      "filedUnder": "Filed under {{name}}",
+      "filedUnder": "In {{name}}",
       "loadFailed": "Couldn’t load the board.",
       "moveFailed": "Couldn’t move that task. It’s back where it was.",
-      "addFailed": "Couldn’t add that task."
+      "addFailed": "Couldn’t add that task.",
+      "stats": {
+        "open": "open",
+        "doing": "in progress",
+        "done": "done",
+        "overdue": "overdue"
+      },
+      "filedAll": "In all projects",
+      "keyAdd": "add",
+      "keyCancel": "cancel"
     },
     "columns": {
       "later": "Later",
@@ -982,11 +998,12 @@
       "label": "Goals",
       "title": "Goals",
       "new": "New goal",
-      "empty": "No goals yet. A goal groups tasks toward one outcome.",
+      "empty": "Goals group tasks and track how many are done.",
       "noTarget": "No target",
       "progress": "{{done}} / {{total}} tasks",
       "edit": "Edit {{name}}",
-      "loadFailed": "Couldn’t load your goals."
+      "loadFailed": "Couldn’t load your goals.",
+      "emptyTitle": "No goals yet"
     },
     "goal": {
       "newTitle": "New goal",
@@ -1076,11 +1093,11 @@
       "newEvent": "New event"
     },
     "grid": {
-      "more_one": "+{{count}} more",
-      "more_other": "+{{count}} more",
-      "newOn": "New event on {{day}}",
+      "more_one": "{{count}} more",
+      "more_other": "{{count}} more",
       "eventsFailed": "Couldn’t load your events.",
-      "googleFailed": "Couldn’t read Google Calendar."
+      "googleFailed": "Couldn’t read Google Calendar.",
+      "moveFailed": "Couldn’t move that to another day."
     },
     "event": {
       "newTitle": "New event",
@@ -1113,7 +1130,8 @@
       "connecting": "Connecting Google Calendar…",
       "connectFailed": "Couldn’t connect Google Calendar.",
       "refused": "Google Calendar wasn’t connected: the consent was cancelled or did not complete.",
-      "back": "Back to the calendar"
+      "back": "Back to the calendar",
+      "readOnly": "Read-only"
     }
   },
   "hosts": {

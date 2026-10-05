@@ -15,11 +15,11 @@
     "newEvent": "New event"
   },
   "grid": {
-    "more_one": "+{{count}} more",
-    "more_other": "+{{count}} more",
-    "newOn": "New event on {{day}}",
+    "more_one": "{{count}} more",
+    "more_other": "{{count}} more",
     "eventsFailed": "Couldn’t load your events.",
-    "googleFailed": "Couldn’t read Google Calendar."
+    "googleFailed": "Couldn’t read Google Calendar.",
+    "moveFailed": "Couldn’t move that to another day."
   },
   "event": {
     "newTitle": "New event",
@@ -52,6 +52,7 @@
     "connecting": "Connecting Google Calendar…",
     "connectFailed": "Couldn’t connect Google Calendar.",
     "refused": "Google Calendar wasn’t connected: the consent was cancelled or did not complete.",
-    "back": "Back to the calendar"
+    "back": "Back to the calendar",
+    "readOnly": "Read-only"
   }
 }

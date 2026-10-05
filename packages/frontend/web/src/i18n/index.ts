@@ -1,8 +1,9 @@
-export { DateField } from './components/date-field';
 export { LanguageSwitcher } from './components/language-switcher';
 export { RelativeTime } from './components/relative-time';
 export { TimeField } from './components/time-field';
 export { useApplyUserSettings } from './hooks/use-apply-user-settings';
+export { useDatePickerCopy } from './hooks/use-date-picker-copy';
+export { useDragLabels } from './hooks/use-drag-labels';
 export { useLocale } from './hooks/use-locale';
 export {
   addDays,

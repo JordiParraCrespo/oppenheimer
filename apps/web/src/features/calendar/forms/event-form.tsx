@@ -1,6 +1,7 @@
 import {
   Button,
   Checkbox,
+  DatePicker,
   Field,
   FieldError,
   FieldLabel,
@@ -8,10 +9,10 @@ import {
   Textarea,
 } from '@oppenheimer/design-system-web';
 import {
-  DateField,
   ErrorAlert,
   type ResolvedErrorMessage,
   TimeField,
+  useDatePickerCopy,
   useZodResolver,
 } from '@oppenheimer/frontend-web';
 import {
@@ -59,6 +60,7 @@ export function EventForm({
   });
   const allDay = useWatch({ control, name: 'allDay' });
   const startTime = useWatch({ control, name: 'startTime' });
+  const copy = useDatePickerCopy();
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -77,11 +79,11 @@ export function EventForm({
           control={control}
           name="date"
           render={({ field }) => (
-            <DateField
+            <DatePicker
+              {...copy}
               value={field.value}
-              onChange={(day) => day && field.onChange(day)}
+              onValueChange={(day) => day && field.onChange(day)}
               today={today}
-              clearable={false}
             />
           )}
         />

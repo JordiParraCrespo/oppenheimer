@@ -1,11 +1,17 @@
-import { Button, Skeleton } from '@oppenheimer/design-system-web';
-import { Plus } from '@oppenheimer/design-system-web/icons';
+import {
+  Button,
+  GoalCard,
+  GoalEmpty,
+  GoalGrid,
+  IconButton,
+  Skeleton,
+} from '@oppenheimer/design-system-web';
+import { Ellipsis, Plus } from '@oppenheimer/design-system-web/icons';
 import { useGoals, useProjects } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatCalendarDay, useLocale } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { GoalCard } from '../components/goal-card';
 import { GoalDialog } from '../dialogs/goal';
 import { useBoardFilter } from '../hooks/use-board-filter';
 
@@ -33,9 +39,8 @@ export function GoalsStrip() {
 
   return (
     <section aria-label={t('tasks.goals.label')} className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <h2 className="text-sm font-medium text-fg-muted">{t('tasks.goals.title')}</h2>
-        <span className="flex-1" />
+      <div className="flex items-center px-1">
+        <span className="eyebrow flex-1">{t('tasks.goals.title')}</span>
         <Button variant="ghost" size="sm" onClick={() => setEditing('new')}>
           <Plus />
           {t('tasks.goals.new')}
@@ -45,31 +50,31 @@ export function GoalsStrip() {
         <Skeleton className="h-24 w-full" />
       ) : goals.isError ? (
         <ErrorAlert error={goals.error} fallback={t('tasks.goals.loadFailed')} />
-      ) : goals.data.length === 0 ? (
-        <p className="rounded-lg border border-border-subtle border-dashed px-4 py-5 text-sm text-fg-muted">
-          {t('tasks.goals.empty')}
-        </p>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
+        <GoalGrid>
           {goals.data.map((goal) => (
             <GoalCard
               key={goal.id}
               name={goal.name}
-              meta={projectNames?.get(goal.projectId) || t('tasks.sidebar.unassigned')}
-              target={
-                goal.targetDate
-                  ? formatCalendarDay(goal.targetDate, locale, 'short')
-                  : t('tasks.goals.noTarget')
+              meta={
+                <>
+                  {projectNames?.get(goal.projectId) || t('tasks.sidebar.unassigned')}{' '}
+                  <span className="text-fg-subtle">·</span>{' '}
+                  <span className="figures">
+                    {goal.targetDate
+                      ? formatCalendarDay(goal.targetDate, locale, 'short')
+                      : t('tasks.goals.noTarget')}
+                  </span>
+                </>
               }
+              done={goal.doneCount}
+              total={goal.totalCount}
               countLabel={t('tasks.goals.progress', {
                 done: goal.doneCount,
                 total: goal.totalCount,
               })}
-              percent={goal.percent}
-              complete={goal.isComplete}
               selected={filter.goalId === goal.id}
-              editLabel={t('tasks.goals.edit', { name: goal.name })}
-              onPick={() =>
+              onSelect={() =>
                 navigate({
                   search: (previous) => ({
                     ...previous,
@@ -78,10 +83,23 @@ export function GoalsStrip() {
                   replace: true,
                 })
               }
-              onEdit={() => setEditing(goal.id)}
+              action={
+                <IconButton
+                  size="sm"
+                  aria-label={t('tasks.goals.edit', { name: goal.name })}
+                  onClick={() => setEditing(goal.id)}
+                >
+                  <Ellipsis />
+                </IconButton>
+              }
             />
           ))}
-        </div>
+          {goals.data.length === 0 ? (
+            <GoalEmpty title={t('tasks.goals.emptyTitle')} onClick={() => setEditing('new')}>
+              {t('tasks.goals.empty')}
+            </GoalEmpty>
+          ) : null}
+        </GoalGrid>
       )}
       {editing ? (
         <GoalDialog

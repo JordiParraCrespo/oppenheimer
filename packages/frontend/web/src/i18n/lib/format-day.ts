@@ -39,13 +39,6 @@ export function formatCalendarMonth(month: string, locale: string): string {
   );
 }
 
-/** The seven weekday names, Monday first, in the reader's language. */
-export function weekdayNames(locale: string, width: 'narrow' | 'short' = 'short'): string[] {
-  const format = dateFormatter(locale, { weekday: width, timeZone: 'UTC' });
-  // 2024-01-01 was a Monday.
-  return Array.from({ length: 7 }, (_, day) => format.format(new Date(Date.UTC(2024, 0, 1 + day))));
-}
-
 /** `today`, `tomorrow` or `yesterday` for a day next to `today`, so a caller can say it in words. */
 export function nearDay(iso: string, today: string): 'today' | 'tomorrow' | 'yesterday' | null {
   const days = Math.round((utcMidnight(iso).getTime() - utcMidnight(today).getTime()) / 86_400_000);

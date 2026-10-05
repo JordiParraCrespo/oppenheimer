@@ -1,7 +1,22 @@
+import type { TaskDueTone } from '@oppenheimer/design-system-web';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
 import { daysBetween, nearDay } from '@oppenheimer/frontend-web';
-import type { TaskCardView } from '../components/task-card';
 import type { BoardFilter } from './board';
+
+/** What a card draws, in the reader's words. */
+export interface TaskCardView {
+  id: string;
+  title: string;
+  notes: string;
+  done: boolean;
+  /** Under All projects only: the project the card is filed under. */
+  projectName: string | null;
+  /** Unless the board is filtered to it. */
+  goalName: string | null;
+  /** `Tomorrow · 09:00`, or null with no due date or once done. */
+  due: string | null;
+  dueTone: TaskDueTone;
+}
 
 /**
  * A task as its card draws it: the project only under All projects, the goal
@@ -29,7 +44,7 @@ export function cardView(
     projectName: filter.projectId ? null : context.projectName(task.projectId),
     goalName: task.goalId && task.goalId !== filter.goalId ? context.goalName(task.goalId) : null,
     due: due ? [context.dayLabel(due), task.dueTime].filter(Boolean).join(' · ') : null,
-    dueTone: away === null ? 'later' : away < 0 ? 'overdue' : away <= 1 ? 'soon' : 'later',
+    dueTone: away === null ? 'default' : away < 0 ? 'overdue' : away <= 1 ? 'soon' : 'default',
   };
 }
 

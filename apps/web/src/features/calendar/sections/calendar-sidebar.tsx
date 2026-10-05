@@ -1,11 +1,25 @@
-import { Checkbox, cn, SidebarListHead } from '@oppenheimer/design-system-web';
+import { CalendarLayerItem, SidebarListHead } from '@oppenheimer/design-system-web';
+import { CalendarDays, CircleCheck, CircleDot, Zap } from '@oppenheimer/design-system-web/icons';
 import { getRouteApi } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LAYER_TONE } from '../components/calendar-chip';
-import { CALENDAR_LAYERS, hiddenLayers, toggleLayer } from '../lib/calendar-search';
+import {
+  CALENDAR_LAYERS,
+  type CalendarLayer,
+  hiddenLayers,
+  toggleLayer,
+} from '../lib/calendar-search';
 import { GoogleCalendarCard } from './google-calendar-card';
 
 const calendar = getRouteApi('/_authenticated/plan/calendar');
+
+/** Each layer's glyph: the month draws its entries with the same. */
+const ICON: Record<CalendarLayer, ReactNode> = {
+  events: <CircleDot />,
+  google: <CalendarDays />,
+  tasks: <CircleCheck />,
+  automations: <Zap />,
+};
 
 /**
  * The calendar's sidebar list (`20-plan-calendar.md` §1): a toggle per layer,
@@ -23,23 +37,19 @@ export function CalendarSidebar() {
       <SidebarListHead label={t('calendar.sidebar.layers')} />
       <div className="flex flex-col gap-0.5 px-3 pb-4">
         {CALENDAR_LAYERS.map((layer) => (
-          // biome-ignore lint/a11y/noLabelWithoutControl: the checkbox inside is the control.
-          <label
+          <CalendarLayerItem
             key={layer}
-            className="flex h-8 cursor-pointer items-center gap-2.5 rounded-sm px-2 text-sm hover:bg-hover-surface"
+            icon={ICON[layer]}
+            checked={!hidden.has(layer)}
+            onCheckedChange={() =>
+              navigate({
+                search: (previous) => ({ ...previous, off: toggleLayer(previous.off, layer) }),
+                replace: true,
+              })
+            }
           >
-            <Checkbox
-              checked={!hidden.has(layer)}
-              onCheckedChange={() =>
-                navigate({
-                  search: (previous) => ({ ...previous, off: toggleLayer(previous.off, layer) }),
-                  replace: true,
-                })
-              }
-            />
-            <span className={cn('size-1.5 rounded-pill', LAYER_TONE[layer])} aria-hidden />
-            <span className="text-fg">{t(`calendar.layers.${layer}`)}</span>
-          </label>
+            {t(`calendar.layers.${layer}`)}
+          </CalendarLayerItem>
         ))}
       </div>
       <GoogleCalendarCard />

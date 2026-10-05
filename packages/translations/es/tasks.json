@@ -15,16 +15,22 @@
   "board": {
     "title": "Tareas",
     "newTask": "Nueva tarea",
-    "counts": "{{open}} abiertas · {{doing}} en curso · {{done}} hechas",
-    "overdue_one": "{{count}} vencida",
-    "overdue_other": "{{count}} vencidas",
     "addTask": "Añadir tarea",
     "addTo": "Añadir una tarea a {{column}}",
     "quickPlaceholder": "Título de la tarea",
-    "filedUnder": "Se archivará en {{name}}",
+    "filedUnder": "En {{name}}",
     "loadFailed": "No se ha podido cargar el tablero.",
     "moveFailed": "No se ha podido mover la tarea. Ha vuelto a su sitio.",
-    "addFailed": "No se ha podido añadir la tarea."
+    "addFailed": "No se ha podido añadir la tarea.",
+    "stats": {
+      "open": "abiertas",
+      "doing": "en curso",
+      "done": "hechas",
+      "overdue": "vencidas"
+    },
+    "filedAll": "En todos los proyectos",
+    "keyAdd": "añadir",
+    "keyCancel": "cancelar"
   },
   "columns": {
     "later": "Más adelante",
@@ -58,11 +64,12 @@
     "label": "Objetivos",
     "title": "Objetivos",
     "new": "Nuevo objetivo",
-    "empty": "Aún no hay objetivos. Un objetivo agrupa tareas hacia un mismo resultado.",
+    "empty": "Los objetivos agrupan tareas y cuentan cuántas están hechas.",
     "noTarget": "Sin fecha",
     "progress": "{{done}} / {{total}} tareas",
     "edit": "Editar {{name}}",
-    "loadFailed": "No se han podido cargar tus objetivos."
+    "loadFailed": "No se han podido cargar tus objetivos.",
+    "emptyTitle": "Aún no hay objetivos"
   },
   "goal": {
     "newTitle": "Nuevo objetivo",

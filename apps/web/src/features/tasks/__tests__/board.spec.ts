@@ -107,7 +107,7 @@ describe('a card', () => {
     expect(cardView(task('2', { dueDate: '2026-10-01' }), context).dueTone).toBe('overdue');
     expect(cardView(task('3', { dueDate: '2026-10-20' }), context)).toMatchObject({
       due: '2026-10-20',
-      dueTone: 'later',
+      dueTone: 'default',
     });
   });
 

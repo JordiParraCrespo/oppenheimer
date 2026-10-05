@@ -1,3 +1,4 @@
+import type { StatusState } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 
 /**
@@ -35,3 +36,13 @@ export function mostUrgent<T extends { state: TaskSessionState }>(
 ): T | undefined {
   return [...sessions].sort((a, b) => URGENCY.indexOf(a.state) - URGENCY.indexOf(b.state))[0];
 }
+
+/** Each state on the design system's run-state dot. */
+export const SESSION_STATUS: Record<TaskSessionState, StatusState> = {
+  waiting: 'needs-input',
+  queued: 'queued',
+  running: 'running',
+  failed: 'failed',
+  idle: 'idle',
+  completed: 'completed',
+};
