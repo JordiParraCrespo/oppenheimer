@@ -149,14 +149,31 @@ test('a session started from a card moves it to In progress and links back', asy
 test('the calendar: a personal event on a day, and the layers', async ({ page }) => {
   const owner = await provisionedUser('plancalendar');
   await signInAs(page, owner.user);
-  // From the board through the sidebar, as a person goes: the board's sidebar
-  // stays drawn a moment while the calendar's loads, and must not throw then.
-  await page.goto('/plan');
   const plan = page.getByRole('navigation', { name: 'Plan' });
+  const layer = page.getByRole('checkbox', { name: 'My events' });
+
+  // Into the board through the sidebar from a calendar opened cold, with the
+  // board's chunk (the dev server's module, which the stack serves) held back
+  // and a layer toggled while it is on its way. The
+  // calendar stays matched until the board can draw, so the toggle is a real
+  // one and the later choice wins; the next move lands on the board, whose
+  // list must take over from the calendar's without ever drawing it unmatched.
+  await page.goto('/plan/calendar');
+  await expect(page.getByRole('button', { name: 'New event', exact: true })).toBeVisible();
+  await page.route(/\/plan\/index\.tsx/, async (route) => {
+    await new Promise((settle) => setTimeout(settle, 1_500));
+    await route.continue();
+  });
+  await plan.getByText('Tasks', { exact: true }).click();
+  await layer.click();
+  await expect(page).toHaveURL(/off=events/);
+  await plan.getByText('Tasks', { exact: true }).click();
+  await expect(page.getByRole('button', { name: 'New task', exact: true })).toBeVisible();
+  await page.unroute(/\/plan\/index\.tsx/);
+
+  // And back to the calendar the same way.
   await plan.getByText('Calendar', { exact: true }).click();
-  await expect(page).toHaveURL(/\/plan\/calendar$/);
-  await expect(plan.locator('[data-active]')).toHaveText('Calendar');
-  await expect(page.getByText('This screen could not be drawn')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'New event', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'New event', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'New event' });
   await dialog.getByLabel('Title').fill('Design review');
@@ -164,15 +181,10 @@ test('the calendar: a personal event on a day, and the layers', async ({ page })
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('button', { name: /Design review/ })).toBeVisible();
 
-  await page.getByRole('checkbox', { name: 'My events' }).click();
+  await layer.click();
   await expect(page).toHaveURL(/off=events/);
   await expect(page.getByRole('button', { name: /Design review/ })).toHaveCount(0);
-  await page.getByRole('checkbox', { name: 'My events' }).click();
+  await layer.click();
   await expect(page.getByRole('button', { name: /Design review/ })).toBeVisible();
-
-  // And back to the board the same way.
-  await plan.getByText('Tasks', { exact: true }).click();
-  await expect(page.getByRole('button', { name: 'New task', exact: true })).toBeVisible();
-  await expect(page.getByText('This screen could not be drawn')).toHaveCount(0);
   await owner.api.dispose();
 });

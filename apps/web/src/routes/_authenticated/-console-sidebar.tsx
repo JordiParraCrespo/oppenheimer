@@ -15,15 +15,21 @@ const AutomationsSidebar = lazy(() =>
 const PlanNav = lazy(() =>
   import('@/features/tasks/sections/plan-nav').then((module) => ({ default: module.PlanNav })),
 );
+/**
+ * Plan's two lists load as one: whichever the reader lands on fetches the
+ * other, so the move between the board and the calendar has nothing left to
+ * wait for.
+ */
+const planSidebars = () =>
+  Promise.all([
+    import('@/features/tasks/sections/tasks-sidebar'),
+    import('@/features/calendar/sections/calendar-sidebar'),
+  ]);
 const TasksSidebar = lazy(() =>
-  import('@/features/tasks/sections/tasks-sidebar').then((module) => ({
-    default: module.TasksSidebar,
-  })),
+  planSidebars().then(([tasks]) => ({ default: tasks.TasksSidebar })),
 );
 const CalendarSidebar = lazy(() =>
-  import('@/features/calendar/sections/calendar-sidebar').then((module) => ({
-    default: module.CalendarSidebar,
-  })),
+  planSidebars().then(([, calendar]) => ({ default: calendar.CalendarSidebar })),
 );
 
 /**
@@ -42,7 +48,11 @@ export function ConsoleSidebar({ list }: { list: ConsoleList }) {
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
           <PlanNav />
-          {list === 'tasks' ? <TasksSidebar /> : <CalendarSidebar />}
+          {/* A boundary per list: a swap that still suspends draws nothing under
+              the nav, never the previous list, whose route is no longer matched. */}
+          <Suspense key={list} fallback={null}>
+            {list === 'tasks' ? <TasksSidebar /> : <CalendarSidebar />}
+          </Suspense>
         </div>
       )}
     </Suspense>

@@ -161,8 +161,7 @@ export function BoardColumns() {
           return task ? card(task, true) : null;
         }}
       >
-        {/* Into the page's gutters, so a fourth column scrolls to the edge rather than stopping short of it. */}
-        <TaskBoard className="-mx-4 px-4 sm:-mx-8 sm:px-8">
+        <TaskBoard>
           {COLUMNS.map((status) => {
             const ids = drag.groups[status] ?? [];
             const label = t(`tasks.columns.${status}`);
