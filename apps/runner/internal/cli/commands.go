@@ -188,6 +188,10 @@ func (a *App) Register(ctx context.Context, out io.Writer, opts RegisterOptions)
 		if identity, err = a.Pairing.SetWorkspaces(workspaces); err != nil {
 			return err
 		}
+	} else if err := ExcludeFromIndexing(workspaces); err != nil {
+		// A chosen directory got the opt-out from ChooseWorkspaces; the
+		// default gets it here, so pairing leaves both roots the same way.
+		p.printf("warning: could not keep %s out of the desktop search index (%v); indexing a session's checkouts costs this host CPU it owes the agents\n", workspaces, err)
 	}
 	p.printf("paired as %s (%s)\n", identity.Name, identity.HostID)
 	p.printf("control plane %s, channel %s\n", identity.ControlPlaneURL, identity.Channel)

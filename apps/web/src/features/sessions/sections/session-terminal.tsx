@@ -2,6 +2,7 @@ import {
   Button,
   DropZone,
   EmptyState,
+  HostLinkChrome,
   Terminal,
   TerminalStatusBar,
   TerminalStatusItem,
@@ -9,9 +10,13 @@ import {
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
+import { hostLinkLabels } from '../lib/host-link-labels';
+import { hostLinkPhaseOf } from '../lib/host-link-phase';
+import { HostLinkFix } from './host-link-fix';
 
 /** Window 0 is the agent's (05); the pane shows only that one today. */
 const AGENT_WINDOW = 0;
@@ -25,25 +30,41 @@ const AGENT_WINDOW = 0;
  * and hands the drop to the same batch upload as a paste (`useFilePaste`),
  * whose paths land in the agent's prompt.
  *
+ * The bottom band is the host link (`HostLinkChrome`): the status bar while
+ * the link is live or blipping, and while the host is away a banner in its
+ * place that says so, counts the time, and opens the fix from How to fix.
+ * It comes back on its own; the fix is for when it does not.
+ *
  * **There is no prompt row of ours.** The artboard draws one, but a real
  * agent draws its own prompt inside the grid, and a second field gave the pane
  * two carets; the agent's has the history, slash commands and mode, so the
  * grid keeps the input.
  */
-export function SessionTerminal({ sessionId }: { sessionId: string }) {
+export function SessionTerminal({ sessionId, hostId }: { sessionId: string; hostId: string }) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
   const upload = useFilePaste(sessionId, AGENT_WINDOW);
-  const { containerRef, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
+  const terminal = useTerminal(createStream, {
     onEnd: refresh,
     agentWindow: true,
     onFiles: upload.send,
+    hostId,
   });
+  const { containerRef, status, hasOutput, ended, retryNow, awaySince } = terminal;
+  const phase = hostLinkPhaseOf({
+    status,
+    away: awaySince !== null,
+    reconnected: terminal.reconnected,
+  });
+  const host = terminal.hostName ?? t('sessions.session.hostLink.thisHost');
 
   return (
     <DropZone onFiles={upload.send} className="flex min-h-0 flex-1 flex-col">
-      <Terminal className="min-h-0 flex-1 overflow-hidden">
+      <Terminal
+        className="min-h-0 flex-1 overflow-hidden"
+        hostLink={phase ? { phase, host, labels: hostLinkLabels(t) } : undefined}
+      >
         {/* The padding is the wrapper's: the fit addon sizes the grid from its
           host element and counts that host's padding as usable space, so a
           padded host overflows its own box and paints over the rows below it.
@@ -105,31 +126,36 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
           </div>
         ) : null}
 
-        <TerminalStatusBar>
-          <TerminalStatusItem>
-            <span
-              data-status={status}
-              className="size-1.5 rounded-pill bg-term-dim data-[status=live]:bg-term-success data-[status=offline]:bg-term-warning"
-            />
-            {t(`sessions.session.status.${status}`)}
-          </TerminalStatusItem>
-          {/* Between reconnects the ladder may be waiting up to thirty seconds;
-            this skips the wait. */}
-          {status === 'connecting' || status === 'offline' ? (
-            <Button variant="ghost" size="xs" onClick={retryNow}>
-              {t('sessions.session.retryNow')}
-            </Button>
-          ) : null}
-          {upload.sending ? (
-            <TerminalStatusItem>{t('sessions.session.file.sending')}</TerminalStatusItem>
-          ) : null}
-          {/* The artboard's other items — context used, rate-limit windows,
-            memory, permission mode, host count — are numbers the runner and
-            the control plane report. They stay out until there is something
-            real to put in them, and the grid size is not one of them: how
-            many columns the pane resolved to is our business, not the
-            reader's. */}
-        </TerminalStatusBar>
+        {phase ? (
+          <HostLinkChrome
+            elapsed={
+              phase === 'offline' && awaySince !== null ? (
+                <TimeAway since={new Date(awaySince)} />
+              ) : undefined
+            }
+            fix={<HostLinkFix host={host} />}
+          >
+            {/* Between reconnects the ladder may be waiting up to thirty
+                seconds; this skips the wait. Not while the host is away: the
+                banner says it comes back on its own, and it does. */}
+            {phase === 'reconnecting' ? (
+              <Button variant="ghost" size="xs" onClick={retryNow}>
+                {t('sessions.session.retryNow')}
+              </Button>
+            ) : null}
+            {upload.sending ? (
+              <TerminalStatusItem>{t('sessions.session.file.sending')}</TerminalStatusItem>
+            ) : null}
+            {/* The artboard's other items — context used, rate-limit windows,
+                memory, permission mode, host count — are numbers the runner
+                and the control plane report. They stay out until there is
+                something real to put in them. */}
+          </HostLinkChrome>
+        ) : (
+          <TerminalStatusBar>
+            <TerminalStatusItem>{t('sessions.session.status.closed')}</TerminalStatusItem>
+          </TerminalStatusBar>
+        )}
       </Terminal>
     </DropZone>
   );

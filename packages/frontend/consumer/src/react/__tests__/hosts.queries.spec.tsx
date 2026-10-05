@@ -99,6 +99,27 @@ describe('useHostPresence', () => {
       LIVE_POLL.hostPresence.interval,
     );
   });
+
+  it('polls only while watching, and reads one host through select', async () => {
+    const findAll = vi.fn().mockResolvedValue([host('h-1', 'laptop', false), host('h-2')]);
+    const { wrapper, queryClient } = setup({ findAll });
+    const { result, rerender } = renderHook(
+      ({ watching }: { watching: boolean }) =>
+        useHostPresence({
+          watching,
+          select: (hosts) => hosts.find((candidate) => candidate.id === 'h-1')?.online,
+        }),
+      { wrapper, initialProps: { watching: true } },
+    );
+
+    await waitFor(() => expect(result.current.data).toBe(false));
+    expect(observerIntervals(queryClient, hostsKeys.list())).toEqual([
+      LIVE_POLL.hostPresence.interval,
+    ]);
+
+    rerender({ watching: false });
+    expect(observerIntervals(queryClient, hostsKeys.list())).toEqual([false]);
+  });
 });
 
 describe('useHostsSnapshot', () => {

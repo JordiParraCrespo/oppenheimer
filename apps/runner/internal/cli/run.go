@@ -74,8 +74,9 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 	}
 
 	// Every boot, not only at pairing: a host paired before the runner knew to
-	// ask gets the opt-out the first time it starts, and a workspace root the
-	// user emptied by hand gets it back.
+	// ask gets the opt-out the first time it starts, a default root no session
+	// has made yet is created to hold it, and a workspace root the user
+	// emptied by hand gets it back.
 	if err := ExcludeFromIndexing(a.Paths.Workspaces); err != nil {
 		logger.Warn("could not keep the workspaces out of the desktop search index",
 			slog.String("dir", a.Paths.Workspaces), slog.Any("error", err))

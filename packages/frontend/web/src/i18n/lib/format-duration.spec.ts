@@ -1,7 +1,12 @@
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
 import { formatAge } from './format-date';
-import { formatCountdown, formatElapsed, formatShortDuration } from './format-duration';
+import {
+  formatCountdown,
+  formatElapsed,
+  formatShortDuration,
+  formatTimeAway,
+} from './format-duration';
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -20,6 +25,21 @@ describe('formatCountdown', () => {
 
   it('stops at zero', () => {
     expect(formatCountdown(-5_000, 'en')).toBe('0m 00s');
+  });
+});
+
+/** The banner's time offline, as the host-link frames write it ("2m 14s"). */
+describe('formatTimeAway', () => {
+  it('keeps the two largest units', () => {
+    expect(formatTimeAway(7_000, 'en')).toBe('7s');
+    expect(formatTimeAway(2 * MINUTE + 14_000, 'en')).toBe('2m 14s');
+    expect(formatTimeAway(HOUR + 3 * MINUTE + 9_000, 'en')).toBe('1h 03m');
+    expect(formatTimeAway(2 * DAY + 3 * HOUR, 'en')).toBe('2d 3h');
+  });
+
+  it('writes the units in the reader’s language, and never runs backwards', () => {
+    expect(formatTimeAway(2 * MINUTE + 14_000, 'es')).toBe('2min 14s');
+    expect(formatTimeAway(-5_000, 'en')).toBe('0s');
   });
 });
 
