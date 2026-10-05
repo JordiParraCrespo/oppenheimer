@@ -219,10 +219,14 @@ others but has no step on the wire — the stepper stays
 `host/clone/worktree/agent` — because what it reports is
 `session.started`: the moment the session has a pane to attach to (01).
 It starts in the directory the worktree will occupy, which does not exist
-yet, and the agent is sent into it once it does. A create spends its
-seconds on the clone and the worktree, and with the pane made last every
-one of them was a spinner; made first, the reader is in the session
-watching it being built. A stage that fails after it kills the pane: a
+yet. Once it does, the pane's shell is replaced by the agent, started in
+the worktree (`tmux respawn-pane`): nothing is typed to start it, so the
+screen opens on what the agent draws, and it runs under the runner's own
+`PATH`, as it did when the agent was the session's first command. A
+create spends its seconds on the clone and the worktree, and with the pane
+made last every one of them was a spinner; made first, an attach waits on
+nothing, and the console shows the steps until the agent runs (05). A
+stage that fails after it kills the pane: a
 terminal with nothing running in it is not a session.
 
 Then, in order:
@@ -234,8 +238,17 @@ Then, in order:
 2. For each checkout, ensure the workspace's store
    `repos/<store>.git` exists and is fetched (the runner still keeps it
    at `<owner>/<repo>/main`, until note 10's layout lands). The store
-   is blobless and has no working tree: `git clone --filter=blob:none
-   --no-checkout` the first time. A create then fetches only the ref
+   is blobless and has no working tree. The first clone is **shallow at
+   the base** (`git clone --depth=1 --branch <base> --no-checkout`, the
+   refspec then widened to every branch), which is all a worktree needs
+   and on microsoft/vscode a third of a blobless clone's time (5.4 s
+   against 18.3 s, note 14); the history follows in the background
+   (`fetch --unshallow --filter=blob:none`, the store marked a promisor
+   of `blob:none`), which leaves the store exactly the blobless clone it
+   always was. That fetch takes no lock: while it runs, a create uses a
+   base the clone brought rather than fetching beside it, and waits for it
+   only for a branch the clone did not bring. A store left shallow by a
+   restart is deepened by its next fetch. A create then fetches only the ref
    its worktree is made from — the base, or the existing branch it
    checks out — with no tags and git's automatic gc off, and a ref that
    is not a branch on the remote fails the create. Both go through the
@@ -267,9 +280,15 @@ Then, in order:
    fully checked out. A create for a new branch moves it to the
    session's path and checks out the session's branch there, which
    writes only what changed on the base since; the runner then makes
-   the next spare in the background. A spare still being made is not
-   waited for, a finished one on disk is taken after a restart, and
+   the next spare in the background. A spare still being made is waited
+   for — it is already writing the files a plain add would write again
+   beside it — a finished one on disk is taken after a restart, and
    something at `.spare` the store never registered is left alone.
+   `repository.prepare` (01) builds the store and the spare **before** a
+   create is asked for: New session sends it as soon as a host and a
+   repository are picked, so the create that follows only moves the spare
+   and cuts its branch. Session branches are cut `--no-track`: they are
+   pushed to a branch of their own, never pulled from their base.
    A detached worktree at a session's path is a claim cut short
    between the move and the checkout; the next attempt finishes it.
    The cost is one checked-out tree per repository on the host.
@@ -431,10 +450,13 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
 - Resize goes straight through to the tmux window. The console holds a
   drag's sizes for 50 ms and sends the one it settles on, so the runner
   adds no timer of its own.
-- A **pasted image** (`session.image`) is pulled, not streamed: the
+- A **pasted file** (`session.image`: an image, a PDF, text) is pulled, not streamed: the
   runner fetches it from the control plane over HTTPS on its own
   goroutine, so the reader that pumps every pane never waits on it. It
-  re-checks the bytes against the generated image table, writes the file
+  re-checks the bytes against the generated file table (magic bytes for
+  the images and PDF; for text, valid UTF-8 with no control bytes and no
+  `#!` or markup opening), writes the file under `<command id><extension
+  from the table>`, never a name the person chose
   (§11), and pastes the path through a tmux buffer named for the command,
   as a bracketed paste. A paste that does not land deletes its file.
 - **Images attached to the first task** (`session.create`'s `images`)
@@ -571,7 +593,7 @@ One tree, named here and pointed at from 09:
   state/sessions.json  0600  session id → checkouts (path, branch, repo, mode), cwd, agent
   state/update.json    0600  what the last update did, and how often it has booted
   manifests/                 agent manifests newer than the bundled ones (§9)
-  images/<session>/    0700  images pasted into a session's prompt, 0600 each, named by command id; dropped when the tmux session ends (stop, close, a reboot)
+  images/<session>/    0700  files pasted into or attached to a session's prompt (images, PDF, text), 0600 each, named by command id; dropped when the tmux session ends (stop, close, a reboot)
   bin/                       runner-<version> binaries and the `current` symlink (09 §5)
   run/                       runner.sock, runner.lock
   log/                       runner.log, rotated at 10 MB × 3
@@ -651,3 +673,10 @@ capacity gate, the egress proxy, and the `hypervisor`, `guest` and
 8. Whether `sessions` should split into `sessions` and `workspaces` once
    the VM slice adds a second kind of place a worktree can live. Today
    git is an adapter of `sessions`; then it may want its own context.
+9. ~~**Network work before Send.**~~ Decided 2026-10-02 (§5): New session
+   sends `repository.prepare` when a host and a repository are picked; the
+   first clone is shallow and deepened in the background; checkouts run one
+   worker per core. Skipping a create's fetch when the store is fresh was
+   measured and **not** taken: a create sees its base as it is now, and the
+   fetch costs about half a second. A treeless clone was measured slower
+   than shallow (13.4 s against 9.3 s to a ready spare on vscode).

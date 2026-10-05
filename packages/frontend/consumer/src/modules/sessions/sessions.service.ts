@@ -3,6 +3,7 @@ import { TOKENS } from '../../di/tokens';
 import type {
   AttachTicket,
   CreateSessionInput,
+  PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
 } from './session.entity';
@@ -40,6 +41,10 @@ export class SessionsService {
     return this.repository.create(input, idempotencyKey);
   }
 
+  prepare(input: PrepareSessionInput): Promise<string[]> {
+    return this.repository.prepare(input);
+  }
+
   rename(id: string, name: string): Promise<SessionEntity> {
     return this.repository.rename(id, name);
   }
@@ -60,12 +65,12 @@ export class SessionsService {
     return this.repository.issueAttachTicket(id, window);
   }
 
-  uploadAttachment(image: Blob): Promise<SessionAttachment> {
-    return this.repository.uploadAttachment(image);
+  uploadAttachment(file: Blob): Promise<SessionAttachment> {
+    return this.repository.uploadAttachment(file);
   }
 
-  pasteImage(id: string, image: Blob, window = 0): Promise<void> {
-    return this.repository.pasteImage(id, image, window);
+  pasteFile(id: string, file: Blob, window = 0): Promise<void> {
+    return this.repository.pasteFile(id, file, window);
   }
 
   /**

@@ -23,8 +23,8 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/adapters/systemd"
 	svcapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/app"
 	svcdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/domain"
+	filestore "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/files"
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
-	imagestore "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/images"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
 	sessionstate "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/state"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/tmux"
@@ -134,7 +134,7 @@ func New(version string) (*App, error) {
 		Worktrees:  worktrees,
 		Classifier: manifest.New(manifest.Options{Dir: paths.Manifests()}),
 		Store:      sessionstate.New(paths.State()),
-		Images:     imagestore.New(paths.Images()),
+		Files:      filestore.New(paths.Files()),
 		Layout:     layout,
 		Env: func(session sessionsdomain.Session) map[string]string {
 			env := map[string]string{

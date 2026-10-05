@@ -68,6 +68,7 @@ function render() {
     '\tStep       SessionStep       `json:"step"`',
     '\tStatus     SessionStepStatus `json:"status"`',
     '\tDurationMs *int64            `json:"durationMs,omitempty"`',
+    '\tDownload   bool              `json:"download,omitempty"`',
     '}',
     '',
   ].join('\n');

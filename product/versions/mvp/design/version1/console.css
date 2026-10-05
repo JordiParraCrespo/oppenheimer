@@ -49,6 +49,8 @@
 .op-link__dot{width:6px;height:6px;flex:none;border-radius:980px;background:var(--success);transition:background 220ms var(--ease-standard)}
 .op-link[data-link="reconnecting"] .op-link__dot{background:var(--warning);animation:op-pulse-dot 1.2s var(--ease-standard) infinite}
 .op-link[data-link="reconnecting"]{color:var(--term-fg,var(--fg))}
+.op-link[data-link="offline"] .op-link__dot{background:var(--term-warning,var(--warning))}
+.op-link[data-link="offline"]{color:var(--term-fg,var(--fg))}
 .op-link__label{animation:op-wait-label 200ms var(--ease-out)}
 @media (prefers-reduced-motion:reduce){.op-link__dot{animation:none!important}}
 @keyframes op-wait-label{from{opacity:0}to{opacity:1}}
@@ -410,3 +412,4 @@
 [data-composer="tabbed"] .op-chipselect__chev{display:none}
 [data-composer="tabbed"] .op-composer{border-radius:18px}
 [data-composer="tabbed"] .op-composer__input{min-height:128px;font-size:15px}
+

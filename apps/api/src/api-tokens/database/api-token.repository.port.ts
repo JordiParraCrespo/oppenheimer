@@ -2,15 +2,27 @@ import type { RepositoryPort } from '@oppenheimer/backend-ddd';
 import type { Option } from 'oxide.ts';
 import type { ApiTokenEntity } from '../domain/api-token.entity';
 
-export interface ApiTokenRepositoryPort extends RepositoryPort<ApiTokenEntity> {
+/** What `insertWithinLimit` did with the token. */
+export type InsertOutcome = 'inserted' | 'limit_reached';
+
+/**
+ * Not `RepositoryPort.insert`: a token is only ever written through
+ * `insertWithinLimit`, so there is no unlimited path to it.
+ */
+export interface ApiTokenRepositoryPort extends Omit<RepositoryPort<ApiTokenEntity>, 'insert'> {
   /** Look a token up by the SHA-256 digest of the presented secret. */
   findOneByHash(tokenHash: string): Promise<Option<ApiTokenEntity>>;
 
   /** Every token belonging to a user, newest first, including revoked ones. */
   findByUserId(userId: string): Promise<ApiTokenEntity[]>;
 
-  /** How many of a user's tokens are still usable (not revoked, not expired). */
-  countActiveForUser(userId: string, now: Date): Promise<number>;
+  /**
+   * Insert the token unless its owner already holds `limit` usable ones (not
+   * revoked, not expired at `now`). The count and the insert are one step: two
+   * requests near the limit cannot both see room and both insert. Resolves
+   * which it did.
+   */
+  insertWithinLimit(token: ApiTokenEntity, limit: number, now: Date): Promise<InsertOutcome>;
 
   /**
    * Record a successful authentication without loading and saving the whole

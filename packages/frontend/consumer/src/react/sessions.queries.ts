@@ -11,10 +11,14 @@ import {
 } from '@tanstack/react-query';
 import type {
   CreateSessionInput,
+  PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
 } from '../modules/sessions/session.entity';
-import type { SessionStartProgress } from '../modules/sessions/session-steps';
+import {
+  deriveSessionStartProgress,
+  type SessionStartProgress,
+} from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
 import { CLOSE_WATCH_MS, type PollKeys, pollWhile, RESTART_WATCH_MS } from './live-poll';
 
@@ -208,6 +212,32 @@ export function useSessionStartProgress(
   });
 }
 
+/**
+ * Whether a session this console watched start is still opening: its row
+ * reads `open` but the agent step has not landed.
+ *
+ * `session.started` means the session's pane exists, which the host makes
+ * before the clone, so the row turns `open` while the repository and the agent
+ * are still on their way. The terminal would show a shell waiting in an empty
+ * directory; the start pane, still ticking its steps, is the truer picture.
+ *
+ * It holds only a start this cache watched: it sent the create, or its start
+ * pane read the log. A session opened from a bookmark, or long after it
+ * started, goes straight to its terminal without reading the log at all.
+ */
+export function useSessionOpening(session: SessionEntity | undefined): boolean {
+  const queryClient = useQueryClient();
+  const live = session?.isLive ?? false;
+  const watched =
+    session !== undefined &&
+    queryClient.getQueryState(sessionsKeys.start(session.id, false)) !== undefined;
+  const { data } = useSessionStartProgress(session?.id, {
+    starting: live && watched,
+    failed: false,
+  });
+  return live && watched && !(data?.settled ?? false);
+}
+
 export interface CreateSessionVariables {
   input: CreateSessionInput;
   /**
@@ -237,8 +267,33 @@ export function useCreateSession(
       // other session mutation already seeds it ({@link useSessionPatch});
       // create was the one that did not.
       queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      // This console watches the start it sent ({@link useSessionOpening}).
+      // The row can read `open` before the start pane ever mounts, since the
+      // host makes the pane first, so the watch begins here and not there.
+      // Stale from the outset, so the first reader fetches the log at once.
+      queryClient.setQueryData(
+        sessionsKeys.start(session.id, false),
+        deriveSessionStartProgress([], { failed: false }),
+        { updatedAt: 0 },
+      );
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     }),
+  });
+}
+
+/**
+ * Gets a host ready for the session New session is composing: the draft's
+ * repository cloned or fetched there and a spare worktree made, so pressing
+ * send cuts a branch from a checkout that already exists. Nothing is cached:
+ * the answer is only whether the host was told.
+ */
+export function usePrepareSession(
+  options?: UseMutationOptions<string[], Error, PrepareSessionInput>,
+) {
+  const app = useConsumerApp();
+  return useMutation({
+    mutationFn: (input: PrepareSessionInput) => app.sessions.prepare(input),
+    ...options,
   });
 }
 
@@ -334,7 +389,7 @@ export function useCloseSession(
 }
 
 /**
- * Upload an image for New session's first task. Nothing is cached: what comes
+ * Upload a file for New session's first task. Nothing is cached: what comes
  * back is the id the create names in `attachmentIds`.
  */
 export function useUploadSessionAttachment(
@@ -342,24 +397,24 @@ export function useUploadSessionAttachment(
 ) {
   const app = useConsumerApp();
   return useMutation({
-    mutationFn: (image: Blob) => app.sessions.uploadAttachment(image),
+    mutationFn: (file: Blob) => app.sessions.uploadAttachment(file),
     ...options,
   });
 }
 
 /**
- * Paste an image into one window's prompt. Nothing is cached and no key is
+ * Paste a file into one window's prompt. Nothing is cached and no key is
  * kept: success is the path appearing in the terminal, which the terminal
  * itself shows.
  */
-export function usePasteSessionImage(
+export function usePasteSessionFile(
   sessionId: string,
   window = 0,
   options?: UseMutationOptions<void, Error, Blob>,
 ) {
   const app = useConsumerApp();
   return useMutation({
-    mutationFn: (image: Blob) => app.sessions.pasteImage(sessionId, image, window),
+    mutationFn: (file: Blob) => app.sessions.pasteFile(sessionId, file, window),
     ...options,
   });
 }

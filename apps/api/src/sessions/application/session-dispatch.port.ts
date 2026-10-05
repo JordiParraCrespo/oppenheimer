@@ -1,6 +1,6 @@
-import type { SessionImageMediaType } from '@oppenheimer/shared/protocol';
+import type { SessionFileMediaType } from '@oppenheimer/shared/protocol';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
-import type { SessionLaunchImage } from '../domain/session-launch-image.types';
+import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 
 export interface SessionDispatchOutcome {
@@ -44,7 +44,7 @@ export interface SessionLaunchSpec {
    * the log's `prompt.first`, like the prompt, so the hello reconciliation
    * resends them with it.
    */
-  images?: SessionLaunchImage[];
+  images?: SessionLaunchFile[];
 }
 
 export interface SessionCloseSpec {
@@ -57,11 +57,24 @@ export interface SessionCloseSpec {
   acceptUnpushedWork: boolean;
 }
 
+/**
+ * A repository a host is to get ready before any session asks for it: its mirror
+ * cloned or fetched and a spare worktree made at `baseBranch` (02 §5).
+ */
+export interface SessionPrepareSpec {
+  githubRepoId: number;
+  repositoryFullName: string;
+  baseBranch: string;
+  /** An installation token narrowed to this repository, sealed to the host's key. Base64. */
+  sealed: string;
+  expiresAt: Date;
+}
+
 /** A picture for a window's prompt; the runner saves it and pastes its path. */
-export interface SessionImageSpec {
+export interface SessionFileSpec {
   window: number;
   /** What the bytes are by their magic bytes, never the browser's label. */
-  mediaType: SessionImageMediaType;
+  mediaType: SessionFileMediaType;
   data: Buffer;
 }
 
@@ -92,10 +105,18 @@ export interface SessionDispatchPort {
     spec: SessionLaunchSpec,
   ): Promise<SessionDispatchOutcome>;
   /** Give a window's program an image: saved on the host, its path pasted in. */
-  pasteImage(session: WorkSessionEntity, image: SessionImageSpec): Promise<SessionDispatchOutcome>;
+  pasteFile(session: WorkSessionEntity, image: SessionFileSpec): Promise<SessionDispatchOutcome>;
   /** Remove one checkout's worktree, with the same refuse-on-unpushed-work posture. */
   removeCheckout(
     session: WorkSessionEntity,
     checkout: SessionCheckoutEntity,
   ): Promise<SessionDispatchOutcome>;
+  /**
+   * Why `prepare` would send nothing to this host right now — `host_offline`
+   * or `not_supported` — or null when it would. Asked first, so no token is
+   * minted for a host that cannot take it.
+   */
+  prepareRefusal(hostId: string): 'host_offline' | 'not_supported' | null;
+  /** Get a repository ready on a host for a session not yet asked for. */
+  prepare(hostId: string, spec: SessionPrepareSpec): SessionDispatchOutcome;
 }

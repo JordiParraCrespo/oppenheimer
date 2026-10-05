@@ -63,7 +63,7 @@ func (s *startSteps) stage(ev sessionsdomain.StageEvent) {
 		s.emit(done(step, ev.Took))
 		return
 	}
-	s.emit(link.SessionStepPayload{Step: step, Status: link.SessionStepRunning})
+	s.emit(link.SessionStepPayload{Step: step, Status: link.SessionStepRunning, Download: ev.Download})
 }
 
 func done(step link.SessionStep, took time.Duration) link.SessionStepPayload {

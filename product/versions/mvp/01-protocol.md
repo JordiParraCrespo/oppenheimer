@@ -87,11 +87,15 @@ runner does with it and point back.
   control frames stay small, and one paste must not queue ahead of every
   pane on the host. The control plane parks the image under the command
   id and the runner pulls it once over HTTPS with its own assertion
-  (`GET /hosts/self/images/{commandId}`); what counts as an image is one
-  table in `packages/shared/src/protocol/session-image.ts` that the
-  runner's copy is generated from. It is sent only to a runner whose
-  `hello` names the `session.image` capability, so an older runner is
-  refused up front rather than sent a frame it ignores.
+  (`GET /hosts/self/images/{commandId}`); what counts as a file a session
+  takes is one table in `packages/shared/src/protocol/session-file.ts`
+  that the runner's copy is generated from. It is sent only to a runner
+  whose `hello` names the `session.image` capability, so an older runner is
+  refused up front rather than sent a frame it ignores. Since 2026-10-04
+  the frame may carry a PDF or UTF-8 text as well as a picture (the names
+  `image`, `images` and `imageId` stay, so runners of either age parse it),
+  and those types go only to a runner whose `hello` also names
+  `session.files`.
 - **`welcome`** is the control plane's answer to `hello`: the protocol
   version the two will speak and the fingerprint of the control plane's
   signing key, which the runner compares against the one it pinned at
@@ -107,10 +111,11 @@ runner does with it and point back.
   is up.** The host builds the tmux session *before* it clones, so the pane
   is there about thirty milliseconds in and the clone, the worktree and the
   agent follow it. The checkouts it reports are therefore true before they
-  are on disk: the worktree's path is known from the start. The console
-  attaches on this, which is the point — it puts the reader in the terminal
-  while the repository is still arriving, instead of in front of a spinner.
-  The `agent` step of `session.step` is what says the agent was launched.
+  are on disk: the worktree's path is known from the start. An attach is
+  served from here on. The `agent` step of `session.step` is what says the
+  agent was launched, and a console that watched the start keeps its steps
+  on screen until then (05), so the reader sees the agent and never a shell
+  waiting on a clone.
 - **`session.attach` is served while a create is still running.** It needs
   the session's tmux name and nothing else, and that exists from
   `session.started`; the host makes the attach wait for the pane rather than
@@ -123,7 +128,8 @@ runner does with it and point back.
   `shell` among them for the blank terminal); `launch`
   (`{ model?, permission?, effort? }`); `prompt` (the person's first task,
   optional); `images` (up to five `{ imageId, mediaType }` attached to
-  that task, only with a `prompt`, each once); and the slugs and
+  that task, only with a `prompt`, each once — a PDF or text only for a
+  runner that named `session.files`); and the slugs and
   checkouts the directory layout needs. Like `session.image`, `images`
   carries no bytes: the runner pulls each with
   `GET /hosts/self/images/{imageId}` before it starts the agent. It is
@@ -157,6 +163,14 @@ runner does with it and point back.
   way `session.image` is capability-gated, never as an optional field an
   older runner silently drops.
 
+  **`hello.capabilities` is open-ended** (since 2026-10-04). It was a closed
+  enum, so a runner naming a capability its control plane had never heard
+  of (a rollback, a runner released first) failed the whole hello and
+  redialled forever. It is a list of strings now, and the control plane
+  keeps the ones it knows (`knownCapabilities`). A control plane that
+  predates this still refuses an unknown name, so the release that adds
+  `session.files` ships the control plane before the runner offers it.
+
   **A new catalog agent does not move the protocol version.** A runner
   probes the command of every agent it can launch (02 §10), so its last
   inventory says which `agent` values it knows. The control plane sends
@@ -186,6 +200,19 @@ runner does with it and point back.
   created while its host is offline therefore keeps its task in the log
   and delivers it when the launch is finally dispatched.
 - `host.preflight`, `host.update`
+- `repository.prepare` — get a repository ready on the host before any
+  session asks for it: the store cloned or fetched and a spare worktree
+  made at the base (02 §5). The console sends it through
+  `POST /v1/sessions/prepare` the moment New session has a host and a
+  repository, so the create that follows cuts its branch from a checkout
+  that already exists. No session exists and nothing is recorded, so the
+  token its git needs **travels with the command**, minted for that one
+  repository and sealed to the host's key as `credentials.grant` seals
+  one: a credential ask names a session. The runner holds it under
+  `prepare:<commandId>` for that command's git and drops it when the
+  command ends. Fire and forget; a runner whose `hello` does not name the
+  `repository.prepare` capability is sent nothing, and the create does the
+  work as before.
 - `credentials.token` — the runner asks for the installation token for
   one session's repository; the control plane answers with
   `credentials.grant`, carrying the token sealed to the host's key and
@@ -210,10 +237,11 @@ runner does with it and point back.
   database is behind stops reading the link, and a resend then only
   adds to the backlog. The log the batch lands in is 03's; the
   wire that carries it is this note's. While a session starts, the
-  runner logs `session.step`: its kind and `{ step, status, durationMs }`
-  payload are `packages/shared/src/protocol/session-step.ts`, and the Go
-  twin is generated from it. A failure is `session.failed`, not a step
-  status.
+  runner logs `session.step`: its kind and `{ step, status, durationMs,
+  download }` payload are `packages/shared/src/protocol/session-step.ts`,
+  and the Go twin is generated from it. `download` marks the clone step
+  of a repository the host has never held, which is a first download
+  rather than a fetch. A failure is `session.failed`, not a step status.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

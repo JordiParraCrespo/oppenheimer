@@ -32,6 +32,8 @@ import { MoveSessionCommandHandler } from './commands/move-session/move-session.
 import { MoveSessionHttpController } from './commands/move-session/move-session.http.controller';
 import { PasteSessionImageCommandHandler } from './commands/paste-session-image/paste-session-image.command-handler';
 import { PasteSessionImageHttpController } from './commands/paste-session-image/paste-session-image.http.controller';
+import { PrepareSessionCommandHandler } from './commands/prepare-session/prepare-session.command-handler';
+import { PrepareSessionHttpController } from './commands/prepare-session/prepare-session.http.controller';
 import { RecordSessionEventsCommandHandler } from './commands/record-session-events/record-session-events.command-handler';
 import { RemoveCheckoutCommandHandler } from './commands/remove-checkout/remove-checkout.command-handler';
 import { RemoveCheckoutHttpController } from './commands/remove-checkout/remove-checkout.http.controller';
@@ -76,6 +78,7 @@ const httpControllers = [
   IssueAttachTicketHttpController,
   PasteSessionImageHttpController,
   StopSessionHttpController,
+  PrepareSessionHttpController,
   RestartSessionHttpController,
   AddCheckoutHttpController,
   RemoveCheckoutHttpController,
@@ -90,6 +93,7 @@ const commandHandlers: Provider[] = [
   RenameSessionCommandHandler,
   MoveSessionCommandHandler,
   StopSessionCommandHandler,
+  PrepareSessionCommandHandler,
   RestartSessionCommandHandler,
   CloseSessionCommandHandler,
   AddCheckoutCommandHandler,

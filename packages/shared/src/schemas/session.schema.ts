@@ -2,12 +2,12 @@ import { z } from 'zod';
 import { SESSION_EFFORTS, SESSION_PERMISSIONS } from '../agents/catalog.js';
 import { PAGINATION } from '../constants/index.js';
 import {
-  attachedImagesAreValid,
-  SESSION_CREATE_MAX_IMAGES,
-  SESSION_IMAGE_MAX_BYTES,
-  SESSION_IMAGE_MEDIA_TYPES,
-  type SessionImageMediaType,
-} from '../protocol/session-image.js';
+  attachedFilesAreValid,
+  SESSION_CREATE_MAX_FILES,
+  SESSION_FILE_MAX_BYTES,
+  SESSION_FILE_MEDIA_TYPES,
+  type SessionFileMediaType,
+} from '../protocol/session-file.js';
 import { paginationSchema } from './pagination.schema.js';
 import {
   codingAgentSchema,
@@ -121,12 +121,12 @@ const createSessionFields = z.object({
    */
   prompt: promptSchema.optional(),
   /**
-   * Images attached to the first task, each uploaded beforehand with
+   * Files attached to the first task (images, PDF, text), each uploaded beforehand with
    * `POST /sessions/attachments` and named here by the id that returned
    * (`product/versions/mvp/03-control-plane.md`). What becomes of them on the
    * wire is `session.create`'s `images`.
    */
-  attachmentIds: z.array(z.string().uuid()).max(SESSION_CREATE_MAX_IMAGES).optional(),
+  attachmentIds: z.array(z.string().uuid()).max(SESSION_CREATE_MAX_FILES).optional(),
 });
 
 /**
@@ -159,7 +159,7 @@ export const createSessionSchema = createSessionFields
     { path: ['checkouts'] },
   )
   /** The wire's own rule for `session.create`'s images: they ride a task, each once. */
-  .refine((value) => attachedImagesAreValid(value.prompt, value.attachmentIds), {
+  .refine((value) => attachedFilesAreValid(value.prompt, value.attachmentIds), {
     path: ['attachmentIds'],
   });
 
@@ -171,6 +171,19 @@ export type CreateSessionDto = z.infer<typeof createSessionSchema>;
  * screen would be a needless limit.
  */
 export const addCheckoutSchema = sessionCheckoutInputSchema;
+
+/**
+ * Get a host ready for a session not yet asked for: the repositories it will
+ * check out, cloned or fetched and a spare worktree made, so the create that
+ * follows waits on neither. New session sends it as soon as a host and a
+ * repository are picked. Nothing is recorded.
+ */
+export const prepareSessionSchema = z.object({
+  hostId: z.string().uuid(),
+  checkouts: z.array(sessionCheckoutInputSchema).min(1).max(MAX_SESSION_CHECKOUTS),
+});
+
+export type PrepareSessionInput = z.infer<typeof prepareSessionSchema>;
 
 export type AddCheckoutDto = z.infer<typeof addCheckoutSchema>;
 
@@ -244,7 +257,8 @@ export const issueAttachTicketSchema = z.object({
 export type IssueAttachTicketDto = z.infer<typeof issueAttachTicketSchema>;
 
 /**
- * `POST /sessions/{id}/images` — the form fields beside the file. A multipart
+ * `POST /sessions/{id}/images` — a file for a running session's prompt (the
+ * route keeps its first name); these are the form fields beside it. A multipart
  * field arrives as text, so the window is coerced; absent, it is the agent's.
  */
 export const pasteSessionImageSchema = z.object({
@@ -254,17 +268,15 @@ export const pasteSessionImageSchema = z.object({
 export type PasteSessionImageDto = z.infer<typeof pasteSessionImageSchema>;
 
 /**
- * `POST /sessions/attachments` — an image for a session that does not exist
+ * `POST /sessions/attachments` — a file for a session that does not exist
  * yet. The console uploads each file the composer holds when the task is sent,
  * then names them in `attachmentIds` on `POST /sessions`; an upload nobody
  * names expires on its own.
  */
 export const sessionAttachmentSchema = z.object({
   id: z.string().uuid(),
-  mediaType: z.enum(
-    SESSION_IMAGE_MEDIA_TYPES as [SessionImageMediaType, ...SessionImageMediaType[]],
-  ),
-  size: z.number().int().min(1).max(SESSION_IMAGE_MAX_BYTES),
+  mediaType: z.enum(SESSION_FILE_MEDIA_TYPES as [SessionFileMediaType, ...SessionFileMediaType[]]),
+  size: z.number().int().min(1).max(SESSION_FILE_MAX_BYTES),
 });
 
 export type SessionAttachmentDto = z.infer<typeof sessionAttachmentSchema>;

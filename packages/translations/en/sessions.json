@@ -4,6 +4,7 @@
     "failedTitle": "The session did not start",
     "failedLead": "The host could not start this session.",
     "working": "Working…",
+    "downloading": "This host has not had this repository before, so it is downloading it first. This one takes a bit longer; later sessions on it start in about a second.",
     "failed": "Failed",
     "took": "{{seconds}}s",
     "steps": {
@@ -16,7 +17,8 @@
       },
       "clone": {
         "label": "Clone {{repo}}",
-        "doing": "Fetching the repository…"
+        "doing": "Fetching the repository…",
+        "downloading": "Downloading the repository…"
       },
       "worktree": {
         "label": "Check out the branch",
@@ -131,10 +133,11 @@
       "placeholder": "Describe a task or ask a question",
       "send": "Send",
       "stop": "Stop",
-      "attach": "Attach images",
+      "attach": "Attach files",
       "removeAttachment": "Remove {{name}}",
-      "attachTooLarge": "{{name}} is over 5 MB. Crop it or save it smaller, then attach it again.",
-      "attachTooMany": "A first task carries at most {{max}} images."
+      "attachTooLarge": "{{name}} is over 5 MB. Save a smaller copy, then attach it again.",
+      "attachTooMany": "A first task carries at most {{max}} files.",
+      "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file."
     },
     "failed": "The session could not be created."
   },
@@ -145,9 +148,10 @@
       "offline": "Host offline",
       "closed": "Disconnected"
     },
-    "image": {
-      "sending": "Sending image",
-      "failedTitle": "The image did not reach the session"
+    "file": {
+      "sending": "Sending file",
+      "notSupported": "None of the dropped files is one the agent can take. Drop an image, a PDF or a text file.",
+      "failedTitle": "The file did not reach the session"
     },
     "retryNow": "Retry now",
     "retry": "Try again",

@@ -567,3 +567,24 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   row and not the list because its clock is kept per query and the list is one
   query for every session — a second session started during the first one's
   clone would otherwise inherit the first one's settled tick.
+- 2026-10-02: **A host gets the repository ready while New session is still
+  being written** (01, 02, 05). Picking a host and a repository sends
+  `repository.prepare`: the store cloned or fetched and a spare worktree
+  made, with a token minted for that repository and sealed into the command
+  because no session exists to ask for one. Measured from the browser on a
+  host that had never seen the repository, with ten seconds between the pick
+  and Send: microsoft/vscode 32–34 s → 0.89–0.93 s, facebook/react 7.8 s →
+  1.0–1.1 s to the agent's first screen (note 14).
+- 2026-10-02: **The first clone is shallow, and the history follows in the
+  background** (02 §5). A worktree needs the base's one commit, not the whole
+  history: on microsoft/vscode the store is ready for a spare in 9.3 s
+  instead of 25.8 s. The deepen ends at the same blobless store as before, so
+  a session's `git log` and `blame` work as they did once it lands.
+- 2026-10-04: **A session takes files, not only images** (03, 01, 02 §7, 05,
+  07). Images, PDF and UTF-8 text, one allowlist judged by the bytes at the
+  API and again on the host; text is text only when it is valid UTF-8 with
+  no control bytes and opens neither with `#!` nor as HTML, SVG or XML.
+  Executables, archives and scripts are refused whatever they are called,
+  and the runner names every file `<id><extension from the table>`. The
+  wire keeps its `image` names; a runner that takes more says so with
+  `session.files`, and one that does not is sent images only.

@@ -11,6 +11,7 @@ import {
   CircleUserRoundIcon,
   CodeIcon,
   CpuIcon,
+  FileUpIcon,
   HeadingIcon,
   PanelTopIcon,
   ImageIcon,
@@ -52,6 +53,7 @@ import {
   ToggleLeftIcon,
   type LucideIcon,
   TypeIcon,
+  UnplugIcon,
   WavesIcon,
   ZapIcon,
 } from '@oppenheimer/design-system-web/icons';
@@ -120,6 +122,7 @@ export const TOC: TocGroup[] = [
       { id: 'reporows', label: 'RepositoryAddField · RepositoryRowList', icon: ListChecksIcon, components: ['repository-add-field', 'repository-row-list', 'repository-select'] },
       { id: 'fieldselect', label: 'FieldSelect', icon: SquareChevronDownIcon, components: ['field-select'] },
       { id: 'composer', label: 'Composer', icon: MessageSquareIcon, components: ['composer'] },
+      { id: 'dropzone', label: 'DropZone', icon: FileUpIcon, components: ['drop-zone'] },
       { id: 'engine', label: 'AgentModelSelect', icon: BotIcon, components: ['agent-model-select'] },
       { id: 'effort', label: 'EffortSlider', icon: SlidersHorizontalIcon, components: ['effort-slider'] },
       { id: 'permission', label: 'PermissionMenu', icon: ShieldCheckIcon, components: ['permission-menu'] },
@@ -169,7 +172,10 @@ export const TOC: TocGroup[] = [
   },
   {
     group: 'Terminal',
-    items: [{ id: 'terminal', label: 'Terminal', icon: TerminalIcon, components: ['terminal'] }],
+    items: [
+      { id: 'terminal', label: 'Terminal', icon: TerminalIcon, components: ['terminal'] },
+      { id: 'hostlink', label: 'HostLinkChrome · CommandRow', icon: UnplugIcon, components: ['host-link', 'command-row'] },
+    ],
   },
   {
     group: 'Media',

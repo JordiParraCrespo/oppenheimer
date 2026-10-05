@@ -56,6 +56,8 @@ const MaxEventPayloadBytes = 8192
 const (
 	CapabilitySessionImage        = "session.image"
 	CapabilitySessionCreateImages = "session.create.images"
+	CapabilitySessionFiles        = "session.files"
+	CapabilityRepositoryPrepare   = "repository.prepare"
 )
 
 // The `type` of every message on the link.
@@ -85,6 +87,7 @@ const (
 	TypeCredentialsToken   = "credentials.token"
 	TypeCredentialsGrant   = "credentials.grant"
 	TypeCredentialsRevoke  = "credentials.revoke"
+	TypeRepositoryPrepare  = "repository.prepare"
 )
 
 // MessageTypes is every message type on the link, in the schema's order.
@@ -114,6 +117,7 @@ var MessageTypes = []string{
 	TypeCredentialsToken,
 	TypeCredentialsGrant,
 	TypeCredentialsRevoke,
+	TypeRepositoryPrepare,
 }
 
 // NewMessage returns a pointer to a new struct for a message type, and false
@@ -170,6 +174,8 @@ func NewMessage(messageType string) (any, bool) {
 		return new(CredentialsGrant), true
 	case TypeCredentialsRevoke:
 		return new(CredentialsRevoke), true
+	case TypeRepositoryPrepare:
+		return new(RepositoryPrepare), true
 	}
 	return nil, false
 }
@@ -440,6 +446,17 @@ type CredentialsRevoke struct {
 	RequestID  string `json:"requestId"`
 	SessionID  string `json:"sessionId"`
 	CheckoutID string `json:"checkoutId"`
+}
+
+// RepositoryPrepare is the `repository.prepare` message.
+type RepositoryPrepare struct {
+	Type               string    `json:"type"`
+	CommandID          string    `json:"commandId"`
+	GithubRepoID       int64     `json:"githubRepoId"`
+	RepositoryFullName string    `json:"repositoryFullName"`
+	BaseBranch         string    `json:"baseBranch"`
+	Sealed             string    `json:"sealed"`
+	ExpiresAt          time.Time `json:"expiresAt"`
 }
 
 // SessionSnapshot is `#/$defs/sessionSnapshot`.

@@ -1,17 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SESSION_IMAGE_MAX_BYTES, SESSION_IMAGE_MEDIA_TYPES } from '@oppenheimer/shared/protocol';
+import { SESSION_FILE_MAX_BYTES, SESSION_FILE_MEDIA_TYPES } from '@oppenheimer/shared/protocol';
 
-/** An image waiting for the `POST /sessions` that names it in `attachmentIds`. */
+/** A file waiting for the `POST /sessions` that names it in `attachmentIds`. */
 export class SessionAttachmentResponseDto {
   @ApiProperty({ format: 'uuid', description: 'What `attachmentIds` names it by.' })
   id!: string;
 
   @ApiProperty({
-    enum: SESSION_IMAGE_MEDIA_TYPES,
-    description: 'What the bytes are by their magic bytes, never the label the browser gave them.',
+    enum: SESSION_FILE_MEDIA_TYPES,
+    description:
+      'What the bytes are (magic bytes, or text that is only text), never the label the browser gave them.',
   })
-  mediaType!: (typeof SESSION_IMAGE_MEDIA_TYPES)[number];
+  mediaType!: (typeof SESSION_FILE_MEDIA_TYPES)[number];
 
-  @ApiProperty({ minimum: 1, maximum: SESSION_IMAGE_MAX_BYTES, description: 'Bytes.' })
+  @ApiProperty({ minimum: 1, maximum: SESSION_FILE_MAX_BYTES, description: 'Bytes.' })
   size!: number;
 }

@@ -352,7 +352,10 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 	if len(constants.CloseCodes) != 5 || len(constants.Refusals) != 1 {
 		t.Errorf("x-constants gained a close code or a refusal this test does not check: %v %v", constants.CloseCodes, constants.Refusals)
 	}
-	if !slices.Equal(constants.Capabilities, []string{link.CapabilitySessionImage, link.CapabilitySessionCreateImages}) {
+	if !slices.Equal(constants.Capabilities, []string{
+		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
+		link.CapabilityRepositoryPrepare,
+	}) {
 		t.Errorf("capabilities: the schema says %v", constants.Capabilities)
 	}
 }

@@ -38,6 +38,7 @@ const eventRetry = 5 * time.Second
 const (
 	laneHostUpdate    = "host:update"
 	laneHostPreflight = "host:preflight"
+	laneRepoPrepare   = "repo:"
 )
 
 // linkSender is the slice of the link the handler writes through, so a test
@@ -60,9 +61,9 @@ type linkHandler struct {
 	reporter *link.Reporter
 
 	credentials *credentialBroker
-	// httpClient pulls parked images; nil is a default client (link_images.go).
+	// httpClient pulls parked files; nil is a default client (link_files.go).
 	httpClient *http.Client
-	// bootToken mints the assertion an image pull carries.
+	// bootToken mints the assertion a file pull carries.
 	bootToken func(ctx context.Context) (string, error)
 
 	// life is the daemon's context, not a link's. Session commands run on it
@@ -232,7 +233,10 @@ func (h *linkHandler) Hello(ctx context.Context) (link.Hello, error) {
 		RunID:         h.reporter.RunID(),
 		Host:          facts,
 		Sessions:      h.snapshots(),
-		Capabilities:  []string{link.CapabilitySessionImage, link.CapabilitySessionCreateImages},
+		Capabilities: []string{
+			link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
+			link.CapabilityRepositoryPrepare,
+		},
 	}, nil
 }
 
@@ -373,13 +377,13 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 	case "session.image":
 		var m link.SessionImage
 		if msg.Decode(&m) == nil {
-			h.lanes.run(m.SessionID, func() { h.image(h.life, m) })
+			h.lanes.run(m.SessionID, func() { h.file(h.life, m) })
 		}
 	case "session.resize":
 		var m link.SessionResize
 		if msg.Decode(&m) == nil {
 			// An ioctl on an open PTY, done here like a credit, so a resize
-			// never waits behind an image paste in the session's lane. One
+			// never waits behind a file paste in the session's lane. One
 			// for an attachment still being opened is kept for it: the attach
 			// runs off the lane now, so there is no queue to hold its place.
 			if !h.resize(m) {
@@ -416,6 +420,14 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		var m link.HostPreflight
 		if msg.Decode(&m) == nil {
 			h.lanes.run(laneHostPreflight, func() { h.preflight(h.life, m.CommandID) })
+		}
+	case "repository.prepare":
+		var m link.RepositoryPrepare
+		if msg.Decode(&m) == nil {
+			// One lane per repository: a second pick of the same one waits for
+			// the first rather than racing it, and other repositories and
+			// every session go on meanwhile.
+			h.lanes.run(laneRepoPrepare+m.RepositoryFullName, func() { h.prepareRepository(h.life, m) })
 		}
 	case "host.update":
 		var m link.HostUpdate
