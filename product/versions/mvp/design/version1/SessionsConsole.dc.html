@@ -16,6 +16,7 @@
 <span class="op-rail__mark" aria-hidden="true">O</span>
 <button class="op-rail__btn" type="button" data-active="{{ navSessions }}" aria-current="{{ navSessionsCur }}" aria-label="Sessions" onClick="{{ goSessions }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions<span class="op-nav__count">{{ sessionTotal }}</span></span></button>
 <button class="op-rail__btn" type="button" data-active="{{ navRoutines }}" aria-current="{{ navRoutinesCur }}" aria-label="Automations" onClick="{{ goRoutines }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Automations<span class="op-nav__count">{{ routineTotal }}</span></span></button>
+<a class="op-rail__btn" href="./Tasks.dc.html" aria-label="Plan"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Plan</span></a>
 </nav>
 <nav class="op-sidebar" style="width:{{ sidebarWidth }};min-width:{{ sidebarWidth }};overflow:hidden;transition:width 220ms cubic-bezier(.4,0,.2,1),min-width 220ms cubic-bezier(.4,0,.2,1)">
 <div class="op-sidebar__head">
@@ -1015,6 +1016,17 @@ Waiting for the host to connect…
 <div style="flex:1;min-height:0;display:flex;flex-direction:column;padding:{{ framePad }};transition:padding 220ms cubic-bezier(.4,0,.2,1)">
 <div style="flex:1;min-height:0;width:100%;max-width:{{ frameMax }};margin:0 auto;display:flex;flex-direction:column;overflow:hidden;background:var(--card);transition:max-width 220ms cubic-bezier(.4,0,.2,1)">
 
+<div style="flex:none;display:flex;align-items:center;gap:10px;min-width:0;height:46px;padding:0 12px 0 14px;border-bottom:1px solid var(--border-subtle)">
+<sc-if value="{{ fromTask }}">
+<a class="op-btn op-btn--ghost op-btn--sm" href="{{ taskHref }}" title="Back to task" style="flex:none;max-width:240px;gap:6px;text-decoration:none;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="13" hint-size="13px,13px"></x-import><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ taskTitle }}</span></a>
+<span style="flex:none;color:var(--fg-subtle)">/</span>
+</sc-if>
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ paneDot }}"></span>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:13px">{{ attachName }}</span>
+<span style="flex:none;font-size:12.5px;color:var(--fg-muted)">{{ paneState }}</span>
+<span style="flex:1"></span>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)">{{ paneMeta }}</span>
+</div>
 <div class="op-term" style="flex:1;min-height:0;position:relative">
 <div class="op-term__scroll" ref="{{ termScrollRef }}" style="opacity:{{ termDim }};transition:opacity 220ms cubic-bezier(.4,0,.2,1)">
 <sc-for list="{{ feed }}" as="f" hint-placeholder-count="4">
@@ -1152,7 +1164,7 @@ Waiting for the host to connect…
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;emptyAccount&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;State&quot;},&quot;page&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;sessions&quot;,&quot;routines&quot;],&quot;default&quot;:&quot;sessions&quot;,&quot;tsType&quot;:&quot;'sessions' | 'routines'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;hostLink&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;live&quot;,&quot;reconnecting&quot;,&quot;offline&quot;],&quot;default&quot;:&quot;live&quot;,&quot;tsType&quot;:&quot;'live' | 'reconnecting' | 'offline'&quot;,&quot;section&quot;:&quot;Host link&quot;},&quot;offlineStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;bar&quot;,&quot;card&quot;],&quot;default&quot;:&quot;bar&quot;,&quot;tsType&quot;:&quot;'bar' | 'card'&quot;,&quot;section&quot;:&quot;Host link&quot;},&quot;firstClone&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Host link&quot;}}">
 const ALL = [
-  { name: 'PR #121 porting to peersyst', state: 'running', age: '2m', mins: 2, repo: 'xrp-mobile', agent: 'claude-code', host: 'optimus', active: 'true' },
+  { name: 'PR #121 porting to peersyst', state: 'running', age: '2m', mins: 2, repo: 'xrp-mobile', agent: 'claude-code', host: 'optimus' },
   { name: 'nightly ingest', state: 'running', age: '9m', mins: 9, repo: 'atlas', agent: 'claude-code', host: 'fable' },
   { name: 'invoice triage', state: 'waiting', age: '18m', mins: 18, repo: 'atlas', agent: 'codex', host: 'optimus' },
   { name: 'XRP Mobile API cleanup', state: 'waiting', age: '3h', mins: 180, repo: 'xrp-mobile', agent: 'opencode', host: 'mac-studio' },
@@ -1701,6 +1713,28 @@ class Component extends DCLogic {
     this.initLink();
     if (this.props.page === 'routines') this.setState({ section: 'routines', view: 'routine' });
     else if (this.props.emptyAccount) this.setState({ view: 'new', session: null });
+    // Deep link from Plan: ?session=<name>&state=<state>&meta=<agent · model · repo>
+    const dq = new URLSearchParams(window.location.search);
+    if (dq.get('session') && this.props.page !== 'routines') {
+      const name = dq.get('session'), sst = dq.get('state') || 'running', repo = dq.get('repo') || 'xrp-mobile';
+      const known = ALL.some(x => x.name === name);
+      const prompt = dq.get('prompt') || name;
+      const tail = sst === 'waiting'
+        ? [{ text: 'Plan ready. Two approaches fit; which do you want?' }, { text: '  1. Patch the existing module and keep the public API' }, { text: '  2. Replace it behind a feature flag' }]
+        : sst === 'failed' ? [{ text: 'Tests failed in 2 files. Stopped before committing.', tone: 'err' }]
+        : [{ text: 'Working on it. Edited 3 files so far.' }];
+      this.setState(s => ({
+        view: 'terminal', open: null, linking: true,
+        session: { label: name, state: sst, meta: dq.get('meta') || '' },
+        fromTask: dq.get('task') ? { id: dq.get('task'), title: dq.get('taskTitle') || 'Task' } : null,
+        mine: known || s.mine.some(x => x.name === name) ? s.mine : [{ name, state: sst === 'running' || sst === 'waiting' || sst === 'failed' ? sst : 'idle', age: 'now', mins: 0, repo, agent: 'claude-code', host: 'optimus', project: REPO_PROJECT[repo] }].concat(s.mine),
+        feed: known && name.indexOf('PR #121') === 0 ? s.feed : [
+          { you: 'true', text: prompt },
+          { agent: 'true', lines: [{ text: 'Reading ' + repo + ' and the files the prompt mentions.' }].concat(tail) },
+        ],
+      }));
+      if (this.runAttach) this.runAttach();
+    }
     this._away = () => {
       const { open, filterOpen, modelOpen, accountOpen, permOpen, effortOpen } = this.state;
       if (this.state.sessionMenu) this.setState({ sessionMenu: null });
@@ -2805,6 +2839,8 @@ class Component extends DCLogic {
 
         ...x,
 
+        active: this.state.session && this.state.session.label === x.name ? 'true' : 'false',
+
         editing: this.state.editing === x.key ? 'true' : undefined,
 
         notEditing: this.state.editing === x.key ? undefined : 'true',
@@ -3047,6 +3083,16 @@ class Component extends DCLogic {
       frameRadius: this.state.zoom ? '0px' : '18px',
       toggleZoom: e => { if (e) e.stopPropagation(); this.setState(s => ({ zoom: !s.zoom })); },
       closePane: e => { if (e) e.stopPropagation(); this.setState({ session: null, zoom: false }); },
+      ...(() => {
+        const ss = (this.state.session || {}).state;
+        const ft = this.state.fromTask;
+        return {
+          paneDot: { running: 'var(--success)', waiting: 'var(--warning)', failed: 'var(--danger)' }[ss] || 'var(--fg-subtle)',
+          paneState: { running: 'Running', waiting: 'Needs input', failed: 'Failed', queued: 'Queued', completed: 'Completed' }[ss] || 'Idle',
+          paneMeta: (this.state.session || {}).meta || '',
+          fromTask: ft ? 'true' : undefined, taskTitle: ft ? ft.title : '', taskHref: ft ? 'Tasks.dc.html?task=' + encodeURIComponent(ft.id) : '',
+        };
+      })(),
 
 
       renameRef: this._renameRef,

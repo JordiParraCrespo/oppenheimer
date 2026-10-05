@@ -26,6 +26,7 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`Ready`](version1/Ready.dc.html) | You're all set — workspace, code and host summary, into the console |
 | [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions and automations, the sidebar grouped by project, terminal, composer |
 | [`Routines`](version1/Routines.dc.html) | The console on its automations page — automations grouped by project, their triggers, steps and run history |
+| [`Tasks`](version1/Tasks.dc.html) | Plan — the rail's third item: tasks by status (To do, In progress, Later, Done) per project, goals, a calendar synced with Google Calendar, and tasks started as or linked to sessions |
 | [`Settings`](version1/Settings.dc.html) | Settings — profile, workspace and hosts (rename, remove, and an Add a host page with the install command and agent prompt) |
 | [`Emails`](version1/Emails.dc.html) | Index of the transactional emails, each framed live from `version1/emails/` with when it is sent and its link lifetime |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
@@ -73,6 +74,14 @@ Settings host card, are icon buttons labelled Copy command / Copied. The
 export also put a pasted reference screenshot in `version1/`
 (`screenshot-2026-10-01-…png`, a crop of the automations table); it was
 left out with the other uploads.
+
+The 2026-10-05 export adds `Tasks`, opened from a third rail item, Plan,
+which `SessionsConsole` now carries beside Sessions and Automations. Plan
+lists a project's tasks by status — To do, In progress, Later, Done —
+with goals above them; a task has a title, notes, a due date and time,
+and either starts a session (agent, model, host, repository, prompt) or
+links an existing one. A calendar view shows the tasks beside events from
+Google Calendar.
 
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
@@ -132,5 +141,9 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   alone until the API names a trigger. The workspace-invite email runs
   ahead of the notes, which keep workspaces personal with no invitations;
   the emails are their own slice.
+- Plan (`Tasks`) is in the version-1 frames as of the 2026-10-05 export,
+  but the notes put a board of tasks linked to projects and sessions in
+  0.3 (`../../../next-steps/0.3-kanban.md`), after the MVP, and no note
+  covers goals or the Google Calendar sync yet.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.
