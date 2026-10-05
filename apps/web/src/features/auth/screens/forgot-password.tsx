@@ -1,4 +1,4 @@
-import { Button, Link as TextLink } from '@oppenheimer/design-system-web';
+import { Button, Link } from '@oppenheimer/design-system-web';
 import { useErrorMessage, useForgotPassword } from '@oppenheimer/frontend-core/react';
 import {
   AuthBackLink,
@@ -54,9 +54,9 @@ export function ForgotPasswordScreen() {
         </Button>
 
         <AuthFooterNote>
-          <TextLink render={<button type="button" onClick={() => setSentTo(null)} />}>
+          <Link render={<button type="button" onClick={() => setSentTo(null)} />}>
             {t('auth.forgotPassword.differentAddress')}
-          </TextLink>
+          </Link>
         </AuthFooterNote>
         <AuthBackLink />
       </>
