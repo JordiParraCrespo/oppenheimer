@@ -17,8 +17,9 @@ import { diffStatParts } from './diff-stat';
  * field that narrows the tree as they type.
  *
  * It owns no data: `files` is the changed set, `selected` the file the diff
- * is showing, `onSelect` the pick. The tree's model is built from `files`
- * and rebuilt when the caller hands a new `files`; that is its only write.
+ * is showing (moved by the caller, the highlight follows), `onSelect` the
+ * pick. The tree's model is built from `files` and rebuilt when the caller
+ * hands a new `files`; the selection is the only other thing written to it.
  * It draws in its own shadow root; its colours, type and radius are the
  * tokens, passed through its custom properties (its type marks' hues from
  * the `--file-icon-*` map in the stylesheet).
@@ -113,7 +114,9 @@ function Tree({
 }) {
   const stats = new Map(files.map((file) => [file.path, file]));
   // The model fixes its callbacks when it is built; the pick reads the latest handler.
-  const pick = React.useEffectEvent((path: string) => onSelect?.(path));
+  const pick = React.useEffectEvent((path: string) => {
+    if (path !== selected) onSelect?.(path);
+  });
   const { model } = useFileTree({
     paths: files.map((file) => file.path),
     initialExpansion: 'open',
@@ -136,6 +139,13 @@ function Tree({
       return { text: parts.map((part) => part.text).join(''), parts };
     },
   });
+  // The model is imperative: a `selected` the caller moves (a comment link, a scroll) is written into it.
+  React.useEffect(() => {
+    const current = model.getSelectedPaths();
+    if (selected ? current.length === 1 && current[0] === selected : current.length === 0) return;
+    for (const path of current) model.getItem(path)?.deselect();
+    if (selected) model.getItem(selected)?.select();
+  }, [model, selected]);
   return (
     <>
       <label className="flex h-[34px] items-center gap-2 rounded-sm border border-border-subtle bg-card px-3 text-fg-subtle focus-within:border-primary focus-within:ring-3 focus-within:ring-ring">

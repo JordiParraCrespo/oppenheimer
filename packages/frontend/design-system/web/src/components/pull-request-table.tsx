@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckIcon, GitMergeIcon, XIcon } from 'lucide-react';
-import type * as React from 'react';
+import * as React from 'react';
 
 import { AuthorMark } from '../internal/author-mark';
 import { cn } from '../lib/utils';
@@ -9,6 +9,7 @@ import { Button } from './button';
 import { DiffStat } from './diff-stat';
 import { IconButton } from './icon-button';
 import { StatusDot, type StatusState } from './status-dot';
+import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 
 /**
  * The pull request queue: what is waiting on the reader, one row each, on
@@ -225,12 +226,13 @@ function MergeButton({
   confirming: boolean;
   onConfirmingChange: (confirming: boolean) => void;
   onMerge: () => void;
-  /** Why it cannot merge yet; set, the button is off and says so on hover. */
+  /** Why it cannot merge yet; set, the button is off (and a confirmation open is dropped), and says why on hover, on focus and to a screen reader. */
   disabledReason?: string;
   merged?: boolean;
   labels?: { merge?: string; confirm?: string; confirmTitle?: string; cancel?: string; merged?: string };
   className?: string;
 }) {
+  const reasonId = React.useId();
   if (merged) {
     return (
       <StatusDot state="completed" density="compact" className={cn('h-7 px-2.5 text-xs whitespace-nowrap', className)}>
@@ -238,7 +240,8 @@ function MergeButton({
       </StatusDot>
     );
   }
-  if (confirming) {
+  // A merge that became blocked while it asked falls back to the off button and its reason.
+  if (confirming && !disabledReason) {
     return (
       <span className={cn('flex items-center gap-0.5 motion-safe:animate-appear-fast', className)}>
         <IconButton size="sm" aria-label={labels.cancel ?? 'Cancel merge'} onClick={() => onConfirmingChange(false)}>
@@ -251,18 +254,32 @@ function MergeButton({
       </span>
     );
   }
-  return (
+  const button = (
     <Button
       variant="secondary"
       size="sm"
       disabled={Boolean(disabledReason)}
-      title={disabledReason}
+      focusableWhenDisabled
+      aria-describedby={disabledReason ? reasonId : undefined}
       onClick={() => onConfirmingChange(true)}
-      className={className}
+      className={disabledReason ? undefined : className}
     >
       <GitMergeIcon />
       {labels.merge ?? 'Merge'}
     </Button>
+  );
+  if (!disabledReason) return button;
+  // The off button takes no pointer, so the reason hangs from a wrapper: on hover, on focus, and read with the button.
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<span className={cn('inline-flex', className)} />}>
+        {button}
+        <span id={reasonId} className="sr-only">
+          {disabledReason}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{disabledReason}</TooltipContent>
+    </Tooltip>
   );
 }
 

@@ -23,6 +23,7 @@ function PullRequestHeader({
   authorKind = 'session',
   head,
   base,
+  labels = {},
   className,
   ...props
 }: Omit<React.ComponentProps<'header'>, 'title'> & {
@@ -39,6 +40,8 @@ function PullRequestHeader({
   /** The branch it merges, and where to. */
   head?: React.ReactNode;
   base?: React.ReactNode;
+  /** `into`: what a screen reader says for the arrow between head and base. */
+  labels?: { into?: string };
 }) {
   return (
     <header data-slot="pull-request-header" className={cn('flex flex-col gap-2.5 pb-2', className)} {...props}>
@@ -72,7 +75,7 @@ function PullRequestHeader({
               <span className="figures text-xs">{head}</span>
               {base ? (
                 <>
-                  <ArrowRightIcon className="size-3 text-fg-subtle" aria-label="into" />
+                  <ArrowRightIcon className="size-3 text-fg-subtle" aria-label={labels.into ?? 'into'} />
                   <span className="figures text-xs">{base}</span>
                 </>
               ) : null}
