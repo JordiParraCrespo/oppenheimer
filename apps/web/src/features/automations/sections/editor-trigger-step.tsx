@@ -8,10 +8,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  useNow,
 } from '@oppenheimer/design-system-web';
 import { Clock } from '@oppenheimer/design-system-web/icons';
-import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { GITHUB_EVENT_TYPES, SCHEDULE_FREQUENCIES } from '@oppenheimer/shared/automations';
 import { MAX_AUTOMATION_TRIGGERS } from '@oppenheimer/shared/schemas/automation';
 import { useState } from 'react';
@@ -37,7 +35,6 @@ export function EditorTriggerStep({
   onChange: (triggers: TriggerCard[]) => void;
 }) {
   const { t } = useTranslation();
-  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   const [adding, setAdding] = useState(false);
   const replace = (card: TriggerCard) =>
     onChange(triggers.map((current) => (current.key === card.key ? card : current)));
@@ -52,7 +49,6 @@ export function EditorTriggerStep({
           <ScheduleTriggerCard
             key={card.key}
             card={card}
-            now={now}
             onChange={replace}
             onRemove={() => remove(card.key)}
           />
@@ -80,7 +76,7 @@ export function EditorTriggerStep({
                 <DropdownMenuItem
                   key={frequency}
                   onClick={() =>
-                    onChange([...triggers, scheduleCard(frequency, now, viewerTimeZone())])
+                    onChange([...triggers, scheduleCard(frequency, Date.now(), viewerTimeZone())])
                   }
                 >
                   <Clock />
