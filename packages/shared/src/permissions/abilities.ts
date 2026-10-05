@@ -66,6 +66,11 @@ export const KNOWN_SUBJECTS = [
   // Workspace-owned, like sessions: an automation is a saved prompt the
   // workspace runs, and each of its runs is a session.
   'Automation',
+  // Plan (`product/versions/mvp/17-plan.md`), workspace-owned like the rest:
+  // `Task` covers tasks, their goals and their links to sessions; `Calendar`
+  // the workspace's own events and a person's Google Calendar connection.
+  'Task',
+  'Calendar',
   'all',
 ] as const;
 
@@ -349,6 +354,16 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     {
       action: 'manage',
       subject: 'Automation',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'Task',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'Calendar',
       conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
     },
   ],

@@ -16,6 +16,9 @@ import { AutomationOrmEntity } from '../automations/database/automation.orm-enti
 import { AutomationRevisionOrmEntity } from '../automations/database/automation-revision.orm-entity';
 import { AutomationRunOrmEntity } from '../automations/database/automation-run.orm-entity';
 import { AutomationSettingsOrmEntity } from '../automations/database/automation-settings.orm-entity';
+import { GoalOrmEntity } from '../tasks/database/goal.orm-entity';
+import { TaskOrmEntity } from '../tasks/database/task.orm-entity';
+import { TaskSessionOrmEntity } from '../tasks/database/task-session.orm-entity';
 import { AutomationTriggerOrmEntity } from '../automations/database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from '../automations/database/automation-trigger-subject.orm-entity';
 import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm-entity';
@@ -100,6 +103,9 @@ const dataSource = new DataSource({
     AutomationTriggerSubjectOrmEntity,
     AutomationRunOrmEntity,
     AutomationSettingsOrmEntity,
+    TaskOrmEntity,
+    GoalOrmEntity,
+    TaskSessionOrmEntity,
     FeatureFlagOrmEntity,
     FlagSegmentOrmEntity,
     FlagChangeOrmEntity,

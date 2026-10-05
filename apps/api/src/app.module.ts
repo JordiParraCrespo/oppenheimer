@@ -69,6 +69,7 @@ import { RedisModule } from './redis/redis.module';
 import { RelayModule } from './relay/relay.module';
 import { RolesModule } from './roles/roles.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { TasksModule } from './tasks/tasks.module';
 import { CredentialThrottlerGuard } from './throttling/guards/credential-throttler.guard';
 import { RedisThrottlerStorage } from './throttling/infrastructure/redis-throttler.adapter';
 import { ThrottlingModule } from './throttling/throttling.module';
@@ -236,6 +237,7 @@ import { UsersModule } from './users/user.module';
     ProjectsModule,
     SessionsModule,
     AutomationsModule,
+    TasksModule,
     RelayModule,
     HealthModule,
     QueueModule,

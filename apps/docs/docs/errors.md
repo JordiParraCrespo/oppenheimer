@@ -533,6 +533,33 @@ on the run as `skipped` with a reason (`not_launchable`, `agent_unavailable`,
 `overlapping`, the rate caps, `missed`), and a reason that would repeat every time
 pauses the automation with a `pausedReason`.
 
+## Tasks
+
+Plan's board: tasks, the goals over them, and the sessions a task started or
+links. See `product/versions/mvp/17-plan.md`.
+
+| Code                                 | Title                                    | HTTP |
+| ------------------------------------ | ---------------------------------------- | ---- |
+| `TASKS_001` <a id="tasks_001" />     | Task not found                           | 404  |
+| `TASKS_002` <a id="tasks_002" />     | Goal not found                           | 404  |
+| `TASKS_003` <a id="tasks_003" />     | Tasks belong to an organization          | 400  |
+| `TASKS_004` <a id="tasks_004" />     | That project cannot take tasks           | 409  |
+| `TASKS_005` <a id="tasks_005" />     | Session not found                        | 404  |
+| `TASKS_006` <a id="tasks_006" />     | That position is no longer on the board  | 409  |
+| `TASKS_007` <a id="tasks_007" />     | That goal belongs to another project     | 409  |
+
+`TASKS_001`, `TASKS_002` and `TASKS_005` are also returned for a task, goal or
+session in another workspace.
+
+`TASKS_004` is a project that is missing or archived: nothing new is filed under a
+retired project.
+
+`TASKS_006` is a move that named a task to land after which is no longer in that
+column, or is the task being moved. The board was stale; reload it.
+
+`TASKS_007` is a request whose goal and project disagree. A goal brings its own
+project, so leave `projectId` out when choosing one.
+
 ## Inbound events
 
 What external systems tell us — GitHub's webhook today — stored once and normalized
