@@ -9,12 +9,14 @@
 <x-dc>
 <helmet><script src="./ds-base.js"></script>
 <link rel="stylesheet" href="./console.css">
+<script src="./rail-order.js"></script>
 </helmet>
 <div data-bare="{{ bare }}" style="display:flex;height:100vh;overflow:hidden;background:var(--background);font-family:var(--font-sans);color:var(--fg);font-size:15px">
 
 <nav class="op-rail" aria-label="Sections">
 <span class="op-rail__mark" aria-hidden="true">O</span>
 <button class="op-rail__btn" type="button" data-active="{{ navSessions }}" aria-current="{{ navSessionsCur }}" aria-label="Sessions" onClick="{{ goSessions }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions<span class="op-nav__count">{{ sessionTotal }}</span></span></button>
+<a class="op-rail__btn" href="./PullRequests.dc.html" aria-label="Pull requests" title="Pull requests" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import></a>
 <button class="op-rail__btn" type="button" data-active="{{ navRoutines }}" aria-current="{{ navRoutinesCur }}" aria-label="Automations" onClick="{{ goRoutines }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Automations<span class="op-nav__count">{{ routineTotal }}</span></span></button>
 <a class="op-rail__btn" href="./Tasks.dc.html" aria-label="Plan"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Plan</span></a>
 </nav>
@@ -1182,9 +1184,10 @@ const PROJECT_SEED = [
   { id: 'mobile', name: 'XRP Mobile', repos: [{ repo: 'xrp-mobile', base: 'main', def: true }], host: 'optimus', agent: 'claude-code',
     instructions: 'Run pnpm test before every commit. Never touch packages/legacy-wallet.' },
   { id: 'atlas', name: 'Atlas', repos: [{ repo: 'atlas', base: 'main', def: true }, { repo: 'flama-ai', base: 'main', def: false }], host: 'fable', agent: 'claude-code', instructions: '' },
+  { id: 'opp', name: 'Oppenheimer', repos: [{ repo: 'oppenheimer', base: 'main', def: true }, { repo: 'runner', base: 'main', def: true }], host: 'mac-studio', agent: 'claude-code', instructions: '' },
   { id: 'web', name: 'Client sites', repos: [{ repo: 'flama-ai', base: 'main', def: true }, { repo: 'adri-rodriguez', base: 'main', def: true }, { repo: 'xrp-mobile', base: 'main', def: false }], host: 'optimus', agent: 'codex', instructions: '' },
 ];
-const REPO_PROJECT = { 'xrp-mobile': 'mobile', atlas: 'atlas', 'flama-ai': 'web', 'adri-rodriguez': 'web' };
+const REPO_PROJECT = { 'xrp-mobile': 'mobile', atlas: 'atlas', 'flama-ai': 'web', 'adri-rodriguez': 'web', oppenheimer: 'opp', runner: 'opp' };
 
 const PROJECTS = [
   { value: 'all', label: 'All repositories' },
@@ -1716,10 +1719,12 @@ class Component extends DCLogic {
     // Deep link from Plan: ?session=<name>&state=<state>&meta=<agent · model · repo>
     const dq = new URLSearchParams(window.location.search);
     if (dq.get('session') && this.props.page !== 'routines') {
-      const name = dq.get('session'), sst = dq.get('state') || 'running', repo = dq.get('repo') || 'xrp-mobile';
+      const name = dq.get('session'), sst = dq.get('state') || 'running', repo = dq.get('repo') || 'xrp-mobile', qHost = dq.get('host') || 'optimus', isReview = !!dq.get('review');
       const known = ALL.some(x => x.name === name);
       const prompt = dq.get('prompt') || name;
-      const tail = sst === 'waiting'
+      const tail = isReview
+        ? [{ text: 'Checked out ' + (dq.get('branch') || 'the branch') + ' on ' + qHost + '.' }].concat((dq.get('checks') || '').split('|').filter(Boolean).map(t => ({ text: '✓ ' + t, tone: 'ok' }))).concat((dq.get('notes') || '').split('|').filter(Boolean).map(t => ({ text: '• ' + t }))).concat([{ text: 'Ready. Ask me about the change, or tell me what to check.' }])
+        : sst === 'waiting'
         ? [{ text: 'Plan ready. Two approaches fit; which do you want?' }, { text: '  1. Patch the existing module and keep the public API' }, { text: '  2. Replace it behind a feature flag' }]
         : sst === 'failed' ? [{ text: 'Tests failed in 2 files. Stopped before committing.', tone: 'err' }]
         : [{ text: 'Working on it. Edited 3 files so far.' }];
@@ -1727,10 +1732,10 @@ class Component extends DCLogic {
         view: 'terminal', open: null, linking: true,
         session: { label: name, state: sst, meta: dq.get('meta') || '' },
         fromTask: dq.get('task') ? { id: dq.get('task'), title: dq.get('taskTitle') || 'Task' } : null,
-        mine: known || s.mine.some(x => x.name === name) ? s.mine : [{ name, state: sst === 'running' || sst === 'waiting' || sst === 'failed' ? sst : 'idle', age: 'now', mins: 0, repo, agent: 'claude-code', host: 'optimus', project: REPO_PROJECT[repo] }].concat(s.mine),
+        mine: known || s.mine.some(x => x.name === name) ? s.mine : [{ name, state: sst === 'running' || sst === 'waiting' || sst === 'failed' ? sst : 'idle', age: 'now', mins: 0, repo, agent: 'claude-code', host: qHost, project: REPO_PROJECT[repo] }].concat(s.mine),
         feed: known && name.indexOf('PR #121') === 0 ? s.feed : [
           { you: 'true', text: prompt },
-          { agent: 'true', lines: [{ text: 'Reading ' + repo + ' and the files the prompt mentions.' }].concat(tail) },
+          { agent: 'true', lines: (isReview ? [] : [{ text: 'Reading ' + repo + ' and the files the prompt mentions.' }]).concat(tail) },
         ],
       }));
       if (this.runAttach) this.runAttach();

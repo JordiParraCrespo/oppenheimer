@@ -17,12 +17,14 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 [data-noscrollbar]::-webkit-scrollbar{display:none}
 @keyframes op-rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 </style>
+<script src="./rail-order.js"></script>
 </helmet>
 <div onClick="{{ closeMenus }}" style="display:flex;height:100vh;overflow:hidden;background:var(--background);font-family:var(--font-sans);color:var(--fg);font-size:14px">
 
 <nav class="op-rail" aria-label="Sections">
 <span class="op-rail__mark" aria-hidden="true">O</span>
 <button class="op-rail__btn" type="button" aria-label="Sessions" onClick="{{ goSessions }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions</span></button>
+<a class="op-rail__btn" href="./PullRequests.dc.html" aria-label="Pull requests" title="Pull requests" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import></a>
 <button class="op-rail__btn" type="button" aria-label="Automations" onClick="{{ goRoutines }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Automations</span></button>
 <button class="op-rail__btn" type="button" data-active="true" aria-current="page" aria-label="Plan"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Plan<span class="op-nav__count">{{ openN }}</span></span></button>
 </nav>
