@@ -14,8 +14,9 @@ The frames are `../mvp/design/version1/Tasks.dc.html` (Plan) and the
 They are the source of truth for what Plan *is*; these notes decide how
 the control plane and the console make it true.
 
-**Status: proposal.** Everything under "Proposed" below is a
-recommendation waiting on the owner; nothing is built.
+**Status: design.** Plan is 0.3, and Google Calendar is read-only
+first (decision log). The rest is proposed and waits on the owner;
+nothing is built.
 
 | # | Note | What it settles |
 |---|------|-----------------|
@@ -43,29 +44,32 @@ Each slice ships behind the `plan` release flag (one row in
    to Done when its PR merges (needs 0.2), a week view, tasks from
    GitHub Issues or Linear, Plan in Slack (0.4) and on mobile (0.5).
 
+## Decided
+
+1. **Plan is 0.3**, not the MVP. The export put it in `version1/` and
+   on the MVP console's rail, as it did automations, which then moved
+   into the MVP (`../mvp/16-automations-architecture.md` Q1); Plan does
+   not. The MVP console does not show the Plan rail item until 0.3
+   ships it behind the `plan` flag.
+2. **Google Calendar is read-only first.** The grant asks for
+   `calendar.readonly`; a Google event opens read-only with "Open in
+   Google Calendar" and is not draggable, which departs from the frames.
+   Writing back (`calendar.events`, conflict handling) is a later slice.
+   (03 §4)
+
 ## Open questions for the owner
 
 These change what gets built; each note carries its own smaller ones.
 
-1. **Is Plan 0.3, or is it in the MVP?** The export put it in
-   `version1/` and on the MVP console's rail, as it did automations,
-   which then moved into the MVP (`../mvp/16-automations-architecture.md`
-   Q1). This directory assumes 0.3.
-2. **Google Calendar: read-only or two-way?** The frames let you edit
-   and drag a Google event like a personal one. Two-way needs the
-   `calendar.events` scope (sensitive, longer Google verification) and
-   conflict handling; read-only needs `calendar.readonly` and is
-   slice 4 as written. Proposed: read-only first, Google events open
-   read-only with "Open in Google Calendar". (03 §4)
-3. **Do personal events belong in Oppenheimer at all?** The frames have
+1. **Do personal events belong in Oppenheimer at all?** The frames have
    a Personal calendar (Dentist, Padel). It is cheap (one table we need
    for Google anyway), but it makes Plan a calendar app as well as a
    board. Proposed: keep it, it is the same row with `source = manual`.
-4. **Does anything move a card on its own?** The frames move a card to
+2. **Does anything move a card on its own?** The frames move a card to
    In progress when a session starts from it, and nothing else. Proposed:
    only that in 0.3; Done stays a person's call until 0.2 gives a merged
    PR to key on.
-5. **Queued.** The launch dialog says "Queue session" for an offline
+3. **Queued.** The launch dialog says "Queue session" for an offline
    host, and the session waits as Queued. The API already keeps such a
    session `starting` and re-dispatches it on reconnect. Proposed:
    derive Queued (`starting` + host offline) everywhere in the console,
@@ -77,3 +81,6 @@ These change what gets built; each note carries its own smaller ones.
   sketch points here. The product word is **Plan** for the section,
   **task** and **goal** for the things in it; the 0.3 sketch's "card"
   is a task.
+- 2026-10-05: the owner decided Plan is 0.3, not the MVP, and Google
+  Calendar is read-only first (`calendar.readonly`); two-way is a later
+  slice.

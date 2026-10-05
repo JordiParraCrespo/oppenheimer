@@ -24,7 +24,8 @@ enabled or not, and nothing on the server joins across modules.
 
 - **Event** (Google or Personal): time and title; busy events in full
   colour, free ones muted; all-day events as a filled bar. Click opens
-  the event dialog. Drag to another day moves it.
+  the event dialog. Drag to another day moves a personal event; a
+  Google event is read-only (§4).
 - **Task due**: a check-circle and the title, struck through when Done.
   Click opens the task dialog; drag to another day sets its due date
   (`PATCH /tasks/:id`).
@@ -90,12 +91,12 @@ Google Calendar") or Settings → Integrations, with
 client (`GOOGLE_CLIENT_ID`) serves both; the callback is the API's own
 (`/v1/calendar/google/callback`), not Better Auth's.
 
-**Scope.** Proposed: `https://www.googleapis.com/auth/calendar.readonly`
+**Scope.** Decided (README): `https://www.googleapis.com/auth/calendar.readonly`
 (plus `calendar.calendarlist.readonly` if we let people pick calendars).
 Read-only is a "sensitive" scope; Google's app verification takes days
 and a published privacy policy, and until then the client is limited to
 100 test users, which covers us. Two-way editing needs
-`calendar.events` and conflict handling (README open question 2). With
+`calendar.events` and conflict handling, and is a later slice. With
 read-only, a Google event's dialog is read-only with "Open in Google
 Calendar", and Google events are not draggable — a change from the
 frames, which treat them like personal ones.
@@ -161,9 +162,8 @@ second adapter and a `provider` value, not a new module.
 
 ## Open questions
 
-1. Read-only or two-way (README question 2).
-2. Which calendars: primary only (simplest), or a picker in Settings?
-3. Should a task with a due **time** be blocked on the calendar as a
+1. Which calendars: primary only (simplest), or a picker in Settings?
+2. Should a task with a due **time** be blocked on the calendar as a
    time slot, or always sit in the day's top band as the frames draw it?
-4. Does a week view come before or after Google write-back? The frames'
+3. Does a week view come before or after Google write-back? The frames'
    "n more" overflow on busy days (the 8-item Tuesday) argues for it.

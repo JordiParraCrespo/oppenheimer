@@ -106,7 +106,7 @@ for, and a session is where it gets done.
    existing ones, not a view of sessions. Sessions with no task stay off
    the board.
 2. *Do columns move on their own?* Only on start (→ In progress). Every
-   other move is a person's. (README open question 4)
+   other move is a person's. (README open question 2)
 3. *Does a card seed the prompt?* Yes: title and notes, editable before
    starting.
 4. *Per project or per workspace?* One workspace board, filtered by
