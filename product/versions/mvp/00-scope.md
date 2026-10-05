@@ -103,6 +103,12 @@ or a blank terminal in each session; Claude Code is the one the demo walks.
   agent, with its structured result), then resume. Slack, Linear and push
   guardrails stay later.
 
+- **Plan is in the MVP** (2026-10-05, 17). The rail's third item: a
+  board of tasks (Later, To do, In progress, Done) per project with
+  goals over it, tasks that start a session or link existing ones, and
+  a month calendar of task due dates, automation runs, personal events
+  and a read-only Google Calendar. Designed in 18 to 20.
+
 ## Out, for later slices
 
 Virtual machines in any form (Shared workspace VM, Clean VM,

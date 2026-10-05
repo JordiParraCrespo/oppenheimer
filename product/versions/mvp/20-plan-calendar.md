@@ -1,4 +1,4 @@
-# 03 — The calendar
+# 20 — Plan: the calendar
 
 Plan's second section is a month view that shows four **layers**, each
 with a toggle in the sidebar: **Google Calendar**, **Personal**, **Task
@@ -12,21 +12,21 @@ each owned by the module whose rows they are:
 
 | Layer | Owner | Request |
 |-------|-------|---------|
-| Task due dates | `tasks` (02) | `GET /tasks?dueFrom&dueTo` |
+| Task due dates | `tasks` (19) | `GET /tasks?dueFrom&dueTo` |
 | Automations | `automations` | `GET /automations/occurrences?from&to` (new, §3) |
 | Google Calendar | `calendar`, read through to Google | `GET /calendar/google/events?from&to` (§5) |
 | Personal | `calendar` | `GET /calendar/events?from&to` (§2) |
 
 A layer toggle is a query enabled or not, each read is cached in the
 console's query client for the open month, and nothing on the server
-joins across modules. Every route here is behind the `plan` flag (02 §8).
+joins across modules. Every route here is behind the `plan` flag (19 §8).
 
 ## 1. What each item does
 
 - **Event**: time and title; busy events in full colour, free ones
   muted; all-day events as a filled bar. A personal event opens the
   event dialog and drags to another day. A Google event opens read-only
-  with "Open in Google Calendar" and does not drag (README, decided 2).
+  with "Open in Google Calendar" and does not drag (17, decided 2).
 - **Task due**: a check-circle and the title, struck through when Done.
   Click opens the task dialog; drag to another day sets its due date
   (`PATCH /tasks/:id`).
@@ -36,7 +36,7 @@ joins across modules. Every route here is behind the `plan` flag (02 §8).
 
 ## 2. Personal events
 
-Personal events stay (README, decided 3). They are the only events Plan
+Personal events stay (17, decided 3). They are the only events Plan
 stores, in one table with one shape:
 
 **`calendar_event`**
@@ -90,7 +90,7 @@ signs in with GitHub may still want it. The calendar is a second,
 incremental OAuth grant, started from Plan's sidebar ("Connect Google
 Calendar") or Settings → Integrations, with `access_type=offline`,
 `prompt=consent`, `include_granted_scopes=true` and
-`https://www.googleapis.com/auth/calendar.readonly` (decided, README).
+`https://www.googleapis.com/auth/calendar.readonly` (decided, 17).
 The same Google client (`GOOGLE_CLIENT_ID`) serves both; the callback is
 the API's own (`/v1/calendar/google/callback`), not Better Auth's.
 `calendar.readonly` is a "sensitive" scope: Google's verification takes

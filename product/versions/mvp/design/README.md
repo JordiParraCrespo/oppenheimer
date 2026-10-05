@@ -142,9 +142,8 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   ahead of the notes, which keep workspaces personal with no invitations;
   the emails are their own slice.
 - Plan (`Tasks`, and the rail item and Back to task chip in
-  `SessionsConsole`) is in the version-1 frames as of the 2026-10-05
-  export, but it is 0.3, after the MVP; its design is `../../0.3/`. One
-  departure from the frames there: Google Calendar is read-only, so a
-  Google event cannot be edited or dragged.
+  `SessionsConsole`) is in the MVP; its design is `../17-plan.md` to
+  `../20-plan-calendar.md`. One departure from the frames there: Google
+  Calendar is read-only, so a Google event cannot be edited or dragged.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

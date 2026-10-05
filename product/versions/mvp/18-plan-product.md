@@ -1,4 +1,4 @@
-# 01 — Plan: the product
+# 18 — Plan: the product
 
 What `Tasks.dc.html` draws, read as product rules. Where the frames
 are prototype shortcuts (seed data, `localStorage`, stale model names)
@@ -12,7 +12,7 @@ this note says what the real thing does instead.
 - **Sidebar.** Two sections, **Tasks** (open count) and **Calendar**
   (today's event count). Under Tasks: **Projects**: All projects, each
   project with its open count, and Unassigned, plus "+" for New project.
-  Under Calendar: the layer toggles (03 §1) and the Google Calendar connection
+  Under Calendar: the layer toggles (20 §1) and the Google Calendar connection
   card.
 - **Routes.** `/plan` (the board, `?project=<slug>&goal=<id>`),
   `/plan/calendar` (`?month=2026-10`), and `?task=<id>` on either to open
@@ -63,10 +63,10 @@ this note says what the real thing does instead.
   goal keeps its tasks and clears their goal.
 - **Project** (from Plan's sidebar): name only in the frame. The real
   one is the console's existing New project dialog
-  (`../mvp/05-screens.md`), so a project made here has default
+  (`05-screens.md`), so a project made here has default
   repositories, host and agent like any other.
 - "None" in the frames is **Unassigned**: the workspace's Unassigned
-  project, as for sessions (`../mvp/10-api-modules-and-data-model.md`).
+  project, as for sessions (`10-api-modules-and-data-model.md`).
 
 ## 4. Tasks and sessions
 
@@ -88,7 +88,7 @@ for, and a session is where it gets done.
   never shows a live session line while it sits in To do. The move is
   conditional on the status the person saw when they clicked: if the
   card was dragged elsewhere in the meantime, the session is linked and
-  the status is left alone (02 §5). (README, decided 4)
+  the status is left alone (19 §5). (17, decided 4)
 - **Offline host.** If the chosen host is offline, a note says "*host*
   has been offline for *2 days*. The session waits as Queued and starts
   when its runner reconnects.", and the button reads **Queue session**.

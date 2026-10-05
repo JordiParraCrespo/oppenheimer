@@ -1,4 +1,4 @@
-# 02 — Tasks and goals: the backend
+# 19 — Plan: tasks and goals, the backend
 
 One new API module, `tasks/`, holding tasks, goals and the links from
 tasks to sessions. It is a Domain-Driven Hexagon module like
@@ -136,7 +136,7 @@ schemas in `packages/shared/src/schemas/task.schema.ts` and
 (`id`, `name`, state group, `updatedAt`, `origin`), read through a
 sessions query port (`SessionSummaryReader`) in one batched call, so the
 card's session line needs no second request. Overdue has one owner, the
-client: it compares due dates with its own date (01, open question 1)
+client: it compares due dates with its own date (18, open question 1)
 over the tasks it already holds. The summary returns counts only.
 
 Optimistic updates in the console (TanStack Query) for move, complete

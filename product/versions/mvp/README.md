@@ -28,6 +28,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 14 | [Hosts in Settings](14-hosts-settings.md) | The 2026-09-26 Settings frame read against `hosts/`: status and running count, what removing a host stops, the pairing poll, the CPU count |
 | 15 | [Host metadata](15-host-metadata.md) | Where a host's facts live, split by how often they change: inventory, presence, networks, events; access patterns, retention, measured cost |
 | 16 | [Automations: the architecture](16-automations-architecture.md) | How a run is fired, guarded and dispatched: the inbound-events hub, the schedule tick, triggers, revisions, guards, configuration, the data model; and the headless drive that runs take next, in its slices |
+| 17 | [Plan](17-plan.md) | The rail's third item: the slices and the owner's decisions; tasks, goals and a calendar beside Google Calendar |
+| 18 | [Plan: the product](18-plan-product.md) | What the Plan frames say, screen by screen: the board, the dialogs, tasks that start or link sessions, and the gaps the frames leave |
+| 19 | [Plan: tasks and goals](19-plan-tasks-and-goals.md) | The `tasks` module: tables, ordering, the API, starting a session from a task, the attach rule, Queued |
+| 20 | [Plan: the calendar](20-plan-calendar.md) | The month view from four reads, personal events, read-only Google Calendar through a port |
 
 ## Decision log
 
@@ -588,3 +592,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   and the runner names every file `<id><extension from the table>`. The
   wire keeps its `image` names; a runner that takes more says so with
   `session.files`, and one that does not is sent images only.
+- 2026-10-05: **Plan is in the MVP** (17–20). The export drew a third
+  rail item: a board of tasks with goals over it, tasks that start or
+  link sessions, and a month calendar. The owner decided it ships in the
+  first version, absorbing what `next-steps/` called 0.3 Kanban; Google
+  Calendar is read-only first, personal events stay, only attaching a
+  session moves a card, and Queued is a console label.
