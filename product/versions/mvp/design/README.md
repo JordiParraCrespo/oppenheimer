@@ -27,6 +27,7 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions and automations, the sidebar grouped by project, terminal, composer |
 | [`Routines`](version1/Routines.dc.html) | The console on its automations page — automations grouped by project, their triggers, steps and run history |
 | [`Tasks`](version1/Tasks.dc.html) | Plan — the rail's third item: tasks by status (To do, In progress, Later, Done) per project, goals, a calendar synced with Google Calendar, and tasks started as or linked to sessions |
+| [`PullRequests`](version1/PullRequests.dc.html) | Pull requests — the rail's fourth item: the queue of pull requests waiting on you, a diff with line comments and a file tree, the review agent, checks, conflicts and merge |
 | [`Settings`](version1/Settings.dc.html) | Settings — profile, workspace and hosts (rename, remove, and an Add a host page with the install command and agent prompt) |
 | [`Emails`](version1/Emails.dc.html) | Index of the transactional emails, each framed live from `version1/emails/` with when it is sent and its link lifetime |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
@@ -82,6 +83,17 @@ with goals above them; a task has a title, notes, a due date and time,
 and either starts a session (agent, model, host, repository, prompt) or
 links an existing one. A calendar view shows the tasks beside events from
 Google Calendar.
+
+The 2026-10-05 evening export adds `PullRequests`, opened from a fourth
+rail item, Pull requests, which `SessionsConsole` and `Tasks` now carry
+too. It is a review queue: the pull requests waiting on you, searchable
+by title, repository, number and author, with what to review next, the
+path to merge and median waits; one opens on its brief, files and checks,
+the diff with a file tree, line comments and a pending review to submit,
+an agent to ask or run a command, conflicts, and Merge behind a confirm.
+`version1/assets/filetypes/` holds the file-type marks its file tree uses.
+`version1/rail-order.js`, loaded by the three console frames, lets a
+person drag the rail's items into their own order, kept per browser.
 
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
@@ -147,5 +159,10 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   Calendar is read-only, so a Google event cannot be edited or dragged.
   Its components are in the design system (the showcase's Plan group),
   and the console builds on them.
+- Pull requests (`PullRequests`) are in the version-1 frames as of the
+  2026-10-05 evening export, but `../00-scope.md` keeps "Create PR and
+  diff view" out of the MVP and `../../../next-steps/0.2-git-and-github.md`
+  is where reviewing and merging a pull request from the console lives.
+  The rail's drag-to-reorder is in no note either.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.
