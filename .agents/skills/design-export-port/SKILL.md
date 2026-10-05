@@ -178,6 +178,9 @@ Keep the JS `tailwind.config.ts` preset in sync with the same values.
   plus the component that draws it; the feature only passes a callback.
   Read the frame's script for the edge cases it already handles (counting
   `dragenter`/`dragleave`, ignoring drags without files) and keep them.
+- Behaviour the frames hand-write twice (two drags, two month grids) is
+  one primitive the surfaces compose. Port the frame's numbers onto the
+  token ramp, not its script.
 - Stay in the package. A frame that implies new behaviour in the app, the
   API or the runner (an upload for files that are not images) is listed as
   out of scope in the PR, not built in it, unless the user asked for it.
