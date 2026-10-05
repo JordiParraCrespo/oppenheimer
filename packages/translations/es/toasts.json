@@ -18,5 +18,10 @@
   "hostRemoved": "Se ha quitado «{{name}}».",
   "deviceSignedOut": "Se ha cerrado la sesión en «{{name}}».",
   "otherDevicesSignedOut": "Se ha cerrado la sesión en tus otros dispositivos.",
-  "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos."
+  "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos.",
+  "taskAdded": "Tarea añadida.",
+  "taskDeleted": "Tarea eliminada.",
+  "goalAdded": "Objetivo añadido.",
+  "taskSessionStarted": "Sesión iniciada.",
+  "taskSessionQueued": "Sesión en cola. Empieza cuando su host se vuelva a conectar."
 }

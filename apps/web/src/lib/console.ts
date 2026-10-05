@@ -35,15 +35,20 @@ export const useConsoleDialog = consoleDialogs.useDialogActions;
 export const useConsoleDialogRequest = consoleDialogs.useDialogRequest;
 
 /** The console's lists: what the rail switches and the sidebar shows. */
-export type ConsoleList = 'sessions' | 'automations';
+export type ConsoleList = 'sessions' | 'automations' | 'tasks' | 'calendar';
 
 /**
  * Which of the console's lists the address is under: `automations` for
- * everything under `/automations`, the editor included, and `sessions` for
- * the rest. One predicate, asked of the router, so the rail's current item
- * and the sidebar beside it can never disagree.
+ * everything under `/automations`, the editor included; Plan's two, `calendar`
+ * under `/plan/calendar` (Google's return included) and `tasks` for the rest
+ * of `/plan`; and `sessions` for everything else. One predicate, asked of the
+ * router, so the rail's current item and the sidebar beside it can never
+ * disagree.
  */
 export function useConsoleList(): ConsoleList {
   const matchRoute = useMatchRoute();
-  return matchRoute({ to: '/automations', fuzzy: true }) ? 'automations' : 'sessions';
+  if (matchRoute({ to: '/automations', fuzzy: true })) return 'automations';
+  if (matchRoute({ to: '/plan/calendar', fuzzy: true })) return 'calendar';
+  if (matchRoute({ to: '/plan', fuzzy: true })) return 'tasks';
+  return 'sessions';
 }

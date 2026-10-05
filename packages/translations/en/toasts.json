@@ -18,5 +18,10 @@
   "hostRemoved": "“{{name}}” removed.",
   "deviceSignedOut": "“{{name}}” signed out.",
   "otherDevicesSignedOut": "Your other devices are signed out.",
-  "passwordChanged": "Password changed. Other devices are signed out."
+  "passwordChanged": "Password changed. Other devices are signed out.",
+  "taskAdded": "Task added.",
+  "taskDeleted": "Task deleted.",
+  "goalAdded": "Goal added.",
+  "taskSessionStarted": "Session started.",
+  "taskSessionQueued": "Session queued. It starts when its host reconnects."
 }

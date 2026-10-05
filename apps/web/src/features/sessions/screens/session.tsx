@@ -23,8 +23,15 @@ import { SessionTerminal } from '../sections/session-terminal';
 export function SessionScreen({
   sessionId,
   closed,
+  statusItem,
 }: {
   sessionId: string;
+  /**
+   * A chip at the head of the terminal's status bar: the task this session is
+   * on ("Back to task", `18-plan-product.md` §4). The route composes it, since
+   * the task is the tasks feature's.
+   */
+  statusItem?: ReactNode;
   /**
    * What to draw instead of the session's own stopped pane.
    *
@@ -115,7 +122,7 @@ export function SessionScreen({
        surface in dark mode. */
     <div className="flex min-h-0 flex-1 flex-col bg-term-bg p-3.5">
       <div className="mx-auto flex min-h-0 w-full max-w-260 flex-1 flex-col overflow-hidden">
-        <SessionTerminal sessionId={session.id} hostId={session.hostId} />
+        <SessionTerminal sessionId={session.id} hostId={session.hostId} statusItem={statusItem} />
       </div>
     </div>
   );

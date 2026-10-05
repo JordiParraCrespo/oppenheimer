@@ -23,6 +23,8 @@ export const SCOPE_RESOURCES = [
   'projects',
   'sessions',
   'automations',
+  'tasks',
+  'calendar',
   'repositories',
   'flags',
 ] as const;
@@ -373,6 +375,55 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
           { action: 'create', subject: 'Automation' },
           { action: 'update', subject: 'Automation' },
           { action: 'delete', subject: 'Automation' },
+        ],
+      },
+    },
+  },
+  {
+    resource: 'tasks',
+    label: 'Tasks',
+    description: 'Plan: tasks, goals, and the sessions a task started or links.',
+    levels: {
+      read: {
+        scope: 'tasks:read',
+        label: 'Read',
+        description: 'Read the board, its tasks and goals, and which sessions a task links.',
+        policies: [{ action: 'read', subject: 'Task' }],
+      },
+      write: {
+        scope: 'tasks:write',
+        label: 'Edit',
+        description:
+          'Create, edit, move and delete tasks and goals, link sessions, and start a session from a task.',
+        // Starting a session from a task also asks `sessions:write` on the
+        // route, so a tasks-only credential cannot reach a host.
+        policies: [
+          { action: 'create', subject: 'Task' },
+          { action: 'update', subject: 'Task' },
+          { action: 'delete', subject: 'Task' },
+        ],
+      },
+    },
+  },
+  {
+    resource: 'calendar',
+    label: 'Calendar',
+    description: 'Plan’s calendar: the workspace’s own events and the Google Calendar layer.',
+    levels: {
+      read: {
+        scope: 'calendar:read',
+        label: 'Read',
+        description: 'Read events, and the caller’s own Google Calendar for a range of days.',
+        policies: [{ action: 'read', subject: 'Calendar' }],
+      },
+      write: {
+        scope: 'calendar:write',
+        label: 'Edit',
+        description: 'Create, edit and delete events, and connect or disconnect Google Calendar.',
+        policies: [
+          { action: 'create', subject: 'Calendar' },
+          { action: 'update', subject: 'Calendar' },
+          { action: 'delete', subject: 'Calendar' },
         ],
       },
     },

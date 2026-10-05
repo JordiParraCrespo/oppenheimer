@@ -27,7 +27,8 @@ they disagree, fix the code or update both together. The tier-wide model is
       │                @oppenheimer/design-system-web   Base UI + Tailwind v4
       │
       ├──────────────► @oppenheimer/frontend-consumer   sessions, projects, hosts, installations,
-      │                                  automations; organizations, profile, permissions
+      │                                  automations, tasks, calendar; organizations,
+      │                                  profile, permissions
       │                       │
       └──────────────► @oppenheimer/frontend-core       auth, users, user-settings,
                               │                   capabilities, analytics, OppenheimerApp

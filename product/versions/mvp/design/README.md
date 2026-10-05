@@ -141,10 +141,11 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   alone until the API names a trigger. The workspace-invite email runs
   ahead of the notes, which keep workspaces personal with no invitations;
   the emails are their own slice.
-- Plan (`Tasks`) is in the version-1 frames as of the 2026-10-05 export,
-  but the notes put a board of tasks linked to projects and sessions in
-  0.3 (`../../../next-steps/0.3-kanban.md`), after the MVP, and no note
-  covers goals or the Google Calendar sync yet. Its components landed in the design
-  system ahead of that slice (the showcase's Plan group).
+- Plan (`Tasks`, and the rail item and Back to task chip in
+  `SessionsConsole`) is in the MVP; its design is `../17-plan.md` to
+  `../20-plan-calendar.md`. One departure from the frames there: Google
+  Calendar is read-only, so a Google event cannot be edited or dragged.
+  Its components are in the design system (the showcase's Plan group),
+  and the console builds on them.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

@@ -1,15 +1,14 @@
 import { Wordmark } from '@oppenheimer/design-system-web';
 import { AppShell, RouteError } from '@oppenheimer/frontend-web';
 import { createFileRoute, Outlet, redirect, useMatches } from '@tanstack/react-router';
-import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WorkspaceGate } from '@/features/organizations/sections/workspace-gate';
 import { NotFoundScreen } from '@/features/public/screens/not-found';
 import { ConsoleRail } from '@/features/sessions/sections/console-rail';
-import { SessionsSidebar } from '@/features/sessions/sections/sessions-sidebar';
 import { ConsoleDialogProvider, useConsoleList } from '@/lib/console';
 import { NAV, USER_MENU } from '@/lib/nav';
 import { ConsoleDialogs } from '@/providers/console-dialogs';
+import { ConsoleSidebar } from './_authenticated/-console-sidebar';
 
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
@@ -20,26 +19,6 @@ declare module '@tanstack/react-router' {
     shell?: 'own';
   }
 }
-
-/**
- * The automations sidebar loads with the automations pages, not with the
- * shell: most visits are to sessions, and its trigger catalog and schedule
- * arithmetic have no business on their first load.
- */
-const AutomationsSidebar = lazy(() =>
-  import('@/features/automations/sections/automations-sidebar').then((module) => ({
-    default: module.AutomationsSidebar,
-  })),
-);
-
-const SIDEBARS = {
-  sessions: <SessionsSidebar />,
-  automations: (
-    <Suspense fallback={null}>
-      <AutomationsSidebar />
-    </Suspense>
-  ),
-};
 
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: ({ context, location }) => {
@@ -88,7 +67,7 @@ function AuthenticatedShell() {
           nav={NAV}
           userMenuLinks={USER_MENU}
           rail={<ConsoleRail />}
-          sidebar={SIDEBARS[list]}
+          sidebar={<ConsoleSidebar list={list} />}
           // The brand row names the product, not the workspace — version 1 has one
           // workspace per account. `chrome={false}` is the bar, the palette and
           // the foot's hairline; `AppShell` and `use-shell.ts` say why.
