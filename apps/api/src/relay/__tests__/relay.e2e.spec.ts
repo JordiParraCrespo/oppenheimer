@@ -303,6 +303,20 @@ describe.skipIf(!enabled)('the runner and the relay, end to end', () => {
       checkouts: { branch: string; path: string }[];
     };
     expect(payload.checkouts[0].branch).toBe('oppenheimer/hello-world/bold-otter-3f9a7k');
+    // `session.started` is the pane, made before the clone: the worktree is
+    // there once the agent step lands, which is when the agent runs in it.
+    await until(
+      'the agent step',
+      () =>
+        w.batches
+          .flatMap((b) => b.events)
+          .find((e) => {
+            if (e.kind !== 'session.step') return false;
+            const step = JSON.parse(e.payload) as { step: string; status: string };
+            return step.step === 'agent' && step.status === 'done';
+          }),
+      120_000,
+    );
     expect(existsSync(payload.checkouts[0].path)).toBe(true);
     const windows = execFileSync('tmux', [
       '-L',

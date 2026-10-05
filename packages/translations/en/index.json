@@ -375,6 +375,7 @@
       "failedTitle": "The session did not start",
       "failedLead": "The host could not start this session.",
       "working": "Working…",
+      "downloading": "This host has not had this repository before, so it is downloading it first. This one takes a bit longer; later sessions on it start in about a second.",
       "failed": "Failed",
       "took": "{{seconds}}s",
       "steps": {
@@ -387,7 +388,8 @@
         },
         "clone": {
           "label": "Clone {{repo}}",
-          "doing": "Fetching the repository…"
+          "doing": "Fetching the repository…",
+          "downloading": "Downloading the repository…"
         },
         "worktree": {
           "label": "Check out the branch",

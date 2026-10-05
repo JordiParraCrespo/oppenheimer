@@ -111,10 +111,11 @@ runner does with it and point back.
   is up.** The host builds the tmux session *before* it clones, so the pane
   is there about thirty milliseconds in and the clone, the worktree and the
   agent follow it. The checkouts it reports are therefore true before they
-  are on disk: the worktree's path is known from the start. The console
-  attaches on this, which is the point — it puts the reader in the terminal
-  while the repository is still arriving, instead of in front of a spinner.
-  The `agent` step of `session.step` is what says the agent was launched.
+  are on disk: the worktree's path is known from the start. An attach is
+  served from here on. The `agent` step of `session.step` is what says the
+  agent was launched, and a console that watched the start keeps its steps
+  on screen until then (05), so the reader sees the agent and never a shell
+  waiting on a clone.
 - **`session.attach` is served while a create is still running.** It needs
   the session's tmux name and nothing else, and that exists from
   `session.started`; the host makes the attach wait for the pane rather than
@@ -236,10 +237,11 @@ runner does with it and point back.
   database is behind stops reading the link, and a resend then only
   adds to the backlog. The log the batch lands in is 03's; the
   wire that carries it is this note's. While a session starts, the
-  runner logs `session.step`: its kind and `{ step, status, durationMs }`
-  payload are `packages/shared/src/protocol/session-step.ts`, and the Go
-  twin is generated from it. A failure is `session.failed`, not a step
-  status.
+  runner logs `session.step`: its kind and `{ step, status, durationMs,
+  download }` payload are `packages/shared/src/protocol/session-step.ts`,
+  and the Go twin is generated from it. `download` marks the clone step
+  of a repository the host has never held, which is a first download
+  rather than a fetch. A failure is `session.failed`, not a step status.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

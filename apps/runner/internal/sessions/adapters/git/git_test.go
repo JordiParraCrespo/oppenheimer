@@ -132,6 +132,29 @@ func TestEnsureClonesShallowThenDeepensToABloblessStore(t *testing.T) {
 	}
 }
 
+// Has is what tells a first session's download from a later one's fetch, and
+// a clone that failed half-way must not count as the repository being here.
+func TestHasIsTrueOnlyOnceAWholeCloneIsInPlace(t *testing.T) {
+	remote := origin(t)
+	c, _ := client(t)
+	ctx := context.Background()
+	if c.Has(repo) {
+		t.Fatal("a repository never cloned is reported as here")
+	}
+	if err := c.Ensure(ctx, repo, remote, "no-such-branch"); err == nil {
+		t.Fatal("a clone of a missing branch succeeded")
+	}
+	if c.Has(repo) {
+		t.Fatal("a failed clone is reported as the repository being here")
+	}
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	if !c.Has(repo) {
+		t.Fatal("a cloned repository is not reported as here")
+	}
+}
+
 func TestEnsureFetchesOnlyTheBranchesItIsGiven(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)

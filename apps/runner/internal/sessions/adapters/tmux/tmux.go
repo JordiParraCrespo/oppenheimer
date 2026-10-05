@@ -318,6 +318,20 @@ func (s *Server) SendKeys(ctx context.Context, target, keys string) error {
 	return err
 }
 
+// Launch replaces the shell a window was made with by command, in dir.
+// `respawn-pane -k` makes the program the pane's own process, as `exec` would,
+// on a fresh screen: no line is typed for it, and neither the shell's prompt
+// nor its scrollback survives. The command runs with the session's
+// environment, under the runner's PATH rather than a login shell's.
+func (s *Server) Launch(ctx context.Context, target, dir, command string) error {
+	args := []string{"respawn-pane", "-k", "-t", target, "-c", dir}
+	if command != "" {
+		args = append(args, command)
+	}
+	_, err := s.command(ctx, args...)
+	return err
+}
+
 // Paste puts text into a window through a tmux buffer. `-p` makes it a
 // bracketed paste when the program asked for one, which is what lets an
 // agent tell a pasted path from typed keys and take the file it names. The

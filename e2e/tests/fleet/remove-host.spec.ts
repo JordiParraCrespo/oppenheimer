@@ -30,12 +30,13 @@ test('removing a host stops its sessions on the machine', async ({ page }) => {
   const tmux = () =>
     box.host.exec('tmux -L oppenheimer ls -F "#{session_name}" 2>/dev/null || true');
   expect(tmux()).toContain(tmuxName);
-  // This session's worktree: the runner names its directory after the session.
+  // This session's worktree, the only one on this host: the branch it is on.
   const worktree = () =>
     box.host.exec(
-      `cd ~/oppenheimer-ai/workspaces/*/*/worktrees/*-${sessionId} && git branch --show-current`,
+      'for d in ~/oppenheimer-ai/workspaces/*/*/.worktrees/*/; do git -C "$d" branch --show-current; done 2>/dev/null || true',
     );
-  expect(worktree()).toBe(checkouts[0]?.branch);
+  // The row opens with the pane, before the clone: the worktree follows.
+  await expect.poll(worktree, { timeout: 60_000 }).toBe(checkouts[0]?.branch);
 
   await signInAs(page, user);
   await page.goto('/settings/hosts');

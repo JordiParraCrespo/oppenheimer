@@ -1,6 +1,10 @@
 import { Button } from '@oppenheimer/design-system-web';
 import { isSessionNotFound } from '@oppenheimer/frontend-consumer';
-import { useRestartSession, useSession } from '@oppenheimer/frontend-consumer/react';
+import {
+  useRestartSession,
+  useSession,
+  useSessionOpening,
+} from '@oppenheimer/frontend-consumer/react';
 import { RouteError, RouteNotFound } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
@@ -43,6 +47,9 @@ export function SessionScreen({
   // The way back from a stopped session. Held here because this screen is the
   // one that branches on the lifecycle; the pane below it takes props only.
   const restart = useRestartSession();
+  // A start watched here stays on its pane until the agent is running, not
+  // just until the host made the terminal it will run in.
+  const opening = useSessionOpening(session);
 
   if (isPending) return <SessionSkeleton />;
 
@@ -67,7 +74,7 @@ export function SessionScreen({
   // group is organised by what needs you, so an `idle` session has a live PTY
   // and a `waiting-on-you` one may be a terminal or a failure. What the pane
   // turns on is whether a terminal exists to attach to.
-  if (session.isProvisioning || session.lifecycle === 'failed') {
+  if (session.isProvisioning || opening || session.lifecycle === 'failed') {
     return <SessionProvisioning session={session} />;
   }
 
