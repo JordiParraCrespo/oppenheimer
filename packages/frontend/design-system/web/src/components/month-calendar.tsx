@@ -4,7 +4,7 @@ import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
 import { CircleCheckIcon, XIcon, ZapIcon } from 'lucide-react';
 import type * as React from 'react';
 
-import { dateOf, type IsoDate, type MonthDay } from '../internal/month';
+import { dateFormat, dateOf, type IsoDate, type MonthDay } from '../internal/month';
 import { DayNumber, MonthGrid } from '../internal/month-grid';
 import { cn } from '../lib/utils';
 import { useDraggable, useDroppable } from './drag';
@@ -262,8 +262,8 @@ function MonthCalendar({
   closeLabel?: string;
   className?: string;
 }) {
-  const longDay = new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' });
-  const monthDay = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' });
+  const longDay = dateFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' });
+  const monthDay = dateFormat(locale, { month: 'short', day: 'numeric' });
   const byDay = new Map<IsoDate, CalendarEntryData[]>();
   for (const entry of entries) {
     const list = byDay.get(entry.date) ?? [];

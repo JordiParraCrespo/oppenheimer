@@ -139,14 +139,20 @@ function takes(accepts: unknown, type: unknown): boolean {
 }
 
 /**
- * Only the targets that take the active item. Under the pointer first; from
- * the keyboard, which has no pointer, the nearest corners.
+ * Only the targets that take the active item. An item of a sortable group
+ * answers with its group's `accepts`, so a group that refuses a type
+ * refuses it over its items too, not only over its empty space. Under the
+ * pointer first; from the keyboard, which has no pointer, the nearest
+ * corners.
  */
 const acceptingCollisions: CollisionDetection = (args) => {
   const type = args.active.data.current?.type;
-  const droppableContainers = args.droppableContainers.filter((container) =>
-    takes(container.data.current?.accepts, type),
-  );
+  const accepting = (data: Record<string, unknown> | undefined): boolean => {
+    const group = (data?.sortable as { containerId?: string | number } | undefined)?.containerId;
+    if (group === undefined) return takes(data?.accepts, type);
+    return takes(args.droppableContainers.find((c) => c.id === group)?.data.current?.accepts, type);
+  };
+  const droppableContainers = args.droppableContainers.filter((container) => accepting(container.data.current));
   const scoped = { ...args, droppableContainers };
   const under = pointerWithin(scoped);
   return under.length > 0 ? under : closestCorners(scoped);

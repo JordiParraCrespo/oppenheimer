@@ -38,9 +38,22 @@ function monthDays(year: number, month: number): MonthDay[] {
   });
 }
 
+const formats = new Map<string, Intl.DateTimeFormat>();
+
+/** One `Intl.DateTimeFormat` per locale and options, built once, not on every render. */
+function dateFormat(locale: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = `${locale}|${JSON.stringify(options)}`;
+  let format = formats.get(key);
+  if (!format) {
+    format = new Intl.DateTimeFormat(locale, options);
+    formats.set(key, format);
+  }
+  return format;
+}
+
 /** Monday to Sunday in the locale, in the given width. */
 function weekdayNames(locale: string, width: 'short' | 'narrow'): string[] {
-  const format = new Intl.DateTimeFormat(locale, { weekday: width });
+  const format = dateFormat(locale, { weekday: width });
   // 2024-01-01 was a Monday.
   return Array.from({ length: 7 }, (_, i) => format.format(new Date(2024, 0, 1 + i)));
 }
@@ -50,5 +63,5 @@ function shiftMonth(year: number, month: number, by: number): { year: number; mo
   return { year: date.getFullYear(), month: date.getMonth() };
 }
 
-export { dateOf, isoOf, monthDays, shiftMonth, weekdayNames };
+export { dateFormat, dateOf, isoOf, monthDays, shiftMonth, weekdayNames };
 export type { IsoDate, MonthDay };

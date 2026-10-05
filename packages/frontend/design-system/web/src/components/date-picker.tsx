@@ -3,7 +3,7 @@
 import { CalendarIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import * as React from 'react';
 
-import { dateOf, type IsoDate, shiftMonth } from '../internal/month';
+import { dateFormat, dateOf, type IsoDate, shiftMonth } from '../internal/month';
 import { DayNumber, MonthGrid } from '../internal/month-grid';
 import { cn } from '../lib/utils';
 import { Button } from './button';
@@ -44,11 +44,11 @@ function DatePicker({
   const [open, setOpen] = React.useState(false);
   const start = dateOf(value ?? today);
   const [view, setView] = React.useState({ year: start.getFullYear(), month: start.getMonth() });
-  const title = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(
+  const title = dateFormat(locale, { month: 'long', year: 'numeric' }).format(
     new Date(view.year, view.month, 1),
   );
   const label = value
-    ? new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' }).format(dateOf(value))
+    ? dateFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' }).format(dateOf(value))
     : placeholder;
 
   const pick = (iso: IsoDate | null) => {
