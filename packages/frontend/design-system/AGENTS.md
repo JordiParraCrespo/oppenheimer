@@ -135,31 +135,35 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   `PageHeaderRow size="display"`. `TaskBoard` lays out whatever columns it
   is given at its parent's width; `MonthCalendar` and `DatePicker` are the
   two faces of one month grid.
-- **A pull request reads as a queue, a briefing and its diff.** The queue
-  is `PullRequestTable` rows: a `LaneBadge`, the title (the row's one
-  button), the reference and author, a `DiffStat`, checks and conflicts as
-  run-state dots, the wait in mono, and a `MergeButton` that asks once in
-  place. A pull request opens on `PullRequestHeader`, `StatCard`s,
-  `MergePath` and `Panel`s; Submit review opens `ReviewDecision`; the
-  author's description is `Prose`. The scopes and the pane's views are a
-  `SegmentedControl` at `lg` and `md`.
-- **Diffs are @pierre/diffs and the file tree is @pierre/trees**, the
-  libraries DiffsHub runs on, wrapped so no app imports them: `DiffView`
-  (Shiki highlighting, unified or split, comments as line annotations drawn
-  as `DiffComment` / `DiffCommentDraft`), `DiffFile` with its sticky
-  `DiffFileHeader`, and `DiffFileTree`. Both draw in a shadow root; their
-  colours, type and radius are the tokens, passed through their custom
-  properties, and they follow the app's theme switch, not the OS.
-- **A file wears its type's mark.** `FileIcon` and the tree draw the same
-  published icon set (@pierre/trees, its `complete` set) in the
-  `--file-icon-*` hues: an identity, like an agent's vendor colour, never a
-  state. Never a redrawn logo.
-- **Analytics are a few small charts on the chart tokens.** `BarChart`,
-  `LineChart`, `RingChart`, `BarList`, with `ChartHero` and `ChartLegend`:
+- **A gate is a status, not a new vocabulary.** Whether something may go
+  ahead (checks, conflicts, a merge step) is a `StatusDot` gate state
+  (`passing`, `blocked`, `waiting`), worded by the caller; a run's state
+  stays a run state. A component never adds its own state union for a
+  colour the dot already has.
+- **A section is a `Card`.** `Panel` and `StatCard` compose `Card`; a
+  numbered sequence is `Stepper` (`MergePath` is its horizontal
+  orientation in a `Panel`); a share of a whole is `StatBar`, wherever it
+  sits; a weight in ink (a pull request's lane) is a `Badge` variant
+  (`strong`, `soft`), not a component per meaning.
+- **Data colours are one set of tones.** Charts, stat bars and fact dots
+  take a `DataTone` (`chart-1` to `chart-5`, the status hues, `muted`);
   `--chart-1` to `--chart-3` are a categorical order validated for
-  colour-blind separation in both themes, values sit in text ink, one axis,
-  every chart answers the pointer and every multi-series one has a legend.
-  No chart library.
+  colour-blind separation in both themes. Values sit in text ink, one
+  axis, every chart answers the pointer and every multi-series one has a
+  legend. No chart library.
+- **One comment field.** A review's comment and a diff's draft are the
+  same field: ⌘/Ctrl+Enter submits when there is something to submit, Esc
+  cancels. A choice of a few described options is a `RadioGroup`.
+- **Diffs are @pierre/diffs and the file tree is @pierre/trees**, wrapped
+  so no app imports them. They draw in a shadow root, so their colours,
+  type and radius reach them only as the tokens passed through their
+  custom properties. The theme is the app's: `DiffView` takes
+  `colorScheme` from the caller and never reads the OS or the document.
+- **A file wears its type's mark.** `FileIcon` and the tree draw the same
+  published icon set (@pierre/trees, its `complete` set). Its hue comes
+  from one map, the `--file-icon-*` tokens in `globals.css`, which the
+  tree reads too: an identity, like an agent's vendor colour, never a
+  state. Never a redrawn logo, never a hue table in a component.
 - **The rail's order is the reader's.** Its items are `SortableRailItem`s
   in a vertical `SortableGroup` inside the shell's `DragProvider`; where
   the order is kept is the app's.

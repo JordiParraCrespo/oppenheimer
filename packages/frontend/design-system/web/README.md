@@ -54,9 +54,10 @@ Wire the styles into the app's CSS entry alongside Tailwind:
   every file under the section that draws it.
 - `src/internal/` — the building blocks only those components import
   (`Checkbox`, `Label`, `Empty`, `Sheet`, the month helpers and the one
-  month grid `MonthCalendar` and `DatePicker` share, and `useColorScheme`,
-  which hands the app's theme to the libraries that theme in JavaScript);
-  not exported.
+  month grid `MonthCalendar` and `DatePicker` share, `AuthorMark` (a
+  session's or a person's glyph), `DataTone` (the one tone set charts and
+  stat bars take) and `CommentField` (the review's and the diff draft's
+  comment box)); not exported.
 - `src/lib/utils` — `cn()`.
 
 The rules are in [`../AGENTS.md`](../AGENTS.md); the rendered reference is the

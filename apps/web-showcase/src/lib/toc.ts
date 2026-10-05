@@ -124,6 +124,7 @@ export const TOC: TocGroup[] = [
       { id: 'segmented', label: 'SegmentedControl', icon: ToggleLeftIcon, components: ['segmented-control'] },
       { id: 'textarea', label: 'Textarea', icon: TextIcon, components: ['textarea'] },
       { id: 'checkbox', label: 'Checkbox', icon: SquareCheckIcon, components: ['checkbox'] },
+      { id: 'radiogroup', label: 'RadioGroup', icon: CircleDotIcon, components: ['radio-group'] },
       { id: 'disclosure', label: 'Disclosure', icon: ChevronDownCircleIcon, components: ['disclosure'] },
       { id: 'chipselect', label: 'ChipSelect', icon: SquareChevronDownIcon, components: ['chip-select', 'popover'] },
       { id: 'reporows', label: 'RepositoryAddField · RepositoryRowList', icon: ListChecksIcon, components: ['repository-add-field', 'repository-row-list', 'repository-select'] },

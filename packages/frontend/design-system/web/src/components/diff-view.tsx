@@ -5,7 +5,7 @@ import { PatchDiff } from '@pierre/diffs/react';
 import { BotIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, MessageSquareIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
-import { useColorScheme } from '../internal/color-scheme';
+import { CommentField } from '../internal/comment-field';
 import { cn } from '../lib/utils';
 import { Button } from './button';
 import { DiffStat } from './diff-stat';
@@ -34,17 +34,15 @@ import { IconButton } from './icon-button';
  *
  * The colours are the system's: the code on the card, additions and
  * deletions as a wash of the success and danger hues with a 3px bar, the
- * gutter numbers subtle; the library follows the app's theme switch, not the
- * OS.
+ * gutter numbers subtle. `colorScheme` is the app's resolved theme (the
+ * kit's `useTheme().resolvedTheme`), so the code follows the app's switch,
+ * not the OS.
  */
 
 type DiffLayout = 'unified' | 'split';
 
-interface DiffAnnotation<T> {
-  side: 'additions' | 'deletions';
-  lineNumber: number;
-  metadata: T;
-}
+/** A comment's place: one side of one line, with what the caller draws there. The library's own type. */
+type DiffAnnotation<T> = DiffLineAnnotation<T>;
 
 /** The library's custom properties, pointed at the tokens. */
 const DIFF_TOKENS = {
@@ -69,6 +67,7 @@ const DIFF_TOKENS = {
 function DiffView<T>({
   patch,
   layout = 'unified',
+  colorScheme,
   annotations,
   renderAnnotation,
   onCommentLine,
@@ -77,25 +76,26 @@ function DiffView<T>({
   /** One file's unified diff (`diff --git …` or just its `@@` hunks). */
   patch: string;
   layout?: DiffLayout;
+  /** The app's resolved theme, from its theme owner, so the code's colours match it from the first paint. */
+  colorScheme: 'light' | 'dark';
   annotations?: DiffAnnotation<T>[];
   renderAnnotation?: (annotation: DiffAnnotation<T>) => React.ReactNode;
   /** The + on a hovered line: the line (or range) to start a comment on. */
   onCommentLine?: (line: { side: 'additions' | 'deletions'; lineNumber: number; endLineNumber: number }) => void;
   className?: string;
 }) {
-  const scheme = useColorScheme();
   return (
     <div data-slot="diff-view" data-layout={layout} className={cn('min-w-0 bg-card', className)}>
       <PatchDiff<T>
         patch={patch}
         style={DIFF_TOKENS}
-        lineAnnotations={annotations as DiffLineAnnotation<T>[] | undefined}
-        renderAnnotation={renderAnnotation ? (annotation) => renderAnnotation(annotation as DiffAnnotation<T>) : undefined}
+        lineAnnotations={annotations}
+        renderAnnotation={renderAnnotation}
         disableWorkerPool
         options={{
           diffStyle: layout,
           theme: { light: 'pierre-light', dark: 'pierre-dark' },
-          themeType: scheme,
+          themeType: colorScheme,
           disableFileHeader: true,
           overflow: 'wrap',
           diffIndicators: 'classic',
@@ -296,23 +296,17 @@ function DiffCommentDraft({
       <div className="flex max-w-160 items-start gap-2.5">
         {avatar ? <span className="mt-1.5 shrink-0">{avatar}</span> : null}
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <textarea
+          <CommentField
             rows={3}
             value={value}
+            onValueChange={onValueChange}
             placeholder={labels.placeholder ?? 'Leave a comment'}
             // biome-ignore lint/a11y/noAutofocus: the field opens because the reader asked to comment.
             autoFocus
-            onChange={(event) => onValueChange(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && (event.metaKey || event.ctrlKey) && !empty) {
-                event.preventDefault();
-                onAddToReview();
-              } else if (event.key === 'Escape') {
-                event.preventDefault();
-                onCancel();
-              }
-            }}
-            className="min-h-19 w-full resize-y rounded-sm border border-border bg-background px-3 py-2.5 text-[13.5px] leading-normal text-fg outline-none placeholder:text-fg-subtle focus:border-primary focus:ring-3 focus:ring-ring"
+            onSubmit={onAddToReview}
+            onCancel={onCancel}
+            canSubmit={!empty}
+            className="min-h-19 bg-background"
           />
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="secondary" size="sm" disabled={empty} onClick={onAddToReview}>

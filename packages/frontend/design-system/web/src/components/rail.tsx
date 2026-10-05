@@ -144,22 +144,23 @@ function SortableRailItem({
   className,
   style,
   ...props
-}: React.ComponentProps<typeof RailItem> & { id: string }) {
+}: Omit<React.ComponentProps<typeof RailItem>, 'ref' | 'onPointerDown' | 'onKeyDown'> & { id: string }) {
   const { ref, handleProps, style: slide, isDragging } = useSortableItem({
     id,
     data: { type: 'rail-item', label: props.label },
   });
+  // The drag contract goes last: the caller's props never replace the ref, the listeners or the slide.
   return (
     <RailItem
-      ref={ref}
+      {...props}
       data-dragging={isDragging || undefined}
-      style={{ ...style, ...slide }}
       className={cn(
         'touch-none data-dragging:bg-selected-surface data-dragging:shadow-[inset_0_0_0_1px_var(--ring)] data-dragging:[&>*]:invisible',
         className,
       )}
       {...handleProps}
-      {...props}
+      ref={ref}
+      style={{ ...style, ...slide }}
     />
   );
 }

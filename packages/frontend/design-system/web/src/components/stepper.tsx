@@ -30,30 +30,40 @@ type Step = {
  * green as steps complete. The footer carries a mono elapsed time ("00:12")
  * and a status word ("Working…"). Pending steps are not numbered: the order
  * is the rail's, and a number would read as a count of what is left.
+ *
+ * `orientation="horizontal"` lays the same steps across, for gates read at
+ * a glance rather than watched (a pull request's path to merge: Checks,
+ * Conflicts, Review, Merge): the marks in a row with the rail running
+ * between them, each label and meta under its mark. A gate that is not met
+ * is `failed`.
  */
 function Stepper({
   steps,
   elapsed,
   status,
+  orientation = 'vertical',
   className,
   ...props
 }: React.ComponentProps<'div'> & {
-  steps: Step[];
+  steps: readonly Step[];
+  orientation?: 'vertical' | 'horizontal';
   /** Mono elapsed time in the footer ("00:12"). */
   elapsed?: React.ReactNode;
   status?: React.ReactNode;
 }) {
   return (
-    <div data-slot="stepper" className={cn('flex flex-col', className)} {...props}>
-      <ol className="m-0 flex list-none flex-col p-0">
+    <div data-slot="stepper" data-orientation={orientation} className={cn('group/stepper flex flex-col', className)} {...props}>
+      <ol
+        className="m-0 flex list-none flex-col p-0 group-data-[orientation=horizontal]/stepper:grid group-data-[orientation=horizontal]/stepper:grid-flow-col group-data-[orientation=horizontal]/stepper:auto-cols-fr"
+      >
         {steps.map((step, index) => (
           <li
             key={step.id}
             data-slot="step"
             data-state={step.state}
-            className="group/step flex min-h-[46px] gap-3"
+            className="group/step flex min-h-[46px] gap-3 group-data-[orientation=horizontal]/stepper:min-w-0 group-data-[orientation=horizontal]/stepper:flex-col group-data-[orientation=horizontal]/stepper:gap-2.5"
           >
-            <span className="flex w-[18px] shrink-0 flex-col items-center">
+            <span className="flex w-[18px] shrink-0 flex-col items-center group-data-[orientation=horizontal]/stepper:w-full group-data-[orientation=horizontal]/stepper:flex-row">
               <span
                 aria-hidden
                 className={cn(
@@ -75,12 +85,13 @@ function Stepper({
                   aria-hidden
                   className={cn(
                     'mt-1 w-[1.5px] flex-1 rounded-[1px] bg-border transition-colors duration-base',
+                    'group-data-[orientation=horizontal]/stepper:mx-1.5 group-data-[orientation=horizontal]/stepper:mt-0 group-data-[orientation=horizontal]/stepper:h-[1.5px] group-data-[orientation=horizontal]/stepper:w-auto',
                     step.state === 'done' && 'bg-success',
                   )}
                 />
               ) : null}
             </span>
-            <span className="flex min-w-0 flex-1 flex-col gap-[3px] pb-4">
+            <span className="flex min-w-0 flex-1 flex-col gap-[3px] pb-4 group-data-[orientation=horizontal]/stepper:pr-3 group-data-[orientation=horizontal]/stepper:pb-0">
               <span
                 className={cn(
                   'text-operate text-fg-muted transition-colors duration-base',

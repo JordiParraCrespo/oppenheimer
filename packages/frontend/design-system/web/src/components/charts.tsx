@@ -2,7 +2,9 @@
 
 import * as React from 'react';
 
+import { type DataTone, TONE_BG, TONE_STROKE } from '../internal/data-tone';
 import { cn } from '../lib/utils';
+import { StatBar } from './stat-card';
 
 /**
  * The review analytics' charts, drawn in HTML and SVG on the chart tokens
@@ -22,41 +24,22 @@ import { cn } from '../lib/utils';
  *   the hovered point, ticks on the right, and the readout above.
  * - `RingChart`: shares of a whole (the lane mix) as a ring with rounded
  *   arcs and gaps, the total in the middle; its rows are `ChartRow`s.
- * - `BarList`: ranked rows (why pull requests waited), each a label, a
- *   share bar on the hover track, the value and its previous one.
+ * - `BarList`: ranked rows (why pull requests waited), each a label, the
+ *   value and its previous one over a `StatBar` share.
  * - `ChartLegend`: the series' dots and names, under a chart.
  */
-
-type ChartTone = 'chart-1' | 'chart-2' | 'chart-3' | 'chart-4' | 'chart-5' | 'muted';
-
-const BG: Record<ChartTone, string> = {
-  'chart-1': 'bg-chart-1',
-  'chart-2': 'bg-chart-2',
-  'chart-3': 'bg-chart-3',
-  'chart-4': 'bg-chart-4',
-  'chart-5': 'bg-chart-5',
-  muted: 'bg-fg-subtle',
-};
-const STROKE: Record<ChartTone, string> = {
-  'chart-1': 'var(--chart-1)',
-  'chart-2': 'var(--chart-2)',
-  'chart-3': 'var(--chart-3)',
-  'chart-4': 'var(--chart-4)',
-  'chart-5': 'var(--chart-5)',
-  muted: 'var(--fg-subtle)',
-};
 
 interface ChartSeries {
   key: string;
   label: string;
-  tone: ChartTone;
+  tone: DataTone;
 }
 
 /** The default value format: the number as it is. */
 const plain = (value: number) => String(value);
 
-function Dot({ tone, className }: { tone: ChartTone; className?: string }) {
-  return <span aria-hidden className={cn('size-2 shrink-0 rounded-pill', BG[tone], className)} />;
+function Dot({ tone, className }: { tone: DataTone; className?: string }) {
+  return <span aria-hidden className={cn('size-2 shrink-0 rounded-pill', TONE_BG[tone], className)} />;
 }
 
 function ChartHero({
@@ -66,7 +49,7 @@ function ChartHero({
   delta,
   className,
 }: {
-  tone?: ChartTone;
+  tone?: DataTone;
   label: React.ReactNode;
   value: React.ReactNode;
   /** A `StatDelta`. */
@@ -95,6 +78,43 @@ function ChartLegend({ series, className }: { series: readonly ChartSeries[]; cl
         </span>
       ))}
     </div>
+  );
+}
+
+/**
+ * What a chart reads out above itself while a point is hovered: the
+ * point's label, muted, then each series' dot and value in mono, in text
+ * ink. Without a point it shows `idle`.
+ */
+function ChartReadout({
+  series,
+  label,
+  values,
+  format,
+  idle,
+}: {
+  series: readonly ChartSeries[];
+  label?: string;
+  values?: Record<string, number>;
+  format: (value: number) => string;
+  idle?: React.ReactNode;
+}) {
+  return (
+    <figcaption className="figures flex min-h-4 items-center justify-end gap-3 text-xs text-fg">
+      {values ? (
+        <>
+          <span className="text-fg-muted">{label}</span>
+          {series.map((s) => (
+            <span key={s.key} className="flex items-center gap-1.5">
+              <Dot tone={s.tone} className="size-1.5" />
+              {format(values[s.key] ?? 0)}
+            </span>
+          ))}
+        </>
+      ) : (
+        <span className="text-fg-muted">{idle}</span>
+      )}
+    </figcaption>
   );
 }
 
@@ -130,24 +150,13 @@ function BarChart({
   const hovered = hover === null ? null : data[hover];
   return (
     <figure data-slot="bar-chart" className={cn('m-0 flex min-w-0 flex-col gap-2', className)} aria-label={ariaLabel}>
-      <figcaption className="figures flex min-h-4 items-center justify-end gap-3 text-xs text-fg">
-        {hovered ? (
-          <>
-            <span className="text-fg-muted">
-              {hovered.sublabel ? `${hovered.sublabel} ` : ''}
-              {hovered.label}
-            </span>
-            {series.map((s) => (
-              <span key={s.key} className="flex items-center gap-1.5">
-                <Dot tone={s.tone} className="size-1.5" />
-                {format(hovered.values[s.key] ?? 0)}
-              </span>
-            ))}
-          </>
-        ) : (
-          <span className="text-fg-muted">{readout}</span>
-        )}
-      </figcaption>
+      <ChartReadout
+        series={series}
+        label={hovered ? `${hovered.sublabel ? `${hovered.sublabel} ` : ''}${hovered.label}` : undefined}
+        values={hovered?.values}
+        format={format}
+        idle={readout}
+      />
       <div
         role="list"
         className="flex items-end gap-[5px]"
@@ -168,7 +177,7 @@ function BarChart({
                 key={s.key}
                 className={cn(
                   'max-w-4 min-w-0 flex-1 rounded-t-[4px] transition-[height,opacity] duration-slow ease-out',
-                  BG[s.tone],
+                  TONE_BG[s.tone],
                   hover !== null && hover !== i && 'opacity-35',
                 )}
                 // biome-ignore lint/style/noInlineStyles: the bar's height is the value.
@@ -229,19 +238,7 @@ function LineChart({
   const hovered = hover === null ? null : points[hover];
   return (
     <figure data-slot="line-chart" className={cn('m-0 flex min-w-0 flex-col gap-2', className)} aria-label={ariaLabel}>
-      <figcaption className="figures flex min-h-4 items-center justify-end gap-3 text-xs text-fg">
-        {hovered ? (
-          <>
-            <span className="text-fg-muted">{hovered.label}</span>
-            {series.map((s) => (
-              <span key={s.key} className="flex items-center gap-1.5">
-                <Dot tone={s.tone} className="size-1.5" />
-                {format(hovered.values[s.key] ?? 0)}
-              </span>
-            ))}
-          </>
-        ) : null}
-      </figcaption>
+      <ChartReadout series={series} label={hovered?.label} values={hovered?.values} format={format} />
       <div className="grid grid-cols-[minmax(0,1fr)_34px] gap-x-2.5">
         {/* biome-ignore lint/a11y/noStaticElementInteractions: the hover readout repeats the figure's data, which the list below carries for assistive technology. */}
         <div
@@ -265,7 +262,7 @@ function LineChart({
                 key={s.key}
                 d={path(s.key)}
                 fill="none"
-                stroke={STROKE[s.tone]}
+                stroke={TONE_STROKE[s.tone]}
                 strokeWidth={2}
                 vectorEffect="non-scaling-stroke"
                 strokeLinejoin="round"
@@ -285,7 +282,7 @@ function LineChart({
                 <span
                   key={s.key}
                   aria-hidden
-                  className={cn('pointer-events-none absolute -mb-[4.5px] -ml-[4.5px] size-[9px] rounded-pill shadow-[0_0_0_2px_var(--card)]', BG[s.tone])}
+                  className={cn('pointer-events-none absolute -mb-[4.5px] -ml-[4.5px] size-[9px] rounded-pill shadow-[0_0_0_2px_var(--card)]', TONE_BG[s.tone])}
                   // biome-ignore lint/style/noInlineStyles: the dot sits on the value.
                   style={{ left: `${x(hover)}%`, bottom: `${100 - y(hovered.values[s.key] ?? 0)}%` }}
                 />
@@ -335,7 +332,7 @@ function RingChart({
   size = 148,
   className,
 }: {
-  segments: readonly { key: string; label: string; value: number; tone: ChartTone }[];
+  segments: readonly { key: string; label: string; value: number; tone: DataTone }[];
   /** In the middle, over the total: "Merged". */
   label?: React.ReactNode;
   value?: React.ReactNode;
@@ -365,7 +362,7 @@ function RingChart({
               cy="50"
               r="44"
               fill="none"
-              stroke={STROKE[s.tone]}
+              stroke={TONE_STROKE[s.tone]}
               strokeWidth={7}
               strokeLinecap="round"
               pathLength={100}
@@ -394,7 +391,7 @@ function ChartRow({
   delta,
   className,
 }: {
-  tone?: ChartTone;
+  tone?: DataTone;
   label: React.ReactNode;
   value: React.ReactNode;
   share?: React.ReactNode;
@@ -437,13 +434,7 @@ function BarList({
             <span className="figures font-medium text-fg">{row.value}</span>
             {row.previous !== undefined ? <span className="figures w-12 text-right text-xs text-fg-subtle">{row.previous}</span> : null}
           </span>
-          <span aria-hidden className="h-1.5 overflow-hidden rounded-pill bg-hover-surface">
-            <span
-              className="block h-full rounded-pill bg-chart-1 transition-[width] duration-slow ease-out"
-              // biome-ignore lint/style/noInlineStyles: the share is data.
-              style={{ width: `${Math.max(0, Math.min(100, row.share))}%` }}
-            />
-          </span>
+          <StatBar track segments={[{ share: row.share, tone: 'chart-1' }]} />
           {row.detail ? <span className="text-xs text-fg-muted">{row.detail}</span> : null}
         </li>
       ))}
@@ -452,4 +443,5 @@ function BarList({
 }
 
 export { BarChart, BarList, ChartHero, ChartLegend, ChartRow, LineChart, RingChart };
-export type { BarDatum, ChartSeries, ChartTone, LinePoint };
+export type { BarDatum, ChartSeries, LinePoint };
+export type { DataTone };

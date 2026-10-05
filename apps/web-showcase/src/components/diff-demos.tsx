@@ -16,6 +16,8 @@ import { FileIcon } from '@oppenheimer/design-system-web/file-icon';
 import { SegmentedControl, SegmentedControlItem } from '@oppenheimer/design-system-web/segmented-control';
 import * as React from 'react';
 
+import { useShowcaseTheme } from '@/lib/theme';
+
 import { KEYCHAIN_PATCH, PR_FILES, RECONNECT_PATCH } from './pull-request-fixtures';
 
 type Note = { kind: 'agent'; text: string } | { kind: 'draft' } | { kind: 'mine'; text: string };
@@ -26,6 +28,7 @@ type Note = { kind: 'agent'; text: string } | { kind: 'draft' } | { kind: 'mine'
  * the + on a hovered line, and the tree beside them.
  */
 export function DiffDemo() {
+  const { dark } = useShowcaseTheme();
   const [layout, setLayout] = React.useState<DiffLayout>('unified');
   const [collapsed, setCollapsed] = React.useState<Record<string, boolean>>({});
   const [viewed, setViewed] = React.useState<Record<string, boolean>>({});
@@ -71,6 +74,7 @@ export function DiffDemo() {
                 <DiffView<Note>
                   patch={file.patch}
                   layout={layout}
+                  colorScheme={dark ? 'dark' : 'light'}
                   annotations={file.annotations}
                   onCommentLine={
                     file.path === PR_FILES[0].path
@@ -115,7 +119,7 @@ export function DiffDemo() {
             </DiffFile>
           ))}
         </div>
-        <aside className="hidden w-65 shrink-0 border-l border-border-subtle lg:flex">
+        <aside className="hidden w-100 shrink-0 border-l border-border-subtle lg:flex">
           <DiffFileTree files={PR_FILES} selected={selected} onSelect={setSelected} viewed={viewedCount} className="w-full" />
         </aside>
       </div>

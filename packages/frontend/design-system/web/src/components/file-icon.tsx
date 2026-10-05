@@ -1,5 +1,7 @@
+'use client';
+
 import { createFileTreeIconResolver, getBuiltInSpriteSheet } from '@pierre/trees';
-import type * as React from 'react';
+import * as React from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -7,94 +9,46 @@ import { cn } from '../lib/utils';
  * FileIcon — a file's type mark, from the path: the Go gopher's cyan for
  * `.go`, TypeScript's blue, YAML's red, a neutral page for anything the set
  * does not know. The marks are the published icon set `DiffFileTree` draws
- * (@pierre/trees, its `complete` set), so a diff's header and its tree show
- * the same mark; each wears its hue from the `--file-icon-*` tokens.
+ * (@pierre/trees, its `complete` set): the icon is a `<use>` of the set's
+ * own sprite, added to the document once, and its hue is the type's
+ * `--file-icon-<type>` token, the map the tree reads too.
  */
 
 const resolver = createFileTreeIconResolver({ set: 'complete', colored: true });
+const SPRITE_ID = 'op-file-icon-sprite';
 
-/** The sprite's symbols by id, parsed once: `{ viewBox, body }`. */
-let symbols: Map<string, { viewBox: string; body: string }> | null = null;
-function symbolOf(id: string) {
-  if (!symbols) {
-    symbols = new Map();
-    const sprite = getBuiltInSpriteSheet('complete');
-    for (const match of sprite.matchAll(/<symbol id="([^"]+)" viewBox="([^"]+)">([\s\S]*?)<\/symbol>/g)) {
-      const [, symbolId, viewBox, body] = match;
-      if (symbolId && viewBox && body) symbols.set(symbolId, { viewBox, body });
-    }
-  }
-  return symbols.get(id);
+/** Adds the set's sprite to the document once, so every icon can reference its symbols. */
+function useSprite() {
+  React.useEffect(() => {
+    // The document body: the sprite the <use> elements below point into.
+    if (document.getElementById(SPRITE_ID)) return;
+    // The HTML parser puts the set's markup in the SVG namespace, as it would inline.
+    const sprite = new DOMParser().parseFromString(getBuiltInSpriteSheet('complete'), 'text/html').body.firstElementChild;
+    if (!sprite) return;
+    sprite.id = SPRITE_ID;
+    sprite.setAttribute('aria-hidden', 'true');
+    sprite.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden');
+    document.body.append(document.adoptNode(sprite));
+  }, []);
 }
 
-/** The set's token for each hue it colours with; anything unlisted is gray. */
-const HUE: Record<string, string> = {
-  astro: 'purple',
-  babel: 'yellow',
-  bash: 'green',
-  biome: 'blue',
-  bootstrap: 'indigo',
-  browserslist: 'yellow',
-  bun: 'mauve',
-  c: 'blue',
-  cpp: 'blue',
-  claude: 'orange',
-  css: 'indigo',
-  database: 'purple',
-  docker: 'blue',
-  eslint: 'indigo',
-  go: 'cyan',
-  graphql: 'pink',
-  html: 'orange',
-  image: 'pink',
-  javascript: 'yellow',
-  json: 'orange',
-  markdown: 'green',
-  mcp: 'teal',
-  npm: 'red',
-  postcss: 'red',
-  prettier: 'teal',
-  python: 'blue',
-  react: 'cyan',
-  ruby: 'red',
-  rust: 'orange',
-  sass: 'pink',
-  svelte: 'red',
-  svg: 'orange',
-  svgo: 'green',
-  swift: 'orange',
-  table: 'teal',
-  tailwind: 'cyan',
-  terraform: 'indigo',
-  typescript: 'blue',
-  vite: 'purple',
-  vscode: 'blue',
-  vue: 'green',
-  wasm: 'indigo',
-  webpack: 'blue',
-  yml: 'red',
-  zig: 'orange',
-  zip: 'orange',
-};
-
 function FileIcon({ path, className, ...props }: Omit<React.ComponentProps<'svg'>, 'children'> & { path: string }) {
+  useSprite();
   const icon = resolver.resolveIcon('file-tree-icon-file', path);
-  const symbol = symbolOf(icon.name) ?? symbolOf('file-tree-builtin-default');
   const token = icon.token ?? 'default';
   return (
     <svg
       aria-hidden
       data-slot="file-icon"
       data-token={token}
-      viewBox={symbol?.viewBox ?? '0 0 16 16'}
       fill="currentColor"
       className={cn('size-4 shrink-0', className)}
-      // biome-ignore lint/style/noInlineStyles: the hue is the file's type, data from the path.
-      style={{ color: `var(--file-icon-${HUE[token] ?? 'gray'})` }}
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: the body is the icon set's own static sprite, not input.
-      dangerouslySetInnerHTML={{ __html: symbol?.body ?? '' }}
+      // biome-ignore lint/style/noInlineStyles: the hue is the file's type, read from its token.
+      style={{ color: `var(--file-icon-${token}, var(--file-icon-default))` }}
       {...props}
-    />
+    >
+      <use href={`#${icon.name}`} />
+    </svg>
   );
 }
 

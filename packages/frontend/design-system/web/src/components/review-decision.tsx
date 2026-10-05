@@ -1,13 +1,13 @@
 'use client';
 
-import { Radio as RadioPrimitive } from '@base-ui/react/radio';
-import { RadioGroup as RadioGroupPrimitive } from '@base-ui/react/radio-group';
 import { BotIcon, ChevronDownIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
+import { CommentField } from '../internal/comment-field';
 import { cn } from '../lib/utils';
 import { Button } from './button';
 import { IconButton } from './icon-button';
+import { RadioGroup, RadioGroupItem } from './radio-group';
 
 /**
  * Submitting a review: what the Submit review button opens, a 380px panel
@@ -15,7 +15,8 @@ import { IconButton } from './icon-button';
  *
  * - `ReviewDecision`: the verdicts as a radio list, each with its line of
  *   what it does (Comment; Approve and merge; Request changes, which sends
- *   the comments back to the session), the review comment (optional), a
+ *   the comments back to the session) on `RadioGroup`, the review comment
+ *   (optional, the one comment field: ⌘⏎ submits), a
  *   note on what posts with it, and the foot: Discard the pending comments,
  *   close, and the primary button named for the verdict.
  * - `SubmitReviewButton`: the trigger, primary, with how many comments are
@@ -67,32 +68,11 @@ function ReviewDecision({
     <div data-slot="review-decision" className={cn('flex flex-col gap-3.5', className)}>
       <div className="flex flex-col gap-1">
         <span className="pb-1 text-operate font-medium text-fg">{labels.title ?? 'Review decision'}</span>
-        <RadioGroupPrimitive
-          value={verdict}
-          onValueChange={(next) => onVerdictChange(String(next))}
-          aria-label={labels.title ?? 'Review decision'}
-          className="flex flex-col gap-1"
-        >
+        <RadioGroup value={verdict} onValueChange={onVerdictChange} aria-label={labels.title ?? 'Review decision'}>
           {verdicts.map((option) => (
-            <label
-              key={option.value}
-              className="flex cursor-pointer items-start gap-3 rounded-sm px-2.5 py-[7px] transition-colors duration-instant ease-standard hover:bg-hover-surface has-data-checked:bg-selected-surface"
-            >
-              <RadioPrimitive.Root
-                value={option.value}
-                className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-pill border-[1.5px] border-border-strong outline-none focus-visible:ring-3 focus-visible:ring-ring data-checked:border-primary"
-              >
-                <RadioPrimitive.Indicator className="size-1.5 rounded-pill bg-primary" />
-              </RadioPrimitive.Root>
-              <span className="flex min-w-0 flex-col gap-0.5">
-                <span className="text-[13.5px] font-medium text-fg">{option.label}</span>
-                {option.description ? (
-                  <span className="text-xs leading-[1.4] text-pretty text-fg-muted">{option.description}</span>
-                ) : null}
-              </span>
-            </label>
+            <RadioGroupItem key={option.value} value={option.value} label={option.label} description={option.description} />
           ))}
-        </RadioGroupPrimitive>
+        </RadioGroup>
       </div>
       <label className="flex flex-col gap-2">
         <span className="flex items-baseline gap-2">
@@ -100,18 +80,13 @@ function ReviewDecision({
           <span className="flex-1" />
           <span className="text-xs text-fg-subtle">{labels.optional ?? 'Optional'}</span>
         </span>
-        <textarea
-          rows={2}
+        <CommentField
           value={comment}
+          onValueChange={onCommentChange}
           placeholder={labels.placeholder ?? 'Anything to add for the author'}
-          onChange={(event) => onCommentChange(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && (event.metaKey || event.ctrlKey) && !submitDisabled) {
-              event.preventDefault();
-              onSubmit();
-            }
-          }}
-          className="min-h-16 w-full resize-y rounded-sm border border-border bg-background px-3 py-[9px] text-[13.5px] leading-normal text-fg outline-none placeholder:text-fg-subtle focus:border-primary focus:ring-3 focus:ring-ring"
+          onSubmit={onSubmit}
+          onCancel={onClose}
+          canSubmit={!submitDisabled}
         />
         {agentNote ? (
           <span className="flex items-start gap-1.5 text-xs leading-[1.45] text-fg-muted">

@@ -177,6 +177,7 @@ import { TimeGrid } from '@oppenheimer/design-system-web/time-grid';
 import { ChipSelectPopup } from '@oppenheimer/design-system-web/chip-select';
 import { Input } from '@oppenheimer/design-system-web/input';
 import { Checkbox } from '@oppenheimer/design-system-web/checkbox';
+import { RadioGroup, RadioGroupItem } from '@oppenheimer/design-system-web/radio-group';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 import {
   ArrowUpRightIcon,
@@ -708,6 +709,19 @@ export function CheckboxDemo() {
       <Checkbox checked={discard} onCheckedChange={(checked) => setDiscard(checked === true)} />
       Discard work that is not pushed
     </FieldLabel>
+  );
+}
+
+/* ── RadioGroup ──────────────────────────────────────────────────────────── */
+
+export function RadioGroupDemo() {
+  const [verdict, setVerdict] = React.useState('comment');
+  return (
+    <RadioGroup value={verdict} onValueChange={setVerdict} aria-label="Verdict" className="w-full max-w-90">
+      <RadioGroupItem value="comment" label="Comment" description="Post the comments without a verdict." />
+      <RadioGroupItem value="approve" label="Approve" description="The change can merge once checks pass." />
+      <RadioGroupItem value="changes" label="Request changes" description="It does not merge until these are addressed." />
+    </RadioGroup>
   );
 }
 

@@ -20,10 +20,21 @@ function DiffStat({
       className={cn('figures inline-flex shrink-0 items-baseline gap-1.5 text-xs whitespace-nowrap', className)}
       {...props}
     >
-      {additions > 0 ? <span className="text-success">+{additions}</span> : null}
-      {deletions > 0 ? <span className="text-danger">−{deletions}</span> : null}
+      {diffStatParts(additions, deletions).map((part) => (
+        <span key={part.side} className={part.side === 'additions' ? 'text-success' : 'text-danger'}>
+          {part.text}
+        </span>
+      ))}
     </span>
   );
 }
 
-export { DiffStat };
+/** The stat's parts, as text: each side that is not zero, signed. The tree's rows print the same. */
+function diffStatParts(additions: number, deletions: number) {
+  return [
+    additions > 0 ? { side: 'additions' as const, text: `+${additions}` } : null,
+    deletions > 0 ? { side: 'deletions' as const, text: `−${deletions}` } : null,
+  ].filter((part) => part !== null);
+}
+
+export { DiffStat, diffStatParts };

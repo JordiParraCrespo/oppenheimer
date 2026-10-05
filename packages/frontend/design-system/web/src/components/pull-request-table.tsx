@@ -1,20 +1,22 @@
 'use client';
 
-import { BotIcon, CheckIcon, GitMergeIcon, UserIcon, XIcon } from 'lucide-react';
+import { CheckIcon, GitMergeIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
+import { AuthorMark } from '../internal/author-mark';
 import { cn } from '../lib/utils';
 import { Button } from './button';
 import { DiffStat } from './diff-stat';
 import { IconButton } from './icon-button';
-import { dotVariants, type StatusState } from './status-dot';
+import { StatusDot, type StatusState } from './status-dot';
 
 /**
  * The pull request queue: what is waiting on the reader, one row each, on
  * the card. A row is the lane it was sorted into, the title with its
  * `repo #number` in mono and who opened it (a session's bot glyph or a
  * person's), a note when something holds it ("Checks failing"), the size as
- * a `DiffStat`, checks and conflicts as a dot and a word, how long it has
+ * a `DiffStat`, checks and conflicts on `StatusDot`'s gate states
+ * (`passing`, `blocked`, `waiting`) with the caller's word, how long it has
  * waited in mono, and its actions on the right. The title is the row's
  * button, stretched over the row, so the actions beside it are never inside
  * it.
@@ -25,25 +27,11 @@ import { dotVariants, type StatusState } from './status-dot';
  * - `PullRequestTable` / `PullRequestTableHead` / `PullRequestRow`: the card,
  *   its column heads, a row. The filter row (search and lanes) goes above
  *   the head and `RunsListFoot` under the rows, as on Runs.
- * - `LaneBadge`: Deep, Medium or Quick — how much reading a change needs.
- *   Deep is inverted ink because it asks for the most; the others sit on
- *   the hover wash.
+ * - The lane (Deep, Medium, Quick: how much reading a change needs) is a
+ *   `Badge`, `strong` for Deep and `soft` for the others.
  * - `MergeButton`: Merge, which asks once in place (Cancel, Confirm merge)
  *   before it acts.
  */
-
-type PullRequestLane = 'deep' | 'medium' | 'quick';
-type PullRequestCheck = 'passing' | 'failing' | 'running' | 'none';
-type PullRequestConflict = 'clean' | 'conflicts';
-
-/** Checks and conflicts on the run-state dots: green clean, red broken, amber still going. */
-const CHECK_STATE: Record<PullRequestCheck, StatusState> = {
-  passing: 'running',
-  failing: 'failed',
-  running: 'needs-input',
-  none: 'idle',
-};
-const CONFLICT_STATE: Record<PullRequestConflict, StatusState> = { clean: 'running', conflicts: 'failed' };
 
 const COLUMNS =
   'grid-cols-[84px_minmax(0,1fr)_72px_auto] @[880px]/prq:grid-cols-[80px_minmax(0,1fr)_88px_88px_108px_68px_auto]';
@@ -92,28 +80,11 @@ function PullRequestTableHead({
   );
 }
 
-function LaneBadge({ lane, className, children }: { lane: PullRequestLane; className?: string; children: React.ReactNode }) {
-  return (
-    <span
-      data-slot="lane-badge"
-      data-lane={lane}
-      className={cn(
-        'inline-flex h-5.5 w-fit items-center rounded-pill px-[9px] text-xs font-medium whitespace-nowrap',
-        lane === 'deep' ? 'bg-fg text-background' : 'bg-hover-surface text-fg',
-        className,
-      )}
-    >
-      {children}
-    </span>
-  );
-}
-
 function Signal({ state, children }: { state: StatusState; children: React.ReactNode }) {
   return (
-    <span className="flex items-center gap-[7px] text-xs whitespace-nowrap text-fg">
-      <span aria-hidden className={cn(dotVariants({ state }), 'size-[7px]')} />
+    <StatusDot state={state} density="compact" className="text-xs whitespace-nowrap">
       {children}
-    </span>
+    </StatusDot>
   );
 }
 
@@ -139,7 +110,7 @@ function PullRequestRow({
   className,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'title'> & {
-  /** A `LaneBadge`. */
+  /** The lane, a `Badge` (`strong` for Deep, `soft` otherwise). */
   lane: React.ReactNode;
   title: React.ReactNode;
   /** `oppenheimer #482`. */
@@ -152,9 +123,11 @@ function PullRequestRow({
   noteTone?: 'danger' | 'warning';
   additions: number;
   deletions: number;
-  checks: PullRequestCheck;
+  /** A gate state: `passing`, `blocked` (failing) or `waiting` (running). */
+  checks: StatusState;
   checksLabel: React.ReactNode;
-  conflicts: PullRequestConflict;
+  /** `passing` when it merges cleanly, `blocked` on conflicts. */
+  conflicts: StatusState;
   conflictsLabel: React.ReactNode;
   /** Mono, already formatted: `1d 3h`. */
   waiting: React.ReactNode;
@@ -195,12 +168,7 @@ function PullRequestRow({
               <span aria-hidden className="text-fg-subtle">
                 ·
               </span>
-              {authorKind === 'session' ? (
-                <BotIcon className="size-3 shrink-0 text-fg-subtle" aria-hidden />
-              ) : (
-                <UserIcon className="size-3 shrink-0 text-fg-subtle" aria-hidden />
-              )}
-              <span className="truncate">{author}</span>
+              <AuthorMark kind={authorKind}>{author}</AuthorMark>
             </>
           ) : null}
           {note ? (
@@ -214,16 +182,9 @@ function PullRequestRow({
             </>
           ) : null}
         </span>
-        <span className="flex items-center gap-1.5 text-xs whitespace-nowrap text-fg-muted @[880px]/prq:hidden">
-          <span aria-hidden className={cn(dotVariants({ state: CHECK_STATE[checks] }))} />
-          {checksLabel}
-          <span aria-hidden className="text-fg-subtle">
-            ·
-          </span>
-          <span className={conflicts === 'conflicts' ? 'text-danger' : undefined}>{conflictsLabel}</span>
-          <span aria-hidden className="text-fg-subtle">
-            ·
-          </span>
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 @[880px]/prq:hidden">
+          <Signal state={checks}>{checksLabel}</Signal>
+          <Signal state={conflicts}>{conflictsLabel}</Signal>
           <DiffStat additions={additions} deletions={deletions} />
         </span>
       </div>
@@ -231,12 +192,10 @@ function PullRequestRow({
         <DiffStat additions={additions} deletions={deletions} />
       </span>
       <span role="cell" className="hidden @[880px]/prq:block">
-        <Signal state={CHECK_STATE[checks]}>{checksLabel}</Signal>
+        <Signal state={checks}>{checksLabel}</Signal>
       </span>
       <span role="cell" className="hidden @[880px]/prq:block">
-        <Signal state={CONFLICT_STATE[conflicts]}>
-          <span className={conflicts === 'conflicts' ? 'text-fg' : 'text-fg-muted'}>{conflictsLabel}</span>
-        </Signal>
+        <Signal state={conflicts}>{conflictsLabel}</Signal>
       </span>
       <span role="cell" className={cn('figures text-right text-xs', waitingTone === 'late' ? 'text-fg' : 'text-fg-muted')}>
         {waiting}
@@ -274,10 +233,9 @@ function MergeButton({
 }) {
   if (merged) {
     return (
-      <span className={cn('inline-flex h-7 items-center gap-1.5 px-2.5 text-xs whitespace-nowrap text-fg-muted', className)}>
-        <span aria-hidden className={cn(dotVariants({ state: 'running' }), 'size-[7px]')} />
+      <StatusDot state="completed" density="compact" className={cn('h-7 px-2.5 text-xs whitespace-nowrap', className)}>
         {labels.merged ?? 'Merged'}
-      </span>
+      </StatusDot>
     );
   }
   if (confirming) {
@@ -308,5 +266,4 @@ function MergeButton({
   );
 }
 
-export { LaneBadge, MergeButton, PullRequestRow, PullRequestTable, PullRequestTableHead };
-export type { PullRequestCheck, PullRequestConflict, PullRequestLane };
+export { MergeButton, PullRequestRow, PullRequestTable, PullRequestTableHead };

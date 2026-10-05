@@ -100,7 +100,6 @@ export function PullRequestAnalyticsDemo() {
       <Panel title="Median wait for your review" meta="vs last month">
         <div className="grid gap-2 sm:grid-cols-2">
           <StatCard
-            variant="inset"
             label={
               <span className="flex items-center gap-2">
                 <span className="size-2 rounded-pill bg-chart-1" />
@@ -112,7 +111,6 @@ export function PullRequestAnalyticsDemo() {
             detail={<StatDelta value="−21%" tone="good">from 3h 54m</StatDelta>}
           />
           <StatCard
-            variant="inset"
             label={
               <span className="flex items-center gap-2">
                 <span className="size-2 rounded-pill bg-chart-2" />

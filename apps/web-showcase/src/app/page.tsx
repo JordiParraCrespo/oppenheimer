@@ -70,6 +70,7 @@ import {
   AddHostDialogDemo,
   DestructiveDialogDemo,
   CheckboxDemo,
+  RadioGroupDemo,
   SegmentedDemo,
   SlugFieldDemo,
   FilterMenuDemo,
@@ -783,6 +784,16 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="radiogroup"
+        title="RadioGroup"
+        meta="radio-group.tsx"
+        desc="One value out of a few, each a row that says what it does: the 16px ring filling with the action blue's dot, the label, an optional line under it. The whole row picks and the chosen one rests on the selected wash. A review's verdict in ReviewDecision. Two or three ways to read one pane are a SegmentedControl; a pick inside a menu is DropdownMenuRadioGroup."
+        code={`<RadioGroup value={verdict} onValueChange={setVerdict} aria-label="Verdict"><RadioGroupItem value="approve" label="Approve" description="…" /></RadioGroup>`}
+      >
+        <RadioGroupDemo />
+      </Spec>
+
+      <Spec
         id="disclosure"
         title="Disclosure"
         meta="disclosure.tsx"
@@ -1267,10 +1278,10 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="prqueue"
         title="PullRequestTable"
         meta="pull-request-table.tsx"
-        desc="The queue of pull requests waiting on the reader, on the card. A row is its LaneBadge (Deep in inverted ink, Medium and Quick on the hover wash), the title with repo #number in mono and who opened it (a session's bot glyph or a person's), a note when something holds it, the size as a DiffStat, checks and conflicts as a dot and a word, the wait in mono (full ink once it is late), and the actions. The title is the row's button, stretched over it, so the actions are never inside it. The table reads its own width: from 880px Size, Checks and Conflicts are columns, narrower they fold under the title. MergeButton asks once in place (Cancel, Confirm merge) and says why it is off while checks, conflicts or a code owner hold it. The page opens on PageHeaderRow display with Review next, the scopes are a large SegmentedControl with counts, the filters are a search and PillTabs, the foot is RunsListFoot."
+        desc="The queue of pull requests waiting on the reader, on the card. A row is its lane as a Badge (strong for Deep, soft for Medium and Quick), the title with repo #number in mono and who opened it (a session's bot glyph or a person's), a note when something holds it, the size as a DiffStat, checks and conflicts as StatusDot gate states (passing, blocked, waiting) and a word, the wait in mono (full ink once it is late), and the actions. The title is the row's button, stretched over it, so the actions are never inside it. The table reads its own width: from 880px Size, Checks and Conflicts are columns, narrower they fold under the title. MergeButton asks once in place (Cancel, Confirm merge) and says why it is off while checks, conflicts or a code owner hold it. The page opens on PageHeaderRow display with Review next, the scopes are a large SegmentedControl with counts, the filters are a search and PillTabs, the foot is RunsListFoot."
         code={`<PullRequestTable>
   <PullRequestTableHead />
-  <PullRequestRow lane={<LaneBadge lane="deep">Deep</LaneBadge>} title="Move session tokens to the runner keychain" reference="oppenheimer #482" author="Session · auth-hardening" additions={612} deletions={248} checks="passing" checksLabel="Passing" conflicts="clean" conflictsLabel="No conflicts" waiting="1d 3h" onOpen={open}
+  <PullRequestRow lane={<Badge variant="strong">Deep</Badge>} title="Move session tokens to the runner keychain" reference="oppenheimer #482" author="Session · auth-hardening" additions={612} deletions={248} checks="passing" checksLabel="Passing" conflicts="passing" conflictsLabel="No conflicts" waiting="1d 3h" onOpen={open}
     actions={<MergeButton confirming={confirming} onConfirmingChange={setConfirming} onMerge={merge} />} />
 </PullRequestTable>`}
         bare
@@ -1282,27 +1293,24 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="prbriefing"
         title="Briefing · ReviewDecision"
         meta="pull-request-header.tsx · stat-card.tsx · merge-path.tsx · panel.tsx · review-decision.tsx · prose.tsx"
-        desc="One pull request, opened on its briefing. The bar holds the views (a medium SegmentedControl, Changes carrying its DiffStat), Open review session and Submit review, which opens ReviewDecision in a popover: the verdicts as a radio list, the optional comment, what posts with it, Discard, and the primary named for the verdict. PullRequestHeader is the state, lane and reference, the title at H2 and the branch head → base. StatCards lead with the numbers (a 24px mono figure, a unit, a StatBar of shares or a track); MergePath lays out Checks, Conflicts, Review and Merge as done, blocked or to come, with the next step and its actions under a hairline. The rest are Panels: the brief with its FactTiles and lane, the review session, the pending comments as DiffCommentLinks, where it changes, the reviewers. Description renders the author's markdown in Prose. The second frame is the same page held by a conflict."
-        code={`<PullRequestHeader state="open" stateLabel="Open" lane={<LaneBadge lane="deep">Deep</LaneBadge>} reference="oppenheimer #482" title="…" author="Session · auth-hardening" head="agent/auth-keychain" base="main" />
+        desc="One pull request, opened on its briefing. The bar holds the views (a medium SegmentedControl, Changes carrying its DiffStat), Open review session and Submit review, which opens ReviewDecision in a popover: the verdicts as a RadioGroup, the optional comment (the same field a diff's draft uses: ⌘↵ submits, Esc closes), what posts with it, Discard, and the primary named for the verdict. PullRequestHeader is the state (a StatusDot pill), lane and reference, the title at H2 and the branch head → base. StatCards lead with the numbers (a 24px mono figure, a unit, a StatBar of shares or a track); MergePath is a horizontal Stepper of Checks, Conflicts, Review and Merge (a gate not met is failed), with the next step and its actions under a hairline. StatCard and Panel are Cards. The rest are Panels: the brief with its FactTiles and lane, the review session, the pending comments as DiffCommentLinks, where it changes, the reviewers. Description renders the author's markdown in Prose. The second frame is the same page held by a conflict."
+        code={`<PullRequestHeader state="active" stateLabel="Open" lane={<Badge variant="strong">Deep</Badge>} reference="oppenheimer #482" title="…" author="Session · auth-hardening" head="agent/auth-keychain" base="main" />
 <StatCard label="Checks" value="214 / 214" unit="Passing" bar={<StatBar track segments={[{ share: 100, tone: 'success' }]} />} />
-<MergePath title="Path to merge" summary="2 of 4 done" steps={[{ label: 'Checks', detail: 'All passing', state: 'done' }, …]} note="Squash and merge into main" actions={…} />
+<MergePath title="Path to merge" summary="2 of 4 done" steps={[{ id: 'checks', label: 'Checks', detail: 'All passing', state: 'done' }, …]} note="Squash and merge into main" actions={…} />
 <Popover><PopoverTrigger render={<SubmitReviewButton count={2} />}>Submit review</PopoverTrigger><PopoverContent align="end"><ReviewDecision verdicts={…} verdict={v} onVerdictChange={setV} comment={c} onCommentChange={setC} submitLabel="Approve and merge" onSubmit={submit} /></PopoverContent></Popover>`}
         bare
       >
-        <div className="flex w-full flex-col gap-6">
-          <PullRequestBriefingDemo />
-          <PullRequestBriefingDemo conflicted />
-        </div>
+        <PullRequestBriefingDemo />
       </Spec>
 
       <Spec
         id="diffview"
         title="DiffView · DiffFileTree"
         meta="diff-view.tsx · diff-file-tree.tsx · file-icon.tsx · diff-stat.tsx"
-        desc="A pull request's Changes on @pierre/diffs, the library DiffsHub runs on: Shiki highlighting, unified or split, long lines wrapped, hunks under their @@ line. A file is a DiffFile: its sticky header (fold chevron, the file's type mark, the path with its folder muted, comments, the DiffStat, Viewed) over its lines. Comments are annotations on one side of one line, drawn as a DiffComment (the review agent's bot glyph or a person's avatar) or a DiffCommentDraft; hovering a line number offers the blue + that starts one. Beside it, DiffFileTree on @pierre/trees: single-child folders flattened, each file's mark and DiffStat, a filter, and how many are viewed. The marks are the trees' published icon set, which FileIcon draws anywhere else."
+        desc="A pull request's Changes on @pierre/diffs, the library DiffsHub runs on: Shiki highlighting, unified or split, long lines wrapped, hunks under their @@ line. A file is a DiffFile: its sticky header (fold chevron, the file's type mark, the path with its folder muted, comments, the DiffStat, Viewed) over its lines. Comments are annotations on one side of one line, drawn as a DiffComment (the review agent's bot glyph or a person's avatar) or a DiffCommentDraft; hovering a line number offers the blue + that starts one. Beside it, DiffFileTree on @pierre/trees: single-child folders flattened, each file's mark and DiffStat, a filter, and how many are viewed. The diff takes the app's theme as colorScheme rather than reading the OS. The marks are the trees' published icon set, which FileIcon draws anywhere else."
         code={`<DiffFile>
   <DiffFileHeader path={file.path} additions={318} deletions={40} comments={1} collapsed={collapsed} onCollapsedChange={setCollapsed} viewed={viewed} onViewedChange={setViewed} />
-  <DiffView patch={file.patch} layout="unified" annotations={notes} onCommentLine={openDraft} renderAnnotation={({ metadata }) => <DiffComment bot author="Full-review agent" status="Pending">{metadata.text}</DiffComment>} />
+  <DiffView patch={file.patch} layout="unified" colorScheme={theme} annotations={notes} onCommentLine={openDraft} renderAnnotation={({ metadata }) => <DiffComment bot author="Full-review agent" status="Pending">{metadata.text}</DiffComment>} />
 </DiffFile>
 <DiffFileTree files={files} selected={path} onSelect={scrollTo} viewed={1} />`}
         bare

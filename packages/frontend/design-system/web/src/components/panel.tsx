@@ -1,13 +1,13 @@
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { Card } from './card';
 
 /**
- * Panel — a titled block of a page on the card: Path to merge, Brief,
- * Reviewers, each section of the review analytics. A 15px medium title, an
- * optional `meta` on its baseline at the right (mono for a count, words for
- * "vs last month"), then the content.
- * The `Card` contract: 18px radius, the subtle hairline, no shadow.
+ * Panel — a `Card` with a title row, for a titled block of a page: Path to
+ * merge, Brief, Reviewers, each section of the review analytics. A 15px
+ * medium title, an optional `meta` on its baseline at the right (mono for
+ * a count, words for "vs last month"), then the content.
  */
 function Panel({
   title,
@@ -15,16 +15,12 @@ function Panel({
   className,
   children,
   ...props
-}: Omit<React.ComponentProps<'section'>, 'title'> & {
+}: Omit<React.ComponentProps<typeof Card>, 'title'> & {
   title?: React.ReactNode;
   meta?: React.ReactNode;
 }) {
   return (
-    <section
-      data-slot="panel"
-      className={cn('flex min-w-0 flex-col gap-4 rounded-lg border border-border-subtle bg-card px-5 py-4.5', className)}
-      {...props}
-    >
+    <Card data-slot="panel" className={cn('min-w-0 gap-4 overflow-visible px-5 py-4.5', className)} {...props}>
       {title || meta ? (
         <div className="flex items-baseline gap-2">
           {title ? <h2 className="m-0 text-body font-medium text-fg">{title}</h2> : null}
@@ -33,7 +29,7 @@ function Panel({
         </div>
       ) : null}
       {children}
-    </section>
+    </Card>
   );
 }
 

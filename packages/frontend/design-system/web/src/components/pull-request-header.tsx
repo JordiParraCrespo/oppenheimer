@@ -1,24 +1,17 @@
-import { ArrowRightIcon, BotIcon, GitBranchIcon, UserIcon } from 'lucide-react';
+import { ArrowRightIcon, GitBranchIcon } from 'lucide-react';
 import type * as React from 'react';
 
+import { AuthorMark } from '../internal/author-mark';
 import { cn } from '../lib/utils';
-import { dotVariants, type StatusState } from './status-dot';
+import { StatusDot, type StatusState } from './status-dot';
 
 /**
- * How a pull request's page opens: a line of pills (its state with a dot,
- * its lane, `repo #number` in mono), the title at the ladder's H2 in the
+ * How a pull request's page opens: a line of pills (its state on
+ * `StatusDot` with the caller's word — `active` while open, `completed` once
+ * merged —, its lane, `repo #number` in mono), the title at the ladder's H2 in the
  * display face, and who opened it (a session's bot glyph or a person's)
  * with the branch it merges, `head → base` in mono.
  */
-
-type PullRequestState = 'open' | 'draft' | 'merged' | 'closed';
-
-const STATE_DOT: Record<PullRequestState, StatusState> = {
-  open: 'running',
-  draft: 'idle',
-  merged: 'queued',
-  closed: 'failed',
-};
 
 function PullRequestHeader({
   state,
@@ -33,10 +26,10 @@ function PullRequestHeader({
   className,
   ...props
 }: Omit<React.ComponentProps<'header'>, 'title'> & {
-  state: PullRequestState;
+  state: StatusState;
   /** "Open", the caller's word for `state`. */
   stateLabel: React.ReactNode;
-  /** A `LaneBadge`. */
+  /** The lane, a `Badge`. */
   lane?: React.ReactNode;
   /** `oppenheimer #482`. */
   reference: React.ReactNode;
@@ -50,10 +43,13 @@ function PullRequestHeader({
   return (
     <header data-slot="pull-request-header" className={cn('flex flex-col gap-2.5 pb-2', className)} {...props}>
       <div className="flex flex-wrap items-center gap-2 text-sm text-fg-muted">
-        <span className="inline-flex h-6 items-center gap-1.5 rounded-pill border border-border-subtle bg-card px-2.5 text-xs font-medium text-fg">
-          <span aria-hidden className={cn(dotVariants({ state: STATE_DOT[state] }), 'size-[7px]')} />
+        <StatusDot
+          state={state}
+          density="compact"
+          className="h-6 rounded-pill border border-border-subtle bg-card px-2.5 text-xs font-medium"
+        >
           {stateLabel}
-        </span>
+        </StatusDot>
         {lane}
         <span className="figures text-xs">{reference}</span>
       </div>
@@ -61,14 +57,9 @@ function PullRequestHeader({
       {author || head ? (
         <div className="flex flex-wrap items-center gap-1.5 text-sm text-fg-muted">
           {author ? (
-            <>
-              {authorKind === 'session' ? (
-                <BotIcon className="size-[13px] text-fg-subtle" aria-hidden />
-              ) : (
-                <UserIcon className="size-[13px] text-fg-subtle" aria-hidden />
-              )}
-              <span className="text-fg">{author}</span>
-            </>
+            <AuthorMark kind={authorKind} className="text-fg">
+              {author}
+            </AuthorMark>
           ) : null}
           {author && head ? (
             <span aria-hidden className="text-fg-subtle">
@@ -94,4 +85,3 @@ function PullRequestHeader({
 }
 
 export { PullRequestHeader };
-export type { PullRequestState };

@@ -26,6 +26,10 @@ const badgeVariants = cva(
         paused: "h-auto border-0 bg-status-paused-bg px-2.5 py-1 leading-[1.4] text-status-paused",
         ended: "h-auto border-0 bg-status-ended-bg px-2.5 py-1 leading-[1.4] text-status-ended",
         draft: "h-auto border-0 bg-status-draft-bg px-2.5 py-1 leading-[1.4] text-status-draft",
+        // A weight a row is sorted into (a pull request's lane): `strong` in
+        // inverted ink for the one that asks the most, `soft` for the rest.
+        strong: "h-5.5 border-0 bg-fg px-[9px] text-background",
+        soft: "h-5.5 border-0 bg-hover-surface px-[9px] text-fg",
       },
     },
     defaultVariants: {
@@ -38,7 +42,8 @@ const badgeVariants = cva(
  * Badge — a small pill marker. Beyond the shadcn set this carries the brand's
  * status tones: `count` is the blue count pill, `new` the pink attention
  * marker, and active/paused/ended/draft the tinted table status pills. Colour
- * on a badge is always a status signal, never decoration.
+ * on a badge is always a status signal, never decoration; `strong` and `soft`
+ * carry a row's weight (a pull request's lane) in ink alone.
  */
 function Badge({
   className,
