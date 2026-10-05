@@ -36,7 +36,10 @@ Wire the styles into the app's CSS entry alongside Tailwind:
 - `src/assets/imagery/` — the auth carousel photographs.
 - `src/hooks/` — the generic React hooks every UI layer shares, exported from
   the root: `useControlled` (a controlled/uncontrolled `value`, written once),
-  `useDebouncedValue`, `useDebouncedCallback` and `useIsMobile`. Nothing here
+  `useDebouncedValue`, `useDebouncedCallback`, `useIsMobile`, `useNow`,
+  `useCopy` (copy a text and say "Copied" for a moment; every copy control
+  uses it) and `useFileDrag` (whether files are being dragged over an
+  element, and the files when they land; `DropZone` draws it). Nothing here
   knows about the product or fetches.
 - `src/components/` — the public components, one file each. The grouped
   inventory is the showcase's `apps/web-showcase/src/lib/toc.ts`, which names

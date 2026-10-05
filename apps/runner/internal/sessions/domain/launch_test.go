@@ -101,14 +101,14 @@ func TestCommandLineKeepsAPromptOneWord(t *testing.T) {
 	}
 }
 
-func TestPromptWithImagesListsThePathsAfterTheTask(t *testing.T) {
-	if got := PromptWithImages("look", []string{"/a.png", "/b.jpg"}); got != "look\n\n/a.png\n/b.jpg" {
+func TestPromptWithFilesListsThePathsAfterTheTask(t *testing.T) {
+	if got := PromptWithFiles("look", []string{"/a.png", "/b.jpg"}); got != "look\n\n/a.png\n/b.jpg" {
 		t.Fatalf("prompt = %q", got)
 	}
-	if got := PromptWithImages("look", nil); got != "look" {
+	if got := PromptWithFiles("look", nil); got != "look" {
 		t.Fatalf("prompt = %q, want the task unchanged", got)
 	}
-	if got := PromptWithImages("", []string{"/a.png"}); got != "/a.png" {
+	if got := PromptWithFiles("", []string{"/a.png"}); got != "/a.png" {
 		t.Fatalf("prompt = %q", got)
 	}
 }

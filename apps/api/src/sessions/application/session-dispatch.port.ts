@@ -1,6 +1,6 @@
-import type { SessionImageMediaType } from '@oppenheimer/shared/protocol';
+import type { SessionFileMediaType } from '@oppenheimer/shared/protocol';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
-import type { SessionLaunchImage } from '../domain/session-launch-image.types';
+import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 
 export interface SessionDispatchOutcome {
@@ -44,7 +44,7 @@ export interface SessionLaunchSpec {
    * the log's `prompt.first`, like the prompt, so the hello reconciliation
    * resends them with it.
    */
-  images?: SessionLaunchImage[];
+  images?: SessionLaunchFile[];
 }
 
 export interface SessionCloseSpec {
@@ -71,10 +71,10 @@ export interface SessionPrepareSpec {
 }
 
 /** A picture for a window's prompt; the runner saves it and pastes its path. */
-export interface SessionImageSpec {
+export interface SessionFileSpec {
   window: number;
   /** What the bytes are by their magic bytes, never the browser's label. */
-  mediaType: SessionImageMediaType;
+  mediaType: SessionFileMediaType;
   data: Buffer;
 }
 
@@ -105,7 +105,7 @@ export interface SessionDispatchPort {
     spec: SessionLaunchSpec,
   ): Promise<SessionDispatchOutcome>;
   /** Give a window's program an image: saved on the host, its path pasted in. */
-  pasteImage(session: WorkSessionEntity, image: SessionImageSpec): Promise<SessionDispatchOutcome>;
+  pasteFile(session: WorkSessionEntity, image: SessionFileSpec): Promise<SessionDispatchOutcome>;
   /** Remove one checkout's worktree, with the same refuse-on-unpushed-work posture. */
   removeCheckout(
     session: WorkSessionEntity,

@@ -1506,9 +1506,9 @@ export type SessionAttachmentResponseDto = {
      */
     id: string;
     /**
-     * What the bytes are by their magic bytes, never the label the browser gave them.
+     * What the bytes are (magic bytes, or text that is only text), never the label the browser gave them.
      */
-    mediaType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
+    mediaType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp' | 'application/pdf' | 'text/plain' | 'text/markdown' | 'text/csv' | 'application/json';
     /**
      * Bytes.
      */
@@ -4800,7 +4800,7 @@ export type CollectSessionImageError = CollectSessionImageErrors[keyof CollectSe
 
 export type CollectSessionImageResponses = {
     /**
-     * The image’s bytes
+     * The file’s bytes
      */
     200: unknown;
 };
@@ -6237,7 +6237,7 @@ export type UploadSessionAttachmentData = {
 
 export type UploadSessionAttachmentErrors = {
     /**
-     * SESSIONS_015 — No image attached
+     * SESSIONS_015 — No file attached
      */
     400: ProblemDetailsDto;
     /**
@@ -6249,17 +6249,17 @@ export type UploadSessionAttachmentErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * SESSIONS_012 — Image too large
+     * SESSIONS_012 — File too large
      */
     413: ProblemDetailsDto;
     /**
-     * SESSIONS_013 — Not an image
+     * SESSIONS_013 — Not a type a session takes
      */
     415: ProblemDetailsDto;
     /**
      * RATE_001 — Rate limit reached
      *
-     * SESSIONS_020 — Too many images waiting
+     * SESSIONS_020 — Too many files waiting
      */
     429: ProblemDetailsDto;
 };
@@ -6376,7 +6376,7 @@ export type PasteSessionImageData = {
 
 export type PasteSessionImageErrors = {
     /**
-     * SESSIONS_015 — No image attached
+     * SESSIONS_015 — No file attached
      */
     400: ProblemDetailsDto;
     /**
@@ -6392,7 +6392,7 @@ export type PasteSessionImageErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_017 — The host’s runner cannot take images
+     * SESSIONS_017 — Runner cannot take it
      *
      * SESSIONS_014 — That session is stopped
      *
@@ -6400,11 +6400,11 @@ export type PasteSessionImageErrors = {
      */
     409: ProblemDetailsDto;
     /**
-     * SESSIONS_012 — Image too large
+     * SESSIONS_012 — File too large
      */
     413: ProblemDetailsDto;
     /**
-     * SESSIONS_013 — Not an image
+     * SESSIONS_013 — Not a file it takes
      */
     415: ProblemDetailsDto;
     /**
@@ -6421,7 +6421,7 @@ export type PasteSessionImageError = PasteSessionImageErrors[keyof PasteSessionI
 
 export type PasteSessionImageResponses = {
     /**
-     * The host has been told to pull the image
+     * The host has been told to pull the file
      */
     202: unknown;
 };

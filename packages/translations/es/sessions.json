@@ -131,23 +131,22 @@
       "placeholder": "Describe una tarea o haz una pregunta",
       "send": "Enviar",
       "stop": "Detener",
-      "attach": "Adjuntar imágenes",
+      "attach": "Adjuntar archivos",
       "removeAttachment": "Quitar {{name}}",
-      "attachTooLarge": "{{name}} pesa más de 5 MB. Recórtala o guárdala más pequeña y vuelve a adjuntarla.",
-      "attachTooMany": "Una primera tarea lleva como mucho {{max}} imágenes."
+      "attachTooLarge": "{{name}} pesa más de 5 MB. Guarda una copia más pequeña y vuelve a adjuntarlo.",
+      "attachTooMany": "Una primera tarea lleva como mucho {{max}} archivos.",
+      "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto."
     },
     "failed": "No se pudo crear la sesión."
   },
   "session": {
     "status": {
-      "connecting": "Conectando",
-      "live": "En vivo",
-      "offline": "Host desconectado",
       "closed": "Desconectado"
     },
-    "image": {
-      "sending": "Enviando imagen",
-      "failedTitle": "La imagen no llegó a la sesión"
+    "file": {
+      "sending": "Enviando archivo",
+      "notSupported": "Ninguno de los archivos soltados es uno que el agente pueda recibir. Suelta una imagen, un PDF o un archivo de texto.",
+      "failedTitle": "El archivo no llegó a la sesión"
     },
     "retryNow": "Reintentar ahora",
     "retry": "Intentar de nuevo",
@@ -159,12 +158,32 @@
       "title": "Todavía no hay nada en pantalla",
       "description": "La conexión está activa. Esto se llena en cuanto el agente dibuja: una sesión nueva cuando termina de arrancar, y una anterior cuando se reenvía su historial."
     },
-    "offline": {
-      "title": "{{host}} está desconectado",
-      "description": "El runner de esa máquina no está conectado. Este terminal se vuelve a conectar solo en cuanto el runner vuelva.",
-      "install": "Si la máquina está encendida, reinstala y arranca el runner en ella con",
-      "status": "o comprueba qué falla con",
-      "hosts": "Abrir hosts"
+    "hostLink": {
+      "thisHost": "este host",
+      "status": {
+        "live": "En directo",
+        "reconnecting": "Conectando con {{host}}…",
+        "offline": "Host desconectado",
+        "catchingUp": "Poniéndose al día con {{host}}…",
+        "reconnected": "Reconectado"
+      },
+      "title": {
+        "offline": "{{host}} está desconectado",
+        "catchingUp": "El runner ha vuelto",
+        "reconnected": "Reconectado"
+      },
+      "line": {
+        "offline": "Se reconecta solo cuando vuelva el runner",
+        "catchingUp": "Recuperando la salida de {{host}}…",
+        "reconnected": "El historial está al día"
+      },
+      "fix": "Cómo arreglarlo",
+      "fixIntro": "El historial se conserva. La sesión sigue sola en cuanto el runner de {{host}} se reconecte; no hay que pulsar nada.",
+      "install": "Si sigue desconectado, reinstala y arranca el runner en {{host}}:",
+      "statusCommand": "Para ver qué ha fallado:",
+      "hosts": "Ajustes → Hosts",
+      "copy": "Copiar comando",
+      "copied": "Copiado"
     }
   },
   "sidebar": {

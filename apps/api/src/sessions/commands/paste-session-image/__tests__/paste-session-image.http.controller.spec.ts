@@ -8,7 +8,7 @@ import {
 import { CommandBus } from '@nestjs/cqrs';
 import { Test } from '@nestjs/testing';
 import { AllExceptionsFilter } from '@oppenheimer/backend-core';
-import { SESSION_IMAGE_MAX_BYTES } from '@oppenheimer/shared/protocol';
+import { SESSION_FILE_MAX_BYTES } from '@oppenheimer/shared/protocol';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiAuthGuard } from '../../../../auth/guards/api-auth.guard';
@@ -97,12 +97,12 @@ describe('POST /v1/sessions/:id/images', () => {
   });
 
   it('refuses an image over the ceiling with SESSIONS_012, before the bus sees it', async () => {
-    const response = await post({ file: new Blob([new Uint8Array(SESSION_IMAGE_MAX_BYTES + 1)]) });
+    const response = await post({ file: new Blob([new Uint8Array(SESSION_FILE_MAX_BYTES + 1)]) });
 
     expect(response.status).toBe(413);
     await expect(response.json()).resolves.toMatchObject({
       code: 'SESSIONS_012',
-      maxBytes: SESSION_IMAGE_MAX_BYTES,
+      maxBytes: SESSION_FILE_MAX_BYTES,
     });
     expect(execute).not.toHaveBeenCalled();
   });

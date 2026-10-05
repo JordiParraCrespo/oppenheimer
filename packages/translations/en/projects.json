@@ -30,9 +30,8 @@
     "failed": "The project could not be created.",
     "saveFailed": "The project could not be saved.",
     "delete": "Delete project",
-    "deleteHint": "Delete this project",
-    "deleteBlocked_one": "Move or delete its {{count}} session first",
-    "deleteBlocked_other": "Move or delete its {{count}} sessions first",
+    "deleteBlocked_one": "This project can’t be deleted while it has {{count}} open session. Move it to another project or delete it first.",
+    "deleteBlocked_other": "This project can’t be deleted while it has {{count}} open sessions. Move them to another project or delete them first.",
     "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted.",
     "loadFailed": "Could not load this project."
   },

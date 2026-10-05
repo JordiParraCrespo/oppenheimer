@@ -61,9 +61,9 @@ type linkHandler struct {
 	reporter *link.Reporter
 
 	credentials *credentialBroker
-	// httpClient pulls parked images; nil is a default client (link_images.go).
+	// httpClient pulls parked files; nil is a default client (link_files.go).
 	httpClient *http.Client
-	// bootToken mints the assertion an image pull carries.
+	// bootToken mints the assertion a file pull carries.
 	bootToken func(ctx context.Context) (string, error)
 
 	// life is the daemon's context, not a link's. Session commands run on it
@@ -234,7 +234,8 @@ func (h *linkHandler) Hello(ctx context.Context) (link.Hello, error) {
 		Host:          facts,
 		Sessions:      h.snapshots(),
 		Capabilities: []string{
-			link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilityRepositoryPrepare,
+			link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
+			link.CapabilityRepositoryPrepare,
 		},
 	}, nil
 }
@@ -376,13 +377,13 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 	case "session.image":
 		var m link.SessionImage
 		if msg.Decode(&m) == nil {
-			h.lanes.run(m.SessionID, func() { h.image(h.life, m) })
+			h.lanes.run(m.SessionID, func() { h.file(h.life, m) })
 		}
 	case "session.resize":
 		var m link.SessionResize
 		if msg.Decode(&m) == nil {
 			// An ioctl on an open PTY, done here like a credit, so a resize
-			// never waits behind an image paste in the session's lane. One
+			// never waits behind a file paste in the session's lane. One
 			// for an attachment still being opened is kept for it: the attach
 			// runs off the lane now, so there is no queue to hold its place.
 			if !h.resize(m) {

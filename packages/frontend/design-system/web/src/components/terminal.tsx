@@ -1,6 +1,16 @@
+'use client';
+
 import { ChevronRightIcon } from 'lucide-react';
 import type * as React from 'react';
 
+import {
+  HostLinkContext,
+  LinkDot,
+  resolveHostLink,
+  type TerminalHostLink,
+  type TerminalLinkState,
+  useHostLink,
+} from '../internal/host-link';
 import { cn } from '../lib/utils';
 
 /**
@@ -14,26 +24,50 @@ import { cn } from '../lib/utils';
  * PTY; `TerminalLine` renders the same vocabulary for the showcase, empty
  * states and replayed logs. `TerminalPrompt` is the pinned input row and
  * `TerminalStatusBar` the instrumentation band along the bottom.
+ *
+ * `hostLink` is where the session's link to its host stands (a phase of
+ * `HostLinkPhase`, the form, the host's name). The frame acts on it itself:
+ * the scrollback fades behind the notice card and the prompt locks with a
+ * placeholder that says why. `HostLinkChrome`, in the status bar's place,
+ * draws the rest. Without it the link is live.
  */
-function Terminal({ className, ...props }: React.ComponentProps<'div'>) {
+function Terminal({
+  hostLink,
+  className,
+  ...props
+}: React.ComponentProps<'div'> & { hostLink?: TerminalHostLink }) {
+  const link = resolveHostLink(hostLink);
   return (
-    <div
-      data-slot="terminal"
-      className={cn(
-        'figures flex h-full min-h-0 flex-col bg-term-bg text-[13px] leading-[1.55] text-term-fg selection:bg-term-selection',
-        className,
-      )}
-      {...props}
-    />
+    <HostLinkContext value={link}>
+      <div
+        data-slot="terminal"
+        data-host-link={link.phase}
+        className={cn(
+          'figures relative flex h-full min-h-0 flex-col bg-term-bg text-[13px] leading-[1.55] text-term-fg selection:bg-term-selection',
+          className,
+        )}
+        {...props}
+      />
+    </HostLinkContext>
   );
 }
 
-/** The scrollback: owns its scroll context so the prompt row never moves. */
+/**
+ * The scrollback: owns its scroll context so the prompt row never moves.
+ * Behind the host link's notice card it fades back, further while the host
+ * is offline than while it catches up.
+ */
 function TerminalScrollback({ className, ...props }: React.ComponentProps<'div'>) {
+  const { form, row } = useHostLink();
+  const fade = form === 'notice' ? row.card || undefined : undefined;
   return (
     <div
       data-slot="terminal-scrollback"
-      className={cn('min-h-0 flex-1 overflow-y-auto px-5 py-4 overscroll-contain', className)}
+      data-fade={fade}
+      className={cn(
+        'min-h-0 flex-1 overflow-y-auto px-5 py-4 overscroll-contain transition-opacity duration-base ease-standard data-[fade=soft]:opacity-60 data-[fade=strong]:opacity-[0.28]',
+        className,
+      )}
       {...props}
     />
   );
@@ -90,12 +124,20 @@ function TerminalTurn({ className, children, ...props }: React.ComponentProps<'d
   );
 }
 
-/** The pinned input row: a blue chevron and a bare input on the terminal face. */
+/**
+ * The pinned input row: a blue chevron and a bare input on the terminal face.
+ * While the host link locks it (offline, catching up) it is disabled, and in
+ * any phase that changes what input does the placeholder says so ("Read-only
+ * while optimus is offline").
+ */
 function TerminalPrompt({
   className,
   placeholder = 'Ask the agent, or run a command',
+  disabled,
   ...props
 }: React.ComponentProps<'input'>) {
+  const { phase, host, labels, row } = useHostLink();
+  const phasePlaceholder = labels.placeholder[phase];
   return (
     <div
       data-slot="terminal-prompt"
@@ -104,8 +146,9 @@ function TerminalPrompt({
       <ChevronRightIcon className="size-3.5 shrink-0 text-term-accent" strokeWidth={2.5} aria-hidden />
       <input
         type="text"
-        placeholder={placeholder}
-        className="min-w-0 flex-1 border-0 bg-transparent font-[inherit] text-inherit caret-term-caret outline-none placeholder:text-term-dim"
+        placeholder={phasePlaceholder ? phasePlaceholder(host) : placeholder}
+        disabled={disabled || row.locked}
+        className="min-w-0 flex-1 border-0 bg-transparent font-[inherit] text-inherit caret-term-caret outline-none placeholder:text-term-dim disabled:cursor-not-allowed"
         {...props}
       />
     </div>
@@ -139,13 +182,13 @@ function TerminalStatusItem({ className, ...props }: React.ComponentProps<'span'
 }
 
 /**
- * The status bar's first item: the link to the host. A 6px dot, green while
- * the session is live, amber and pulsing while the console reconnects, and
- * the label beside it, which fades in each time it changes so the switch
- * reads as an event rather than a flicker.
+ * The link to the host, as the status bar's first item: green while the
+ * session is live, amber and pulsing while the console reconnects, amber and
+ * still once the host is offline. The label beside it fades in each time it
+ * changes, so the switch reads as an event rather than a flicker.
+ * `HostLinkChrome` draws it from the phase; it is here for a status bar that
+ * draws its own.
  */
-type TerminalLinkState = 'live' | 'reconnecting';
-
 function TerminalStatusLink({
   state,
   className,
@@ -153,16 +196,13 @@ function TerminalStatusLink({
   ...props
 }: React.ComponentProps<'span'> & { state: TerminalLinkState }) {
   return (
-    <TerminalStatusItem data-link={state} className={className} {...props}>
-      <span
-        aria-hidden
-        data-slot="terminal-link-dot"
-        className={cn(
-          'size-1.5 shrink-0 rounded-pill transition-colors duration-slow ease-standard',
-          state === 'live' ? 'bg-success' : 'bg-warning motion-safe:animate-pulse-dot',
-        )}
-      />
-      <span key={state} className="motion-safe:animate-label-in">
+    <TerminalStatusItem
+      data-link={state}
+      className={cn(state !== 'live' && 'text-term-fg', className)}
+      {...props}
+    >
+      <LinkDot state={state} />
+      <span key={typeof children === 'string' ? children : state} className="motion-safe:animate-label-in">
         {children}
       </span>
     </TerminalStatusItem>
@@ -180,5 +220,5 @@ export {
   TerminalStatusLink,
   TerminalTurn,
 };
-export type { TerminalLinkState };
+export type { TerminalHostLink, TerminalLinkState };
 export type { TerminalTone };

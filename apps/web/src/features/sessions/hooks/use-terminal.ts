@@ -2,6 +2,7 @@ import '@xterm/xterm/css/xterm.css';
 import type { SessionStream, StreamEnd, StreamStatus } from '@oppenheimer/frontend-consumer';
 import { useHostPresence } from '@oppenheimer/frontend-consumer/react';
 import { useEffect, useRef, useState } from 'react';
+import { RECONNECTED_FOR_MS } from '../lib/host-link-phase';
 import { mountSessionTerminal } from '../lib/terminal-runtime';
 
 /**
@@ -24,19 +25,23 @@ import { mountSessionTerminal } from '../lib/terminal-runtime';
  * With `hostId`, an `offline` link also watches the host list, and a poll that
  * finds the host online redials the same way, so a reader who has just brought
  * the runner back is not left on that rung either. Only a poll answered after
- * the link went offline counts: the list read before it is the one that still
+ * the link went away counts: the list read before it is the one that still
  * called the host online, and redialling on it would only meet `host_offline`
  * again. Not an offline→online edge either, because the API calls a host
  * online for thirty seconds after its last heartbeat, so a runner restarted
- * inside that window never reads offline at all. `hostName` is the list's
- * name for it, for the pane to say which machine it is waiting on.
+ * inside that window never reads offline at all.
+ *
+ * What the pane draws of all this (`hostLinkPhaseOf`) is read off the rest of
+ * the return: `awaySince`, when the link went offline and until it is live
+ * again; `hostBack`, a poll since then found the host; `reconnected`, the link
+ * came back from being away a moment ago; `hostName`, the list's name for it.
  */
 export function useTerminal(
   createStream: () => SessionStream,
   options: {
     onEnd?: (reason: StreamEnd) => void;
     agentWindow?: boolean;
-    onImage?: (image: File) => void;
+    onFiles?: (files: File[]) => void;
     hostId?: string;
   } = {},
 ) {
@@ -48,15 +53,21 @@ export function useTerminal(
   const [hasOutput, setHasOutput] = useState(false);
   // Why the stream ended, if it has; cleared by a retry that opens a new one.
   const [ended, setEnded] = useState<StreamEnd | null>(null);
+  // When the link went offline, held until it is live again; the ref is what
+  // the status listener reads, the state what the pane draws.
+  const awayRef = useRef<number | null>(null);
+  const [awaySince, setAwaySince] = useState<number | null>(null);
+  // The link came back from being away, for the moment the pane says so.
+  const [reconnected, setReconnected] = useState(false);
   // Bumped to open a new stream after an end.
   const [generation, setGeneration] = useState(0);
   const streamRef = useRef<SessionStream | null>(null);
   // Read through a ref so a new callback identity never rebuilds the terminal.
   const onEndRef = useRef(options.onEnd);
-  const onImageRef = useRef(options.onImage);
+  const onFilesRef = useRef(options.onFiles);
   useEffect(() => {
     onEndRef.current = options.onEnd;
-    onImageRef.current = options.onImage;
+    onFilesRef.current = options.onFiles;
   });
   const agentWindow = options.agentWindow ?? false;
 
@@ -69,12 +80,25 @@ export function useTerminal(
     streamRef.current = stream;
     const unmount = mountSessionTerminal(container, stream, {
       agentWindow,
-      onImage: (image) => onImageRef.current?.(image),
+      onFiles: (files) => onFilesRef.current?.(files),
       // A reconnect replays the scrollback, so a session that has already run
       // answers this on its first frame and the waiting state never shows.
       onFirstOutput: () => setHasOutput(true),
     });
-    const offStatus = stream.onStatus(setStatus);
+    const offStatus = stream.onStatus((next) => {
+      setStatus(next);
+      if (next === 'offline' && awayRef.current === null) {
+        awayRef.current = Date.now();
+        setAwaySince(awayRef.current);
+      } else if (next === 'live' && awayRef.current !== null) {
+        awayRef.current = null;
+        setAwaySince(null);
+        setReconnected(true);
+      } else if (next === 'closed') {
+        awayRef.current = null;
+        setAwaySince(null);
+      }
+    });
     const offEnd = stream.onEnd((reason) => {
       setEnded(reason);
       onEndRef.current?.(reason);
@@ -103,17 +127,17 @@ export function useTerminal(
   });
   const hostOnline = presence.data?.online ?? false;
   const answeredAt = presence.dataUpdatedAt;
-  // When the link went offline, so a list read from before it is not taken
-  // for the host coming back.
-  const offlineSince = useRef<number | null>(null);
+  const hostBack =
+    status === 'offline' && hostOnline && awaySince !== null && answeredAt > awaySince;
   useEffect(() => {
-    if (status !== 'offline') {
-      offlineSince.current = null;
-      return;
-    }
-    if (offlineSince.current === null) offlineSince.current = Date.now();
-    if (hostOnline && answeredAt > offlineSince.current) streamRef.current?.reconnectNow();
-  }, [status, hostOnline, answeredAt]);
+    if (hostBack) streamRef.current?.reconnectNow();
+  }, [hostBack, answeredAt]);
+
+  useEffect(() => {
+    if (!reconnected) return;
+    const timer = setTimeout(() => setReconnected(false), RECONNECTED_FOR_MS);
+    return () => clearTimeout(timer);
+  }, [reconnected]);
 
   const retryNow = () => {
     if (ended) {
@@ -125,5 +149,15 @@ export function useTerminal(
     streamRef.current?.reconnectNow();
   };
 
-  return { containerRef, status, hasOutput, ended, retryNow, hostName: presence.data?.name };
+  return {
+    containerRef,
+    status,
+    hasOutput,
+    ended,
+    retryNow,
+    hostName: presence.data?.name,
+    awaySince,
+    hostBack,
+    reconnected,
+  };
 }

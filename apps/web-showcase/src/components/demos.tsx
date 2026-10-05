@@ -101,6 +101,7 @@ import {
   FieldSelectRow,
 } from '@oppenheimer/design-system-web/field-select';
 import { HostCard } from '@oppenheimer/design-system-web/host-card';
+import { fixCommands } from './host-link-demos';
 import {
   AddRow,
   InlineToken,
@@ -543,7 +544,9 @@ export function TooltipDemo() {
 const HOSTS: ChipSelectOption[] = [
   { value: 'optimus', label: 'optimus', description: '32 vCPU · eu-west · idle' },
   { value: 'mac-studio', label: 'jordis-mac-studio', description: 'local · 2 sessions running' },
-  { value: 'fable', label: 'fable', description: '16 vCPU · us-east · idle' },
+  // An offline host stays listed, so the choice is visible, but cannot be
+  // picked: a session needs a live runner to start.
+  { value: 'fable', label: 'fable', description: 'Offline · last seen 2 days ago', disabled: true },
 ];
 
 const BRANCHES = (extra: string[]) => [
@@ -708,8 +711,8 @@ export function CheckboxDemo() {
 
 /* ── Composer ────────────────────────────────────────────────────────────── */
 
-export function ComposerDemo({ full }: { full?: boolean }) {
-  const [value, setValue] = React.useState('');
+export function ComposerDemo({ full, blocked }: { full?: boolean; blocked?: string }) {
+  const [value, setValue] = React.useState(blocked ? 'Fix the flaky retriever eval' : '');
   const [busy, setBusy] = React.useState(false);
   const [files, setFiles] = React.useState<{ id: string; name: string }[]>(
     full ? [{ id: '1', name: 'Screenshot from 2026-09-20 11-42-07.png' }] : [],
@@ -722,6 +725,7 @@ export function ComposerDemo({ full }: { full?: boolean }) {
         onValueChange={setValue}
         placeholder={full ? 'Describe a task or ask a question' : 'Name or first task'}
         busy={busy}
+        sendBlockedReason={blocked}
         onSubmit={() => {
           setBusy(true);
           setTimeout(() => {
@@ -1001,6 +1005,10 @@ export function StepperDemo() {
           id,
           label,
           meta: i < step ? `${(0.6 + i * 0.7).toFixed(1)}s` : i === step ? meta : undefined,
+          note:
+            id === 'clone' && i === step
+              ? 'First session on mac-studio with this repository, so it downloads in full once. Later sessions here start in about a second.'
+              : undefined,
           state: i < step ? 'done' : i === step ? 'running' : 'pending',
         }))}
         elapsed={`${(t * 0.9).toFixed(1)}s`}
@@ -1810,23 +1818,42 @@ export function RoutineEditorDemo() {
 
 export function RoutineItemsDemo() {
   const [active, setActive] = React.useState('review');
+  const [menu, setMenu] = React.useState<string | null>(null);
+  const action = (id: string, paused?: boolean) => (
+    <DropdownMenu open={menu === id} onOpenChange={(open) => setMenu(open ? id : null)}>
+      <DropdownMenuTrigger render={<IconButton aria-label="Automation actions" size="sm" />}>
+        <EllipsisIcon />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-47">
+        <DropdownMenuItem>Run now</DropdownMenuItem>
+        <DropdownMenuItem>Edit</DropdownMenuItem>
+        <DropdownMenuItem>{paused ? 'Resume' : 'Pause'}</DropdownMenuItem>
+        <DropdownMenuItem>Duplicate</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
   return (
-    <div className="flex w-66 flex-col gap-px rounded-lg border border-sidebar-border bg-sidebar p-3">
-      <RoutineItem name="Review new pull requests" meta={26} icon={<BrandGlyph name="github" size={13} />} running active={active === 'review'} onClick={() => setActive('review')} />
-      {active === 'review' ? (
+    <div className="flex w-full flex-wrap gap-6">
+      <div className="flex w-66 flex-col gap-px rounded-lg border border-sidebar-border bg-sidebar p-3">
+        <RoutineItem name="Review new pull requests" meta="Running" icon={<BrandGlyph name="github" size={13} />} running lastRun="running" lastRunLabel="Last run: running" active={active === 'review'} onClick={() => setActive('review')} action={action('review')} menuOpen={menu === 'review'} />
+        <RoutineItem name="Nightly dependency audit" meta="in 11m" lastRun="failed" lastRunLabel="Last run: failed" active={active === 'audit'} onClick={() => setActive('audit')} action={action('audit')} menuOpen={menu === 'audit'} />
+        <RoutineItem name="Standup digest" meta="in 45h" lastRun="completed" lastRunLabel="Last run: completed" active={active === 'standup'} onClick={() => setActive('standup')} action={action('standup')} menuOpen={menu === 'standup'} />
+        <RoutineItem name="Triage bug reports" meta="Paused" paused icon={<BrandGlyph name="github" size={13} />} active={active === 'triage'} onClick={() => setActive('triage')} action={action('triage', true)} menuOpen={menu === 'triage'} />
+      </div>
+      <div className="flex w-66 flex-col gap-px rounded-lg border border-sidebar-border bg-sidebar p-3">
+        <RoutineItem name="Review new pull requests" meta={26} icon={<BrandGlyph name="github" size={13} />} active />
         <RoutineRunList>
           <RoutineRun title="Review #124 · Harden API config loading" ago="17h" active />
           <RoutineRun title="Review #123 · Bump react-native to 0.76.3" ago="18h" />
           <RoutineRun title="Review #118 · Split wallet store by account" ago="2d" state="failed" />
         </RoutineRunList>
-      ) : null}
-      <RoutineItem name="Standup digest" meta="in 45h" active={active === 'standup'} onClick={() => setActive('standup')} />
-      {active === 'standup' ? (
+        <RoutineItem name="Standup digest" meta="in 45h" />
         <RoutineRunList>
           <RoutineRunsEmpty>No runs yet.</RoutineRunsEmpty>
         </RoutineRunList>
-      ) : null}
-      <RoutineItem name="Triage bug reports" meta="Paused" paused icon={<BrandGlyph name="github" size={13} />} active={active === 'triage'} onClick={() => setActive('triage')} />
+      </div>
     </div>
   );
 }
@@ -1951,7 +1978,45 @@ export function HostCardsDemo() {
     <div className="flex w-full max-w-170 flex-col gap-2.5">
       <HostCard name="jordis-mac-studio" meta="macOS 15 · local · runner 0.14.2" status="running" state="Running · 2 sessions" seen="connected" action={action} />
       <HostCard name="optimus" meta="Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2" status="idle" state="Idle" seen="connected" action={action} />
-      <HostCard name="fable" meta="Debian 12 · 16 vCPU · us-east · runner 0.13.8" status="offline" state="Offline" seen="last seen 2 days ago" action={action} />
+      <FableHostCard action={action} />
     </div>
+  );
+}
+
+/** Fable, offline: what waits on it, the fix, and Check again. */
+function FableHostCard({ action }: { action: React.ReactNode }) {
+  const [checking, setChecking] = React.useState(false);
+  const [checked, setChecked] = React.useState(false);
+  return (
+    <HostCard
+      name="fable"
+      meta="Debian 12 · 16 vCPU · us-east · runner 0.13.8"
+      status="offline"
+      state="Offline"
+      seen="last seen 2 days ago"
+      action={action}
+      offline={{
+        note: '3 sessions reconnect on their own when its runner is back, and 1 automation run waits as Queued. Its runner (0.13.8) is out of date; installing updates it to 0.14.2.',
+        commands: fixCommands('fable').map(([lead, command]) => ({ lead, command })),
+        action: (
+          <Button
+            variant="secondary"
+            size="sm"
+            pending={checking}
+            pendingLabel="Checking…"
+            onClick={() => {
+              setChecking(true);
+              setTimeout(() => {
+                setChecking(false);
+                setChecked(true);
+              }, 1500);
+            }}
+          >
+            Check again
+          </Button>
+        ),
+        actionNote: checked && !checking ? 'still offline · checked just now' : undefined,
+      }}
+    />
   );
 }

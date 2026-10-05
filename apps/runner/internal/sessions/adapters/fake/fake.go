@@ -45,20 +45,20 @@ type Terminals struct {
 	FailPaste bool
 }
 
-// Images is app.Images in memory.
-type Images struct {
+// Files is app.Files in memory.
+type Files struct {
 	mu sync.Mutex
-	// Saved is each session's images by name.
+	// Saved is each session's files by name.
 	Saved map[string]map[string][]byte
-	// Discarded names the sessions whose images were dropped.
+	// Discarded names the sessions whose files were dropped.
 	Discarded []string
 }
 
-// NewImages returns an empty image store.
-func NewImages() *Images { return &Images{Saved: map[string]map[string][]byte{}} }
+// NewFiles returns an empty file store.
+func NewFiles() *Files { return &Files{Saved: map[string]map[string][]byte{}} }
 
-// Save implements app.Images; the path is a fixed fake root.
-func (i *Images) Save(sessionID, name string, data []byte) (string, error) {
+// Save implements app.Files; the path is a fixed fake root.
+func (i *Files) Save(sessionID, name string, data []byte) (string, error) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	if i.Saved[sessionID] == nil {
@@ -68,16 +68,16 @@ func (i *Images) Save(sessionID, name string, data []byte) (string, error) {
 	return "/home/jordi/.oppenheimer/images/" + sessionID + "/" + name, nil
 }
 
-// Delete implements app.Images.
-func (i *Images) Delete(sessionID, name string) error {
+// Delete implements app.Files.
+func (i *Files) Delete(sessionID, name string) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	delete(i.Saved[sessionID], name)
 	return nil
 }
 
-// Discard implements app.Images.
-func (i *Images) Discard(sessionID string) error {
+// Discard implements app.Files.
+func (i *Files) Discard(sessionID string) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	delete(i.Saved, sessionID)

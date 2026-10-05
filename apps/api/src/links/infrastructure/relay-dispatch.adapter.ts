@@ -9,19 +9,20 @@ import type {
   SessionRestartMessage,
   SessionStopMessage,
 } from '@oppenheimer/shared/protocol';
+import { missingFileCapability } from '@oppenheimer/shared/protocol';
 import type {
   SessionCloseSpec,
   SessionDispatchOutcome,
   SessionDispatchPort,
-  SessionImageSpec,
+  SessionFileSpec,
   SessionLaunchSpec,
   SessionPrepareSpec,
 } from '../../sessions/application/session-dispatch.port';
 import type { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import type { LinkRegistryPort, RunnerLink } from '../application/link-registry.port';
-import type { ParkedImagePort } from '../application/parked-image.port';
-import { LINK_REGISTRY, PARKED_IMAGES } from '../links.di-tokens';
+import type { ParkedFilePort } from '../application/parked-file.port';
+import { LINK_REGISTRY, PARKED_FILES } from '../links.di-tokens';
 
 const OFFLINE: SessionDispatchOutcome = { delivered: false, hints: ['host_offline'] };
 const DELIVERED: SessionDispatchOutcome = { delivered: true, hints: [] };
@@ -46,8 +47,8 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
   constructor(
     @Inject(LINK_REGISTRY)
     private readonly links: LinkRegistryPort,
-    @Inject(PARKED_IMAGES)
-    private readonly images: ParkedImagePort,
+    @Inject(PARKED_FILES)
+    private readonly files: ParkedFilePort,
   ) {}
 
   async create(
@@ -55,12 +56,11 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     spec: SessionLaunchSpec,
   ): Promise<SessionDispatchOutcome> {
     return this.withLink(session, (link) => {
-      // A runner that did not say it takes images at launch would drop the
-      // field and start the task without them. The ids stay in the log, so
-      // the hello of an updated runner is sent them.
-      if (spec.images?.length && !link.capabilities.includes('session.create.images')) {
-        return NOT_SUPPORTED;
-      }
+      // A runner that cannot take these files at launch would drop them or
+      // refuse them, and start the task without them. The ids stay in the
+      // log, so the hello of an updated runner is sent them.
+      const types = (spec.images ?? []).map((file) => file.mediaType);
+      if (missingFileCapability(link.capabilities, 'create', types)) return NOT_SUPPORTED;
       return this.deliver(link, createMessage(session, spec));
     });
   }
@@ -102,27 +102,27 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     });
   }
 
-  async pasteImage(
+  async pasteFile(
     session: WorkSessionEntity,
-    image: SessionImageSpec,
+    file: SessionFileSpec,
   ): Promise<SessionDispatchOutcome> {
     return this.withLink(session, async (link) => {
-      // A runner that did not say it takes images would log the frame as
-      // unknown and paste nothing, while this answered "delivered".
-      if (!link.capabilities.includes('session.image')) return NOT_SUPPORTED;
+      // A runner that cannot take this file would log the frame as unknown or
+      // refuse it after the park, while this answered "delivered".
+      if (missingFileCapability(link.capabilities, 'paste', [file.mediaType])) return NOT_SUPPORTED;
       const commandId = randomUUID();
-      await this.images.park(commandId, {
+      await this.files.park(commandId, {
         hostId: session.hostId,
         sessionId: session.id,
-        mediaType: image.mediaType,
-        data: image.data,
+        mediaType: file.mediaType,
+        data: file.data,
       });
       const message: SessionImageMessage = {
         type: 'session.image',
         commandId,
         sessionId: session.id,
-        window: image.window,
-        mediaType: image.mediaType,
+        window: file.window,
+        mediaType: file.mediaType,
       };
       return this.deliver(link, message);
     });
