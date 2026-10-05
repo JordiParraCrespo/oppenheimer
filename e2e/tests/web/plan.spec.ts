@@ -149,11 +149,14 @@ test('a session started from a card moves it to In progress and links back', asy
 test('the calendar: a personal event on a day, and the layers', async ({ page }) => {
   const owner = await provisionedUser('plancalendar');
   await signInAs(page, owner.user);
-  await page.goto('/plan/calendar');
-
-  await expect(page.getByRole('navigation', { name: 'Plan' }).locator('[data-active]')).toHaveText(
-    'Calendar',
-  );
+  // From the board through the sidebar, as a person goes: the board's sidebar
+  // stays drawn a moment while the calendar's loads, and must not throw then.
+  await page.goto('/plan');
+  const plan = page.getByRole('navigation', { name: 'Plan' });
+  await plan.getByText('Calendar', { exact: true }).click();
+  await expect(page).toHaveURL(/\/plan\/calendar$/);
+  await expect(plan.locator('[data-active]')).toHaveText('Calendar');
+  await expect(page.getByText('This screen could not be drawn')).toHaveCount(0);
   await page.getByRole('button', { name: 'New event', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'New event' });
   await dialog.getByLabel('Title').fill('Design review');
@@ -166,5 +169,10 @@ test('the calendar: a personal event on a day, and the layers', async ({ page })
   await expect(page.getByRole('button', { name: /Design review/ })).toHaveCount(0);
   await page.getByRole('checkbox', { name: 'My events' }).click();
   await expect(page.getByRole('button', { name: /Design review/ })).toBeVisible();
+
+  // And back to the board the same way.
+  await plan.getByText('Tasks', { exact: true }).click();
+  await expect(page.getByRole('button', { name: 'New task', exact: true })).toBeVisible();
+  await expect(page.getByText('This screen could not be drawn')).toHaveCount(0);
   await owner.api.dispose();
 });

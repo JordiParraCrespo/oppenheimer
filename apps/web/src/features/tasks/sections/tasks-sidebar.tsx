@@ -2,12 +2,10 @@ import { IconButton, RoutineItem, SidebarListHead, Skeleton } from '@oppenheimer
 import { Folder, Inbox, Layers, Plus } from '@oppenheimer/design-system-web/icons';
 import { useProjects, useTasks } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { getRouteApi, Link } from '@tanstack/react-router';
+import { Link, useMatch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { UNASSIGNED_SLUG } from '../hooks/use-board-filter';
-
-const board = getRouteApi('/_authenticated/plan/');
 
 /**
  * The board's sidebar list (`18-plan-product.md` §1): All projects, each
@@ -16,7 +14,13 @@ const board = getRouteApi('/_authenticated/plan/');
  */
 export function TasksSidebar() {
   const { t } = useTranslation();
-  const { project } = board.useSearch();
+  // The shell draws this beside the board, and keeps drawing it for a moment
+  // while the calendar's sidebar loads: by then the board's match is gone.
+  const project = useMatch({
+    from: '/_authenticated/plan/',
+    shouldThrow: false,
+    select: (match) => match.search.project,
+  });
   const projects = useProjects();
   const { data: open } = useTasks({
     select: (rows) => {

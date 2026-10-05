@@ -267,6 +267,8 @@ function apiEnv() {
   const defaults = existsSync(join(ROOT, '.env')) ? {} : parseEnv(join(ROOT, '.env.example'));
   const local = existsSync(join(ROOT, '.env.local')) ? parseEnv(join(ROOT, '.env.local')) : {};
   for (const key of Object.keys(local)) delete defaults[key];
+  // Nor over the shell's own: an exported `GOOGLE_CLIENT_ID` is the value meant.
+  for (const key of Object.keys(process.env)) delete defaults[key];
   return { ...defaults, ...parseEnv(stubEnvFile) };
 }
 

@@ -1,6 +1,6 @@
 import { CalendarLayerItem, SidebarListHead } from '@oppenheimer/design-system-web';
 import { CalendarDays, CircleCheck, CircleDot, Zap } from '@oppenheimer/design-system-web/icons';
-import { getRouteApi } from '@tanstack/react-router';
+import { getRouteApi, useMatch } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -28,7 +28,13 @@ const ICON: Record<CalendarLayer, ReactNode> = {
  */
 export function CalendarSidebar() {
   const { t } = useTranslation();
-  const { off } = calendar.useSearch();
+  // Drawn by the shell, and for a moment after the calendar's match is gone
+  // while the board's sidebar loads: read it if it is there.
+  const off = useMatch({
+    from: '/_authenticated/plan/calendar',
+    shouldThrow: false,
+    select: (match) => match.search.off,
+  });
   const navigate = calendar.useNavigate();
   const hidden = hiddenLayers(off);
 
