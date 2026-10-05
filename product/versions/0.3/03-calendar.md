@@ -15,7 +15,7 @@ each owned by the module whose rows they are:
 | Task due dates | `tasks` (02) | `GET /tasks?dueFrom&dueTo` |
 | Automations | `automations` | `GET /automations/occurrences?from&to` (new, §3) |
 | Google Calendar | `calendar`, read through to Google | `GET /calendar/google/events?from&to` (§5) |
-| Personal | `calendar`, if it survives | `GET /calendar/events?from&to` (§2) |
+| Personal | `calendar` | `GET /calendar/events?from&to` (§2) |
 
 A layer toggle is a query enabled or not, each read is cached in the
 console's query client for the open month, and nothing on the server
@@ -32,13 +32,12 @@ joins across modules. Every route here is behind the `plan` flag (02 §8).
   (`PATCH /tasks/:id`).
 - **Automation run**: a bolt, time and name, muted; click goes to the
   automation. Not draggable.
-- **Day cell**: click on empty space opens New event on that day if
-  personal events exist, otherwise New task due that day.
+- **Day cell**: click on empty space opens New event on that day.
 
-## 2. Personal events (an option until README question 1 closes)
+## 2. Personal events
 
-If personal events stay, they are the only events Plan stores, in one
-table with one shape:
+Personal events stay (README, decided 3). They are the only events Plan
+stores, in one table with one shape:
 
 **`calendar_event`**
 
@@ -68,9 +67,6 @@ The event dialog: title, notes, date, All day, start and end on a
 15-minute grid (end shows the duration), Busy / Free, Delete event.
 `POST/PATCH/DELETE /calendar/events`. Scope resource `calendar`
 (`calendar:read`, `calendar:write`).
-
-If the answer is no, this section, the Personal layer and New event go,
-and the `calendar` module holds only the Google connection (§4–5).
 
 ## 3. Automation occurrences
 

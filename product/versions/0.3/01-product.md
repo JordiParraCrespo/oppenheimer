@@ -88,7 +88,7 @@ for, and a session is where it gets done.
   never shows a live session line while it sits in To do. The move is
   conditional on the status the person saw when they clicked: if the
   card was dragged elsewhere in the meantime, the session is linked and
-  the status is left alone (02 §5). (README open question 2)
+  the status is left alone (02 §5). (README, decided 4)
 - **Offline host.** If the chosen host is offline, a note says "*host*
   has been offline for *2 days*. The session waits as Queued and starts
   when its runner reconnects.", and the button reads **Queue session**.

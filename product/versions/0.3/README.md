@@ -12,15 +12,15 @@ The frames are `../mvp/design/version1/Tasks.dc.html` (Plan) and the
 They are the source of truth for what Plan *is*; these notes decide how
 the control plane and the console make it true.
 
-**Status: proposal.** Two points are decided (below); the rest waits on
-the owner, and nothing is built. The product word is **Plan** for the
+**Status: design.** The owner's questions are decided (below); nothing
+is built. The product word is **Plan** for the
 section, **task** and **goal** for the things in it.
 
 | # | Note | What it settles |
 |---|------|-----------------|
 | 01 | [The product](01-product.md) | What the frames say Plan is, screen by screen, and the gaps they leave |
 | 02 | [Tasks and goals: the backend](02-tasks-and-goals.md) | The `tasks` module: tables, ordering, the API, starting a session from a task, links, and what the sessions module must add |
-| 03 | [The calendar](03-calendar.md) | The month view composed from four reads; Google read through a port, uncached on the server; personal events if they survive |
+| 03 | [The calendar](03-calendar.md) | The month view composed from four reads; Google read through a port, uncached on the server; personal events in one table |
 
 ## Slices
 
@@ -34,8 +34,8 @@ Each slice ships behind the `plan` release flag (one row in
    Link existing, the card's session line, the session header's "Back
    to task" chip, and Queued for an offline host. (02 §5–7, 01 §4)
 3. **Calendar without Google.** The month view, task due dates and
-   automation occurrences as layers, drag a task to reschedule it, and
-   personal events if open question 1 keeps them. (03 §1–3)
+   automation occurrences and personal events as layers, drag to
+   reschedule. (03 §1–3)
 4. **Google Calendar, read-only.** Connect, the Google layer read for
    the open month, the sidebar's connection card, Settings →
    Integrations. (03 §4–5)
@@ -55,24 +55,23 @@ Each slice ships behind the `plan` release flag (one row in
    Google Calendar" and is not draggable, which departs from the frames.
    Writing back (`calendar.events`, conflict handling) is a later slice.
    (03 §4)
+3. **Personal events stay.** Plan stores its own events beside the
+   Google layer, in one table (03 §2).
+4. **Only attaching a session moves a card.** Start and Link existing
+   move Later or To do to In progress, one rule for both (01 §4, 02 §5).
+   Nothing else moves a card for now; a merged PR moving it to Done waits
+   for 0.2.
+5. **Queued is a console label** over `starting` + host offline, in the
+   launch dialog and on the card's session line; session state does not
+   change (02 §7).
 
-## Open questions for the owner
-
-These change what gets built; each note carries its own smaller ones.
-
-1. **Do personal events belong in Oppenheimer at all?** The frames have
-   a Personal calendar (Dentist, Padel). Keeping them makes Plan a
-   calendar app as well as a board, and is the only reason Plan would
-   store events (03 §2). Until this closes, 03 §2 is an option, not a
-   design.
-2. **What moves a card on its own?** The frames move a card to In
-   progress when a session starts from it. Proposed: attaching a
-   session, by Start or by Link existing, moves Later or To do to In
-   progress, one rule for both (01 §4, 02 §5); nothing else moves a
-   card until 0.2 gives a merged PR to key on.
+There are no open questions for the owner left; each note keeps its own
+smaller ones.
 
 ## Decision log
 
 - 2026-10-05: the owner decided Plan is 0.3, not the MVP, and Google
   Calendar is read-only first (`calendar.readonly`); two-way is a later
   slice.
+- 2026-10-05: the owner decided personal events stay, only attaching a
+  session moves a card for now, and Queued is a console label.
