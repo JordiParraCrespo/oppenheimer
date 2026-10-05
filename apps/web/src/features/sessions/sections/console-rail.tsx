@@ -10,11 +10,12 @@ import { useConsoleList } from '@/lib/console';
  * (`product/versions/mvp/05-screens.md`, `…/13-automations.md`). The current
  * one is `useConsoleList`'s answer, the same the shell picks the sidebar by.
  * A section rather than kit because the count is a product read; it is the
- * list the sidebar already subscribes to, so it costs nothing extra.
+ * list the sidebar already subscribes to, so it costs nothing extra, and it
+ * selects the count so a change to a row that keeps it re-renders nothing.
  */
 export function ConsoleRail() {
   const { t } = useTranslation();
-  const { data: sessions } = useSessions();
+  const { data: sessionCount } = useSessions({ select: (rows) => rows.length });
   const list = useConsoleList();
 
   return (
@@ -22,7 +23,7 @@ export function ConsoleRail() {
       <RailMark aria-hidden>O</RailMark>
       <RailItem
         label={t('nav.sessions')}
-        count={sessions?.length}
+        count={sessionCount}
         active={list === 'sessions'}
         render={<Link to="/sessions/new" />}
       >
