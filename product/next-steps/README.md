@@ -62,3 +62,6 @@ where these land is the first open question below.
   summary on every PR, plus Analytics; lanes, auto-merge and prepared
   review sessions come after. Design handoff:
   `0.2-pull-requests-design-handoff.md`.
+- 2026-10-05: the 2026-10-05 evening frames (`PullRequests.dc.html`) are
+  the spec for the Pull requests area's first version, over the notes;
+  the API plan is `0.2-pull-requests-api-plan.md`.
