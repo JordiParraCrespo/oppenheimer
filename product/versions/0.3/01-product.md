@@ -12,7 +12,7 @@ this note says what the real thing does instead.
 - **Sidebar.** Two sections, **Tasks** (open count) and **Calendar**
   (today's event count). Under Tasks: **Projects**: All projects, each
   project with its open count, and Unassigned, plus "+" for New project.
-  Under Calendar: the layer toggles (03 §1) and the Google Calendar sync
+  Under Calendar: the layer toggles (03 §1) and the Google Calendar connection
   card.
 - **Routes.** `/plan` (the board, `?project=<slug>&goal=<id>`),
   `/plan/calendar` (`?month=2026-10`), and `?task=<id>` on either to open
@@ -82,8 +82,13 @@ for, and a session is where it gets done.
   Model and agent lists come from `packages/shared/src/agents/catalog.ts`,
   not the frame's names. Permission and effort take the New session
   defaults; the frame has no picker for them.
-- Starting a session links it to the task and moves the task to **In
-  progress**, unless it is Done (it stays Done).
+- **One status rule for attaching a session.** Start and Link existing
+  both link the session, and both move a task that is in Later or To do
+  to **In progress**; In progress and Done stay as they are. So a card
+  never shows a live session line while it sits in To do. The move is
+  conditional on the status the person saw when they clicked: if the
+  card was dragged elsewhere in the meantime, the session is linked and
+  the status is left alone (02 §5). (README open question 2)
 - **Offline host.** If the chosen host is offline, a note says "*host*
   has been offline for *2 days*. The session waits as Queued and starts
   when its runner reconnects.", and the button reads **Queue session**.
@@ -100,13 +105,13 @@ for, and a session is where it gets done.
   which opens Plan on that task. With several tasks: the one that
   started it, else the most recently linked.
 
-## 5. The 0.3 sketch's questions, answered by the frames
+## 5. Questions the frames answer
 
 1. *What is a card?* A **task**, stored, that may start sessions or link
    existing ones, not a view of sessions. Sessions with no task stay off
    the board.
-2. *Do columns move on their own?* Only on start (→ In progress). Every
-   other move is a person's. (README open question 2)
+2. *Do columns move on their own?* Only when a session is attached
+   (→ In progress, §4). Every other move is a person's.
 3. *Does a card seed the prompt?* Yes: title and notes, editable before
    starting.
 4. *Per project or per workspace?* One workspace board, filtered by

@@ -7,63 +7,70 @@ due dates** and **Automations**. The header counts what the month holds:
 grid only (Monday first, today circled, "n more" past four items a day,
 compact times under 150 px a column).
 
-Only two of the four layers are calendar data. Task due dates are
-tasks (02); automation runs are automations' schedules. So the view is
-**composed in the console from three modules**, not served by one:
+The view is **composed in the console from four reads**, one per layer,
+each owned by the module whose rows they are:
 
-| Layer | Source | Request |
-|-------|--------|---------|
-| Google Calendar, Personal | `calendar` module (this note) | `GET /calendar/events?from&to` |
+| Layer | Owner | Request |
+|-------|-------|---------|
 | Task due dates | `tasks` (02) | `GET /tasks?dueFrom&dueTo` |
-| Automations | `automations` | `GET /automations/occurrences?from&to` (new) |
+| Automations | `automations` | `GET /automations/occurrences?from&to` (new, §3) |
+| Google Calendar | `calendar`, read through to Google | `GET /calendar/google/events?from&to` (§5) |
+| Personal | `calendar`, if it survives | `GET /calendar/events?from&to` (§2) |
 
-Each module stays the owner of its rows, a layer toggle is a query
-enabled or not, and nothing on the server joins across modules.
+A layer toggle is a query enabled or not, each read is cached in the
+console's query client for the open month, and nothing on the server
+joins across modules. Every route here is behind the `plan` flag (02 §8).
 
 ## 1. What each item does
 
-- **Event** (Google or Personal): time and title; busy events in full
-  colour, free ones muted; all-day events as a filled bar. Click opens
-  the event dialog. Drag to another day moves a personal event; a
-  Google event is read-only (§4).
+- **Event**: time and title; busy events in full colour, free ones
+  muted; all-day events as a filled bar. A personal event opens the
+  event dialog and drags to another day. A Google event opens read-only
+  with "Open in Google Calendar" and does not drag (README, decided 2).
 - **Task due**: a check-circle and the title, struck through when Done.
   Click opens the task dialog; drag to another day sets its due date
   (`PATCH /tasks/:id`).
 - **Automation run**: a bolt, time and name, muted; click goes to the
   automation. Not draggable.
-- **Day cell**: click on empty space opens New event on that day.
+- **Day cell**: click on empty space opens New event on that day if
+  personal events exist, otherwise New task due that day.
 
-## 2. Personal events
+## 2. Personal events (an option until README question 1 closes)
+
+If personal events stay, they are the only events Plan stores, in one
+table with one shape:
 
 **`calendar_event`**
 
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | uuid PK | |
-| `organizationId`, `userId` | uuid | events are a person's, inside their workspace |
-| `source` | varchar(16) | `manual` · `google` |
-| `connectionId` | uuid null | FK → `calendar_connection`, `CASCADE`; set for `google` |
-| `externalCalendarId`, `externalId` | text null | Google's ids; unique `(connectionId, externalCalendarId, externalId)` |
-| `etag` | text null | Google's, for incremental sync |
+| `organizationId` | uuid | the tenant key, as for tasks |
 | `title` | varchar(500) | |
 | `notes` | text | |
 | `allDay` | boolean | |
 | `startsAt`, `endsAt` | timestamptz null | timed events |
-| `startDate`, `endDate` | date null | all-day events (end exclusive, as Google) |
-| `busy` | boolean | Google's `transparency` |
-| `status` | varchar(16) | `confirmed` · `cancelled` (Google deletes arrive as cancelled) |
+| `startDate`, `endDate` | date null | all-day events (end exclusive) |
+| `busy` | boolean | |
+| `createdByUserId` | uuid | |
 | `createdAt`, `updatedAt` | timestamptz | |
 
 `CHECK` that exactly one of the timed pair and the all-day pair is set.
-Index `(userId, startsAt)` and `(userId, startDate)` for the range query.
-Recurring Google events are stored **expanded** (`singleEvents=true`),
-one row per occurrence within the sync window; Personal events have no
-recurrence in the frames and get none.
+Indexes `(organizationId, startsAt)` and `(organizationId, startDate)`
+for the range query. No recurrence; the frames draw none.
+
+**Visibility:** personal events belong to the workspace, like tasks,
+because Plan is a workspace page. Workspaces have one member today;
+whether teammates see each other's personal events is a question for
+when teams come, not now.
 
 The event dialog: title, notes, date, All day, start and end on a
 15-minute grid (end shows the duration), Busy / Free, Delete event.
-`POST/PATCH/DELETE /calendar/events` for `manual` rows only. Scope
-resource `calendar` (`calendar:read`, `calendar:write`).
+`POST/PATCH/DELETE /calendar/events`. Scope resource `calendar`
+(`calendar:read`, `calendar:write`).
+
+If the answer is no, this section, the Personal layer and New event go,
+and the `calendar` module holds only the Google connection (§4–5).
 
 ## 3. Automation occurrences
 
@@ -81,89 +88,76 @@ cannot return thousands of rows; hourly triggers show as one all-day
 ## 4. Google Calendar: the connection
 
 **Separate from sign-in.** Google sign-in asks for `openid email
-profile` with no refresh token, and should stay that way: a person who
-signs in with Google has not agreed to share their calendar, and a
-person who signs in with GitHub may still want it. The calendar is a
-second, incremental OAuth grant, started from Plan's sidebar ("Connect
-Google Calendar") or Settings → Integrations, with
-`access_type=offline`, `prompt=consent`,
-`include_granted_scopes=true` and the scope below. The same Google
-client (`GOOGLE_CLIENT_ID`) serves both; the callback is the API's own
-(`/v1/calendar/google/callback`), not Better Auth's.
+profile` with no refresh token, and stays that way: a person who signs
+in with Google has not agreed to share their calendar, and a person who
+signs in with GitHub may still want it. The calendar is a second,
+incremental OAuth grant, started from Plan's sidebar ("Connect Google
+Calendar") or Settings → Integrations, with `access_type=offline`,
+`prompt=consent`, `include_granted_scopes=true` and
+`https://www.googleapis.com/auth/calendar.readonly` (decided, README).
+The same Google client (`GOOGLE_CLIENT_ID`) serves both; the callback is
+the API's own (`/v1/calendar/google/callback`), not Better Auth's.
+`calendar.readonly` is a "sensitive" scope: Google's verification takes
+days and a published privacy policy, and until then the client is
+limited to 100 test users, which covers us.
 
-**Scope.** Decided (README): `https://www.googleapis.com/auth/calendar.readonly`
-(plus `calendar.calendarlist.readonly` if we let people pick calendars).
-Read-only is a "sensitive" scope; Google's app verification takes days
-and a published privacy policy, and until then the client is limited to
-100 test users, which covers us. Two-way editing needs
-`calendar.events` and conflict handling, and is a later slice. With
-read-only, a Google event's dialog is read-only with "Open in Google
-Calendar", and Google events are not draggable — a change from the
-frames, which treat them like personal ones.
-
-**`calendar_connection`**
+**`calendar_connection`** — the only thing stored for Google.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | uuid PK | |
-| `organizationId`, `userId` | uuid | one per user per provider account |
+| `organizationId` | uuid | |
+| `userId` | uuid | whose Google account this is |
 | `provider` | varchar(16) | `google` |
-| `accountEmail` | varchar(320) | shown on the sync card |
+| `accountEmail` | varchar(320) | shown on the sidebar card |
 | `refreshTokenSealed` | bytea | encrypted at rest (below) |
 | `scopes` | text[] | as granted |
-| `calendars` | jsonb | the calendars synced (default: primary), each with its `syncToken` |
-| `status` | varchar(16) | `active` · `revoked` · `error` |
-| `lastSyncedAt` | timestamptz null | "Synced 2 min ago" |
-| `lastError` | text null | |
+| `status` | varchar(16) | `active` · `revoked` |
 | `createdAt`, `updatedAt` | timestamptz | |
 
-Unique `(userId, provider, accountEmail)`.
+Unique `(organizationId, userId, provider)`. The Google layer shows the
+viewer's own connection only. The grant belongs to a person, not the
+workspace, so a member never reads someone else's Google calendar.
 
-**Secrets.** Nothing in the API encrypts a stored secret at rest today
-(`hosts/infrastructure/seal.util.ts` seals to a host's key, a different
-job). The refresh token is the first: AES-256-GCM under a key from a new
-`DATA_ENCRYPTION_KEY` (32 bytes, base64) in the root `.env.example`,
-with a key id prefix on the ciphertext so the key can rotate. That
-helper belongs in `packages/backend/core`, since the next integration
-(Slack, 0.4) needs it too. Access tokens are never stored; they are
-minted per sync and held in memory.
+**The refresh token is encrypted at rest** with AES-256-GCM under
+`CALENDAR_TOKEN_KEY` (32 bytes, base64, documented in the root
+`.env.example`). The ciphertext carries a key-id prefix so the key can
+rotate. The helper lives in the `calendar` module's infrastructure, and
+moves to a shared package only when a second integration needs one.
+Access tokens are minted per request and never stored.
 
-Disconnect revokes the token at Google and deletes the connection and
-its events.
+Disconnect revokes the token at Google and deletes the row.
 
-## 5. Sync
+## 5. Reading Google
 
-- **Window.** 45 days back to 120 days ahead (the frames' seed spans
-  −45…+90). Wider is a parameter.
-- **First sync** on connect: `events.list` per calendar with
-  `singleEvents=true`, `timeMin/timeMax` the window, paged; store the
-  final `nextSyncToken`.
-- **Incremental**: `events.list?syncToken=…` returns only changes,
-  including cancellations; apply by `(externalCalendarId, externalId)`.
-  A `410 Gone` means the token expired: full re-sync of that calendar.
-- **When.** A BullMQ repeatable job every 5 minutes per active
-  connection (the queue module already runs automation schedules), plus
-  a sync when the person opens the calendar if the last one is older
-  than a minute ("Synced 2 min ago" is honest either way). Google push
-  (`events.watch` to a webhook) is the later improvement; it would
-  arrive through `inbound-events` like GitHub's webhooks, and needs a
-  public HTTPS callback and channel renewal every week.
-- **Failure.** `invalid_grant` marks the connection `revoked` and the
-  sync card says "Reconnect"; other errors back off and show "Last
-  synced *time* · retrying".
-- **Window slides** daily: rows older than the window are deleted.
+No events are stored and nothing syncs. The Google layer is a read
+through `CalendarProviderPort` (`listEvents(connection, from, to)`,
+`revoke(connection)`), implemented by a `GoogleCalendarAdapter`:
 
-## 6. Where the Google pieces live
+- `GET /calendar/google/events?from&to` mints an access token from the
+  sealed refresh token and calls `events.list` on the primary calendar
+  with `singleEvents=true` and the range, paged. It returns the events
+  in the shape the month view draws: title, all-day or start/end, busy,
+  and a link to the event in Google.
+- The console caches the result per month in the query client. It
+  refetches on focus and when the cache is older than a couple of
+  minutes. The sidebar card shows the account and "Updated *2 min
+  ago*" from that cache.
+- If Google answers `invalid_grant`, the connection is marked `revoked`
+  and the card says "Reconnect". On any other error the Google layer
+  shows as unavailable with Retry, and the rest of the month still
+  draws.
 
-A `calendar/` module with a `CalendarProviderPort` (list calendars,
-list events since a token, revoke) and a `GoogleCalendarAdapter`, the
-same port-and-adapter shape as `github/`. Outlook or iCloud would be a
-second adapter and a `provider` value, not a new module.
+The port is the seam: Outlook or iCloud would be a second adapter and a
+new `provider` value. Stored events, sync tokens and a sync job come
+back only if something needs Google's events when nobody is looking: a
+reminder, a conflict check before an automation runs, or write-back.
 
 ## Open questions
 
-1. Which calendars: primary only (simplest), or a picker in Settings?
-2. Should a task with a due **time** be blocked on the calendar as a
-   time slot, or always sit in the day's top band as the frames draw it?
+1. Which calendars: primary only (as written), or a picker in Settings
+   (which adds `calendar.calendarlist.readonly`)?
+2. Should a task with a due **time** take a time slot on the calendar,
+   or always sit in the day's top band as the frames draw it?
 3. Does a week view come before or after Google write-back? The frames'
    "n more" overflow on busy days (the 8-item Tuesday) argues for it.
