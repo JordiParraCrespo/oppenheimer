@@ -131,7 +131,7 @@ export function useTerminal(
     status === 'offline' && hostOnline && awaySince !== null && answeredAt > awaySince;
   useEffect(() => {
     if (hostBack) streamRef.current?.reconnectNow();
-  }, [hostBack, answeredAt]);
+  }, [hostBack]);
 
   useEffect(() => {
     if (!reconnected) return;
