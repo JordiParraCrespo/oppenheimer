@@ -506,7 +506,8 @@
         "attach": "Attach images",
         "removeAttachment": "Remove {{name}}",
         "attachTooLarge": "{{name}} is over 5 MB. Crop it or save it smaller, then attach it again.",
-        "attachTooMany": "A first task carries at most {{max}} images."
+        "attachTooMany": "A first task carries at most {{max}} images.",
+        "attachNotImage": "{{name}} is not an image the agent can read. Attach a PNG, JPEG, GIF or WebP."
       },
       "failed": "The session could not be created."
     },
@@ -519,6 +520,7 @@
       },
       "image": {
         "sending": "Sending image",
+        "notImage": "None of the dropped files is an image the agent can read. Drop a PNG, JPEG, GIF or WebP.",
         "failedTitle": "The image did not reach the session"
       },
       "retryNow": "Retry now",
