@@ -356,10 +356,9 @@
       "failed": "No se pudo crear el proyecto.",
       "saveFailed": "No se pudo guardar el proyecto.",
       "delete": "Eliminar proyecto",
-      "deleteHint": "Elimina este proyecto",
-      "deleteBlocked_one": "Mueve o elimina su {{count}} sesión primero",
-      "deleteBlocked_other": "Mueve o elimina sus {{count}} sesiones primero",
-      "deleteBlocked_many": "Mueve o elimina sus {{count}} sesiones primero",
+      "deleteBlocked_one": "Este proyecto no se puede eliminar mientras tenga {{count}} sesión abierta. Muévela a otro proyecto o elimínala primero.",
+      "deleteBlocked_other": "Este proyecto no se puede eliminar mientras tenga {{count}} sesiones abiertas. Muévelas a otro proyecto o elimínalas primero.",
+      "deleteBlocked_many": "Este proyecto no se puede eliminar mientras tenga {{count}} sesiones abiertas. Muévelas a otro proyecto o elimínalas primero.",
       "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar.",
       "loadFailed": "No se ha podido cargar este proyecto."
     },
