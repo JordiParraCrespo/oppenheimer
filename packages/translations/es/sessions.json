@@ -143,9 +143,6 @@
   },
   "session": {
     "status": {
-      "connecting": "Conectando",
-      "live": "En vivo",
-      "offline": "Host desconectado",
       "closed": "Desconectado"
     },
     "file": {
@@ -162,6 +159,36 @@
     "starting": {
       "title": "Todavía no hay nada en pantalla",
       "description": "La conexión está activa. Esto se llena en cuanto el agente dibuja: una sesión nueva cuando termina de arrancar, y una anterior cuando se reenvía su historial."
+    },
+    "hostLink": {
+      "thisHost": "este host",
+      "status": {
+        "live": "En directo",
+        "reconnecting": "Conectando con {{host}}…",
+        "offline": "Host desconectado",
+        "catchingUp": "Poniéndose al día con {{host}}…",
+        "reconnected": "Reconectado"
+      },
+      "title": {
+        "offline": "{{host}} está desconectado",
+        "catchingUp": "El runner ha vuelto",
+        "reconnected": "Reconectado"
+      },
+      "line": {
+        "offline": "Se reconecta solo cuando vuelva el runner",
+        "catchingUp": "Recuperando la salida de {{host}}…",
+        "reconnected": "El historial está al día"
+      },
+      "fix": "Cómo arreglarlo",
+      "fixIntro": "Ejecútalos en {{host}}, no en este terminal, o pásale el prompt a Claude Code o Codex en esa máquina.",
+      "install": "Si está parado, reinstálalo y arráncalo:",
+      "statusCommand": "Mira qué falla:",
+      "hosts": "Ajustes → Hosts",
+      "copy": "Copiar comando",
+      "copied": "Copiado",
+      "logCommand": "Lee el log reciente del runner:",
+      "copyPrompt": "Copiar prompt de diagnóstico",
+      "prompt": "El runner de Oppenheimer en {{host}} ha perdido la conexión con Oppenheimer. Ayúdame a recuperarlo.\n\n- Primero dime en qué máquina estás (uname -n, whoami). Si no es {{host}}, para.\n- Ejecuta ~/.local/bin/oppenheimer-runner status y enséñame lo que imprime.\n- Lee las últimas 50 líneas de ~/.oppenheimer/log/runner.log y ~/.oppenheimer/log/runner.err.log\n  y dime qué ha fallado.\n- No reinstales, desinstales ni ejecutes nada como root salvo que te lo diga. Si el servicio\n  está parado, propón ~/.local/bin/oppenheimer-runner install y espera a que te dé el visto bueno."
     }
   },
   "sidebar": {

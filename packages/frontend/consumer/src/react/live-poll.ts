@@ -28,7 +28,9 @@
  *   one's settled tick. A detail query is per session, so each gets its own.
  * - `pairing`: whether a pairing token has been spent and its machine is online.
  * - `liveRun`: an automation run, queued for seconds and running for minutes.
- * - `hostPresence`: a host going on or offline (Settings → Hosts).
+ * - `hostPresence`: a host going on or offline (Settings → Hosts), or coming
+ *   back while a session's terminal waits on it. A reader who left the tab is
+ *   redialled by the terminal's own visibility wake, so it still pauses.
  */
 export const LIVE_POLL = {
   sessionStarting: { interval: 2000, inBackground: true },
