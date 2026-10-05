@@ -8,12 +8,13 @@ import { hostLinkPhaseOf } from '../lib/host-link-phase';
  * the readings that would draw the wrong band if they slipped.
  */
 const at = (over: Partial<Parameters<typeof hostLinkPhaseOf>[0]>) =>
-  hostLinkPhaseOf({ status: 'live', away: false, hostBack: false, reconnected: false, ...over });
+  hostLinkPhaseOf({ status: 'live', away: false, reconnected: false, ...over });
 
 describe('hostLinkPhaseOf', () => {
-  it('reads host_offline as offline, and as catching up once the host list finds it again', () => {
+  it('reads host_offline as offline until the stream is attached again', () => {
+    // The host list keeps a dead runner online for thirty seconds; the relay
+    // saying host_offline is what the reader is shown.
     expect(at({ status: 'offline', away: true })).toBe('offline');
-    expect(at({ status: 'offline', away: true, hostBack: true })).toBe('catching-up');
   });
 
   it('reads a dial as a blip, unless the host was away', () => {

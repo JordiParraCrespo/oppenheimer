@@ -549,12 +549,15 @@
           "reconnected": "Scrollback is up to date"
         },
         "fix": "How to fix",
-        "fixIntro": "Scrollback is kept. The session picks up on its own the moment the runner on {{host}} reconnects — nothing to press here.",
-        "install": "If it stays offline, reinstall and start the runner on {{host}}:",
-        "statusCommand": "To see what went wrong:",
+        "fixIntro": "Run these on {{host}} itself, not in this terminal, or hand the prompt to Claude Code or Codex on that machine.",
+        "install": "If it is stopped, reinstall and start it:",
+        "statusCommand": "See what is wrong:",
         "hosts": "Settings → Hosts",
         "copy": "Copy command",
-        "copied": "Copied"
+        "copied": "Copied",
+        "logCommand": "Read the runner's recent log:",
+        "copyPrompt": "Copy troubleshooting prompt",
+        "prompt": "The Oppenheimer runner on {{host}} has lost its link to Oppenheimer. Help me get it back.\n\n- First tell me which machine you are on (uname -n, whoami). If it is not {{host}}, stop.\n- Run ~/.local/bin/oppenheimer-runner status and show me what it prints.\n- Read the last 50 lines of ~/.oppenheimer/log/runner.log and ~/.oppenheimer/log/runner.err.log\n  and tell me what went wrong.\n- Do not reinstall, uninstall or run anything as root unless I say so. If the service is\n  stopped, propose ~/.local/bin/oppenheimer-runner install and wait for my go-ahead."
       }
     },
     "sidebar": {

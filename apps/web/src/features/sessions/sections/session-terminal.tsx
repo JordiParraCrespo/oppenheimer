@@ -55,7 +55,6 @@ export function SessionTerminal({ sessionId, hostId }: { sessionId: string; host
   const phase = hostLinkPhaseOf({
     status,
     away: awaySince !== null,
-    hostBack: terminal.hostBack,
     reconnected: terminal.reconnected,
   });
   const host = terminal.hostName ?? t('sessions.session.hostLink.thisHost');

@@ -33,8 +33,8 @@ import { mountSessionTerminal } from '../lib/terminal-runtime';
  *
  * What the pane draws of all this (`hostLinkPhaseOf`) is read off the rest of
  * the return: `awaySince`, when the link went offline and until it is live
- * again; `hostBack`, a poll since then found the host; `reconnected`, the link
- * came back from being away a moment ago; `hostName`, the list's name for it.
+ * again; `reconnected`, the link came back from being away a moment ago;
+ * `hostName`, the list's name for it.
  */
 export function useTerminal(
   createStream: () => SessionStream,
@@ -157,7 +157,6 @@ export function useTerminal(
     retryNow,
     hostName: presence.data?.name,
     awaySince,
-    hostBack,
     reconnected,
   };
 }
