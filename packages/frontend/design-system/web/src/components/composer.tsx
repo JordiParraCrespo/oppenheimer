@@ -44,6 +44,12 @@ const DEFAULT_COMPOSER_LABELS: ComposerLabels = {
  * `ComposerToolButton`s. Attachments list under the textarea as removable
  * chips; they are never silently dropped.
  *
+ * `sendBlockedReason` keeps the box usable but the send off, and says why
+ * ("fable is offline — pick another host"): the draft is fine, the scope
+ * above it is not. The button stays focusable (`aria-disabled`, not
+ * `disabled`) with the reason as its description, so a keyboard or screen
+ * reader user hears it, and as its title for the pointer.
+ *
  * `scope` is New session's tabbed form: the scope chips (`ChipSelectTrigger`,
  * `tab` variant) sit in a grey band fused to the top of the field (control
  * fill, 18px top radii, inset 18px each side). With a band the field is the
@@ -57,6 +63,7 @@ function Composer({
   onStop,
   busy = false,
   disabled = false,
+  sendBlockedReason,
   placeholder = 'Describe a task or ask a question',
   attachments,
   onRemoveAttachment,
@@ -77,6 +84,8 @@ function Composer({
   onStop?: () => void;
   busy?: boolean;
   disabled?: boolean;
+  /** Why the draft cannot be sent yet, though it can be written. Present: send is off and says this. */
+  sendBlockedReason?: string;
   placeholder?: string;
   attachments?: ComposerAttachment[];
   onRemoveAttachment?: (id: string) => void;
@@ -96,7 +105,9 @@ function Composer({
   labels?: Partial<ComposerLabels>;
 }) {
   const label = { ...DEFAULT_COMPOSER_LABELS, ...labels };
-  const canSend = value.trim().length > 0 && !disabled;
+  const blocked = !busy && sendBlockedReason !== undefined;
+  const canSend = value.trim().length > 0 && !disabled && !blocked;
+  const reasonId = React.useId();
 
   function submit() {
     if (busy) return onStop?.();
@@ -190,11 +201,14 @@ function Composer({
         ) : null}
         <IconButton
           aria-label={busy ? label.stop : label.send}
+          aria-disabled={blocked || undefined}
+          aria-describedby={blocked ? reasonId : undefined}
+          title={blocked ? sendBlockedReason : undefined}
           variant="primary"
           size="sm"
           onClick={submit}
-          disabled={!busy && !canSend}
-          className="size-8"
+          disabled={!busy && !blocked && !canSend}
+          className="size-8 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 aria-disabled:hover:bg-primary"
         >
           {busy ? (
             <SquareIcon className="size-3.5 fill-current" />
@@ -202,6 +216,11 @@ function Composer({
             <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
           )}
         </IconButton>
+        {blocked ? (
+          <span id={reasonId} className="sr-only">
+            {sendBlockedReason}
+          </span>
+        ) : null}
       </div>
     </div>
   );

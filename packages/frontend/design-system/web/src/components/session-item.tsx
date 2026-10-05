@@ -4,6 +4,7 @@ import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import { GitBranchIcon } from 'lucide-react';
 import type * as React from 'react';
 
+import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
 import type { StatusState } from './status-dot';
 
@@ -85,7 +86,7 @@ function SessionItem({
       nativeButton={nativeButton ?? render === undefined}
       className={cn(
         'group/session flex h-[30px] w-full items-center gap-[9px] rounded-sm px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
-        withAction && 'group-hover/row:not-data-active:bg-hover-surface group-data-menu-open/row:not-data-active:bg-hover-surface',
+        withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
       {...props}
@@ -126,8 +127,7 @@ function SessionItem({
         <span
           className={cn(
             'figures shrink-0 text-[11px] text-fg opacity-0 transition-opacity duration-fast group-hover/session:opacity-100 group-data-active/session:opacity-100 group-focus-visible/session:opacity-100',
-            withAction &&
-              'group-hover/row:invisible group-focus-within/row:invisible group-data-menu-open/row:invisible',
+            withAction && META_GIVES_WAY,
           )}
         >
           {age}
@@ -138,19 +138,9 @@ function SessionItem({
 
   if (!withAction) return button;
   return (
-    <div
-      role="listitem"
-      data-slot="session-row"
-      data-menu-open={menuOpen || undefined}
-      className="group/row relative"
-    >
+    <SidebarRow slot="session-row" action={rename ? undefined : action} menuOpen={menuOpen}>
       {button}
-      {rename ? null : (
-      <span className="absolute top-1/2 right-1.5 flex -translate-y-1/2 opacity-0 transition-opacity duration-fast group-hover/row:opacity-100 group-focus-within/row:opacity-100 group-data-menu-open/row:opacity-100 [&_button]:size-5 [&_button]:rounded-xs [&_button]:text-fg-muted [&_button:hover]:text-fg [&_svg:not([class*=size-])]:size-3.5">
-        {action}
-      </span>
-      )}
-    </div>
+    </SidebarRow>
   );
 }
 

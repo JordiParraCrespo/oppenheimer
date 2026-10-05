@@ -51,7 +51,13 @@ import {
   XIcon,
 } from '@oppenheimer/design-system-web/icons';
 import {
+  DropZoneNewSessionDemo,
+  DropZoneTerminalDemo,
+  TerminalHostLinkDemo,
+} from '../components/host-link-demos';
+import {
   AccountMenuDemo,
+
   CarouselDemo,
   ComposerDemo,
   AddHostDialogDemo,
@@ -796,7 +802,7 @@ export default function Page() {
         id="chipselect"
         title="ChipSelect · RepositorySelect"
         meta="chip-select.tsx · repository-select.tsx"
-        desc="A scope decision stated as a chip, so the row reads as a sentence: run on this host, this repo, this branch; the agent moved into the composer's engine button. Every one of them filters: a sticky search row, two-line options with a check and an optional mark, a centred line when nothing matches, and a pinned action band at the foot for adding what is not in the list yet. The repository picker multi-selects; each selected row grows a branch cell that opens a branch pane for that repo, and the branch chip only shows while exactly one repository is selected."
+        desc="A scope decision stated as a chip, so the row reads as a sentence: run on this host, this repo, this branch; the agent moved into the composer's engine button. Every one of them filters: a sticky search row, two-line options with a check and an optional mark, a centred line when nothing matches, and a pinned action band at the foot for adding what is not in the list yet. The repository picker multi-selects; each selected row grows a branch cell that opens a branch pane for that repo, and the branch chip only shows while exactly one repository is selected. An option that cannot be picked right now stays listed, faded, with the reason as its description: an offline host reads Offline · last seen 2 days ago."
         code={`<ChipSelect value={host} onValueChange={setHost} options={hosts} icon={<CpuIcon />} searchPlaceholder="Search hosts…" emptyText="No host matches." action={{ label: 'Add host…', onSelect: openAddHost }} />
 <RepositorySelect repositories={repos} value={scope} onValueChange={setScope} />`}
       >
@@ -826,6 +832,23 @@ export default function Page() {
       >
         <ComposerDemo />
         <ComposerDemo full />
+        <ComposerDemo full blocked="fable is offline — pick another host" />
+      </Spec>
+
+      <Spec
+        id="dropzone"
+        title="DropZone"
+        meta="drop-zone.tsx"
+        desc="Files are attached by dropping them on the pane, not only through the paperclip. A drag that carries files outlines the whole pane in the action blue, 3px, square and flush with its edge: no fill, no radius, no label. In the console the zone wraps the main column beside the sidebar. On New session the files join the composer's attachments; in a running session each goes into the prompt as an @path. The outline exists only during the drag and never takes the pointer. The zone is its own box, so two on a page each get only their own drops; the window listener catches a near miss too, for a page with exactly one zone. A dragged link or text is left alone. Drag a file from your desktop onto either pane."
+        code={`<DropZone onFiles={(files) => attach(files)}>
+  <NewSessionPane />
+</DropZone>
+<DropZone listen="window" onFiles={attach}>…</DropZone>  // the page's only zone`}
+      >
+        <div className="grid w-full gap-4 lg:grid-cols-2">
+          <DropZoneNewSessionDemo />
+          <DropZoneTerminalDemo />
+        </div>
       </Spec>
 
       <Spec
@@ -990,8 +1013,8 @@ export default function Page() {
         id="routineitem"
         title="RoutineItem"
         meta="routine-item.tsx"
-        desc="The sidebar in routines mode: the same list holds routines. A clock or the GitHub mark names the trigger, the right edge carries the run count, the next run as a mono countdown, or Paused, and the selected routine expands its last runs inline, each with a state dot and its age. A paused routine dims its name."
-        code={`<RoutineItem name="Standup digest" meta="in 45h" active /><RoutineRunList><RoutineRun title="Standup digest · Fri 25 Sep" ago="1d" /></RoutineRunList>`}
+        desc="The sidebar in routines mode: the same list holds routines. A clock or the GitHub mark names the trigger, the right edge carries the next run as a mono countdown, Running or Paused, behind a dot for how the last run ended (red failed, green running, grey otherwise). On hover the meta gives way to the ellipsis: Run now, Edit, Pause, Duplicate, Delete. A paused routine dims its name. Right: RoutineRun rows, the runs list the earlier frames expanded under the selected routine, kept while the console still draws it."
+        code={`<RoutineItem name="Nightly dependency audit" meta="in 11m" lastRun="failed" lastRunLabel="Last run: failed" action={<DropdownMenu>…</DropdownMenu>} menuOpen={open} />`}
       >
         <RoutineItemsDemo />
       </Spec>
@@ -1034,8 +1057,8 @@ export default function Page() {
         id="stepper"
         title="Stepper"
         meta="stepper.tsx"
-        desc="The provisioning pane: the host as the eyebrow, Starting your session as the title, owner/repo · branch under it. Steps are named so a slow one is diagnosable: an empty ring while pending, a spinning ring while running, a green check when done, the rail turning green behind it, the running step's mono detail under its label, and the footer reading the elapsed seconds and a status word."
-        code={`<Stepper steps={[{ id, label, meta, state: 'running' }]} elapsed="1.4s" status="Working…" />`}
+        desc="The provisioning pane: the host as the eyebrow, Starting your session as the title, owner/repo · branch under it. Steps are named so a slow one is diagnosable: an empty ring while pending, a spinning ring while running, a green check when done, the rail turning green behind it, the running step's mono detail under its label, and the footer reading the elapsed seconds and a status word. A step that is slow for a reason the reader should know carries a note while it runs: the first clone of a repository on a host downloads it in full once."
+        code={`<Stepper steps={[{ id, label, meta, note: firstClone ? 'First session on mac-studio with this repository…' : undefined, state: 'running' }]} elapsed="1.4s" status="Working…" />`}
       >
         <StepperDemo />
       </Spec>
@@ -1046,12 +1069,37 @@ export default function Page() {
         id="terminal"
         title="Terminal"
         meta="terminal.tsx"
-        desc="The product's primary surface: 13px SF Mono at 1.55 on its own ramp, paper in light mode. In the product the scrollback is xterm.js; TerminalLine carries the same vocabulary for replays and the showcase. The prompt row is pinned and the status band runs along the bottom, starting with the link to the host: TerminalStatusLink is green and Live while connected, amber and pulsing while the console reconnects."
+        desc="The product's primary surface: 13px SF Mono at 1.55 on its own ramp, paper in light mode. In the product the scrollback is xterm.js; TerminalLine carries the same vocabulary for replays and the showcase. The prompt row is pinned and the status band runs along the bottom, starting with the link to the host: TerminalStatusLink is green and Live while connected, amber and pulsing while the console reconnects, amber and still once the host is offline."
         bare
       >
         <ThemePair className="md:grid-cols-1 lg:grid-cols-2 [&>div]:p-0 [&>div]:border-0 [&>div]:bg-transparent">
           <TerminalDemo />
         </ThemePair>
+      </Spec>
+
+      <Spec
+        id="hostlink"
+        title="HostLinkChrome · CommandRow"
+        meta="host-link.tsx · command-row.tsx"
+        desc="Where a session's link to its host stands, as one phase the Terminal is given: live, reconnecting, offline, catching up, reconnected. The terminal acts on it itself: the prompt locks and its placeholder says why, and behind the card the scrollback fades back. HostLinkChrome, in the status bar's place, draws the rest from the same phase table. The banner is the console's form: the bar's place goes to an amber wash with the dot, “optimus is offline”, a dim line and the time offline, and its one control, How to fix, opens the fix above it. The notice is the frames' other drawing of the same phases, a card over the scrollback. The session comes back on its own (the runner dials out), so the fix is the only control. The fix is CommandRows, a $ command with an icon copy button (Copy command, then Copied), and a link to Settings → Hosts. Step through the phases with the control above each terminal."
+        code={`<Terminal hostLink={{ phase, host: 'optimus' }}>
+  <TerminalScrollback>…</TerminalScrollback>
+  <TerminalPrompt />
+  <HostLinkChrome elapsed="2m 14s" fix={<><CommandRowList><CommandRow surface="terminal" lead="To see what went wrong:" command="…" /></CommandRowList><Link to="/settings/hosts">Settings → Hosts</Link></>}>
+    <TerminalStatusItem>1 host</TerminalStatusItem>
+  </HostLinkChrome>
+</Terminal>
+<Terminal hostLink={{ phase, form: 'notice', host: 'optimus' }}>…</Terminal>`}
+        bare
+      >
+        <div className="flex w-full flex-col gap-6">
+          <ThemePair className="md:grid-cols-1 lg:grid-cols-2 [&>div]:p-0 [&>div]:border-0 [&>div]:bg-transparent">
+            <TerminalHostLinkDemo form="banner" />
+          </ThemePair>
+          <ThemePair className="md:grid-cols-1 lg:grid-cols-2 [&>div]:p-0 [&>div]:border-0 [&>div]:bg-transparent">
+            <TerminalHostLinkDemo form="notice" />
+          </ThemePair>
+        </div>
       </Spec>
 
       <GroupHead>Routines</GroupHead>
@@ -1142,8 +1190,9 @@ export default function Page() {
         id="hostcard"
         title="HostCard"
         meta="host-card.tsx"
-        desc="One card per host. Running is green, idle is a grey dot, offline is a hollow ring with its last-seen time. The ellipsis holds Rename, Copy host ID (with the id as a mono value) and Remove host."
-        code={`<HostCard name="optimus" meta="Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2" status="idle" state="Idle" seen="connected" action={…} />`}
+        desc="One card per host. Running is green, idle is a grey dot, offline is a hollow ring with its last-seen time. The ellipsis holds Rename, Copy host ID (with the id as a mono value) and Remove host. An offline host opens its detail under a hairline: what waits on it (sessions that reconnect on their own, automation runs queued, a runner out of date), the commands that bring it back as CommandRows, and Check again with a mono note of the answer. The console cannot reconnect a runner, so the card explains and looks again."
+        code={`<HostCard name="fable" status="offline" state="Offline" seen="last seen 2 days ago" action={…}
+  offline={{ note: '3 sessions reconnect on their own…', commands: [{ lead: 'To see what went wrong:', command: '…' }], action: <Button variant="secondary" size="sm">Check again</Button>, actionNote: 'still offline · checked just now' }} />`}
       >
         <HostCardsDemo />
       </Spec>
