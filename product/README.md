@@ -21,6 +21,7 @@ for the detail and sources.
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
+| releases | [Releases and deployment artifacts](releases.md) | Independent web, API and runner versions; GitHub builds, deployment pulls by digest |
 | next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 Kanban, 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
 
 Decisions that changed along the way, so nobody is confused by an
@@ -312,3 +313,8 @@ earlier note:
   and the worktree moved into a hidden directory so Spotlight stops indexing
   it while the agent boots. Recorded in 01, 02, 05 and the MVP decision log.
 
+
+- Web, API and runner ship independent semantic versions. GitHub validates each
+  release commit and builds its artifacts; deployment consumes recorded image
+  digests. Runner signing remains offline. Automated deployments follow later
+  (`releases.md`, 2026-10-01).

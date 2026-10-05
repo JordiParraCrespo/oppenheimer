@@ -75,7 +75,6 @@
         "go.work",
         ".golangci.yml",
         ".agents/rules/go.md",
-        ".github/workflows/release-runner.yml",
         "apps/docs/docs/architecture/go-services.md",
         "e2e/fleet",
         "e2e/support/fleet.ts",

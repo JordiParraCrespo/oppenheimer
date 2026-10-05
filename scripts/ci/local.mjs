@@ -149,6 +149,7 @@ const any = packages.length > 0;
 
 // lint — always.
 job('lint', [
+  ['Release identities', 'node', ['--test', 'scripts/releases/identity.test.mjs']],
   // `pnpm check` is the contributor's command and writes the fixes it can; a
   // drift Biome could fix would then pass. Check without writing.
   ['Biome', 'pnpm', ['exec', 'biome', 'check', '.']],

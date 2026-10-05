@@ -26,7 +26,7 @@ services:
       retries: 5
 
   api:
-    image: ${API_IMAGE:-ghcr.io/your-org/oppenheimer-api:latest}
+    image: ${API_IMAGE:?Set API_IMAGE to the image digest from an API release}
     restart: always
     depends_on:
       postgres:
@@ -74,7 +74,7 @@ services:
 
   # oppenheimer:begin web
   web:
-    image: ${WEB_IMAGE:-ghcr.io/your-org/oppenheimer-web:latest}
+    image: ${WEB_IMAGE:?Set WEB_IMAGE to the image digest from a web release}
     restart: always
     # nginx resolves the `api` upstream when it starts, and proxies /api to it.
     depends_on:

@@ -65,6 +65,12 @@ control plane coordinates access; the work stays on your machine.
 Read the [MVP scope](product/versions/mvp/00-scope.md) for the exact product
 boundary or the [one-page brief](product/brief.html) for the wider vision.
 
+## Releases
+
+Web, API and runner have independent semantic versions. GitHub builds versioned
+images and runner binaries; deployment pulls the published artifacts. See
+[the release procedure](product/releases.md).
+
 ## Quick start
 
 You will need Node.js 22, pnpm, Docker, and Go.
