@@ -78,7 +78,7 @@ describe('NewSessionComposer', () => {
     expect((textarea as HTMLTextAreaElement).value).toBe('Fix the wallet list');
   });
 
-  describe('attached images', () => {
+  describe('attached files', () => {
     const png = (name = 'screen.png', size = 16) =>
       new File([new Uint8Array(size)], name, { type: 'image/png' });
 
@@ -130,14 +130,25 @@ describe('NewSessionComposer', () => {
       expect(onSubmit).toHaveBeenCalledWith('Go', []);
     });
 
-    it('takes a screenshot the browser left unlabelled, and leaves other pastes to the field', () => {
+    it('takes a PDF, text and an unlabelled screenshot, and refuses what a session never takes', () => {
       render(<NewSessionComposer onSubmit={vi.fn()} />);
       const textarea = screen.getByRole('textbox');
 
       fireEvent.paste(textarea, {
         clipboardData: { files: [new File(['%PDF'], 'doc.pdf', { type: 'application/pdf' })] },
       });
-      expect(screen.queryByText('doc.pdf')).toBeNull();
+      expect(screen.getByText('doc.pdf')).toBeTruthy();
+
+      fireEvent.paste(textarea, {
+        clipboardData: { files: [new File(['# Notes'], 'notes.md', { type: 'text/markdown' })] },
+      });
+      expect(screen.getByText('notes.md')).toBeTruthy();
+
+      fireEvent.paste(textarea, {
+        clipboardData: { files: [new File(['PK'], 'bundle.zip', { type: 'application/zip' })] },
+      });
+      expect(screen.queryByText('bundle.zip')).toBeNull();
+      expect(screen.getByRole('alert').textContent).toContain('attachNotSupported');
 
       fireEvent.paste(textarea, {
         clipboardData: { files: [new File([new Uint8Array(8)], 'image.png', { type: '' })] },

@@ -1,8 +1,8 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import type { ParkedImage, ParkedImagePort } from '../../../links/application/parked-image.port';
-import { PARKED_IMAGES } from '../../../links/links.di-tokens';
+import type { ParkedFile, ParkedFilePort } from '../../../links/application/parked-file.port';
+import { PARKED_FILES } from '../../../links/links.di-tokens';
 import { HostErrors } from '../../domain/hosts.errors';
 import { CollectSessionImageCommand } from './collect-session-image.command';
 
@@ -13,16 +13,16 @@ import { CollectSessionImageCommand } from './collect-session-image.command';
  */
 @CommandHandler(CollectSessionImageCommand)
 export class CollectSessionImageCommandHandler
-  implements ICommandHandler<CollectSessionImageCommand, ParkedImage>
+  implements ICommandHandler<CollectSessionImageCommand, ParkedFile>
 {
   constructor(
-    @Inject(PARKED_IMAGES)
-    private readonly images: ParkedImagePort,
+    @Inject(PARKED_FILES)
+    private readonly files: ParkedFilePort,
   ) {}
 
-  async execute(command: CollectSessionImageCommand): Promise<ParkedImage> {
-    const image = await this.images.collect(command.commandId, command.hostId);
-    if (!image) throw new AppError(HostErrors.IMAGE_NOT_PARKED);
+  async execute(command: CollectSessionImageCommand): Promise<ParkedFile> {
+    const image = await this.files.collect(command.commandId, command.hostId);
+    if (!image) throw new AppError(HostErrors.FILE_NOT_PARKED);
     return image;
   }
 }

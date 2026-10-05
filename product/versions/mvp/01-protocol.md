@@ -87,11 +87,15 @@ runner does with it and point back.
   control frames stay small, and one paste must not queue ahead of every
   pane on the host. The control plane parks the image under the command
   id and the runner pulls it once over HTTPS with its own assertion
-  (`GET /hosts/self/images/{commandId}`); what counts as an image is one
-  table in `packages/shared/src/protocol/session-image.ts` that the
-  runner's copy is generated from. It is sent only to a runner whose
-  `hello` names the `session.image` capability, so an older runner is
-  refused up front rather than sent a frame it ignores.
+  (`GET /hosts/self/images/{commandId}`); what counts as a file a session
+  takes is one table in `packages/shared/src/protocol/session-file.ts`
+  that the runner's copy is generated from. It is sent only to a runner
+  whose `hello` names the `session.image` capability, so an older runner is
+  refused up front rather than sent a frame it ignores. Since 2026-10-04
+  the frame may carry a PDF or UTF-8 text as well as a picture (the names
+  `image`, `images` and `imageId` stay, so runners of either age parse it),
+  and those types go only to a runner whose `hello` also names
+  `session.files`.
 - **`welcome`** is the control plane's answer to `hello`: the protocol
   version the two will speak and the fingerprint of the control plane's
   signing key, which the runner compares against the one it pinned at
@@ -124,7 +128,8 @@ runner does with it and point back.
   `shell` among them for the blank terminal); `launch`
   (`{ model?, permission?, effort? }`); `prompt` (the person's first task,
   optional); `images` (up to five `{ imageId, mediaType }` attached to
-  that task, only with a `prompt`, each once); and the slugs and
+  that task, only with a `prompt`, each once — a PDF or text only for a
+  runner that named `session.files`); and the slugs and
   checkouts the directory layout needs. Like `session.image`, `images`
   carries no bytes: the runner pulls each with
   `GET /hosts/self/images/{imageId}` before it starts the agent. It is
@@ -157,6 +162,14 @@ runner does with it and point back.
   2026-09-26), that arrives as a field a runner advertises it takes, the
   way `session.image` is capability-gated, never as an optional field an
   older runner silently drops.
+
+  **`hello.capabilities` is open-ended** (since 2026-10-04). It was a closed
+  enum, so a runner naming a capability its control plane had never heard
+  of (a rollback, a runner released first) failed the whole hello and
+  redialled forever. It is a list of strings now, and the control plane
+  keeps the ones it knows (`knownCapabilities`). A control plane that
+  predates this still refuses an unknown name, so the release that adds
+  `session.files` ships the control plane before the runner offers it.
 
   **A new catalog agent does not move the protocol version.** A runner
   probes the command of every agent it can launch (02 §10), so its last

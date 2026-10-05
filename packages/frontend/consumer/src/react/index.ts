@@ -72,7 +72,7 @@ export {
   useCreateSession,
   useInvalidateSession,
   useMoveSession,
-  usePasteSessionImage,
+  usePasteSessionFile,
   usePrepareSession,
   useRenameSession,
   useRestartSession,

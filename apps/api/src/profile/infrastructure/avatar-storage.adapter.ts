@@ -39,7 +39,7 @@ export class AvatarStorageAdapter implements AvatarStoragePort {
     }
 
     if (size > AVATAR_MAX_BYTES) {
-      throw new AppError(ProfileErrors.IMAGE_TOO_LARGE, {
+      throw new AppError(ProfileErrors.FILE_TOO_LARGE, {
         detail: `That image is ${size} bytes; the limit is ${AVATAR_MAX_BYTES}.`,
         extensions: { maxBytes: AVATAR_MAX_BYTES },
       });

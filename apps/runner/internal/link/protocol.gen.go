@@ -56,6 +56,7 @@ const MaxEventPayloadBytes = 8192
 const (
 	CapabilitySessionImage        = "session.image"
 	CapabilitySessionCreateImages = "session.create.images"
+	CapabilitySessionFiles        = "session.files"
 	CapabilityRepositoryPrepare   = "repository.prepare"
 )
 

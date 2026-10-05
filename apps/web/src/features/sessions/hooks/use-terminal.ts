@@ -25,7 +25,7 @@ export function useTerminal(
   options: {
     onEnd?: (reason: StreamEnd) => void;
     agentWindow?: boolean;
-    onImage?: (image: File) => void;
+    onFiles?: (files: File[]) => void;
   } = {},
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -41,10 +41,10 @@ export function useTerminal(
   const streamRef = useRef<SessionStream | null>(null);
   // Read through a ref so a new callback identity never rebuilds the terminal.
   const onEndRef = useRef(options.onEnd);
-  const onImageRef = useRef(options.onImage);
+  const onFilesRef = useRef(options.onFiles);
   useEffect(() => {
     onEndRef.current = options.onEnd;
-    onImageRef.current = options.onImage;
+    onFilesRef.current = options.onFiles;
   });
   const agentWindow = options.agentWindow ?? false;
 
@@ -57,7 +57,7 @@ export function useTerminal(
     streamRef.current = stream;
     const unmount = mountSessionTerminal(container, stream, {
       agentWindow,
-      onImage: (image) => onImageRef.current?.(image),
+      onFiles: (files) => onFilesRef.current?.(files),
       // A reconnect replays the scrollback, so a session that has already run
       // answers this on its first frame and the waiting state never shows.
       onFirstOutput: () => setHasOutput(true),

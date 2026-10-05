@@ -31,7 +31,7 @@ import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import { SessionAttachmentResponseDto } from '../../dtos/session-attachment.response.dto';
-import { SessionImageFileInterceptor } from '../../interceptors/session-image-file.interceptor';
+import { SessionFileInterceptor } from '../../interceptors/session-file.interceptor';
 import { UploadSessionAttachmentCommand } from './upload-session-attachment.command';
 
 @ApiTags('Sessions')
@@ -52,7 +52,7 @@ export class UploadSessionAttachmentHttpController {
   // A handful per session, a session a few times a minute at most. What bounds
   // the bytes held is the per-person cap on waiting uploads (SESSIONS_020).
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  @UseInterceptors(SessionImageFileInterceptor)
+  @UseInterceptors(SessionFileInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -62,15 +62,19 @@ export class UploadSessionAttachmentHttpController {
     },
   })
   @ApiOperation({
-    summary: 'Attach an image to a first task',
+    summary: 'Attach a file to a first task',
     description:
-      'Kept briefly for the `POST /sessions` that names it in `attachmentIds`; the host saves it and gives the agent its path with the task. Only its uploader can name it, and the same bytes uploaded again answer the same id.',
+      'An image (PNG, JPEG, GIF, WebP), a PDF, or UTF-8 text (plain, Markdown, CSV, JSON), judged by its bytes; executables, archives, scripts, SVG and HTML are refused. Kept briefly for the `POST /sessions` that names it in `attachmentIds`; the host saves it under a name of its own and gives the agent its path with the task. Only its uploader can name it, and the same bytes uploaded again answer the same id.',
   })
   @ApiResponse({ status: 201, type: SessionAttachmentResponseDto })
-  @ApiProblemResponse({ status: 413, description: 'Image too large', code: 'SESSIONS_012' })
-  @ApiProblemResponse({ status: 415, description: 'Not an image', code: 'SESSIONS_013' })
-  @ApiProblemResponse({ status: 400, description: 'No image attached', code: 'SESSIONS_015' })
-  @ApiProblemResponse({ status: 429, description: 'Too many images waiting', code: 'SESSIONS_020' })
+  @ApiProblemResponse({ status: 413, description: 'File too large', code: 'SESSIONS_012' })
+  @ApiProblemResponse({
+    status: 415,
+    description: 'Not a type a session takes',
+    code: 'SESSIONS_013',
+  })
+  @ApiProblemResponse({ status: 400, description: 'No file attached', code: 'SESSIONS_015' })
+  @ApiProblemResponse({ status: 429, description: 'Too many files waiting', code: 'SESSIONS_020' })
   @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async upload(
     @CurrentAccessScope() scope: AccessScope,
@@ -82,6 +86,7 @@ export class UploadSessionAttachmentHttpController {
         organizationId: scope.organizationId,
         userId,
         data: file?.buffer,
+        hint: { mediaType: file?.mimetype, fileName: file?.originalname },
       }),
     );
   }

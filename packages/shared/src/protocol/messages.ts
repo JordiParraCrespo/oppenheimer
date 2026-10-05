@@ -16,10 +16,10 @@ import {
   windowIndexSchema,
 } from './primitives.js';
 import {
-  attachedImagesAreValid,
-  SESSION_CREATE_MAX_IMAGES,
-  SESSION_IMAGE_MEDIA_TYPES,
-} from './session-image.js';
+  attachedFilesAreValid,
+  SESSION_CREATE_MAX_FILES,
+  SESSION_FILE_MEDIA_TYPES,
+} from './session-file.js';
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON
@@ -39,9 +39,26 @@ import {
 export const RUNNER_CAPABILITIES = [
   'session.image',
   'session.create.images',
+  /**
+   * Takes every type in `SESSION_FILE_MEDIA_TYPES` (PDF, text), not only the
+   * images: a runner without it is sent images alone, on paste and at launch.
+   */
+  'session.files',
   'repository.prepare',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
+
+/**
+ * The capabilities a hello named that this side knows, in order. The hello
+ * carries plain strings so a runner newer than its control plane (a rollback,
+ * a staggered deploy) still links: what the control plane has never heard of
+ * is dropped here rather than failing the whole hello.
+ */
+export function knownCapabilities(named: readonly string[]): RunnerCapability[] {
+  return named.filter((name): name is RunnerCapability =>
+    (RUNNER_CAPABILITIES as readonly string[]).includes(name),
+  );
+}
 
 /**
  * The first message after the upgrade. The control plane reconciles the
@@ -65,7 +82,8 @@ export const helloSchema = z.object({
    * frame it does not know while the console waits for a paste that never
    * comes. Absent is none.
    */
-  capabilities: z.array(z.enum(RUNNER_CAPABILITIES)).max(32).default([]),
+  /** Open-ended on purpose; read through `knownCapabilities`. */
+  capabilities: z.array(z.string().min(1).max(64)).max(32).default([]),
 });
 
 export type HelloMessage = z.infer<typeof helloSchema>;
@@ -231,7 +249,8 @@ export const sessionCreateSchema = z
      */
     prompt: promptTextSchema.optional(),
     /**
-     * The images attached to the first task in the composer. Like
+     * The files attached to the first task in the composer (the field keeps
+     * its first name; images, PDF and text since `session.files`). Like
      * `session.image`, the bytes are **not** here: the control plane parks each
      * under its `imageId` and the runner pulls it once over HTTPS
      * (`GET /hosts/self/images/{imageId}`) before it starts the agent, saves it
@@ -240,16 +259,18 @@ export const sessionCreateSchema = z
      *
      * Present only with a `prompt`, each named once (the refine below), and
      * sent only to a runner whose `hello` named `session.create.images`: an
-     * older runner would drop the field and launch the task without the pictures.
+     * older runner would drop the field and launch the task without the files.
+     * A type beyond the images goes only to a runner that also named
+     * `session.files`.
      */
     images: z
       .array(
         z.object({
           imageId: commandIdSchema,
-          mediaType: z.enum(SESSION_IMAGE_MEDIA_TYPES),
+          mediaType: z.enum(SESSION_FILE_MEDIA_TYPES),
         }),
       )
-      .max(SESSION_CREATE_MAX_IMAGES)
+      .max(SESSION_CREATE_MAX_FILES)
       .optional(),
     branch: gitRefSchema,
     checkouts: z.array(
@@ -271,7 +292,7 @@ export const sessionCreateSchema = z
   })
   .refine(
     (message) =>
-      attachedImagesAreValid(
+      attachedFilesAreValid(
         message.prompt,
         message.images?.map((image) => image.imageId),
       ),
@@ -313,21 +334,23 @@ export const sessionInputSchema = z.object({
 export type SessionInputMessage = z.infer<typeof sessionInputSchema>;
 
 /**
- * An image for a window's prompt. The bytes are **not** here: control frames
+ * A file for a window's prompt (an image, a PDF, text; the type keeps its
+ * first name). The bytes are **not** here: control frames
  * stay small, and one paste must not queue ahead of every pane on the host.
  * The control plane parks the upload under this command id, and the runner
  * pulls it once over HTTPS with its own assertion
  * (`GET /hosts/self/images/{commandId}`), writes it outside the worktree, and
  * pastes its path into the window as a bracketed paste (02 §7).
  *
- * Sent only to a runner whose `hello` said it can take one.
+ * Sent only to a runner whose `hello` said it can take one (`session.image`),
+ * and a type beyond the images only to one that named `session.files`.
  */
 export const sessionImageSchema = z.object({
   type: z.literal('session.image'),
   commandId: commandIdSchema,
   sessionId: sessionIdSchema,
   window: windowIndexSchema,
-  mediaType: z.enum(SESSION_IMAGE_MEDIA_TYPES),
+  mediaType: z.enum(SESSION_FILE_MEDIA_TYPES),
 });
 
 export type SessionImageMessage = z.infer<typeof sessionImageSchema>;

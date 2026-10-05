@@ -110,9 +110,10 @@
   band fused to the top of the composer (the tabbed composer of the
   2026-09-26 export); a composer for the
   first task whose foot row reads scope of action, then engine: attach
-  (the paperclip, or an image pasted into the field, attaches it to the
-  first task as a removable chip under the text; a file it cannot take
-  is refused under the field with the reason, never dropped)
+  (the paperclip, a file pasted into the field or dropped on the pane
+  attaches it to the first task as a removable chip under the text —
+  an image, a PDF or a text file; a file it cannot take is refused under
+  the field with the reason, never dropped)
   and the permission level on the left (ask for approval, approve for
   me, full access, the last in a warning tone because it changes a
   machine unattended); the agent and model, the effort and dictation on
@@ -309,8 +310,8 @@
   pointer on that grey is a turn. Those cells are repainted in the
   terminal's own ramp, because Claude's theme is not the console's (its dark
   grey on a light console is a black bar), and the tint is laid over them.
-- **An image pasted or dropped onto the terminal becomes a path in the
-  prompt**, as a drag-and-drop does in a local terminal (01
+- **A file pasted or dropped onto the terminal becomes a path in the
+  prompt** (an image, a PDF or a text file), as a drag-and-drop does in a local terminal (01
   `session.image`). The status bar says while it travels; a refusal
   stays on screen until dismissed.
 - Settings → Hosts (above): each host a card with its status and running

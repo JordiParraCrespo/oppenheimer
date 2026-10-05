@@ -1,9 +1,9 @@
 import type { CacheService } from '@oppenheimer/backend-cache';
 import { describe, expect, it } from 'vitest';
 import {
-  CacheParkedImageAdapter,
-  STAGED_IMAGES_PER_OWNER,
-} from '../infrastructure/cache-parked-image.adapter';
+  CacheParkedFileAdapter,
+  STAGED_FILES_PER_OWNER,
+} from '../infrastructure/cache-parked-file.adapter';
 
 /** A cache with `take` as one read-and-delete, which is all the adapter relies on. */
 function memoryCache(): CacheService {
@@ -29,9 +29,9 @@ const image = {
   data: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
 };
 
-describe('CacheParkedImageAdapter', () => {
+describe('CacheParkedFileAdapter', () => {
   it('hands an image over once, to the host it was parked for', async () => {
-    const parked = new CacheParkedImageAdapter(memoryCache());
+    const parked = new CacheParkedFileAdapter(memoryCache());
     await parked.park('cmd-1', image);
 
     await expect(parked.collect('cmd-1', 'host-a')).resolves.toEqual(image);
@@ -39,7 +39,7 @@ describe('CacheParkedImageAdapter', () => {
   });
 
   it('gives another host nothing, and leaves the image for its own', async () => {
-    const parked = new CacheParkedImageAdapter(memoryCache());
+    const parked = new CacheParkedFileAdapter(memoryCache());
     await parked.park('cmd-1', image);
 
     await expect(parked.collect('cmd-1', 'host-b')).resolves.toBeUndefined();
@@ -55,7 +55,7 @@ describe('CacheParkedImageAdapter', () => {
     });
 
     it('names an upload by its owner and bytes, so a second upload is the same id', async () => {
-      const store = new CacheParkedImageAdapter(memoryCache());
+      const store = new CacheParkedFileAdapter(memoryCache());
 
       const first = await store.stage(png(1));
       expect(first).toMatch(
@@ -65,9 +65,24 @@ describe('CacheParkedImageAdapter', () => {
       await expect(store.stage({ ...png(1), userId: 'user-2' })).resolves.not.toBe(first);
     });
 
+    it('names the same text staged as two types twice, so neither takes the other’s type', async () => {
+      const store = new CacheParkedFileAdapter(memoryCache());
+      const text = { ...owner, data: Buffer.from('a,b\n') };
+
+      const asCsv = await store.stage({ ...text, mediaType: 'text/csv' });
+      const asPlain = await store.stage({ ...text, mediaType: 'text/plain' });
+
+      expect(asPlain).not.toBe(asCsv);
+      const claimed = await store.claim([asCsv as string], owner, {
+        hostId: 'host-1',
+        sessionId: 'session-1',
+      });
+      expect(claimed?.[0]?.mediaType).toBe('text/csv');
+    });
+
     it('refuses an upload past the per-person cap, but not the same bytes again', async () => {
-      const store = new CacheParkedImageAdapter(memoryCache());
-      for (let i = 0; i < STAGED_IMAGES_PER_OWNER; i += 1) {
+      const store = new CacheParkedFileAdapter(memoryCache());
+      for (let i = 0; i < STAGED_FILES_PER_OWNER; i += 1) {
         await expect(store.stage(png(i))).resolves.toBeDefined();
       }
 
@@ -76,7 +91,7 @@ describe('CacheParkedImageAdapter', () => {
     });
 
     it('parks a copy for a host under a fresh id, and keeps the upload for a retry', async () => {
-      const store = new CacheParkedImageAdapter(memoryCache());
+      const store = new CacheParkedFileAdapter(memoryCache());
       const id = (await store.stage(png(1))) as string;
 
       const claimed = await store.claim([id], owner, { hostId: 'host-a', sessionId: 's-1' });
@@ -95,7 +110,7 @@ describe('CacheParkedImageAdapter', () => {
     });
 
     it('claims nothing another person staged, and nothing that is gone', async () => {
-      const store = new CacheParkedImageAdapter(memoryCache());
+      const store = new CacheParkedFileAdapter(memoryCache());
       const id = (await store.stage(png(1))) as string;
       const target = { hostId: 'host-a', sessionId: 's-1' };
 

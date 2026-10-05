@@ -133,10 +133,11 @@
       "placeholder": "Describe una tarea o haz una pregunta",
       "send": "Enviar",
       "stop": "Detener",
-      "attach": "Adjuntar imágenes",
+      "attach": "Adjuntar archivos",
       "removeAttachment": "Quitar {{name}}",
-      "attachTooLarge": "{{name}} pesa más de 5 MB. Recórtala o guárdala más pequeña y vuelve a adjuntarla.",
-      "attachTooMany": "Una primera tarea lleva como mucho {{max}} imágenes."
+      "attachTooLarge": "{{name}} pesa más de 5 MB. Guarda una copia más pequeña y vuelve a adjuntarlo.",
+      "attachTooMany": "Una primera tarea lleva como mucho {{max}} archivos.",
+      "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto."
     },
     "failed": "No se pudo crear la sesión."
   },
@@ -147,9 +148,10 @@
       "offline": "Host desconectado",
       "closed": "Desconectado"
     },
-    "image": {
-      "sending": "Enviando imagen",
-      "failedTitle": "La imagen no llegó a la sesión"
+    "file": {
+      "sending": "Enviando archivo",
+      "notSupported": "Ninguno de los archivos soltados es uno que el agente pueda recibir. Suelta una imagen, un PDF o un archivo de texto.",
+      "failedTitle": "El archivo no llegó a la sesión"
     },
     "retryNow": "Reintentar ahora",
     "retry": "Intentar de nuevo",

@@ -258,12 +258,12 @@ function nextMessage(socket: WebSocket): Promise<{ text?: unknown; bytes?: Buffe
   });
 }
 
-async function runnerUp(h: Harness): Promise<WebSocket> {
+async function runnerUp(h: Harness, overrides: Record<string, unknown> = {}): Promise<WebSocket> {
   const runner = ws(h.origin, '/api/v1/relay/runner', {
     headers: { authorization: 'Bearer valid.host' },
   });
   await opened(runner);
-  runner.send(hello());
+  runner.send(hello(overrides));
   const welcome = await nextMessage(runner);
   expect(welcome.text).toMatchObject({
     type: 'welcome',
@@ -422,6 +422,16 @@ describe('runner link', () => {
         connectedAt: expect.any(Date),
       }),
     );
+  });
+
+  it('links a runner that names capabilities this control plane has never heard of, keeping the known ones', async () => {
+    // A rollback, or a runner released before its control plane: an unknown
+    // capability must never cost the host its link.
+    const runner = await runnerUp(h, {
+      capabilities: ['session.image', 'session.from-the-future', 'session.files'],
+    });
+    sockets.push(runner);
+    expect(h.registry.find(HOST)?.capabilities).toEqual(['session.image', 'session.files']);
   });
 
   it('tells a runner newer than this control plane to wait, not to update', async () => {

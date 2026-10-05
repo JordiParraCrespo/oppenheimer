@@ -105,15 +105,15 @@ type Worktrees interface {
 	Push(ctx context.Context, path, branch string) (pushed bool, err error)
 }
 
-// Images is where a session's pasted images are kept on this host: under the
+// Files is where a session's pasted files are kept on this host: under the
 // runner's own home, never in the worktree, so an agent cannot commit one by
 // accident and closing the session can drop them all.
-type Images interface {
-	// Save writes one image for a session and returns its absolute path.
+type Files interface {
+	// Save writes one file for a session and returns its absolute path.
 	Save(sessionID, name string, data []byte) (string, error)
-	// Delete removes one image, when the paste it was written for failed.
+	// Delete removes one file, when the paste it was written for failed.
 	Delete(sessionID, name string) error
-	// Discard removes every image a session was given.
+	// Discard removes every file a session was given.
 	Discard(sessionID string) error
 }
 

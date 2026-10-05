@@ -9,6 +9,8 @@ import {
   sessionsKeys,
   useCloseSession,
   useCreateSession,
+  useRenameSession,
+  useRestartSession,
   useSession,
   useSessionOpening,
   useSessions,
@@ -33,6 +35,8 @@ function setup(
     close?: unknown;
     startProgress?: unknown;
     create?: unknown;
+    rename?: unknown;
+    restart?: unknown;
   },
   // The console's own defaults, for the specs whose rule is its stale window.
   defaultOptions: ConstructorParameters<typeof QueryClient>[0] = {
@@ -359,6 +363,23 @@ describe('useSessionOpening', () => {
 
     expect(result.current).toBe(true);
     await waitFor(() => expect(startProgress).toHaveBeenCalled());
+  });
+
+  it('does not hold a live session that was only renamed or restarted', async () => {
+    // A rename answers with the row like a create does; it starts nothing, and
+    // holding its terminal behind a start pane would never let go.
+    const startProgress = vi.fn().mockResolvedValue(progress(false));
+    const rename = vi.fn().mockResolvedValue(live);
+    const restart = vi.fn().mockResolvedValue(live);
+    const { wrapper } = setup({ startProgress, rename, restart });
+    const { result: renamer } = renderHook(() => useRenameSession(), { wrapper });
+    await renamer.current.mutateAsync({ id: 's-1', name: 'renamed' });
+    const { result: restarter } = renderHook(() => useRestartSession(), { wrapper });
+    await restarter.current.mutateAsync('s-1');
+
+    const { result } = renderHook(() => useSessionOpening(live), { wrapper });
+
+    expect(result.current).toBe(false);
   });
 
   it('opens a session it never watched start without reading its log', async () => {

@@ -1,12 +1,14 @@
 import { Composer, FieldError } from '@oppenheimer/design-system-web';
 import {
-  SESSION_CREATE_MAX_IMAGES,
-  SESSION_IMAGE_MAX_BYTES,
-  SESSION_IMAGE_MEDIA_TYPES,
+  SESSION_CREATE_MAX_FILES,
+  SESSION_FILE_ACCEPT,
+  SESSION_FILE_MAX_BYTES,
+  sessionFileOffered,
 } from '@oppenheimer/shared/protocol';
 import type { ClipboardEvent, ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useReceiveDrops } from '../hooks/use-new-session-drop';
 
 /** One file the composer holds, keyed so two files with one name stay two chips. */
 interface HeldFile {
@@ -20,10 +22,13 @@ interface HeldFile {
  * re-render the host chip, the repository picker and the branch pane. They
  * leave once, on submit.
  *
- * What a file *is* is the API's to judge by its bytes: a browser's label is
- * often empty for a pasted screenshot, so a file is refused here only for size
- * or count, with the reason under the field, never silently dropped. A paste
- * with no image is left to the field.
+ * Every way in — the paperclip, a paste, a drop on the screen's pane, which
+ * hands its files here (`useReceiveDrops`) — goes through `hold` and one
+ * rule, `sessionFileOffered`, shared with the running session's terminal: an
+ * image, a PDF or text, or no type at all (a pasted screenshot often has
+ * none; the API judges the bytes). A file is refused for that, for size or for count,
+ * with the reason under the field, never silently dropped. A paste with no
+ * file is left to the field.
  *
  * `scope`, `tools` and `engine` are passed in because each is a chip bound to
  * the New session draft's store.
@@ -53,10 +58,12 @@ export function NewSessionComposer({
     const accepted: HeldFile[] = [];
     let reason: string | null = null;
     for (const file of incoming) {
-      if (file.size > SESSION_IMAGE_MAX_BYTES) {
+      if (!sessionFileOffered(file)) {
+        reason = t('sessions.new.composer.attachNotSupported', { name: file.name });
+      } else if (file.size > SESSION_FILE_MAX_BYTES) {
         reason = t('sessions.new.composer.attachTooLarge', { name: file.name });
-      } else if (files.length + accepted.length >= SESSION_CREATE_MAX_IMAGES) {
-        reason = t('sessions.new.composer.attachTooMany', { max: SESSION_CREATE_MAX_IMAGES });
+      } else if (files.length + accepted.length >= SESSION_CREATE_MAX_FILES) {
+        reason = t('sessions.new.composer.attachTooMany', { max: SESSION_CREATE_MAX_FILES });
       } else {
         accepted.push({ id: crypto.randomUUID(), file });
       }
@@ -65,14 +72,13 @@ export function NewSessionComposer({
     if (accepted.length > 0) setFiles((held) => [...held, ...accepted]);
   }
 
+  useReceiveDrops(hold);
+
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
-    // Only what could be an image; an unlabelled file is a screenshot more
-    // often than not. Nothing is prevented: text pasted with it still lands
-    // in the field, and a textarea inserts nothing for a file.
-    const images = Array.from(event.clipboardData.files).filter(
-      (file) => file.type === '' || file.type.startsWith('image/'),
-    );
-    if (images.length > 0) hold(images);
+    // Nothing is prevented: text pasted with a file still lands in the field,
+    // and a textarea inserts nothing for a file.
+    const pasted = Array.from(event.clipboardData.files);
+    if (pasted.length > 0) hold(pasted);
   }
 
   return (
@@ -81,7 +87,7 @@ export function NewSessionComposer({
         ref={picker}
         type="file"
         multiple
-        accept={SESSION_IMAGE_MEDIA_TYPES.join(',')}
+        accept={SESSION_FILE_ACCEPT}
         className="hidden"
         aria-label={t('sessions.new.composer.attach')}
         onChange={(event) => {

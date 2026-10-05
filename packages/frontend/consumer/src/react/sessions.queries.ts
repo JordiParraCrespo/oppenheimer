@@ -322,15 +322,6 @@ function useSessionPatch<TVariables>(
     mutationFn: (variables: TVariables) => patch(app, variables),
     ...withCacheOnSuccess(options, (session) => {
       queryClient.setQueryData(sessionsKeys.detail(session.id), session);
-      // This console watches the start it sent ({@link useSessionOpening}).
-      // The row can read `open` before the start pane ever mounts, since the
-      // host makes the pane first, so the watch begins here and not there.
-      // Stale from the outset, so the first reader fetches the log at once.
-      queryClient.setQueryData(
-        sessionsKeys.start(session.id, false),
-        deriveSessionStartProgress([], { failed: false }),
-        { updatedAt: 0 },
-      );
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     }),
   });
@@ -373,15 +364,6 @@ export function useRestartSession(options?: UseMutationOptions<SessionEntity, Er
     mutationFn: (id: string) => app.sessions.restart(id),
     ...withCacheOnSuccess(options, (session) => {
       queryClient.setQueryData(sessionsKeys.detail(session.id), session);
-      // This console watches the start it sent ({@link useSessionOpening}).
-      // The row can read `open` before the start pane ever mounts, since the
-      // host makes the pane first, so the watch begins here and not there.
-      // Stale from the outset, so the first reader fetches the log at once.
-      queryClient.setQueryData(
-        sessionsKeys.start(session.id, false),
-        deriveSessionStartProgress([], { failed: false }),
-        { updatedAt: 0 },
-      );
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
       // A restart is a request; the row is still stopped until the host says
       // otherwise, so the detail reads until it does.
@@ -407,7 +389,7 @@ export function useCloseSession(
 }
 
 /**
- * Upload an image for New session's first task. Nothing is cached: what comes
+ * Upload a file for New session's first task. Nothing is cached: what comes
  * back is the id the create names in `attachmentIds`.
  */
 export function useUploadSessionAttachment(
@@ -415,24 +397,24 @@ export function useUploadSessionAttachment(
 ) {
   const app = useConsumerApp();
   return useMutation({
-    mutationFn: (image: Blob) => app.sessions.uploadAttachment(image),
+    mutationFn: (file: Blob) => app.sessions.uploadAttachment(file),
     ...options,
   });
 }
 
 /**
- * Paste an image into one window's prompt. Nothing is cached and no key is
+ * Paste a file into one window's prompt. Nothing is cached and no key is
  * kept: success is the path appearing in the terminal, which the terminal
  * itself shows.
  */
-export function usePasteSessionImage(
+export function usePasteSessionFile(
   sessionId: string,
   window = 0,
   options?: UseMutationOptions<void, Error, Blob>,
 ) {
   const app = useConsumerApp();
   return useMutation({
-    mutationFn: (image: Blob) => app.sessions.pasteImage(sessionId, image, window),
+    mutationFn: (file: Blob) => app.sessions.pasteFile(sessionId, file, window),
     ...options,
   });
 }

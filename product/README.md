@@ -321,3 +321,6 @@ earlier note:
   started sending `repository.prepare` when a host and a repository are
   picked, so the clone and the spare worktree are made while the prompt is
   written (02 §5, 01, 05; measured in 14).
+- 03, 01 and 05 let a session take images only; on 2026-10-04 it takes files
+  (images, PDF, text) judged by their bytes, and a runner that does not
+  announce `session.files` is still sent images only (01, 02, 03, 05, 07).
