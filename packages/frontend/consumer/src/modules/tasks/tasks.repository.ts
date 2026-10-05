@@ -1,12 +1,9 @@
-import {
-  type GoalResponseDto,
-  heyApiSdk,
-  type StartTaskSessionRequest,
-  type TaskResponseDto,
-} from '@oppenheimer/api-client';
+import { type GoalResponseDto, heyApiSdk, type TaskResponseDto } from '@oppenheimer/api-client';
 import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { injectable } from 'inversify';
+import type { CreateSessionInput } from '../sessions/session.entity';
+import { toCreateSessionRequest } from '../sessions/sessions.repository';
 import {
   GoalEntity,
   type GoalInput,
@@ -52,9 +49,12 @@ function toGoal(data: GoalResponseDto): GoalEntity {
   );
 }
 
-/** What a Start session sends: New session's body, and where the person saw the card. */
+/**
+ * What a Start session sends: New session's input (filed under the task's project
+ * by the API), and where the person saw the card.
+ */
 export interface StartTaskSessionInput {
-  session: StartTaskSessionRequest['session'];
+  session: Omit<CreateSessionInput, 'projectId'>;
   seenStatus: TaskStatus;
   idempotencyKey: string;
 }
@@ -115,7 +115,7 @@ export class TasksRepository {
     const data = await unwrapBody(
       heyApiSdk.startTaskSession({
         path: { id },
-        body: { session: input.session, seenStatus: input.seenStatus },
+        body: { session: toCreateSessionRequest(input.session), seenStatus: input.seenStatus },
         headers: { 'Idempotency-Key': input.idempotencyKey },
       }),
       TasksErrors.START_SESSION_FAILED,

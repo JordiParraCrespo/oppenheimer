@@ -17,5 +17,17 @@
     "year": "{{count}}y"
   },
   "dismiss": "Dismiss",
-  "breadcrumb": "Breadcrumb"
+  "breadcrumb": "Breadcrumb",
+  "dateField": {
+    "none": "No date",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "clear": "Clear"
+  },
+  "timeField": {
+    "none": "No time",
+    "hour": "Hour",
+    "minute": "Minute",
+    "clear": "Clear"
+  }
 }

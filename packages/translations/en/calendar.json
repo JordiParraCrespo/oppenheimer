@@ -1,0 +1,57 @@
+{
+  "sidebar": {
+    "layers": "Show"
+  },
+  "layers": {
+    "events": "My events",
+    "google": "Google Calendar",
+    "tasks": "Tasks due",
+    "automations": "Automation runs"
+  },
+  "header": {
+    "previous": "Previous month",
+    "next": "Next month",
+    "today": "Today",
+    "newEvent": "New event"
+  },
+  "grid": {
+    "more_one": "+{{count}} more",
+    "more_other": "+{{count}} more",
+    "newOn": "New event on {{day}}",
+    "eventsFailed": "Couldn’t load your events.",
+    "googleFailed": "Couldn’t read Google Calendar."
+  },
+  "event": {
+    "newTitle": "New event",
+    "editTitle": "Edit event",
+    "title": "Title",
+    "allDay": "All day",
+    "notes": "Notes",
+    "add": "Add event",
+    "save": "Save",
+    "delete": "Delete event",
+    "deleteTitle": "Delete this event?",
+    "deleteDescription": "“{{title}}” is deleted.",
+    "saveFailed": "Couldn’t save the event.",
+    "deleteFailed": "Couldn’t delete the event.",
+    "gone": "This event is not in the month shown, or no longer exists."
+  },
+  "google": {
+    "title": "Google Calendar",
+    "description": "Show your Google events beside your own. Read-only: nothing is written to Google.",
+    "connect": "Connect Google Calendar",
+    "reconnect": "Reconnect",
+    "revoked": "Google no longer lets us read this calendar. Reconnect to show it again.",
+    "connectedAs": "Connected as {{email}}",
+    "disconnect": "Disconnect",
+    "disconnectTitle": "Disconnect Google Calendar?",
+    "disconnectDescription": "Its events leave the calendar. You can connect it again at any time.",
+    "disconnectFailed": "Couldn’t disconnect Google Calendar.",
+    "startFailed": "Couldn’t reach Google. Try again.",
+    "loadFailed": "Couldn’t check the Google Calendar connection.",
+    "connecting": "Connecting Google Calendar…",
+    "connectFailed": "Couldn’t connect Google Calendar.",
+    "refused": "Google Calendar wasn’t connected: the consent was cancelled or did not complete.",
+    "back": "Back to the calendar"
+  }
+}

@@ -8,6 +8,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFilePaste } from '../hooks/use-file-paste';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
@@ -30,7 +31,14 @@ const AGENT_WINDOW = 0;
  * two carets; the agent's has the history, slash commands and mode, so the
  * grid keeps the input.
  */
-export function SessionTerminal({ sessionId }: { sessionId: string }) {
+export function SessionTerminal({
+  sessionId,
+  statusItem,
+}: {
+  sessionId: string;
+  /** Drawn first in the status bar: the session's task, when the route has one. */
+  statusItem?: ReactNode;
+}) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
@@ -106,6 +114,7 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
         ) : null}
 
         <TerminalStatusBar>
+          {statusItem}
           <TerminalStatusItem>
             <span
               data-status={status}

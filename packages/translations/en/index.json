@@ -18,7 +18,19 @@
       "year": "{{count}}y"
     },
     "dismiss": "Dismiss",
-    "breadcrumb": "Breadcrumb"
+    "breadcrumb": "Breadcrumb",
+    "dateField": {
+      "none": "No date",
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "clear": "Clear"
+    },
+    "timeField": {
+      "none": "No time",
+      "hour": "Hour",
+      "minute": "Minute",
+      "clear": "Clear"
+    }
   },
   "validation": {
     "required": "This field is required",
@@ -910,6 +922,200 @@
       "backToAutomation": "Back to the automation"
     }
   },
+  "tasks": {
+    "backToTask": "Back to task",
+    "nav": {
+      "label": "Plan",
+      "tasks": "Tasks",
+      "calendar": "Calendar"
+    },
+    "sidebar": {
+      "projects": "Projects",
+      "all": "All projects",
+      "unassigned": "Unassigned",
+      "newProject": "New project",
+      "loadFailed": "Couldn’t load your projects."
+    },
+    "board": {
+      "title": "Tasks",
+      "newTask": "New task",
+      "counts": "{{open}} open · {{doing}} in progress · {{done}} done",
+      "overdue_one": "{{count}} overdue",
+      "overdue_other": "{{count}} overdue",
+      "addTask": "Add task",
+      "addTo": "Add a task to {{column}}",
+      "quickPlaceholder": "Task title",
+      "filedUnder": "Filed under {{name}}",
+      "loadFailed": "Couldn’t load the board.",
+      "moveFailed": "Couldn’t move that task. It’s back where it was.",
+      "addFailed": "Couldn’t add that task."
+    },
+    "columns": {
+      "later": "Later",
+      "todo": "To do",
+      "doing": "In progress",
+      "done": "Done"
+    },
+    "card": {
+      "markDone": "Mark as done",
+      "markNotDone": "Mark as not done",
+      "start": "Start session",
+      "openSession": "Open session {{name}}"
+    },
+    "sessionState": {
+      "waiting": "Needs input",
+      "queued": "Queued",
+      "running": "Running",
+      "failed": "Failed",
+      "idle": "Idle",
+      "completed": "Completed"
+    },
+    "dates": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "yesterday": "Yesterday",
+      "nextMonday": "Next Monday",
+      "endOfMonth": "End of month",
+      "inThreeMonths": "In 3 months"
+    },
+    "goals": {
+      "label": "Goals",
+      "title": "Goals",
+      "new": "New goal",
+      "empty": "No goals yet. A goal groups tasks toward one outcome.",
+      "noTarget": "No target",
+      "progress": "{{done}} / {{total}} tasks",
+      "edit": "Edit {{name}}",
+      "loadFailed": "Couldn’t load your goals."
+    },
+    "goal": {
+      "newTitle": "New goal",
+      "editTitle": "Edit goal",
+      "name": "Goal",
+      "namePlaceholder": "What are you aiming for?",
+      "target": "Target",
+      "add": "Add goal",
+      "delete": "Delete goal",
+      "deleteTitle": "Delete this goal?",
+      "deleteDescription": "“{{name}}” goes; its tasks stay on the board without a goal.",
+      "saveFailed": "Couldn’t save the goal.",
+      "deleteFailed": "Couldn’t delete the goal."
+    },
+    "dialog": {
+      "newTitle": "New task",
+      "editTitle": "Edit task",
+      "titleLabel": "Title",
+      "titlePlaceholder": "What needs doing?",
+      "notesLabel": "Notes",
+      "notesPlaceholder": "Add notes",
+      "status": "Status",
+      "project": "Project",
+      "goal": "Goal",
+      "none": "None",
+      "due": "Due",
+      "sessions": "Sessions",
+      "startSession": "Start session",
+      "linkExisting": "Link existing",
+      "unlink": "Unlink {{name}}",
+      "unlinkFailed": "Couldn’t unlink that session.",
+      "add": "Add task",
+      "save": "Save",
+      "delete": "Delete task",
+      "deleteTitle": "Delete this task?",
+      "deleteDescription": "“{{title}}” is deleted. Its sessions stay as they are.",
+      "saveFailed": "Couldn’t save the task.",
+      "deleteFailed": "Couldn’t delete the task.",
+      "loadFailed": "Couldn’t load the board.",
+      "gone": "This task no longer exists."
+    },
+    "link": {
+      "title": "Link a session",
+      "search": "Search sessions",
+      "empty": "No sessions to link.",
+      "inProject": "In {{name}}",
+      "others": "Other sessions",
+      "failed": "Couldn’t link that session."
+    },
+    "start": {
+      "title": "Start session",
+      "for": "For “{{title}}”",
+      "prompt": "Prompt",
+      "repository": "Repository",
+      "repositoryPlaceholder": "Pick a repository",
+      "repositorySearch": "Search repositories",
+      "noRepositories": "This project has no repositories. Add one in its settings.",
+      "host": "Host",
+      "hostPlaceholder": "Pick a host",
+      "hostSearch": "Search hosts",
+      "noHosts": "No hosts yet. Add one in Settings → Hosts.",
+      "agent": "Agent and model",
+      "agentSearch": "Search models",
+      "agentEmpty": "No model matches “{{query}}”.",
+      "offlineShort": "Offline",
+      "offline": "{{host}} is offline. The session waits as Queued and starts when its runner reconnects.",
+      "offlineSince": "{{host}} has been offline since {{when}}. The session waits as Queued and starts when its runner reconnects.",
+      "start": "Start session",
+      "queue": "Queue session",
+      "failed": "Couldn’t start the session."
+    }
+  },
+  "calendar": {
+    "sidebar": {
+      "layers": "Show"
+    },
+    "layers": {
+      "events": "My events",
+      "google": "Google Calendar",
+      "tasks": "Tasks due",
+      "automations": "Automation runs"
+    },
+    "header": {
+      "previous": "Previous month",
+      "next": "Next month",
+      "today": "Today",
+      "newEvent": "New event"
+    },
+    "grid": {
+      "more_one": "+{{count}} more",
+      "more_other": "+{{count}} more",
+      "newOn": "New event on {{day}}",
+      "eventsFailed": "Couldn’t load your events.",
+      "googleFailed": "Couldn’t read Google Calendar."
+    },
+    "event": {
+      "newTitle": "New event",
+      "editTitle": "Edit event",
+      "title": "Title",
+      "allDay": "All day",
+      "notes": "Notes",
+      "add": "Add event",
+      "save": "Save",
+      "delete": "Delete event",
+      "deleteTitle": "Delete this event?",
+      "deleteDescription": "“{{title}}” is deleted.",
+      "saveFailed": "Couldn’t save the event.",
+      "deleteFailed": "Couldn’t delete the event.",
+      "gone": "This event is not in the month shown, or no longer exists."
+    },
+    "google": {
+      "title": "Google Calendar",
+      "description": "Show your Google events beside your own. Read-only: nothing is written to Google.",
+      "connect": "Connect Google Calendar",
+      "reconnect": "Reconnect",
+      "revoked": "Google no longer lets us read this calendar. Reconnect to show it again.",
+      "connectedAs": "Connected as {{email}}",
+      "disconnect": "Disconnect",
+      "disconnectTitle": "Disconnect Google Calendar?",
+      "disconnectDescription": "Its events leave the calendar. You can connect it again at any time.",
+      "disconnectFailed": "Couldn’t disconnect Google Calendar.",
+      "startFailed": "Couldn’t reach Google. Try again.",
+      "loadFailed": "Couldn’t check the Google Calendar connection.",
+      "connecting": "Connecting Google Calendar…",
+      "connectFailed": "Couldn’t connect Google Calendar.",
+      "refused": "Google Calendar wasn’t connected: the consent was cancelled or did not complete.",
+      "back": "Back to the calendar"
+    }
+  },
   "hosts": {
     "pairing": {
       "tokenExpires": "Token expires in {{time}} · single use",
@@ -1096,7 +1302,8 @@
     "sidebarDescription": "Your sessions, your automations and your account.",
     "settings": "Settings",
     "automations": "Automations",
-    "logOutFailed": "Could not log you out. Try again."
+    "logOutFailed": "Could not log you out. Try again.",
+    "plan": "Plan"
   },
   "language": {
     "label": "Language",
@@ -1360,7 +1567,12 @@
     "hostRemoved": "“{{name}}” removed.",
     "deviceSignedOut": "“{{name}}” signed out.",
     "otherDevicesSignedOut": "Your other devices are signed out.",
-    "passwordChanged": "Password changed. Other devices are signed out."
+    "passwordChanged": "Password changed. Other devices are signed out.",
+    "taskAdded": "Task added.",
+    "taskDeleted": "Task deleted.",
+    "goalAdded": "Goal added.",
+    "taskSessionStarted": "Session started.",
+    "taskSessionQueued": "Session queued. It starts when its host reconnects."
   },
   "emails": {
     "common": {

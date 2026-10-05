@@ -17,5 +17,17 @@
     "year": "{{count}}a"
   },
   "dismiss": "Descartar",
-  "breadcrumb": "Ruta de navegación"
+  "breadcrumb": "Ruta de navegación",
+  "dateField": {
+    "none": "Sin fecha",
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "clear": "Quitar"
+  },
+  "timeField": {
+    "none": "Sin hora",
+    "hour": "Hora",
+    "minute": "Minuto",
+    "clear": "Quitar"
+  }
 }

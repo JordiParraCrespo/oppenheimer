@@ -4,5 +4,5 @@ export {
   CalendarEventEntity,
   type CalendarEventInput,
   type CalendarRange,
-  GoogleCalendarConnectionEntity,
+  type GoogleCalendarConnectionEntity,
 } from './calendar-event.entity';

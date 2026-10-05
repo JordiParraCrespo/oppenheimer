@@ -68,7 +68,7 @@ function toEntity(data: SessionResponseDto): SessionEntity {
  * be the API's defaults spelled out by a client that did not know them, and the
  * one default that matters — the permission level — is the API's to state.
  */
-function toRequest(input: CreateSessionInput): CreateSessionRequest {
+export function toCreateSessionRequest(input: CreateSessionInput): CreateSessionRequest {
   const launch = input.launch
     ? {
         ...(input.launch.model ? { model: input.launch.model } : {}),
@@ -145,7 +145,7 @@ export class SessionsRepository {
   async create(input: CreateSessionInput, idempotencyKey: string): Promise<SessionEntity> {
     const data = await unwrapBody(
       heyApiSdk.createSession({
-        body: toRequest(input),
+        body: toCreateSessionRequest(input),
         headers: { 'Idempotency-Key': idempotencyKey },
       }),
       SessionsErrors.CREATE_FAILED,

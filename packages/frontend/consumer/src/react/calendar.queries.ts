@@ -4,6 +4,7 @@ import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   skipToken,
   type UseMutationOptions,
+  type UseQueryOptions,
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
@@ -28,12 +29,16 @@ export const calendarKeys = {
 /** How long Google's month stays fresh before a focus reads it again. */
 const GOOGLE_FRESH_MS = 2 * 60_000;
 
-/** The workspace's own events for the days on screen. */
-export function useCalendarEvents(range: CalendarRange) {
+/** The workspace's own events for the days on screen; `select` for one of them. */
+export function useCalendarEvents<TData = CalendarEventEntity[]>(
+  range: CalendarRange,
+  options?: Omit<UseQueryOptions<CalendarEventEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
+) {
   const app = useConsumerApp();
-  return useQuery({
+  return useQuery<CalendarEventEntity[], Error, TData>({
     queryKey: calendarKeys.eventRange(range),
     queryFn: () => app.calendar.findEvents(range),
+    ...options,
   });
 }
 

@@ -1,0 +1,137 @@
+{
+  "backToTask": "Back to task",
+  "nav": {
+    "label": "Plan",
+    "tasks": "Tasks",
+    "calendar": "Calendar"
+  },
+  "sidebar": {
+    "projects": "Projects",
+    "all": "All projects",
+    "unassigned": "Unassigned",
+    "newProject": "New project",
+    "loadFailed": "Couldn’t load your projects."
+  },
+  "board": {
+    "title": "Tasks",
+    "newTask": "New task",
+    "counts": "{{open}} open · {{doing}} in progress · {{done}} done",
+    "overdue_one": "{{count}} overdue",
+    "overdue_other": "{{count}} overdue",
+    "addTask": "Add task",
+    "addTo": "Add a task to {{column}}",
+    "quickPlaceholder": "Task title",
+    "filedUnder": "Filed under {{name}}",
+    "loadFailed": "Couldn’t load the board.",
+    "moveFailed": "Couldn’t move that task. It’s back where it was.",
+    "addFailed": "Couldn’t add that task."
+  },
+  "columns": {
+    "later": "Later",
+    "todo": "To do",
+    "doing": "In progress",
+    "done": "Done"
+  },
+  "card": {
+    "markDone": "Mark as done",
+    "markNotDone": "Mark as not done",
+    "start": "Start session",
+    "openSession": "Open session {{name}}"
+  },
+  "sessionState": {
+    "waiting": "Needs input",
+    "queued": "Queued",
+    "running": "Running",
+    "failed": "Failed",
+    "idle": "Idle",
+    "completed": "Completed"
+  },
+  "dates": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "yesterday": "Yesterday",
+    "nextMonday": "Next Monday",
+    "endOfMonth": "End of month",
+    "inThreeMonths": "In 3 months"
+  },
+  "goals": {
+    "label": "Goals",
+    "title": "Goals",
+    "new": "New goal",
+    "empty": "No goals yet. A goal groups tasks toward one outcome.",
+    "noTarget": "No target",
+    "progress": "{{done}} / {{total}} tasks",
+    "edit": "Edit {{name}}",
+    "loadFailed": "Couldn’t load your goals."
+  },
+  "goal": {
+    "newTitle": "New goal",
+    "editTitle": "Edit goal",
+    "name": "Goal",
+    "namePlaceholder": "What are you aiming for?",
+    "target": "Target",
+    "add": "Add goal",
+    "delete": "Delete goal",
+    "deleteTitle": "Delete this goal?",
+    "deleteDescription": "“{{name}}” goes; its tasks stay on the board without a goal.",
+    "saveFailed": "Couldn’t save the goal.",
+    "deleteFailed": "Couldn’t delete the goal."
+  },
+  "dialog": {
+    "newTitle": "New task",
+    "editTitle": "Edit task",
+    "titleLabel": "Title",
+    "titlePlaceholder": "What needs doing?",
+    "notesLabel": "Notes",
+    "notesPlaceholder": "Add notes",
+    "status": "Status",
+    "project": "Project",
+    "goal": "Goal",
+    "none": "None",
+    "due": "Due",
+    "sessions": "Sessions",
+    "startSession": "Start session",
+    "linkExisting": "Link existing",
+    "unlink": "Unlink {{name}}",
+    "unlinkFailed": "Couldn’t unlink that session.",
+    "add": "Add task",
+    "save": "Save",
+    "delete": "Delete task",
+    "deleteTitle": "Delete this task?",
+    "deleteDescription": "“{{title}}” is deleted. Its sessions stay as they are.",
+    "saveFailed": "Couldn’t save the task.",
+    "deleteFailed": "Couldn’t delete the task.",
+    "loadFailed": "Couldn’t load the board.",
+    "gone": "This task no longer exists."
+  },
+  "link": {
+    "title": "Link a session",
+    "search": "Search sessions",
+    "empty": "No sessions to link.",
+    "inProject": "In {{name}}",
+    "others": "Other sessions",
+    "failed": "Couldn’t link that session."
+  },
+  "start": {
+    "title": "Start session",
+    "for": "For “{{title}}”",
+    "prompt": "Prompt",
+    "repository": "Repository",
+    "repositoryPlaceholder": "Pick a repository",
+    "repositorySearch": "Search repositories",
+    "noRepositories": "This project has no repositories. Add one in its settings.",
+    "host": "Host",
+    "hostPlaceholder": "Pick a host",
+    "hostSearch": "Search hosts",
+    "noHosts": "No hosts yet. Add one in Settings → Hosts.",
+    "agent": "Agent and model",
+    "agentSearch": "Search models",
+    "agentEmpty": "No model matches “{{query}}”.",
+    "offlineShort": "Offline",
+    "offline": "{{host}} is offline. The session waits as Queued and starts when its runner reconnects.",
+    "offlineSince": "{{host}} has been offline since {{when}}. The session waits as Queued and starts when its runner reconnects.",
+    "start": "Start session",
+    "queue": "Queue session",
+    "failed": "Couldn’t start the session."
+  }
+}

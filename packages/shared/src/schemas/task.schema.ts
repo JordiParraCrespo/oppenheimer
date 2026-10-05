@@ -73,6 +73,11 @@ export const createTaskSchema = z
 
 export type CreateTaskDto = z.infer<typeof createTaskSchema>;
 
+/** A column's inline composer: a title, filed by the board's filter. */
+export const quickTaskSchema = z.object({ title: taskTitleSchema });
+
+export type QuickTaskDto = z.infer<typeof quickTaskSchema>;
+
 /**
  * `PATCH /tasks/{id}`. Every field optional; `null` clears. The status is not
  * here: a column change is a move, which also says where in the column.

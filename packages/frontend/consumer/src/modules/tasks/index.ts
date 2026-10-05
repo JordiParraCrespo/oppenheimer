@@ -1,6 +1,6 @@
 export {
   compareRank,
-  GoalEntity,
+  type GoalEntity,
   type GoalInput,
   TaskEntity,
   type TaskFilter,
