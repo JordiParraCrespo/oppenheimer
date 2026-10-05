@@ -145,5 +145,7 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   `SessionsConsole`) is in the MVP; its design is `../17-plan.md` to
   `../20-plan-calendar.md`. One departure from the frames there: Google
   Calendar is read-only, so a Google event cannot be edited or dragged.
+  Its components are in the design system (the showcase's Plan group),
+  and the console builds on them.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

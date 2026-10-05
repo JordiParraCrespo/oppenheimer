@@ -41,11 +41,16 @@ Wire the styles into the app's CSS entry alongside Tailwind:
   uses it) and `useFileDrag` (whether files are being dragged over an
   element, and the files when they land; `DropZone` draws it). Nothing here
   knows about the product or fetches.
+- `src/components/drag.tsx` — the drag layer every surface that moves
+  things composes (`DragProvider`, `useDraggable`, `useDroppable`,
+  `SortableGroup`, `SortableItem`, `useSortableGroups`, `DropSlot`), over
+  `@dnd-kit/core` and `@dnd-kit/sortable`, with the motion built in.
 - `src/components/` — the public components, one file each. The grouped
   inventory is the showcase's `apps/web-showcase/src/lib/toc.ts`, which names
   every file under the section that draws it.
 - `src/internal/` — the building blocks only those components import
-  (`Checkbox`, `Label`, `Empty`, `Sheet`); not exported.
+  (`Checkbox`, `Label`, `Empty`, `Sheet`, the month helpers and the one
+  month grid `MonthCalendar` and `DatePicker` share); not exported.
 - `src/lib/utils` — `cn()`.
 
 The rules are in [`../AGENTS.md`](../AGENTS.md); the rendered reference is the

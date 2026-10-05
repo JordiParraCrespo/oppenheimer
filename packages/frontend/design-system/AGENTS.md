@@ -118,6 +118,23 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   around the whole pane, square and flush, with no fill and no label. It is
   its own box; `listen="window"` only on a page
   with one zone.
+- **Things move by dragging on one layer.** `drag.tsx` is headless and
+  product-free: `useDraggable` / `useDroppable` (with `accepts` by
+  `data.type`), and `SortableGroup` / `SortableItem` / `useSortableGroups`
+  for order across groups, all inside one `DragProvider` per surface that
+  the page owns. A component that drags (the month) draws sources and
+  targets and never mounts its own provider. It wraps dnd-kit, which no app
+  imports. The motion lives in the layer, on the token ramp (`--drag-lift`,
+  the fast and base durations); a sortable item's own place is the drop
+  slot. Keyboard and announcements come with it; a surface translates the
+  words through `labels`. A control inside a draggable spreads
+  `dragIgnore`. Files from the desktop stay `DropZone`'s.
+- **Plan composes the system's own vocabulary.** A task's status is the
+  run-state dot (`TASK_STATUS_STATE`), its done toggle a `Checkbox`, a
+  calendar source a `Checkbox` row, and a page that opens on its own name
+  `PageHeaderRow size="display"`. `TaskBoard` lays out whatever columns it
+  is given at its parent's width; `MonthCalendar` and `DatePicker` are the
+  two faces of one month grid.
 - **A sidebar row's actions are its ellipsis.** `SessionItem` and
   `RoutineItem` take `action` and `menuOpen` through one row shell; a
   routine row adds `lastRun`, a dot before the meta for how the last run
