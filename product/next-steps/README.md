@@ -58,3 +58,7 @@ where these land is the first open question below.
 - 2026-09-28: analytics stays inside the Pull requests area for now
   (`0.2-pull-requests.md` §5); it becomes its own rail item, with PRs as
   one tab, once it covers sessions, agents, hosts or automations.
+- 2026-10-05: version 1 of the Pull requests area is the queue with a
+  summary on every PR, plus Analytics; lanes, auto-merge and prepared
+  review sessions come after. Design handoff:
+  `0.2-pull-requests-design-handoff.md`.
