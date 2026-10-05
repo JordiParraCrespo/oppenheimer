@@ -135,6 +135,34 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   `PageHeaderRow size="display"`. `TaskBoard` lays out whatever columns it
   is given at its parent's width; `MonthCalendar` and `DatePicker` are the
   two faces of one month grid.
+- **A pull request reads as a queue, a briefing and its diff.** The queue
+  is `PullRequestTable` rows: a `LaneBadge`, the title (the row's one
+  button), the reference and author, a `DiffStat`, checks and conflicts as
+  run-state dots, the wait in mono, and a `MergeButton` that asks once in
+  place. A pull request opens on `PullRequestHeader`, `StatCard`s,
+  `MergePath` and `Panel`s; Submit review opens `ReviewDecision`; the
+  author's description is `Prose`. The scopes and the pane's views are a
+  `SegmentedControl` at `lg` and `md`.
+- **Diffs are @pierre/diffs and the file tree is @pierre/trees**, the
+  libraries DiffsHub runs on, wrapped so no app imports them: `DiffView`
+  (Shiki highlighting, unified or split, comments as line annotations drawn
+  as `DiffComment` / `DiffCommentDraft`), `DiffFile` with its sticky
+  `DiffFileHeader`, and `DiffFileTree`. Both draw in a shadow root; their
+  colours, type and radius are the tokens, passed through their custom
+  properties, and they follow the app's theme switch, not the OS.
+- **A file wears its type's mark.** `FileIcon` and the tree draw the same
+  published icon set (@pierre/trees, its `complete` set) in the
+  `--file-icon-*` hues: an identity, like an agent's vendor colour, never a
+  state. Never a redrawn logo.
+- **Analytics are a few small charts on the chart tokens.** `BarChart`,
+  `LineChart`, `RingChart`, `BarList`, with `ChartHero` and `ChartLegend`:
+  `--chart-1` to `--chart-3` are a categorical order validated for
+  colour-blind separation in both themes, values sit in text ink, one axis,
+  every chart answers the pointer and every multi-series one has a legend.
+  No chart library.
+- **The rail's order is the reader's.** Its items are `SortableRailItem`s
+  in a vertical `SortableGroup` inside the shell's `DragProvider`; where
+  the order is kept is the app's.
 - **A sidebar row's actions are its ellipsis.** `SessionItem` and
   `RoutineItem` take `action` and `menuOpen` through one row shell; a
   routine row adds `lastRun`, a dot before the meta for how the last run

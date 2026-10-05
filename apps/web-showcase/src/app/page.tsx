@@ -56,6 +56,9 @@ import {
   TerminalHostLinkDemo,
 } from '../components/host-link-demos';
 import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos';
+import { DiffDemo } from '../components/diff-demos';
+import { PullRequestAnalyticsDemo } from '../components/pr-analytics-demos';
+import { PullRequestBriefingDemo, PullRequestQueueDemo } from '../components/pull-request-demos';
 import { DragPrimitivesDemo } from '../components/drag-demos';
 import { PlanDialogsDemo, SessionPaneHeaderDemo } from '../components/plan-dialog-demos';
 import { TaskBoardDemo, TaskStatusDots } from '../components/task-board-demos';
@@ -763,7 +766,7 @@ export default function Page() {
         id="segmented"
         title="SegmentedControl"
         meta="segmented-control.tsx"
-        desc="Two or three ways to read the same thing, one always on: Command / Agent prompt in the Add host dialog. A pill on the hover surface with 2px of inset; the active segment lifts onto the card colour. Never a form value; that is RadioGroup."
+        desc="Two or three ways to read the same thing, one always on: Command / Agent prompt in the Add host dialog. A pill on the hover surface with 2px of inset; the active segment lifts onto the card colour. Never a form value; that is RadioGroup. Three sizes: sm labels a panel, md (28px) switches what a pane shows (Briefing / Description / Changes, a lane), lg (32px) is a page's top row (Mine / Review requests / Watching); an item's count rides after its label in mono."
         code={`<SegmentedControl value={tab} onValueChange={setTab}><SegmentedControlItem value="cmd">Command</SegmentedControlItem>…</SegmentedControl>`}
       >
         <SegmentedDemo />
@@ -1012,7 +1015,7 @@ export default function Page() {
         id="sidebar"
         title="Rail · Sidebar · SessionItem"
         meta="rail.tsx · sidebar.tsx · session-item.tsx"
-        desc="The console's chrome. The 56px rail switches between the sessions and routines lists, its tooltips carrying the counts. The sidebar groups sessions under projects: a header per project with a folding chevron, a mono count and hover-only actions (new session here, project settings); search and the facet chips above the groups, and an empty group says so with a link. A session row is a glyph coloured by state and a name; the age shows on hover and on the active row, and gives way to the ellipsis, whose menu is Rename, Move to project… (a pane inside the menu) and Delete, each with its single-key hint. Rename turns the row into an inline input. A session still provisioning is pending: the grey glyph pulses."
+        desc="The console's chrome. The 56px rail switches between the sessions and routines lists, its tooltips carrying the counts. The sidebar groups sessions under projects: a header per project with a folding chevron, a mono count and hover-only actions (new session here, project settings); search and the facet chips above the groups, and an empty group says so with a link. A session row is a glyph coloured by state and a name; the age shows on hover and on the active row, and gives way to the ellipsis, whose menu is Rename, Move to project… (a pane inside the menu) and Delete, each with its single-key hint. Rename turns the row into an inline input. A session still provisioning is pending: the grey glyph pulses. The rail's items reorder by dragging (SortableRailItem in a vertical SortableGroup, on the drag layer): a press still navigates, a drag starts after 5px; drag Plan to the top here."
         bare
       >
         <div className="flex flex-wrap gap-6">
@@ -1256,6 +1259,68 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         desc="The task dialog and Start session are compositions, not components: a form-size Dialog with a borderless title and notes, then label and value rows. Values that are fixed (the four statuses, an agent's models) are chips; values that grow with the workspace (projects, goals, hosts, repositories) are ChipSelects that filter. One state each: what a pick means (an offline host, a queued start) is the console's rule, not this page's."
       >
         <PlanDialogsDemo />
+      </Spec>
+
+      <GroupHead>Pull requests</GroupHead>
+
+      <Spec
+        id="prqueue"
+        title="PullRequestTable"
+        meta="pull-request-table.tsx"
+        desc="The queue of pull requests waiting on the reader, on the card. A row is its LaneBadge (Deep in inverted ink, Medium and Quick on the hover wash), the title with repo #number in mono and who opened it (a session's bot glyph or a person's), a note when something holds it, the size as a DiffStat, checks and conflicts as a dot and a word, the wait in mono (full ink once it is late), and the actions. The title is the row's button, stretched over it, so the actions are never inside it. The table reads its own width: from 880px Size, Checks and Conflicts are columns, narrower they fold under the title. MergeButton asks once in place (Cancel, Confirm merge) and says why it is off while checks, conflicts or a code owner hold it. The page opens on PageHeaderRow display with Review next, the scopes are a large SegmentedControl with counts, the filters are a search and PillTabs, the foot is RunsListFoot."
+        code={`<PullRequestTable>
+  <PullRequestTableHead />
+  <PullRequestRow lane={<LaneBadge lane="deep">Deep</LaneBadge>} title="Move session tokens to the runner keychain" reference="oppenheimer #482" author="Session · auth-hardening" additions={612} deletions={248} checks="passing" checksLabel="Passing" conflicts="clean" conflictsLabel="No conflicts" waiting="1d 3h" onOpen={open}
+    actions={<MergeButton confirming={confirming} onConfirmingChange={setConfirming} onMerge={merge} />} />
+</PullRequestTable>`}
+        bare
+      >
+        <PullRequestQueueDemo />
+      </Spec>
+
+      <Spec
+        id="prbriefing"
+        title="Briefing · ReviewDecision"
+        meta="pull-request-header.tsx · stat-card.tsx · merge-path.tsx · panel.tsx · review-decision.tsx · prose.tsx"
+        desc="One pull request, opened on its briefing. The bar holds the views (a medium SegmentedControl, Changes carrying its DiffStat), Open review session and Submit review, which opens ReviewDecision in a popover: the verdicts as a radio list, the optional comment, what posts with it, Discard, and the primary named for the verdict. PullRequestHeader is the state, lane and reference, the title at H2 and the branch head → base. StatCards lead with the numbers (a 24px mono figure, a unit, a StatBar of shares or a track); MergePath lays out Checks, Conflicts, Review and Merge as done, blocked or to come, with the next step and its actions under a hairline. The rest are Panels: the brief with its FactTiles and lane, the review session, the pending comments as DiffCommentLinks, where it changes, the reviewers. Description renders the author's markdown in Prose. The second frame is the same page held by a conflict."
+        code={`<PullRequestHeader state="open" stateLabel="Open" lane={<LaneBadge lane="deep">Deep</LaneBadge>} reference="oppenheimer #482" title="…" author="Session · auth-hardening" head="agent/auth-keychain" base="main" />
+<StatCard label="Checks" value="214 / 214" unit="Passing" bar={<StatBar track segments={[{ share: 100, tone: 'success' }]} />} />
+<MergePath title="Path to merge" summary="2 of 4 done" steps={[{ label: 'Checks', detail: 'All passing', state: 'done' }, …]} note="Squash and merge into main" actions={…} />
+<Popover><PopoverTrigger render={<SubmitReviewButton count={2} />}>Submit review</PopoverTrigger><PopoverContent align="end"><ReviewDecision verdicts={…} verdict={v} onVerdictChange={setV} comment={c} onCommentChange={setC} submitLabel="Approve and merge" onSubmit={submit} /></PopoverContent></Popover>`}
+        bare
+      >
+        <div className="flex w-full flex-col gap-6">
+          <PullRequestBriefingDemo />
+          <PullRequestBriefingDemo conflicted />
+        </div>
+      </Spec>
+
+      <Spec
+        id="diffview"
+        title="DiffView · DiffFileTree"
+        meta="diff-view.tsx · diff-file-tree.tsx · file-icon.tsx · diff-stat.tsx"
+        desc="A pull request's Changes on @pierre/diffs, the library DiffsHub runs on: Shiki highlighting, unified or split, long lines wrapped, hunks under their @@ line. A file is a DiffFile: its sticky header (fold chevron, the file's type mark, the path with its folder muted, comments, the DiffStat, Viewed) over its lines. Comments are annotations on one side of one line, drawn as a DiffComment (the review agent's bot glyph or a person's avatar) or a DiffCommentDraft; hovering a line number offers the blue + that starts one. Beside it, DiffFileTree on @pierre/trees: single-child folders flattened, each file's mark and DiffStat, a filter, and how many are viewed. The marks are the trees' published icon set, which FileIcon draws anywhere else."
+        code={`<DiffFile>
+  <DiffFileHeader path={file.path} additions={318} deletions={40} comments={1} collapsed={collapsed} onCollapsedChange={setCollapsed} viewed={viewed} onViewedChange={setViewed} />
+  <DiffView patch={file.patch} layout="unified" annotations={notes} onCommentLine={openDraft} renderAnnotation={({ metadata }) => <DiffComment bot author="Full-review agent" status="Pending">{metadata.text}</DiffComment>} />
+</DiffFile>
+<DiffFileTree files={files} selected={path} onSelect={scrollTo} viewed={1} />`}
+        bare
+      >
+        <DiffDemo />
+      </Spec>
+
+      <Spec
+        id="pranalytics"
+        title="Charts"
+        meta="charts.tsx"
+        desc="The review analytics, in HTML and SVG on the chart tokens: blue, teal and violet, validated as a categorical order for colour-blind separation in both themes. ChartHero is a series' headline figure at 40px mono with its StatDelta. BarChart groups a day's columns (16px at most, 3px apart), labels the days in mono with the month under its first day, and on hover lifts the day, fades the rest and reads its values out above. LineChart draws two series with a crosshair, a dot per series and ticks on the right. RingChart shows shares of a whole with rounded, gapped arcs and the total inside; ChartRow is its legend row. BarList ranks reasons on a share bar with the previous value. Values sit in text ink, never the series colour, and every multi-series chart has a ChartLegend."
+        code={`<BarChart series={[{ key: 'created', label: 'Created', tone: 'chart-1' }, { key: 'merged', label: 'Merged', tone: 'chart-2' }]} data={days} aria-label="Pull requests per day" />
+<LineChart series={series} points={weeks} ticks={[0, 1, 2, 3, 4]} format={(h) => \`\${h}h\`} aria-label="Median wait" />
+<RingChart label="Merged" value={214} segments={[{ key: 'quick', label: 'Quick', value: 118, tone: 'chart-1' }, …]} />`}
+        bare
+      >
+        <PullRequestAnalyticsDemo />
       </Spec>
 
       <GroupHead>Settings</GroupHead>

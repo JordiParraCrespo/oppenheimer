@@ -38,6 +38,16 @@ export {
   CardHeader,
   CardTitle,
 } from './components/card';
+export type { BarDatum, ChartSeries, ChartTone, LinePoint } from './components/charts';
+export {
+  BarChart,
+  BarList,
+  ChartHero,
+  ChartLegend,
+  ChartRow,
+  LineChart,
+  RingChart,
+} from './components/charts';
 export { Checkbox } from './components/checkbox';
 export type { ChipProps } from './components/chip';
 export { Chip, chipVariants, FilterChip } from './components/chip';
@@ -92,6 +102,18 @@ export {
   DialogTitle,
   DialogTrigger,
 } from './components/dialog';
+export type { DiffTreeFile } from './components/diff-file-tree';
+export { DiffFileTree } from './components/diff-file-tree';
+export { DiffStat } from './components/diff-stat';
+export type { DiffAnnotation, DiffLayout } from './components/diff-view';
+export {
+  DiffComment,
+  DiffCommentDraft,
+  DiffCommentLink,
+  DiffFile,
+  DiffFileHeader,
+  DiffView,
+} from './components/diff-view';
 export { Disclosure, DisclosurePanel, DisclosureTrigger } from './components/disclosure';
 export type {
   DragData,
@@ -159,6 +181,7 @@ export {
 } from './components/field';
 export type { FieldSelectOption } from './components/field-select';
 export { FieldSelect, FieldSelectGroup, FieldSelectRow } from './components/field-select';
+export { FileIcon } from './components/file-icon';
 export { GoalCard, GoalEmpty, GoalGrid } from './components/goal-card';
 export type { HostCardOffline, HostCardStatus } from './components/host-card';
 export { HostCard } from './components/host-card';
@@ -181,6 +204,8 @@ export type { InputProps } from './components/input';
 export { Input, inputVariants } from './components/input';
 export { Kbd } from './components/kbd';
 export { Link } from './components/link';
+export type { MergeStep, MergeStepState } from './components/merge-path';
+export { MergePath } from './components/merge-path';
 export type { CalendarEntryData, CalendarEntryKind } from './components/month-calendar';
 export { CalendarEntry, MonthCalendar } from './components/month-calendar';
 export {
@@ -194,6 +219,7 @@ export {
   PageHeaderStat,
   PageHeaderTitleInput,
 } from './components/page-header';
+export { Panel, PanelGrid } from './components/panel';
 export { PasswordInput } from './components/password-input';
 export type { PermissionLevel, PermissionOption } from './components/permission-menu';
 export { PermissionMenu } from './components/permission-menu';
@@ -207,7 +233,22 @@ export {
   PopoverTitle,
   PopoverTrigger,
 } from './components/popover';
-export { Rail, RailItem, RailMark } from './components/rail';
+export { Prose } from './components/prose';
+export type { PullRequestState } from './components/pull-request-header';
+export { PullRequestHeader } from './components/pull-request-header';
+export type {
+  PullRequestCheck,
+  PullRequestConflict,
+  PullRequestLane,
+} from './components/pull-request-table';
+export {
+  LaneBadge,
+  MergeButton,
+  PullRequestRow,
+  PullRequestTable,
+  PullRequestTableHead,
+} from './components/pull-request-table';
+export { Rail, RailItem, RailMark, SortableRailItem } from './components/rail';
 export type { RepositoryAddOption } from './components/repository-add-field';
 export { RepositoryAddField } from './components/repository-add-field';
 export type {
@@ -222,6 +263,8 @@ export type {
   RepositoryScope,
 } from './components/repository-select';
 export { RepositorySelect } from './components/repository-select';
+export type { ReviewVerdict } from './components/review-decision';
+export { ReviewDecision, SubmitReviewButton } from './components/review-decision';
 export type { RoutineRunState } from './components/routine-item';
 export {
   RoutineItem,
@@ -307,6 +350,8 @@ export { Skeleton } from './components/skeleton';
 export type { SlugStatus } from './components/slug-input';
 export { SlugInput } from './components/slug-input';
 export { Toaster, toast } from './components/sonner';
+export type { StatTone } from './components/stat-card';
+export { FactGrid, FactTile, StatBar, StatCard, StatDelta } from './components/stat-card';
 export type { StatusState } from './components/status-dot';
 export { dotVariants, STATUS_LABEL, StatusDot } from './components/status-dot';
 export { StepHeader } from './components/step-header';

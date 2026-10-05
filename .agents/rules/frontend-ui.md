@@ -74,6 +74,13 @@ multi-line, so a grep for `export` misses most of them.
 | Picking a day | `DatePicker` | `<input type="date">`, a `ChipSelect` of dates |
 | A page that opens on its own name with a line of counts | `PageHeaderRow size="display"` + `PageHeaderStat`s in `PageHeaderMeta indent={false}` | a hand-built `h1` and a paragraph |
 | The bar over a session's terminal | `SessionPaneHeader` (and `SessionPaneBack` from a task) | a row of spans over the `Terminal` |
+| The pull requests waiting on someone | `PullRequestTable` with `PullRequestRow`s (`LaneBadge`, `MergeButton`) | a `RoutineTable`, a hand-built grid |
+| A pull request's opening, numbers and way to merge | `PullRequestHeader`, `StatCard` (+ `StatBar`, `StatDelta`), `MergePath`, `Panel` | a `Card` of `div`s, a `Stepper` |
+| Submitting a review | `ReviewDecision` in a `Popover` from `SubmitReviewButton` | a `Dialog`, a `DropdownMenu` of verdicts |
+| A diff, its comments and its files | `DiffFile` + `DiffFileHeader` + `DiffView` (`DiffComment`, `DiffCommentDraft`), `DiffFileTree` | a `<pre>`, a diff library imported in a feature |
+| A file's type mark | `FileIcon` | a copied logo, an extension in text |
+| Rendered markdown someone wrote | `Prose` | `dangerouslySetInnerHTML` into an unstyled `div` |
+| Counts over time, shares of a whole, ranked reasons | `BarChart`, `LineChart`, `RingChart`, `BarList` | a chart library, `RunHistory` stretched |
 | A choice that exists but cannot be picked now (an offline host) | a `disabled` `ChipSelect` option whose `description` says why | hiding it, an error after the pick |
 
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat

@@ -6,6 +6,10 @@ import {
   BarChart3Icon,
   BotIcon,
   CalendarDaysIcon,
+  ChartColumnIcon,
+  FileDiffIcon,
+  FileTextIcon,
+  GitPullRequestIcon,
   ChevronDownCircleIcon,
   CircleCheckIcon,
   CircleDotIcon,
@@ -172,6 +176,15 @@ export const TOC: TocGroup[] = [
       { id: 'taskboard', label: 'TaskBoard · GoalCard', icon: KanbanIcon, components: ['task-board', 'goal-card'] },
       { id: 'calendar', label: 'MonthCalendar', icon: CalendarDaysIcon, components: ['month-calendar', 'calendar-source'] },
       { id: 'plandialogs', label: 'Task & session dialogs', icon: AppWindowIcon, components: [] },
+    ],
+  },
+  {
+    group: 'Pull requests',
+    items: [
+      { id: 'prqueue', label: 'PullRequestTable', icon: GitPullRequestIcon, components: ['pull-request-table'] },
+      { id: 'prbriefing', label: 'Briefing · ReviewDecision', icon: FileTextIcon, components: ['pull-request-header', 'stat-card', 'merge-path', 'panel', 'review-decision', 'prose'] },
+      { id: 'diffview', label: 'DiffView · DiffFileTree', icon: FileDiffIcon, components: ['diff-view', 'diff-file-tree', 'file-icon', 'diff-stat'] },
+      { id: 'pranalytics', label: 'Charts', icon: ChartColumnIcon, components: ['charts'] },
     ],
   },
   {

@@ -203,6 +203,23 @@
     --term-magenta: #6a4bdb;
     --term-cyan: #00808d;
 
+    /* File-type marks (`FileIcon`, `DiffFileTree`) wear their language's hue,
+       the way an agent wears its vendor's: an identity, never a state. The
+       hues are the published icon set's own (@pierre/trees), named here so
+       the tree's shadow DOM and the header's mark read one source. */
+    --file-icon-gray: #84848a;
+    --file-icon-red: #d52c36;
+    --file-icon-orange: #d47628;
+    --file-icon-yellow: #d5a910;
+    --file-icon-green: #199f43;
+    --file-icon-teal: #17a5af;
+    --file-icon-cyan: #1ca1c7;
+    --file-icon-blue: #1a85d4;
+    --file-icon-indigo: #693acf;
+    --file-icon-purple: #a631be;
+    --file-icon-pink: #d32a61;
+    --file-icon-mauve: #594c5b;
+
     /* ---- Elevation ----------------------------------------------------
        Surfaces never cast shadows; depth is tonal. Only three transient
        layers detach from the page, all soft and ambient, never directional. */
@@ -473,8 +490,8 @@
     --sidebar-item-active: rgba(255, 255, 255, 0.1);
 
     --chart-1: var(--op-blue-400);
-    --chart-2: #39d6e6;
-    --chart-3: #a68cff;
+    --chart-2: #0fa89a; /* validated against --chart-1 on the dark card: L in band, ΔE ≥ 15 */
+    --chart-3: #9473ff; /* with --chart-1 and --chart-2, the validated categorical three on the dark card */
     --chart-4: var(--op-green-400);
     --chart-5: var(--op-amber-400);
     --chart-grid: #2a2a2d;
@@ -497,6 +514,19 @@
     --term-selection: rgba(41, 151, 255, 0.24);
     --term-magenta: var(--op-violet-500);
     --term-cyan: var(--op-teal-500);
+
+    --file-icon-gray: #adadb1;
+    --file-icon-red: #ff6762;
+    --file-icon-orange: #ffa359;
+    --file-icon-yellow: #ffd452;
+    --file-icon-green: #5ecc71;
+    --file-icon-teal: #64d1db;
+    --file-icon-cyan: #68cdf2;
+    --file-icon-blue: #69b1ff;
+    --file-icon-indigo: #9d6afb;
+    --file-icon-purple: #d568ea;
+    --file-icon-pink: #ff678d;
+    --file-icon-mauve: #79697b;
 
     --shadow-popover: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 32px -8px rgba(0, 0, 0, 0.7);
     --shadow-modal: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 32px 80px -16px rgba(0, 0, 0, 0.8);
