@@ -10,7 +10,7 @@ import {
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { ElapsedClock } from '../components/elapsed-clock';
+import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
@@ -131,7 +131,7 @@ export function SessionTerminal({ sessionId, hostId }: { sessionId: string; host
           <HostLinkChrome
             elapsed={
               phase === 'offline' && awaySince !== null ? (
-                <ElapsedClock since={new Date(awaySince)} ticking />
+                <TimeAway since={new Date(awaySince)} />
               ) : undefined
             }
             fix={<HostLinkFix host={host} />}
