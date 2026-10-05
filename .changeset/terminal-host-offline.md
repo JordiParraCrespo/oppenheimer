@@ -12,5 +12,10 @@ when the host is back.
   `hostPresence` poll Settings → Hosts uses.
 - `@oppenheimer/web`: `useTerminal` takes `hostId`; while the link is offline
   it watches that host and redials once a poll answered after the drop finds it
-  online. The pane shows `HostOfflineNotice` instead of offering Retry now.
-- `@oppenheimer/translations`: `sessions.session.offline.*`.
+  online. The band under the terminal is the design system's
+  `HostLinkChrome`: a banner while the host is away (offline, catching up,
+  reconnected) with the time offline and How to fix, which opens the commands
+  to copy and the link to Settings → Hosts. Retry now is offered only for a
+  blip.
+- `@oppenheimer/translations`: `sessions.session.hostLink.*`; the stream's
+  status words other than `closed` go.
