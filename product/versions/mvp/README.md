@@ -598,3 +598,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   first version, absorbing what `next-steps/` called 0.3 Kanban; Google
   Calendar is read-only first, personal events stay, only attaching a
   session moves a card, and Queued is a console label.
+- 2026-10-05: **Plan ships live, as built** (17 "As built"). No `plan`
+  flag; no `GET /tasks/summary` (the board's read serves the counts); a
+  session started from a task is a person's, linked with `started`; the
+  calendar computes automation runs from the automations list; event
+  times are wall-clock; archiving a project is not blocked by its tasks.

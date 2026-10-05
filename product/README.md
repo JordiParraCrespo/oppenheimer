@@ -327,3 +327,9 @@ earlier note:
 - `next-steps/` placed a kanban board in 0.3. On 2026-10-05 the design
   export drew it as Plan (tasks, goals, a calendar) and the owner put it
   in the MVP (`versions/mvp/17-plan.md`); 0.2 with pull requests is next.
+- 17 and 19 put Plan behind a `plan` release flag, with a task summary
+  endpoint, a `'task'` session origin and an automation occurrences
+  endpoint. The first version shipped with none of them: no flag, the
+  board's one read serves every count, a task's session is a person's and
+  its link records the task, and the console computes automation runs
+  (`versions/mvp/17-plan.md`, "As built").

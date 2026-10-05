@@ -50,6 +50,7 @@ export function TasksSidebar() {
           icon={<Layers />}
           meta={total === undefined ? undefined : String(total)}
           active={!project}
+          nativeButton={false}
           render={<Link to="/plan" />}
         />
         {projects.isPending ? (
@@ -69,6 +70,7 @@ export function TasksSidebar() {
                 icon={<Folder />}
                 meta={String(open?.get(row.id) ?? 0)}
                 active={project === row.slug}
+                nativeButton={false}
                 render={<Link to="/plan" search={{ project: row.slug }} />}
               />
             ))}
@@ -78,6 +80,7 @@ export function TasksSidebar() {
                 icon={<Inbox />}
                 meta={String(open?.get(unassigned.id) ?? 0)}
                 active={project === UNASSIGNED_SLUG}
+                nativeButton={false}
                 render={<Link to="/plan" search={{ project: UNASSIGNED_SLUG }} />}
               />
             ) : null}

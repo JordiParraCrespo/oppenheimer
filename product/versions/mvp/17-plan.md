@@ -20,9 +20,9 @@ the control plane and the console make it true. The product word is
 
 ## Slices
 
-Built in this order, each usable on its own, behind the `plan` release
-flag (one row in `packages/shared/src/feature-flags/catalog.ts`) until
-the last one lands.
+Built in this order, each usable on its own. The plan was to keep them
+behind a `plan` release flag until the last one landed; the first
+version shipped all four at once with no flag (decided 6).
 
 1. **Board.** Tasks and goals: tables, CRUD, reorder, the board, the task
    and goal dialogs, the project filter, the rail item and its open
@@ -61,5 +61,42 @@ the last one lands.
    launch dialog and on the card's session line; session state does not
    change (19 §7).
 
+6. **No `plan` flag.** The first version ships the four slices together
+   and live, so there is nothing to hide while the rest lands. The
+   routes carry their policies and scopes like any other.
+
 Each note keeps its own smaller open questions; the decisions above are
 logged in `README.md`.
+
+## As built (first version)
+
+Where the build differs from 18–20 as written. The notes keep their text
+and point here.
+
+- **No flag** (decided 6): 19 §8 and the "behind the `plan` flag" lines
+  in 20 no longer hold.
+- **No summary endpoint.** The board, the sidebar's counts and the rail's
+  open count are one read, `GET /tasks`, which the console already holds
+  for the columns; `GET /tasks/summary` (19 §3) was not needed.
+- **A session started from a task is a person's session**
+  (`origin: 'person'`), started through the sessions module's own
+  `CreateSessionCommand` with the idempotency key `task:<id>:<key>`. The
+  link (`task_session.origin = 'started'`) is what says it came from a
+  task; the sessions module gained no `'task'` origin (19 §6).
+- **Automation runs on the calendar are computed in the console** from
+  the automations list it already reads: each schedule trigger carries its
+  rule and zone, and `nextScheduleOccurrence` (`packages/shared`) places
+  the runs for the month, as the scheduler would. Hourly rules are left
+  off the grid. There is no `GET /automations/occurrences` (20 §3).
+- **Event times are wall-clock**, like a task's due date: a day, and a
+  start and an end on it as `HH:MM`, read in the viewer's zone. Google's
+  events are asked for in the viewer's zone so both layers draw alike.
+- **Archiving a project is not blocked by its tasks** (18 §6, 19 §2): the
+  console leaves an archived project's tasks off its filter, and they keep
+  their project. Revisit if open tasks on archived projects confuse people.
+- **The sealer's key** is `CALENDAR_TOKEN_KEY`, 32 bytes in base64 (20 §5),
+  and the Google redirect URI is `${FRONTEND_URL}/plan/calendar/google`, a
+  console route that posts the code to the API.
+- **Not built yet:** dragging an event or a task on the calendar, and a
+  Settings → Integrations page; the Google card in the calendar's sidebar
+  is the one place to connect and disconnect.

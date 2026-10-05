@@ -44,7 +44,8 @@ new feature. Before creating anything, answer these:
   `packages/frontend/core` (`auth`, `users`, `user-settings`, `capabilities`,
   `analytics`, `feature-flags`) or of the product package
   `packages/frontend/consumer` (`sessions`, `hosts`, `projects`,
-  `installations`, `automations`, `organizations`, `profile`, `permissions`),
+  `installations`, `automations`, `tasks`, `calendar`, `organizations`,
+  `profile`, `permissions`),
   or is on the app's allowlist (`public`: pages that render no entity). Never
   name it after a page (`settings`, `console`, `home`).
   `ls packages/frontend/*/src/modules` shows what exists.

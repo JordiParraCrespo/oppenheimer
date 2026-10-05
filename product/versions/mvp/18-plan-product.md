@@ -124,7 +124,8 @@ for, and a session is where it gets done.
 - **Who.** Workspaces are personal, so tasks have no assignee. Every row
   records who created it, so teams later add an assignee column, not a
   migration of meaning.
-- **Archived projects.** Archiving is already refused while a project
+- **Archived projects.** (As built, archiving is not blocked by tasks;
+  see 17 "As built".) Archiving is already refused while a project
   has open sessions; it is also refused while it has open tasks (not
   Done), with the same "move or finish them first" copy. Its Done tasks
   and its goals stay, and leave the board with the project.

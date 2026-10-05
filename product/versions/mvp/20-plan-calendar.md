@@ -19,7 +19,9 @@ each owned by the module whose rows they are:
 
 A layer toggle is a query enabled or not, each read is cached in the
 console's query client for the open month, and nothing on the server
-joins across modules. Every route here is behind the `plan` flag (19 §8).
+joins across modules. Every route here was to be behind the `plan`
+flag (19 §8); as built there is none, and the automations layer is
+computed in the console (17 "As built").
 
 ## 1. What each item does
 
@@ -69,6 +71,11 @@ The event dialog: title, notes, date, All day, start and end on a
 (`calendar:read`, `calendar:write`).
 
 ## 3. Automation occurrences
+
+> As built, the console computes the occurrences from the automations
+> list with the same `nextScheduleOccurrence`; there is no endpoint, and
+> past runs are not drawn yet (17 "As built"). The design below stands
+> for when the month should show what actually ran.
 
 `automations` gains a query, `GET /automations/occurrences?from&to`,
 that walks each active schedule trigger with the shared

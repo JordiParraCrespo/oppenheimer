@@ -122,7 +122,7 @@ schemas in `packages/shared/src/schemas/task.schema.ts` and
 | Method and path | Use |
 |-----------------|-----|
 | `GET /tasks?projectId&goalId&status&dueFrom&dueTo&sessionId` | The board (all statuses, ordered), the calendar's due layer, the session header's lookup |
-| `GET /tasks/summary` | Raw counts per project and status, for the header, sidebar and rail |
+| `GET /tasks/summary` | Raw counts per project and status, for the header, sidebar and rail (not built: the counts come from `GET /tasks`; 17 "As built") |
 | `POST /tasks` | Create (title, notes, status, projectId, goalId, dueDate, dueTime) |
 | `PATCH /tasks/:id` | Edit fields |
 | `POST /tasks/:id/move` | `{ status, afterId?, beforeId? }` or `{ status, position: 'first' \| 'last' }` |
@@ -175,7 +175,9 @@ same session back and re-runs step 3, which is idempotent on the
 Link existing (`PUT /tasks/:id/sessions/:sessionId`) is step 3 alone,
 with `origin = 'linked'`.
 
-The sessions module adds `'task'` to the session `origin` values
+As built, the session is a person's (`origin: 'person'`) and the link
+is what records that it came from a task (17 "As built"). The plan was:
+the sessions module adds `'task'` to the session `origin` values
 (`work_session.origin` is `varchar(16)` already) and nothing else; it
 does not know tasks exist.
 
@@ -209,6 +211,9 @@ person's session should probably not expire silently. Proposed: no
 expiry.
 
 ## 8. Feature flag and rollout
+
+> As built, there is no `plan` flag: the first version shipped live
+> (17, decided 6). The rest of this section is the plan as it stood.
 
 `plan` (release flag, temporary, with an expiry in the catalog) gates the
 rail item, the routes, and every Plan controller (`@RequireFlag('plan')`

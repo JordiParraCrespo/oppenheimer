@@ -21,12 +21,14 @@ export function PlanNav() {
         icon={<CircleCheck />}
         meta={open === undefined ? undefined : String(open)}
         active={!onCalendar}
+        nativeButton={false}
         render={<Link to="/plan" />}
       />
       <RoutineItem
         name={t('tasks.nav.calendar')}
         icon={<CalendarDays />}
         active={onCalendar}
+        nativeButton={false}
         render={<Link to="/plan/calendar" />}
       />
     </nav>

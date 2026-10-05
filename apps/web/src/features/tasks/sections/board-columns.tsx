@@ -220,7 +220,9 @@ export function BoardColumns() {
                     onDragStart={(event) => {
                       event.dataTransfer.effectAllowed = 'move';
                       event.dataTransfer.setData('text/plain', task.id);
-                      setDragging(task.id);
+                      // After the drag has begun: Chromium cancels a drag whose
+                      // source re-renders inside its own dragstart.
+                      requestAnimationFrame(() => setDragging(task.id));
                     }}
                     onDragEnd={() => {
                       setDragging(null);
