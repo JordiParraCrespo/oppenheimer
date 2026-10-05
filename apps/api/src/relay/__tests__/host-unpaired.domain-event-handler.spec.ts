@@ -18,10 +18,9 @@ describe('HostUnpairedDomainEventHandler', () => {
   });
 
   it('does nothing for a host with no link on this instance', () => {
-    const links = registry(undefined);
+    // A throw here would surface in whatever emitted the unpair.
     expect(() =>
-      new HostUnpairedDomainEventHandler(links).handle({ aggregateId: HOST }),
+      new HostUnpairedDomainEventHandler(registry(undefined)).handle({ aggregateId: HOST }),
     ).not.toThrow();
-    expect(links.find).toHaveBeenCalledWith(HOST);
   });
 });

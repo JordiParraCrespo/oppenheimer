@@ -1,23 +1,12 @@
 {
   "common": {
     "appName": "Oppenheimer",
-    "back": "Back",
     "cancel": "Cancel",
     "close": "Close",
-    "confirm": "Confirm",
-    "controlAppName": "Oppenheimer Control",
     "copied": "Copied",
     "copy": "Copy",
-    "create": "Create",
-    "delete": "Delete",
-    "edit": "Edit",
-    "error": "Something went wrong",
-    "github": "GitHub",
-    "google": "Google",
     "loading": "Loading...",
-    "next": "Next",
     "or": "or",
-    "orContinueWith": "Or continue with",
     "product": "Console",
     "relative": {
       "day": "{{count}}d",
@@ -28,18 +17,47 @@
       "week": "{{count}}w",
       "year": "{{count}}y"
     },
-    "save": "Save",
-    "search": "Search"
+    "dismiss": "Dismiss",
+    "breadcrumb": "Breadcrumb",
+    "dateField": {
+      "none": "No date",
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "clear": "Clear",
+      "choose": "Choose a date"
+    },
+    "timeField": {
+      "none": "No time",
+      "hour": "Hour",
+      "minute": "Minute",
+      "clear": "Clear"
+    },
+    "drag": {
+      "instructions": "To pick up an item, press space or enter. Use the arrow keys to move it, space or enter to drop it, and escape to cancel.",
+      "pickedUp": "Picked up {{name}}.",
+      "over": "{{name}} is over {{target}}.",
+      "nowhere": "{{name}} is not over a place it can go.",
+      "dropped": "{{name}} was dropped on {{target}}.",
+      "droppedNowhere": "{{name}} was dropped.",
+      "cancelled": "Moving {{name}} was cancelled."
+    }
   },
   "validation": {
-    "title": "Validation error",
     "required": "This field is required",
     "email": "Enter a valid email address",
     "minLength": "Must be at least {{min}} characters",
     "maxLength": "Must be at most {{max}} characters",
     "minItems": "Select at least {{min}}",
     "maxItems": "Select at most {{max}}",
-    "url": "Enter a valid URL, including https://"
+    "url": "Enter a valid URL, including https://",
+    "invalid": "This value is not valid",
+    "format": "This is not in the expected format",
+    "choice": "Choose one of the options",
+    "date": "Enter a valid date",
+    "min": "Must be at least {{min}}",
+    "max": "Must be at most {{max}}",
+    "multipleOf": "Must be a multiple of {{step}}",
+    "tooLong": "This is too long"
   },
   "errors": {
     "fallback": "Something went wrong. Please try again.",
@@ -50,6 +68,8 @@
       "AUTH_001": "Please sign in to continue.",
       "AUTH_002": "You do not have permission to do that.",
       "USER_001": "That user could not be found.",
+      "USER_002": "That username is already taken. Try another.",
+      "USER_003": "Type your email address exactly to confirm.",
       "TOKEN_001": "That API token could not be found.",
       "TOKEN_002": "You cannot grant a token more access than you have yourself.",
       "TOKEN_003": "That API token is invalid or has expired.",
@@ -104,8 +124,10 @@
       "ROLE_005": "You cannot give a role more access than you have yourself.",
       "ROLE_006": "That role belongs to another organization.",
       "ROLE_007": "This deployment is missing a system role it needs. Run the database migrations.",
-      "AUTHZ_001": "You are not a member of that organization.",
+      "ROLE_008": "Switch to an organization to create a role in it.",
       "AUTHZ_002": "Something is misconfigured on the server. Please try again later.",
+      "AUTHZ_003": "That organization id is not valid.",
+      "AUTHZ_004": "Something is misconfigured on the server. Please try again later.",
       "GRANT_001": "That access grant could not be found.",
       "GRANT_002": "You cannot grant more access than you have yourself.",
       "GRANT_003": "That person or team is not part of this organization.",
@@ -121,6 +143,7 @@
       "GITHUB_008": "That GitHub installation is suspended or no longer installed.",
       "GITHUB_009": "GitHub did not answer. Try again in a moment.",
       "GITHUB_010": "That repository is not one this GitHub installation covers.",
+      "GITHUB_011": "That GitHub link was not started here. Connect GitHub again from this page.",
       "PROJECTS_001": "That project could not be found.",
       "PROJECTS_002": "Choose a workspace before working with projects.",
       "PROJECTS_003": "Projects cannot be archived right now. Try again in a moment.",
@@ -145,7 +168,7 @@
       "HOSTS_003": "That registration token was refused. Mint a new one and try again.",
       "HOSTS_004": "Hosts are not set up on this server yet.",
       "HOSTS_005": "That host could not prove who it is.",
-      "HOSTS_006": "You already have several unused pairing tokens. Pair a machine with one, or wait for them to expire; each lasts an hour.",
+      "HOSTS_006": "You already have several unused pairing tokens. Pair a machine with one, or wait for them to expire; each expires soon after it is created.",
       "ADMIN_009": "That session no longer exists for this user.",
       "PROFILE_001": "We could not find your profile.",
       "PROFILE_002": "That current password is not right.",
@@ -155,8 +178,11 @@
       "PROFILE_006": "That new password is not strong enough.",
       "PROFILE_007": "You cannot sign out the device you are using right now.",
       "PROFILE_008": "We could not reach the account service. Please try again.",
+      "PROFILE_009": "That is already your email address.",
       "PROFILE_CLIENT_010": "That file type cannot be used as a profile picture.",
       "PROFILE_CLIENT_011": "That image is too large. Pick one under 2 MB.",
+      "PROFILE_CLIENT_012": "We could not send the confirmation to that address.",
+      "PROFILE_CLIENT_013": "We could not delete your account. Nothing was removed.",
       "FLAG_001": "That feature flag does not exist.",
       "FLAG_002": "Those targeting rules are not valid for this flag.",
       "FLAG_003": "This feature is not available right now.",
@@ -164,13 +190,54 @@
       "FLAG_005": "A segment with that key already exists.",
       "FLAG_006": "That segment is still used by a flag. Remove it from the flag's rules first.",
       "FLAG_007": "Those segment conditions are not valid.",
-      "SESSIONS_012": "That image is over 5 MB. Crop it or save it smaller, then paste it again.",
-      "SESSIONS_013": "Only PNG, JPEG, GIF and WebP images can be pasted into a session.",
-      "SESSIONS_014": "This session is stopped. Restart it to paste an image into its prompt.",
-      "SESSIONS_015": "No image was attached. Paste or drop the image again.",
-      "SESSIONS_016": "This session's host is offline, so the image was not sent.",
-      "SESSIONS_017": "This session's host needs a newer runner before it can take images. Update the runner, then paste again.",
-      "HOSTS_007": "No image is waiting for that command."
+      "SESSIONS_012": "That file is over 5 MB. Save a smaller copy, then try again.",
+      "SESSIONS_013": "A session takes images (PNG, JPEG, GIF, WebP), PDFs and text files. Executables, archives, scripts, SVG and HTML are refused.",
+      "SESSIONS_014": "This session is stopped. Restart it to give its prompt a file.",
+      "SESSIONS_015": "No file was attached. Paste or drop the file again.",
+      "SESSIONS_016": "The host is offline, so the file was not sent.",
+      "SESSIONS_017": "This host needs a newer runner before it can take that file. Update the runner, then try again.",
+      "SESSIONS_019": "An attached file expired before the session started. Send again to upload it anew.",
+      "SESSIONS_020": "You have too many files waiting. Send or remove some, then attach again.",
+      "HOSTS_007": "No file is waiting for that command.",
+      "AUTOMATIONS_001": "That automation doesn't exist, or it was deleted.",
+      "AUTOMATIONS_002": "Choose a workspace before working with automations.",
+      "AUTOMATIONS_003": "Someone saved this automation since you opened it. Reload it and try again.",
+      "AUTOMATIONS_004": "One of the repositories isn't available to this workspace.",
+      "AUTOMATIONS_005": "That agent can't run an automation.",
+      "AUTOMATIONS_006": "A trigger would never fire. Pick a later time.",
+      "AUTOMATIONS_007": "That project can't hold automations.",
+      "AUTOMATIONS_008": "That run doesn't exist.",
+      "TASKS_001": "That task doesn't exist, or it was deleted.",
+      "TASKS_002": "That goal doesn't exist, or it was deleted.",
+      "TASKS_003": "Choose a workspace before working with tasks.",
+      "TASKS_004": "That project can't take tasks. It may have been archived.",
+      "TASKS_005": "That session doesn't exist, or it is in another workspace.",
+      "TASKS_006": "The board changed while you were moving that task. It has been reloaded; try again.",
+      "TASKS_007": "That goal belongs to another project.",
+      "CALENDAR_001": "That event doesn't exist, or it was deleted.",
+      "CALENDAR_002": "Choose a workspace before working with the calendar.",
+      "CALENDAR_003": "That's too many days to show at once.",
+      "CALENDAR_004": "Google Calendar isn't set up on this server.",
+      "CALENDAR_005": "That Google Calendar connection expired. Connect again.",
+      "CALENDAR_006": "Google didn't share your calendar. Connect again and allow calendar access.",
+      "CALENDAR_007": "Google Calendar isn't connected. Connect it again.",
+      "CALENDAR_008": "Google Calendar didn't answer. Try again in a moment.",
+      "CALENDAR_009": "An event has to end after it starts.",
+      "INBOUND_001": "That event source isn't known.",
+      "INBOUND_002": "The delivery carries no delivery id.",
+      "SESS_001": "The host has no record of that session.",
+      "SESS_002": "The host could not start a session with those settings.",
+      "SESS_003": "That session is not running on its host.",
+      "SESS_004": "The host already has a session in that worktree.",
+      "SESS_005": "The host could not give that file to the session.",
+      "TMUX_001": "tmux is not installed on the host. Install it, then try again.",
+      "TMUX_002": "tmux on the host refused to start the session.",
+      "GIT_001": "The host could not prepare the worktree.",
+      "GIT_002": "A git command failed on the host.",
+      "GIT_003": "The branch could not be pushed.",
+      "GIT_004": "The host cannot reach that repository. Check that the GitHub App has access to it.",
+      "GIT_005": "A git command on the host took too long and was stopped.",
+      "CONSENT_CLIENT_002": "The server did not say where to send you next."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -180,7 +247,8 @@
     "unexpected": {
       "title": "This screen could not be drawn",
       "retry": "Try again"
-    }
+    },
+    "code": "Code: {{code}}"
   },
   "auth": {
     "email": "Email",
@@ -199,11 +267,8 @@
       "signUp": "Create one",
       "invalidCredentials": "Invalid email or password",
       "noSocialProviders": "Social sign-in is not configured on this deployment. Set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET or GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET on the API to enable it.",
-      "failedTitle": "Login failed",
-      "failedMessage": "Could not sign in.",
       "continueWithGithub": "Continue with GitHub",
       "continueWithGoogle": "Continue with Google",
-      "keepSignedIn": "Keep me signed in",
       "socialFailed": "Could not start social sign-in. Try again, or sign in with your email and password."
     },
     "register": {
@@ -215,8 +280,6 @@
       "hasAccount": "Already have an account?",
       "signIn": "Sign in",
       "failed": "Registration failed",
-      "successTitle": "Account created",
-      "successMessage": "You can now sign in.",
       "passwordHint": "Twelve characters minimum."
     },
     "forgotPassword": {
@@ -225,15 +288,14 @@
       "submit": "Send reset link",
       "submitting": "Sending...",
       "successTitle": "Check your email",
-      "successMessage": "If an account exists with that email, you will receive a reset link shortly.",
       "backToSignIn": "Back to sign in",
       "error": "Something went wrong",
       "legal": "Only members of this workspace can reset a password.",
-      "notReceived": "Didn't get it? Check your spam folder, or <retry>try another email</retry>.",
       "sentMessage": "We sent a password reset link to <address>{{email}}</address>. It expires in 30 minutes.",
       "emailLabel": "Work email",
       "resend": "Resend link",
-      "differentAddress": "Use a different address"
+      "differentAddress": "Use a different address",
+      "resendFailed": "Could not send the email again. Try again in a moment."
     },
     "resetPassword": {
       "title": "Set a new password",
@@ -247,7 +309,6 @@
       "requestNewLink": "Request a new link",
       "successTitle": "Password updated",
       "successMessage": "You can now sign in.",
-      "failedTitle": "Reset failed",
       "error": "Could not reset password",
       "confirmPassword": "Confirm password",
       "confirmPasswordPlaceholder": "Re-enter the password",
@@ -296,90 +357,63 @@
       "failed": "That sign-in didn't complete. Try again, or use your email and password.",
       "noAccount": "There's no account here for that sign-in yet. Create one below — the provider buttons will do it in one step."
     },
-    "passwordRules": {
-      "length": "At least 12 characters",
-      "match": "Both passwords match"
-    },
     "showPassword": "Show password",
     "legal": "By continuing you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>.",
     "passwordsDoNotMatch": "Passwords do not match"
   },
   "projects": {
-    "page": {
+    "dialog": {
       "newTitle": "New project",
       "editTitle": "Project settings",
-      "name": "Project name",
-      "namePlaceholder": "Name this project",
-      "back": "Back",
-      "crumbSessions": "Sessions",
-      "crumbNewSession": "New session",
+      "gone": "That project is no longer here.",
+      "name": "Name",
+      "namePlaceholder": "Name your project",
+      "repositories": "Repositories",
+      "addRepository": "Add a repository…",
+      "repositoriesHint": "Sessions in this project can clone these. Add at least one.",
+      "noMatch": "No repository matches “{{query}}”",
+      "allAdded": "Every repository is added",
+      "remove": "Remove {{name}}",
+      "defaults": "Defaults",
+      "optional": "optional",
+      "defaultsHint": "What every new session in this project starts with. Each can be changed per session.",
+      "host": "Host",
+      "noHost": "No host is paired yet.",
+      "agent": "Agent",
+      "clonedByDefault": "Cloned by default",
+      "clonedTitle": "Cloned by default in new sessions",
+      "selectFirst": "Select repositories above first.",
+      "clonedCount_one": "{{count}} cloned",
+      "clonedCount_other": "{{count}} cloned",
+      "branchEmpty": "No branch named “{{query}}”",
       "create": "Create project",
       "creating": "Creating…",
       "save": "Save changes",
       "saving": "Saving…",
       "failed": "The project could not be created.",
       "saveFailed": "The project could not be saved.",
-      "recap": {
-        "name": "Name the project, then pick its repositories.",
-        "repositories": "Pick at least one repository.",
-        "default": "Mark at least one repository as default."
-      },
-      "summary": {
-        "repositories_one": "{{count}} repository · {{defaults}} default",
-        "repositories_other": "{{count}} repositories · {{defaults}} default"
-      },
-      "steps": {
-        "repositories": {
-          "title": "Repositories",
-          "subtitle": "The code sessions in this project can clone.",
-          "label": "Default repositories",
-          "hint": "Ticked in every new session. Add others per session.",
-          "defaultCount": "{{defaults}} of {{count}} by default",
-          "search": "Search repositories…",
-          "noMatch": "No repository matches “{{query}}”.",
-          "none": "No repository is connected yet.",
-          "default": "Default",
-          "defaultTitle": "Cloned by default in new sessions",
-          "branchEmpty": "No branch named “{{query}}”"
-        },
-        "host": {
-          "title": "Default host",
-          "subtitle": "Where new sessions run unless you pick another.",
-          "none": "No host is paired yet."
-        },
-        "agent": {
-          "title": "Default agent",
-          "subtitle": "Started in every new session. Change it per session."
-        }
-      },
-      "delete": {
-        "title": "Delete project",
-        "hint": "Delete this project.",
-        "blocked_one": "Move or delete its {{count}} session first.",
-        "blocked_other": "Move or delete its {{count}} sessions first.",
-        "action": "Delete project",
-        "deleting": "Deleting…",
-        "failed": "The project could not be deleted."
-      },
-      "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted."
+      "delete": "Delete project",
+      "deleteBlocked_one": "This project can’t be deleted while it has {{count}} open session. Move it to another project or delete it first.",
+      "deleteBlocked_other": "This project can’t be deleted while it has {{count}} open sessions. Move them to another project or delete them first.",
+      "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted.",
+      "loadFailed": "Could not load this project."
     },
     "deleteDialog": {
       "title": "Delete {{name}}?",
       "description": "Its sessions stay where they are; a resolved one keeps its directory name for ever. Automations targeting it are paused.",
-      "confirm": "Delete project"
+      "confirm": "Delete project",
+      "deleting": "Deleting…",
+      "failed": "The project could not be deleted."
     },
     "unassigned": "Unassigned"
   },
   "sessions": {
-    "home": {
-      "openTitle": "No session open",
-      "openDescription": "Pick one from the sidebar, or start another."
-    },
     "provisioning": {
       "title": "Starting your session",
       "failedTitle": "The session did not start",
       "failedLead": "The host could not start this session.",
       "working": "Working…",
+      "downloading": "This host has not had this repository before, so it is downloading it first. This one takes a bit longer; later sessions on it start in about a second.",
       "failed": "Failed",
       "took": "{{seconds}}s",
       "steps": {
@@ -392,7 +426,8 @@
         },
         "clone": {
           "label": "Clone {{repo}}",
-          "doing": "Fetching the repository…"
+          "doing": "Fetching the repository…",
+          "downloading": "Downloading the repository…"
         },
         "worktree": {
           "label": "Check out the branch",
@@ -407,22 +442,24 @@
       "progressFailed": "Could not load how the start is going.",
       "codes": {
         "SESS_002": "This host makes sessions with one repository."
-      }
-    },
-    "group": {
-      "working": "Working",
-      "waiting-on-you": "Waiting on you",
-      "ready-for-review": "Ready for review",
-      "landing": "Landing",
-      "idle": "Idle",
-      "resolved": "Done"
+      },
+      "details": "Details from the host: {{detail}}"
     },
     "closed": {
-      "description": "This session has stopped. Its work is on its branch."
+      "description": "This session has stopped. Its work is on {{branch}}, and restarting brings the terminal back where it left off.",
+      "deleted": "This session was deleted. Its worktree is gone from the host; commits already pushed stay on the remote.",
+      "descriptionNoBranch": "This session has stopped. Restarting brings the terminal back where it left off.",
+      "restart": "Restart",
+      "restarting": "Restarting",
+      "restartFailed": "The session could not be restarted."
     },
     "new": {
       "title": "New session",
       "subtitle": "Set the scope, then describe the work.",
+      "subtitleProject_one": "In {{name}} · cloning {{picked}} of {{count}} repository, each on its own opp/ branch.",
+      "subtitleProject_other": "In {{name}} · cloning {{picked}} of {{count}} repositories, each on its own opp/ branch.",
+      "subtitleCloning_one": "In {{name}} · cloning {{count}} repository, on its own opp/ branch.",
+      "subtitleCloning_other": "In {{name}} · cloning {{count}} repositories, each on its own opp/ branch.",
       "host": {
         "label": "Host",
         "placeholder": "Host",
@@ -430,7 +467,8 @@
         "empty": "No host matches.",
         "loading": "Loading hosts…",
         "add": "Add host…",
-        "offline": "Offline"
+        "offline": "Offline",
+        "failed": "Could not load your hosts."
       },
       "project": {
         "label": "Project",
@@ -439,7 +477,8 @@
         "empty": "No project matches.",
         "loading": "Loading projects…",
         "add": "New project…",
-        "noRepositories": "No repositories"
+        "noRepositories": "No repositories",
+        "failed": "Could not load your projects."
       },
       "repository": {
         "label": "Repositories",
@@ -452,8 +491,10 @@
         "branchPane": "Branch for {{name}}",
         "changeBranch": "Change branch",
         "manage": "Manage repository access",
+        "manageFailed": "Could not open GitHub. Try again in a moment.",
         "noApp": "This deployment has no GitHub App, so there are no repositories to pick.",
-        "archived": "Archived"
+        "archived": "Archived",
+        "failed": "Could not load your repositories."
       },
       "branch": {
         "label": "Branch",
@@ -485,11 +526,14 @@
       },
       "effort": {
         "label": "Effort",
+        "none": "Off",
         "minimal": "Minimal",
         "low": "Low",
         "medium": "Medium",
         "high": "High",
+        "xhigh": "Extra high",
         "max": "Max",
+        "ultra": "Ultra",
         "faster": "Faster",
         "smarter": "Smarter",
         "hint": "How long the agent may think before it answers. Higher effort costs more and takes longer."
@@ -497,23 +541,63 @@
       "composer": {
         "placeholder": "Describe a task or ask a question",
         "send": "Send",
-        "stop": "Stop"
+        "stop": "Stop",
+        "attach": "Attach files",
+        "removeAttachment": "Remove {{name}}",
+        "attachTooLarge": "{{name}} is over 5 MB. Save a smaller copy, then attach it again.",
+        "attachTooMany": "A first task carries at most {{max}} files.",
+        "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file."
       },
-      "queued": "Your first task is queued for this host.",
       "failed": "The session could not be created."
     },
     "session": {
       "status": {
-        "connecting": "Connecting",
-        "live": "Live",
-        "offline": "Host offline",
         "closed": "Disconnected"
       },
-      "image": {
-        "sending": "Sending image",
-        "hostOffline": "The image was not sent: the host is offline.",
-        "failedTitle": "The image did not reach the session",
-        "dismiss": "Dismiss"
+      "file": {
+        "sending": "Sending file",
+        "notSupported": "None of the dropped files is one the agent can take. Drop an image, a PDF or a text file.",
+        "failedTitle": "The file did not reach the session"
+      },
+      "retryNow": "Retry now",
+      "retry": "Try again",
+      "ended": {
+        "forbidden": "You do not have access to this session's terminal.",
+        "refused": "The host refused to open this terminal."
+      },
+      "starting": {
+        "title": "Nothing on the grid yet",
+        "description": "The link is up. This fills as soon as the agent draws — a new session once it has started, an older one once its history has replayed."
+      },
+      "hostLink": {
+        "thisHost": "this host",
+        "status": {
+          "live": "Live",
+          "reconnecting": "Connecting to {{host}}…",
+          "offline": "Host offline",
+          "catchingUp": "Catching up on {{host}}…",
+          "reconnected": "Reconnected"
+        },
+        "title": {
+          "offline": "{{host}} is offline",
+          "catchingUp": "Runner is back",
+          "reconnected": "Reconnected"
+        },
+        "line": {
+          "offline": "Reconnects on its own when the runner is back",
+          "catchingUp": "Catching up on output from {{host}}…",
+          "reconnected": "Scrollback is up to date"
+        },
+        "fix": "How to fix",
+        "fixIntro": "Run these on {{host}} itself, not in this terminal, or hand the prompt to Claude Code or Codex on that machine.",
+        "install": "If it is stopped, reinstall and start it:",
+        "statusCommand": "See what is wrong:",
+        "hosts": "Settings → Hosts",
+        "copy": "Copy command",
+        "copied": "Copied",
+        "logCommand": "Read the runner's recent log:",
+        "copyPrompt": "Copy troubleshooting prompt",
+        "prompt": "The Oppenheimer runner on {{host}} has lost its link to Oppenheimer. Help me get it back.\n\n- First tell me which machine you are on (uname -n, whoami). If it is not {{host}}, stop.\n- Run ~/.local/bin/oppenheimer-runner status and show me what it prints.\n- Read the last 50 lines of ~/.oppenheimer/log/runner.log and ~/.oppenheimer/log/runner.err.log\n  and tell me what went wrong.\n- Do not reinstall, uninstall or run anything as root unless I say so. If the service is\n  stopped, propose ~/.local/bin/oppenheimer-runner install and wait for my go-ahead."
       }
     },
     "sidebar": {
@@ -535,7 +619,8 @@
       "moveTitle": "Move to project",
       "moveNone": "No other project holds this session's repository.",
       "delete": "Delete",
-      "writeFailed": "That change did not land. Try again."
+      "writeFailed": "That change did not land. Try again.",
+      "loadFailed": "Could not load your sessions."
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",
@@ -565,15 +650,6 @@
       "recent": "Last activity",
       "oldest": "Oldest first",
       "name": "Name"
-    },
-    "agents": {
-      "claude-code": "Claude Code",
-      "codex": "Codex"
-    },
-    "row": {
-      "actions": "Session actions",
-      "move": "Move to project…",
-      "moveTitle": "Move to project"
     }
   },
   "automations": {
@@ -581,10 +657,17 @@
       "new": "New automation",
       "projects": "Projects",
       "all": "All automations",
+      "search": "Search automations",
+      "clearSearch": "Clear search",
+      "noMatch": "No automations match “{{query}}”.",
       "emptyProject": "No automations yet.",
       "createOne": "Create one",
       "newHere": "New automation in {{name}}",
-      "noProjects": "No project yet. Make one from New session, and its automations gather here."
+      "noProjects": "No project yet. Make one from New session, and its automations gather here.",
+      "noRuns": "No runs yet.",
+      "running": "Running",
+      "paused": "Paused",
+      "loadFailed": "Could not load your automations."
     },
     "page": {
       "tabs": {
@@ -593,16 +676,489 @@
       },
       "new": "New automation",
       "empty": "No automations yet. An automation starts a session on a schedule or when something happens on GitHub.",
-      "runsEmpty": "No runs yet. Each run appears here with the session it started."
+      "runsEmpty": "No runs yet. Each run appears here with the session it started.",
+      "loadFailed": "Automations could not be loaded.",
+      "actionFailed": "That did not go through.",
+      "actionFailedFor": "“{{name}}” was not updated"
+    },
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "running": "Running"
+    },
+    "runStatus": {
+      "queued": "Queued",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "skipped": "Skipped",
+      "expired": "Expired"
+    },
+    "skipReason": {
+      "paused": "Skipped: the automation was paused",
+      "deleted": "Skipped: the automation was deleted",
+      "own_event": "Skipped: the event was our own",
+      "automation_rate_limited": "Skipped: this automation’s hourly limit",
+      "workspace_rate_limited": "Skipped: the workspace’s hourly limit",
+      "overlapping": "Skipped: a run was still going",
+      "missed": "Skipped: the slot was missed",
+      "not_launchable": "Skipped: the session could not start",
+      "agent_unavailable": "Skipped: the agent is not on the host"
+    },
+    "pausedReason": {
+      "user": "Paused. Triggers are ignored until you resume it; Run now still works.",
+      "project_archived": "Paused because its project was deleted. Move it to another project to resume it.",
+      "host_unpaired": "Paused because its host was removed. Pick another host in Edit to resume it.",
+      "owner_lost_access": "Paused because its owner can no longer run it."
+    },
+    "frequency": {
+      "once": {
+        "label": "Once",
+        "desc": "On a chosen date and time"
+      },
+      "hourly": {
+        "label": "Hourly",
+        "desc": "Every hour, at a chosen minute"
+      },
+      "daily": {
+        "label": "Daily",
+        "desc": "Every day at a chosen time"
+      },
+      "weekdays": {
+        "label": "Weekdays",
+        "desc": "Monday to Friday at a chosen time"
+      },
+      "weekly": {
+        "label": "Weekly",
+        "desc": "On the days you pick"
+      },
+      "monthly": {
+        "label": "Monthly",
+        "desc": "On one day of the month"
+      }
+    },
+    "event": {
+      "pr_opened": {
+        "label": "Pull request opened",
+        "desc": "Opened, or a draft marked ready for review"
+      },
+      "pr_draft": {
+        "label": "Draft opened",
+        "desc": "Opened as a draft, or converted to one"
+      },
+      "pr_sync": {
+        "label": "Pull request pushed",
+        "desc": "New commits pushed to an open pull request"
+      },
+      "pr_merged": {
+        "label": "Pull request merged",
+        "desc": "After the merge lands"
+      },
+      "comment": {
+        "label": "Comment added",
+        "desc": "On a pull request or issue"
+      },
+      "push": {
+        "label": "Push to branch",
+        "desc": "One run per push, not per commit"
+      },
+      "issue_labeled": {
+        "label": "Label added",
+        "desc": "On a pull request or issue, once per label"
+      },
+      "check_failed": {
+        "label": "Check failed",
+        "desc": "Any Actions workflow or status check"
+      },
+      "issue_opened": {
+        "label": "Issue opened",
+        "desc": "New issues only, not reopened ones"
+      },
+      "mention": {
+        "label": "Mentioned @oppenheimer",
+        "desc": "In an issue, pull request or review"
+      },
+      "release": {
+        "label": "Release published",
+        "desc": "Pre-releases excluded"
+      }
+    },
+    "trigger": {
+      "once": "Once, {{date}} at {{time}}",
+      "hourly": "Hourly at :{{minute}}",
+      "daily": "Daily at {{time}}",
+      "weekdays": "Weekdays at {{time}}",
+      "weekly": "Every {{days}} at {{time}}",
+      "monthly": "Monthly on day {{day}} at {{time}}",
+      "event": "On {{event}}",
+      "more": "{{summary}} +{{count}}",
+      "manual": "Manual only",
+      "monFri": "Mon–Fri",
+      "weekend": "Sat, Sun"
+    },
+    "next": {
+      "onEvent": "On next event",
+      "none": "—",
+      "today": "Today, {{time}}",
+      "tomorrow": "Tomorrow, {{time}}",
+      "in": "in {{time}}",
+      "nextIn": "Next in"
+    },
+    "table": {
+      "automation": "Automation",
+      "trigger": "Trigger",
+      "next": "Next run",
+      "status": "Status",
+      "actions": "Automation actions",
+      "edit": "Edit",
+      "runNow": "Run now",
+      "pause": "Pause",
+      "resume": "Resume",
+      "duplicate": "Duplicate",
+      "delete": "Delete"
+    },
+    "history": {
+      "title": "Run history",
+      "range": "Last 30 days",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "runs_one": "{{count}} run",
+      "runs_other": "{{count}} runs"
+    },
+    "runs": {
+      "all": "All",
+      "completed": "Completed",
+      "failed": "Failed",
+      "running": "Running",
+      "run": "Run",
+      "automation": "Automation",
+      "time": "Time",
+      "allAutomations": "All automations",
+      "allProjects": "All projects",
+      "window": {
+        "24h": "Last 24 hours",
+        "7d": "Last 7 days",
+        "30d": "Last 30 days"
+      },
+      "clear": "Clear",
+      "noMatch": "No runs match these filters.",
+      "range": "{{from}}–{{to}} of {{total}}",
+      "previous": "Previous page",
+      "next": "Next page",
+      "deleted": "Deleted automation",
+      "noSession": "This run did not start a session.",
+      "loadFailed": "Runs could not be loaded."
+    },
+    "detail": {
+      "back": "Back",
+      "crumb": "Automations",
+      "runNow": "Run now",
+      "edit": "Edit",
+      "more": "More actions",
+      "pause": "Pause automation",
+      "resume": "Resume automation",
+      "duplicate": "Duplicate",
+      "delete": "Delete automation",
+      "resumeAction": "Resume",
+      "notFound": "This automation does not exist, or was deleted."
     },
     "editor": {
       "newTitle": "New automation",
-      "name": "Automation name",
+      "editTitle": "Edit automation",
+      "steps": {
+        "label": "Automation steps",
+        "task": "Task",
+        "trigger": "Trigger",
+        "where": "Where it runs"
+      },
+      "name": "Name",
       "namePlaceholder": "Name this automation",
+      "prompt": "What should the agent do?",
+      "promptPlaceholder": "Describe the work for every run…",
+      "promptHint": "The pull request, issue or commit that fired the run is passed in as context.",
+      "triggerLead": "Any trigger starts a run.",
+      "addTrigger": "Add trigger",
+      "addAnother": "Add another trigger",
+      "groupSchedule": "Schedule",
+      "groupGithub": "GitHub",
+      "removeTrigger": "Remove trigger",
+      "on": "on",
+      "at": "at",
+      "in": "in",
+      "onThe": "on day",
+      "targeting": "targeting",
+      "labeled": "labeled",
+      "anyBranch": "any branch",
+      "anyLabel": "any label",
+      "branchPlaceholder": "Branch name",
+      "labelPlaceholder": "Label name",
+      "anyOfRepos": "any of {{count}} repositories",
+      "someRepos": "{{count}} repositories",
+      "reposHead": "Repositories · pick one or more",
+      "atLeastOne": "At least one is required",
+      "hour": "Hour",
+      "minute": "Minute",
+      "minutesPast": "Minutes past the hour",
+      "dayOfMonth": "Day of the month",
+      "days": "Days",
+      "nextRun": "Next run",
+      "inRel": "· in",
+      "passed": "That time has passed. Pick a later one.",
+      "listening_one": "Listening on {{repos}} · would have run once in the last 7 days",
+      "listening_other": "Listening on {{repos}} · would have run {{count}} times in the last 7 days",
+      "listeningNone": "Listening on {{repos}} · nothing matched in the last 7 days",
+      "code": "Code",
+      "project": "Project",
+      "chooseProject": "Choose a project",
+      "searchProjects": "Search projects",
+      "noRepositories": "No repositories",
+      "repositories": "Repositories",
+      "searchRepositories": "Search repositories",
+      "repoCount_one": "{{count}} repo",
+      "repoCount_other": "{{count}} repos",
+      "runsOn": "Runs on",
+      "host": "Host",
+      "chooseHost": "Choose a host",
+      "searchHosts": "Search hosts",
+      "agent": "Agent",
+      "searchAgents": "Search agents",
+      "model": "Model",
+      "searchModels": "Search models",
+      "agentDefault": "The agent’s default",
+      "branchHint": "Each run is its own session on a fresh opp/ branch — nothing lands on main without a pull request.",
+      "missingName": "Add a name.",
+      "missingPrompt": "Describe the work.",
+      "missingTrigger": "Add a trigger.",
+      "missingWhere": "Pick a project, a repository and a host.",
       "back": "Back",
-      "crumb": "Automations",
+      "next": "Next",
+      "save": "Save",
       "create": "Create automation",
-      "recap": "Name the automation, then say where it runs."
+      "saveFailed": "The automation could not be saved.",
+      "noMatch": "No match for “{{query}}”.",
+      "chooseRepositories": "Choose repositories…",
+      "chooseAgent": "Choose an agent…",
+      "chooseModel": "Choose a model…"
+    },
+    "skipReasonOther": "Skipped",
+    "pausedReasonOther": "Paused. Triggers are ignored until it is resumed.",
+    "deleteDialog": {
+      "title": "Delete “{{name}}”?",
+      "description": "Its triggers stop now. Past runs are kept.",
+      "confirm": "Delete",
+      "deleting": "Deleting…",
+      "failed": "The automation could not be deleted."
+    },
+    "runClosed": {
+      "title": "This run's turn has ended",
+      "description": "Its work is on {{branch}}. Opening it in the terminal picks the session up where the run left off.",
+      "descriptionNoBranch": "Opening it in the terminal picks the session up where the run left off.",
+      "open": "Open in terminal",
+      "opening": "Opening",
+      "backToAutomation": "Back to the automation"
+    }
+  },
+  "tasks": {
+    "backToTask": "Back to task",
+    "nav": {
+      "label": "Plan",
+      "tasks": "Tasks",
+      "calendar": "Calendar"
+    },
+    "sidebar": {
+      "projects": "Projects",
+      "all": "All projects",
+      "unassigned": "Unassigned",
+      "newProject": "New project",
+      "loadFailed": "Couldn’t load your projects."
+    },
+    "board": {
+      "title": "Tasks",
+      "newTask": "New task",
+      "addTask": "Add task",
+      "addTo": "Add a task to {{column}}",
+      "quickPlaceholder": "Task title",
+      "filedUnder": "In {{name}}",
+      "loadFailed": "Couldn’t load the board.",
+      "moveFailed": "Couldn’t move that task. It’s back where it was.",
+      "addFailed": "Couldn’t add that task.",
+      "stats": {
+        "open": "open",
+        "doing": "in progress",
+        "done": "done",
+        "overdue": "overdue"
+      },
+      "filedAll": "In all projects",
+      "keyAdd": "add",
+      "keyCancel": "cancel"
+    },
+    "columns": {
+      "later": "Later",
+      "todo": "To do",
+      "doing": "In progress",
+      "done": "Done"
+    },
+    "card": {
+      "markDone": "Mark as done",
+      "markNotDone": "Mark as not done",
+      "start": "Start session",
+      "openSession": "Open session {{name}}"
+    },
+    "sessionState": {
+      "waiting": "Needs input",
+      "queued": "Queued",
+      "running": "Running",
+      "failed": "Failed",
+      "idle": "Idle",
+      "completed": "Completed"
+    },
+    "dates": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "yesterday": "Yesterday",
+      "nextMonday": "Next Monday",
+      "endOfMonth": "End of month",
+      "inThreeMonths": "In 3 months"
+    },
+    "goals": {
+      "label": "Goals",
+      "title": "Goals",
+      "new": "New goal",
+      "empty": "Goals group tasks and track how many are done.",
+      "noTarget": "No target",
+      "progress": "{{done}} / {{total}} tasks",
+      "edit": "Edit {{name}}",
+      "loadFailed": "Couldn’t load your goals.",
+      "emptyTitle": "No goals yet"
+    },
+    "goal": {
+      "newTitle": "New goal",
+      "editTitle": "Edit goal",
+      "name": "Goal",
+      "namePlaceholder": "What are you aiming for?",
+      "target": "Target",
+      "add": "Add goal",
+      "delete": "Delete goal",
+      "deleteTitle": "Delete this goal?",
+      "deleteDescription": "“{{name}}” goes; its tasks stay on the board without a goal.",
+      "saveFailed": "Couldn’t save the goal.",
+      "deleteFailed": "Couldn’t delete the goal."
+    },
+    "dialog": {
+      "newTitle": "New task",
+      "editTitle": "Edit task",
+      "titleLabel": "Title",
+      "titlePlaceholder": "What needs doing?",
+      "notesLabel": "Notes",
+      "notesPlaceholder": "Add notes",
+      "status": "Status",
+      "project": "Project",
+      "goal": "Goal",
+      "none": "None",
+      "due": "Due",
+      "sessions": "Sessions",
+      "startSession": "Start session",
+      "linkExisting": "Link existing",
+      "unlink": "Unlink {{name}}",
+      "unlinkFailed": "Couldn’t unlink that session.",
+      "add": "Add task",
+      "save": "Save",
+      "delete": "Delete task",
+      "deleteTitle": "Delete this task?",
+      "deleteDescription": "“{{title}}” is deleted. Its sessions stay as they are.",
+      "saveFailed": "Couldn’t save the task.",
+      "deleteFailed": "Couldn’t delete the task.",
+      "loadFailed": "Couldn’t load the board.",
+      "gone": "This task no longer exists."
+    },
+    "link": {
+      "title": "Link a session",
+      "search": "Search sessions",
+      "empty": "No sessions to link.",
+      "inProject": "In {{name}}",
+      "others": "Other sessions",
+      "failed": "Couldn’t link that session."
+    },
+    "start": {
+      "title": "Start session",
+      "for": "For “{{title}}”",
+      "prompt": "Prompt",
+      "repository": "Repository",
+      "repositoryPlaceholder": "Pick a repository",
+      "repositorySearch": "Search repositories",
+      "noRepositories": "This project has no repositories. Add one in its settings.",
+      "host": "Host",
+      "hostPlaceholder": "Pick a host",
+      "hostSearch": "Search hosts",
+      "noHosts": "No hosts yet. Add one in Settings → Hosts.",
+      "agent": "Agent and model",
+      "agentSearch": "Search models",
+      "agentEmpty": "No model matches “{{query}}”.",
+      "offlineShort": "Offline",
+      "offline": "{{host}} is offline. The session waits as Queued and starts when its runner reconnects.",
+      "offlineSince": "{{host}} has been offline since {{when}}. The session waits as Queued and starts when its runner reconnects.",
+      "start": "Start session",
+      "queue": "Queue session",
+      "failed": "Couldn’t start the session."
+    }
+  },
+  "calendar": {
+    "sidebar": {
+      "layers": "Show"
+    },
+    "layers": {
+      "events": "My events",
+      "google": "Google Calendar",
+      "tasks": "Tasks due",
+      "automations": "Automation runs"
+    },
+    "header": {
+      "previous": "Previous month",
+      "next": "Next month",
+      "today": "Today",
+      "newEvent": "New event"
+    },
+    "grid": {
+      "more_one": "{{count}} more",
+      "more_other": "{{count}} more",
+      "eventsFailed": "Couldn’t load your events.",
+      "googleFailed": "Couldn’t read Google Calendar.",
+      "moveFailed": "Couldn’t move that to another day."
+    },
+    "event": {
+      "newTitle": "New event",
+      "editTitle": "Edit event",
+      "title": "Title",
+      "allDay": "All day",
+      "notes": "Notes",
+      "add": "Add event",
+      "save": "Save",
+      "delete": "Delete event",
+      "deleteTitle": "Delete this event?",
+      "deleteDescription": "“{{title}}” is deleted.",
+      "saveFailed": "Couldn’t save the event.",
+      "deleteFailed": "Couldn’t delete the event.",
+      "gone": "This event is not in the month shown, or no longer exists."
+    },
+    "google": {
+      "title": "Google Calendar",
+      "description": "Show your Google events beside your own. Read-only: nothing is written to Google.",
+      "connect": "Connect Google Calendar",
+      "reconnect": "Reconnect",
+      "revoked": "Google no longer lets us read this calendar. Reconnect to show it again.",
+      "connectedAs": "Connected as {{email}}",
+      "disconnect": "Disconnect",
+      "disconnectTitle": "Disconnect Google Calendar?",
+      "disconnectDescription": "Its events leave the calendar. You can connect it again at any time.",
+      "disconnectFailed": "Couldn’t disconnect Google Calendar.",
+      "startFailed": "Couldn’t reach Google. Try again.",
+      "loadFailed": "Couldn’t check the Google Calendar connection.",
+      "connecting": "Connecting Google Calendar…",
+      "connectFailed": "Couldn’t connect Google Calendar.",
+      "refused": "Google Calendar wasn’t connected: the consent was cancelled or did not complete.",
+      "back": "Back to the calendar",
+      "readOnly": "Read-only"
     }
   },
   "hosts": {
@@ -610,33 +1166,66 @@
       "tokenExpires": "Token expires in {{time}} · single use",
       "tokenExpired": "Token expired — generate a new one.",
       "newToken": "New token",
-      "waiting": "Listening for this host…",
+      "waiting": "Waiting for the host to connect…",
       "registered": "Registered — waiting for its runner",
       "online": "Runner connected",
       "mintFailed": "We could not create a registration token.",
-      "installerDigest": "Installer SHA-256: {{digest}}"
+      "installerDigest": "Installer SHA-256: {{digest}}",
+      "copyCommand": "Copy install command",
+      "copyPrompt": "Copy agent prompt",
+      "inspect": "Inspect command and prompt",
+      "format": "Install format",
+      "command": "Command",
+      "agentPrompt": "Agent prompt"
     },
     "add": {
       "title": "Add a host",
       "meta": "Nothing on the host is exposed to the internet.",
       "back": "Back",
-      "crumbNewSession": "New session",
       "use": "Use this host",
       "defaultName": "New host",
       "install": {
         "title": "Install",
         "subtitle": "Run this once on the machine, or hand it to an agent already there.",
-        "done": "Installed",
-        "format": "Install format",
-        "command": "Command",
-        "agentPrompt": "Agent prompt"
+        "done": "Installed"
       },
       "connect": {
         "title": "Connect",
         "subtitle": "The runner registers itself with the hostname it reports."
       },
       "crumbHosts": "Hosts",
-      "done": "Done"
+      "done": "Done",
+      "description": "Run one command on the machine you want sessions on. Nothing on it is exposed to the internet."
+    },
+    "settings": {
+      "state": {
+        "running_one": "Running · {{count}} session",
+        "running_other": "Running · {{count}} sessions",
+        "idle": "Idle",
+        "offline": "Offline"
+      },
+      "seen": {
+        "connected": "connected",
+        "lastSeen": "last seen {{when}}",
+        "now": "now"
+      },
+      "meta": {
+        "cpus": "{{count}} vCPU",
+        "runner": "runner {{version}}"
+      },
+      "actions": "{{name}} actions",
+      "rename": "Rename",
+      "renameLabel": "Host name",
+      "save": "Save",
+      "cancel": "Cancel",
+      "remove": "Remove host",
+      "removing": "Removing…",
+      "removeTitle": "Remove {{name}}?",
+      "removeRunning_one": "{{count}} session is running on {{name}}. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
+      "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
+      "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
+      "renameFailed": "Could not rename this host. Try again.",
+      "removeFailed": "Could not remove this host. Try again."
     }
   },
   "settings": {
@@ -649,44 +1238,92 @@
     },
     "profile": {
       "title": "Profile",
+      "failed": "The profile could not be loaded.",
+      "emailChanged": "Your email address is updated. Sign in with it from now on.",
+      "picture": "Profile picture",
+      "pictureHint": "Shown beside your sessions and automations",
+      "upload": "Upload",
+      "uploading": "Uploading…",
+      "removePicture": "Remove",
+      "pictureFailed": "The picture could not be changed.",
       "email": "Email",
       "emailHint": "Used to sign in and for run notifications",
-      "failed": "The profile could not be loaded."
+      "unverified": "Not verified",
+      "change": "Change",
+      "fullName": "Full name",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "username": "Username",
+      "usernameHint": "Appears in session logs and commit trailers",
+      "discard": "Discard",
+      "saveChanges": "Save changes",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "saveFailed": "Your changes could not be saved."
+    },
+    "changeEmail": {
+      "title": "Change email",
+      "description": "We send a link to the new address. Your account moves there when you follow it; until then you sign in with {{email}}.",
+      "newEmail": "New email",
+      "send": "Send link",
+      "sending": "Sending…",
+      "sentTitle": "Check your inbox",
+      "sent": "If {{email}} can be used, a link is on its way there. Follow it to finish the change.",
+      "done": "Done",
+      "failed": "The link could not be sent."
+    },
+    "security": {
+      "heading": "Sign-in",
+      "password": "Password",
+      "passwordHint": "Changing it signs out every other device",
+      "change": "Change"
+    },
+    "changePassword": {
+      "title": "Change password",
+      "description": "Every other device signed in to your account is signed out.",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "mismatch": "The passwords do not match.",
+      "submit": "Change password",
+      "submitting": "Changing…",
+      "failed": "The password could not be changed."
+    },
+    "devices": {
+      "heading": "Devices",
+      "unknown": "Unknown device",
+      "current": "This device",
+      "lastSeen": "Active {{when}}",
+      "activeNow": "Active now",
+      "signOut": "Sign out",
+      "signingOut": "Signing out…",
+      "signOutOthers": "Sign out of all other devices",
+      "signingOutOthers": "Signing out of other devices…",
+      "failed": "The devices could not be loaded.",
+      "revokeFailed": "That device could not be signed out."
+    },
+    "account": {
+      "heading": "Account",
+      "delete": "Delete account",
+      "deleteHint": "Stops every session and removes your automations and host registrations. This cannot be undone."
+    },
+    "deleteAccount": {
+      "title": "Delete your account?",
+      "description": "Every session stops, your hosts are unpaired and your workspace, projects and sign-ins are removed. This cannot be undone.",
+      "confirmLabel": "Type {{email}} to confirm",
+      "mismatch": "Type your email address exactly.",
+      "confirm": "Delete account",
+      "deleting": "Deleting…",
+      "failed": "Your account could not be deleted."
     },
     "hosts": {
       "title": "Hosts",
       "description": "Servers your sessions run on. Nothing on a host is exposed to the internet.",
       "add": "Add host",
       "empty": "No hosts yet",
-      "emptyHint": "Add one and your sessions have somewhere to run.",
-      "online": "Online",
-      "offline": "Offline",
+      "emptyHint": "Hosts you connect appear here with their live session count. Sessions cannot start until one is online.",
       "failed": "The hosts could not be loaded."
     }
-  },
-  "home": {
-    "greeting": "Welcome back, {{name}}",
-    "greetingFallback": "Welcome back",
-    "subtitle": "Here's what's happening with your account.",
-    "overview": "Overview",
-    "totalUsers": "Total Users",
-    "activeSessions": "Active Sessions",
-    "apiCalls": "API Calls",
-    "uptime": "Uptime",
-    "account": "Account",
-    "accountDescription": "Your profile and current status.",
-    "email": "Email",
-    "role": "Role",
-    "status": "Status",
-    "active": "Active",
-    "inactive": "Inactive",
-    "memberSince": "Member since",
-    "admin": "Admin",
-    "accountUnavailable": "We couldn't load your account. Check your connection and try again.",
-    "retry": "Try again",
-    "retrying": "Retrying...",
-    "signOut": "Sign out",
-    "signingOut": "Signing out..."
   },
   "nav": {
     "menu": "Menu",
@@ -709,258 +1346,9 @@
     "sidebarTitle": "Navigation",
     "sidebarDescription": "Your sessions, your automations and your account.",
     "settings": "Settings",
-    "automations": "Automations"
-  },
-  "control": {
-    "accessDeniedTitle": "Control plane access required",
-    "accessDeniedDescription": "This workspace is reserved for platform administrators.",
-    "auth": {
-      "headline": "Run your product from one secure control plane.",
-      "body": "Sign in with a platform administrator account to manage access across your applications.",
-      "noAccount": "This identity has no control-plane account. Ask an existing platform administrator to provision it.",
-      "features": {
-        "users": "Create and manage consumer accounts",
-        "roles": "Define reusable application roles",
-        "security": "Revoke sessions and block access immediately"
-      }
-    },
-    "roles": {
-      "title": "Roles and permissions",
-      "description": "Define reusable access rules for the consumer applications.",
-      "permissionCount_one": "{{count}} permission",
-      "permissionCount_other": "{{count}} permissions"
-    },
-    "users": {
-      "title": "Users",
-      "description": "Manage consumer accounts, application roles and active access.",
-      "search": "Search users…",
-      "add": "Add user",
-      "empty": "No users yet",
-      "noMatches": "No users match this search",
-      "noRoles": "No roles",
-      "superAdmin": "Super admin",
-      "consumer": "Consumer",
-      "active": "Active",
-      "banned": "Banned",
-      "columns": {
-        "name": "User",
-        "email": "Email",
-        "roles": "App roles",
-        "access": "Platform access",
-        "status": "Status",
-        "joined": "Joined"
-      },
-      "actions": {
-        "roles": "Manage app roles",
-        "password": "Set password",
-        "sessions": "Revoke sessions",
-        "ban": "Ban user",
-        "unban": "Unban user",
-        "delete": "Delete user"
-      },
-      "create": {
-        "title": "Add a user",
-        "description": "Create a consumer account. You can assign application roles afterward.",
-        "password": "Temporary password (optional)",
-        "submit": "Create user"
-      },
-      "roles": {
-        "title": "Application roles",
-        "description": "Choose the roles {{name}} uses in consumer applications.",
-        "noDescription": "No description"
-      },
-      "password": {
-        "title": "Set a new password",
-        "description": "Replace the sign-in password for {{name}}.",
-        "label": "New password",
-        "submit": "Set password"
-      },
-      "confirm": {
-        "ban": {
-          "title": "Ban this user?",
-          "description": "{{name}} will immediately lose access.",
-          "submit": "Ban user"
-        },
-        "unban": {
-          "title": "Unban this user?",
-          "description": "{{name}} will be able to sign in again.",
-          "submit": "Unban user"
-        },
-        "sessions": {
-          "title": "Revoke all sessions?",
-          "description": "{{name}} will be signed out on every device.",
-          "submit": "Revoke sessions"
-        },
-        "delete": {
-          "title": "Delete this user?",
-          "description": "The account for {{name}} and its access will be permanently removed.",
-          "submit": "Delete user"
-        }
-      }
-    },
-    "flags": {
-      "title": "Feature flags",
-      "description": "Roll features out, run experiments and pull kill switches for everyone on this deployment.",
-      "tabs": {
-        "flags": "Flags",
-        "segments": "Segments",
-        "history": "History"
-      },
-      "search": "Search flags",
-      "empty": "No flags match.",
-      "columns": {
-        "flag": "Flag",
-        "kind": "Kind",
-        "serving": "Serving",
-        "enabled": "On"
-      },
-      "kinds": {
-        "release": "Release",
-        "ops": "Ops",
-        "experiment": "Experiment"
-      },
-      "expired": "Expired",
-      "expiredHint": "Past {{date}}. Ship it and remove the flag from the code.",
-      "expires": "Until {{date}}",
-      "serving": {
-        "default": "Default: {{value}}",
-        "off": "Off: {{value}} to everyone",
-        "value": "{{value}} to everyone else",
-        "split": "Split {{arms}}",
-        "rules_one": "{{count}} rule, then",
-        "rules_other": "{{count}} rules, then"
-      },
-      "actions": {
-        "edit": "Edit targeting",
-        "explain": "Explain",
-        "history": "History"
-      },
-      "toggle": {
-        "onTitle": "Switch {{key}} on?",
-        "offTitle": "Switch {{key}} off?",
-        "onDescription": "Its targeting takes effect for everyone on this deployment straight away.",
-        "offDescription": "Everyone on this deployment gets {{value}} straight away. Targeting is kept for when you switch it back on.",
-        "comment": "Why",
-        "commentPlaceholder": "Incident, rollout step, experiment ended…",
-        "commentHint": "Recorded on the history with your name.",
-        "confirmOn": "Switch on",
-        "confirmOff": "Switch off",
-        "pending": "Switching…"
-      },
-      "targeting": {
-        "title": "Targeting: {{key}}",
-        "description": "Rules are checked in order and the first whose conditions all hold decides. Everyone else gets the fallthrough.",
-        "enabled": "Serve targeting",
-        "enabledHint": "Off serves {{value}} to everyone, whatever the rules say.",
-        "rules": "Rules",
-        "rule": "Rule {{number}}",
-        "addRule": "Add rule",
-        "removeRule": "Remove rule",
-        "moveUp": "Move up",
-        "moveDown": "Move down",
-        "ruleDescription": "What this rule is for",
-        "noRules": "No rules. Everyone gets the fallthrough.",
-        "conditions": "When",
-        "addCondition": "Add condition",
-        "removeCondition": "Remove condition",
-        "noConditions": "No conditions, so this rule matches everyone.",
-        "attribute": "Attribute",
-        "operator": "Operator",
-        "values": "Values",
-        "valuesHint": "One per line.",
-        "serve": "Serve",
-        "fallthrough": "Everyone else",
-        "serveValue": "One value",
-        "serveSplit": "Percentage split",
-        "addArm": "Add arm",
-        "removeArm": "Remove arm",
-        "weight": "Percent",
-        "splitTotal": "Total {{total}}%",
-        "comment": "Why",
-        "commentPlaceholder": "What this change is for",
-        "save": "Save targeting",
-        "saving": "Saving…"
-      },
-      "attributes": {
-        "userId": "User ID",
-        "organizationId": "Organization ID",
-        "email": "Email",
-        "platformRole": "Platform role",
-        "platform": "Platform",
-        "appVersion": "App version",
-        "segment": "Segment"
-      },
-      "operators": {
-        "in": "is one of",
-        "not_in": "is not one of",
-        "ends_with": "ends with",
-        "semver_gte": "is at least version",
-        "semver_lt": "is below version"
-      },
-      "explain": {
-        "title": "Explain: {{key}}",
-        "description": "What this flag serves to someone, and why. Describe as much of them as you know.",
-        "submit": "Explain",
-        "result": "Serves {{value}}",
-        "reasons": {
-          "DEFAULT": "Nothing decided, so the catalog default was served.",
-          "DISABLED": "The flag is switched off.",
-          "TARGETING_MATCH": "Rule “{{rule}}” matched.",
-          "SPLIT": "Bucketed by a percentage split.",
-          "FALLTHROUGH": "No rule matched; the fallthrough served it.",
-          "ERROR": "Targeting served a value this flag does not take, so the default was served."
-        }
-      },
-      "segments": {
-        "search": "Search segments",
-        "empty": "No segments yet. A segment is a named audience, like staff or beta customers, that any flag's rules can target.",
-        "new": "New segment",
-        "edit": "Edit",
-        "delete": "Delete",
-        "columns": {
-          "segment": "Segment",
-          "conditions": "Conditions",
-          "usedBy": "Used by"
-        },
-        "conditionCount_one": "{{count}} condition",
-        "conditionCount_other": "{{count}} conditions",
-        "unused": "No flag",
-        "newTitle": "New segment",
-        "editTitle": "Edit segment",
-        "formDescription": "Everyone who meets all of these conditions is in the segment.",
-        "key": "Key",
-        "keyHint": "What rules refer to it by. Lowercase letters, digits, - and _. It cannot be changed later.",
-        "name": "Name",
-        "details": "Description",
-        "create": "Create segment",
-        "save": "Save segment",
-        "saving": "Saving…",
-        "deleteTitle": "Delete this segment?",
-        "deleteDescription": "No flag targets it, so nobody's flags change.",
-        "inUse": "Used by {{flags}}. Remove it from their rules first."
-      },
-      "history": {
-        "search": "Filter by flag or segment key",
-        "empty": "No changes yet.",
-        "columns": {
-          "when": "When",
-          "subject": "Flag or segment",
-          "change": "Change",
-          "by": "By",
-          "comment": "Why"
-        },
-        "actions": {
-          "targeting_updated": "Targeting changed",
-          "toggled": "Switched",
-          "segment_created": "Segment created",
-          "segment_updated": "Segment updated",
-          "segment_deleted": "Segment deleted"
-        },
-        "switchedOn": "Switched on",
-        "switchedOff": "Switched off",
-        "unknownActor": "Unknown"
-      }
-    }
+    "automations": "Automations",
+    "logOutFailed": "Could not log you out. Try again.",
+    "plan": "Plan"
   },
   "language": {
     "label": "Language",
@@ -978,26 +1366,14 @@
     "invalidTitle": "This link has expired",
     "invalidDescription": "Start the connection again from the application that sent you here.",
     "backToSessions": "Back to sessions",
-    "noRedirect": "The server did not say where to send you next.",
     "sensitiveScope": "Sensitive",
     "unknownClient": "An application",
     "failed": "That did not go through. Try again."
   },
   "onboarding": {
-    "description": "Your account is ready. Name the workspace your sessions will live in.",
-    "eyebrow": "Almost there",
-    "signOut": "Sign out",
-    "title": "Create your workspace",
-    "create": {
-      "name": "Workspace name",
-      "namePlaceholder": "Acme Inc.",
-      "hint": "You can rename it later from Settings.",
-      "submit": "Create workspace",
-      "submitting": "Creating…"
-    },
     "flow": {
       "back": "Back",
-      "counter": "{{step}} of {{total}}",
+      "step": "{{step}} of {{total}}",
       "continue": "Continue",
       "workspace": {
         "title": "Name your workspace",
@@ -1024,20 +1400,19 @@
         "title": "Connect GitHub",
         "description": "This installs the Oppenheimer GitHub App on your account. You pick all repositories or selected ones on GitHub's own page.",
         "connect": "Connect GitHub",
+        "starting": "Opening GitHub…",
         "skip": "Skip for now",
         "skipNote": "You can add repositories later in Settings. The repo picker stays empty until you do.",
         "connected": "{{count}} repositories · read access",
         "change": "Change which repositories",
         "failed": "We could not connect that GitHub installation.",
+        "unstarted": "This GitHub link was not started here. Connect GitHub again.",
         "connectedAll": "Every repository on the account",
         "connectedPending": "Connected"
       },
       "host": {
         "title": "Add your first host",
-        "description": "A host is a server you control: a cloud VM, a build box, or your own workstation. Sessions run there, and nothing on it is ever exposed to the internet.",
-        "installCommand": "Install command",
-        "agentPrompt": "Prompt for an AI agent",
-        "agentNote": "Paste into Claude Code or Codex already running on that machine.",
+        "description": "Run one command on the server you want sessions on — a cloud VM, a build box, or your workstation. Nothing on it is exposed to the internet.",
         "defaultName": "My first host",
         "skip": "Skip for now",
         "skipNote": "You can pair a machine later. Sessions need one before they can run."
@@ -1053,141 +1428,8 @@
         "noWorkspace": "No workspace yet",
         "noGithub": "Not connected",
         "noHost": "No host yet",
-        "doneLabel": "Done"
-      }
-    }
-  },
-  "pages": {
-    "profile": {
-      "description": "Manage your personal account for this workspace.",
-      "title": "My profile"
-    },
-    "team": {
-      "common": {
-        "cancel": "Cancel",
-        "error": "Something went wrong. Please try again.",
-        "loading": "Loading…"
-      },
-      "confirm": {
-        "cancelDescription": "The invitation link will stop working.",
-        "cancelTitle": "Cancel this invitation?",
-        "deleteRoleDescription": "Members assigned to it will lose the permissions it grants.",
-        "deleteRoleTitle": "Delete this role?",
-        "removeDescription": "They will lose access to this workspace. Their account will not be deleted.",
-        "removeTitle": "Remove this member?"
-      },
-      "description": "Manage who can access the {{workspace}} workspace and what their role lets them do.",
-      "invite": {
-        "description": "Add teammates by email. Their role can be adjusted after they join.",
-        "emails": "Email addresses",
-        "emailsHint": "Separate multiple addresses with commas or new lines.",
-        "emailsPlaceholder": "name@company.com, another@company.com",
-        "role": "Organization access",
-        "roles": {
-          "admin": "Admin",
-          "member": "Member",
-          "owner": "Owner"
-        },
-        "send": "Send invite",
-        "sendMany": "Send {{count}} invites",
-        "sending": "Sending…",
-        "title": "Invite members"
-      },
-      "memberRole": {
-        "description": "Choose the application role for {{name}}.",
-        "noRole": "No custom role",
-        "role": "Role",
-        "save": "Save role",
-        "title": "Edit member role"
-      },
-      "members": {
-        "cancelInvite": "Cancel invitation",
-        "columns": {
-          "email": "Email",
-          "joined": "Joined",
-          "name": "Name",
-          "organizationRole": "Organization role",
-          "role": "Role",
-          "status": "Status"
-        },
-        "editRole": "Edit role",
-        "export": "Export CSV",
-        "invite": "Invite",
-        "remove": "Remove member",
-        "search": "Search members",
-        "status": {
-          "active": "Active",
-          "inactive": "Inactive",
-          "invited": "Invited"
-        },
-        "empty": "No members found.",
-        "noMatches": "No members match your filters."
-      },
-      "roleForm": {
-        "create": "Create role",
-        "description": "Name the role and choose what it can do.",
-        "details": "Description",
-        "detailsPlaceholder": "What can this role do?",
-        "edit": "Edit",
-        "editTitle": "Edit role",
-        "name": "Role name",
-        "namePlaceholder": "e.g. Content editor",
-        "newTitle": "New custom role",
-        "noPermissionResults": "No permissions match your search.",
-        "none": "None",
-        "permissions": "Permissions",
-        "save": "Save changes",
-        "saving": "Saving…",
-        "searchPermissions": "Search permissions",
-        "view": "View"
-      },
-      "roles": {
-        "columns": {
-          "description": "Description",
-          "role": "Role",
-          "type": "Type"
-        },
-        "custom": "Custom",
-        "delete": "Delete",
-        "duplicate": "Duplicate",
-        "edit": "Edit",
-        "empty": "No roles found.",
-        "export": "Export CSV",
-        "new": "New role",
-        "search": "Search roles",
-        "system": "System"
-      },
-      "stats": {
-        "active": "Active accounts",
-        "members": "Members",
-        "pending": "Pending invites"
-      },
-      "tabs": {
-        "members": "Members",
-        "roles": "Roles"
-      },
-      "title": "Team",
-      "permissionAreas": {
-        "team": {
-          "name": "Team",
-          "hint": "Members, invitations and roles"
-        },
-        "organization": {
-          "name": "Organization",
-          "hint": "Workspace name, mark and workspaces"
-        },
-        "users": {
-          "name": "Users",
-          "hint": "The user directory"
-        },
-        "api": {
-          "name": "API keys",
-          "hint": "Personal API tokens"
-        },
-        "audit": {
-          "name": "Audit log",
-          "hint": "Who did what, and when"
-        }
+        "doneLabel": "Done",
+        "failed": "Could not load this. Reload the page to try again."
       }
     }
   },
@@ -1351,10 +1593,31 @@
     "system": "Match system"
   },
   "toasts": {
-    "copied": "Copied to clipboard.",
-    "memberRemoved": "Member removed.",
-    "membersInvited": "Invitations sent.",
-    "passwordChanged": "Password updated. Your other devices have been signed out."
+    "automationCreated": "“{{name}}” created.",
+    "automationSaved": "“{{name}}” saved.",
+    "automationDeleted": "“{{name}}” deleted.",
+    "automationDuplicated": "Duplicated as “{{name}}”.",
+    "automationPaused": "“{{name}}” paused.",
+    "automationResumed": "“{{name}}” resumed.",
+    "runStarted": "Run of “{{name}}” started.",
+    "openRun": "Open",
+    "emailResent": "Email sent again.",
+    "sessionRenamed": "Renamed to “{{name}}”.",
+    "sessionMoved": "“{{name}}” moved to {{project}}.",
+    "sessionDeleteRequested": "Asked the host to delete “{{name}}”.",
+    "projectCreated": "“{{name}}” created.",
+    "projectSaved": "“{{name}}” saved.",
+    "projectDeleted": "“{{name}}” deleted.",
+    "hostRenamed": "Renamed to “{{name}}”.",
+    "hostRemoved": "“{{name}}” removed.",
+    "deviceSignedOut": "“{{name}}” signed out.",
+    "otherDevicesSignedOut": "Your other devices are signed out.",
+    "passwordChanged": "Password changed. Other devices are signed out.",
+    "taskAdded": "Task added.",
+    "taskDeleted": "Task deleted.",
+    "goalAdded": "Goal added.",
+    "taskSessionStarted": "Session started.",
+    "taskSessionQueued": "Session queued. It starts when its host reconnects."
   },
   "emails": {
     "common": {
@@ -1420,8 +1683,20 @@
       "body": "{{hostName}} ({{machine}}) was paired with your account and can now run coding sessions for you. Its key fingerprint starts with {{fingerprint}}.",
       "action": "Open Oppenheimer",
       "helper": "If you paired it, there is nothing to do. On that machine, the runner’s status command shows the same fingerprint, so you can check it is the one you meant.",
-      "closing": "Don't recognise it? Someone used one of your pairing tokens. The console cannot unpair a host yet. If you can reach the machine, run the runner’s uninstall command on it; if you cannot, unpair it through the API with DELETE /v1/hosts/{{hostId}}. Your unspent tokens expire within the hour.",
+      "closing": "Don't recognise it? Someone used one of your pairing tokens. The console cannot unpair a host yet. If you can reach the machine, run the runner’s uninstall command on it; if you cannot, unpair it through the API with DELETE /v1/hosts/{{hostId}}. Your unspent tokens expire on their own soon after they are created.",
       "unknownMachine": "no hostname reported",
+      "footerNote": "This is a security email, so you always receive it."
+    },
+    "hostNetworkChanged": {
+      "subject": "{{hostName}} is connecting from a new network",
+      "preview": "{{hostName}} moved from {{from}} to {{to}}. If you did not move it, act now.",
+      "heading": "A host moved to a new network",
+      "body": "{{hostName}} used to connect from {{from}}. It now connects from {{to}}, at {{ip}}.",
+      "action": "Open Oppenheimer",
+      "helper": "If you took the machine somewhere new, or its provider changed, there is nothing to do. We only write when the country or the network operator changes, not for every new address.",
+      "closing": "Don't recognise the move? The host's key may be in use somewhere else. Remove the host from Settings, or through the API with DELETE /v1/hosts/{{hostId}}; its runner is refused from that moment, and the sessions on it are stopped.",
+      "unknownPlace": "an unknown network",
+      "attribution": "IP geolocation by DB-IP.",
       "footerNote": "This is a security email, so you always receive it."
     }
   }

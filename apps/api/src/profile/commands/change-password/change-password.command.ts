@@ -3,9 +3,7 @@ import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 
 /**
  * Carries the request headers because Better Auth resolves *which* session is
- * changing its password from them. That is also the reason the route is
- * session-only: there is a live session to re-issue, and a long-lived API token
- * has no business rotating the password that mints them.
+ * changing its password from them.
  */
 export class ChangePasswordCommand extends CommandBase {
   readonly headers: IncomingHttpHeaders;

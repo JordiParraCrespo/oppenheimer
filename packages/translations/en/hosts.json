@@ -3,32 +3,65 @@
     "tokenExpires": "Token expires in {{time}} · single use",
     "tokenExpired": "Token expired — generate a new one.",
     "newToken": "New token",
-    "waiting": "Listening for this host…",
+    "waiting": "Waiting for the host to connect…",
     "registered": "Registered — waiting for its runner",
     "online": "Runner connected",
     "mintFailed": "We could not create a registration token.",
-    "installerDigest": "Installer SHA-256: {{digest}}"
+    "installerDigest": "Installer SHA-256: {{digest}}",
+    "copyCommand": "Copy install command",
+    "copyPrompt": "Copy agent prompt",
+    "inspect": "Inspect command and prompt",
+    "format": "Install format",
+    "command": "Command",
+    "agentPrompt": "Agent prompt"
   },
   "add": {
     "title": "Add a host",
     "meta": "Nothing on the host is exposed to the internet.",
     "back": "Back",
-    "crumbNewSession": "New session",
     "use": "Use this host",
     "defaultName": "New host",
     "install": {
       "title": "Install",
       "subtitle": "Run this once on the machine, or hand it to an agent already there.",
-      "done": "Installed",
-      "format": "Install format",
-      "command": "Command",
-      "agentPrompt": "Agent prompt"
+      "done": "Installed"
     },
     "connect": {
       "title": "Connect",
       "subtitle": "The runner registers itself with the hostname it reports."
     },
     "crumbHosts": "Hosts",
-    "done": "Done"
+    "done": "Done",
+    "description": "Run one command on the machine you want sessions on. Nothing on it is exposed to the internet."
+  },
+  "settings": {
+    "state": {
+      "running_one": "Running · {{count}} session",
+      "running_other": "Running · {{count}} sessions",
+      "idle": "Idle",
+      "offline": "Offline"
+    },
+    "seen": {
+      "connected": "connected",
+      "lastSeen": "last seen {{when}}",
+      "now": "now"
+    },
+    "meta": {
+      "cpus": "{{count}} vCPU",
+      "runner": "runner {{version}}"
+    },
+    "actions": "{{name}} actions",
+    "rename": "Rename",
+    "renameLabel": "Host name",
+    "save": "Save",
+    "cancel": "Cancel",
+    "remove": "Remove host",
+    "removing": "Removing…",
+    "removeTitle": "Remove {{name}}?",
+    "removeRunning_one": "{{count}} session is running on {{name}}. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
+    "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
+    "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused.",
+    "renameFailed": "Could not rename this host. Try again.",
+    "removeFailed": "Could not remove this host. Try again."
   }
 }

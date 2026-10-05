@@ -1,38 +1,36 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useSyncExternalStore } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ConsoleDialogProvider } from '@/lib/console';
 import { NewSessionForm } from '../sections/new-session-form';
 
 /**
- * New session's render budget, across all three of its clocks.
- *
- * The draft used to be one `useState` object in the section that also held
- * five reads, so an effort pick re-rendered the host chip, the repository
- * picker and the branch pane, and a settle of the host list re-rendered the
- * effort picker. It is a React Hook Form store behind a context now, and each
- * chip binds its own field and its own read. These assertions are what keep it
- * that way: a pick renders the chip that was picked, a settle renders the chip
- * that draws the list, a keystroke renders neither.
- *
- * Runs in the `render-budget` project, without the React Compiler, so what it
- * measures is the structure rather than the memoisation that would hide it.
+ * New session's render budget across its three clocks: a pick renders the
+ * chip picked, a list settle the chip drawing it, a keystroke neither. It
+ * guards against a draft in section state, where an effort pick re-rendered
+ * the host chip, the repository picker and the branch pane.
  */
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
+  // The kit's i18n concern registers itself on import.
+  initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), useSearch: () => ({}) }));
 
-/** Every chip, counted by name, with a button that makes the chip's pick. */
 const renders = vi.hoisted(() => new Map<string, number>());
+const prepared = vi.hoisted(() => vi.fn());
 
 vi.mock('../components/project-select', () => ({
   ProjectSelect: chip('project', 'project-1'),
 }));
 vi.mock('../components/host-select', () => ({ HostSelect: chip('host', 'host-2') }));
 vi.mock('../components/repository-branch-select', () => ({
-  RepositoryBranchSelect: chip('repositories', [{ id: 'installation-1:42', branch: 'main' }]),
+  RepositoryBranchSelect: chip('repositories', [{ id: 'installation-1:42', branch: 'main' }], {
+    // A row whose key no longer parses: `toCheckouts` drops it from the body.
+    stale: [{ id: 'installation-1:gone', branch: 'main' }],
+  }),
 }));
 vi.mock('../components/branch-select', () => ({ BranchSelect: chip('branch', 'develop') }));
 vi.mock('../components/permission-select', () => ({
@@ -67,9 +65,11 @@ const reads = vi.hoisted(() => {
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   // Each hook subscribes to its own slice, as a query observer subscribes to
   // its own key: settling the hosts must not look like a change to the projects.
-  useProjects: () => {
-    const projects = useSyncExternalStore(reads.subscribe, () => reads.get().projects);
-    return { data: projects, isPending: false };
+  useProjects: (options?: { select?: (projects: unknown[]) => unknown }) => {
+    const data = useSyncExternalStore(reads.subscribe, () =>
+      options?.select ? options.select(reads.get().projects) : reads.get().projects,
+    );
+    return { data, isPending: false };
   },
   useProjectsSnapshot: () => () => reads.get().projects,
   // Applies `select` inside the subscription, as a query observer does, so a
@@ -84,16 +84,33 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useInstallations: () => ({ data: [], isPending: false }),
   useInstallationRepositoriesFor: () => ({ repositories: [], isPending: false }),
   useRepositoryBranchesFor: () => ({ byRepository: new Map(), isPending: false }),
+  useStartInstallation: () => ({ mutate: vi.fn(), error: null, reset: vi.fn() }),
+  usePrepareSession: () => ({ mutate: prepared }),
   // Called once per render of NewSessionSend, so it doubles as that section's count.
   useCreateSession: () => {
     renders.set('send', (renders.get('send') ?? 0) + 1);
-    return { mutate: vi.fn(), isPending: false, isError: false };
+    return {
+      mutate: vi.fn(),
+      reset: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+      submittedAt: 0,
+    };
   },
+  useUploadSessionAttachment: () => ({
+    mutateAsync: vi.fn(),
+    reset: vi.fn(),
+    isPending: false,
+    error: null,
+    submittedAt: 0,
+  }),
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', () => ({
   useDeploymentCapabilities: () => ({ data: null, isPending: false }),
   useErrorMessage: () => (_error: unknown, fallback: string) => ({ message: fallback }),
+  lastFailure: () => ({ error: null, index: -1, dismiss: vi.fn() }),
 }));
 
 const PROJECTS = [
@@ -107,19 +124,28 @@ const PROJECTS = [
   },
 ];
 
-/** A chip stub: counts its renders and picks `pick` when pressed. */
-function chip(name: string, pick: unknown) {
+/**
+ * A chip stub: counts its renders and picks `pick` when pressed. Each of
+ * `others` is one more button, named `<name>:<key>`, that picks its value.
+ */
+function chip(name: string, pick: unknown, others: Record<string, unknown> = {}) {
   return function Chip({ onValueChange }: { onValueChange: (value: unknown) => void }) {
     renders.set(name, (renders.get(name) ?? 0) + 1);
     return (
-      <button type="button" onClick={() => onValueChange(pick)}>
-        {name}
-      </button>
+      <>
+        <button type="button" onClick={() => onValueChange(pick)}>
+          {name}
+        </button>
+        {Object.entries(others).map(([key, value]) => (
+          <button key={key} type="button" onClick={() => onValueChange(value)}>
+            {`${name}:${key}`}
+          </button>
+        ))}
+      </>
     );
   };
 }
 
-/** Which chips rendered since the last call, and resets the count. */
 function rendered(): string[] {
   const names = [...renders.keys()].filter((name) => (renders.get(name) ?? 0) > 0).sort();
   renders.clear();
@@ -129,7 +155,13 @@ function rendered(): string[] {
 beforeEach(() => {
   window.localStorage.clear();
   reads.set({ hosts: [], projects: PROJECTS });
-  render(<NewSessionForm />);
+  // The console's dialog owner sits above the composer in the app; here it
+  // holds nothing, so the chips can ask for a dialog and none opens.
+  render(
+    <ConsoleDialogProvider>
+      <NewSessionForm />
+    </ConsoleDialogProvider>,
+  );
   rendered();
 });
 
@@ -146,16 +178,35 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual(['permission']);
   });
 
-  /** The send gate re-renders when a host is picked; the chips beside it must not. */
   it('renders only the host chip and the send gate when a host is picked', () => {
     fireEvent.click(screen.getByRole('button', { name: 'host' }));
     expect(rendered()).toEqual(['host', 'send']);
   });
 
-  /** The branch chip reads the same field, and appears for a lone repository. */
-  it('renders the repository and branch chips when a repository is picked', () => {
+  /**
+   * The branch chip reads the same field, and appears for a lone repository;
+   * the send gate opens, since a session needs a repository.
+   */
+  it('renders the repository and branch chips and the send gate when a repository is picked', () => {
     fireEvent.click(screen.getByRole('button', { name: 'repositories' }));
-    expect(rendered()).toEqual(['branch', 'repositories']);
+    expect(rendered()).toEqual(['branch', 'repositories', 'send']);
+  });
+
+  /**
+   * The host is asked to get the repository ready as soon as the draft names
+   * both, and once: a second pick of the same ones asks nothing more.
+   */
+  it('asks the host to prepare the repository once a host and a repository are picked', () => {
+    prepared.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'host' }));
+    expect(prepared).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'repositories' }));
+    fireEvent.click(screen.getByRole('button', { name: 'repositories' }));
+    expect(prepared).toHaveBeenCalledTimes(1);
+    expect(prepared).toHaveBeenCalledWith({
+      hostId: 'host-2',
+      checkouts: [{ installationId: 'installation-1', githubRepoId: 42, baseBranch: 'main' }],
+    });
   });
 
   /** An agent switch decides which foot controls exist, so those three redraw. */
@@ -183,12 +234,55 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual([]);
   });
 
+  it('summarises the picked project under the title', () => {
+    cleanup();
+    render(
+      <ConsoleDialogProvider>
+        <NewSessionForm heading={<h1>title</h1>} />
+      </ConsoleDialogProvider>,
+    );
+    expect(screen.getByText('sessions.new.subtitle')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'project' }));
+    expect(screen.getByText('sessions.new.subtitleProject')).toBeTruthy();
+  });
+
+  /** The send gate (05): a host still in the workspace and one repository the body can carry. */
+  describe('the send gate', () => {
+    function composer() {
+      return {
+        field: screen.getByRole<HTMLTextAreaElement>('textbox'),
+        send: screen.getByRole<HTMLButtonElement>('button', { name: 'sessions.new.composer.send' }),
+      };
+    }
+
+    beforeEach(() => {
+      act(() => reads.set({ ...reads.get(), hosts: [{ id: 'host-2' }] }));
+      fireEvent.click(screen.getByRole('button', { name: 'host' }));
+      fireEvent.change(composer().field, { target: { value: 'Fix the build' } });
+    });
+
+    it('holds the field and the send button until a repository is picked', () => {
+      expect(composer().field.disabled).toBe(true);
+      expect(composer().send.disabled).toBe(true);
+
+      fireEvent.click(screen.getByRole('button', { name: 'repositories' }));
+      expect(composer().field.disabled).toBe(false);
+      expect(composer().send.disabled).toBe(false);
+    });
+
+    it('stays shut for a pick the request would drop', () => {
+      fireEvent.click(screen.getByRole('button', { name: 'repositories:stale' }));
+      expect(composer().field.disabled).toBe(true);
+      expect(composer().send.disabled).toBe(true);
+    });
+  });
+
   it('remembers a pick for the next visit, but never the permission level', () => {
     fireEvent.click(screen.getByRole('button', { name: 'effort' }));
     fireEvent.click(screen.getByRole('button', { name: 'permission' }));
 
     const stored = JSON.parse(window.localStorage.getItem('oppenheimer.new-session.draft') ?? '{}');
-    expect(stored.effort).toBe('high');
+    expect(stored.efforts).toEqual({ 'claude-code': 'high' });
     expect(stored).not.toHaveProperty('permission');
   });
 });

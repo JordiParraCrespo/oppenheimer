@@ -33,9 +33,9 @@ type Classifier struct {
 
 // Options configure loading.
 type Options struct {
-	// Dir holds manifests that override the bundled ones by agent id, which
-	// is how the control plane ships a fix for an agent's new spinner
-	// without a runner release. A missing directory is not an error.
+	// Dir holds manifests that override the bundled ones by agent id, so a
+	// fix for an agent's new spinner can reach a host without a runner
+	// release. A missing directory is not an error.
 	Dir string
 	// Logger reports a manifest that was skipped and why; nil discards.
 	Logger *slog.Logger
@@ -87,8 +87,8 @@ func (c *Classifier) load(fsys fs.FS, dir, source string) {
 	}
 }
 
-// Manifest returns the rules loaded for an agent, for `runner status` and for
-// tests that want to see which version is in force.
+// Manifest returns the rules loaded for an agent, so a test can see which
+// version is in force.
 func (c *Classifier) Manifest(agent domain.Agent) (*Manifest, bool) {
 	m, ok := c.byAgent[agent]
 	return m, ok
@@ -124,7 +124,6 @@ func (c *Classifier) Classify(screen app.Screen, agent domain.Agent) (domain.Sta
 	return state, ""
 }
 
-// region extracts the text a rule reads.
 func region(screen app.Screen, r Region) string {
 	kind, n, err := r.parse()
 	if err != nil {
@@ -200,8 +199,7 @@ func LoginURL(screen string, targets []domain.LoginTarget) string {
 	return ""
 }
 
-// Bundled reads the manifests compiled into this binary, for tests and for
-// `runner status`.
+// Bundled reads the manifests compiled into this binary, for tests.
 func Bundled() ([]*Manifest, error) {
 	entries, err := fs.ReadDir(bundled, "manifests")
 	if err != nil {

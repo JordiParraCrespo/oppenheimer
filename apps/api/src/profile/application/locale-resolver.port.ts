@@ -13,7 +13,6 @@ export interface ResolvedLocale {
  * business.
  */
 export interface LocaleResolverPort {
-  /** Resolve for a known account. */
   resolveForRecipient(userId: string): Promise<ResolvedLocale>;
 
   /**

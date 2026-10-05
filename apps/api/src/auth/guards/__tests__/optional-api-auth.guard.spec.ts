@@ -5,17 +5,17 @@ import { AuthErrors } from '../../domain/auth.errors';
 import { ApiAuthGuard } from '../api-auth.guard';
 import { OptionalApiAuthGuard } from '../optional-api-auth.guard';
 
-vi.mock('../../infrastructure/better-auth.config', () => ({ auth: { api: {} } }));
-
 function contextFor(request: object): ExecutionContext {
   return { switchToHttp: () => ({ getRequest: () => request }) } as unknown as ExecutionContext;
 }
+
+const tenants = { stamp: vi.fn().mockReturnValue({ organizationId: null }) };
 
 describe('OptionalApiAuthGuard', () => {
   let guard: OptionalApiAuthGuard;
 
   beforeEach(() => {
-    guard = new OptionalApiAuthGuard({} as never, {} as never);
+    guard = new OptionalApiAuthGuard({} as never, {} as never, tenants as never, {} as never);
   });
 
   it('lets an anonymous caller through with no identity', async () => {
@@ -26,6 +26,7 @@ describe('OptionalApiAuthGuard', () => {
 
     await expect(guard.canActivate(contextFor(request))).resolves.toBe(true);
     expect(request).toMatchObject({ user: null, session: null, scopeContext: null });
+    expect(tenants.stamp).toHaveBeenCalledWith(expect.anything(), request);
   });
 
   it('still refuses a credential that was presented and is broken', async () => {

@@ -1,20 +1,33 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import type { InstallationStatusChange } from '../database/github-installation.repository.port';
 
 /**
- * The `installation` webhook, verified and narrowed.
+ * The `installation` webhook, verified and narrowed: the only event this
+ * module acts on itself (every other event goes to the inbound-events hub),
+ * because it reports installation facts that change without us and that a
+ * token mint must respect. Nothing mirrors the repository set, so
+ * `installation_repositories` has nothing to keep current.
  *
- * It is the only event this module subscribes to, because it is the only one
- * that reports a fact about an installation that changes without us and that a
- * token mint must respect. Nothing mirrors the repository set, so there is
- * nothing for `installation_repositories` to keep current.
- *
- * A delivery is a status write and is idempotent to repeat, which is why there
- * is no delivery table and no de-duplication key.
+ * A delivery is a status write ordered by GitHub's own timestamp
+ * (`occurredAt`): GitHub does not promise delivery order, so a suspend or
+ * unsuspend applies only when newer than the last one the row took, and a
+ * late retry or a replayed body is a no-op. That is why an installation
+ * delivery needs no stored row and no de-duplication key.
  */
 export type InstallationWebhookAction = 'suspend' | 'unsuspend' | 'delete';
 
 export type InstallationWebhookEvent =
-  | { type: 'installation'; action: InstallationWebhookAction; githubInstallationId: number }
+  | {
+      type: 'installation';
+      action: InstallationWebhookAction;
+      githubInstallationId: number;
+      /**
+       * When GitHub says the change happened: `installation.suspended_at` for a
+       * suspend, `installation.updated_at` otherwise. `null` when the payload
+       * carries no usable time.
+       */
+      occurredAt: Date | null;
+    }
   | { type: 'ignored' };
 
 const ACTIONS: Record<string, InstallationWebhookAction> = {
@@ -74,7 +87,54 @@ export function parseInstallationEvent(
       : Number.NaN;
   if (!Number.isInteger(id) || id <= 0) return { type: 'ignored' };
 
-  return { type: 'installation', action, githubInstallationId: id };
+  const fields = installation as Record<string, unknown>;
+  const occurredAt =
+    (action === 'suspend' ? timestampOf(fields.suspended_at) : null) ??
+    timestampOf(fields.updated_at);
+  return { type: 'installation', action, githubInstallationId: id, occurredAt };
+}
+
+/**
+ * The status write an installation delivery asks for: only the columns its
+ * action is about, so everything else is left alone. A suspension holds
+ * GitHub's time; an uninstall, like a disconnect here, holds the time we
+ * learned of it. A payload with no time is ordered by `receivedAt`.
+ */
+export function installationStatusChange(
+  delivery: Extract<InstallationWebhookEvent, { type: 'installation' }>,
+  receivedAt: Date,
+): InstallationStatusChange {
+  const occurredAt = delivery.occurredAt ?? receivedAt;
+  const base = { githubInstallationId: delivery.githubInstallationId, occurredAt };
+  if (delivery.action === 'suspend') return { ...base, suspendedAt: occurredAt };
+  if (delivery.action === 'unsuspend') return { ...base, suspendedAt: null };
+  return { ...base, deletedAt: receivedAt };
+}
+
+/**
+ * The SHA-256 of the **raw bytes** GitHub signed, hex. Not of the parsed object:
+ * the hub stores the payload as `jsonb`, which normalizes whitespace and key
+ * order, and a replay is the same bytes under a new unsigned delivery id.
+ */
+export function payloadDigest(payload: Buffer | string): string {
+  return createHash('sha256').update(payload).digest('hex');
+}
+
+/** A delivery body the hub can store: a JSON object, or `null`. */
+export function parseDeliveryBody(payload: Buffer | string): Record<string, unknown> | null {
+  const body = safeParse(payload);
+  return body && !Array.isArray(body) ? body : null;
+}
+
+/** An ISO 8601 string, or epoch seconds as some GitHub payloads carry; else `null`. */
+function timestampOf(value: unknown): Date | null {
+  const date =
+    typeof value === 'string'
+      ? new Date(value)
+      : typeof value === 'number'
+        ? new Date(value * 1000)
+        : null;
+  return date && Number.isFinite(date.getTime()) ? date : null;
 }
 
 function safeParse(payload: Buffer | string): Record<string, unknown> | null {

@@ -6,12 +6,11 @@ import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
-import {
-  activeOrganizationIdOf,
-  type ScopedRequest,
-} from '../../../auth/domain/scope-context.types';
+import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
+import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import type { AbilityRequest } from '../../../roles/application/ability.factory';
 import type { RoleEntity } from '../../domain/role.entity';
 import { RoleResponseDto } from '../../dtos/role.response.dto';
 import { FindRoleByIdQuery } from '../../queries/find-role-by-id/find-role-by-id.query';
@@ -42,21 +41,30 @@ export class CreateRoleHttpController {
     description: 'A role with this name already exists',
     code: 'ROLE_002',
   })
+  @ApiProblemResponse({
+    status: 400,
+    description: 'No active organization, and the caller cannot create a global role',
+    code: 'ROLE_008',
+  })
   async create(
     @Body() body: CreateRoleRequest,
     @CurrentUser() actor: { id: string; role?: string },
-    @Req() request: ScopedRequest,
+    @Req() request: ScopedRequest & AbilityRequest,
   ): Promise<RoleResponseDto> {
+    const organizationId = tenantOrganizationIdOf(request);
     const roleId = await this.commandBus.execute<CreateRoleCommand, AggregateID>(
       new CreateRoleCommand({
         ...body,
         actorId: actor.id,
         actorRole: actor.role,
-        activeOrganizationId: activeOrganizationIdOf(request),
+        organizationId,
+        // Anyone else with no tenant gets ROLE_008; the handler checks
+        // `manage all` again before writing a global role.
+        global: organizationId === null && request.ability?.can('manage', 'all') === true,
       }),
     );
     const role = await this.queryBus.execute<FindRoleByIdQuery, RoleEntity>(
-      new FindRoleByIdQuery(roleId, activeOrganizationIdOf(request)),
+      new FindRoleByIdQuery(roleId, tenantOrganizationIdOf(request)),
     );
     return this.mapper.toResponse(role);
   }

@@ -1,22 +1,37 @@
-import { Composer } from '@oppenheimer/design-system-web';
-import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { Composer, FieldError } from '@oppenheimer/design-system-web';
+import {
+  SESSION_CREATE_MAX_FILES,
+  SESSION_FILE_ACCEPT,
+  SESSION_FILE_MAX_BYTES,
+  sessionFileOffered,
+} from '@oppenheimer/shared/protocol';
+import type { ClipboardEvent, ReactNode } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useReceiveDrops } from '../hooks/use-new-session-drop';
+
+/** One file the composer holds, keyed so two files with one name stay two chips. */
+interface HeldFile {
+  id: string;
+  file: File;
+}
 
 /**
- * The composer of New session: the first task, and the foot row of controls
- * that says how it will be run.
+ * The composer of New session. **The task's text and files live here**, the
+ * lowest component that reads them: held higher, every keystroke would
+ * re-render the host chip, the repository picker and the branch pane. They
+ * leave once, on submit.
  *
- * **The task's text lives here**, in the lowest component that reads it. That
- * is the point of this file existing at all: the sections above hold the chips
- * and the lists they draw, and text held up there would re-render the host
- * chip, the repository picker and the branch pane on every keystroke. What
- * leaves this component is the finished sentence, once.
+ * Every way in — the paperclip, a paste, a drop on the screen's pane, which
+ * hands its files here (`useReceiveDrops`) — goes through `hold` and one
+ * rule, `sessionFileOffered`, shared with the running session's terminal: an
+ * image, a PDF or text, or no type at all (a pasted screenshot often has
+ * none; the API judges the bytes). A file is refused for that, for size or for count,
+ * with the reason under the field, never silently dropped. A paste with no
+ * file is left to the field.
  *
- * `scope` is the band over the field and `tools` and `engine` are the foot
- * row's two slots — where the work happens on top, scope of action on the
- * left, who drives it on the right — and they are passed in rather than built
- * here because each is a chip bound to the New session draft's store.
+ * `scope`, `tools` and `engine` are passed in because each is a chip bound to
+ * the New session draft's store.
  */
 export function NewSessionComposer({
   onSubmit,
@@ -26,37 +41,97 @@ export function NewSessionComposer({
   tools,
   engine,
 }: {
-  onSubmit: (text: string) => void;
+  onSubmit: (text: string, files: File[]) => void;
   busy?: boolean;
   disabled?: boolean;
-  /** The scope chips, in the band fused to the top of the field. */
   scope?: ReactNode;
   tools?: ReactNode;
   engine?: ReactNode;
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState('');
+  const [files, setFiles] = useState<HeldFile[]>([]);
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const picker = useRef<HTMLInputElement>(null);
+
+  function hold(incoming: File[]) {
+    const accepted: HeldFile[] = [];
+    let reason: string | null = null;
+    for (const file of incoming) {
+      if (!sessionFileOffered(file)) {
+        reason = t('sessions.new.composer.attachNotSupported', { name: file.name });
+      } else if (file.size > SESSION_FILE_MAX_BYTES) {
+        reason = t('sessions.new.composer.attachTooLarge', { name: file.name });
+      } else if (files.length + accepted.length >= SESSION_CREATE_MAX_FILES) {
+        reason = t('sessions.new.composer.attachTooMany', { max: SESSION_CREATE_MAX_FILES });
+      } else {
+        accepted.push({ id: crypto.randomUUID(), file });
+      }
+    }
+    setRefusal(reason);
+    if (accepted.length > 0) setFiles((held) => [...held, ...accepted]);
+  }
+
+  useReceiveDrops(hold);
+
+  function onPaste(event: ClipboardEvent<HTMLDivElement>) {
+    // Nothing is prevented: text pasted with a file still lands in the field,
+    // and a textarea inserts nothing for a file.
+    const pasted = Array.from(event.clipboardData.files);
+    if (pasted.length > 0) hold(pasted);
+  }
 
   return (
-    <Composer
-      value={draft}
-      onValueChange={setDraft}
-      busy={busy}
-      disabled={disabled}
-      placeholder={t('sessions.new.composer.placeholder')}
-      labels={{ send: t('sessions.new.composer.send'), stop: t('sessions.new.composer.stop') }}
-      scope={scope}
-      tools={tools}
-      engine={engine}
-      onSubmit={(text) => {
-        const task = text.trim();
-        if (!task) return;
-        onSubmit(task);
-        // Deliberately not cleared. A successful submit navigates to the new
-        // session and this unmounts with it; a failed one leaves the sentence
-        // where its author can fix it and send it again, which is the whole
-        // reason not to clear on the way out.
-      }}
-    />
+    <div className="flex flex-col gap-2">
+      <input
+        ref={picker}
+        type="file"
+        multiple
+        accept={SESSION_FILE_ACCEPT}
+        className="hidden"
+        aria-label={t('sessions.new.composer.attach')}
+        onChange={(event) => {
+          const picked = Array.from(event.currentTarget.files ?? []);
+          // Cleared so choosing the same file again still fires a change.
+          event.currentTarget.value = '';
+          hold(picked);
+        }}
+      />
+      <Composer
+        value={draft}
+        onValueChange={setDraft}
+        busy={busy}
+        disabled={disabled}
+        placeholder={t('sessions.new.composer.placeholder')}
+        labels={{
+          send: t('sessions.new.composer.send'),
+          stop: t('sessions.new.composer.stop'),
+          attach: t('sessions.new.composer.attach'),
+          removeAttachment: (name) => t('sessions.new.composer.removeAttachment', { name }),
+        }}
+        attachments={files.map(({ id, file }) => ({ id, name: file.name }))}
+        onRemoveAttachment={(id) => {
+          setRefusal(null);
+          setFiles((held) => held.filter((file) => file.id !== id));
+        }}
+        onAttach={() => picker.current?.click()}
+        onPaste={onPaste}
+        scope={scope}
+        tools={tools}
+        engine={engine}
+        onSubmit={(text) => {
+          const task = text.trim();
+          if (!task) return;
+          onSubmit(
+            task,
+            files.map(({ file }) => file),
+          );
+          // Deliberately not cleared. A successful submit navigates to the new
+          // session and this unmounts with it; a failed one leaves the sentence
+          // and its files where their author can fix them and send again.
+        }}
+      />
+      {refusal ? <FieldError className="mx-4.5">{refusal}</FieldError> : null}
+    </div>
   );
 }

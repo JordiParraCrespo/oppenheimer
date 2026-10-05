@@ -62,6 +62,7 @@ user-facing diagnostics are the same artifact and the same version.
 | `status` | local diagnostics: link state, sessions, versions, preflight, disk. Exit codes are a contract, as in `apps/cli` |
 | `credential-helper` | git's credential protocol on stdin/stdout, answered over the Unix socket (§8) |
 | `update` | check, apply, pin or roll back a version (09 §5) |
+| `agents update` | bring every installed agent CLI current now, the round `run` does on its own (§10) |
 | `selfcheck` | a staged binary proving it can parse the config and speak the protocol before it becomes the service (09 §5) |
 | `version` | version, commit, build date, protocol range |
 
@@ -143,22 +144,51 @@ What belongs here is what the runner does with it:
   read loop hands each one to a lane per session and goes back to
   reading, so a slow create never holds up the pongs that keep the link
   up, or the `credentials.grant` its own clone is waiting on. A lane runs
-  its session's commands one at a time, in arrival order: an attach,
-  input or stop sent right after a create waits for the session, and a
-  redelivered create runs once the first has ended. The context those
+  its session's commands one at a time, in arrival order: an input or a
+  stop sent right after a create waits for the session, and a
+  redelivered create runs once the first has ended. **An attach is the
+  one command that does not use the lane.** It needs the session's tmux
+  name and nothing else, and that exists long before the create lands, so
+  it waits on the session's own terminal instead; queued, it would sit
+  out the clone and the agent launch for work it does not depend on,
+  which is what building the terminal first exists to avoid. Nothing else
+  is let past: a stop sent during a create is still answered after it. The context those
   commands run on is the daemon's, so a link that drops mid-clone does
   not take the clone with it; their outcomes reach the control plane
   through the event log, which is resent on the next link. The one
   exception is an attach: its id belongs to the link that allocated it,
   so one still queued when that link ends is dropped and the browser
-  reattaches.
+  reattaches — and so is one whose PTY finishes opening after that link
+  ended, whose PTY is closed rather than streamed on the next link.
+  Host commands follow the same rule, each on a lane of its own:
+  `host.update` on one, so a download that outlives the link it was asked
+  on still finishes, and `host.preflight` on another, so a preflight never
+  waits behind a download. What the read loop still does itself is only
+  what cannot block: a credit, a resize of an open attachment (one whose
+  attach is still opening keeps its place behind it in the lane), and a
+  browser's keystrokes, which go to a bounded queue per attachment that
+  one goroutine writes to the PTY. A PTY that stops taking them — a wedged
+  `tmux attach` client — fills its queue, and that attachment is closed
+  (`attachment.closed`, "input stalled") instead of stalling every other
+  one on the link. Event batches the link refuses while it stays up (a
+  full control queue) are offered again every few seconds, in order, and
+  at most 4096 wait: past that the oldest is dropped with a warning, and
+  the next hello's snapshot reconciles. A batch the link took but that
+  has had no ack for a minute — an ack lost on the control plane's side,
+  a batch it dropped — is sent again on the same ticker, with every
+  batch made after it, in order (01, "events.append and events.ack"),
+  rather than waiting pending until the link happens to drop.
 - **Except when the control plane says the host was unpaired**: an HTTP
   `410` at the handshake or a `4410` close (01). That is not a drop but a
   verdict, so the link stops redialling, the revocation is written to
   `config.json`, and later boots do not dial either — the daemon stays up,
   quiet, so the service manager does not restart it into the same refusal
   every few seconds. `runner status` says what happened; a fresh
-  registration replaces the revoked identity without `--force`.
+  registration replaces the revoked identity without `--force`. The
+  verdict also stops the runner's sessions (tmux ends, every checkout
+  stays): unpairing is a person removing the host, which stops the
+  sessions on it (03, 14), and an agent left running would work where no
+  console can see it. A dropped link still leaves sessions running.
 - **As built (`internal/link`, `internal/cli/link*.go`):** the link is a
   port with one transport adapter, as §3 says; the composition root maps
   each message onto the session service. The launch argv comes from
@@ -180,19 +210,50 @@ is no project level: a project is metadata the control plane keeps, and
 one is observable on disk, and each reported as a `session.step` (01)
 as it starts and lands: `host` running when the frame arrives and done
 once create accepts it, then `clone` (the stores), `worktree` (the
-checkouts) and `agent` (tmux and window 0), each landing with the time
+checkouts) and `agent` (window 0's program), each landing with the time
 it took on the host. A failure is `session.failed`; the step that
-started last is the one that failed:
+started last is the one that failed.
+
+**The terminal is made first, before the stores.** It is a stage like the
+others but has no step on the wire — the stepper stays
+`host/clone/worktree/agent` — because what it reports is
+`session.started`: the moment the session has a pane to attach to (01).
+It starts in the directory the worktree will occupy, which does not exist
+yet. Once it does, the pane's shell is replaced by the agent, started in
+the worktree (`tmux respawn-pane`): nothing is typed to start it, so the
+screen opens on what the agent draws, and it runs under the runner's own
+`PATH`, as it did when the agent was the session's first command. A
+create spends its seconds on the clone and the worktree, and with the pane
+made last every one of them was a spinner; made first, an attach waits on
+nothing, and the console shows the steps until the agent runs (05). A
+stage that fails after it kills the pane: a
+terminal with nothing running in it is not a session.
+
+Then, in order:
 
 1. Write the `.oppenheimer` marker into
    `sessions/<slug>/` **before** anything else. Only
    a directory carrying it is ours to delete, ever (10, the rules
    learned from Orca).
-2. For each checkout, ensure the workspace's bare store
-   `repos/<store>.git` exists and is fetched
-   (`git clone --bare` the first time, then `git fetch`, with the
-   `+refs/heads/*:refs/remotes/origin/*` refspec a bare clone does not
-   set), authenticated through the credential helper (§8). The store
+2. For each checkout, ensure the workspace's store
+   `repos/<store>.git` exists and is fetched (the runner still keeps it
+   at `<owner>/<repo>/main`, until note 10's layout lands). The store
+   is blobless and has no working tree. The first clone is **shallow at
+   the base** (`git clone --depth=1 --branch <base> --no-checkout`, the
+   refspec then widened to every branch), which is all a worktree needs
+   and on microsoft/vscode a third of a blobless clone's time (5.4 s
+   against 18.3 s, note 14); the history follows in the background
+   (`fetch --unshallow --filter=blob:none`, the store marked a promisor
+   of `blob:none`), which leaves the store exactly the blobless clone it
+   always was. That fetch takes no lock: while it runs, a create uses a
+   base the clone brought rather than fetching beside it, and waits for it
+   only for a branch the clone did not bring. A store left shallow by a
+   restart is deepened by its next fetch. A create then fetches only the ref
+   its worktree is made from — the base, or the existing branch it
+   checks out — with no tags and git's automatic gc off, and a ref that
+   is not a branch on the remote fails the create. Both go through the
+   credential helper (§8), and so does a blob the session's shell reads
+   later (`git log -p`, `blame`). The store
    is found **by GitHub id**, never by name: the runner writes
    `git config oppenheimer.repo-id <id>` into the bare repo when it
    creates it as `<owner>--<repo>.git`, suffixes the name if that one is
@@ -214,6 +275,23 @@ started last is the one that failed:
    finished), a registration whose directory is gone is pruned, and a
    branch the attempt cut is reused only while it holds nothing the base
    does not. Anything else at the path is `SESS_004`.
+   Each store keeps one **spare** worktree beside the sessions'
+   (`worktrees/.spare`), detached at the base the last create used and
+   fully checked out. A create for a new branch moves it to the
+   session's path and checks out the session's branch there, which
+   writes only what changed on the base since; the runner then makes
+   the next spare in the background. A spare still being made is waited
+   for — it is already writing the files a plain add would write again
+   beside it — a finished one on disk is taken after a restart, and
+   something at `.spare` the store never registered is left alone.
+   `repository.prepare` (01) builds the store and the spare **before** a
+   create is asked for: New session sends it as soon as a host and a
+   repository are picked, so the create that follows only moves the spare
+   and cuts its branch. Session branches are cut `--no-track`: they are
+   pushed to a branch of their own, never pulled from their base.
+   A detached worktree at a session's path is a claim cut short
+   between the move and the checkout; the next attempt finishes it.
+   The cost is one checked-out tree per repository on the host.
 4. `tmux new-session -d -s <id> -c <cwd>` on the dedicated socket, where
    `<cwd>` is the checkout the control plane names as the working
    directory, or the session directory when it names none, with the
@@ -232,10 +310,27 @@ started last is the one that failed:
    agent's `launch` map in `packages/shared/src/agents/catalog.ts`. The
    maps hold argument *vectors*, so the runner concatenates and never
    parses, and a value that would need quoting cannot become a second
-   word. It **drops** a stop it has no entry for rather than failing the
-   launch: a thinking budget is never worth refusing a session over, and
-   the console has already hidden a control the catalog declares nothing
-   for. The table is `launch_catalog.gen.go`, generated from the catalog
+   word. It **drops** a choice it has no entry for rather than failing
+   the launch: a thinking budget is never worth refusing a session over,
+   and the console has already hidden a control the catalog declares
+   nothing for.
+
+   **Effort is keyed by model** (changed 2026-09-29). The agent's
+   `launch.effort` is how it spells *any* level — `--effort <effort>`,
+   `-c model_reasoning_effort=<effort>`, `--reasoning-effort <effort>`,
+   OpenCode's `OPENCODE_CONFIG_CONTENT` naming the build agent's model
+   and variant — with `<effort>` and `<model>` replaced inside each word;
+   which levels exist is the model row's list. The runner spells a level
+   only when the launch's model (the agent's default when none is named)
+   lists it, so a model id is spliced in only once the catalog knows it,
+   and a level it lacks is dropped, never forwarded to a CLI that would
+   refuse it or pass it to an API that would. A launch saved before this
+   carries an old product stop and no `effortIsLevel` mark; on restart its
+   effort is not sent and the CLI runs at its own default, rather than
+   reading `medium` with a meaning nobody chose. An effort's environment
+   never names a variable a permission level sets (the catalog spec holds
+   it); if one ever did, the permission level wins, because an effort must
+   not loosen what the agent may do. The table is `launch_catalog.gen.go`, generated from the catalog
    and checked against it, and the runner's own agent list is one map
    from its agent names to catalog ids; an id it does not know launches
    nothing and is never read as Claude Code.
@@ -355,12 +450,25 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
 - Resize goes straight through to the tmux window. The console holds a
   drag's sizes for 50 ms and sends the one it settles on, so the runner
   adds no timer of its own.
-- A **pasted image** (`session.image`) is pulled, not streamed: the
+- A **pasted file** (`session.image`: an image, a PDF, text) is pulled, not streamed: the
   runner fetches it from the control plane over HTTPS on its own
   goroutine, so the reader that pumps every pane never waits on it. It
-  re-checks the bytes against the generated image table, writes the file
+  re-checks the bytes against the generated file table (magic bytes for
+  the images and PDF; for text, valid UTF-8 with no control bytes and no
+  `#!` or markup opening), writes the file under `<command id><extension
+  from the table>`, never a name the person chose
   (§11), and pastes the path through a tmux buffer named for the command,
   as a bracketed paste. A paste that does not land deletes its file.
+- **Images attached to the first task** (`session.create`'s `images`)
+  are pulled the same way, all at once and before anything is made, and
+  not at all for a session the host already holds (a create sent again);
+  a pull that fails fails the create with the reason, and a create with
+  images and no task is refused. They are saved where pasted
+  images go (§11) just before the agent starts, and their paths are
+  appended to the prompt it is launched with, a blank line after the
+  task and one path to a line. The session keeps the task as typed, so
+  a restart, by which time the images went with the tmux session, names
+  no file that is gone.
 
 ### 8. Git and credentials
 
@@ -379,6 +487,10 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
   on for want of a credential fails with `GIT_004`, saying which
   repository and session had no token — never git's "could not read
   Username", which points at a prompt nobody was shown.
+  Close marks its whole run with the session, as create does, and a
+  push for no session is refused with `GIT_004` before it reaches the
+  network: a push always needs the token, and GitHub's refusal would
+  read as work that could not be pushed.
 - The runner **pulls** a fresh token from the control plane before
   expiry — it is the side that knows when the token is about to be used
   — and the control plane may push `credentials.revoke` to drop it early
@@ -454,6 +566,21 @@ the control plane refuses to create a session for (01). Missing
 §2). **Disk pressure** is a status event before a session fails to
 write, not an error after (note 12).
 
+**Agent updates.** Installed agent CLIs stay current: `run` runs each
+one's own unattended updater, the catalog's `update`
+(`packages/shared/src/agents/catalog.ts`), shortly after boot and on a
+schedule after, one at a time and never beside the runner's own update
+check or another round, and a session starting that agent meanwhile
+waits for its update. A CLI one release behind is refused by its vendor the day a model
+ships that needs the newer one, and the person would find out in the
+session's terminal. A running session keeps the binary it started with;
+the next session starts the new one. An agent that is not installed is
+left alone, and so is one whose updater cannot run without asking
+(OpenCode's asks whenever it cannot tell how it was installed): the catalog
+gives it no `update`. A failure is logged and retried; `runner agents
+update` runs the round by hand (09 open question 4 says what to do when it
+fails). `RUNNER_AGENT_UPDATES=off` opts a host out.
+
 ### 11. State on disk
 
 One tree, named here and pointed at from 09:
@@ -466,7 +593,7 @@ One tree, named here and pointed at from 09:
   state/sessions.json  0600  session id → checkouts (path, branch, repo, mode), cwd, agent
   state/update.json    0600  what the last update did, and how often it has booted
   manifests/                 agent manifests newer than the bundled ones (§9)
-  images/<session>/    0700  images pasted into a session's prompt, 0600 each, named by command id; dropped when the tmux session ends (stop, close, a reboot)
+  images/<session>/    0700  files pasted into or attached to a session's prompt (images, PDF, text), 0600 each, named by command id; dropped when the tmux session ends (stop, close, a reboot)
   bin/                       runner-<version> binaries and the `current` symlink (09 §5)
   run/                       runner.sock, runner.lock
   log/                       runner.log, rotated at 10 MB × 3
@@ -546,3 +673,10 @@ capacity gate, the egress proxy, and the `hypervisor`, `guest` and
 8. Whether `sessions` should split into `sessions` and `workspaces` once
    the VM slice adds a second kind of place a worktree can live. Today
    git is an adapter of `sessions`; then it may want its own context.
+9. ~~**Network work before Send.**~~ Decided 2026-10-02 (§5): New session
+   sends `repository.prepare` when a host and a repository are picked; the
+   first clone is shallow and deepened in the background; checkouts run one
+   worker per core. Skipping a create's fetch when the store is fresh was
+   measured and **not** taken: a create sees its base as it is now, and the
+   fetch costs about half a second. A treeless clone was measured slower
+   than shallow (13.4 s against 9.3 s to a ready spare on vscode).

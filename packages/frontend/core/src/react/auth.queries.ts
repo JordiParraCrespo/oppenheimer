@@ -5,14 +5,16 @@ import {
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import { CORE_CONFIG } from '../config';
 import type { SocialAuthIntent, SocialProvider } from '../modules/auth/auth.client';
 import { useOppenheimerApp } from './context';
 import { featureFlagsQueryOptions } from './feature-flags.queries';
 import { withCacheOnSuccess } from './mutations';
 import { reconcileCacheOwner } from './persistence';
+import { useQuery } from './query';
+import { expireSession } from './query-client';
 import { authKeys } from './query-keys';
 import { usersKeys } from './users.queries';
 
@@ -28,10 +30,6 @@ export function useSessionRestore(
     queryKey: authKeys.session(),
     queryFn: async () => {
       const userId = await app.auth.restoreSession();
-
-      // A persisted cache can outlive the session it was written under, so
-      // check it still belongs to whoever is signed in now — before this
-      // resolves and either app's gate renders anything from it.
       reconcileCacheOwner(queryClient, userId);
 
       // Start the flags request now that we know who is asking, so it runs
@@ -44,13 +42,15 @@ export function useSessionRestore(
 
       return userId;
     },
-    // Retry transient failures on startup. `restoreSession()` only rejects when
-    // the session lookup itself fails (network/server error) — a genuinely
-    // unauthenticated user resolves successfully, so retries never fire for
-    // them. Without this a single network blip masquerades as "logged out" and
-    // silently bounces the user to /login.
-    retry: 2,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+    // `restoreSession()` only rejects when the session lookup itself fails
+    // (network/server error); a signed-out user resolves, so retries never
+    // fire for them.
+    retry: CORE_CONFIG.session.restoreRetries,
+    retryDelay: (attempt) =>
+      Math.min(
+        CORE_CONFIG.session.restoreRetryBaseMs * 2 ** attempt,
+        CORE_CONFIG.session.restoreRetryMaxMs,
+      ),
     staleTime: Infinity,
     ...options,
   });
@@ -58,12 +58,11 @@ export function useSessionRestore(
 
 /**
  * What a social button hands the mutation. The `intent` is what separates the
- * login screen's button from the register screen's: the API refuses a provider
- * identity it has never seen unless the caller asked for a sign-up.
+ * login screen's button from the register screen's ({@link SocialAuthIntent}).
  */
 export interface SocialLoginVariables {
   provider: SocialProvider;
-  /** Defaults to `'sign-in'`, which refuses an identity with no account here. */
+  /** Defaults to `'sign-in'`. */
   intent?: SocialAuthIntent;
 }
 
@@ -102,6 +101,17 @@ export function useLogout(options?: Omit<UseMutationOptions<void, Error, void>, 
   });
 }
 
+/**
+ * End a session the server has stopped honouring, from something that is not a
+ * query: a terminal's stream closing as `unauthorized`, say. The query client
+ * does the same for every 401 it sees; this is that path for the rest.
+ */
+export function useExpireSession(): () => void {
+  const app = useOppenheimerApp();
+  const queryClient = useQueryClient();
+  return () => expireSession(app, queryClient);
+}
+
 export function useForgotPassword(
   options?: Omit<UseMutationOptions<void, Error, string>, 'mutationFn'>,
 ) {
@@ -123,21 +133,6 @@ export function useResetPassword(
 
   return useMutation({
     mutationFn: ({ token, password }) => app.auth.resetPassword(token, password),
-    ...options,
-  });
-}
-
-export function useChangePassword(
-  options?: Omit<
-    UseMutationOptions<void, Error, { currentPassword: string; newPassword: string }>,
-    'mutationFn'
-  >,
-) {
-  const app = useOppenheimerApp();
-
-  return useMutation({
-    mutationFn: ({ currentPassword, newPassword }) =>
-      app.auth.changePassword(currentPassword, newPassword),
     ...options,
   });
 }

@@ -5,10 +5,9 @@
  * `packages/shared/src/agents/catalog.ts` is the source 01 points at for how
  * a structured launch becomes each agent's argv. The runner reads the same
  * entry, in Go; rather than a hand-kept twin that drifts on the next catalog
- * edit, the Go file is generated here, as the second half of
- * `pnpm --filter @oppenheimer/shared build` beside the protocol schema, and
- * committed. `catalog.spec.ts` fails when the committed file is stale, so the
- * drift cannot ship green.
+ * edit, the Go file is generated here as part of
+ * `pnpm --filter @oppenheimer/shared build` and committed. `catalog.spec.ts`
+ * fails when the committed file is stale, so the drift cannot ship green.
  */
 const { writeFileSync } = require('node:fs');
 const { join, relative } = require('node:path');
@@ -28,11 +27,26 @@ const outputPath = join(
   'launch_catalog.gen.go',
 );
 
+// The updaters go to the host context, which owns the tools and never imports
+// the sessions one (`apps/runner/internal/arch/arch_test.go`).
+const updatesOutputPath = join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'apps',
+  'runner',
+  'internal',
+  'host',
+  'domain',
+  'agent_update.gen.go',
+);
+
 function goStrings(vector) {
   return `[]string{${vector.map((word) => JSON.stringify(word)).join(', ')}}`;
 }
 
-/** Inside a `map[string][]string` literal `gofmt -s` elides the element type. */
+/** Inside a composite literal `gofmt -s` elides the element type. */
 function goElided(vector) {
   return `{${vector.map((word) => JSON.stringify(word)).join(', ')}}`;
 }
@@ -48,14 +62,6 @@ function aligned(entries, indent) {
   return entries.map(
     ([key, value]) => `${indent}${key}:${' '.repeat(width - key.length + 1)}${value},`,
   );
-}
-
-function goMap(record) {
-  const entries = Object.entries(record).map(([key, vector]) => [
-    JSON.stringify(key),
-    goElided(vector),
-  ]);
-  return `map[string][]string{\n${aligned(entries, '\t\t\t').join('\n')}\n\t\t}`;
 }
 
 /** One permission level: its argv and its env, each omitted when empty. */
@@ -78,6 +84,19 @@ function goLevels(record) {
   return `map[string]launchLevel{\n${aligned(entries, '\t\t\t').join('\n')}\n\t\t}`;
 }
 
+/**
+ * The effort levels each model offers, keyed by model id: which names a
+ * launch on that model may carry. A model with no effort has no row, so the
+ * runner drops a level asked of it. How a level is spelled is the agent's one
+ * `effort` level, beside this.
+ */
+function goEffortLevels(models) {
+  const rows = models
+    .filter((model) => model.effort)
+    .map((model) => [JSON.stringify(model.id), goElided(model.effort.levels)]);
+  return `map[string][]string{\n${aligned(rows, '\t\t\t').join('\n')}\n\t\t}`;
+}
+
 /** One login target: a host, and a path prefix when there is one. */
 function goTarget(target) {
   const fields = [`Host: ${JSON.stringify(target.host)}`];
@@ -92,9 +111,10 @@ function render() {
     '',
     'package domain',
     '',
-    "// launchCatalog is each agent's `launch` entry of the catalog: the argument",
-    '// vectors a structured launch becomes. `<model>` and `<prompt>` are the two',
-    '// placeholders, substituted whole.',
+    "// launchCatalog is each agent's `launch` entry of the catalog, and the effort",
+    '// levels its models offer: the argument vectors a structured launch becomes.',
+    '// `<model>`, `<prompt>` and `<conversation>` are substituted whole; an effort',
+    '// spelling has `<effort>` and `<model>` replaced inside each word.',
     'var launchCatalog = map[string]launchMap{',
   ];
   for (const id of CODING_AGENT_IDS) {
@@ -103,11 +123,33 @@ function render() {
     lines.push(`\t${JSON.stringify(id)}: {`);
     // Single-line fields align as a run; each multi-line map stands alone.
     const head = [['command', JSON.stringify(agent.command)]];
+    if (launch.always) head.push(['always', goStrings(launch.always)]);
     if (launch.model) head.push(['model', goStrings(launch.model)]);
+    const defaultModel = agent.models.find((model) => model.default);
+    if (defaultModel) head.push(['defaultModel', JSON.stringify(defaultModel.id)]);
     lines.push(...aligned(head, '\t\t'));
     if (launch.permission) lines.push(`\t\tpermission: ${goLevels(launch.permission)},`);
-    if (launch.effort) lines.push(`\t\teffort: ${goMap(launch.effort)},`);
-    if (launch.prompt) lines.push(`\t\tprompt: ${goStrings(launch.prompt)},`);
+    if (launch.effort) {
+      const spelling = [['effort', `launchLevel${goLevel(launch.effort)}`]];
+      if (launch.effort.unset) spelling.push(['effortUnset', JSON.stringify(launch.effort.unset)]);
+      lines.push(...aligned(spelling, '\t\t'));
+      lines.push(`\t\teffortLevels: ${goEffortLevels(agent.models)},`);
+    }
+    // gofmt aligns a run of consecutive single-line fields, so these are
+    // emitted as one run rather than a line each — otherwise the generated
+    // file is not gofmt-clean and the Go linter fails on it.
+    const tail = [];
+    if (launch.prompt) tail.push(['prompt', goStrings(launch.prompt)]);
+    if (launch.conversation?.create) {
+      tail.push(['conversationCreate', goStrings(launch.conversation.create)]);
+    }
+    if (launch.conversation?.resume) {
+      tail.push(['conversationResume', goStrings(launch.conversation.resume)]);
+    }
+    if (launch.conversation?.resumeLeads) {
+      tail.push(['conversationResumeLeads', 'true']);
+    }
+    if (tail.length > 0) lines.push(...aligned(tail, '\t\t'));
     lines.push('\t},');
   }
   lines.push('}', '');
@@ -127,18 +169,56 @@ function render() {
   return lines.join('\n');
 }
 
-const output = render();
-if (process.argv.includes('--check')) {
-  const { readFileSync } = require('node:fs');
-  if (readFileSync(outputPath, 'utf8') !== output) {
-    console.error(
-      `${relative(process.cwd(), outputPath)} is stale; run pnpm --filter @oppenheimer/shared build`,
-    );
-    process.exit(1);
-  }
-  process.exit(0);
+/**
+ * Each agent's `update` argv, keyed by the executable it runs on — the tool
+ * name the host context probes. The blank terminal has no command and no
+ * updater, so it has no row.
+ */
+function renderUpdates() {
+  const rows = CODING_AGENT_IDS.filter((id) => CODING_AGENTS[id].update).map((id) => [
+    JSON.stringify(CODING_AGENTS[id].command),
+    goElided(CODING_AGENTS[id].update),
+  ]);
+  return [
+    '// Code generated by packages/shared/scripts/emit-agent-catalog.cjs from',
+    '// packages/shared/src/agents/catalog.ts; DO NOT EDIT.',
+    '',
+    'package domain',
+    '',
+    "// agentUpdates is each agent's `update` entry of the catalog, keyed by the",
+    '// executable it runs on: the argv, appended to that executable, that updates',
+    '// the CLI in place without asking. An agent whose updater asks has no row.',
+    'var agentUpdates = map[string][]string{',
+    ...aligned(rows, '\t'),
+    '}',
+    '',
+  ].join('\n');
 }
-writeFileSync(outputPath, output, 'utf8');
-console.log(`runner launch catalog written to ${relative(process.cwd(), outputPath)}`);
 
-module.exports = { render, outputPath };
+// Only when run: `require()` must not rewrite the committed file, or the spec
+// that compares it with render() would compare a fresh render with itself.
+if (require.main === module) {
+  const outputs = [
+    [outputPath, render()],
+    [updatesOutputPath, renderUpdates()],
+  ];
+  if (process.argv.includes('--check')) {
+    const { readFileSync } = require('node:fs');
+    let stale = false;
+    for (const [path, output] of outputs) {
+      if (readFileSync(path, 'utf8') !== output) {
+        console.error(
+          `${relative(process.cwd(), path)} is stale; run pnpm --filter @oppenheimer/shared build`,
+        );
+        stale = true;
+      }
+    }
+    process.exit(stale ? 1 : 0);
+  }
+  for (const [path, output] of outputs) {
+    writeFileSync(path, output, 'utf8');
+    console.log(`runner agent catalog written to ${relative(process.cwd(), path)}`);
+  }
+}
+
+module.exports = { render, outputPath, renderUpdates, updatesOutputPath };

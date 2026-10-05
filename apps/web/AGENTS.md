@@ -20,16 +20,20 @@
 - A form → `src/features/<module>/forms/` (props in, `onSubmit` out; never fetches).
 - A dialog → `src/features/<module>/dialogs/`, one per file, owning its mutation.
 - A helper or component a second screen wants → `@oppenheimer/frontend-web`, not a
-  second copy and not `src/lib/` (that holds only `oppenheimer.ts`, `auth-client.ts`, `nav.ts`).
+  second copy and not `src/lib/` (that holds only configuration: `oppenheimer.ts`,
+  `auth-client.ts`, `nav.ts`, and `console.ts`, which names the console's dialogs
+  and lists for the kit's generic `createDialogSlot`; `pnpm check:structure` holds the list).
 - Logic — entities, repositories, query hooks → `@oppenheimer/frontend-consumer` or
   `@oppenheimer/frontend-core`.
 
 ## Telling the user something worked, or didn't
 
-- **A failure stays on screen**: `<Alert variant="destructive">` next to what
-  failed. Never a toast — a faded submission error cannot be re-read.
-- **A success is transient**: `toast.success()` imported from
-  `@oppenheimer/design-system-web` (not from `sonner`), copy under `toasts.*`.
+- **A failure stays on screen**: `<ErrorAlert>` from `@oppenheimer/frontend-web`
+  next to what failed. Never a toast — a faded submission error cannot be re-read.
+- **A success is transient**: `notifySuccess()` from `@oppenheimer/frontend-web`
+  (not `toast` directly, and never `sonner`), copy under `toasts.*`, and only
+  when the result is easy to miss. When to toast and when not to is
+  `.agents/rules/frontend-ui.md`.
 - Field validation is neither: `Field` + `FieldError`.
 - `<Toaster />` is mounted once in `src/app.tsx` and handed the app's own
   `theme`, because the design system's `Toaster` reads `next-themes` and this
@@ -55,12 +59,16 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
 - Building a screen this console does not have. There is no profile page
   inside the console and no settings pane in it: Settings is its own chrome
   beside the console (`routes/_authenticated/settings.tsx`), and its sections
-  are features named after their modules (`profile`, `hosts`). There is one
-  pairing surface, `/hosts/new`; the composer's host chip and Settings → Hosts
-  open the same screen, and `?from=settings` is how the header knows which
-  (`product/versions/mvp/05-screens.md`).
+  are features named after their modules (`profile`, `hosts`). The console
+  pairs a machine in a dialog, `hosts/dialogs/add-host.tsx`, from the
+  composer's host chip; the one pairing page, `AddHostScreen`, is Settings'
+  own at `/settings/hosts/new`. New project, Project settings and the
+  automation editor are dialogs too, not pages
+  (`product/versions/mvp/05-screens.md`, `13-automations.md`). Plan's task,
+  goal and Start session dialogs open from the address (`?task=`, `?start=`)
+  so "Back to task" is a link (`product/versions/mvp/18-plan-product.md`).
 - Putting `useWatch` or a query in the page and threading the value down.
-  Subscribe at the leaf — `packages/frontend/web/src/auth/components/password-requirements.tsx`
+  Subscribe at the leaf — `src/features/projects/components/project-save-button.tsx`
   for a form value, `src/features/sessions/screens/session.tsx` for a query:
   the route composes, and the screen that branches on a session's state is the
   one that asked for it. `pnpm check:structure` fails a query a screen holds

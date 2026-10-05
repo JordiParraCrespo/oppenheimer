@@ -10,8 +10,7 @@ export default defineConfig({
   // There is one .env, at the monorepo root; a .env placed in apps/web is
   // deliberately not read. Only VITE_-prefixed values reach the client bundle.
   envDir: path.resolve(import.meta.dirname, '../..'),
-  // Busts the persisted query cache on release: a version bump drops entries
-  // that may not match the new response shapes.
+  // The persisted query cache's buster (`providers/query-provider.tsx`).
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
@@ -22,10 +21,8 @@ export default defineConfig({
       autoCodeSplitting: true,
     }),
     react({
-      // The React Compiler memoises components and hooks at build time, so
-      // nothing here needs `useMemo`, `useCallback` or `memo` by hand. React 19
-      // ships the runtime it needs; `babel-plugin-react-compiler` is the
-      // plugin's peer and the only addition.
+      // React 19 ships the runtime the React Compiler needs;
+      // the compiler itself is `oxc-transform-react`, the only addition.
       compiler: true,
     }),
     tailwindcss(),
@@ -35,40 +32,12 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
-  optimizeDeps: {
-    // Workspace packages are linked, not installed, so dev has to be told to
-    // pre-bundle this CommonJS entrypoint into ESM.
-    include: [
-      '@oppenheimer/shared/schemas/auth',
-      '@oppenheimer/shared/schemas/organization',
-      '@oppenheimer/shared/schemas/profile',
-      '@oppenheimer/shared/schemas/project',
-      '@oppenheimer/shared/schemas/role',
-      '@oppenheimer/shared/constants',
-      '@oppenheimer/shared/permissions',
-      // The flag catalog: `useFeatureFlag` reads each flag's safe default
-      // from it before the API has answered.
-      '@oppenheimer/shared/feature-flags/catalog',
-      // The coding-agent catalog: New session reads the models, the launch
-      // flags and the effort stops out of it.
-      '@oppenheimer/shared/agents',
-      '@oppenheimer/shared/schemas/session',
-      // The attach socket's control vocabulary and close codes.
-      '@oppenheimer/shared/protocol',
-    ],
-  },
   build: {
     rollupOptions: {
       // One chunk per library instead of one chunk for all of them, so a
       // release invalidates app code and leaves the dependencies cached. See
       // the note in `@oppenheimer/tsconfig/vite-chunks.mjs`.
       output: { manualChunks: vendorChunks },
-    },
-    commonjsOptions: {
-      // `@oppenheimer/shared` builds to CommonJS for the API's sake. Its `dist` sits
-      // outside `node_modules`, so the interop plugin skips it by default and
-      // Rollup cannot see the named exports.
-      include: [/node_modules/, /packages[\\/]shared[\\/]dist/],
     },
   },
   server: {

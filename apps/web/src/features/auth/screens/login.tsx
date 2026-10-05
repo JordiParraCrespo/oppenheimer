@@ -1,4 +1,4 @@
-import { useLogin } from '@oppenheimer/frontend-core/react';
+import { useErrorMessage, useLogin } from '@oppenheimer/frontend-core/react';
 import {
   AuthDivider,
   AuthFooterNote,
@@ -7,7 +7,6 @@ import {
   AuthTitle,
   OAuthCallbackNotice,
   SocialLoginButtons,
-  useErrorMessage,
 } from '@oppenheimer/frontend-web';
 import type { LoginDto } from '@oppenheimer/shared/schemas/auth';
 import { useNavigate } from '@tanstack/react-router';
@@ -43,7 +42,7 @@ export function LoginScreen({
         // Split rather than pass the whole string as `to`: the target may
         // carry search params (`/settings?section=security`), and `to` is a
         // path — everything after the `?` would be swallowed into the pathname.
-        const [pathname, query] = (redirectTo ?? '/sessions').split('?');
+        const [pathname, query] = (redirectTo ?? '/sessions/new').split('?');
         navigate({
           to: pathname,
           search: Object.fromEntries(new URLSearchParams(query ?? '')),
@@ -66,7 +65,7 @@ export function LoginScreen({
       <LoginForm
         defaultEmail={email}
         isPending={isPending}
-        error={error ? resolveError(error, t('auth.login.invalidCredentials')).message : undefined}
+        error={error ? resolveError(error, t('auth.login.invalidCredentials')) : undefined}
         forgotPasswordLink={
           <AuthLink to="/forgot-password">{t('auth.login.forgotPassword')}</AuthLink>
         }

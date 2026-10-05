@@ -1,17 +1,12 @@
-import { AppError } from '@oppenheimer/backend-core';
 import { describe, expect, it } from 'vitest';
 import { SessionCheckoutEntity } from '../../domain/session-checkout.entity';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
 import { SessionPlanFactory } from '../session-plan.factory';
 
 /**
- * Where the agent is launched.
- *
- * The aggregate used to refuse a foreign checkout from a `setCwdCheckout` setter;
- * that setter is gone, because `cwdCheckoutId` is folded from the log and a setter
- * beside the fold was a second truth. The refusal moved here, to the factory that
- * turns `cwdGithubRepoId` — what the request names — into the checkout id the log
- * records, and this is the test that moved with it.
+ * Where the agent is launched. `cwdCheckoutId` is folded from the log, so refusing
+ * a foreign checkout is the factory's job: it turns `cwdGithubRepoId`, what the
+ * request names, into the checkout id the log records.
  */
 function session() {
   return WorkSessionEntity.request({
@@ -57,7 +52,9 @@ describe('SessionPlanFactory.cwdCheckoutIdFor', () => {
     const work = session();
     work.attachCheckout(checkout(work.id, '42', 'xrp-mobile'));
 
-    expect(() => factory.cwdCheckoutIdFor(work, 999)).toThrow(AppError);
+    expect(() => factory.cwdCheckoutIdFor(work, 999)).toThrow(
+      expect.objectContaining({ code: 'SESSIONS_003' }),
+    );
   });
 
   it('names the checkout of the repository the request asked for', () => {

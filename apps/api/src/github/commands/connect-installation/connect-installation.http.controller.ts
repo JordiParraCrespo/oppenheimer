@@ -36,18 +36,16 @@ export class ConnectInstallationHttpController {
   @CheckPolicies({ action: 'create', subject: 'Installation' })
   @RequireScopes('repositories:write')
   @ApiOperation({
-    // Named explicitly: the generated client turns an operationId into a function
-    // name, and the defaults (`list`, `connect`) would collide across resources.
-    operationId: 'connectInstallation',
     summary: 'Connect a GitHub App installation to the workspace',
     description:
-      'Called with the `installation_id` and OAuth `code` GitHub puts on the install redirect. The code is exchanged once to prove the caller can see the installation, then discarded — it is never stored. Re-posting the same installation refreshes what GitHub reports about it.',
+      'Called with the `installation_id`, OAuth `code` and `state` GitHub puts on the install redirect. The `state` must be one `POST /installations/install-state` minted for this caller in this workspace; it is spent on the first attempt, before GitHub is called. The code is exchanged once to prove the caller can see the installation, then discarded — it is never stored. Re-posting the same installation, with a fresh state, refreshes what GitHub reports about it.',
   })
   @ApiResponse({ status: 201, type: InstallationResponseDto })
   @ApiProblemResponse({
     status: 400,
-    description: 'The authorization code was expired or already used, or no organization is active',
-    code: ['GITHUB_005', 'GITHUB_006'],
+    description:
+      'The install state was missing, expired, used or someone else’s; the authorization code was expired or already used; or no organization is active',
+    code: ['GITHUB_005', 'GITHUB_006', 'GITHUB_011'],
   })
   @ApiProblemResponse({
     status: 403,
@@ -80,11 +78,10 @@ export class ConnectInstallationHttpController {
         userId: scope.userId,
         githubInstallationId: body.githubInstallationId,
         code: body.code,
+        state: body.state,
       }),
     );
 
-    // Commands return only the aggregate id; the full DTO comes from a follow-up
-    // query, which also re-applies the caller's scope.
     const installation = await this.queryBus.execute<
       FindInstallationQuery,
       GithubInstallationEntity

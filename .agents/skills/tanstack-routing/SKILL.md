@@ -23,7 +23,7 @@ apps/web/src/
 ├── app.tsx             createRouter, the RouterContext type, the auth subscription
 ├── routeTree.gen.ts    GENERATED — never edit by hand
 └── routes/
-    ├── __root.tsx      NuqsAdapter + PageViewTracker, no guard
+    ├── __root.tsx      PageViewTracker, no guard
     ├── index.tsx       /  → redirects to /sessions or /login
     ├── _auth.tsx       the split screen (AuthLayout + panel), no guard
     ├── _auth/
@@ -54,18 +54,24 @@ visitors away, and onboarding, which turns signed-out ones away — the layout
 carries no guard and each subtree gets a pathless child that carries its own.
 Stacking both onto the shared parent is how you get a redirect loop.
 
-**`validateSearch` replaces the route's search.** Whatever it returns *is* the
-search; a key it does not return is gone by the next navigation. A route that
-only cares about one key must still spread the rest through, or it silently
-deletes another component's state — `routes/_authenticated/settings/index.tsx`
-is the worked example, and `__root.tsx` explains why nuqs depends on it.
+**A route's search is its schema, and nothing else.** `validateSearch` is a
+Zod object from the feature's `lib/` (`features/<module>/lib/*-search.ts`,
+built from the kit's `searchText` / `searchFlag` / `searchPage`), passed to the
+router as it is — Zod is a Standard Schema, so no adapter. The router replaces
+the search with what the schema returns, so a key it does not name is dropped,
+on purpose: one rule, and no second writer of the URL for it to
+protect. A value of the wrong shape reads as absent (`.catch(undefined)`)
+rather than failing the route. A list's filters are search params of the
+routes that show the list (`runsSearchSchema` on both runs routes), read and
+written through the route that draws it — `getRouteApi(id).useSearch()` and
+its `useNavigate()` with `search: (previous) => …, replace: true` — never
+`useSearch({ strict: false })`, which reads keys the route did not name.
 
-The wider TanStack advice is to write these as Zod schemas with defaults, which
-buys real type safety. Weigh it here against the bundle: `validateSearch` is
-critical-path code that `autoCodeSplitting` will not split out, and `apps/web`
-must not pull runtime values from the `@oppenheimer/shared` root. A narrow
-schema from a subpath is fine; a hand-rolled validator, as the routes use
-today, is also fine. `pnpm check:bundle` is the arbiter.
+`validateSearch` is critical-path code that `autoCodeSplitting` will not split
+out, so a schema imports nothing heavy: Zod is already on the first load, and
+whatever a schema reaches in `@oppenheimer/shared` lands on it (the package
+tree-shakes, but what is used is kept whole). `pnpm check:bundle` is the
+arbiter.
 
 **`to` is a pathname, never a URL with a query.** `to: '/settings?section=security'`
 puts the whole string in the pathname and 404s. Split it and pass `search`

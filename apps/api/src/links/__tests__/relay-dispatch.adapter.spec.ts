@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
 import { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import type { LinkRegistryPort, RunnerLink } from '../application/link-registry.port';
-import type { ParkedImagePort } from '../application/parked-image.port';
+import type { ParkedFilePort } from '../application/parked-file.port';
 import { RelayDispatchAdapter } from '../infrastructure/relay-dispatch.adapter';
 
 /**
@@ -52,7 +52,12 @@ function harness(withLink: boolean, capabilities: RunnerCapability[] = ['session
     capabilities,
     send: vi.fn().mockReturnValue(true),
   } as unknown as RunnerLink;
-  const images = { park: vi.fn(), collect: vi.fn() } satisfies ParkedImagePort;
+  const images = {
+    park: vi.fn(),
+    stage: vi.fn(),
+    claim: vi.fn(),
+    collect: vi.fn(),
+  } satisfies ParkedFilePort;
   const links: LinkRegistryPort = {
     register: vi.fn(),
     unregister: vi.fn(),
@@ -87,7 +92,9 @@ describe('RelayDispatchAdapter', () => {
     expect(parsed.sessionId).toBe(entity.id);
     expect(parsed.organizationSlug).toBe('jordi');
     expect(parsed.sessionSlug).toBe('bold-otter-3f9a7k');
-    expect(parsed.launch).toEqual({ permission: 'ask' });
+    // The conversation is the session's own id: it is what lets the agent's
+    // transcript be reopened once the pane is gone.
+    expect(parsed.launch).toEqual({ permission: 'ask', conversation: entity.id });
     expect(parsed.prompt).toBe('Fix the wallet list empty state');
     expect(parsed.checkouts).toEqual([
       expect.objectContaining({ githubRepoId: 42, repositoryFullName: 'acme/xrp-mobile' }),
@@ -137,7 +144,7 @@ describe('RelayDispatchAdapter', () => {
     const data = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     const work = session();
 
-    const outcome = await adapter.pasteImage(work, { window: 0, mediaType: 'image/png', data });
+    const outcome = await adapter.pasteFile(work, { window: 0, mediaType: 'image/png', data });
 
     expect(outcome).toEqual({ delivered: true, hints: [] });
     const sent = sessionImageSchema.strict().parse(vi.mocked(link.send).mock.calls[0]?.[0]);
@@ -152,7 +159,7 @@ describe('RelayDispatchAdapter', () => {
 
   it('parks nothing for a host that is offline', async () => {
     const { adapter, link, images } = harness(false);
-    const outcome = await adapter.pasteImage(session(), {
+    const outcome = await adapter.pasteFile(session(), {
       window: 0,
       mediaType: 'image/png',
       data: Buffer.from([0x89]),
@@ -164,7 +171,7 @@ describe('RelayDispatchAdapter', () => {
 
   it('sends nothing to a runner that did not say it takes images', async () => {
     const { adapter, link, images } = harness(true, []);
-    const outcome = await adapter.pasteImage(session(), {
+    const outcome = await adapter.pasteFile(session(), {
       window: 0,
       mediaType: 'image/png',
       data: Buffer.from([0x89]),
@@ -172,5 +179,79 @@ describe('RelayDispatchAdapter', () => {
     expect(outcome).toEqual({ delivered: false, hints: ['not_supported'] });
     expect(link.send).not.toHaveBeenCalled();
     expect(images.park).not.toHaveBeenCalled();
+  });
+
+  it('sends a PDF only to a runner that said it takes files beyond images', async () => {
+    const pdf = { window: 0, mediaType: 'application/pdf' as const, data: Buffer.from('%PDF-1.7') };
+
+    const older = harness(true, ['session.image']);
+    expect(await older.adapter.pasteFile(session(), pdf)).toEqual({
+      delivered: false,
+      hints: ['not_supported'],
+    });
+    // Parked bytes would wait for a pull that is refused on arrival.
+    expect(older.images.park).not.toHaveBeenCalled();
+
+    const current = harness(true, ['session.image', 'session.files']);
+    expect(await current.adapter.pasteFile(session(), pdf)).toEqual({
+      delivered: true,
+      hints: [],
+    });
+    const sent = sessionImageSchema.strict().parse(vi.mocked(current.link.send).mock.calls[0]?.[0]);
+    expect(sent.mediaType).toBe('application/pdf');
+  });
+
+  describe('a first task with images', () => {
+    const imageId = '5b1c2d3e-4f50-4a6b-8c7d-9e0f1a2b3c4d';
+    const spec = {
+      organizationSlug: 'jordi',
+      branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
+      prompt: 'Match this screenshot',
+      images: [{ imageId, mediaType: 'image/png' as const }],
+    };
+
+    it('names the parked images on the create, and parks nothing itself', async () => {
+      const { adapter, link, images } = harness(true, ['session.create.images']);
+
+      const outcome = await adapter.create(session(), spec);
+
+      expect(outcome).toEqual({ delivered: true, hints: [] });
+      const sent = sessionCreateSchema.parse(vi.mocked(link.send).mock.calls[0]?.[0]);
+      expect(sent.images).toEqual([{ imageId, mediaType: 'image/png' }]);
+      // The images were parked when the create claimed them, before the row.
+      expect(images.park).not.toHaveBeenCalled();
+    });
+
+    it('sends text to a runner at launch only when it takes files beyond images', async () => {
+      const withText = {
+        ...spec,
+        images: [
+          ...spec.images,
+          { imageId: '6c2d3e4f-5061-4b7c-9d8e-0f1a2b3c4d5e', mediaType: 'text/markdown' as const },
+        ],
+      };
+
+      const older = harness(true, ['session.create.images']);
+      expect(await older.adapter.create(session(), withText)).toEqual({
+        delivered: false,
+        hints: ['not_supported'],
+      });
+      expect(older.link.send).not.toHaveBeenCalled();
+
+      const current = harness(true, ['session.create.images', 'session.files']);
+      expect(await current.adapter.create(session(), withText)).toEqual({
+        delivered: true,
+        hints: [],
+      });
+    });
+
+    it('sends nothing to a runner that cannot take them at launch', async () => {
+      const { adapter, link } = harness(true, ['session.image']);
+
+      const outcome = await adapter.create(session(), spec);
+
+      expect(outcome).toEqual({ delivered: false, hints: ['not_supported'] });
+      expect(link.send).not.toHaveBeenCalled();
+    });
   });
 });

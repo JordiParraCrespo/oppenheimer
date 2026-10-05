@@ -6,11 +6,9 @@
 // reads, the patterns that make it match, the patterns that veto it, and a
 // priority so that adding a rule cannot silently reorder the others.
 //
-// Manifests are data, not code, for two reasons. Agents change their screens
-// often — a new spinner glyph in a point release breaks detection — and a data
-// file can be replaced without building, signing and rolling out a binary to
-// every host. And one agent is a rule set, while five agents are a treadmill:
-// keeping that current should not be a release.
+// Manifests are data, not code, because agents change their screens often —
+// a new spinner glyph in a point release breaks detection — and a data file
+// can be replaced without building, signing and rolling out a binary.
 //
 // The format is ours. The shape of it — regions, priorities, negative guards,
 // the terminal title as the most trustworthy signal — is what reading herdr's
@@ -92,13 +90,12 @@ type Rule struct {
 
 // Pattern is a regular expression in a manifest. It is a named type so that
 // compiling happens once, at load, and a broken pattern is a load error
-// rather than a surprise on some host at three in the morning.
+// rather than a miss on some host mid-session.
 type Pattern string
 
 // Region names a part of the captured terminal.
 type Region string
 
-// Regions.
 const (
 	// RegionTitle is the terminal title the agent sets with an escape
 	// sequence. It is the most trustworthy signal there is: the agent
@@ -139,8 +136,8 @@ func (r Region) parse() (kind Region, n int, err error) {
 }
 
 // knownStates are the states a rule may conclude. Lifecycle states
-// (`starting`, `stopped`, `closed`) are the runner's business, never a
-// screen's.
+// (`creating`, `starting`, `stopped`, `closed`) are the runner's business,
+// never a screen's.
 var knownStates = map[domain.State]bool{
 	domain.StateWorking: true,
 	domain.StateBlocked: true,

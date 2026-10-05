@@ -75,12 +75,10 @@ function SidebarProvider({
     onChange: onOpenChange,
   });
 
-  // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
     return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
   }, [isMobile, setOpen, setOpenMobile]);
 
-  // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
@@ -93,8 +91,6 @@ function SidebarProvider({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [toggleSidebar]);
 
-  // We add a state so that we can do data-state="expanded" or "collapsed".
-  // This makes it easier to style the sidebar with Tailwind classes.
   const state = open ? 'expanded' : 'collapsed';
 
   const contextValue = React.useMemo<SidebarContextProps>(
@@ -204,7 +200,6 @@ function Sidebar({
       data-side={side}
       data-slot="sidebar"
     >
-      {/* This is what handles the sidebar gap on desktop */}
       <div
         data-slot="sidebar-gap"
         className={cn(
@@ -221,7 +216,6 @@ function Sidebar({
         data-side={side}
         className={cn(
           'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-base ease-standard data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] md:flex',
-          // Adjust the padding for floating and inset variants.
           variant === 'floating' || variant === 'inset'
             ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
             : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=left]:border-sidebar-border group-data-[side=right]:border-l group-data-[side=right]:border-sidebar-border',
@@ -361,6 +355,55 @@ function SidebarSearch({
 }
 
 /**
+ * SidebarListHead — the line over a grouped list: the list's name as a muted
+ * uppercase label, its count in mono, then any actions (New project, the
+ * filter menu). Both of the console's lists open on one.
+ */
+function SidebarListHead({
+  label,
+  count,
+  className,
+  children,
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'children'> & {
+  label: React.ReactNode;
+  count?: React.ReactNode;
+  /** Icon buttons after the count. */
+  children?: React.ReactNode;
+}) {
+  return (
+    <div
+      data-slot="sidebar-list-head"
+      className={cn('flex items-center gap-2 px-3 pt-0.5 pb-1.5', className)}
+      {...props}
+    >
+      <span className="eyebrow min-w-0 flex-1 font-normal tracking-[0.04em] text-fg-muted">
+        {label}
+      </span>
+      {count !== undefined ? (
+        <span className="figures text-micro leading-(--leading-body) tracking-normal text-fg-muted">{count}</span>
+      ) : null}
+      {children}
+    </div>
+  );
+}
+
+/**
+ * SidebarProjectGroup — one project's block in the grouped list: its
+ * `SidebarProjectHeader`, then its rows or its `SidebarEmptyRow`. It owns the
+ * list's 12px inset, so a header and its rows line up in every sidebar.
+ */
+function SidebarProjectGroup({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="sidebar-project-group"
+      className={cn('mt-1.5 flex flex-col px-3', className)}
+      {...props}
+    />
+  );
+}
+
+/**
  * SidebarProjectHeader — a project's row in the grouped list: a chevron
  * that folds the group, the name, a mono count, and actions (new session,
  * project settings) that only appear on hover or focus. 28px on a 6px
@@ -404,7 +447,7 @@ function SidebarProjectHeader({
       >
         <ChevronDownIcon
           className={cn(
-            'size-3.5 shrink-0 transition-transform duration-base ease-standard',
+            'size-3.25 shrink-0 transition-transform duration-base ease-standard',
             !open && '-rotate-90',
           )}
           aria-hidden
@@ -713,7 +756,6 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<'div'> & {
   showIcon?: boolean;
 }) {
-  // Random width between 50 to 90%.
   const [width] = React.useState(() => {
     return `${Math.floor(Math.random() * 40) + 50}%`;
   });
@@ -819,6 +861,8 @@ export {
   SidebarMenuSubItem,
   SidebarProvider,
   SidebarEmptyRow,
+  SidebarListHead,
+  SidebarProjectGroup,
   SidebarProjectHeader,
   SidebarRail,
   SidebarSearch,

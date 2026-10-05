@@ -13,6 +13,6 @@ export class FindUserRolesQueryHandler implements IQueryHandler<FindUserRolesQue
   ) {}
 
   execute(query: FindUserRolesQuery): Promise<RoleEntity[]> {
-    return this.userRoleRepository.findRolesForUser(query.userId, query.activeOrganizationId);
+    return this.userRoleRepository.findRolesForUser(query.userId, query.organizationId);
   }
 }

@@ -1,24 +1,17 @@
 /* =============================================================================
    Terminal symbols
    =============================================================================
-   A terminal is the product's primary surface, and coding agents draw their
-   turns with glyphs no stock monospace face carries in full — the Powerline
-   and private-use ranges most of all. Without a face that has them, every
-   agent line opens with a substitute mark instead of its bullet.
+   Coding agents draw their turns with glyphs no stock monospace face carries,
+   so without this face every agent line opens with a substitute mark.
 
-   `unicode-range` is the whole point: the browser fetches this 1.1MB file
-   only when a session actually prints a character inside these ranges, and
-   every other glyph — all of Latin, every digit, every accent — keeps coming
-   from the platform's own monospace face at its own metrics.
+   `unicode-range` is the whole point: the browser fetches this 1.1MB file only
+   when a session prints a character in these ranges, and every other glyph
+   keeps coming from the platform's own monospace face at its own metrics.
 
-   The ranges are the symbol blocks a terminal program draws furniture from,
-   plus the private-use planes. The private-use planes alone are not enough,
-   which is the trap: Powerline and oh-my-posh live there, but the marks a
-   coding agent opens a turn with do not. `⏺` is U+23FA (Miscellaneous
-   Technical), `✻` and `❯` are U+273B and U+276F (Dingbats), and a box is
-   drawn from U+2500. Claim only the private-use planes and every one of those
-   still falls through to a face that has no glyph for it, which is what drew
-   a stray mark at the start of every agent line.
+   The ranges are the symbol blocks terminal programs draw furniture from, plus
+   the private-use planes. The planes alone are not enough: Powerline and
+   oh-my-posh live there, but `⏺` is U+23FA (Miscellaneous Technical), `✻`
+   and `❯` are U+273B and U+276F (Dingbats), and boxes are drawn from U+2500.
    ========================================================================== */
 @font-face {
   font-family: 'Oppenheimer Symbols';
@@ -111,6 +104,10 @@
        lift between `--canvas` and `--card` is what separates them. */
     --canvas: var(--op-white);
     --background: var(--canvas);
+    /* The grey ground a page of cards sits on. The console is one white
+       surface, but Settings still draws white cards on the old grey
+       (`design/version1/Settings.dc.html`), so that ground keeps a name. */
+    --canvas-recessed: var(--op-gray-50);
     --card: var(--op-white); /* the only lit surface on the canvas */
     /* A lit surface that is also a control — the social sign-in buttons — needs
        somewhere to go on hover. It cannot be the canvas, or the button would
@@ -310,6 +307,8 @@
     --dur-fast: 140ms; /* menus, tooltips */
     --dur-base: 220ms; /* dialogs, sidebar collapse, theme change */
     --dur-slow: 400ms; /* progress and chart fills */
+    /* A dragged item picked up: tilted and a touch larger, as a card off a table. */
+    --drag-lift: rotate(1.6deg) scale(1.025);
     --transition-control:
       background-color var(--dur-fast) var(--ease-standard),
       color var(--dur-fast) var(--ease-standard),
@@ -421,6 +420,7 @@
   [data-theme="dark"] {
     --canvas: #121213;
     --background: var(--canvas);
+    --canvas-recessed: var(--canvas); /* dark lifts the card instead */
     --card: #1a1a1c;
     --card-hover: #212124;
     --card-active: #27272b;
@@ -481,6 +481,10 @@
     --chart-axis: var(--op-gray-500);
     --brand-glyph-filter: invert(1);
 
+    /* The session artboard's (`SessionsConsole.dc.html`): `#1a1a1c`, the
+       card's lift. The session screen paints its frame in it too, as the
+       artboard does, so the terminal is one surface from the sidebar's edge
+       rather than a lighter slab on the `#121213` canvas. */
     --term-bg: #1a1a1c;
     --term-fg: var(--op-gray-100);
     --term-dim: var(--op-gray-500);
@@ -650,15 +654,22 @@
   --animate-effort-in: op-effort-in 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-pulse-dot: op-pulse-dot 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   --animate-label-in: op-label-in 200ms cubic-bezier(0, 0, 0.2, 1) both;
+  /* Something that appears in place (a note, a fold, a card over the
+     terminal): the 4px rise plus fade, at the fast or the base duration. */
+  --animate-appear-fast: op-effort-in 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-appear: op-effort-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-drag-lift: op-drag-lift var(--dur-fast) cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --ease-out: var(--ease-out);
   --ease-in: var(--ease-in);
-  --duration-instant: var(--dur-instant);
-  --duration-fast: var(--dur-fast);
-  --duration-base: var(--dur-base);
-  --duration-slow: var(--dur-slow);
+  /* `duration-*` reads Tailwind's `--transition-duration-*` namespace. */
+  --transition-duration-instant: var(--dur-instant);
+  --transition-duration-fast: var(--dur-fast);
+  --transition-duration-base: var(--dur-base);
+  --transition-duration-slow: var(--dur-slow);
 
   /* ---- Semantic colours as utilities (bg-canvas, text-fg-muted, …) ------ */
   --color-canvas: var(--canvas);
+  --color-canvas-recessed: var(--canvas-recessed);
   --color-fg: var(--fg);
   --color-fg-muted: var(--fg-muted);
   --color-fg-subtle: var(--fg-subtle);
@@ -874,9 +885,6 @@
     opacity: 1;
   }
 }
-/* Menus and dialogs enter with a 4px rise plus fade; nothing slides in from
-   an edge. */
-/* The effort value swapping in as the knob moves. */
 /* The terminal's link dot while reconnecting: a breath, not a blink. */
 @keyframes op-pulse-dot {
   0%,
@@ -900,6 +908,7 @@
   }
 }
 
+/* The effort value swapping in as the knob moves. */
 @keyframes op-effort-in {
   from {
     opacity: 0;
@@ -908,6 +917,15 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+/* A dragged item leaving its place: a slight tilt and grow, as a card picked up. */
+@keyframes op-drag-lift {
+  from {
+    transform: none;
+  }
+  to {
+    transform: var(--drag-lift);
   }
 }
 /* The Ready ring: a scale-and-fade on the out curve. */
@@ -921,6 +939,8 @@
     transform: none;
   }
 }
+/* Menus and dialogs enter with a 4px rise plus fade; nothing slides in from
+   an edge. */
 @keyframes op-rise {
   from {
     opacity: 0;

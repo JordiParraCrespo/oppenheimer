@@ -1,6 +1,9 @@
 import 'reflect-metadata';
 import { describe, expect, it, vi } from 'vitest';
-import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
+import type {
+  HostSessionRow,
+  WorkSessionRepositoryPort,
+} from '../../database/work-session.repository.port';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
 import type { SessionDispatchPort } from '../session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../session-launch.factory';
@@ -23,7 +26,7 @@ function session(state: 'starting' | 'open'): WorkSessionEntity {
   return entity;
 }
 
-function harness(rows: { session: WorkSessionEntity; prompt?: string }[]) {
+function harness(rows: HostSessionRow[]) {
   const sessions = {
     findUnresolvedForHostForMachine: vi.fn().mockResolvedValue(rows),
     appendEvents: vi.fn().mockResolvedValue({ accepted: ['k'], rejected: [], appended: [] }),
@@ -34,6 +37,7 @@ function harness(rows: { session: WorkSessionEntity; prompt?: string }[]) {
   const launches = new SessionLaunchSpecFactory({
     slugOf: vi.fn().mockResolvedValue('jordi'),
     isMember: vi.fn(),
+    ownedBy: vi.fn().mockResolvedValue([]),
   });
   return {
     sessions,
@@ -56,6 +60,16 @@ describe('SessionReconciliationResolver', () => {
     expect(h.sessions.appendEvents).not.toHaveBeenCalled();
   });
 
+  it('sends the first task’s images again with it, by the ids the log recorded', async () => {
+    const owed = session('starting');
+    const images = [{ imageId: 'parked-1', mediaType: 'image/png' as const }];
+    const h = harness([{ session: owed, prompt: 'match this', images }]);
+
+    await h.resolver.reconcile(HOST, 'run-1', []);
+
+    expect(h.dispatch.create).toHaveBeenCalledWith(owed, expect.objectContaining({ images }));
+  });
+
   it('records stopped an open session the host no longer holds, keyed by the run', async () => {
     const lost = session('open');
     const h = harness([{ session: lost }]);
@@ -72,7 +86,9 @@ describe('SessionReconciliationResolver', () => {
 
   it('leaves alone what the host holds, and what is already stopped', async () => {
     const held = session('open');
-    const h = harness([{ session: held }]);
+    const stopped = session('open');
+    stopped.recordEvent({ seq: 3, kind: 'session.stopped', payload: {}, occurredAt: new Date() });
+    const h = harness([{ session: held }, { session: stopped }]);
     const outcome = await h.resolver.reconcile(HOST, 'run-1', [held.id]);
     expect(outcome).toEqual({ redispatched: [], stopped: [] });
     expect(h.dispatch.create).not.toHaveBeenCalled();

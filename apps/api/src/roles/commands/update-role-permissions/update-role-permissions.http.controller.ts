@@ -15,10 +15,8 @@ import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
-import {
-  activeOrganizationIdOf,
-  type ScopedRequest,
-} from '../../../auth/domain/scope-context.types';
+import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
+import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import type { RoleEntity } from '../../domain/role.entity';
@@ -59,11 +57,11 @@ export class UpdateRolePermissionsHttpController {
         permissions: body.permissions,
         actorId: actor.id,
         actorRole: actor.role,
-        activeOrganizationId: activeOrganizationIdOf(request),
+        organizationId: tenantOrganizationIdOf(request),
       }),
     );
     const role = await this.queryBus.execute<FindRoleByIdQuery, RoleEntity>(
-      new FindRoleByIdQuery(roleId, activeOrganizationIdOf(request)),
+      new FindRoleByIdQuery(roleId, tenantOrganizationIdOf(request)),
     );
     return this.mapper.toResponse(role);
   }

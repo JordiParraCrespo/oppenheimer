@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   hostFactsSchema as wireHostFactsSchema,
   promptTextSchema as wirePromptSchema,
-} from '../protocol/primitives';
+} from '../protocol/primitives.js';
 import {
   hostFactsSchema as dtoHostFactsSchema,
   promptSchema as dtoPromptSchema,
   FIELD_BOUNDS,
   promptByteLength,
-} from '../schemas/primitives';
+} from '../schemas/primitives.js';
 
 /**
  * The package is on two Zod entry points for as long as the JSON Schema emitter
@@ -27,7 +27,9 @@ import {
  * A literal sample of what `apps/runner/internal/host/domain/facts.go` marshals.
  * Copied from the struct's json tags rather than written to suit the schema — the
  * register body is the runner's to define, and this is the artefact both schemas
- * must accept.
+ * must accept. It is an example, not a field census: the struct's fields are
+ * pinned against the emitted schema by the runner's `TestHostFactsMatchesTheSchema`
+ * (`apps/runner/internal/link/protocol_test.go`).
  */
 const runnerFactsJson = `{
   "platform": "macos",
@@ -44,7 +46,17 @@ const runnerFactsJson = `{
   ],
   "workspacePath": "/Users/jordi/oppenheimer-ai",
   "diskFreeBytes": 120000000000,
-  "runnerVersion": "0.4.1"
+  "cpus": 12,
+  "runnerVersion": "0.4.1",
+  "osName": "macOS 15.3.1",
+  "kernelVersion": "24.3.0",
+  "cpuModel": "Apple M3 Max",
+  "memoryTotalBytes": 68719476736,
+  "diskTotalBytes": 1000000000000,
+  "virtualization": "none",
+  "timezone": "Europe/Madrid",
+  "bootedAt": "2026-09-20T08:14:03Z",
+  "serviceManager": "launchd"
 }`;
 
 const validFacts = JSON.parse(runnerFactsJson);
@@ -60,6 +72,10 @@ const invalidFacts: [string, unknown][] = [
   ['a negative diskFreeBytes', { ...validFacts, diskFreeBytes: -1 }],
   ['a fractional diskFreeBytes', { ...validFacts, diskFreeBytes: 1.5 }],
   ['diskFreeBytes as a string', { ...validFacts, diskFreeBytes: '120' }],
+  ['a CPU count of zero, which Go omits rather than sends', { ...validFacts, cpus: 0 }],
+  ['a fractional CPU count', { ...validFacts, cpus: 1.5 }],
+  ['a boot time that is not a timestamp', { ...validFacts, bootedAt: 'last tuesday' }],
+  ['a zero memory total, which Go omits rather than sends', { ...validFacts, memoryTotalBytes: 0 }],
   ['a tool with no name', { ...validFacts, tools: [{ path: '/usr/bin/git', required: true }] }],
   ['a tool with no required flag', { ...validFacts, tools: [{ name: 'git' }] }],
   ['tools as the old version map', { ...validFacts, tools: { git: '2.45.0' } }],
@@ -78,7 +94,14 @@ describe('hostFactsSchema agrees across the two Zod entry points', () => {
   });
 
   it('both accept the empty strings Go emits for non-omitempty fields', () => {
-    const sparse = { ...validFacts, workspacePath: '', hostname: '', osVersion: undefined };
+    const sparse = {
+      ...validFacts,
+      workspacePath: '',
+      hostname: '',
+      osVersion: undefined,
+      // A runner from before the CPU count, or one that could not read it.
+      cpus: undefined,
+    };
     expect(dtoHostFactsSchema.safeParse(sparse).success).toBe(true);
     expect(wireHostFactsSchema.safeParse(sparse).success).toBe(true);
   });
@@ -88,14 +111,6 @@ describe('hostFactsSchema agrees across the two Zod entry points', () => {
     expect(Object.keys(parsed).sort()).toEqual(Object.keys(validFacts).sort());
     expect(parsed.tools).toHaveLength(3);
     expect(parsed.tools[2]).toEqual({ name: 'claude', required: false });
-  });
-
-  it('derives the agents by name, since an agent is just a probed tool', () => {
-    const parsed = dtoHostFactsSchema.parse(validFacts);
-    expect(parsed.tools.filter((tool) => !tool.required).map((tool) => tool.name)).toEqual([
-      'claude',
-    ]);
-    expect(parsed).not.toHaveProperty('agents');
   });
 
   it('both parse to the same value', () => {
@@ -114,31 +129,11 @@ describe('hostFactsSchema agrees across the two Zod entry points', () => {
       Object.keys(wireHostFactsSchema.shape).sort(),
     );
   });
-
-  it('describes exactly the fields `facts.go` declares, and no others', () => {
-    expect(Object.keys(dtoHostFactsSchema.shape).sort()).toEqual([
-      'arch',
-      'diskFreeBytes',
-      'home',
-      'hostname',
-      'osVersion',
-      'platform',
-      'root',
-      'runnerVersion',
-      'tools',
-      'user',
-      'workspacePath',
-    ]);
-  });
 });
 
 /**
- * The prompt bound, on both Zod entry points.
- *
- * It is a **byte** bound, and that is the whole point of testing it: the event
- * log caps a payload at 8 KiB of serialized JSON and `02-runner.md` §7 caps
- * `prompt.first` at 2 KB, so a character bound would accept a multibyte prompt
- * the log then refuses — committing a session whose task nothing recorded.
+ * The prompt bound, on both Zod entry points. It is a **byte** bound
+ * (`FIELD_BOUNDS.prompt` says why), and that is the whole point of testing it.
  */
 describe('promptSchema agrees across the two Zod entry points', () => {
   const at = (bytes: number, char = 'a') => char.repeat(bytes);

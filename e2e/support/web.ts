@@ -39,7 +39,6 @@ export async function signInAs(
   await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
 }
 
-/** `POST /v1/organizations` as the context's user; returns the new id. */
 export async function createOrganization(
   api: APIRequestContext,
   name = ORGANIZATION_NAME,
@@ -58,11 +57,8 @@ export async function provisionedUser(prefix = 'user') {
 }
 
 /**
- * Registers through the UI and walks first-run as far as Connect GitHub.
- *
- * Three specs want an account that has just claimed its address, and typing
- * the name into the same two fields three times hid where they actually
- * differ. It returns the claimed address so a caller can assert on it.
+ * Names the workspace on first-run's workspace step, for an account that has
+ * just registered, and walks on as far as Connect GitHub.
  *
  * It stops on step 3 on purpose: the claim is the moment the account becomes
  * finished, so everything the shown-once rule has to say starts here.
@@ -79,20 +75,6 @@ export async function claimWorkspaceThroughUi(page: Page, label: string): Promis
   await expect(page).toHaveURL(/\/onboarding\/github/, { timeout: 30_000 });
 
   return name;
-}
-
-/** Invites `email` into the organization and returns the invitation id. */
-export async function inviteByApi(
-  api: APIRequestContext,
-  organizationId: string,
-  email: string,
-  role: 'owner' | 'admin' | 'member' = 'member',
-): Promise<string> {
-  const response = await api.post(`/api/v1/organizations/${organizationId}/invitations`, {
-    data: { email, role },
-  });
-  expect(response.status(), `inviting ${email} should succeed`).toBe(201);
-  return ((await response.json()) as { id: string }).id;
 }
 
 /**

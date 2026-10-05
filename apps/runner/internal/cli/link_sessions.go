@@ -7,6 +7,7 @@ package cli
 
 import (
 	"context"
+	"encoding/base64"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
@@ -16,26 +17,47 @@ import (
 )
 
 func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
-	steps := newStartSteps(func(p link.SessionStepPayload) {
-		h.reporter.Append(m.SessionID, link.SessionStepKind, p)
-	}, time.Now)
-	agent, ok := sessionsdomain.AgentFromCatalogID(m.Agent)
-	if !ok {
-		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("unknown agent %q", m.Agent))
-		return
-	}
-	// One checkout, exactly: this runner's session service makes one worktree
-	// (its layout is still `<repo>/worktrees/<slug>`, not yet note 10's), so a
-	// frame with none has nothing to check out and a frame with several would
-	// have its extra rows silently dropped. Both are refused with the reason, so
-	// the control plane records a failed launch rather than a partial one.
+	// `first` is read by the started reporter below, so the checkout is
+	// resolved before the steps are.
 	if len(m.Checkouts) != 1 {
 		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail(
 			"this runner makes sessions with exactly one checkout; the frame carried %d", len(m.Checkouts)))
 		return
 	}
 	first := m.Checkouts[0]
-	session, err := h.app.Sessions.Create(ctx, sessionsapp.CreateInput{
+	steps := newStartSteps(
+		func(p link.SessionStepPayload) { h.reporter.Append(m.SessionID, link.SessionStepKind, p) },
+		// The terminal exists, so the session can be attached to: the worktree's
+		// path is known from the start, so the checkout this reports is true
+		// before it is on disk.
+		func(session sessionsdomain.Session) {
+			h.reporter.Append(session.ID, "session.started", map[string]any{
+				"checkouts": []map[string]any{{
+					"checkoutId": first.CheckoutID, "branch": session.Branch, "path": session.Worktree, "mode": "worktree",
+				}},
+			})
+		},
+		time.Now,
+	)
+	agent, ok := sessionsdomain.AgentFromCatalogID(m.Agent)
+	if !ok {
+		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("unknown agent %q", m.Agent))
+		return
+	}
+	// A create sent again for a session this host already holds (a redelivery,
+	// a reconnect) makes nothing new, so it pulls nothing: its files were
+	// pulled once, and a parked file is handed over only once.
+	var files []sessionsapp.CreateFile
+	var err error
+	if _, notHeld := h.app.Sessions.Get(m.SessionID); notHeld != nil {
+		files, err = h.pullCreateFiles(ctx, m.Images)
+	}
+	if err != nil {
+		h.fail(m.CommandID, err)
+		h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))
+		return
+	}
+	_, err = h.app.Sessions.Create(ctx, sessionsapp.CreateInput{
 		ID:         m.SessionID,
 		Repo:       first.RepositoryFullName,
 		Remote:     "https://github.com/" + first.RepositoryFullName + ".git",
@@ -45,23 +67,64 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 		Agent:      agent,
 		Launch: sessionsdomain.Launch{
 			Model: m.Launch.Model, Permission: m.Launch.Permission, Effort: m.Launch.Effort, Prompt: m.Prompt,
+			// The name the agent's conversation takes, so what it says can be
+			// reopened after the session stops.
+			Conversation: m.Launch.Conversation, Resume: m.Launch.Resume,
 		},
 		CheckoutID: first.CheckoutID, GithubRepoID: first.GithubRepoID,
+		Files:    files,
 		Progress: steps.stage,
 	})
 	if err != nil {
 		h.fail(m.CommandID, err)
 		h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))
-		return
 	}
-	h.reporter.Append(session.ID, "session.started", map[string]any{
-		"checkouts": []map[string]any{{
-			"checkoutId": first.CheckoutID, "branch": session.Branch, "path": session.Worktree, "mode": "worktree",
-		}},
-	})
 }
 
-func (h *linkHandler) lifecycle(ctx context.Context, m link.SessionCommand) {
+// lifecycleCommand is what lifecycle reads of stop, restart, close,
+// window.open and window.close: each is its own message on the wire, and
+// this is the union of the fields the handler acts on.
+type lifecycleCommand struct {
+	Type               string
+	CommandID          string
+	SessionID          string
+	Window             int
+	AcceptUnpushedWork bool
+}
+
+// decodeLifecycle decodes a lifecycle message into its own generated struct
+// and keeps what lifecycle reads. ok is false for a body that does not decode.
+func decodeLifecycle(msg link.Message) (lifecycleCommand, bool) {
+	m := lifecycleCommand{Type: msg.Type}
+	var err error
+	switch msg.Type {
+	case link.TypeSessionStop:
+		var body link.SessionStop
+		err = msg.Decode(&body)
+		m.CommandID, m.SessionID = body.CommandID, body.SessionID
+	case link.TypeSessionRestart:
+		var body link.SessionRestart
+		err = msg.Decode(&body)
+		m.CommandID, m.SessionID = body.CommandID, body.SessionID
+	case link.TypeSessionClose:
+		var body link.SessionClose
+		err = msg.Decode(&body)
+		m.CommandID, m.SessionID, m.AcceptUnpushedWork = body.CommandID, body.SessionID, body.AcceptUnpushedWork
+	case link.TypeSessionWindowOpen:
+		var body link.SessionWindowOpen
+		err = msg.Decode(&body)
+		m.CommandID, m.SessionID = body.CommandID, body.SessionID
+	case link.TypeSessionWindowClose:
+		var body link.SessionWindowClose
+		err = msg.Decode(&body)
+		m.CommandID, m.SessionID, m.Window = body.CommandID, body.SessionID, body.Window
+	default:
+		return lifecycleCommand{}, false
+	}
+	return m, err == nil
+}
+
+func (h *linkHandler) lifecycle(ctx context.Context, m lifecycleCommand) {
 	var err error
 	switch m.Type {
 	case "session.stop":
@@ -92,18 +155,45 @@ func (h *linkHandler) lifecycle(ctx context.Context, m link.SessionCommand) {
 }
 
 // preflight re-collects the host facts and reports them at once, as a
-// heartbeat, which is the shape the control plane already reads them in.
+// heartbeat, which is the shape the control plane already reads them in. The
+// facts are collected once: a failed check still reports what it found.
 func (h *linkHandler) preflight(ctx context.Context, commandID string) {
-	if _, err := h.app.Host.Preflight(ctx); err != nil {
-		h.fail(commandID, err)
-	}
-	beat, err := h.Heartbeat(ctx)
+	facts, err := h.app.Host.Preflight(ctx)
 	if err != nil {
 		h.fail(commandID, err)
-		return
+		if facts.Platform == "" {
+			return // the collection itself failed: there is nothing to report
+		}
 	}
+	beat := h.heartbeatFrom(facts)
 	beat.Type = "heartbeat"
 	_ = h.client.Send(beat)
+}
+
+// prepareRepository gets a repository ready for the create a person is about
+// to send: the mirror cloned or fetched and a spare worktree checked out
+// (02 §5). Its git runs as `prepare:<command id>`, an identity the broker
+// holds this command's own token for: there is no session to ask one for.
+func (h *linkHandler) prepareRepository(ctx context.Context, m link.RepositoryPrepare) {
+	sealed, err := base64.StdEncoding.DecodeString(m.Sealed)
+	if err != nil {
+		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("the prepare's token is not base64"))
+		return
+	}
+	token, err := h.app.Pairing.Unseal(sealed)
+	if err != nil {
+		h.fail(m.CommandID, err)
+		return
+	}
+	id := preparePrefix + m.CommandID
+	h.credentials.Hold(id, string(token), m.ExpiresAt)
+	defer h.credentials.Forget(id)
+
+	ctx = sessionsdomain.WithSession(ctx, id)
+	remote := "https://github.com/" + m.RepositoryFullName + ".git"
+	if err := h.app.Worktrees.PrepareRepository(ctx, m.RepositoryFullName, remote, m.BaseBranch); err != nil {
+		h.fail(m.CommandID, err)
+	}
 }
 
 // update applies a version the control plane asks for: the pin and the safe

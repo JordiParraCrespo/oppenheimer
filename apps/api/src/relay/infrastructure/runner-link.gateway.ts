@@ -4,10 +4,13 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   helloSchema,
+  knownCapabilities,
+  LINK_MAX_FRAME_BYTES,
   PROTOCOL_VERSION,
   type ProtocolMessage,
   protocolMessageSchema,
   RUNNER_LINK_CLOSE_CODES,
+  RUNNER_LINK_REFUSALS,
   welcomeSchema,
 } from '@oppenheimer/shared/protocol';
 import { type WebSocket, WebSocketServer } from 'ws';
@@ -15,8 +18,10 @@ import type { HostAssertionPort } from '../../hosts/application/host-assertion.p
 import { HOST_ASSERTION } from '../../hosts/hosts.di-tokens';
 import type { LinkRegistryPort } from '../../links/application/link-registry.port';
 import { LINK_REGISTRY } from '../../links/links.di-tokens';
+import { clientAddressOf } from './client-address.util';
 import { CredentialsProcessor } from './credentials.processor';
 import { decodeFrame } from './frame.util';
+import { type AppendQueueLimits, type AppendRun, LinkAppendQueue } from './link-append-queue.util';
 import { RelayEventsProcessor } from './relay-events.processor';
 import { SocketRunnerLink } from './socket-runner-link.adapter';
 import { refuseUpgrade } from './upgrade.util';
@@ -35,42 +40,70 @@ export const HELLO_TIMEOUT_MS = 10_000;
  */
 export const LINK_PING_INTERVAL_MS = 15_000;
 
-/** A control frame larger than this is not a control frame. */
-const MAX_CONTROL_FRAME_BYTES = 512 * 1024;
+/**
+ * The protocol's `LINK_MAX_FRAME_BYTES`, which says why every legitimate frame
+ * fits; `ws` refuses a bigger one with 1009 before buffering it.
+ */
+export const MAX_RUNNER_FRAME_BYTES = LINK_MAX_FRAME_BYTES;
+
+/**
+ * A link's `events.append` queue (`LinkAppendQueue`). The numbers are batches,
+ * and a batch is up to 256 events of up to 8 KB each, so the ceiling bounds a
+ * link's queued appends in memory as well as in latency.
+ */
+export const APPEND_QUEUE_LIMITS: AppendQueueLimits = {
+  /**
+   * Waiting batches at which the socket stops being read. Everything on the
+   * link pauses with it — heartbeats, PTY bytes, refusals — and that is the
+   * point: a link the database cannot keep up with is overloaded as a whole,
+   * and the runner's own bounded queue is where the rest should wait.
+   */
+  pauseAt: 64,
+  resumeAt: 16,
+  closeAt: 256,
+  /**
+   * A database that is stuck costs a reconnect rather than a socket held open
+   * forever, and the keepalive, which cannot read a pong while paused, is not
+   * what ends it.
+   */
+  maxPauseMs: 10_000,
+  maxEventsPerAppend: 256,
+};
+
+/** "Try again later": the link is overloaded, not broken. */
+const LINK_OVERLOADED = 1013;
 
 /**
  * Oldest protocol this control plane still speaks. The window is N-2 minor
  * versions of the runner (03); with one protocol version in existence the
  * floor is that version, and this is the constant that moves when it is not.
  */
-export const MIN_SUPPORTED_PROTOCOL = PROTOCOL_VERSION;
+const MIN_SUPPORTED_PROTOCOL = PROTOCOL_VERSION;
 
 /**
  * The server half of the runner link.
  *
- * The handshake is the boot assertion as a bearer, verified by the hosts
- * module's port — the same credential `DELETE /hosts/self` takes, verified
- * exactly once per dial because verifying burns the `jti`. A socket that
- * presents none is refused before the upgrade, so it never costs a frame.
- *
- * The assertion says *which* host is dialling, and whether that host has been
- * unpaired — an unpaired host still authenticates, because its own uninstall
- * has to. The handshake refuses one with `410`, the runner's cue to stop
- * dialling rather than walk its ladder forever. One unpaired while connected
- * is closed with `4410`, the same answer after the upgrade
+ * The handshake is the boot assertion as a bearer, verified by the hosts module's
+ * port exactly once per dial, because verifying burns the `jti`. A socket presenting
+ * none is refused before the upgrade. An unpaired host still authenticates (its
+ * uninstall must), and the handshake refuses it with `410`, the runner's cue to stop
+ * dialling; one unpaired while connected is closed with `4410`
  * (`RUNNER_LINK_CLOSE_CODES`).
  *
- * After the upgrade the first frame must be `hello`; anything else, or nothing
- * within the timeout, closes the socket. A runner below `MIN_SUPPORTED_PROTOCOL`
- * is refused **with** `update_required` rather than dropped (01).
+ * The first frame after the upgrade must be `hello`; anything else, or nothing
+ * within the timeout, closes the socket. A runner below `MIN_SUPPORTED_PROTOCOL` is
+ * refused **with** `update_required` rather than dropped (01).
  */
 @Injectable()
 export class RunnerLinkGateway {
-  /** Each link's `events.append` messages, applied in arrival order (see `onControl`). */
-  private readonly appendChains = new WeakMap<SocketRunnerLink, Promise<void>>();
+  /** Each link's `events.append` messages, applied in arrival order (see `LinkAppendQueue`). */
+  private readonly appendQueues = new WeakMap<SocketRunnerLink, LinkAppendQueue>();
 
   private readonly logger = new Logger(RunnerLinkGateway.name);
-  private readonly server = new WebSocketServer({ noServer: true, maxPayload: 16 * 1024 * 1024 });
+  private readonly server = new WebSocketServer({
+    noServer: true,
+    maxPayload: MAX_RUNNER_FRAME_BYTES,
+  });
 
   constructor(
     @Inject(HOST_ASSERTION)
@@ -108,14 +141,17 @@ export class RunnerLinkGateway {
         socket,
         410,
         'this host was unpaired; pair it again from Add host',
-        'host-unpaired',
+        RUNNER_LINK_REFUSALS.UNPAIRED,
       );
       return;
     }
-    this.server.handleUpgrade(request, socket, head, (ws) => this.accept(ws, hostId));
+    // Read before the upgrade: the address the link came from is a fact about
+    // this request, and the socket is handed over as soon as it is accepted.
+    const address = clientAddressOf(request, this.trustedProxyHops);
+    this.server.handleUpgrade(request, socket, head, (ws) => this.accept(ws, hostId, address));
   }
 
-  private accept(ws: WebSocket, hostId: string): void {
+  private accept(ws: WebSocket, hostId: string, address: string | null): void {
     const timer = setTimeout(
       () => ws.close(RUNNER_LINK_CLOSE_CODES.HELLO_TIMEOUT, 'hello expected'),
       HELLO_TIMEOUT_MS,
@@ -147,7 +183,7 @@ export class RunnerLinkGateway {
         ws.close(RUNNER_LINK_CLOSE_CODES.PROTOCOL_MISMATCH, 'protocol too new');
         return;
       }
-      void this.open(ws, hostId, hello.data);
+      void this.open(ws, hostId, hello.data, address);
     });
     ws.on('error', (error) => {
       this.logger.warn({
@@ -162,13 +198,16 @@ export class RunnerLinkGateway {
     ws: WebSocket,
     hostId: string,
     hello: ReturnType<typeof helloSchema.parse>,
+    address: string | null,
   ): Promise<void> {
     const link = new SocketRunnerLink(
       hostId,
       hello.runId,
       this.links.nextEpoch(hostId),
       ws,
-      hello.capabilities,
+      // A runner newer than this control plane may name capabilities it has
+      // never heard of; those are dropped, never a reason to refuse the link.
+      knownCapabilities(hello.capabilities),
     );
     const replaced = this.links.register(link);
     if (replaced instanceof SocketRunnerLink) {
@@ -177,6 +216,33 @@ export class RunnerLinkGateway {
       replaced.close(RUNNER_LINK_CLOSE_CODES.REPLACED, 'replaced by a newer link');
     }
 
+    let alive = true;
+    let pingSentAt = 0;
+    const appends = new LinkAppendQueue(
+      (run) => this.applyAppends(link, run),
+      {
+        pause: () => ws.pause(),
+        resume: () => {
+          // A pong that arrived while paused is read now; the next beat judges.
+          alive = true;
+          ws.resume();
+        },
+        overflow: (reason) => {
+          this.logger.warn({
+            message: 'runner link overloaded; closing so it resends later',
+            hostId,
+            reason,
+          });
+          // Read again so the close handshake can complete; the queue is already
+          // disposed, so nothing more is applied.
+          ws.resume();
+          link.close(LINK_OVERLOADED, 'append queue overloaded; try again later');
+        },
+      },
+      APPEND_QUEUE_LIMITS,
+    );
+    this.appendQueues.set(link, appends);
+
     ws.on('message', (data, isBinary) => {
       if (isBinary) {
         this.onBinary(link, data as Buffer);
@@ -184,23 +250,30 @@ export class RunnerLinkGateway {
       }
       void this.onControl(link, data as Buffer);
     });
-    let alive = true;
     ws.on('pong', () => {
       alive = true;
+      // The keepalive's own ping, timed: the "echo 41 ms" a host row shows.
+      if (pingSentAt) link.roundTripMillis = Date.now() - pingSentAt;
     });
     const keepAlive = setInterval(() => {
+      // A paused socket reads no pongs, so a missed one proves nothing while
+      // the pause is on purpose. The queue's own maximum pause ends a link that
+      // stays stuck.
+      if (appends.paused) return;
       if (!alive) {
         this.logger.warn({ message: 'runner link missed a pong; terminating', hostId });
         ws.terminate();
         return;
       }
       alive = false;
+      pingSentAt = Date.now();
       ws.ping();
     }, LINK_PING_INTERVAL_MS);
     keepAlive.unref();
 
     ws.on('close', (code, reason) => {
       clearInterval(keepAlive);
+      appends.dispose();
       this.links.unregister(link);
       for (const sink of link.drainAttachments()) sink.closed('link_lost');
       this.logger.log({
@@ -227,7 +300,7 @@ export class RunnerLinkGateway {
       }),
     );
     try {
-      await this.events.onHello(link, hello);
+      await this.events.onHello(link, hello, link.connectedAt, address);
     } catch (error) {
       this.logger.error({ message: 'hello could not be recorded', hostId, error: String(error) });
     }
@@ -242,10 +315,6 @@ export class RunnerLinkGateway {
   }
 
   private async onControl(link: SocketRunnerLink, data: Buffer): Promise<void> {
-    if (data.byteLength > MAX_CONTROL_FRAME_BYTES) {
-      link.close(1009, 'control frame too large');
-      return;
-    }
     const parsed = protocolMessageSchema.safeParse(parseJson(data));
     if (!parsed.success) {
       this.logger.warn({ message: 'unparseable control frame from runner', hostId: link.hostId });
@@ -253,18 +322,26 @@ export class RunnerLinkGateway {
     }
     const message = parsed.data;
     if (message.type === 'events.append') {
-      // A session's log is ordered by the `seq` this control plane assigns on
-      // append, and a runner sends a start's steps as consecutive batches. Taken
-      // concurrently, two appends race for the row lock and `running` can land
-      // after `done`. So a link's appends are applied one after another, in the
-      // order they arrived; every other message still runs on its own, so a
-      // credential ask never queues behind the log.
-      const previous = this.appendChains.get(link) ?? Promise.resolve();
-      const next = previous.then(() => this.process(link, message));
-      this.appendChains.set(link, next);
-      return next;
+      // In arrival order, coalesced, and bounded: see `LinkAppendQueue`.
+      this.appendQueues.get(link)?.push(message);
+      return;
     }
     return this.process(link, message);
+  }
+
+  /** One coalesced run of a link's batches; a failure is logged, never thrown. */
+  private async applyAppends(link: SocketRunnerLink, run: AppendRun): Promise<void> {
+    try {
+      await this.events.onEventsAppend(link, run);
+    } catch (error) {
+      this.logger.error({
+        message: 'a runner message could not be processed',
+        hostId: link.hostId,
+        type: 'events.append',
+        batches: run.length,
+        error: String(error),
+      });
+    }
   }
 
   /** Dispatch one message; a failure is logged, never thrown, so a chain keeps going. */
@@ -286,7 +363,8 @@ export class RunnerLinkGateway {
       case 'heartbeat':
         return this.events.onHeartbeat(link, message);
       case 'events.append':
-        return this.events.onEventsAppend(link, message);
+        // Queued in `onControl`; never dispatched one by one.
+        return;
       case 'command.failed': {
         // An attach's refusal is its browser's; any other is the session's.
         const sink = link.attachmentByCommand(message.commandId);
@@ -315,6 +393,11 @@ export class RunnerLinkGateway {
           type: message.type,
         });
     }
+  }
+
+  /** `TRUST_PROXY`: how many reverse-proxy hops to believe in `X-Forwarded-For`. */
+  private get trustedProxyHops(): number {
+    return this.configService.get<number>('app.trustProxy') ?? 0;
   }
 
   /** The fingerprint registration handed every host, which the runner pins. */

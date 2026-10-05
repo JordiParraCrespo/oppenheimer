@@ -1,5 +1,6 @@
 /**
- * The two vitest projects every frontend package runs, in one place.
+ * The two vitest projects of the packages with component specs (`apps/web`,
+ * `packages/frontend/web`), in one place.
  *
  * They want opposite things from the React Compiler, and that is the whole
  * point of there being two:

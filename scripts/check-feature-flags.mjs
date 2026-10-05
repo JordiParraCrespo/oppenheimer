@@ -20,8 +20,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-// `fileURLToPath`, not `.pathname`: a pathname is URL-encoded, so a checkout
-// under a directory with a space in it would resolve to nothing.
+// `fileURLToPath`, not `.pathname`, for a checkout path with a space: see check-api-structure.mjs.
 const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
 const CATALOG = 'packages/shared/src/feature-flags/catalog.ts';
 const WARN_WITHIN_DAYS = 14;

@@ -4,6 +4,7 @@ import { type CreateEmailOptions, Resend } from 'resend';
 import {
   EmailService,
   type EmailVerificationEmailParams,
+  type HostNetworkChangedEmailParams,
   type HostPairedEmailParams,
   type InvitationEmailParams,
   type PasswordResetEmailParams,
@@ -11,6 +12,7 @@ import {
 } from './email.service';
 import {
   renderEmailVerificationEmail,
+  renderHostNetworkChangedEmail,
   renderHostPairedEmail,
   renderInvitationEmail,
   renderPasswordResetEmail,
@@ -28,13 +30,9 @@ export class ResendEmailService extends EmailService {
   }
 
   /**
-   * Send an email through Resend.
-   *
    * `resend.emails.send()` resolves with `{ data, error }` instead of throwing,
-   * so a failure (misconfigured sender domain, rate limit, invalid recipient)
-   * would otherwise be silently swallowed. Inspect the response and throw so the
-   * failure propagates to the caller (e.g. the email queue processor) instead of
-   * being reported as a successful send.
+   * so without the throw here a failure (misconfigured sender domain, rate
+   * limit, invalid recipient) would reach the caller as a successful send.
    */
   private async send(options: CreateEmailOptions): Promise<void> {
     const { data, error } = await this.resend.emails.send(options);
@@ -95,6 +93,16 @@ export class ResendEmailService extends EmailService {
 
   async sendHostPaired(to: string, params: HostPairedEmailParams): Promise<void> {
     const html = await renderHostPairedEmail(params);
+    await this.send({
+      from: this.from,
+      to,
+      subject: params.subject,
+      html,
+    });
+  }
+
+  async sendHostNetworkChanged(to: string, params: HostNetworkChangedEmailParams): Promise<void> {
+    const html = await renderHostNetworkChangedEmail(params);
     await this.send({
       from: this.from,
       to,

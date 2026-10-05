@@ -1,16 +1,19 @@
+import type { Paginated } from '@oppenheimer/backend-ddd';
 import type { Option } from 'oxide.ts';
 import type { AccessGrantEntity } from '../domain/access-grant.entity';
 
 /**
- * Port for the access-grant aggregate.
- *
  * Lookups are organization-bound rather than by bare id: a grant in another
  * tenant must read as missing, not forbidden, so ids cannot be probed.
  */
 export interface AccessGrantRepositoryPort {
   insert(entity: AccessGrantEntity): Promise<void>;
   findOneInOrganization(organizationId: string, id: string): Promise<Option<AccessGrantEntity>>;
-  findAllInOrganization(organizationId: string): Promise<AccessGrantEntity[]>;
+  /** One page of the organization's grants, newest first. */
+  findPageInOrganization(
+    organizationId: string,
+    page: { page: number; limit: number },
+  ): Promise<Paginated<AccessGrantEntity>>;
   delete(entity: AccessGrantEntity): Promise<boolean>;
   /**
    * Unexpired grants reaching any of these principals — the scope resolver's

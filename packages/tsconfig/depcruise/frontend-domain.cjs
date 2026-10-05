@@ -29,6 +29,17 @@ module.exports = function frontendDomain({ role }) {
         to: { path: ['^src/react/', 'node_modules/react/', 'node_modules/@tanstack/react-query/'] },
       },
       {
+        name: 'one-api-client',
+        comment:
+          'The API client is imported by its package name: `heyApiSdk` and the DTO types, through `unwrap`. A path into its src/ reaches past the one generated client.',
+        severity: 'error',
+        from: {},
+        to: {
+          path: '(^|/)api-client/src/',
+          pathNot: '(^|/)api-client/src/index\\.ts$',
+        },
+      },
+      {
         name: role === 'core' ? 'kernel-knows-no-product' : 'products-never-meet',
         comment:
           role === 'core'
@@ -54,8 +65,8 @@ module.exports = function frontendDomain({ role }) {
     options: {
       doNotFollow: { path: 'node_modules|^../' },
       tsConfig: { fileName: 'tsconfig.json' },
-      // 'specify' keeps type-only imports apart from value imports, so a lib/
-      // file may name `ReactNode` without being told it renders.
+      // 'specify' keeps type-only imports apart from value imports, which
+      // no-circular's `dependencyTypesNot: ['type-only']` depends on.
       tsPreCompilationDeps: 'specify',
       enhancedResolveOptions: {
         exportsFields: ['exports'],

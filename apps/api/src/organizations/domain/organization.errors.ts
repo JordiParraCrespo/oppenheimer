@@ -1,17 +1,10 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 /**
- * Organization / team / invitation error catalog. Surfaced as HTTP responses by
- * the global `AllExceptionsFilter` via `AppError`.
- *
- * Better Auth's organization plugin owns these tables and raises its own
- * `APIError`s with a `SCREAMING_SNAKE_CASE` code. Those codes are an upstream
- * detail: there are ~60 of them, they are grouped by the wording of the English
- * sentence rather than by what a client would do about them, and they change
- * between Better Auth releases. `organization-error.mapper.ts` folds them into
- * the entries below, which are the distinctions a client actually branches on.
- * The upstream code is preserved verbatim as an `upstreamCode` extension member
- * so nothing is lost for debugging.
+ * The distinctions a client branches on. Better Auth's ~60 organization codes
+ * are grouped by the wording of an English sentence and change between
+ * releases; `infrastructure/organization-error.util.ts` folds them onto these
+ * and keeps the original as an `upstreamCode` extension member.
  */
 export const OrganizationErrors = {
   NOT_FOUND: {

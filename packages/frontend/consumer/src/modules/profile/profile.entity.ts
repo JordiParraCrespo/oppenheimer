@@ -13,6 +13,8 @@ export class ProfileEntity {
     public readonly lastName: string,
     public readonly phone: string | null,
     public readonly jobTitle: string | null,
+    /** `null` until chosen. */
+    public readonly username: string | null,
     public readonly avatarUrl: string | null,
     public readonly role: string,
     public readonly emailVerified: boolean,

@@ -48,18 +48,15 @@ const WIDTHS = {
 /**
  * The auth split from the MVP artboards: the wordmark top-left, a 340px form
  * column centred in the left half, the panel on the right. Below 900px the
- * panel drops away and the form takes the width; it carries no information,
- * only atmosphere. An app's `_auth` route mounts this around its `Outlet`,
- * and the guards sit on the children — the sign-in screens turn a signed-in
- * visitor away, the onboarding screens a signed-out one.
+ * panel, which is only atmosphere, drops away. An app's `_auth` route mounts
+ * this around its `Outlet`; the guards sit on the children (the sign-in
+ * screens turn a signed-in visitor away, the onboarding screens a signed-out one).
  *
- * These screens follow the OS theme: there is no toggle here. Appearance is
- * chosen from the account menu once signed in.
+ * These screens follow the OS theme; appearance is chosen from the account
+ * menu once signed in.
  *
- * How wide the column is and what sits under it are the page's to declare as
- * `staticData`. One walk reads both: the innermost match that *declares* a key
- * wins, which is `in` rather than a truthiness test, because `null` is a
- * legal-note answer and not an absence.
+ * `legalNoteKey` is found with `in`, not truthiness, because `null` is a
+ * legal-note answer, not an absence.
  */
 export function AuthLayout({ product, panel, children }: AuthLayoutProps) {
   const { t } = useTranslation();

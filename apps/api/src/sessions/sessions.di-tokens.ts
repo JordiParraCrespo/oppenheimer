@@ -1,12 +1,9 @@
 /**
- * DI tokens for the sessions module.
- *
- * Three of them are published surface. `SESSION_DISPATCH` is what `links/` binds
- * to send a session's work to a host over the runner link; this module imports
- * that binding rather than providing one. `RECORD_SESSION_EVENTS` is the other
- * direction — what `relay/` calls with a runner's batch — and it is a port rather
- * than a raw command so the relay does not have to know which slice handles it.
- * `SESSION_LOOKUP` is what the attach socket asks when it redeems a ticket.
+ * `SESSION_DISPATCH` is what `links/` binds to send a session's work to a host;
+ * this module imports that binding rather than providing one. The other direction
+ * is the published surface `relay/` calls: `RECORD_SESSION_EVENTS` with a runner's
+ * batch, `SESSION_LOOKUP` to redeem an attach ticket or a credential ask, and
+ * `SESSION_RECONCILIATION` with a runner's hello.
  */
 export const WORK_SESSION_REPOSITORY = Symbol('WORK_SESSION_REPOSITORY');
 export const SESSION_DISPATCH = Symbol('SESSION_DISPATCH');

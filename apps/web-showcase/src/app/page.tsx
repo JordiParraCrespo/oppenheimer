@@ -51,7 +51,17 @@ import {
   XIcon,
 } from '@oppenheimer/design-system-web/icons';
 import {
+  DropZoneNewSessionDemo,
+  DropZoneTerminalDemo,
+  TerminalHostLinkDemo,
+} from '../components/host-link-demos';
+import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos';
+import { DragPrimitivesDemo } from '../components/drag-demos';
+import { PlanDialogsDemo, SessionPaneHeaderDemo } from '../components/plan-dialog-demos';
+import { TaskBoardDemo, TaskStatusDots } from '../components/task-board-demos';
+import {
   AccountMenuDemo,
+
   CarouselDemo,
   ComposerDemo,
   AddHostDialogDemo,
@@ -65,6 +75,7 @@ import {
   PermissionDemo,
   ScopeChips,
   RepositoryRowListDemo,
+  DisclosureDemo,
   SidebarDemo,
   CalloutDemo,
   PillTabsDemo,
@@ -76,6 +87,7 @@ import {
   RoutineTableDemo,
   RunsListDemo,
   TemplateGridDemo,
+  FieldSelectGroupDemo,
   RoutineEditorDemo,
   RoutineItemsDemo,
   SettingsNavDemo,
@@ -111,7 +123,6 @@ export default function Page() {
         sub={`Achromatic by default, colour rationed to one blue for actions and one for links, one typeface with size and tracking carrying the hierarchy, no shadow on any surface, six radii and no others. ${TOC_COUNT} components, every one of them on an MVP screen.`}
       />
 
-      {/* ── Foundations ─────────────────────────────────────────────────── */}
       <GroupHead>Foundations</GroupHead>
 
       <Spec
@@ -182,7 +193,6 @@ export default function Page() {
         <Icons />
       </Spec>
 
-      {/* ── Core ─────────────────────────────────────────────────────────── */}
       <GroupHead>Core</GroupHead>
 
       <Spec
@@ -212,8 +222,9 @@ export default function Page() {
         id="buttons"
         title="Button"
         meta="button.tsx"
-        desc="Anything you press is a pill, on the 28 / 34 / 42 ramp. One primary per view. Press is a scale to .975, never a hue change. Disabled keeps its shape at 40%. It acts; a Link navigates."
+        desc="Anything you press is a pill, on the 28 / 34 / 42 ramp. One primary per view. Press is a scale to .975, never a hue change. Disabled keeps its shape at 40%. Pending is disabled and aria-busy, and reads its verb in progress; no spinner. It acts; a Link navigates."
         code={`<Button size="lg" block>Sign in</Button>
+<Button variant="destructive" pending={remove.isPending} pendingLabel="Deleting…">Delete session</Button>
 <Button variant="social" size="lg" block><BrandGlyph name="google" /> Continue with Google</Button>
 <Button variant="secondary" size="sm"><CopyIcon /> Copy</Button>`}
       >
@@ -235,6 +246,26 @@ export default function Page() {
         <Swatch label="disabled">
           <Button disabled>Continue</Button>
         </Swatch>
+        <Swatch label="pending · pendingLabel">
+          <Button pending pendingLabel="Signing in…">
+            Sign in
+          </Button>
+        </Swatch>
+        <Swatch label="pending · destructive">
+          <Button variant="destructive" pending pendingLabel="Deleting…">
+            Delete session
+          </Button>
+        </Swatch>
+        <Swatch label="pending locks its own button; a sibling that waits is disabled">
+          <div className="flex gap-2">
+            <Button variant="outline" disabled>
+              Deny
+            </Button>
+            <Button pending pendingLabel="Allowing…">
+              Allow
+            </Button>
+          </div>
+        </Swatch>
         <Swatch label="sm · 28">
           <Button variant="secondary" size="sm">
             <CopyIcon /> Copy
@@ -250,10 +281,10 @@ export default function Page() {
         </Swatch>
         <Swatch label="primary with glyph">
           <Button size="lg">
-            <BrandGlyph name="github" flip={false} className="text-white" /> Connect GitHub
+            <BrandGlyph name="github" /> Connect GitHub
           </Button>
         </Swatch>
-        <div className="flex w-full max-w-[340px] flex-col gap-2.5">
+        <div className="flex w-full max-w-85 flex-col gap-2.5">
           <Button variant="social" size="lg" block>
             <BrandGlyph name="google" /> Continue with Google
           </Button>
@@ -458,10 +489,10 @@ export default function Page() {
         desc="A 1px hairline in the subtle border. Rare on its own, since sections divide by whitespace; the labelled form is the OR between social sign-in and the email form."
         code={`<Separator>or</Separator>`}
       >
-        <div className="w-full max-w-[340px]">
+        <div className="w-full max-w-85">
           <Separator>or</Separator>
         </div>
-        <div className="w-full max-w-[340px]">
+        <div className="w-full max-w-85">
           <Separator />
         </div>
         <Swatch label="vertical">
@@ -500,15 +531,17 @@ export default function Page() {
         desc="The content container: 18px radius, a subtle hairline, the lit surface on the canvas, no shadow. Header, content and footer carry the 24px padding; padded puts it on the card for a single block."
         code={`<Card><CardHeader><CardTitle>…</CardTitle><CardDescription>…</CardDescription></CardHeader><CardContent>…</CardContent></Card>`}
       >
-        <Card className="w-full max-w-[360px]">
+        <Card className="w-full max-w-90">
           <CardHeader>
             <CardTitle>mac-studio</CardTitle>
             <CardDescription>macOS 15 · echo 38 ms · 3 sessions</CardDescription>
           </CardHeader>
-          <CardContent className="flex gap-2">
-            <Chip icon={<CheckIcon className="text-success" strokeWidth={2.5} />}>git</Chip>
-            <Chip icon={<CheckIcon className="text-success" strokeWidth={2.5} />}>tmux</Chip>
-            <Chip icon={<CheckIcon className="text-success" strokeWidth={2.5} />}>claude</Chip>
+          <CardContent>
+            <div className="flex gap-2">
+              <Chip icon={<CheckIcon className="text-success" strokeWidth={2.5} />}>git</Chip>
+              <Chip icon={<CheckIcon className="text-success" strokeWidth={2.5} />}>tmux</Chip>
+              <Chip icon={<CheckIcon className="text-success" strokeWidth={2.5} />}>claude</Chip>
+            </div>
           </CardContent>
           <CardFooter>
             <StatusDot state="running">Connected</StatusDot>
@@ -518,7 +551,7 @@ export default function Page() {
           </CardFooter>
         </Card>
         <ThemePair className="md:grid-cols-1">
-          <Card padded className="max-w-[300px]">
+          <Card padded className="max-w-75">
             <div className="text-h4 font-semibold">Tonal depth</div>
             <p className="mt-1 text-sm text-fg-muted">A lit card on the canvas. No border shadow, in either theme.</p>
           </Card>
@@ -549,7 +582,7 @@ export default function Page() {
             />
           </Card>
         </div>
-        <div className="w-full max-w-[384px]">
+        <div className="w-full max-w-96">
           <CodeBlock
             layout="panel"
             code={`curl -fsSL https://app.oppenheimer.dev/install.sh \\\n  | sh -s -- --token opk_7f3a9c`}
@@ -564,7 +597,7 @@ export default function Page() {
         desc="Facts a person checks before moving on: the Ready screen's workspace, code and host. A Card of rows with hairlines between them, a muted 13px label on the left and a mono value on the right. Values are mono because they are things, not prose."
         code={`<SummaryCard><SummaryRow label="Workspace">oppenheimer.dev/versio</SummaryRow>…</SummaryCard>`}
       >
-        <SummaryCard className="w-full max-w-[400px]">
+        <SummaryCard className="w-full max-w-100">
           <SummaryRow label="Workspace">oppenheimer.dev/versio</SummaryRow>
           <SummaryRow label="Code">JordiParraCrespo · 12 repos</SummaryRow>
           <SummaryRow label="Host">mac-studio · macOS 15</SummaryRow>
@@ -584,7 +617,7 @@ export default function Page() {
         <Swatch label="sm · 36">
           <SuccessMark size="sm" />
         </Swatch>
-        <div className="flex max-w-[400px] flex-col gap-3.5">
+        <div className="flex max-w-100 flex-col gap-3.5">
           <SuccessMark />
           <StepHeader title="You're all set">
             Versio Platform is ready. Start a session and watch every step it takes.
@@ -600,7 +633,7 @@ export default function Page() {
         code={`<StepHeader step={2} total={4} back={{ href: '/sign-in' }} title="Name your workspace">A workspace holds your hosts, repositories and run history.</StepHeader>`}
       >
         <StepHeader
-          className="max-w-[400px]"
+          className="max-w-100"
           step={2}
           total={4}
           back={{ href: '#stepheader' }}
@@ -620,7 +653,7 @@ export default function Page() {
       >
         {CODING_AGENT_IDS.map((agent) => (
           <Swatch key={agent} label={agent}>
-            <span className="flex items-center gap-2.5 text-[13px] text-fg">
+            <span className="flex items-center gap-2.5 text-sm text-fg">
               <AgentMark agent={agent} />
               {CODING_AGENTS[agent].label}
             </span>
@@ -635,7 +668,7 @@ export default function Page() {
         desc="An empty state names the next action. The full form has a title, a description and one button; compact is the left-aligned sidebar line."
         code={`<EmptyState compact><EmptyState.Header><EmptyState.Description>No sessions yet…</EmptyState.Description></EmptyState.Header></EmptyState>`}
       >
-        <Card className="w-full max-w-[420px]">
+        <Card className="w-full max-w-105">
           <EmptyState>
             <EmptyState.Header>
               <EmptyState.Media variant="icon">
@@ -672,7 +705,6 @@ export default function Page() {
         <SkeletonDemo />
       </Spec>
 
-      {/* ── Forms ────────────────────────────────────────────────────────── */}
       <GroupHead>Forms</GroupHead>
 
       <Spec
@@ -686,7 +718,7 @@ export default function Page() {
   <FieldDescription>Twelve characters minimum.</FieldDescription>
 </Field>`}
       >
-        <FieldGroup className="w-full max-w-[340px]">
+        <FieldGroup className="w-full max-w-85">
           <Field>
             <FieldLabel htmlFor="email">Email</FieldLabel>
             <Input id="email" type="email" size="lg" placeholder="you@company.com" />
@@ -707,7 +739,7 @@ export default function Page() {
             <FieldError>Passwords do not match.</FieldError>
           </Field>
         </FieldGroup>
-        <div className="flex w-full max-w-[340px] flex-col gap-3">
+        <div className="flex w-full max-w-85 flex-col gap-3">
           <Input size="sm" placeholder="sm · 28" />
           <Input size="md" placeholder="md · 34" leading={<SearchIcon />} />
           <Input size="lg" placeholder="lg · 42" />
@@ -748,13 +780,23 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="disclosure"
+        title="Disclosure"
+        meta="disclosure.tsx"
+        desc="A fold inside a dialog or a step: one row that reads as a label, an optional word beside it, a summary on the right while closed, and a chevron that turns over 140ms. Add a host folds the install command and the agent prompt behind Inspect command and prompt, in the muted tone; the project dialog folds its Defaults with the summary of what is set."
+        code={`<Disclosure><DisclosureTrigger meta="optional" summary="mac-studio · Claude Code">Defaults</DisclosureTrigger><DisclosurePanel>…</DisclosurePanel></Disclosure>`}
+      >
+        <DisclosureDemo />
+      </Spec>
+
+      <Spec
         id="textarea"
         title="Textarea"
         meta="textarea.tsx"
         desc="The multi-line field at the 10px radius, sized to its content from 88px."
         code={`<Textarea placeholder="Session name" />`}
       >
-        <Field className="w-full max-w-[420px]">
+        <Field className="w-full max-w-105">
           <FieldLabel htmlFor="notes">Session name</FieldLabel>
           <Textarea id="notes" placeholder="Describe the task in one or two lines." />
         </Field>
@@ -764,7 +806,7 @@ export default function Page() {
         id="chipselect"
         title="ChipSelect · RepositorySelect"
         meta="chip-select.tsx · repository-select.tsx"
-        desc="A scope decision stated as a chip, so the row reads as a sentence: run on this host, this repo, this branch; the agent moved into the composer's engine button. Every one of them filters: a sticky search row, two-line options with a check and an optional mark, a centred line when nothing matches, and a pinned action band at the foot for adding what is not in the list yet. The repository picker multi-selects; each selected row grows a branch cell that opens a branch pane for that repo, and the branch chip only shows while exactly one repository is selected."
+        desc="A scope decision stated as a chip, so the row reads as a sentence: run on this host, this repo, this branch; the agent moved into the composer's engine button. Every one of them filters: a sticky search row, two-line options with a check and an optional mark, a centred line when nothing matches, and a pinned action band at the foot for adding what is not in the list yet. The repository picker multi-selects; each selected row grows a branch cell that opens a branch pane for that repo, and the branch chip only shows while exactly one repository is selected. An option that cannot be picked right now stays listed, faded, with the reason as its description: an offline host reads Offline · last seen 2 days ago."
         code={`<ChipSelect value={host} onValueChange={setHost} options={hosts} icon={<CpuIcon />} searchPlaceholder="Search hosts…" emptyText="No host matches." action={{ label: 'Add host…', onSelect: openAddHost }} />
 <RepositorySelect repositories={repos} value={scope} onValueChange={setScope} />`}
       >
@@ -773,10 +815,11 @@ export default function Page() {
 
       <Spec
         id="reporows"
-        title="RepositoryRowList"
-        meta="repository-row-list.tsx"
-        desc="The project dialog's repository picker: a 14px card with a search row and one row per repository the App can see. Tick a row to include it; it then grows a Default toggle (cloned into every new session) and a 168px pill for the base branch, which opens the same searchable pane the scope chips use. Untied rows keep the controls' space but not their ink, so the list never reflows. The caller renders the label, the help glyph and the count above it."
-        code={`<RepositoryRowList repositories={repos} value={rows} onValueChange={setRows} />`}
+        title="RepositoryAddField · RepositoryRowList"
+        meta="repository-add-field.tsx · repository-row-list.tsx"
+        desc="The project dialog's repositories, in two controls. RepositoryAddField decides which are in the project: a search field that reads Add a repository…, a listbox on focus of the repositories the App can see that are not yet added, and a 14px card of the ones added, each with an X. RepositoryRowList, in the Defaults fold under it, says what each does in a new session: a Cloned by default checkbox, the mono name and a 168px pill for the base branch, which opens the same searchable pane the scope chips use. Adding a repository adds it cloned by default on its own branch."
+        code={`<RepositoryAddField repositories={repos} value={ids} onValueChange={setIds} />
+<RepositoryRowList repositories={repos} value={rows} onValueChange={setRows} />`}
       >
         <RepositoryRowListDemo />
       </Spec>
@@ -789,10 +832,42 @@ export default function Page() {
         code={`<Composer value={v} onValueChange={setV} onSubmit={start} onAttach={pick}
   scope={<><ChipSelect variant="tab" … /><RepositorySelect variant="tab" … /></>}
   tools={<PermissionMenu options={levels} value={level} onValueChange={setLevel} />}
-  engine={<><AgentModelSelect agents={harnesses} value={engine} onValueChange={setEngine} /><EffortPicker value={effort} onValueChange={setEffort} /></>} />`}
+  engine={<><AgentModelSelect agents={harnesses} value={engine} onValueChange={setEngine} /><EffortPicker stops={levels} value={effort} onValueChange={setEffort} /></>} />`}
       >
         <ComposerDemo />
         <ComposerDemo full />
+        <ComposerDemo full blocked="fable is offline — pick another host" />
+      </Spec>
+
+      <Spec
+        id="dropzone"
+        title="DropZone"
+        meta="drop-zone.tsx"
+        desc="Files are attached by dropping them on the pane, not only through the paperclip. A drag that carries files outlines the whole pane in the action blue, 3px, square and flush with its edge: no fill, no radius, no label. In the console the zone wraps the main column beside the sidebar. On New session the files join the composer's attachments; in a running session each goes into the prompt as an @path. The outline exists only during the drag and never takes the pointer. The zone is its own box, so two on a page each get only their own drops; the window listener catches a near miss too, for a page with exactly one zone. A dragged link or text is left alone. Drag a file from your desktop onto either pane."
+        code={`<DropZone onFiles={(files) => attach(files)}>
+  <NewSessionPane />
+</DropZone>
+<DropZone listen="window" onFiles={attach}>…</DropZone>  // the page's only zone`}
+      >
+        <div className="grid w-full gap-4 lg:grid-cols-2">
+          <DropZoneNewSessionDemo />
+          <DropZoneTerminalDemo />
+        </div>
+      </Spec>
+
+      <Spec
+        id="datepicker"
+        title="DatePicker"
+        meta="date-picker.tsx"
+        desc="A due date, or a day for an event. The trigger is a 34px field with the calendar glyph, the day as words and a chevron; it opens a small month with today ringed and the picked day filled in ink. Under the grid, quick picks as chips (the caller's words: Today, Tomorrow, Next Monday) and Clear while a day is set. Picking closes it. Days are plain ISO dates in the reader's calendar, and today is the caller's clock, never read in render."
+        code={`<DatePicker
+  value={due}
+  onValueChange={setDue}
+  today={today}
+  quick={[{ label: 'Tomorrow', value: tomorrow }]}
+/>`}
+      >
+        <DatePickerDemo />
       </Spec>
 
       <Spec
@@ -809,9 +884,9 @@ export default function Page() {
         id="effort"
         title="EffortSlider · EffortPicker"
         meta="effort-slider.tsx"
-        desc="How long the agent may think, as a stepped track: five stops from Minimal to Max, a 30px knob in full ink, the used part of the track in the control wash, a dot at every stop the knob is not on. Pointer picks and drags, arrows step. EffortPicker is the composer's form: a muted tool button opening a 268px popover with the Effort header, the info glyph and Faster / Smarter at the ends. Picking stays in the popover; you are comparing, not confirming."
-        code={`<EffortPicker value={effort} onValueChange={setEffort} />
-<EffortSlider value={effort} onValueChange={setEffort} />`}
+        desc="How long the agent may think, as a stepped track: one stop per level the caller passes (a model's own levels in the console), a 30px knob in full ink, the used part of the track in the control wash, a dot at every stop the knob is not on. Pointer picks and drags, arrows step. EffortPicker is the composer's form: a muted tool button opening a 268px popover with the Effort header, the info glyph and Faster / Smarter at the ends. Picking stays in the popover; you are comparing, not confirming."
+        code={`<EffortPicker stops={levels} value={effort} onValueChange={setEffort} />
+<EffortSlider stops={levels} value={effort} onValueChange={setEffort} />`}
       >
         <Swatch label="picker">
           <EffortDemo />
@@ -840,13 +915,16 @@ export default function Page() {
         id="fieldselect"
         title="FieldSelect"
         meta="field-select.tsx"
-        desc="The routine editor's picker: a 42px labelled field whose value and a muted mono count sit on one line. It opens the same listbox as the chip select, with a search row, group eyebrows, and checkboxes when more than one can be picked."
-        code={`<Field><FieldLabel>Repositories</FieldLabel><FieldSelect multiple value={repos} onValueChange={setRepos} options={options} /></Field>`}
+        desc="A labelled picker whose value and a muted mono count sit on one line. It opens the same listbox as the chip select, with a search row, group eyebrows, and checkboxes when more than one can be picked. Two variants: the field, under a FieldLabel; and quiet, the value at the end of a FieldSelectRow, when several picks read as the rows of one FieldSelectGroup card."
+        code={`<Field><FieldLabel>Repositories</FieldLabel><FieldSelect multiple value={repos} onValueChange={setRepos} options={options} /></Field>
+<FieldSelectGroup><FieldSelectRow icon={<CpuIcon />} label="Host"><FieldSelect variant="quiet" value={host} onValueChange={setHost} options={hosts} /></FieldSelectRow></FieldSelectGroup>`}
       >
-        <RoutineEditorDemo />
+        <div className="flex w-full flex-col gap-6">
+          <RoutineEditorDemo />
+          <FieldSelectGroupDemo />
+        </div>
       </Spec>
 
-      {/* ── Overlays ─────────────────────────────────────────────────────── */}
       <GroupHead>Overlays</GroupHead>
 
       <Spec
@@ -863,8 +941,8 @@ export default function Page() {
         id="alert"
         title="Alert"
         meta="alert.tsx"
-        desc="A whole-form or whole-page failure, on the flat card with the hue in the ink and the hairline. A note under a form is a Callout; a success is a toast."
-        code={`<Alert variant="destructive"><AlertTitle>Could not sign in</AlertTitle>…</Alert>`}
+        desc="The callout box with a title and, for a failure, its one action (Dismiss, Retry). A plain note is a Callout; a success is a toast."
+        code={`<Alert tone="danger"><AlertTitle>Could not sign in</AlertTitle>…</Alert>`}
       >
         <AlertDemo />
       </Spec>
@@ -873,7 +951,7 @@ export default function Page() {
         id="dialog"
         title="Dialog"
         meta="dialog.tsx"
-        desc="The one modal surface: 440px, 28px radius, the modal shadow, a blurred scrim, a 4px rise. Add a host opens from the composer's host chip and from Settings: one instruction block whose header band carries the Command / Agent prompt tabs and a single Copy, the code at a fixed height so the token line under it never moves, and a status line that resolves in place. Destructive copy states the cost and the button says exactly what it does."
+        desc="The one modal surface: 440px by default, 28px radius, the modal shadow, a blurred scrim, a 4px rise. The console's forms are dialogs over it: New project and Project settings at 540px, Add a host at 520px, the automation editor at 640px. Add a host opens from the composer's host chip: one sentence, Copy install command and Copy agent prompt, the token line, the command and the prompt behind an Inspect fold, and a status box that resolves in place. Destructive copy states the cost and the button says exactly what it does."
         code={`<Dialog><DialogTrigger render={<Button />}>Add a host…</DialogTrigger><DialogContent><DialogHeader><DialogTitle>Add a host</DialogTitle>…`}
       >
         <AddHostDialogDemo />
@@ -928,7 +1006,6 @@ export default function Page() {
         <ToastDemo />
       </Spec>
 
-      {/* ── Navigation ───────────────────────────────────────────────────── */}
       <GroupHead>Navigation</GroupHead>
 
       <Spec
@@ -955,8 +1032,8 @@ export default function Page() {
         id="routineitem"
         title="RoutineItem"
         meta="routine-item.tsx"
-        desc="The sidebar in routines mode: the same list holds routines. A clock or the GitHub mark names the trigger, the right edge carries the run count, the next run as a mono countdown, or Paused, and the selected routine expands its last runs inline, each with a state dot and its age. A paused routine dims its name."
-        code={`<RoutineItem name="Standup digest" meta="in 45h" active /><RoutineRunList><RoutineRun title="Standup digest · Fri 25 Sep" ago="1d" /></RoutineRunList>`}
+        desc="The sidebar in routines mode: the same list holds routines. A clock or the GitHub mark names the trigger, the right edge carries the next run as a mono countdown, Running or Paused, behind a dot for how the last run ended (red failed, green running, grey otherwise). On hover the meta gives way to the ellipsis: Run now, Edit, Pause, Duplicate, Delete. A paused routine dims its name. Right: RoutineRun rows, the runs list the earlier frames expanded under the selected routine, kept while the console still draws it."
+        code={`<RoutineItem name="Nightly dependency audit" meta="in 11m" lastRun="failed" lastRunLabel="Last run: failed" action={<DropdownMenu>…</DropdownMenu>} menuOpen={open} />`}
       >
         <RoutineItemsDemo />
       </Spec>
@@ -975,7 +1052,7 @@ export default function Page() {
         id="editorpage"
         title="EditorPage"
         meta="editor-page.tsx"
-        desc="The page over the main column — New project, Add a host, the automations overview and its editor — and nothing in it. EditorPage is the canvas column that scrolls on its own; EditorPageBody the measured body, wide for a page that holds a table; EditorPageBack the pill above the page header; EditorPageTop a first row for a page that opens on view tabs and one action. The console mounts the frame from a layout route and each page fills the body."
+        desc="The page over the main column — the automations overview, and Add a host inside Settings — and nothing in it. EditorPage is the canvas column that scrolls on its own; EditorPageBody the measured body, wide for a page that holds a table; EditorPageBack the pill above the page header; EditorPageTop a first row for a page that opens on view tabs and one action. The console mounts the frame from a layout route and each page fills the body."
         code={`<EditorPage><EditorPageBody><EditorPageBack render={<Link to="/sessions" />}>Back</EditorPageBack><PageHeader>…</PageHeader><RoutineSteps>…</RoutineSteps></EditorPageBody></EditorPage>
 <EditorPage><EditorPageBody wide><EditorPageTop><PillTabs …>…</PillTabs><Button size="sm" variant="secondary">New automation</Button></EditorPageTop>…</EditorPageBody></EditorPage>`}
       >
@@ -989,8 +1066,8 @@ export default function Page() {
         id="pageheader"
         title="PageHeader"
         meta="page-header.tsx"
-        desc="Every routine page opens with one: a breadcrumb back, the name at 28px beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining."
-        code={`<PageHeader><PageHeaderCrumbs>…</PageHeaderCrumbs><PageHeaderRow size="lg" icon={<ClockIcon />} title="Nightly dependency audit" actions={…} /><PageHeaderMeta>…</PageHeaderMeta><PageHeaderNote action={<Button size="sm">Resume</Button>}>Paused.</PageHeaderNote></PageHeader>`}
+        desc="Every routine page opens with one: a breadcrumb back, the name beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining. The display size is a page that opens on its own name (Plan's Tasks and Calendar): the ladder's H1, no glyph, and its facts under it as PageHeaderStats in an unindented meta line."
+        code={`<PageHeader><PageHeaderCrumbs>…</PageHeaderCrumbs><PageHeaderRow icon={<ClockIcon />} title="Nightly dependency audit" actions={…} /><PageHeaderMeta>…</PageHeaderMeta><PageHeaderNote action={<Button size="sm">Resume</Button>}>Paused.</PageHeaderNote></PageHeader>`}
       >
         <PageHeaderDemo />
       </Spec>
@@ -999,20 +1076,19 @@ export default function Page() {
         id="stepper"
         title="Stepper"
         meta="stepper.tsx"
-        desc="The provisioning pane: the host as the eyebrow, Starting your session as the title, owner/repo · branch under it. Steps are named so a slow one is diagnosable: an empty ring while pending, a spinning ring while running, a green check when done, the rail turning green behind it, the running step's mono detail under its label, and the footer reading the elapsed seconds and a status word."
-        code={`<Stepper steps={[{ id, label, meta, state: 'running' }]} elapsed="1.4s" status="Working…" />`}
+        desc="The provisioning pane: the host as the eyebrow, Starting your session as the title, owner/repo · branch under it. Steps are named so a slow one is diagnosable: an empty ring while pending, a spinning ring while running, a green check when done, the rail turning green behind it, the running step's mono detail under its label, and the footer reading the elapsed seconds and a status word. A step that is slow for a reason the reader should know carries a note while it runs: the first clone of a repository on a host downloads it in full once."
+        code={`<Stepper steps={[{ id, label, meta, note: firstClone ? 'First session on mac-studio with this repository…' : undefined, state: 'running' }]} elapsed="1.4s" status="Working…" />`}
       >
         <StepperDemo />
       </Spec>
 
-      {/* ── Terminal ─────────────────────────────────────────────────────── */}
       <GroupHead>Terminal</GroupHead>
 
       <Spec
         id="terminal"
         title="Terminal"
         meta="terminal.tsx"
-        desc="The product's primary surface: 13px SF Mono at 1.55 on its own ramp, paper in light mode. In the product the scrollback is xterm.js; TerminalLine carries the same vocabulary for replays and the showcase. The prompt row is pinned and the status band runs along the bottom, starting with the link to the host: TerminalStatusLink is green and Live while connected, amber and pulsing while the console reconnects."
+        desc="The product's primary surface: 13px SF Mono at 1.55 on its own ramp, paper in light mode. In the product the scrollback is xterm.js; TerminalLine carries the same vocabulary for replays and the showcase. The prompt row is pinned and the status band runs along the bottom, starting with the link to the host: TerminalStatusLink is green and Live while connected, amber and pulsing while the console reconnects, amber and still once the host is offline."
         bare
       >
         <ThemePair className="md:grid-cols-1 lg:grid-cols-2 [&>div]:p-0 [&>div]:border-0 [&>div]:bg-transparent">
@@ -1020,7 +1096,47 @@ export default function Page() {
         </ThemePair>
       </Spec>
 
-      {/* ── Routines ─────────────────────────────────────────────────────── */}
+      <Spec
+        id="hostlink"
+        title="HostLinkChrome · CommandRow"
+        meta="host-link.tsx · command-row.tsx"
+        desc="Where a session's link to its host stands, as one phase the Terminal is given: live, reconnecting, offline, catching up, reconnected. The terminal acts on it itself: the prompt locks and its placeholder says why, and behind the card the scrollback fades back. HostLinkChrome, in the status bar's place, draws the rest from the same phase table. The banner is the console's form: the bar's place goes to an amber wash with the dot, “optimus is offline”, a dim line and the time offline, and its one control, How to fix, opens the fix above it. The notice is the frames' other drawing of the same phases, a card over the scrollback. The session comes back on its own (the runner dials out), so the fix is the only control. The fix is CommandRows, a $ command with an icon copy button (Copy command, then Copied), and a link to Settings → Hosts. Step through the phases with the control above each terminal."
+        code={`<Terminal hostLink={{ phase, host: 'optimus' }}>
+  <TerminalScrollback>…</TerminalScrollback>
+  <TerminalPrompt />
+  <HostLinkChrome elapsed="2m 14s" fix={<><CommandRowList><CommandRow surface="terminal" lead="To see what went wrong:" command="…" /></CommandRowList><Link to="/settings/hosts">Settings → Hosts</Link></>}>
+    <TerminalStatusItem>1 host</TerminalStatusItem>
+  </HostLinkChrome>
+</Terminal>
+<Terminal hostLink={{ phase, form: 'notice', host: 'optimus' }}>…</Terminal>`}
+        bare
+      >
+        <div className="flex w-full flex-col gap-6">
+          <ThemePair className="md:grid-cols-1 lg:grid-cols-2 [&>div]:p-0 [&>div]:border-0 [&>div]:bg-transparent">
+            <TerminalHostLinkDemo form="banner" />
+          </ThemePair>
+          <ThemePair className="md:grid-cols-1 lg:grid-cols-2 [&>div]:p-0 [&>div]:border-0 [&>div]:bg-transparent">
+            <TerminalHostLinkDemo form="notice" />
+          </ThemePair>
+        </div>
+      </Spec>
+
+      <Spec
+        id="sessionpane"
+        title="SessionPaneHeader"
+        meta="session-pane-header.tsx"
+        desc="The bar over a session's terminal, on the pane's card with a hairline under it: the session in mono, its run state on StatusDot, and on the right what drives it (agent, model, repository) in small mono. A session opened from a task leads with the way back to it, a quiet link with the task's title and a slash, no glyph. TerminalStatusBar is the terminal's own band along its bottom."
+        code={`<SessionPaneHeader
+  state="needs-input"
+  name="biometric-unlock"
+  stateLabel="Needs input"
+  meta="claude-code · opus 4.6 · xrp-mobile"
+  back={<SessionPaneBack render={<RouterLink to="/plan/tasks/$id" params={{ id }} />}>Biometric unlock on Android</SessionPaneBack>}
+/>`}
+      >
+        <SessionPaneHeaderDemo />
+      </Spec>
+
       <GroupHead>Routines</GroupHead>
 
       <Spec
@@ -1073,7 +1189,75 @@ export default function Page() {
         <RoutineEditorDemo />
       </Spec>
 
-      {/* ── Settings ─────────────────────────────────────────────────────── */}
+      <GroupHead>Plan</GroupHead>
+
+      <Spec
+        id="drag"
+        title="Drag layer"
+        meta="drag.tsx"
+        desc="Headless primitives any surface composes to move things by dragging, built on dnd-kit and wrapped so apps only import these names. DragProvider owns one surface's drag: pointer and keyboard (space to pick up, arrows, space to drop, escape to cancel), scrolling at the edges and what a screen reader hears, in words the caller translates. useDraggable and useDroppable make anything a source or a target, and accepts limits a target to the types it takes. SortableGroup and SortableItem keep things in order across one or more groups: the item's own place becomes the drop slot, its neighbours slide out of the way, and useSortableGroups moves ids between groups as the drag crosses them. The motion is the frames' on the system's ramp: a press becomes a drag after 5px, the lifted copy takes --drag-lift and the popover shadow over the fast duration, neighbours slide on the base duration and the copy glides home on the same as it settles flat. One DragProvider per surface, owned by the page; a component that drags (the month) draws its sources and targets inside it. Reduced motion keeps the moves and drops the motion. Files from the desktop are DropZone's, not this layer's."
+        code={`const sortable = useSortableGroups(groups, setGroups, save);
+<DragProvider {...sortable} overlay={(active) => <Card id={active.id} />}>
+  <SortableGroup id="todo" items={groups.todo}>
+    {groups.todo.map((id) => <SortableItem key={id} id={id} data={{ type: 'task', label: titleOf(id) }}><Card id={id} /></SortableItem>)}
+  </SortableGroup>
+</DragProvider>
+
+const drop = useDroppable({ id: day, accepts: ['task'] });   // drop.isOver, drop.canDrop
+const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProps`}
+      >
+        <DragPrimitivesDemo />
+      </Spec>
+
+      <Spec
+        id="taskboard"
+        title="TaskBoard · GoalCard"
+        meta="task-board.tsx · goal-card.tsx · page-header.tsx"
+        desc="Plan's tasks by status, on the drag layer. A column is a SortableGroup with its head (the status on StatusDot, the count in mono, a + to add) over an 18px tray on the hover wash that tints toward the selected wash while a card would land in it; its foot is Add task or the composer. A card has a round Checkbox (green when done, the title struck), the title, two lines of notes, the project and goal, the due date in mono (red when overdue, full ink when due within a day), the linked session as a chip that opens it, and Start session on hover. The board is one row of however many columns it is given, as wide as its parent. A task's status reads on the run-state dots (TASK_STATUS_STATE: Later pending, To do idle, In progress running, Done completed). Goals sit above the board: a 4px bar of the share done, full ink and green at 100%, and the goal's name is a toggle that narrows the board, its menu beside it. The page opens on PageHeaderRow at its display size. Drag cards within and across columns, check one off, add one, pick a goal."
+        code={`<DragProvider {...useSortableGroups(groups, setGroups, save)} overlay={(a) => <TaskCard title={titleOf(a.id)} />}>
+  <TaskBoard>
+    <TaskColumn id="todo" status="todo" label="To do" count={4} items={groups.todo} onAdd={add} foot={<TaskColumnAdd onClick={add}>Add task</TaskColumnAdd>}>
+      {groups.todo.map((id) => (
+        <SortableItem key={id} id={id} data={{ type: 'task' }}>
+          <TaskCard title="Draft the beta waitlist email" project="Atlas" due="Oct 10" session={<TaskSessionChip state="running" word="Running" name="atlas-waitlist" />} onStart={start} />
+        </SortableItem>
+      ))}
+    </TaskColumn>
+  </TaskBoard>
+</DragProvider>
+<GoalCard name="Atlas public beta" meta="Atlas · Nov 16" done={1} total={4} countLabel="1 / 4 tasks" selected onSelect={pick} />`}
+        bare
+      >
+        <div className="flex w-full flex-col gap-6">
+          <TaskStatusDots />
+          <TaskBoardDemo />
+        </div>
+      </Spec>
+
+      <Spec
+        id="calendar"
+        title="MonthCalendar · CalendarSourceCard"
+        meta="month-calendar.tsx · calendar-source.tsx"
+        desc="Plan's month: weekday eyebrows over whole weeks, Monday first. Days outside the month sit on the hover wash with their entries faded, today's number is a filled circle, and the 1st reads Oct 1. Entries are a ring for a timed event, a check for a task's due date and a bolt for an automation run, with the time in mono; an all-day event is a filled bar and a free one reads muted. Past four a day shows three and N more, which opens the whole day. Drag an event or a task to another day: it lifts, the day under it takes the selected wash, and escape puts it back. The page owns the DragProvider: an entry is a calendar-entry source and a day a target whose id is its date, and N more lists the day to read, not to drag. Automation runs keep their schedule. It shares one month grid with DatePicker. The sidebar lists what the month draws, each source a row with a Checkbox, and the connected calendar's card says when it last synced."
+        code={`<DragProvider overlay={(a) => <CalendarEntry entry={byId(a.id)} lifted />} onDragEnd={({ active, over }) => over && move(active.id, over.id)}>
+  <MonthCalendar year={2026} month={9} today={today} entries={entries} onOpenEntry={open} onAddDay={add} />
+</DragProvider>
+<CalendarLayerItem icon={<CalendarIcon />} checked onCheckedChange={toggle}>Google Calendar</CalendarLayerItem>
+<CalendarSourceCard mark={<BrandGlyph name="google" />} name="Google Calendar" account="me@example.com" status="Synced 2 min ago" />`}
+        bare
+      >
+        <MonthCalendarDemo />
+      </Spec>
+
+      <Spec
+        id="plandialogs"
+        title="Task & session dialogs"
+        meta="dialog.tsx · chip.tsx · chip-select.tsx · date-picker.tsx"
+        desc="The task dialog and Start session are compositions, not components: a form-size Dialog with a borderless title and notes, then label and value rows. Values that are fixed (the four statuses, an agent's models) are chips; values that grow with the workspace (projects, goals, hosts, repositories) are ChipSelects that filter. One state each: what a pick means (an offline host, a queued start) is the console's rule, not this page's."
+      >
+        <PlanDialogsDemo />
+      </Spec>
+
       <GroupHead>Settings</GroupHead>
 
       <Spec
@@ -1110,13 +1294,13 @@ export default function Page() {
         id="hostcard"
         title="HostCard"
         meta="host-card.tsx"
-        desc="One card per host. Running is green, idle is a grey dot, offline is a hollow ring with its last-seen time. The ellipsis holds Rename, Copy host ID (with the id as a mono value) and Remove host."
-        code={`<HostCard name="optimus" meta="Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2" status="idle" state="Idle" seen="connected" action={…} />`}
+        desc="One card per host. Running is green, idle is a grey dot, offline is a hollow ring with its last-seen time. The ellipsis holds Rename, Copy host ID (with the id as a mono value) and Remove host. An offline host opens its detail under a hairline: what waits on it (sessions that reconnect on their own, automation runs queued, a runner out of date), the commands that bring it back as CommandRows, and Check again with a mono note of the answer. The console cannot reconnect a runner, so the card explains and looks again."
+        code={`<HostCard name="fable" status="offline" state="Offline" seen="last seen 2 days ago" action={…}
+  offline={{ note: '3 sessions reconnect on their own…', commands: [{ lead: 'To see what went wrong:', command: '…' }], action: <Button variant="secondary" size="sm">Check again</Button>, actionNote: 'still offline · checked just now' }} />`}
       >
         <HostCardsDemo />
       </Spec>
 
-      {/* ── Media ────────────────────────────────────────────────────────── */}
       <GroupHead>Media</GroupHead>
 
       <Spec

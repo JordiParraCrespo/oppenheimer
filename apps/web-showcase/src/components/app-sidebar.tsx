@@ -28,7 +28,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <div className="flex h-10 items-center justify-between gap-2.5 px-2">
           <Wordmark product="Design" />
-          <span className="figures text-[11px] text-sidebar-muted">{TOC_COUNT}</span>
+          <span className="figures text-micro text-sidebar-muted">{TOC_COUNT}</span>
         </div>
       </SidebarHeader>
 
@@ -58,6 +58,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   );
 }
 
+const TRIGGER_OFFSET = 120;
+
 /**
  * Tracks which `<section id>` is in view inside the main scroll container.
  *
@@ -68,8 +70,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  * section is the last one whose top has passed the trigger line, except when
  * scrolled to the bottom, where it is simply the last section.
  */
-const TRIGGER_OFFSET = 120;
-
 function useActiveSection() {
   const [active, setActive] = React.useState<string | null>(null);
 

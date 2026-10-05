@@ -120,7 +120,6 @@ func Unpack(archivePath, member, dest string) error {
 			_ = os.Remove(dest)
 			return err
 		}
-		// 0700: the file is a binary this user is about to execute.
 		return os.Chmod(dest, 0o700) //nolint:gosec // an executable owned by, and readable only by, this user
 	}
 }

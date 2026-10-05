@@ -9,17 +9,15 @@ import type { ProjectEntity } from '../domain/project.entity';
 export type ProjectInsertOutcome = 'inserted' | 'slug-taken';
 
 /**
- * What archiving came back with. `in-use` and `archived` both carry the project,
- * because the caller reports on it either way; `not-found` covers a project that is
- * missing and one in another workspace alike.
+ * What archiving came back with. Every result but `not-found` carries the project,
+ * because the caller reports on it; `not-found` covers a project that is missing and
+ * one in another workspace alike.
  */
 export type ArchiveOutcome =
   | { result: 'archived' | 'in-use' | 'unassigned'; project: ProjectEntity }
   | { result: 'not-found' };
 
 /**
- * Port for persisting and querying the project aggregate.
- *
  * Every read takes an {@link AccessScope}, which is what turns "this query is
  * authorized" from something a handler has to remember into something the
  * compiler asks for; the adapter throws rather than falling back to an
@@ -36,8 +34,9 @@ export interface ProjectRepositoryPort {
    */
   insert(entity: ProjectEntity): Promise<ProjectInsertOutcome>;
   /**
-   * Write what a person may change — the name, the defaults and the repositories as a whole set — to a project that is still active, returning
-   * the stored project.
+   * Write what a person may change — the name, the defaults and the
+   * repositories as a whole set — to a project that is still active,
+   * returning the stored project.
    *
    * `None` when nothing was updated: the project is gone or archived. A targeted
    * `UPDATE … WHERE "archivedAt" IS NULL` rather than writing the whole
@@ -47,15 +46,12 @@ export interface ProjectRepositoryPort {
    */
   saveSettingsIfActive(scope: AccessScope, entity: ProjectEntity): Promise<Option<ProjectEntity>>;
   /**
-   * Retire a project, in one transaction with the question that decides it.
-   *
-   * The row is locked with `SELECT … FOR UPDATE` **before** `stillInUse` is asked
-   * and stays locked until `archivedAt` is written, while creating a session takes
-   * a share lock on the same row inside its own insert transaction. That is what
-   * makes "an archived project holds no unresolved session" a fact rather than a
-   * probability: whichever of the two waits sees the other's committed work and
-   * refuses. A boolean callback rather than a value, because the answer has to be
-   * read inside the lock.
+   * Retire a project, in one transaction with the question that decides it. The row is
+   * locked `FOR UPDATE` before `stillInUse` is asked and until `archivedAt` is written,
+   * while creating a session takes a share lock on the same row in its insert
+   * transaction, so "an archived project holds no unresolved session" is a fact:
+   * whichever waits sees the other's committed work and refuses. A callback, because the
+   * answer has to be read inside the lock.
    */
   archiveIfUnused(
     scope: AccessScope,
@@ -79,4 +75,10 @@ export interface ProjectRepositoryPort {
    * workspace's own provisioning calls it before anyone has a scope in it.
    */
   provisionUnassigned(organizationId: string): Promise<void>;
+  /**
+   * Delete every project of a workspace, its repositories with it. Only
+   * deleting the account that owns the workspace asks it, after the sessions
+   * that refuse to lose their project are gone.
+   */
+  eraseWorkspace(organizationId: string): Promise<void>;
 }

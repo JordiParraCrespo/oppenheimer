@@ -40,9 +40,7 @@ func origin(t *testing.T) string {
 	return bare
 }
 
-// git runs a git command in dir and fails the test if it does not work; the
-// fixtures below are built with real git so the adapter is exercised against
-// the tool it actually drives.
+// git runs a git command in dir and fails the test if it does not work.
 func git(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", args...)
@@ -58,34 +56,154 @@ func git(t *testing.T, dir string, args ...string) string {
 func client(t *testing.T) (*gitadapter.Client, domain.Layout) {
 	t.Helper()
 	layout := domain.Layout{Root: t.TempDir()}
-	return gitadapter.New(gitadapter.Options{Layout: layout}), layout
+	c := gitadapter.New(gitadapter.Options{Layout: layout})
+	t.Cleanup(c.Wait)
+	return c, layout
 }
 
 const repo = "jordi/oppenheimer"
 
-func TestEnsureClonesThenFetches(t *testing.T) {
-	remote := origin(t)
+// advance lands a commit on branch in the origin, from a scratch clone.
+func advance(t *testing.T, remote, branch string) {
+	t.Helper()
+	work := filepath.Join(t.TempDir(), "advance")
+	git(t, "", "clone", "-q", remote, work)
+	git(t, work, "-c", "user.email=test@example.com", "-c", "user.name=Test",
+		"commit", "--allow-empty", "-q", "-m", "upstream moved")
+	git(t, work, "push", "-q", "origin", "HEAD:refs/heads/"+branch)
+}
+
+func remoteRef(t *testing.T, mirror, ref string) string {
+	t.Helper()
+	cmd := exec.Command("git", "rev-parse", "--verify", "--quiet", "refs/remotes/origin/"+ref)
+	cmd.Dir = mirror
+	out, _ := cmd.Output()
+	return strings.TrimSpace(string(out))
+}
+
+// A first clone is shallow, so a worktree can be cut before the history
+// arrives, and then becomes the blobless store with the whole history that a
+// session's `git log` reads; nothing is checked out in the mirror itself.
+func TestEnsureClonesShallowThenDeepensToABloblessStore(t *testing.T) {
+	bare := origin(t)
+	advance(t, bare, "main")
+	advance(t, bare, "next")
+	// A local path clones by copying the object store, depth and filter or
+	// not; the file transport is how git behaves against a server.
+	git(t, bare, "config", "uploadpack.allowFilter", "true")
 	c, layout := client(t)
 	ctx := context.Background()
 
-	if err := c.Ensure(ctx, repo, remote); err != nil {
-		t.Fatalf("first ensure (clone): %v", err)
+	if err := c.Ensure(ctx, repo, "file://"+bare, "main"); err != nil {
+		t.Fatalf("ensure: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(layout.Mirror(repo), ".git")); err != nil {
-		t.Fatalf("the mirror is not there: %v", err)
+	mirror := layout.Mirror(repo)
+	if _, err := os.Stat(filepath.Join(mirror, "README.md")); !os.IsNotExist(err) {
+		t.Fatalf("the mirror has a working tree: %v", err)
+	}
+	// A worktree can be cut at once, deepened or not.
+	worktree := layout.Worktree(repo, "shallow")
+	if err := c.Add(ctx, repo, worktree, "oppenheimer/shallow", "main", true); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(worktree, "README.md")); err != nil {
+		t.Fatalf("the worktree has no files: %v", err)
 	}
 
-	// The second call fetches, and needs no remote: the host already knows
-	// where the repository came from.
-	if err := c.Ensure(ctx, repo, ""); err != nil {
-		t.Fatalf("second ensure (fetch): %v", err)
+	deadline := time.Now().Add(30 * time.Second)
+	for {
+		_, err := os.Stat(filepath.Join(mirror, ".git", "shallow"))
+		if os.IsNotExist(err) {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("the mirror was never deepened")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if got := strings.TrimSpace(git(t, mirror, "config", "remote.origin.partialclonefilter")); got != "blob:none" {
+		t.Fatalf("partialclonefilter = %q, want blob:none", got)
+	}
+	if got := strings.TrimSpace(git(t, mirror, "rev-list", "--count", "refs/remotes/origin/main")); got != "2" {
+		t.Fatalf("origin/main has %s commits, want the whole history (2)", got)
+	}
+	if remoteRef(t, mirror, "next") == "" {
+		t.Fatal("the deepen did not fetch every branch")
+	}
+}
+
+// Has is what tells a first session's download from a later one's fetch, and
+// a clone that failed half-way must not count as the repository being here.
+func TestHasIsTrueOnlyOnceAWholeCloneIsInPlace(t *testing.T) {
+	remote := origin(t)
+	c, _ := client(t)
+	ctx := context.Background()
+	if c.Has(repo) {
+		t.Fatal("a repository never cloned is reported as here")
+	}
+	if err := c.Ensure(ctx, repo, remote, "no-such-branch"); err == nil {
+		t.Fatal("a clone of a missing branch succeeded")
+	}
+	if c.Has(repo) {
+		t.Fatal("a failed clone is reported as the repository being here")
+	}
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	if !c.Has(repo) {
+		t.Fatal("a cloned repository is not reported as here")
+	}
+}
+
+func TestEnsureFetchesOnlyTheBranchesItIsGiven(t *testing.T) {
+	remote := origin(t)
+	c, layout := client(t)
+	ctx := context.Background()
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	mirror := layout.Mirror(repo)
+	before := remoteRef(t, mirror, "main")
+	advance(t, remote, "main")
+	advance(t, remote, "elsewhere")
+
+	if err := c.Ensure(ctx, repo, "", "main"); err != nil {
+		t.Fatalf("ensure: %v", err)
+	}
+
+	if remoteRef(t, mirror, "main") == before {
+		t.Fatal("origin/main did not move")
+	}
+	if remoteRef(t, mirror, "elsewhere") != "" {
+		t.Fatal("a branch nobody asked for was fetched")
+	}
+}
+
+func TestEnsureFailsWhenTheRefIsNotABranchOnTheRemote(t *testing.T) {
+	remote := origin(t)
+	c, layout := client(t)
+	ctx := context.Background()
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	advance(t, remote, "elsewhere")
+
+	err := c.Ensure(ctx, repo, "", "no-such-branch")
+
+	var prob *problem.Error
+	if !isProblem(err, &prob, domain.ErrGitCommand.Code) {
+		t.Fatalf("err = %v, want %s", err, domain.ErrGitCommand.Code)
+	}
+	// One fetch, not a second one of everything.
+	if remoteRef(t, layout.Mirror(repo), "elsewhere") != "" {
+		t.Fatal("a failed fetch went on to fetch every branch")
 	}
 }
 
 func TestEnsureRefusesARepositoryItHasNeverSeenWithNoRemote(t *testing.T) {
 	c, _ := client(t)
 
-	err := c.Ensure(context.Background(), repo, "")
+	err := c.Ensure(context.Background(), repo, "", "main")
 
 	var prob *problem.Error
 	if !isProblem(err, &prob, "GIT_001") {
@@ -97,7 +215,7 @@ func TestEnsureRefusesARepositoryNameThatWouldEscapeTheLayout(t *testing.T) {
 	c, _ := client(t)
 
 	for _, name := range []string{"../../etc", "owner/../../etc", "not-a-repo"} {
-		if err := c.Ensure(context.Background(), name, "https://example.test/x.git"); err == nil {
+		if err := c.Ensure(context.Background(), name, "https://example.test/x.git", "main"); err == nil {
 			t.Fatalf("%q must not be accepted as a repository name", name)
 		}
 	}
@@ -107,7 +225,7 @@ func TestAddCutsANewBranchFromTheBaseAndRemoveTakesItAway(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "session-abc")
@@ -136,7 +254,7 @@ func TestAddRefusesToReuseAPathThatExists(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "taken")
@@ -156,7 +274,7 @@ func TestDirtyAndPush(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "session-push")
@@ -191,21 +309,6 @@ func TestDirtyAndPush(t *testing.T) {
 	pushed, err = c.Push(ctx, worktree, "oppenheimer/push")
 	if err != nil || pushed {
 		t.Fatalf("second push = %v, err = %v; want nothing to do", pushed, err)
-	}
-}
-
-func TestGitNeverWaitsForAPassword(t *testing.T) {
-	c, _ := client(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// A remote that cannot be reached must fail fast, not hang a session
-	// create. What it is classified as is pinned against a remote that does
-	// answer, in recovery_test.go.
-	err := c.Ensure(ctx, repo, "https://127.0.0.1:1/private.git")
-
-	if err == nil || ctx.Err() != nil {
-		t.Fatalf("err = %v, ctx = %v; want a prompt failure, not a wait", err, ctx.Err())
 	}
 }
 

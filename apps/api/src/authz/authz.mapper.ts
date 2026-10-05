@@ -5,7 +5,7 @@ import {
   type ResourceRegistry,
 } from '@oppenheimer/backend-authz';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import type { AppAbility } from '@oppenheimer/shared';
+import type { AbilityContext, AppAbility } from '@oppenheimer/shared';
 import { AccessGrantOrmEntity } from './database/access-grant.orm-entity';
 import { AccessGrantEntity } from './domain/access-grant.entity';
 import { AccessGrantResponseDto } from './dtos/access-grant.response.dto';
@@ -15,7 +15,6 @@ import type {
   AuthzRuleDto,
 } from './dtos/authz-catalog.response.dto';
 
-/** Maps the access-grant aggregate between its three shapes. */
 @Injectable()
 export class AccessGrantMapper
   implements Mapper<AccessGrantEntity, AccessGrantOrmEntity, AccessGrantResponseDto>
@@ -66,12 +65,7 @@ export class AccessGrantMapper
   }
 }
 
-/**
- * Registry declarations → the catalog wire shape.
- *
- * Pure and DI-free: the query handler resolves the ability and delegates the
- * shaping here.
- */
+/** Registry declarations → the catalog wire shape. */
 export function toResourceDto(resource: ResourceDefinition): AuthzResourceDto {
   return {
     subject: resource.subject,
@@ -91,6 +85,7 @@ export function toResourceDto(resource: ResourceDefinition): AuthzResourceDto {
 export function toCatalogResponse(
   registry: ResourceRegistry,
   ability: AppAbility,
+  context: AbilityContext = {},
 ): AuthzCatalogResponseDto {
   const groups = registry.byGroup().map((group) => ({
     group: group.group,
@@ -99,10 +94,13 @@ export function toCatalogResponse(
 
   // The same containment rule the write path enforces, evaluated up front so
   // the role builder can disable what would be rejected rather than surfacing
-  // the rejection after the fact.
+  // the rejection after the fact. Known rules are unconditioned, and
+  // containment respects conditions, so an actor holding only conditioned
+  // rules (a tenant owner) gets an empty list: the rules they may grant must
+  // carry their own organization condition, which this list cannot express.
   const grantable: AuthzRuleDto[] = registry
     .knownRules()
-    .filter((rule) => canGrant(ability, [rule]))
+    .filter((rule) => canGrant(ability, [rule], context))
     .map((rule) => ({ action: rule.action, subject: rule.subject }));
 
   return { groups, grantable };

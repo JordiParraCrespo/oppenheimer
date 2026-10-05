@@ -3,14 +3,12 @@ package cli
 import (
 	"context"
 	"sync"
+
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 )
 
-// creditWindow is 01's 256 KB: the bytes an attachment may have in flight
-// before its PTY reads pause. A runaway build stalls its own pane, never the
-// link.
-const creditWindow = 256 * 1024
-
-// flowWindow is one attachment's credit: bytes sent minus bytes the browser
+// flowWindow is one attachment's credit, against link.CreditWindow (01's
+// 256 KB, from the protocol's constants): bytes sent minus bytes the browser
 // acknowledged consuming. A pump acquires before every read and blocks while
 // the window is spent; a credit or a close wakes it.
 type flowWindow struct {
@@ -38,7 +36,7 @@ func (w *flowWindow) acquire(ctx context.Context) bool {
 	defer stop()
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	for w.inFlight >= creditWindow && !w.closed && ctx.Err() == nil {
+	for w.inFlight >= link.CreditWindow && !w.closed && ctx.Err() == nil {
 		w.cond.Wait()
 	}
 	return !w.closed && ctx.Err() == nil

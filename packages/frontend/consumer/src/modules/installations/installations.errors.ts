@@ -15,10 +15,6 @@ export const InstallationsErrors = {
     code: 'INSTALLATIONS_CLIENT_002',
     message: 'Failed to connect the GitHub installation',
   },
-  REMOVE_FAILED: {
-    code: 'INSTALLATIONS_CLIENT_003',
-    message: 'Failed to disconnect the GitHub installation',
-  },
   FETCH_REPOSITORIES_FAILED: {
     code: 'INSTALLATIONS_CLIENT_004',
     message: 'Failed to load repositories',
@@ -26,5 +22,9 @@ export const InstallationsErrors = {
   FETCH_BRANCHES_FAILED: {
     code: 'INSTALLATIONS_CLIENT_005',
     message: 'Failed to load branches',
+  },
+  START_FAILED: {
+    code: 'INSTALLATIONS_CLIENT_006',
+    message: 'Failed to start the GitHub installation',
   },
 } as const satisfies Record<string, ErrorDefinition>;

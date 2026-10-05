@@ -3,19 +3,13 @@ import type { ProjectUsagePort } from './project-usage.port';
 
 /**
  * What the running application can say a project is still being used for,
- * collected at boot.
- *
- * Archiving a project has to refuse while sessions nobody has closed are listed
- * in it, and this module cannot answer that: sessions are somebody else's
- * aggregate, and the dependency only runs one way — a session needs the project it
- * belongs to. So the question is a port this module declares and another module
- * contributes an implementation of, through
- * {@link ProjectsModule.contributeUsage}.
+ * collected at boot through {@link ProjectsModule.contributeUsage}. The
+ * dependency only runs one way — a session needs the project it belongs to — so
+ * this module cannot ask sessions directly.
  *
  * An empty registry is the **fail-closed** case and the only one: a deployment
  * built without the module that owns sessions cannot archive a project, because
- * nothing can say whether archiving it would strand work. That is a DI fact, not a
- * fallback to catch.
+ * nothing can say whether archiving it would strand work.
  */
 @Injectable()
 export class ProjectUsageRegistry {
@@ -42,7 +36,6 @@ export class ProjectUsageRegistry {
     return false;
   }
 
-  /** Empty means nothing can answer, which is what makes the archive refuse. */
   canAnswer(): boolean {
     return this.usages.length > 0;
   }

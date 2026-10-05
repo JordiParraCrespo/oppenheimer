@@ -4,7 +4,6 @@
  * stops at `github-rest.adapter.ts`, the only file that talks to it.
  */
 
-/** One repository the installation covers, as GitHub answered for it. */
 export interface GithubRepository {
   githubRepoId: number;
   name: string;
@@ -18,7 +17,6 @@ export interface GithubRepository {
   pushedAt: string | null;
 }
 
-/** One branch of one repository. */
 export interface GithubBranch {
   name: string;
   commitSha: string;
@@ -47,7 +45,6 @@ export interface GithubRepositoryToken {
 }
 
 export interface GithubAppPort {
-  /** Whether the App's credentials are present on this deployment. */
   isConfigured(): boolean;
   /**
    * Exchange the OAuth code from the install redirect and return which
@@ -56,7 +53,7 @@ export interface GithubAppPort {
    * This is the claim proof, and it has no fallback: matching the installation's
    * `account.login` against the caller's linked GitHub account fails for
    * organization installations, where that login is the org rather than a user
-   * (`product/versions/mvp/00-scope.md`). The code is used once, here, and never
+   * (`product/versions/mvp/10-api-modules-and-data-model.md`). The code is used once, here, and never
    * stored.
    */
   listUserInstallations(code: string): Promise<GithubInstallationRef[]>;
@@ -70,7 +67,6 @@ export interface GithubAppPort {
    * otherwise.
    */
   readInstallation(githubInstallationId: number): Promise<GithubInstallationClaim>;
-  /** Every repository the installation covers, read through its own token. */
   listInstallationRepositories(githubInstallationId: number): Promise<GithubRepository[]>;
   /**
    * One repository, by GitHub's own id.
@@ -80,7 +76,6 @@ export interface GithubAppPort {
    * than a `find()` over the installation's whole catalogue.
    */
   readRepository(githubInstallationId: number, githubRepoId: number): Promise<GithubRepository>;
-  /** One repository's branches, plus which of them is the default. */
   listRepositoryBranches(
     githubInstallationId: number,
     githubRepoId: number,

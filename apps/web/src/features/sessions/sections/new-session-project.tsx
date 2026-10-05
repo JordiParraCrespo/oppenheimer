@@ -1,34 +1,34 @@
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useHostsSnapshot, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { useSearch } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { useConsoleDialog } from '@/lib/console';
 import { ProjectSelect } from '../components/project-select';
+import { useLandingPick } from '../hooks/use-landing-pick';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { useSearchPick } from '../hooks/use-search-pick';
 import { projectPrefill, toProjectOptions } from '../lib/session-options';
 
 /**
- * The project chip, bound to the draft: first in the scope band, because
- * picking a project prefills the host, the repository and the agent
- * (`product/versions/mvp/05-screens.md`).
- *
- * It subscribes to the projects because it draws them. The hosts it only
- * reads at pick time, to know which project default is still a machine this
- * workspace has, so a refetch of the host list does not re-render it — what
- * it subscribes to is only whether that list has answered, because a pick
- * made before it has would drop the project's default host as if it were
- * gone. New project… is the project page (`/projects/new`), which lands back
- * here with what it made in the address — the same `?project=` the sidebar's
- * "New session here" names — and the chip picks it once the lists can.
+ * The project chip, first in the scope band because picking a project
+ * prefills the host, the repository and the agent
+ * (`product/versions/mvp/05-screens.md`). The hosts are read only at pick
+ * time, so a host refetch does not re-render it; it subscribes only to whether
+ * that list has answered, because a pick before then would drop the project's
+ * default host as if it were gone.
  */
 export function NewSessionProject() {
   const { t } = useTranslation();
   const { control, setValue } = useNewSessionDraft();
   const { field } = useController({ control, name: 'projectId' });
-  const navigate = useNavigate();
+  const dialogs = useConsoleDialog();
+  const [created, setCreated] = useState<string | undefined>();
 
   const search = useSearch({ from: '/_authenticated/sessions/new' });
+  const resolveError = useErrorMessage();
   const projects = useProjects();
   const hosts = useHostsSnapshot();
   // A boolean that flips once, so the settle re-renders this chip once and a
@@ -44,7 +44,6 @@ export function NewSessionProject() {
     ? field.value
     : (projects.data?.find((project) => project.isUnassigned)?.id ?? null);
 
-  /** Picking a project: the chip, then what its defaults set on the others. */
   function pick(next: ProjectEntity) {
     field.onChange(next.id);
     const prefill = projectPrefill(
@@ -57,8 +56,17 @@ export function NewSessionProject() {
     if (prefill.model !== undefined) setValue('model', prefill.model);
   }
 
-  // The sidebar's "New session here" names the project in the address.
-  useSearchPick(search.project, projects.data, hostsReady === true, pick);
+  // The sidebar's "New session here" names the project in the address; the
+  // dialog names the one it made. Either is picked once the lists can.
+  useSearchPick(created ?? search.project, projects.data, hostsReady === true, pick);
+
+  // With neither, the project the chip starts on — remembered, or Unassigned —
+  // offers its defaults on arrival, so the draft a visit opens with is always
+  // the one its project describes. Per chip, a default the project names wins
+  // over the last visit's choice; a chip it names nothing for keeps what
+  // `initialDraft` restored, because `projectPrefill` leaves a missing default
+  // out of the patch.
+  useLandingPick(value, projects.data, hostsReady === true, Boolean(search.project), pick);
 
   return (
     <ProjectSelect
@@ -71,8 +79,15 @@ export function NewSessionProject() {
         const next = projects.data?.find((candidate) => candidate.id === id);
         if (next) pick(next);
       }}
-      onNewProject={() => navigate({ to: '/projects/new' })}
+      onNewProject={() =>
+        dialogs.open({ kind: 'project', onSaved: (project) => setCreated(project.id) })
+      }
       loading={projects.isPending}
+      failure={
+        projects.isError
+          ? resolveError(projects.error, t('sessions.new.project.failed')).message
+          : undefined
+      }
       variant="tab"
     />
   );

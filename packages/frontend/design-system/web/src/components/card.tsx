@@ -9,8 +9,8 @@ import { cn } from '../lib/utils';
  * way to make this system look cheap.
  *
  * `padded` puts the 24px card padding on the card itself for a single block of
- * content (the CodeBlock cards on Add host); otherwise use the header, content
- * and footer parts, which carry their own.
+ * content; otherwise use the header, content and footer parts, which carry
+ * their own.
  */
 function Card({
   className,

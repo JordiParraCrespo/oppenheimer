@@ -74,25 +74,13 @@ export class I18nService {
       onMissingKey: options.onMissingKey,
     });
     this.defaultTimeZone = options.defaultTimeZone ?? 'UTC';
-    // Injectable so tests can freeze time without stubbing globals.
     this.now = options.now ?? (() => new Date());
-  }
-
-  get locales(): readonly string[] {
-    return this.translator.locales();
-  }
-
-  supports(locale: string | null | undefined): boolean {
-    return this.translator.supports(locale);
   }
 
   /**
    * Pick the first candidate with a bundle, falling back to the default.
-   *
-   * Callers pass the chain in priority order — explicit query parameter, then
-   * `Accept-Language`, then the user's stored preference, then the
-   * organization's default — and get back a locale that is guaranteed to
-   * render.
+   * Callers pass candidates in priority order and get back a locale that is
+   * guaranteed to render.
    */
   negotiate(...candidates: (string | null | undefined)[]): string {
     return this.translator.negotiate(...candidates);
@@ -109,7 +97,7 @@ export class I18nService {
     );
   }
 
-  /** Escape hatch for code that needs the raw lookup (boot-time key checks). */
+  /** Escape hatch for code that needs the raw lookup. */
   has(locale: string, key: string): boolean {
     return this.translator.has(locale, key);
   }

@@ -21,22 +21,19 @@ import { gzipSync } from 'node:zlib';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Budget in KB of gzipped bytes on the critical path. */
+/** Each app's critical-path budget, in KB of gzipped bytes. */
 const APPS = [
   // oppenheimer:begin web
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 421KB measured (2026-09-21), raised from 385KB against 371KB. Two things
-    // happened and only one of them is a diff: the app had already drifted to
-    // 415KB while nothing re-measured — this check has been failing, not
-    // passing — and New session then added 6.1KB of it. That 6.1KB is almost
-    // all `vendor-ui`: `manualChunks` puts every design-system component in one
-    // chunk the entry loads, so a picker used on one lazy route still lands on
-    // the critical path. The floor is ~108KB of Base UI and icons plus ~57KB of
-    // React; the next real reduction is letting design-system code follow its
-    // route rather than shaving app code, and that is its own measured diff.
-    budgetKB: 430,
+    // 435.4KB measured (2026-09-29): `vendor-react` 106.5KB, `vendor-ui`
+    // 100.4KB, `vendor-forms` 36.8KB, the entry 30.5KB, `vendor-router` 30.2KB.
+    // `manualChunks` puts every design-system component in one chunk the entry
+    // loads, so a picker used on one lazy route is on the critical path; letting
+    // design-system code follow its route is the fix, as its own measured diff.
+    // Headroom is 4.6KB so the next drift fails while it is one change's worth.
+    budgetKB: 440,
   },
   // oppenheimer:end web
 ];

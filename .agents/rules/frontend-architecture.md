@@ -12,8 +12,9 @@ for names, shapes and where a query is subscribed to, Biome for effects and
 memo, Biome plugins in `biome-plugins/` for query keys, `skipToken` and
 mutation cache updates (the rules are
 [`apps/docs/docs/architecture/query-keys.md`](../../apps/docs/docs/architecture/query-keys.md)),
-and a `*-render.spec.tsx` for what a component costs. The Claude Code Stop hook
-runs all three. The layer model and the cookbooks are in
+`pnpm check:unused` (knip) for code nothing reaches, and a `*-render.spec.tsx`
+for what a component costs. The Claude Code Stop hook runs dependency-cruiser
+and `pnpm check:structure`; CI runs every check. The layer model and the cookbooks are in
 [`packages/frontend/ARCHITECTURE.md`](../../packages/frontend/ARCHITECTURE.md)
 and `apps/web/ARCHITECTURE.md`; `/scaffold-feature` produces the shape.
 
@@ -25,7 +26,7 @@ built from this starter.
 | Question | Answer | Goes in |
 | --- | --- | --- |
 | Is it logic (an entity, a repository, a service, a query hook)? | kernel: session, users, settings, anything any app needs | `packages/frontend/core` |
-| | the product's domain: sessions, hosts, the account chrome | `packages/frontend/consumer` |
+| | the product's domain and its account chrome | `packages/frontend/consumer` |
 | Is it UI or platform glue below the routes that needs no product hook? | | `packages/frontend/web` |
 | Is it a design-system primitive? | | `packages/frontend/design-system/web` |
 | Everything else | | `apps/web/src/features/<module>/<kind>/` |
@@ -84,15 +85,27 @@ shared ─► core ─► consumer ─► apps/web
   in.
 - The kernel never imports the product package, and the kit imports only the
   kernel. `pnpm arch` fails either way.
+- A feature never imports React Query outside its tests
+  (`features-query-through-the-product`); it reads and writes through the
+  product package's hooks.
+- `src/providers/` imports a feature's `dialogs/` and nothing else of a
+  feature (`providers-mount-dialogs`).
 - The kit is imported by its package name (`@oppenheimer/frontend-web`), never by a
   path into its `src/`.
+- The API is called through `@oppenheimer/api-client`'s root (`heyApiSdk`),
+  from a product package's repository, never a path into the client's `src/`
+  (`one-api-client`). A function is named after the API slice's use case
+  (`FindHostsHttpController` is `findHosts`); the API's operation-id factory
+  refuses two handlers on one name, so there is never a `list2` to guess at.
 - An app never keeps a file the kit ships. `pnpm check:structure` compares
   basenames; the fix is to import it.
 
 ## The kit is concerns, not kinds, at its top level
 
 `packages/frontend/web/src/<concern>/<kind>/` — `shell`, `auth`,
-`layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`, `roles`. Each
+`layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`,
+`pairing`. A concern is named after what it does, never after a product
+module. Each
 concern has an `index.ts`; a concern imports another only through it. The
 concerns are layered (leaves → middle → top) and `pnpm arch` holds the order.
 A concern that needs a product hook is a feature, not kit.
@@ -161,7 +174,10 @@ name the jobs and split *those*.
   two.
   The split that matters is by clock, not by length — a keystroke, a page, a
   tick. When you cannot name the second job, there isn't one.
-- **One component per file.** Biome's `noNestedComponentDefinitions` is on.
+- **One component per file** in an app. Biome's `noNestedComponentDefinitions`
+  catches one declared inside another; `pnpm check:structure` catches two
+  declared side by side, which Biome does not see. The kit is exempt: a
+  primitives file there exports a family meant to be read together.
 - **An effect synchronises with something outside React, and says what.**
   A DOM listener, a subscription, a timer, an imperative library, the URL.
   Never deriving state, resetting on a prop change, chaining updates or
@@ -226,13 +242,36 @@ name the jobs and split *those*.
   that draws it, and hand a one-second tick to a leaf of its own — the
   pairing countdown and the provisioning clock are elements in their parent's
   slot, so a tick re-renders a line of text and not the dialog around it.
-- **Entity queries opt into `shareEntities`.** The entities are classes, which
-  TanStack Query's default structural sharing does not look into, so without
-  it every refetch hands every reader a new object per row. A query hook that
-  returns entities passes `structuralSharing: shareEntities` (from
-  `@oppenheimer/frontend-core/react`); a list hook takes a narrowing `select`,
-  and a read that only happens in an event handler uses the module's
-  `use…Snapshot()` rather than subscribing.
+- **Queries share entities across refetches.** The entities are classes,
+  which TanStack Query's default structural sharing does not look into, so
+  without `shareEntities` every refetch hands every reader a new object per
+  row. A query hook in a frontend package's `src/react/` calls `useQuery` /
+  `useQueries` from `@oppenheimer/frontend-core/react`, which apply it (a query
+  that must not share passes `structuralSharing: false`); `pnpm
+  check:structure` fences TanStack's own two out of those files. A list hook
+  takes a narrowing `select`, and a read that only happens in an event handler
+  uses the module's `use…Snapshot()` rather than subscribing.
+
+- **A decision about time is config; a unit is not.** How long data stays
+  fresh, how often a clock on screen moves, how long input waits, how many
+  times a request is retried: a value in `CORE_CONFIG`
+  (`@oppenheimer/frontend-core/config`) when any product lives with it, or in
+  `CONSUMER_CONFIG` (`@oppenheimer/frontend-consumer/config`) when it is the
+  console's, because the kernel never names a product. Polls are `LIVE_POLL`,
+  below. A unit (`MINUTE = 60_000`), a protocol fact (an escape code, the API's
+  page maximum) and a small value with one reader that is part of how that
+  code works (a "Copied" flash, a resize settle) stay a constant where they
+  are used.
+
+- **Polling is one policy.** `LIVE_POLL` in the product package
+  (`src/react/live-poll.ts`) owns every poll: its interval and whether it
+  keeps running while the tab is hidden. A package hook spreads `pollWhile()`
+  and says only when the thing it watches is still moving; a feature never
+  sets `refetchInterval` and asks for the hook that already polls
+  (`useHostPresence`). A poll that watches something finish keeps running on
+  a hidden tab, because that is the tab the reader leaves while it runs;
+  presence, which never settles, does not. `pnpm check:structure` fails a
+  `refetchInterval` anywhere but that file.
 
 ## Routing is its own skill
 
@@ -243,6 +282,26 @@ moving or guarding a route — or touching `routeTree.gen.ts`, `beforeLoad`,
 (`.agents/skills/tanstack-routing/`). It carries the file-name table, the
 guard and search-param rules, and the check that proves a restructure did not
 change a URL.
+
+## Nothing is kept for later
+
+`pnpm check:unused` runs knip (`knip.json`) over `apps/web` and the kernel,
+product and kit packages, and fails on an unused file, dependency or export.
+
+- An export is checked **through its package's barrel**, the kernel's
+  included: a package exports what the console imports and nothing else. A
+  hook, key factory or error catalog only the package itself uses stays in it,
+  unexported. Keeping something "for a later screen" is the shape this check
+  exists to stop — the later screen re-exports it.
+- A kernel export that is a documented contract with no caller yet (the
+  flags rule's `useFeatureFlag`, the analytics doc's `useCaptureEvent`) is
+  tagged `/** @public <why> */` on its line in the barrel. One symbol, one
+  reason; never a package or a file.
+- Exported types are not checked: they cost nothing at run time and are the
+  vocabulary a caller annotates with.
+- Knip does not see class members. When you delete the last caller of a hook,
+  delete the service and repository methods only it reached, and the error
+  codes only they raised.
 
 ## Patterns agents get wrong
 

@@ -62,7 +62,7 @@ func ExitCode(err error) int {
 }
 
 // printer writes the CLI's output and remembers the first failure, so a
-// closed pipe is reported once instead of ignored eight times.
+// closed pipe is reported once instead of ignored at every line.
 type printer struct {
 	w   io.Writer
 	err error
@@ -188,6 +188,10 @@ func (a *App) Register(ctx context.Context, out io.Writer, opts RegisterOptions)
 		if identity, err = a.Pairing.SetWorkspaces(workspaces); err != nil {
 			return err
 		}
+	} else if err := ExcludeFromIndexing(workspaces); err != nil {
+		// A chosen directory got the opt-out from ChooseWorkspaces; the
+		// default gets it here, so pairing leaves both roots the same way.
+		p.printf("warning: could not keep %s out of the desktop search index (%v); indexing a session's checkouts costs this host CPU it owes the agents\n", workspaces, err)
 	}
 	p.printf("paired as %s (%s)\n", identity.Name, identity.HostID)
 	p.printf("control plane %s, channel %s\n", identity.ControlPlaneURL, identity.Channel)
@@ -595,4 +599,38 @@ func errorSuffix(state upddomain.State) string {
 		return ""
 	}
 	return ": " + state.Error
+}
+
+// AgentsUpdate runs every installed agent CLI's own updater now, the round
+// `run` does hourly, and prints what each came to. It fails when any updater
+// did, so a script can tell.
+func (a *App) AgentsUpdate(ctx context.Context, out io.Writer) error {
+	results := a.Host.UpdateAgents(ctx)
+	tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
+	p := newPrinter(tw)
+	if len(results) == 0 {
+		p.println("no agent CLI is installed on this host")
+	}
+	failed := 0
+	for _, r := range results {
+		switch r.Outcome {
+		case hostdomain.AgentUpdated:
+			p.printf("%s\tupdated\t%s → %s\n", r.Tool, r.From, r.To)
+		case hostdomain.AgentCurrent:
+			p.printf("%s\tcurrent\t%s\n", r.Tool, r.To)
+		case hostdomain.AgentUpdateFailed:
+			failed++
+			p.printf("%s\tfailed\t%s\n", r.Tool, r.Detail)
+		}
+	}
+	if err := tw.Flush(); err != nil {
+		return err
+	}
+	if p.err != nil {
+		return p.err
+	}
+	if failed > 0 {
+		return hostdomain.ErrAgentUpdate.WithDetail("%d of %d failed; run the agent's own updater to see why", failed, len(results))
+	}
+	return nil
 }

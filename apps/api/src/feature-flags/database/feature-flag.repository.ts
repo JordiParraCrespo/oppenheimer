@@ -1,77 +1,37 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  type AggregateID,
-  OutboxService,
-  Paginated,
-  type PaginatedQueryParams,
-} from '@oppenheimer/backend-ddd';
-import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, type Repository } from 'typeorm';
+import { OutboxService, TypeOrmRepositoryBase } from '@oppenheimer/backend-ddd';
+import type { Option } from 'oxide.ts';
+import type { EntityManager, Repository } from 'typeorm';
 import type { FeatureFlagEntity } from '../domain/feature-flag.entity';
 import { FeatureFlagMapper } from '../feature-flag.mapper';
 import { FeatureFlagOrmEntity } from './feature-flag.orm-entity';
 import type { FeatureFlagRepositoryPort } from './feature-flag.repository.port';
 
-/**
- * TypeORM adapter for flag targeting. Stages the aggregate's change events on
- * the transactional outbox with the write, so an audited change and the change
- * itself commit together.
- */
+/** The advisory lock every flag and segment write holds: `'flag'` as a bigint. */
+const FLAG_WRITE_LOCK = 0x666c6167;
+
 @Injectable()
-export class FeatureFlagRepository implements FeatureFlagRepositoryPort {
+export class FeatureFlagRepository
+  extends TypeOrmRepositoryBase<FeatureFlagEntity, FeatureFlagOrmEntity>
+  implements FeatureFlagRepositoryPort
+{
   constructor(
     @InjectRepository(FeatureFlagOrmEntity)
-    private readonly repository: Repository<FeatureFlagOrmEntity>,
-    private readonly dataSource: DataSource,
-    private readonly mapper: FeatureFlagMapper,
-    private readonly outbox: OutboxService,
-  ) {}
-
-  async insert(entity: FeatureFlagEntity | FeatureFlagEntity[]): Promise<void> {
-    const entities = Array.isArray(entity) ? entity : [entity];
-    const records = entities.map((e) => this.mapper.toPersistence(e));
-    await this.outbox.writeWithEvents(entities, (manager) => {
-      const repository = manager.getRepository(FeatureFlagOrmEntity);
-      // `QueryDeepPartialEntity` cannot represent the jsonb unions; see RoleRepository.
-      return repository.insert(records as Parameters<typeof repository.insert>[0]);
-    });
+    protected readonly repository: Repository<FeatureFlagOrmEntity>,
+    protected readonly mapper: FeatureFlagMapper,
+    protected readonly outbox: OutboxService,
+  ) {
+    super();
   }
 
-  async save(entity: FeatureFlagEntity): Promise<FeatureFlagEntity> {
-    const record = await this.outbox.writeWithEvents([entity], (manager) =>
-      manager.getRepository(FeatureFlagOrmEntity).save(this.mapper.toPersistence(entity)),
-    );
-    return this.mapper.toDomain(record);
+  async findOneByKey(key: string, manager?: EntityManager): Promise<Option<FeatureFlagEntity>> {
+    return this.toOption(await this.on(manager).findOneBy({ key }));
   }
 
-  async findOneById(id: string): Promise<Option<FeatureFlagEntity>> {
-    const record = await this.repository.findOneBy({ id });
-    return record ? Some(this.mapper.toDomain(record)) : None;
-  }
-
-  async findOneByKey(key: string): Promise<Option<FeatureFlagEntity>> {
-    const record = await this.repository.findOneBy({ key });
-    return record ? Some(this.mapper.toDomain(record)) : None;
-  }
-
-  async findAll(): Promise<FeatureFlagEntity[]> {
-    const records = await this.repository.find({ order: { key: 'ASC' } });
+  async findAll(manager?: EntityManager): Promise<FeatureFlagEntity[]> {
+    const records = await this.on(manager).find({ order: { key: 'ASC' } });
     return records.map((record) => this.mapper.toDomain(record));
-  }
-
-  async findAllPaginated(params: PaginatedQueryParams): Promise<Paginated<FeatureFlagEntity>> {
-    const [records, count] = await this.repository.findAndCount({
-      skip: params.offset,
-      take: params.limit,
-      order: { key: params.orderBy.param === 'desc' ? 'DESC' : 'ASC' },
-    });
-    return new Paginated({
-      count,
-      limit: params.limit,
-      page: params.page,
-      data: records.map((record) => this.mapper.toDomain(record)),
-    });
   }
 
   async fingerprint(): Promise<string> {
@@ -83,14 +43,27 @@ export class FeatureFlagRepository implements FeatureFlagRepositoryPort {
     return (row as { digest: string } | undefined)?.digest ?? '';
   }
 
-  async delete(entity: FeatureFlagEntity): Promise<boolean> {
-    const result = await this.outbox.writeWithEvents([entity], (manager) =>
-      manager.getRepository(FeatureFlagOrmEntity).delete({ id: entity.id as AggregateID }),
-    );
-    return result.affected ? result.affected > 0 : false;
+  async save(entity: FeatureFlagEntity, manager?: EntityManager): Promise<FeatureFlagEntity> {
+    if (!manager) return super.save(entity);
+    const record = await manager
+      .getRepository(FeatureFlagOrmEntity)
+      .save(this.mapper.toPersistence(entity));
+    // Events commit or roll back with the caller's transaction. The caller
+    // discards the aggregate afterwards, so they are not cleared here.
+    await this.outbox.stageEvents(manager, entity.domainEvents);
+    return this.mapper.toDomain(record);
   }
 
-  transaction<T>(handler: () => Promise<T>): Promise<T> {
-    return this.dataSource.transaction(() => handler());
+  serialized<T>(work: (manager: EntityManager) => Promise<T>): Promise<T> {
+    // The lock is transaction-scoped: it is released when the transaction
+    // ends, after `work` has committed its writes.
+    return this.outbox.transaction(async (manager) => {
+      await manager.query('SELECT pg_advisory_xact_lock($1)', [FLAG_WRITE_LOCK]);
+      return work(manager);
+    });
+  }
+
+  private on(manager?: EntityManager): Repository<FeatureFlagOrmEntity> {
+    return manager ? manager.getRepository(FeatureFlagOrmEntity) : this.repository;
   }
 }

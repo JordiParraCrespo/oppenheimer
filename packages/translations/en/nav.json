@@ -19,5 +19,7 @@
   "sidebarTitle": "Navigation",
   "sidebarDescription": "Your sessions, your automations and your account.",
   "settings": "Settings",
-  "automations": "Automations"
+  "automations": "Automations",
+  "logOutFailed": "Could not log you out. Try again.",
+  "plan": "Plan"
 }

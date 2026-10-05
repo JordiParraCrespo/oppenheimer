@@ -14,10 +14,12 @@
     "@oppenheimer/go-auth": "workspace:*",
     "@oppenheimer/go-config": "workspace:*",
     "@oppenheimer/go-core": "workspace:*",
+    "@oppenheimer/go-execx": "workspace:*",
     "@oppenheimer/go-health": "workspace:*",
     "@oppenheimer/go-httpx": "workspace:*",
     "@oppenheimer/go-postgres": "workspace:*",
     "@oppenheimer/go-selfupdate": "workspace:*",
-    "@oppenheimer/go-ws": "workspace:*"
+    "@oppenheimer/go-ws": "workspace:*",
+    "@oppenheimer/shared": "workspace:*"
   }
 }

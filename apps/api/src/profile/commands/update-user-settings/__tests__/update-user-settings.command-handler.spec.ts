@@ -27,7 +27,6 @@ describe('UpdateUserSettingsCommandHandler', () => {
   });
 
   it('creates the record on a first save', async () => {
-    // No row is provisioned at sign-up, so the first save has nothing to load.
     const id = await service.execute(COMMAND);
 
     expect(id).toBe('user-uuid');
@@ -50,7 +49,9 @@ describe('UpdateUserSettingsCommandHandler', () => {
     expect(existing.theme).toBe('dark');
   });
 
-  it('replaces every preference, including the ones left at their default', async () => {
+  it('writes defaults back over saved non-default preferences', async () => {
+    // The reset path: switching back to comfortable, or opting out of product
+    // updates, must replace the saved value rather than leave it stuck.
     const existing = UserSettingsEntity.create({
       id: 'user-uuid',
       props: {
@@ -74,6 +75,7 @@ describe('UpdateUserSettingsCommandHandler', () => {
       }),
     );
 
+    expect(repo.save).toHaveBeenCalledWith(existing);
     expect(existing.density).toBe('comfortable');
     expect(existing.weeklyDigest).toBe(false);
     expect(existing.productUpdates).toBe(false);

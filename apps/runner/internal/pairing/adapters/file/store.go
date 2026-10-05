@@ -91,7 +91,7 @@ func (s *Store) Save(identity domain.Identity, key ed25519.PrivateKey) error {
 	return s.SaveIdentity(identity)
 }
 
-// SaveIdentity rewrites config.json only, for a channel or pin change.
+// SaveIdentity rewrites config.json only, for a change that keeps the key.
 func (s *Store) SaveIdentity(identity domain.Identity) error {
 	if err := os.MkdirAll(s.dir, 0o700); err != nil {
 		return err

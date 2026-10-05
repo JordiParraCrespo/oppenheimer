@@ -1,13 +1,10 @@
 {
-  "home": {
-    "openTitle": "No session open",
-    "openDescription": "Pick one from the sidebar, or start another."
-  },
   "provisioning": {
     "title": "Starting your session",
     "failedTitle": "The session did not start",
     "failedLead": "The host could not start this session.",
     "working": "Working…",
+    "downloading": "This host has not had this repository before, so it is downloading it first. This one takes a bit longer; later sessions on it start in about a second.",
     "failed": "Failed",
     "took": "{{seconds}}s",
     "steps": {
@@ -20,7 +17,8 @@
       },
       "clone": {
         "label": "Clone {{repo}}",
-        "doing": "Fetching the repository…"
+        "doing": "Fetching the repository…",
+        "downloading": "Downloading the repository…"
       },
       "worktree": {
         "label": "Check out the branch",
@@ -35,22 +33,24 @@
     "progressFailed": "Could not load how the start is going.",
     "codes": {
       "SESS_002": "This host makes sessions with one repository."
-    }
-  },
-  "group": {
-    "working": "Working",
-    "waiting-on-you": "Waiting on you",
-    "ready-for-review": "Ready for review",
-    "landing": "Landing",
-    "idle": "Idle",
-    "resolved": "Done"
+    },
+    "details": "Details from the host: {{detail}}"
   },
   "closed": {
-    "description": "This session has stopped. Its work is on its branch."
+    "description": "This session has stopped. Its work is on {{branch}}, and restarting brings the terminal back where it left off.",
+    "deleted": "This session was deleted. Its worktree is gone from the host; commits already pushed stay on the remote.",
+    "descriptionNoBranch": "This session has stopped. Restarting brings the terminal back where it left off.",
+    "restart": "Restart",
+    "restarting": "Restarting",
+    "restartFailed": "The session could not be restarted."
   },
   "new": {
     "title": "New session",
     "subtitle": "Set the scope, then describe the work.",
+    "subtitleProject_one": "In {{name}} · cloning {{picked}} of {{count}} repository, each on its own opp/ branch.",
+    "subtitleProject_other": "In {{name}} · cloning {{picked}} of {{count}} repositories, each on its own opp/ branch.",
+    "subtitleCloning_one": "In {{name}} · cloning {{count}} repository, on its own opp/ branch.",
+    "subtitleCloning_other": "In {{name}} · cloning {{count}} repositories, each on its own opp/ branch.",
     "host": {
       "label": "Host",
       "placeholder": "Host",
@@ -58,7 +58,8 @@
       "empty": "No host matches.",
       "loading": "Loading hosts…",
       "add": "Add host…",
-      "offline": "Offline"
+      "offline": "Offline",
+      "failed": "Could not load your hosts."
     },
     "project": {
       "label": "Project",
@@ -67,7 +68,8 @@
       "empty": "No project matches.",
       "loading": "Loading projects…",
       "add": "New project…",
-      "noRepositories": "No repositories"
+      "noRepositories": "No repositories",
+      "failed": "Could not load your projects."
     },
     "repository": {
       "label": "Repositories",
@@ -80,8 +82,10 @@
       "branchPane": "Branch for {{name}}",
       "changeBranch": "Change branch",
       "manage": "Manage repository access",
+      "manageFailed": "Could not open GitHub. Try again in a moment.",
       "noApp": "This deployment has no GitHub App, so there are no repositories to pick.",
-      "archived": "Archived"
+      "archived": "Archived",
+      "failed": "Could not load your repositories."
     },
     "branch": {
       "label": "Branch",
@@ -113,11 +117,14 @@
     },
     "effort": {
       "label": "Effort",
+      "none": "Off",
       "minimal": "Minimal",
       "low": "Low",
       "medium": "Medium",
       "high": "High",
+      "xhigh": "Extra high",
       "max": "Max",
+      "ultra": "Ultra",
       "faster": "Faster",
       "smarter": "Smarter",
       "hint": "How long the agent may think before it answers. Higher effort costs more and takes longer."
@@ -125,23 +132,63 @@
     "composer": {
       "placeholder": "Describe a task or ask a question",
       "send": "Send",
-      "stop": "Stop"
+      "stop": "Stop",
+      "attach": "Attach files",
+      "removeAttachment": "Remove {{name}}",
+      "attachTooLarge": "{{name}} is over 5 MB. Save a smaller copy, then attach it again.",
+      "attachTooMany": "A first task carries at most {{max}} files.",
+      "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file."
     },
-    "queued": "Your first task is queued for this host.",
     "failed": "The session could not be created."
   },
   "session": {
     "status": {
-      "connecting": "Connecting",
-      "live": "Live",
-      "offline": "Host offline",
       "closed": "Disconnected"
     },
-    "image": {
-      "sending": "Sending image",
-      "hostOffline": "The image was not sent: the host is offline.",
-      "failedTitle": "The image did not reach the session",
-      "dismiss": "Dismiss"
+    "file": {
+      "sending": "Sending file",
+      "notSupported": "None of the dropped files is one the agent can take. Drop an image, a PDF or a text file.",
+      "failedTitle": "The file did not reach the session"
+    },
+    "retryNow": "Retry now",
+    "retry": "Try again",
+    "ended": {
+      "forbidden": "You do not have access to this session's terminal.",
+      "refused": "The host refused to open this terminal."
+    },
+    "starting": {
+      "title": "Nothing on the grid yet",
+      "description": "The link is up. This fills as soon as the agent draws — a new session once it has started, an older one once its history has replayed."
+    },
+    "hostLink": {
+      "thisHost": "this host",
+      "status": {
+        "live": "Live",
+        "reconnecting": "Connecting to {{host}}…",
+        "offline": "Host offline",
+        "catchingUp": "Catching up on {{host}}…",
+        "reconnected": "Reconnected"
+      },
+      "title": {
+        "offline": "{{host}} is offline",
+        "catchingUp": "Runner is back",
+        "reconnected": "Reconnected"
+      },
+      "line": {
+        "offline": "Reconnects on its own when the runner is back",
+        "catchingUp": "Catching up on output from {{host}}…",
+        "reconnected": "Scrollback is up to date"
+      },
+      "fix": "How to fix",
+      "fixIntro": "Run these on {{host}} itself, not in this terminal, or hand the prompt to Claude Code or Codex on that machine.",
+      "install": "If it is stopped, reinstall and start it:",
+      "statusCommand": "See what is wrong:",
+      "hosts": "Settings → Hosts",
+      "copy": "Copy command",
+      "copied": "Copied",
+      "logCommand": "Read the runner's recent log:",
+      "copyPrompt": "Copy troubleshooting prompt",
+      "prompt": "The Oppenheimer runner on {{host}} has lost its link to Oppenheimer. Help me get it back.\n\n- First tell me which machine you are on (uname -n, whoami). If it is not {{host}}, stop.\n- Run ~/.local/bin/oppenheimer-runner status and show me what it prints.\n- Read the last 50 lines of ~/.oppenheimer/log/runner.log and ~/.oppenheimer/log/runner.err.log\n  and tell me what went wrong.\n- Do not reinstall, uninstall or run anything as root unless I say so. If the service is\n  stopped, propose ~/.local/bin/oppenheimer-runner install and wait for my go-ahead."
     }
   },
   "sidebar": {
@@ -163,7 +210,8 @@
     "moveTitle": "Move to project",
     "moveNone": "No other project holds this session's repository.",
     "delete": "Delete",
-    "writeFailed": "That change did not land. Try again."
+    "writeFailed": "That change did not land. Try again.",
+    "loadFailed": "Could not load your sessions."
   },
   "deleteSession": {
     "title": "Delete “{{name}}”?",
@@ -193,14 +241,5 @@
     "recent": "Last activity",
     "oldest": "Oldest first",
     "name": "Name"
-  },
-  "agents": {
-    "claude-code": "Claude Code",
-    "codex": "Codex"
-  },
-  "row": {
-    "actions": "Session actions",
-    "move": "Move to project…",
-    "moveTitle": "Move to project"
   }
 }

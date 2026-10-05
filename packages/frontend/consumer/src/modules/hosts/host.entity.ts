@@ -1,13 +1,48 @@
 /**
+ * One word for the row, derived by the API on every read: `running` (online,
+ * a session up), `idle`, `offline`, `unpaired`.
+ */
+export type HostStatus = 'running' | 'idle' | 'offline' | 'unpaired';
+
+/**
+ * What a host row says beyond identity (`product/versions/mvp/15-host-metadata.md`):
+ * its status and running sessions, what the machine is, where it connects
+ * from and how the link is doing. Every fact the runner has not reported is
+ * `null`, never a placeholder.
+ */
+export interface HostDetails {
+  status: HostStatus;
+  runningSessionCount: number;
+  osName: string | null;
+  cpuCount: number | null;
+  memoryTotalBytes: number | null;
+  cloudProvider: string | null;
+  countryCode: string | null;
+  city: string | null;
+  asnOrg: string | null;
+  roundTripMillis: number | null;
+}
+
+const NO_DETAILS: HostDetails = {
+  status: 'offline',
+  runningSessionCount: 0,
+  osName: null,
+  cpuCount: null,
+  memoryTotalBytes: null,
+  cloudProvider: null,
+  countryCode: null,
+  city: null,
+  asnOrg: null,
+  roundTripMillis: null,
+};
+
+/**
  * A host as the console needs it: a machine the user owns that runs sessions
- * (`product/versions/mvp/00-scope.md`). A host is paired with one pasted
- * install command carrying a registration token, and appears here once its
- * runner connects.
+ * (`product/versions/mvp/00-scope.md`), which appears once its runner connects.
  *
- * The API reports `online` as a boolean rather than a state word, so that is
- * what this carries. `pairing` was a third state in the design note; on the
- * wire a host simply does not exist until its runner has registered, which is
- * the same fact told a shorter way.
+ * `online` is a boolean because the API reports it so. The design note's
+ * `pairing` state has no wire form: a host does not exist until its runner has
+ * registered.
  */
 export class HostEntity {
   constructor(
@@ -24,6 +59,7 @@ export class HostEntity {
     /** When the runner last reported in; `null` until it has connected once. */
     public readonly lastSeenAt: Date | null,
     public readonly createdAt: Date,
+    public readonly details: HostDetails = NO_DETAILS,
   ) {}
 
   /**
@@ -51,7 +87,9 @@ export interface HostPairingToken {
 /**
  * What Add host hands the person: a registration token, already baked into
  * both the command a human pastes into a terminal and the same instruction
- * phrased for a coding agent that is already running on the machine.
+ * phrased for a coding agent that is already running on the machine. The
+ * secret is shown once and only the server knows it, so no surface assembles
+ * either string.
  */
 export interface HostPairing {
   /** The pairing token's own id, for revoking it. */
@@ -67,6 +105,5 @@ export interface HostPairing {
   installScriptSha256: string | null;
   /** When the token stops registering a host. */
   expiresAt: Date;
-  /** The host this token created, once a runner has redeemed it. */
   redeemedHostId: string | null;
 }

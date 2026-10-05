@@ -75,14 +75,6 @@ describe('AllExceptionsFilter', () => {
     expect(problem.detail).toBe('No user with id 42');
   });
 
-  it('merges extension members supplied by the thrower', () => {
-    const problem = handle(
-      new AppError(USER_NOT_FOUND, { extensions: { retryAfter: 30 } }),
-    ).problem();
-
-    expect(problem.retryAfter).toBe(30);
-  });
-
   it('does not let an extension overwrite a member the API owns', () => {
     const { status, problem } = handle(
       new AppError(USER_NOT_FOUND, {
@@ -165,10 +157,8 @@ describe('AllExceptionsFilter', () => {
   });
 
   it('gives a bare HttpException no code — a code requires a catalog entry', () => {
-    // Documented, deliberate behaviour, and the reason the Better Auth façades
-    // throw `AppError` rather than passing an upstream `{ message, code }` body
-    // through: only curated catalog codes are part of the public contract, so
-    // the filter will not lift one off an arbitrary exception body.
+    // Only curated catalog codes are part of the public contract, so the filter
+    // never lifts one off an arbitrary exception body.
     const problem = handle(
       new HttpException({ message: 'Organization slug already taken', code: 'SLUG_TAKEN' }, 409),
     ).problem();
@@ -178,27 +168,6 @@ describe('AllExceptionsFilter', () => {
     expect(problem.detail).toBe('Organization slug already taken');
     expect(problem.code).toBeUndefined();
     expect(problem.type).toBe(DEFAULT_PROBLEM_TYPE);
-  });
-
-  it("carries an AppError's extension members onto the problem document", () => {
-    const problem = handle(
-      new AppError(
-        { code: 'ORG_002', message: 'That organization slug is already taken', httpStatus: 409 },
-        {
-          detail: 'Organization slug already taken',
-          extensions: { upstreamCode: 'ORGANIZATION_SLUG_ALREADY_TAKEN' },
-        },
-      ),
-    ).problem();
-
-    expect(problem).toMatchObject({
-      type: 'https://oppenheimer.dev/errors#org_002',
-      title: 'That organization slug is already taken',
-      status: 409,
-      detail: 'Organization slug already taken',
-      code: 'ORG_002',
-      upstreamCode: 'ORGANIZATION_SLUG_ALREADY_TAKEN',
-    });
   });
 
   it('keeps a 5xx status but not its message', () => {

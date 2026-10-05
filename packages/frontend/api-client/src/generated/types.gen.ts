@@ -76,13 +76,17 @@ export type UpdateUserSettingsRequest = {
 export type ProfileResponseDto = {
     id: string;
     /**
-     * Read-only here — changing it is an admin operation.
+     * Read-only here — `POST /profile/email` sends a link to a new address, which moves the account when followed.
      */
     email: string;
     firstName: string;
     lastName: string;
     phone: string | null;
     jobTitle: string | null;
+    /**
+     * The handle session logs and commit trailers carry; unique across accounts.
+     */
+    username: string | null;
     avatarUrl: string | null;
     role: string;
     emailVerified: boolean;
@@ -116,11 +120,17 @@ export type ChangePasswordRequest = {
     revokeOtherSessions?: boolean;
 };
 
+export type ChangeEmailRequest = {
+    newEmail: string;
+    callbackURL?: string;
+};
+
 export type UpdateProfileRequest = {
     firstName?: string;
     lastName?: string;
     phone?: string | null;
     jobTitle?: string | null;
+    username?: string | null;
 };
 
 export type UserResponseDto = {
@@ -168,6 +178,10 @@ export type MyPermissionsResponseDto = {
 export type UpdateUserRequest = {
     firstName?: string;
     lastName?: string;
+};
+
+export type DeleteOwnAccountRequest = {
+    confirmation: string;
 };
 
 export type ResourceActionDto = {
@@ -234,6 +248,18 @@ export type AccessGrantResponseDto = {
     createdAt: string;
 };
 
+export type AccessGrantPaginationMetaDto = {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+};
+
+export type PaginatedAccessGrantsResponseDto = {
+    data: Array<AccessGrantResponseDto>;
+    meta: AccessGrantPaginationMetaDto;
+};
+
 export type CreateAccessGrantRequest = {
     principalType: 'user' | 'team' | 'role';
     principalId: string;
@@ -252,11 +278,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -274,7 +300,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -295,7 +321,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write';
     label: string;
     description: string;
     /**
@@ -310,7 +336,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'repositories' | 'flags';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'tasks' | 'calendar' | 'repositories' | 'flags';
     label: string;
     description: string;
     /**
@@ -328,12 +354,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -349,7 +375,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -620,9 +646,22 @@ export type InstallationResponseDto = {
     updatedAt: string;
 };
 
+export type InstallStartResponseDto = {
+    /**
+     * The GitHub App’s installation page, with `state` already on it. Send the browser here.
+     */
+    url: string;
+    /**
+     * Single use, 15 minutes, bound to the caller and the workspace. GitHub echoes it on the install redirect; post it back as `state` on `POST /installations`.
+     */
+    state: string;
+    expiresAt: string;
+};
+
 export type ConnectInstallationRequest = {
     githubInstallationId: number;
     code: string;
+    state: string;
 };
 
 export type RepositoryResponseDto = {
@@ -660,6 +699,64 @@ export type RepositoryBranchResponseDto = {
     isDefault: boolean;
 };
 
+/**
+ * One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`.
+ */
+export type HostStatus = 'running' | 'idle' | 'offline' | 'unpaired';
+
+export type HostMachineResponseDto = {
+    osName?: string | null;
+    kernelVersion?: string | null;
+    cpuModel?: string | null;
+    cpuCount?: number | null;
+    memoryTotalBytes?: number | null;
+    diskTotalBytes?: number | null;
+    /**
+     * `none`, `vm` or `container`, as the runner read it from local files.
+     */
+    virtualization?: string | null;
+    /**
+     * The vendor the firmware names; never the answer of a metadata call.
+     */
+    cloudProvider?: string | null;
+    timezone?: string | null;
+    bootedAt?: string | null;
+    channel?: string | null;
+    serviceManager?: string | null;
+    /**
+     * When the machine last changed, not when it last reported.
+     */
+    changedAt: string;
+};
+
+export type HostVitalsResponseDto = {
+    /**
+     * When the current (or last) link opened.
+     */
+    connectedAt?: string | null;
+    /**
+     * The link’s last ping/pong.
+     */
+    roundTripMillis?: number | null;
+    /**
+     * One-minute load average.
+     */
+    loadAverage?: number | null;
+    memoryAvailableBytes?: number | null;
+    diskFreeBytes?: number | null;
+};
+
+export type HostNetworkResponseDto = {
+    ip: string;
+    countryCode?: string | null;
+    region?: string | null;
+    city?: string | null;
+    asn?: number | null;
+    asnOrg?: string | null;
+    firstSeenAt: string;
+    lastSeenAt: string;
+};
+
 export type HostResponseDto = {
     id: string;
     /**
@@ -685,7 +782,27 @@ export type HostResponseDto = {
      * Whether the runner has sent a heartbeat recently enough to be considered attached. Derived on read, never stored.
      */
     online: boolean;
+    /**
+     * One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`.
+     */
+    status: HostStatus;
+    /**
+     * Sessions on this host that are neither stopped nor resolved — what removing the host would stop. Counted across every workspace, because the host is one person’s.
+     */
+    runningSessionCount: number;
     lastSeenAt?: string | null;
+    /**
+     * What the machine is. Null until the runner has reported its facts.
+     */
+    machine?: HostMachineResponseDto | null;
+    /**
+     * Its last live numbers. Null until its first link.
+     */
+    vitals?: HostVitalsResponseDto | null;
+    /**
+     * Where its current (or last) link came from. Null until one has.
+     */
+    network?: HostNetworkResponseDto | null;
     /**
      * When the host was unpaired. The row is kept so its history survives.
      */
@@ -720,6 +837,38 @@ export type PairingTokenResponseDto = {
      */
     redeemedHostId?: string | null;
     createdAt: string;
+};
+
+export type PairingTokenStatusResponseDto = {
+    id: string;
+    /**
+     * The name the machine will adopt when it registers with this token.
+     */
+    name: string;
+    /**
+     * Non-secret display prefix. The secret is shown once, in the install command.
+     */
+    prefix: string;
+    /**
+     * Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count.
+     */
+    createdFromIp?: string | null;
+    /**
+     * Where it was spent from — a different fact from where it was minted.
+     */
+    redeemedFromIp?: string | null;
+    expiresAt: string;
+    revokedAt?: string | null;
+    redeemedAt?: string | null;
+    /**
+     * The host this token created.
+     */
+    redeemedHostId?: string | null;
+    createdAt: string;
+    /**
+     * The host this token paired, as the hosts list shows it. Null until a runner spends the token.
+     */
+    host?: HostResponseDto | null;
 };
 
 export type MintPairingTokenRequest = {
@@ -787,7 +936,18 @@ export type RegisterHostRequest = {
         }> | null;
         workspacePath: string;
         diskFreeBytes: number;
+        cpus?: number;
         runnerVersion: string;
+        osName?: string;
+        kernelVersion?: string;
+        cpuModel?: string;
+        memoryTotalBytes?: number;
+        diskTotalBytes?: number;
+        virtualization?: string;
+        cloudProvider?: string;
+        timezone?: string;
+        bootedAt?: string;
+        serviceManager?: string;
     };
 };
 
@@ -808,6 +968,29 @@ export type HostRegistrationResponseDto = {
      * Where the runner fetches signed release artifacts from.
      */
     releaseBaseUrl?: string;
+};
+
+export type HostTimelineEntryResponseDto = {
+    /**
+     * Opaque; increases with time.
+     */
+    id: string;
+    kind: 'paired' | 'renamed' | 'unpaired' | 'facts_changed' | 'network_changed' | 'runner_updated' | 'runner_rolled_back';
+    /**
+     * `renamed`: `{ from, to }`. `facts_changed`: `{ changed: { field: [before, after] } }`. `network_changed`: `{ from, to }` networks. `runner_updated`: `{ from, to }` versions.
+     */
+    payload: {
+        [key: string]: unknown;
+    };
+    occurredAt: string;
+};
+
+export type HostTimelinePageResponseDto = {
+    entries: Array<HostTimelineEntryResponseDto>;
+    /**
+     * Pass as `before` for the next, older page; null at the end.
+     */
+    next?: string | null;
 };
 
 export type RenameHostRequest = {
@@ -1135,7 +1318,7 @@ export type ProjectResponseDto = {
     /**
      * The agent a new session is offered, from the coding-agent catalog.
      */
-    defaultAgent?: string | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | null;
     /**
      * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived, and it may hold no repository.
      */
@@ -1153,7 +1336,7 @@ export type CreateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | null;
 };
 
 export type UpdateProjectRequest = {
@@ -1165,7 +1348,7 @@ export type UpdateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | null;
 };
 
 export type SessionLaunchResponseDto = {
@@ -1176,11 +1359,11 @@ export type SessionLaunchResponseDto = {
     /**
      * What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default. Null for an agent with no approvals (the blank terminal).
      */
-    permission: 'ask' | 'auto' | 'full';
+    permission: 'ask' | 'auto' | 'full' | null;
     /**
      * How hard the agent may think. Null leaves the agent its own default.
      */
-    effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
+    effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
 };
 
 export type SessionCheckoutResponseDto = {
@@ -1238,10 +1421,10 @@ export type SessionResponseDto = {
     /**
      * The coding agent this session runs.
      */
-    agent: string;
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
     launch: SessionLaunchResponseDto;
     /**
-     * The derived group — what the sidebar dot shows, computed from the row and organised by what needs you: the session failed, the agent has been blocked for 30 s, or a launch has sat unready for 60 s. Two arms have no writer until the relay and the pull-request flow land: `landing`, and the fourth `waiting-on-you` source (the pane is gone with no report).
+     * The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/versions/mvp/03-control-plane.md`).
      */
     state: 'working' | 'waiting-on-you' | 'ready-for-review' | 'landing' | 'idle' | 'resolved';
     /**
@@ -1269,18 +1452,25 @@ export type SessionResponseDto = {
 
 export type SessionPageMetaDto = {
     /**
-     * Total matching sessions, across all pages.
+     * Total matching sessions, across all pages. Page mode only: absent when `cursor` was sent.
      */
-    total: number;
+    total?: number;
     /**
-     * 1-based page number.
+     * 1-based page number. Page mode only: absent when `cursor` was sent.
      */
-    page: number;
+    page?: number;
     /**
      * Sessions per page.
      */
     limit: number;
-    totalPages: number;
+    /**
+     * Page mode only: absent when `cursor` was sent.
+     */
+    totalPages?: number;
+    /**
+     * Send it back as `cursor`, with the same `sort`, for the page after this one. Null on the last page. Present in both modes.
+     */
+    nextCursor: string | null;
 };
 
 export type PaginatedSessionsResponseDto = {
@@ -1293,18 +1483,36 @@ export type CreateSessionRequest = {
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
     projectId?: string;
     name?: string;
-    checkouts: Array<{
-        installationId: string;
-        githubRepoId: number;
-        baseBranch?: string;
-    }>;
+    checkouts: [
+        {
+            installationId: string;
+            githubRepoId: number;
+            baseBranch?: string;
+        }
+    ];
     cwdGithubRepoId?: number;
     launch?: {
         model?: string;
         permission?: 'ask' | 'auto' | 'full';
-        effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
+        effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
     };
     prompt?: string;
+    attachmentIds?: Array<string>;
+};
+
+export type SessionAttachmentResponseDto = {
+    /**
+     * What `attachmentIds` names it by.
+     */
+    id: string;
+    /**
+     * What the bytes are (magic bytes, or text that is only text), never the label the browser gave them.
+     */
+    mediaType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp' | 'application/pdf' | 'text/plain' | 'text/markdown' | 'text/csv' | 'application/json';
+    /**
+     * Bytes.
+     */
+    size: number;
 };
 
 export type SessionEventResponseDto = {
@@ -1366,6 +1574,24 @@ export type AttachTicketResponseDto = {
     window: number;
 };
 
+export type PrepareSessionRequest = {
+    hostId: string;
+    checkouts: [
+        {
+            installationId: string;
+            githubRepoId: number;
+            baseBranch?: string;
+        }
+    ];
+};
+
+export type PrepareSessionResponseDto = {
+    /**
+     * Why the host was not told: `host_offline` (no live link) or `not_supported` (a runner older than the prepare). Empty when it was.
+     */
+    hints: Array<string>;
+};
+
 export type AddCheckoutRequest = {
     installationId: string;
     githubRepoId: number;
@@ -1378,6 +1604,598 @@ export type RenameSessionRequest = {
 
 export type MoveSessionRequest = {
     projectId: string;
+};
+
+export type AutomationRepositoryResponseDto = {
+    /**
+     * The installation its tokens are minted through.
+     */
+    installationId: string;
+    /**
+     * GitHub’s repository id, as a string (a bigint).
+     */
+    githubRepoId: string;
+    /**
+     * `owner/repo`, as it was when the revision was saved.
+     */
+    fullName: string;
+};
+
+export type AutomationRevisionResponseDto = {
+    id: string;
+    /**
+     * Numbered from 1; each save that changes what a run executes adds one.
+     */
+    number: number;
+    hostId: string;
+    agent: string;
+    model?: string | null;
+    permission: 'auto' | 'full';
+    effort?: string | null;
+    /**
+     * The instructions every run is given.
+     */
+    prompt: string;
+    repositories: Array<AutomationRepositoryResponseDto>;
+    createdAt: string;
+};
+
+export type ScheduleResponseDto = {
+    frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+    hour: number;
+    minute: number;
+    /**
+     * Weekly: 0 = Sunday … 6 = Saturday.
+     */
+    days?: Array<number>;
+    dayOfMonth?: number;
+    /**
+     * Once: the local date, `YYYY-MM-DD`.
+     */
+    date?: string;
+    /**
+     * The IANA zone the wall time is in.
+     */
+    timezone: string;
+};
+
+export type TriggerFilterResponseDto = {
+    op: 'any' | 'equals';
+    /**
+     * The branch or label, when `op` is `equals`.
+     */
+    value?: string;
+};
+
+export type AutomationTriggerResponseDto = {
+    id: string;
+    /**
+     * The card’s place in the editor, from 0.
+     */
+    position: number;
+    source: 'schedule' | 'github';
+    /**
+     * `schedule`, or the catalog event (`pr_opened`, `push`, …).
+     */
+    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+    schedule?: ScheduleResponseDto;
+    /**
+     * GitHub: the repositories it listens on.
+     */
+    repositories?: Array<string>;
+    filter?: TriggerFilterResponseDto;
+    /**
+     * Schedule: the next slot, UTC.
+     */
+    nextFireAt?: string | null;
+};
+
+export type AutomationRunSummaryResponseDto = {
+    id: string;
+    /**
+     * The name the agent gave the session, or the automation’s name and cause.
+     */
+    title: string;
+    status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'skipped' | 'expired';
+    /**
+     * The session the run started — the run view — or null while queued or skipped.
+     */
+    sessionId: string | null;
+    createdAt: string;
+};
+
+export type AutomationResponseDto = {
+    id: string;
+    organizationId: string;
+    projectId: string;
+    /**
+     * Whose runs these are: every run acts as this person.
+     */
+    ownerUserId: string;
+    /**
+     * Whether the caller owns it.
+     */
+    ownedByMe: boolean;
+    name: string;
+    /**
+     * `running` while any run is live, else `active` or `paused`.
+     */
+    status: 'active' | 'paused' | 'running';
+    pausedAt?: string | null;
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | null;
+    /**
+     * The earliest next slot of its schedule triggers. Null when paused or event-only.
+     */
+    nextRunAt?: string | null;
+    revision: AutomationRevisionResponseDto;
+    triggers: Array<AutomationTriggerResponseDto>;
+    overlap?: 'skip' | 'queue' | null;
+    maxRunsPerHour?: number | null;
+    /**
+     * Send it back on a save; a stale one is refused (`AUTOMATIONS_003`).
+     */
+    version: number;
+    /**
+     * Runs that became sessions, over the listed window.
+     */
+    runCount: number;
+    /**
+     * The last six, newest first.
+     */
+    lastRuns: Array<AutomationRunSummaryResponseDto>;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type CreateAutomationRequest = {
+    projectId: string;
+    repositories: Array<{
+        installationId: string;
+        githubRepoId: number;
+    }>;
+    hostId: string;
+    name: string;
+    triggers: Array<{
+        source: 'schedule';
+        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+        hour: number;
+        minute: number;
+        days?: Array<number>;
+        dayOfMonth?: number;
+        date?: string;
+        timezone: string;
+    } | {
+        source: 'github';
+        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+        repositories: Array<number>;
+        filter: {
+            op: 'any';
+        } | {
+            op: 'equals';
+            value: string;
+        };
+    }>;
+    prompt: string;
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    launch?: {
+        model?: string;
+        permission?: 'auto' | 'full';
+        effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
+    };
+    active?: boolean;
+    overlap?: 'skip' | 'queue' | null;
+    maxRunsPerHour?: number | null;
+};
+
+export type PreviewTriggerRequest = {
+    source: 'github';
+    event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+    repositories: Array<number>;
+    filter: {
+        op: 'any';
+    } | {
+        op: 'equals';
+        value: string;
+    };
+    days?: number;
+};
+
+export type TriggerPreviewMatchResponseDto = {
+    repository: string;
+    ref?: string;
+    title?: string;
+    actor?: string;
+    url?: string;
+    occurredAt: string;
+};
+
+export type TriggerPreviewResponseDto = {
+    /**
+     * How many stored events the card matches in the window.
+     */
+    count: number;
+    days: number;
+    /**
+     * The two most recent.
+     */
+    matches: Array<TriggerPreviewMatchResponseDto>;
+};
+
+export type UpdateAutomationRequest = {
+    projectId?: string;
+    repositories?: Array<{
+        installationId: string;
+        githubRepoId: number;
+    }>;
+    hostId?: string;
+    name?: string;
+    triggers?: Array<{
+        source: 'schedule';
+        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+        hour: number;
+        minute: number;
+        days?: Array<number>;
+        dayOfMonth?: number;
+        date?: string;
+        timezone: string;
+    } | {
+        source: 'github';
+        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+        repositories: Array<number>;
+        filter: {
+            op: 'any';
+        } | {
+            op: 'equals';
+            value: string;
+        };
+    }>;
+    prompt?: string;
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    launch?: {
+        model?: string;
+        permission?: 'auto' | 'full';
+        effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
+    };
+    overlap?: 'skip' | 'queue' | null;
+    maxRunsPerHour?: number | null;
+    version: number;
+};
+
+export type RunCauseResponseDto = {
+    label: string;
+    text: string;
+    ref?: string;
+    actor?: string;
+    url?: string;
+    /**
+     * The catalog event, or `schedule` / `manual`.
+     */
+    eventType: string;
+};
+
+export type RunTurnResponseDto = {
+    state: 'queued' | 'in_progress' | 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired';
+    exitCode?: number | null;
+    /**
+     * The agent’s final message.
+     */
+    result?: string | null;
+    failureDetail?: string | null;
+    /**
+     * The agent’s own estimate.
+     */
+    costUsd?: number | null;
+    permissionDenials: number;
+    /**
+     * The prompt the agent was given.
+     */
+    prompt?: string | null;
+};
+
+export type AutomationRunResponseDto = {
+    id: string;
+    automationId: string;
+    /**
+     * The automation’s name, kept when it is deleted.
+     */
+    automationName: string;
+    /**
+     * The automation was deleted; the list reads “Deleted automation”.
+     */
+    automationDeleted: boolean;
+    projectId: string;
+    status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'skipped' | 'expired';
+    /**
+     * What became of the firing before a session.
+     */
+    outcome: 'pending' | 'skipped' | 'expired' | 'dispatched';
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | null;
+    cause: 'schedule' | 'event' | 'manual';
+    causeSummary: RunCauseResponseDto;
+    title: string;
+    sessionId?: string | null;
+    /**
+     * The session’s working branch.
+     */
+    branch?: string | null;
+    revisionNumber: number;
+    agent: string;
+    model?: string | null;
+    hostId: string;
+    createdAt: string;
+    scheduledFor?: string | null;
+    dispatchedAt?: string | null;
+    startedAt?: string | null;
+    endedAt?: string | null;
+    /**
+     * Milliseconds, once ended.
+     */
+    durationMs?: number | null;
+    turn?: RunTurnResponseDto | null;
+};
+
+export type RunStatusCountsResponseDto = {
+    all: number;
+    completed: number;
+    failed: number;
+    /**
+     * Queued and running together, as the Running tab shows them.
+     */
+    running: number;
+};
+
+export type AutomationRunPageResponseDto = {
+    items: Array<AutomationRunResponseDto>;
+    total: number;
+    page: number;
+    limit: number;
+    /**
+     * Per status tab, under the same facets but not the status filter.
+     */
+    counts: RunStatusCountsResponseDto;
+};
+
+export type RunHistoryDayResponseDto = {
+    /**
+     * The local calendar day, `YYYY-MM-DD`.
+     */
+    date: string;
+    /**
+     * Runs that did not fail, running ones included, as the chart counts them.
+     */
+    succeeded: number;
+    failed: number;
+};
+
+export type RunHistoryResponseDto = {
+    /**
+     * Oldest first, today last.
+     */
+    days: Array<RunHistoryDayResponseDto>;
+    succeeded: number;
+    failed: number;
+    total: number;
+    timezone: string;
+};
+
+export type AutomationSettingsResponseDto = {
+    maxRunsPerAutomationHour: number;
+    maxRunsPerWorkspaceHour: number;
+    liveRunsPerHost: number;
+    overlap: 'skip' | 'queue';
+    staleTtlSeconds: number;
+    missedGraceSeconds: number;
+    maxRunSeconds: number;
+};
+
+export type UpdateAutomationSettingsRequest = {
+    maxRunsPerAutomationHour?: number | null;
+    maxRunsPerWorkspaceHour?: number | null;
+    liveRunsPerHost?: number | null;
+    overlap?: 'skip' | 'queue' | null;
+    staleTtlSeconds?: number | null;
+    missedGraceSeconds?: number | null;
+    maxRunSeconds?: number | null;
+};
+
+export type TaskSessionLinkResponseDto = {
+    sessionId: string;
+    /**
+     * `started` from this task, or `linked` to it afterwards.
+     */
+    origin: 'started' | 'linked';
+    linkedAt: string;
+};
+
+export type TaskResponseDto = {
+    id: string;
+    /**
+     * Always set: a task with no project is filed under the Unassigned one.
+     */
+    projectId: string;
+    goalId?: string | null;
+    status: 'later' | 'todo' | 'doing' | 'done';
+    /**
+     * Its place in the column. Compare byte by byte (not with a locale): the board is ordered by it.
+     */
+    rank: string;
+    title: string;
+    /**
+     * Free text; empty when there are none.
+     */
+    notes: string;
+    /**
+     * A calendar day, read in the viewer’s timezone.
+     */
+    dueDate?: string | null;
+    dueTime?: string | null;
+    completedAt?: string | null;
+    /**
+     * Oldest first.
+     */
+    sessions: Array<TaskSessionLinkResponseDto>;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type CreateTaskRequest = {
+    title: string;
+    notes?: string;
+    status?: 'later' | 'todo' | 'doing' | 'done';
+    projectId?: string;
+    goalId?: string | null;
+    dueDate?: string | null;
+    dueTime?: string | null;
+};
+
+export type UpdateTaskRequest = {
+    title?: string;
+    notes?: string;
+    projectId?: string;
+    goalId?: string | null;
+    dueDate?: string | null;
+    dueTime?: string | null;
+};
+
+export type MoveTaskRequest = {
+    status: 'later' | 'todo' | 'doing' | 'done';
+    afterTaskId: string | null;
+};
+
+export type StartTaskSessionRequest = {
+    session: {
+        hostId: string;
+        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+        projectId?: string;
+        name?: string;
+        checkouts: [
+            {
+                installationId: string;
+                githubRepoId: number;
+                baseBranch?: string;
+            }
+        ];
+        cwdGithubRepoId?: number;
+        launch?: {
+            model?: string;
+            permission?: 'ask' | 'auto' | 'full';
+            effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
+        };
+        prompt?: string;
+        attachmentIds?: Array<string>;
+    };
+    seenStatus: 'later' | 'todo' | 'doing' | 'done';
+};
+
+export type StartTaskSessionResponseDto = {
+    task: TaskResponseDto;
+    sessionId: string;
+    /**
+     * What the control plane could not do just now: `host_offline` when the session waits for its host.
+     */
+    hints: Array<string>;
+};
+
+export type LinkTaskSessionRequest = {
+    seenStatus: 'later' | 'todo' | 'doing' | 'done';
+};
+
+export type GoalResponseDto = {
+    id: string;
+    projectId: string;
+    name: string;
+    targetDate?: string | null;
+    /**
+     * Its tasks that are Done.
+     */
+    doneCount: number;
+    /**
+     * All its tasks.
+     */
+    totalCount: number;
+    createdAt: string;
+};
+
+export type CreateGoalRequest = {
+    name: string;
+    projectId: string;
+    targetDate?: string | null;
+};
+
+export type UpdateGoalRequest = {
+    name?: string;
+    projectId?: string;
+    targetDate?: string | null;
+};
+
+export type CalendarEventResponseDto = {
+    /**
+     * Ours a uuid; Google’s its own id, with the day for an all-day event spanning several.
+     */
+    id: string;
+    source: 'personal' | 'google';
+    title: string;
+    /**
+     * Empty for Google’s events, which are read-only here.
+     */
+    notes: string;
+    date: string;
+    allDay: boolean;
+    startTime?: string | null;
+    endTime?: string | null;
+    /**
+     * Busy, or free time drawn muted.
+     */
+    busy: boolean;
+    /**
+     * Where a Google event opens in Google Calendar; null for a personal one.
+     */
+    url?: string | null;
+};
+
+export type CreateCalendarEventRequest = {
+    title: string;
+    notes?: string;
+    date: string;
+    allDay: boolean;
+    startTime?: string | null;
+    endTime?: string | null;
+    busy?: boolean;
+};
+
+export type UpdateCalendarEventRequest = {
+    title?: string;
+    notes?: string;
+    date?: string;
+    allDay?: boolean;
+    startTime?: string | null;
+    endTime?: string | null;
+    busy?: boolean;
+};
+
+export type GoogleCalendarConnectionResponseDto = {
+    /**
+     * Whether the caller has connected, revoked or not.
+     */
+    connected: boolean;
+    accountEmail?: string | null;
+    /**
+     * `revoked` when Google dropped the grant: the card offers Reconnect.
+     */
+    status?: 'active' | 'revoked';
+};
+
+export type GoogleCalendarConnectStartResponseDto = {
+    /**
+     * Google’s consent page, carrying the single-use state.
+     */
+    url: string;
+    expiresAt: string;
+};
+
+export type ConnectGoogleCalendarRequest = {
+    code: string;
+    state: string;
 };
 
 export type CapabilitiesResponseDto = {
@@ -1394,19 +2212,23 @@ export type CapabilitiesResponseDto = {
      */
     github_app: boolean;
     /**
+     * Plan’s calendar can connect a Google Calendar.
+     */
+    google_calendar: boolean;
+    /**
      * Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug.
      */
     github_app_install_url: string | null;
 };
 
-export type GetSettingsData = {
+export type GetUserSettingsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/profile/settings';
 };
 
-export type GetSettingsErrors = {
+export type GetUserSettingsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -1417,22 +2239,22 @@ export type GetSettingsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type GetSettingsError = GetSettingsErrors[keyof GetSettingsErrors];
+export type GetUserSettingsError = GetUserSettingsErrors[keyof GetUserSettingsErrors];
 
-export type GetSettingsResponses = {
+export type GetUserSettingsResponses = {
     200: UserSettingsResponseDto;
 };
 
-export type GetSettingsResponse = GetSettingsResponses[keyof GetSettingsResponses];
+export type GetUserSettingsResponse = GetUserSettingsResponses[keyof GetUserSettingsResponses];
 
-export type UpdateSettingsData = {
+export type UpdateUserSettingsData = {
     body: UpdateUserSettingsRequest;
     path?: never;
     query?: never;
     url: '/api/v1/profile/settings';
 };
 
-export type UpdateSettingsErrors = {
+export type UpdateUserSettingsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -1443,13 +2265,13 @@ export type UpdateSettingsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type UpdateSettingsError = UpdateSettingsErrors[keyof UpdateSettingsErrors];
+export type UpdateUserSettingsError = UpdateUserSettingsErrors[keyof UpdateUserSettingsErrors];
 
-export type UpdateSettingsResponses = {
+export type UpdateUserSettingsResponses = {
     200: UserSettingsResponseDto;
 };
 
-export type UpdateSettingsResponse = UpdateSettingsResponses[keyof UpdateSettingsResponses];
+export type UpdateUserSettingsResponse = UpdateUserSettingsResponses[keyof UpdateUserSettingsResponses];
 
 export type DeleteAvatarData = {
     body?: never;
@@ -1550,14 +2372,14 @@ export type RevokeOtherSessionsResponses = {
 
 export type RevokeOtherSessionsResponse = RevokeOtherSessionsResponses[keyof RevokeOtherSessionsResponses];
 
-export type FindSessionsData = {
+export type FindProfileSessionsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/profile/sessions';
 };
 
-export type FindSessionsErrors = {
+export type FindProfileSessionsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -1568,15 +2390,15 @@ export type FindSessionsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type FindSessionsError = FindSessionsErrors[keyof FindSessionsErrors];
+export type FindProfileSessionsError = FindProfileSessionsErrors[keyof FindProfileSessionsErrors];
 
-export type FindSessionsResponses = {
+export type FindProfileSessionsResponses = {
     200: Array<UserSessionResponseDto>;
 };
 
-export type FindSessionsResponse = FindSessionsResponses[keyof FindSessionsResponses];
+export type FindProfileSessionsResponse = FindProfileSessionsResponses[keyof FindProfileSessionsResponses];
 
-export type RevokeSessionData = {
+export type RevokeProfileSessionData = {
     body?: never;
     path: {
         id: string;
@@ -1585,7 +2407,7 @@ export type RevokeSessionData = {
     url: '/api/v1/profile/sessions/{id}';
 };
 
-export type RevokeSessionErrors = {
+export type RevokeProfileSessionErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -1604,16 +2426,16 @@ export type RevokeSessionErrors = {
     409: ProblemDetailsDto;
 };
 
-export type RevokeSessionError = RevokeSessionErrors[keyof RevokeSessionErrors];
+export type RevokeProfileSessionError = RevokeProfileSessionErrors[keyof RevokeProfileSessionErrors];
 
-export type RevokeSessionResponses = {
+export type RevokeProfileSessionResponses = {
     /**
      * Session revoked
      */
     204: void;
 };
 
-export type RevokeSessionResponse = RevokeSessionResponses[keyof RevokeSessionResponses];
+export type RevokeProfileSessionResponse = RevokeProfileSessionResponses[keyof RevokeProfileSessionResponses];
 
 export type ChangePasswordData = {
     body: ChangePasswordRequest;
@@ -1653,6 +2475,78 @@ export type ChangePasswordResponses = {
 };
 
 export type ChangePasswordResponse = ChangePasswordResponses[keyof ChangePasswordResponses];
+
+export type ChangeEmailData = {
+    body: ChangeEmailRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/email';
+};
+
+export type ChangeEmailErrors = {
+    /**
+     * PROFILE_009 — The new address is the current one
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type ChangeEmailError = ChangeEmailErrors[keyof ChangeEmailErrors];
+
+export type ChangeEmailResponses = {
+    /**
+     * Confirmation link sent to the new address
+     */
+    202: unknown;
+};
+
+export type DeleteOwnAccountData = {
+    body: DeleteOwnAccountRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile';
+};
+
+export type DeleteOwnAccountErrors = {
+    /**
+     * USER_003 — The confirmation is not the account’s email
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type DeleteOwnAccountError = DeleteOwnAccountErrors[keyof DeleteOwnAccountErrors];
+
+export type DeleteOwnAccountResponses = {
+    /**
+     * Account deleted
+     */
+    204: void;
+};
+
+export type DeleteOwnAccountResponse = DeleteOwnAccountResponses[keyof DeleteOwnAccountResponses];
 
 export type GetProfileData = {
     body?: never;
@@ -1714,12 +2608,12 @@ export type UpdateProfileResponses = {
 
 export type UpdateProfileResponse = UpdateProfileResponses[keyof UpdateProfileResponses];
 
-export type FindAllData = {
+export type FindUsersData = {
     body?: never;
     path?: never;
     query?: {
         /**
-         * Search by name or email
+         * Search by name or email; `%` and `_` match literally
          */
         search?: string;
         /**
@@ -1738,7 +2632,7 @@ export type FindAllData = {
     url: '/api/v1/users';
 };
 
-export type FindAllErrors = {
+export type FindUsersErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -1749,22 +2643,22 @@ export type FindAllErrors = {
     403: ProblemDetailsDto;
 };
 
-export type FindAllError = FindAllErrors[keyof FindAllErrors];
+export type FindUsersError = FindUsersErrors[keyof FindUsersErrors];
 
-export type FindAllResponses = {
+export type FindUsersResponses = {
     200: PaginatedUsersResponseDto;
 };
 
-export type FindAllResponse = FindAllResponses[keyof FindAllResponses];
+export type FindUsersResponse = FindUsersResponses[keyof FindUsersResponses];
 
-export type MeData = {
+export type GetMeData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/users/me';
 };
 
-export type MeErrors = {
+export type GetMeErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -1775,22 +2669,22 @@ export type MeErrors = {
     403: ProblemDetailsDto;
 };
 
-export type MeError = MeErrors[keyof MeErrors];
+export type GetMeError = GetMeErrors[keyof GetMeErrors];
 
-export type MeResponses = {
+export type GetMeResponses = {
     200: UserResponseDto;
 };
 
-export type MeResponse = MeResponses[keyof MeResponses];
+export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
 
-export type PermissionsData = {
+export type GetMyPermissionsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/users/me/permissions';
 };
 
-export type PermissionsErrors = {
+export type GetMyPermissionsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -1801,15 +2695,15 @@ export type PermissionsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type PermissionsError = PermissionsErrors[keyof PermissionsErrors];
+export type GetMyPermissionsError = GetMyPermissionsErrors[keyof GetMyPermissionsErrors];
 
-export type PermissionsResponses = {
+export type GetMyPermissionsResponses = {
     200: MyPermissionsResponseDto;
 };
 
-export type PermissionsResponse = PermissionsResponses[keyof PermissionsResponses];
+export type GetMyPermissionsResponse = GetMyPermissionsResponses[keyof GetMyPermissionsResponses];
 
-export type RemoveData = {
+export type DeleteUserData = {
     body?: never;
     path: {
         id: string;
@@ -1818,7 +2712,7 @@ export type RemoveData = {
     url: '/api/v1/users/{id}';
 };
 
-export type RemoveErrors = {
+export type DeleteUserErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -1833,13 +2727,13 @@ export type RemoveErrors = {
     404: ProblemDetailsDto;
 };
 
-export type RemoveError = RemoveErrors[keyof RemoveErrors];
+export type DeleteUserError = DeleteUserErrors[keyof DeleteUserErrors];
 
-export type RemoveResponses = {
+export type DeleteUserResponses = {
     200: unknown;
 };
 
-export type FindOneData = {
+export type FindUserByIdData = {
     body?: never;
     path: {
         id: string;
@@ -1848,7 +2742,7 @@ export type FindOneData = {
     url: '/api/v1/users/{id}';
 };
 
-export type FindOneErrors = {
+export type FindUserByIdErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -1863,15 +2757,15 @@ export type FindOneErrors = {
     404: ProblemDetailsDto;
 };
 
-export type FindOneError = FindOneErrors[keyof FindOneErrors];
+export type FindUserByIdError = FindUserByIdErrors[keyof FindUserByIdErrors];
 
-export type FindOneResponses = {
+export type FindUserByIdResponses = {
     200: UserResponseDto;
 };
 
-export type FindOneResponse = FindOneResponses[keyof FindOneResponses];
+export type FindUserByIdResponse = FindUserByIdResponses[keyof FindUserByIdResponses];
 
-export type UpdateData = {
+export type UpdateUserData = {
     body: UpdateUserRequest;
     path: {
         id: string;
@@ -1880,7 +2774,7 @@ export type UpdateData = {
     url: '/api/v1/users/{id}';
 };
 
-export type UpdateErrors = {
+export type UpdateUserErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -1895,22 +2789,22 @@ export type UpdateErrors = {
     404: ProblemDetailsDto;
 };
 
-export type UpdateError = UpdateErrors[keyof UpdateErrors];
+export type UpdateUserError = UpdateUserErrors[keyof UpdateUserErrors];
 
-export type UpdateResponses = {
+export type UpdateUserResponses = {
     200: UserResponseDto;
 };
 
-export type UpdateResponse = UpdateResponses[keyof UpdateResponses];
+export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
 
-export type CatalogData = {
+export type FindAuthzCatalogData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/authz/catalog';
 };
 
-export type CatalogErrors = {
+export type FindAuthzCatalogErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -1921,22 +2815,31 @@ export type CatalogErrors = {
     403: ProblemDetailsDto;
 };
 
-export type CatalogError = CatalogErrors[keyof CatalogErrors];
+export type FindAuthzCatalogError = FindAuthzCatalogErrors[keyof FindAuthzCatalogErrors];
 
-export type CatalogResponses = {
+export type FindAuthzCatalogResponses = {
     200: AuthzCatalogResponseDto;
 };
 
-export type CatalogResponse = CatalogResponses[keyof CatalogResponses];
+export type FindAuthzCatalogResponse = FindAuthzCatalogResponses[keyof FindAuthzCatalogResponses];
 
-export type ListData = {
+export type FindAccessGrantsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Items per page (default: 20, max: 100)
+         */
+        limit?: number;
+        /**
+         * Page number (default: 1)
+         */
+        page?: number;
+    };
     url: '/api/v1/access-grants';
 };
 
-export type ListErrors = {
+export type FindAccessGrantsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -1947,22 +2850,22 @@ export type ListErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListError = ListErrors[keyof ListErrors];
+export type FindAccessGrantsError = FindAccessGrantsErrors[keyof FindAccessGrantsErrors];
 
-export type ListResponses = {
-    200: Array<AccessGrantResponseDto>;
+export type FindAccessGrantsResponses = {
+    200: PaginatedAccessGrantsResponseDto;
 };
 
-export type ListResponse = ListResponses[keyof ListResponses];
+export type FindAccessGrantsResponse = FindAccessGrantsResponses[keyof FindAccessGrantsResponses];
 
-export type CreateData = {
+export type CreateAccessGrantData = {
     body: CreateAccessGrantRequest;
     path?: never;
     query?: never;
     url: '/api/v1/access-grants';
 };
 
-export type CreateErrors = {
+export type CreateAccessGrantErrors = {
     /**
      * GRANT_003 — The named principal does not belong to this organization
      */
@@ -1977,15 +2880,15 @@ export type CreateErrors = {
     403: ProblemDetailsDto;
 };
 
-export type CreateError = CreateErrors[keyof CreateErrors];
+export type CreateAccessGrantError = CreateAccessGrantErrors[keyof CreateAccessGrantErrors];
 
-export type CreateResponses = {
+export type CreateAccessGrantResponses = {
     201: AccessGrantResponseDto;
 };
 
-export type CreateResponse = CreateResponses[keyof CreateResponses];
+export type CreateAccessGrantResponse = CreateAccessGrantResponses[keyof CreateAccessGrantResponses];
 
-export type RevokeData = {
+export type RevokeAccessGrantData = {
     body?: never;
     path: {
         id: string;
@@ -1994,7 +2897,7 @@ export type RevokeData = {
     url: '/api/v1/access-grants/{id}';
 };
 
-export type RevokeErrors = {
+export type RevokeAccessGrantErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2009,25 +2912,25 @@ export type RevokeErrors = {
     404: ProblemDetailsDto;
 };
 
-export type RevokeError = RevokeErrors[keyof RevokeErrors];
+export type RevokeAccessGrantError = RevokeAccessGrantErrors[keyof RevokeAccessGrantErrors];
 
-export type RevokeResponses = {
+export type RevokeAccessGrantResponses = {
     /**
      * Revoked
      */
     204: void;
 };
 
-export type RevokeResponse = RevokeResponses[keyof RevokeResponses];
+export type RevokeAccessGrantResponse = RevokeAccessGrantResponses[keyof RevokeAccessGrantResponses];
 
-export type CurrentData = {
+export type FindCurrentCredentialData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/me/credential';
 };
 
-export type CurrentErrors = {
+export type FindCurrentCredentialErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2038,22 +2941,22 @@ export type CurrentErrors = {
     403: ProblemDetailsDto;
 };
 
-export type CurrentError = CurrentErrors[keyof CurrentErrors];
+export type FindCurrentCredentialError = FindCurrentCredentialErrors[keyof FindCurrentCredentialErrors];
 
-export type CurrentResponses = {
+export type FindCurrentCredentialResponses = {
     200: CurrentCredentialResponseDto;
 };
 
-export type CurrentResponse = CurrentResponses[keyof CurrentResponses];
+export type FindCurrentCredentialResponse = FindCurrentCredentialResponses[keyof FindCurrentCredentialResponses];
 
-export type FindAll2Data = {
+export type FindApiTokensData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/tokens';
 };
 
-export type FindAll2Errors = {
+export type FindApiTokensErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2064,22 +2967,22 @@ export type FindAll2Errors = {
     403: ProblemDetailsDto;
 };
 
-export type FindAll2Error = FindAll2Errors[keyof FindAll2Errors];
+export type FindApiTokensError = FindApiTokensErrors[keyof FindApiTokensErrors];
 
-export type FindAll2Responses = {
+export type FindApiTokensResponses = {
     200: Array<ApiTokenResponseDto>;
 };
 
-export type FindAll2Response = FindAll2Responses[keyof FindAll2Responses];
+export type FindApiTokensResponse = FindApiTokensResponses[keyof FindApiTokensResponses];
 
-export type Create2Data = {
+export type CreateApiTokenData = {
     body: CreateApiTokenRequest;
     path?: never;
     query?: never;
     url: '/api/v1/tokens';
 };
 
-export type Create2Errors = {
+export type CreateApiTokenErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2100,22 +3003,22 @@ export type Create2Errors = {
     429: ProblemDetailsDto;
 };
 
-export type Create2Error = Create2Errors[keyof Create2Errors];
+export type CreateApiTokenError = CreateApiTokenErrors[keyof CreateApiTokenErrors];
 
-export type Create2Responses = {
+export type CreateApiTokenResponses = {
     201: CreatedApiTokenResponseDto;
 };
 
-export type Create2Response = Create2Responses[keyof Create2Responses];
+export type CreateApiTokenResponse = CreateApiTokenResponses[keyof CreateApiTokenResponses];
 
-export type Permissions2Data = {
+export type FindGrantablePermissionsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/tokens/permissions';
 };
 
-export type Permissions2Errors = {
+export type FindGrantablePermissionsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2126,15 +3029,15 @@ export type Permissions2Errors = {
     403: ProblemDetailsDto;
 };
 
-export type Permissions2Error = Permissions2Errors[keyof Permissions2Errors];
+export type FindGrantablePermissionsError = FindGrantablePermissionsErrors[keyof FindGrantablePermissionsErrors];
 
-export type Permissions2Responses = {
+export type FindGrantablePermissionsResponses = {
     200: PermissionCatalogResponseDto;
 };
 
-export type Permissions2Response = Permissions2Responses[keyof Permissions2Responses];
+export type FindGrantablePermissionsResponse = FindGrantablePermissionsResponses[keyof FindGrantablePermissionsResponses];
 
-export type Revoke2Data = {
+export type RevokeApiTokenData = {
     body?: never;
     path: {
         id: string;
@@ -2143,7 +3046,7 @@ export type Revoke2Data = {
     url: '/api/v1/tokens/{id}';
 };
 
-export type Revoke2Errors = {
+export type RevokeApiTokenErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2158,23 +3061,23 @@ export type Revoke2Errors = {
     404: ProblemDetailsDto;
 };
 
-export type Revoke2Error = Revoke2Errors[keyof Revoke2Errors];
+export type RevokeApiTokenError = RevokeApiTokenErrors[keyof RevokeApiTokenErrors];
 
-export type Revoke2Responses = {
+export type RevokeApiTokenResponses = {
     /**
      * Token revoked
      */
     204: void;
 };
 
-export type Revoke2Response = Revoke2Responses[keyof Revoke2Responses];
+export type RevokeApiTokenResponse = RevokeApiTokenResponses[keyof RevokeApiTokenResponses];
 
-export type FindAll3Data = {
+export type FindRolesData = {
     body?: never;
     path?: never;
     query?: {
         /**
-         * Search by role name
+         * Search by role name or description; `%` and `_` match literally
          */
         search?: string;
         /**
@@ -2189,7 +3092,7 @@ export type FindAll3Data = {
     url: '/api/v1/roles';
 };
 
-export type FindAll3Errors = {
+export type FindRolesErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2200,22 +3103,26 @@ export type FindAll3Errors = {
     403: ProblemDetailsDto;
 };
 
-export type FindAll3Error = FindAll3Errors[keyof FindAll3Errors];
+export type FindRolesError = FindRolesErrors[keyof FindRolesErrors];
 
-export type FindAll3Responses = {
+export type FindRolesResponses = {
     200: PaginatedRolesResponseDto;
 };
 
-export type FindAll3Response = FindAll3Responses[keyof FindAll3Responses];
+export type FindRolesResponse = FindRolesResponses[keyof FindRolesResponses];
 
-export type Create3Data = {
+export type CreateRoleData = {
     body: CreateRoleRequest;
     path?: never;
     query?: never;
     url: '/api/v1/roles';
 };
 
-export type Create3Errors = {
+export type CreateRoleErrors = {
+    /**
+     * ROLE_008 — No active organization, and the caller cannot create a global role
+     */
+    400: ProblemDetailsDto;
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2230,15 +3137,15 @@ export type Create3Errors = {
     409: ProblemDetailsDto;
 };
 
-export type Create3Error = Create3Errors[keyof Create3Errors];
+export type CreateRoleError = CreateRoleErrors[keyof CreateRoleErrors];
 
-export type Create3Responses = {
+export type CreateRoleResponses = {
     201: RoleResponseDto;
 };
 
-export type Create3Response = Create3Responses[keyof Create3Responses];
+export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
 
-export type Remove2Data = {
+export type DeleteRoleData = {
     body?: never;
     path: {
         id: string;
@@ -2247,7 +3154,7 @@ export type Remove2Data = {
     url: '/api/v1/roles/{id}';
 };
 
-export type Remove2Errors = {
+export type DeleteRoleErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2262,13 +3169,13 @@ export type Remove2Errors = {
     404: ProblemDetailsDto;
 };
 
-export type Remove2Error = Remove2Errors[keyof Remove2Errors];
+export type DeleteRoleError = DeleteRoleErrors[keyof DeleteRoleErrors];
 
-export type Remove2Responses = {
+export type DeleteRoleResponses = {
     200: unknown;
 };
 
-export type FindOne2Data = {
+export type FindRoleByIdData = {
     body?: never;
     path: {
         id: string;
@@ -2277,7 +3184,7 @@ export type FindOne2Data = {
     url: '/api/v1/roles/{id}';
 };
 
-export type FindOne2Errors = {
+export type FindRoleByIdErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2292,15 +3199,15 @@ export type FindOne2Errors = {
     404: ProblemDetailsDto;
 };
 
-export type FindOne2Error = FindOne2Errors[keyof FindOne2Errors];
+export type FindRoleByIdError = FindRoleByIdErrors[keyof FindRoleByIdErrors];
 
-export type FindOne2Responses = {
+export type FindRoleByIdResponses = {
     200: RoleResponseDto;
 };
 
-export type FindOne2Response = FindOne2Responses[keyof FindOne2Responses];
+export type FindRoleByIdResponse = FindRoleByIdResponses[keyof FindRoleByIdResponses];
 
-export type Update2Data = {
+export type UpdateRoleData = {
     body: UpdateRoleRequest;
     path: {
         id: string;
@@ -2309,7 +3216,7 @@ export type Update2Data = {
     url: '/api/v1/roles/{id}';
 };
 
-export type Update2Errors = {
+export type UpdateRoleErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2324,15 +3231,15 @@ export type Update2Errors = {
     404: ProblemDetailsDto;
 };
 
-export type Update2Error = Update2Errors[keyof Update2Errors];
+export type UpdateRoleError = UpdateRoleErrors[keyof UpdateRoleErrors];
 
-export type Update2Responses = {
+export type UpdateRoleResponses = {
     200: RoleResponseDto;
 };
 
-export type Update2Response = Update2Responses[keyof Update2Responses];
+export type UpdateRoleResponse = UpdateRoleResponses[keyof UpdateRoleResponses];
 
-export type UpdatePermissionsData = {
+export type UpdateRolePermissionsData = {
     body: UpdateRolePermissionsRequest;
     path: {
         id: string;
@@ -2341,7 +3248,7 @@ export type UpdatePermissionsData = {
     url: '/api/v1/roles/{id}/permissions';
 };
 
-export type UpdatePermissionsErrors = {
+export type UpdateRolePermissionsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2356,13 +3263,13 @@ export type UpdatePermissionsErrors = {
     404: ProblemDetailsDto;
 };
 
-export type UpdatePermissionsError = UpdatePermissionsErrors[keyof UpdatePermissionsErrors];
+export type UpdateRolePermissionsError = UpdateRolePermissionsErrors[keyof UpdateRolePermissionsErrors];
 
-export type UpdatePermissionsResponses = {
+export type UpdateRolePermissionsResponses = {
     200: RoleResponseDto;
 };
 
-export type UpdatePermissionsResponse = UpdatePermissionsResponses[keyof UpdatePermissionsResponses];
+export type UpdateRolePermissionsResponse = UpdateRolePermissionsResponses[keyof UpdateRolePermissionsResponses];
 
 export type FindUserRolesData = {
     body?: never;
@@ -2392,7 +3299,7 @@ export type FindUserRolesResponses = {
 
 export type FindUserRolesResponse = FindUserRolesResponses[keyof FindUserRolesResponses];
 
-export type AssignData = {
+export type AssignUserRolesData = {
     body: AssignUserRolesRequest;
     path: {
         userId: string;
@@ -2401,7 +3308,7 @@ export type AssignData = {
     url: '/api/v1/users/{userId}/roles';
 };
 
-export type AssignErrors = {
+export type AssignUserRolesErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2416,22 +3323,22 @@ export type AssignErrors = {
     404: ProblemDetailsDto;
 };
 
-export type AssignError = AssignErrors[keyof AssignErrors];
+export type AssignUserRolesError = AssignUserRolesErrors[keyof AssignUserRolesErrors];
 
-export type AssignResponses = {
+export type AssignUserRolesResponses = {
     200: Array<RoleResponseDto>;
 };
 
-export type AssignResponse = AssignResponses[keyof AssignResponses];
+export type AssignUserRolesResponse = AssignUserRolesResponses[keyof AssignUserRolesResponses];
 
-export type List2Data = {
+export type ListOrganizationsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/organizations';
 };
 
-export type List2Errors = {
+export type ListOrganizationsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2456,22 +3363,22 @@ export type List2Errors = {
     502: ProblemDetailsDto;
 };
 
-export type List2Error = List2Errors[keyof List2Errors];
+export type ListOrganizationsError = ListOrganizationsErrors[keyof ListOrganizationsErrors];
 
-export type List2Responses = {
+export type ListOrganizationsResponses = {
     200: Array<OrganizationResponseDto>;
 };
 
-export type List2Response = List2Responses[keyof List2Responses];
+export type ListOrganizationsResponse = ListOrganizationsResponses[keyof ListOrganizationsResponses];
 
-export type Create4Data = {
+export type CreateOrganizationData = {
     body: CreateOrganizationRequest;
     path?: never;
     query?: never;
     url: '/api/v1/organizations';
 };
 
-export type Create4Errors = {
+export type CreateOrganizationErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2496,13 +3403,13 @@ export type Create4Errors = {
     502: ProblemDetailsDto;
 };
 
-export type Create4Error = Create4Errors[keyof Create4Errors];
+export type CreateOrganizationError = CreateOrganizationErrors[keyof CreateOrganizationErrors];
 
-export type Create4Responses = {
+export type CreateOrganizationResponses = {
     201: OrganizationResponseDto;
 };
 
-export type Create4Response = Create4Responses[keyof Create4Responses];
+export type CreateOrganizationResponse = CreateOrganizationResponses[keyof CreateOrganizationResponses];
 
 export type CheckSlugData = {
     body: CheckSlugRequest;
@@ -2544,7 +3451,7 @@ export type CheckSlugResponses = {
 
 export type CheckSlugResponse = CheckSlugResponses[keyof CheckSlugResponses];
 
-export type Remove3Data = {
+export type DeleteOrganizationData = {
     body?: never;
     path: {
         id: string;
@@ -2553,7 +3460,7 @@ export type Remove3Data = {
     url: '/api/v1/organizations/{id}';
 };
 
-export type Remove3Errors = {
+export type DeleteOrganizationErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2578,15 +3485,15 @@ export type Remove3Errors = {
     502: ProblemDetailsDto;
 };
 
-export type Remove3Error = Remove3Errors[keyof Remove3Errors];
+export type DeleteOrganizationError = DeleteOrganizationErrors[keyof DeleteOrganizationErrors];
 
-export type Remove3Responses = {
+export type DeleteOrganizationResponses = {
     200: OrganizationResponseDto;
 };
 
-export type Remove3Response = Remove3Responses[keyof Remove3Responses];
+export type DeleteOrganizationResponse = DeleteOrganizationResponses[keyof DeleteOrganizationResponses];
 
-export type GetFullData = {
+export type GetOrganizationData = {
     body?: never;
     path: {
         id: string;
@@ -2595,7 +3502,7 @@ export type GetFullData = {
     url: '/api/v1/organizations/{id}';
 };
 
-export type GetFullErrors = {
+export type GetOrganizationErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2620,15 +3527,15 @@ export type GetFullErrors = {
     502: ProblemDetailsDto;
 };
 
-export type GetFullError = GetFullErrors[keyof GetFullErrors];
+export type GetOrganizationError = GetOrganizationErrors[keyof GetOrganizationErrors];
 
-export type GetFullResponses = {
+export type GetOrganizationResponses = {
     200: FullOrganizationResponseDto;
 };
 
-export type GetFullResponse = GetFullResponses[keyof GetFullResponses];
+export type GetOrganizationResponse = GetOrganizationResponses[keyof GetOrganizationResponses];
 
-export type Update3Data = {
+export type UpdateOrganizationData = {
     body: UpdateOrganizationRequest;
     path: {
         id: string;
@@ -2637,7 +3544,7 @@ export type Update3Data = {
     url: '/api/v1/organizations/{id}';
 };
 
-export type Update3Errors = {
+export type UpdateOrganizationErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2662,15 +3569,15 @@ export type Update3Errors = {
     502: ProblemDetailsDto;
 };
 
-export type Update3Error = Update3Errors[keyof Update3Errors];
+export type UpdateOrganizationError = UpdateOrganizationErrors[keyof UpdateOrganizationErrors];
 
-export type Update3Responses = {
+export type UpdateOrganizationResponses = {
     200: OrganizationResponseDto;
 };
 
-export type Update3Response = Update3Responses[keyof Update3Responses];
+export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
 
-export type SetActiveData = {
+export type SetActiveOrganizationData = {
     body?: never;
     path: {
         id: string;
@@ -2679,7 +3586,7 @@ export type SetActiveData = {
     url: '/api/v1/organizations/{id}/set-active';
 };
 
-export type SetActiveErrors = {
+export type SetActiveOrganizationErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2704,55 +3611,49 @@ export type SetActiveErrors = {
     502: ProblemDetailsDto;
 };
 
-export type SetActiveError = SetActiveErrors[keyof SetActiveErrors];
+export type SetActiveOrganizationError = SetActiveOrganizationErrors[keyof SetActiveOrganizationErrors];
 
-export type SetActiveResponses = {
+export type SetActiveOrganizationResponses = {
     200: OrganizationResponseDto;
 };
 
-export type SetActiveResponse = SetActiveResponses[keyof SetActiveResponses];
+export type SetActiveOrganizationResponse = SetActiveOrganizationResponses[keyof SetActiveOrganizationResponses];
 
-export type ActiveData = {
+export type GetMembershipData = {
     body?: never;
-    path?: never;
+    path: {
+        orgId: string;
+    };
     query?: never;
     url: '/api/v1/organizations/{orgId}/members/me';
 };
 
-export type ActiveErrors = {
+export type GetMembershipErrors = {
+    /**
+     * AUTHZ_003 — The organization id is not a UUID
+     */
+    400: ProblemDetailsDto;
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
     401: ProblemDetailsDto;
     /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing members
+     * ORG_003 — The caller is not a member of this organization
      *
      * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
      */
     403: ProblemDetailsDto;
-    /**
-     * ORG_001 / ORG_005 — The organization or the member does not exist
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_006 / ORG_007 / ORG_014 — Already a member, the last owner cannot leave, or a membership limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
 };
 
-export type ActiveError = ActiveErrors[keyof ActiveErrors];
+export type GetMembershipError = GetMembershipErrors[keyof GetMembershipErrors];
 
-export type ActiveResponses = {
+export type GetMembershipResponses = {
     200: MemberResponseDto;
 };
 
-export type ActiveResponse = ActiveResponses[keyof ActiveResponses];
+export type GetMembershipResponse = GetMembershipResponses[keyof GetMembershipResponses];
 
-export type List3Data = {
+export type ListMembersData = {
     body?: never;
     path: {
         orgId: string;
@@ -2770,775 +3671,23 @@ export type List3Data = {
     url: '/api/v1/organizations/{orgId}/members';
 };
 
-export type List3Errors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing members
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_001 / ORG_005 — The organization or the member does not exist
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_006 / ORG_007 / ORG_014 — Already a member, the last owner cannot leave, or a membership limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type List3Error = List3Errors[keyof List3Errors];
-
-export type List3Responses = {
-    200: Array<MemberResponseDto>;
-};
-
-export type List3Response = List3Responses[keyof List3Responses];
-
-export type AddData = {
-    body: AddMemberRequest;
-    path: {
-        orgId: string;
-    };
-    query?: never;
-    url: '/api/v1/organizations/{orgId}/members';
-};
-
-export type AddErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing members
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_001 / ORG_005 — The organization or the member does not exist
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_006 / ORG_007 / ORG_014 — Already a member, the last owner cannot leave, or a membership limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type AddError = AddErrors[keyof AddErrors];
-
-export type AddResponses = {
-    201: MemberResponseDto;
-};
-
-export type AddResponse = AddResponses[keyof AddResponses];
-
-export type UpdateRoleData = {
-    body: UpdateMemberRoleRequest;
-    path: {
-        orgId: string;
-        memberId: string;
-    };
-    query?: never;
-    url: '/api/v1/organizations/{orgId}/members/{memberId}';
-};
-
-export type UpdateRoleErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing members
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_001 / ORG_005 — The organization or the member does not exist
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_006 / ORG_007 / ORG_014 — Already a member, the last owner cannot leave, or a membership limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type UpdateRoleError = UpdateRoleErrors[keyof UpdateRoleErrors];
-
-export type UpdateRoleResponses = {
-    200: MemberResponseDto;
-};
-
-export type UpdateRoleResponse = UpdateRoleResponses[keyof UpdateRoleResponses];
-
-export type Remove4Data = {
-    body?: never;
-    path: {
-        orgId: string;
-        memberIdOrEmail: string;
-    };
-    query?: never;
-    url: '/api/v1/organizations/{orgId}/members/{memberIdOrEmail}';
-};
-
-export type Remove4Errors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing members
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_001 / ORG_005 — The organization or the member does not exist
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_006 / ORG_007 / ORG_014 — Already a member, the last owner cannot leave, or a membership limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type Remove4Error = Remove4Errors[keyof Remove4Errors];
-
-export type Remove4Responses = {
-    200: MemberResponseDto;
-};
-
-export type Remove4Response = Remove4Responses[keyof Remove4Responses];
-
-export type LeaveData = {
-    body?: never;
-    path: {
-        orgId: string;
-    };
-    query?: never;
-    url: '/api/v1/organizations/{orgId}/leave';
-};
-
-export type LeaveErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing members
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_001 / ORG_005 — The organization or the member does not exist
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_006 / ORG_007 / ORG_014 — Already a member, the last owner cannot leave, or a membership limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type LeaveError = LeaveErrors[keyof LeaveErrors];
-
-export type LeaveResponses = {
-    200: MemberResponseDto;
-};
-
-export type LeaveResponse = LeaveResponses[keyof LeaveResponses];
-
-export type List4Data = {
-    body?: never;
-    path: {
-        orgId: string;
-    };
-    query?: never;
-    url: '/api/v1/organizations/{orgId}/invitations';
-};
-
-export type List4Errors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_009 / ORG_004 / ORG_011 — The invitation was issued to another account, the caller may not manage invitations, or their email is unverified
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_001 — The organization does not exist, or is not visible to the caller
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_010 / ORG_006 / ORG_014 — That user is already invited or already a member, or an invitation limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type List4Error = List4Errors[keyof List4Errors];
-
-export type List4Responses = {
-    200: Array<InvitationResponseDto>;
-};
-
-export type List4Response = List4Responses[keyof List4Responses];
-
-export type InviteData = {
-    body: InviteMemberRequest;
-    path: {
-        orgId: string;
-    };
-    query?: never;
-    url: '/api/v1/organizations/{orgId}/invitations';
-};
-
-export type InviteErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_009 / ORG_004 / ORG_011 — The invitation was issued to another account, the caller may not manage invitations, or their email is unverified
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_001 — The organization does not exist, or is not visible to the caller
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_010 / ORG_006 / ORG_014 — That user is already invited or already a member, or an invitation limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type InviteError = InviteErrors[keyof InviteErrors];
-
-export type InviteResponses = {
-    201: InvitationResponseDto;
-};
-
-export type InviteResponse = InviteResponses[keyof InviteResponses];
-
-export type ListMineData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/v1/invitations';
-};
-
-export type ListMineErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_009 / ORG_004 / ORG_011 — The invitation was issued to another account, the caller may not manage invitations, or their email is unverified
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_008 — The invitation does not exist or is no longer retrievable
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_010 / ORG_006 / ORG_014 — That user is already invited or already a member, or an invitation limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type ListMineError = ListMineErrors[keyof ListMineErrors];
-
-export type ListMineResponses = {
-    200: Array<InvitationResponseDto>;
-};
-
-export type ListMineResponse = ListMineResponses[keyof ListMineResponses];
-
-export type GetData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/invitations/{id}';
-};
-
-export type GetErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_009 / ORG_004 / ORG_011 — The invitation was issued to another account, the caller may not manage invitations, or their email is unverified
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_008 — The invitation does not exist or is no longer retrievable
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_010 / ORG_006 / ORG_014 — That user is already invited or already a member, or an invitation limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type GetError = GetErrors[keyof GetErrors];
-
-export type GetResponses = {
-    200: InvitationResponseDto;
-};
-
-export type GetResponse = GetResponses[keyof GetResponses];
-
-export type AcceptData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/invitations/{id}/accept';
-};
-
-export type AcceptErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_009 / ORG_004 / ORG_011 — The invitation was issued to another account, the caller may not manage invitations, or their email is unverified
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_008 — The invitation does not exist or is no longer retrievable
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_010 / ORG_006 / ORG_014 — That user is already invited or already a member, or an invitation limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type AcceptError = AcceptErrors[keyof AcceptErrors];
-
-export type AcceptResponses = {
-    200: InvitationResponseDto;
-};
-
-export type AcceptResponse = AcceptResponses[keyof AcceptResponses];
-
-export type RejectData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/invitations/{id}/reject';
-};
-
-export type RejectErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_009 / ORG_004 / ORG_011 — The invitation was issued to another account, the caller may not manage invitations, or their email is unverified
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_008 — The invitation does not exist or is no longer retrievable
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_010 / ORG_006 / ORG_014 — That user is already invited or already a member, or an invitation limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type RejectError = RejectErrors[keyof RejectErrors];
-
-export type RejectResponses = {
-    200: InvitationResponseDto;
-};
-
-export type RejectResponse = RejectResponses[keyof RejectResponses];
-
-export type CancelData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/invitations/{id}/cancel';
-};
-
-export type CancelErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_009 / ORG_004 / ORG_011 — The invitation was issued to another account, the caller may not manage invitations, or their email is unverified
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_008 — The invitation does not exist or is no longer retrievable
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_010 / ORG_006 / ORG_014 — That user is already invited or already a member, or an invitation limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type CancelError = CancelErrors[keyof CancelErrors];
-
-export type CancelResponses = {
-    200: InvitationResponseDto;
-};
-
-export type CancelResponse = CancelResponses[keyof CancelResponses];
-
-export type ListMine2Data = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/v1/workspaces/mine';
-};
-
-export type ListMine2Errors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type ListMine2Error = ListMine2Errors[keyof ListMine2Errors];
-
-export type ListMine2Responses = {
-    200: Array<WorkspaceResponseDto>;
-};
-
-export type ListMine2Response = ListMine2Responses[keyof ListMine2Responses];
-
-export type List5Data = {
-    body?: never;
-    path?: never;
-    query?: {
-        organizationId?: string;
-    };
-    url: '/api/v1/workspaces';
-};
-
-export type List5Errors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type List5Error = List5Errors[keyof List5Errors];
-
-export type List5Responses = {
-    200: Array<WorkspaceResponseDto>;
-};
-
-export type List5Response = List5Responses[keyof List5Responses];
-
-export type Create5Data = {
-    body: CreateWorkspaceRequest;
-    path?: never;
-    query?: never;
-    url: '/api/v1/workspaces';
-};
-
-export type Create5Errors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type Create5Error = Create5Errors[keyof Create5Errors];
-
-export type Create5Responses = {
-    201: WorkspaceResponseDto;
-};
-
-export type Create5Response = Create5Responses[keyof Create5Responses];
-
-export type Remove5Data = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/workspaces/{id}';
-};
-
-export type Remove5Errors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type Remove5Error = Remove5Errors[keyof Remove5Errors];
-
-export type Remove5Responses = {
-    204: void;
-};
-
-export type Remove5Response = Remove5Responses[keyof Remove5Responses];
-
-export type Update4Data = {
-    body: UpdateWorkspaceRequest;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/workspaces/{id}';
-};
-
-export type Update4Errors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type Update4Error = Update4Errors[keyof Update4Errors];
-
-export type Update4Responses = {
-    200: WorkspaceResponseDto;
-};
-
-export type Update4Response = Update4Responses[keyof Update4Responses];
-
-export type SetActive2Data = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/workspaces/{id}/set-active';
-};
-
-export type SetActive2Errors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
-     *
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
-     */
-    404: ProblemDetailsDto;
-    /**
-     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
-     */
-    409: ProblemDetailsDto;
-    /**
-     * ORG_016 — The organization service failed to handle the request
-     */
-    502: ProblemDetailsDto;
-};
-
-export type SetActive2Error = SetActive2Errors[keyof SetActive2Errors];
-
-export type SetActive2Responses = {
-    200: WorkspaceResponseDto;
-};
-
-export type SetActive2Response = SetActive2Responses[keyof SetActive2Responses];
-
-export type ListMembersData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/workspaces/{id}/members';
-};
-
 export type ListMembersErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
     401: ProblemDetailsDto;
     /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
+     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing members
      *
      * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
      */
     403: ProblemDetailsDto;
     /**
-     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
+     * ORG_001 / ORG_005 — The organization or the member does not exist
      */
     404: ProblemDetailsDto;
     /**
-     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
+     * ORG_006 / ORG_007 / ORG_014 — Already a member, the last owner cannot leave, or a membership limit was reached
      */
     409: ProblemDetailsDto;
     /**
@@ -3550,18 +3699,18 @@ export type ListMembersErrors = {
 export type ListMembersError = ListMembersErrors[keyof ListMembersErrors];
 
 export type ListMembersResponses = {
-    200: Array<WorkspaceMemberResponseDto>;
+    200: Array<MemberResponseDto>;
 };
 
 export type ListMembersResponse = ListMembersResponses[keyof ListMembersResponses];
 
 export type AddMemberData = {
-    body: AddWorkspaceMemberRequest;
+    body: AddMemberRequest;
     path: {
-        id: string;
+        orgId: string;
     };
     query?: never;
-    url: '/api/v1/workspaces/{id}/members';
+    url: '/api/v1/organizations/{orgId}/members';
 };
 
 export type AddMemberErrors = {
@@ -3570,17 +3719,17 @@ export type AddMemberErrors = {
      */
     401: ProblemDetailsDto;
     /**
-     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
+     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing members
      *
      * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
      */
     403: ProblemDetailsDto;
     /**
-     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
+     * ORG_001 / ORG_005 — The organization or the member does not exist
      */
     404: ProblemDetailsDto;
     /**
-     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
+     * ORG_006 / ORG_007 / ORG_014 — Already a member, the last owner cannot leave, or a membership limit was reached
      */
     409: ProblemDetailsDto;
     /**
@@ -3592,22 +3741,439 @@ export type AddMemberErrors = {
 export type AddMemberError = AddMemberErrors[keyof AddMemberErrors];
 
 export type AddMemberResponses = {
-    201: WorkspaceMemberResponseDto;
+    201: MemberResponseDto;
 };
 
 export type AddMemberResponse = AddMemberResponses[keyof AddMemberResponses];
 
+export type UpdateMemberRoleData = {
+    body: UpdateMemberRoleRequest;
+    path: {
+        orgId: string;
+        memberId: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{orgId}/members/{memberId}';
+};
+
+export type UpdateMemberRoleErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing members
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_001 / ORG_005 — The organization or the member does not exist
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_006 / ORG_007 / ORG_014 — Already a member, the last owner cannot leave, or a membership limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type UpdateMemberRoleError = UpdateMemberRoleErrors[keyof UpdateMemberRoleErrors];
+
+export type UpdateMemberRoleResponses = {
+    200: MemberResponseDto;
+};
+
+export type UpdateMemberRoleResponse = UpdateMemberRoleResponses[keyof UpdateMemberRoleResponses];
+
 export type RemoveMemberData = {
     body?: never;
     path: {
-        id: string;
-        userId: string;
+        orgId: string;
+        memberIdOrEmail: string;
     };
     query?: never;
-    url: '/api/v1/workspaces/{id}/members/{userId}';
+    url: '/api/v1/organizations/{orgId}/members/{memberIdOrEmail}';
 };
 
 export type RemoveMemberErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing members
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_001 / ORG_005 — The organization or the member does not exist
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_006 / ORG_007 / ORG_014 — Already a member, the last owner cannot leave, or a membership limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type RemoveMemberError = RemoveMemberErrors[keyof RemoveMemberErrors];
+
+export type RemoveMemberResponses = {
+    200: MemberResponseDto;
+};
+
+export type RemoveMemberResponse = RemoveMemberResponses[keyof RemoveMemberResponses];
+
+export type LeaveOrganizationData = {
+    body?: never;
+    path: {
+        orgId: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{orgId}/leave';
+};
+
+export type LeaveOrganizationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing members
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_001 / ORG_005 — The organization or the member does not exist
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_006 / ORG_007 / ORG_014 — Already a member, the last owner cannot leave, or a membership limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type LeaveOrganizationError = LeaveOrganizationErrors[keyof LeaveOrganizationErrors];
+
+export type LeaveOrganizationResponses = {
+    200: MemberResponseDto;
+};
+
+export type LeaveOrganizationResponse = LeaveOrganizationResponses[keyof LeaveOrganizationResponses];
+
+export type ListOrganizationInvitationsData = {
+    body?: never;
+    path: {
+        orgId: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{orgId}/invitations';
+};
+
+export type ListOrganizationInvitationsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_009 / ORG_004 / ORG_011 — The invitation was issued to another account, the caller may not manage invitations, or their email is unverified
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_001 — The organization does not exist, or is not visible to the caller
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_010 / ORG_006 / ORG_014 — That user is already invited or already a member, or an invitation limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type ListOrganizationInvitationsError = ListOrganizationInvitationsErrors[keyof ListOrganizationInvitationsErrors];
+
+export type ListOrganizationInvitationsResponses = {
+    200: Array<InvitationResponseDto>;
+};
+
+export type ListOrganizationInvitationsResponse = ListOrganizationInvitationsResponses[keyof ListOrganizationInvitationsResponses];
+
+export type InviteMemberData = {
+    body: InviteMemberRequest;
+    path: {
+        orgId: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{orgId}/invitations';
+};
+
+export type InviteMemberErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_009 / ORG_004 / ORG_011 — The invitation was issued to another account, the caller may not manage invitations, or their email is unverified
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_001 — The organization does not exist, or is not visible to the caller
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_010 / ORG_006 / ORG_014 — That user is already invited or already a member, or an invitation limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type InviteMemberError = InviteMemberErrors[keyof InviteMemberErrors];
+
+export type InviteMemberResponses = {
+    201: InvitationResponseDto;
+};
+
+export type InviteMemberResponse = InviteMemberResponses[keyof InviteMemberResponses];
+
+export type ListMyInvitationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/invitations';
+};
+
+export type ListMyInvitationsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_009 / ORG_004 / ORG_011 — The invitation was issued to another account, the caller may not manage invitations, or their email is unverified
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_008 — The invitation does not exist or is no longer retrievable
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_010 / ORG_006 / ORG_014 — That user is already invited or already a member, or an invitation limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type ListMyInvitationsError = ListMyInvitationsErrors[keyof ListMyInvitationsErrors];
+
+export type ListMyInvitationsResponses = {
+    200: Array<InvitationResponseDto>;
+};
+
+export type ListMyInvitationsResponse = ListMyInvitationsResponses[keyof ListMyInvitationsResponses];
+
+export type GetInvitationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/invitations/{id}';
+};
+
+export type GetInvitationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_009 / ORG_004 / ORG_011 — The invitation was issued to another account, the caller may not manage invitations, or their email is unverified
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_008 — The invitation does not exist or is no longer retrievable
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_010 / ORG_006 / ORG_014 — That user is already invited or already a member, or an invitation limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type GetInvitationError = GetInvitationErrors[keyof GetInvitationErrors];
+
+export type GetInvitationResponses = {
+    200: InvitationResponseDto;
+};
+
+export type GetInvitationResponse = GetInvitationResponses[keyof GetInvitationResponses];
+
+export type AcceptInvitationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/invitations/{id}/accept';
+};
+
+export type AcceptInvitationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_009 / ORG_004 / ORG_011 — The invitation was issued to another account, the caller may not manage invitations, or their email is unverified
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_008 — The invitation does not exist or is no longer retrievable
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_010 / ORG_006 / ORG_014 — That user is already invited or already a member, or an invitation limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type AcceptInvitationError = AcceptInvitationErrors[keyof AcceptInvitationErrors];
+
+export type AcceptInvitationResponses = {
+    200: InvitationResponseDto;
+};
+
+export type AcceptInvitationResponse = AcceptInvitationResponses[keyof AcceptInvitationResponses];
+
+export type RejectInvitationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/invitations/{id}/reject';
+};
+
+export type RejectInvitationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_009 / ORG_004 / ORG_011 — The invitation was issued to another account, the caller may not manage invitations, or their email is unverified
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_008 — The invitation does not exist or is no longer retrievable
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_010 / ORG_006 / ORG_014 — That user is already invited or already a member, or an invitation limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type RejectInvitationError = RejectInvitationErrors[keyof RejectInvitationErrors];
+
+export type RejectInvitationResponses = {
+    200: InvitationResponseDto;
+};
+
+export type RejectInvitationResponse = RejectInvitationResponses[keyof RejectInvitationResponses];
+
+export type CancelInvitationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/invitations/{id}/cancel';
+};
+
+export type CancelInvitationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_009 / ORG_004 / ORG_011 — The invitation was issued to another account, the caller may not manage invitations, or their email is unverified
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_008 — The invitation does not exist or is no longer retrievable
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_010 / ORG_006 / ORG_014 — That user is already invited or already a member, or an invitation limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type CancelInvitationError = CancelInvitationErrors[keyof CancelInvitationErrors];
+
+export type CancelInvitationResponses = {
+    200: InvitationResponseDto;
+};
+
+export type CancelInvitationResponse = CancelInvitationResponses[keyof CancelInvitationResponses];
+
+export type ListMyWorkspacesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/workspaces/mine';
+};
+
+export type ListMyWorkspacesErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3632,22 +4198,357 @@ export type RemoveMemberErrors = {
     502: ProblemDetailsDto;
 };
 
-export type RemoveMemberError = RemoveMemberErrors[keyof RemoveMemberErrors];
+export type ListMyWorkspacesError = ListMyWorkspacesErrors[keyof ListMyWorkspacesErrors];
 
-export type RemoveMemberResponses = {
+export type ListMyWorkspacesResponses = {
+    200: Array<WorkspaceResponseDto>;
+};
+
+export type ListMyWorkspacesResponse = ListMyWorkspacesResponses[keyof ListMyWorkspacesResponses];
+
+export type ListWorkspacesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        organizationId?: string;
+    };
+    url: '/api/v1/workspaces';
+};
+
+export type ListWorkspacesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type ListWorkspacesError = ListWorkspacesErrors[keyof ListWorkspacesErrors];
+
+export type ListWorkspacesResponses = {
+    200: Array<WorkspaceResponseDto>;
+};
+
+export type ListWorkspacesResponse = ListWorkspacesResponses[keyof ListWorkspacesResponses];
+
+export type CreateWorkspaceData = {
+    body: CreateWorkspaceRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/workspaces';
+};
+
+export type CreateWorkspaceErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type CreateWorkspaceError = CreateWorkspaceErrors[keyof CreateWorkspaceErrors];
+
+export type CreateWorkspaceResponses = {
+    201: WorkspaceResponseDto;
+};
+
+export type CreateWorkspaceResponse = CreateWorkspaceResponses[keyof CreateWorkspaceResponses];
+
+export type DeleteWorkspaceData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/workspaces/{id}';
+};
+
+export type DeleteWorkspaceErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type DeleteWorkspaceError = DeleteWorkspaceErrors[keyof DeleteWorkspaceErrors];
+
+export type DeleteWorkspaceResponses = {
     204: void;
 };
 
-export type RemoveMemberResponse = RemoveMemberResponses[keyof RemoveMemberResponses];
+export type DeleteWorkspaceResponse = DeleteWorkspaceResponses[keyof DeleteWorkspaceResponses];
 
-export type ListInstallationsData = {
+export type RenameWorkspaceData = {
+    body: UpdateWorkspaceRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/workspaces/{id}';
+};
+
+export type RenameWorkspaceErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type RenameWorkspaceError = RenameWorkspaceErrors[keyof RenameWorkspaceErrors];
+
+export type RenameWorkspaceResponses = {
+    200: WorkspaceResponseDto;
+};
+
+export type RenameWorkspaceResponse = RenameWorkspaceResponses[keyof RenameWorkspaceResponses];
+
+export type SetActiveWorkspaceData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/workspaces/{id}/set-active';
+};
+
+export type SetActiveWorkspaceErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type SetActiveWorkspaceError = SetActiveWorkspaceErrors[keyof SetActiveWorkspaceErrors];
+
+export type SetActiveWorkspaceResponses = {
+    200: WorkspaceResponseDto;
+};
+
+export type SetActiveWorkspaceResponse = SetActiveWorkspaceResponses[keyof SetActiveWorkspaceResponses];
+
+export type ListWorkspaceMembersData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/workspaces/{id}/members';
+};
+
+export type ListWorkspaceMembersErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type ListWorkspaceMembersError = ListWorkspaceMembersErrors[keyof ListWorkspaceMembersErrors];
+
+export type ListWorkspaceMembersResponses = {
+    200: Array<WorkspaceMemberResponseDto>;
+};
+
+export type ListWorkspaceMembersResponse = ListWorkspaceMembersResponses[keyof ListWorkspaceMembersResponses];
+
+export type AddWorkspaceMemberData = {
+    body: AddWorkspaceMemberRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/workspaces/{id}/members';
+};
+
+export type AddWorkspaceMemberErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type AddWorkspaceMemberError = AddWorkspaceMemberErrors[keyof AddWorkspaceMemberErrors];
+
+export type AddWorkspaceMemberResponses = {
+    201: WorkspaceMemberResponseDto;
+};
+
+export type AddWorkspaceMemberResponse = AddWorkspaceMemberResponses[keyof AddWorkspaceMemberResponses];
+
+export type RemoveWorkspaceMemberData = {
+    body?: never;
+    path: {
+        id: string;
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/workspaces/{id}/members/{userId}';
+};
+
+export type RemoveWorkspaceMemberErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * ORG_003 / ORG_004 — The caller is not a member, or their org role does not allow managing workspaces
+     *
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * ORG_012 / ORG_001 / ORG_005 — The workspace, its organization, or the member does not exist
+     */
+    404: ProblemDetailsDto;
+    /**
+     * ORG_013 / ORG_014 — A workspace with that name exists, or a workspace limit was reached
+     */
+    409: ProblemDetailsDto;
+    /**
+     * ORG_016 — The organization service failed to handle the request
+     */
+    502: ProblemDetailsDto;
+};
+
+export type RemoveWorkspaceMemberError = RemoveWorkspaceMemberErrors[keyof RemoveWorkspaceMemberErrors];
+
+export type RemoveWorkspaceMemberResponses = {
+    204: void;
+};
+
+export type RemoveWorkspaceMemberResponse = RemoveWorkspaceMemberResponses[keyof RemoveWorkspaceMemberResponses];
+
+export type FindInstallationsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/installations';
 };
 
-export type ListInstallationsErrors = {
+export type FindInstallationsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3658,13 +4559,13 @@ export type ListInstallationsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListInstallationsError = ListInstallationsErrors[keyof ListInstallationsErrors];
+export type FindInstallationsError = FindInstallationsErrors[keyof FindInstallationsErrors];
 
-export type ListInstallationsResponses = {
+export type FindInstallationsResponses = {
     200: Array<InstallationResponseDto>;
 };
 
-export type ListInstallationsResponse = ListInstallationsResponses[keyof ListInstallationsResponses];
+export type FindInstallationsResponse = FindInstallationsResponses[keyof FindInstallationsResponses];
 
 export type ConnectInstallationData = {
     body: ConnectInstallationRequest;
@@ -3675,7 +4576,7 @@ export type ConnectInstallationData = {
 
 export type ConnectInstallationErrors = {
     /**
-     * GITHUB_005 / GITHUB_006 — The authorization code was expired or already used, or no organization is active
+     * GITHUB_005 / GITHUB_006 / GITHUB_011 — The install state was missing, expired, used or someone else’s; the authorization code was expired or already used; or no organization is active
      */
     400: ProblemDetailsDto;
     /**
@@ -3703,6 +4604,40 @@ export type ConnectInstallationResponses = {
 };
 
 export type ConnectInstallationResponse = ConnectInstallationResponses[keyof ConnectInstallationResponses];
+
+export type StartInstallationData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/installations/install-state';
+};
+
+export type StartInstallationErrors = {
+    /**
+     * GITHUB_006 — No organization is active
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type StartInstallationError = StartInstallationErrors[keyof StartInstallationErrors];
+
+export type StartInstallationResponses = {
+    201: InstallStartResponseDto;
+};
+
+export type StartInstallationResponse = StartInstallationResponses[keyof StartInstallationResponses];
 
 export type ListInstallationRepositoriesData = {
     body?: never;
@@ -3828,14 +4763,19 @@ export type DisconnectInstallationResponses = {
 
 export type DisconnectInstallationResponse = DisconnectInstallationResponses[keyof DisconnectInstallationResponses];
 
-export type List6Data = {
+export type FindHostsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Add the hosts that were removed — for naming the host of a session that outlived it.
+         */
+        include?: 'unpaired';
+    };
     url: '/api/v1/hosts';
 };
 
-export type List6Errors = {
+export type FindHostsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3846,22 +4786,22 @@ export type List6Errors = {
     403: ProblemDetailsDto;
 };
 
-export type List6Error = List6Errors[keyof List6Errors];
+export type FindHostsError = FindHostsErrors[keyof FindHostsErrors];
 
-export type List6Responses = {
+export type FindHostsResponses = {
     200: Array<HostResponseDto>;
 };
 
-export type List6Response = List6Responses[keyof List6Responses];
+export type FindHostsResponse = FindHostsResponses[keyof FindHostsResponses];
 
-export type List7Data = {
+export type FindPairingTokensData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/hosts/pairing';
 };
 
-export type List7Errors = {
+export type FindPairingTokensErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3872,22 +4812,22 @@ export type List7Errors = {
     403: ProblemDetailsDto;
 };
 
-export type List7Error = List7Errors[keyof List7Errors];
+export type FindPairingTokensError = FindPairingTokensErrors[keyof FindPairingTokensErrors];
 
-export type List7Responses = {
+export type FindPairingTokensResponses = {
     200: Array<PairingTokenResponseDto>;
 };
 
-export type List7Response = List7Responses[keyof List7Responses];
+export type FindPairingTokensResponse = FindPairingTokensResponses[keyof FindPairingTokensResponses];
 
-export type MintData = {
+export type MintPairingTokenData = {
     body: MintPairingTokenRequest;
     path?: never;
     query?: never;
     url: '/api/v1/hosts/pairing';
 };
 
-export type MintErrors = {
+export type MintPairingTokenErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3910,15 +4850,15 @@ export type MintErrors = {
     503: ProblemDetailsDto;
 };
 
-export type MintError = MintErrors[keyof MintErrors];
+export type MintPairingTokenError = MintPairingTokenErrors[keyof MintPairingTokenErrors];
 
-export type MintResponses = {
+export type MintPairingTokenResponses = {
     201: MintedPairingTokenResponseDto;
 };
 
-export type MintResponse = MintResponses[keyof MintResponses];
+export type MintPairingTokenResponse = MintPairingTokenResponses[keyof MintPairingTokenResponses];
 
-export type Revoke3Data = {
+export type RevokePairingTokenData = {
     body?: never;
     path: {
         id: string;
@@ -3927,7 +4867,7 @@ export type Revoke3Data = {
     url: '/api/v1/hosts/pairing/{id}';
 };
 
-export type Revoke3Errors = {
+export type RevokePairingTokenErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3942,25 +4882,57 @@ export type Revoke3Errors = {
     404: ProblemDetailsDto;
 };
 
-export type Revoke3Error = Revoke3Errors[keyof Revoke3Errors];
+export type RevokePairingTokenError = RevokePairingTokenErrors[keyof RevokePairingTokenErrors];
 
-export type Revoke3Responses = {
+export type RevokePairingTokenResponses = {
     /**
      * Pairing token revoked
      */
     204: void;
 };
 
-export type Revoke3Response = Revoke3Responses[keyof Revoke3Responses];
+export type RevokePairingTokenResponse = RevokePairingTokenResponses[keyof RevokePairingTokenResponses];
 
-export type RegisterData = {
+export type FindPairingTokenData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/pairing/{id}';
+};
+
+export type FindPairingTokenErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_002 — Pairing token not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindPairingTokenError = FindPairingTokenErrors[keyof FindPairingTokenErrors];
+
+export type FindPairingTokenResponses = {
+    200: PairingTokenStatusResponseDto;
+};
+
+export type FindPairingTokenResponse = FindPairingTokenResponses[keyof FindPairingTokenResponses];
+
+export type RegisterHostData = {
     body: RegisterHostRequest;
     path?: never;
     query?: never;
     url: '/api/v1/hosts/register';
 };
 
-export type RegisterErrors = {
+export type RegisterHostErrors = {
     /**
      * HOSTS_003 — The registration token was rejected — used, expired, revoked or unknown
      */
@@ -3975,38 +4947,38 @@ export type RegisterErrors = {
     503: ProblemDetailsDto;
 };
 
-export type RegisterError = RegisterErrors[keyof RegisterErrors];
+export type RegisterHostError = RegisterHostErrors[keyof RegisterHostErrors];
 
-export type RegisterResponses = {
+export type RegisterHostResponses = {
     201: HostRegistrationResponseDto;
 };
 
-export type RegisterResponse = RegisterResponses[keyof RegisterResponses];
+export type RegisterHostResponse = RegisterHostResponses[keyof RegisterHostResponses];
 
-export type UninstallData = {
+export type UninstallHostData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/hosts/self';
 };
 
-export type UninstallErrors = {
+export type UninstallHostErrors = {
     /**
      * HOSTS_005 — No valid host assertion was presented
      */
     401: ProblemDetailsDto;
 };
 
-export type UninstallError = UninstallErrors[keyof UninstallErrors];
+export type UninstallHostError = UninstallHostErrors[keyof UninstallHostErrors];
 
-export type UninstallResponses = {
+export type UninstallHostResponses = {
     /**
      * The calling host is unpaired
      */
     204: void;
 };
 
-export type UninstallResponse = UninstallResponses[keyof UninstallResponses];
+export type UninstallHostResponse = UninstallHostResponses[keyof UninstallHostResponses];
 
 export type CollectSessionImageData = {
     body?: never;
@@ -4032,12 +5004,12 @@ export type CollectSessionImageError = CollectSessionImageErrors[keyof CollectSe
 
 export type CollectSessionImageResponses = {
     /**
-     * The image’s bytes
+     * The file’s bytes
      */
     200: unknown;
 };
 
-export type UnpairData = {
+export type UnpairHostData = {
     body?: never;
     path: {
         id: string;
@@ -4046,7 +5018,7 @@ export type UnpairData = {
     url: '/api/v1/hosts/{id}';
 };
 
-export type UnpairErrors = {
+export type UnpairHostErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4061,18 +5033,18 @@ export type UnpairErrors = {
     404: ProblemDetailsDto;
 };
 
-export type UnpairError = UnpairErrors[keyof UnpairErrors];
+export type UnpairHostError = UnpairHostErrors[keyof UnpairHostErrors];
 
-export type UnpairResponses = {
+export type UnpairHostResponses = {
     /**
      * Host unpaired
      */
     204: void;
 };
 
-export type UnpairResponse = UnpairResponses[keyof UnpairResponses];
+export type UnpairHostResponse = UnpairHostResponses[keyof UnpairHostResponses];
 
-export type Get2Data = {
+export type FindHostData = {
     body?: never;
     path: {
         id: string;
@@ -4081,7 +5053,7 @@ export type Get2Data = {
     url: '/api/v1/hosts/{id}';
 };
 
-export type Get2Errors = {
+export type FindHostErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4096,15 +5068,15 @@ export type Get2Errors = {
     404: ProblemDetailsDto;
 };
 
-export type Get2Error = Get2Errors[keyof Get2Errors];
+export type FindHostError = FindHostErrors[keyof FindHostErrors];
 
-export type Get2Responses = {
+export type FindHostResponses = {
     200: HostResponseDto;
 };
 
-export type Get2Response = Get2Responses[keyof Get2Responses];
+export type FindHostResponse = FindHostResponses[keyof FindHostResponses];
 
-export type RenameData = {
+export type RenameHostData = {
     body: RenameHostRequest;
     path: {
         id: string;
@@ -4113,7 +5085,7 @@ export type RenameData = {
     url: '/api/v1/hosts/{id}';
 };
 
-export type RenameErrors = {
+export type RenameHostErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4128,13 +5100,45 @@ export type RenameErrors = {
     404: ProblemDetailsDto;
 };
 
-export type RenameError = RenameErrors[keyof RenameErrors];
+export type RenameHostError = RenameHostErrors[keyof RenameHostErrors];
 
-export type RenameResponses = {
+export type RenameHostResponses = {
     200: HostResponseDto;
 };
 
-export type RenameResponse = RenameResponses[keyof RenameResponses];
+export type RenameHostResponse = RenameHostResponses[keyof RenameHostResponses];
+
+export type FindHostTimelineData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}/timeline';
+};
+
+export type FindHostTimelineErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindHostTimelineError = FindHostTimelineErrors[keyof FindHostTimelineErrors];
+
+export type FindHostTimelineResponses = {
+    200: HostTimelinePageResponseDto;
+};
+
+export type FindHostTimelineResponse = FindHostTimelineResponses[keyof FindHostTimelineResponses];
 
 export type ListUsersData = {
     body?: never;
@@ -4275,7 +5279,7 @@ export type StopImpersonatingResponses = {
 
 export type StopImpersonatingResponse = StopImpersonatingResponses[keyof StopImpersonatingResponses];
 
-export type RevokeSession2Data = {
+export type RevokeUserSessionData = {
     body: RevokeSessionRequest;
     path: {
         id: string;
@@ -4284,7 +5288,7 @@ export type RevokeSession2Data = {
     url: '/api/v1/admin/users/{id}/sessions/revoke';
 };
 
-export type RevokeSession2Errors = {
+export type RevokeUserSessionErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -4313,13 +5317,13 @@ export type RevokeSession2Errors = {
     502: ProblemDetailsDto;
 };
 
-export type RevokeSession2Error = RevokeSession2Errors[keyof RevokeSession2Errors];
+export type RevokeUserSessionError = RevokeUserSessionErrors[keyof RevokeUserSessionErrors];
 
-export type RevokeSession2Responses = {
+export type RevokeUserSessionResponses = {
     200: AdminSuccessResponseDto;
 };
 
-export type RevokeSession2Response = RevokeSession2Responses[keyof RevokeSession2Responses];
+export type RevokeUserSessionResponse = RevokeUserSessionResponses[keyof RevokeUserSessionResponses];
 
 export type RemoveUserData = {
     body?: never;
@@ -4413,7 +5417,7 @@ export type GetUserResponses = {
 
 export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
 
-export type UpdateUserData = {
+export type AdminUpdateUserData = {
     body: AdminUpdateUserRequest;
     path: {
         id: string;
@@ -4422,7 +5426,7 @@ export type UpdateUserData = {
     url: '/api/v1/admin/users/{id}';
 };
 
-export type UpdateUserErrors = {
+export type AdminUpdateUserErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -4451,15 +5455,15 @@ export type UpdateUserErrors = {
     502: ProblemDetailsDto;
 };
 
-export type UpdateUserError = UpdateUserErrors[keyof UpdateUserErrors];
+export type AdminUpdateUserError = AdminUpdateUserErrors[keyof AdminUpdateUserErrors];
 
-export type UpdateUserResponses = {
+export type AdminUpdateUserResponses = {
     200: AdminUserResponseDto;
 };
 
-export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
+export type AdminUpdateUserResponse = AdminUpdateUserResponses[keyof AdminUpdateUserResponses];
 
-export type SetRoleData = {
+export type SetUserRoleData = {
     body: SetUserRoleRequest;
     path: {
         id: string;
@@ -4468,7 +5472,7 @@ export type SetRoleData = {
     url: '/api/v1/admin/users/{id}/role';
 };
 
-export type SetRoleErrors = {
+export type SetUserRoleErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -4497,15 +5501,15 @@ export type SetRoleErrors = {
     502: ProblemDetailsDto;
 };
 
-export type SetRoleError = SetRoleErrors[keyof SetRoleErrors];
+export type SetUserRoleError = SetUserRoleErrors[keyof SetUserRoleErrors];
 
-export type SetRoleResponses = {
+export type SetUserRoleResponses = {
     200: AdminUserResponseDto;
 };
 
-export type SetRoleResponse = SetRoleResponses[keyof SetRoleResponses];
+export type SetUserRoleResponse = SetUserRoleResponses[keyof SetUserRoleResponses];
 
-export type BanData = {
+export type BanUserData = {
     body: BanUserRequest;
     path: {
         id: string;
@@ -4514,7 +5518,7 @@ export type BanData = {
     url: '/api/v1/admin/users/{id}/ban';
 };
 
-export type BanErrors = {
+export type BanUserErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -4543,15 +5547,15 @@ export type BanErrors = {
     502: ProblemDetailsDto;
 };
 
-export type BanError = BanErrors[keyof BanErrors];
+export type BanUserError = BanUserErrors[keyof BanUserErrors];
 
-export type BanResponses = {
+export type BanUserResponses = {
     200: AdminUserResponseDto;
 };
 
-export type BanResponse = BanResponses[keyof BanResponses];
+export type BanUserResponse = BanUserResponses[keyof BanUserResponses];
 
-export type UnbanData = {
+export type UnbanUserData = {
     body?: never;
     path: {
         id: string;
@@ -4560,7 +5564,7 @@ export type UnbanData = {
     url: '/api/v1/admin/users/{id}/unban';
 };
 
-export type UnbanErrors = {
+export type UnbanUserErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -4589,15 +5593,15 @@ export type UnbanErrors = {
     502: ProblemDetailsDto;
 };
 
-export type UnbanError = UnbanErrors[keyof UnbanErrors];
+export type UnbanUserError = UnbanUserErrors[keyof UnbanUserErrors];
 
-export type UnbanResponses = {
+export type UnbanUserResponses = {
     200: AdminUserResponseDto;
 };
 
-export type UnbanResponse = UnbanResponses[keyof UnbanResponses];
+export type UnbanUserResponse = UnbanUserResponses[keyof UnbanUserResponses];
 
-export type ImpersonateData = {
+export type ImpersonateUserData = {
     body?: never;
     path: {
         id: string;
@@ -4606,7 +5610,7 @@ export type ImpersonateData = {
     url: '/api/v1/admin/users/{id}/impersonate';
 };
 
-export type ImpersonateErrors = {
+export type ImpersonateUserErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -4635,13 +5639,13 @@ export type ImpersonateErrors = {
     502: ProblemDetailsDto;
 };
 
-export type ImpersonateError = ImpersonateErrors[keyof ImpersonateErrors];
+export type ImpersonateUserError = ImpersonateUserErrors[keyof ImpersonateUserErrors];
 
-export type ImpersonateResponses = {
+export type ImpersonateUserResponses = {
     200: AdminUserResponseDto;
 };
 
-export type ImpersonateResponse = ImpersonateResponses[keyof ImpersonateResponses];
+export type ImpersonateUserResponse = ImpersonateUserResponses[keyof ImpersonateUserResponses];
 
 export type ListUserSessionsData = {
     body?: never;
@@ -4689,7 +5693,7 @@ export type ListUserSessionsResponses = {
 
 export type ListUserSessionsResponse = ListUserSessionsResponses[keyof ListUserSessionsResponses];
 
-export type RevokeSessionsData = {
+export type RevokeUserSessionsData = {
     body?: never;
     path: {
         id: string;
@@ -4698,7 +5702,7 @@ export type RevokeSessionsData = {
     url: '/api/v1/admin/users/{id}/revoke-sessions';
 };
 
-export type RevokeSessionsErrors = {
+export type RevokeUserSessionsErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -4727,15 +5731,15 @@ export type RevokeSessionsErrors = {
     502: ProblemDetailsDto;
 };
 
-export type RevokeSessionsError = RevokeSessionsErrors[keyof RevokeSessionsErrors];
+export type RevokeUserSessionsError = RevokeUserSessionsErrors[keyof RevokeUserSessionsErrors];
 
-export type RevokeSessionsResponses = {
+export type RevokeUserSessionsResponses = {
     200: AdminSuccessResponseDto;
 };
 
-export type RevokeSessionsResponse = RevokeSessionsResponses[keyof RevokeSessionsResponses];
+export type RevokeUserSessionsResponse = RevokeUserSessionsResponses[keyof RevokeUserSessionsResponses];
 
-export type SetPasswordData = {
+export type SetUserPasswordData = {
     body: SetUserPasswordRequest;
     path: {
         id: string;
@@ -4744,7 +5748,7 @@ export type SetPasswordData = {
     url: '/api/v1/admin/users/{id}/set-password';
 };
 
-export type SetPasswordErrors = {
+export type SetUserPasswordErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -4773,13 +5777,13 @@ export type SetPasswordErrors = {
     502: ProblemDetailsDto;
 };
 
-export type SetPasswordError = SetPasswordErrors[keyof SetPasswordErrors];
+export type SetUserPasswordError = SetUserPasswordErrors[keyof SetUserPasswordErrors];
 
-export type SetPasswordResponses = {
+export type SetUserPasswordResponses = {
     200: AdminSuccessResponseDto;
 };
 
-export type SetPasswordResponse = SetPasswordResponses[keyof SetPasswordResponses];
+export type SetUserPasswordResponse = SetUserPasswordResponses[keyof SetUserPasswordResponses];
 
 export type GetClientFeatureFlagsData = {
     body?: never;
@@ -5129,7 +6133,7 @@ export type UpdateFeatureFlagResponses = {
 
 export type UpdateFeatureFlagResponse = UpdateFeatureFlagResponses[keyof UpdateFeatureFlagResponses];
 
-export type ListProjectsData = {
+export type FindProjectsData = {
     body?: never;
     path?: never;
     query?: {
@@ -5141,7 +6145,7 @@ export type ListProjectsData = {
     url: '/api/v1/projects';
 };
 
-export type ListProjectsErrors = {
+export type FindProjectsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -5152,13 +6156,13 @@ export type ListProjectsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListProjectsError = ListProjectsErrors[keyof ListProjectsErrors];
+export type FindProjectsError = FindProjectsErrors[keyof FindProjectsErrors];
 
-export type ListProjectsResponses = {
+export type FindProjectsResponses = {
     200: Array<ProjectResponseDto>;
 };
 
-export type ListProjectsResponse = ListProjectsResponses[keyof ListProjectsResponses];
+export type FindProjectsResponse = FindProjectsResponses[keyof FindProjectsResponses];
 
 export type CreateProjectData = {
     body: CreateProjectRequest;
@@ -5236,7 +6240,7 @@ export type ArchiveProjectResponses = {
 
 export type ArchiveProjectResponse = ArchiveProjectResponses[keyof ArchiveProjectResponses];
 
-export type GetProjectData = {
+export type FindProjectData = {
     body?: never;
     path: {
         id: string;
@@ -5245,7 +6249,7 @@ export type GetProjectData = {
     url: '/api/v1/projects/{id}';
 };
 
-export type GetProjectErrors = {
+export type FindProjectErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -5260,13 +6264,13 @@ export type GetProjectErrors = {
     404: ProblemDetailsDto;
 };
 
-export type GetProjectError = GetProjectErrors[keyof GetProjectErrors];
+export type FindProjectError = FindProjectErrors[keyof FindProjectErrors];
 
-export type GetProjectResponses = {
+export type FindProjectResponses = {
     200: ProjectResponseDto;
 };
 
-export type GetProjectResponse = GetProjectResponses[keyof GetProjectResponses];
+export type FindProjectResponse = FindProjectResponses[keyof FindProjectResponses];
 
 export type UpdateProjectData = {
     body: UpdateProjectRequest;
@@ -5308,7 +6312,7 @@ export type UpdateProjectResponses = {
 
 export type UpdateProjectResponse = UpdateProjectResponses[keyof UpdateProjectResponses];
 
-export type ListSessionsData = {
+export type FindSessionsData = {
     body?: never;
     path?: never;
     query?: {
@@ -5338,14 +6342,18 @@ export type ListSessionsData = {
          */
         limit?: number;
         /**
-         * Page number (default: 1)
+         * Opaque: the previous page’s `meta.nextCursor`, for the same `sort`. Walks without counting, and a session is never returned twice in one walk.
+         */
+        cursor?: string;
+        /**
+         * Page number (default: 1). Ignored when `cursor` is sent.
          */
         page?: number;
     };
     url: '/api/v1/sessions';
 };
 
-export type ListSessionsErrors = {
+export type FindSessionsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -5356,13 +6364,13 @@ export type ListSessionsErrors = {
     403: ProblemDetailsDto;
 };
 
-export type ListSessionsError = ListSessionsErrors[keyof ListSessionsErrors];
+export type FindSessionsError = FindSessionsErrors[keyof FindSessionsErrors];
 
-export type ListSessionsResponses = {
+export type FindSessionsResponses = {
     200: PaginatedSessionsResponseDto;
 };
 
-export type ListSessionsResponse = ListSessionsResponses[keyof ListSessionsResponses];
+export type FindSessionsResponse = FindSessionsResponses[keyof FindSessionsResponses];
 
 export type CreateSessionData = {
     body: CreateSessionRequest;
@@ -5393,15 +6401,25 @@ export type CreateSessionErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_017 — The host’s runner takes no images
+     *
      * SESSIONS_011 — The host's runner is older than the agent picked
      *
      * SESSIONS_006 — That project is archived
      */
     409: ProblemDetailsDto;
     /**
+     * SESSIONS_019 — Attachment gone
+     */
+    410: ProblemDetailsDto;
+    /**
      * RATE_001 — Rate limit reached
      */
     429: ProblemDetailsDto;
+    /**
+     * SESSIONS_016 — The host is offline
+     */
+    503: ProblemDetailsDto;
 };
 
 export type CreateSessionError = CreateSessionErrors[keyof CreateSessionErrors];
@@ -5412,7 +6430,53 @@ export type CreateSessionResponses = {
 
 export type CreateSessionResponse = CreateSessionResponses[keyof CreateSessionResponses];
 
-export type ListSessionEventsData = {
+export type UploadSessionAttachmentData = {
+    body: {
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/attachments';
+};
+
+export type UploadSessionAttachmentErrors = {
+    /**
+     * SESSIONS_015 — No file attached
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_012 — File too large
+     */
+    413: ProblemDetailsDto;
+    /**
+     * SESSIONS_013 — Not a type a session takes
+     */
+    415: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     *
+     * SESSIONS_020 — Too many files waiting
+     */
+    429: ProblemDetailsDto;
+};
+
+export type UploadSessionAttachmentError = UploadSessionAttachmentErrors[keyof UploadSessionAttachmentErrors];
+
+export type UploadSessionAttachmentResponses = {
+    201: SessionAttachmentResponseDto;
+};
+
+export type UploadSessionAttachmentResponse = UploadSessionAttachmentResponses[keyof UploadSessionAttachmentResponses];
+
+export type FindSessionEventsData = {
     body?: never;
     path: {
         id: string;
@@ -5430,7 +6494,7 @@ export type ListSessionEventsData = {
     url: '/api/v1/sessions/{id}/events';
 };
 
-export type ListSessionEventsErrors = {
+export type FindSessionEventsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -5445,13 +6509,13 @@ export type ListSessionEventsErrors = {
     404: ProblemDetailsDto;
 };
 
-export type ListSessionEventsError = ListSessionEventsErrors[keyof ListSessionEventsErrors];
+export type FindSessionEventsError = FindSessionEventsErrors[keyof FindSessionEventsErrors];
 
-export type ListSessionEventsResponses = {
+export type FindSessionEventsResponses = {
     200: SessionEventPageResponseDto;
 };
 
-export type ListSessionEventsResponse = ListSessionEventsResponses[keyof ListSessionEventsResponses];
+export type FindSessionEventsResponse = FindSessionEventsResponses[keyof FindSessionEventsResponses];
 
 export type IssueAttachTicketData = {
     body: IssueAttachTicketRequest;
@@ -5472,6 +6536,8 @@ export type IssueAttachTicketErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * HOSTS_001 — Host not found
+     *
      * SESSIONS_001 — Session not found
      */
     404: ProblemDetailsDto;
@@ -5514,7 +6580,7 @@ export type PasteSessionImageData = {
 
 export type PasteSessionImageErrors = {
     /**
-     * SESSIONS_015 — No image attached
+     * SESSIONS_015 — No file attached
      */
     400: ProblemDetailsDto;
     /**
@@ -5530,7 +6596,7 @@ export type PasteSessionImageErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_017 — The host’s runner cannot take images
+     * SESSIONS_017 — Runner cannot take it
      *
      * SESSIONS_014 — That session is stopped
      *
@@ -5538,11 +6604,11 @@ export type PasteSessionImageErrors = {
      */
     409: ProblemDetailsDto;
     /**
-     * SESSIONS_012 — Image too large
+     * SESSIONS_012 — File too large
      */
     413: ProblemDetailsDto;
     /**
-     * SESSIONS_013 — Not an image
+     * SESSIONS_013 — Not a file it takes
      */
     415: ProblemDetailsDto;
     /**
@@ -5559,7 +6625,7 @@ export type PasteSessionImageError = PasteSessionImageErrors[keyof PasteSessionI
 
 export type PasteSessionImageResponses = {
     /**
-     * The host has been told to pull the image
+     * The host has been told to pull the file
      */
     202: unknown;
 };
@@ -5600,6 +6666,42 @@ export type StopSessionResponses = {
 
 export type StopSessionResponse = StopSessionResponses[keyof StopSessionResponses];
 
+export type PrepareSessionData = {
+    body: PrepareSessionRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/prepare';
+};
+
+export type PrepareSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_010 — That repository is not one this GitHub installation covers
+     *
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type PrepareSessionError = PrepareSessionErrors[keyof PrepareSessionErrors];
+
+export type PrepareSessionResponses = {
+    200: PrepareSessionResponseDto;
+};
+
+export type PrepareSessionResponse = PrepareSessionResponses[keyof PrepareSessionResponses];
+
 export type RestartSessionData = {
     body?: never;
     path: {
@@ -5619,6 +6721,8 @@ export type RestartSessionErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * HOSTS_001 — Host not found
+     *
      * SESSIONS_001 — Session not found
      */
     404: ProblemDetailsDto;
@@ -5636,7 +6740,7 @@ export type RestartSessionResponses = {
 
 export type RestartSessionResponse = RestartSessionResponses[keyof RestartSessionResponses];
 
-export type AddSessionCheckoutData = {
+export type AddCheckoutData = {
     body: AddCheckoutRequest;
     path: {
         id: string;
@@ -5645,7 +6749,7 @@ export type AddSessionCheckoutData = {
     url: '/api/v1/sessions/{id}/checkouts';
 };
 
-export type AddSessionCheckoutErrors = {
+export type AddCheckoutErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -5670,15 +6774,15 @@ export type AddSessionCheckoutErrors = {
     409: ProblemDetailsDto;
 };
 
-export type AddSessionCheckoutError = AddSessionCheckoutErrors[keyof AddSessionCheckoutErrors];
+export type AddCheckoutError = AddCheckoutErrors[keyof AddCheckoutErrors];
 
-export type AddSessionCheckoutResponses = {
+export type AddCheckoutResponses = {
     201: SessionResponseDto;
 };
 
-export type AddSessionCheckoutResponse = AddSessionCheckoutResponses[keyof AddSessionCheckoutResponses];
+export type AddCheckoutResponse = AddCheckoutResponses[keyof AddCheckoutResponses];
 
-export type RemoveSessionCheckoutData = {
+export type RemoveCheckoutData = {
     body?: never;
     path: {
         id: string;
@@ -5688,7 +6792,7 @@ export type RemoveSessionCheckoutData = {
     url: '/api/v1/sessions/{id}/checkouts/{checkoutId}';
 };
 
-export type RemoveSessionCheckoutErrors = {
+export type RemoveCheckoutErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -5705,13 +6809,13 @@ export type RemoveSessionCheckoutErrors = {
     404: ProblemDetailsDto;
 };
 
-export type RemoveSessionCheckoutError = RemoveSessionCheckoutErrors[keyof RemoveSessionCheckoutErrors];
+export type RemoveCheckoutError = RemoveCheckoutErrors[keyof RemoveCheckoutErrors];
 
-export type RemoveSessionCheckoutResponses = {
+export type RemoveCheckoutResponses = {
     200: SessionResponseDto;
 };
 
-export type RemoveSessionCheckoutResponse = RemoveSessionCheckoutResponses[keyof RemoveSessionCheckoutResponses];
+export type RemoveCheckoutResponse = RemoveCheckoutResponses[keyof RemoveCheckoutResponses];
 
 export type CloseSessionData = {
     body?: never;
@@ -5750,7 +6854,7 @@ export type CloseSessionResponses = {
 
 export type CloseSessionResponse = CloseSessionResponses[keyof CloseSessionResponses];
 
-export type GetSessionData = {
+export type FindSessionData = {
     body?: never;
     path: {
         id: string;
@@ -5759,7 +6863,7 @@ export type GetSessionData = {
     url: '/api/v1/sessions/{id}';
 };
 
-export type GetSessionErrors = {
+export type FindSessionErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -5774,13 +6878,13 @@ export type GetSessionErrors = {
     404: ProblemDetailsDto;
 };
 
-export type GetSessionError = GetSessionErrors[keyof GetSessionErrors];
+export type FindSessionError = FindSessionErrors[keyof FindSessionErrors];
 
-export type GetSessionResponses = {
+export type FindSessionResponses = {
     200: SessionResponseDto;
 };
 
-export type GetSessionResponse = GetSessionResponses[keyof GetSessionResponses];
+export type FindSessionResponse = FindSessionResponses[keyof FindSessionResponses];
 
 export type RenameSessionData = {
     body: RenameSessionRequest;
@@ -5855,6 +6959,1287 @@ export type MoveSessionResponses = {
 };
 
 export type MoveSessionResponse = MoveSessionResponses[keyof MoveSessionResponses];
+
+export type FindAutomationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * One project’s automations
+         */
+        projectId?: string;
+    };
+    url: '/api/v1/automations';
+};
+
+export type FindAutomationsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindAutomationsError = FindAutomationsErrors[keyof FindAutomationsErrors];
+
+export type FindAutomationsResponses = {
+    200: Array<AutomationResponseDto>;
+};
+
+export type FindAutomationsResponse = FindAutomationsResponses[keyof FindAutomationsResponses];
+
+export type CreateAutomationData = {
+    body: CreateAutomationRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automations';
+};
+
+export type CreateAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_006 — A trigger would never fire
+     *
+     * AUTOMATIONS_005 — That agent cannot run an automation
+     *
+     * AUTOMATIONS_007 — That project cannot hold automations
+     */
+    422: ProblemDetailsDto;
+};
+
+export type CreateAutomationError = CreateAutomationErrors[keyof CreateAutomationErrors];
+
+export type CreateAutomationResponses = {
+    201: AutomationResponseDto;
+};
+
+export type CreateAutomationResponse = CreateAutomationResponses[keyof CreateAutomationResponses];
+
+export type PreviewTriggerData = {
+    body: PreviewTriggerRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automations/trigger-preview';
+};
+
+export type PreviewTriggerErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type PreviewTriggerError = PreviewTriggerErrors[keyof PreviewTriggerErrors];
+
+export type PreviewTriggerResponses = {
+    200: TriggerPreviewResponseDto;
+};
+
+export type PreviewTriggerResponse = PreviewTriggerResponses[keyof PreviewTriggerResponses];
+
+export type DeleteAutomationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{id}';
+};
+
+export type DeleteAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Automation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteAutomationError = DeleteAutomationErrors[keyof DeleteAutomationErrors];
+
+export type DeleteAutomationResponses = {
+    204: void;
+};
+
+export type DeleteAutomationResponse = DeleteAutomationResponses[keyof DeleteAutomationResponses];
+
+export type FindAutomationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{id}';
+};
+
+export type FindAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Automation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindAutomationError = FindAutomationErrors[keyof FindAutomationErrors];
+
+export type FindAutomationResponses = {
+    200: AutomationResponseDto;
+};
+
+export type FindAutomationResponse = FindAutomationResponses[keyof FindAutomationResponses];
+
+export type UpdateAutomationData = {
+    body: UpdateAutomationRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{id}';
+};
+
+export type UpdateAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Automation not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_003 — The automation was changed by someone else
+     */
+    409: ProblemDetailsDto;
+};
+
+export type UpdateAutomationError = UpdateAutomationErrors[keyof UpdateAutomationErrors];
+
+export type UpdateAutomationResponses = {
+    200: AutomationResponseDto;
+};
+
+export type UpdateAutomationResponse = UpdateAutomationResponses[keyof UpdateAutomationResponses];
+
+export type PauseAutomationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{id}/pause';
+};
+
+export type PauseAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Automation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type PauseAutomationError = PauseAutomationErrors[keyof PauseAutomationErrors];
+
+export type PauseAutomationResponses = {
+    200: AutomationResponseDto;
+};
+
+export type PauseAutomationResponse = PauseAutomationResponses[keyof PauseAutomationResponses];
+
+export type ResumeAutomationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{id}/resume';
+};
+
+export type ResumeAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Automation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type ResumeAutomationError = ResumeAutomationErrors[keyof ResumeAutomationErrors];
+
+export type ResumeAutomationResponses = {
+    200: AutomationResponseDto;
+};
+
+export type ResumeAutomationResponse = ResumeAutomationResponses[keyof ResumeAutomationResponses];
+
+export type DuplicateAutomationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{id}/duplicate';
+};
+
+export type DuplicateAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Automation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DuplicateAutomationError = DuplicateAutomationErrors[keyof DuplicateAutomationErrors];
+
+export type DuplicateAutomationResponses = {
+    201: AutomationResponseDto;
+};
+
+export type DuplicateAutomationResponse = DuplicateAutomationResponses[keyof DuplicateAutomationResponses];
+
+export type RunAutomationData = {
+    body?: never;
+    headers?: {
+        /**
+         * A retried Run now is the same run.
+         */
+        'Idempotency-Key'?: string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automations/{id}/run';
+};
+
+export type RunAutomationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Automation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RunAutomationError = RunAutomationErrors[keyof RunAutomationErrors];
+
+export type RunAutomationResponses = {
+    201: AutomationRunResponseDto;
+};
+
+export type RunAutomationResponse = RunAutomationResponses[keyof RunAutomationResponses];
+
+export type FindAutomationRunsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Default 10
+         */
+        limit?: number;
+        /**
+         * From 1
+         */
+        page?: number;
+        /**
+         * Default `30d`
+         */
+        window?: '24h' | '7d' | '30d';
+        /**
+         * Comma-separated, any of queued, running, completed, failed, cancelled, skipped, expired. Default: every status but skipped and expired
+         */
+        status?: string;
+        /**
+         * One project’s runs
+         */
+        projectId?: string;
+        /**
+         * One automation’s runs
+         */
+        automationId?: string;
+    };
+    url: '/api/v1/automation-runs';
+};
+
+export type FindAutomationRunsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindAutomationRunsError = FindAutomationRunsErrors[keyof FindAutomationRunsErrors];
+
+export type FindAutomationRunsResponses = {
+    200: AutomationRunPageResponseDto;
+};
+
+export type FindAutomationRunsResponse = FindAutomationRunsResponses[keyof FindAutomationRunsResponses];
+
+export type FindRunHistoryData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * The viewer’s IANA zone, whose midnights split the days. Default `UTC`
+         */
+        timezone?: string;
+        /**
+         * Default 30
+         */
+        days?: number;
+        /**
+         * One project’s runs
+         */
+        projectId?: string;
+        /**
+         * One automation’s runs
+         */
+        automationId?: string;
+    };
+    url: '/api/v1/automation-runs/history';
+};
+
+export type FindRunHistoryErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindRunHistoryError = FindRunHistoryErrors[keyof FindRunHistoryErrors];
+
+export type FindRunHistoryResponses = {
+    200: RunHistoryResponseDto;
+};
+
+export type FindRunHistoryResponse = FindRunHistoryResponses[keyof FindRunHistoryResponses];
+
+export type FindAutomationRunData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/automation-runs/{id}';
+};
+
+export type FindAutomationRunErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_008 — Run not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindAutomationRunError = FindAutomationRunErrors[keyof FindAutomationRunErrors];
+
+export type FindAutomationRunResponses = {
+    200: AutomationRunResponseDto;
+};
+
+export type FindAutomationRunResponse = FindAutomationRunResponses[keyof FindAutomationRunResponses];
+
+export type FindAutomationSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automation-settings';
+};
+
+export type FindAutomationSettingsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindAutomationSettingsError = FindAutomationSettingsErrors[keyof FindAutomationSettingsErrors];
+
+export type FindAutomationSettingsResponses = {
+    200: AutomationSettingsResponseDto;
+};
+
+export type FindAutomationSettingsResponse = FindAutomationSettingsResponses[keyof FindAutomationSettingsResponses];
+
+export type UpdateAutomationSettingsData = {
+    body: UpdateAutomationSettingsRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/automation-settings';
+};
+
+export type UpdateAutomationSettingsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type UpdateAutomationSettingsError = UpdateAutomationSettingsErrors[keyof UpdateAutomationSettingsErrors];
+
+export type UpdateAutomationSettingsResponses = {
+    200: AutomationSettingsResponseDto;
+};
+
+export type UpdateAutomationSettingsResponse = UpdateAutomationSettingsResponses[keyof UpdateAutomationSettingsResponses];
+
+export type FindTasksData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Due on or before this day.
+         */
+        dueTo?: string;
+        /**
+         * Due on or after this day.
+         */
+        dueFrom?: string;
+        /**
+         * Only the tasks this session is on.
+         */
+        sessionId?: string;
+        /**
+         * Only this goal’s tasks.
+         */
+        goalId?: string;
+        /**
+         * Only this project’s tasks.
+         */
+        projectId?: string;
+    };
+    url: '/api/v1/tasks';
+};
+
+export type FindTasksErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindTasksError = FindTasksErrors[keyof FindTasksErrors];
+
+export type FindTasksResponses = {
+    200: Array<TaskResponseDto>;
+};
+
+export type FindTasksResponse = FindTasksResponses[keyof FindTasksResponses];
+
+export type CreateTaskData = {
+    body: CreateTaskRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/tasks';
+};
+
+export type CreateTaskErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_002 — Goal not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * TASKS_007 — Goal of another project
+     *
+     * TASKS_004 — Project archived or missing
+     */
+    409: ProblemDetailsDto;
+};
+
+export type CreateTaskError = CreateTaskErrors[keyof CreateTaskErrors];
+
+export type CreateTaskResponses = {
+    201: TaskResponseDto;
+};
+
+export type CreateTaskResponse = CreateTaskResponses[keyof CreateTaskResponses];
+
+export type DeleteTaskData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}';
+};
+
+export type DeleteTaskErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteTaskError = DeleteTaskErrors[keyof DeleteTaskErrors];
+
+export type DeleteTaskResponses = {
+    204: void;
+};
+
+export type DeleteTaskResponse = DeleteTaskResponses[keyof DeleteTaskResponses];
+
+export type FindTaskData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}';
+};
+
+export type FindTaskErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindTaskError = FindTaskErrors[keyof FindTaskErrors];
+
+export type FindTaskResponses = {
+    200: TaskResponseDto;
+};
+
+export type FindTaskResponse = FindTaskResponses[keyof FindTaskResponses];
+
+export type UpdateTaskData = {
+    body: UpdateTaskRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}';
+};
+
+export type UpdateTaskErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_002 — Goal not found
+     *
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * TASKS_007 — Goal of another project
+     *
+     * TASKS_004 — Project archived or missing
+     */
+    409: ProblemDetailsDto;
+};
+
+export type UpdateTaskError = UpdateTaskErrors[keyof UpdateTaskErrors];
+
+export type UpdateTaskResponses = {
+    200: TaskResponseDto;
+};
+
+export type UpdateTaskResponse = UpdateTaskResponses[keyof UpdateTaskResponses];
+
+export type MoveTaskData = {
+    body: MoveTaskRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}/move';
+};
+
+export type MoveTaskErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * TASKS_006 — Stale position
+     */
+    409: ProblemDetailsDto;
+};
+
+export type MoveTaskError = MoveTaskErrors[keyof MoveTaskErrors];
+
+export type MoveTaskResponses = {
+    200: TaskResponseDto;
+};
+
+export type MoveTaskResponse = MoveTaskResponses[keyof MoveTaskResponses];
+
+export type StartTaskSessionData = {
+    body: StartTaskSessionRequest;
+    headers?: {
+        /**
+         * A retry with the same key returns the session already started.
+         */
+        'Idempotency-Key'?: string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}/sessions';
+};
+
+export type StartTaskSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_006 — Project archived
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type StartTaskSessionError = StartTaskSessionErrors[keyof StartTaskSessionErrors];
+
+export type StartTaskSessionResponses = {
+    201: StartTaskSessionResponseDto;
+};
+
+export type StartTaskSessionResponse = StartTaskSessionResponses[keyof StartTaskSessionResponses];
+
+export type UnlinkTaskSessionData = {
+    body?: never;
+    path: {
+        id: string;
+        sessionId: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}/sessions/{sessionId}';
+};
+
+export type UnlinkTaskSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UnlinkTaskSessionError = UnlinkTaskSessionErrors[keyof UnlinkTaskSessionErrors];
+
+export type UnlinkTaskSessionResponses = {
+    200: TaskResponseDto;
+};
+
+export type UnlinkTaskSessionResponse = UnlinkTaskSessionResponses[keyof UnlinkTaskSessionResponses];
+
+export type LinkTaskSessionData = {
+    body: LinkTaskSessionRequest;
+    path: {
+        id: string;
+        sessionId: string;
+    };
+    query?: never;
+    url: '/api/v1/tasks/{id}/sessions/{sessionId}';
+};
+
+export type LinkTaskSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_005 — Session not found
+     *
+     * TASKS_001 — Task not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type LinkTaskSessionError = LinkTaskSessionErrors[keyof LinkTaskSessionErrors];
+
+export type LinkTaskSessionResponses = {
+    200: TaskResponseDto;
+};
+
+export type LinkTaskSessionResponse = LinkTaskSessionResponses[keyof LinkTaskSessionResponses];
+
+export type FindGoalsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Only this project’s goals.
+         */
+        projectId?: string;
+    };
+    url: '/api/v1/goals';
+};
+
+export type FindGoalsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindGoalsError = FindGoalsErrors[keyof FindGoalsErrors];
+
+export type FindGoalsResponses = {
+    200: Array<GoalResponseDto>;
+};
+
+export type FindGoalsResponse = FindGoalsResponses[keyof FindGoalsResponses];
+
+export type CreateGoalData = {
+    body: CreateGoalRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/goals';
+};
+
+export type CreateGoalErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_004 — Project archived or missing
+     */
+    409: ProblemDetailsDto;
+};
+
+export type CreateGoalError = CreateGoalErrors[keyof CreateGoalErrors];
+
+export type CreateGoalResponses = {
+    201: GoalResponseDto;
+};
+
+export type CreateGoalResponse = CreateGoalResponses[keyof CreateGoalResponses];
+
+export type DeleteGoalData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/goals/{id}';
+};
+
+export type DeleteGoalErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_002 — Goal not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteGoalError = DeleteGoalErrors[keyof DeleteGoalErrors];
+
+export type DeleteGoalResponses = {
+    204: void;
+};
+
+export type DeleteGoalResponse = DeleteGoalResponses[keyof DeleteGoalResponses];
+
+export type UpdateGoalData = {
+    body: UpdateGoalRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/goals/{id}';
+};
+
+export type UpdateGoalErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TASKS_002 — Goal not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * TASKS_004 — Project archived or missing
+     */
+    409: ProblemDetailsDto;
+};
+
+export type UpdateGoalError = UpdateGoalErrors[keyof UpdateGoalErrors];
+
+export type UpdateGoalResponses = {
+    200: GoalResponseDto;
+};
+
+export type UpdateGoalResponse = UpdateGoalResponses[keyof UpdateGoalResponses];
+
+export type FindCalendarEventsData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * The last day, included.
+         */
+        to: string;
+        /**
+         * The first day.
+         */
+        from: string;
+    };
+    url: '/api/v1/calendar/events';
+};
+
+export type FindCalendarEventsErrors = {
+    /**
+     * CALENDAR_003 — Range too wide
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindCalendarEventsError = FindCalendarEventsErrors[keyof FindCalendarEventsErrors];
+
+export type FindCalendarEventsResponses = {
+    200: Array<CalendarEventResponseDto>;
+};
+
+export type FindCalendarEventsResponse = FindCalendarEventsResponses[keyof FindCalendarEventsResponses];
+
+export type CreateCalendarEventData = {
+    body: CreateCalendarEventRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/calendar/events';
+};
+
+export type CreateCalendarEventErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type CreateCalendarEventError = CreateCalendarEventErrors[keyof CreateCalendarEventErrors];
+
+export type CreateCalendarEventResponses = {
+    201: CalendarEventResponseDto;
+};
+
+export type CreateCalendarEventResponse = CreateCalendarEventResponses[keyof CreateCalendarEventResponses];
+
+export type DeleteCalendarEventData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/calendar/events/{id}';
+};
+
+export type DeleteCalendarEventErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * CALENDAR_001 — Event not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteCalendarEventError = DeleteCalendarEventErrors[keyof DeleteCalendarEventErrors];
+
+export type DeleteCalendarEventResponses = {
+    204: void;
+};
+
+export type DeleteCalendarEventResponse = DeleteCalendarEventResponses[keyof DeleteCalendarEventResponses];
+
+export type UpdateCalendarEventData = {
+    body: UpdateCalendarEventRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/calendar/events/{id}';
+};
+
+export type UpdateCalendarEventErrors = {
+    /**
+     * CALENDAR_009 — Times do not fit the day
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * CALENDAR_001 — Event not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UpdateCalendarEventError = UpdateCalendarEventErrors[keyof UpdateCalendarEventErrors];
+
+export type UpdateCalendarEventResponses = {
+    200: CalendarEventResponseDto;
+};
+
+export type UpdateCalendarEventResponse = UpdateCalendarEventResponses[keyof UpdateCalendarEventResponses];
+
+export type DisconnectGoogleCalendarData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/calendar/google/connection';
+};
+
+export type DisconnectGoogleCalendarErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type DisconnectGoogleCalendarError = DisconnectGoogleCalendarErrors[keyof DisconnectGoogleCalendarErrors];
+
+export type DisconnectGoogleCalendarResponses = {
+    204: void;
+};
+
+export type DisconnectGoogleCalendarResponse = DisconnectGoogleCalendarResponses[keyof DisconnectGoogleCalendarResponses];
+
+export type FindGoogleCalendarConnectionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/calendar/google/connection';
+};
+
+export type FindGoogleCalendarConnectionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindGoogleCalendarConnectionError = FindGoogleCalendarConnectionErrors[keyof FindGoogleCalendarConnectionErrors];
+
+export type FindGoogleCalendarConnectionResponses = {
+    200: GoogleCalendarConnectionResponseDto;
+};
+
+export type FindGoogleCalendarConnectionResponse = FindGoogleCalendarConnectionResponses[keyof FindGoogleCalendarConnectionResponses];
+
+export type ConnectGoogleCalendarData = {
+    body: ConnectGoogleCalendarRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/calendar/google/connection';
+};
+
+export type ConnectGoogleCalendarErrors = {
+    /**
+     * CALENDAR_006 — Google refused
+     *
+     * CALENDAR_005 — State rejected
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * CALENDAR_004 — Not configured
+     */
+    503: ProblemDetailsDto;
+};
+
+export type ConnectGoogleCalendarError = ConnectGoogleCalendarErrors[keyof ConnectGoogleCalendarErrors];
+
+export type ConnectGoogleCalendarResponses = {
+    201: GoogleCalendarConnectionResponseDto;
+};
+
+export type ConnectGoogleCalendarResponse = ConnectGoogleCalendarResponses[keyof ConnectGoogleCalendarResponses];
+
+export type StartGoogleCalendarConnectionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/calendar/google/connection/start';
+};
+
+export type StartGoogleCalendarConnectionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * CALENDAR_004 — Not configured
+     */
+    503: ProblemDetailsDto;
+};
+
+export type StartGoogleCalendarConnectionError = StartGoogleCalendarConnectionErrors[keyof StartGoogleCalendarConnectionErrors];
+
+export type StartGoogleCalendarConnectionResponses = {
+    200: GoogleCalendarConnectStartResponseDto;
+};
+
+export type StartGoogleCalendarConnectionResponse = StartGoogleCalendarConnectionResponses[keyof StartGoogleCalendarConnectionResponses];
+
+export type FindGoogleCalendarEventsData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * The IANA zone to read Google’s times in.
+         */
+        timeZone: string;
+        /**
+         * The last day, included.
+         */
+        to: string;
+        /**
+         * The first day.
+         */
+        from: string;
+    };
+    url: '/api/v1/calendar/google/events';
+};
+
+export type FindGoogleCalendarEventsErrors = {
+    /**
+     * CALENDAR_003 — Range too wide
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * CALENDAR_007 — Not connected
+     */
+    409: ProblemDetailsDto;
+    /**
+     * CALENDAR_008 — Google did not answer
+     */
+    502: ProblemDetailsDto;
+    /**
+     * CALENDAR_004 — Not configured
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindGoogleCalendarEventsError = FindGoogleCalendarEventsErrors[keyof FindGoogleCalendarEventsErrors];
+
+export type FindGoogleCalendarEventsResponses = {
+    200: Array<CalendarEventResponseDto>;
+};
+
+export type FindGoogleCalendarEventsResponse = FindGoogleCalendarEventsResponses[keyof FindGoogleCalendarEventsResponses];
 
 export type CheckData = {
     body?: never;

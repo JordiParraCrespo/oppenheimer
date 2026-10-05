@@ -1,6 +1,7 @@
 import {
   Avatar,
   AvatarFallback,
+  Callout,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -18,7 +19,7 @@ import {
   SidebarMenuButton,
 } from '@oppenheimer/design-system-web';
 import { ChevronDown, Globe, LogOut, Moon } from '@oppenheimer/design-system-web/icons';
-import { useLogout, useProfile } from '@oppenheimer/frontend-core/react';
+import { useErrorMessage, useLogout, useProfile } from '@oppenheimer/frontend-core/react';
 import { type Locale, locales } from '@oppenheimer/translations/locales';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -29,20 +30,16 @@ import { useShell } from '../hooks/use-shell';
 const THEMES: readonly ThemePreference[] = ['light', 'dark', 'system'];
 
 /**
- * The account row at the foot of the sidebar, and the menu it opens.
+ * The account row at the foot of the sidebar, and the menu it opens, both from
+ * `product/versions/mvp/design/version1/SessionsConsole.dc.html`: a 32px
+ * `.op-navitem` of 22px accent avatar, name and a 14px chevron (no role line:
+ * the role under your own name is a fact you know) over a 250px
+ * `.op-accountmenu` of e-mail, appearance, language and "Log out". The middle
+ * rows carry the export's 15px moon and globe, and "Log out" the 15px door in
+ * the one tone the menu may colour.
  *
- * Both are the artboard's, down to the measurements
- * (`product/versions/mvp/design/version1/SessionsConsole.dc.html`): a 32px
- * `.op-navitem` of 22px accent avatar, name and a 14px chevron — no second
- * line, because the role under someone's own name is a fact about them they
- * already know — over a 250px `.op-accountmenu` that is the account's e-mail,
- * appearance, language and the way out. The two middle rows carry the 15px
- * moon and globe the export draws in the `.op-menu__icon` slot, and "Log out"
- * the 15px door, in the one tone the menu is allowed to colour.
- *
- * Appearance and language open sideways rather than unrolling in place, so
- * the menu is four rows tall whatever is in it, and the console loses nothing
- * by having no chrome bar to put a theme toggle in.
+ * Appearance and language open sideways, so the menu stays a few rows tall
+ * and the console needs no chrome bar for a theme toggle.
  */
 export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avatar' }) {
   const { t, i18n } = useTranslation();
@@ -51,6 +48,7 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
   const { data: user } = useProfile();
   const navigate = useNavigate();
   const logout = useLogout({ onSuccess: () => navigate({ to: '/login' }) });
+  const resolveError = useErrorMessage();
 
   // Narrowed to `Locale` because the menu *names* it (`language.en`), not just
   // compares it: `t()` is typed over the catalog, and a bare `string` in the
@@ -61,7 +59,9 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
   const initials = user ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}` : '';
 
   return (
-    <DropdownMenu>
+    // A failed log out is shown inside the menu, which stays open for it; closing
+    // the menu forgets it, so the next open starts clean.
+    <DropdownMenu onOpenChange={(open) => !open && logout.reset()}>
       {trigger === 'avatar' ? (
         <DropdownMenuTrigger
           render={
@@ -162,10 +162,22 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
-          <DropdownMenuItem variant="destructive" onClick={() => logout.mutate()}>
+          <DropdownMenuItem
+            variant="destructive"
+            closeOnClick={false}
+            disabled={logout.isPending}
+            onClick={() => logout.mutate()}
+          >
             <LogOut />
             {t('nav.logOut')}
           </DropdownMenuItem>
+          {/* A `Callout`, not `ErrorAlert`: that card is drawn for a form or a
+              page, and this menu is 250px of rows. */}
+          {logout.error ? (
+            <Callout tone="danger" className="mx-1 mt-1 mb-1">
+              {resolveError(logout.error, t('nav.logOutFailed')).message}
+            </Callout>
+          ) : null}
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -1,28 +1,19 @@
 /**
  * TanStack Query's `structuralSharing` for data made of entity classes.
  *
- * The query client's default sharing (`replaceEqualDeep`) keeps an unchanged
- * value's identity across a refetch, but only for plain objects and arrays.
- * Every entity in the frontend packages is a class (`SessionEntity`,
- * `HostEntity`), so by default each refetch or poll hands every reader a new
- * object for every row, and every memo keyed on one misses: a sidebar of
- * sessions re-rendered all of its rows on each two-second provisioning poll,
- * for rows that had not changed.
+ * The default (`replaceEqualDeep`) keeps identity only for plain objects and
+ * arrays, and every frontend entity is a class, so without this each refetch
+ * hands readers a new object per row and a list re-renders every row on every
+ * poll.
  *
- * This is the same walk, extended to what the entities are made of: a class
- * instance is compared field by field when both sides share a prototype, and a
- * `Date` by its time. What is equal keeps the previous reference; what changed
- * is the new value, with its unchanged parts still shared — so a list where one
- * session moved on hands back the same objects for every other row.
+ * This extends the same walk: a class instance is compared field by field when
+ * both sides share a prototype, a `Date` by its time. What is equal keeps the
+ * previous reference, and what changed keeps its unchanged parts shared.
  *
- * It only walks records. A `Map`, a `Set`, a typed array or a `Blob` holds its
- * contents where an own-key walk cannot see them, so two different ones would
- * compare equal; those are always taken as changed. Opt in per query, on data
- * that is entities, not as the client's default.
- *
- * ```ts
- * useQuery({ queryKey, queryFn, structuralSharing: shareEntities });
- * ```
+ * It only walks records. A `Map`, `Set`, typed array or `Blob` hides its
+ * contents from an own-key walk, so two different ones would compare equal;
+ * those are always taken as changed, as the default takes them. `useQuery` and
+ * `useQueries` from `./query` apply it to every query they declare.
  */
 export function shareEntities<T>(previous: unknown, next: T): T {
   return share(previous, next) as T;

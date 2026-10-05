@@ -68,8 +68,6 @@ describe('the session fold', () => {
   });
 
   it('leaves the lifecycle alone when a session is stopped', () => {
-    // Stopping ends the processes and leaves the worktrees, so the work is exactly
-    // as unfinished as it was. `stoppedAt` is the whole of what changes.
     const fold = foldSessionLog([
       entry(SESSION_EVENT_KINDS.REQUESTED),
       entry(SESSION_EVENT_KINDS.STARTED),
@@ -111,13 +109,23 @@ describe('the session fold', () => {
     expect(fold.state).toBe('resolved');
   });
 
-  it('keeps a name a person typed against a name a model derived', () => {
-    const fold = foldSessionLog([
-      entry(SESSION_EVENT_KINDS.NAMED, { name: 'Fix the wallet list', source: 'user' }),
-      entry(SESSION_EVENT_KINDS.NAMED, { name: 'Wallet empty state', source: 'model' }),
-    ]);
-    expect(fold.name).toBe('Fix the wallet list');
-    expect(fold.nameSource).toBe('user');
+  it.each([
+    // A derived title never overwrites a name a person typed, whichever derives it.
+    ['user', 'model', 'Fix the wallet list', 'user'],
+    ['user', 'prompt', 'Fix the wallet list', 'user'],
+    // A person may always rename over a derived title.
+    ['model', 'user', 'Fix the wallet list', 'user'],
+    // A name taken from the prompt's own words is recorded as such.
+    [null, 'prompt', 'Wallet list empty state', 'prompt'],
+  ] as const)('names: %s then %s keeps %s, from %s', (first, second, name, nameSource) => {
+    const named = (source: string) =>
+      entry(SESSION_EVENT_KINDS.NAMED, {
+        name: source === 'user' ? 'Fix the wallet list' : 'Wallet list empty state',
+        source,
+      });
+    const fold = foldSessionLog([...(first ? [named(first)] : []), named(second)]);
+    expect(fold.name).toBe(name);
+    expect(fold.nameSource).toBe(nameSource);
   });
 
   it('moves the session with the last moved event, and leaves the row’s project alone otherwise', () => {
@@ -129,30 +137,15 @@ describe('the session fold', () => {
       entry(SESSION_EVENT_KINDS.MOVED, {}),
     ]);
     expect(moved.projectId).toBe('p-3');
-  });
-
-  it('keeps a name a person typed against the prompt-derived fallback', () => {
-    const fold = foldSessionLog([
-      entry(SESSION_EVENT_KINDS.NAMED, { name: 'Fix the wallet list', source: 'user' }),
-      entry(SESSION_EVENT_KINDS.NAMED, { name: 'Wallet list empty state', source: 'prompt' }),
+    // A resolved session is a tombstone and stays where it ended: the close keeps
+    // its project, and a later move does not retarget it.
+    const closed = foldSessionLog([
+      entry(SESSION_EVENT_KINDS.REQUESTED),
+      entry(SESSION_EVENT_KINDS.MOVED, { to: 'project-1' }),
+      entry(SESSION_EVENT_KINDS.CLOSED),
+      entry(SESSION_EVENT_KINDS.MOVED, { from: 'project-1', to: 'project-2' }),
     ]);
-    expect(fold.name).toBe('Fix the wallet list');
-    expect(fold.nameSource).toBe('user');
-  });
-
-  it('records a name taken from the prompt’s words as such', () => {
-    const fold = foldSessionLog([
-      entry(SESSION_EVENT_KINDS.NAMED, { name: 'Wallet list empty state', source: 'prompt' }),
-    ]);
-    expect(fold.nameSource).toBe('prompt');
-  });
-
-  it('lets a person rename over a model’s title', () => {
-    const fold = foldSessionLog([
-      entry(SESSION_EVENT_KINDS.NAMED, { name: 'Wallet empty state', source: 'model' }),
-      entry(SESSION_EVENT_KINDS.NAMED, { name: 'Fix the wallet list', source: 'user' }),
-    ]);
-    expect(fold.name).toBe('Fix the wallet list');
+    expect(closed.projectId).toBe('project-1');
   });
 
   it('keeps an unknown kind in the log and advances nothing but the clock', () => {
@@ -167,13 +160,6 @@ describe('the session fold', () => {
 });
 
 describe('the fold as a property', () => {
-  it('rebuilds the same row from the same log, every time', () => {
-    for (let seed = 1; seed <= 40; seed += 1) {
-      const log = generateLog(seed, 24);
-      expect(foldSessionLog(log)).toEqual(foldSessionLog(log));
-    }
-  });
-
   it('is a left fold: replaying from a stored row equals replaying from the start', () => {
     // This is what "the row is the fold" means operationally. Appending to a row
     // read out of the database has to land where a full replay would.
@@ -210,12 +196,9 @@ describe('the fold as a property', () => {
 });
 
 /**
- * The launch options, which are the newest columns the fold projects.
- *
- * They exist as columns because a restart must reproduce the launch and the
- * console shows the engine button on a session that already exists — so the
- * property that matters is the same one every other column here has: the log
- * alone rebuilds them (`product/versions/mvp/03-control-plane.md`).
+ * The launch options: the property that matters is the one every other column
+ * here has, that the log alone rebuilds them
+ * (`product/versions/mvp/03-control-plane.md`).
  */
 describe('the launch the fold projects', () => {
   it('takes the launch from the request that stated it', () => {

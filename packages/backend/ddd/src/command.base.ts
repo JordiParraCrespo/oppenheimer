@@ -4,13 +4,15 @@ import { Guard } from './guard';
 import { RequestContextService } from './request-context.service';
 
 export interface CommandMetadata {
-  /** Correlation id used for log correlation. */
   readonly correlationId: string;
 
   /** Causation id used to reconstruct execution order if needed. */
   readonly causationId?: string;
 
-  /** Time when the command was created. */
+  /**
+   * Epoch milliseconds when the command was constructed: `Date.now()` unless
+   * the caller passes one.
+   */
   readonly timestamp: number;
 }
 
@@ -21,7 +23,6 @@ export type CommandProps<T> = Omit<T, 'id' | 'metadata'> & Partial<CommandBase>;
  * through the CQRS command bus to its handler.
  */
 export class CommandBase {
-  /** Command id, used for distributed tracing & idempotency. */
   readonly id: string;
 
   readonly metadata: CommandMetadata;

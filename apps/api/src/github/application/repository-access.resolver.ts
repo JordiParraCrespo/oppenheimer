@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import type { GithubInstallationRepositoryPort } from '../database/github-installation.repository.port';
 import { GithubErrors } from '../domain/github.errors';
@@ -8,19 +9,21 @@ import type { GithubAppPort, GithubRepository } from '../infrastructure/github-a
 import type { RepositoryAccessPort, RepositoryToken } from './repository-access.port';
 
 /**
- * Turns a checkout's two ids into a credential for one repository.
- *
+ * How long GitHub's answer about a repository is reused: long enough that a
+ * burst of session starts costs one call, short enough that a rename or a new
+ * default branch is picked up while someone is still looking at the console.
+ */
+const REPOSITORY_TTL_SECONDS = 60;
+
+function repositoryCacheKey(githubInstallationId: string, githubRepoId: number): string {
+  return `github:repository:${githubInstallationId}:${githubRepoId}`;
+}
+
+/**
  * It lives in `application/` rather than in a slice because no route reaches it:
- * it is what the relay calls when a runner asks for a credential, and what the
- * session dispatcher seals into a job. It needs ports, it is not a use case.
- *
- * **Nothing here is cached, and no token is stored.** GitHub already gives the
- * token an hour and the runner holds it in memory for that hour, so a cache here
- * would buy nothing and cost the one property the design turns on: a mint is a
- * live call, so it fails the moment the repository leaves the installation or
- * the App's permissions narrow. A cached secret would keep a removed repository
- * working until its TTL — which is the "in our copy but the mint fails" failure
- * mode this module exists without, wearing a Redis key instead of a table.
+ * it is what the relay mints a runner's credential through, and what a session,
+ * automation or project reads a repository through. It needs ports, it is not a
+ * use case.
  */
 @Injectable()
 export class RepositoryAccessResolver implements RepositoryAccessPort {
@@ -29,6 +32,7 @@ export class RepositoryAccessResolver implements RepositoryAccessPort {
     private readonly installations: GithubInstallationRepositoryPort,
     @Inject(GITHUB_APP)
     private readonly github: GithubAppPort,
+    private readonly cache: CacheService,
   ) {}
 
   async repositoryOf(
@@ -36,9 +40,6 @@ export class RepositoryAccessResolver implements RepositoryAccessPort {
     installationId: string,
     githubRepoId: number,
   ): Promise<GithubRepository> {
-    // Scoped, unlike the mint below: this one answers a person's request, so the
-    // installation is read through the caller's own scope rather than through the
-    // by-id read a token mint runs for a host.
     const found = await this.installations.findOneById(scope, installationId);
     if (found.isNone()) {
       throw new AppError(GithubErrors.INSTALLATION_NOT_FOUND, {
@@ -51,7 +52,15 @@ export class RepositoryAccessResolver implements RepositoryAccessPort {
         detail: `Installation ${installation.accountLogin} is suspended or no longer installed`,
       });
     }
-    return this.github.readRepository(installation.githubInstallationId, githubRepoId);
+    // The installation lookup above authorises the read and stays live on every
+    // call; only GitHub's answer about the repository is reused, keyed by the
+    // installation that may see it. `getOrSet` also collapses concurrent asks
+    // for one repository into a single call.
+    return this.cache.getOrSet(
+      repositoryCacheKey(String(installation.githubInstallationId), githubRepoId),
+      REPOSITORY_TTL_SECONDS,
+      () => this.github.readRepository(installation.githubInstallationId, githubRepoId),
+    );
   }
 
   async mintRepositoryToken(

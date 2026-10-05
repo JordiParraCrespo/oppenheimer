@@ -13,11 +13,8 @@ import { registerThroughUi } from '../../support/web';
  *
  * The walk itself is `first-run.spec.ts`. This file covers the two ways in —
  * a fresh sign-up, and the account whose sign-up hook left it with no
- * workspace — and the fact that both land on the same step. `/onboarding` is
- * the door to the walk, not a screen: it used to hold a second
- * create-workspace form beside the one at `/onboarding/workspace`, and the
- * step subsumed it once `claimPersonalWorkspace` learned to create when there
- * is no row to name.
+ * workspace — and that both land on the same step: `/onboarding` is the door
+ * to the walk, not a screen.
  */
 test('a newcomer is sent to name the workspace sign-up made', async ({ page }) => {
   const user = newUser('firstrun');
@@ -26,7 +23,6 @@ test('a newcomer is sent to name the workspace sign-up made', async ({ page }) =
   await expect(page).toHaveURL(/\/onboarding\/workspace/, { timeout: 30_000 });
   await expect(page.locator('[data-slot="alert"]')).toHaveCount(0);
 
-  // One workspace already, owned by the account, with no team.
   const account = await findUserByEmail(user.email);
   expect(account).toBeTruthy();
   const memberships = await findOrganizationsForUser(account?.id ?? '');
@@ -42,7 +38,7 @@ test('a newcomer is sent to name the workspace sign-up made', async ({ page }) =
 /**
  * The recovery path. Sign-up provisions the workspace, but the hook is
  * best-effort, so an account can hold none — which every product screen reads
- * as a refusal. `_authenticated` sends it to `/onboarding`, and from there it
+ * as a refusal. `WorkspaceGate` sends it to `/onboarding`, and from there it
  * is the ordinary step that serves it.
  *
  * The only way to reach that state is to remove the membership.
@@ -54,6 +50,12 @@ async function registerWithoutWorkspace(
   await registerThroughUi(page, user);
   await expect(page).toHaveURL(/\/onboarding\/workspace/, { timeout: 30_000 });
   const account = await findUserByEmail(user.email);
+  // A workspace owns its projects — at least the Unassigned one sign-up makes —
+  // so they go first, or the foreign key refuses the delete.
+  await query(
+    `DELETE FROM "project" WHERE "organizationId" IN (SELECT "organizationId" FROM "member" WHERE "userId" = $1)`,
+    [account?.id ?? ''],
+  );
   await query(
     `DELETE FROM "organization" WHERE "id" IN (SELECT "organizationId" FROM "member" WHERE "userId" = $1)`,
     [account?.id ?? ''],
@@ -71,7 +73,10 @@ test('an account with no workspace is served by the workspace step', async ({ pa
   await expect(page.getByRole('heading', { name: /name your workspace/i })).toBeVisible();
   await expect(page.locator('[data-slot="alert"]')).toHaveCount(0);
 
-  await page.getByLabel('Workspace name').fill('Nora & Co');
+  // A name no earlier run has claimed: the address it becomes is unique across
+  // the deployment, and the stack's database outlives a run.
+  const workspaceName = `Nora & Co ${Date.now().toString(36)}`;
+  await page.getByLabel('Workspace name').fill(workspaceName);
   await expect(page.getByText(/is available/i)).toBeVisible({ timeout: 30_000 });
   await page.getByRole('button', { name: 'Continue' }).click();
 
@@ -81,7 +86,7 @@ test('an account with no workspace is served by the workspace step', async ({ pa
 
   const account = await findUserByEmail(user.email);
   const memberships = await findOrganizationsForUser(account?.id ?? '');
-  expect(memberships).toEqual([expect.objectContaining({ role: 'owner', orgName: 'Nora & Co' })]);
+  expect(memberships).toEqual([expect.objectContaining({ role: 'owner', orgName: workspaceName })]);
 });
 
 test('the workspace step does not ask the server for an empty name', async ({ page }) => {

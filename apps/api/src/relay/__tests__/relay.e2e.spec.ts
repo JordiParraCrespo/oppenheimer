@@ -7,11 +7,14 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { Logger } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
+import type { ScopeResolverPort } from '@oppenheimer/backend-authz';
 import type { CacheService } from '@oppenheimer/backend-cache';
 import { Some } from 'oxide.ts';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
+import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
+import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import { HostAssertionResolver } from '../../hosts/application/host-assertion.resolver';
 import type { HostKeyPort } from '../../hosts/application/host-key.port';
 import type { HostPresencePort } from '../../hosts/application/host-presence.port';
@@ -36,17 +39,15 @@ import { RelayUpgradeGateway } from '../infrastructure/relay-upgrade.gateway';
 import { RunnerLinkGateway } from '../infrastructure/runner-link.gateway';
 
 /**
- * The real runner binary against the real relay, minus Postgres and Redis.
+ * The real runner binary against the real relay, minus Postgres and Redis. Real: the
+ * Go runner (`runner run`) with an Ed25519 identity verified by the real
+ * `HostAssertionResolver`, both gateways, tmux, git (a public repository is cloned)
+ * and the frame layout. Faked: the rows (host, session, ticket) and the log, which
+ * record what the relay hands them.
  *
- * What is real: the Go runner (`runner run`) with a real Ed25519 identity, its
- * boot assertion verified by the real `HostAssertionResolver`; the two
- * gateways; tmux; git (a public repository is cloned); the frame layout both
- * ways. What is faked: the rows (a host, a session, a ticket) and the log,
- * which record what the relay hands them.
- *
- * Opt in with `RELAY_E2E=1`: it needs `go`, `tmux`, `git` and the network,
- * and takes a while. `claude` is a shim on PATH that prints its argv and
- * execs a shell, so the launch argv is observable and the pane is interactive.
+ * Opt in with `RELAY_E2E=1`: it needs `go`, `tmux`, `git` and the network, and is
+ * slow. `claude` is a shim on PATH that prints its argv and execs a shell, so the
+ * launch argv is observable and the pane interactive.
  */
 const enabled = process.env.RELAY_E2E === '1';
 const RUNNER_DIR = resolve(__dirname, '..', '..', '..', '..', 'runner');
@@ -165,7 +166,8 @@ async function boot(): Promise<World> {
     },
   };
   const presence: HostPresencePort = {
-    observe: vi.fn().mockResolvedValue(true),
+    observe: vi.fn().mockResolvedValue('recorded'),
+    connectedFrom: vi.fn().mockResolvedValue(undefined),
   };
   const reconciliation: SessionReconciliationPort = {
     reconcile: vi.fn().mockResolvedValue({ redispatched: [], stopped: [] }),
@@ -178,10 +180,17 @@ async function boot(): Promise<World> {
   const workspaces_: WorkspaceLookupPort = {
     slugOf: vi.fn().mockResolvedValue('jordi'),
     isMember: vi.fn().mockResolvedValue(true),
+    ownedBy: vi.fn().mockResolvedValue([]),
   };
 
   const registry = new InProcessLinkRegistry(() => 0);
-  const assertions = new HostAssertionResolver(hosts, cache, config);
+  const owners: CredentialOwnerPort = {
+    findActiveOwner: vi.fn().mockResolvedValue({ id: USER }),
+    requireActiveOwner: vi.fn().mockResolvedValue({ id: USER }),
+  };
+  const assertions = new HostAssertionResolver(hosts, cache, config, owners, {
+    isBurned: async () => false,
+  });
   const runners = new RunnerLinkGateway(
     assertions,
     registry,
@@ -190,10 +199,20 @@ async function boot(): Promise<World> {
       lookup,
       { mintRepositoryToken: vi.fn() } as unknown as RepositoryAccessPort,
       { publicKeyOf: vi.fn() } as unknown as HostKeyPort,
+      owners,
     ),
     config,
   );
-  const browsers = new BrowserAttachGateway(cache, lookup, registry, workspaces_, config);
+  const browsers = new BrowserAttachGateway(
+    cache,
+    lookup,
+    registry,
+    workspaces_,
+    config,
+    { resolve: vi.fn().mockResolvedValue({}) } as unknown as ScopeResolverPort,
+    { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) } as HostAccessPort,
+    owners,
+  );
   new RelayUpgradeGateway({} as never, runners, browsers).mount(server);
 
   const log: string[] = [];
@@ -259,7 +278,7 @@ describe.skipIf(!enabled)('the runner and the relay, end to end', () => {
       organizationSlug: 'jordi',
       sessionSlug: 'bold-otter-3f9a7k',
       agent: 'claude-code',
-      launch: { model: 'opus', permission: 'ask', effort: 'medium' },
+      launch: { model: 'claude-opus-5-5', permission: 'ask', effort: 'xhigh' },
       prompt: 'say hello',
       branch: 'oppenheimer/hello-world/bold-otter-3f9a7k',
       checkouts: [
@@ -284,6 +303,20 @@ describe.skipIf(!enabled)('the runner and the relay, end to end', () => {
       checkouts: { branch: string; path: string }[];
     };
     expect(payload.checkouts[0].branch).toBe('oppenheimer/hello-world/bold-otter-3f9a7k');
+    // `session.started` is the pane, made before the clone: the worktree is
+    // there once the agent step lands, which is when the agent runs in it.
+    await until(
+      'the agent step',
+      () =>
+        w.batches
+          .flatMap((b) => b.events)
+          .find((e) => {
+            if (e.kind !== 'session.step') return false;
+            const step = JSON.parse(e.payload) as { step: string; status: string };
+            return step.step === 'agent' && step.status === 'done';
+          }),
+      120_000,
+    );
     expect(existsSync(payload.checkouts[0].path)).toBe(true);
     const windows = execFileSync('tmux', [
       '-L',
@@ -338,7 +371,10 @@ describe.skipIf(!enabled)('the runner and the relay, end to end', () => {
       },
       20_000,
     );
-    expect(screen).toContain('--model opus --permission-mode manual --effort high say hello');
+    // The level reaches the CLI under its own name, for a model that offers it.
+    expect(screen).toContain(
+      '--model claude-opus-5-5 --permission-mode manual --effort xhigh say hello',
+    );
 
     // Keystrokes: bare bytes in, the shell's echo and output back.
     browser.send(Buffer.from('echo relay-e2e-$((40+2))\r'), { binary: true });

@@ -74,12 +74,12 @@ oppenheimer/
 │   ├── env/              # Root .env loader (@oppenheimer/env)
 │   ├── frontend/         # The React tier: logic split by product, glue split by platform
 │   │   ├── core/         # Kernel every app loads: session, users, settings, DI (@oppenheimer/frontend-core)
-│   │   ├── consumer/     # The console's domain: sessions, hosts, plus the account chrome (@oppenheimer/frontend-consumer)
+│   │   ├── consumer/     # The console's domain and account chrome, one module per src/modules/ dir (@oppenheimer/frontend-consumer)
 │   │   ├── api-client/   # Auto-generated typed client from Swagger (@oppenheimer/api-client)
 │   │   ├── web/          # The web platform kit: shell, auth chrome, table, i18n… (@oppenheimer/frontend-web)
 │   │   └── design-system/
 │   │       └── web/      # shadcn/ui + Base UI + Tailwind v4 (@oppenheimer/design-system-web)
-│   ├── go/               # Shared Go modules (@oppenheimer/go-*): core, config, httpx, auth, health, ws, postgres, selfupdate
+│   ├── go/               # Shared Go modules (@oppenheimer/go-*): core, config, httpx, auth, health, ws, postgres, selfupdate, execx
 │   ├── shared/           # Zod schemas, types, CASL permissions
 │   └── translations/     # Shared i18n JSON files
 ├── docker/               # Docker Compose (dev + prod)
@@ -118,14 +118,25 @@ When you add a file that mentions an optional app (CI, compose,
   already covers — see `.agents/rules/frontend-ui.md`
 - Conventional commits enforced via commitlint
 - Independent versioning per package via Changesets
-- No git hooks — CI enforces quality
-- CI runs what a pull request touches, not the whole pipeline:
-  `scripts/ci/affected.mjs` asks Turborepo which packages the diff affects
-  (a change in `packages/shared` reaches every app that imports it), and the
-  jobs build, test and package only those. A push to `main`, or a change to a
-  file no package owns (the workflow, the lockfile, `docker/`, `scripts/`),
-  runs everything. A new Docker image is a row in that script's `IMAGES`; a
-  new root-level file every package relies on is a pattern in its
+- No git hooks, and no CI on pull requests: **CI is local**. The pipeline is
+  `scripts/ci/local.mjs`: lint, Go, build and test, and, behind
+  `scripts/stack/stack.mjs up`, the API's integration and e2e suites. A new
+  CI step goes there and nowhere else. Before you push, commit and run
+  `pnpm ci:local`; push only on a green run, and paste its report
+  (`.ci-local/report.md`) into the pull request. No GitHub check gates a
+  pull request: whoever merges reads that report, and the scheduled run is
+  what catches a report that was wrong
+- `.github/workflows/ci.yml` runs that same program, `pnpm ci:local --all`,
+  on `main` every eight hours and on demand (`workflow_dispatch`), and then
+  builds the images. A red run opens a `main-red` issue with the failed
+  rows, and the next green run closes it. An open `main-red` issue comes
+  before new work: `pnpm ci:local --all` on that commit reproduces it
+- `scripts/ci/affected.mjs` chooses what runs: it asks Turborepo which
+  packages the diff against `origin/main` affects (a change in
+  `packages/shared` reaches every app that imports it). `--all`, or a change
+  to a file no package owns (the workflow, the lockfile, `docker/`,
+  `scripts/`), runs everything. A new Docker image is a row in its `IMAGES`;
+  a new root-level file every package relies on is a pattern in its
   `GLOBAL_PATHS`
 
 ### Backend (`apps/api` + `packages/backend/*`)
@@ -208,7 +219,7 @@ static binary, long-lived connections or process orchestration (runners, VMs,
 containers) — `apps/runner` is the template, and the API talks to it with an
 API key. The cross-cutting toolkit is `packages/go/*`, the Go counterpart of
 `packages/backend/*`: one Go module each (`core`, `config`, `httpx`, `auth`,
-`health`, `ws`, `postgres`, `selfupdate`), tied together by the root `go.work`, each also published to
+`health`, `ws`, `postgres`, `selfupdate`, `execx`), tied together by the root `go.work`, each also published to
 Turborepo as `@oppenheimer/go-<name>` so the task graph and `--affected` see them.
 `apps/runner` is more than the template now: it is the host agent. It pairs a
 macOS, Debian or Ubuntu machine with a workspace, installs itself as a launchd
@@ -241,14 +252,15 @@ The frontend is split twice, and the two splits answer different questions:
 
 - **By product** for logic. `core` is the kernel every app loads (session,
   users, user settings, capabilities, analytics, the InversifyJS container,
-  config, validation). `consumer` (`sessions`, `hosts`, and the account chrome:
-  `organizations` as the personal workspace, `profile`, `api-tokens`) is the
-  product's domain (entities, repositories, services, TanStack Query hooks);
+  validation). `consumer` is the
+  product's domain — one module per directory under its `src/modules/`,
+  among them the account chrome: `organizations` as the personal workspace,
+  `profile`, `permissions` — (entities, repositories, services, TanStack Query hooks);
   the app loads it through `OppenheimerApp.create({ modules })`. The kernel
   never imports the product package.
 - **By platform** for UI and glue. `web` is the platform kit: what sits below
-  the routes, organised by concern (`shell`, `auth`, `table`, `layout`,
-  `forms`, `theme`, `i18n`, `analytics`, `platform`, …), each concern with the
+  the routes, organised by concern (`shell`, `auth`, `layout`, `pairing`, `forms`, …; the
+  kit's `.dependency-cruiser.cjs` holds the list and its layers), each concern with the
   same kind directories a feature has. The kit imports the kernel only; a
   component that needs a product hook is a feature.
 - **In the app**: routes compose, features contain. `features/<module>/`
@@ -311,7 +323,7 @@ packages/frontend/core        → used by every frontend package and web
 packages/frontend/consumer    → used by web
 packages/frontend/web         → used by web
 packages/go/core              → used by every other packages/go module and runner
-packages/go/{config,httpx,auth,health,ws,postgres,selfupdate} → used by runner (auth ← ws, httpx ← health, auth)
+packages/go/{config,httpx,auth,health,ws,postgres,selfupdate,execx} → used by runner (auth ← ws, httpx ← health, auth)
 ```
 
 ## Commands
@@ -326,7 +338,9 @@ pnpm arch               # Architecture boundaries (dependency-cruiser), API and 
 pnpm check:structure    # Frontend layout contract: feature names, kinds, route cap, docs
 pnpm check:flags        # Feature flags: none past expiry, none declared but unread
 pnpm check:compiler     # What the React Compiler leaves uncompiled, silently (oxc bailouts)
+pnpm check:unused       # Unused files, exports and dependencies in the frontend (knip)
 pnpm docker:dev         # Start Postgres + Redis
+pnpm ci:local           # CI, locally: what the branch touches (--all for everything)
 # oppenheimer:begin e2e
 node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)
 # oppenheimer:end e2e
@@ -337,11 +351,14 @@ pnpm changeset          # Create a changeset for versioning
 ## Deployment
 
 - **Tier 1 (~€4/mo)**: Hetzner VPS + Docker Compose for API/DB/Redis, free hosting for web/docs
-- Docker images built in CI (GitHub Actions), pushed to GHCR
+- Docker images built by the scheduled CI run on `main` (GitHub Actions), pushed to GHCR when it is green
 
 ## When modifying code
 
 - Shared types/schemas go in `packages/shared`, not duplicated in apps
+- A test names the behavior it protects and the regression that breaks it,
+  lives at the owner boundary, and needs no test-only production seam;
+  auditing existing tests is `.agents/skills/test-audit/`
 - New env vars go in the root `.env.example` with a note on what they do; never
   add a per-package `.env` (see `.agents/rules/api-config.md`)
 - New API endpoints need Swagger decorators and `@RequireScopes`; without the
@@ -368,12 +385,14 @@ pnpm changeset          # Create a changeset for versioning
 - Sign-up creates the account and its personal workspace in one go. The
   `/onboarding` screen is only the recovery path for an account that ended up
   with no workspace. Only `/register` passes the social `sign-up` intent
-- `apps/web` must not import runtime values from the `@oppenheimer/shared` **root**:
-  its CJS build is not tree-shakeable, so the whole graph lands in the bundle.
-  Import a narrow subpath (`@oppenheimer/shared/schemas/auth`) or fetch from the API.
-  Anything newly imported this way needs adding to `optimizeDeps.include` in
-  `apps/web/vite.config.ts` for dev
-- The same applies to `@oppenheimer/translations`: `apps/web`
+- `@oppenheimer/shared` gives bundlers an ESM build and declares its side
+  effects, so `apps/web` tree-shakes it: an import from the root costs what it
+  uses and no more. Still prefer the narrowest subpath that has the value
+  (`@oppenheimer/shared/schemas/auth`) — it says what the code depends on — and
+  remember that what you *use* lands whole: a schema that reaches the scope
+  catalog brings the catalog. Every `src/<dir>/` and `src/schemas/<x>.schema.ts`
+  is a subpath by pattern; a new one needs no config
+- `@oppenheimer/translations` is imported by subpath only: `apps/web`
   imports metadata from `@oppenheimer/translations/locales` and catalogs from
   `@oppenheimer/translations/lazy`; only the default locale is bundled
 - The web app's critical path is budgeted: `pnpm check:bundle` fails past the

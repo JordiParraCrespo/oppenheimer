@@ -1,45 +1,64 @@
-export {
-  apiTokensKeys,
-  useApiTokens,
-  useCreateApiToken,
-  useCurrentCredential,
-  usePermissionCatalog,
-  useRevokeApiToken,
-} from './api-tokens.queries';
 export { useRegister } from './auth.queries';
-export { useConsumerApp } from './context';
-// `useCurrentPairing`, `usePairingTokens` and the host poll are the flow's
-// internals: a surface that reached for them directly would be back to asking
-// "is there a host?" instead of "was this token spent?". They stay exported
-// from their own file for a spec or a later drawer; the barrel offers the flow.
+export {
+  type PauseAutomationVariables,
+  type RunAutomationVariables,
+  type UpdateAutomationVariables,
+  useAutomation,
+  useAutomationRuns,
+  useAutomations,
+  useCreateAutomation,
+  useDeleteAutomation,
+  useDuplicateAutomation,
+  useRunAutomation,
+  useRunHistory,
+  useSetAutomationPaused,
+  useTriggerPreview,
+  useUpdateAutomation,
+} from './automations.queries';
+export {
+  type UpdateCalendarEventVariables,
+  useCalendarEvents,
+  useConnectGoogleCalendar,
+  useCreateCalendarEvent,
+  useDeleteCalendarEvent,
+  useDisconnectGoogleCalendar,
+  useGoogleCalendarConnection,
+  useGoogleCalendarEvents,
+  useStartGoogleCalendarConnection,
+  useUpdateCalendarEvent,
+} from './calendar.queries';
+// The pairing flow, not its parts: a surface that read the token or the host
+// poll directly would be back to asking "is there a host?" instead of "was
+// this token spent?".
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
-export { hostsKeys, useHosts, useHostsSnapshot, useRemoveHost } from './hosts.queries';
+export {
+  useHostPresence,
+  useHosts,
+  useHostsSnapshot,
+  useRemoveHost,
+  useRenameHost,
+} from './hosts.queries';
 export {
   type ConnectInstallationVariables,
-  installationsKeys,
-  type RepositoryRef,
   useConnectInstallation,
   useInstallationRepositories,
   useInstallationRepositoriesFor,
   useInstallations,
-  useRemoveInstallation,
-  useRepositoryBranches,
   useRepositoryBranchesFor,
+  useStartInstallation,
 } from './installations.queries';
 export {
   type ClaimPersonalWorkspaceVariables,
-  organizationsKeys,
-  type UpdateOrganizationVariables,
   useCheckSlug,
   useClaimPersonalWorkspace,
-  useCreateOrganization,
   useOrganizations,
-  useUpdateOrganization,
 } from './organizations.queries';
+export { usePermissionCatalog } from './permissions.queries';
 export { CONSUMER_NON_PERSISTED_FEATURES } from './persistence';
 export {
-  profileKeys,
+  useChangeEmail,
   useChangeOwnPassword,
+  useDeleteAccount,
   useDeleteAvatar,
   useMyProfile,
   useProfileSessions,
@@ -49,7 +68,6 @@ export {
   useUploadAvatar,
 } from './profile.queries';
 export {
-  projectsKeys,
   type UpdateProjectVariables,
   useArchiveProject,
   useCreateProject,
@@ -62,15 +80,38 @@ export {
   type CreateSessionVariables,
   type MoveSessionVariables,
   type RenameSessionVariables,
-  sessionsKeys,
   useCloseSession,
   useCreateSession,
+  useInvalidateSession,
   useMoveSession,
-  usePasteSessionImage,
+  usePasteSessionFile,
+  usePrepareSession,
   useRenameSession,
+  useRestartSession,
   useSession,
+  useSessionOpening,
   useSessionStartProgress,
   useSessions,
-  useStopSession,
+  useUploadSessionAttachment,
 } from './sessions.queries';
 export { useSessionStream } from './sessions.stream';
+export {
+  type LinkTaskSessionVariables,
+  type MoveTaskVariables,
+  type StartTaskSessionVariables,
+  type UpdateGoalVariables,
+  type UpdateTaskVariables,
+  useCreateGoal,
+  useCreateTask,
+  useDeleteGoal,
+  useDeleteTask,
+  useGoals,
+  useLinkTaskSession,
+  useMoveTask,
+  useSessionTasks,
+  useStartTaskSession,
+  useTasks,
+  useUnlinkTaskSession,
+  useUpdateGoal,
+  useUpdateTask,
+} from './tasks.queries';

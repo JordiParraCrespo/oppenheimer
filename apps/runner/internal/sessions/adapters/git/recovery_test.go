@@ -78,7 +78,9 @@ func privateClient(t *testing.T) (*gitadapter.Client, domain.Layout, string) {
 	t.Helper()
 	command, seen := helper(t)
 	layout := domain.Layout{Root: t.TempDir()}
-	return gitadapter.New(gitadapter.Options{Layout: layout, CredentialHelper: command}), layout, seen
+	c := gitadapter.New(gitadapter.Options{Layout: layout, CredentialHelper: command})
+	t.Cleanup(c.Wait)
+	return c, layout, seen
 }
 
 func TestEnsureClonesAPrivateRepositoryForTheSessionItIsFor(t *testing.T) {
@@ -86,7 +88,7 @@ func TestEnsureClonesAPrivateRepositoryForTheSessionItIsFor(t *testing.T) {
 	c, layout, seen := privateClient(t)
 	ctx := context.Background()
 
-	if err := c.Ensure(domain.WithSession(ctx, sessionID), repo, remote); err != nil {
+	if err := c.Ensure(domain.WithSession(ctx, sessionID), repo, remote, "main"); err != nil {
 		t.Fatalf("clone of a private repository for a session: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(layout.Mirror(repo), ".git")); err != nil {
@@ -98,7 +100,7 @@ func TestEnsureClonesAPrivateRepositoryForTheSessionItIsFor(t *testing.T) {
 	}
 
 	// The fetch that follows needs the credential just as much.
-	if err := c.Ensure(domain.WithSession(ctx, sessionID), repo, ""); err != nil {
+	if err := c.Ensure(domain.WithSession(ctx, sessionID), repo, "", "main"); err != nil {
 		t.Fatalf("fetch of a private repository for a session: %v", err)
 	}
 
@@ -113,12 +115,36 @@ func TestEnsureClonesAPrivateRepositoryForTheSessionItIsFor(t *testing.T) {
 	}
 }
 
+func TestPushForNoSessionIsRefusedBeforeTheNetwork(t *testing.T) {
+	remote := privateOrigin(t)
+	c, layout, seen := privateClient(t)
+	ctx := context.Background()
+	if err := c.Ensure(domain.WithSession(ctx, sessionID), repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	worktree := layout.Worktree(repo, "session-unmarked")
+	if err := c.Add(ctx, repo, worktree, "oppenheimer/unmarked", "main", true); err != nil {
+		t.Fatal(err)
+	}
+	before, _ := os.ReadFile(seen)
+
+	_, err := c.Push(ctx, worktree, "oppenheimer/unmarked")
+
+	var prob *problem.Error
+	if !isProblem(err, &prob, "GIT_004") {
+		t.Fatalf("err = %v, want GIT_004", err)
+	}
+	if after, _ := os.ReadFile(seen); string(after) != string(before) {
+		t.Fatalf("the helper was asked (%q): the push reached the network", after)
+	}
+}
+
 func TestEnsureSaysWhatIsMissingWhenAPrivateCloneHasNoCredential(t *testing.T) {
 	remote := privateOrigin(t)
 	c, layout, _ := privateClient(t)
 
 	for _, session := range []string{"", "a-session-the-control-plane-refuses"} {
-		err := c.Ensure(domain.WithSession(context.Background(), session), repo, remote)
+		err := c.Ensure(domain.WithSession(context.Background(), session), repo, remote, "main")
 
 		var prob *problem.Error
 		if !isProblem(err, &prob, "GIT_004") {
@@ -142,6 +168,35 @@ func TestEnsureSaysWhatIsMissingWhenAPrivateCloneHasNoCredential(t *testing.T) {
 	}
 }
 
+// A remote that wants a credential the helper does not have must fail the
+// clone, not ask anyone: a daemon has no one to ask, and a prompt it waits on
+// hangs the session create. The askpass programs the daemon's environment
+// names are what git would run to ask; each one here writes a marker.
+func TestGitNeverAsksForAPassword(t *testing.T) {
+	remote := privateOrigin(t)
+	c, _, _ := privateClient(t)
+	marker := filepath.Join(t.TempDir(), "asked")
+	askpass := filepath.Join(t.TempDir(), "askpass")
+	if err := os.WriteFile(askpass, []byte("#!/bin/sh\necho asked >> '"+marker+"'\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GIT_ASKPASS", askpass)
+	t.Setenv("SSH_ASKPASS", askpass)
+	t.Setenv("GIT_TERMINAL_PROMPT", "1")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err := c.Ensure(ctx, repo, remote, "main")
+
+	var prob *problem.Error
+	if !isProblem(err, &prob, "GIT_004") || ctx.Err() != nil {
+		t.Fatalf("err = %v, ctx = %v; want GIT_004 at once", err, ctx.Err())
+	}
+	if _, err := os.Stat(marker); err == nil {
+		t.Fatal("git ran an askpass program to ask for a password")
+	}
+}
+
 func TestEnsureClearsAnEmptyMirrorAnOlderRunnerLeft(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
@@ -149,7 +204,7 @@ func TestEnsureClearsAnEmptyMirrorAnOlderRunnerLeft(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := c.Ensure(context.Background(), repo, remote); err != nil {
+	if err := c.Ensure(context.Background(), repo, remote, "main"); err != nil {
 		t.Fatalf("clone over an empty directory: %v", err)
 	}
 }
@@ -158,7 +213,7 @@ func TestAddAdoptsTheWorktreeItAlreadyMadeForTheSameBranch(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "redelivered")
@@ -176,7 +231,7 @@ func TestAddFinishesAWorktreeWhoseAddWasKilled(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "killed")
@@ -212,7 +267,7 @@ func TestAddReplacesARegistrationWhoseDirectoryIsGone(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "vanished")
@@ -239,7 +294,7 @@ func TestAddReusesABranchAKilledAttemptCreatedWithoutItsWorktree(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
 	git(t, layout.Mirror(repo), "branch", "oppenheimer/orphan", "origin/main")
@@ -254,7 +309,7 @@ func TestAddKeepsABranchThatHasWorkOfItsOwn(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote); err != nil {
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
 	mirror := layout.Mirror(repo)
@@ -294,7 +349,7 @@ func TestACommandStoppedPartWayIsAbandonedNotAGitFailure(t *testing.T) {
 		cancel()
 	}()
 
-	err := c.Ensure(ctx, repo, server.URL+"/slow.git")
+	err := c.Ensure(ctx, repo, server.URL+"/slow.git", "main")
 
 	var prob *problem.Error
 	if !isProblem(err, &prob, "GIT_005") {

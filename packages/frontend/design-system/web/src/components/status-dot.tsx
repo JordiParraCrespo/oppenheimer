@@ -4,17 +4,6 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
-/**
- * StatusDot — status is a dot, not an icon. A 6px coloured dot plus a word,
- * which is how run state reads everywhere: the session list, the host pairing
- * step, the terminal tab. The six states are the vocabulary; do not invent
- * "In progress" or "Error" alongside them.
- *
- * `completed` swaps the dot for a small green check (the connected-host and
- * connected-GitHub rows). `meta` adds a muted second line under the label.
- * `pulse` animates the dot for a live "waiting…" state; it stops under
- * reduced motion.
- */
 const dotVariants = cva('inline-block size-1.5 shrink-0 rounded-pill', {
   variants: {
     state: {
@@ -26,8 +15,7 @@ const dotVariants = cva('inline-block size-1.5 shrink-0 rounded-pill', {
       idle: 'bg-fg-subtle',
       pending: 'bg-border-strong',
       // The routine vocabulary: active and paused are a routine's own states,
-      // beside the run states above. Running pulses; paused is muted, not
-      // coloured.
+      // beside the run states above. Paused is muted, not coloured.
       active: 'bg-success',
       paused: 'bg-fg-subtle',
     },
@@ -49,29 +37,58 @@ const STATUS_LABEL: Record<StatusState, string> = {
   paused: 'Paused',
 };
 
+/**
+ * StatusDot — status is a dot, not an icon. A 6px coloured dot plus a word,
+ * which is how run state reads everywhere: the session list, the host pairing
+ * step, the terminal tab. These states are the vocabulary; do not invent
+ * "In progress" or "Error" alongside them.
+ *
+ * `completed` swaps the dot for a small green check (the connected-host and
+ * connected-GitHub rows). `meta` adds a muted second line under the label.
+ * `pulse` animates the dot for a live "waiting…" state; it stops under
+ * reduced motion.
+ */
 function StatusDot({
   state = 'idle',
   children,
   meta,
   pulse,
+  density = 'default',
   className,
   ...props
 }: React.ComponentProps<'span'> &
   VariantProps<typeof dotVariants> & {
-    /** A muted second line under the label. */
     meta?: React.ReactNode;
-    /** Animate the dot for a live wait. */
     pulse?: boolean;
+    /**
+     * `compact` is a routine's status in a table row or a page's facts: a
+     * slightly larger dot set close to its word, no column for a check, and a
+     * paused routine's word muted.
+     */
+    density?: 'default' | 'compact';
   }) {
   const resolved = state ?? 'idle';
+  const compact = density === 'compact';
   return (
     <span
       data-slot="status-dot"
       data-state={resolved}
-      className={cn('inline-flex items-start gap-2.5 text-operate text-fg', className)}
+      data-density={density}
+      className={cn(
+        'inline-flex text-operate text-fg',
+        compact
+          ? 'items-center gap-1.75 text-sm data-[state=paused]:text-fg-muted'
+          : 'items-start gap-2.5',
+        className,
+      )}
       {...props}
     >
-      <span className="flex h-[1.4em] w-4 shrink-0 items-center justify-center">
+      <span
+        className={cn(
+          'flex shrink-0 items-center justify-center',
+          compact ? '[&>span]:size-1.75' : 'h-[1.4em] w-4',
+        )}
+      >
         {resolved === 'completed' ? (
           <CheckIcon className="size-3.5 text-success" strokeWidth={2.5} aria-hidden />
         ) : (

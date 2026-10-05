@@ -4,12 +4,16 @@ import {
   type SessionCheckoutResponseDto,
   type SessionResponseDto,
 } from '@oppenheimer/api-client';
-import { AppError, MapApiError, toAppError } from '@oppenheimer/frontend-core';
-import { SESSION_IMAGE_MAX_BYTES } from '@oppenheimer/shared/protocol';
+import { AppError, MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { PAGINATION } from '@oppenheimer/shared/constants';
+import { SESSION_FILE_MAX_BYTES } from '@oppenheimer/shared/protocol';
 import { injectable } from 'inversify';
+import { CONSUMER_CONFIG } from '../../config';
 import {
   type AttachTicket,
   type CreateSessionInput,
+  type PrepareSessionInput,
+  type SessionAttachment,
   SessionCheckoutEntity,
   SessionEntity,
 } from './session.entity';
@@ -17,22 +21,11 @@ import { type SessionStartEntry, settlesStart, toStartEntry } from './session-st
 import { SessionsErrors } from './sessions.errors';
 
 /**
- * The wire shapes come from the generated client: `pnpm generate:api-client`
- * writes them from the API's own OpenAPI, so a field the API renames cannot
- * stay right here and wrong there.
- *
- * They were hand-written here once, against a single-repository session with a
- * `running | idle | stopped` state — a shape the control plane had already
- * replaced with checkouts, a derived group and a stored lifecycle. Nothing
- * noticed, because nothing called it. That is the whole argument for calling the
- * generated operations rather than composing URLs by hand.
+ * The wire shapes come from the generated client (`pnpm generate:api-client`,
+ * from the API's own OpenAPI), so a field the API renames cannot stay right
+ * here and wrong there. Call the generated operations rather than composing
+ * URLs by hand.
  */
-/** Entries per page of the start log, and how many pages a start may span. */
-const START_LOG_PAGE = 50;
-/** The API's largest page (`PAGINATION.MAX_LIMIT`), so the whole list is as few requests as it can be. */
-const LIST_PAGE_LIMIT = 100;
-
-const MAX_START_LOG_PAGES = 20;
 
 function toCheckout(data: SessionCheckoutResponseDto): SessionCheckoutEntity {
   return new SessionCheckoutEntity(
@@ -54,7 +47,7 @@ function toEntity(data: SessionResponseDto): SessionEntity {
     data.hostId,
     data.name,
     data.slug,
-    data.agent as SessionEntity['agent'],
+    data.agent,
     {
       model: data.launch.model ?? null,
       permission: data.launch.permission ?? null,
@@ -71,13 +64,11 @@ function toEntity(data: SessionResponseDto): SessionEntity {
 }
 
 /**
- * The body `POST /sessions` takes.
- *
  * `launch` is sent only when the caller chose something: an empty object would
  * be the API's defaults spelled out by a client that did not know them, and the
  * one default that matters — the permission level — is the API's to state.
  */
-function toRequest(input: CreateSessionInput): CreateSessionRequest {
+export function toCreateSessionRequest(input: CreateSessionInput): CreateSessionRequest {
   const launch = input.launch
     ? {
         ...(input.launch.model ? { model: input.launch.model } : {}),
@@ -93,6 +84,7 @@ function toRequest(input: CreateSessionInput): CreateSessionRequest {
     ...(input.cwdGithubRepoId !== undefined ? { cwdGithubRepoId: input.cwdGithubRepoId } : {}),
     ...(launch && Object.keys(launch).length ? { launch } : {}),
     ...(input.prompt ? { prompt: input.prompt } : {}),
+    ...(input.attachmentIds?.length ? { attachmentIds: input.attachmentIds } : {}),
     ...(input.name ? { name: input.name } : {}),
     ...(input.projectId ? { projectId: input.projectId } : {}),
   };
@@ -101,69 +93,78 @@ function toRequest(input: CreateSessionInput): CreateSessionRequest {
 @injectable()
 export class SessionsRepository {
   /**
-   * The caller's sessions.
-   *
-   * `GET /sessions` answers the paginated envelope every list endpoint here
-   * uses — `{ data, meta }` — so the rows are read out of it rather than off
-   * the body.
-   */
-  @MapApiError(SessionsErrors.FETCH_LIST_FAILED)
-  /**
    * Every session in the workspace, whatever the endpoint's page size: the
    * sidebar groups, searches and filters the whole list in the browser, so a
-   * page would be a list that silently ends. Pages are walked at the largest
-   * size the API allows until the total the first page reports is in hand.
+   * page would be a list that silently ends.
+   *
+   * The list is walked **by cursor**, at the largest page the API allows, until
+   * `meta.nextCursor` is null: no page pays for an offset or a count, and a
+   * session whose activity moves it up the list mid-walk is never read twice.
    */
+  @MapApiError(SessionsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<SessionEntity[]> {
     const sessions: SessionEntity[] = [];
-    for (let page = 1; ; page += 1) {
-      const { data, error } = await heyApiSdk.listSessions({
-        query: { page, limit: LIST_PAGE_LIMIT },
-      });
-      // An absent body is a failed read, not an empty collection — returning
-      // `[]` would render "no sessions" over a request that never succeeded.
-      if (error || !data?.data) throw new AppError(SessionsErrors.FETCH_LIST_FAILED);
+    let cursor: string | undefined;
+    for (;;) {
+      const data = await unwrapBody(
+        heyApiSdk.findSessions({
+          query: { limit: PAGINATION.MAX_LIMIT, ...(cursor ? { cursor } : {}) },
+        }),
+        SessionsErrors.FETCH_LIST_FAILED,
+        (body) => Array.isArray(body.data),
+      );
       sessions.push(...data.data.map(toEntity));
-      if (data.data.length === 0 || sessions.length >= data.meta.total) return sessions;
+      const next = data.meta.nextCursor;
+      // A cursor the walk already sent would loop for ever; stop instead.
+      if (!next || next === cursor) return sessions;
+      cursor = next;
     }
   }
 
   /**
-   * One session.
-   *
-   * The failure keeps the response's status, which the other reads here do not
-   * need and this one does: the console's session route has to tell a mistyped
-   * or closed session id — a 404, and a destination that will never exist —
-   * from a read that failed and is worth retrying. `toAppError` is the same
-   * normaliser `MapApiError` uses, so a problem document the API sent still
-   * reaches the screen.
+   * The failure keeps the response's status, as every call here does, and this
+   * read leans on it: `isSessionNotFound` tells a 404 from a read worth retrying.
    */
   @MapApiError(SessionsErrors.FETCH_ONE_FAILED)
   async findById(id: string): Promise<SessionEntity> {
-    const { data, error, response } = await heyApiSdk.getSession({ path: { id } });
-    if (error || !data) {
-      throw toAppError({ status: response?.status, body: error }, SessionsErrors.FETCH_ONE_FAILED);
-    }
+    const data = await unwrapBody(
+      heyApiSdk.findSession({ path: { id } }),
+      SessionsErrors.FETCH_ONE_FAILED,
+    );
     return toEntity(data);
   }
 
   /**
-   * Start a session.
-   *
-   * The `Idempotency-Key` is not optional in practice and so is minted here
-   * rather than asked of the caller: a session is directories, a git checkout
-   * and a process on somebody's machine, and a retry after a lost response must
-   * hand back the session already created instead of building a second worktree
-   * and a second branch.
+   * The `Idempotency-Key` is not optional in practice: a session is
+   * directories, a git checkout and a process on somebody's machine, and a
+   * retry after a lost response must hand back the session already created
+   * instead of building a second worktree and a second branch. The key is the
+   * caller's to mint (`CreateSessionVariables`).
    */
   @MapApiError(SessionsErrors.CREATE_FAILED)
   async create(input: CreateSessionInput, idempotencyKey: string): Promise<SessionEntity> {
-    const { data, error } = await heyApiSdk.createSession({
-      body: toRequest(input),
-      headers: { 'Idempotency-Key': idempotencyKey },
-    });
-    if (error || !data) throw new AppError(SessionsErrors.CREATE_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.createSession({
+        body: toCreateSessionRequest(input),
+        headers: { 'Idempotency-Key': idempotencyKey },
+      }),
+      SessionsErrors.CREATE_FAILED,
+    );
     return toEntity(data);
+  }
+
+  /**
+   * Asks the host to clone or fetch the draft's repository and make a spare
+   * worktree, so the create that follows does not wait on git. Answers the
+   * hints only: whether the host was told.
+   */
+  @MapApiError(SessionsErrors.PREPARE_FAILED)
+  async prepare(input: PrepareSessionInput): Promise<string[]> {
+    const data = await unwrapBody(
+      heyApiSdk.prepareSession({ body: input }),
+      SessionsErrors.PREPARE_FAILED,
+    );
+    return data.hints;
   }
 
   /**
@@ -176,12 +177,15 @@ export class SessionsRepository {
   async findStartLog(id: string): Promise<SessionStartEntry[]> {
     const entries: SessionStartEntry[] = [];
     let afterSeq: number | undefined;
-    for (let page = 0; page < MAX_START_LOG_PAGES; page += 1) {
-      const { data, error } = await heyApiSdk.listSessionEvents({
-        path: { id },
-        query: { limit: START_LOG_PAGE, afterSeq },
-      });
-      if (error || !data?.data) throw new AppError(SessionsErrors.FETCH_EVENTS_FAILED);
+    for (let page = 0; page < CONSUMER_CONFIG.sessions.maxStartLogPages; page += 1) {
+      const data = await unwrapBody(
+        heyApiSdk.findSessionEvents({
+          path: { id },
+          query: { limit: CONSUMER_CONFIG.sessions.startLogPageSize, afterSeq },
+        }),
+        SessionsErrors.FETCH_EVENTS_FAILED,
+        (body) => Array.isArray(body.data),
+      );
       for (const raw of data.data) {
         const entry = toStartEntry(raw);
         if (!entry) continue;
@@ -194,26 +198,23 @@ export class SessionsRepository {
     return entries;
   }
 
-  @MapApiError(SessionsErrors.STOP_FAILED)
-  async stop(id: string): Promise<SessionEntity> {
-    const { data, error } = await heyApiSdk.stopSession({ path: { id } });
-    if (error || !data) throw new AppError(SessionsErrors.STOP_FAILED);
-    return toEntity(data);
-  }
-
   /** Display only: the slug, the directory and the branch never change. */
   @MapApiError(SessionsErrors.RENAME_FAILED)
   async rename(id: string, name: string): Promise<SessionEntity> {
-    const { data, error } = await heyApiSdk.renameSession({ path: { id }, body: { name } });
-    if (error || !data) throw new AppError(SessionsErrors.RENAME_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.renameSession({ path: { id }, body: { name } }),
+      SessionsErrors.RENAME_FAILED,
+    );
     return toEntity(data);
   }
 
   /** To a project that holds the session's repository; nothing on the host moves. */
   @MapApiError(SessionsErrors.MOVE_FAILED)
   async move(id: string, projectId: string): Promise<SessionEntity> {
-    const { data, error } = await heyApiSdk.moveSession({ path: { id }, body: { projectId } });
-    if (error || !data) throw new AppError(SessionsErrors.MOVE_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.moveSession({ path: { id }, body: { projectId } }),
+      SessionsErrors.MOVE_FAILED,
+    );
     return toEntity(data);
   }
 
@@ -223,34 +224,40 @@ export class SessionsRepository {
    * not pushed refuses the close unless the caller accepts losing it.
    */
   @MapApiError(SessionsErrors.CLOSE_FAILED)
+  /**
+   * Bring a stopped session's terminal back. The host recreates window 0 in the
+   * worktrees the session already has and reopens the agent's own conversation,
+   * so what comes back is the session as it was rather than a second one.
+   */
+  async restart(id: string): Promise<SessionEntity> {
+    const data = await unwrapBody(
+      heyApiSdk.restartSession({ path: { id } }),
+      SessionsErrors.RESTART_FAILED,
+    );
+    return toEntity(data);
+  }
+
   async close(id: string, acceptUnpushedWork = false): Promise<SessionEntity> {
-    const { data, error } = await heyApiSdk.closeSession({
-      path: { id },
-      query: acceptUnpushedWork ? { acceptUnpushedWork } : undefined,
-    });
-    if (error || !data) throw new AppError(SessionsErrors.CLOSE_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.closeSession({
+        path: { id },
+        query: acceptUnpushedWork ? { acceptUnpushedWork } : undefined,
+      }),
+      SessionsErrors.CLOSE_FAILED,
+    );
     return toEntity(data);
   }
 
   /**
-   * A pass to open one window's terminal.
-   *
-   * Never cached and never retried on its own: the ticket is single use and
-   * sixty seconds, so the only right time to mint one is the moment a socket is
-   * about to be opened with it.
+   * A pass to open one window's terminal. Never cached and never retried on
+   * its own: the ticket is single use and sixty seconds.
    */
   @MapApiError(SessionsErrors.ATTACH_TICKET_FAILED)
   async issueAttachTicket(id: string, window = 0): Promise<AttachTicket> {
-    const { data, error, response } = await heyApiSdk.issueAttachTicket({
-      path: { id },
-      body: { window },
-    });
-    if (error || !data) {
-      throw toAppError(
-        { status: response?.status, body: error },
-        SessionsErrors.ATTACH_TICKET_FAILED,
-      );
-    }
+    const data = await unwrapBody(
+      heyApiSdk.issueAttachTicket({ path: { id }, body: { window } }),
+      SessionsErrors.ATTACH_TICKET_FAILED,
+    );
     return {
       ticket: data.ticket,
       url: data.url,
@@ -260,24 +267,33 @@ export class SessionsRepository {
   }
 
   /**
-   * An image for one window's prompt. The agent reads its host's clipboard,
-   * not the browser's, so the image goes to the host and the runner pastes
+   * A file (an image, a PDF, text) for a session that does not exist yet:
+   * kept briefly by the API for the `create` that names its id in `attachmentIds`. A file over the cap
+   * is refused here, before it is sent; the API judges the type by the bytes.
+   */
+  @MapApiError(SessionsErrors.UPLOAD_ATTACHMENT_FAILED)
+  async uploadAttachment(file: Blob): Promise<SessionAttachment> {
+    if (file.size > SESSION_FILE_MAX_BYTES) throw new AppError(SessionsErrors.FILE_TOO_LARGE);
+    const data = await unwrapBody(
+      heyApiSdk.uploadSessionAttachment({ body: { file: file } }),
+      SessionsErrors.UPLOAD_ATTACHMENT_FAILED,
+    );
+    return { id: data.id, mediaType: data.mediaType, size: data.size };
+  }
+
+  /**
+   * A file for one window's prompt. The agent reads its host's clipboard,
+   * not the browser's, so the file goes to the host and the runner pastes
    * its path in. A file over the cap is refused here, before it is sent; the
    * API judges the type by the bytes and answers an unreachable host as an
    * error, so a resolved call means the host has it.
    */
-  @MapApiError(SessionsErrors.PASTE_IMAGE_FAILED)
-  async pasteImage(id: string, image: Blob, window = 0): Promise<void> {
-    if (image.size > SESSION_IMAGE_MAX_BYTES) throw new AppError(SessionsErrors.IMAGE_TOO_LARGE);
-    const { error, response } = await heyApiSdk.pasteSessionImage({
-      path: { id },
-      body: { file: image, window },
-    });
-    if (error) {
-      throw toAppError(
-        { status: response?.status, body: error },
-        SessionsErrors.PASTE_IMAGE_FAILED,
-      );
-    }
+  @MapApiError(SessionsErrors.PASTE_FILE_FAILED)
+  async pasteFile(id: string, file: Blob, window = 0): Promise<void> {
+    if (file.size > SESSION_FILE_MAX_BYTES) throw new AppError(SessionsErrors.FILE_TOO_LARGE);
+    await unwrap(
+      heyApiSdk.pasteSessionImage({ path: { id }, body: { file: file, window } }),
+      SessionsErrors.PASTE_FILE_FAILED,
+    );
   }
 }

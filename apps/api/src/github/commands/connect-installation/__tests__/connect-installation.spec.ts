@@ -1,6 +1,11 @@
+import type { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  INSTALL_STATE_PREFIX,
+  InstallStateResolver,
+} from '../../../application/install-state.resolver';
 import type { GithubInstallationRepositoryPort } from '../../../database/github-installation.repository.port';
 import { GithubErrors } from '../../../domain/github.errors';
 import { GithubInstallationEntity } from '../../../domain/github-installation.entity';
@@ -13,15 +18,12 @@ import { ConnectInstallationCommand } from '../connect-installation.command';
 import { ConnectInstallationCommandHandler } from '../connect-installation.command-handler';
 
 /**
- * Two things are asserted here, and they fail independently.
- *
- * The **claim proof**: `POST /installations` takes an installation id from the
- * caller's browser, so if the handler trusted it, anyone could post someone
- * else's number and receive one-hour write tokens for their repositories.
- *
- * And **which row the claim lands on**: a claim is something a workspace holds,
- * not something it once touched, so a live row elsewhere is a conflict while a
- * disconnected one is history.
+ * Three things are asserted here, and they fail independently: the install
+ * state (without one this person minted, a half-finished callback URL would
+ * connect someone's installation to whoever opened it); the claim proof (the
+ * installation id comes from the browser, so trusting it would hand anyone
+ * one-hour write tokens for another account's repositories); and which row the
+ * claim lands on (see `ConnectInstallationCommandHandler`).
  */
 
 const CLAIM: GithubInstallationClaim = {
@@ -38,6 +40,27 @@ interface Rows {
   visible?: { githubInstallationId: number }[];
   claim?: GithubInstallationClaim;
   insertFails?: AppError;
+}
+
+/** A state minted for `ana` in `org-acme`, seeded into every `build()`. */
+const STATE = 'the-install-state-nonce';
+
+/** `setIfAbsent` / `take` over a Map: the two semantics the resolver relies on. */
+function memoryCache() {
+  const store = new Map<string, unknown>();
+  return {
+    store,
+    setIfAbsent: vi.fn(async (key: string, value: unknown) => {
+      if (store.has(key)) return false;
+      store.set(key, value);
+      return true;
+    }),
+    take: vi.fn(async (key: string) => {
+      const value = store.get(key);
+      store.delete(key);
+      return value;
+    }),
+  };
 }
 
 function build(rows: Rows = {}) {
@@ -64,13 +87,18 @@ function build(rows: Rows = {}) {
     readInstallation: vi.fn().mockResolvedValue(rows.claim ?? CLAIM),
   } satisfies Pick<GithubAppPort, 'isConfigured' | 'listUserInstallations' | 'readInstallation'>;
 
+  const cache = memoryCache();
+  cache.store.set(`${INSTALL_STATE_PREFIX}${STATE}`, { userId: 'ana', organizationId: 'org-acme' });
+  const installState = new InstallStateResolver(cache as unknown as CacheService);
+
   const handler = new ConnectInstallationCommandHandler(
     installations as unknown as GithubInstallationRepositoryPort,
     github as unknown as GithubAppPort,
     new GithubInstallationMapper(),
+    installState,
   );
 
-  return { handler, installations, github };
+  return { handler, installations, github, cache };
 }
 
 function command(overrides: Partial<ConnectInstallationCommand> = {}) {
@@ -79,6 +107,7 @@ function command(overrides: Partial<ConnectInstallationCommand> = {}) {
     userId: 'ana',
     githubInstallationId: CLAIM.githubInstallationId,
     code: 'the-oauth-code',
+    state: STATE,
     ...overrides,
   });
 }
@@ -94,6 +123,41 @@ function connected(organizationId: string, suspendedAt: Date | null = null) {
     suspendedAt,
   });
 }
+
+describe('the install state', () => {
+  it.each([
+    // The regression: Mallory's stopped callback carries her code and no state
+    // of Victor's, and used to connect her installation to his workspace.
+    ['a state this console never minted', { state: 'never-minted-state-nonce' }],
+    ['a state minted for someone else', { userId: 'mallory' }],
+    ['a state minted in another workspace', { organizationId: 'org-rival' }],
+  ])('refuses %s, before GitHub is called', async (_case, overrides) => {
+    const subject = build();
+
+    await expect(subject.handler.execute(command(overrides))).rejects.toMatchObject({
+      code: 'GITHUB_011',
+    });
+    expect(subject.github.listUserInstallations).not.toHaveBeenCalled();
+    expect(subject.installations.insert).not.toHaveBeenCalled();
+  });
+
+  it('spends the state: a second post with it is refused', async () => {
+    const subject = build();
+
+    await expect(subject.handler.execute(command())).resolves.toBeTruthy();
+    await expect(subject.handler.execute(command())).rejects.toMatchObject({
+      code: 'GITHUB_011',
+    });
+    expect(subject.github.listUserInstallations).toHaveBeenCalledTimes(1);
+  });
+
+  it('spends the state even when GitHub then refuses the claim', async () => {
+    const subject = build({ visible: [] });
+
+    await expect(subject.handler.execute(command())).rejects.toMatchObject({ code: 'GITHUB_004' });
+    expect(subject.cache.store.size).toBe(0);
+  });
+});
 
 describe('the claim proof', () => {
   let subject: ReturnType<typeof build>;
@@ -120,13 +184,6 @@ describe('the claim proof', () => {
     await expect(other.handler.execute(command())).rejects.toMatchObject({ code: 'GITHUB_004' });
     expect(other.github.readInstallation).not.toHaveBeenCalled();
     expect(other.installations.insert).not.toHaveBeenCalled();
-  });
-
-  it('refuses when GitHub lists nothing at all for the caller', async () => {
-    const empty = build({ visible: [] });
-
-    await expect(empty.handler.execute(command())).rejects.toBeInstanceOf(AppError);
-    expect(empty.installations.insert).not.toHaveBeenCalled();
   });
 
   it('carries GitHub’s current suspension onto a new row', async () => {
@@ -200,15 +257,6 @@ describe('which row the claim lands on', () => {
     // installation usable here until the next webhook said otherwise.
     expect(existing.suspendedAt).toEqual(stillSuspended);
     expect(existing.isUsable).toBe(false);
-  });
-
-  it('claims an installation another workspace disconnected', async () => {
-    // A claim is something a workspace holds. Once it is given up, the number is
-    // free, and `GITHUB_003` would otherwise mean "someone once connected this".
-    const subject = build({ disconnected: undefined, live: undefined });
-
-    await expect(subject.handler.execute(command())).resolves.toBeTruthy();
-    expect(subject.installations.insert).toHaveBeenCalledTimes(1);
   });
 
   it('reports the constraint’s refusal as the same 409, not a 500', async () => {

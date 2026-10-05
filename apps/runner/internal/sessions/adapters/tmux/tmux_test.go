@@ -84,7 +84,6 @@ func TestListOnAHostWithNoServerIsEmptyNotAnError(t *testing.T) {
 }
 
 func TestKillingASessionThatIsAlreadyGoneSucceeds(t *testing.T) {
-	// The caller wanted it gone, and it is gone.
 	if err := server(t).Kill(context.Background(), "opp-never-existed"); err != nil {
 		t.Fatalf("kill: %v", err)
 	}
@@ -127,8 +126,6 @@ func TestTheEnvironmentIsInheritedByEveryWindow(t *testing.T) {
 	s := server(t)
 	ctx := context.Background()
 	dir := t.TempDir()
-	// The session id and the runner's socket are set once, at creation, so
-	// a git credential helper called from any tab knows who it answers for.
 	env := map[string]string{"OPPENHEIMER_SESSION": "abc123"}
 	if err := s.Create(ctx, "opp-env", dir, "", env); err != nil {
 		t.Fatal(err)
@@ -190,6 +187,47 @@ func TestAttachStreamsAndDetachingLeavesTheSessionRunning(t *testing.T) {
 	}
 	if has, err := s.Has(ctx, "opp-attach"); err != nil || !has {
 		t.Fatal("detaching must leave the session running — that is the whole product")
+	}
+}
+
+func TestPanesListsEverySessionWithItsTitleInOneCall(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	// A program that never touches the title, as a shell prompt might.
+	for _, name := range []string{"opp-abc", "opp-def"} {
+		if err := s.Create(ctx, name, t.TempDir(), "sleep 60", nil); err != nil {
+			t.Fatalf("create %s: %v", name, err)
+		}
+	}
+	socket := "opp-test-" + strings.ReplaceAll(t.Name(), "/", "-")
+	if out, err := exec.Command("tmux", "-L", socket, "select-pane", "-t", "opp-abc:0", "-T", "my  title with spaces").CombinedOutput(); err != nil {
+		t.Fatalf("set the title: %s: %v", out, err)
+	}
+
+	panes, err := s.Panes(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	byName := map[string]app.Pane{}
+	for _, pane := range panes {
+		byName[pane.Session] = pane
+	}
+	if len(panes) != 2 || len(byName) != 2 {
+		t.Fatalf("panes = %+v, want one per session", panes)
+	}
+	if abc := byName["opp-abc"]; abc.Window != 0 || !abc.Active || abc.Title != "my  title with spaces" {
+		t.Fatalf("opp-abc = %+v, want window 0, active, with its title whole", abc)
+	}
+}
+
+func TestPanesOnAHostWithNoServerIsEmptyNotAnError(t *testing.T) {
+	s := server(t)
+
+	panes, err := s.Panes(context.Background())
+
+	if err != nil || len(panes) != 0 {
+		t.Fatalf("panes = %v, err = %v, want none and no error", panes, err)
 	}
 }
 
@@ -263,5 +301,56 @@ func TestPasteIsABracketedPasteForAProgramThatAskedForOne(t *testing.T) {
 	want := "^[[200~/tmp/shot.png^[[201~"
 	if screen := waitFor(t, s, "opp-paste:0", want); !strings.Contains(screen, want) {
 		t.Fatalf("capture:\n%s", screen)
+	}
+}
+
+func TestASessionLaunchesWiderThanTmuxsDefault(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	if err := s.Create(ctx, "opp-launch-size", t.TempDir(), "", nil); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	out, err := exec.Command("tmux", "-L", "opp-test-"+t.Name(),
+		"display-message", "-p", "-t", "opp-launch-size", "#{window_width}x#{window_height}").Output()
+	if err != nil {
+		t.Fatalf("display-message: %v", err)
+	}
+
+	if got := strings.TrimSpace(string(out)); got != "132x40" {
+		t.Fatalf("a detached session launched at %s, want 132x40 (tmux's own default is 80x24)", got)
+	}
+}
+
+func TestLaunchReplacesTheShellWithTheProgramInPlace(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	worktree := t.TempDir()
+	if err := s.Create(ctx, "opp-launch", t.TempDir(), "", map[string]string{"OPPENHEIMER_SESSION": "launched-session"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SendKeys(ctx, "opp-launch:0", "echo typed-before-the-launch\n"); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, s, "opp-launch:0", "typed-before-the-launch")
+
+	// The program is the pane's own process, started in dir with the
+	// session's environment, and what the shell held is gone with it.
+	if err := s.Launch(ctx, "opp-launch:0", worktree, `sh -c 'pwd; echo "agent-for-$OPPENHEIMER_SESSION"; sleep 30'`); err != nil {
+		t.Fatal(err)
+	}
+	screen := waitFor(t, s, "opp-launch:0", "agent-for-launched-session")
+	if !strings.Contains(screen, worktree) {
+		t.Fatalf("the program did not start in the worktree:\n%s", screen)
+	}
+	// Scrollback too: a reader who scrolls up finds the program's first
+	// line, not the shell it replaced.
+	socket := "opp-test-" + strings.ReplaceAll(t.Name(), "/", "-")
+	history, err := exec.Command("tmux", "-L", socket, "capture-pane", "-p", "-S", "-", "-t", "opp-launch:0").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if all := screen + string(history); strings.Contains(all, "typed-before-the-launch") || strings.Contains(all, "sleep 30") {
+		t.Fatalf("the pane still holds what came before the program, or how it was started:\n%s", all)
 	}
 }

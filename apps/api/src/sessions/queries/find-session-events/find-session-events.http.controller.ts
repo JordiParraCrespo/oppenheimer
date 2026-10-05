@@ -41,7 +41,6 @@ export class FindSessionEventsHttpController {
   @CheckPolicies({ action: 'read', subject: 'Session' })
   @RequireScopes('sessions:read')
   @ApiOperation({
-    operationId: 'listSessionEvents',
     summary: 'Read a session’s log',
     description:
       'The append-only log, which is the truth per session — the row is a fold of it. Paginated by `seq`, which is dense and assigned by the control plane.',

@@ -36,33 +36,33 @@ export class AssignUserRolesCommandHandler
 
     const uniqueRoleIds = [...new Set(command.roleIds)];
     const roles =
-      command.activeOrganizationId === undefined
+      command.organizationId === undefined
         ? await this.roleRepository.findByIds(uniqueRoleIds)
-        : await this.roleRepository.findByIds(uniqueRoleIds, command.activeOrganizationId);
+        : await this.roleRepository.findByIds(uniqueRoleIds, command.organizationId);
     if (roles.length !== uniqueRoleIds.length) throw new AppError(RoleErrors.NOT_FOUND);
 
     // No privilege escalation: assigning a role grants its permissions to the
     // target, so the caller must already hold everything those roles confer.
-    // `RoleGrantPolicy` guards role *definitions*; this closes the parallel
-    // escalation path where a lesser admin assigns a role that outranks them.
+    // Role writes make the same check; this is the other path, a lesser admin
+    // assigning a role that outranks them.
     await this.grantPolicy.assertGrantable(
       command.actorId
         ? {
             id: command.actorId,
             role: command.actorRole,
-            activeOrganizationId: command.activeOrganizationId,
+            organizationId: command.organizationId,
           }
         : undefined,
       roles.flatMap((role) => role.permissions.map((permission) => permission.toDefinition())),
     );
 
-    if (command.activeOrganizationId === undefined) {
+    if (command.organizationId === undefined) {
       await this.userRoleRepository.setRolesForUser(command.userId, uniqueRoleIds);
     } else {
       await this.userRoleRepository.setRolesForUser(
         command.userId,
         uniqueRoleIds,
-        command.activeOrganizationId,
+        command.organizationId,
       );
     }
   }

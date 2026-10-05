@@ -3,12 +3,10 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 /**
  * Whether a caller may put work on a host.
  *
- * `hostId` on a session cannot be held by a composite foreign key the way a
- * project can: a host has no workspace column, and a *grant* is a row rather
- * than a column. So the reference is guarded here instead, by loading the host
- * through the own-or-grant-scoped repository and refusing on a miss — which is
- * the one reference in the schema that a check guards rather than a constraint,
- * and is named as such.
+ * `hostId` on a session has a plain foreign key, not a composite one the way a
+ * project's does: a host has no workspace column, and a *grant* is a row rather
+ * than a column. So whether the caller may use the host is guarded here, by
+ * loading it through the own-or-grant-scoped repository and refusing on a miss.
  */
 export interface HostAccessPort {
   /**

@@ -1,5 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { CredentialsTokenMessage } from '@oppenheimer/shared/protocol';
+import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
+import { CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
 import { REPOSITORY_ACCESS } from '../../github/github.di-tokens';
 import type { HostKeyPort } from '../../hosts/application/host-key.port';
@@ -7,23 +9,20 @@ import { HOST_KEY } from '../../hosts/hosts.di-tokens';
 import type { RunnerLink } from '../../links/application/link-registry.port';
 import type { SessionLookupPort } from '../../sessions/application/session-lookup.port';
 import { SESSION_LOOKUP } from '../../sessions/sessions.di-tokens';
-import { seal } from './seal.util';
 
 /**
- * `credentials.token` → `credentials.grant`: the runner asks for the
- * installation token for one session's repository, on the link, because the
- * link is the only channel already authenticated per host (01).
+ * `credentials.token` → `credentials.grant`: the runner asks on the link for one
+ * session repository's installation token, because the link is the only channel
+ * already authenticated per host (01).
  *
- * Three checks before anything is minted: the session and checkout exist and
- * are live, the session runs on **this** link's host, and the repository the
- * runner names is the checkout's. Then the token is minted live — never cached,
- * so a repository removed from the installation stops on the next ask — and
- * sealed to the host's key, so the relay holds it in the clear for as long as
- * this function runs and no longer.
+ * Before minting: the session and checkout exist and are live, the session runs on
+ * **this** link's host, the named repository is the checkout's, and the session's
+ * starter may still act. The token is minted live, never cached, so a repository
+ * removed from the installation stops on the next ask, and sealed to the host's
+ * key, so the relay holds it in the clear only while this runs.
  *
- * A refusal is a `command.failed` carrying the ask's `requestId` and the
- * catalog code; the runner's credential helper turns that into git's "I have
- * none".
+ * A refusal is a `command.failed` with the ask's `requestId` and the catalog code,
+ * which the runner's credential helper turns into git's "I have none".
  */
 @Injectable()
 export class CredentialsProcessor {
@@ -36,6 +35,8 @@ export class CredentialsProcessor {
     private readonly repositories: RepositoryAccessPort,
     @Inject(HOST_KEY)
     private readonly keys: HostKeyPort,
+    @Inject(CREDENTIAL_OWNER)
+    private readonly owners: CredentialOwnerPort,
   ) {}
 
   async onToken(link: RunnerLink, ask: CredentialsTokenMessage): Promise<void> {
@@ -48,8 +49,16 @@ export class CredentialsProcessor {
       this.refuse(link, ask, 'SESSIONS_001', "the repository is not this checkout's");
       return;
     }
-    const publicKey = await this.keys.publicKeyOf(link.hostId);
-    if (!publicKey) {
+    // A token is minted for the person who started the session; a banned or
+    // deactivated one gets none, the same rule every credential of theirs
+    // follows. (The host's own owner is refused at the link: its handshake
+    // and every heartbeat ask.) Read per ask, never cached.
+    if (!(await this.owners.findActiveOwner(target.createdByUserId))) {
+      this.refuse(link, ask, 'TOKEN_003', 'the session owner may not act');
+      return;
+    }
+    // The key is read before a token is minted, so a host with none costs no mint.
+    if (!(await this.keys.publicKeyOf(link.hostId))) {
       this.refuse(link, ask, 'HOSTS_001', 'host key unavailable');
       return;
     }
@@ -58,12 +67,17 @@ export class CredentialsProcessor {
         target.installationId,
         target.githubRepoId,
       );
+      const sealed = await this.keys.sealFor(link.hostId, Buffer.from(minted.token, 'utf8'));
+      if (!sealed) {
+        this.refuse(link, ask, 'HOSTS_001', 'host key unavailable');
+        return;
+      }
       link.send({
         type: 'credentials.grant',
         requestId: ask.requestId,
         sessionId: ask.sessionId,
         checkoutId: ask.checkoutId,
-        sealed: seal(publicKey, Buffer.from(minted.token, 'utf8')).toString('base64'),
+        sealed,
         expiresAt: minted.expiresAt.toISOString(),
       });
     } catch (error) {

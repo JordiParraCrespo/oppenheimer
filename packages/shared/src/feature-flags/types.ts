@@ -1,6 +1,6 @@
 /**
- * The feature-flag model shared by the API (which evaluates), the clients
- * (which read evaluated values) and the control plane (which edits targeting).
+ * The feature-flag model shared by the API (which evaluates, and whose admin
+ * routes edit targeting) and the clients (which read evaluated values).
  *
  * Two halves, deliberately kept apart:
  *
@@ -55,7 +55,7 @@ interface FlagDefinitionBase {
   owner: string;
   /**
    * When a `release` or `experiment` flag should be gone. Required for both —
-   * the catalog test and `pnpm check:flags` enforce it.
+   * the catalog test enforces it, and `pnpm check:flags` fails once it passes.
    */
   expiresAt?: IsoDate;
   /**
@@ -120,7 +120,7 @@ export interface FlagCondition {
 
 /**
  * One arm of a percentage split. A weight is a percentage in 0.01 % steps —
- * one of the evaluator's 10 000 buckets — and an arm's weights sum to 100.
+ * one of the evaluator's 10 000 buckets — and a split's weights sum to 100.
  */
 export interface FlagSplitArm {
   value: FlagValue;

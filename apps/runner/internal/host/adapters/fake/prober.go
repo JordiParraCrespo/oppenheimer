@@ -1,5 +1,5 @@
-// Package fake is an in-memory Prober: the default in tests and the reason
-// nothing in this context needs a Debian box to be exercised.
+// Package fake is an in-memory Prober and Updater: the default in tests and
+// the reason nothing in this context needs a Debian box to be exercised.
 package fake
 
 import (
@@ -21,7 +21,12 @@ type Prober struct {
 	Hostname     string
 	Root         bool
 	Free         uint64
+	Total        uint64
+	MachineFacts domain.Machine
 	PlatformErr  error
+	// Calls records "invalidate" and "tool:<name>" in order, so a test can
+	// tell a fresh probe from a cached one.
+	Calls []string
 }
 
 // New returns a healthy Ubuntu host with git and tmux present.
@@ -44,7 +49,13 @@ func (p *Prober) Platform(context.Context) (domain.Platform, string, error) {
 }
 
 // Tool implements app.Prober.
-func (p *Prober) Tool(_ context.Context, name string) domain.Tool { return p.Tools[name] }
+func (p *Prober) Tool(_ context.Context, name string) domain.Tool {
+	p.Calls = append(p.Calls, "tool:"+name)
+	return p.Tools[name]
+}
+
+// Invalidate implements app.Prober.
+func (p *Prober) Invalidate() { p.Calls = append(p.Calls, "invalidate") }
 
 // Identity implements app.Prober.
 func (p *Prober) Identity() (string, string, string, bool) {
@@ -53,3 +64,9 @@ func (p *Prober) Identity() (string, string, string, bool) {
 
 // DiskFree implements app.Prober.
 func (p *Prober) DiskFree(string) (uint64, error) { return p.Free, nil }
+
+// DiskTotal implements app.Prober.
+func (p *Prober) DiskTotal(string) (uint64, error) { return p.Total, nil }
+
+// Machine implements app.Prober.
+func (p *Prober) Machine(context.Context) domain.Machine { return p.MachineFacts }

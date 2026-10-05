@@ -128,7 +128,16 @@ func TestForwardedFor(t *testing.T) {
 func TestServeAcceptsAProvidedListener(t *testing.T) {
 	// A host agent opens no TCP port: it serves a 0600 Unix socket that only
 	// its own user can reach.
-	socket := filepath.Join(t.TempDir(), "runner.sock")
+	//
+	// Not `t.TempDir()`: it builds the directory name out of the test's, and a
+	// socket path is capped at 104 bytes on macOS (108 on Linux), past which
+	// `net.Listen` fails with a bare `bind: invalid argument`.
+	dir, err := os.MkdirTemp("", "opp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+	socket := filepath.Join(dir, "runner.sock")
 	listener, err := net.Listen("unix", socket)
 	if err != nil {
 		t.Fatal(err)

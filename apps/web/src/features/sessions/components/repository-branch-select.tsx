@@ -5,40 +5,31 @@ import {
   type RepositoryScope,
   RepositorySelect,
 } from '@oppenheimer/design-system-web';
-import { Folder } from '@oppenheimer/design-system-web/icons';
+import { ArrowUpRight, Folder } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import { capRepositories } from '../lib/session-options';
 
 /**
- * The repository chip, and the branch pane that hangs off the selected row.
+ * The repository chip, and the branch pane off the selected row. A session
+ * checks out one repository in the MVP (`capRepositories`,
+ * `product/versions/mvp/00-scope.md`): the runner makes one worktree per
+ * session, and a second repository accepted here was refused by the host,
+ * leaving a session that spun forever (#56). So a second pick replaces the
+ * first; the picker keeps its multi-select for when runners make several.
  *
- * A session checks out one repository in the MVP (`capRepositories`,
- * `product/versions/mvp/00-scope.md`): a runner makes one worktree per
- * session, and a second repository used to be accepted here and then refused
- * by the host, leaving a session that spun forever (#56). So picking a second
- * repository replaces the first rather than adding to it; the design system's
- * picker keeps its multi-select for the day runners make several.
- *
- * A branch is a fact about a repository rather than about the session — which
- * is why the two are one control: picking a repository lands it on its default
- * branch, and its row then grows the cell that opens its own branch pane.
- *
- * Two reads, so two flags: `loading` is the repositories, `branchesLoading` the
- * branches of the ones already picked — a slower read, because the API asks
- * GitHub live, and the pane that shows it is inside this same popup. Both are
- * `loading` rather than `disabled`: an empty list is a list that has not
- * arrived, and a greyed chip says the opposite.
- *
- * Every row carries the branches the section has loaded for it. Until that read
- * lands the picker falls back to the repository's `defaultBranch`, which is the
- * branch it would have chosen anyway.
+ * A branch belongs to a repository, so the two are one control and a picked
+ * repository lands on its default branch. `branchesLoading` is its own flag
+ * because the API reads branches from GitHub live. Both flags mean loading,
+ * not disabled: an empty list has not arrived, and a greyed chip says the
+ * opposite.
  */
 export function RepositoryBranchSelect({
   repositories,
   value,
   onValueChange,
-  manageUrl,
+  onManage,
   loading,
+  failure,
   branchesLoading,
   disabled,
   variant,
@@ -46,12 +37,15 @@ export function RepositoryBranchSelect({
   repositories: RepositoryOption[];
   value: RepositoryScope[];
   onValueChange: (value: RepositoryScope[]) => void;
-  /** `github_app_install_url`; `null` when the deployment has no GitHub App. */
-  manageUrl: string | null;
+  /**
+   * Opens the App's install page to change what it covers; absent when the
+   * deployment has no GitHub App, which drops the foot row.
+   */
+  onManage?: () => void;
   loading?: boolean;
+  failure?: string;
   branchesLoading?: boolean;
   disabled?: boolean;
-  /** `tab` inside the composer's scope band; `chip` on its own. */
   variant?: ChipSelectTriggerVariant;
 }) {
   const { t } = useTranslation();
@@ -71,19 +65,22 @@ export function RepositoryBranchSelect({
       aria-label={t('sessions.new.repository.label')}
       placeholder={t('sessions.new.repository.placeholder')}
       searchPlaceholder={t('sessions.new.repository.search')}
-      emptyText={t(manageUrl ? 'sessions.new.repository.empty' : 'sessions.new.repository.noApp')}
+      emptyText={
+        failure ?? t(onManage ? 'sessions.new.repository.empty' : 'sessions.new.repository.noApp')
+      }
       branchSearchPlaceholder={t('sessions.new.repository.branchSearch')}
       branchEmptyText={t('sessions.new.repository.branchEmpty')}
       branchPaneTitle={(name) => t('sessions.new.repository.branchPane', { name })}
       changeBranchLabel={t('sessions.new.repository.changeBranch')}
       action={
-        manageUrl === null
-          ? undefined
-          : {
+        onManage
+          ? {
               label: t('sessions.new.repository.manage'),
               icon: <BrandGlyph name="github" size={15} />,
-              href: manageUrl,
+              trailing: <ArrowUpRight />,
+              onSelect: onManage,
             }
+          : undefined
       }
     />
   );

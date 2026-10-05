@@ -3,34 +3,27 @@
 import { CheckIcon, CopyIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { useCopy } from '../hooks/use-copy';
 import { cn } from '../lib/utils';
 import { Button } from './button';
 
-/**
- * CodeBlock — a command or snippet a person copies: 12.5px SF Mono, wrapped,
- * with a small secondary "Copy" that reads "Copied" for a moment. On Add host
- * two sit side by side inside Cards: the install command and the prompt for
- * an AI agent. `title` is the card-style header; `note` is a muted line under
- * the code ("Paste into Claude Code or Codex already running on that machine.").
- *
- * `dim` marks a trailing span of the code as faint (the token in the agent
- * prompt) without changing what gets copied.
- *
- * `layout="panel"` is the Add host dialog's form: a tonal 10px panel at
- * 11.5px with a header band of its own — pill `tabs` on the left (Command,
- * Agent prompt) and one small ghost Copy on the right, a hairline under it,
- * then the code at a fixed height so switching tabs never moves the token
- * line under it. One block, two ways to read it, one Copy: the same block
- * opens from the composer's host chip and from Settings. Without `tabs` the
- * band holds Copy alone.
- *
- * `copyLabel` and `copiedLabel` default to English because the design system
- * carries no catalog. Any app that translates must pass its own — the defaults
- * are for the showcase, not for a product screen, where leaving them is how a
- * Spanish reader ends up with an English button.
- */
 type CodeBlockTab = { value: string; label: React.ReactNode };
 
+/**
+ * CodeBlock — a command or snippet a person copies: 12.5px SF Mono, wrapped,
+ * with a small secondary "Copy" that reads "Copied" for a moment. `title` is a
+ * card-style header; `note` a muted line under the code. `dim` marks a trailing
+ * span as faint (the token in the agent prompt) without changing what is copied.
+ *
+ * `layout="panel"` is the Add host dialog's form: a tonal 10px panel at 11.5px
+ * with its own header band (pill `tabs` left, one small ghost Copy right, a
+ * hairline under it), then the code at a fixed 152px so switching tabs never
+ * moves the token line. Without `tabs` the band holds Copy alone.
+ *
+ * `copyLabel` and `copiedLabel` default to English because the design system
+ * carries no catalog: an app that translates must pass its own, or a Spanish
+ * reader gets an English button.
+ */
 function CodeBlock({
   code,
   title,
@@ -38,6 +31,7 @@ function CodeBlock({
   dim,
   layout = 'card',
   tabs,
+  tabsLabel = 'Format',
   tab,
   onTabChange,
   maxLines,
@@ -55,6 +49,8 @@ function CodeBlock({
   layout?: 'card' | 'panel';
   /** Panel only: the ways to read the block, as pill tabs in the band. The caller swaps `code`. */
   tabs?: CodeBlockTab[];
+  /** Panel only: what the tabs choose between, for assistive tech. */
+  tabsLabel?: string;
   tab?: string;
   onTabChange?: (value: string) => void;
   /**
@@ -70,21 +66,7 @@ function CodeBlock({
   copyLabel?: string;
   copiedLabel?: string;
 }) {
-  const [copied, setCopied] = React.useState(false);
-  const timer = React.useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  React.useEffect(() => () => clearTimeout(timer.current), []);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      clearTimeout(timer.current);
-      timer.current = setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // Clipboard denied: the text is still selectable.
-    }
-  }
+  const { copied, copy } = useCopy(code);
 
   const head = dim && code.endsWith(dim) ? code.slice(0, -dim.length) : code;
   const tail = dim && code.endsWith(dim) ? dim : null;
@@ -107,7 +89,7 @@ function CodeBlock({
           className="flex items-center justify-between gap-2.5 border-b border-border-subtle p-1.5"
         >
           {tabs && tabs.length > 0 ? (
-            <div role="tablist" aria-label="Format" className="flex gap-0.5">
+            <div role="tablist" aria-label={tabsLabel} className="flex gap-0.5">
               {tabs.map((option) => {
                 const selected = option.value === tab;
                 return (
@@ -147,7 +129,7 @@ function CodeBlock({
           style={capStyle}
           className={cn(
             'm-0 p-3 font-mono text-[11.5px] leading-[1.7] break-normal whitespace-pre-wrap text-fg [overflow-wrap:anywhere]',
-            tabs ? 'h-24 overflow-y-auto' : 'min-h-[76px]',
+            tabs ? 'h-38 overscroll-contain overflow-y-auto' : 'min-h-[76px]',
             maxLines && 'max-h-[calc(var(--code-max-lines)*1.7em)] overflow-y-auto',
           )}
         >

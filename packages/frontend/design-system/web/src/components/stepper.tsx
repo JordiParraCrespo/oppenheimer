@@ -3,6 +3,22 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
+type StepState = 'pending' | 'running' | 'done' | 'failed';
+
+type Step = {
+  id: string;
+  label: React.ReactNode;
+  /** Mono detail under the label ("cloning 41 MB", "1.2s"). */
+  meta?: React.ReactNode;
+  /**
+   * A sentence under the meta for a step that is slow for a reason the
+   * reader should know (the first clone of a repository on a host). Give it
+   * only while that step runs; it rises in when it appears.
+   */
+  note?: React.ReactNode;
+  state: StepState;
+};
+
 /**
  * Stepper — the provisioning pane. A session is not instant: the host has to
  * be reached, the repo cloned, the branch checked out and the harness started.
@@ -11,20 +27,10 @@ import { cn } from '../lib/utils';
  * Each step: an 18px mark on a rail (an empty ring while pending, a spinning
  * ring while running, a green check when done), a 14px label that lifts to
  * full ink as it runs, and a mono meta line. The rail between steps turns
- * green as steps complete. The footer carries a mono elapsed time ("1.4s")
+ * green as steps complete. The footer carries a mono elapsed time ("00:12")
  * and a status word ("Working…"). Pending steps are not numbered: the order
  * is the rail's, and a number would read as a count of what is left.
  */
-type StepState = 'pending' | 'running' | 'done' | 'failed';
-
-type Step = {
-  id: string;
-  label: React.ReactNode;
-  /** Mono detail under the label ("cloning 41 MB", "1.2s"). */
-  meta?: React.ReactNode;
-  state: StepState;
-};
-
 function Stepper({
   steps,
   elapsed,
@@ -87,6 +93,11 @@ function Stepper({
               </span>
               {step.meta ? (
                 <span className="figures text-[11.5px] text-fg-muted">{step.meta}</span>
+              ) : null}
+              {step.note ? (
+                <span className="mt-[3px] block max-w-85 font-sans text-[12.5px] leading-[1.45] tracking-[-0.004em] text-fg-muted text-pretty motion-safe:animate-appear">
+                  {step.note}
+                </span>
               ) : null}
             </span>
           </li>

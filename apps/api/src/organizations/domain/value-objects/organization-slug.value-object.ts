@@ -8,18 +8,12 @@ const MAX_READABLE_LENGTH = 32;
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /**
- * The URL-safe name an organization is addressed by.
- *
- * The rule used to be written twice — once for the workspace sign-up
- * provisions and once for the one a person creates by hand — which is how two
- * organizations of the same product could disagree about what a slug is. It is
- * a value object because the constraint belongs to the value, not to whichever
- * caller happens to be minting one.
+ * The URL-safe name an organization is addressed by. A value object so the
+ * workspace sign-up provisions and one a person creates by hand cannot
+ * disagree about what a slug is.
  */
 export class OrganizationSlug extends ValueObject<string> {
   /**
-   * Derive a slug from what the organization is called.
-   *
    * The display name is reduced to URL characters and capped, then a random
    * suffix is appended: `slug` is unique in the database, and two people who
    * name their workspace the same thing must not collide on it. A name with

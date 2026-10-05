@@ -1,29 +1,23 @@
 import {
-  heyApiClient,
   heyApiSdk,
   type InstallationResponseDto,
   type RepositoryBranchResponseDto,
   type RepositoryResponseDto,
 } from '@oppenheimer/api-client';
-import { AppError, MapApiError } from '@oppenheimer/frontend-core';
+import { MapApiError, unwrapBody } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
-import { BranchEntity, InstallationEntity, RepositoryEntity } from './installation.entity';
+import {
+  BranchEntity,
+  type InstallationCallback,
+  InstallationEntity,
+  type InstallationStart,
+  RepositoryEntity,
+} from './installation.entity';
 import { InstallationsErrors } from './installations.errors';
 
-/**
- * The wire shapes come from the generated client: `pnpm generate:api-client`
- * writes them from the API's own OpenAPI, so a field the API renames cannot
- * stay right here and wrong there. They were hand-written once, which is how
- * `HostsRepository` read `state` for a field the API sends as `online`.
- *
- * Each is handed to the client as the status-keyed map it expects — see the
- * note in `hosts.repository.ts`: a bare DTO resolves to the union of its own
- * field types, not to the DTO.
- */
+/** The wire shapes are the generated client's, never mirrored here. */
 type InstallationDto = InstallationResponseDto;
 type RepositoryDto = RepositoryResponseDto;
-
-const INSTALLATIONS_URL = '/api/v1/installations';
 
 function toEntity(data: InstallationDto): InstallationEntity {
   return new InstallationEntity(
@@ -53,50 +47,53 @@ function toRepository(data: RepositoryDto): RepositoryEntity {
 export class InstallationsRepository {
   @MapApiError(InstallationsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<InstallationEntity[]> {
-    const { data, error } = await heyApiClient.get<{ 200: InstallationDto[] }>({
-      url: INSTALLATIONS_URL,
-    });
     // An absent body is a failed read, not an empty list — returning `[]` would
     // render "GitHub is not connected" over a request that never succeeded,
     // and send somebody to reinstall an App they already have.
-    if (error || !data) throw new AppError(InstallationsErrors.FETCH_LIST_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.findInstallations(),
+      InstallationsErrors.FETCH_LIST_FAILED,
+    );
     return data.map(toEntity);
+  }
+
+  /**
+   * Start a GitHub App install: the API mints a single-use `state` for this
+   * person in this workspace and answers with the App's install URL carrying
+   * it.
+   */
+  @MapApiError(InstallationsErrors.START_FAILED)
+  async startInstall(): Promise<InstallationStart> {
+    const data = await unwrapBody(heyApiSdk.startInstallation(), InstallationsErrors.START_FAILED);
+    return { url: data.url, state: data.state, expiresAt: new Date(data.expiresAt) };
   }
 
   /**
    * Attach the installation GitHub just created to this workspace.
    *
-   * Both values come off the install redirect. The `code` proves the caller
-   * can see the installation and is exchanged once, server-side, then
-   * discarded — it is never stored, and re-posting the same installation
-   * refreshes what GitHub reports about it rather than duplicating it.
+   * All three values come off the install redirect. The `state` is the one
+   * `startInstall` minted, and proves this person started this install; the
+   * `code` proves the caller can see the installation and is exchanged once,
+   * server-side, then discarded — it is never stored, and re-posting the same
+   * installation refreshes what GitHub reports about it rather than
+   * duplicating it.
    */
   @MapApiError(InstallationsErrors.CONNECT_FAILED)
-  async connect(githubInstallationId: number, code: string): Promise<InstallationEntity> {
-    const { data, error } = await heyApiClient.post<{ 201: InstallationDto }>({
-      url: INSTALLATIONS_URL,
-      body: { githubInstallationId, code },
-    });
-    if (error || !data) throw new AppError(InstallationsErrors.CONNECT_FAILED);
+  async connect(callback: InstallationCallback): Promise<InstallationEntity> {
+    const { githubInstallationId, code, state } = callback;
+    const data = await unwrapBody(
+      heyApiSdk.connectInstallation({ body: { githubInstallationId, code, state } }),
+      InstallationsErrors.CONNECT_FAILED,
+    );
     return toEntity(data);
-  }
-
-  @MapApiError(InstallationsErrors.REMOVE_FAILED)
-  async remove(id: string): Promise<void> {
-    const { error } = await heyApiClient.delete({
-      url: `${INSTALLATIONS_URL}/{id}`,
-      path: { id },
-    });
-    if (error) throw new AppError(InstallationsErrors.REMOVE_FAILED);
   }
 
   @MapApiError(InstallationsErrors.FETCH_REPOSITORIES_FAILED)
   async repositories(installationId: string): Promise<RepositoryEntity[]> {
-    const { data, error } = await heyApiClient.get<{ 200: RepositoryDto[] }>({
-      url: `${INSTALLATIONS_URL}/{id}/repositories`,
-      path: { id: installationId },
-    });
-    if (error || !data) throw new AppError(InstallationsErrors.FETCH_REPOSITORIES_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.listInstallationRepositories({ path: { id: installationId } }),
+      InstallationsErrors.FETCH_REPOSITORIES_FAILED,
+    );
     return data.map(toRepository);
   }
 
@@ -109,10 +106,10 @@ export class InstallationsRepository {
    */
   @MapApiError(InstallationsErrors.FETCH_BRANCHES_FAILED)
   async branches(installationId: string, githubRepoId: number): Promise<BranchEntity[]> {
-    const { data, error } = await heyApiSdk.listRepositoryBranches({
-      path: { id: installationId, githubRepoId },
-    });
-    if (error || !data) throw new AppError(InstallationsErrors.FETCH_BRANCHES_FAILED);
+    const data = await unwrapBody(
+      heyApiSdk.listRepositoryBranches({ path: { id: installationId, githubRepoId } }),
+      InstallationsErrors.FETCH_BRANCHES_FAILED,
+    );
     return data.map(toBranch);
   }
 }

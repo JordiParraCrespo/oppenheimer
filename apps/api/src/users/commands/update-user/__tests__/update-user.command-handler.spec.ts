@@ -1,6 +1,7 @@
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserRepositoryPort } from '../../../database/user.repository.port';
+import { UserDeactivatedDomainEvent } from '../../../domain/events/user-deactivated.domain-event';
 import { UserEntity } from '../../../domain/user.entity';
 import { UserErrors } from '../../../domain/user.errors';
 import { Email } from '../../../domain/value-objects/email.value-object';
@@ -16,10 +17,13 @@ function makeUser(): UserEntity {
       lastName: 'User',
       phone: null,
       jobTitle: null,
+      username: null,
       avatarUrl: null,
       role: 'user',
       isActive: true,
       emailVerified: true,
+      banned: false,
+      banExpires: null,
     },
   });
 }
@@ -27,13 +31,30 @@ function makeUser(): UserEntity {
 describe('UpdateUserCommandHandler', () => {
   let service: UpdateUserCommandHandler;
   let repo: Pick<UserRepositoryPort, 'findOneById' | 'save'>;
+  const sessionCache = { refreshUser: vi.fn().mockResolvedValue(undefined) };
 
   beforeEach(() => {
     repo = {
       findOneById: vi.fn().mockResolvedValue(Some(makeUser())),
       save: vi.fn().mockImplementation((user: UserEntity) => Promise.resolve(user)),
     };
-    service = new UpdateUserCommandHandler(repo as UserRepositoryPort);
+    service = new UpdateUserCommandHandler(repo as UserRepositoryPort, sessionCache as never);
+  });
+
+  it('refreshes the cached sessions, so a deactivation refuses the next request', async () => {
+    const order: string[] = [];
+    vi.mocked(repo.save).mockImplementation(async (entity) => {
+      order.push('save');
+      return entity as never;
+    });
+    sessionCache.refreshUser.mockImplementation(async () => {
+      order.push('refresh');
+    });
+
+    await service.execute(new UpdateUserCommand({ userId: 'user-uuid', isActive: false }));
+
+    expect(sessionCache.refreshUser).toHaveBeenCalledWith('user-uuid');
+    expect(order).toEqual(['save', 'refresh']);
   });
 
   it('applies the profile update through the aggregate and persists it', async () => {
@@ -50,8 +71,36 @@ describe('UpdateUserCommandHandler', () => {
     const saved = vi.mocked(repo.save).mock.calls[0][0] as UserEntity;
     expect(saved.firstName).toBe('Updated');
     expect(saved.isActive).toBe(false);
-    // Unchanged fields are preserved.
     expect(saved.lastName).toBe('User');
+  });
+
+  it('stages one UserDeactivatedDomainEvent when an active account is deactivated', async () => {
+    await service.execute(new UpdateUserCommand({ userId: 'user-uuid', isActive: false }));
+
+    // The repository stages `domainEvents` on the outbox in the save transaction.
+    const saved = vi.mocked(repo.save).mock.calls[0][0] as UserEntity;
+    const events = saved.domainEvents.filter((e) => e instanceof UserDeactivatedDomainEvent);
+    expect(events).toHaveLength(1);
+    expect(events[0].aggregateId).toBe('user-uuid');
+  });
+
+  it('raises nothing when the account was already deactivated', async () => {
+    const inactive = makeUser();
+    inactive.updateProfile({ isActive: false });
+    inactive.clearEvents();
+    vi.mocked(repo.findOneById).mockResolvedValue(Some(inactive));
+
+    await service.execute(new UpdateUserCommand({ userId: 'user-uuid', isActive: false }));
+
+    const saved = vi.mocked(repo.save).mock.calls[0][0] as UserEntity;
+    expect(saved.domainEvents).toHaveLength(0);
+  });
+
+  it('raises nothing for a profile update that leaves the account active', async () => {
+    await service.execute(new UpdateUserCommand({ userId: 'user-uuid', firstName: 'Updated' }));
+
+    const saved = vi.mocked(repo.save).mock.calls[0][0] as UserEntity;
+    expect(saved.domainEvents).toHaveLength(0);
   });
 
   it('throws NOT_FOUND when the user does not exist', async () => {

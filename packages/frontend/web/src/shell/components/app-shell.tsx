@@ -8,11 +8,7 @@ import { AppSidebar } from './app-sidebar';
 import { CommandPalette } from './command-palette';
 import { TopBar } from './top-bar';
 
-/**
- * How each pane frames a screen. `measure` is the reading column every text
- * screen wants; `full` hands the whole content area to the screen and keeps no
- * scroll of its own, which is what a terminal needs — see `lib/pane.ts`.
- */
+/** How each pane frames a screen; `lib/pane.ts` says why there are two. */
 const PANE = {
   measure: {
     main: 'overflow-y-auto px-6 pt-8 pb-16 md:px-12 md:pt-11',
@@ -37,8 +33,6 @@ const PANE = {
 export function AppShell({ children, ...config }: ShellConfig & { children: ReactNode }) {
   const chrome = config.chrome ?? true;
   const [commandOpen, setCommandOpen] = useState(false);
-  // The saved theme and language become this device's defaults — once, and
-  // only where the device has not chosen for itself.
   useApplyUserSettings();
   const pane = PANE[useMatches({ select: resolveContentPane })];
 
@@ -52,8 +46,7 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
           {/* The column is a flex column, and its inner track stretches, so a
               screen whose content *is* the viewport — the session terminal —
               can fill the height with `flex-1` instead of guessing at a
-              viewport calculation. Screens whose children size themselves are
-              unaffected: nothing here sets `flex-1` on them. */}
+              viewport calculation. */}
           <main className={`flex min-h-0 min-w-0 flex-1 flex-col ${pane.main}`}>
             <div className={pane.track}>{children}</div>
           </main>

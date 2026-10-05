@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginatedResponseDto } from '@oppenheimer/backend-core';
 
 export class AccessGrantResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -33,3 +34,22 @@ export class AccessGrantResponseDto {
   @ApiProperty()
   createdAt!: Date;
 }
+
+export class AccessGrantPaginationMetaDto {
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  limit!: number;
+
+  @ApiProperty()
+  totalPages!: number;
+}
+
+export class PaginatedAccessGrantsResponseDto extends PaginatedResponseDto(
+  AccessGrantResponseDto,
+  AccessGrantPaginationMetaDto,
+) {}

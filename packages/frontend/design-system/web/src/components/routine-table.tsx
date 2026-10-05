@@ -3,6 +3,8 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 import { StatusDot, type StatusState } from './status-dot';
 
+const GRID = 'grid grid-cols-[minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,1fr)_96px_32px] items-center gap-3.5 px-3';
+
 /**
  * RoutineTable — the Routines overview: one row per routine in an 18px
  * card, four columns (the routine with its glyph and agent · model ·
@@ -14,8 +16,6 @@ import { StatusDot, type StatusState } from './status-dot';
  * Composed from parts so a screen can render what it has: the head, the
  * rows, or the empty line.
  */
-const GRID = 'grid grid-cols-[minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,1fr)_96px_32px] items-center gap-3.5 px-3';
-
 function RoutineTable({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -66,7 +66,7 @@ function RoutineTableRow({
 }: Omit<React.ComponentProps<'div'>, 'children'> & {
   icon: React.ReactNode;
   name: React.ReactNode;
-  /** "Claude Code · Claude Sonnet 4.6 · XRP Mobile". */
+  /** "Claude Code · Claude Sonnet 5.5 · XRP Mobile". */
   sub?: React.ReactNode;
   trigger: React.ReactNode;
   /** "Tomorrow, 02:00", "On next event", or "—". */
@@ -113,7 +113,7 @@ function RoutineTableRow({
         {nextRelative ? <span className="figures text-[11.5px] text-fg-subtle">{nextRelative}</span> : null}
       </span>
       <span role="cell">
-        <StatusDot state={status} className={cn('items-center text-[13px]', paused && 'text-fg-muted')}>
+        <StatusDot state={status} density="compact" pulse={status === 'running'}>
           {statusLabel}
         </StatusDot>
       </span>

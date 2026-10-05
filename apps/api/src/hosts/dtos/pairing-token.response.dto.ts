@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { HostResponseDto } from './host.response.dto';
 
 export class PairingTokenResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -56,10 +57,8 @@ export class PairingTokenResponseDto {
  * Returned only by `POST /v1/hosts/pairing`. This is the single moment the
  * secret exists outside the caller's hands: it is embedded in the install
  * command and only its digest is stored, so nothing can recover it afterwards.
- *
- * The command and the prompt are templated from deploy-owned configuration, not
- * from anything a workspace can write — a workspace-writable install string
- * would be remote code execution on somebody's laptop.
+ * The command and the prompt come from deploy-owned configuration; why is on
+ * `RunnerReleaseConfig`.
  */
 export class MintedPairingTokenResponseDto extends PairingTokenResponseDto {
   @ApiProperty({
@@ -82,4 +81,18 @@ export class MintedPairingTokenResponseDto extends PairingTokenResponseDto {
       'The same instruction phrased for a coding agent already running on the machine, for someone who would rather paste it there.',
   })
   agentPrompt!: string;
+}
+
+/**
+ * `GET /v1/hosts/pairing/{id}`: the token, and the host it paired once a runner
+ * has spent it. Add host polls this while it listens for the machine.
+ */
+export class PairingTokenStatusResponseDto extends PairingTokenResponseDto {
+  @ApiPropertyOptional({
+    nullable: true,
+    type: () => HostResponseDto,
+    description:
+      'The host this token paired, as the hosts list shows it. Null until a runner spends the token.',
+  })
+  host!: HostResponseDto | null;
 }

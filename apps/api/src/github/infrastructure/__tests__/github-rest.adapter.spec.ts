@@ -6,7 +6,7 @@ import type { GithubFetch } from '../github-rest.adapter';
 import { GithubRestAdapter } from '../github-rest.adapter';
 
 /**
- * The adapter is the only thing in the repository that talks to GitHub, and it
+ * The adapter is the only thing in this module that talks to GitHub, and it
  * owns two things a client library would otherwise: the App JWT and pagination.
  * Both are asserted here against a `fetch` double, so these tests never touch
  * the network.
@@ -93,8 +93,6 @@ function headerOf(init: RequestInit, name: string): string | undefined {
 
 describe('configuration', () => {
   it('asks the capability rather than re-deriving one of its own', () => {
-    // The two used to be different subsets, so a deployment with no App slug
-    // reported `github_app: false` and still answered `POST /installations` 201.
     expect(build([]).adapter.isConfigured()).toBe(true);
     expect(build([], { configured: false }).adapter.isConfigured()).toBe(false);
   });
@@ -125,8 +123,6 @@ describe('the App JWT', () => {
 
     expect(header).toEqual({ alg: 'RS256', typ: 'JWT' });
     expect(payload.iss).toBe('1234567');
-    // GitHub refuses a JWT living longer than ten minutes, and one whose `iat`
-    // is in its own future — which an unsynchronised clock makes routine.
     expect(payload.exp - payload.iat).toBeLessThanOrEqual(600);
     expect(payload.iat).toBeLessThanOrEqual(now);
     expect(payload.exp).toBeGreaterThan(now);
@@ -141,8 +137,6 @@ describe('the App JWT', () => {
       http.impl,
     );
 
-    // A PEM from a one-line .env or a container secret arrives like this, and
-    // the signer would otherwise throw an opaque parse error.
     await expect(adapter.mintRepositoryToken(45678901, 831004242)).resolves.toMatchObject({
       token: 'ghs_minted',
     });
@@ -178,8 +172,6 @@ describe('minting a repository token', () => {
     expect(headerOf(init, 'accept')).toBe('application/vnd.github+json');
     expect(headerOf(init, 'x-github-api-version')).toBe('2022-11-28');
     expect(headerOf(init, 'user-agent')).toBeTruthy();
-    // The credential travels in a header. In a URL it would reach every log,
-    // proxy and error message that ever names the request.
     expect(url).not.toContain('Bearer');
     expect(init.signal).toBeDefined();
   });
@@ -201,7 +193,6 @@ describe('minting a repository token', () => {
   });
 
   it('reports a rejected App credential as a configuration problem', async () => {
-    // A 401 is never the caller's fault: the App key did not verify.
     await expect(
       build([{ status: 401 }]).adapter.mintRepositoryToken(45678901, 831004242),
     ).rejects.toMatchObject({ code: 'GITHUB_002' });
@@ -226,7 +217,6 @@ describe('minting a repository token', () => {
       failing,
     );
 
-    // A timeout is never a 4xx, whatever the call site nominated for one.
     await expect(adapter.mintRepositoryToken(45678901, 831004242)).rejects.toMatchObject({
       code: 'GITHUB_009',
     });
@@ -330,8 +320,6 @@ describe('the installation claim proof', () => {
   });
 
   it('refuses a code GitHub rejects with a 200 and an error field', async () => {
-    // The one failure that matters here does not come back as a 4xx, so a status
-    // check alone would read it as success.
     const { adapter, http } = build([{ body: { error: 'bad_verification_code' } }]);
 
     await expect(adapter.listUserInstallations('stale')).rejects.toMatchObject({
@@ -353,14 +341,11 @@ describe('the installation claim proof', () => {
       accountLogin: 'acme-labs',
       accountType: 'Organization',
       repositorySelection: 'selected',
-      // The part a redirect cannot be trusted for.
       suspendedAt: new Date('2026-09-19T09:00:00.000Z'),
     });
   });
 
   it('refuses an installation GitHub describes without an account', async () => {
-    // Inventing 'unknown' / 'Organization' here would put a fiction in a column
-    // the console shows, and pass the aggregate's checks by luck of the string.
     await expect(
       build([{ body: { ...INSTALLATION, account: null } }]).adapter.readInstallation(45678901),
     ).rejects.toMatchObject({ code: 'GITHUB_009' });

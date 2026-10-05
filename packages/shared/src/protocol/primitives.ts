@@ -4,9 +4,9 @@ import {
   CODING_AGENTS,
   SESSION_EFFORTS,
   SESSION_PERMISSIONS,
-} from '../agents/catalog';
-import { loginUrlPattern } from '../agents/login';
-import { FIELD_BOUNDS, HOST_PLATFORMS, promptByteLength } from '../schemas/primitives';
+} from '../agents/catalog.js';
+import { loginUrlPattern } from '../agents/login.js';
+import { FIELD_BOUNDS, HOST_PLATFORMS, promptByteLength } from '../schemas/primitives.js';
 
 /**
  * The pieces more than one message is built from. Nothing here is a message:
@@ -42,16 +42,15 @@ export const windowIndexSchema = z.number().int().min(0);
 /** GitHub's own numeric repository id. */
 export const githubRepoIdSchema = z.number().int().positive();
 
-/** The agent a session runs. The catalog is the closed union; see `../agents/catalog`. */
 export const protocolAgentSchema = z.enum(CODING_AGENT_IDS);
 
 /**
  * How the agent is started, as the host receives it.
  *
  * **Structured, never argv.** The control plane says which of the product's
- * three permission levels and five effort stops somebody chose; the host is
- * what turns that into a command line, from the same catalog this schema takes
- * its unions from. A control plane that sent argv would be dictating a command
+ * three permission levels and which of the CLI's effort levels somebody chose;
+ * the host is what turns that into a command line, from the same catalog this
+ * schema takes its unions from. A control plane that sent argv would be dictating a command
  * to run on somebody's laptop, and the runner would have nothing left to check
  * — so the mapping stays on the machine that executes it
  * (`product/versions/mvp/01-protocol.md`, and
@@ -66,7 +65,24 @@ export const protocolAgentSchema = z.enum(CODING_AGENT_IDS);
 export const launchOptionsSchema = z.object({
   model: z.string().min(1).max(128).optional(),
   permission: z.enum(SESSION_PERMISSIONS).optional(),
+  /**
+   * A name from the union of every level any CLI takes, which is a vocabulary
+   * and not a list of what is legal here: only a level the session's model
+   * offers is spelled, and the runner drops any other rather than forward it
+   * (01). Absent is the CLI's own default.
+   */
   effort: z.enum(SESSION_EFFORTS).optional(),
+  /**
+   * The name the agent's own conversation takes, so the transcript it keeps can
+   * be reopened later. The control plane sends the session's id, which is the
+   * one name both sides already agree on; an agent whose CLI cannot be told an
+   * id ignores it.
+   *
+   * `resume` reopens that conversation instead of starting one, and carries no
+   * first task — the conversation already holds it.
+   */
+  conversation: z.string().uuid().optional(),
+  resume: z.boolean().optional(),
 });
 
 export type LaunchOptions = z.infer<typeof launchOptionsSchema>;
@@ -134,12 +150,6 @@ export const hostToolSchema = z.object({
  * What the runner last saw about the machine — the wire half of
  * `hostFactsSchema` in `../schemas/primitives`, which registration uses.
  *
- *
- * Agents installed on a host are read from `tools` — the names `ProbedTools` in
- * `facts.go` reports, an agent's being its catalog `command` — and there is no
- * separate agents key; that is what the console consumes for the agent chip.
- * The blank terminal needs no tool of its own.
- *
  * Both mirror `Facts` in `apps/runner/internal/host/domain/facts.go` verbatim,
  * because the runner marshals that struct whole into both `POST /hosts/register`
  * and this link. Keep the two identical; the conformance spec fails otherwise.
@@ -159,7 +169,18 @@ export const hostFactsSchema = z.object({
     .transform((tools) => tools ?? []),
   workspacePath: z.string(),
   diskFreeBytes: z.number().int().min(0),
+  cpus: z.number().int().min(1).optional(),
   runnerVersion: z.string(),
+  osName: z.string().max(80).optional(),
+  kernelVersion: z.string().max(64).optional(),
+  cpuModel: z.string().max(128).optional(),
+  memoryTotalBytes: z.number().int().min(1).optional(),
+  diskTotalBytes: z.number().int().min(1).optional(),
+  virtualization: z.string().max(24).optional(),
+  cloudProvider: z.string().max(24).optional(),
+  timezone: z.string().max(64).optional(),
+  bootedAt: z.iso.datetime({ offset: true }).optional(),
+  serviceManager: z.string().max(16).optional(),
 });
 
 /**
@@ -175,16 +196,13 @@ export type ObservedAgentState = (typeof OBSERVED_AGENT_STATES)[number];
 export const observedAgentStateSchema = z.enum(OBSERVED_AGENT_STATES);
 
 /**
- * One session as the host currently holds it. Sent in bulk at hello, where the
- * control plane reconciles against its own state rather than replaying a queue,
- * and per session on every heartbeat.
+ * One session as the host currently holds it: in bulk at hello, per session on
+ * every heartbeat.
  *
  * **`loginUrl` is validated against the reporting agent's own login pattern**,
- * not merely as a URL. A free-form URL here would be F3 straight through: this
- * is the one field the console turns into a clickable button, and
- * `https://claude.ai.attacker.test/oauth` parses as a perfectly good URL. The
- * catalog's anchored pattern is therefore enforced on the wire, which is what
- * makes it a control rather than a comment.
+ * not merely as a URL (F3): it is the one field the console turns into a
+ * clickable button, and `https://claude.ai.attacker.test/oauth` parses as a
+ * perfectly good URL.
  */
 export const sessionSnapshotSchema = z
   .object({
@@ -217,10 +235,10 @@ export const sessionSnapshotSchema = z
      * The vendor login URL the classifier saw.
      *
      * Two checks, on purpose. The `regex` is the union of every catalog pattern,
-     * so it **survives emission to JSON Schema** and the generated Go refuses
-     * `https://claude.ai.attacker.test/oauth` exactly where the control plane
-     * does. The `superRefine` below then narrows it to the *reporting agent's*
-     * own vendor, which depends on a sibling field and so can only live in Zod.
+     * so it **survives emission to JSON Schema** and the generated Go refuses a
+     * foreign host exactly where the control plane does. The `superRefine` below
+     * narrows it to the *reporting agent's* own vendor, which depends on a
+     * sibling field and so can only live in Zod.
      */
     loginUrl: z.string().regex(ANY_VENDOR_LOGIN_URL).nullable(),
   })
@@ -242,9 +260,6 @@ export type SessionSnapshot = z.infer<typeof sessionSnapshotSchema>;
  * ids those become `__schema0`, `__schema1`, … — which is what the Go generator
  * would name the types it produces. Naming them here is the difference between
  * `SessionSnapshot` and `Schema0` on the other side of the contract.
- *
- * The snapshot is the one that matters for correctness: named and `$ref`'d, a
- * field added to it cannot land in `hello` and miss `heartbeat`.
  */
 for (const [id, schema] of [
   ['sessionSnapshot', sessionSnapshotSchema],

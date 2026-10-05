@@ -28,8 +28,9 @@ const Socket = "oppenheimer"
 // classifier; the runner never invents one.
 type State string
 
-// States. `working`, `blocked` and `idle` come from the screen manifest;
-// `starting`, `stopped` and `closed` are lifecycle.
+// States. `working`, `blocked`, `idle`, `done` and `unknown` come from the
+// screen manifest; `creating`, `starting`, `stopped` and `closed` are
+// lifecycle.
 const (
 	// StateCreating is a session whose create is still running: its mirror,
 	// worktree or tmux session may not exist yet. It is only ever held in
@@ -76,7 +77,7 @@ const (
 // agentCatalogIDs is the runner's view of the catalog's `CODING_AGENT_IDS`:
 // each agent it can start and the catalog id the control plane names it by.
 // It is the one table; Valid, CatalogID, AgentFromCatalogID and Command all
-// read it, so a fifth agent is one row here and one in the catalog, and a
+// read it, so a new agent is one row here and one in the catalog, and a
 // test fails when the generated launch table has an id this map lacks.
 var agentCatalogIDs = map[Agent]string{
 	AgentClaude:   "claude-code",
@@ -162,7 +163,6 @@ type Session struct {
 	Dirty bool `json:"dirty,omitempty"`
 }
 
-// Sentinel conditions.
 var (
 	ErrRepoName     = errors.New("repository must be owner/name")
 	ErrBranchName   = errors.New("branch name is not usable")
@@ -172,8 +172,7 @@ var (
 	ErrNoSuchWindow = errors.New("no such window")
 )
 
-// TmuxName is the tmux session name: the id, prefixed, so adoption can tell
-// ours from anyone else's.
+// TmuxName is the tmux session name: the id, prefixed.
 func (s Session) TmuxName() string { return Prefix + s.ID }
 
 // Target addresses one window for tmux.
@@ -296,9 +295,25 @@ func (l Layout) Mirror(repo string) string {
 	return filepath.Join(l.Root, filepath.FromSlash(repo), "main")
 }
 
-// Worktree is `<root>/<repo>/worktrees/<slug>`.
+// Worktree is `<root>/<repo>/.worktrees/<slug>`.
+//
+// **The leading dot is load-bearing on macOS.** Spotlight does not descend into
+// a hidden directory, and a session's worktree is a whole checkout written in
+// one go: left visible, the indexer walks it while the agent is starting and
+// every file the agent reads queues behind that scan. Measured with a bare
+// `tmux` and agent, no runner involved, two worktrees of the same commit in the
+// same parent directory and run interleaved: `wt` 30.2s, `.wt` 5.7s, `wt2`
+// 31.5s to the agent's first token. The same split held across thirteen runs at
+// machine loads from 14 to 59, which is how it was told apart from load.
+//
+// (`.metadata_never_index` was already present at the workspaces root and does
+// not work there — `mdls` still returns indexed metadata for files underneath
+// it. The dot is what Spotlight actually honours.)
+//
+// A session created before this carries its own absolute path and is
+// unaffected; only new worktrees land here.
 func (l Layout) Worktree(repo, slug string) string {
-	return filepath.Join(l.Root, filepath.FromSlash(repo), "worktrees", slug)
+	return filepath.Join(l.Root, filepath.FromSlash(repo), ".worktrees", slug)
 }
 
 // DefaultBranchName is what a session's own branch is called when the user

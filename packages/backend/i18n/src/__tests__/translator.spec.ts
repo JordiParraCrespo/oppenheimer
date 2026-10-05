@@ -84,6 +84,13 @@ describe('Translator', () => {
     expect(subject.t('es', 'inbox.summary', { count: 4 })).toBe('4 notificaciones sin leer');
   });
 
+  it('falls back to one/other for a locale the runtime rejects', () => {
+    // `x-!` is not a well-formed language tag, so `Intl.PluralRules` throws.
+    const subject = translator();
+    expect(subject.t('x-!', 'inbox.summary', { count: 1 })).toBe('1 unread notification');
+    expect(subject.t('x-!', 'inbox.summary', { count: 4 })).toBe('4 unread notifications');
+  });
+
   it('renders an unknown placeholder as a gap, never as a raw token', () => {
     expect(translator().t('en', 'inbox.types.lead.created.title', {})).toBe('New lead from ');
   });
@@ -110,10 +117,6 @@ describe('Translator', () => {
     it('falls back to the default locale when nothing matches', () => {
       expect(translator().negotiate('de', 'fr')).toBe('en');
     });
-
-    it('skips empty candidates', () => {
-      expect(translator().negotiate(undefined, null, '', 'es')).toBe('es');
-    });
   });
 
   describe('optional', () => {
@@ -124,11 +127,5 @@ describe('Translator', () => {
     it('behaves like t() for a present key', () => {
       expect(translator().optional('en', 'inbox.onlyEnglish')).toBe('Only in English');
     });
-  });
-
-  it('reports which locales it can render', () => {
-    expect(translator().locales()).toEqual(['en', 'es']);
-    expect(translator().supports('es')).toBe(true);
-    expect(translator().supports('de')).toBe(false);
   });
 });

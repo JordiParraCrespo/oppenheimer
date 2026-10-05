@@ -22,23 +22,18 @@ export class UpdateRolePermissionsCommandHandler
   ) {}
 
   async execute(command: UpdateRolePermissionsCommand): Promise<AggregateID> {
-    // No privilege escalation: the author must already hold everything they
-    // are putting on the role.
     await this.grantPolicy.assertGrantable(
       command.actorId
         ? {
             id: command.actorId,
             role: command.actorRole,
-            activeOrganizationId: command.activeOrganizationId,
+            organizationId: command.organizationId,
           }
         : undefined,
       command.permissions,
     );
 
-    const found = await this.roleRepository.findOneById(
-      command.roleId,
-      command.activeOrganizationId,
-    );
+    const found = await this.roleRepository.findOneById(command.roleId, command.organizationId);
     if (found.isNone()) throw new AppError(RoleErrors.NOT_FOUND);
 
     const role = found.unwrap();
@@ -47,7 +42,7 @@ export class UpdateRolePermissionsCommandHandler
         ? {
             id: command.actorId,
             role: command.actorRole,
-            activeOrganizationId: command.activeOrganizationId,
+            organizationId: command.organizationId,
           }
         : undefined,
       role,
@@ -56,8 +51,6 @@ export class UpdateRolePermissionsCommandHandler
       Permission.fromDefinition(permission),
     );
 
-    // Never let a full-access system role (e.g. `admin`) be stripped of its
-    // `manage all` rule — that would lock every admin out of the platform.
     if (role.isSystem && role.hasFullAccess() && !RoleEntity.grantsFullAccess(permissions)) {
       throw new AppError(RoleErrors.ADMIN_LOCKOUT);
     }

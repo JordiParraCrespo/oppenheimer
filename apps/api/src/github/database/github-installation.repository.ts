@@ -13,16 +13,13 @@ import { GithubInstallationOrmEntity } from './github-installation.orm-entity';
 import type {
   GithubInstallationRepositoryPort,
   InstallationStatusChange,
+  InstallationStatusChangeResult,
 } from './github-installation.repository.port';
 
 /** Postgres' unique-violation SQLSTATE. */
 const UNIQUE_VIOLATION = '23505';
 
 /**
- * TypeORM adapter for the installation aggregate. Translates domain ↔
- * persistence via the mapper and stages domain events on the transactional
- * outbox atomically with the write that raised them.
- *
  * Note what is absent from the scoped reads: no `WHERE organizationId = ...`.
  * Extending `ScopedRepositoryBase` and naming the resource is the whole of it,
  * so a query and an `ability.can()` cannot disagree.
@@ -119,25 +116,44 @@ export class GithubInstallationRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
-  async applyStatusChange(change: InstallationStatusChange): Promise<boolean> {
+  async applyStatusChange(
+    change: InstallationStatusChange,
+  ): Promise<InstallationStatusChangeResult> {
     const patch: Partial<GithubInstallationOrmEntity> = {};
     if (change.suspendedAt !== undefined) patch.suspendedAt = change.suspendedAt;
     if (change.deletedAt !== undefined) patch.deletedAt = change.deletedAt;
+    // A suspend or unsuspend is ordered by GitHub's time; an uninstall is
+    // terminal for its installation id (a reinstall gets a new one), so it
+    // applies whatever the order.
+    const ordered = change.suspendedAt !== undefined && change.deletedAt === undefined;
+    if (ordered) patch.statusChangedAt = change.occurredAt;
+    const githubInstallationId = String(change.githubInstallationId);
 
-    // One statement, only the named columns, and only while the row is live —
-    // so a delivery that read the world before a disconnect committed cannot
-    // write `deletedAt` back to null and resurrect a claim.
-    const result = await this.repository
+    const update = this.repository
       .createQueryBuilder()
       .update(GithubInstallationOrmEntity)
       .set({ ...patch, updatedAt: new Date() })
-      .where('"githubInstallationId" = :githubInstallationId', {
-        githubInstallationId: String(change.githubInstallationId),
-      })
-      .andWhere('"deletedAt" IS NULL')
-      .execute();
+      .where('"githubInstallationId" = :githubInstallationId', { githubInstallationId })
+      .andWhere('"deletedAt" IS NULL');
+    if (ordered) {
+      update.andWhere('("statusChangedAt" IS NULL OR "statusChangedAt" <= :occurredAt)', {
+        occurredAt: change.occurredAt,
+      });
+    }
+    const result = await update.execute();
+    if ((result.affected ?? 0) > 0) return 'applied';
+    if (!ordered) return 'missing';
 
-    return (result.affected ?? 0) > 0;
+    // Nothing matched: either no live row, or one holding a newer change. Only
+    // asked on a miss, so the path every delivery takes stays one statement.
+    const live = await this.repository
+      .createQueryBuilder('installation')
+      .where('installation."githubInstallationId" = :githubInstallationId', {
+        githubInstallationId,
+      })
+      .andWhere('installation."deletedAt" IS NULL')
+      .getExists();
+    return live ? 'stale' : 'missing';
   }
 
   /**

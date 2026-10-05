@@ -31,10 +31,21 @@ type Terminals interface {
 	// Capture returns what the classifier reads: the visible text of a
 	// window and the terminal title the program in it has set.
 	Capture(ctx context.Context, target string) (Screen, error)
+	// CaptureBody is Capture without the title, for a caller that already
+	// has it from Panes.
+	CaptureBody(ctx context.Context, target string) (string, error)
+	// Panes lists every pane on this server with the fields a refresh
+	// needs: one process for the whole host instead of one per session.
+	// No server at all is an empty list.
+	Panes(ctx context.Context) ([]Pane, error)
 	// Windows lists a session's windows.
 	Windows(ctx context.Context, name string) ([]domain.Window, error)
 	// SendKeys types into a window.
 	SendKeys(ctx context.Context, target, keys string) error
+	// Launch replaces the program in a window with command, run in dir: the
+	// program becomes the pane's own process on a fresh screen, and nothing
+	// is typed to start it. An empty command is a plain shell.
+	Launch(ctx context.Context, target, dir, command string) error
 	// Paste pastes text into a window as a bracketed paste when the program
 	// there asked for one, which is how a dropped file's path reaches an
 	// agent in a local terminal. The id names the paste, so two at once
@@ -43,6 +54,18 @@ type Terminals interface {
 	// Attach runs `tmux attach` on a PTY and returns it. Closing the
 	// returned Attachment detaches without touching the session.
 	Attach(ctx context.Context, target string, size Size) (Attachment, error)
+}
+
+// Pane is one pane of the tmux server, as the poll loop sees it.
+type Pane struct {
+	// Session is the tmux session name.
+	Session string
+	Window  int
+	Pane    int
+	// Active marks the pane a `<session>:<window>` target addresses.
+	Active bool
+	// Title is what the program in the pane set through an OSC sequence.
+	Title string
 }
 
 // Size is a terminal's dimensions.
@@ -54,17 +77,25 @@ type Size struct {
 // Attachment is one PTY attached to a window: the bytes a browser sees.
 type Attachment interface {
 	io.ReadWriteCloser
-	// Resize sets the PTY's size; tmux sizes the window to the smallest
-	// attached client.
+	// Resize sets the PTY's size; tmux sizes the window to the client that
+	// resized last (`window-size latest`, tmux.Config).
 	Resize(size Size) error
 }
 
 // Worktrees is git, at the granularity a session needs.
 type Worktrees interface {
-	// Ensure makes sure `<root>/<repo>/main` exists and is fetched.
-	Ensure(ctx context.Context, repo, remote string) error
+	// Ensure makes sure the repository's store exists on this host and that
+	// ref, the branch a worktree is about to be made from, is fresh in it.
+	Ensure(ctx context.Context, repo, remote, ref string) error
+	// Has reports whether the repository's store is on this host, whole: the
+	// difference between an Ensure that fetches and one that downloads it.
+	Has(repo string) bool
 	// Add creates a worktree at path, on branch, cut from base.
 	Add(ctx context.Context, repo, path, branch, base string, newBranch bool) error
+	// Prepare makes the directory this repository's worktrees are created in
+	// and answers it, so a terminal can be started there before the worktree
+	// itself exists. Add makes it too; this is for the pane that comes first.
+	Prepare(ctx context.Context, repo string) (string, error)
 	// Remove deletes a worktree and prunes the record.
 	Remove(ctx context.Context, repo, path string, force bool) error
 	// Dirty reports uncommitted changes in a worktree.
@@ -74,15 +105,15 @@ type Worktrees interface {
 	Push(ctx context.Context, path, branch string) (pushed bool, err error)
 }
 
-// Images is where a session's pasted images are kept on this host: under the
+// Files is where a session's pasted files are kept on this host: under the
 // runner's own home, never in the worktree, so an agent cannot commit one by
 // accident and closing the session can drop them all.
-type Images interface {
-	// Save writes one image for a session and returns its absolute path.
+type Files interface {
+	// Save writes one file for a session and returns its absolute path.
 	Save(sessionID, name string, data []byte) (string, error)
-	// Delete removes one image, when the paste it was written for failed.
+	// Delete removes one file, when the paste it was written for failed.
 	Delete(sessionID, name string) error
-	// Discard removes every image a session was given.
+	// Discard removes every file a session was given.
 	Discard(sessionID string) error
 }
 
@@ -90,9 +121,8 @@ type Images interface {
 type Screen struct {
 	// Body is the visible text of the pane.
 	Body string
-	// Title is what the program set through an OSC escape sequence. It is
-	// the most trustworthy signal available: the agent controls it, and
-	// nothing a person types into their prompt can appear in it.
+	// Title is what the program set through an OSC escape sequence; why it
+	// is the signal to trust is manifest.RegionTitle.
 	Title string
 }
 
@@ -111,14 +141,23 @@ type Store interface {
 	Save([]domain.Session) error
 }
 
-// Publisher receives state changes. The link will forward them to the control
-// plane; until it exists, the composition root supplies a logger.
+// Publisher receives state changes; the link forwards them to the control
+// plane.
 type Publisher interface {
 	SessionChanged(session domain.Session)
 }
 
-// NopPublisher drops events, for tests and for a runner with no link yet.
+// NopPublisher drops events: the service's publisher until the link is set.
 type NopPublisher struct{}
 
 // SessionChanged implements Publisher.
 func (NopPublisher) SessionChanged(domain.Session) {}
+
+// LaunchGate holds an agent's launch while something is replacing that
+// agent's executable, so a session never starts a CLI halfway through its
+// update. Hold returns once the command may be started, and the release to
+// call once it has; it never fails, because a launch late is better than a
+// launch refused.
+type LaunchGate interface {
+	Hold(ctx context.Context, command string) (release func())
+}

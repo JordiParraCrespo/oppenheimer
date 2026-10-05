@@ -52,7 +52,6 @@ function bootAssertion(privateKey: KeyObject, hostId: string): string {
   return `${header}.${payload}.${signature.toString('base64url')}`;
 }
 
-/** A context that authenticates purely as a host, with its own assertion. */
 async function hostContext(assertion: string): Promise<APIRequestContext> {
   return request.newContext({
     baseURL: API_URL,
@@ -60,7 +59,6 @@ async function hostContext(assertion: string): Promise<APIRequestContext> {
   });
 }
 
-/** Mint a pairing token and pull the secret out of the install command. */
 async function mintPairingToken(api: APIRequestContext, name = 'e2e box') {
   const response = await api.post('/api/v1/hosts/pairing', {
     data: { name },
@@ -145,6 +143,34 @@ test.describe('Hosts', () => {
       os: 'debian 13',
       runnerVersion: '0.3.1',
       online: false,
+      // Never heartbeated, so offline — and nothing has been started on it.
+      status: 'offline',
+      runningSessionCount: 0,
+      // The inventory starts at registration; presence and network with the link.
+      machine: expect.objectContaining({ channel: null }),
+      vitals: null,
+      network: null,
+    });
+
+    // The timeline opens with the pairing, written with the host itself.
+    const opened = await api.get(`/api/v1/hosts/${hostId}/timeline`, { failOnStatusCode: false });
+    expect(opened.status(), await opened.text()).toBe(200);
+    expect((await opened.json()).entries).toEqual([
+      expect.objectContaining({
+        kind: 'paired',
+        payload: expect.objectContaining({ name: 'Pairing flow' }),
+      }),
+    ]);
+
+    // What Add host polls while it listens: the token, and the host it paired.
+    const polled = await api.get(`/api/v1/hosts/pairing/${minted.id}`, {
+      failOnStatusCode: false,
+    });
+    expect(polled.status(), await polled.text()).toBe(200);
+    expect(await polled.json()).toMatchObject({
+      id: minted.id,
+      redeemedHostId: hostId,
+      host: { id: hostId, name: 'Pairing flow', status: 'offline' },
     });
 
     // The runner's second and last HTTP call, authenticated by a signed
@@ -156,6 +182,22 @@ test.describe('Hosts', () => {
     const after = await api.get(`/api/v1/hosts/${hostId}`, { failOnStatusCode: false });
     expect(after.status()).toBe(200);
     expect((await after.json()).unpairedAt, 'the row is kept, not deleted').toBeTruthy();
+
+    // Settings lists the machines a session can still start on; a removed one
+    // is only there for a caller that asks, to name a session that outlived it.
+    const remaining = (await (await api.get('/api/v1/hosts')).json()) as { id: string }[];
+    expect(remaining.map((host) => host.id)).not.toContain(hostId);
+    const withRemoved = (await (await api.get('/api/v1/hosts?include=unpaired')).json()) as {
+      id: string;
+      status: string;
+    }[];
+    expect(withRemoved.find((host) => host.id === hostId)?.status).toBe('unpaired');
+
+    // The machine's own uninstall is on its timeline too, newest first.
+    const closed = (await (await api.get(`/api/v1/hosts/${hostId}/timeline`)).json()) as {
+      entries: { kind: string }[];
+    };
+    expect(closed.entries.map((entry) => entry.kind)).toEqual(['unpaired', 'paired']);
   });
 
   test('a host credential cannot reach a route meant for a person', async () => {
@@ -190,14 +232,10 @@ test.describe('Hosts', () => {
   });
 
   test('a made-up registration token is refused, and says no more than that', async () => {
-    // The guard every other pairing test here carries, asked the same way.
-    // Whether a deployment can pair is not something an anonymous caller can
-    // read — `hosts` is a server-internal capability and `GET
-    // /health/capabilities` does not report it — so it is read from minting,
-    // which answers `HOSTS_004` when there is no runner release, signing key or
-    // install URL. Registration refuses on that same configuration before it
-    // ever looks at a token, and a red test there would be reporting the
-    // deployment rather than the code.
+    // Registration refuses an unconfigured deployment before it looks at a
+    // token, and an anonymous caller cannot ask whether pairing is configured
+    // (`GET /health/capabilities` does not report `hosts`), so the guard is
+    // read from minting, as every other pairing test here reads it.
     const { api } = await signedUpContext('hostbogus');
     const minted = await mintPairingToken(api);
     test.skip(

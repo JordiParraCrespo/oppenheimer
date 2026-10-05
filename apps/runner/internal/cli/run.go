@@ -73,6 +73,15 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 		}()
 	}
 
+	// Every boot, not only at pairing: a host paired before the runner knew to
+	// ask gets the opt-out the first time it starts, a default root no session
+	// has made yet is created to hold it, and a workspace root the user
+	// emptied by hand gets it back.
+	if err := ExcludeFromIndexing(a.Paths.Workspaces); err != nil {
+		logger.Warn("could not keep the workspaces out of the desktop search index",
+			slog.String("dir", a.Paths.Workspaces), slog.Any("error", err))
+	}
+
 	// Sessions live in tmux, which outlived this process being replaced.
 	// Take them back over before anything else looks at them.
 	if adopted, err := a.Sessions.Adopt(ctx); err != nil {
@@ -81,8 +90,6 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 		logger.Info("sessions adopted", slog.Int("count", len(adopted)))
 	}
 	if orphans, err := a.Sessions.Orphans(ctx); err == nil && len(orphans) > 0 {
-		// Reported, never killed here: an orphan holds someone's work, and
-		// ending it is a decision, not a side effect of booting.
 		logger.Warn("tmux sessions this runner does not recognise", slog.Any("sessions", orphans))
 	}
 	loops.Add(1)
@@ -90,6 +97,15 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 		defer loops.Done()
 		a.sessionLoop(ctx, logger)
 	}()
+	if AgentUpdatesEnabled() {
+		loops.Add(1)
+		go func() {
+			defer loops.Done()
+			a.agentUpdateLoop(ctx, logger)
+		}()
+	} else {
+		logger.Info("agent updates are off", slog.String("by", EnvAgentUpdates))
+	}
 	// The link: one outbound socket, redialled for as long as this process
 	// lives. Sessions do not wait for it — tmux does not care whether the
 	// control plane can see it.
@@ -97,7 +113,7 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 		// The control plane unpaired this host. Dialling again would be refused
 		// the same way, and exiting would only have the service manager restart
 		// us into the same refusal every few seconds — so the daemon stays up,
-		// quiet, and keeps serving its local socket for `status` and `sessions`.
+		// quiet, and keeps serving its local socket.
 		logger.Warn("this host was unpaired; the link stays down until it is paired again",
 			slog.Time("revokedAt", *identity.RevokedAt))
 	} else {
@@ -137,7 +153,16 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 
 // listen opens the Unix socket 0600. A stale socket from a killed runner is
 // replaced: the lock above already proved no other runner is alive.
+//
+// Its directory, and the home above it, are made private first (see
+// privateDirectory): that is what closes the window between Listen and the
+// Chmod after it, which stays as defence in depth.
 func (a *App) listen(ctx context.Context) (net.Listener, error) {
+	for _, dir := range []string{a.Paths.Home, a.Paths.Run()} {
+		if err := privateDirectory(dir); err != nil {
+			return nil, err
+		}
+	}
 	socket := a.Paths.Socket()
 	if err := os.Remove(socket); err != nil && !os.IsNotExist(err) {
 		return nil, err
@@ -154,8 +179,8 @@ func (a *App) listen(ctx context.Context) (net.Listener, error) {
 	return listener, nil
 }
 
-// localRouter is the runner's only HTTP surface: the credential helper and
-// the CLI reach it over the socket, and nothing else can.
+// localRouter is the runner's only HTTP surface, on the local socket: the
+// credential helper asks it for tokens, and nothing off this host can reach it.
 func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Handler {
 	problems := &problem.Writer{TypeBaseURL: errorTypeBaseURL, Logger: logger}
 	router := httpx.NewRouter(problems)
@@ -177,14 +202,8 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 		return httpx.WriteJSON(w, http.StatusOK, payload)
 	})
 	router.HandleFunc("GET /v1/sessions", func(w http.ResponseWriter, r *http.Request) error {
-		sessions := a.Sessions.List()
-		for i, session := range sessions {
-			if session.State.Live() {
-				if refreshed, err := a.Sessions.Refresh(r.Context(), session.ID); err == nil {
-					sessions[i] = refreshed
-				}
-			}
-		}
+		// A session that could not be refreshed is listed as last seen.
+		sessions, _ := a.Sessions.RefreshAll(r.Context())
 		return httpx.WriteJSON(w, http.StatusOK, map[string]any{"sessions": sessions})
 	})
 	router.HandleFunc("GET /v1/sessions/{id}", func(w http.ResponseWriter, r *http.Request) error {
@@ -231,8 +250,9 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 
 // sessionLoop keeps every live session's state fresh. It polls slowly: with
 // no client attached nobody is watching a dot change, and `capture-pane` on a
-// busy host is not free. The link will make this adaptive — a second while a
-// browser is attached — when it lands.
+// busy host is not free. Each tick is one `list-panes` for the whole host plus
+// one `capture-pane` per live session, and writes the session map only when a
+// state changed.
 func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
@@ -242,14 +262,8 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 			return
 		case <-ticker.C:
 		}
-		for _, session := range a.Sessions.List() {
-			if !session.State.Live() {
-				continue
-			}
-			if _, err := a.Sessions.Refresh(ctx, session.ID); err != nil {
-				logger.Warn("could not refresh a session",
-					slog.String("session", session.ID), slog.Any("error", err))
-			}
+		if _, err := a.Sessions.RefreshAll(ctx); err != nil {
+			logger.Warn("could not refresh every session", slog.Any("error", err))
 		}
 	}
 }
@@ -281,8 +295,54 @@ func (a *App) updateLoop(ctx context.Context, logger *slog.Logger) {
 	}
 }
 
+// agentUpdateAfterBoot is how long `run` waits before the first round of
+// agent updates: long enough that a boot, an adoption and the first dial are
+// not competing with a download, short enough that a host that was off when
+// a model shipped is current within the minute it comes back. The runner's
+// own update check never overlaps a round: both take App.downloads.
+const agentUpdateAfterBoot = 30 * time.Second
+
+// agentUpdateLoop keeps the agent CLIs on the host current: every installed
+// agent's own updater, shortly after boot and every AgentUpdateInterval
+// after. A CLI a release behind is refused by its vendor the day a model
+// needs the newer one, and the person finds out in the session's terminal —
+// so this runs whether or not anyone is watching. A failure is logged and
+// retried at the next tick; the CLI it failed on is still the one it was.
+func (a *App) agentUpdateLoop(ctx context.Context, logger *slog.Logger) {
+	timer := time.NewTimer(agentUpdateAfterBoot)
+	defer timer.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-timer.C:
+		}
+		a.updateAgents(ctx, logger)
+		timer.Reset(hostdomain.AgentUpdateInterval)
+	}
+}
+
+func (a *App) updateAgents(ctx context.Context, logger *slog.Logger) {
+	a.downloads.Lock()
+	results := a.Host.UpdateAgents(ctx)
+	a.downloads.Unlock()
+	for _, result := range results {
+		attrs := []any{slog.String("agent", result.Tool), slog.String("from", result.From), slog.String("to", result.To)}
+		switch result.Outcome {
+		case hostdomain.AgentUpdated:
+			logger.Info("agent updated", attrs...)
+		case hostdomain.AgentUpdateFailed:
+			logger.Warn("agent update failed", append(attrs, slog.String("detail", result.Detail))...)
+		case hostdomain.AgentCurrent:
+			logger.Debug("agent is current", attrs...)
+		}
+	}
+}
+
 func (a *App) checkForUpdate(ctx context.Context, logger *slog.Logger) {
+	a.downloads.Lock()
 	plan, err := a.Updates.Apply(ctx, applyOptions())
+	a.downloads.Unlock()
 	if err != nil {
 		logger.Warn("update check failed", slog.Any("error", err))
 		return

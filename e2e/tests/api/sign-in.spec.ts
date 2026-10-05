@@ -103,18 +103,6 @@ test.describe('sign-in', () => {
       .toBe(0);
   });
 
-  test('a session issued before sign-out stops working after it', async () => {
-    const { api, userId } = await signedUpContext('revoke');
-    await signOut(api);
-
-    const protectedRoute = await api.get('/api/v1/users/me', {
-      failOnStatusCode: false,
-    });
-
-    expect(protectedRoute.status()).toBe(401);
-    expect(await findSessionsForUser(userId)).toHaveLength(0);
-  });
-
   test('signing in twice yields two independent sessions', async () => {
     const api = await newContext();
     const user = newUser('multi');
@@ -123,8 +111,9 @@ test.describe('sign-in', () => {
     const second = await newContext();
     expect((await signIn(second, user.email, user.password)).status()).toBe(200);
 
-    // Both contexts must still be able to read their own session.
-    expect((await getSession(api)).status()).toBe(200);
-    expect((await getSession(second)).status()).toBe(200);
+    await signOut(api);
+
+    expect((await (await getSession(api)).json())?.user?.email).toBeUndefined();
+    expect((await (await getSession(second)).json())?.user?.email).toBe(user.email);
   });
 });

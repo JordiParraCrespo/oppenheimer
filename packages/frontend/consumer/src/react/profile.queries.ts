@@ -1,12 +1,16 @@
 'use client';
 
-import { usersKeys, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
-import type { ChangeOwnPasswordDto, UpdateProfileDto } from '@oppenheimer/shared/schemas/profile';
+import { useQuery, usersKeys, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import type {
+  ChangeEmailDto,
+  ChangeOwnPasswordDto,
+  DeleteAccountDto,
+  UpdateProfileDto,
+} from '@oppenheimer/shared/schemas/profile';
 import {
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type { ProfileEntity, UserSessionEntity } from '../modules/profile/profile.entity';
@@ -84,11 +88,8 @@ export function useDeleteAvatar(options?: UseMutationOptions<ProfileEntity, Erro
 }
 
 /**
- * Changing your own password.
- *
- * Named apart from `useChangePassword` in `auth.queries`, which goes through
- * Better Auth's client. This one is the REST endpoint, and it defaults to
- * revoking the other sessions — so the session list is invalidated on success.
+ * The REST endpoint defaults to revoking the other sessions, so the session
+ * list is invalidated on success.
  */
 export function useChangeOwnPassword(
   options?: UseMutationOptions<void, Error, ChangeOwnPasswordDto>,
@@ -137,5 +138,33 @@ export function useRevokeOtherProfileSessions(options?: UseMutationOptions<void,
     ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: profileKeys.sessions() });
     }),
+  });
+}
+
+/**
+ * Nothing is cached: the profile keeps its current address until the link
+ * sent to the new one is followed, and that lands back on Settings with a
+ * fresh load.
+ */
+export function useChangeEmail(options?: UseMutationOptions<void, Error, ChangeEmailDto>) {
+  const app = useConsumerApp();
+
+  return useMutation({
+    mutationFn: (dto: ChangeEmailDto) => app.profile.changeEmail(dto),
+    ...options,
+  });
+}
+
+/**
+ * Leaves the cache alone: the caller signs out next, and signing out is what
+ * clears it — clearing here would re-fetch every mounted query as a 401 in the
+ * moment between the two.
+ */
+export function useDeleteAccount(options?: UseMutationOptions<void, Error, DeleteAccountDto>) {
+  const app = useConsumerApp();
+
+  return useMutation({
+    mutationFn: (dto: DeleteAccountDto) => app.profile.deleteAccount(dto),
+    ...options,
   });
 }

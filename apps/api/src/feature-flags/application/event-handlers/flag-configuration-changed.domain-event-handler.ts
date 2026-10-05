@@ -6,20 +6,15 @@ import { FLAG_CHANGE_REPOSITORY, FLAG_SNAPSHOT } from '../../feature-flags.di-to
 import type { FlagSnapshotPort } from '../flag-evaluator.port';
 
 /**
- * Two consequences of every flag or segment change, delivered from the outbox
- * after the change commits:
+ * Two consequences of every flag or segment change, delivered from the outbox after it
+ * commits: an audit trail entry (who, what, why, before and after), and an immediate
+ * snapshot reload on this replica so whoever pulled the switch sees it hold on their
+ * next request; other replicas notice on their next poll.
  *
- * 1. an entry on the audit trail — who, what, why, and the before/after;
- * 2. an immediate snapshot reload on this replica, so the person who pulled
- *    the switch sees it hold on their next request instead of up to a poll
- *    interval later. Other replicas notice on their next poll.
- *
- * Throwing on either failure is deliberate: the relay retries the row with
- * backoff. A change that is live but unaudited is the one outcome a flag
- * system in a regulated product cannot have, and a delivery marked done while
- * this replica still serves the old rules would leave it stale until the
- * next poll. The audit write is idempotent on the event id, so a retry after
- * a failed reload records nothing twice.
+ * Either failure throws so the relay retries with backoff: a change live but unaudited
+ * is the one outcome a regulated product cannot have, and a delivery marked done while
+ * this replica serves old rules stays stale until the next poll. The audit write is
+ * idempotent on the event id, so a retry after a failed reload records nothing twice.
  */
 @Injectable()
 export class FlagConfigurationChangedDomainEventHandler {
@@ -30,7 +25,9 @@ export class FlagConfigurationChangedDomainEventHandler {
     private readonly snapshot: FlagSnapshotPort,
   ) {}
 
-  @OnEvent(FlagConfigurationChangedDomainEvent.name)
+  // `suppressErrors: false`: by default Nest logs a listener's rejection and
+  // resolves, and the relay would mark the row delivered.
+  @OnEvent(FlagConfigurationChangedDomainEvent.name, { suppressErrors: false })
   async handle(event: FlagConfigurationChangedDomainEvent): Promise<void> {
     await this.changes.record({
       id: event.id,

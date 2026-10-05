@@ -4,10 +4,8 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
-import {
-  activeOrganizationIdOf,
-  type ScopedRequest,
-} from '../../../auth/domain/scope-context.types';
+import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
+import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import type { RoleEntity } from '../../domain/role.entity';
@@ -38,7 +36,7 @@ export class FindRoleByIdHttpController {
     @Req() request: ScopedRequest,
   ): Promise<RoleResponseDto> {
     const role = await this.queryBus.execute<FindRoleByIdQuery, RoleEntity>(
-      new FindRoleByIdQuery(id, activeOrganizationIdOf(request)),
+      new FindRoleByIdQuery(id, tenantOrganizationIdOf(request)),
     );
     return this.mapper.toResponse(role);
   }

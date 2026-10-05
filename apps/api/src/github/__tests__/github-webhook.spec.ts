@@ -41,15 +41,11 @@ describe('webhook signature', () => {
   });
 
   it('refuses a re-serialized body, byte for byte', () => {
-    // Same object, different bytes: key order and whitespace are part of what
-    // was signed. This is why the raw body has to reach the handler.
     const reserialized = JSON.stringify({ installation: { id: 42 }, action: 'suspend' });
     expect(verifyWebhookSignature(SECRET, reserialized, sign(body))).toBe(false);
   });
 
   it('refuses a missing or malformed signature without throwing', () => {
-    // `timingSafeEqual` throws on a length mismatch, so a short header would be
-    // a 500 rather than a refusal if the lengths were not compared first.
     expect(verifyWebhookSignature(SECRET, body, undefined)).toBe(false);
     expect(verifyWebhookSignature(SECRET, body, '')).toBe(false);
     expect(verifyWebhookSignature(SECRET, body, 'sha256=short')).toBe(false);
@@ -71,6 +67,7 @@ describe('installation event parsing', () => {
       type: 'installation',
       action: 'suspend',
       githubInstallationId: 42,
+      occurredAt: null,
     });
     expect(parseInstallationEvent('installation', payload('unsuspend'))).toMatchObject({
       action: 'unsuspend',
@@ -81,8 +78,6 @@ describe('installation event parsing', () => {
   });
 
   it('ignores every other event', () => {
-    // Nothing here mirrors the repository set, so there is nothing for
-    // `installation_repositories` to keep current.
     expect(parseInstallationEvent('installation_repositories', payload('added'))).toEqual({
       type: 'ignored',
     });
@@ -104,5 +99,38 @@ describe('installation event parsing', () => {
       type: 'ignored',
     });
     expect(parseInstallationEvent('installation', 'not json at all')).toEqual({ type: 'ignored' });
+  });
+
+  it("reads GitHub's own time of the change, not ours", () => {
+    const at = (action: string, installation: Record<string, unknown>) =>
+      parseInstallationEvent('installation', JSON.stringify({ action, installation }));
+
+    expect(at('unsuspend', { id: 42, updated_at: '2026-09-01T10:00:00Z' })).toMatchObject({
+      occurredAt: new Date('2026-09-01T10:00:00Z'),
+    });
+    expect(
+      at('suspend', {
+        id: 42,
+        suspended_at: '2026-09-01T09:00:00Z',
+        updated_at: '2026-09-01T10:00:00Z',
+      }),
+    ).toMatchObject({ occurredAt: new Date('2026-09-01T09:00:00Z') });
+    expect(at('suspend', { id: 42, updated_at: '2026-09-01T10:00:00Z' })).toMatchObject({
+      occurredAt: new Date('2026-09-01T10:00:00Z'),
+    });
+    expect(at('deleted', { id: 42, updated_at: 1_788_000_000 })).toMatchObject({
+      occurredAt: new Date(1_788_000_000_000),
+    });
+  });
+
+  it('has no time for a payload whose timestamp is missing or unreadable', () => {
+    const at = (updated: unknown) =>
+      parseInstallationEvent(
+        'installation',
+        JSON.stringify({ action: 'unsuspend', installation: { id: 42, updated_at: updated } }),
+      );
+    expect(at(undefined)).toMatchObject({ occurredAt: null });
+    expect(at('yesterday-ish')).toMatchObject({ occurredAt: null });
+    expect(at({ nested: true })).toMatchObject({ occurredAt: null });
   });
 });

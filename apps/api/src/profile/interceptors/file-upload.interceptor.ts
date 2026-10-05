@@ -27,20 +27,16 @@ export interface FileUploadOptions {
 }
 
 /**
- * `FileInterceptor` for a single uploaded file, with multer's rejections
- * folded onto the caller's own catalog — the avatar and a pasted image are
- * the two routes that take one.
+ * `FileInterceptor` for a single uploaded file (the avatar, a pasted image),
+ * with multer's rejections folded onto the caller's own catalog.
  *
- * The limit has to live on multer: it is what stops a large upload being
- * buffered into memory in the first place, long before any handler sees it.
- * But multer reports the rejection as a bare `PayloadTooLargeException`, which
- * `AllExceptionsFilter` renders with no `code`, so nothing could tell an
- * oversized file apart from any other 413. Catching it here restores the
- * contract. A request with no file part is the caller's `missing` code, not a
- * validation failure: `invalidParams` describes rejected *fields*, and a
- * missing part is not one.
+ * The limit lives on multer, which stops a large upload being buffered into
+ * memory at all, but multer throws a bare `PayloadTooLargeException` that
+ * `AllExceptionsFilter` renders with no `code`; catching it here restores the
+ * contract. A missing file part is the caller's `missing` code, not a
+ * validation failure: `invalidParams` describes rejected fields.
  *
- * Storage is memory, stated here rather than assumed: the handlers read
+ * Storage is memory, stated rather than assumed: the handlers read
  * `file.buffer`, and a `MulterModule` default pointing at disk would hand
  * them `undefined`.
  */
@@ -92,6 +88,6 @@ function isTooLarge(error: unknown): boolean {
 export const AvatarFileInterceptor = FileUploadInterceptor({
   field: 'file',
   maxBytes: AVATAR_MAX_BYTES,
-  tooLarge: ProfileErrors.IMAGE_TOO_LARGE,
+  tooLarge: ProfileErrors.FILE_TOO_LARGE,
   missing: ProfileErrors.UNSUPPORTED_IMAGE_TYPE,
 });

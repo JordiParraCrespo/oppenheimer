@@ -36,9 +36,12 @@ edit(
   'P1',
   api('users/commands/update-user/update-user.command-handler.ts'),
   `    await this.userRepository.save(user);
+    await this.sessionCache.refreshUser(user.id);
     return user.id;`,
-  `    // Return the saved user so the controller can skip the follow-up query.
-    return this.userRepository.save(user);`,
+  `    await this.userRepository.save(user);
+    await this.sessionCache.refreshUser(user.id);
+    // Return the saved user so the controller can skip the follow-up query.
+    return user;`,
 );
 edit(
   'P1',
@@ -93,12 +96,16 @@ edit(
   'P3',
   api('users/commands/delete-user/delete-user.command-handler.ts'),
   `    const user = found.unwrap();
-    user.delete();`,
+
+    if (
+      command.confirmation`,
   `    const user = found.unwrap();
     if (user.role === 'admin') {
       throw new ForbiddenException('Admins cannot be deleted through this endpoint');
     }
-    user.delete();`,
+
+    if (
+      command.confirmation`,
 );
 edit(
   'P3',
@@ -159,10 +166,10 @@ edit(
   'P7',
   api('users/commands/delete-user/delete-user.command-handler.ts'),
   `    private readonly userRepository: UserRepositoryPort,
-  ) {}`,
+    private readonly erasure: AccountErasureRegistry,`,
   `    private readonly userRepository: UserRepositoryPort,
     private readonly events: EventEmitter2,
-  ) {}`,
+    private readonly erasure: AccountErasureRegistry,`,
 );
 edit(
   'P7',
@@ -204,38 +211,18 @@ edit(
 edit(
   'P9',
   api('users/domain/user.entity.ts'),
-  `  /** Mark the user for deletion and raise the corresponding domain event. */`,
-  `  /** Rename in one go, e.g. from the GitHub profile. */
-  rename(fullName: string): void {
+  `  delete(): void {
+    this.addEvent(
+      new UserDeletedDomainEvent({`,
+  `  rename(fullName: string): void {
     const [first, ...rest] = fullName.split(' ');
     this.props.firstName = first ?? '';
     this.props.lastName = rest.join(' ');
   }
 
-  /** Mark the user for deletion and raise the corresponding domain event. */`,
-);
-
-// P10 HEX-LEGACY-SHAPE: a new route added to a ledgered legacy controller.
-edit(
-  'P10',
-  api('admin/admin.controller.ts'),
-  `  @Patch('users/:id')
-  @Version('1')`,
-  `  @Get('users/:id/impersonations')
-  @Version('1')
-  @RequireScopes('admin:read')
-  @CheckPolicies({ action: 'manage', subject: 'User' })
-  @ApiOperation({ summary: "List a user's active impersonation sessions" })
-  @ApiResponse({ status: 200, type: AdminUserResponseDto })
-  listImpersonations(
-    @Req() req: Request,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<AdminUserResponseDto> {
-    return this.admin.getUser(req.headers, id);
-  }
-
-  @Patch('users/:id')
-  @Version('1')`,
+  delete(): void {
+    this.addEvent(
+      new UserDeletedDomainEvent({`,
 );
 
 // P11 ledger drift + HEX-PORT-INJECTION: a query handler injects the concrete
@@ -286,4 +273,4 @@ edit(
   public validate(): void {`,
 );
 
-console.log('planted P1–P11 and decoys N1–N2 in', root);
+console.log('planted P1–P9, P11 and decoys N1–N2 in', root);

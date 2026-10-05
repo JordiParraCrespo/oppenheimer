@@ -14,21 +14,37 @@ import type { RoleEntity } from '../domain/role.entity';
 export interface UserRoleRepositoryPort {
   findRoleIdsForUser(userId: string, organizationId?: string | null): Promise<string[]>;
   findRolesForUser(userId: string, organizationId?: string | null): Promise<RoleEntity[]>;
-  /** Replace the user's role assignments **within one scope**. */
-  setRolesForUser(userId: string, roleIds: string[], organizationId?: string | null): Promise<void>;
+  /**
+   * Replace the user's role assignments **within one scope**. With `manager`
+   * the write joins that transaction, for a caller whose unit of work spans
+   * more than this table; without it the replacement is its own transaction.
+   */
+  setRolesForUser(
+    userId: string,
+    roleIds: string[],
+    organizationId?: string | null,
+    manager?: EntityManager,
+  ): Promise<void>;
 
   /**
-   * Grant one role, leaving every other assignment the user holds alone.
+   * Make `roleId` the membership role (`MEMBERSHIP_ROLES` in `@oppenheimer/shared`) the
+   * user holds in exactly `organizationId`. In one transaction: the user's other
+   * membership roles scoped there are removed, `roleId` is granted there and the
+   * organization's role version is bumped. Nothing else is touched: not a custom role
+   * assigned there (even one also held globally: the scoped row is its own grant), not a
+   * global assignment, not another organization's.
+   */
+  replaceMembershipRole(userId: string, organizationId: string, roleId: string): Promise<void>;
+
+  /**
+   * Grant one role, leaving every other assignment alone. Additive on purpose, unlike
+   * `setRolesForUser`: sign-up hands a new account its default role through it, which
+   * must not be able to revoke anything. Granting a role already held in that scope is a
+   * no-op, so it is safe to repeat.
    *
-   * Additive on purpose, and distinct from `setRolesForUser`: the caller is
-   * sign-up handing a new account its default role, which must not be able to
-   * revoke anything. Granting a role the user already holds in that scope is a
-   * no-op, so the operation is safe to repeat.
-   *
-   * `manager` enlists the grant in a transaction the caller already owns, which
-   * is what lets the personal workspace write its organization, its membership
-   * and this grant as one unit without a second writer against `user_role`.
-   * Omitted, the grant runs in its own transaction as any other write does.
+   * `manager` enlists the grant in the caller's transaction, so the personal workspace
+   * writes its organization, membership and this grant as one unit; omitted, the grant
+   * runs in its own.
    */
   assignRoleToUser(
     userId: string,

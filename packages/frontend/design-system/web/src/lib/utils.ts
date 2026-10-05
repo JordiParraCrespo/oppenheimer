@@ -5,14 +5,13 @@ import { extendTailwindMerge } from 'tailwind-merge';
  * The type ladder's own names, as `styles/globals.css` declares them in
  * `@theme inline`.
  *
- * tailwind-merge only knows Tailwind's default `text-*` sizes, so every name
- * the system added read to it as a *colour* instead: `cn('text-operate
- * text-fg')` returned `text-fg` alone, and the size was dropped from every
- * component that happened to name a colour after it — `SidebarMenuButton`,
- * `DropdownMenuItem`, `EmptyTitle`, `EmptyDescription` — each silently
- * inheriting the 15px read size where the artboards draw 14, 17 or 32.
- * Declaring the names here is what keeps a size and a colour in one class list
- * from being treated as one group.
+ * tailwind-merge only knows Tailwind's default `text-*` sizes and reads any
+ * other as a *colour*: `cn('text-operate text-fg')` would return `text-fg`
+ * alone, silently dropping the size wherever a colour followed it. Declaring
+ * the names here keeps a size and a colour in one class list apart.
+ *
+ * `@shadcn/lint` has the same blind spot, so `oxlint.design.json` lists the
+ * ladder's names as allowed under `no-raw-colors`: keep the two in step.
  */
 const FONT_SIZES = [
   'micro',

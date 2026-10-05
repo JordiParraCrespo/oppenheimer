@@ -19,13 +19,10 @@ export interface GeneratedApiTokenSecret {
 }
 
 /**
- * Mint a new token secret.
- *
  * The secret is high-entropy and random, so a fast digest is the right hash
  * here: password KDFs exist to slow down guessing of low-entropy inputs, and
  * using one would put a deliberate delay on every authenticated request. What
- * matters is that only the digest is stored and that comparison is constant
- * time.
+ * matters is that only the digest is stored.
  */
 export function generateApiTokenSecret(): GeneratedApiTokenSecret {
   const random = randomBytes(SECRET_BYTES).toString('base64url');

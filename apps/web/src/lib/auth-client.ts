@@ -7,26 +7,16 @@ import {
 import type { IAuthClient } from '@oppenheimer/frontend-core';
 import { createAuthClient } from 'better-auth/react';
 
-/**
- * Better Auth browser client. Authentication is cookie-based: the API sets an
- * httpOnly session cookie which the browser sends automatically on subsequent
- * requests (`credentials: include`). The Vite dev server proxies `/api` to the
- * API, keeping web and API same-origin so the cookie is sent without
- * cross-site restrictions.
- */
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? '';
 
 /**
- * Better Auth rejects a relative `baseURL`, but same-origin is this app's
- * intended default — with no `VITE_API_URL` the path is just `/api/auth`,
- * which threw `Invalid base URL` and left the page blank before any UI
- * mounted. Resolving against the current origin keeps the zero-config path
- * working and still lets an absolute `VITE_API_URL` win, since `new URL()`
- * ignores the base when the input is already absolute.
+ * Better Auth rejects a relative `baseURL` (`Invalid base URL`, a blank page),
+ * so the same-origin default is resolved against the current origin; an
+ * absolute `VITE_API_URL` still wins, since `new URL()` ignores the base then.
  */
 const authBaseUrl = new URL(`${apiBaseUrl}/api/auth`, window.location.origin).toString();
 
-export const authClient = createAuthClient({
+const authClient = createAuthClient({
   baseURL: authBaseUrl,
   // The shared plugin set (additional user fields, admin, organizations) comes
   // from @oppenheimer/auth so the client types stay in lockstep with the server.
@@ -53,16 +43,15 @@ export const webAuthClient: IAuthClient = {
   async signInSocial(provider, intent = 'sign-in') {
     const url = (path: string) => new URL(path, window.location.origin).toString();
 
-    // Redirects the browser to the provider and back to /sessions — but only
-    // when the call to start the round-trip succeeds. It is the one method
-    // here that used to skip `unwrap`, so a provider the API rejected resolved
-    // as if it had worked and the screen had nothing to show.
+    // Redirects the browser to the provider and back, but only when the call
+    // to start the round-trip succeeds: without `unwrap` a provider the API
+    // rejected resolves as if it had worked and the screen has nothing to show.
     unwrap(
       await authClient.signIn.social({
         provider,
         // Signing in returns to the console; signing *up* has a workspace to
         // name first, the same first-run flow the email form opens.
-        callbackURL: url(intent === 'sign-up' ? '/onboarding/workspace' : '/sessions'),
+        callbackURL: url(intent === 'sign-up' ? '/onboarding/workspace' : '/sessions/new'),
         // A failed round-trip comes back here with `?error=<code>` appended, so
         // it has to land on the screen the person actually started from —
         // otherwise a rejected sign-up reports itself on the login screen,
@@ -78,7 +67,10 @@ export const webAuthClient: IAuthClient = {
   },
 
   async signOut() {
-    await authClient.signOut();
+    // Unwrapped like every other call: a sign-out the server refused (or
+    // never heard) must reject, or the screen navigates to /login while the
+    // session is still live and is bounced straight back.
+    unwrap(await authClient.signOut());
   },
 
   async forgotPassword(email) {
@@ -94,10 +86,6 @@ export const webAuthClient: IAuthClient = {
     unwrap(await authClient.resetPassword({ token, newPassword }));
   },
 
-  async changePassword(currentPassword, newPassword) {
-    unwrap(await authClient.changePassword({ currentPassword, newPassword }));
-  },
-
   async getSession() {
     // `public/session-preload.js` starts this request from <head>, so on app
     // start the answer is usually already in hand. Only for a same-origin API:
@@ -111,7 +99,6 @@ export const webAuthClient: IAuthClient = {
     return toAuthSession(await authClient.getSession());
   },
 
-  // On web the browser sends the session cookie automatically.
   async getAuthHeaders() {
     return {};
   },

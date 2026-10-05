@@ -2,26 +2,23 @@ import {
   IconButton,
   SessionList,
   SidebarEmptyRow,
+  SidebarProjectGroup,
   SidebarProjectHeader,
+  useNow,
 } from '@oppenheimer/design-system-web';
-import { Plus, Settings } from '@oppenheimer/design-system-web/icons';
+import { Plus, Settings2 } from '@oppenheimer/design-system-web/icons';
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { SessionRow, type SessionRowActions } from './session-row';
+import { SessionRow } from './session-row';
 
 /**
- * One project's group in the sidebar: the folding header with its count and
- * hover actions, then its rows or the empty row. `project` is null for the
- * sessions whose project the list does not hold, which get a header with no
- * actions.
- *
- * The sidebar owns the open set, the menu and rename state and every
- * mutation; this draws one group and reports what was clicked. It is a
- * section rather than a component for one reason: the header's "one of mine
- * is open" mark is a subscription to the route, a boolean per group, so a
- * navigation re-renders the groups whose mark moved and not the list above
- * them.
+ * One project's group in the sidebar; `project` is null for sessions whose
+ * project the list does not hold, which get a header with no actions. It owns
+ * its ages' clock, and is a section rather than a component because the
+ * header's "one of mine is open" mark subscribes to the route, a boolean per
+ * group, so a navigation re-renders only the groups whose mark moved.
  */
 export function ProjectGroup({
   project,
@@ -30,10 +27,10 @@ export function ProjectGroup({
   onOpenChange,
   narrowed,
   query,
-  now,
   onNewSessionHere,
   onSettings,
-  rows,
+  onDelete,
+  onWrite,
 }: {
   project: ProjectEntity | null;
   sessions: SessionEntity[];
@@ -41,15 +38,18 @@ export function ProjectGroup({
   onOpenChange: (open: boolean) => void;
   /** Whether a filter or the search is narrowing the list, which changes what an empty group says. */
   narrowed: boolean;
+  /** The settled search, which an empty group repeats back. */
   query: string;
-  /** The sidebar's minute clock, which every row's age is read against. */
-  now: number;
   onNewSessionHere: (project: ProjectEntity) => void;
   onSettings: (project: ProjectEntity) => void;
-  rows: SessionRowActions;
+  onDelete: (session: SessionEntity) => void;
+  onWrite: (error: Error | null) => void;
 }) {
   const { t } = useTranslation();
-  // Unassigned under its translated name; the API's spelling is English.
+  // One clock for the group's ages, ticking once a minute: every row redraws
+  // on the tick, because every age may have moved, and the sidebar around the
+  // groups — its head, its filters — does not.
+  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   const label = project
     ? project.isUnassigned
       ? t('projects.unassigned')
@@ -61,7 +61,7 @@ export function ProjectGroup({
   });
 
   return (
-    <div className="mt-1.5 flex flex-col">
+    <SidebarProjectGroup>
       <SidebarProjectHeader
         name={label}
         count={sessions.length}
@@ -85,7 +85,7 @@ export function ProjectGroup({
                 aria-label={t('sessions.sidebar.projectSettings', { name: label })}
                 onClick={() => onSettings(project)}
               >
-                <Settings />
+                <Settings2 />
               </IconButton>
             </>
           ) : undefined
@@ -103,14 +103,18 @@ export function ProjectGroup({
           ) : null}
         </SidebarEmptyRow>
       ) : (
-        <div className="px-3">
-          <SessionList>
-            {sessions.map((session) => (
-              <SessionRow key={session.id} session={session} now={now} rows={rows} />
-            ))}
-          </SessionList>
-        </div>
+        <SessionList>
+          {sessions.map((session) => (
+            <SessionRow
+              key={session.id}
+              session={session}
+              now={now}
+              onDelete={onDelete}
+              onWrite={onWrite}
+            />
+          ))}
+        </SessionList>
       )}
-    </div>
+    </SidebarProjectGroup>
   );
 }

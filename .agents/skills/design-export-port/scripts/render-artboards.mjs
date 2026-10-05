@@ -4,11 +4,20 @@
  *
  *   node render-artboards.mjs --design <export root> --version <artboards dir> \
  *     --out /tmp/shots [--only A,B] [--click Page:selector]... [--dismiss selector] [--escape] [--full]
+ *     [--props 'Page:{"key":"value"}']... [--drag Page]... [--tag name]
  *
  * --dismiss clicks a selector (a modal's close button) on every page where
  * it exists, before the per-page clicks; --escape presses Escape instead.
  * A click that times out is recorded as an error, but the capture is still
  * written so the state can be seen.
+ *
+ * Most new states hide behind a page's props (the knobs Claude Design shows
+ * in its side panel, declared in the page's `data-props`), not behind a
+ * click. --props sets them on the mounted page through the runtime's own
+ * `__dcSetProps`, so the page runs its update path as it would in the
+ * editor. --drag holds a file over the window (dragenter, then dragover,
+ * never a drop) for overlays that only show mid-drag. --tag names the
+ * capture `<page>-<tag>-<theme>.png`, so one page's states sit side by side.
  *
  * The pages need their runtime and an HTTP origin: the export folder is
  * served, any CDN scripts the pages reference are fetched once into
@@ -30,6 +39,9 @@ const a = args({
   escape: { type: 'boolean', default: false },
   dismiss: {},
   full: { type: 'boolean', default: false },
+  props: { multiple: true },
+  drag: { multiple: true },
+  tag: {},
   port: { default: '8765' },
   settle: { default: '2500' },
 });
@@ -68,20 +80,41 @@ const clicks = (a.click ?? []).map((c) => {
   return { page: c.slice(0, i), selector: c.slice(i + 1) };
 });
 
+const props = (a.props ?? []).map((p) => {
+  const i = p.indexOf(':');
+  return { page: p.slice(0, i), values: JSON.parse(p.slice(i + 1)) };
+});
+const drags = new Set(a.drag ?? []);
+
 const origin = `http://localhost:${a.port}`;
 const server = await startServer('python3', ['-m', 'http.server', a.port], { cwd: design, url: `${origin}/${a.version}/` });
 const browser = await launch();
 let failures = [];
 try {
   failures = await shootAll(browser, names, async (page, { name, theme, errors }) => {
-    await page.route('https://**', (route) => {
+    // A URL predicate, not the 'https://**' glob: the glob matched none of
+    // these requests, so every capture fetched the CDN live and failed
+    // whenever the network did.
+    await page.route((url) => vendored.has(url.href), (route) => {
       const file = vendored.get(route.request().url());
-      return file ? route.fulfill({ body: readFileSync(file), contentType: 'application/javascript' }) : route.continue();
+      // The pages load these with `crossorigin` (and SRI), so the stand-in
+      // must carry CORS headers or the browser refuses the script.
+      return route.fulfill({ body: readFileSync(file), contentType: 'application/javascript', headers: { 'access-control-allow-origin': '*' } });
     });
     const file = existsSync(join(pagesDir, `${name}.dc.html`)) ? `${name}.dc.html` : `${name}.html`;
     await page.goto(`${origin}/${a.version}/${file}`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(Number(a.settle));
     await applyTheme(page, theme);
+    for (const p of props) {
+      if (p.page !== name) continue;
+      const set = await page.evaluate((values) => {
+        if (typeof window.__dcSetProps !== 'function') return false;
+        window.__dcSetProps(window.__dcRootName(), values);
+        return true;
+      }, p.values);
+      if (!set) errors.push(`--props ${p.page}: the page has no __dcSetProps (not a Claude Design artboard?)`);
+      await page.waitForTimeout(600);
+    }
     if (a.escape) await page.keyboard.press('Escape');
     if (a.dismiss) {
       const el = page.locator(a.dismiss).first();
@@ -93,9 +126,18 @@ try {
       if ((await el.count()) === 0) errors.push(`--click ${c.page}:${c.selector} matched nothing`);
       else await el.click({ timeout: 5000 }).catch((e) => errors.push(`--click ${c.page}:${c.selector}: ${e.message.split('\n')[0]}`));
     }
+    if (drags.has(name)) {
+      await page.evaluate(() => {
+        const dt = new DataTransfer();
+        dt.items.add(new File(['x'], 'screenshot.png', { type: 'image/png' }));
+        const at = { bubbles: true, cancelable: true, dataTransfer: dt, clientX: innerWidth / 2, clientY: innerHeight / 2 };
+        document.body.dispatchEvent(new DragEvent('dragenter', at));
+        document.body.dispatchEvent(new DragEvent('dragover', at));
+      });
+    }
     await page.waitForTimeout(400);
     if ((await page.evaluate(() => document.body.innerText.trim().length)) === 0) errors.push('page rendered no text (runtime failed?)');
-    await page.screenshot({ path: join(out, `${name}-${theme}.png`), fullPage: a.full });
+    await page.screenshot({ path: join(out, `${name}${a.tag ? `-${a.tag}` : ''}-${theme}.png`), fullPage: a.full });
   });
 } finally {
   await browser.close();

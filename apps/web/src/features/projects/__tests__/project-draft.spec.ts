@@ -1,47 +1,52 @@
+import { repositoryKey } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
-import { projectBlock, repositorySummary } from '../lib/project-draft';
+import { projectBlock, projectInputOf } from '../lib/project-draft';
 
 const row = (id: string, isDefault: boolean) => ({ id, isDefault, branch: 'main' });
 
 describe('projectBlock', () => {
   it('asks for a name first, then a repository, then a default', () => {
-    expect(projectBlock('  ', { rows: [], defaultHostId: null, defaultAgent: null })).toBe('name');
-    expect(projectBlock('XRP', { rows: [], defaultHostId: null, defaultAgent: null })).toBe(
-      'repositories',
-    );
-    expect(
-      projectBlock('XRP', { rows: [row('a', false)], defaultHostId: null, defaultAgent: null }),
-    ).toBe('default');
+    expect(projectBlock('  ', [])).toBe('name');
+    expect(projectBlock('XRP', [])).toBe('repositories');
+    expect(projectBlock('XRP', [row('a', false)])).toBe('default');
   });
 
   it('is ready once a named project holds a default repository', () => {
-    expect(
-      projectBlock('XRP', {
-        rows: [row('a', true), row('b', false)],
-        defaultHostId: null,
-        defaultAgent: null,
-      }),
-    ).toBeNull();
+    expect(projectBlock('XRP', [row('a', true), row('b', false)])).toBeNull();
   });
 });
 
-describe('repositorySummary', () => {
-  it('counts the rows and the defaults among them', () => {
-    expect(repositorySummary([row('a', true), row('b', false)])).toEqual({
-      count: 2,
-      defaults: 1,
+/** What the project dialog sends (`product/versions/mvp/05-screens.md`). */
+describe('projectInputOf', () => {
+  const id = repositoryKey({ installationId: 'inst-1', githubRepoId: 2 });
+  const values = (rows: { id: string; isDefault: boolean; branch: string }[]) => ({
+    name: ' XRP ',
+    rows,
+    defaultHostId: null,
+    defaultAgent: null,
+  });
+
+  it('sends the trimmed name and every row with its base', () => {
+    expect(projectInputOf(values([{ id, isDefault: false, branch: 'develop' }]))).toEqual({
+      name: 'XRP',
+      repositories: [
+        { installationId: 'inst-1', githubRepoId: 2, isDefault: false, baseBranch: 'develop' },
+      ],
+      defaultHostId: null,
+      defaultAgent: null,
     });
   });
 
-  it('lets the Unassigned project save with no repository, but not with no default', () => {
-    const draft = { rows: [], defaultHostId: 'host-1', defaultAgent: null };
-    expect(projectBlock('Unassigned', draft, { holdsNone: true })).toBeNull();
+  it('drops a row whose id names nothing this screen knows', () => {
     expect(
-      projectBlock(
-        'Unassigned',
-        { ...draft, rows: [{ id: 'inst:1', isDefault: false, branch: 'main' }] },
-        { holdsNone: true },
-      ),
-    ).toBe('default');
+      projectInputOf(values([{ id: 'garbage', isDefault: true, branch: 'main' }])).repositories,
+    ).toEqual([]);
+  });
+
+  it('sends neither the name nor an empty list for Unassigned', () => {
+    expect(projectInputOf(values([]), { fixed: true })).toEqual({
+      defaultHostId: null,
+      defaultAgent: null,
+    });
   });
 });

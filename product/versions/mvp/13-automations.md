@@ -1,12 +1,12 @@
-# 13 — Automations: the console's second list, ahead of its API
+# 13 — Automations: the console
 
 The 2026-09-26 export (`design/version1/Routines.dc.html`, which is
-`SessionsConsole` opened on its automations page) draws the console's
-second list. Its copy says **Automations**; the export's internal names
-stay `routines` (`design/README.md`), and the console uses the product
-word. Automations themselves — the scheduler, the GitHub trigger, the
-runs — stay out of the MVP (00); what this note records is the console's
-side, built so the rail is whole, and what the export draws for the rest.
+`SessionsConsole` opened on its automations page) and the 2026-09-27
+export's editor dialog draw the console's second list. Its copy says
+**Automations**; the export's internal names stay `routines`
+(`design/README.md`), and the console uses the product word. This note
+owns the console: what the export draws and what is built. How a run is
+fired, guarded and dispatched is 16; the tables and modules are 10.
 
 ## What the export draws
 
@@ -24,51 +24,68 @@ side, built so the rail is whole, and what the export draws for the rest.
 - **One automation**: the page header at its large size — glyph, name,
   Run now, Edit, the more menu with pause, duplicate and delete — a
   status line, a paused band, then its run history and its runs.
-- **The editor**: the page over the main column, like the project page:
-  a page header whose title is the name, Cancel and Create, a recap line,
-  then four numbered steps — Where (project, repositories, host), When
-  (trigger cards), What (the task), Agent (agent, model, permission,
-  effort).
+- **The editor**: a dialog over the console with three steps under its
+  title as a segmented strip — Task (the name, what the agent should do),
+  Trigger (any trigger starts a run; a row adds one, a schedule or a
+  GitHub event, each read as a sentence), Where it runs (Code: project,
+  repositories; Runs on: host, agent, model) — and a footer that walks
+  them: the line that says what is still missing, Back, Cancel on the
+  first step, Next while a step is unfinished, Create on the last.
 - **A run** opens the session it started, in the console's session pane.
 
-## Built (2026-09-26)
+## Built
 
 | URL | What |
 |---|---|
-| `/automations` | The overview on its Automations tab: the table, empty |
-| `/automations/runs` | The overview on its Runs tab: the runs list, empty |
-| `/automations/new` | The editor's header, Back and a Create that stays off; `?project=` is kept for the Where step |
+| `/automations` | The overview on its Automations tab: run history, then the table |
+| `/automations/runs` | The overview on its Runs tab: run history with its legend, then every run |
+| `/automations/$automationId` | One automation: its header, run history and runs |
+| `/automations/$automationId/sessions/$sessionId` | A run: the session it started, in the whole pane, with the automations list kept beside it |
 
-- Which list is beside the rail is the address's: everything under
-  `/automations` is the automations list, the editor included, and the
-  rest is the sessions list. One predicate (`useConsoleList`, the kit's)
-  answers both the rail's current item and the sidebar the shell mounts.
-- `/automations` is a layout route that mounts the overview's frame once
-  — `EditorPage` with its wide body, the view tabs as links, New
-  automation — and outlets the tab's view.
-- The editor sits under the `_editor` layout, the frame the project page
-  and Add a host use.
-- The sidebar lists the projects as groups, each empty until an
-  automation exists; the search and the rows arrive with them. The
-  workspace's Unassigned project has no group, nor does it count: it holds
-  the sessions that name no project, and an automation is set up for one
-  (2026-09-27).
-- The console's feature is `apps/web/src/features/automations/`, on the
-  app's allowlist because its pages render no entity yet; the product
-  package gains its module when the control plane names the resource.
-- Not built, on purpose: a page for one automation, and the editor's
-  steps. A route with an id that no loader can refuse would answer every
-  address with an empty page, and numbered steps without a field are a
-  facade.
+- **The list beside the rail is the address's**: everything under
+  `/automations` is the automations list, the rest the sessions list. One
+  predicate (`useConsoleList`, the kit's) answers the rail's current item
+  and the sidebar the shell mounts, which is why a run opens under
+  `/automations` and not under `/sessions`.
+- **The sidebar** groups the automations by project (the workspace's
+  Unassigned project has no group: an automation is set up for a project),
+  with a search over names, each row's glyph (a clock, or GitHub's mark
+  when an event can start it) and its mono meta — Running, Paused, the wait
+  to the next slot, else its run count. The selected automation expands its
+  last six runs; each opens the run view.
+- **The overview** is one frame, `EditorPage` with its wide body, mounted by
+  the layout route; each tab is a route of its own, so the address says
+  which is open. The run-history chart is thirty bars of the viewer's local
+  days, drawn from the first visit: with no runs yet it is the empty axis,
+  not absent (2026-09-28). The table's row menu edits, runs now, pauses or resumes, duplicates
+  and deletes. The Runs tab keeps its status pill, facets (automation,
+  project, window) and page in the URL; a page is ten runs. The status
+  pills and the facets share one row in every locale: a facet caps its
+  width and truncates a long name, and when the row still cannot hold
+  them the facets wrap as one group, never the window alone. The unset
+  facet says "all" in every language (2026-09-29).
+- **One automation**: Back, then the ordinary page header (not the large
+  one) with Run now, Edit and the more menu (pause or resume, duplicate, delete behind a confirm), the facts
+  line (status, the countdown to the next run, the trigger, agent · model ·
+  project), the paused band with its reason and Resume, then its run
+  history and its runs.
+- **The editor** is one dialog for New and Edit automation, opened through
+  `useConsoleDialog` from the sidebar, a project header's plus, the
+  overview, a row's Edit and a page's Edit. Task holds the two typed
+  fields (React Hook Form over the shared Task schema); Trigger draws each
+  trigger as a sentence of tokens — a schedule with its week strip and
+  next run, a GitHub card with the live "would have run N times" line the
+  API replays against received events; Where it runs picks project,
+  repositories, host, agent and model, prefilled from the project. Create
+  and Save exist only on the last step.
+- The feature is `apps/web/src/features/automations/` over the product
+  package's `automations` module (`packages/frontend/consumer`).
+- Not built: templates (16 decides them as a fixed catalog; they come
+  after), and the frame's run transcript beside the terminal, which is
+  the headless slice's structured output (16 §5).
 
 ## Open
 
-- **The data model.** A routine is a session template plus a trigger; a
-  run is a session the trigger started. Whether a run is a row of its own
-  or a session with a `routineId` decides most of the API, and 03, 10
-  and 11 own the tables and endpoints when they are decided.
-- **Templates.** The export's grid is a fixed catalog by category; whether
-  templates are code, rows, or both.
-- **Where runs are opened.** The export opens a run in the session pane
-  with the sidebar still on automations; the sessions pane assumes the
-  sessions list.
+- **What a run opened from the Runs tab of a deleted automation shows.**
+  The run view keeps the automations list, where that automation no longer
+  has a row; the session opens, and nothing in the list is selected.

@@ -5,16 +5,13 @@ import { parseEnv } from './env';
 /**
  * The sessions GitHub App (`product/versions/mvp/03-control-plane.md`).
  *
- * Every value is **optional capability config**: without them the app boots,
- * `GET /installations` answers an empty list, and every GitHub-backed route
- * answers `GITHUB_002` — a self-hoster who has not registered an App has no
- * repository access, not a broken API. All six are needed together, which is
- * what the `github_app` capability reports.
+ * Every value is optional capability config: without them the app boots,
+ * `GET /installations` answers an empty list and every GitHub-backed route answers
+ * `GITHUB_002`. All six are needed together, which is what the `github_app` capability
+ * reports.
  *
- * Deliberately a namespace of its own rather than more keys under `oauth.github`:
- * that pair is Better Auth's *sign-in* provider, a different App with different
- * credentials, and folding them together would make one of them impossible to
- * rotate alone.
+ * A namespace of its own rather than keys under `oauth.github`: that pair is Better
+ * Auth's sign-in provider, a different App whose credentials must rotate alone.
  */
 const schema = z.object({
   appId: z.string().optional(),
@@ -27,25 +24,14 @@ const schema = z.object({
   /** The App's URL slug, so the console can link to its install page. */
   slug: z.string().optional(),
   /**
-   * Where GitHub's REST API lives, up to but not including a trailing slash.
+   * Where GitHub's REST API lives, without a trailing slash. Defaulted, not optional:
+   * a deployment talks to github.com or to a GitHub Enterprise Server, and this is the
+   * seam an end-to-end run points at a stub.
    *
-   * Defaulted rather than optional, because unlike the six above this one is
-   * never absent — a deployment either talks to github.com or to a GitHub
-   * Enterprise Server, and the second is the reason this is configurable at
-   * all. It is also the seam an end-to-end run points at a stub, so a create
-   * path that needs a repository can be exercised without registering an App.
-   *
-   * **The variable is `GITHUB_APP_API_URL`, not `GITHUB_API_URL`, and that is
-   * not a matter of taste.** `GITHUB_API_URL` is one of the environment
-   * variables GitHub Actions defines in every step, set to
-   * `https://api.github.com` — and `@oppenheimer/env` lets a real environment
-   * variable win over the root `.env`, as it must. So a deployment or a test
-   * run that lives inside Actions would have had this silently overridden by
-   * the runner, which is exactly what happened the first time the end-to-end
-   * job tried to point the API at its stub: the OAuth URL took effect, the
-   * API URL did not, and the suite talked to the real github.com. The
-   * `GITHUB_APP_` prefix the other six already carry is outside that reserved
-   * namespace.
+   * The variable is `GITHUB_APP_API_URL`, never `GITHUB_API_URL`: GitHub Actions sets
+   * `GITHUB_API_URL=https://api.github.com` in every step and `@oppenheimer/env` lets a
+   * real env var win over `.env`, so inside Actions that name would silently replace an
+   * e2e stub with the real github.com.
    */
   apiBaseUrl: z.string().url().default('https://api.github.com'),
   /**

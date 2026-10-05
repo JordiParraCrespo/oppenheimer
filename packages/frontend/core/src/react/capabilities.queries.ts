@@ -1,33 +1,25 @@
 'use client';
 
 import type { ClientDeployment } from '@oppenheimer/shared';
-import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
+import { type UseQueryOptions } from '@tanstack/react-query';
+import { CORE_CONFIG } from '../config';
 import { useOppenheimerApp } from './context';
+import { useQuery } from './query';
 
-/**
- * Query key factory for the `capabilities` feature. Same shape as the other
- * feature key factories: everything derives from `all`, and `all` itself is
- * never handed to `useQuery` — a root that is also a leaf stops meaning
- * "everything" the day a second query joins it.
- */
-export const capabilitiesKeys = {
+const capabilitiesKeys = {
   all: ['capabilities'] as const,
   deployment: () => [...capabilitiesKeys.all, 'deployment'] as const,
 };
 
 /**
- * Which client-facing optional features the deployment has configured (OAuth
- * providers), from `GET /health/capabilities`.
+ * Which client-facing optional features (OAuth providers, the GitHub App) the
+ * deployment has configured, from `GET /health/capabilities`, to hide UI this
+ * install cannot serve. It changes only on reconfigure and restart, so it is
+ * static for a page's lifetime.
  *
- * Use this to hide UI for features this install cannot serve — a social
- * sign-in button for a provider with no credentials is a dead button. The set
- * only changes when the deployment is reconfigured and restarted, so it is
- * effectively static for the lifetime of a page.
- *
- * The read is public (it gates the login screen, before any session exists).
- * Note the failure semantics: an *error* here means the API was unreachable,
- * which says nothing about what is configured — callers must not treat a
- * failed read as "capability missing".
+ * An *error* means the API was unreachable, not that a capability is missing:
+ * treating it as an empty set would hide every provider on a deployment that
+ * has them all — a login page with no way in.
  */
 export function useDeploymentCapabilities<TData = ClientDeployment>(
   options?: Omit<UseQueryOptions<ClientDeployment, Error, TData>, 'queryKey' | 'queryFn'>,
@@ -37,7 +29,7 @@ export function useDeploymentCapabilities<TData = ClientDeployment>(
   return useQuery({
     queryKey: capabilitiesKeys.deployment(),
     queryFn: () => app.capabilities.get(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: CORE_CONFIG.query.capabilitiesStaleMs,
     ...options,
   });
 }

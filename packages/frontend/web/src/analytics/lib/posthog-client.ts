@@ -24,24 +24,19 @@ function stripUrlSecrets(result: CaptureResult | null): CaptureResult | null {
 }
 
 /**
- * PostHog adapter for the web app.
+ * The SDK is loaded with a dynamic `import()`, in its own chunk fetched only
+ * when a project key is configured, keeping ~50KB of vendor JavaScript off the
+ * critical path of the marketing and auth pages. The DI container is built
+ * synchronously, so calls made before the SDK arrives are queued and replayed.
  *
- * The SDK is loaded with a dynamic `import()` rather than a static one, so it
- * lands in its own chunk and is fetched only when a project key is configured.
- * That keeps ~50KB of vendor JavaScript off the critical path of the marketing
- * and auth pages, where it would otherwise cost Core Web Vitals for visitors
- * who never reach the app.
- *
- * Because loading is async but the DI container is built synchronously, calls
- * made before the SDK arrives are queued and replayed on load.
- *
- * Feature flags do not come from here — the API evaluates them — so PostHog's
- * own flag loading is switched off: no `/flags` request per page load, and an
- * ad blocker that eats PostHog cannot change what the product shows.
+ * PostHog's own flag loading is off because the API evaluates flags: no
+ * `/flags` request per page load, and an ad blocker that eats PostHog cannot
+ * change what the product shows.
  */
 class PostHogAnalyticsClient implements IAnalyticsClient {
   private posthog: PostHog | null = null;
-  private pending: Array<(posthog: PostHog) => void> = [];
+  /** Calls made before the SDK arrived; `null` once the SDK loaded or failed to. */
+  private pending: Array<(posthog: PostHog) => void> | null = [];
 
   constructor(
     private readonly apiKey: string,
@@ -51,30 +46,41 @@ class PostHogAnalyticsClient implements IAnalyticsClient {
   }
 
   private async load(): Promise<void> {
+    let sdk: PostHog;
     try {
       const { default: posthog } = await import('posthog-js');
 
       posthog.init(this.apiKey, {
         api_host: this.host,
-        // Page views are driven from the router via `usePageView`. PostHog's
-        // automatic capture only fires on hard loads, which in a SPA means
-        // every client-side navigation would go uncounted.
+        // `PageViewTracker` sends them per navigation; PostHog's own capture
+        // sees only the first hard load of a SPA.
         capture_pageview: false,
         persistence: 'localStorage+cookie',
-        // Runs on every outgoing event, including the autocapture ones we
-        // never raise ourselves. See `stripUrlSecrets`.
         before_send: stripUrlSecrets,
         advanced_disable_feature_flags: true,
       });
 
-      this.posthog = posthog;
-      for (const call of this.pending) call(posthog);
-      this.pending = [];
+      sdk = posthog;
     } catch (error) {
-      // A blocked or failed SDK load must not break the app. Every subsequent
-      // call stays queued against a client that never arrives, which is
-      // functionally the no-op client.
+      // A blocked or failed SDK load must not break the app, and it is never
+      // retried: drop what was queued and every call after it, so a
+      // long-lived tab behaves as the no-op client instead of holding events
+      // for a client that never arrives.
+      this.pending = null;
       console.warn('[analytics] PostHog failed to load', error);
+      return;
+    }
+    // Replayed outside the try above: a call that throws is that call's
+    // failure, not a failed load, and the SDK is up.
+    const queued = this.pending ?? [];
+    this.pending = null;
+    this.posthog = sdk;
+    for (const call of queued) {
+      try {
+        call(sdk);
+      } catch (error) {
+        console.warn('[analytics] a queued PostHog call failed', error);
+      }
     }
   }
 
@@ -82,7 +88,7 @@ class PostHogAnalyticsClient implements IAnalyticsClient {
     if (this.posthog) {
       call(this.posthog);
     } else {
-      this.pending.push(call);
+      this.pending?.push(call);
     }
   }
 

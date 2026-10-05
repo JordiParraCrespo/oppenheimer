@@ -5,11 +5,9 @@ import {
   githubRepoIdSchema,
   gitRefSchema,
   installationIdSchema,
-} from './primitives';
+} from './primitives.js';
 
 /**
- * Project shapes.
- *
  * A project is a **saved scope a person creates**: the repositories its sessions
  * usually work on, the base each one branches from, which of them are offered by
  * default, and the host and agent a new session starts with
@@ -22,8 +20,6 @@ import {
  * `slug` is in no request body: it is the project's stable handle, derived once
  * from its first name and never reissued. A project is metadata; nothing on a
  * host is named after it.
- *
- * Schemas state the constraint only, never a message (`.agents/rules/forms.md`).
  */
 
 /** How many repositories one project may hold. The dialog shows them all at once. */
@@ -99,7 +95,7 @@ export type UpdateProjectDto = z.infer<typeof updateProjectSchema>;
  * Archived projects are left out by default: a retired project's slug stays
  * claimed for ever so it is never reissued, which means the listing would
  * otherwise grow monotonically with rows nobody can put work in.
- * `includeArchived` is what the settings screen passes to show the history.
+ * `includeArchived` asks for the history too.
  */
 export const listProjectsQuerySchema = z.object({
   includeArchived: z.coerce.boolean().optional(),

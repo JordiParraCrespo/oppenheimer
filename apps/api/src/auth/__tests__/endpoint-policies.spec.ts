@@ -3,10 +3,17 @@ import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { CHECK_POLICIES_KEY, type PolicyRule } from '@oppenheimer/backend-authz';
 import { ENDPOINT_POLICIES, type GuardedEndpoint } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
-import { AdminController } from '../../admin/admin.controller';
+import { ListUsersHttpController } from '../../admin/queries/list-users/list-users.http.controller';
 import { FindApiTokensHttpController } from '../../api-tokens/queries/find-api-tokens/find-api-tokens.http.controller';
+import { CreateAutomationHttpController } from '../../automations/commands/create-automation/create-automation.http.controller';
+import { DeleteAutomationHttpController } from '../../automations/commands/delete-automation/delete-automation.http.controller';
+import { RunAutomationHttpController } from '../../automations/commands/run-automation/run-automation.http.controller';
+import { UpdateAutomationHttpController } from '../../automations/commands/update-automation/update-automation.http.controller';
+import { FindAutomationHttpController } from '../../automations/queries/find-automation/find-automation.http.controller';
+import { FindAutomationRunsHttpController } from '../../automations/queries/find-automation-runs/find-automation-runs.http.controller';
+import { FindAutomationsHttpController } from '../../automations/queries/find-automations/find-automations.http.controller';
 import { FindFeatureFlagsHttpController } from '../../feature-flags/queries/find-feature-flags/find-feature-flags.http.controller';
-import { MembersController } from '../../organizations/members.controller';
+import { ListMembersHttpController } from '../../organizations/queries/list-members/list-members.http.controller';
 import { ArchiveProjectHttpController } from '../../projects/commands/archive-project/archive-project.http.controller';
 import { CreateProjectHttpController } from '../../projects/commands/create-project/create-project.http.controller';
 import { UpdateProjectHttpController } from '../../projects/commands/update-project/update-project.http.controller';
@@ -18,6 +25,7 @@ import { CloseSessionHttpController } from '../../sessions/commands/close-sessio
 import { IssueAttachTicketHttpController } from '../../sessions/commands/issue-attach-ticket/issue-attach-ticket.http.controller';
 import { MoveSessionHttpController } from '../../sessions/commands/move-session/move-session.http.controller';
 import { PasteSessionImageHttpController } from '../../sessions/commands/paste-session-image/paste-session-image.http.controller';
+import { PrepareSessionHttpController } from '../../sessions/commands/prepare-session/prepare-session.http.controller';
 import { RemoveCheckoutHttpController } from '../../sessions/commands/remove-checkout/remove-checkout.http.controller';
 import { RestartSessionHttpController } from '../../sessions/commands/restart-session/restart-session.http.controller';
 import { StopSessionHttpController } from '../../sessions/commands/stop-session/stop-session.http.controller';
@@ -30,24 +38,18 @@ import { FindSessionsHttpController } from '../../sessions/queries/find-sessions
  *
  * `ENDPOINT_POLICIES` (`packages/shared/src/permissions/endpoint-policies.ts`)
  * is what a client gates a destination on; `@CheckPolicies` is what the
- * endpoint behind it actually demands. They used to be two independent
- * declarations of one rule, and two of them can come apart — a screen shown to
- * everyone while the read behind it demands a permission a plain member does
- * not hold is a link that can only answer 403.
- *
- * This is the half that holds the server to it: adding, removing or changing a
- * `@CheckPolicies` on one of these handlers fails here until the catalog is
- * brought along with it, and nothing else in the build would notice. Client
- * route paths are not in it — a nav row names its endpoint where the row
- * lives — so this test needs no frontend package to run.
+ * endpoint demands. If they come apart, a screen shown to everyone can only
+ * answer 403. Changing a `@CheckPolicies` on one of these handlers fails here
+ * until the catalog follows; nothing else in the build would notice. Client
+ * route paths are not in it, so this test needs no frontend package.
  */
 
 /** The handler each guarded endpoint's data actually comes from. */
 const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }> = {
-  'GET /organizations/:orgId/members': { controller: MembersController, handler: 'list' },
+  'GET /organizations/:orgId/members': { controller: ListMembersHttpController, handler: 'list' },
   'GET /roles': { controller: FindRolesHttpController, handler: 'findAll' },
   'GET /tokens': { controller: FindApiTokensHttpController, handler: 'findAll' },
-  'GET /admin/users': { controller: AdminController, handler: 'listUsers' },
+  'GET /admin/users': { controller: ListUsersHttpController, handler: 'listUsers' },
   'GET /feature-flags/admin': {
     controller: FindFeatureFlagsHttpController,
     handler: 'findFeatureFlags',
@@ -61,6 +63,7 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
   'GET /sessions/:id': { controller: FindSessionHttpController, handler: 'get' },
   'GET /sessions/:id/events': { controller: FindSessionEventsHttpController, handler: 'list' },
   'DELETE /sessions/:id': { controller: CloseSessionHttpController, handler: 'close' },
+  'POST /sessions/prepare': { controller: PrepareSessionHttpController, handler: 'prepare' },
   'POST /sessions/:id/stop': { controller: StopSessionHttpController, handler: 'stop' },
   'POST /sessions/:id/move': { controller: MoveSessionHttpController, handler: 'move' },
   'POST /sessions/:id/restart': { controller: RestartSessionHttpController, handler: 'restart' },
@@ -77,6 +80,13 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
     controller: PasteSessionImageHttpController,
     handler: 'paste',
   },
+  'GET /automations': { controller: FindAutomationsHttpController, handler: 'list' },
+  'GET /automations/:id': { controller: FindAutomationHttpController, handler: 'find' },
+  'POST /automations': { controller: CreateAutomationHttpController, handler: 'create' },
+  'PATCH /automations/:id': { controller: UpdateAutomationHttpController, handler: 'update' },
+  'DELETE /automations/:id': { controller: DeleteAutomationHttpController, handler: 'handle' },
+  'POST /automations/:id/run': { controller: RunAutomationHttpController, handler: 'run' },
+  'GET /automation-runs': { controller: FindAutomationRunsHttpController, handler: 'list' },
 };
 
 function methodOn(controller: object, handler: string): object {

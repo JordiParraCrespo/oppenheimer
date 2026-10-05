@@ -10,7 +10,6 @@ import { Permission } from '../../domain/value-objects/permission.value-object';
 import { ROLE_REPOSITORY } from '../../roles.di-tokens';
 import { CreateRoleCommand } from './create-role.command';
 
-/** Creates a new custom role with its initial permission set. */
 @CommandHandler(CreateRoleCommand)
 export class CreateRoleCommandHandler implements ICommandHandler<CreateRoleCommand, AggregateID> {
   constructor(
@@ -20,31 +19,29 @@ export class CreateRoleCommandHandler implements ICommandHandler<CreateRoleComma
   ) {}
 
   async execute(command: CreateRoleCommand): Promise<AggregateID> {
-    // No privilege escalation: the author must already hold everything they
-    // are putting on the role.
-    await this.grantPolicy.assertGrantable(
-      command.actorId
-        ? {
-            id: command.actorId,
-            role: command.actorRole,
-            activeOrganizationId: command.activeOrganizationId,
-          }
-        : undefined,
-      command.permissions,
-    );
+    const organizationId = command.organizationId ?? null;
+    const actor = command.actorId
+      ? { id: command.actorId, role: command.actorRole, organizationId }
+      : undefined;
 
-    const existing = await this.roleRepository.findOneByName(
-      command.name,
-      command.activeOrganizationId,
-    );
+    if (organizationId === null) {
+      if (!command.global) {
+        throw new AppError(RoleErrors.ORGANIZATION_REQUIRED, {
+          detail: 'Switch to an organization to create a role in it.',
+        });
+      }
+      await this.grantPolicy.assertCanCreateGlobal(actor);
+    }
+
+    await this.grantPolicy.assertGrantable(actor, command.permissions);
+
+    const existing = await this.roleRepository.findOneByName(command.name, organizationId);
     if (existing.isSome()) throw new AppError(RoleErrors.NAME_TAKEN);
 
     const role = RoleEntity.createNew({
       name: command.name,
       description: command.description,
-      // A role created inside an organization belongs to it. Global roles are
-      // seeded, not created through the API.
-      organizationId: command.activeOrganizationId ?? null,
+      organizationId,
       permissions: command.permissions.map((permission) => Permission.fromDefinition(permission)),
     });
 

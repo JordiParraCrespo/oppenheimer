@@ -4,6 +4,8 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import { requireLaunchableHost } from '../../application/require-launchable-host.policy';
+import { SessionAttachmentsResolver } from '../../application/session-attachments.resolver';
+import { throwIfRefused } from '../../application/session-create-refusal.policy';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../application/session-launch.factory';
 import { SessionNamingResolver } from '../../application/session-naming.resolver';
@@ -21,13 +23,11 @@ import { CreateSessionCommand } from './create-session.command';
  * Starts a session: the project, the slug, the checkouts, the first entry of the
  * log, and the job the host is owed.
  *
- * The order matters. The host is checked **first**, because `hostId` is the one
- * reference in the schema a constraint cannot hold — a host belongs to a person and
- * carries no workspace column — so a foreign host must be refused before anything is
- * written. The project comes next, because the branch name needs its slug. The row,
- * its checkouts and its log then commit together, and only a session that was
- * genuinely created is dispatched: a retry hands back the first one rather than
- * asking the host to build a second worktree.
+ * The order matters. The host is checked **first**: `hostId` is the one reference
+ * no composite key can scope (a host is a person's, with no workspace column), so a
+ * foreign host is refused before anything is written; then the project, the
+ * checkouts and the attached images. The row, its checkouts and its log commit
+ * together, and only a session genuinely created is dispatched.
  */
 @CommandHandler(CreateSessionCommand)
 export class CreateSessionCommandHandler
@@ -44,6 +44,7 @@ export class CreateSessionCommandHandler
     private readonly launches: SessionLaunchSpecFactory,
     private readonly naming: SessionNamingResolver,
     private readonly mapper: WorkSessionMapper,
+    private readonly attachments: SessionAttachmentsResolver,
   ) {}
 
   async execute(command: CreateSessionCommand): Promise<SessionCommandResult> {
@@ -69,11 +70,14 @@ export class CreateSessionCommandHandler
       agent: input.agent,
       name: input.name,
       idempotencyKey: command.idempotencyKey,
+      origin: command.origin,
     });
 
     for (const checkout of input.checkouts) {
       await this.plan.attachCheckout(scope, session, checkout);
     }
+    // Before the row: a task that talks about a picture must not start without it.
+    const images = await this.attachments.claim(scope, command.userId, session.id, input);
 
     const created = await this.sessions.createIfUnclaimed(
       session,
@@ -81,32 +85,21 @@ export class CreateSessionCommandHandler
         commandId: command.id,
         userId: command.userId,
         input,
+        images,
         checkouts: session.checkouts.length,
         cwdCheckoutId: this.plan.cwdCheckoutIdFor(session, input.cwdGithubRepoId),
       }),
     );
-    // The project was retired between the lookup and the insert. The project row is
-    // locked inside that transaction, so this is the race decided rather than
-    // detected afterwards.
-    if (created.projectArchived) {
-      throw new AppError(SessionErrors.PROJECT_ARCHIVED, {
-        detail: `Project ${project.slug} is archived`,
-      });
-    }
+    throwIfRefused(created, { projectSlug: project.slug, hostId: input.hostId });
     if (!created.created) return { sessionId: created.session.id, hints: [] };
 
     // The name is asked for *while* the host is told about the session, so the
-    // model's round trip overlaps the dispatch rather than following it. It
-    // resolves within the namer's deadline and never rejects: a model that is
-    // not quick is replaced by the prompt's own words, and the response then
-    // carries a readable name rather than the slug.
-    const naming = input.prompt
-      ? this.naming.propose(created.session, input.prompt)
-      : Promise.resolve(null);
+    // model's round trip overlaps the dispatch rather than following it.
+    const naming = input.prompt ? this.naming.propose(created.session, input.prompt) : null;
 
     const { hints } = await this.dispatch.create(
       created.session,
-      await this.launches.build(created.session, { prompt: input.prompt }),
+      await this.launches.build(created.session, { prompt: input.prompt, images }),
     );
 
     await this.naming.record(

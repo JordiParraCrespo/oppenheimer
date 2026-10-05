@@ -11,8 +11,13 @@ build:
 vet:
 	$(GO) vet $(PKGS)
 
+# The module directories are passed one NUL-delimited argument at a time:
+# unquoted `$(go list -m -f '{{.Dir}}/...')` splits on the spaces in a checkout
+# path, and golangci-lint then reports "directory not found" for the first half
+# of it with 0 issues — a green run that linted nothing, or a red one that
+# found no fault.
 lint:
-	golangci-lint run $$($(GO) list -m -f '{{.Dir}}/...')
+	$(GO) list -m -f '{{.Dir}}/...' | tr '\n' '\0' | xargs -0 golangci-lint run
 
 test:
 	$(GO) test -count=1 $(PKGS)

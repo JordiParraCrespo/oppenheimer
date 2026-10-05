@@ -24,7 +24,14 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
-| 13 | [Automations](13-automations.md) | The console's second list, ahead of its API: what the export draws, the routes and frames built, the open questions; automations themselves stay after the MVP (00) |
+| 13 | [Automations](13-automations.md) | The console: what the export draws and what is built — the overview, the runs, an automation's page, the run view and the editor |
+| 14 | [Hosts in Settings](14-hosts-settings.md) | The 2026-09-26 Settings frame read against `hosts/`: status and running count, what removing a host stops, the pairing poll, the CPU count |
+| 15 | [Host metadata](15-host-metadata.md) | Where a host's facts live, split by how often they change: inventory, presence, networks, events; access patterns, retention, measured cost |
+| 16 | [Automations: the architecture](16-automations-architecture.md) | How a run is fired, guarded and dispatched: the inbound-events hub, the schedule tick, triggers, revisions, guards, configuration, the data model; and the headless drive that runs take next, in its slices |
+| 17 | [Plan](17-plan.md) | The rail's third item: the slices and the owner's decisions; tasks, goals and a calendar beside Google Calendar |
+| 18 | [Plan: the product](18-plan-product.md) | What the Plan frames say, screen by screen: the board, the dialogs, tasks that start or link sessions, and the gaps the frames leave |
+| 19 | [Plan: tasks and goals](19-plan-tasks-and-goals.md) | The `tasks` module: tables, ordering, the API, starting a session from a task, the attach rule, Queued |
+| 20 | [Plan: the calendar](20-plan-calendar.md) | The month view from four reads, personal events, read-only Google Calendar through a port |
 
 ## Decision log
 
@@ -258,8 +265,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-21: **the console is one screen.** The sidebar is the
   navigation — New session, the session list, the account menu — and the
   pane beside it is a route: the composer, a terminal, the provisioning
-  steps, a closed session, "no sessions open", or a 404 that keeps the
-  sidebar. The starter's chrome went with it: no 56px bar over the pane,
+  steps, a closed session, or a 404 that keeps the sidebar; with nothing
+  open it is the composer (changed 2026-09-27, below). The starter's chrome went with it: no 56px bar over the pane,
   no ⌘K palette, and no Settings or Profile page — those screens and
   their features were deleted rather than left unnavigated, and
   appearance and language moved into the account menu, which is where
@@ -417,6 +424,33 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   and no-workspace redirect and draws its own chrome. The drawer 05
   described for hosts is gone; the host card's rows come with the hosts
   slice (05).
+- 2026-09-26: the version-1 frames gained a Settings page with a Hosts
+  section, and the hosts backend is designed against it (14). A host
+  read now carries a derived `status` and the count of sessions running
+  on it; `GET /hosts` leaves unpaired hosts out unless asked; removing a
+  host stops the sessions running on it, where unpairing used to leave
+  them `open`; `GET /hosts/pairing/{id}`, listed in 10, is built and
+  returns the host the token paired; the runner reports its CPU count.
+- 2026-09-26: host metadata moves off the `host` row (15). What the
+  machine is goes to `host_inventory` (written only when its facts
+  change), whether it is there to `host_presence` (one narrow row
+  rewritten per heartbeat), where it connects from to `host_network`
+  (public addresses as the API saw them, kept 90 days), and what changed
+  to `host_event` (append-only, 180 days). Heartbeat history is
+  deliberately not stored. `host` keeps its old columns until the code
+  switches over (expand, switch, contract).
+- 2026-09-26: 15's two open questions are settled. Geography comes from
+  DB-IP Lite (free, no account), and the owner is emailed about a new
+  network only when the host's country or ASN changes.
+- 2026-09-26: **Add host from Settings stays in Settings.** It opens the
+  Add a host page at `/settings/hosts/new`, inside the Settings frame with
+  its Back, as the frame draws it — not a dialog, and no longer the
+  console's page with `?from=settings`. The console keeps `/hosts/new`;
+  both mount the one screen. Copy host ID is left out of the host menu
+  for now (14).
+- 2026-09-26: 14's first open question is settled: the host card's
+  location slot, drawn as "eu-west" / "local", shows the city and country
+  code of the host's connecting address from DB-IP Lite (15).
 - 2026-09-26: **a project is a saved scope a person creates, and metadata
   only** (00, 01, 02, 03, 05, 10, 11). It holds repositories (each on a base,
   offered by default or not) and a default host and agent; none is
@@ -434,3 +468,138 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-27: **the automations sidebar leaves out Unassigned**: an
   automation is set up for a project, and Unassigned only holds the
   sessions that name none (13).
+- 2026-09-27: Settings → Profile is specified in 05; credential writes
+  (password, email, devices, deleting the account) are session-only (08).
+- 2026-09-27: **a session checks out exactly one repository in the MVP.** A
+  session with none was accepted, then refused by the host at launch
+  (`SESS_002`) and shown as failed. The create body now takes one checkout,
+  no fewer, and the console's composer stays disabled until a repository is
+  picked. A session with no git returns when a runner can make one (00, 10).
+- 2026-09-27: **nothing open is New session**: the console lands on
+  `/sessions/new`, and `/sessions` redirects there, instead of a "no
+  sessions open" pane (05).
+- 2026-09-27: **New project, Project settings, the console's Add a host
+  and the automation editor are dialogs over the console again**, as the
+  2026-09-27 export draws them; the `_editor` pages of 2026-09-26 are
+  gone. Settings keeps its Add a host page. Add a host copies first —
+  Copy install command, Copy agent prompt — and shows the instruction
+  behind an Inspect fold, in the console and in onboarding; the
+  automation editor holds its Task step alone until the API names a
+  trigger (05, 13).
+- 2026-09-27: organization routes are authorized in the organization they name (08).
+- 2026-09-27: **automations move into the MVP** (00, 16). A run is a
+  headless session for any agent in the catalog, translated in the API;
+  `sessions/` owns execution (`session_turn`) and `automations/` only the
+  firing (`automation_run`); a run acts as its owner; external events go
+  through a provider-neutral `inbound-events/` hub; schedules are rows
+  fired by a one-minute tick; guards and limits are configurable at three
+  levels. 13's open data-model question is closed.
+- 2026-09-28: **the per-host cap counts live runs, not headless turns**,
+  since runs are interactive sessions until the headless drive (slice 2);
+  a run whose first turn ended holds no place, one past the run limit is
+  stopped, and the disk floor defers. **A run opens at
+  `/automations/$automationId/sessions/$sessionId`**, the session pane
+  with the automations list kept (05, 13, 16).
+- 2026-09-28: 02 §5's store was a `git clone --bare` refreshed by
+  fetching every branch. It is blobless with no working tree, a create
+  fetches only the ref its worktree is made from, and each repository
+  keeps one spare worktree checked out ahead of the next create (02).
+- 2026-09-28: **Settings is two sliders, not a cog** (05). The
+  version-1 export's `settings` glyph is lucide's `settings-2`, so the
+  account menu's link and a project header's action both draw it, and
+  05's "cog" is gone. 05 now keeps the glyph map: folder for a project,
+  an arrow out for a foot action that opens another site, `Callout` and
+  the Auto shield kept against the export, with the reasons.
+- 2026-09-28: **The GitHub App install redirect carries a console-minted
+  state** (03, 05). An addition, not a reversal: `POST /installations`
+  now requires the single-use `state` that `POST
+  /installations/install-state` minted for the caller in the workspace,
+  so a forwarded callback can no longer connect someone else's
+  installation (`GITHUB_011`). Both install entry points mint on click;
+  `github_app_install_url` stays as the capability that says an App
+  exists. The first-run walk rides as the state's prefix,
+  `first-run.<nonce>`.
+- 2026-09-29: **Effort is each CLI's own levels, per model** (01, 02,
+  03, 05). The slider was five product stops that each agent mapped
+  onto its flag, which put "Medium" on a Claude Code launch of `--effort
+  high` and sent Codex a `minimal` no model takes. The catalog now spells
+  effort once per agent and lists each model's levels and default; the
+  slider draws those, starts on the default and sends nothing until
+  moved, and OpenCode takes a level as the model's variant.
+- 2026-09-30: **The session grid's line height is 1.3** (05). A departure
+  from the export's 1.55 and from the earlier xterm value of 1: xterm
+  stretches block and box glyphs to its cell, so 1.55 elongated Claude
+  Code's mark and 1 packed a turn. The HTML terminal keeps 1.55.
+- 2026-09-30: **The reader's messages in the session grid are drawn as the
+  export's bubble** (05). Found by Claude Code's own user-message background
+  and pointer, repainted in the terminal's ramp, with the tint laid over the
+  grid; the input row stays the agent's own.
+- 2026-09-30: **The dark session terminal is the artboard's `#1a1a1c`, frame
+  included** (05). It had been set to the canvas (`#121213`) because the
+  lighter terminal read as a slab on a darker page; the artboard paints the
+  session's frame in the terminal colour too, so the console now does the same
+  and matches it.
+- 2026-09-30: **The terminal answers the line, word and select-all chords
+  a desktop terminal does, and Ctrl+Shift+C copies off the Mac** (05).
+- 2026-10-01: **`session.started` means the session has a terminal, not that
+  its agent is up** (01, 02). The host builds the tmux session before it
+  clones, so the pane exists about thirty milliseconds in and the clone, the
+  worktree and the agent follow it. The console attaches on this, which puts
+  the reader in the terminal while the repository is still arriving; the
+  `agent` step is what says the agent was launched. The terminal is a stage
+  like the others but has no step on the wire — the stepper stays
+  `host/clone/worktree/agent`.
+- 2026-10-01: **An attach is served while its create is still running, and is
+  the only command that does not use the session's lane** (01, 02). It needs
+  the tmux name and nothing else. Queued behind the create it sat out the
+  clone and the agent launch — the cost that building the terminal first
+  exists to remove — so it waits on the session's own terminal instead.
+  Everything else still waits for the create to land: a stop sent during a
+  create is answered after it, which is what keeps stop, list and unpair
+  seeing one consistent set of sessions.
+- 2026-10-01: **A session's worktree lives in a hidden directory**
+  (`<repo>/.worktrees/<slug>`, 02). Spotlight does not descend into a dotted
+  directory, and a worktree is a whole checkout written at once: left
+  visible it is indexed while the agent starts, and the agent's file reads
+  queue behind the scan. Two worktrees of the same commit in one parent, run
+  interleaved: `wt` 30.2s, `.wt` 5.7s, `wt2` 31.5s to the agent's first
+  token. `.metadata_never_index` at the workspaces root does not work —
+  `mdls` still returns indexed metadata underneath it.
+- 2026-10-01: **One session's row polls faster than the session list while it
+  is starting** (05). The list keeps one pace; the row a reader is watching
+  opens at 300ms and settles to 2s after 3s. The opening phase belongs to the
+  row and not the list because its clock is kept per query and the list is one
+  query for every session — a second session started during the first one's
+  clone would otherwise inherit the first one's settled tick.
+- 2026-10-02: **A host gets the repository ready while New session is still
+  being written** (01, 02, 05). Picking a host and a repository sends
+  `repository.prepare`: the store cloned or fetched and a spare worktree
+  made, with a token minted for that repository and sealed into the command
+  because no session exists to ask for one. Measured from the browser on a
+  host that had never seen the repository, with ten seconds between the pick
+  and Send: microsoft/vscode 32–34 s → 0.89–0.93 s, facebook/react 7.8 s →
+  1.0–1.1 s to the agent's first screen (note 14).
+- 2026-10-02: **The first clone is shallow, and the history follows in the
+  background** (02 §5). A worktree needs the base's one commit, not the whole
+  history: on microsoft/vscode the store is ready for a spare in 9.3 s
+  instead of 25.8 s. The deepen ends at the same blobless store as before, so
+  a session's `git log` and `blame` work as they did once it lands.
+- 2026-10-04: **A session takes files, not only images** (03, 01, 02 §7, 05,
+  07). Images, PDF and UTF-8 text, one allowlist judged by the bytes at the
+  API and again on the host; text is text only when it is valid UTF-8 with
+  no control bytes and opens neither with `#!` nor as HTML, SVG or XML.
+  Executables, archives and scripts are refused whatever they are called,
+  and the runner names every file `<id><extension from the table>`. The
+  wire keeps its `image` names; a runner that takes more says so with
+  `session.files`, and one that does not is sent images only.
+- 2026-10-05: **Plan is in the MVP** (17–20). The export drew a third
+  rail item: a board of tasks with goals over it, tasks that start or
+  link sessions, and a month calendar. The owner decided it ships in the
+  first version, absorbing what `next-steps/` called 0.3 Kanban; Google
+  Calendar is read-only first, personal events stay, only attaching a
+  session moves a card, and Queued is a console label.
+- 2026-10-05: **Plan ships live, as built** (17 "As built"). No `plan`
+  flag; no `GET /tasks/summary` (the board's read serves the counts); a
+  session started from a task is a person's, linked with `started`; the
+  calendar computes automation runs from the automations list; event
+  times are wall-clock; archiving a project is not blocked by its tasks.

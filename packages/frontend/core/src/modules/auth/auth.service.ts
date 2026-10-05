@@ -22,7 +22,8 @@ const PENDING_SOCIAL_LOGIN_KEY = 'oppenheimer.pending-social-login';
 @injectable()
 export class AuthService {
   /**
-   * Bumped whenever the current identity stops being valid, i.e. on logout.
+   * Bumped whenever the current identity stops being valid: logout or session
+   * expiry.
    *
    * `trackAuthenticated` resolves the user asynchronously and is deliberately
    * not awaited, so a fast logout can land while that lookup is still in
@@ -58,12 +59,6 @@ export class AuthService {
     this.trackAuthenticated(ANALYTICS_EVENTS.USER_SIGNED_UP, 'password');
   }
 
-  /**
-   * `intent` decides whether the round-trip may create an account: the API
-   * refuses an unknown provider identity on a plain `'sign-in'`, so only the
-   * register screens pass `'sign-up'`. Either way an identity that already
-   * exists — including one that so far only had a password — is signed in.
-   */
   async socialLogin(provider: SocialProvider, intent?: SocialAuthIntent): Promise<void> {
     // Written before the redirect, consumed by `restoreSession()` when the
     // provider sends the user back. Best-effort: if storage is unavailable the
@@ -73,12 +68,10 @@ export class AuthService {
   }
 
   /**
-   * Restores the session on app start by asking the auth client whether a
-   * valid session exists, and syncs the `isAuthenticated` store accordingly.
-   *
-   * Returns the restored user's id, or `null` when there is no session. The
-   * caller uses it to decide whether a persisted query cache from an earlier
-   * run still belongs to the person now sitting in front of the app.
+   * Runs on app start. Returns the restored user's id, or `null` when there
+   * is no session. The caller uses it to decide whether a persisted query
+   * cache from an earlier run still belongs to the person now sitting in
+   * front of the app.
    */
   async restoreSession(): Promise<string | null> {
     const session = await this.authRepository.getSession();
@@ -105,10 +98,6 @@ export class AuthService {
     this.analytics.capture(ANALYTICS_EVENTS.PASSWORD_RESET_COMPLETED);
   }
 
-  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    return this.authRepository.changePassword(currentPassword, newPassword);
-  }
-
   async logout(): Promise<void> {
     await this.authRepository.logout();
     this.store.setState({ isAuthenticated: false });
@@ -125,8 +114,24 @@ export class AuthService {
   }
 
   /**
-   * Emits the sign-in event for an OAuth round-trip, if one just completed.
+   * The server stopped honouring the session (expired, or revoked from another
+   * device) while the app still believed in it.
    *
+   * Not a logout: there is nothing left to sign out of, and the analytics
+   * identity is kept because the same person will most likely sign back in.
+   * The router's guards read the flipped store and send the user to /login.
+   *
+   * Returns whether the store changed, so a burst of failing queries expires
+   * the session once.
+   */
+  expireSession(): boolean {
+    if (!this.store.getState().isAuthenticated) return false;
+    this.store.setState({ isAuthenticated: false });
+    this.identityEpoch += 1;
+    return true;
+  }
+
+  /**
    * The marker is cleared first so a reload can't double-count it. Note this
    * reports `USER_SIGNED_IN` for both new and returning users — the OAuth
    * callback carries nothing that distinguishes them; providers derive
@@ -152,8 +157,6 @@ export class AuthService {
   }
 
   /**
-   * Resolves who just authenticated and reports it.
-   *
    * Deliberately not awaited: learning the user id costs a `getSession()`
    * round-trip, and analytics must never sit in the critical path of a login.
    * The caller's promise resolves as soon as auth itself is done; the identify
@@ -165,7 +168,6 @@ export class AuthService {
     void this.authRepository
       .getSession()
       .then((session) => {
-        // Superseded by a logout that happened while this was in flight.
         if (epoch !== this.identityEpoch) return;
 
         if (session) {

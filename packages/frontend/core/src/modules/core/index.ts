@@ -1,4 +1,4 @@
-export { type CoreModuleConfig, createCoreModule } from './core.module';
+export type { CoreModuleConfig } from './core.module';
 export {
   createErrorMessageResolver,
   type ErrorMessageKey,
@@ -10,12 +10,9 @@ export {
   AppError,
   type AppErrorOptions,
   type ErrorDefinition,
-  toAppError,
+  type SdkResult,
+  unwrap,
+  unwrapBody,
 } from './errors';
 export { MapApiError } from './map-api-error.decorator';
-export {
-  checkPassword,
-  meetsPasswordRequirements,
-  type PasswordRule,
-} from './password-requirements';
 export type { IStorageService } from './storage.service';

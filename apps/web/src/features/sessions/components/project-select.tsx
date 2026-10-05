@@ -3,7 +3,7 @@ import {
   type ChipSelectOption,
   type ChipSelectTriggerVariant,
 } from '@oppenheimer/design-system-web';
-import { FolderKanban } from '@oppenheimer/design-system-web/icons';
+import { Folder } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -22,6 +22,7 @@ export function ProjectSelect({
   onValueChange,
   onNewProject,
   loading,
+  failure,
   disabled,
   variant,
 }: {
@@ -30,6 +31,8 @@ export function ProjectSelect({
   onValueChange: (value: string) => void;
   onNewProject: () => void;
   loading?: boolean;
+  /** Why the list failed to load, shown where its rows would be. */
+  failure?: string;
   disabled?: boolean;
   variant?: ChipSelectTriggerVariant;
 }) {
@@ -40,7 +43,7 @@ export function ProjectSelect({
       value={value ?? ''}
       onValueChange={onValueChange}
       options={projects}
-      icon={<FolderKanban />}
+      icon={<Folder />}
       loading={loading}
       loadingText={t('sessions.new.project.loading')}
       disabled={disabled}
@@ -48,7 +51,7 @@ export function ProjectSelect({
       aria-label={t('sessions.new.project.label')}
       placeholder={t('sessions.new.project.placeholder')}
       searchPlaceholder={t('sessions.new.project.search')}
-      emptyText={t('sessions.new.project.empty')}
+      emptyText={failure ?? t('sessions.new.project.empty')}
       action={{ label: t('sessions.new.project.add'), onSelect: onNewProject }}
     />
   );

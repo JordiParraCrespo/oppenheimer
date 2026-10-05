@@ -1,11 +1,25 @@
 import { Injectable } from '@nestjs/common';
-import type { Mapper } from '@oppenheimer/backend-ddd';
-import type { CreateSessionDto } from '@oppenheimer/shared';
+import { toPageMeta } from '@oppenheimer/backend-core';
+import { ArgumentInvalidException, type Mapper } from '@oppenheimer/backend-ddd';
+import {
+  type CreateSessionDto,
+  SESSION_SORTS,
+  type SessionAttachmentDto,
+  type SessionSortDto,
+} from '@oppenheimer/shared';
+import { effortLevelFor } from '@oppenheimer/shared/agents';
+import { SESSION_FILE_MEDIA_TYPES, type SessionFileMediaType } from '@oppenheimer/shared/protocol';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
+import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
-import type { NewSessionEvent } from './database/work-session.repository.port';
+import type {
+  NewSessionEvent,
+  SessionListCursor,
+  SessionListPage,
+} from './database/work-session.repository.port';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
 import { SessionCheckoutEntity } from './domain/session-checkout.entity';
+import type { SessionLaunchFile } from './domain/session-launch-file.types';
 import {
   launchPermissionFor,
   SESSION_EVENT_KINDS,
@@ -13,26 +27,53 @@ import {
   type SessionFold,
   type SessionLaunchFold,
 } from './domain/session-state.policy';
+import {
+  type SessionTurnFold,
+  TURN_DRIVES,
+  TURN_ORIGINS,
+  TURN_STATES,
+  type TurnDrive,
+  type TurnOrigin,
+  type TurnState,
+} from './domain/session-turn.policy';
 import { WorkSessionEntity } from './domain/work-session.entity';
 import { WorkSessionEventEntity } from './domain/work-session-event.entity';
-import { SessionCheckoutResponseDto, SessionResponseDto } from './dtos/session.response.dto';
+import {
+  SessionCheckoutResponseDto,
+  SessionPageMetaDto,
+  SessionResponseDto,
+} from './dtos/session.response.dto';
 import { SessionEventResponseDto } from './dtos/session-event.response.dto';
 
 /**
- * Maps the work-session aggregate between its domain, persistence and response
- * shapes — the session, its checkouts and its log entries, because all three are
- * one aggregate and one mapper is what stops three files disagreeing about how a
- * bigint crosses a boundary.
+ * One row the batched append's `INSERT … RETURNING` answers, beside the count of
+ * rows it meant to insert. `id` is null on the single row that comes back when
+ * nothing landed at all.
+ */
+export interface AppendedEventRow {
+  expected: number;
+  id: string | null;
+  seq: number;
+  idempotencyKey: string;
+  source: WorkSessionEventOrmEntity['source'];
+  kind: string;
+  payload: unknown;
+  occurredAt: Date;
+  recordedAt: Date;
+}
+
+/**
+ * One mapper for the whole aggregate (session, checkouts, log entries), so three
+ * files cannot disagree about how a bigint crosses a boundary.
  *
- * `githubRepoId` travels everywhere as the string the driver exchanges a bigint
- * as. Nothing coerces it: GitHub's ids fit in a JavaScript number today and the
- * column says they are not promised to.
+ * `githubRepoId` travels everywhere as the string the driver exchanges a bigint as,
+ * never coerced: GitHub's ids fit in a number today and the column says they are not
+ * promised to.
  *
- * `state` on the wire is the **derived group**, not the stored lifecycle. That is
- * the committed client contract: the sidebar shows what needs you. It is computed
- * from the row and nothing else — every input the group reads is a column the fold
- * projects — so a listing answers it without walking a log, and a mapper cannot be
- * handed an observation the log never recorded.
+ * `state` on the wire is the **derived group**, not the stored lifecycle: the
+ * committed client contract (the sidebar shows what needs you). It is computed from
+ * the row alone, every input being a column the fold projects, so a listing needs no
+ * log walk and a mapper cannot be handed an observation the log never recorded.
  */
 @Injectable()
 export class WorkSessionMapper
@@ -50,6 +91,7 @@ export class WorkSessionMapper
     record.slug = entity.slug;
     record.agent = entity.agent;
     record.idempotencyKey = entity.idempotencyKey;
+    record.origin = entity.origin;
     const fold = entity.fold;
     record.state = fold.state;
     record.stateSeq = fold.stateSeq;
@@ -83,6 +125,9 @@ export class WorkSessionMapper
         agent: record.agent as SessionAgent,
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
+        origin: record.origin === 'automation' ? 'automation' : 'person',
+        // Loaded by the repository when it folds, under the row lock.
+        latestTurn: null,
         ...this.foldOf(record),
         // After the fold: on a row the listed project is never null.
         projectId: record.projectId,
@@ -90,6 +135,55 @@ export class WorkSessionMapper
     });
     for (const checkout of checkouts) session.attachCheckout(this.checkoutToDomain(checkout));
     return session;
+  }
+
+  /** A stored turn as the fold reads it. Values outside the unions read as their safest member. */
+  turnToDomain(record: SessionTurnOrmEntity): SessionTurnFold {
+    return {
+      seq: record.seq,
+      origin: (TURN_ORIGINS as readonly string[]).includes(record.origin)
+        ? (record.origin as TurnOrigin)
+        : 'person',
+      drive: (TURN_DRIVES as readonly string[]).includes(record.drive)
+        ? (record.drive as TurnDrive)
+        : 'interactive',
+      state: (TURN_STATES as readonly string[]).includes(record.state)
+        ? (record.state as TurnState)
+        : 'queued',
+      prompt: record.prompt,
+      observedWorking: record.observedWorking,
+      startedAt: record.startedAt ? new Date(record.startedAt) : null,
+      endedAt: record.endedAt ? new Date(record.endedAt) : null,
+      exitCode: record.exitCode,
+      agentSessionId: record.agentSessionId,
+      result: record.result,
+      failureDetail: record.failureDetail,
+      costUsd: record.costUsd === null ? null : Number(record.costUsd),
+      permissionDenials: record.permissionDenials,
+      outputRef: record.outputRef,
+    };
+  }
+
+  turnToPersistence(session: WorkSessionEntity, turn: SessionTurnFold): SessionTurnOrmEntity {
+    const record = new SessionTurnOrmEntity();
+    record.organizationId = session.organizationId;
+    record.sessionId = session.id;
+    record.seq = turn.seq;
+    record.origin = turn.origin;
+    record.drive = turn.drive;
+    record.state = turn.state;
+    record.prompt = turn.prompt;
+    record.observedWorking = turn.observedWorking;
+    record.startedAt = turn.startedAt;
+    record.endedAt = turn.endedAt;
+    record.exitCode = turn.exitCode;
+    record.agentSessionId = turn.agentSessionId;
+    record.result = turn.result;
+    record.failureDetail = turn.failureDetail;
+    record.costUsd = turn.costUsd === null ? null : turn.costUsd.toFixed(6);
+    record.permissionDenials = turn.permissionDenials;
+    record.outputRef = turn.outputRef;
+    return record;
   }
 
   /**
@@ -113,8 +207,6 @@ export class WorkSessionMapper
       ackedReportHash: record.ackedReportHash,
       launch: {
         model: record.launchModel,
-        // Null is a session whose agent has no approvals; for any other agent
-        // a missing level reads as the one that asks before every action.
         permission: launchPermissionFor(record.agent, record.launchPermission),
         effort: record.launchEffort,
       },
@@ -123,24 +215,21 @@ export class WorkSessionMapper
   }
 
   /**
-   * The entries a create request owes its log — one action, one transaction.
+   * The entries a create request owes its log: one action, one transaction. They
+   * live here because they *are* the session's columns (the fold projects them), and
+   * building them beside the persistence shape keeps the two saying the same thing.
    *
-   * It is a mapper method rather than an object literal in the handler for the
-   * reason every shape in this file is: these three entries *are* the session's
-   * columns, since the fold projects them, and assembling them beside the
-   * persistence shape they produce is what keeps the two saying the same thing.
-   *
-   * There are three, at most. `session.requested` states the launch, because the
-   * launch columns are a projection of it. `session.cwd_set` says where the agent
-   * runs, as an entry rather than a column write because a later "work in this
-   * checkout instead" is the same entry. `prompt.first` carries the composer's
-   * task when there was one — and never appears at all when there was not, rather
-   * than appearing empty.
+   * At most three. `session.requested` states the launch, which the launch columns
+   * project. `session.cwd_set` is an entry, not a column write, because a later "work
+   * in this checkout instead" is the same entry. `prompt.first` carries the
+   * composer's task, and is absent rather than empty when there was none.
    */
   toRequestEvents(props: {
     commandId: string;
     userId: string;
     input: CreateSessionDto;
+    /** The first task's images, already parked for the host. */
+    images?: readonly SessionLaunchFile[];
     checkouts: number;
     cwdCheckoutId: string | null;
   }): NewSessionEvent[] {
@@ -171,10 +260,38 @@ export class WorkSessionMapper
         idempotencyKey: WorkSessionMapper.promptKeyFor(props.commandId),
         source: 'api',
         kind: SESSION_EVENT_KINDS.PROMPT_FIRST,
-        payload: { text: input.prompt },
+        payload: {
+          text: input.prompt,
+          ...(props.images?.length ? { images: props.images.map(toFileRecord) } : {}),
+        },
       });
     }
     return events;
+  }
+
+  /**
+   * The images a `prompt.first` entry names, for a create sent again. An entry
+   * written before images existed, or one a runner wrote off the transcript,
+   * names none; a malformed item is dropped rather than sent to a host.
+   */
+  static filesOf(payload: unknown): SessionLaunchFile[] {
+    const listed = (payload as { images?: unknown } | null)?.images;
+    if (!Array.isArray(listed)) return [];
+    return listed.flatMap((item: { imageId?: unknown; mediaType?: unknown }) =>
+      typeof item?.imageId === 'string' &&
+      (SESSION_FILE_MEDIA_TYPES as readonly unknown[]).includes(item.mediaType)
+        ? [{ imageId: item.imageId, mediaType: item.mediaType as SessionFileMediaType }]
+        : [],
+    );
+  }
+
+  /** What `POST /sessions/attachments` answers for an upload it staged. */
+  static toAttachmentResponse(
+    id: string,
+    mediaType: SessionFileMediaType,
+    data: Buffer,
+  ): SessionAttachmentDto {
+    return { id, mediaType, size: data.length };
   }
 
   /**
@@ -183,7 +300,8 @@ export class WorkSessionMapper
    * An absent level is `ask` — the one that asks before every action — and never
    * anything else: a default that escalated is the single mistake this field must
    * not make (`product/versions/mvp/03-control-plane.md`). An agent with no
-   * approvals records no level at all (`launchPermissionFor`).
+   * approvals records no level at all (`launchPermissionFor`), and an effort
+   * the model does not offer is not recorded (`effortLevelFor`).
    */
   toLaunch(
     agent: CreateSessionDto['agent'],
@@ -192,7 +310,7 @@ export class WorkSessionMapper
     return {
       model: launch?.model ?? null,
       permission: launchPermissionFor(agent, launch?.permission),
-      effort: launch?.effort ?? null,
+      effort: effortLevelFor(agent, launch?.model ?? null, launch?.effort),
     };
   }
 
@@ -260,6 +378,102 @@ export class WorkSessionMapper
     return record;
   }
 
+  /**
+   * A batch as the append's single `INSERT` reads it: a JSON array for
+   * `jsonb_to_recordset`, each entry numbered so the statement can keep the
+   * caller's order when it hands out `seq`. An absent payload is `{}`, an absent
+   * `occurredAt` is now.
+   */
+  toAppendRecordset(events: readonly NewSessionEvent[]): string {
+    const now = new Date();
+    return JSON.stringify(
+      events.map((event, ord) => ({
+        ord,
+        idempotencyKey: event.idempotencyKey,
+        source: event.source,
+        kind: event.kind,
+        payload: event.payload ?? {},
+        occurredAt: (event.occurredAt ?? now).toISOString(),
+      })),
+    );
+  }
+
+  /** A row the batched append landed, as the log entry the fold reads. */
+  appendedToDomain(sessionId: string, row: AppendedEventRow): WorkSessionEventEntity {
+    return WorkSessionEventEntity.create({
+      id: row.id ?? '',
+      createdAt: row.recordedAt,
+      updatedAt: row.recordedAt,
+      props: {
+        sessionId,
+        seq: row.seq,
+        idempotencyKey: row.idempotencyKey,
+        source: row.source,
+        kind: row.kind,
+        payload: row.payload,
+        occurredAt: row.occurredAt,
+        recordedAt: row.recordedAt,
+      },
+    });
+  }
+
+  /**
+   * The list's cursor as the client holds it: opaque, base64url JSON of the sort
+   * it was issued for, the last row's sort key and its id. The key is the text
+   * Postgres printed, never a JavaScript `Date`, because a `Date` keeps
+   * milliseconds and a `timestamptz` keeps microseconds — a truncated key would
+   * skip the rows that share its millisecond.
+   */
+  toListCursor(cursor: SessionListCursor): string {
+    return Buffer.from(
+      JSON.stringify({ s: cursor.sort, k: cursor.key, i: cursor.id }),
+      'utf8',
+    ).toString('base64url');
+  }
+
+  /**
+   * A cursor back from the client, for the sort it is now asking in. Anything
+   * that is not one this API issued for that sort is a 400: a cursor issued
+   * for `recent` compared against `name` keys would page through nonsense.
+   */
+  fromListCursor(text: string, sort: SessionSortDto): SessionListCursor {
+    const invalid = () =>
+      new ArgumentInvalidException('`cursor` is not a cursor this list issued for this sort');
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(Buffer.from(text, 'base64url').toString('utf8'));
+    } catch {
+      throw invalid();
+    }
+    if (typeof parsed !== 'object' || parsed === null) throw invalid();
+    const { s, k, i } = parsed as { s?: unknown; k?: unknown; i?: unknown };
+    if (
+      typeof s !== 'string' ||
+      !(SESSION_SORTS as readonly string[]).includes(s) ||
+      typeof k !== 'string' ||
+      typeof i !== 'string' ||
+      !UUID_PATTERN.test(i)
+    ) {
+      throw invalid();
+    }
+    if (s !== sort) {
+      throw new ArgumentInvalidException(
+        `\`cursor\` was issued for sort \`${s}\`; this request sorts by \`${sort}\``,
+      );
+    }
+    return { sort, key: k, id: i };
+  }
+
+  toPageMeta(page: SessionListPage): SessionPageMetaDto {
+    const meta = new SessionPageMetaDto();
+    meta.limit = page.limit;
+    meta.nextCursor = page.nextCursor ? this.toListCursor(page.nextCursor) : null;
+    if (page.total !== undefined && page.page !== undefined) {
+      Object.assign(meta, toPageMeta({ count: page.total, page: page.page, limit: page.limit }));
+    }
+    return meta;
+  }
+
   eventToDomain(record: WorkSessionEventOrmEntity): WorkSessionEventEntity {
     return WorkSessionEventEntity.create({
       id: record.id,
@@ -279,10 +493,8 @@ export class WorkSessionMapper
   }
 
   /**
-   * `hints` is what the control plane could not do for *this request* — it is
-   * empty on every read and carries `host_offline` when a command could not reach
-   * the host. It rides the session rather than a second envelope because the
-   * console renders the row it just changed.
+   * `hints` rides the session rather than a second envelope because the console
+   * renders the row it just changed.
    */
   toResponse(
     entity: WorkSessionEntity,
@@ -343,4 +555,11 @@ export class WorkSessionMapper
     dto.recordedAt = entity.recordedAt;
     return dto;
   }
+}
+
+/** What `fromListCursor` accepts as a session id, before Postgres casts it. */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function toFileRecord(image: SessionLaunchFile): SessionLaunchFile {
+  return { imageId: image.imageId, mediaType: image.mediaType };
 }

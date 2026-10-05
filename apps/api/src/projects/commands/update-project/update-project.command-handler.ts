@@ -9,17 +9,11 @@ import { PROJECT_REPOSITORY } from '../../projects.di-tokens';
 import { UpdateProjectCommand } from './update-project.command';
 
 /**
- * Changes what a person may change about a project: its name, its repositories as
- * a whole set and its defaults. Never the slug — it is the project's stable
- * handle, and the aggregate offers no way to change it — and never the
- * Unassigned project's name (`PROJECTS_008`).
- *
- * Editing a project never reaches into a session: what a session checked out is
- * on its own checkout rows.
- *
- * Returns the saved aggregate rather than its id: the handler has the stored row
- * in hand, and making the controller ask the bus for it again would be a second
- * scoped round-trip to rebuild what this one just read.
+ * Changes a project's name, its repositories as a whole set and its defaults. Never the
+ * slug, the project's stable handle, and never the Unassigned project's name
+ * (`PROJECTS_008`). A session's checkout rows are its own, so an edit never reaches
+ * one. Returns the aggregate the scoped write read back, sparing the controller a
+ * second scoped read.
  */
 @CommandHandler(UpdateProjectCommand)
 export class UpdateProjectCommandHandler

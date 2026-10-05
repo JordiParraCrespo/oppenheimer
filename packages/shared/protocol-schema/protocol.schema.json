@@ -55,9 +55,8 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": [
-              "session.image"
-            ]
+            "minLength": 1,
+            "maxLength": 64
           }
         }
       },
@@ -96,6 +95,11 @@
             "loadAverage1m": {
               "type": "number",
               "minimum": 0
+            },
+            "memoryAvailableBytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
             }
           },
           "required": [
@@ -395,12 +399,23 @@
             "effort": {
               "type": "string",
               "enum": [
+                "none",
                 "minimal",
                 "low",
                 "medium",
                 "high",
-                "max"
+                "xhigh",
+                "max",
+                "ultra"
               ]
+            },
+            "conversation": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+            },
+            "resume": {
+              "type": "boolean"
             }
           }
         },
@@ -408,6 +423,36 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 2048
+        },
+        "images": {
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "imageId": {
+                "$ref": "#/$defs/commandId"
+              },
+              "mediaType": {
+                "type": "string",
+                "enum": [
+                  "image/png",
+                  "image/jpeg",
+                  "image/gif",
+                  "image/webp",
+                  "application/pdf",
+                  "text/plain",
+                  "text/markdown",
+                  "text/csv",
+                  "application/json"
+                ]
+              }
+            },
+            "required": [
+              "imageId",
+              "mediaType"
+            ]
+          }
         },
         "branch": {
           "$ref": "#/$defs/gitRef"
@@ -559,7 +604,12 @@
             "image/png",
             "image/jpeg",
             "image/gif",
-            "image/webp"
+            "image/webp",
+            "application/pdf",
+            "text/plain",
+            "text/markdown",
+            "text/csv",
+            "application/json"
           ]
         }
       },
@@ -874,6 +924,47 @@
         "sessionId",
         "checkoutId"
       ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "repository.prepare"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "githubRepoId": {
+          "$ref": "#/$defs/githubRepoId"
+        },
+        "repositoryFullName": {
+          "$ref": "#/$defs/gitRef"
+        },
+        "baseBranch": {
+          "$ref": "#/$defs/gitRef"
+        },
+        "sealed": {
+          "type": "string",
+          "format": "base64",
+          "contentEncoding": "base64",
+          "pattern": "^$|^(?:[0-9a-zA-Z+/]{4})*(?:(?:[0-9a-zA-Z+/]{2}==)|(?:[0-9a-zA-Z+/]{3}=))?$"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "githubRepoId",
+        "repositoryFullName",
+        "baseBranch",
+        "sealed",
+        "expiresAt"
+      ]
     }
   ],
   "$defs": {
@@ -929,8 +1020,56 @@
           "minimum": 0,
           "maximum": 9007199254740991
         },
+        "cpus": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
         "runnerVersion": {
           "type": "string"
+        },
+        "osName": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "kernelVersion": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "cpuModel": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "memoryTotalBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "diskTotalBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "virtualization": {
+          "type": "string",
+          "maxLength": 24
+        },
+        "cloudProvider": {
+          "type": "string",
+          "maxLength": 24
+        },
+        "timezone": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "bootedAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-]\\d{2}:\\d{2})))$"
+        },
+        "serviceManager": {
+          "type": "string",
+          "maxLength": 16
         }
       },
       "required": [
@@ -1121,5 +1260,29 @@
       "maximum": 9007199254740991,
       "id": "githubRepoId"
     }
+  },
+  "x-constants": {
+    "protocolVersion": 1,
+    "closeCodes": {
+      "HELLO_EXPECTED": 4400,
+      "HELLO_TIMEOUT": 4408,
+      "REPLACED": 4409,
+      "UNPAIRED": 4410,
+      "PROTOCOL_MISMATCH": 4426
+    },
+    "refusalHeader": "X-Oppenheimer-Refusal",
+    "refusals": {
+      "UNPAIRED": "host-unpaired"
+    },
+    "frameHeaderBytes": 4,
+    "creditWindowBytes": 262144,
+    "maxFrameBytes": 524288,
+    "capabilities": [
+      "session.image",
+      "session.create.images",
+      "session.files",
+      "repository.prepare"
+    ],
+    "maxEventPayloadBytes": 8192
   }
 }

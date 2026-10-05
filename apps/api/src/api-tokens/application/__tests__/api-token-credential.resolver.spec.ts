@@ -1,8 +1,10 @@
 import { Logger } from '@nestjs/common';
+import { AppError } from '@oppenheimer/backend-core';
 import { toResourceScope } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CredentialOwnerPort } from '../../../auth/application/credential-owner.port';
+import { AuthErrors } from '../../../auth/domain/auth.errors';
 import type { CredentialOwner, ScopedRequest } from '../../../auth/domain/scope-context.types';
 import type { ApiTokenRepositoryPort } from '../../database/api-token.repository.port';
 import { ApiTokenEntity } from '../../domain/api-token.entity';
@@ -32,19 +34,33 @@ describe('ApiTokenCredentialResolver', () => {
       findOneByHash: vi.fn(),
       touchLastUsedAt: vi.fn().mockResolvedValue(undefined),
     } as unknown as ApiTokenRepositoryPort;
-    owners = { findActiveOwner: vi.fn().mockResolvedValue(owner) };
+    owners = {
+      findActiveOwner: vi.fn(),
+      requireActiveOwner: vi.fn().mockResolvedValue(owner),
+    };
     resolver = new ApiTokenCredentialResolver(apiTokens, owners);
   });
 
-  const stored = (overrides: Partial<Parameters<typeof ApiTokenEntity.issue>[0]> = {}) => {
-    const { token, secret } = ApiTokenEntity.issue({
+  const stored = (
+    overrides: Partial<Parameters<typeof ApiTokenEntity.issue>[0]> = {},
+    lastUsedAt: Date | null = null,
+  ) => {
+    const issued = ApiTokenEntity.issue({
       userId: owner.id,
       name: 'CI deploy',
       scopes: ['users:read'],
       ...overrides,
     });
+    // Rehydrated the way the repository loads it, so a prior use can be set.
+    const { id, createdAt, updatedAt, ...props } = issued.token.getProps();
+    const token = ApiTokenEntity.create({
+      id,
+      createdAt,
+      updatedAt,
+      props: { ...props, lastUsedAt },
+    });
     vi.mocked(apiTokens.findOneByHash).mockResolvedValue(Some(token));
-    return { token, secret };
+    return { token, secret: issued.secret };
   };
 
   it('claims the secrets this module mints, and nothing else', () => {
@@ -84,6 +100,39 @@ describe('ApiTokenCredentialResolver', () => {
       credentialId: token.id,
     });
     expect(apiTokens.touchLastUsedAt).toHaveBeenCalledWith(token.id, expect.any(Date));
+  });
+
+  describe('lastUsedAt', () => {
+    const second = 1000;
+    const now = new Date('2026-03-03T10:00:00Z');
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'], now });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    // Regression: every request wrote the row, ten row versions a second for a
+    // token polled ten times a second.
+    it.each([
+      ['skips the stamp when the token was used moments ago', 10 * second, 0],
+      ['stamps a token last used more than a minute ago', 2 * 60 * second, 1],
+      ['stamps a token never used before', null, 1],
+    ] as const)('%s', async (_label, usedAgo, stamps) => {
+      const { token, secret } = stored(
+        {},
+        usedAgo === null ? null : new Date(now.getTime() - usedAgo),
+      );
+
+      await resolver.resolve(secret, request());
+
+      expect(apiTokens.touchLastUsedAt).toHaveBeenCalledTimes(stamps);
+      for (const call of vi.mocked(apiTokens.touchLastUsedAt).mock.calls) {
+        expect(call).toEqual([token.id, now]);
+      }
+    });
   });
 
   it('refuses an unknown digest with the opaque credential error', async () => {
@@ -129,8 +178,11 @@ describe('ApiTokenCredentialResolver', () => {
 
   it('refuses a token whose owner can no longer act', async () => {
     const { secret } = stored();
-    vi.mocked(owners.findActiveOwner).mockResolvedValue(null);
+    vi.mocked(owners.requireActiveOwner).mockRejectedValue(
+      new AppError(AuthErrors.INVALID_CREDENTIAL),
+    );
 
     await expect(resolver.resolve(secret, request())).rejects.toMatchObject({ code: 'TOKEN_003' });
+    expect(owners.requireActiveOwner).toHaveBeenCalledWith(owner.id);
   });
 });

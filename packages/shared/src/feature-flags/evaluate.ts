@@ -1,4 +1,4 @@
-import { isValidFlagValue } from './catalog';
+import { isValidFlagValue } from './catalog.js';
 import type {
   FlagCondition,
   FlagConfig,
@@ -8,7 +8,7 @@ import type {
   FlagSegment,
   FlagServe,
   FlagValue,
-} from './types';
+} from './types.js';
 
 /**
  * The flag evaluator: definition + config + context → value. Pure, synchronous
@@ -26,7 +26,7 @@ export const FLAG_BUCKETS = 10_000;
 /**
  * UTF-8 bytes of a string. Written out rather than `TextEncoder` because this
  * package targets no runtime in particular — no DOM lib, no Node types — and
- * the encoding is fifteen lines.
+ * the encoding is a few lines.
  */
 function utf8(input: string): number[] {
   const bytes: number[] = [];
@@ -223,7 +223,6 @@ function pickArm(
   return undefined;
 }
 
-/** The unit a flag's rollout is bucketed on for this caller. */
 export function bucketUnitOf(
   definition: FlagDefinition,
   context: FlagEvaluationContext,
@@ -244,8 +243,6 @@ export function offValueOf(definition: FlagDefinition): FlagValue {
 }
 
 /**
- * Evaluates one flag.
- *
  * Order: no config → default; switched off → the off value; first matching rule;
  * otherwise the fallthrough. A split that cannot bucket the caller (an
  * anonymous visitor has no unit) serves the default — the one answer that is
@@ -298,24 +295,4 @@ export function evaluateFlag(
   }
 
   return serve(config.fallthrough, 'FALLTHROUGH');
-}
-
-/**
- * Evaluates a set of flags against one context. `configs` and `segments` are
- * keyed by flag and segment key — the in-memory snapshot the API holds.
- */
-export function evaluateFlags(
-  definitions: Readonly<Record<string, FlagDefinition>>,
-  keys: readonly string[],
-  configs: ReadonlyMap<string, FlagConfig>,
-  context: FlagEvaluationContext,
-  segments: ReadonlyMap<string, FlagSegment> = new Map(),
-): Record<string, FlagEvaluation> {
-  const result: Record<string, FlagEvaluation> = {};
-  for (const key of keys) {
-    const definition = definitions[key];
-    if (!definition) continue;
-    result[key] = evaluateFlag(key, definition, configs.get(key), context, segments);
-  }
-  return result;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import type { Query, QueryClient } from '@tanstack/query-core';
+import { CORE_CONFIG } from '../config';
 import { authKeys, userSettingsKeys } from './query-keys';
 
 /**
@@ -11,24 +12,13 @@ import { authKeys, userSettingsKeys } from './query-keys';
 export const QUERY_PERSIST_MAX_AGE = 24 * 60 * 60 * 1000;
 
 /**
- * `gcTime` for the persisted client. It must be **at least** `maxAge`: React
- * Query garbage-collects an unused query after `gcTime`, and a collected query
- * is not written to storage, so a shorter `gcTime` would silently persist
- * nothing. Both apps get this from {@link defaultQueryClientOptions}.
- */
-export const QUERY_PERSIST_GC_TIME = QUERY_PERSIST_MAX_AGE;
-
-/**
- * Features whose queries never reach storage, whatever the product. The
- * session is the kernel's own; a product adds its sensitive features (a
- * credential list, a profile) through `nonPersistedFeatures` when the app
+ * Features whose queries never reach storage, whatever the product: the
+ * session and the user's settings. A product adds its sensitive features
+ * (sessions, hosts, a profile) through `nonPersistedFeatures` when the app
  * builds its persist options — `CONSUMER_NON_PERSISTED_FEATURES` in
- * `@oppenheimer/frontend-consumer` is the list the consumer apps pass.
+ * `@oppenheimer/frontend-consumer` is the list `apps/web` passes.
  */
-export const KERNEL_NON_PERSISTED_FEATURES: readonly string[] = [
-  authKeys.all[0],
-  userSettingsKeys.all[0],
-];
+const KERNEL_NON_PERSISTED_FEATURES: readonly string[] = [authKeys.all[0], userSettingsKeys.all[0]];
 
 export interface QueryPersistConfig {
   /** Feature key prefixes (the first segment of a query key) to keep out of storage. */
@@ -36,12 +26,11 @@ export interface QueryPersistConfig {
 }
 
 /**
- * Whether a query may be written to storage.
- *
  * Only successful queries are persisted — restoring an error or a pending
  * fetch would replay a failure the user has already moved past. The feature
- * segment is the first entry of every key factory (see the "React Query keys"
- * guide), which is what makes a per-feature deny-list possible.
+ * segment is the first entry of every key factory
+ * (`apps/docs/docs/architecture/query-keys.md`), which is what makes a
+ * per-feature deny-list possible.
  */
 export function shouldDehydrateQuery(
   query: Query,
@@ -54,28 +43,22 @@ export function shouldDehydrateQuery(
 }
 
 /**
- * Records which user a persisted cache belongs to. Persisted like any other
- * successful query, so it travels with the cache it describes.
+ * The user a persisted cache belongs to. Persisted like any other successful
+ * query, so it travels with the cache it describes.
  */
 export const cacheOwnerKey = ['cacheOwner'] as const;
 
 /**
- * Drops a restored cache that doesn't belong to the user who is signed in now.
+ * A persisted cache outlives its session (expired, server-revoked, or a tab
+ * closed before the persister's throttled write after logout), so the next
+ * boot could hydrate the previous user's `users`/`organizations` entries and
+ * flash them to the next person on that browser.
  *
- * A persisted cache outlives its session: it survives an expired or
- * server-revoked session, and a tab closed right after logout can beat the
- * persister's throttled write to storage. Without this, the next boot hydrates
- * the previous user's `users`/`organizations` entries, and the next person on
- * that browser or device sees them flash before the refetch lands.
- *
- * So on every session restore the restored cache is reconciled against the
- * signed-in user: same user, keep it; anyone else — including nobody, and
- * including a cache with no owner recorded — throw the non-`auth` entries away.
- * `auth` is spared because the session query driving this call is one of them.
- *
- * Called from `useSessionRestore`'s `queryFn`, i.e. before the query resolves
- * and before either app's gate renders anything, so no component ever observes
- * another user's data.
+ * So each session restore reconciles the cache against the signed-in user:
+ * same user, keep it; anyone else, nobody, or no owner recorded, drop every
+ * non-`auth` entry (`auth` holds the session query driving this call). Called
+ * from `useSessionRestore`'s `queryFn`, before the app's gate renders, so no
+ * component ever observes another user's data.
  */
 export function reconcileCacheOwner(queryClient: QueryClient, ownerId: string | null): void {
   const previousOwnerId = queryClient.getQueryData<string>(cacheOwnerKey) ?? null;
@@ -91,10 +74,7 @@ export function reconcileCacheOwner(queryClient: QueryClient, ownerId: string | 
 /**
  * Increment when the persistence policy changes in a way that makes an
  * already-stored cache unsafe to hydrate, or changes the shape of a persisted
- * key so an old entry would sit in storage that nothing reads. Revision 2
- * dropped profile/session entities written before they were excluded from
- * persistence; revision 3 drops the `['capabilities']` entry written before
- * the query moved to `capabilitiesKeys.deployment()`.
+ * key so an old entry would sit in storage that nothing reads.
  */
 const QUERY_PERSIST_REVISION = 3;
 
@@ -118,16 +98,19 @@ export function createQueryPersistOptions(appVersion: string, config: QueryPersi
 }
 
 /**
- * Query defaults every app shares. `gcTime` is pinned to the persist window;
- * `staleTime` is per-app because "how stale is too stale" depends on how long
- * the app's screens stay open.
+ * Query defaults every app shares. `gcTime` is pinned to the persist window:
+ * it must be **at least** `maxAge`, because React Query garbage-collects an
+ * unused query after `gcTime` and a collected query is not written to storage,
+ * so a shorter one would silently persist nothing. `staleTime` is per-app
+ * because "how stale is too stale" depends on how long the app's screens stay
+ * open.
  */
 export function defaultQueryClientOptions(staleTime: number) {
   return {
     queries: {
       staleTime,
-      gcTime: QUERY_PERSIST_GC_TIME,
-      retry: 1,
+      gcTime: QUERY_PERSIST_MAX_AGE,
+      retry: CORE_CONFIG.query.retries,
     },
   };
 }

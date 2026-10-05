@@ -2,19 +2,14 @@ import '@oppenheimer/env/load';
 import { Pool } from 'pg';
 
 /**
- * Direct database access for the tests.
+ * Direct database access for the tests: reset tokens are read from Better
+ * Auth's `verification` table instead of a mail catcher.
  *
- * Password-reset and verification tokens normally reach a user by email. Rather
- * than standing up a mail catcher, the suite reads them from where the API puts
- * them: reset tokens live in Better Auth's `verification` table, and everything
- * else is asserted against the rows sign-up is supposed to create.
- *
- * Connection settings come from the root `.env` through `@oppenheimer/env`, reading
- * the same `DB_*` variables as `database.config.ts` and Better Auth's own pool.
- * That is the whole point: a suite that asserted against a *different* database
- * from the API under test would report passes that mean nothing. Blank is read
- * as unset, matching `orUndefined` in `apps/api/src/config/env.ts`, so a
- * commented-out `DB_PASSWORD=` behaves identically on both sides.
+ * Connection settings are the root `.env`'s `DB_*` variables, the same ones
+ * `database.config.ts` and Better Auth's pool read, so the suite asserts
+ * against the API's own database. Blank is read as unset, matching
+ * `orUndefined` in `apps/api/src/config/env.ts`, so a commented-out
+ * `DB_PASSWORD=` behaves identically on both sides.
  */
 const orUndefined = (value: string | undefined): string | undefined =>
   value?.trim() ? value : undefined;
@@ -63,7 +58,7 @@ export async function findUserByEmail(email: string): Promise<UserRow | undefine
 /**
  * The reset token as Better Auth stores it: the `verification` row's identifier
  * is `reset-password:<token>` and its value is the user id. Returns the newest
- * unexpired token for the user, which is what the email would have carried.
+ * token for the user, expired or not: what the latest email carried.
  */
 export async function findResetToken(email: string): Promise<string | undefined> {
   const rows = await query<{ identifier: string }>(
@@ -78,18 +73,6 @@ export async function findResetToken(email: string): Promise<string | undefined>
   );
   const identifier = rows[0]?.identifier;
   return identifier ? identifier.slice('reset-password:'.length) : undefined;
-}
-
-export async function countResetTokens(email: string): Promise<number> {
-  const rows = await query<{ count: string }>(
-    `SELECT count(*)::text AS count
-       FROM "verification" v
-       JOIN "user" u ON u."id"::text = v."value"
-      WHERE lower(u."email") = lower($1)
-        AND v."identifier" LIKE 'reset-password:%'`,
-    [email],
-  );
-  return Number(rows[0]?.count ?? '0');
 }
 
 /** Force a token to look expired without waiting out its real lifetime. */
@@ -147,5 +130,12 @@ export async function setUserRole(userId: string, role: string): Promise<void> {
        SELECT $1, r."id" FROM "role" r WHERE r."name" = $2
        ON CONFLICT DO NOTHING`,
     [userId, role],
+  );
+  // A global assignment written behind the API's back: bump the user's role
+  // version as `UserRoleRepository` would, or a cached role set keeps answering.
+  await query(
+    `INSERT INTO "user_role_version" ("userId", "version") VALUES ($1, 2)
+     ON CONFLICT ("userId") DO UPDATE SET "version" = "user_role_version"."version" + 1`,
+    [userId],
   );
 }

@@ -1,14 +1,10 @@
 import { type AuthSession, toAuthSession } from './session';
 
 /**
- * The global an app's `public/session-preload.js` writes.
- *
- * That script runs in `<head>`, before the app bundle has been fetched, let
- * alone parsed — so the session lookup overlaps bundle parse instead of
- * starting after React has mounted. It resolves to the endpoint's JSON body,
- * to `null` when nobody is signed in, or to `undefined` when the request was
- * not usable (offline, a proxy error, an HTML error page), which means "ask the
- * auth client properly".
+ * The global an app's `public/session-preload.js` writes from `<head>`. It
+ * resolves to the endpoint's JSON body, to `null` when nobody is signed in, or
+ * to `undefined` when the request was not usable (offline, a proxy error, an
+ * HTML error page), which means "ask the auth client properly".
  */
 declare global {
   interface Window {
@@ -37,14 +33,11 @@ function isSessionBody(value: unknown): value is PreloadedSessionBody {
 }
 
 /**
- * Takes the preloaded session, if there is one to take.
- *
  * Returns the session, `null` for a confirmed anonymous visitor, or `undefined`
- * when there is nothing usable and the caller should go through the auth client
- * as before. Anything unrecognised is treated as `undefined` rather than as
+ * when there is nothing usable and the caller should go through the auth
+ * client. Anything unrecognised is treated as `undefined` rather than as
  * "signed out": mistaking a bad response for no session signs a reader out on a
- * blip, which is exactly the failure `restoreSession()`'s retries exist to
- * avoid.
+ * blip, the failure `toAuthSession` throws rather than return `null` to avoid.
  *
  * One-shot. The global is cleared before the body is read, so a later call —
  * after a sign-in, or a refetch — always goes to the auth client, which owns

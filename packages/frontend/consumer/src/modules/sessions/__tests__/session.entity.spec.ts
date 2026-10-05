@@ -78,6 +78,14 @@ describe('SessionEntity.isProvisioning', () => {
   });
 });
 
+describe('SessionEntity.isResolved', () => {
+  it('is true only once the host has closed the session', () => {
+    expect(session({ lifecycle: 'resolved' }).isResolved).toBe(true);
+    expect(session({ lifecycle: 'open' }).isResolved).toBe(false);
+    expect(session({ lifecycle: 'failed' }).isResolved).toBe(false);
+  });
+});
+
 describe('the checkouts a session carries', () => {
   const mobile = checkout('42', 'acme/xrp-mobile', 'oppenheimer/xrp/bold-otter-3f9a7k');
   const web = checkout('43', 'acme/xrp-web', 'oppenheimer/xrp/bold-otter-3f9a7k');

@@ -33,6 +33,19 @@ describe('matchesIpRule', () => {
     expect(matchesIpRule('::ffff:203.0.113.7', '203.0.113.7')).toBe(true);
   });
 
+  it('reads an IPv4-mapped prefix in the mapped address’s 128 bits', () => {
+    expect(matchesIpRule('::ffff:203.0.113.0/120', '::ffff:203.0.113.7')).toBe(true);
+    expect(matchesIpRule('::ffff:203.0.113.0/120', '203.0.113.7')).toBe(true);
+    expect(matchesIpRule('::ffff:203.0.113.0/120', '203.0.114.7')).toBe(false);
+    // Shorter than /96 it reaches past the mapped range, and still holds it.
+    expect(matchesIpRule('::ffff:203.0.113.0/80', '203.0.113.7')).toBe(true);
+    expect(matchesIpRule('::ffff:203.0.113.0/80', '2001:db8::1')).toBe(false);
+    // /96 is IPv4 /0, every client; past /128 is no prefix at all.
+    expect(matchesIpRule('::ffff:203.0.113.0/96', '203.0.113.7')).toBe(true);
+    expect(matchesIpRule('::ffff:203.0.113.0/96', '198.51.100.7')).toBe(true);
+    expect(matchesIpRule('::ffff:203.0.113.0/129', '203.0.113.7')).toBe(false);
+  });
+
   it('never matches an IPv4 rule against a real IPv6 address', () => {
     expect(matchesIpRule('0.0.0.0/0', '2001:db8::1')).toBe(false);
   });
@@ -62,7 +75,6 @@ describe('isIpAllowed', () => {
   });
 
   it('denies a restricted credential whose source address is unknown', () => {
-    // Failing open here would make the restriction advisory.
     expect(isIpAllowed(['198.51.100.0/24'], null)).toBe(false);
   });
 });

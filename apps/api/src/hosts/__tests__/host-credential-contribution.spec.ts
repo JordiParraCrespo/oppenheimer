@@ -16,8 +16,7 @@ const EXPIRES_AT = new Date('2026-09-20T12:05:00.000Z');
 /**
  * Stands in for the real verifier. What matters here is that the resolver
  * reaches it through the port at all: it is bound to `HOST_ASSERTION`, which
- * `HostsModule` publishes to its own injector and no longer has to publish
- * application-wide.
+ * `HostsModule` publishes to its own injector, not application-wide.
  */
 const assertions: HostAssertionPort = {
   recognises: (bearer) => bearer.split('.').length === 3,
@@ -27,11 +26,7 @@ const assertions: HostAssertionPort = {
   },
 };
 
-/**
- * Stands in for the root `AuthModule`, which cannot boot here: it configures
- * Better Auth and the ORM. What matters is that the registry is a global
- * provider of the kernel's, which is exactly how the real module publishes it.
- */
+/** The root `AuthModule`'s stand-in, as in `auth/__tests__/credential-contribution.spec.ts`. */
 @Global()
 @Module({ providers: [CredentialResolverRegistry], exports: [CredentialResolverRegistry] })
 class KernelStubModule {}
@@ -68,9 +63,6 @@ describe('the hosts module’s credential contribution', () => {
   it('builds the resolver in the hosts injector, over this module’s own port', async () => {
     const [resolver] = (await bootedRegistry()).all();
 
-    // Answered by a provider only `HostsContributionModule` declares, which is
-    // the property the contribution shape exists for: recognising a machine
-    // costs the module no application-wide publication.
     expect(resolver.recognises(ASSERTION)).toBe(true);
     expect(resolver.recognises('oppenheimer_pat_not_a_host')).toBe(false);
   });

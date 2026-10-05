@@ -93,6 +93,14 @@ hold. They are the role-side and grant-side twins of `grantableScopes`, which
 already protects credential minting. Without them, `update Role` is effectively
 `manage all`: compose the role, assign it to yourself, done.
 
+Role containment respects CASL conditions. Pass `canGrant` the context the
+actor's ability was built with; each requested rule's `${...}` placeholders
+are interpolated in it, and the rule is grantable only when some actor rule
+for the same action and subject is unconditioned, or its conditions are all
+present in the request and match it. So a tenant owner holding
+`manage Session { organizationId: <org> }` may grant that rule or a narrower
+one, never bare `manage Session` and never another organization's id.
+
 ## Testing
 
 ```ts

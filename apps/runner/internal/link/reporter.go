@@ -2,9 +2,10 @@ package link
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
-	"sort"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -14,6 +15,21 @@ import (
 type Sender interface {
 	Send(message any) error
 }
+
+// maxPendingBatches bounds what the reporter holds while the link is gone for
+// long. The runner keeps no durable outbox and the next hello's snapshot
+// reconciles (02-runner §4), so past the cap the oldest batch is dropped — and
+// the log says which, never silently.
+const maxPendingBatches = 4096
+
+// ackTimeout is how long a batch the link took may go without an ack before
+// Retry sends it again. A reconnect resends everything on its own; this is for
+// the link that stays up and still never answers a batch — an ack lost on the
+// control plane's side, a batch it dropped — which would otherwise sit
+// pending until the link happened to drop. It is generous because the control
+// plane stops reading a link whose appends the database cannot keep up with,
+// and a resend then only adds to what it is behind on.
+const ackTimeout = time.Minute
 
 // Reporter batches a session's events and keeps every batch until an ack
 // accounts for each of its keys (01, "events.append and events.ack"). Keys
@@ -27,17 +43,26 @@ type Reporter struct {
 	now    func() time.Time
 	seq    atomic.Uint64
 
-	mu      sync.Mutex
-	pending map[string]pendingBatch // batchId → batch, until fully acked
+	// mu is held across a flush, sends included — Send never blocks — so two
+	// flushes cannot interleave and put a newer batch ahead of an older one.
+	mu sync.Mutex
+	// pending holds every batch until fully acked, in the order it was made:
+	// the control plane records a link's batches as they arrive, and that is
+	// the log's order — a start's `running` must not land after its `done`.
+	pending []*pendingBatch
 	batches atomic.Uint64
+	// limit is how many batches may await an ack; past it Append drops the
+	// oldest. maxPendingBatches in production.
+	limit int
 }
 
-// pendingBatch is a batch awaiting its ack, with the order it was made in: a
-// resend replays batches in that order, because a session's log is ordered by
-// arrival and a start's `running` must not land after its `done`.
+// pendingBatch is a batch awaiting its ack. queued says the link that is up
+// took it, at sentAt; one the link refused is not, and the next flush tries it
+// again.
 type pendingBatch struct {
-	n     uint64
-	batch EventsAppend
+	batch  EventsAppend
+	queued bool
+	sentAt time.Time
 }
 
 // NewReporter builds a reporter for one process.
@@ -45,15 +70,19 @@ func NewReporter(runID string, sender Sender, logger *slog.Logger) *Reporter {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Reporter{runID: runID, sender: sender, logger: logger, now: time.Now, pending: map[string]pendingBatch{}}
+	return &Reporter{
+		runID: runID, sender: sender, logger: logger, now: time.Now,
+		limit: maxPendingBatches,
+	}
 }
 
 // RunID is the id every key starts with.
 func (r *Reporter) RunID() string { return r.runID }
 
-// Append records one event for a session and sends it in its own batch. The
-// batch stays pending until acked; Resend replays what is still pending after
-// a reconnect. Payload is marshalled here and capped by the control plane.
+// Append records one event for a session in its own batch, then sends what
+// the link has not taken, oldest first: a new batch never overtakes one the
+// link refused. The batch stays pending until acked. Payload is marshalled
+// here and capped by the control plane.
 func (r *Reporter) Append(sessionID, kind string, payload any) {
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -74,9 +103,12 @@ func (r *Reporter) Append(sessionID, kind string, payload any) {
 		}},
 	}
 	r.mu.Lock()
-	r.pending[batch.BatchID] = pendingBatch{n: ordinal, batch: batch}
-	r.mu.Unlock()
-	r.send(batch)
+	defer r.mu.Unlock()
+	if len(r.pending) >= r.limit {
+		r.dropOldestLocked()
+	}
+	r.pending = append(r.pending, &pendingBatch{batch: batch})
+	r.flushLocked()
 }
 
 // Ack drops every key the control plane accounted for; a batch whose keys are
@@ -85,8 +117,14 @@ func (r *Reporter) Append(sessionID, kind string, payload any) {
 func (r *Reporter) Ack(ack EventsAck) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	entry, ok := r.pending[ack.BatchID]
-	if !ok {
+	at := -1
+	for i, entry := range r.pending {
+		if entry.batch.BatchID == ack.BatchID {
+			at = i
+			break
+		}
+	}
+	if at < 0 {
 		return
 	}
 	settled := map[string]bool{}
@@ -98,49 +136,103 @@ func (r *Reporter) Ack(ack EventsAck) {
 		r.logger.Warn("event rejected by the control plane",
 			slog.String("key", rejected.IdempotencyKey), slog.String("reason", rejected.Reason))
 	}
-	batch := entry.batch
-	kept := batch.Events[:0]
-	for _, event := range batch.Events {
+	entry := r.pending[at]
+	kept := make([]Event, 0, len(entry.batch.Events))
+	for _, event := range entry.batch.Events {
 		if !settled[event.IdempotencyKey] {
 			kept = append(kept, event)
 		}
 	}
 	if len(kept) == 0 {
-		delete(r.pending, ack.BatchID)
+		r.pending = append(r.pending[:at], r.pending[at+1:]...)
 		return
 	}
-	batch.Events = kept
-	r.pending[ack.BatchID] = pendingBatch{n: entry.n, batch: batch}
+	entry.batch.Events = kept
 }
 
 // Resend replays every batch still waiting on an ack: what a reconnect calls
 // after hello, because a WebSocket cannot tell "persisted" from "never arrived".
 func (r *Reporter) Resend() {
 	r.mu.Lock()
-	entries := make([]pendingBatch, 0, len(r.pending))
+	defer r.mu.Unlock()
 	for _, entry := range r.pending {
-		entries = append(entries, entry)
+		entry.queued = false
 	}
-	r.mu.Unlock()
-	// In the order they were made, never the map's: the control plane records
-	// a link's batches as they arrive, and that is the log's order.
-	sort.Slice(entries, func(i, j int) bool { return entries[i].n < entries[j].n })
-	for _, entry := range entries {
-		r.send(entry.batch)
-	}
+	r.flushLocked()
 }
 
-// Pending is how many batches await an ack, for status and tests.
-func (r *Reporter) Pending() int {
+// Retry sends what the link refused while it stayed up — a full control
+// queue — and what it took but never acked within the ack timeout, without
+// waiting for a reconnect. The daemon calls it on a ticker.
+func (r *Reporter) Retry() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return len(r.pending)
+	r.requeueOverdueLocked()
+	r.flushLocked()
 }
 
-func (r *Reporter) send(batch EventsAppend) {
-	if err := r.sender.Send(batch); err != nil {
-		// Between links, or a full queue: the batch is pending and Resend
-		// will carry it. Nothing is lost by not sending now.
-		r.logger.Debug("event batch held until the link is back", slog.String("batch", batch.BatchID), slog.Any("error", err))
+// requeueOverdueLocked marks the oldest batch whose ack is overdue, and every
+// batch made after it, as not yet taken, so the flush that follows sends them
+// again in the order they were made — as a reconnect's Resend would. Sending
+// only the overdue one would put it behind newer batches the control plane
+// may not have either. The keys make whatever did arrive free to resend.
+func (r *Reporter) requeueOverdueLocked() {
+	now := r.now()
+	for i, entry := range r.pending {
+		if !entry.queued || now.Sub(entry.sentAt) < ackTimeout {
+			continue
+		}
+		r.logger.Warn("event batch unacked past the ack timeout; sending it and every later batch again",
+			slog.String("batch", entry.batch.BatchID), slog.Duration("timeout", ackTimeout),
+			slog.Int("batches", len(r.pending)-i))
+		for _, later := range r.pending[i:] {
+			later.queued = false
+		}
+		return
 	}
+}
+
+// flushLocked hands the link every batch it has not taken yet, in the order
+// they were made, and stops at the first refusal. Between links or with a
+// full queue the rest would be refused too, and sending past a refused batch
+// would put a newer one ahead of it. Retry, Resend or the next Append carries
+// on from there. A batch over the frame cap is the exception: no link will
+// ever take it, so it is dropped with a warning rather than hold back every
+// batch behind it.
+func (r *Reporter) flushLocked() {
+	for i := 0; i < len(r.pending); {
+		entry := r.pending[i]
+		if entry.queued {
+			i++
+			continue
+		}
+		err := r.sender.Send(entry.batch)
+		switch {
+		case err == nil:
+			entry.queued, entry.sentAt = true, r.now()
+			i++
+		case errors.Is(err, ErrFrameTooLarge):
+			r.logger.Warn("event batch dropped: larger than the link carries",
+				slog.String("batch", entry.batch.BatchID), slog.String("session", entry.batch.SessionID),
+				slog.Any("error", err))
+			r.pending = slices.Delete(r.pending, i, i+1)
+		default:
+			r.logger.Debug("event batches held until the link takes them",
+				slog.String("batch", entry.batch.BatchID), slog.Any("error", err))
+			return
+		}
+	}
+}
+
+func (r *Reporter) dropOldestLocked() {
+	dropped := r.pending[0]
+	r.pending[0] = nil
+	r.pending = r.pending[1:]
+	kinds := make([]string, 0, len(dropped.batch.Events))
+	for _, event := range dropped.batch.Events {
+		kinds = append(kinds, event.Kind)
+	}
+	r.logger.Warn("event batch dropped: too many wait on the link; the next hello reconciles",
+		slog.String("batch", dropped.batch.BatchID), slog.String("session", dropped.batch.SessionID),
+		slog.Any("kinds", kinds), slog.Int("limit", r.limit))
 }

@@ -5,6 +5,7 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
+import { ProjectArchivedDomainEvent } from './events/project-archived.domain-event';
 import {
   type ProjectRepositoryProps,
   projectRepositoriesProblem,
@@ -34,11 +35,14 @@ export interface ProjectProps {
   createdByUserId: string | null;
   /**
    * The repositories the project holds, in the order a person put them. Empty
-   * only for a project from before projects held repositories that had no
-   * checkout to backfill from; every write leaves at least one.
+   * only for an Unassigned project nobody has given any; every write leaves at
+   * least one.
    */
   repositories: ProjectRepositoryProps[];
-  /** The host a new session is offered. A suggestion, never a grant. */
+  /**
+   * The host a new session is offered. A suggestion, never a grant: creating a
+   * session still loads the host through the caller's own-or-grant scope.
+   */
   defaultHostId: string | null;
   /** The agent a new session is offered, from the closed catalog. */
   defaultAgent: string | null;
@@ -86,7 +90,6 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     return new ProjectEntity(create);
   }
 
-  /** Create a brand-new project with a generated id. */
   static createNew(props: CreateProjectProps): ProjectEntity {
     assertHoldable(props.repositories);
     return new ProjectEntity({
@@ -176,11 +179,19 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
    */
   archive(at: Date): void {
     this.assertNotUnassigned('archived');
-    this.props.archivedAt = this.props.archivedAt ?? at;
+    if (this.props.archivedAt) return;
+    this.props.archivedAt = at;
     this.setUpdatedAt(new Date());
+    this.addEvent(
+      new ProjectArchivedDomainEvent({
+        aggregateId: this.id,
+        organizationId: this.props.organizationId,
+        reason: 'The project was retired; what starts work in it must stop',
+      }),
+    );
   }
 
-  /** Rename the project. Display only: the slug stays as it is. */
+  /** Display only: the slug stays as it is. */
   rename(name: string): void {
     if (name !== this.props.name) this.assertNotUnassigned('renamed');
     this.props.name = name;
@@ -206,9 +217,8 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
         `Project slug must be at most ${PROJECT_SLUG_MAX_LENGTH} characters`,
       );
     }
-    // An empty list is the Unassigned project's, or a legacy row the backfill could
-    // not fill, and it is read, not written; anything non-empty must be a list a
-    // project can hold.
+    // An empty list is an Unassigned project's that nobody has given repositories;
+    // anything non-empty must be a list a project can hold.
     if (this.props.repositories.length > 0) assertHoldable(this.props.repositories);
   }
 

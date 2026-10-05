@@ -12,6 +12,7 @@ export class UserEntity {
     public readonly updatedAt: Date,
   ) {}
 
+  /** Absent on a user read back from the persisted query cache: a getter does not survive JSON. */
   get fullName(): string {
     return `${this.firstName} ${this.lastName}`;
   }

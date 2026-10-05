@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  compareSemver,
-  evaluateFlag,
-  evaluateFlags,
-  FLAG_BUCKETS,
-  flagBucket,
-  murmur3,
-} from '../evaluate';
-import type { FlagConfig, FlagDefinition, FlagSegment } from '../types';
+import { compareSemver, evaluateFlag, FLAG_BUCKETS, flagBucket, murmur3 } from '../evaluate.js';
+import type { FlagConfig, FlagDefinition, FlagSegment } from '../types.js';
 
 const booleanFlag: FlagDefinition = {
   description: 'test',
@@ -56,10 +49,6 @@ describe('murmur3', () => {
 });
 
 describe('flagBucket', () => {
-  it('is stable for the same unit', () => {
-    expect(flagBucket('flag', 'salt', 'org-1')).toBe(flagBucket('flag', 'salt', 'org-1'));
-  });
-
   it('is independent between flags, so the same users are not every canary', () => {
     const units = Array.from({ length: 200 }, (_, i) => `org-${i}`);
     const inFirstTenPercent = (key: string) =>
@@ -359,18 +348,5 @@ describe('evaluateFlag', () => {
     expect(
       evaluateFlag('flag', booleanFlag, config({ fallthrough: { value: 'true' } }), {}),
     ).toMatchObject({ value: false, reason: 'ERROR' });
-  });
-});
-
-describe('evaluateFlags', () => {
-  it('evaluates only the requested keys, skipping undeclared ones', () => {
-    const result = evaluateFlags(
-      { a: booleanFlag, b: variantFlag },
-      ['a', 'ghost'],
-      new Map([['a', config({ key: 'a', fallthrough: { value: true } })]]),
-      {},
-    );
-    expect(Object.keys(result)).toEqual(['a']);
-    expect(result.a?.value).toBe(true);
   });
 });

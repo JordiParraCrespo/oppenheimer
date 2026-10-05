@@ -7,7 +7,7 @@ const FETCH_FAILED = {
   message: 'Failed to fetch user',
 };
 
-/** What the generated api-client throws: the parsed body hangs off `body`. */
+/** A failure as `unwrap` hands it to `toAppError`: the parsed body on `body`. */
 const apiError = (status: number, body: unknown) =>
   Object.assign(new Error('api'), { status, body });
 
@@ -61,5 +61,17 @@ describe('toAppError', () => {
   it('passes an AppError through untouched', () => {
     const original = new AppError(FETCH_FAILED);
     expect(toAppError(original, FETCH_FAILED)).toBe(original);
+  });
+});
+
+describe('toAppError on a body that is not a problem document', () => {
+  it("keeps the code Better Auth's `{ code, message }` body names, and the status", () => {
+    const error = toAppError(
+      { status: 400, body: { code: 'INVALID_CONSENT', message: 'Bad code' } },
+      FETCH_FAILED,
+    );
+
+    expect(error.code).toBe('INVALID_CONSENT');
+    expect(error.status).toBe(400);
   });
 });

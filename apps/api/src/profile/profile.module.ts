@@ -5,6 +5,8 @@ import { Session } from '../auth/database/session.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 import { UsersModule } from '../users/user.module';
 import { LocaleResolver } from './application/locale.resolver';
+import { ChangeEmailCommandHandler } from './commands/change-email/change-email.command-handler';
+import { ChangeEmailHttpController } from './commands/change-email/change-email.http.controller';
 import { ChangePasswordCommandHandler } from './commands/change-password/change-password.command-handler';
 import { ChangePasswordHttpController } from './commands/change-password/change-password.http.controller';
 import { DeleteAvatarCommandHandler } from './commands/delete-avatar/delete-avatar.command-handler';
@@ -12,7 +14,7 @@ import { DeleteAvatarHttpController } from './commands/delete-avatar/delete-avat
 import { RevokeOtherSessionsCommandHandler } from './commands/revoke-other-sessions/revoke-other-sessions.command-handler';
 import { RevokeOtherSessionsHttpController } from './commands/revoke-other-sessions/revoke-other-sessions.http.controller';
 import { RevokeSessionCommandHandler } from './commands/revoke-session/revoke-session.command-handler';
-import { RevokeSessionHttpController } from './commands/revoke-session/revoke-session.http.controller';
+import { RevokeProfileSessionHttpController } from './commands/revoke-session/revoke-session.http.controller';
 import { UpdateProfileCommandHandler } from './commands/update-profile/update-profile.command-handler';
 import { UpdateProfileHttpController } from './commands/update-profile/update-profile.http.controller';
 import { UpdateUserSettingsCommandHandler } from './commands/update-user-settings/update-user-settings.command-handler';
@@ -32,25 +34,26 @@ import {
   USER_SETTINGS_REPOSITORY,
 } from './profile.di-tokens';
 import { ProfileMapper } from './profile.mapper';
-import { FindSessionsHttpController } from './queries/find-sessions/find-sessions.http.controller';
+import { FindProfileSessionsHttpController } from './queries/find-sessions/find-sessions.http.controller';
 import { FindSessionsQueryHandler } from './queries/find-sessions/find-sessions.query-handler';
 import { GetProfileHttpController } from './queries/get-profile/get-profile.http.controller';
 import { GetProfileQueryHandler } from './queries/get-profile/get-profile.query-handler';
 import { GetUserSettingsHttpController } from './queries/get-user-settings/get-user-settings.http.controller';
 import { GetUserSettingsQueryHandler } from './queries/get-user-settings/get-user-settings.query-handler';
 
-// Registration order matters: every static sub-route (`settings`, `avatar`,
-// `sessions`) must be matched before `sessions/:id`, and the bare `GET`/`PATCH`
-// on the collection last.
+// Registration order matters: a static sub-route before a parameterised one on
+// the same method (`DELETE sessions` before `DELETE sessions/:id`), and the bare
+// `GET`/`PATCH` on the collection last.
 const httpControllers = [
   GetUserSettingsHttpController,
   UpdateUserSettingsHttpController,
   UploadAvatarHttpController,
   DeleteAvatarHttpController,
-  FindSessionsHttpController,
+  FindProfileSessionsHttpController,
   RevokeOtherSessionsHttpController,
-  RevokeSessionHttpController,
+  RevokeProfileSessionHttpController,
   ChangePasswordHttpController,
+  ChangeEmailHttpController,
   GetProfileHttpController,
   UpdateProfileHttpController,
 ];
@@ -63,6 +66,7 @@ const commandHandlers: Provider[] = [
   ChangePasswordCommandHandler,
   RevokeSessionCommandHandler,
   RevokeOtherSessionsCommandHandler,
+  ChangeEmailCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -76,8 +80,6 @@ const repositories: Provider[] = [
   { provide: SESSION_READER, useClass: SessionRepository },
 ];
 
-// Every outbound dependency is bound to the token its port is named by, so a
-// handler names the port and the choice of adapter is made once, here.
 const adapters: Provider[] = [
   { provide: AVATAR_STORAGE, useClass: AvatarStorageAdapter },
   { provide: PROFILE_AUTH, useClass: ProfileAuthGateway },
@@ -85,7 +87,8 @@ const adapters: Provider[] = [
 ];
 
 /**
- * The caller's own account: profile fields, preferences, password and sessions.
+ * The caller's own account: profile fields, preferences, email, password and
+ * sessions.
  *
  * Imports `UsersModule` for its `USER_REPOSITORY` — the `user` row is that
  * module's aggregate, and this module reads and updates the profile columns on

@@ -3,6 +3,7 @@ package app_test
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 
@@ -112,8 +113,21 @@ func TestPreflightReportsDiskPressureBeforeASessionFails(t *testing.T) {
 	}
 }
 
-func TestPreflightPassesOnAHealthyHost(t *testing.T) {
-	if _, err := service(fake.New()).Preflight(context.Background()); err != nil {
-		t.Fatalf("preflight: %v", err)
+func TestPreflightProbesAfreshWhereCollectMayUseTheCache(t *testing.T) {
+	p := fake.New()
+	svc := service(p)
+
+	if _, err := svc.Collect(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if slices.Contains(p.Calls, "invalidate") {
+		t.Fatalf("calls = %v: a plain collect keeps the cache", p.Calls)
+	}
+	p.Calls = nil
+	if _, err := svc.Preflight(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Calls) < 2 || p.Calls[0] != "invalidate" || !strings.HasPrefix(p.Calls[1], "tool:") {
+		t.Fatalf("calls = %v, want the cache dropped before the tools are probed", p.Calls)
 	}
 }

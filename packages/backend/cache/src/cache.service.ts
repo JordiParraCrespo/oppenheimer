@@ -1,8 +1,38 @@
+/**
+ * The cache port. Values are JSON; keys are the caller's, and the
+ * implementation namespaces them (see `RedisCacheService`), so a caller writes
+ * `attach:<ticket>`, never `cache:attach:<ticket>`.
+ *
+ * There is deliberately no `reset()`/flush: the cache shares its Redis database
+ * with BullMQ and the rate limiter, so "empty the cache" is one mistake away
+ * from "empty every queue".
+ */
 export abstract class CacheService {
   abstract get<T>(key: string): Promise<T | undefined>;
+
+  /**
+   * Read several keys in one round trip, answering in the order asked, with
+   * `undefined` for each key that is missing.
+   */
+  abstract mget<T>(keys: string[]): Promise<(T | undefined)[]>;
+
   abstract set<T>(key: string, value: T, ttl?: number): Promise<void>;
   abstract del(key: string): Promise<void>;
-  abstract reset(): Promise<void>;
+
+  /**
+   * Answer the cached value, or run `load`, cache its result for `ttlSeconds`
+   * and answer that.
+   *
+   * Concurrent callers for the same key share one `load` (single-flight), so an
+   * entry that expires under load costs one recomputation, not one per request.
+   * The guarantee is per process: with R replicas, at most R loads per expiry.
+   *
+   * A cache that is down never fails the caller: a failed read falls through
+   * to `load`, and a failed write is ignored. A `load` that throws is not
+   * cached; every waiter gets the error and the next call tries again.
+   */
+  abstract getOrSet<T>(key: string, ttlSeconds: number, load: () => Promise<T>): Promise<T>;
+
   /**
    * Store `value` only if `key` does not exist yet, and report whether this
    * call is the one that stored it.

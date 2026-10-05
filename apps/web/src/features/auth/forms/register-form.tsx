@@ -1,5 +1,10 @@
 import { Button, FieldGroup, Input, PasswordInput } from '@oppenheimer/design-system-web';
-import { AuthField, AuthFormError, useZodResolver } from '@oppenheimer/frontend-web';
+import {
+  AuthField,
+  AuthFormFailure,
+  type ResolvedErrorMessage,
+  useZodResolver,
+} from '@oppenheimer/frontend-web';
 import { type RegisterDto, registerSchema } from '@oppenheimer/shared/schemas/auth';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -15,13 +20,14 @@ export function RegisterForm({
   onSubmit,
 }: {
   isPending: boolean;
-  /** The resolved failure message, if the last attempt failed. */
-  error?: string;
+  error?: ResolvedErrorMessage;
   onSubmit: (values: RegisterDto) => void;
 }) {
   const { t } = useTranslation();
 
   const {
+    setError,
+    getValues,
     register,
     handleSubmit,
     formState: { errors },
@@ -33,7 +39,7 @@ export function RegisterForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <FieldGroup>
-        {error && <AuthFormError>{error}</AuthFormError>}
+        <AuthFormFailure form={{ setError, getValues }} error={error} />
 
         <div className="grid grid-cols-2 gap-3">
           <AuthField label={t('auth.firstName')} htmlFor="firstName" error={errors.firstName}>
@@ -92,8 +98,14 @@ export function RegisterForm({
           />
         </AuthField>
 
-        <Button type="submit" size="lg" block disabled={isPending}>
-          {isPending ? t('auth.register.submitting') : t('auth.register.submit')}
+        <Button
+          type="submit"
+          size="lg"
+          block
+          pending={isPending}
+          pendingLabel={t('auth.register.submitting')}
+        >
+          {t('auth.register.submit')}
         </Button>
       </FieldGroup>
     </form>

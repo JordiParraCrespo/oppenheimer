@@ -1,13 +1,10 @@
-// The narrow subpath, not the package root: `@oppenheimer/shared`'s CJS build is not
-// tree-shakeable by Rollup, so importing these two runtime constants from the
-// root would pull CASL and the whole scope catalog into the web bundle. This
-// entry reaches nothing but Zod.
-
 import { AppError } from '@oppenheimer/frontend-core';
 import {
   AVATAR_MAX_BYTES,
   AVATAR_MIME_TYPES,
+  type ChangeEmailDto,
   type ChangeOwnPasswordDto,
+  type DeleteAccountDto,
   type UpdateProfileDto,
 } from '@oppenheimer/shared/schemas/profile';
 import { inject, injectable } from 'inversify';
@@ -32,8 +29,6 @@ export class ProfileService {
   }
 
   /**
-   * Upload a new avatar.
-   *
    * Type and size are checked here as well as on the server so the user is told
    * immediately, without spending an upload to find out — the server check is
    * still the one that decides.
@@ -54,6 +49,14 @@ export class ProfileService {
 
   async changePassword(dto: ChangeOwnPasswordDto): Promise<void> {
     return this.profileRepository.changePassword(dto);
+  }
+
+  async changeEmail(dto: ChangeEmailDto): Promise<void> {
+    return this.profileRepository.changeEmail(dto);
+  }
+
+  async deleteAccount(dto: DeleteAccountDto): Promise<void> {
+    return this.profileRepository.deleteAccount(dto);
   }
 
   async getSessions(): Promise<UserSessionEntity[]> {

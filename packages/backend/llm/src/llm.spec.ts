@@ -96,12 +96,10 @@ describe('createLlmService', () => {
 
   it('is configured only once a provider has what it needs to make a call', () => {
     expect(llmIsConfigured({ provider: 'none' })).toBe(false);
-    // The hosted presets need a key; their base URL is built in.
     expect(llmIsConfigured({ provider: 'openrouter' })).toBe(false);
     expect(llmIsConfigured({ provider: 'openrouter', apiKey: 'k' })).toBe(true);
     expect(llmIsConfigured({ provider: 'together', apiKey: 'k' })).toBe(true);
     expect(llmIsConfigured({ provider: 'anthropic', apiKey: 'k' })).toBe(true);
-    // A self-hosted server needs a URL and no key.
     expect(llmIsConfigured({ provider: 'openai-compatible' })).toBe(false);
     expect(llmIsConfigured({ provider: 'openai-compatible', baseUrl })).toBe(true);
   });

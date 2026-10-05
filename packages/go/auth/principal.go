@@ -1,9 +1,8 @@
 // Package auth authenticates machine callers and enforces scope.
 //
-// This service is never called by a browser: the NestJS API talks to it with
-// an API key, and agents it manages (runners, VMs) talk to it with a
-// short-lived service JWT it minted for them. Both resolve to the same
-// Principal, so handlers and use cases never care which one arrived.
+// A service built on it is never called by a browser: a caller holds an API
+// key or a short-lived service JWT the service minted for it. Both resolve to
+// the same Principal, so handlers and use cases never care which one arrived.
 package auth
 
 import (

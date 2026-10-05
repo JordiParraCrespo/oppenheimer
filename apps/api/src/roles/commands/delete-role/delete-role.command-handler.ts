@@ -7,10 +7,7 @@ import { RoleErrors } from '../../domain/role.errors';
 import { ROLE_REPOSITORY } from '../../roles.di-tokens';
 import { DeleteRoleCommand } from './delete-role.command';
 
-/**
- * Deletes a custom role. System roles are protected. Existing assignments in
- * the `user_role` join are removed by the database cascade.
- */
+/** Existing assignments in the `user_role` join go with the role, by the database cascade. */
 @CommandHandler(DeleteRoleCommand)
 export class DeleteRoleCommandHandler implements ICommandHandler<DeleteRoleCommand, void> {
   constructor(
@@ -20,10 +17,7 @@ export class DeleteRoleCommandHandler implements ICommandHandler<DeleteRoleComma
   ) {}
 
   async execute(command: DeleteRoleCommand): Promise<void> {
-    const found = await this.roleRepository.findOneById(
-      command.roleId,
-      command.activeOrganizationId,
-    );
+    const found = await this.roleRepository.findOneById(command.roleId, command.organizationId);
     if (found.isNone()) throw new AppError(RoleErrors.NOT_FOUND);
 
     const role = found.unwrap();
@@ -33,7 +27,7 @@ export class DeleteRoleCommandHandler implements ICommandHandler<DeleteRoleComma
         ? {
             id: command.actorId,
             role: command.actorRole,
-            activeOrganizationId: command.activeOrganizationId,
+            organizationId: command.organizationId,
           }
         : undefined,
       role,

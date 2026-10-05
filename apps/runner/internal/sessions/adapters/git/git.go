@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -26,6 +25,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/execx"
 )
 
 var _ app.Worktrees = (*Client)(nil)
@@ -61,6 +61,16 @@ type Client struct {
 	// both clone it, or cut worktrees while the other is fetching.
 	mu    sync.Mutex
 	repos map[string]*sync.Mutex
+
+	// prewarm keeps a spare worktree per repository (spares.go), held in
+	// spares under mu; warming counts the ones being made.
+	prewarm bool
+	spares  map[string]*spare
+	warming sync.WaitGroup
+
+	// deepening holds, under mu, the mirrors cloned shallow whose history is
+	// still being fetched (deepen); the channel closes when it lands.
+	deepening map[string]chan struct{}
 }
 
 // Options configure the client.
@@ -68,6 +78,9 @@ type Options struct {
 	Layout           domain.Layout
 	Binary           string
 	CredentialHelper string
+	// Spares keeps one worktree per repository checked out ahead of the next
+	// create.
+	Spares bool
 }
 
 // New builds the client.
@@ -78,11 +91,11 @@ func New(opts Options) *Client {
 	}
 	return &Client{
 		layout: opts.Layout, binary: binary, credentialHelper: opts.CredentialHelper,
-		repos: map[string]*sync.Mutex{},
+		repos: map[string]*sync.Mutex{}, prewarm: opts.Spares, spares: map[string]*spare{},
+		deepening: map[string]chan struct{}{},
 	}
 }
 
-// lock takes the repository's lock and returns its release.
 func (c *Client) lock(repo string) func() {
 	c.mu.Lock()
 	m, ok := c.repos[repo]
@@ -95,19 +108,54 @@ func (c *Client) lock(repo string) func() {
 	return m.Unlock
 }
 
-// Ensure makes sure the repository's mirror exists and is up to date. The
-// first call clones; later ones fetch and prune. A clone lands whole or not
-// at all: it is made beside the mirror and renamed into place.
-func (c *Client) Ensure(ctx context.Context, repo, remote string) error {
+// Has implements app.Worktrees. A clone is made beside the mirror and renamed
+// into place once whole, so a mirror with a `.git` is never half a download.
+func (c *Client) Has(repo string) bool {
+	if domain.ValidateRepo(repo) != nil {
+		return false
+	}
+	_, err := os.Stat(filepath.Join(c.layout.Mirror(repo), ".git"))
+	return err == nil
+}
+
+// Ensure makes sure the repository's store exists and that ref is fresh in
+// it; an empty ref fetches every branch. The first call clones; later ones
+// fetch. The store is blobless and has no working tree
+// (02-runner §5): a file's contents arrive when a checkout or a command first
+// reads them, through the same credential helper. A first clone is shallow at
+// ref and gets its history in the background (deepen).
+func (c *Client) Ensure(ctx context.Context, repo, remote, ref string) error {
 	if err := domain.ValidateRepo(repo); err != nil {
 		return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
+	}
+	if ref != "" {
+		if err := domain.ValidateBranch(ref); err != nil {
+			return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
+		}
 	}
 	defer c.lock(repo)()
 	mirror := c.layout.Mirror(repo)
 	if _, err := os.Stat(filepath.Join(mirror, ".git")); err == nil {
-		_, fetchErr := c.run(ctx, command{timeout: fetchTimeout, dir: mirror, repo: repo},
-			"fetch", "--prune", "--tags", "origin")
-		return fetchErr
+		if landed := c.deepeningOf(repo); landed != nil {
+			// A deepen is fetching every branch right now, from a clone made
+			// moments ago: a ref the clone brought is current, and a second
+			// fetch beside the deepen would contend for the same refs.
+			if ref == "" || c.hasRemoteBranch(ctx, mirror, ref) {
+				return nil
+			}
+			select {
+			case <-landed:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+		if err := c.fetch(ctx, repo, mirror, ref); err != nil {
+			return err
+		}
+		// A shallow mirror whose deepen was cut short (a runner restart)
+		// gets its history now.
+		c.deepen(ctx, repo, mirror)
+		return nil
 	}
 	if remote == "" {
 		return domain.ErrWorktree.WithDetail(
@@ -130,8 +178,25 @@ func (c *Client) Ensure(ctx context.Context, repo, remote string) error {
 	if err != nil {
 		return domain.ErrWorktree.WithDetail("create a directory to clone into: %v", err).WithCause(err)
 	}
-	if _, err := c.run(ctx, command{timeout: fetchTimeout, repo: repo},
-		"clone", remote, partial); err != nil {
+	// Shallow first: the base's one commit with its files is what a worktree
+	// needs, and on a large repository it is a third of the time a blobless
+	// clone of the whole history takes (14). The history follows in the
+	// background (deepen), leaving the store blobless as it always was. A
+	// local path ignores --depth, so a test's clone is whole from the start.
+	clone := append(append([]string{}, noMaintenance...), "clone", "--depth=1", "--no-checkout")
+	if ref != "" {
+		clone = append(clone, "--branch", ref)
+	}
+	clone = append(clone, remote, partial)
+	if _, err := c.run(ctx, command{timeout: fetchTimeout, repo: repo}, clone...); err != nil {
+		_ = os.RemoveAll(partial)
+		return err
+	}
+	// Every branch, and the tags: the refspec is what a bare `git fetch` in
+	// the session's shell uses afterwards, and a shallow clone narrows it to
+	// the one branch it fetched.
+	if _, err := c.run(ctx, command{timeout: quickTimeout, dir: partial},
+		"config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"); err != nil {
 		_ = os.RemoveAll(partial)
 		return err
 	}
@@ -139,7 +204,112 @@ func (c *Client) Ensure(ctx context.Context, repo, remote string) error {
 		_ = os.RemoveAll(partial)
 		return domain.ErrWorktree.WithDetail("move the clone into %s: %v", mirror, err).WithCause(err)
 	}
+	c.deepen(ctx, repo, mirror)
 	return nil
+}
+
+// deepen fetches, in the background, the history a shallow mirror was cloned
+// without: every branch's commits and trees, the blobs left to arrive when
+// read, as a blobless clone would have had them. It takes no lock, so creates
+// go on beside it; Ensure leaves the fetching to it while it runs. ctx's
+// session rides along for the token; its end does not.
+func (c *Client) deepen(ctx context.Context, repo, mirror string) {
+	if _, err := os.Stat(filepath.Join(mirror, ".git", "shallow")); err != nil {
+		return
+	}
+	c.mu.Lock()
+	if _, running := c.deepening[repo]; running {
+		c.mu.Unlock()
+		return
+	}
+	landed := make(chan struct{})
+	c.deepening[repo] = landed
+	c.mu.Unlock()
+
+	c.warming.Add(1)
+	go func() {
+		defer c.warming.Done()
+		defer func() {
+			c.mu.Lock()
+			delete(c.deepening, repo)
+			c.mu.Unlock()
+			close(landed)
+		}()
+		ctx := context.WithoutCancel(ctx)
+		quick := command{timeout: quickTimeout, dir: mirror}
+		// Promised objects are what a blobless clone records: the blobs of
+		// older commits stay on the remote until something reads them.
+		if _, err := c.run(ctx, quick, "config", "remote.origin.promisor", "true"); err != nil {
+			return
+		}
+		if _, err := c.run(ctx, quick, "config", "remote.origin.partialclonefilter", "blob:none"); err != nil {
+			return
+		}
+		args := append(append([]string{}, noMaintenance...), "fetch", "--unshallow", "--filter=blob:none", "origin")
+		_, _ = c.run(ctx, command{timeout: fetchTimeout, dir: mirror, repo: repo}, args...)
+	}()
+}
+
+// deepeningOf is the channel a running deepen of repo closes, or nil.
+func (c *Client) deepeningOf(repo string) chan struct{} {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.deepening[repo]
+}
+
+// hasRemoteBranch reports origin/<branch> in mirror.
+func (c *Client) hasRemoteBranch(ctx context.Context, mirror, branch string) bool {
+	_, err := c.run(ctx, command{timeout: quickTimeout, dir: mirror},
+		"rev-parse", "--verify", "--quiet", "refs/remotes/origin/"+branch)
+	return err == nil
+}
+
+// PrepareRepository gets repo ready for a create that has not been asked for
+// yet: its mirror cloned or base fetched, and a spare worktree at base made
+// and checked out. It returns once those are done and a first clone's history
+// has landed, so the caller's context (the token its git rides on) is live for
+// all of it; a create takes the spare as soon as it is ready. A spare already
+// there, or being made, is kept.
+func (c *Client) PrepareRepository(ctx context.Context, repo, remote, base string) error {
+	if err := c.Ensure(ctx, repo, remote, base); err != nil {
+		return err
+	}
+	if s := c.warm(ctx, repo, base); s != nil {
+		select {
+		case <-s.done:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	// The history a shallow clone left out is fetched under this context's
+	// identity too: the caller's token must outlive it. A create meanwhile
+	// takes the spare and goes on without it.
+	if landed := c.deepeningOf(repo); landed != nil {
+		select {
+		case <-landed:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	return nil
+}
+
+// noMaintenance keeps git from packing or gc-ing the store on the back of a
+// session's clone or fetch: that work is git's to do some other time, not while a
+// person waits for a terminal.
+var noMaintenance = []string{"-c", "maintenance.auto=false", "-c", "gc.auto=0"}
+
+// fetch is the one fetch a create waits on: the ref its worktree is made from,
+// or every branch when it names none.
+func (c *Client) fetch(ctx context.Context, repo, mirror, ref string) error {
+	args := append(append([]string{}, noMaintenance...), "fetch", "--no-tags", "origin")
+	if ref == "" {
+		args = append(args, "--prune")
+	} else {
+		args = append(args, "+refs/heads/"+ref+":refs/remotes/origin/"+ref)
+	}
+	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: mirror, repo: repo}, args...)
+	return err
 }
 
 // sweepPartials removes clones in progress that no clone is still writing:
@@ -170,6 +340,9 @@ func sweepPartials(parent string) {
 // session's own, left by an attempt cut short, and a redelivered create takes
 // it over rather than refusing it (recovery.go).
 func (c *Client) Add(ctx context.Context, repo, path, branch, base string, newBranch bool) error {
+	if newBranch {
+		c.awaitSpare(ctx, repo)
+	}
 	defer c.lock(repo)()
 	mirror := c.layout.Mirror(repo)
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
@@ -184,24 +357,57 @@ func (c *Client) Add(ctx context.Context, repo, path, branch, base string, newBr
 		return domain.ErrSessionExists.WithDetail("%s", found.reason)
 	case adopt:
 		return c.adopt(ctx, mirror, path, found)
+	case claimed:
+		if !newBranch {
+			return domain.ErrSessionExists.WithDetail("%s already exists, on a detached HEAD", path)
+		}
+		if err := c.checkoutSession(ctx, mirror, path, branch, base); err != nil {
+			return err
+		}
+		c.warm(ctx, repo, base)
+		return nil
 	case recreate:
 		if err := c.clear(ctx, mirror, path, found); err != nil {
 			return err
 		}
 	case vacant:
 	}
+	if newBranch && c.claim(ctx, repo, mirror, path, branch, base) {
+		c.warm(ctx, repo, base)
+		return nil
+	}
 
 	args := []string{"worktree", "add"}
 	switch {
 	case !newBranch:
 		args = append(args, path, branch)
+	// --no-track: a session's branch is pushed to a branch of its own
+	// (push --set-upstream), never pulled from its base, and git's guess at
+	// tracking the base fails outright when two refspecs map onto it.
 	case c.leftoverBranch(ctx, mirror, branch, startPoint(base)):
-		args = append(args, "-B", branch, path, startPoint(base))
+		args = append(args, "--no-track", "-B", branch, path, startPoint(base))
 	default:
-		args = append(args, "-b", branch, path, startPoint(base))
+		args = append(args, "--no-track", "-b", branch, path, startPoint(base))
 	}
-	_, err = c.run(ctx, command{timeout: fetchTimeout, dir: mirror}, args...)
-	return err
+	if _, err = c.run(ctx, command{timeout: fetchTimeout, dir: mirror}, args...); err != nil {
+		return err
+	}
+	c.warm(ctx, repo, base)
+	return nil
+}
+
+// Prepare makes the directory this repository's worktrees are created in and
+// answers it. The session's terminal is started there before the worktree
+// exists, so the reader is in the pane while the clone is still running.
+func (c *Client) Prepare(ctx context.Context, repo string) (string, error) {
+	if err := domain.ValidateRepo(repo); err != nil {
+		return "", domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
+	}
+	dir := filepath.Dir(c.layout.Worktree(repo, "x"))
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", domain.ErrWorktree.WithDetail("create %s: %v", dir, err).WithCause(err)
+	}
+	return dir, nil
 }
 
 // Remove deletes a worktree and prunes git's record of it.
@@ -235,7 +441,14 @@ func (c *Client) Dirty(ctx context.Context, path string) (bool, error) {
 // to say — and `--set-upstream` is harmless when the upstream is already set,
 // which keeps this one command instead of a check plus a command that can
 // disagree with each other.
+//
+// A push always needs a credential, so one done for no session is refused
+// before it reaches the network: the helper would have nothing to ask for,
+// and GitHub's refusal would read as work that could not be pushed.
 func (c *Client) Push(ctx context.Context, path, branch string) (bool, error) {
+	if c.credentialHelper != "" && domain.SessionOf(ctx) == "" {
+		return false, credentialRefused("push", "", "")
+	}
 	out, err := c.run(ctx, command{timeout: fetchTimeout, dir: path}, "push", "--set-upstream", "origin", branch)
 	if err != nil {
 		return false, pushRejected(out, err)
@@ -257,40 +470,49 @@ type command struct {
 // doing work for (domain.WithSession) is handed to the credential helper.
 func (c *Client) run(ctx context.Context, how command, args ...string) (string, error) {
 	session := domain.SessionOf(ctx)
-	ctx, cancel := context.WithTimeout(ctx, how.timeout)
-	defer cancel()
 
-	full := []string{"-c", "advice.detachedHead=false"}
+	// A checkout writes its files from one worker per core: on a large tree
+	// that halves the step a person waits on for a worktree (14).
+	full := []string{"-c", "advice.detachedHead=false", "-c", "checkout.workers=0"}
 	if c.credentialHelper != "" {
-		// The helper is the runner's own subcommand over the local socket;
-		// no token is ever written to a config file or a command line.
 		full = append(full, "-c", "credential.helper=", "-c", "credential.helper="+c.credentialHelper)
 	}
 	full = append(full, args...)
 
-	cmd := exec.CommandContext(ctx, c.binary, full...) //nolint:gosec // fixed binary, arguments built here
-	killGroupOnCancel(cmd)
-	// Whatever is still holding git's output once it has been killed is not
-	// waited for past this.
-	cmd.WaitDelay = waitDelay
-	cmd.Dir = how.dir
-	cmd.Env = append(os.Environ(),
-		"GIT_TERMINAL_PROMPT=0",
-		"GIT_ASKPASS=",
-		"GCM_INTERACTIVE=never",
-		// Always set, empty or not: the daemon's own environment must never
-		// lend a command a session it is not for.
-		SessionEnv+"="+session,
-	)
-	out, err := cmd.CombinedOutput()
-	text := strings.TrimRight(string(out), "\n")
+	res, err := execx.Run(ctx, execx.Spec{
+		Name: c.binary,
+		Args: full,
+		Dir:  how.dir,
+		Env: append(os.Environ(),
+			"GIT_TERMINAL_PROMPT=0",
+			"GIT_ASKPASS=",
+			"GCM_INTERACTIVE=never",
+			// Always set, empty or not: the daemon's own environment must never
+			// lend a command a session it is not for.
+			SessionEnv+"="+session,
+		),
+		Timeout: how.timeout,
+		// git hands the network to helpers (`git-remote-https`, `ssh`) that
+		// inherit its output: a cancel kills them with it, and whatever is
+		// still holding that output is not waited for past waitDelay.
+		KillGroup: true,
+		WaitDelay: waitDelay,
+		Output:    execx.Combined,
+	})
+	text := res.Out
 	if err != nil {
 		verb := strings.Join(args, " ")
+		// TimedOut and Canceled read the context git ran under, so a deadline
+		// the caller's context already had is reported as a timeout too.
+		var failed *execx.Error
+		timedOut := errors.As(err, &failed) && failed.TimedOut
+		canceled := failed != nil && failed.Canceled
+		err = execx.Cause(err)
 		switch {
-		case errors.Is(ctx.Err(), context.DeadlineExceeded):
+		case timedOut:
 			return text, domain.ErrGitCommand.WithDetail(
 				"git %s timed out after %s", verb, how.timeout).WithCause(err)
-		case errors.Is(ctx.Err(), context.Canceled):
+		case canceled:
 			// git did not fail: the runner stopped waiting for it. Whatever
 			// git printed last is not the reason — it may well be git saying
 			// it succeeded — so it is not quoted.

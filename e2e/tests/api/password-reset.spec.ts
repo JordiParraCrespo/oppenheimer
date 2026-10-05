@@ -236,7 +236,7 @@ test.describe('change password', () => {
   });
 });
 
-/** Helper: the user id behind an email, used for password-hash comparisons. */
+/** The user id behind an email, used for password-hash comparisons. */
 async function findResetTokenOwner(email: string): Promise<string | undefined> {
   const { findUserByEmail } = await import('../../support/db');
   return (await findUserByEmail(email))?.id;

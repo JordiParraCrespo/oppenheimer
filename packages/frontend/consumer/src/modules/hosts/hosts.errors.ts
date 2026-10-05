@@ -17,4 +17,8 @@ export const HostsErrors = {
     code: 'HOSTS_CLIENT_003',
     message: 'Failed to remove the host',
   },
+  RENAME_FAILED: {
+    code: 'HOSTS_CLIENT_004',
+    message: 'Failed to rename the host',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

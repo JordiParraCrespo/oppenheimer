@@ -1,7 +1,14 @@
 import { z } from 'zod';
-import { SESSION_EFFORTS, SESSION_PERMISSIONS } from '../agents/catalog';
-import { PAGINATION } from '../constants';
-import { paginationSchema } from './pagination.schema';
+import { SESSION_EFFORTS, SESSION_PERMISSIONS } from '../agents/catalog.js';
+import { PAGINATION } from '../constants/index.js';
+import {
+  attachedFilesAreValid,
+  SESSION_CREATE_MAX_FILES,
+  SESSION_FILE_MAX_BYTES,
+  SESSION_FILE_MEDIA_TYPES,
+  type SessionFileMediaType,
+} from '../protocol/session-file.js';
+import { paginationSchema } from './pagination.schema.js';
 import {
   codingAgentSchema,
   displayNameSchema,
@@ -9,21 +16,12 @@ import {
   gitRefSchema,
   installationIdSchema,
   promptSchema,
-} from './primitives';
+} from './primitives.js';
 
 /**
- * Session shapes.
- *
  * A session is one piece of work inside a project: a terminal, an agent, and a
  * set of checkouts. A **checkout** is one repository checked out for one session
- * on its own branch, and a session has zero or more of them — zero is a real
- * session working in `sessions/<slug>/` with no git at all.
- *
- * This file is the fields the routes accept and the constraints that are
- * decidable from the body alone. It is deliberately not where the sessions
- * module's behaviour is written down.
- *
- * Schemas state the constraint only, never a message (`.agents/rules/forms.md`).
+ * on its own branch; the MVP takes exactly one (`checkouts` below).
  */
 
 export { codingAgentSchema, SESSION_EFFORTS, SESSION_PERMISSIONS };
@@ -39,33 +37,30 @@ export type SessionEffortDto = z.infer<typeof sessionEffortSchema>;
 /**
  * How the agent is started: the composer's foot row, as one object.
  *
- * Four controls that always travel together — the route body, the log payload,
- * `session.create` and the response all carry this same shape — so it is named
- * once rather than spelled four times in four places
- * (`product/versions/mvp/03-control-plane.md`).
+ * The route body, the log payload, `session.create` and the response all carry
+ * this same shape, so it is named once (`product/versions/mvp/03-control-plane.md`).
  *
  * `agent` is deliberately **not** in here. The agent is what the session is;
  * the launch is how it was started, and only the second is something a later
  * slice changes without making a different session.
  *
- * `permission` absent means `ask` and nothing else, for every agent that has
- * approvals: it is the level that asks before every action, and a default that
- * escalates is the one mistake this field must not make. The console never
- * seeds `full` from a remembered choice either, for the same reason. The
- * default is applied where the agent is known (the API's launch mapping), not
- * here, because an agent with no approvals — the blank terminal — records no
- * level at all.
+ * `permission` absent means `ask` for every agent that has approvals: a default
+ * that escalates is the one mistake this field must not make, which is also why
+ * the console never seeds `full` from a remembered choice. The default is
+ * applied where the agent is known (the API's launch mapping), not here, because
+ * an agent with no approvals — the blank terminal — records no level at all.
  *
- * What each value means to a given CLI is catalog data, beside that agent's
- * command (`../agents/catalog`), because the answer differs per agent and a
- * column here would state it once per agent.
+ * What each value means to a given CLI is catalog data (`../agents/catalog`).
  */
 export const sessionLaunchSchema = z.object({
   /** An id or alias the agent's own CLI takes; absent runs that agent's default. */
   model: z.string().min(1).max(128).optional(),
   /** Absent is `ask` for an agent with approvals, and nothing for one without. */
   permission: sessionPermissionSchema.optional(),
-  /** Absent leaves the agent's own default; an agent with no notion of it ignores it. */
+  /**
+   * A level the session's model offers (`effortLevelFor`); any other name in
+   * the union is recorded as none and never sent. Absent is the CLI's own default.
+   */
   effort: sessionEffortSchema.optional(),
 });
 
@@ -79,7 +74,7 @@ export type SessionLaunchDto = z.infer<typeof sessionLaunchSchema>;
  *
  * `baseBranch` is what the session's branch is created *from*, defaulting to the
  * repository's default branch when absent. There is no branch field: the working
- * branch is always `oppenheimer/<project.slug>/<work_session.slug>`, never the
+ * branch is always `oppenheimer/<work_session.slug>`, never the
  * base itself — git refuses a worktree on a branch another worktree already
  * holds, so two sessions "on main" would fail at the second.
  *
@@ -107,12 +102,12 @@ const createSessionFields = z.object({
   projectId: z.string().uuid().optional(),
   name: displayNameSchema.optional(),
   /**
-   * At most one in the MVP: a runner makes one worktree per session, so a
-   * second repository is refused here, before a row is written and the first
-   * prompt spent on a session no host can make (#56, 00). Empty is a session
-   * with no git at all, on purpose.
+   * Exactly one in the MVP: a runner makes one worktree per session and
+   * cannot launch one with no git, so a second repository, or none, is refused
+   * here, before a row is written and the first prompt spent on a session no
+   * host can make (#56, 00, 10).
    */
-  checkouts: z.array(sessionCheckoutInputSchema).max(MAX_SESSION_CHECKOUTS),
+  checkouts: z.array(sessionCheckoutInputSchema).min(1).max(MAX_SESSION_CHECKOUTS),
   /** Which checkout the agent is launched inside. Must be one of `checkouts`. */
   cwdGithubRepoId: githubRepoIdSchema.optional(),
   /** The composer's foot row. Absent is `ask` with each agent's own defaults. */
@@ -121,10 +116,17 @@ const createSessionFields = z.object({
    * The first task, as typed into the composer.
    *
    * It is recorded as the log's `prompt.first` and carried to the host on the
-   * launch, so the agent is started and then given it — never a second message
-   * racing the first. It also names the session where a namer is configured.
+   * launch, so the agent starts with it — never a second message racing the
+   * first. It also names the session where a namer is configured.
    */
   prompt: promptSchema.optional(),
+  /**
+   * Files attached to the first task (images, PDF, text), each uploaded beforehand with
+   * `POST /sessions/attachments` and named here by the id that returned
+   * (`product/versions/mvp/03-control-plane.md`). What becomes of them on the
+   * wire is `session.create`'s `images`.
+   */
+  attachmentIds: z.array(z.string().uuid()).max(SESSION_CREATE_MAX_FILES).optional(),
 });
 
 /**
@@ -155,7 +157,11 @@ export const createSessionSchema = createSessionFields
       new Set(value.checkouts.map((checkout) => checkout.githubRepoId)).size ===
       value.checkouts.length,
     { path: ['checkouts'] },
-  );
+  )
+  /** The wire's own rule for `session.create`'s images: they ride a task, each once. */
+  .refine((value) => attachedFilesAreValid(value.prompt, value.attachmentIds), {
+    path: ['attachmentIds'],
+  });
 
 export type CreateSessionDto = z.infer<typeof createSessionSchema>;
 
@@ -165,6 +171,19 @@ export type CreateSessionDto = z.infer<typeof createSessionSchema>;
  * screen would be a needless limit.
  */
 export const addCheckoutSchema = sessionCheckoutInputSchema;
+
+/**
+ * Get a host ready for a session not yet asked for: the repositories it will
+ * check out, cloned or fetched and a spare worktree made, so the create that
+ * follows waits on neither. New session sends it as soon as a host and a
+ * repository are picked. Nothing is recorded.
+ */
+export const prepareSessionSchema = z.object({
+  hostId: z.string().uuid(),
+  checkouts: z.array(sessionCheckoutInputSchema).min(1).max(MAX_SESSION_CHECKOUTS),
+});
+
+export type PrepareSessionInput = z.infer<typeof prepareSessionSchema>;
 
 export type AddCheckoutDto = z.infer<typeof addCheckoutSchema>;
 
@@ -180,9 +199,8 @@ export type RenameSessionDto = z.infer<typeof renameSessionSchema>;
  * event log, never a second truth.
  *
  * It is one of three vocabularies and the narrowest of them. The agent's own
- * observations (`working`, `blocked`, `idle`, `done`, `unknown`) are inputs
- * reported as events and never a session state: mapping `done` and `unknown`
- * onto this union was the error an earlier draft made.
+ * observations (`OBSERVED_AGENT_STATES` in `../protocol/primitives`) are inputs
+ * reported as events, never a session state.
  */
 export const SESSION_STATES = ['starting', 'open', 'failed', 'resolved'] as const;
 
@@ -197,7 +215,8 @@ export type SessionState = z.infer<typeof sessionStateSchema>;
  * `waiting-on-you` has four sources — the session failed, the agent has been
  * blocked for ≥ 30 s, a launch has sat in a non-ready state for ≥ 60 s, or the
  * pane is gone with no report. `landing` is the phase after the agent stops:
- * branch pushed, pull request open and approved, not yet merged.
+ * branch pushed, pull request open and approved, not yet merged. The pane-gone
+ * source and `landing` have no writer yet (the API's `session-group.policy.ts`).
  * `ready-for-review` versus `idle` is not a state at all but a hash comparison.
  */
 export const SESSION_GROUPS = [
@@ -217,10 +236,10 @@ export type SessionGroup = z.infer<typeof sessionGroupSchema>;
  * A tmux window index — tabs are tmux windows, so an attach ticket authorises
  * one window.
  *
- * Written out rather than imported from `../protocol`, which the root barrel
- * deliberately does not re-export: pulling the wire vocabulary in here would put
- * it in every browser bundle that imports a session schema. Keep the two in
- * step; there is one number to keep.
+ * Written out rather than imported from `../protocol/primitives`, whose schema
+ * objects are `zod/v4` and cannot be used from a classic `zod` schema (see
+ * `./primitives`), and whose load registers JSON-Schema ids, a side effect no
+ * browser bundle should carry. Keep the two in step; there is one number to keep.
  */
 const sessionWindowSchema = z.number().int().min(0);
 
@@ -238,7 +257,8 @@ export const issueAttachTicketSchema = z.object({
 export type IssueAttachTicketDto = z.infer<typeof issueAttachTicketSchema>;
 
 /**
- * `POST /sessions/{id}/images` — the form fields beside the file. A multipart
+ * `POST /sessions/{id}/images` — a file for a running session's prompt (the
+ * route keeps its first name); these are the form fields beside it. A multipart
  * field arrives as text, so the window is coerced; absent, it is the agent's.
  */
 export const pasteSessionImageSchema = z.object({
@@ -246,6 +266,20 @@ export const pasteSessionImageSchema = z.object({
 });
 
 export type PasteSessionImageDto = z.infer<typeof pasteSessionImageSchema>;
+
+/**
+ * `POST /sessions/attachments` — a file for a session that does not exist
+ * yet. The console uploads each file the composer holds when the task is sent,
+ * then names them in `attachmentIds` on `POST /sessions`; an upload nobody
+ * names expires on its own.
+ */
+export const sessionAttachmentSchema = z.object({
+  id: z.string().uuid(),
+  mediaType: z.enum(SESSION_FILE_MEDIA_TYPES as [SessionFileMediaType, ...SessionFileMediaType[]]),
+  size: z.number().int().min(1).max(SESSION_FILE_MAX_BYTES),
+});
+
+export type SessionAttachmentDto = z.infer<typeof sessionAttachmentSchema>;
 
 /**
  * `DELETE /sessions/{id}` — the close.
@@ -286,7 +320,6 @@ export const moveSessionSchema = z.object({
 
 export type MoveSessionDto = z.infer<typeof moveSessionSchema>;
 
-/** The orders the session list can come back in. */
 export const SESSION_SORTS = ['recent', 'oldest', 'name'] as const;
 
 export const sessionSortSchema = z.enum(SESSION_SORTS);
@@ -301,6 +334,11 @@ export type SessionSortDto = z.infer<typeof sessionSortSchema>;
  * provisional with the rest of how sessions are organized (05): `recent` is last
  * activity first and is the default, `oldest` is creation order, `name` is
  * alphabetical.
+ *
+ * `cursor` is the previous page's `meta.nextCursor`, opaque, for the same
+ * `sort`. With it the list is walked by key instead of by page: no count, and a
+ * session is never returned twice in one walk however the list moves under it.
+ * Without it, the list pages by `page`.
  */
 export const listSessionsQuerySchema = paginationSchema.extend({
   projectId: z.string().uuid().optional(),
@@ -309,6 +347,7 @@ export const listSessionsQuerySchema = paginationSchema.extend({
   githubRepoId: z.coerce.number().int().positive().optional(),
   agent: codingAgentSchema.optional(),
   sort: sessionSortSchema.optional(),
+  cursor: z.string().min(1).max(512).optional(),
 });
 
 export type ListSessionsQueryDto = z.infer<typeof listSessionsQuerySchema>;

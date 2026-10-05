@@ -1,11 +1,14 @@
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
+import { calendarKeys } from '../calendar.queries';
 import { hostsKeys } from '../hosts.queries';
 import { installationsKeys } from '../installations.queries';
+import { tasksKeys } from '../tasks.queries';
 
 /**
- * The key shapes, and what invalidating one of them reaches. Reach is asked of
- * a real `QueryClient`, so the answer is React Query's own matcher.
+ * What invalidating or removing a key reaches, asked of a real `QueryClient`,
+ * so the answer is React Query's own matcher rather than a key's spelling; and
+ * that an id nobody chose stays `undefined`, since the hook gates on it.
  */
 
 function cacheWith(...keys: (readonly unknown[])[]) {
@@ -18,42 +21,6 @@ const invalidated = (client: QueryClient, key: readonly unknown[]) =>
   client.getQueryState(key)?.isInvalidated ?? false;
 
 describe('installationsKeys', () => {
-  it('gives repositories the full ladder, one function per level', () => {
-    expect(installationsKeys.repositoryLists('inst-1')).toEqual(
-      installationsKeys.repositoryList('inst-1'),
-    );
-    expect(installationsKeys.repositoryDetails('inst-1')).toEqual([
-      'installations',
-      'detail',
-      'inst-1',
-      'repositories',
-      'detail',
-    ]);
-    expect(installationsKeys.repositoryDetail('inst-1', 42)).toEqual([
-      ...installationsKeys.repositoryDetails('inst-1'),
-      42,
-    ]);
-  });
-
-  it('splits repositories into a list and per-repository details', () => {
-    expect(installationsKeys.repositoryList('inst-1')).toEqual([
-      'installations',
-      'detail',
-      'inst-1',
-      'repositories',
-      'list',
-    ]);
-    expect(installationsKeys.branches('inst-1', 42)).toEqual([
-      'installations',
-      'detail',
-      'inst-1',
-      'repositories',
-      'detail',
-      42,
-      'branches',
-    ]);
-  });
-
   it('keeps an id nobody chose as undefined rather than a made-up one', () => {
     expect(installationsKeys.repositoryList(undefined)).toContain(undefined);
     expect(installationsKeys.branches('inst-1', undefined)).toContain(undefined);
@@ -84,14 +51,6 @@ describe('installationsKeys', () => {
 });
 
 describe('hostsKeys', () => {
-  it('gives pairing the full ladder, one function per level', () => {
-    expect(hostsKeys.pairings()).toEqual(['hosts', 'pairing']);
-    expect(hostsKeys.pairingLists()).toEqual(['hosts', 'pairing', 'list']);
-    expect(hostsKeys.pairingList()).toEqual(['hosts', 'pairing', 'list']);
-    expect(hostsKeys.pairingDetails()).toEqual(['hosts', 'pairing', 'detail']);
-    expect(hostsKeys.pairingDetail('laptop')).toEqual(['hosts', 'pairing', 'detail', 'laptop']);
-  });
-
   it('refreshes the token poll without minting a new token', async () => {
     const client = cacheWith(hostsKeys.pairingList(), hostsKeys.pairingDetail('laptop'));
 
@@ -108,5 +67,36 @@ describe('hostsKeys', () => {
 
     expect(invalidated(client, hostsKeys.list())).toBe(true);
     expect(invalidated(client, hostsKeys.pairingList())).toBe(false);
+  });
+});
+
+describe('tasksKeys', () => {
+  it('refreshes every task list, the board and a session’s alike, without touching the goals', async () => {
+    const board = tasksKeys.list({});
+    const session = tasksKeys.list({ sessionId: 's-1' });
+    const goals = tasksKeys.goalList();
+    const client = cacheWith(board, session, goals);
+
+    await client.invalidateQueries({ queryKey: tasksKeys.lists() });
+
+    expect(invalidated(client, board)).toBe(true);
+    expect(invalidated(client, session)).toBe(true);
+    expect(invalidated(client, goals)).toBe(false);
+  });
+});
+
+describe('calendarKeys', () => {
+  it('refreshes the workspace’s events without reading Google again', async () => {
+    const october = calendarKeys.eventRange({ from: '2026-10-01', to: '2026-10-31' });
+    const google = calendarKeys.googleEvents(
+      { from: '2026-10-01', to: '2026-10-31' },
+      'Europe/Madrid',
+    );
+    const client = cacheWith(october, google);
+
+    await client.invalidateQueries({ queryKey: calendarKeys.events() });
+
+    expect(invalidated(client, october)).toBe(true);
+    expect(invalidated(client, google)).toBe(false);
   });
 });

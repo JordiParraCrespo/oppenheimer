@@ -1,7 +1,7 @@
 import { Controller, Get, Query, UseGuards, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
+import { ApiAuthProblemResponses, toPageMeta } from '@oppenheimer/backend-core';
 import type { Paginated } from '@oppenheimer/backend-ddd';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
@@ -45,12 +45,7 @@ export class FindFlagChangesHttpController {
     );
     return {
       data: result.data.map((change) => this.mapper.toChangeResponse(change)),
-      meta: {
-        total: result.count,
-        page: result.page,
-        limit: result.limit,
-        totalPages: Math.ceil(result.count / result.limit),
-      },
+      meta: toPageMeta(result),
     };
   }
 }

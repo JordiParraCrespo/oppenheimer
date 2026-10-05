@@ -1,9 +1,14 @@
-import { AppError } from '@oppenheimer/backend-core';
+import {
+  defineAbilitiesFromPermissions,
+  type PermissionDefinition,
+  SYSTEM_ROLE_PERMISSIONS,
+} from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserRepositoryPort } from '../../../../users/database/user.repository.port';
 import { UserErrors } from '../../../../users/domain/user.errors';
-import type { RoleGrantPolicy } from '../../../application/role-grant.policy';
+import type { AbilityFactory } from '../../../application/ability.factory';
+import { RoleGrantPolicy } from '../../../application/role-grant.policy';
 import type { RoleRepositoryPort } from '../../../database/role.repository.port';
 import type { UserRoleRepositoryPort } from '../../../database/user-role.repository.port';
 import { RoleEntity } from '../../../domain/role.entity';
@@ -43,6 +48,8 @@ describe('AssignUserRolesCommandHandler', () => {
       findRoleIdsForUser: vi.fn(),
       findRolesForUser: vi.fn(),
       setRolesForUser: vi.fn().mockResolvedValue(undefined),
+      assignRoleToUser: vi.fn(),
+      replaceMembershipRole: vi.fn(),
     };
     grantPolicy = {
       assertGrantable: vi.fn().mockResolvedValue(undefined),
@@ -99,7 +106,7 @@ describe('AssignUserRolesCommandHandler', () => {
       new AssignUserRolesCommand({
         userId: 'user-1',
         roleIds: ['r1', 'r2'],
-        activeOrganizationId: 'organization-1',
+        organizationId: 'organization-1',
       }),
     );
 
@@ -124,36 +131,68 @@ describe('AssignUserRolesCommandHandler', () => {
         roleIds: ['r1'],
         actorId: 'actor-1',
         actorRole: 'admin',
-        activeOrganizationId: 'organization-1',
+        organizationId: 'organization-1',
       }),
     );
 
     expect(grantPolicy.assertGrantable).toHaveBeenCalledWith(
-      { id: 'actor-1', role: 'admin', activeOrganizationId: 'organization-1' },
+      { id: 'actor-1', role: 'admin', organizationId: 'organization-1' },
       [permission.toDefinition()],
     );
   });
 
-  it('does not write the join when the actor cannot grant the assigned roles', async () => {
-    const permission = Permission.fromDefinition({
-      action: 'manage',
-      subject: 'all',
-    });
-    vi.mocked(roleRepo.findByIds).mockResolvedValue([makeRole('r1', [permission])]);
-    vi.mocked(grantPolicy.assertGrantable).mockRejectedValue(
-      new AppError(RoleErrors.PERMISSION_NOT_GRANTABLE),
-    );
+  describe('with the real grant policy', () => {
+    /** The handler wired to a real `RoleGrantPolicy` over an actor holding `actorRules`. */
+    function handlerFor(actorRules: PermissionDefinition[]): AssignUserRolesCommandHandler {
+      const abilityFactory = {
+        createForUser: vi.fn(async (user, scope) =>
+          defineAbilitiesFromPermissions(actorRules, {
+            user,
+            activeOrganizationId: scope?.organizationId ?? null,
+            activeTeamId: null,
+          }),
+        ),
+      } as unknown as AbilityFactory;
+      return new AssignUserRolesCommandHandler(
+        userRepo as UserRepositoryPort,
+        roleRepo as RoleRepositoryPort,
+        userRoleRepo,
+        new RoleGrantPolicy(abilityFactory),
+      );
+    }
 
-    await expect(
-      service.execute(
+    const assign = (handler: AssignUserRolesCommandHandler) =>
+      handler.execute(
         new AssignUserRolesCommand({
           userId: 'user-1',
           roleIds: ['r1'],
           actorId: 'actor-1',
-          actorRole: 'user',
+          organizationId: 'organization-1',
         }),
-      ),
-    ).rejects.toMatchObject({ code: RoleErrors.PERMISSION_NOT_GRANTABLE.code });
-    expect(userRoleRepo.setRolesForUser).not.toHaveBeenCalled();
+      );
+
+    it('lets `manage all` assign the conditioned owner role', async () => {
+      vi.mocked(roleRepo.findByIds).mockResolvedValue([
+        makeRole(
+          'r1',
+          SYSTEM_ROLE_PERMISSIONS.owner.map((rule) => Permission.fromDefinition(rule)),
+        ),
+      ]);
+
+      await assign(handlerFor([{ action: 'manage', subject: 'all' }]));
+
+      expect(userRoleRepo.setRolesForUser).toHaveBeenCalledWith('user-1', ['r1'], 'organization-1');
+    });
+
+    it('stops an owner assigning a role wider than their organization', async () => {
+      vi.mocked(roleRepo.findByIds).mockResolvedValue([
+        makeRole('r1', [Permission.fromDefinition({ action: 'manage', subject: 'Session' })]),
+      ]);
+
+      await expect(assign(handlerFor(SYSTEM_ROLE_PERMISSIONS.owner))).rejects.toMatchObject({
+        code: RoleErrors.PERMISSION_NOT_GRANTABLE.code,
+      });
+      expect(userRoleRepo.setRolesForUser).not.toHaveBeenCalled();
+    });
   });
 });

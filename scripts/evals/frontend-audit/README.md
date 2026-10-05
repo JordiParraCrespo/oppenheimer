@@ -14,7 +14,7 @@ leaf that shows it, a debounced search, and an effect that names its system.
 
 ```bash
 node scripts/evals/frontend-audit/run.mjs --validate        # the fixtures, no agent: must be 12/12
-node scripts/evals/frontend-audit/run.mjs [--case <id>]     # the agent (default claude-sonnet-5)
+node scripts/evals/frontend-audit/run.mjs [--case <id>]     # the agent (default claude-sonnet-5-5)
 node scripts/evals/frontend-audit/run.mjs --trials 3        # each case three times
 node scripts/evals/frontend-audit/run.mjs --grade <report>  # re-grade a saved report
 ```

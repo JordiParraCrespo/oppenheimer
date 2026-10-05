@@ -1,11 +1,10 @@
 'use client';
 
-import { shareEntities, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type {
@@ -38,8 +37,6 @@ export function useProjects<TData = ProjectEntity[]>(
   return useQuery<ProjectEntity[], Error, TData>({
     queryKey: projectsKeys.list(),
     queryFn: () => app.projects.findAll(),
-    // Entities are classes: without this every refetch is a new object per project.
-    structuralSharing: shareEntities,
     ...options,
   });
 }
@@ -90,7 +87,7 @@ export function useUpdateProject(
   });
 }
 
-/** Archive: the row stays so its directory name is never reissued, and the listing leaves it out. */
+/** Archive: the row stays so its slug is never reissued, and the listing leaves it out. */
 export function useArchiveProject(options?: UseMutationOptions<ProjectEntity, Error, string>) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();

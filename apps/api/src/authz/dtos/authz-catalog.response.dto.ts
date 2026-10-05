@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-/** One action a resource supports. */
 export class ResourceActionDto {
   @ApiProperty({ example: 'read' })
   name!: string;
@@ -15,7 +14,6 @@ export class ResourceActionDto {
   sensitive?: boolean;
 }
 
-/** A resource a role can be granted permissions over. */
 export class AuthzResourceDto {
   @ApiProperty({ example: 'Project' })
   subject!: string;
@@ -48,7 +46,6 @@ export class AuthzResourceDto {
   credentialScope?: string;
 }
 
-/** Resources grouped for display. */
 export class AuthzResourceGroupDto {
   @ApiProperty({ example: 'control-plane' })
   group!: string;
@@ -57,7 +54,6 @@ export class AuthzResourceGroupDto {
   resources!: AuthzResourceDto[];
 }
 
-/** A single `(action, subject)` pair. */
 export class AuthzRuleDto {
   @ApiProperty({ example: 'read' })
   action!: string;

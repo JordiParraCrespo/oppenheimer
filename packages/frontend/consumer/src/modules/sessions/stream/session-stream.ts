@@ -3,6 +3,7 @@ import {
   type AttachClientMessage,
   attachServerMessageSchema,
 } from '@oppenheimer/shared/protocol';
+import { CONSUMER_CONFIG } from '../../../config';
 
 /**
  * The contract between the console and whatever is feeding a terminal.
@@ -10,14 +11,13 @@ import {
  * `product/versions/mvp/01-protocol.md` decides the wire: PTY bytes as binary
  * WebSocket frames, control messages as JSON on the same socket, the browser
  * acking consumed bytes. This interface is that shape with the socket left
- * out, so the screen holds a stream and never a socket — and so the replay in
- * `fake-session-stream.ts` and the real transport below are interchangeable.
+ * out, so the screen holds a stream and never a socket.
  */
 
 /**
- * `offline` is the ticket's own hint (`host_offline`): the session's host holds
- * no link right now. The stream keeps trying behind it, so it is a state rather
- * than an end.
+ * `offline` is the relay's `host_offline` on the attach socket (a hint, or
+ * the close code): the session's host holds no link right now. The stream
+ * keeps trying behind it, so it is a state rather than an end.
  */
 export type StreamStatus = 'connecting' | 'live' | 'offline' | 'closed';
 
@@ -48,8 +48,14 @@ export interface SessionStream {
   onStatus(listener: (status: StreamStatus) => void): () => void;
   /** Keystrokes, already encoded by the terminal. */
   send(data: string): void;
-  /** The grid changed shape; the PTY needs to know. */
   resize(cols: number, rows: number): void;
+  /**
+   * Skip the rest of the wait before the next reconnect and dial now: the
+   * reader pressed Retry, the browser came back online, or the tab became
+   * visible again. Does nothing while a dial is already in flight, once the
+   * stream is live, or once it has ended.
+   */
+  reconnectNow(): void;
   dispose(): void;
 }
 
@@ -72,12 +78,24 @@ export interface SessionStreamOptions {
   schedule?: (fn: () => void, ms: number) => () => void;
 }
 
-/** The reconnect ladder, with jitter on top (`12-lessons-from-grok-bot.md`). */
-export const RECONNECT_LADDER_MS = [500, 1_000, 2_000, 5_000, 10_000, 30_000] as const;
-
-/** Close codes after which reconnecting cannot help: the answer would be the same. */
+/**
+ * Close codes after which reconnecting cannot help: the answer would be the same.
+ *
+ * `UNAUTHORIZED` is deliberately not one of them. A ticket is single-use and
+ * short-lived — the gateway *takes* it — so "this ticket did not resolve" is a
+ * fact about the ticket, not about the session or the person: it is stale,
+ * spent, or expired before the socket opened. Every attempt mints a fresh one,
+ * so the ladder is exactly the remedy. Whether the person may attach at all is
+ * decided at the mint, where a 401 does end the stream for good
+ * ({@link endOfMintFailure}).
+ *
+ * Listing it here stranded the terminal: the status went to `closed`
+ * ("Disconnected"), which draws no recovery alert — only `forbidden` and
+ * `refused` do — and the status bar offers Retry only while connecting or
+ * offline. The pane became a dead canvas that nothing but a page reload could
+ * revive, which reads as a terminal that has stopped scrolling.
+ */
 const FINAL_CLOSE_CODES = new Map<number, StreamEnd>([
-  [ATTACH_CLOSE_CODES.UNAUTHORIZED, 'unauthorized'],
   [ATTACH_CLOSE_CODES.FORBIDDEN, 'forbidden'],
   [ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE, 'resolved'],
   [ATTACH_CLOSE_CODES.SESSION_STOPPED, 'stopped'],
@@ -107,7 +125,6 @@ function endOfMintFailure(error: unknown): StreamEnd | null {
   }
 }
 
-/** Turn the ticket's path into the socket URL on the API's origin. */
 export function attachSocketUrl(path: string, apiBaseUrl: string | undefined): string {
   const base = apiBaseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
   const url = new URL(path, base);
@@ -119,17 +136,15 @@ type DataListener = (chunk: Uint8Array | string, consumed: () => void) => void;
 
 /**
  * The real transport: one attach socket per stream, reconnected through the
- * ladder with a fresh ticket each time, and an epoch counter so a frame or a
- * callback from a socket that has since been replaced is dropped.
+ * ladder with a fresh ticket each time, and an epoch counter so a frame or
+ * callback from a replaced socket is dropped.
  *
- * Output is delivered as the bytes the socket carried; the terminal decodes
- * them, which keeps a multi-byte character that straddles two PTY reads whole.
- * Input goes the other way as bytes too. The viewport is sent first, before
- * the relay dispatches the attach, so the pane is not resized a frame later;
- * a resize that arrives before the socket is open waits for it.
+ * Output is delivered as raw bytes and the terminal decodes them, which keeps a
+ * multi-byte character straddling two PTY reads whole. The viewport is sent
+ * before the relay dispatches the attach, so the pane is not resized a frame
+ * later; a resize that arrives before the socket opens waits for it.
  *
- * Constructing one dials: a stream exists to be connected, and the hook that
- * owns it disposes it with the terminal.
+ * Constructing one dials; the hook that owns it disposes it with the terminal.
  */
 export class AttachSessionStream implements SessionStream {
   private readonly dataListeners = new Set<DataListener>();
@@ -146,6 +161,8 @@ export class AttachSessionStream implements SessionStream {
   private attached = false;
   private attempt = 0;
   private cancelRetry: (() => void) | null = null;
+  /** Between a failed dial and the next one, the one time `reconnectNow` may act. */
+  private waiting = false;
   private viewport: { cols: number; rows: number } | null = null;
   /** The reason a `closed` control frame named, read back when the close follows. */
   private closedReason: StreamEnd | null = null;
@@ -191,6 +208,16 @@ export class AttachSessionStream implements SessionStream {
     this.tell({ type: 'resize', cols, rows });
   }
 
+  reconnectNow(): void {
+    if (this.disposed || !this.waiting) return;
+    this.cancelRetry?.();
+    this.waiting = false;
+    // A fresh start: the reader or the network said now, so the next failure
+    // waits the ladder's first step rather than its thirty seconds.
+    this.attempt = 0;
+    void this.connect();
+  }
+
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
@@ -216,6 +243,7 @@ export class AttachSessionStream implements SessionStream {
   /** Over for good: say why, then say closed, and never dial again. */
   private end(reason: StreamEnd): void {
     this.cancelRetry?.();
+    this.waiting = false;
     for (const listener of this.endListeners) listener(reason);
     this.setStatus('closed');
   }
@@ -227,11 +255,16 @@ export class AttachSessionStream implements SessionStream {
   private retry(after: StreamStatus): void {
     if (this.disposed) return;
     this.setStatus(after);
-    const base = RECONNECT_LADDER_MS[Math.min(this.attempt, RECONNECT_LADDER_MS.length - 1)];
+    const ladder = CONSUMER_CONFIG.stream.reconnectLadderMs;
+    const base = ladder[Math.min(this.attempt, ladder.length - 1)];
     this.attempt += 1;
     const jitter = base * (Math.random() * 0.4 - 0.2);
+    this.waiting = true;
     this.cancelRetry = this.schedule(
-      () => void this.connect(),
+      () => {
+        this.waiting = false;
+        void this.connect();
+      },
       Math.max(0, Math.round(base + jitter)),
     );
   }
@@ -266,7 +299,6 @@ export class AttachSessionStream implements SessionStream {
 
     ws.onopen = () => {
       if (thisEpoch !== this.epoch) return;
-      // The viewport first, so the attach the relay dispatches carries it.
       if (this.viewport) this.tell({ type: 'resize', ...this.viewport });
     };
     ws.onmessage = (event: MessageEvent) => {

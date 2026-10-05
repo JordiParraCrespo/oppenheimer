@@ -16,11 +16,8 @@ export const ProjectErrors = {
     httpStatus: 400,
   },
   /**
-   * Archiving has to refuse while sessions nobody has closed are still listed in
-   * the project, and the question "is any session still open here" is answered by
-   * the module that owns sessions, over the query bus. If nothing answers it,
-   * archiving refuses: a destructive path that assumes "no work" when it cannot
-   * ask is fail-open, and this is the fail-closed half of that.
+   * No module contributed an answer to "is any session still open here", so
+   * archiving refuses rather than assume there is none (fail-closed).
    */
   ARCHIVE_UNAVAILABLE: {
     code: 'PROJECTS_003',
@@ -33,7 +30,6 @@ export const ProjectErrors = {
     message: 'That project is archived',
     httpStatus: 409,
   },
-  /** Archiving refuses while the project still holds sessions nobody has closed. */
   HAS_OPEN_SESSIONS: {
     code: 'PROJECTS_005',
     message: 'That project still has open sessions',

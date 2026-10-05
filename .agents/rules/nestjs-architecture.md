@@ -97,11 +97,20 @@ single-responsibility is enforced (no god-services).
 ## Repository ports & adapters
 
 - Define a port interface in `database/<module>.repository.port.ts`, extending
-  `RepositoryPort<Aggregate>` from `@oppenheimer/backend-ddd`. Lookups return
-  `Option<T>` (from `oxide.ts`), not `T | null`.
+  `RepositoryPort<Aggregate>` from `@oppenheimer/backend-ddd` (`insert`, `save`,
+  `findOneById`, `delete`). Lookups return `Option<T>` (from `oxide.ts`), not
+  `T | null`. A list is declared on the port that needs it, bounded; the base
+  port has none.
 - The TypeORM adapter implements the port, maps domain ↔ ORM via the mapper, and
   stages the aggregate's domain events on the **transactional outbox** inside
   the same transaction as the write (see "Event-driven async processing").
+  A non-tenant adapter extends `TypeOrmRepositoryBase` (same package), which
+  does exactly that for the four port methods; a tenant adapter extends
+  `ScopedRepositoryBase` from `@oppenheimer/backend-authz`.
+- A write of several statements runs in one
+  `this.outbox.transaction(async (manager) => …)`. There is no repository
+  `transaction()` method: a callback that does not receive the manager cannot
+  join the transaction.
 - Inject the port through a DI token (see `nestjs-di.md`), never the concrete class.
 
 ## Mapper
@@ -209,7 +218,7 @@ error through**. Fold its code onto a catalog entry with a mapper, and keep the
 original as an `upstreamCode` extension member so debugging loses nothing:
 
 ```typescript
-// organizations/organization-error.mapper.ts
+// organizations/infrastructure/organization-error.util.ts
 export const invokeOrganizationApi = betterAuthInvoker(mapOrganizationError);
 ```
 
@@ -253,9 +262,14 @@ in which a listener crash, a Redis blip, or a killed process can silently lose
 the side effect. The row *is* the message: `aggregateId` is a plain column with
 no foreign key, so a queued event outlives the record it names.
 
-After commit the repository wakes the relay (`OutboxRelayService` in
-`apps/api/src/outbox/`); a background poll is the safety net for rows whose
-process died between commit and delivery. The relay claims due rows with
+After commit the relay (`OutboxRelayService` in `apps/api/src/outbox/`) is
+woken, not awaited: `OutboxService.transaction` and `writeWithEvents` do it
+themselves once their transaction commits with something staged, so a
+repository never calls `wake()`. A wake asks for a drain and returns, so the
+request never waits for delivery (the listeners have not necessarily run when
+it returns). At most one drain runs per process;
+wakes during it collapse into one more pass. A background poll is the safety
+net for rows whose process died between commit and delivery. The relay claims due rows with
 `FOR UPDATE SKIP LOCKED` — concurrent API replicas lease disjoint rows, which is
 what makes the pattern safe under horizontal scaling — and delivers them:
 
@@ -266,10 +280,19 @@ what makes the pattern safe under horizontal scaling — and delivers them:
 - `channel: 'queue'` rows (staged with `OutboxService.stageJob`) → added to the
   BullMQ queue named by `topic`.
 
+Delivery is at least once, so **listeners must be idempotent**: an event row
+is one delivery to every `@OnEvent` listener of that event, so when one
+listener throws, the retry runs all of them again; a process that stalls past
+the 30 s lease (a slow listener alone does not: the relay renews the lease
+while it delivers) lets another replica claim and run the row a second time;
+and a process that dies after publishing a batch but before marking it
+processed redelivers that batch.
+
 Delivery failures retry with exponential backoff and park as `failed` after
 `maxAttempts` — kept for inspection, never dropped. Leases expire
 (`lockedUntil`), so rows owned by a dead process are reclaimed rather than
-stuck. Every row records a human-readable **reason** (pass `reason` when raising
+stuck. Delivered rows are purged after 7 days (`OutboxRetentionProcessor`);
+`failed` rows are kept. Every row records a human-readable **reason** (pass `reason` when raising
 the event) so the table is self-explaining at 2am.
 
 This does **not** replace BullMQ: BullMQ still owns retries, delayed jobs and

@@ -8,10 +8,7 @@ import type {
   SocialProvider,
 } from './auth.client';
 
-/**
- * Thin adapter over the platform {@link IAuthClient}. Keeps the service layer
- * decoupled from the concrete Better Auth client implementation.
- */
+/** Thin adapter over the platform {@link IAuthClient}. */
 @injectable()
 export class AuthRepository {
   constructor(@inject(TOKENS.AuthClient) private readonly client: IAuthClient) {}
@@ -38,10 +35,6 @@ export class AuthRepository {
 
   resetPassword(token: string, password: string): Promise<void> {
     return this.client.resetPassword(token, password);
-  }
-
-  changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    return this.client.changePassword(currentPassword, newPassword);
   }
 
   logout(): Promise<void> {

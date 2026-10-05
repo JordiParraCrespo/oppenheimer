@@ -1,18 +1,22 @@
-import { BullModule } from '@nestjs/bullmq';
-import { Module, type Provider } from '@nestjs/common';
+import { Module, type Provider, type Type } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
-import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { AuthModule } from '../auth/auth.module';
 import { LinksModule } from '../links/links.module';
+import { QueueModule } from '../queue/queue.module';
 import { UsersModule } from '../users/user.module';
+import { HostNetworkChangedDomainEventHandler } from './application/event-handlers/host-network-changed.domain-event-handler';
 import { HostRegisteredDomainEventHandler } from './application/event-handlers/host-registered.domain-event-handler';
 import { HostAccessResolver } from './application/host-access.resolver';
+import { HostAccountErasure } from './application/host-account-erasure.resolver';
 import { HostAssertionResolver } from './application/host-assertion.resolver';
 import { HostCredentialResolver } from './application/host-credential.resolver';
 import { HostKeyResolver } from './application/host-key.resolver';
 import { HostPresenceResolver } from './application/host-presence.resolver';
+import type { HostUsagePort } from './application/host-usage.port';
+import { HostUsageRegistry } from './application/host-usage.registry';
+import { HostVitalsResolver } from './application/host-vitals.resolver';
 import { CollectSessionImageCommandHandler } from './commands/collect-session-image/collect-session-image.command-handler';
 import { CollectSessionImageHttpController } from './commands/collect-session-image/collect-session-image.http.controller';
 import { MintPairingTokenCommandHandler } from './commands/mint-pairing-token/mint-pairing-token.command-handler';
@@ -29,8 +33,13 @@ import { UnpairHostCommandHandler } from './commands/unpair-host/unpair-host.com
 import { UnpairHostHttpController } from './commands/unpair-host/unpair-host.http.controller';
 import { HostOrmEntity } from './database/host.orm-entity';
 import { HostRepository } from './database/host.repository';
+import { HostEventOrmEntity } from './database/host-event.orm-entity';
+import { HostInventoryOrmEntity } from './database/host-inventory.orm-entity';
+import { HostMetadataRepository } from './database/host-metadata.repository';
+import { HostNetworkOrmEntity } from './database/host-network.orm-entity';
 import { HostPairingTokenOrmEntity } from './database/host-pairing-token.orm-entity';
 import { HostPairingTokenRepository } from './database/host-pairing-token.repository';
+import { HostPresenceOrmEntity } from './database/host-presence.orm-entity';
 import { HostPrincipalGuard } from './guards/host-principal.guard';
 import { HostMapper } from './host.mapper';
 import { HostPairingTokenMapper } from './host-pairing-token.mapper';
@@ -38,16 +47,27 @@ import {
   HOST_ACCESS,
   HOST_ASSERTION,
   HOST_KEY,
+  HOST_METADATA_REPOSITORY,
   HOST_PAIRING_TOKEN_REPOSITORY,
   HOST_PRESENCE,
   HOST_REPOSITORY,
+  HOST_VITALS,
+  IP_GEOLOCATION,
+  LEGACY_REPLAY_MARKER,
 } from './hosts.di-tokens';
 import { HostResource } from './hosts.resource';
+import { DbipGeolocationAdapter } from './infrastructure/dbip-geolocation.adapter';
+import { HostRetentionProcessor } from './infrastructure/host-retention.processor';
+import { RedisLegacyReplayMarker } from './infrastructure/redis-legacy-replay-marker.adapter';
 import { RunnerReleaseConfig } from './infrastructure/runner-release.config';
 import { FindHostHttpController } from './queries/find-host/find-host.http.controller';
 import { FindHostQueryHandler } from './queries/find-host/find-host.query-handler';
+import { FindHostTimelineHttpController } from './queries/find-host-timeline/find-host-timeline.http.controller';
+import { FindHostTimelineQueryHandler } from './queries/find-host-timeline/find-host-timeline.query-handler';
 import { FindHostsHttpController } from './queries/find-hosts/find-hosts.http.controller';
 import { FindHostsQueryHandler } from './queries/find-hosts/find-hosts.query-handler';
+import { FindPairingTokenHttpController } from './queries/find-pairing-token/find-pairing-token.http.controller';
+import { FindPairingTokenQueryHandler } from './queries/find-pairing-token/find-pairing-token.query-handler';
 import { FindPairingTokensHttpController } from './queries/find-pairing-tokens/find-pairing-tokens.http.controller';
 import { FindPairingTokensQueryHandler } from './queries/find-pairing-tokens/find-pairing-tokens.query-handler';
 
@@ -59,12 +79,14 @@ import { FindPairingTokensQueryHandler } from './queries/find-pairing-tokens/fin
 const httpControllers = [
   FindHostsHttpController,
   FindPairingTokensHttpController,
+  FindPairingTokenHttpController,
   MintPairingTokenHttpController,
   RevokePairingTokenHttpController,
   RegisterHostHttpController,
   UninstallHostHttpController,
   CollectSessionImageHttpController,
   FindHostHttpController,
+  FindHostTimelineHttpController,
   RenameHostHttpController,
   UnpairHostHttpController,
 ];
@@ -83,6 +105,8 @@ const queryHandlers: Provider[] = [
   FindHostsQueryHandler,
   FindHostQueryHandler,
   FindPairingTokensQueryHandler,
+  FindPairingTokenQueryHandler,
+  FindHostTimelineQueryHandler,
 ];
 
 const mappers: Provider[] = [HostMapper, HostPairingTokenMapper];
@@ -90,40 +114,53 @@ const mappers: Provider[] = [HostMapper, HostPairingTokenMapper];
 const repositories: Provider[] = [
   { provide: HOST_REPOSITORY, useClass: HostRepository },
   { provide: HOST_PAIRING_TOKEN_REPOSITORY, useClass: HostPairingTokenRepository },
+  // One instance behind both the port and the class: the host repository
+  // writes the timeline inside its own transactions through the class.
+  HostMetadataRepository,
+  { provide: HOST_METADATA_REPOSITORY, useExisting: HostMetadataRepository },
+  { provide: IP_GEOLOCATION, useClass: DbipGeolocationAdapter },
+  // TODO(remove after #162 has been live once): replay markers burned before
+  // the cache prefixed its keys. See `LegacyReplayMarkerPort`.
+  { provide: LEGACY_REPLAY_MARKER, useClass: RedisLegacyReplayMarker },
 ];
 
 const resolvers: Provider[] = [
   { provide: HOST_ASSERTION, useClass: HostAssertionResolver },
   { provide: HOST_ACCESS, useClass: HostAccessResolver },
   { provide: HOST_PRESENCE, useClass: HostPresenceResolver },
+  { provide: HOST_VITALS, useClass: HostVitalsResolver },
   { provide: HOST_KEY, useClass: HostKeyResolver },
 ];
 
 /**
- * The machines a person has paired, how they prove they are one of them, and
- * what each last reported about itself.
+ * The machines a person has paired, how they prove they are one of them, and what
+ * each last reported about itself.
  *
- * A host's boot assertion is a credential kind this module **contributes** to
- * the auth kernel: `HostCredentialResolver` goes in the providers below, so it
- * is constructed in this module's own injector and injects this module's
- * `HOST_ASSERTION` port. That is why nothing here is `@Global` — the kernel
- * reaches only its own registry, and recognising a machine costs this module no
- * application-wide publication.
- *
- * Only `HostResource` is contributed to the authorization kernel. The pairing
- * token's declaration exists to scope its rows and is deliberately not
- * registered — see `host-pairing-token.resource.ts`.
+ * A host's boot assertion is a credential kind this module **contributes** to the
+ * auth kernel: `HostCredentialResolver` is built in this module's injector and
+ * injects its `HOST_ASSERTION` port, so nothing here is `@Global`. `HostResource` is
+ * the one resource registered with the authorization kernel, and it scopes pairing
+ * tokens too (see `HostPairingTokenRepository`).
  */
 @Module({
   imports: [
     CqrsModule,
     // The parked images a runner collects (`GET /hosts/self/images/{id}`).
     LinksModule,
-    TypeOrmModule.forFeature([HostOrmEntity, HostPairingTokenOrmEntity]),
+    TypeOrmModule.forFeature([
+      HostOrmEntity,
+      HostPairingTokenOrmEntity,
+      HostInventoryOrmEntity,
+      HostPresenceOrmEntity,
+      HostNetworkOrmEntity,
+      HostEventOrmEntity,
+    ]),
     AuthzKernelModule.forFeature([HostResource]),
-    // The owner's address for the new-host notice, and the queue it goes out on.
+    // The owner's address for the new-host and new-network notices.
     UsersModule,
-    BullModule.registerQueue({ name: QUEUE_NAMES.EMAIL }),
+    // The email queue the notices go out on, and the host-retention queue of
+    // the daily purge of networks and timeline past their retention.
+    QueueModule,
   ],
   controllers: [...httpControllers],
   providers: [
@@ -133,13 +170,41 @@ const resolvers: Provider[] = [
     ...repositories,
     ...resolvers,
     ...AuthModule.contributeCredentials([HostCredentialResolver]),
+    ...UsersModule.contributeAccountErasure([HostAccountErasure]),
     RunnerReleaseConfig,
+    HostUsageRegistry,
     HostPrincipalGuard,
     HostRegisteredDomainEventHandler,
+    HostNetworkChangedDomainEventHandler,
+    HostRetentionProcessor,
   ],
-  // The two application ports, and nothing else. A consumer that could inject
+  // The application ports, and nothing else. A consumer that could inject
   // the repository could skip `assertUsable` and read unpaired rows unscoped,
   // which is exactly the check the port exists to make unavoidable.
-  exports: [HOST_ASSERTION, HOST_ACCESS, HOST_PRESENCE, HOST_KEY],
+  //
+  // `HostUsageRegistry` is the other half of that surface: what runs on a host
+  // is contributed into it by the module that owns the work.
+  exports: [HOST_ASSERTION, HOST_ACCESS, HOST_PRESENCE, HOST_VITALS, HOST_KEY, HostUsageRegistry],
 })
-export class HostsModule {}
+export class HostsModule {
+  /**
+   * The providers a module adds to say what is running on a host:
+   * `providers: [...HostsModule.contributeUsage([SessionHostUsage])]`. Same shape and
+   * reason as `ProjectsModule.contributeUsage`: built in the owning module's injector,
+   * it injects that module's repository with nothing published application-wide, and
+   * a module never imported contributes nothing.
+   */
+  static contributeUsage(usages: Type<HostUsagePort>[]): Provider[] {
+    return [
+      ...usages,
+      {
+        provide: Symbol('HOST_USAGE_CONTRIBUTION'),
+        inject: [HostUsageRegistry, ...usages],
+        useFactory: (registry: HostUsageRegistry, ...contributed: HostUsagePort[]) => {
+          registry.registerAll(contributed);
+          return contributed;
+        },
+      },
+    ];
+  }
+}

@@ -14,12 +14,15 @@ new table is held to. `typeorm.md` covers the decorator mechanics; this file
 covers the design. Designing a table from scratch is the `/design-database`
 skill, which walks the process and ends on the checklist at the bottom here.
 
-The migrations that already read the way a new one should:
-`1781300000000-AddOutbox.ts` (an index named for the query it serves),
-`1781400000000-AddOrgScopedRoles.ts` (partial uniques where NULLs would slip
-through), `1781500000000-AddAccessGrants.ts` (a `CHECK`, a lookup index, a
-partial expiry index), `1788600000000-AddUserSettings.ts` (the header
-explains why this is a table of its own). Read one before writing a new one.
+The schema as it stood before the first deployment is one migration,
+`1790900000000-InitialSchema`, with its SQL split by owning module under
+`apps/api/src/migrations/initial-schema/`. The tables that already read the
+way a new one should: `outbox_message` (an index named for the query it
+serves), `user_role` (partial uniques where NULLs would slip through),
+`access_grant` (a `CHECK`, a lookup index, a partial expiry index),
+`user_settings` (one row per parent, keyed by the parent's id). Read the
+table in its module file and its ORM entity, which is where the why lives,
+before writing a new one.
 
 ## Two kinds of table
 
@@ -102,13 +105,13 @@ explains why this is a table of its own). Read one before writing a new one.
   never point into another tenant. When every parent reference is composite
   like this, the table needs no separate foreign key to `organization`: the
   composite keys already guarantee and cascade it.
-- Adding that unique to a parent that already has rows is a lock on a hot
-  table. `ALTER TABLE ... ADD CONSTRAINT ... UNIQUE` builds the index under an
-  `ACCESS EXCLUSIVE` lock (no reads or writes) until the boot transaction
-  ends. Build it as `CREATE UNIQUE INDEX IF NOT EXISTS` (a `SHARE` lock:
-  reads continue), which a foreign key can reference directly, and say in the
-  header that on a large table it should be built `CONCURRENTLY` by hand
-  first, under the same name.
+- Once a deployment holds data, adding that unique to a parent that already
+  has rows is a lock on a hot table. `ALTER TABLE ... ADD CONSTRAINT ...
+  UNIQUE` builds the index under an `ACCESS EXCLUSIVE` lock (no reads or
+  writes) until the boot transaction ends; `CREATE UNIQUE INDEX IF NOT
+  EXISTS` takes a `SHARE` lock (reads continue), and a foreign key can
+  reference it directly. See "While nothing is deployed" under Migrations for
+  why this does not apply yet.
 
 ## Columns and types
 
@@ -267,85 +270,78 @@ Design for the table at a hundred times today's size.
   says so) and erase a tenant's rows with the batched purge or partition drop.
 - Counters that many requests bump at once (views, likes) do not live on a
   hot parent row. Write them to their own table, or aggregate them.
-- Queues and work tables are claimed with `FOR UPDATE SKIP LOCKED` on a
-  `(status, availableAt)` index, as `outbox_message` is.
+- Queues and work tables are claimed with `FOR UPDATE SKIP LOCKED` through a
+  partial index on the claim's `ORDER BY` column, `WHERE "status" = 'pending'`
+  (`IDX_outbox_message_pending` on `("createdAt")`), so the claim reads the
+  oldest claimable rows and stops at its `LIMIT` with no `Sort`, and the lease
+  and retry columns stay out of every index (HOT updates). Processed rows are
+  purged on a schedule.
 
 ## Migrations
 
-- One migration per change, named for what it does
-  (`1789000000000-AddInvoices.ts`), with a header comment explaining **why**:
+- One migration per change, after the baseline and named for what it does
+  (`1791000000000-AddInvoices.ts`), with a header comment explaining **why**:
   the design decisions, the relationships that were considered, and anything
-  deliberately left out. The existing headers are the model.
+  deliberately left out. The migration in
+  `.agents/skills/design-database/references/templates.md` is the model.
+- Its timestamp is later than the newest migration's and shared with none:
+  TypeORM orders by the timestamp in the class name, so two migrations with
+  the same one run in whatever order the loader finds them.
+  `apps/api/src/__tests__/migration-timestamps.spec.ts` fails on a shared one.
+  Never rename a migration that may have run: TypeORM records it by class
+  name, and a renamed one runs again.
 - `down()` reverses `up()` exactly: drop in reverse order, and restore data a
   backfill moved.
 - Statements that can run twice without harm when practical: `IF NOT EXISTS`,
   `ON CONFLICT DO NOTHING`, `WHERE NOT EXISTS` in seeds and backfills.
-- **Changes to a table that already has rows are lock-aware**:
+- **While nothing is deployed, a migration simply does the change.** No
+  database holds data anyone needs, so there is no `CREATE INDEX
+  CONCURRENTLY`, no hand-run ops script, and no "refuse at boot on a large
+  table" path: add the index, the foreign key or the `CHECK` in the
+  migration, in the boot transaction, and a local database that no longer
+  migrates cleanly is dropped and recreated. Still write the migration as
+  though the table had rows where it costs nothing (a `DEFAULT` on a new
+  `NOT NULL` column, an idempotent seed).
+- **Once a deployment holds data, changes to a table with rows are
+  lock-aware.** Migrations run at boot, all in one transaction
+  (`migrationsTransactionMode: 'all'`), so every lock a migration takes is
+  held until the last one finishes. Then:
   - Adding a column: nullable, or `NOT NULL` with a constant `DEFAULT` (instant
     since Postgres 11). Never add `NOT NULL` without a default to a populated
     table.
   - Adding an index to a large table: `CREATE INDEX CONCURRENTLY`, which cannot
-    run in a transaction. Migrations here run in TypeORM's default
-    `migrationsTransactionMode: 'all'`, which refuses a migration that sets
-    `transaction = false`; switching the data sources to `'each'` is its own
-    change. Until then, a new table's indexes are created with the table (it is
-    empty, so nothing is locked), and an index on a table that is already large
-    is called out in the PR so it can be built by hand, concurrently, first.
+    run in a transaction, so it is built outside the boot migration first, by
+    hand or as a one-off command, under the name the migration then expects.
+    The migration asserts it did: it fails the deploy with a message naming
+    the command if the index is missing or invalid (or a constraint is not
+    validated), and builds it itself only on a small table (development, CI).
+    Without that check a large-table deploy ships without its index.
   - Adding a foreign key or `CHECK` to a large table: add it `NOT VALID`, then
-    `VALIDATE CONSTRAINT` in a separate statement.
+    `VALIDATE CONSTRAINT` in a separate statement. Delete orphans after the
+    `NOT VALID` constraint exists (it stops new ones), then validate.
   - Changing a column type, renaming a column that code still reads, or
     tightening a constraint: expand and contract. Add the new shape, backfill
-    in batches, switch the code, drop the old shape in a later migration.
-  - Backfills of more than a few thousand rows run in batches, not one
-    `UPDATE` over the table.
-  - A batched delete or update picks its batch through an index and then
-    touches only those rows: `DELETE FROM t WHERE ctid = ANY (ARRAY(SELECT
-    ctid FROM t WHERE "occurredAt" < $cutoff LIMIT 5000))`. The plan is a
-    `Tid Scan` under an index-driven `InitPlan`. The tempting
-    `WHERE "id" IN (SELECT "id" ... LIMIT 5000)` plans as a hash semi join
-    over a sequential scan of the whole table, on every batch (checked on
-    Postgres 16).
-  - Migrations run at boot, all in one transaction, so every lock a migration
-    takes is held until the last one finishes. Creating a foreign key takes a
-    `SHARE ROW EXCLUSIVE` lock on the referenced table, which blocks its
-    writes: a new table referencing `user`, `session` or `organization` is
-    fine on its own, but not alongside a backfill that reads a large table.
-    Keep large backfills out of boot migrations (a one-off job or command),
-    and keep migrations that touch hot tables short.
+    in batches, switch the code, drop the old shape in a later migration. A
+    catalog-only type change (`timestamp` to `timestamptz`, widening a
+    `varchar`) is still an `ACCESS EXCLUSIVE` lock.
+  - Backfills of more than a few thousand rows run in batches, outside the
+    boot migration, not one `UPDATE` over the table.
+  - Creating a foreign key takes a `SHARE ROW EXCLUSIVE` lock on the
+    referenced table, which blocks its writes: keep migrations that touch
+    `user`, `session`, `organization` or another hot table short.
   - A `SET LOCAL lock_timeout` lasts until the transaction ends, which here is
     the end of every boot migration, not just this one. A migration that sets
     it runs `RESET lock_timeout` as its last statement.
-  - **Changing a hot table that already has millions of rows** (`session`,
-    `user`, `member`, a large tenant table) is an operation, not just a
-    migration. `lock_timeout` bounds the wait for a lock, not how long it is
-    held, and at boot every lock is held until all migrations commit. So:
-    - Long, non-blocking steps (`CREATE INDEX CONCURRENTLY`, `VALIDATE
-      CONSTRAINT`, batched orphan cleanup, backfills) run outside the boot
-      transaction: as a documented one-off command or script run before the
-      deploy, each in its own short transaction with a `lock_timeout` and a
-      retry. The boot migration then only asserts they happened (it fails
-      the deploy with a clear message if the index is missing or invalid, or
-      the constraint is not validated), and builds them itself on small
-      databases (development, CI).
-    - The remaining instant `ACCESS EXCLUSIVE` step (a catalog-only `ALTER`,
-      adding a `NOT VALID` constraint) ships in its own release with a short
-      `lock_timeout`, so nothing else holds the lock open after it.
-    - Do not switch the data sources to `migrationsTransactionMode: 'each'` as
-      a side effect of one change: it makes every migration commit on its own,
-      so a failed boot leaves the schema half-migrated. If the project wants
-      that, it is its own decision and its own PR.
-    - A type change the catalog can do without a rewrite (`timestamp` to
-      `timestamptz` with `SET LOCAL TimeZone = 'UTC'` on Postgres 12+,
-      widening a `varchar`) is still an `ACCESS EXCLUSIVE` lock: follow the
-      point above, check the server version first, and `ANALYZE` the table
-      after. Converting to `timestamptz` reads the stored values in the
-      migration's `TimeZone`, so check what the writers used: the database
-      default (`SELECT setting FROM pg_settings WHERE name = 'TimeZone'`
-      outside the migration's `SET LOCAL`) and the app's. When the column is
-      Better Auth's, say that Better Auth reads and writes `Date` through
-      `pg` and is unaffected.
-    - Delete orphans after the `NOT VALID` constraint exists (it stops new
-      ones), then validate.
+  - Do not switch the data sources to `migrationsTransactionMode: 'each'` as
+    a side effect of one change: a failed boot would leave the schema
+    half-migrated. That is its own decision and its own PR.
+- A batched delete or update (retention, a purge, a backfill) picks its batch
+  through an index and then touches only those rows: `DELETE FROM t WHERE
+  ctid = ANY (ARRAY(SELECT ctid FROM t WHERE "occurredAt" < $cutoff LIMIT
+  5000))`. The plan is a `Tid Scan` under an index-driven `InitPlan`. The
+  tempting `WHERE "id" IN (SELECT "id" ... LIMIT 5000)` plans as a hash semi
+  join over a sequential scan of the whole table, on every batch (checked on
+  Postgres 16).
 - **The migration is the source of truth**, and the ORM entity mirrors it:
   every column's type, length, nullability and default; every unique
   (`@Unique('UQ_...', [...])`); every `CHECK` (`@Check('CHK_...', ...)`);
@@ -378,8 +374,9 @@ Before a migration is done, each of these holds:
 7. Uniqueness is enforced by the database, including the nullable and
    soft-deleted cases.
 8. Unbounded tables have a retention plan.
-9. The migration is safe on a table with rows (no long lock held on a hot
-   table, no unbatched backfill), and `down()` reverses it.
+9. `down()` reverses the migration. Once a deployment holds data, it is also
+   safe on a table with rows (no long lock held on a hot table, no unbatched
+   backfill).
 10. The ORM entity mirrors the SQL (columns, uniques, checks, index names and
     partial predicates), and is registered in `data-source.ts`.
 11. Every rule of the form "may not be deleted while..." is a `NO ACTION`

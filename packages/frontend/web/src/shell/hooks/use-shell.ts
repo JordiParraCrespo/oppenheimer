@@ -8,7 +8,7 @@ import type { NavItem, NavLink, ShellWorkspace } from '../lib/nav';
  */
 export interface ShellConfig {
   nav: readonly NavItem[];
-  /** Links shown in the account menu above the language list. */
+  /** Links shown in the account menu above the appearance and language rows. */
   userMenuLinks?: readonly NavLink[];
   workspace?: ShellWorkspace;
   /**
@@ -44,7 +44,7 @@ export interface ShellConfig {
    * The console passes `false`. Its sidebar *is* its content, so a second row
    * of navigation has nothing to hold, and the version-1 artboards draw none
    * of the three. Nothing is lost with them: appearance and language live in
-   * the account menu, and with two destinations there is nothing to search.
+   * the account menu, and with one destination there is nothing to search.
    */
   chrome?: boolean;
 }

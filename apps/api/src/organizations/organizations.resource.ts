@@ -5,7 +5,7 @@ import { defineResource } from '@oppenheimer/backend-authz';
  *
  * These tables are owned by the Better Auth organization plugin, so the
  * declarations exist for the role builder and the credential catalog rather
- * than for row filtering — the façade delegates to `auth.api.*`, which applies
+ * than for row filtering — the gateways delegate to `auth.api.*`, which applies
  * its own membership rules. They therefore declare no scope dimensions.
  */
 export const OrganizationResource = defineResource({

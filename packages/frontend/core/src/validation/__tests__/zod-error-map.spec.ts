@@ -1,4 +1,4 @@
-import { loginSchema } from '@oppenheimer/shared';
+import { loginSchema, promptSchema } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { createZodErrorMap, type TranslateFn } from '../zod-error-map';
@@ -41,8 +41,6 @@ describe('createZodErrorMap', () => {
   });
 
   it('cannot override a message the schema states explicitly', () => {
-    // Zod short-circuits the error map when the check carries its own message.
-    // This is why the schemas in `@oppenheimer/shared` deliberately omit them.
     expect(messageFor(z.string().email('Invalid email address'), 'nope')).toBe(
       'Invalid email address',
     );
@@ -67,7 +65,7 @@ describe('createZodErrorMap', () => {
     );
   });
 
-  it('leaves messages it does not recognise to Zod', () => {
+  it('keeps a message a refine states explicitly', () => {
     const schema = z.string().refine(() => false, 'Must be an IPv4/IPv6 address or CIDR block');
     expect(messageFor(schema, 'junk')).toBe('Must be an IPv4/IPv6 address or CIDR block');
   });
@@ -76,5 +74,90 @@ describe('createZodErrorMap', () => {
     expect(messageFor(z.object({ count: z.number() }), { count: 'ten' })).not.toBe(
       'validation.required',
     );
+  });
+
+  it('reports a type mismatch as invalid', () => {
+    expect(messageFor(z.number(), 'ten')).toBe('validation.invalid');
+  });
+
+  it('translates a pattern and every other string shape as a format failure', () => {
+    expect(messageFor(z.string().regex(/^[a-z]+$/), 'A1')).toBe('validation.format');
+    expect(messageFor(z.string().uuid(), 'nope')).toBe('validation.format');
+    expect(messageFor(z.string().startsWith('ghp_'), 'x')).toBe('validation.format');
+  });
+
+  it('surfaces the branch that applied in a union, not the union', () => {
+    const optionalUsername = z.union([
+      z.literal(''),
+      z
+        .string()
+        .max(3)
+        .regex(/^[a-z]+$/),
+    ]);
+
+    expect(messageFor(optionalUsername, '')).toBeUndefined();
+    expect(messageFor(optionalUsername, 'AB')).toBe('validation.format');
+    expect(messageFor(optionalUsername, 'abcd')).toBe('validation.maxLength({"max":3})');
+  });
+
+  it('falls back to invalid for a union no branch of which applied', () => {
+    expect(messageFor(z.union([z.string(), z.number()]), true)).toBe('validation.invalid');
+  });
+
+  it('asks for a choice on an enum or a discriminated union', () => {
+    expect(messageFor(z.enum(['a', 'b']), 'c')).toBe('validation.choice');
+    const shape = z.discriminatedUnion('kind', [
+      z.object({ kind: z.literal('a') }),
+      z.object({ kind: z.literal('b') }),
+    ]);
+    expect(messageFor(shape, { kind: 'c' })).toBe('validation.choice');
+  });
+
+  it('translates dates and numeric bounds', () => {
+    expect(messageFor(z.date(), new Date('nope'))).toBe('validation.date');
+    expect(messageFor(z.number().min(2), 1)).toBe('validation.min({"min":2})');
+    expect(messageFor(z.number().max(2), 3)).toBe('validation.max({"max":2})');
+    expect(messageFor(z.number().multipleOf(5), 7)).toBe('validation.multipleOf({"step":5})');
+    expect(messageFor(z.number().finite(), Number.POSITIVE_INFINITY)).toBe('validation.invalid');
+  });
+
+  it('translates set bounds as item counts', () => {
+    expect(messageFor(z.set(z.string()).min(1), new Set())).toBe('validation.minItems({"min":1})');
+  });
+
+  it('reads a literal, unknown keys and an intersection as invalid', () => {
+    expect(messageFor(z.literal('yes'), 'no')).toBe('validation.invalid');
+    expect(messageFor(z.object({}).strict(), { extra: 1 })).toBe('validation.invalid');
+    const both = z.intersection(
+      z.literal('a'),
+      z.literal('a').transform(() => 'b'),
+    );
+    expect(messageFor(both, 'a')).toBe('validation.invalid');
+  });
+
+  it('words a refine by the key its params name, with the rest interpolated', () => {
+    const named = z.string().refine(() => false, { params: { i18nKey: 'validation.tooLong' } });
+    const withParams = z
+      .string()
+      .refine(() => false, { params: { i18nKey: 'validation.maxLength', max: 4 } });
+
+    expect(messageFor(named, 'x')).toBe('validation.tooLong');
+    expect(messageFor(withParams, 'x')).toBe('validation.maxLength({"max":4})');
+  });
+
+  it('reads a refine that names no key, or an unknown one, as invalid', () => {
+    expect(
+      messageFor(
+        z.string().refine(() => false),
+        'x',
+      ),
+    ).toBe('validation.invalid');
+    const unknown = z.string().refine(() => false, { params: { i18nKey: 'nav.home' } });
+    expect(messageFor(unknown, 'x')).toBe('validation.invalid');
+  });
+
+  it("translates the shared prompt's byte cap", () => {
+    // Four bytes per emoji: under the character cap, over the byte one.
+    expect(messageFor(promptSchema, '😀'.repeat(600))).toBe('validation.tooLong');
   });
 });

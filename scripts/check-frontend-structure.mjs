@@ -10,8 +10,8 @@
  *  - a route file composes; past 120 lines it contains
  *  - an app never re-creates a file the platform kit already ships
  *  - every workspace package carries a README.md and an AGENTS.md, every
- *    frontend app and package an ARCHITECTURE.md, and every AGENTS.md points
- *    at a rule file
+ *    frontend app, `packages/frontend` and each platform kit an
+ *    ARCHITECTURE.md, and every AGENTS.md points at a rule file
  *
  * See .agents/rules/frontend-architecture.md. Run: pnpm check:structure
  */
@@ -19,10 +19,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// `fileURLToPath`, not `new URL(...).pathname`: a pathname is URL-encoded, so a
-// checkout under a directory with a space in it resolves to `/Macintosh%20SSD/...`
-// and every `readdirSync` below it fails — or, worse, still relativises, and the
-// paths silently match nothing they are compared against.
+// `fileURLToPath`, not `.pathname`, for a checkout path with a space: see check-api-structure.mjs.
 const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
 const errors = [];
 const fail = (message) => errors.push(message);
@@ -38,8 +35,12 @@ const KINDS = [
   '__tests__',
 ];
 const ROUTE_LINE_CAP = 120;
-/** What an app keeps beside its routes and features: configuration, nothing else. */
-const APP_CONFIG_FILES = ['oppenheimer.ts', 'auth-client.ts', 'nav.ts', 'query.ts'];
+/**
+ * What an app keeps beside its routes and features: configuration, nothing
+ * else. `console.ts` names the console's dialogs and lists, which the kit's
+ * generic dialog slot and every feature that opens one share.
+ */
+const APP_CONFIG_FILES = ['oppenheimer.ts', 'auth-client.ts', 'nav.ts', 'query.ts', 'console.ts'];
 
 const modulesOf = (pkg) => {
   const dir = join(root, 'packages/frontend', pkg, 'src/modules');
@@ -50,7 +51,6 @@ const modulesOf = (pkg) => {
 };
 const kernel = modulesOf('core');
 
-/** Each frontend app: where its routes and features are, which product it is, what else it may name. */
 const APPS = [
   // oppenheimer:begin web
   {
@@ -58,9 +58,8 @@ const APPS = [
     routes: 'src/routes',
     features: 'src/features',
     product: 'consumer',
-    // `automations`: the console's second list, whose pages render no entity
-    // until the API names one (`product/versions/mvp/13-automations.md`).
-    allow: ['public', 'automations'],
+    // `public`: pages that render no entity.
+    allow: ['public'],
     kit: 'web',
   },
   // oppenheimer:end web
@@ -94,25 +93,19 @@ const kitBasenames = (kit) => {
 };
 
 /**
- * One render-topology check: a query belongs where its result is drawn.
- *
- * Everything above this point is about where a file sits. This is about what a
- * component *does*, and it is the only such rule worth a source scan — the
+ * One render-topology check: a query belongs where its result is drawn. The
  * mistake it catches (subscribe on the page, thread the result down) is a
  * placement mistake wearing a hook, and placement is what this script reads.
  *
- * What a component *costs* is not checked here. It was, briefly, as a line cap
- * per kind; a cap is a formatter, not a model — a section that still owns the
- * query, the column factory, six dialogs and the row menu passes it at 149
- * lines, and the pressure it creates is to shard files rather than to name the
- * jobs. The `*-render.spec.tsx` files, with the React Compiler off, are the
- * check for cost. See .agents/rules/frontend-architecture.md.
+ * What a component *costs* is not checked here: a line cap per kind pushes
+ * people to shard files rather than name the jobs. The `*-render.spec.tsx`
+ * files, with the React Compiler off, are the check for cost
+ * (.agents/rules/frontend-architecture.md).
  *
- * This scan is deliberately narrow and easy to walk around: it reads named
- * imports from a product package's React entrypoint and a single local JSX
- * consumer, so two dummy readers, a default import, a query hook re-exported by
- * the kit, or a `Map` that arrived as a prop all pass it. It is a tripwire on
- * the shape that actually recurred, not a proof.
+ * The scan is deliberately narrow: it reads named imports from a product
+ * package's React entrypoint and a single local JSX consumer, so a default
+ * import, a hook re-exported by the kit or a `Map` that arrived as a prop all
+ * pass it. It is a tripwire on the shape that actually recurred, not a proof.
  */
 
 /** What a React Query result exposes. Reading any of these makes a value derived from it. */
@@ -230,22 +223,18 @@ function queryBindingsOf(source, hooks) {
   return bound;
 }
 
+const FETCHING_KINDS = new Set(['screens', 'sections', 'dialogs']);
+
 /**
  * A query result may not be handed down to its only consumer.
  *
  * Passing rows to the section that renders them is the intended flow, and so
- * is handing a mutation's pending flag to a `forms/` child, which is forbidden to fetch. What this catches is narrower:
- * a screen that subscribes to a query so that exactly one sibling below it can
- * render the result. That sibling can call the hook itself, and until it does,
- * every settle of that query re-renders everything else on the page.
- *
- * `api-tokens.tsx` held `usePermissionCatalog()` for `CreateTokenCard` alone,
- * which forwarded all three of its props to the form below it and read none.
- * Two siblings genuinely sharing one result is a different thing and passes:
- * `profile.tsx` fetches the profile once for its hero and its details pane.
+ * is handing a mutation's pending flag to a `forms/` child, which may not
+ * fetch. What this catches is a screen that subscribes to a query so exactly
+ * one sibling below it can render the result: every settle of that query then
+ * re-renders the rest of the page. Two siblings genuinely sharing one result
+ * pass.
  */
-const FETCHING_KINDS = new Set(['screens', 'sections', 'dialogs']);
-
 function checkQueryStaysHome(source, label) {
   const hooks = queryHooksOf(source);
   if (hooks.size === 0) return;
@@ -383,6 +372,79 @@ for (const { app, routes, features, product, allow, kit } of APPS) {
       fail(
         `${app}/${legacy}: components live in ${features}/<module>/<kind>/ or in the platform kit, not at the app root`,
       );
+  }
+}
+
+// One component per file, in an app. Biome's `noNestedComponentDefinitions`
+// only sees a component declared inside another; two declared side by side
+// pass it, and the second one is always the one nobody finds. The pattern is a
+// tripwire on the usual top-level shapes, not a parser. The kit is exempt: a
+// primitives file there exports a family meant to be read together
+// (`AuthLink`, `AuthBackLink`, …).
+const TOP_LEVEL_COMPONENT =
+  /^(?:export\s+)?(?:default\s+)?(?:function\s+([A-Z]\w*)|const\s+([A-Z]\w*)\s*(?::[^=]+)?=\s*(?:\([^)]*\)\s*(?::[^=]*)?=>|\w+\s*=>|(?:memo|forwardRef)\())/gm;
+for (const { app } of APPS) {
+  const src = join(root, app, 'src');
+  if (!existsSync(src)) continue;
+  for (const file of walk(src)) {
+    if (!file.endsWith('.tsx') || /\.(spec|test)\.tsx$/.test(file) || file.includes('/__tests__/'))
+      continue;
+    const names = [...readFileSync(file, 'utf8').matchAll(TOP_LEVEL_COMPONENT)].map(
+      (match) => match[1] ?? match[2],
+    );
+    if (names.length > 1) {
+      fail(
+        `${relative(root, file)}: ${names.length} components (${names.join(', ')}) — one component per file; give each its own file in the kind it belongs to`,
+      );
+    }
+  }
+}
+
+// Every query a frontend package's React layer declares shares entities across
+// refetches (why: `packages/frontend/core/src/react/query.ts`). The core's
+// `useQuery` and `useQueries` apply it, so the fence is on the import.
+const QUERY_HOOK_IMPORT = /import\s*\{([^}]*)\}\s*from\s*'@tanstack\/react-query'/g;
+const FENCED_HOOKS = ['useQuery', 'useQueries', 'useSuspenseQuery', 'useSuspenseQueries'];
+for (const pkg of readdirSync(join(root, 'packages/frontend'))) {
+  const dir = join(root, 'packages/frontend', pkg, 'src/react');
+  if (!existsSync(dir)) continue;
+  for (const name of readdirSync(dir)) {
+    // `query.ts` is the wrapper itself.
+    if (!/\.tsx?$/.test(name) || /\.(spec|test)\.tsx?$/.test(name) || name === 'query.ts') continue;
+    const source = readFileSync(join(dir, name), 'utf8');
+    for (const match of source.matchAll(QUERY_HOOK_IMPORT)) {
+      const names = match[1].split(',').map((part) => part.trim().replace(/^type\s+/, ''));
+      for (const hook of FENCED_HOOKS.filter((fenced) => names.includes(fenced))) {
+        fail(
+          `packages/frontend/${pkg}/src/react/${name}: imports ${hook} from @tanstack/react-query — use the one from @oppenheimer/frontend-core/react, which shares entities across refetches`,
+        );
+      }
+    }
+  }
+}
+
+// How the console polls is one policy, `LIVE_POLL` in the product package's
+// `live-poll.ts`, the only file that names TanStack's polling options. A
+// `refetchInterval` anywhere else is a second policy nobody finds.
+const sources = (dir) =>
+  [...walk(dir)].filter(
+    (file) =>
+      /\.tsx?$/.test(file) && !/\.(spec|test)\.tsx?$/.test(file) && !file.includes('/__tests__/'),
+  );
+const polling = [
+  ...APPS.flatMap(({ app }) =>
+    existsSync(join(root, app, 'src')) ? sources(join(root, app, 'src')) : [],
+  ),
+  ...readdirSync(join(root, 'packages/frontend')).flatMap((pkg) => {
+    const dir = join(root, 'packages/frontend', pkg, 'src/react');
+    return existsSync(dir) ? sources(dir).filter((file) => !file.endsWith('/live-poll.ts')) : [];
+  }),
+];
+for (const file of polling) {
+  if (/\brefetchInterval\b/.test(readFileSync(file, 'utf8'))) {
+    fail(
+      `${relative(root, file)}: sets refetchInterval — polling is LIVE_POLL's (packages/frontend/consumer/src/react/live-poll.ts): a package hook spreads pollWhile(), and an app asks the package for the hook that polls`,
+    );
   }
 }
 

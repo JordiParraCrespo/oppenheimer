@@ -44,14 +44,11 @@ func Handler(hub *Hub, problems *problem.Writer, logger *slog.Logger, authorize 
 		}
 		defer hub.remove(c)
 
-		// A WebSocket outlives the HTTP request scope. r.Context() is built
-		// on the server BaseContext, which is the SIGTERM signal context, so
-		// deriving from it would cancel this read loop at the same instant
-		// hub.Close tries to send its going-away frame — the client would
-		// then see an abnormal 1006 close instead of 1001. WithoutCancel
-		// keeps the correlation id (and any other request values) for logs
-		// while detaching that cancellation; the connection now ends only
-		// when the peer disconnects or the hub closes it.
+		// A WebSocket outlives the HTTP request scope. r.Context() derives
+		// from the server's BaseContext, the SIGTERM context, and would cancel
+		// this read loop as hub.Close sends its going-away frame: the client
+		// would see 1006 instead of 1001. WithoutCancel keeps the request
+		// values (the correlation id) for logs.
 		ctx, cancel := context.WithCancel(context.WithoutCancel(r.Context()))
 		defer cancel()
 		go c.writeLoop(ctx)
@@ -73,7 +70,7 @@ func Handler(hub *Hub, problems *problem.Writer, logger *slog.Logger, authorize 
 					return
 				}
 				if status == -1 {
-					// Not a close frame: a malformed message. Tell the client and stop.
+					// Not a close frame: a malformed message.
 					c.close(websocket.StatusInvalidFramePayloadData, "malformed envelope")
 				}
 				return
@@ -89,11 +86,11 @@ func (c *conn) handle(ctx context.Context, p *auth.Principal, in Envelope, autho
 		c.reply(Envelope{Type: TypePong, ID: in.ID})
 	case TypeSubscribe:
 		if len(in.Topics) == 0 {
-			c.fail(in.ID, "RUNNER_001", "subscribe needs at least one topic")
+			c.fail(in.ID, problem.ErrValidation.Code, "subscribe needs at least one topic")
 			return
 		}
 		if len(c.topics)+len(in.Topics) > c.hub.opts.MaxTopics {
-			c.fail(in.ID, "RUNNER_001", "too many subscriptions")
+			c.fail(in.ID, problem.ErrValidation.Code, "too many subscriptions")
 			return
 		}
 		for _, topic := range in.Topics {
@@ -115,7 +112,7 @@ func (c *conn) handle(ctx context.Context, p *auth.Principal, in Envelope, autho
 		}
 		c.reply(Envelope{Type: TypeUnsubscribed, ID: in.ID, Topics: in.Topics})
 	default:
-		c.fail(in.ID, "RUNNER_001", "unknown message type "+in.Type)
+		c.fail(in.ID, problem.ErrValidation.Code, "unknown message type "+in.Type)
 	}
 }
 

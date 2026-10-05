@@ -3,17 +3,14 @@ import { z } from 'zod';
 import { parseEnv } from './env';
 
 /**
- * OAuth provider credentials. Better Auth reads these from the environment
- * directly (see `auth.ts`) and derives the callback URLs as
- * `${BETTER_AUTH_URL}/api/auth/callback/<provider>`. This config object is kept
- * for visibility / validation of the configured providers.
+ * OAuth provider credentials. Better Auth reads these from the environment directly
+ * (`auth/infrastructure/better-auth.config.ts`) and derives callback URLs as
+ * `${BETTER_AUTH_URL}/api/auth/callback/<provider>`; this object validates them and
+ * feeds the `google_oauth` / `github_oauth` capabilities.
  *
- * Every key here is **optional capability config**: a self-hoster may run
- * without any OAuth provider, so a missing key disables that provider (the
- * `google_oauth` / `github_oauth` capabilities in `CapabilitiesModule`) — it
- * never fails boot, and it never falls back to a sentinel value. Absence is
- * `undefined`, so a consumer that forgets to handle it fails to compile
- * instead of handing a fake client id to the provider.
+ * Every key is optional capability config: a missing key disables that provider and
+ * never fails boot or falls back to a sentinel. Absence is `undefined`, so a consumer
+ * that forgets it fails to compile instead of handing a fake client id to the provider.
  */
 const schema = z.object({
   google: z.object({

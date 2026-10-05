@@ -12,16 +12,13 @@ import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Queue } from 'bullmq';
 
 /**
- * NestJS host for the `OutboxRelay` from `@oppenheimer/backend-ddd`. Delivers
- * claimed rows to their real destination: `event` rows are re-emitted on the
- * in-process `EventEmitter2` bus (keyed by event class name, exactly as the
- * repositories used to emit them directly), `queue` rows are added to the
- * BullMQ queue named by `topic`.
+ * NestJS host for the `OutboxRelay` from `@oppenheimer/backend-ddd`: `event` rows are
+ * re-emitted on the in-process `EventEmitter2` bus keyed by event class name, `queue`
+ * rows are added to the BullMQ queue named by `topic`.
  *
- * The relay drains on two triggers: repositories `wake()` it right after their
- * staging transaction commits (keeping happy-path latency at in-process
- * levels), and a background poll reclaims rows whose process died between
- * commit and delivery — the case the outbox exists for.
+ * `OutboxService` wakes it right after a staging transaction commits, so delivery
+ * stays in-process fast without the request waiting on it; a background poll reclaims
+ * rows whose process died between commit and delivery, the case the outbox exists for.
  */
 @Injectable()
 export class OutboxRelayService implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -33,11 +30,13 @@ export class OutboxRelayService implements OnApplicationBootstrap, OnApplication
     outbox: OutboxService,
     private readonly eventEmitter: EventEmitter2,
     @InjectQueue(QUEUE_NAMES.EMAIL) emailQueue: Queue,
-    @InjectQueue(QUEUE_NAMES.FILE_PROCESSING) fileProcessingQueue: Queue,
+    @InjectQueue(QUEUE_NAMES.INBOUND_EVENTS) inboundEventsQueue: Queue,
+    @InjectQueue(QUEUE_NAMES.AUTOMATION_RUNS) automationRunsQueue: Queue,
   ) {
     this.queues = new Map<string, Queue>([
       [QUEUE_NAMES.EMAIL, emailQueue],
-      [QUEUE_NAMES.FILE_PROCESSING, fileProcessingQueue],
+      [QUEUE_NAMES.INBOUND_EVENTS, inboundEventsQueue],
+      [QUEUE_NAMES.AUTOMATION_RUNS, automationRunsQueue],
     ]);
     this.relay = new OutboxRelay(outbox, (message) => this.publish(message), {
       owner: `${hostname()}:${process.pid}`,

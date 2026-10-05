@@ -2,6 +2,8 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { ROLES } from '@oppenheimer/shared';
+import type { SessionCachePort } from '../../../auth/application/session-cache.port';
+import { SESSION_CACHE } from '../../../auth/auth.di-tokens';
 import { missingSystemRole } from '../../../roles/application/missing-system-role.factory';
 import type { RoleRepositoryPort } from '../../../roles/database/role.repository.port';
 import { ROLE_REPOSITORY } from '../../../roles/roles.di-tokens';
@@ -13,17 +15,13 @@ import { ProvisionPersonalWorkspaceCommand } from './provision-personal-workspac
 /**
  * Creates the personal workspace a new account lives in: one organization with
  * the account as its single owner, plus the org-scoped `owner` application role
- * that opens it. No team, no roster, no invitation — the MVP is one user per
+ * that opens it. No team, no roster, no invitation: the MVP is one user per
  * workspace (`product/versions/mvp/00-scope.md`).
  *
  * Answers the new organization's id, or `null` when the account already
- * belonged to one and nothing was written. "Already had one" is a success for
- * every caller: sign-up and the seed both provision, and the seed is also the
- * repair path for an account whose sign-up hook did not land.
- *
- * The decision not to write is the repository's, inside the transaction that
- * would have done it — a check here could only be stale by the time the write
- * ran.
+ * belonged to one. That is a success for every caller: sign-up and the seed
+ * both provision, and the seed repairs an account whose sign-up hook did not
+ * land. The repository decides not to write, inside its transaction.
  */
 @CommandHandler(ProvisionPersonalWorkspaceCommand)
 export class ProvisionPersonalWorkspaceCommandHandler
@@ -34,6 +32,8 @@ export class ProvisionPersonalWorkspaceCommandHandler
     private readonly workspaces: PersonalWorkspaceRepositoryPort,
     @Inject(ROLE_REPOSITORY)
     private readonly roles: RoleRepositoryPort,
+    @Inject(SESSION_CACHE)
+    private readonly sessionCache: SessionCachePort,
   ) {}
 
   async execute(command: ProvisionPersonalWorkspaceCommand): Promise<AggregateID | null> {
@@ -49,6 +49,12 @@ export class ProvisionPersonalWorkspaceCommandHandler
       ownerRoleId: ownerRole.unwrap().id,
     });
 
-    return (await this.workspaces.provision(workspace)) ? workspace.id : null;
+    if (!(await this.workspaces.provision(workspace))) return null;
+
+    // The repository pointed the account's open sessions at the workspace in
+    // the database; the cached copies Better Auth reads were written at
+    // sign-in, before it existed, and still name no organization.
+    await this.sessionCache.refreshUser(command.userId);
+    return workspace.id;
   }
 }

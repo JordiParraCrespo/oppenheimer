@@ -21,7 +21,7 @@
 //   node scripts/evals/query-keys/run.mjs --reference          the reference patches (must score 100%)
 //   node scripts/evals/query-keys/run.mjs --control            the known-bad overlays on the reference (must fail)
 //   node scripts/evals/query-keys/run.mjs --task <id> --patch <file>   grade a saved diff, e.g. from a report
-//   options: --model <id> (default claude-sonnet-5), --keep (leave the worktree), --timeout <minutes>
+//   options: --model <id> (default claude-sonnet-5-5), --keep (leave the worktree), --timeout <minutes>
 import { execFileSync, spawnSync } from 'node:child_process';
 import {
   cpSync,
@@ -73,7 +73,7 @@ const AGENT_TOOLS = [
 ].join(',');
 
 function parseArgs(argv) {
-  const args = { model: 'claude-sonnet-5', timeout: 30, mode: 'agent', keep: false, task: null };
+  const args = { model: 'claude-sonnet-5-5', timeout: 30, mode: 'agent', keep: false, task: null };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--task') args.task = argv[++i];

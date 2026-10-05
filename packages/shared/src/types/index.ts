@@ -1,7 +1,7 @@
 /**
- * A role is identified by its (free-form) name. The built-in `admin` / `user`
- * roles are seeded as system roles, but admins can create arbitrary additional
- * roles, so this is a plain string rather than a closed union.
+ * A role is identified by its (free-form) name. The built-in roles are seeded
+ * as system roles, but admins can create arbitrary additional roles, so this is
+ * a plain string rather than a closed union.
  */
 export type Role = string;
 
@@ -28,11 +28,11 @@ export {
   DEPLOYMENT_CAPABILITIES,
   type DeploymentCapabilities,
   type DeploymentCapability,
-} from './deployment-capabilities';
+} from './deployment-capabilities.js';
 export {
   DEFAULT_PROBLEM_TYPE,
   type InvalidParam,
   isProblemDetails,
   PROBLEM_JSON_CONTENT_TYPE,
   type ProblemDetails,
-} from './problem-details';
+} from './problem-details.js';

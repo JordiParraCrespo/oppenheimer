@@ -10,14 +10,10 @@ import (
 
 // The error catalog is this service's public contract: a code is a stable
 // identifier a client branches on and a row on the docs site. Nothing stops a
-// second context from reusing `SESS_001` by copy-paste, and nothing stops a
-// new code from never reaching the reference page — so these two tests do,
-// the same way TestImportBoundaries holds the hexagon.
-//
-// cosmos-sdk keeps a registry of (codespace, code) and complains when one is
-// registered twice; we have no registry to hook into because the catalog is
-// package-level values, so the source is what gets walked. Same guarantee,
-// same place it fails: before the code is pushed.
+// second context from reusing `SESS_001` by copy-paste, or a new code from
+// never reaching the reference page, so these two tests do. The catalog is
+// package-level values with no registry to hook into, so the source is what
+// gets walked.
 
 var catalogEntry = regexp.MustCompile(`problem\.New\("([A-Z][A-Z0-9_]*)"`)
 

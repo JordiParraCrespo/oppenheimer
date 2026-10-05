@@ -2,15 +2,7 @@ import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import type { Locale, TableDensity, Theme } from '@oppenheimer/shared';
 import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
-/**
- * Persistence model for a user's workspace preferences. Infrastructure — the
- * domain `UserSettingsEntity` is mapped to/from this record by `ProfileMapper`.
- *
- * The primary key is the user's id: one settings row per user, no surrogate.
- * The union-typed columns carry an explicit `type` because
- * `emitDecoratorMetadata` reflects a union as `Object`, which Postgres rejects
- * (see `.agents/rules/typeorm.md`).
- */
+/** The primary key is the user's id: one settings row per user, no surrogate. */
 @Entity('user_settings')
 export class UserSettingsOrmEntity {
   @PrimaryColumn({ type: 'uuid' })

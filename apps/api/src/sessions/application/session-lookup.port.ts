@@ -1,11 +1,3 @@
-/**
- * What the relay may know about a session when a browser redeems an attach
- * ticket, and nothing more: enough to decide whether the socket opens and
- * which link it opens on.
- *
- * It is a port rather than the repository because the repository can append,
- * and the door that appends is `RECORD_SESSION_EVENTS`, which checks the host.
- */
 /** The Redis namespace of attach tickets, `attach:<random>`. */
 export const ATTACH_TICKET_PREFIX = 'attach:';
 
@@ -42,8 +34,18 @@ export interface SessionCredentialTarget {
   githubRepoId: number;
   /** `false` once the checkout was retired or the session resolved. */
   live: boolean;
+  /** Who started the session: the person a token minted for it acts for. */
+  createdByUserId: string;
 }
 
+/**
+ * What the relay may know about a session when a browser redeems an attach
+ * ticket, and nothing more: enough to decide whether the socket opens and
+ * which link it opens on.
+ *
+ * It is a port rather than the repository because the repository can append,
+ * and the door that appends is `RECORD_SESSION_EVENTS`, which checks the host.
+ */
 export interface SessionLookupPort {
   /** Unscoped: the ticket already proved who asked, and the caller re-checks membership. */
   findAttachTarget(sessionId: string): Promise<SessionAttachTarget | null>;

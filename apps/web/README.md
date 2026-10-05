@@ -42,7 +42,7 @@ src/
 ├── routes/               # Route + a mount, under 120 lines each
 ├── features/             # <module>/{screens,sections,dialogs,forms,components,hooks,lib,__tests__}
 ├── providers/            # oppenheimer-provider.tsx, query-provider.tsx
-├── lib/                  # configuration only: oppenheimer.ts, auth-client.ts, nav.ts
+├── lib/                  # configuration only: oppenheimer.ts, auth-client.ts, nav.ts, console.ts
 ├── styles/
 └── types/
 public/
@@ -52,14 +52,14 @@ public/
 
 ## Where the shared code lives
 
-- UI and browser glue below the routes — `AppShell`, `PageHead`,
+- UI and browser glue below the routes — `AppShell`, `ConfirmDialog`,
   `useZodResolver`, `dateFormatter` — are in
   `@oppenheimer/frontend-web` (`packages/frontend/web`).
 - Primitives are in `@oppenheimer/design-system-web`.
 - Domain logic is in `@oppenheimer/frontend-core` (session, users, user settings,
   capabilities, analytics) and `@oppenheimer/frontend-consumer` (sessions,
-  hosts, and the account chrome: organizations, profile, api-tokens — the last
-  two have no screen here yet).
+  hosts, and the account chrome: organizations, profile, and the permission
+  catalog OAuth consent reads).
 
 ## More
 

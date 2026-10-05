@@ -1,11 +1,12 @@
 import { Button } from '@oppenheimer/design-system-web';
-import { useForgotPassword } from '@oppenheimer/frontend-core/react';
+import { useErrorMessage, useForgotPassword } from '@oppenheimer/frontend-core/react';
 import {
   AuthBackLink,
   AuthFooterNote,
   AuthSubtitle,
   AuthTitle,
-  useErrorMessage,
+  ErrorAlert,
+  notifySuccess,
 } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
@@ -16,6 +17,9 @@ import { ForgotPasswordForm } from '@/features/auth/forms/forgot-password-form';
  * an address has been submitted. Held locally rather than read off the
  * mutation so "use a different address" can walk the screen back without the
  * success flag dragging it forward again.
+ *
+ * The first send needs no toast: the screen turns into "Check your email".
+ * Resend leaves the screen exactly as it was, so it says the email went.
  */
 export function ForgotPasswordScreen() {
   const { t } = useTranslation();
@@ -35,14 +39,18 @@ export function ForgotPasswordScreen() {
           />
         </AuthSubtitle>
 
+        {/* A failed Resend stays on this view: the form it came from is gone. */}
+        <ErrorAlert error={error} fallback={t('auth.forgotPassword.resendFailed')} />
+
         <Button
           variant="secondary"
           size="lg"
           block
-          disabled={isPending}
-          onClick={() => mutate(sentTo)}
+          onClick={() => mutate(sentTo, { onSuccess: () => notifySuccess('emailResent') })}
+          pending={isPending}
+          pendingLabel={t('auth.forgotPassword.submitting')}
         >
-          {isPending ? t('auth.forgotPassword.submitting') : t('auth.forgotPassword.resend')}
+          {t('auth.forgotPassword.resend')}
         </Button>
 
         <AuthFooterNote>
@@ -66,7 +74,7 @@ export function ForgotPasswordScreen() {
 
       <ForgotPasswordForm
         isPending={isPending}
-        error={error ? resolveError(error, t('auth.forgotPassword.error')).message : undefined}
+        error={error ? resolveError(error, t('auth.forgotPassword.error')) : undefined}
         onSubmit={({ email }) => mutate(email, { onSuccess: () => setSentTo(email) })}
       />
 

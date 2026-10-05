@@ -9,6 +9,7 @@ import {
 import type { SessionGroup, SessionState } from '@oppenheimer/shared';
 import { SessionCreatedDomainEvent } from './events/session-created.domain-event';
 import { SessionStateChangedDomainEvent } from './events/session-state-changed.domain-event';
+import { SessionTurnChangedDomainEvent } from './events/session-turn-changed.domain-event';
 import type { SessionCheckoutEntity } from './session-checkout.entity';
 import { sessionGroup } from './session-group.policy';
 import { SESSION_SLUG_PATTERN } from './session-slug.policy';
@@ -23,6 +24,12 @@ import {
   type SessionLogEntry,
   type SessionNameSource,
 } from './session-state.policy';
+import {
+  foldTurnEvent,
+  type SessionOrigin,
+  type SessionTurnFold,
+  sameTurn,
+} from './session-turn.policy';
 import { SessionErrors } from './sessions.errors';
 import type { WorkSessionEventEntity } from './work-session-event.entity';
 
@@ -34,11 +41,7 @@ export interface WorkSessionProps extends SessionFold {
    */
   projectId: string;
   createdByUserId: string;
-  /**
-   * The host the work runs on. It is the one reference in the schema a handler
-   * guards rather than a constraint: a host belongs to a person and has no
-   * workspace column, so a composite key cannot express it.
-   */
+  /** Guarded by a handler, not a key: see `WorkSessionOrmEntity`. */
   hostId: string;
   slug: string;
   agent: SessionAgent;
@@ -46,6 +49,14 @@ export interface WorkSessionProps extends SessionFold {
   idempotencyKey: string | null;
   /** Members of the aggregate, including retired ones. */
   checkouts: SessionCheckoutEntity[];
+  /** Who asked for the session: a person, or an automation's run. Immutable. */
+  origin: SessionOrigin;
+  /**
+   * The session's latest turn, as the repository last read it under the row
+   * lock. Null before the first prompt. Folded by `recordEvent` like every other
+   * projection; the changed turns are written back by the repository.
+   */
+  latestTurn: SessionTurnFold | null;
 }
 
 export interface CreateWorkSessionProps {
@@ -57,30 +68,33 @@ export interface CreateWorkSessionProps {
   agent: SessionAgent;
   name?: string;
   idempotencyKey?: string | null;
+  /** Absent is a person's session. */
+  origin?: SessionOrigin;
 }
 
 /**
- * Work-session aggregate root — a terminal, an agent, and a set of checkouts.
+ * Work-session aggregate root: a terminal, an agent, and a set of checkouts.
  *
- * **`recordEvent` is the only mutator.** There is no `setState`, no `setName` and
- * no `setCwdCheckout`: every column of `work_session` is a projection of the
- * append-only log, so writing one directly would create a second truth that a
- * replay then disagrees with (`product/versions/mvp/03-control-plane.md`). That
- * includes which checkout the agent was launched in, and it includes the inputs
- * the sidebar's dot is computed from.
+ * **`recordEvent` is the only mutator.** No `setState`, `setName` or
+ * `setCwdCheckout`: every `work_session` column, launch checkout and sidebar inputs
+ * included, is a projection of the append-only log, and a direct write would be a
+ * second truth a replay disagrees with (`product/versions/mvp/03-control-plane.md`).
  *
- * The one thing that is not a fold is **adding a member**: a checkout is a row in
- * another table with its own unique constraints, and inserting it is not a
- * projection of anything. Retiring one is, because it is a consequence of an
- * event, so `session.checkout_removed` is what marks the child and steps the agent
- * out of it.
+ * The one non-fold is **adding a member**: a checkout is a row in another table with
+ * its own unique constraints. Retiring one follows from an event, so
+ * `session.checkout_removed` marks the child and steps the agent out of it.
  *
- * Rows are never hard-deleted. Closing records `session.closed`, the state folds
- * to `resolved` and the row stays for ever: `uq (organizationId, slug)` is the
- * tombstone that stops a new session inheriting a retired session's directory
- * name, and therefore a stranger's agent conversation state.
+ * Never hard-deleted: closing folds to `resolved` and the row stays, since
+ * `uq (organizationId, slug)` is the tombstone that stops a new session inheriting a
+ * retired directory name, and with it a stranger's agent conversation state.
  */
 export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
+  /**
+   * Turns the fold changed since the repository last took them. Not a prop: it
+   * is the write-back list of one append, never part of what the row is.
+   */
+  private changedTurns = new Map<number, SessionTurnFold>();
+
   static create(create: CreateEntityProps<WorkSessionProps>): WorkSessionEntity {
     return new WorkSessionEntity(create);
   }
@@ -111,6 +125,8 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         agent: props.agent,
         idempotencyKey: props.idempotencyKey ?? null,
         checkouts: [],
+        origin: props.origin ?? 'person',
+        latestTurn: null,
         name: props.name ?? props.slug,
         nameSource: props.name ? 'user' : null,
       },
@@ -132,6 +148,30 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
 
   get organizationId(): string {
     return this.props.organizationId;
+  }
+
+  get origin(): SessionOrigin {
+    return this.props.origin;
+  }
+
+  get latestTurn(): SessionTurnFold | null {
+    return this.props.latestTurn;
+  }
+
+  /**
+   * Re-seat the latest turn on what the database holds, inside the row lock —
+   * the turn counterpart of {@link reseatFold}, and for the same reason.
+   */
+  reseatLatestTurn(turn: SessionTurnFold | null): void {
+    this.props.latestTurn = turn;
+    this.changedTurns.clear();
+  }
+
+  /** The turns the folds since the last call moved, for the repository to write. */
+  takeChangedTurns(): SessionTurnFold[] {
+    const turns = [...this.changedTurns.values()].sort((a, b) => a.seq - b.seq);
+    this.changedTurns.clear();
+    return turns;
   }
 
   get projectId(): string {
@@ -212,7 +252,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.state === 'resolved';
   }
 
-  /** Every checkout, retired ones included. */
   /**
    * Why this session cannot take input right now — typed keys, a pasted
    * image — or `null` when it can. Closed is final and stopped has no window
@@ -238,10 +277,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.checkouts.map((checkout) => checkout.directoryName);
   }
 
-  /**
-   * The derived group, for the wire — a function of the row, because every input
-   * it reads is a folded column.
-   */
   group(now: Date = new Date()): SessionGroup {
     return sessionGroup(this.fold, now);
   }
@@ -302,15 +337,13 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
   recordEvent(entry: SessionLogEntry): void {
     const before = this.props.state;
     this.reseatFold(foldSessionEvent(this.fold, entry));
-    // A retired checkout is a row in another table, so the fold cannot reach it —
-    // but its retirement is a consequence of this event, so it happens here rather
-    // than in a setter somebody could call without one.
     if (entry.kind === SESSION_EVENT_KINDS.CHECKOUT_REMOVED) {
       const checkoutId = checkoutIdOf(entry.payload);
       const checkout = this.props.checkouts.find((candidate) => candidate.id === checkoutId);
       checkout?.remove(entry.occurredAt);
     }
     const folded = this.fold;
+    this.foldTurn(entry);
     this.setUpdatedAt(new Date());
     this.validate();
 
@@ -328,7 +361,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     }
   }
 
-  /** Replay a whole log onto the aggregate, entry by entry. */
   recordEvents(entries: readonly (SessionLogEntry | WorkSessionEventEntity)[]): void {
     for (const entry of entries) {
       this.recordEvent({
@@ -363,6 +395,27 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return `${kind}:${commandId}`;
   }
 
+  private foldTurn(entry: SessionLogEntry): void {
+    const before = this.props.latestTurn;
+    const after = foldTurnEvent(before, entry, this.props.origin);
+    if (!after || sameTurn(before, after)) return;
+    this.props.latestTurn = after;
+    this.changedTurns.set(after.seq, after);
+    const from = before && before.seq === after.seq ? before.state : null;
+    if (from === after.state) return;
+    this.addEvent(
+      new SessionTurnChangedDomainEvent({
+        aggregateId: this.id,
+        reason: `turn ${after.seq} of this session moved to ${after.state}`,
+        organizationId: this.props.organizationId,
+        turn: after.seq,
+        origin: after.origin,
+        from,
+        to: after.state,
+      }),
+    );
+  }
+
   public validate(): void {
     if (!this.props.organizationId?.trim()) {
       throw new ArgumentNotProvidedException('A session must belong to an organization');
@@ -373,9 +426,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     if (!this.props.hostId?.trim()) {
       throw new ArgumentNotProvidedException('A session must name a host');
     }
-    // The slug is a directory on every host and a segment of the session's git
-    // branch, so an invalid one is not a display problem: it is a path and a ref
-    // that cannot be created.
     if (!SESSION_SLUG_PATTERN.test(this.props.slug)) {
       throw new ArgumentInvalidException(
         'A session slug is <adjective>-<noun>-<6 base36 characters>',

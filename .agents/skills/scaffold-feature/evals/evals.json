@@ -1,0 +1,112 @@
+{
+  "skill_name": "scaffold-feature",
+  "notes": "Each eval runs in a fresh worktree of this repo, with and without the skill. A grader reads the diff (and the final message) and marks each expectation true or false; an expectation that needs a command's output says so. Scenario 5 plants the files under evals/files/devices first: screens-devices.tsx -> apps/web/src/features/profile/screens/devices.tsx, sections-device-list.tsx -> .../sections/device-list.tsx, components-device-row.tsx -> .../components/device-row.tsx, route-devices.tsx -> apps/web/src/routes/_authenticated/devices.tsx. Planted, they fail `pnpm check:structure` (the screen threads useProfileSessions into the section); that is one of the findings.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "api-tokens-settings",
+      "prompt": "In the web console, add an API tokens page to Settings: list the tokens with their name, when they were created, when they were last used and whether they are revoked; let people create one (with its permissions) and see the secret once; and revoke one. The API already has the endpoints.",
+      "expected_output": "The domain first: there is no api-tokens module in packages/frontend/consumer (only the permission catalog OAuth consent reads), so the agent adds one — entity, error catalog, a repository over @oppenheimer/api-client (findApiTokens, createApiToken, revokeApiToken), the DI symbol and getter — and its hooks in react/api-tokens.queries.ts, with the key prefix kept out of the persisted cache. Then a new apps/web/src/features/api-tokens feature named after that module, mounted as a Settings child route with an item in the SettingsSidebar Account group, a screen that composes, a list section calling useApiTokens itself with every read state, a create card that owns useCreateApiToken and reads usePermissionCatalog only because its form needs the options, the secret shown once and never persisted, revoke behind a confirm with the row owning its open state, all strings translated in en and es, and the checks run.",
+      "files": [],
+      "expectations": [
+        "An api-tokens module is added to packages/frontend/consumer before any feature (entity, errors, repository over the generated SDK with @MapApiError, DI symbol and a get apiTokens() getter), with useApiTokens / useCreateApiToken / useRevokeApiToken in react/api-tokens.queries.ts exported by name; the permissions module is reused for the catalog, not widened into a token module",
+        "The feature is apps/web/src/features/api-tokens with only kind directories; no feature is named after a page (settings, tokens-page)",
+        "The page is a child route of the Settings layout (routes/_authenticated/settings/…) that only mounts a screen, with one item added to SettingsSidebar in routes/_authenticated/settings.tsx; not a ?section= pane, not a console route inside AppShell",
+        "The token list is rendered by a sections/ file that calls useApiTokens itself; no route or screen subscribes to the tokens only to pass them down",
+        "usePermissionCatalog is read by the create card (or a dialog) that renders the form, never by the screen, and the form in forms/ imports no query hook or router",
+        "The create form uses React Hook Form with useZodResolver (or the documented local escape hatch for createApiTokenSchema, which pulls the scope catalog into the bundle) and noValidate; permissions are picked through a Controller over a design-system picker",
+        "The one-time secret is shown once after creation (a panel, not also a toast) and nothing persists it: the new module's key prefix is added to CONSUMER_NON_PERSISTED_FEATURES and no localStorage write is added",
+        "Revoke goes through ConfirmDialog (or a dialog shaped like RemoveHostDialog) that owns useRevokeApiToken; the row or list holds which token is being revoked, and one row's pending state does not disable every row; a revoked token offers no Revoke",
+        "Every read renders loading (Skeleton or nothing until the first answer), empty (EmptyState) and failed (an Alert through useErrorMessage, instead of the list, not an empty state)",
+        "Dates use useLocale() with the kit's formatters (formatMediumDate / formatRelativeTime / dateFormatter); no toLocaleDateString() without a locale and no Date.now() read in render",
+        "Every user-facing string (labels, buttons, dialog copy, aria-labels, empty and loading text) goes through t(), with keys in both packages/translations/en and es area files and the assembled index regenerated",
+        "Colours use the semantic tokens (text-fg, text-fg-muted, bg-surface-*, border-border…); no shadcn aliases, stock Tailwind colours or dark: overrides; lifecycle shown with Badge active/ended (not secondary/destructive)",
+        "No useEffect outside hooks/, no manual useMemo/useCallback/memo outside hooks/, one component per file, no feature importing another",
+        "A spec in the web end-to-end suite covers at least create and revoke (or the summary says why it was not written or run)",
+        "The final message reports which checks ran (structure, arch, biome, typecheck, tests) and their results, and names any it could not run"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "host-activity",
+      "prompt": "The API has GET /v1/hosts/{id}/timeline but the console shows nothing of it. Add a page in Settings → Hosts where people can open a host and see its activity timeline.",
+      "expected_output": "The domain first: a timeline method on HostsRepository over @oppenheimer/api-client with @MapApiError and a new HOSTS_CLIENT_00n fallback, the service method, and a query hook in react/hosts.queries.ts keyed under the host's detail (a new level derived from all), gated with skipToken, entity results opted into shareEntities; exported and tested. Then a detail route under settings/hosts, reached from the host row, a screen that composes, a timeline section that calls the hook itself with every read state, dates through useLocale, translations, and the checks run.",
+      "files": [],
+      "expectations": [
+        "The call is added to the existing hosts module in packages/frontend/consumer (repository with @MapApiError and an AppError on an absent body, a HOSTS_CLIENT_00n error, the service), not written as a fetch or a useQuery in the app",
+        "hostsKeys gains levels derived from all (for example details() → detail(id) → timeline(id)), and no query uses an array literal or the root all key",
+        "The timeline hook gates on a missing id with skipToken, not enabled, and passes structuralSharing: shareEntities when it returns entities",
+        "Paging, if the endpoint pages, keeps the page or cursor in the key under the host's timeline level; nothing unrequested (a filter, a key variant, a column no screen uses) is added",
+        "The new hook and keys are exported by name from packages/frontend/consumer/src/react/index.ts, with a unit test for the key ladder or the mapping",
+        "The page is a route under routes/_authenticated/settings/hosts/ (a $hostId child) that only mounts a screen and stays under 120 lines, and the route's addition follows the tanstack-routing skill (the regenerated route tree is committed, no existing URL changes)",
+        "The host row or its menu links to the page; the hosts feature is extended rather than a new feature, and no feature imports another",
+        "A section calls the timeline hook itself; the screen does not subscribe to it only to pass it down, and a 404 renders a state with a way back rather than throwing",
+        "Loading, empty and failed states are all rendered (failed as an Alert through useErrorMessage, instead of the list)",
+        "Timestamps use useLocale() and the kit's formatters; a relative age that must move uses useNow in the leaf that draws it",
+        "Strings are translated in en and es and the index assembled",
+        "The final message reports the checks it ran and their results"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "signed-in-devices",
+      "prompt": "In Settings → Profile, show the browsers signed in to the account, with when each was last active, and let people sign out any of them except the one they are using, or all the others at once.",
+      "expected_output": "The profile feature (not sessions, which are the agent sessions), a section in Settings → Profile calling useProfileSessions itself and rendering every read state, sign-out of one and of all others behind confirmations with per-row pending state, the current browser offering no sign-out, dates through useLocale and the kit's formatters, t() for all strings, and the checks run.",
+      "files": [],
+      "expectations": [
+        "The UI is in apps/web/src/features/profile (the module that owns useProfileSessions), not in features/sessions, and the agent does not confuse signed-in browsers with agent sessions",
+        "It lives on Settings → Profile (a section the profile settings screen composes, or a Settings child route with a SettingsSidebar item), not a new top-level console page",
+        "A sections/ file calls useProfileSessions itself; the screen does not subscribe to it only to pass it down",
+        "Signing out one browser and signing out all others each ask for confirmation first (ConfirmDialog or an equivalent dialog that owns the mutation), and the current browser offers no sign-out",
+        "A pending sign-out of one row does not disable or re-label every row",
+        "Last-active times use useLocale() with the kit's formatters, not toLocaleDateString() without a locale; any age that moves takes its time from useNow in the leaf",
+        "Loading, empty and failed states use Skeleton, EmptyState and an Alert through useErrorMessage; a failure of a sign-out is shown inside its confirmation",
+        "A successful sign-out gives exactly one confirmation (a toast under toasts.* or the row leaving the list)",
+        "Colours use the semantic tokens; no text-muted-foreground, stock Tailwind colours or hard-coded hex",
+        "Every visible string goes through t() with keys in both en and es area files",
+        "The list of entities is either given structuralSharing: shareEntities in useProfileSessions or the summary notes that it lacks it",
+        "The final message says plainly which checks ran and which could not, without claiming a check it did not run"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "pause-routine-no-endpoint",
+      "prompt": "Let people pause and resume a routine from the Routines list in the console.",
+      "expected_output": "The agent finds that the API serves no automations or routines endpoints (the automations feature is on the structure check's allowlist because the API names no entity yet, and its pages keep their actions off), does not fake a toggle that only changes local state or the query cache, and either stops with a concrete plan (the API module via /scaffold-module with its endpoint, Swagger decorators and @RequireScopes, pnpm generate:api-client, an automations module in packages/frontend/consumer, then the UI) or builds the backend first and only then the UI.",
+      "files": [],
+      "expectations": [
+        "The agent checks the API surface (apps/api/openapi.json or the generated api-client) and states that no endpoint lists, pauses or resumes a routine",
+        "It does not ship a pause that only changes local state, a fixture or the query cache without a server call, and does not call a client method that does not exist",
+        "It does not add placeholder rows, counts or statuses to the Routines pages to make the toggle look wired",
+        "If it stops, it gives a concrete plan: the API module and endpoint (with Swagger decorators and @RequireScopes), pnpm generate:api-client, the automations module in packages/frontend/consumer (entity, repository, service, query keys, a mutation through withCacheOnSuccess), then the toggle in apps/web/src/features/automations",
+        "If it implements the UI, the toggle is in the automations feature, owns a mutation from the consumer package, and reflects the server's answer",
+        "No unrelated files are changed"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "review-devices-feature",
+      "prompt": "Someone added a Devices page to the web console (apps/web/src/features/profile/screens/devices.tsx, sections/device-list.tsx, components/device-row.tsx and the /devices route). Review it against this repo's frontend rules and fix what is wrong.",
+      "expected_output": "The planted violations are fixed: the section fetches its own sessions (the screen stops threading them, and check:structure passes again), the effect-derived filter state is removed (derived during render), the unread `filter` prop is dropped from the row, per-row pending, a confirm before signing out, useLocale + the kit's formatters for dates, t() for all strings with keys in en/es, semantic colour tokens instead of text-muted-foreground/text-gray-500, a lifecycle or neutral Badge instead of secondary, the design system's heading instead of a raw h1, Skeleton/EmptyState/Alert for the read states; and the page moves into Settings (Profile, or a Settings child route with a sidebar item) instead of a console route inside AppShell.",
+      "files": [
+        "evals/files/devices/screens-devices.tsx",
+        "evals/files/devices/sections-device-list.tsx",
+        "evals/files/devices/components-device-row.tsx",
+        "evals/files/devices/route-devices.tsx"
+      ],
+      "expectations": [
+        "The screen no longer subscribes to useProfileSessions only to hand the result to DeviceList; the section calls the hook itself, and pnpm check:structure passes afterwards",
+        "The useEffect that copies filtered sessions into state is gone (the value is derived during render, or the filter is dropped as unrequested)",
+        "DeviceRow no longer takes the `filter` prop it never reads",
+        "One row's pending sign-out no longer disables every row",
+        "Signing out a device asks for confirmation first, with the failure shown inside the confirmation",
+        "Dates use useLocale() and a formatter from the kit instead of toLocaleDateString() without a locale",
+        "Every hard-coded string ('Loading…', 'Filter', 'No devices', 'Unknown device', 'Last seen', 'This device', 'Sign out') goes through t(), with keys present in en and es, and the missing profile.devices.title key is added or replaced",
+        "text-muted-foreground and text-gray-500 are replaced by semantic tokens (text-fg-muted…), and Badge uses a lifecycle/neutral variant instead of secondary",
+        "The raw <h1> is replaced by the page heading the context uses (SettingsTitle in Settings, the PageHeader parts in the console), and loading/empty/failed use Skeleton/EmptyState/Alert",
+        "The page is moved into Settings (a section of Settings → Profile, or a Settings child route with a SettingsSidebar item) rather than left as /devices inside the console chrome, and the route change follows the tanstack-routing skill",
+        "The final message lists each planted violation with what was changed (or why it was left) and which checks it ran"
+      ]
+    }
+  ]
+}

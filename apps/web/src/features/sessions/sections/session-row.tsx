@@ -1,25 +1,23 @@
 import { SessionItem } from '@oppenheimer/design-system-web';
-import type { ProjectEntity, SessionEntity, SessionGroup } from '@oppenheimer/frontend-consumer';
-import { compactAge } from '@oppenheimer/frontend-web';
+import type { SessionEntity, SessionGroup } from '@oppenheimer/frontend-consumer';
+import {
+  useMoveSession,
+  useProjectsSnapshot,
+  useRenameSession,
+} from '@oppenheimer/frontend-consumer/react';
+import { compactAge, notifySuccess } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
-import type { ComponentProps } from 'react';
+import { type ComponentProps, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionRowMenu } from '../components/session-row-menu';
+import { projectsForMove } from '../lib/session-groups';
 
 /**
- * How a session's **group** reads as a dot.
- *
- * The group is what the sidebar shows because it is organised by what needs
- * you rather than by what a process is doing
- * (`product/versions/mvp/05-screens.md`): a session that failed, one whose
- * agent has been blocked for thirty seconds and one whose launch has sat
- * unready for a minute all want the same glance. `working` is the pulsing dot
- * of a session with something happening on a machine elsewhere.
- *
- * One dot is not the group's to give: a session the host has not built yet
- * reads as `idle`, because nothing needs you about it — but the artboard draws
- * it joining the list at once with a pulsing grey glyph, and that is the
- * **lifecycle** speaking, not the group. {@link dotFor} puts the two together.
+ * How a session's **group** reads as a dot. The sidebar shows the group
+ * because it is organised by what needs you, not what a process is doing
+ * (`product/versions/mvp/05-screens.md`). A session the host has not built yet
+ * is `idle` by group, but the artboard draws it with a pulsing grey glyph:
+ * that is the **lifecycle**, and {@link dotFor} combines the two.
  */
 const DOT: Record<SessionGroup, 'running' | 'idle' | 'failed' | 'pending' | 'completed'> = {
   working: 'running',
@@ -30,63 +28,85 @@ const DOT: Record<SessionGroup, 'running' | 'idle' | 'failed' | 'pending' | 'com
   resolved: 'completed',
 };
 
-/** The dot a row shows: provisioning first, then what needs you. */
 function dotFor(session: SessionEntity) {
   return session.isProvisioning ? 'pending' : DOT[session.state];
 }
 
-/** What a row can ask of the sidebar: the callbacks, per session. */
-export interface SessionRowActions {
-  menuFor: string | null;
-  onMenuOpenChange: (session: SessionEntity, open: boolean) => void;
-  renaming: { id: string; draft: string } | null;
-  onRenameDraft: (session: SessionEntity, draft: string) => void;
-  onRenameCommit: () => void;
-  onRenameCancel: () => void;
-  onRename: (session: SessionEntity) => void;
-  onMove: (session: SessionEntity, projectId: string) => void;
-  onDelete: (session: SessionEntity) => void;
-  moveTargets: (session: SessionEntity) => ProjectEntity[];
-}
-
 /**
- * One row. The age is derived on render rather than held: `compactAge` returns
- * the unit and the count, and the words are ours to translate — `null` is
- * "less than a minute", which the artboard leaves blank rather than labelling.
- * The ellipsis is the row's `action`, shown on hover and while its menu is
- * open; the inline rename replaces the name and hides both.
+ * The age is derived on render: `compactAge` returns unit and count, the words
+ * are ours to translate, and `null` ("less than a minute") stays blank as in
+ * the artboard.
  *
- * The row subscribes to whether it is the open session, not the route: the
- * router hands each row one boolean, so a navigation re-renders the two rows
- * whose highlight moved and not the sidebar above them. The session is the
- * list query's, kept by reference across a poll that did not change it, and
- * `now` is the sidebar's one minute clock.
+ * The row owns what only it reads (its menu, the half-typed rename, the rename
+ * and move writes), so one row's keystroke redraws no other row. What it cannot
+ * own goes up as one call each: the delete dialog, which must outlive the row,
+ * and a failed write, which the sidebar shows because a menu closes on its pick
+ * and the row has no room. It subscribes to one boolean for being the open
+ * session, not the route, so a navigation re-renders only the two rows whose
+ * highlight moved; `now` is its group's one-minute clock.
  */
 export function SessionRow({
   session,
   now,
-  rows,
+  onDelete,
+  onWrite,
 }: {
   session: SessionEntity;
   now: number;
-  rows: SessionRowActions;
+  onDelete: (session: SessionEntity) => void;
+  /** A write this row made settled: its error, or null when it landed. */
+  onWrite: (error: Error | null) => void;
 }) {
   const { t } = useTranslation();
   const active = useRouterState({
     select: (state) => state.location.pathname === `/sessions/${session.id}`,
   });
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [draft, setDraft] = useState<string | null>(null);
+  // The projects are read, not subscribed to: the move pane is the one thing
+  // that needs them, it is drawn only while the menu is up (and opening it
+  // renders the row), and a closed row then pays nothing when a project
+  // changes. The sidebar's own subscription keeps the list in the cache.
+  const projectsSnapshot = useProjectsSnapshot();
+  const moveTargets = () => projectsForMove(projectsSnapshot() ?? [], session);
+  // The toasts are the hooks' own, not `mutate`'s: a moved row lands in
+  // another group, and the row that asked unmounts before the write settles.
+  // A renamed or moved row can land anywhere in a long, grouped list, so both
+  // say where it went.
+  const rename = useRenameSession({
+    onSuccess: (renamed) => {
+      onWrite(null);
+      notifySuccess('sessionRenamed', { name: renamed.name });
+    },
+    onError: onWrite,
+  });
+  const move = useMoveSession({
+    onSuccess: (moved, { projectId }) => {
+      onWrite(null);
+      const target = projectsSnapshot()?.find((project) => project.id === projectId);
+      const project = target?.isUnassigned ? t('projects.unassigned') : (target?.name ?? '');
+      notifySuccess('sessionMoved', { name: moved.name, project });
+    },
+    onError: onWrite,
+  });
   const age = compactAge(session.createdAt, now);
-  const menuOpen = rows.menuFor === session.id;
-  const rename: ComponentProps<typeof SessionItem>['rename'] =
-    rows.renaming?.id === session.id
-      ? {
-          value: rows.renaming.draft,
-          onValueChange: (draft) => rows.onRenameDraft(session, draft),
-          onCommit: rows.onRenameCommit,
-          onCancel: rows.onRenameCancel,
+
+  function commitRename() {
+    const name = draft?.trim();
+    if (name && name !== session.name) rename.mutate({ id: session.id, name });
+    setDraft(null);
+  }
+
+  const renameField: ComponentProps<typeof SessionItem>['rename'] =
+    draft === null
+      ? undefined
+      : {
+          value: draft,
+          onValueChange: setDraft,
+          onCommit: commitRename,
+          onCancel: () => setDraft(null),
           label: t('sessions.sidebar.renameLabel'),
-        }
-      : undefined;
+        };
 
   return (
     <SessionItem
@@ -96,17 +116,19 @@ export function SessionRow({
       active={active}
       render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
       menuOpen={menuOpen}
-      rename={rename}
+      rename={renameField}
       action={
         <SessionRowMenu
           open={menuOpen}
-          onOpenChange={(open) => rows.onMenuOpenChange(session, open)}
-          onRename={() => rows.onRename(session)}
-          onMove={(projectId) => rows.onMove(session, projectId)}
-          onDelete={() => rows.onDelete(session)}
-          projects={rows
-            .moveTargets(session)
-            .map((target) => ({ id: target.id, name: target.name }))}
+          onOpenChange={setMenuOpen}
+          onRename={() => setDraft(session.name)}
+          onMove={(projectId) => move.mutate({ id: session.id, projectId })}
+          onDelete={() => onDelete(session)}
+          projects={(menuOpen ? moveTargets() : []).map((target) => ({
+            id: target.id,
+            name: target.name,
+            isUnassigned: target.isUnassigned,
+          }))}
         />
       }
     />

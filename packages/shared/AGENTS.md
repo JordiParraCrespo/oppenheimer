@@ -49,7 +49,9 @@ src/
 - **The coding-agent catalog** (`agents/catalog.ts`): a closed union plus one
   frozen config record per agent. It is deliberately **not a table** — every
   entry carries behaviour the runner needs code for anyway, so a row would be a
-  second source of truth. Keep it data; the type guard is the only function.
+  second source of truth. Keep it data; its only functions are the type guard
+  and the two effort lookups (`effortFor`, `effortLevelFor`), which every
+  tier asks the same way.
 - **`hostFactsSchema` is the runner's `Facts` struct, verbatim.** It mirrors
   `apps/runner/internal/host/domain/facts.go` key for key and json tag for json
   tag, because the runner marshals that struct whole into `POST /hosts/register`
@@ -67,7 +69,17 @@ src/
   a message means rebuilding and committing the artifact —
   `src/protocol/__tests__/` fails if you forget. The emitter
   (`src/protocol/json-schema.ts`) is build-only and deliberately not exported
-  from `src/protocol/index.ts`.
+  from `src/protocol/index.ts`, and so is `src/protocol/samples.ts`, one
+  message of every type. The build writes the samples to
+  `protocol-schema/samples.json`, and `scripts/emit-link-protocol.cjs` reads
+  the schema (with the link's constants under `x-constants`) and writes the
+  runner's `apps/runner/internal/link/protocol.gen.go`; the runner's
+  `protocol_test.go` decodes every sample strictly into it. A new integer on
+  the wire needs a Go width in that emitter's `INTEGER_TYPES`, which fails
+  the build rather than guess. Every `scripts/emit-*.cjs` writes only when
+  run, never on `require()`: the specs compare the committed file with
+  `render()`, and a require that rewrote it first would always pass.
+  `pnpm --filter @oppenheimer/shared check:generated` is the same check CI runs.
 
   **The protocol is temporarily on a second Zod entry point.** Only `zod/v4` can
   emit JSON Schema (`z.toJSONSchema`), so `src/protocol/` imports it while every
@@ -106,7 +118,7 @@ email: z.string().email('Invalid email address'),
 Zod ignores the error map it is handed whenever a check states its own message,
 so a hardcoded string silently pins every consumer to English. The apps' forms
 translate from the issue code instead (`createZodErrorMap` in
-`@oppenheimer/frontend/validation`), and that only works if the schema stays quiet.
+`@oppenheimer/frontend-core/validation`), and that only works if the schema stays quiet.
 
 A `refine` whose meaning cannot be recovered from the issue code — an IP-or-CIDR
 check, say — is the exception, and falls through untranslated by design.
@@ -117,9 +129,27 @@ Full context in [`.agents/rules/forms.md`](../../.agents/rules/forms.md).
 
 - Changing a schema/type may ripple into `apps/api`, `@oppenheimer/frontend`, and
   `@oppenheimer/api-client`. Check consumers before altering the public surface.
-- `apps/web` cannot import runtime values from the package root (CASL and the
-  scope catalog would land in the browser bundle). A schema the web app needs
-  wants a narrow `exports` subpath — `./schemas/auth` is the worked example.
+- The build is two outputs from one source: CommonJS plus the `.d.ts` in
+  `dist/` for `require` (the API, the backend packages, the `emit-*.cjs`
+  scripts), and ESM in `dist/esm/` for `import` (Vite, vitest, Next, and a
+  plain Node ESM `import`). Node's ESM loader takes no extensionless or
+  directory specifier, so **every relative import in `src/` is fully
+  specified**: `'./link.js'`, `'./constants/index.js'` (the `.js` resolves to
+  the `.ts` for tsc and vitest). The build's last step,
+  `scripts/check-esm-imports.mjs`, imports every ESM entry in plain Node and
+  fails on one that is not. `require` and `default` stay on CommonJS.
+- The export map is four patterns: `.`, `./schemas/*` →
+  `schemas/*.schema`, `./feature-flags/catalog`, and `./*` → `*/index`. Every
+  new `src/<dir>/index.ts` is therefore a public subpath, and a new
+  `src/schemas/<x>.schema.ts` is `./schemas/<x>`; nothing else to register.
+  `src/__tests__/exports.spec.ts` resolves every one after a build.
+- `sideEffects` lists the two modules that write to `z.globalRegistry` at load
+  (`protocol/messages.ts`, `protocol/primitives.ts`); everything else is
+  side-effect free, which is what lets `apps/web` tree-shake the package. A new
+  module-level statement that is not a declaration goes on that list, in both
+  its `dist/` and `dist/esm/` forms.
+- A web import from the root is tree-shaken, but what it uses lands whole:
+  prefer a narrow subpath, `./schemas/auth` is the worked example.
 - After schema changes that affect API DTOs, regenerate the client
   (`pnpm generate:api-client`).
 

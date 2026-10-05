@@ -3,34 +3,25 @@ import {
   defineAbilitiesFromPermissions,
   KNOWN_ACTIONS,
   KNOWN_SUBJECTS,
+  type PermissionDefinition,
   SYSTEM_ROLE_PERMISSIONS,
-} from '../../permissions';
+} from '../../permissions/index.js';
 import {
   DEFAULT_OAUTH_SCOPES,
   expandScopes,
-  getPermissionGroup,
   grantableScopes,
-  hasAllScopes,
-  hasScope,
   isOrganizationAllowed,
-  isScope,
   missingScopes,
   normalizeScopes,
   PERMISSION_GROUPS,
-  parseScope,
   parseScopeString,
   SCOPE_ACCESS_LEVELS,
   SCOPE_RESOURCES,
   SCOPES,
-  type Scope,
-  scopesForPolicy,
-  scopesFromRecord,
-  scopesToRecord,
   sortScopes,
-  stringifyScopes,
   toResourceScope,
   ungrantableScopes,
-} from '../index';
+} from '../index.js';
 
 describe('scope catalog', () => {
   it('exposes one group per resource, each with both access levels', () => {
@@ -48,11 +39,6 @@ describe('scope catalog', () => {
     expect(new Set(SCOPES).size).toBe(SCOPES.length);
   });
 
-  it('looks groups up by resource and rejects unknown ones', () => {
-    expect(getPermissionGroup('users').label).toBe('Users');
-    expect(() => getPermissionGroup('nope' as never)).toThrow(/Unknown permission group/);
-  });
-
   it('defaults OAuth clients to the narrowest useful grant', () => {
     expect(DEFAULT_OAUTH_SCOPES).toEqual(['profile:read']);
   });
@@ -66,49 +52,9 @@ describe('scope catalog', () => {
       }
     }
   });
-
-  it('carries the control plane’s four resources', () => {
-    for (const resource of ['hosts', 'projects', 'sessions', 'repositories'] as const) {
-      expect(SCOPE_RESOURCES).toContain(resource);
-      expect(getPermissionGroup(resource).levels.read.scope).toBe(`${resource}:read`);
-      expect(getPermissionGroup(resource).levels.write.scope).toBe(`${resource}:write`);
-    }
-  });
 });
 
 describe('the control plane’s scopes', () => {
-  it('maps each new route’s CASL rule back to the scope that authorizes it', () => {
-    expect(scopesForPolicy({ action: 'read', subject: 'Host' })).toEqual(['hosts:read']);
-    expect(scopesForPolicy({ action: 'delete', subject: 'Host' })).toEqual(['hosts:write']);
-    expect(scopesForPolicy({ action: 'read', subject: 'Project' })).toEqual(['projects:read']);
-    expect(scopesForPolicy({ action: 'update', subject: 'Project' })).toEqual(['projects:write']);
-    expect(scopesForPolicy({ action: 'read', subject: 'Session' })).toEqual(['sessions:read']);
-    expect(scopesForPolicy({ action: 'create', subject: 'Session' })).toEqual(['sessions:write']);
-    expect(scopesForPolicy({ action: 'read', subject: 'Installation' })).toEqual([
-      'repositories:read',
-    ]);
-    expect(scopesForPolicy({ action: 'create', subject: 'Installation' })).toEqual([
-      'repositories:write',
-    ]);
-  });
-
-  it('backs the repositories scope with Installation alone — there is no Repository subject', () => {
-    expect(scopesForPolicy({ action: 'read', subject: 'Repository' })).toEqual([]);
-    for (const level of ['read', 'write'] as const) {
-      for (const policy of getPermissionGroup('repositories').levels[level].policies) {
-        expect(policy.subject).toBe('Installation');
-      }
-    }
-  });
-
-  it('opens a terminal with `update Session`, not a fourth verb', () => {
-    expect(scopesForPolicy({ action: 'attach', subject: 'Session' })).toEqual([]);
-    expect(scopesForPolicy({ action: 'update', subject: 'Session' })).toEqual(['sessions:write']);
-    // What keeps a read-only credential off a PTY is the level, not the verb.
-    expect(hasScope(['sessions:read'], 'sessions:write')).toBe(false);
-    expect(hasScope(['sessions:write'], 'sessions:read')).toBe(true);
-  });
-
   it('uses only actions and subjects the seed and the role UI know', () => {
     for (const group of PERMISSION_GROUPS) {
       for (const level of SCOPE_ACCESS_LEVELS) {
@@ -131,6 +77,36 @@ describe('the control plane’s scopes', () => {
     expect(grantable).not.toContain('hosts:read');
   });
 
+  it.each([
+    ['hosts', 'Host'],
+    ['projects', 'Project'],
+    ['sessions', 'Session'],
+    ['repositories', 'Installation'],
+  ] as const)(
+    'lets a %s reader grant the read level and never the write level',
+    (resource, subject) => {
+      const ability = defineAbilitiesFromPermissions([{ action: 'read', subject }]);
+      expect(grantableScopes(ability)).toEqual([
+        'profile:read',
+        'profile:write',
+        `${resource}:read`,
+      ]);
+    },
+  );
+
+  it('opens a terminal with `update Session`, so that rule alone grants sessions:write', () => {
+    const ability = defineAbilitiesFromPermissions([{ action: 'update', subject: 'Session' }]);
+    expect(grantableScopes(ability)).toContain('sessions:write');
+  });
+
+  it.each([
+    ['a `Repository` reader', { action: 'read', subject: 'Repository' }],
+    ['an `attach Session` holder', { action: 'attach', subject: 'Session' }],
+  ])('grants %s nothing past their profile: no scope is backed by that rule', (_, rule) => {
+    const ability = defineAbilitiesFromPermissions([rule as unknown as PermissionDefinition]);
+    expect(grantableScopes(ability)).toEqual(['profile:read', 'profile:write']);
+  });
+
   it('lets a person grant their own hosts, because a host is theirs and not a workspace’s', () => {
     const ability = defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.user, {
       user: { id: 'me' },
@@ -140,14 +116,6 @@ describe('the control plane’s scopes', () => {
     expect(grantable).toContain('hosts:write');
   });
 
-  /**
-   * The seed changes exactly two roles, and this is the whole story rather than
-   * half of it. A plain account can grant its own hosts and nothing else new; an
-   * owner can grant the workspace's work but not a machine. There is **no
-   * `member` entry in `SYSTEM_ROLE_PERMISSIONS` at all**, so a teammate invited
-   * into a workspace is granted nothing by the seed — asserted here so the gap
-   * is a recorded fact and not a discovery.
-   */
   it('tells the three roles apart, and records that `member` is not seeded', () => {
     const workspaceScopes = ['projects:read', 'sessions:read', 'repositories:read'] as const;
 
@@ -169,24 +137,6 @@ describe('the control plane’s scopes', () => {
   });
 });
 
-describe('isScope / parseScope', () => {
-  it('accepts catalog scopes and rejects anything else', () => {
-    expect(isScope('users:read')).toBe(true);
-    expect(isScope('users:admin')).toBe(false);
-    expect(isScope('nope:read')).toBe(false);
-    expect(isScope('')).toBe(false);
-    expect(isScope(null)).toBe(false);
-    expect(isScope(42)).toBe(false);
-  });
-
-  it('splits a scope into resource and access level', () => {
-    expect(parseScope('roles:write')).toEqual({
-      resource: 'roles',
-      access: 'write',
-    });
-  });
-});
-
 describe('expandScopes', () => {
   it('makes write imply read on the same resource', () => {
     expect([...expandScopes(['users:write'])].sort()).toEqual(['users:read', 'users:write']);
@@ -201,31 +151,32 @@ describe('expandScopes', () => {
   });
 });
 
-describe('hasScope / hasAllScopes / missingScopes', () => {
-  it('honours the write ⇒ read implication', () => {
-    expect(hasScope(['users:write'], 'users:read')).toBe(true);
-    expect(hasScope(['users:read'], 'users:write')).toBe(false);
-  });
-
-  it('requires every scope in the list', () => {
-    expect(hasAllScopes(['users:write', 'roles:read'], ['users:read', 'roles:read'])).toBe(true);
-    expect(hasAllScopes(['users:write'], ['users:read', 'roles:read'])).toBe(false);
-  });
-
-  it('treats an empty requirement as satisfied', () => {
-    expect(hasAllScopes([], [])).toBe(true);
+describe('missingScopes', () => {
+  it('honours the write ⇒ read implication, never the reverse', () => {
+    expect(missingScopes(['users:write'], ['users:read'])).toEqual([]);
+    // What keeps a read-only credential off a PTY is the level, not the verb.
+    expect(missingScopes(['sessions:read'], ['sessions:write'])).toEqual(['sessions:write']);
   });
 
   it('reports exactly what is missing', () => {
     expect(missingScopes(['users:read'], ['users:read', 'roles:write'])).toEqual(['roles:write']);
+    expect(missingScopes(['users:write', 'roles:read'], ['users:read', 'roles:read'])).toEqual([]);
   });
 });
 
 describe('normalizeScopes / parseScopeString', () => {
   it('separates known scopes from junk and de-duplicates', () => {
-    const result = normalizeScopes(['users:read', 'users:read', 'bogus', '', null, 7]);
+    const result = normalizeScopes([
+      'users:read',
+      'users:read',
+      'bogus',
+      'users:admin',
+      '',
+      null,
+      7,
+    ]);
     expect(result.scopes).toEqual(['users:read']);
-    expect(result.unknown).toEqual(['bogus']);
+    expect(result.unknown).toEqual(['bogus', 'users:admin']);
   });
 
   it('trims surrounding whitespace', () => {
@@ -244,63 +195,11 @@ describe('normalizeScopes / parseScopeString', () => {
     expect(parseScopeString(null).scopes).toEqual([]);
     expect(parseScopeString(undefined).scopes).toEqual([]);
   });
-
-  it('round-trips through the OAuth string form', () => {
-    const scopes: Scope[] = ['roles:write', 'users:read'];
-    expect(parseScopeString(stringifyScopes(scopes)).scopes).toEqual(sortScopes(scopes));
-  });
 });
 
 describe('sortScopes', () => {
   it('orders scopes by catalog position, not alphabetically', () => {
     expect(sortScopes(['users:read', 'profile:read'])).toEqual(['profile:read', 'users:read']);
-  });
-});
-
-describe('scopesToRecord / scopesFromRecord', () => {
-  it('groups scopes by resource', () => {
-    expect(scopesToRecord(['users:read', 'users:write', 'roles:read'])).toEqual({
-      users: ['read', 'write'],
-      roles: ['read'],
-    });
-  });
-
-  it('round-trips', () => {
-    const scopes: Scope[] = ['users:read', 'users:write', 'roles:read'];
-    expect(scopesFromRecord(scopesToRecord(scopes))).toEqual(sortScopes(scopes));
-  });
-
-  it('drops unknown resources and levels rather than throwing', () => {
-    expect(
-      scopesFromRecord({
-        users: ['read'],
-        bogus: ['read'],
-        roles: ['sideways'],
-      }),
-    ).toEqual(['users:read']);
-  });
-
-  it('tolerates null and undefined', () => {
-    expect(scopesFromRecord(null)).toEqual([]);
-    expect(scopesFromRecord(undefined)).toEqual([]);
-  });
-});
-
-describe('scopesForPolicy', () => {
-  it('maps a CASL rule back to the scopes that authorize it', () => {
-    expect(scopesForPolicy({ action: 'read', subject: 'User' })).toEqual(['users:read']);
-    expect(scopesForPolicy({ action: 'delete', subject: 'Role' })).toEqual(['roles:write']);
-  });
-
-  it('maps privileged user management to the admin group, not the directory', () => {
-    expect(scopesForPolicy({ action: 'manage', subject: 'User' })).toEqual([
-      'admin:read',
-      'admin:write',
-    ]);
-  });
-
-  it('returns nothing for a rule no scope backs', () => {
-    expect(scopesForPolicy({ action: 'read', subject: 'Article' })).toEqual([]);
   });
 });
 
@@ -320,9 +219,11 @@ describe('grantableScopes', () => {
     expect(grantableScopes(ability)).toEqual(['profile:read', 'profile:write']);
   });
 
-  it('grants a write level when the ability satisfies any one of its rules', () => {
+  it('grants a write level when the ability satisfies any one of its rules, and no further', () => {
     const ability = defineAbilitiesFromPermissions([{ action: 'update', subject: 'User' }]);
     expect(grantableScopes(ability)).toContain('users:write');
+    // Editing the directory is not account takeover: the admin group needs `manage User`.
+    expect(grantableScopes(ability)).not.toContain('admin:write');
   });
 
   it('does not let a directory reader reach the admin group', () => {

@@ -18,11 +18,8 @@ export interface HostPrincipalRequest {
 }
 
 /**
- * The host a request was admitted as, or a refusal.
- *
- * Separate from the decorator so it can be tested as the function it is, and so
- * a gateway that does not go through Nest's HTTP pipeline can ask the same
- * question when the relay arrives.
+ * The host a request was admitted as, or a refusal. Separate from the
+ * decorator so it can be tested as the function it is.
  */
 export function hostPrincipalOf(request: HostPrincipalRequest): string {
   const principal = request[HOST_PRINCIPAL];

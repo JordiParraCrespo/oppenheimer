@@ -3,7 +3,7 @@ import {
   SESSION_START_STEPS,
   sessionFailedPayloadSchema,
   sessionStepPayloadSchema,
-} from '../session-step';
+} from '../session-step.js';
 
 /**
  * One vocabulary for the steps of a start, on both sides of the log: the runner

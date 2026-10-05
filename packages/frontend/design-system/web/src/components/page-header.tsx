@@ -10,7 +10,10 @@ import { cn } from '../lib/utils';
  * one small action.
  *
  * `size="lg"` is the routine page itself (28px title, 44px glyph); `md` is
- * the editor and every other page (24px, 36px).
+ * the editor and every other page (24px, 36px); `display` is a page that
+ * opens on its own name rather than a record's (Plan's Tasks and Calendar):
+ * the ladder's H1, no glyph, and its facts under it in a `PageHeaderMeta`
+ * with `indent={false}`, each a `PageHeaderStat`.
  */
 function PageHeader({ className, ...props }: React.ComponentProps<'header'>) {
   return (
@@ -22,11 +25,17 @@ function PageHeader({ className, ...props }: React.ComponentProps<'header'>) {
   );
 }
 
-/** The crumbs: buttons or links for the parents, a muted span for here. */
-function PageHeaderCrumbs({ className, children, ...props }: React.ComponentProps<'nav'>) {
+/**
+ * The crumbs: buttons or links for the parents, a muted span for here. The
+ * landmark's name is the caller's to translate, so it is required.
+ */
+function PageHeaderCrumbs({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'nav'> & { 'aria-label': string }) {
   return (
     <nav
-      aria-label="Breadcrumb"
       data-slot="page-header-crumbs"
       className={cn(
         'flex min-h-5 flex-wrap items-center gap-1.5 text-[13px] text-fg-subtle [&_a]:text-fg-muted [&_a:hover]:text-fg [&_button]:text-fg-muted [&_button:hover]:text-fg',
@@ -61,7 +70,7 @@ function PageHeaderRow({
   /** The name, or a `PageHeaderTitleInput` while editing. */
   title: React.ReactNode;
   actions?: React.ReactNode;
-  size?: 'md' | 'lg';
+  size?: 'md' | 'lg' | 'display';
 }) {
   return (
     <div
@@ -70,7 +79,7 @@ function PageHeaderRow({
       className={cn('flex min-w-0 items-center gap-3', size === 'lg' && 'gap-3.5', className)}
       {...props}
     >
-      {icon ? (
+      {icon && size !== 'display' ? (
         <span
           className={cn(
             'flex shrink-0 items-center justify-center rounded-pill bg-card text-fg',
@@ -85,9 +94,11 @@ function PageHeaderRow({
         <h1
           className={cn(
             'm-0 min-w-0 flex-1 truncate font-semibold text-fg',
-            size === 'lg'
-              ? 'text-[28px] leading-[1.15] tracking-[-0.019em]'
-              : 'text-2xl leading-[1.25] tracking-[-0.018em]',
+            size === 'display'
+              ? 'text-h1'
+              : size === 'lg'
+                ? 'text-[28px] leading-[1.15] tracking-[-0.019em]'
+                : 'text-[24px] leading-[1.25] tracking-[-0.018em]',
           )}
         >
           {title}
@@ -115,12 +126,21 @@ function PageHeaderTitleInput({ className, ...props }: React.ComponentProps<'inp
   );
 }
 
-/** The facts under the title: status, trigger, agent · model · project, separated by dots. */
-function PageHeaderMeta({ className, ...props }: React.ComponentProps<'div'>) {
+/**
+ * The facts under the title: status, trigger, agent · model · project, separated
+ * by dots — indented under the title, past the icon and its gap
+ * (`indent={false}` under a title with no glyph). A mono fact (`figures`, a
+ * countdown) sits a half step smaller than the words.
+ */
+function PageHeaderMeta({ indent = true, className, ...props }: React.ComponentProps<'div'> & { indent?: boolean }) {
   return (
     <div
       data-slot="page-header-meta"
-      className={cn('flex flex-wrap items-center gap-1.5 text-[13px] text-fg-muted', className)}
+      className={cn(
+        'flex flex-wrap items-center gap-1.5 text-sm text-fg-muted [&_.figures]:text-[12.5px]',
+        indent && 'pl-12',
+        className,
+      )}
       {...props}
     />
   );
@@ -130,6 +150,29 @@ function PageHeaderSep() {
   return (
     <span aria-hidden className="text-fg-subtle">
       ·
+    </span>
+  );
+}
+
+/**
+ * One fact: a number in mono and full ink, then its word ("9 open").
+ * `tone="danger"` is a count that needs attention (overdue), red throughout.
+ */
+function PageHeaderStat({
+  value,
+  tone,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'span'> & { value: React.ReactNode; tone?: 'danger' }) {
+  return (
+    <span
+      data-slot="page-header-stat"
+      data-tone={tone}
+      className={cn(tone === 'danger' && 'text-danger', className)}
+      {...props}
+    >
+      <span className={cn('figures', tone !== 'danger' && 'text-fg')}>{value}</span> {children}
     </span>
   );
 }
@@ -145,7 +188,7 @@ function PageHeaderNote({
     <div
       data-slot="page-header-note"
       className={cn(
-        'mt-1 flex items-center gap-3 rounded-md bg-card py-2.5 pr-2.5 pl-3.5 text-[13px] text-fg-muted motion-safe:animate-label-in',
+        'mt-1 ml-12 flex items-center gap-3 rounded-md bg-card py-2.5 pr-2.5 pl-3.5 text-[13px] text-fg-muted motion-safe:animate-label-in',
         className,
       )}
       {...props}
@@ -158,6 +201,7 @@ function PageHeaderNote({
 
 export {
   PageHeader,
+  PageHeaderStat,
   PageHeaderCrumbs,
   PageHeaderHere,
   PageHeaderMeta,

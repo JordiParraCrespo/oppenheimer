@@ -15,8 +15,8 @@ import {
  * guards, the credential resolver, the Zod request pipe and the problem-document
  * filter all have to agree about a route whose policy is `update Session` behind
  * `sessions:write`. The state machine and the constraints are proved against a real
- * Postgres in `apps/api/test/sessions.integration.spec.ts`; what is proved here is
- * that a caller reaches them, and that another workspace does not.
+ * Postgres in `apps/api/src/sessions/__tests__/sessions.integration.spec.ts`; what
+ * is proved here is that a caller reaches them, and that another workspace does not.
  *
  * Creating a session needs a **host** and a **connected GitHub installation**.
  * Both are set up here through the real routes — minting a pairing token and
@@ -27,7 +27,6 @@ import {
 
 test.describe('Sessions', () => {
   test('a session is created, listed, stopped and keeps its log', async () => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const { api } = await signedUpContext('sessionowner');
 
@@ -107,11 +106,9 @@ test.describe('Sessions', () => {
     // a second one beside it.
     expect(entries.filter((entry) => entry.kind === 'session.stopped')).toHaveLength(1);
 
-    // Closing is a **request**: it has to push branches and remove worktrees, and
-    // only the host can say that happened. So the lifecycle does not move — and
-    // what it does not move *to* is the assertion, because where it stays
-    // depends on whether a host ever answered. With no relay this session never
-    // left `starting`; the rule is that closing did not resolve it.
+    // Closing is a **request**: only the host can say branches were pushed and
+    // worktrees removed. Where the lifecycle stays depends on whether a host ever
+    // answered, so the assertion is only that closing did not resolve it.
     const closed = await api.delete(`/api/v1/sessions/${session.id}`, { failOnStatusCode: false });
     expect(closed.status()).toBe(200);
     expect((await closed.json()).lifecycle, 'closing is a request, not an outcome').not.toBe(
@@ -134,7 +131,6 @@ test.describe('Sessions', () => {
    * the log, and a name derived from that task where a namer is configured.
    */
   test('the launch options and the first task survive the round trip', async () => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const { api } = await signedUpContext('sessionlaunch');
     const hostId = await pairHost(api, 'Launch box');
@@ -155,7 +151,7 @@ test.describe('Sessions', () => {
             baseBranch: 'release/2026-09',
           },
         ],
-        launch: { model: 'opus', permission: 'auto', effort: 'high' },
+        launch: { model: 'claude-opus-5-5', permission: 'auto', effort: 'high' },
         prompt: task,
       },
       failOnStatusCode: false,
@@ -163,7 +159,11 @@ test.describe('Sessions', () => {
     expect(created.status(), await created.text()).toBe(201);
     const session = await created.json();
 
-    expect(session.launch).toEqual({ model: 'opus', permission: 'auto', effort: 'high' });
+    expect(session.launch).toEqual({
+      model: 'claude-opus-5-5',
+      permission: 'auto',
+      effort: 'high',
+    });
     // Named within the create itself: the model is asked while the host is told,
     // and the response waits for its title (or the prompt's own words) rather
     // than leaving the slug for the next listing to replace.
@@ -176,7 +176,7 @@ test.describe('Sessions', () => {
     // is what a listing and a restart will read.
     const read = await api.get(`/api/v1/sessions/${session.id}`, { failOnStatusCode: false });
     expect((await read.json()).launch).toEqual({
-      model: 'opus',
+      model: 'claude-opus-5-5',
       permission: 'auto',
       effort: 'high',
     });
@@ -284,8 +284,7 @@ test.describe('Sessions', () => {
     expect(created.status()).toBe(400);
   });
 
-  test('an image for an unlinked host is refused, and so is what is not an image', async () => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
+  test('a file for an unlinked host is refused, and so is what a session does not take', async () => {
     test.slow();
     const { api } = await signedUpContext('sessionimage');
     const hostId = await pairHost(api, 'Image box');
@@ -325,6 +324,34 @@ test.describe('Sessions', () => {
         failOnStatusCode: false,
       }),
       { status: 415, code: 'SESSIONS_013' },
+    );
+    // Nor does a name: an executable called notes.txt is still an executable.
+    await expectProblemDocument(
+      await api.post(images, {
+        multipart: {
+          file: {
+            name: 'notes.txt',
+            mimeType: 'text/plain',
+            buffer: Buffer.from([0x7f, 0x45, 0x4c, 0x46, 2, 1, 1, 0]),
+          },
+        },
+        failOnStatusCode: false,
+      }),
+      { status: 415, code: 'SESSIONS_013' },
+    );
+    // A PDF is a file a session takes: it gets as far as the host, which is offline.
+    await expectProblemDocument(
+      await api.post(images, {
+        multipart: {
+          file: {
+            name: 'spec.pdf',
+            mimeType: 'application/pdf',
+            buffer: Buffer.from('%PDF-1.7\n'),
+          },
+        },
+        failOnStatusCode: false,
+      }),
+      { status: 503, code: 'SESSIONS_016' },
     );
     await expectProblemDocument(
       await api.post(images, { multipart: { window: '0' }, failOnStatusCode: false }),

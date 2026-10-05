@@ -17,7 +17,7 @@
     "migration:generate": "pnpm typeorm migration:generate -d src/config/data-source.ts",
     "migration:run": "pnpm typeorm migration:run -d src/config/data-source.ts",
     "migration:revert": "pnpm typeorm migration:revert -d src/config/data-source.ts",
-    "generate:openapi": "pnpm exec nest build && OPENAPI_GENERATION=true node dist/generate-openapi.js",
+    "generate:openapi": "pnpm exec nest build && node dist/generate-openapi.js && biome check --write openapi.json",
     "seed": "TS_NODE_PROJECT=tsconfig.typeorm.json ts-node src/database/seed.ts",
     "clean": "rm -rf dist"
   },
@@ -53,6 +53,7 @@
     "class-transformer": "^0.5.1",
     "helmet": "^8.3.0",
     "ioredis": "^5.11.1",
+    "maxmind": "^4",
     "multer": "2.2.0",
     "nestjs-pino": "^4.6.1",
     "nestjs-zod": "^4.3.1",

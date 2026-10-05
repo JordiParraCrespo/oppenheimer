@@ -1,7 +1,5 @@
-// Package state persists the session map: which tmux session belongs to which
-// worktree, branch and repository. It is a cache — the control plane is the
-// source of truth and tmux is the live registry — that exists so a runner
-// which boots before its link comes up still knows what it is looking at.
+// Package state persists the session map (app.Store): which tmux session
+// belongs to which worktree, branch and repository.
 package state
 
 import (
@@ -25,7 +23,7 @@ type Store struct{ path string }
 // New builds a store under dir.
 func New(dir string) *Store { return &Store{path: filepath.Join(dir, FileName)} }
 
-// Path is the file's location, for `runner status`.
+// Path is the file's location.
 func (s *Store) Path() string { return s.path }
 
 // Load returns an empty map on a host that has never opened a session.

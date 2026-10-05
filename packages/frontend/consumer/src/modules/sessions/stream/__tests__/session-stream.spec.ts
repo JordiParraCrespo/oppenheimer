@@ -260,6 +260,27 @@ describe('AttachSessionStream', () => {
     expect(h.timers).toHaveLength(0);
   });
 
+  it('mints again when the ticket did not resolve, rather than stranding the pane', async () => {
+    // A ticket is single-use and short-lived, so a 4401 says the ticket was
+    // stale or already spent — not that this person may not attach, which is
+    // settled at the mint. Treated as final it left the terminal on
+    // "Disconnected" with no alert and no Retry: a dead canvas until a reload.
+    const h = harness();
+    await h.flush();
+    h.sockets[0].open();
+    h.sockets[0].drop(ATTACH_CLOSE_CODES.UNAUTHORIZED);
+
+    expect(h.ends).toEqual([]);
+    expect(h.statuses.at(-1)).toBe('connecting');
+    expect(h.timers).toHaveLength(1);
+
+    h.timers[0].fn();
+    await h.flush();
+    expect(h.tickets).toHaveBeenCalledTimes(2);
+    expect(h.sockets).toHaveLength(2);
+    expect(h.sockets[1].protocols).toEqual(['t-2']);
+  });
+
   it('retries when the API cannot be reached to mint a ticket, and never says offline', async () => {
     let calls = 0;
     const h = harness({
@@ -288,6 +309,51 @@ describe('AttachSessionStream', () => {
     expect(h.ends).toEqual(['missing']);
     expect(h.statuses.at(-1)).toBe('closed');
     expect(h.timers).toHaveLength(0);
+  });
+
+  it('dials at once on reconnectNow, cancelling the wait and restarting the ladder', async () => {
+    const h = harness();
+    await h.flush();
+    for (let rung = 0; rung < 3; rung += 1) {
+      h.sockets.at(-1)?.open();
+      h.sockets.at(-1)?.drop(ATTACH_CLOSE_CODES.LINK_LOST);
+      if (rung < 2) {
+        h.timers[0].fn();
+        h.timers.splice(0, 1);
+        await h.flush();
+      }
+    }
+    expect(h.timers).toHaveLength(1);
+    expect(h.timers[0].ms).toBeGreaterThanOrEqual(1_600);
+
+    h.stream.reconnectNow();
+    await h.flush();
+
+    expect(h.timers).toHaveLength(0);
+    expect(h.sockets).toHaveLength(4);
+    h.sockets[3].drop(ATTACH_CLOSE_CODES.LINK_LOST);
+    expect(h.timers[0].ms).toBeLessThanOrEqual(600);
+  });
+
+  it('ignores reconnectNow while a dial is in flight, once live, and after an end', async () => {
+    const h = harness();
+    await h.flush();
+    h.stream.reconnectNow();
+    await h.flush();
+    expect(h.tickets).toHaveBeenCalledTimes(1);
+
+    const socket = h.sockets[0];
+    socket.open();
+    socket.text({ type: 'attached', window: 0 });
+    h.stream.reconnectNow();
+    await h.flush();
+    expect(h.tickets).toHaveBeenCalledTimes(1);
+
+    socket.text({ type: 'closed', reason: 'stopped' });
+    socket.drop(ATTACH_CLOSE_CODES.SESSION_STOPPED);
+    h.stream.reconnectNow();
+    await h.flush();
+    expect(h.tickets).toHaveBeenCalledTimes(1);
   });
 
   it('closes the socket, cancels the retry and reports closed on dispose', async () => {

@@ -17,19 +17,14 @@ const EXTENSIONS: Record<AvatarMimeType, string> = {
  * Owns everything about where an avatar lives: what is accepted, the key it is
  * stored under, and how a stored value becomes a URL a browser can load.
  *
- * The **key** is what lands in `user.image`, not a URL. The two storage
- * back-ends disagree about what `upload()` returns — local hands back a path,
- * S3 hands back the key — and a private bucket has to be signed at read time
- * anyway, so persisting the key and resolving it per response is the only shape
- * that is correct for both.
+ * What `store()` returns is the storage key, and that is what lands in
+ * `user.image`, never a URL (`StorageService` says why).
  */
 @Injectable()
 export class AvatarStorageAdapter implements AvatarStoragePort {
   constructor(private readonly storage: StorageService) {}
 
   /**
-   * Validate and store an avatar, returning the key to persist.
-   *
    * Size is checked here as well as by multer's own limit: multer truncates at
    * its ceiling and reports it through a different error shape, and a caller
    * that streams straight to this service (a test, a future queue consumer)
@@ -44,7 +39,7 @@ export class AvatarStorageAdapter implements AvatarStoragePort {
     }
 
     if (size > AVATAR_MAX_BYTES) {
-      throw new AppError(ProfileErrors.IMAGE_TOO_LARGE, {
+      throw new AppError(ProfileErrors.FILE_TOO_LARGE, {
         detail: `That image is ${size} bytes; the limit is ${AVATAR_MAX_BYTES}.`,
         extensions: { maxBytes: AVATAR_MAX_BYTES },
       });
@@ -57,23 +52,15 @@ export class AvatarStorageAdapter implements AvatarStoragePort {
     // upload, which is what stops a browser serving the previous image from
     // cache.
     const key = `avatars/${userId}/${randomUUID()}.${EXTENSIONS[mimeType]}`;
-    await this.storage.upload(file, key, mimeType);
-    return key;
+    return this.storage.upload(file, key, mimeType);
   }
 
-  /**
-   * Remove a stored avatar. Best-effort: a key that is already gone, or one
-   * that turns out to be a provider URL rather than something we stored, must
-   * not fail the request that is trying to clear it.
-   */
   async remove(key: string | null): Promise<void> {
     if (!key || isAbsoluteUrl(key)) return;
     await this.storage.delete(key).catch(() => {});
   }
 
   /**
-   * Turn a stored value into something a client can load.
-   *
    * A value that is already an absolute URL came from a social provider at
    * sign-up and is passed straight through — only keys we wrote are resolved
    * against storage.
@@ -81,7 +68,7 @@ export class AvatarStorageAdapter implements AvatarStoragePort {
   async resolveUrl(stored: string | null): Promise<string | null> {
     if (!stored) return null;
     if (isAbsoluteUrl(stored)) return stored;
-    return this.storage.getSignedUrl(stored);
+    return this.storage.getUrl(stored);
   }
 }
 

@@ -1,24 +1,27 @@
+import { randomInt } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { newUser } from '../../support/auth';
 import { findOrganizationsForUser, findUserByEmail, query } from '../../support/db';
-import { claimWorkspaceThroughUi, registerThroughUi } from '../../support/web';
+import { claimInstallation } from '../../support/github-stub';
+import { GITHUB_STUB_URL, STUB_INSTALL_URL } from '../../support/sessions';
+import {
+  claimWorkspaceThroughUi,
+  provisionedUser,
+  registerThroughUi,
+  signInAs,
+} from '../../support/web';
 
 /**
  * The walk a new account actually takes: register → name the workspace →
  * Connect GitHub → Add host → Ready → the console.
  *
- * Every step here talks to the API. That is the point: the screens were
- * scaffolds that looked right and wrote nothing, and the repositories under
- * them were written against a design note rather than the built endpoints —
- * `HostsRepository` read `state` for a field the API sends as `online`, and
- * `SessionsRepository` mapped a paginated envelope as if it were an array.
- * Neither was caught, because nothing called them. A green unit suite over the
- * wrong wire is the failure this spec exists to prevent.
+ * Every step talks to the API, because a green unit suite over the wrong wire
+ * is the failure this guards: `HostsRepository` once read `state` for a field
+ * the API sends as `online`, and nothing called it.
  *
- * GitHub and the host step are skipped: both are optional by design, and
- * neither can be driven here — one installs an App on a real GitHub account,
- * the other needs a runner release to fetch. What is asserted is that skipping
- * them is possible and that Ready says so rather than inventing a summary.
+ * The walk skips GitHub and the host step (Connect GitHub has its own test
+ * below; the host step needs a runner release), so what is asserted is that
+ * skipping them works and Ready says so rather than inventing a summary.
  */
 test('a new account walks the first-run flow into the console', async ({ page }) => {
   const user = newUser('firstrunwalk');
@@ -49,6 +52,9 @@ test('a new account walks the first-run flow into the console', async ({ page })
   // on a deployment with no GitHub App and no runner release configured.
   await page.getByRole('link', { name: /skip for now/i }).click();
   await expect(page).toHaveURL(/\/onboarding\/host/, { timeout: 30_000 });
+  // The address moves before the step draws: wait for the host step itself, or
+  // the next click lands on the GitHub step's own Skip link still on screen.
+  await expect(page.getByRole('heading', { name: /add your first host/i })).toBeVisible();
 
   await page.getByRole('link', { name: /skip for now/i }).click();
   await expect(page).toHaveURL(/\/onboarding\/ready/, { timeout: 30_000 });
@@ -68,10 +74,9 @@ test('a new account walks the first-run flow into the console', async ({ page })
  * Without it, every visit to the flow re-opens the slug form over an address
  * `check-slug` now counts as taken — its own.
  *
- * And that redirect is the path that used to leave the flow half-open. Step
- * 3's Back is a link to this step, so a mid-walk reader lands in the console
- * through it on the happy path — after which Ready must be shut too, or
- * shown-once holds only for readers who left by the button.
+ * Ready is shut with it: step 3's Back links to this step, so a mid-walk
+ * reader reaches the console through that redirect, and shown-once must hold
+ * for them too, not only for readers who left by the button.
  */
 test('a named workspace is not sent back through the slug form', async ({ page }) => {
   const user = newUser('firstrunagain');
@@ -89,17 +94,9 @@ test('a named workspace is not sent back through the slug form', async ({ page }
 /**
  * Shown once, and the whole flow — not just the step that names the workspace.
  *
- * Ready is where it showed: an account that had finished days ago could press
- * Back out of the console, or type the URL, and be congratulated all over
- * again on a walk it had no way to re-take. Being finished cannot be the test,
- * because every legitimate arrival at Ready is finished too — the address is
- * claimed by the end of step 2. Having walked there is.
- *
- * Connect GitHub stays open on purpose: New session's repository chip still
- * sends a finished account there to install the App, which
- * `new-session.spec.ts` drives. Add host used to be open for the same reason
- * and no longer is — the console pairs a machine in its own dialog
- * (`add-host.spec.ts`), so nothing links at step 4 any more.
+ * A finished account could press Back into Ready and be congratulated again.
+ * Being finished cannot be the test, since every legitimate arrival at Ready is
+ * finished too (the address is claimed by step 2); having walked there is.
  */
 test('a finished account cannot walk back into the flow', async ({ page }) => {
   const user = newUser('firstrunover');
@@ -110,6 +107,8 @@ test('a finished account cannot walk back into the flow', async ({ page }) => {
   // Mid-walk the landing is reachable, claimed address and all.
   await page.getByRole('link', { name: /skip for now/i }).click();
   await expect(page).toHaveURL(/\/onboarding\/host/, { timeout: 30_000 });
+  // Wait for the host step to draw, as in the walk above.
+  await expect(page.getByRole('heading', { name: /add your first host/i })).toBeVisible();
   await page.getByRole('link', { name: /skip for now/i }).click();
   await expect(page).toHaveURL(/\/onboarding\/ready/, { timeout: 30_000 });
 
@@ -132,9 +131,75 @@ test('a finished account cannot walk back into the flow', async ({ page }) => {
   await page.goto('/onboarding/host');
   await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
 
-  // Connect GitHub is the one step that stays open, because New session's
-  // repository chip still sends a finished account to it — `new-session.spec.ts`
-  // drives that path.
+  // Connect GitHub is the one step that stays open, because every App install
+  // returns to it, including one a finished account starts from New session's
+  // repository chip (`new-session.spec.ts`).
   await page.goto('/onboarding/github');
   await expect(page).toHaveURL(/\/onboarding\/github/, { timeout: 30_000 });
+});
+
+/**
+ * A GitHub callback this console did not start is never posted (why:
+ * `tests/api/github-install-state.spec.ts`). Without a state minted here, the
+ * step says so and posts nothing.
+ */
+test('a GitHub callback without a state is refused on screen, not posted', async ({ page }) => {
+  const owner = await provisionedUser('ghunstarted');
+  await signInAs(page, owner.user);
+
+  const posts: string[] = [];
+  page.on('request', (request) => {
+    if (
+      request.method() === 'POST' &&
+      new URL(request.url()).pathname === '/api/v1/installations'
+    ) {
+      posts.push(request.url());
+    }
+  });
+
+  await page.goto(
+    '/onboarding/github?installation_id=4242&code=stub-oauth-code&setup_action=install',
+  );
+  await expect(page.getByText(/this github link was not started here/i)).toBeVisible();
+  // The legacy walk marker carries no nonce either, so it keeps the walk and
+  // still posts nothing.
+  await page.goto('/onboarding/github?installation_id=4242&code=stub-oauth-code&state=first-run');
+  await expect(page.getByText(/this github link was not started here/i)).toBeVisible();
+  expect(posts).toEqual([]);
+
+  await owner.api.dispose();
+});
+
+/**
+ * The round trip Connect GitHub makes: mint a state on click, leave for the
+ * App's install page with it, come back with GitHub's `installation_id`,
+ * `code` and that same `state`, and land connected. GitHub is answered here;
+ * the stub lists the installation for the code, as GitHub would.
+ */
+test('Connect GitHub carries a minted state through the install round trip', async ({ page }) => {
+  const owner = await provisionedUser('ghroundtrip');
+  await signInAs(page, owner.user);
+  const githubInstallationId = await claimInstallation(
+    GITHUB_STUB_URL,
+    randomInt(1_000_000, 2 ** 40),
+  );
+
+  await page.route('https://github.com/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/html', body: '<p>GitHub</p>' }),
+  );
+  await page.goto('/onboarding/github');
+  await page.getByRole('button', { name: /connect github/i }).click();
+  await page.waitForURL((url) => url.href.startsWith(`${STUB_INSTALL_URL}?state=`));
+  const state = new URL(page.url()).searchParams.get('state') ?? '';
+  expect(state).toMatch(/^[A-Za-z0-9_-]{43}$/);
+
+  await page.goto(
+    `/onboarding/github?installation_id=${githubInstallationId}&code=stub-oauth-code&setup_action=install&state=${state}`,
+  );
+  // Connected: the spent parameters are dropped from the address on success.
+  await expect(page).toHaveURL(/\/onboarding\/github$/, { timeout: 30_000 });
+  await expect(page.getByText(/this github link was not started here/i)).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /continue/i })).toBeVisible();
+
+  await owner.api.dispose();
 });

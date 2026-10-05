@@ -1,10 +1,12 @@
-import { Alert, AlertDescription } from '@oppenheimer/design-system-web';
+import type { CreateSessionInput } from '@oppenheimer/frontend-consumer';
 import {
   useCreateSession,
   useHosts,
   useProjectsSnapshot,
+  useUploadSessionAttachment,
 } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { lastFailure } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { type ReactNode, useRef } from 'react';
 import { useWatch } from 'react-hook-form';
@@ -14,17 +16,13 @@ import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { toCheckouts, toLaunchInput } from '../lib/session-options';
 
 /**
- * The composer of New session, and the one request the draft makes.
- *
- * What this section reads during render is only what it must: whether a host
- * is picked and still paired, because the composer cannot send without one,
- * and the request's state. The rest of the draft, and the projects, are read once, when the task
- * is sent — so a pick of effort or a refetch of the projects never reaches it.
- *
- * `scope`, `tools` and `engine` are the chips, built by the section above and
- * placed here untouched. They arrive as elements rather than being built here
- * so that picking a host, which re-renders this section, does not re-render
- * them.
+ * The composer of New session and the requests the draft makes: an upload per
+ * image, then the create that names them. During render it reads only whether
+ * a host is picked and paired, whether the pick names one repository (the
+ * composer cannot send without both, 05) and the request's state; the rest of
+ * the draft and the projects are read once, on send, so an effort pick or a
+ * projects refetch never reaches it. The chips arrive as elements so a host
+ * pick, which re-renders this section, does not re-render them.
  */
 export function NewSessionSend({
   scope,
@@ -37,9 +35,14 @@ export function NewSessionSend({
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const resolveError = useErrorMessage();
   const { control, getValues } = useNewSessionDraft();
   const hostId = useWatch({ control, name: 'hostId' });
+  // What `start` posts, not what the picker holds, so the gate and the body agree.
+  const hasCheckout = useWatch({
+    control,
+    name: 'scope',
+    compute: (picked) => toCheckouts(picked).length > 0,
+  });
   // Whether the picked host is still one this workspace has. A remembered host
   // that was removed since the last visit would otherwise leave send enabled
   // with an id the API refuses. A boolean, so a refetch re-renders this only
@@ -47,9 +50,8 @@ export function NewSessionSend({
   const { data: hostKnown } = useHosts({
     select: (hosts) => hosts.some((host) => host.id === hostId),
   });
-  // Read at send time, not subscribed to: the list is only needed to send a
-  // remembered project the workspace no longer has as none, and a subscription
-  // would re-render the composer on every refetch of a list it never draws.
+  // Needed only to send a remembered project the workspace no longer has as
+  // none.
   const projects = useProjectsSnapshot();
 
   /**
@@ -63,6 +65,7 @@ export function NewSessionSend({
    * the API would answer it with the session the first one made.
    */
   const attempt = useRef<{ key: string; body: string } | null>(null);
+  const upload = useUploadSessionAttachment();
   const create = useCreateSession({
     onSuccess: (session) => {
       attempt.current = null;
@@ -70,17 +73,38 @@ export function NewSessionSend({
     },
   });
 
-  function start(prompt: string) {
+  /**
+   * Each file's upload id, all uploaded at once; null when one failed. The API
+   * names an upload by its owner and its bytes, so sending the same files again
+   * answers the same ids — the same body, so the same key — and a second press
+   * of send, or two in one frame, is the create the first one was.
+   */
+  async function attach(files: File[]): Promise<string[] | null> {
+    try {
+      return await Promise.all(files.map(async (file) => (await upload.mutateAsync(file)).id));
+    } catch {
+      // The failure is the mutation's error, which the alert below reads.
+      return null;
+    }
+  }
+
+  async function start(prompt: string, files: File[]) {
     const draft = getValues();
-    if (!draft.hostId || hostKnown === false) return;
+    const [checkout] = toCheckouts(draft.scope);
+    if (!draft.hostId || hostKnown === false || !checkout) return;
+    create.reset();
+    upload.reset();
+    const attachmentIds = await attach(files);
+    if (!attachmentIds) return;
     const projectId = projects()?.find((project) => project.id === draft.projectId)?.id ?? null;
-    const input = {
+    const input: CreateSessionInput = {
       hostId: draft.hostId,
       agent: draft.agent,
       ...(projectId ? { projectId } : {}),
-      checkouts: toCheckouts(draft.scope),
+      checkouts: [checkout],
       launch: toLaunchInput(draft),
       prompt,
+      ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
     };
     const body = JSON.stringify(input);
     if (attempt.current?.body !== body) attempt.current = { key: crypto.randomUUID(), body };
@@ -91,20 +115,14 @@ export function NewSessionSend({
     <div className="flex flex-col gap-4.5">
       <NewSessionComposer
         onSubmit={start}
-        busy={create.isPending}
-        disabled={!hostId || hostKnown === false}
+        busy={upload.isPending || create.isPending}
+        disabled={!hostId || hostKnown === false || !hasCheckout}
         scope={scope}
         tools={tools}
         engine={engine}
       />
 
-      {create.isError ? (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {resolveError(create.error, t('sessions.new.failed')).message}
-          </AlertDescription>
-        </Alert>
-      ) : null}
+      <ErrorAlert error={lastFailure([upload, create]).error} fallback={t('sessions.new.failed')} />
     </div>
   );
 }

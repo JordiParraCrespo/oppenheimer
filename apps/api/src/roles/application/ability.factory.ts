@@ -1,4 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { CacheService } from '@oppenheimer/backend-cache';
+import { requestMemo } from '@oppenheimer/backend-core';
 import {
   type AppAbility,
   defineAbilitiesFromPermissions,
@@ -6,79 +8,129 @@ import {
   SYSTEM_ROLE_PERMISSIONS,
 } from '@oppenheimer/shared';
 import type { AbilityPort } from '../../auth/application/ability.port';
-import type { RoleRepositoryPort } from '../database/role.repository.port';
+import { type TenantRequest, tenantOrganizationIdOf } from '../../auth/domain/request-tenant.types';
+import type {
+  AuthzVersionRepositoryPort,
+  AuthzVersions,
+} from '../database/authz-version.repository.port';
 import type { UserRoleRepositoryPort } from '../database/user-role.repository.port';
-import { ROLE_REPOSITORY, USER_ROLE_REPOSITORY } from '../roles.di-tokens';
+import { AUTHZ_VERSION_REPOSITORY, USER_ROLE_REPOSITORY } from '../roles.di-tokens';
+import { GlobalRoleRegistry } from './global-role.registry';
 
 /** Minimal shape of the authenticated principal the guard hands to the factory. */
 export interface AuthenticatedUser {
   id?: string;
-  /** Legacy single-role column, used as a fallback before migration. */
+  /** Better Auth's `user.role`: platform role names, comma-separated. */
   role?: string;
   [key: string]: unknown;
 }
 
-/** Where the per-request ability is memoized. */
-const ABILITY_CACHE = Symbol('authz.ability');
+/** `requestMemo` keys: the resolved role set, and the ability built from it. */
+const ROLE_SET = Symbol('authz.roleSet');
+const ABILITY = Symbol('authz.ability');
+
+/** How long a cached role set lives. The versions make it correct; this only bounds memory. */
+const ROLE_SET_TTL_SECONDS = 900;
 
 /** The subset of the request object the factory reads and writes. */
-export interface AbilityRequest {
+export interface AbilityRequest extends TenantRequest {
   user?: AuthenticatedUser;
   session?: {
-    activeOrganizationId?: string | null;
     activeTeamId?: string | null;
   } | null;
   ability?: AppAbility;
-  [ABILITY_CACHE]?: AppAbility;
 }
 
 /** Request-scoped context used to interpolate resource-scoping conditions. */
 export interface AbilityScope {
-  /** The caller's active organization (from `session.activeOrganizationId`). */
-  activeOrganizationId?: string | null;
+  /**
+   * The organization the ability is built in: the caller's roles scoped to it
+   * count, and the `${activeOrganizationId}` condition placeholder resolves to
+   * it. For a request, its tenant.
+   */
+  organizationId?: string | null;
   /** The caller's active workspace/team (from `session.activeTeamId`). */
   activeTeamId?: string | null;
 }
 
 /**
+ * The roles a user holds in one organization and what they grant: the value a
+ * request's ability is built from, and — for the `user_role` half — what the
+ * Redis cache holds.
+ */
+interface RoleSet {
+  /**
+   * Ids of the `user_role`-assigned roles (global assignments plus those
+   * scoped to the organization), for the access-scope resolver's
+   * role-addressed grants.
+   */
+  roleIds: string[];
+  permissions: PermissionDefinition[];
+}
+
+/**
  * Builds a CASL ability for an authenticated user from the union of every role
- * assigned to them. This replaces the old hardcoded `defineAbilitiesFor(role)`
- * switch: permissions now live in the database and are fully admin-managed.
+ * assigned to them: roles through the `user_role` join, then the Better Auth
+ * `user.role` column (the global role of that name, then the seeded system-role
+ * permissions).
  *
- * Resolution order:
- *   1. Roles assigned through the `user_role` join (dynamic RBAC).
- *   2. Fallback to the legacy `user.role` column — first the DB role of that
- *      name, then the seeded system-role permissions — so users that predate
- *      the join keep working.
+ * Every resolution first reads three version counters in one query
+ * (`AuthzVersionRepositoryPort`): the organization's `roleVersion`, the global role
+ * catalog's and the user's own. Every writer that changes effective permissions bumps
+ * one in its own transaction.
+ *
+ * - The `user_role` permissions are cached in Redis under a key carrying all three, so
+ *   a write is a miss on the next request on every replica. The versions are read
+ *   before the cache and any computation: a value computed after a concurrent write is
+ *   harmlessly newer than its key, one computed before could claim to be current.
+ * - The `user.role` platform roles come from `GlobalRoleRegistry` and are not in the
+ *   cached value: `user.role` arrives fresh with every request, so Better Auth's
+ *   `set-role` needs no invalidation.
+ * - A Redis error falls back to the database, logged once per outage.
+ *
+ * Only the permission definitions are cached; the ability is interpolated per request
+ * (`${user.id}`, `${activeOrganizationId}`) and does not serialize.
  */
 @Injectable()
 export class AbilityFactory implements AbilityPort {
+  private readonly logger = new Logger('AbilityFactory');
+  private cacheFailing = false;
+
   constructor(
     @Inject(USER_ROLE_REPOSITORY)
     private readonly userRoleRepository: UserRoleRepositoryPort,
-    @Inject(ROLE_REPOSITORY)
-    private readonly roleRepository: RoleRepositoryPort,
+    @Inject(AUTHZ_VERSION_REPOSITORY)
+    private readonly versions: AuthzVersionRepositoryPort,
+    private readonly globalRoles: GlobalRoleRegistry,
+    private readonly cache: CacheService,
   ) {}
 
   /**
-   * The caller's ability for this request, built once and memoized on the
-   * request object.
-   *
-   * Four call sites resolve the ability during a single request (the guard plus
-   * three api-token handlers). Without the memo each one re-reads the role
-   * tables, so the same answer is computed up to four times per request.
+   * The caller's ability for this request, built in the request's tenant and memoized
+   * per request: `PoliciesGuard` and `AccessScopeInterceptor` both ask, and concurrent
+   * asks share one resolution. The organization comes from `request.tenant`
+   * (write-once), never an argument the memo could not see. Handlers with no request
+   * call {@link createForUser}, which shares the Redis cache.
    */
-  async forRequest(request: AbilityRequest): Promise<AppAbility> {
-    if (request[ABILITY_CACHE]) return request[ABILITY_CACHE];
-
-    const ability = await this.createForUser(request.user ?? {}, {
-      activeOrganizationId: request.session?.activeOrganizationId ?? null,
-      activeTeamId: request.session?.activeTeamId ?? null,
+  forRequest(request: AbilityRequest): Promise<AppAbility> {
+    return requestMemo(request, ABILITY, async () => {
+      const { permissions } = await this.roleSetFor(request);
+      const ability = this.build(permissions, request.user ?? {}, {
+        organizationId: tenantOrganizationIdOf(request),
+        activeTeamId: request.session?.activeTeamId ?? null,
+      });
+      request.ability = ability;
+      return ability;
     });
+  }
 
-    request[ABILITY_CACHE] = ability;
-    request.ability = ability;
-    return ability;
+  /**
+   * The ids of the roles the caller holds in the request's tenant (global
+   * assignments plus those scoped to it) — the same read the ability came
+   * from, so the access-scope resolver need not query `user_role` again.
+   */
+  async roleIdsForRequest(request: AbilityRequest): Promise<string[]> {
+    return (await this.roleSetFor(request)).roleIds;
   }
 
   /**
@@ -90,62 +142,152 @@ export class AbilityFactory implements AbilityPort {
     user: AuthenticatedUser,
     scope: AbilityScope = {},
   ): Promise<PermissionDefinition[]> {
-    return this.resolvePermissions(user, scope.activeOrganizationId ?? null);
+    return (await this.resolve(user, scope.organizationId ?? null)).permissions;
   }
 
   async createForUser(user: AuthenticatedUser, scope: AbilityScope = {}): Promise<AppAbility> {
-    const permissions = await this.resolvePermissions(user, scope.activeOrganizationId ?? null);
-    // Pass the principal and active-org scope so resource-scoping conditions
-    // (e.g. `${user.id}`, `${activeOrganizationId}`) can be interpolated when
-    // the ability is built.
+    const { permissions } = await this.resolve(user, scope.organizationId ?? null);
+    return this.build(permissions, user, scope);
+  }
+
+  private build(
+    permissions: PermissionDefinition[],
+    user: AuthenticatedUser,
+    scope: AbilityScope,
+  ): AppAbility {
+    // `${activeOrganizationId}` keeps its name because role rows store it (the
+    // `owner` role's seed in `InitialSchema`); what it resolves to is the
+    // organization this ability is built in.
     return defineAbilitiesFromPermissions(permissions, {
       user,
-      activeOrganizationId: scope.activeOrganizationId ?? null,
+      activeOrganizationId: scope.organizationId ?? null,
       activeTeamId: scope.activeTeamId ?? null,
     });
   }
 
-  private async resolvePermissions(
-    user: AuthenticatedUser,
-    activeOrganizationId: string | null,
+  private roleSetFor(request: AbilityRequest): Promise<RoleSet> {
+    return requestMemo(request, ROLE_SET, () =>
+      this.resolve(request.user ?? {}, tenantOrganizationIdOf(request)),
+    );
+  }
+
+  private async resolve(user: AuthenticatedUser, organizationId: string | null): Promise<RoleSet> {
+    // First, always: every read below is keyed on these.
+    const versions = await this.versions.read(user.id ?? null, organizationId);
+
+    const [assigned, platform] = await Promise.all([
+      user.id
+        ? this.assignedRoles(user.id, organizationId, versions)
+        : Promise.resolve<RoleSet>({ roleIds: [], permissions: [] }),
+      this.platformPermissions(user.role, versions.catalog),
+    ]);
+
+    return {
+      roleIds: assigned.roleIds,
+      permissions: [...assigned.permissions, ...platform],
+    };
+  }
+
+  /**
+   * Roles assigned through the `user_role` join: global assignments plus those
+   * scoped to the organization, so a role granted in one tenant has no effect
+   * in another.
+   */
+  private async assignedRoles(
+    userId: string,
+    organizationId: string | null,
+    versions: AuthzVersions,
+  ): Promise<RoleSet> {
+    const key = [
+      'authz:roles:v1',
+      userId,
+      organizationId ?? '-',
+      versions.organization ?? '-',
+      versions.catalog,
+      versions.user,
+    ].join(':');
+
+    // Not `CacheService.getOrSet`: it fails open silently, and this read must
+    // see a Redis failure to warn once per outage and say when it recovered.
+    // Its single-flight buys little here — the key is one caller's, and
+    // `requestMemo` already shares the answer within a request.
+    const cached = await this.cacheGet(key);
+    if (cached) return cached;
+
+    const roles = await this.userRoleRepository.findRolesForUser(userId, organizationId);
+    const value: RoleSet = {
+      roleIds: roles.map((role) => role.id as string),
+      permissions: roles.flatMap((role) =>
+        role.permissions.map((permission) => permission.toDefinition()),
+      ),
+    };
+    await this.cacheSet(key, value);
+    return value;
+  }
+
+  /**
+   * Also honour the Better Auth `user.role` column. The admin plugin's
+   * `set-role` writes this column, so unioning it here (not just as a
+   * fallback) keeps admin-plugin promotions in sync with CASL: a user
+   * promoted to `admin`/`superadmin` gains that role's permissions even
+   * though their `user_role` join still holds the default `user` row.
+   */
+  private async platformPermissions(
+    role: string | undefined,
+    catalogVersion: string,
   ): Promise<PermissionDefinition[]> {
+    if (!role) return [];
+
+    // Each name resolves independently, so `user,admin` receives the same
+    // permissions as a single `admin` role.
+    const names = role
+      .split(',')
+      .map((name) => name.trim())
+      .filter(Boolean);
+
     const permissions: PermissionDefinition[] = [];
-
-    // 1. Roles assigned through the `user_role` join (dynamic RBAC), narrowed
-    //    to the active organization. The repository unions the caller's global
-    //    assignments with the ones scoped to that organization, so a role
-    //    granted in one tenant has no effect in another.
-    if (user.id) {
-      const roles = await this.userRoleRepository.findRolesForUser(user.id, activeOrganizationId);
-      for (const role of roles) {
-        permissions.push(...role.permissions.map((permission) => permission.toDefinition()));
-      }
+    for (const name of names) {
+      // Platform roles are global rows only — the registry holds nothing
+      // else — so a tenant's role of the same name never stands in for them.
+      const found = await this.globalRoles.permissionsOf(name, catalogVersion);
+      permissions.push(...(found ?? SYSTEM_ROLE_PERMISSIONS[name] ?? []));
     }
-
-    // 2. Also honour the Better Auth `user.role` column. The admin plugin's
-    //    `set-role` writes this column, so unioning it here (not just as a
-    //    fallback) keeps admin-plugin promotions in sync with CASL: a user
-    //    promoted to `admin`/`superadmin` gains that role's permissions even
-    //    though their `user_role` join still holds the default `user` row.
-    if (user.role) {
-      // Better Auth stores multiple platform roles as a comma-separated value.
-      // Resolve each name independently so `user,admin` receives the same
-      // control-plane permissions as a single `admin` role.
-      const platformRoles = user.role
-        .split(',')
-        .map((role) => role.trim())
-        .filter(Boolean);
-
-      for (const roleName of platformRoles) {
-        const found = await this.roleRepository.findOneByName(roleName);
-        permissions.push(
-          ...(found.isSome()
-            ? found.unwrap().permissions.map((permission) => permission.toDefinition())
-            : (SYSTEM_ROLE_PERMISSIONS[roleName] ?? [])),
-        );
-      }
-    }
-
     return permissions;
+  }
+
+  private async cacheGet(key: string): Promise<RoleSet | undefined> {
+    try {
+      const value = await this.cache.get<RoleSet>(key);
+      this.cacheRecovered();
+      return value;
+    } catch (error) {
+      this.cacheFailed(error);
+      return undefined;
+    }
+  }
+
+  private async cacheSet(key: string, value: RoleSet): Promise<void> {
+    try {
+      await this.cache.set(key, value, ROLE_SET_TTL_SECONDS);
+      this.cacheRecovered();
+    } catch (error) {
+      this.cacheFailed(error);
+    }
+  }
+
+  /** Once per outage, not once per request; never with the key or the value. */
+  private cacheFailed(error: unknown): void {
+    if (this.cacheFailing) return;
+    this.cacheFailing = true;
+    this.logger.warn(
+      { message: 'authz cache unavailable; resolving permissions from the database' },
+      error instanceof Error ? error.stack : String(error),
+    );
+  }
+
+  private cacheRecovered(): void {
+    if (!this.cacheFailing) return;
+    this.cacheFailing = false;
+    this.logger.log({ message: 'authz cache recovered' });
   }
 }

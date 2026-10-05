@@ -1,16 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CLIENT_FEATURE_FLAG_KEYS,
-  defaultClientFlagValues,
-  expiredFlags,
   FEATURE_FLAG_KEYS,
   FEATURE_FLAGS,
   getFlagDefinition,
   isFeatureFlagKey,
   isValidFlagValue,
-} from '../catalog';
-import { updateFeatureFlagSchema } from '../schema';
-import type { FlagDefinition } from '../types';
+} from '../catalog.js';
+import { updateFeatureFlagSchema } from '../schema.js';
 
 describe('the feature-flag catalog', () => {
   it.each(FEATURE_FLAG_KEYS)('%s is well-formed', (key) => {
@@ -28,11 +24,6 @@ describe('the feature-flag catalog', () => {
     }
   });
 
-  it('lists only client flags as client keys', () => {
-    for (const key of CLIENT_FEATURE_FLAG_KEYS) expect(getFlagDefinition(key).client).toBe(true);
-    expect(Object.keys(defaultClientFlagValues())).toEqual(CLIENT_FEATURE_FLAG_KEYS);
-  });
-
   it('recognises its own keys and nothing inherited', () => {
     expect(isFeatureFlagKey('api_token_creation')).toBe(true);
     expect(isFeatureFlagKey('toString')).toBe(false);
@@ -40,44 +31,6 @@ describe('the feature-flag catalog', () => {
 
   it('keeps the kill switch for token creation live by default', () => {
     expect(FEATURE_FLAGS.api_token_creation.defaultValue).toBe(true);
-  });
-});
-
-describe('expiredFlags', () => {
-  const catalog: Record<string, FlagDefinition> = {
-    shipped: {
-      description: 'x',
-      kind: 'release',
-      owner: 'x',
-      expiresAt: '2026-01-01',
-      client: false,
-      type: 'boolean',
-      defaultValue: false,
-    },
-    running: {
-      description: 'x',
-      kind: 'experiment',
-      owner: 'x',
-      expiresAt: '2027-01-01',
-      client: false,
-      type: 'boolean',
-      defaultValue: false,
-    },
-    switch: {
-      description: 'x',
-      kind: 'ops',
-      owner: 'x',
-      expiresAt: '2020-01-01',
-      client: false,
-      type: 'boolean',
-      defaultValue: true,
-    },
-  };
-
-  it('names temporary flags past their date, never an ops switch', () => {
-    expect(expiredFlags('2026-06-01', catalog)).toEqual(['shipped']);
-    expect(expiredFlags('2026-01-01', catalog)).toEqual(['shipped']);
-    expect(expiredFlags('2025-12-31', catalog)).toEqual([]);
   });
 });
 

@@ -44,7 +44,6 @@ export class MoveSessionHttpController {
   @CheckPolicies({ action: 'update', subject: 'Session' })
   @RequireScopes('sessions:write')
   @ApiOperation({
-    operationId: 'moveSession',
     summary: 'List a session under another project',
     description:
       'Nothing moves on disk: a project is metadata, and a session’s directory and branch never name it. Any active project in the workspace can take any session.',

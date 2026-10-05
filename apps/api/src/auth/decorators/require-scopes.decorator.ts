@@ -26,7 +26,8 @@ export const ALLOW_ANY_SCOPE_KEY = 'allow_any_scope';
 
 /**
  * Marks a route as reachable by any authenticated credential, scoped or not,
- * without requiring a specific permission. Reserved for routes that only ever
- * expose the caller's own identity.
+ * without requiring a specific permission. Reserved for routes that answer only
+ * about the caller (its identity, its flags, a host's own work) or what an
+ * anonymous caller already gets.
  */
 export const AllowAnyScope = () => SetMetadata(ALLOW_ANY_SCOPE_KEY, true);

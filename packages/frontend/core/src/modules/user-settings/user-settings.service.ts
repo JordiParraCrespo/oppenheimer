@@ -1,4 +1,3 @@
-import type { UpdateUserSettingsDto } from '@oppenheimer/shared/schemas/profile';
 import { inject, injectable } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import type { UserSettingsEntity } from './user-settings.entity';
@@ -13,9 +12,5 @@ export class UserSettingsService {
 
   async get(): Promise<UserSettingsEntity> {
     return this.repository.get();
-  }
-
-  async update(dto: UpdateUserSettingsDto): Promise<UserSettingsEntity> {
-    return this.repository.update(dto);
   }
 }

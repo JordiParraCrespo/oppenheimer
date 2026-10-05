@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ParkedImagePort } from '../../../../links/application/parked-image.port';
+import type { ParkedFilePort } from '../../../../links/application/parked-file.port';
 import { CollectSessionImageCommand } from '../collect-session-image.command';
 import { CollectSessionImageCommandHandler } from '../collect-session-image.command-handler';
 
@@ -13,8 +13,10 @@ describe('CollectSessionImageCommandHandler', () => {
     };
     const images = {
       park: vi.fn(),
+      stage: vi.fn(),
+      claim: vi.fn(),
       collect: vi.fn().mockResolvedValue(image),
-    } satisfies ParkedImagePort;
+    } satisfies ParkedFilePort;
 
     await expect(
       new CollectSessionImageCommandHandler(images).execute(
@@ -27,8 +29,10 @@ describe('CollectSessionImageCommandHandler', () => {
   it('answers HOSTS_007 when nothing is waiting, whatever the reason', async () => {
     const images = {
       park: vi.fn(),
+      stage: vi.fn(),
+      claim: vi.fn(),
       collect: vi.fn().mockResolvedValue(undefined),
-    } satisfies ParkedImagePort;
+    } satisfies ParkedFilePort;
 
     await expect(
       new CollectSessionImageCommandHandler(images).execute(

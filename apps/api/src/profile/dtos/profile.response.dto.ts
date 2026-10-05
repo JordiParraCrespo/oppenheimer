@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
  * The caller's own account, as the profile screen needs it.
  *
  * Richer than `UserResponseDto`: that one is the user *directory*, which other
- * people read, so it carries no contact details. This is only ever returned to
+ * people read, so it carries no phone, job title or avatar. This is only ever returned to
  * the account's owner.
  */
 export class ProfileResponseDto {
@@ -12,7 +12,8 @@ export class ProfileResponseDto {
   id!: string;
 
   @ApiProperty({
-    description: 'Read-only here — changing it is an admin operation.',
+    description:
+      'Read-only here — `POST /profile/email` sends a link to a new address, which moves the account when followed.',
   })
   email!: string;
 
@@ -27,6 +28,13 @@ export class ProfileResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   jobTitle!: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The handle session logs and commit trailers carry; unique across accounts.',
+  })
+  username!: string | null;
 
   @ApiProperty({ type: String, nullable: true })
   avatarUrl!: string | null;

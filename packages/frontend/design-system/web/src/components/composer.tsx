@@ -6,29 +6,6 @@ import * as React from 'react';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 
-/**
- * Composer — the prompt box, the one place on New session with real presence:
- * an 18px-radius field holding a growing textarea, then a foot row with the
- * tools. Focus takes the blue border and ring. Enter submits, Shift+Enter
- * inserts a newline; while `busy` the send button becomes a stop button in the
- * same corner.
- *
- * The foot row reads left to right as scope of action, then engine: attach
- * and `tools` (the permission level) on the left; a spacer; `engine` (the
- * agent and model, the effort) on the right; then mic and the round primary
- * send. Both slots take `ComposerToolButton`s, the 30px text triggers the
- * console's menus hang from. Attachments list under the textarea as
- * removable chips; they are never silently dropped.
- *
- * `scope` is the tabbed form on New session: the scope chips sit in a grey
- * band fused to the top of the field (control fill, 18px radii on the top
- * corners, inset 18px from each side), each chip a `ChipSelectTrigger` in
- * its `tab` variant. With a band the field is the taller one, 128px at 15px,
- * because the sentence above it has already said where the work happens and
- * the box is the whole page's presence.
- *
- * Controlled — own `value`, handle `onSubmit`.
- */
 type ComposerAttachment = { id: string; name: string };
 
 /**
@@ -55,6 +32,30 @@ const DEFAULT_COMPOSER_LABELS: ComposerLabels = {
   removeAttachment: (name) => `Remove ${name}`,
 };
 
+/**
+ * Composer — the prompt box: an 18px-radius field holding a growing textarea,
+ * then a foot row with the tools. Focus takes the blue border and ring. Enter
+ * submits, Shift+Enter inserts a newline; while `busy` the send button becomes
+ * a stop button in the same corner.
+ *
+ * The foot row reads scope of action, then engine: attach and `tools` (the
+ * permission level) on the left; a spacer; `engine` (agent, model, effort) on
+ * the right; then mic and the round primary send. Both slots take
+ * `ComposerToolButton`s. Attachments list under the textarea as removable
+ * chips; they are never silently dropped.
+ *
+ * `sendBlockedReason` keeps the box usable but the send off, and says why
+ * ("fable is offline — pick another host"): the draft is fine, the scope
+ * above it is not. The button stays focusable (`aria-disabled`, not
+ * `disabled`) with the reason as its description, so a keyboard or screen
+ * reader user hears it, and as its title for the pointer.
+ *
+ * `scope` is New session's tabbed form: the scope chips (`ChipSelectTrigger`,
+ * `tab` variant) sit in a grey band fused to the top of the field (control
+ * fill, 18px top radii, inset 18px each side). With a band the field is the
+ * taller one, 128px at 15px, because the sentence above has already said where
+ * the work happens.
+ */
 function Composer({
   value,
   onValueChange,
@@ -62,6 +63,7 @@ function Composer({
   onStop,
   busy = false,
   disabled = false,
+  sendBlockedReason,
   placeholder = 'Describe a task or ask a question',
   attachments,
   onRemoveAttachment,
@@ -82,6 +84,8 @@ function Composer({
   onStop?: () => void;
   busy?: boolean;
   disabled?: boolean;
+  /** Why the draft cannot be sent yet, though it can be written. Present: send is off and says this. */
+  sendBlockedReason?: string;
   placeholder?: string;
   attachments?: ComposerAttachment[];
   onRemoveAttachment?: (id: string) => void;
@@ -101,7 +105,9 @@ function Composer({
   labels?: Partial<ComposerLabels>;
 }) {
   const label = { ...DEFAULT_COMPOSER_LABELS, ...labels };
-  const canSend = value.trim().length > 0 && !disabled;
+  const blocked = !busy && sendBlockedReason !== undefined;
+  const canSend = value.trim().length > 0 && !disabled && !blocked;
+  const reasonId = React.useId();
 
   function submit() {
     if (busy) return onStop?.();
@@ -134,12 +140,10 @@ function Composer({
         placeholder={placeholder}
         disabled={disabled}
         rows={minRows}
-        // `min-h`, not `rows`: `field-sizing-content` sizes the box to what is
-        // typed and overrides the `rows` attribute outright, so an empty
-        // composer collapsed to a single line. The export's floor is 112px
-        // (`.op-composer__input`), which is the prompt box having "real
-        // presence" before anyone has typed into it — the whole point of the
-        // control. `rows` stays for the no-`field-sizing` fallback.
+        // `min-h`, not `rows`: `field-sizing-content` overrides `rows`, so an
+        // empty composer would collapse to one line. The floor is the export's
+        // 112px (`.op-composer__input`); `rows` stays for the no-`field-sizing`
+        // fallback.
         className={cn(
           'field-sizing-content max-h-[40svh] w-full resize-none bg-transparent px-[18px] py-4 text-fg outline-none placeholder:text-field-placeholder',
           scope ? 'min-h-32 text-[15px] leading-normal' : 'min-h-28 text-compose',
@@ -197,11 +201,14 @@ function Composer({
         ) : null}
         <IconButton
           aria-label={busy ? label.stop : label.send}
+          aria-disabled={blocked || undefined}
+          aria-describedby={blocked ? reasonId : undefined}
+          title={blocked ? sendBlockedReason : undefined}
           variant="primary"
           size="sm"
           onClick={submit}
-          disabled={!busy && !canSend}
-          className="size-8"
+          disabled={!busy && !blocked && !canSend}
+          className="size-8 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 aria-disabled:hover:bg-primary"
         >
           {busy ? (
             <SquareIcon className="size-3.5 fill-current" />
@@ -209,6 +216,11 @@ function Composer({
             <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
           )}
         </IconButton>
+        {blocked ? (
+          <span id={reasonId} className="sr-only">
+            {sendBlockedReason}
+          </span>
+        ) : null}
       </div>
     </div>
   );

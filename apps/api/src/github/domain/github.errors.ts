@@ -1,12 +1,5 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
-/**
- * Failures the `github/` module can produce.
- *
- * The prefix is plural-noun `GITHUB_` and the numbering starts at 001 because
- * the Go runner owns its own `HOST_00x` / `PAIR_00x` / `SESS_00x` ranges in the
- * same catalog; a reused code fails `error-catalog-coverage.spec.ts`.
- */
 export const GithubErrors = {
   /**
    * Also raised for an installation that exists but belongs to another
@@ -30,9 +23,9 @@ export const GithubErrors = {
     httpStatus: 503,
   },
   /**
-   * `githubInstallationId` is globally unique, so a second workspace claiming
-   * an installation is a conflict rather than a constraint violation surfacing
-   * as a 500.
+   * `githubInstallationId` is unique among live rows, so a second workspace
+   * claiming an installation is a conflict rather than a constraint violation
+   * surfacing as a 500.
    */
   INSTALLATION_ALREADY_CONNECTED: {
     code: 'GITHUB_003',
@@ -41,9 +34,7 @@ export const GithubErrors = {
   },
   /**
    * The claim proof failed: GitHub does not list the claimed installation for
-   * the account that authorized the code. Without this check a forged
-   * `githubInstallationId` would mint tokens for someone else's repositories
-   * (`product/versions/mvp/00-scope.md`).
+   * the account that authorized the code (see `ConnectInstallationCommandHandler`).
    */
   INSTALLATION_NOT_CLAIMABLE: {
     code: 'GITHUB_004',
@@ -93,5 +84,17 @@ export const GithubErrors = {
     code: 'GITHUB_010',
     message: 'That repository is not covered by this GitHub installation',
     httpStatus: 404,
+  },
+  /**
+   * The install redirect did not carry a state this console minted for this
+   * person in this workspace — missing, expired, already used, or someone
+   * else's. One code for all of them: telling them apart is a probing oracle.
+   * 400 rather than 403: the caller is authorized, the request is just not a
+   * continuation of an install they started.
+   */
+  INSTALL_STATE_REJECTED: {
+    code: 'GITHUB_011',
+    message: 'The GitHub installation was not started from this workspace',
+    httpStatus: 400,
   },
 } as const satisfies Record<string, ErrorDefinition>;

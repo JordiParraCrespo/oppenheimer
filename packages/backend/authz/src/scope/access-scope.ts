@@ -18,10 +18,7 @@ export interface AccessScope {
    * type within the organization; a set means exactly those ids.
    */
   grants: ReadonlyMap<string, ReadonlySet<string> | 'all'>;
-  /**
-   * Skip scoping entirely — the platform tier, or a `manage all` holder.
-   * Always audited when true, and never set for an impersonated session.
-   */
+  /** Skip scoping entirely: the platform tier, or a `manage all` holder. */
   bypass: boolean;
 }
 

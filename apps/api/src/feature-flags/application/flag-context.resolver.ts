@@ -1,5 +1,6 @@
 import type { FlagEvaluationContext, FlagPlatform } from '@oppenheimer/shared/feature-flags';
-import { activeOrganizationIdOf, type ScopedRequest } from '../../auth/domain/scope-context.types';
+import { tenantOrganizationIdOf } from '../../auth/domain/request-tenant.types';
+import type { ScopedRequest } from '../../auth/domain/scope-context.types';
 
 /** What a client reported about itself (`?platform=&appVersion=`). */
 export interface ClientReportedContext {
@@ -21,7 +22,7 @@ function stringOf(value: unknown): string | null {
  * empty context and gets every flag's non-personal answer.
  */
 export function flagContextOf(
-  request: Pick<ScopedRequest, 'user' | 'session'>,
+  request: Pick<ScopedRequest, 'user' | 'tenant'>,
   reported: ClientReportedContext = {},
 ): FlagEvaluationContext {
   const user = request.user ?? null;
@@ -29,7 +30,7 @@ export function flagContextOf(
     userId: stringOf(user?.id),
     email: stringOf(user?.email),
     platformRole: stringOf(user?.role),
-    organizationId: activeOrganizationIdOf(request),
+    organizationId: tenantOrganizationIdOf(request),
     platform: reported.platform ?? null,
     appVersion: reported.appVersion ?? null,
   };

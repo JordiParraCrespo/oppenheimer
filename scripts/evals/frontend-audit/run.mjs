@@ -4,9 +4,9 @@
 // Each case in `cases.json` is a small change to `apps/web` (the files under
 // `cases/<id>/`, laid over the repo at their own paths) committed on top of
 // HEAD in a throwaway worktree, the way a day's merge lands before the routine
-// runs. Nine cases plant one rule break each; three are decoys that look like
-// one and are not. `scripts/evals` is deleted from the worktree first, so the
-// expectations are out of the auditor's reach.
+// runs. Nine cases plant rule breaks (one of them two); three are decoys that
+// look like one and are not. `scripts/evals` is deleted from the worktree
+// first, so the expectations are out of the auditor's reach.
 //
 // The auditor runs the skill exactly as the routine does, in diff mode against
 // the commit before the case, and must end with the skill's JSON block. The
@@ -24,7 +24,7 @@
 //                                                                     mechanical checks fail only where
 //                                                                     a case says they should
 //   node scripts/evals/frontend-audit/run.mjs --grade <report.json>   re-grade a saved report
-//   options: --model <id> (default claude-sonnet-5), --timeout <minutes>, --keep
+//   options: --model <id> (default claude-sonnet-5-5), --timeout <minutes>, --keep
 import { execFileSync, spawnSync } from 'node:child_process';
 import {
   cpSync,
@@ -67,7 +67,7 @@ const AGENT_TOOLS = [
 const SERIOUS = new Set(['high', 'medium']);
 
 function parseArgs(argv) {
-  const args = { model: 'claude-sonnet-5', timeout: 30, trials: 1, mode: 'agent', keep: false };
+  const args = { model: 'claude-sonnet-5-5', timeout: 30, trials: 1, mode: 'agent', keep: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--case') args.case = argv[++i];

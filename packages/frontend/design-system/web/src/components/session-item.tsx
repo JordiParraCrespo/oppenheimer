@@ -4,19 +4,10 @@ import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import { GitBranchIcon } from 'lucide-react';
 import type * as React from 'react';
 
+import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
 import type { StatusState } from './status-dot';
 
-/**
- * SessionItem — the sidebar row for one orchestrated session. There will be
- * hundreds, so the row is a glyph and a name: the branch icon coloured by run
- * state (green running, amber needs input, red failed, grey otherwise), the
- * name truncated, and a mono age that appears on hover and on the active row.
- * A session still provisioning is `pending`: the grey glyph pulses, so a row
- * that joined the list a second ago reads as on its way rather than idle.
- * 30px is the floor; tighter and the pointer target gets unreliable in a long
- * list. Rows sit 1px apart in a `SessionList`.
- */
 function SessionList({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -29,11 +20,8 @@ function SessionList({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 /**
- * `action` is the row's ellipsis: an icon button (the trigger of a
- * `DropdownMenu` with Rename, Move to project… and Delete) that only shows
- * on hover, focus, or while its menu is open (`menuOpen`), and hides the age
- * while it does. `rename` swaps the name for a 22px inline input with the
- * primary ring; Enter commits, Escape cancels.
+ * `rename` swaps the name for a 22px inline input with the primary ring; Enter
+ * commits, Escape cancels.
  */
 type SessionRename = {
   value: string;
@@ -43,6 +31,16 @@ type SessionRename = {
   label?: string;
 };
 
+/**
+ * SessionItem — the sidebar row for one orchestrated session. There will be
+ * hundreds, so the row is a glyph and a name: the branch icon coloured by run
+ * state (green running, amber needs input, red failed, grey otherwise), the
+ * name truncated, and a mono age that appears on hover and on the active row.
+ * A session still provisioning is `pending`: the grey glyph pulses, so a row
+ * that joined the list a second ago reads as on its way rather than idle.
+ * 30px is the floor; tighter and the pointer target gets unreliable in a long
+ * list. Rows sit 1px apart in a `SessionList`.
+ */
 function SessionItem({
   name,
   age,
@@ -53,6 +51,8 @@ function SessionItem({
   menuOpen,
   rename,
   className,
+  render,
+  nativeButton,
   ...props
 }: Omit<ButtonPrimitive.Props, 'children'> & {
   name: string;
@@ -62,7 +62,11 @@ function SessionItem({
   active?: boolean;
   /** Replaces the branch glyph. */
   icon?: React.ReactNode;
-  /** The hover-only ellipsis at the row's right edge, 20px. */
+  /**
+   * The row's 20px ellipsis (the trigger of a `DropdownMenu` with Rename, Move
+   * to project… and Delete): shown on hover, focus, or while its menu is open
+   * (`menuOpen`), and hiding the age while it is.
+   */
   action?: React.ReactNode;
   /** Keeps the row lit and the action visible while its menu is open. */
   menuOpen?: boolean;
@@ -76,9 +80,13 @@ function SessionItem({
       data-active={active || undefined}
       role={withAction ? undefined : 'listitem'}
       aria-current={active ? 'true' : undefined}
+      // A row rendered as a router link is an anchor, not a <button>: Base UI
+      // keeps link semantics only when told so, as Button does.
+      render={render}
+      nativeButton={nativeButton ?? render === undefined}
       className={cn(
         'group/session flex h-[30px] w-full items-center gap-[9px] rounded-sm px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
-        withAction && 'group-hover/row:not-data-active:bg-hover-surface group-data-menu-open/row:not-data-active:bg-hover-surface',
+        withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
       {...props}
@@ -119,8 +127,7 @@ function SessionItem({
         <span
           className={cn(
             'figures shrink-0 text-[11px] text-fg opacity-0 transition-opacity duration-fast group-hover/session:opacity-100 group-data-active/session:opacity-100 group-focus-visible/session:opacity-100',
-            withAction &&
-              'group-hover/row:invisible group-focus-within/row:invisible group-data-menu-open/row:invisible',
+            withAction && META_GIVES_WAY,
           )}
         >
           {age}
@@ -131,19 +138,9 @@ function SessionItem({
 
   if (!withAction) return button;
   return (
-    <div
-      role="listitem"
-      data-slot="session-row"
-      data-menu-open={menuOpen || undefined}
-      className="group/row relative"
-    >
+    <SidebarRow slot="session-row" action={rename ? undefined : action} menuOpen={menuOpen}>
       {button}
-      {rename ? null : (
-      <span className="absolute top-1/2 right-1.5 flex -translate-y-1/2 opacity-0 transition-opacity duration-fast group-hover/row:opacity-100 group-focus-within/row:opacity-100 group-data-menu-open/row:opacity-100 [&_button]:size-5 [&_button]:rounded-xs [&_button]:text-fg-muted [&_button:hover]:text-fg [&_svg:not([class*=size-])]:size-3.5">
-        {action}
-      </span>
-      )}
-    </div>
+    </SidebarRow>
   );
 }
 

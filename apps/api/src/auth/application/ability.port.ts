@@ -1,10 +1,9 @@
 import type { AppAbility } from '@oppenheimer/shared';
+import type { TenantRequest } from '../domain/request-tenant.types';
 
-/** The request members the ability builder reads and writes. */
-export interface AbilityRequest {
+export interface AbilityRequest extends TenantRequest {
   user?: Record<string, unknown>;
   session?: {
-    activeOrganizationId?: string | null;
     activeTeamId?: string | null;
   } | null;
   ability?: AppAbility;
@@ -20,6 +19,11 @@ export interface AbilityRequest {
  * remains the one place an ability is built and memoized.
  */
 export interface AbilityPort {
-  /** The ability for this request, built once and memoized on the request. */
+  /**
+   * The ability for this request in its tenant (`request.tenant`), built once
+   * and memoized on the request. There is deliberately no organization
+   * argument: the request says which organization it acts in, so every caller
+   * gets the same answer.
+   */
   forRequest(request: AbilityRequest): Promise<AppAbility>;
 }

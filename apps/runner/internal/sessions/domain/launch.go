@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"slices"
 	"sort"
 	"strings"
 )
@@ -12,6 +13,22 @@ type Launch struct {
 	Model      string `json:"model,omitempty"`
 	Permission string `json:"permission,omitempty"`
 	Effort     string `json:"effort,omitempty"`
+	// EffortIsLevel marks Effort as the CLI's own level name. A launch saved
+	// before effort was per model has it unset, and its Effort is one of the
+	// old product stops ("medium" was Claude Code's `--effort high`); read
+	// with the levels' meaning it would restart at a level nobody chose, so it
+	// is not sent and the CLI runs at its own default.
+	EffortIsLevel bool `json:"effortIsLevel,omitempty"`
+	// Conversation names the agent's own conversation, so the transcript the
+	// CLI keeps can be found and reopened later. It is the session's id: one
+	// name both sides agree on, rather than the id the CLI would have picked
+	// for itself and never told anyone.
+	//
+	// Resume reopens that conversation instead of starting one. The prompt is
+	// dropped when it is set — a resumed session continues what was said, and
+	// re-sending the first task would replay it.
+	Conversation string `json:"conversation,omitempty"`
+	Resume       bool   `json:"resume,omitempty"`
 	// Prompt is the first task, appended as the trailing positional so it is
 	// in the process's arguments before it starts (02-runner §5). It is kept
 	// for restart only and never logged.
@@ -26,17 +43,38 @@ type Launch struct {
 // shared package's build and checked against it by `catalog.spec.ts`, so the
 // next catalog edit reaches this host or fails the build — never drifts.
 type launchMap struct {
-	command    string
-	model      []string
-	permission map[string]launchLevel
-	effort     map[string][]string
-	prompt     []string
+	command string
+	// always is what every launch of this agent carries, before any choice:
+	// how the session is run rather than what it is asked to do.
+	always []string
+	model  []string
+	// defaultModel is the model a launch that names none runs, which is the
+	// one whose effort levels apply.
+	defaultModel string
+	permission   map[string]launchLevel
+	// effort is how this agent spells any level: argv and environment with
+	// `<effort>` and `<model>` replaced inside each word. effortLevels says
+	// which levels each model offers, and a level outside its model's list is
+	// never spelled; effortUnset is the level that is the CLI left alone.
+	effort       launchLevel
+	effortUnset  string
+	effortLevels map[string][]string
+	prompt       []string
+	// How the agent's own conversation is named at launch and reopened
+	// afterwards. These CLIs keep the transcript themselves, so what a resume
+	// needs is a name both sides agree on: the session's id, pinned here.
+	conversationCreate []string
+	conversationResume []string
+	// The resume form is a subcommand, so it leads the argv instead of
+	// following it.
+	conversationResumeLeads bool
 }
 
-// launchLevel is one permission level: the argv appended to the command and
-// the environment set on the agent's process. The two are one value because
-// together they are the level — an OpenCode Ask is all environment, and
-// without it OpenCode allows everything — so nothing here can emit one half.
+// launchLevel is one permission or effort level: the argv appended to the
+// command and the environment set on the agent's process. The two are one
+// value because together they are the level — an OpenCode Ask is all
+// environment, and without it OpenCode allows everything — so nothing here can
+// emit one half.
 type launchLevel struct {
 	argv []string
 	env  map[string]string
@@ -65,13 +103,34 @@ func (l Launch) Args(agent Agent) []string {
 	if !ok {
 		return nil
 	}
-	var args []string
+	args := append([]string(nil), m.always...)
 	if l.Model != "" && m.model != nil {
 		args = append(args, substitute(m.model, "<model>", l.Model)...)
 	}
 	args = append(args, m.permission[l.Permission].argv...)
-	if v, ok := m.effort[l.Effort]; ok {
-		args = append(args, v...)
+	args = append(args, l.effortLevel(m).argv...)
+	// Reopening the conversation, and then there is no first task to send: the
+	// conversation already holds it, and sending it again would ask for the
+	// same work twice.
+	//
+	// An agent that names its own conversation is reopened without an id:
+	// Codex and OpenCode both scope "the last one" to the directory they were
+	// started in, and a session's worktree is its own and never reused, so
+	// that is this session's conversation. Only a resume that asks for an id
+	// needs one.
+	if l.Resume && m.conversationResume != nil && (l.Conversation != "" || !namesConversation(m.conversationResume)) {
+		resume := substitute(m.conversationResume, "<conversation>", l.Conversation)
+		if m.conversationResumeLeads {
+			return append(resume, args...)
+		}
+		return append(args, resume...)
+	}
+	// Naming it, on a create. Never on a resume: an agent that can be told an
+	// id but not reopen one would be handed an id that already exists, which
+	// its CLI refuses — so such an agent restarts the way it always did, with
+	// a fresh conversation and the first task sent again.
+	if !l.Resume && l.Conversation != "" && m.conversationCreate != nil {
+		args = append(args, substitute(m.conversationCreate, "<conversation>", l.Conversation)...)
 	}
 	if l.Prompt != "" && m.prompt != nil {
 		args = append(args, substitute(m.prompt, "<prompt>", l.Prompt)...)
@@ -79,10 +138,77 @@ func (l Launch) Args(agent Agent) []string {
 	return args
 }
 
-// Env is the environment the chosen permission level sets on the agent's
-// process, or nil.
+// effortLevel is the chosen effort level, spelled for the model this launch
+// runs, or the zero level when there is nothing to send: a level the model
+// does not offer, the level that is the CLI left alone, or an effort saved
+// before it was a level (EffortIsLevel). The model's id is spliced in only
+// once the catalog lists it, so it is catalog data and never a caller's.
+func (l Launch) effortLevel(m launchMap) launchLevel {
+	model := l.Model
+	if model == "" {
+		model = m.defaultModel
+	}
+	if !l.EffortIsLevel || l.Effort == m.effortUnset || !slices.Contains(m.effortLevels[model], l.Effort) {
+		return launchLevel{}
+	}
+	fill := strings.NewReplacer("<effort>", l.Effort, "<model>", model)
+	level := launchLevel{argv: make([]string, len(m.effort.argv))}
+	for i, word := range m.effort.argv {
+		level.argv[i] = fill.Replace(word)
+	}
+	if len(m.effort.env) > 0 {
+		level.env = make(map[string]string, len(m.effort.env))
+		for name, value := range m.effort.env {
+			level.env[name] = fill.Replace(value)
+		}
+	}
+	return level
+}
+
+// Env is the environment the chosen permission and effort levels set on the
+// agent's process, or nil. The catalog spec holds that the two never name the
+// same variable; if they ever did, the permission level wins, because an
+// effort must not be able to loosen what the agent may do.
 func (l Launch) Env(agent Agent) map[string]string {
-	return launchCatalog[agent.CatalogID()].permission[l.Permission].env
+	m := launchCatalog[agent.CatalogID()]
+	permission, effort := m.permission[l.Permission].env, l.effortLevel(m).env
+	if len(effort) == 0 {
+		return permission
+	}
+	env := make(map[string]string, len(permission)+len(effort))
+	for name, value := range effort {
+		env[name] = value
+	}
+	for name, value := range permission {
+		env[name] = value
+	}
+	return env
+}
+
+// PromptWithFiles is the first task followed by the paths of the files
+// attached to it, a blank line after the task and one path to a line: the
+// agent reads them as it reads paths pasted into its prompt. With no paths it
+// is the task unchanged.
+func PromptWithFiles(prompt string, paths []string) string {
+	if len(paths) == 0 {
+		return prompt
+	}
+	list := strings.Join(paths, "\n")
+	if prompt == "" {
+		return list
+	}
+	return prompt + "\n\n" + list
+}
+
+// namesConversation reports whether a form asks for the conversation's id.
+// A form that does not is reopened by the directory it is started in.
+func namesConversation(vector []string) bool {
+	for _, word := range vector {
+		if word == "<conversation>" {
+			return true
+		}
+	}
+	return false
 }
 
 func substitute(vector []string, placeholder, value string) []string {
@@ -135,8 +261,9 @@ func (l Launch) CommandLine(agent Agent) string {
 	return strings.Join(quoted, " ")
 }
 
-// shellQuote single-quotes a word for sh; the only character a single-quoted
-// word cannot contain is the quote itself, which is spelled '\”.
+// shellQuote single-quotes a word for sh. The only character a single-quoted
+// word cannot contain is the quote itself, so each one closes the quote,
+// adds an escaped quote and reopens it.
 func shellQuote(word string) string {
 	if word == "" {
 		return "''"

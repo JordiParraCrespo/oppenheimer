@@ -14,7 +14,7 @@ export type Catalog = Record<string, unknown>;
  *
  * Written out rather than built from a template string: the bundler needs a
  * statically analysable specifier to know which files to split out, and a
- * computed `import(\`./${locale}/index.json\`)` would either bundle every
+ * computed `import(\`./${locale}/browser.json\`)` would either bundle every
  * match or resolve nothing at all.
  *
  * The default locale is listed too, even though the web app bundles it eagerly
@@ -22,18 +22,15 @@ export type Catalog = Record<string, unknown>;
  * the chunk it produces is simply never requested.
  */
 const LOADERS: Record<Locale, () => Promise<{ default: Catalog }>> = {
-  en: () => import('./en'),
-  es: () => import('./es'),
+  en: () => import('./en/browser.json'),
+  es: () => import('./es/browser.json'),
 };
 
-/** Whether a string is a locale this package ships a catalog for. */
 export function isLocale(value: string): value is Locale {
   return (locales as readonly string[]).includes(value);
 }
 
 /**
- * Loads one locale's catalog.
- *
  * Rejects on an unknown locale rather than falling back silently: i18next asks
  * for whatever the browser reports, and a typo'd or unsupported tag should
  * surface as a failed read so its own `fallbackLng` handles it.

@@ -1,9 +1,9 @@
 import {
+  heyApiSdk,
   type OrganizationResponseDto,
-  OrganizationsApi,
   type UpdateOrganizationRequest,
 } from '@oppenheimer/api-client';
-import { AppError, MapApiError } from '@oppenheimer/frontend-core';
+import { MapApiError, unwrapBody } from '@oppenheimer/frontend-core';
 import type { CreateOrganizationDto } from '@oppenheimer/shared';
 import { injectable } from 'inversify';
 import { OrganizationEntity } from './organization.entity';
@@ -20,19 +20,19 @@ function toEntity(organization: OrganizationResponseDto): OrganizationEntity {
 }
 
 /**
- * The personal workspace, and only that. The API still serves the starter's
- * members and invitations endpoints; the console does not call them, so they
- * have no repository method here — a roster is the teams slice's to add.
+ * The personal workspace, and only that (`product/versions/mvp/08-auth.md`).
+ * The API still serves the starter's members and invitations endpoints; the
+ * console does not call them, so they have no repository method or hook — a
+ * roster is the teams slice's to add.
  */
 @injectable()
 export class OrganizationsRepository {
   @MapApiError(OrganizationsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<OrganizationEntity[]> {
-    const result = await OrganizationsApi.list();
-    // An absent body is a failed read, not an empty collection — returning `[]`
-    // here would render "no workspace" over a request that never succeeded.
-    if (!result) throw new AppError(OrganizationsErrors.FETCH_LIST_FAILED);
-
+    const result = await unwrapBody(
+      heyApiSdk.listOrganizations(),
+      OrganizationsErrors.FETCH_LIST_FAILED,
+    );
     return result.map(toEntity);
   }
 
@@ -46,8 +46,10 @@ export class OrganizationsRepository {
    */
   @MapApiError(OrganizationsErrors.CREATE_FAILED)
   async create(dto: CreateOrganizationDto): Promise<OrganizationEntity> {
-    const result = await OrganizationsApi.create(dto);
-    if (!result) throw new AppError(OrganizationsErrors.CREATE_FAILED);
+    const result = await unwrapBody(
+      heyApiSdk.createOrganization({ body: dto }),
+      OrganizationsErrors.CREATE_FAILED,
+    );
     return toEntity(result);
   }
 
@@ -61,16 +63,19 @@ export class OrganizationsRepository {
    */
   @MapApiError(OrganizationsErrors.CHECK_SLUG_FAILED)
   async checkSlug(slug: string): Promise<boolean> {
-    const result = await OrganizationsApi.checkSlug({ slug });
-    if (!result) throw new AppError(OrganizationsErrors.CHECK_SLUG_FAILED);
+    const result = await unwrapBody(
+      heyApiSdk.checkSlug({ body: { slug } }),
+      OrganizationsErrors.CHECK_SLUG_FAILED,
+    );
     return result.available;
   }
 
   @MapApiError(OrganizationsErrors.UPDATE_FAILED)
   async update(id: string, changes: UpdateOrganizationRequest): Promise<OrganizationEntity> {
-    const result = await OrganizationsApi.update(id, changes);
-    if (!result) throw new AppError(OrganizationsErrors.UPDATE_FAILED);
-
+    const result = await unwrapBody(
+      heyApiSdk.updateOrganization({ path: { id }, body: changes }),
+      OrganizationsErrors.UPDATE_FAILED,
+    );
     return toEntity(result);
   }
 }

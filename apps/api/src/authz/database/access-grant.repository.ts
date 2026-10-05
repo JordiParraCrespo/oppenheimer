@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Paginated } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import type { Repository } from 'typeorm';
 import { AccessGrantMapper } from '../authz.mapper';
@@ -27,12 +28,23 @@ export class AccessGrantRepository implements AccessGrantRepositoryPort {
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
-  async findAllInOrganization(organizationId: string): Promise<AccessGrantEntity[]> {
-    const records = await this.repository.find({
+  async findPageInOrganization(
+    organizationId: string,
+    { page, limit }: { page: number; limit: number },
+  ): Promise<Paginated<AccessGrantEntity>> {
+    const [records, count] = await this.repository.findAndCount({
       where: { organizationId },
-      order: { createdAt: 'DESC' },
+      // `id` breaks ties so a page boundary never repeats or skips a grant.
+      order: { createdAt: 'DESC', id: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
-    return records.map((record) => this.mapper.toDomain(record));
+    return new Paginated({
+      count,
+      limit,
+      page,
+      data: records.map((record) => this.mapper.toDomain(record)),
+    });
   }
 
   async delete(entity: AccessGrantEntity): Promise<boolean> {
@@ -53,19 +65,16 @@ export class AccessGrantRepository implements AccessGrantRepositoryPort {
       .createQueryBuilder('grant')
       .where('grant.organizationId = :organizationId', { organizationId })
       .andWhere('(grant.expiresAt IS NULL OR grant.expiresAt > now())')
+      // One statement for any number of principals: the pairs travel as two
+      // arrays, so the SQL text (and its plan-cache and pg_stat_statements
+      // entry) does not change with how many teams and roles a user has.
       .andWhere(
-        `(${principals
-          .map(
-            (_, index) =>
-              `(grant.principalType = :type${index} AND grant.principalId = :id${index})`,
-          )
-          .join(' OR ')})`,
-        Object.fromEntries(
-          principals.flatMap((principal, index) => [
-            [`type${index}`, principal.principalType],
-            [`id${index}`, principal.principalId],
-          ]),
-        ),
+        `(grant.principalType, grant.principalId) IN (
+           SELECT * FROM unnest(CAST(:principalTypes AS varchar[]), CAST(:principalIds AS uuid[])))`,
+        {
+          principalTypes: principals.map((principal) => principal.principalType),
+          principalIds: principals.map((principal) => principal.principalId),
+        },
       )
       .getMany();
 

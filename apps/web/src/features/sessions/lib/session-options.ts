@@ -20,7 +20,7 @@ import {
   CODING_AGENT_IDS,
   CODING_AGENTS,
   type CodingAgentId,
-  SESSION_EFFORTS,
+  effortFor,
   type SessionEffort,
   type SessionPermission,
 } from '@oppenheimer/shared/agents';
@@ -34,15 +34,9 @@ export { parseRepositoryKey, repositoryKey } from '@oppenheimer/frontend-consume
  * Entities in, option shapes out. Nothing here renders, and nothing here
  * fetches: this is the one place that knows both the console's vocabulary and
  * the design system's, so a picker cannot drift from what the API answered.
- *
- * The one genuinely tricky mapping is the repository's **id**: a row is keyed
- * by the installation and GitHub's id together (`repositoryKey`, the product
- * package's), and the pair is parsed back out when a session is created.
  */
 
 /**
- * The hosts, as the host chip's rows.
- *
  * A host that is offline is shown and selectable rather than hidden: the
  * session is recorded and the work is owed to that machine the moment its
  * runner dials in, which is a real thing to want and is what `host_offline`
@@ -85,7 +79,6 @@ export function toRepositoryOptions(
   }));
 }
 
-/** The branches of one repository, as the lone branch chip's rows. */
 export function toBranchOptions(
   branches: readonly BranchEntity[],
   labels: { default: string },
@@ -116,54 +109,91 @@ export function toAgentOptions(): AgentOption[] {
   }));
 }
 
-/** The model an agent runs when nobody has chosen one. */
 export function defaultModelFor(agent: CodingAgentId): string | null {
   const models = CODING_AGENTS[agent].models;
   return (models.find((model) => model.default) ?? models[0])?.id ?? null;
 }
 
 /**
- * Which of the foot row's controls an agent takes, read off its catalog entry
- * once: a control the catalog declares nothing for is neither drawn nor sent.
- * The blank terminal takes none of them.
+ * Whether an agent takes a permission level, read off its catalog entry once:
+ * a control the catalog declares nothing for is neither drawn nor sent. The
+ * blank terminal takes none. Effort is not here because it is the model's, not
+ * the agent's — `effortChoiceFor`.
  */
 export interface LaunchControls {
   permission: boolean;
-  effort: boolean;
 }
 
 export function launchControlsFor(agent: CodingAgentId): LaunchControls {
-  const { launch } = CODING_AGENTS[agent];
-  return { permission: launch.permission !== undefined, effort: launch.effort !== undefined };
+  return { permission: CODING_AGENTS[agent].launch.permission !== undefined };
 }
 
 /**
- * The foot row as `POST /sessions` takes it: only the controls this agent
- * has. A level or an effort the composer still holds from the last agent is
- * dropped rather than sent, so a blank terminal records no permission at all.
+ * The effort level somebody last moved the slider to, per agent, as they left
+ * it: each agent's levels are its own, and whether a pick applies depends on
+ * the model, which is `effortChoiceFor`'s to decide at display time.
+ */
+export type EffortPicks = Partial<Record<CodingAgentId, string>>;
+
+/**
+ * What the effort slider draws for a draft, and whether it is sent.
+ *
+ * `levels` are the model's, in its own order. `value` is the pick for this
+ * agent when the model offers it, and `chosen` says it is sent. Otherwise —
+ * nothing picked, or a pick this model does not have (`ultra` on Sol, then a
+ * switch to Luna) — the knob shows the model's own default and nothing is
+ * sent: the CLI runs as it would unasked, and the pick stays as it was for a
+ * model that has it. Null when the model takes no effort, and the slider is
+ * hidden.
+ */
+export interface EffortChoice {
+  levels: readonly SessionEffort[];
+  value: SessionEffort;
+  chosen: boolean;
+}
+
+export function effortChoiceFor(
+  agent: CodingAgentId,
+  model: string | null,
+  picked: string | undefined,
+): EffortChoice | null {
+  const effort = effortFor(agent, model);
+  if (!effort) return null;
+  const offered = effort.levels.find((level) => level === picked);
+  return offered
+    ? { levels: effort.levels, value: offered, chosen: true }
+    : { levels: effort.levels, value: effort.default, chosen: false };
+}
+
+/**
+ * The foot row as `POST /sessions` takes it: only the controls this agent and
+ * model have. A level the composer still holds from the last agent is dropped
+ * rather than sent, so a blank terminal records no permission at all, and an
+ * effort nobody picked is left to the CLI.
  */
 export function toLaunchInput(draft: {
   agent: CodingAgentId;
   model: string | null;
   permission: SessionPermission;
-  effort: SessionEffort;
+  efforts: EffortPicks;
 }): CreateSessionInput['launch'] {
   const controls = launchControlsFor(draft.agent);
+  const effort = effortChoiceFor(draft.agent, draft.model, draft.efforts[draft.agent]);
   return {
     model: draft.model,
     ...(controls.permission ? { permission: draft.permission } : {}),
-    ...(controls.effort ? { effort: draft.effort } : {}),
+    ...(effort?.chosen ? { effort: effort.value } : {}),
   };
 }
 
-/** The five stops, translated where the call site translates. */
-export function toEffortStops(labels: Record<SessionEffort, string>): EffortStop[] {
-  return SESSION_EFFORTS.map((stop) => ({ value: stop, label: labels[stop] }));
+export function toEffortStops(
+  levels: readonly SessionEffort[],
+  labels: Record<SessionEffort, string>,
+): EffortStop<SessionEffort>[] {
+  return levels.map((level) => ({ value: level, label: labels[level] }));
 }
 
 /**
- * The picker's selection, as `POST /sessions` takes it.
- *
  * A row whose id no longer parses is dropped rather than sent: it would name a
  * repository this workspace cannot reach, and the API would refuse it with a
  * 404 that says nothing useful to whoever is looking at the screen.
@@ -198,8 +228,7 @@ export function toProjectOptions(
   projects: readonly ProjectEntity[],
   labels: { noRepositories: string; unassigned: string },
 ): ChipSelectOption[] {
-  // Unassigned first, under its translated name: it is where work that names
-  // no project goes, and the API's spelling of it is English.
+  // Unassigned first: it is where work that names no project goes.
   const ordered = [
     ...projects.filter((project) => project.isUnassigned),
     ...projects.filter((project) => !project.isUnassigned),
@@ -252,7 +281,7 @@ export function projectPrefill(
   return patch;
 }
 
-/** The slice of the draft a project prefills; the hook owns the whole shape. */
+/** The slice of the draft a project prefills; the whole shape is `NewSessionDraft`. */
 export interface NewSessionDraftShape {
   hostId: string | null;
   scope: RepositoryScope[];

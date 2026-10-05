@@ -2,9 +2,9 @@
 /**
  * Trim the starter down to the apps you are actually going to build.
  *
- * Oppenheimer ships every app it knows how to build. A real project wants three of
- * them, and deleting the rest by hand leaves dead references in CI, compose,
- * Helm, `.env.example` and the docs — the mess this script exists to prevent.
+ * Oppenheimer ships every app it knows how to build. A real project wants some
+ * of them, and deleting the rest by hand leaves dead references in CI, compose,
+ * `.env.example` and the docs — the mess this script exists to prevent.
  *
  * The truth lives in `features.json` next to this file: each optional feature
  * lists the paths that go with it, and every other file that mentions it wraps
@@ -14,11 +14,11 @@
  *   ...lines that exist only because of the runner...
  *   # oppenheimer:end runner
  *
- * A marker can name several features — `oppenheimer:begin mobile|admin-mobile` —
+ * A marker can name several features — `oppenheimer:begin web|web-showcase` —
  * and its block goes only when all of them go.
  *
- *   node scripts/starter/prune.mjs --without mobile,runner,mcp
- *   node scripts/starter/prune.mjs --keep web,admin-web,docs
+ *   node scripts/starter/prune.mjs --without runner,e2e
+ *   node scripts/starter/prune.mjs --keep web,docs
  *   node scripts/starter/prune.mjs --check        # CI: manifest still honest?
  *   node scripts/starter/prune.mjs --list
  *

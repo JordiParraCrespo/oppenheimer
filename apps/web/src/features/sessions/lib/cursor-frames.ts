@@ -1,5 +1,5 @@
 /** How long a frame opened by a hide waits for its show. */
-export const CURSOR_FRAME_MAX_MS = 100;
+const CURSOR_FRAME_MAX_MS = 100;
 
 const ESC = 0x1b;
 const HIDE = '\x1b[?25l';
@@ -58,7 +58,7 @@ export class CursorFrames {
     this.timer = null;
   }
 
-  /** What to write for the sequence at the start of `rest`, if it is one. */
+  /** For a hide or show at the cursor: the length it spans and what to write instead. */
   private replace(startsWith: (sequence: string) => boolean): [number, string] | null {
     if (startsWith(HIDE)) {
       if (this.open) return [HIDE.length, HIDE];

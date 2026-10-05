@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -42,13 +43,16 @@ func (r *recorder) Run(_ context.Context, name string, args ...string) (string, 
 	return "", nil
 }
 
-func (r *recorder) ran(prefix string) bool {
-	for _, c := range r.calls {
+func (r *recorder) ran(prefix string) bool { return r.index(prefix) >= 0 }
+
+// index is the position of the first call starting with prefix, or -1.
+func (r *recorder) index(prefix string) int {
+	for i, c := range r.calls {
 		if strings.HasPrefix(c, prefix) {
-			return true
+			return i
 		}
 	}
-	return false
+	return -1
 }
 
 func unit(home string) domain.Unit {
@@ -79,18 +83,17 @@ func TestSystemdInstallWritesTheUnitEnablesLingeringAndStarts(t *testing.T) {
 	if !strings.Contains(string(written), "KillMode=process") {
 		t.Fatal("the installed unit must not kill the tmux server")
 	}
-	// Lingering before enable: a unit enabled first would not survive the
-	// next reboot until someone logged in.
-	if !cmds.ran("loginctl enable-linger jordi") {
-		t.Fatalf("calls = %v", cmds.calls)
+	// The order is systemd.Manager.Install's rule: lingering before enable,
+	// then restart rather than `enable --now`.
+	want := []string{
+		"loginctl enable-linger jordi",
+		"systemctl --user daemon-reload",
+		"systemctl --user enable " + domain.SystemdUnit,
+		"systemctl --user restart " + domain.SystemdUnit,
 	}
-	if !cmds.ran("systemctl --user daemon-reload") || !cmds.ran("systemctl --user enable "+domain.SystemdUnit) {
-		t.Fatalf("calls = %v", cmds.calls)
-	}
-	// A re-run on a host whose unit is already active must run the release it
-	// just linked: `enable --now` would leave the old process in place.
-	if !cmds.ran("systemctl --user restart "+domain.SystemdUnit) || cmds.ran("systemctl --user enable --now") {
-		t.Fatalf("calls = %v", cmds.calls)
+	// What follows is the status read Install reports with.
+	if len(cmds.calls) < len(want) || !slices.Equal(cmds.calls[:len(want)], want) {
+		t.Fatalf("calls = %q, want them to start %q", cmds.calls, want)
 	}
 }
 

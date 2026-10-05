@@ -7,11 +7,6 @@ import { USER_REPOSITORY } from '../../../users/user.di-tokens';
 import { ProfileErrors } from '../../domain/profile.errors';
 import { GetProfileQuery } from './get-profile.query';
 
-/**
- * Reads the caller's own account. The user row is the users module's aggregate
- * — this module reads it through that module's port rather than keeping a
- * second mapping of the same table.
- */
 @QueryHandler(GetProfileQuery)
 export class GetProfileQueryHandler implements IQueryHandler<GetProfileQuery, UserEntity> {
   constructor(

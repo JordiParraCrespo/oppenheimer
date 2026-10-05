@@ -1,5 +1,5 @@
 import { z } from 'zod/v4';
-import { hintSchema } from './hint';
+import { hintSchema } from './hint.js';
 import {
   attachmentIdSchema,
   checkoutIdSchema,
@@ -14,12 +14,16 @@ import {
   sessionIdSchema,
   sessionSnapshotSchema,
   windowIndexSchema,
-} from './primitives';
-import { SESSION_IMAGE_MEDIA_TYPES } from './session-image';
+} from './primitives.js';
+import {
+  attachedFilesAreValid,
+  SESSION_CREATE_MAX_FILES,
+  SESSION_FILE_MEDIA_TYPES,
+} from './session-file.js';
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON
- * Schema emitted from it (`pnpm --filter @oppenheimer/shared build:protocol`)
+ * Schema emitted from it (`pnpm --filter @oppenheimer/shared build`)
  * and the Go structs generated from that. This settles open question 1 of
  * `product/versions/mvp/01-protocol.md`: Zod is what this repo already uses for
  * DTOs, so the wire is not a second schema language.
@@ -29,7 +33,32 @@ import { SESSION_IMAGE_MEDIA_TYPES } from './session-image';
  * JSON wrapping and no base64 — and nothing in this file describes them.
  */
 
-/* ------------------------------------------------------------------ runner → control plane */
+/* ------------------------------------------------------------------ runner → control plane, and the ack */
+
+/** What a runner can name in `hello.capabilities`. */
+export const RUNNER_CAPABILITIES = [
+  'session.image',
+  'session.create.images',
+  /**
+   * Takes every type in `SESSION_FILE_MEDIA_TYPES` (PDF, text), not only the
+   * images: a runner without it is sent images alone, on paste and at launch.
+   */
+  'session.files',
+  'repository.prepare',
+] as const;
+export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
+
+/**
+ * The capabilities a hello named that this side knows, in order. The hello
+ * carries plain strings so a runner newer than its control plane (a rollback,
+ * a staggered deploy) still links: what the control plane has never heard of
+ * is dropped here rather than failing the whole hello.
+ */
+export function knownCapabilities(named: readonly string[]): RunnerCapability[] {
+  return named.filter((name): name is RunnerCapability =>
+    (RUNNER_CAPABILITIES as readonly string[]).includes(name),
+  );
+}
 
 /**
  * The first message after the upgrade. The control plane reconciles the
@@ -37,19 +66,11 @@ import { SESSION_IMAGE_MEDIA_TYPES } from './session-image';
  * runner below `min_supported` with an `update_required` hint rather than
  * dropping it.
  */
-/** What a runner can name in `hello.capabilities`. */
-export const RUNNER_CAPABILITIES = ['session.image'] as const;
-export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
-
 export const helloSchema = z.object({
   type: z.literal('hello'),
   runnerVersion: z.string().min(1).max(64),
   protocol: protocolRangeSchema,
-  /**
-   * A random id the runner mints at process start. Event idempotency keys are
-   * `<runId>:<n>`, so they depend on nothing the control plane hands out and
-   * survive any reconnect.
-   */
+  /** A random id the runner mints at process start; event idempotency keys are `<runId>:<n>`. */
   runId: z.string().min(1).max(64),
   host: hostFactsSchema,
   /** Every session this host holds, however the control plane thinks they stand. */
@@ -61,7 +82,8 @@ export const helloSchema = z.object({
    * frame it does not know while the console waits for a paste that never
    * comes. Absent is none.
    */
-  capabilities: z.array(z.enum(RUNNER_CAPABILITIES)).max(32).default([]),
+  /** Open-ended on purpose; read through `knownCapabilities`. */
+  capabilities: z.array(z.string().min(1).max(64)).max(32).default([]),
 });
 
 export type HelloMessage = z.infer<typeof helloSchema>;
@@ -74,18 +96,16 @@ export const heartbeatSchema = z.object({
   channel: z.string().min(1).max(64),
   /**
    * The host's facts, re-read — **the same `Facts` shape registration sends**, not
-   * a thinner summary of it.
-   *
-   * This carries `tools`, `diskFreeBytes` and `runnerVersion`, which is why the
-   * heartbeat no longer has its own copies of those three: a second, narrower
-   * host-facts variant here is how the two descriptions of one machine drift. A
-   * tool the person has just installed, or a disk that has filled, becomes visible
-   * without waiting for a re-registration.
+   * a thinner summary: a second, narrower host-facts variant is how two
+   * descriptions of one machine drift. A tool just installed, or a disk that has
+   * filled, shows without waiting for a re-registration.
    */
   host: hostFactsSchema,
   load: z.object({
     /** One-minute load average, as the kernel reports it. Not part of `Facts`. */
     loadAverage1m: z.number().min(0),
+    /** What a new process could have without swapping. Omitted where the runner cannot read it honestly. */
+    memoryAvailableBytes: z.number().int().min(0).optional(),
   }),
   sessions: z.array(sessionSnapshotSchema),
 });
@@ -123,8 +143,7 @@ export const sessionEventSchema = z.object({
    * That is what makes the 8 KB cap real in both languages: `maxLength` on a
    * string survives the trip to JSON Schema, so the generated Go refuses an
    * oversized payload exactly where the control plane does. As a nested object
-   * the cap could only be a Zod `refine`, which does not survive emission at all
-   * — leaving the runner and the API to disagree about the limit on day two. The
+   * the cap could only be a Zod `refine`, which does not survive emission. The
    * control plane parses this and stores jsonb; the wire carries text.
    */
   payload: z.string().max(PROTOCOL_MAX_EVENT_PAYLOAD_BYTES),
@@ -141,10 +160,10 @@ export type SessionEvent = z.infer<typeof sessionEventSchema>;
  * disconnect" from "never arrived". The handshake is therefore explicit: the
  * runner keeps a batch until an `events.ack` naming this `batchId` accounts for
  * every key in it, and resends the batch otherwise. A resend is harmless
- * because the append is one
- * `INSERT … ON CONFLICT (sessionId, idempotencyKey) DO NOTHING` per row, so a
- * batch replayed after a dropped ack, or half-applied before a crash, appends
- * only what was not yet seen and the fold runs over exactly that.
+ * because the append is idempotent per key — `(sessionId, idempotencyKey)` is
+ * unique, and keys already in the log are skipped — so a batch replayed after a
+ * dropped ack, or cut off by a crash before it committed, appends only what was
+ * not yet seen and the fold runs over exactly that.
  */
 export const eventsAppendSchema = z.object({
   type: z.literal('events.append'),
@@ -198,59 +217,87 @@ export type EventsAckMessage = z.infer<typeof eventsAckSchema>;
  * name its checkouts already recorded — created from each checkout's base and
  * never the base itself.
  */
-export const sessionCreateSchema = z.object({
-  type: z.literal('session.create'),
-  commandId: commandIdSchema,
-  sessionId: sessionIdSchema,
-  organizationSlug: gitRefSchema,
-  sessionSlug: gitRefSchema,
-  agent: protocolAgentSchema,
-  /**
-   * How the agent is started: the model, the permission level and the effort
-   * somebody chose in the composer's foot row. Structured rather than argv —
-   * the host owns the mapping to its own flags, from the same catalog
-   * (`launchOptionsSchema`).
-   *
-   * It replaces the bare `model` this message carried while a model was the
-   * only launch option there was; the three travel together now, and the fold
-   * keeps them on the session so a restart reproduces the launch
-   * (`product/versions/mvp/01-protocol.md`).
-   */
-  launch: launchOptionsSchema,
-  /**
-   * The person's first task, if the composer supplied one.
-   *
-   * The runner appends it to the agent's **argv** — both CLIs document the
-   * first task as a trailing positional, and the catalog's `launch.prompt`
-   * says how (`product/versions/mvp/02-runner.md` §5). So it rides the launch
-   * rather than arriving as a `session.input` after `session.started`: input
-   * needs the agent up, and "the agent is up" is a moment only the host can
-   * name. In argv there is nothing to synchronise.
-   *
-   * Set, the control plane has already written `prompt.first` to the log and
-   * the runner writes nothing; unset, the runner reports the first message off
-   * the transcript instead. The field is what decides which, so the two
-   * writers never collide and never need a shared key (02 §7).
-   */
-  prompt: promptTextSchema.optional(),
-  branch: gitRefSchema,
-  checkouts: z.array(
-    z.object({
-      checkoutId: checkoutIdSchema,
-      githubRepoId: githubRepoIdSchema,
-      repositoryFullName: gitRefSchema,
-      /** Never reused inside a session: a retired name would inherit a stranger's history. */
-      directoryName: gitRefSchema,
-      baseBranch: gitRefSchema,
-    }),
-  ),
-  /**
-   * Where the agent is launched. Set, it starts inside that checkout with the
-   * others as `../siblings`; null, it starts in the session directory with
-   * every checkout a peer.
-   */
-  cwdCheckoutId: checkoutIdSchema.nullable(),
-});
+export const sessionCreateSchema = z
+  .object({
+    type: z.literal('session.create'),
+    commandId: commandIdSchema,
+    sessionId: sessionIdSchema,
+    organizationSlug: gitRefSchema,
+    sessionSlug: gitRefSchema,
+    agent: protocolAgentSchema,
+    /**
+     * How the agent is started: the model, the permission level and the effort
+     * somebody chose in the composer's foot row; structured rather than argv
+     * (`launchOptionsSchema` says why).
+     *
+     * The fold keeps them on the session so a restart reproduces the launch
+     * (`product/versions/mvp/01-protocol.md`).
+     */
+    launch: launchOptionsSchema,
+    /**
+     * The person's first task, if the composer supplied one.
+     *
+     * The runner appends it to the agent's **argv** as the catalog's
+     * `launch.prompt` says (`product/versions/mvp/02-runner.md` §5), rather than
+     * sending a `session.input` after `session.started`: input needs the agent
+     * up, a moment only the host can name.
+     *
+     * Set, the control plane has already written `prompt.first` to the log and
+     * the runner writes nothing; unset, the runner reports the first message off
+     * the transcript instead. The field is what decides which, so the two
+     * writers never collide and never need a shared key (02 §7).
+     */
+    prompt: promptTextSchema.optional(),
+    /**
+     * The files attached to the first task in the composer (the field keeps
+     * its first name; images, PDF and text since `session.files`). Like
+     * `session.image`, the bytes are **not** here: the control plane parks each
+     * under its `imageId` and the runner pulls it once over HTTPS
+     * (`GET /hosts/self/images/{imageId}`) before it starts the agent, saves it
+     * outside the worktree, and appends its path to `prompt` so the agent reads
+     * it with the task (02 §7).
+     *
+     * Present only with a `prompt`, each named once (the refine below), and
+     * sent only to a runner whose `hello` named `session.create.images`: an
+     * older runner would drop the field and launch the task without the files.
+     * A type beyond the images goes only to a runner that also named
+     * `session.files`.
+     */
+    images: z
+      .array(
+        z.object({
+          imageId: commandIdSchema,
+          mediaType: z.enum(SESSION_FILE_MEDIA_TYPES),
+        }),
+      )
+      .max(SESSION_CREATE_MAX_FILES)
+      .optional(),
+    branch: gitRefSchema,
+    checkouts: z.array(
+      z.object({
+        checkoutId: checkoutIdSchema,
+        githubRepoId: githubRepoIdSchema,
+        repositoryFullName: gitRefSchema,
+        /** Never reused inside a session: a retired name would inherit a stranger's history. */
+        directoryName: gitRefSchema,
+        baseBranch: gitRefSchema,
+      }),
+    ),
+    /**
+     * Where the agent is launched. Set, it starts inside that checkout with the
+     * others as `../siblings`; null, it starts in the session directory with
+     * every checkout a peer.
+     */
+    cwdCheckoutId: checkoutIdSchema.nullable(),
+  })
+  .refine(
+    (message) =>
+      attachedFilesAreValid(
+        message.prompt,
+        message.images?.map((image) => image.imageId),
+      ),
+    { path: ['images'] },
+  );
 
 export type SessionCreateMessage = z.infer<typeof sessionCreateSchema>;
 
@@ -268,15 +315,6 @@ export const sessionAttachSchema = z.object({
 
 export type SessionAttachMessage = z.infer<typeof sessionAttachSchema>;
 
-/**
- * Write to a session's PTY from the control plane — the first prompt, or a
- * command the console sends without a pane open.
- *
- * Interactive keystrokes do **not** come this way: they are binary frames on
- * the attach socket, relayed as binary frames on the link. This message exists
- * for input the control plane originates, which is why the bytes are base64 in
- * a JSON control frame rather than raw.
- */
 /**
  * Input the **control plane** originates for a window nobody is watching: the
  * composer's line on a session with no pane open, a scripted command. It is
@@ -296,21 +334,23 @@ export const sessionInputSchema = z.object({
 export type SessionInputMessage = z.infer<typeof sessionInputSchema>;
 
 /**
- * An image for a window's prompt. The bytes are **not** here: control frames
+ * A file for a window's prompt (an image, a PDF, text; the type keeps its
+ * first name). The bytes are **not** here: control frames
  * stay small, and one paste must not queue ahead of every pane on the host.
  * The control plane parks the upload under this command id, and the runner
  * pulls it once over HTTPS with its own assertion
  * (`GET /hosts/self/images/{commandId}`), writes it outside the worktree, and
  * pastes its path into the window as a bracketed paste (02 §7).
  *
- * Sent only to a runner whose `hello` said it can take one.
+ * Sent only to a runner whose `hello` said it can take one (`session.image`),
+ * and a type beyond the images only to one that named `session.files`.
  */
 export const sessionImageSchema = z.object({
   type: z.literal('session.image'),
   commandId: commandIdSchema,
   sessionId: sessionIdSchema,
   window: windowIndexSchema,
-  mediaType: z.enum(SESSION_IMAGE_MEDIA_TYPES),
+  mediaType: z.enum(SESSION_FILE_MEDIA_TYPES),
 });
 
 export type SessionImageMessage = z.infer<typeof sessionImageSchema>;
@@ -320,15 +360,13 @@ export type SessionImageMessage = z.infer<typeof sessionImageSchema>;
  *
  * The browser acks the bytes it has consumed, the control plane relays that
  * credit here, and the runner resumes the attachment's PTY reads. Without it a
- * pane that outruns its 256 KB window stalls for good rather than briefly, so
- * this is the message that makes "a runaway build stalls its own pane, never the
- * link" true instead of aspirational
+ * pane that outruns its 256 KB window stalls for good; with it a runaway build
+ * stalls its own pane, never the link
  * (`product/versions/mvp/01-protocol.md`, "Flow control and reconnect").
  *
- * It is the same shape in both places it is used: the browser sends it to the
- * control plane for its one attachment, and the control plane sends it on to the
- * runner. The credit is a delta, never a running total — a lost frame then costs
- * one window's worth of throughput rather than desynchronising the counter.
+ * The same shape on both hops (browser → control plane → runner). The credit is
+ * a delta, never a running total: a lost frame then costs one window's worth of
+ * throughput rather than desynchronising the counter.
  */
 export const attachmentCreditSchema = z.object({
   type: z.literal('attachment.credit'),
@@ -390,11 +428,6 @@ export const sessionCloseSchema = z.object({
 export type SessionCloseMessage = z.infer<typeof sessionCloseSchema>;
 
 /**
- * Recreate window 0 in the same worktrees. This is what a host reboot needs: it
- * shows every session as stopped with a Restart button, and nothing about the
- * checkouts has changed.
- */
-/**
  * End the agent and the tmux session and leave every checkout on disk, which
  * is what makes Restart possible afterwards (02 §5: "Stop is not close").
  */
@@ -406,6 +439,11 @@ export const sessionStopSchema = z.object({
 
 export type SessionStopMessage = z.infer<typeof sessionStopSchema>;
 
+/**
+ * Recreate window 0 in the same worktrees. This is what a host reboot needs: it
+ * shows every session as stopped with a Restart button, and nothing about the
+ * checkouts has changed.
+ */
 export const sessionRestartSchema = z.object({
   type: z.literal('session.restart'),
   commandId: commandIdSchema,
@@ -421,6 +459,31 @@ export const hostPreflightSchema = z.object({
 });
 
 export type HostPreflightMessage = z.infer<typeof hostPreflightSchema>;
+
+/**
+ * Get a repository ready for a session that has not been asked for yet: clone
+ * it (or fetch its base) and build the spare worktree a create then claims, so
+ * the create that follows waits on neither. The console sends it the moment a
+ * person picks a host and a repository in New session (02 §5, 05).
+ *
+ * Fire and forget: nothing is recorded and no session exists. The token the
+ * clone needs travels **with** the command, minted for this repository alone
+ * and sealed to the host's key as `credentials.grant` seals one, because a
+ * credential ask names a session and there is none. It is used for this
+ * command's git and dropped when it ends.
+ */
+export const repositoryPrepareSchema = z.object({
+  type: z.literal('repository.prepare'),
+  commandId: commandIdSchema,
+  githubRepoId: githubRepoIdSchema,
+  repositoryFullName: gitRefSchema,
+  baseBranch: gitRefSchema,
+  /** The installation token, sealed to the host's Ed25519 identity. Base64. */
+  sealed: z.base64(),
+  expiresAt: z.iso.datetime(),
+});
+
+export type RepositoryPrepareMessage = z.infer<typeof repositoryPrepareSchema>;
 
 /**
  * Install a release. The runner still fetches and verifies the signed manifest
@@ -590,6 +653,7 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   credentialsTokenSchema,
   credentialsGrantSchema,
   credentialsRevokeSchema,
+  repositoryPrepareSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;
@@ -599,8 +663,7 @@ export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;
  *
  * **Derived, never listed.** The type comes off `ProtocolMessage` and the values
  * come off the union's own members, so a message added above cannot land in one
- * place and not the other — which is exactly how a hand-written twin of this
- * list would drift.
+ * place and not the other.
  */
 export type ProtocolMessageType = ProtocolMessage['type'];
 

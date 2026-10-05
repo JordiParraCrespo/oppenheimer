@@ -3,11 +3,9 @@ import { QueryBase } from '@oppenheimer/backend-ddd';
 import type { SessionSortDto, SessionState } from '@oppenheimer/shared';
 
 /**
- * Asks for the sessions a caller can reach.
- *
  * `state` is the **stored lifecycle**, not the derived group the sidebar shows: the
- * group is computed on read from things that are not columns, so it cannot be an
- * index and filtering on it would mean reading every row.
+ * group is computed on read against the clock, so no index holds it and filtering on
+ * it would mean reading every row.
  */
 export class FindSessionsQuery extends QueryBase {
   readonly scope: AccessScope;
@@ -19,6 +17,8 @@ export class FindSessionsQuery extends QueryBase {
   readonly githubRepoId?: number;
   readonly agent?: string;
   readonly sort?: SessionSortDto;
+  /** Opaque, from the previous page's `meta.nextCursor`. Switches off `page` and the count. */
+  readonly cursor?: string;
 
   constructor(props: {
     scope: AccessScope;
@@ -30,6 +30,7 @@ export class FindSessionsQuery extends QueryBase {
     githubRepoId?: number;
     agent?: string;
     sort?: SessionSortDto;
+    cursor?: string;
   }) {
     super();
     this.scope = props.scope;
@@ -41,5 +42,6 @@ export class FindSessionsQuery extends QueryBase {
     this.githubRepoId = props.githubRepoId;
     this.agent = props.agent;
     this.sort = props.sort;
+    this.cursor = props.cursor;
   }
 }

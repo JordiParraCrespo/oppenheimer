@@ -1,7 +1,8 @@
-// Package server is the composition root: it turns a Config into a running
-// HTTP handler by building every adapter, wiring every module and mounting
-// the routes. It is the only package that sees concrete adapters, which is
-// what keeps the contexts swappable.
+// Package server is the composition root of `runner serve`: it turns a
+// Config into a running HTTP handler by building every adapter, wiring every
+// module and mounting the routes. It and `cli`, the subcommands' root, are
+// the only packages that see concrete adapters, which is what keeps the
+// contexts swappable.
 package server
 
 import (
@@ -47,7 +48,6 @@ type Server struct {
 func New(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*Server, error) {
 	problems := &problem.Writer{TypeBaseURL: cfg.ErrorTypeBaseURL, Logger: logger}
 
-	// Optional capability: service tokens.
 	var issuer *auth.JWT
 	if cfg.JWT != nil {
 		j, err := auth.NewJWT(auth.JWTOptions{Secret: cfg.JWT.Secret, Issuer: cfg.JWT.Issuer, Audience: cfg.JWT.Audience})
@@ -131,10 +131,8 @@ func New(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*Server,
 	return &Server{Handler: root, Hub: hub, APIKeys: keys, Health: healthModule, pool: pool, logger: logger}, nil
 }
 
-// authorizeEvents is the topic rule for the event stream until a product
-// context (sessions, hosts) owns topics of its own: every topic needs
-// events:read. When a context arrives it supplies its own ws.Authorizer and
-// the composition root chains them here.
+// authorizeEvents is the topic rule for the event stream until a context owns
+// topics of its own: every topic needs events:read.
 func authorizeEvents(_ context.Context, p *auth.Principal, topic string) error {
 	if !p.Can(scopes.EventsRead) {
 		return problem.ErrForbidden.WithDetail("topic %q needs %s", topic, scopes.EventsRead)

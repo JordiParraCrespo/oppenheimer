@@ -26,12 +26,16 @@ describe('LinkAttachments', () => {
     expect(table.byCommandId('cmd-x')).toBeUndefined();
   });
 
-  it('forgets the command with the attachment', () => {
+  it('forgets one of many with its command, and still routes the others', () => {
     const table = new LinkAttachments();
-    const id = table.open(sink(), 'cmd-a');
-    table.close(id);
-    expect(table.byCommandId('cmd-a')).toBeUndefined();
-    expect(table.get(id)).toBeUndefined();
+    const sinks = [sink(), sink(), sink()];
+    const ids = sinks.map((each, index) => table.open(each, `cmd-${index}`));
+    table.close(ids[1]);
+    expect(table.get(ids[1])).toBeUndefined();
+    expect(table.byCommandId('cmd-1')).toBeUndefined();
+    expect(table.byCommandId('cmd-0')).toBe(sinks[0]);
+    expect(table.byCommandId('cmd-2')).toBe(sinks[2]);
+    expect(table.size).toBe(2);
   });
 
   it('drains everything when the link goes', () => {

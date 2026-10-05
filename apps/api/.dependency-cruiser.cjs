@@ -1,17 +1,13 @@
 /**
- * Architecture fitness rules for the Domain-Driven Hexagon layout.
- * See ARCHITECTURE.md. Run with: pnpm --filter @oppenheimer/api arch
+ * Architecture fitness rules for the Domain-Driven Hexagon layout (ARCHITECTURE.md).
+ * Run with: pnpm --filter @oppenheimer/api arch
  *
- * These rules police the *direction* of dependencies. The shape of a module —
- * which directories exist and what a file in each may be called — is policed
- * by `scripts/check-api-structure.mjs` (`pnpm check:api-structure`). The two
- * are meant to be read together: the structure check says where a file lives,
- * this says what it is then allowed to know about.
+ * These police the direction of dependencies; the shape of a module (which
+ * directories exist, what a file may be called) is `scripts/check-api-structure.mjs`.
  *
- * Where a rule carries a `pathNot` exception naming specific files, that is a
- * ledger entry, not a carve-out: the file is a known violation waiting on a
- * refactor, and the comment says which. Adding a name to one of those lists
- * needs the same scrutiny as deleting the rule.
+ * A `pathNot` exception naming specific files is a ledger entry, not a carve-out: a
+ * known violation waiting on a refactor, and the comment says which. Adding a name to
+ * one of those lists needs the same scrutiny as deleting the rule.
  */
 
 /**
@@ -31,13 +27,10 @@ const CROSS_MODULE_PUBLIC_SURFACE = [
   // answer to "what may this principal do". Handlers that check grantability
   // ask it by design; it is published surface. The auth kernel is the one
   // caller that may not name it — it asks through its own `ABILITY` port,
-  // which this module binds to the same factory (see `auth-is-a-kernel`).
+  // which `roles` binds to the same factory (see `auth-is-a-kernel`).
   '^src/roles/application/ability\\.factory\\.ts$',
-  // The one way to report a system role the database does not have. Three
-  // paths raise it — sign-up's default `user` grant, the personal workspace's
-  // org-scoped `owner` grant, and the same grant on the hand-create path —
-  // and only one of them lives in `roles`. Published so the other two do not
-  // each invent their own answer to one fault.
+  // The one way to report a system role the database does not have: two of
+  // the three paths that raise it live outside `roles`.
   '^src/roles/application/missing-system-role\\.factory\\.ts$',
   '\\.di-tokens\\.ts$', // the token a port is bound to
   '\\.repository\\.port\\.ts$', // the port itself
@@ -75,8 +68,6 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/[^/]+/domain/' },
       to: {
-        // Ignore node built-ins; flag everything else that is not an allowed
-        // workspace package or another domain file in the same layer.
         dependencyTypesNot: ['core'],
         pathNot: ['^src/[^/]+/domain/', 'packages/(backend/ddd|backend/authz|shared)/'],
       },
@@ -134,9 +125,10 @@ module.exports = {
       severity: 'error',
       from: {
         path: '^src/[^/]+/(domain|commands|queries|application|dtos)/',
-        // Ledger: these three read ORM repositories directly and still need a
-        // port. All of them reach across into organizations'/roles' tables,
-        // which is what makes the port worth defining rather than inlining.
+        // Ledger: the policy and the resolver read ORM repositories directly
+        // and still need a port. Both reach across into organizations'/roles'
+        // tables, which is what makes the port worth defining rather than
+        // inlining. active-organization.resolver.ts no longer exists.
         pathNot: [
           '^src/authz/application/active-organization\\.resolver\\.ts$',
           '^src/authz/application/principal-residency\\.policy\\.ts$',
@@ -162,19 +154,8 @@ module.exports = {
           '^src/auth/guards/',
           ...TESTS,
           // The seed is a composition root of its own: a standalone script
-          // that boots the same providers to write the first admin user.
+          // that signs its accounts up through Better Auth, as the app does.
           '^src/database/seed\\.ts$',
-          // Ledger: the delegating façades that still call Better Auth from a
-          // service or a mapper instead of a gateway. Cleared when admin/ and
-          // organizations/ are cut into use-case slices over gateway ports.
-          '^src/admin/admin\\.service\\.ts$',
-          '^src/admin/admin\\.mappers\\.ts$',
-          '^src/admin/admin-error\\.mapper\\.ts$',
-          '^src/organizations/organizations\\.service\\.ts$',
-          '^src/organizations/invitations\\.service\\.ts$',
-          '^src/organizations/workspaces\\.service\\.ts$',
-          '^src/organizations/organization\\.mappers\\.ts$',
-          '^src/organizations/organization-error\\.mapper\\.ts$',
           // Ledger: profile's error mapper folds Better Auth's error codes onto
           // this module's catalog, which needs the invoker but is not itself an
           // adapter. It belongs beside the gateway once that file moves.

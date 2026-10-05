@@ -10,33 +10,37 @@ The backend is split into reusable packages under `packages/backend/`. Each foll
 
 Cross-cutting concerns shared across all NestJS apps.
 
-| Export                                      | Purpose                                                                                                              |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `AppError`                                  | Catalog error — an `HttpException` carrying a `code`, a stable title and a per-occurrence `detail`                   |
-| `AllExceptionsFilter`                       | Global filter rendering every exception as an [RFC 7807 problem document](../errors.md) (`application/problem+json`) |
-| `ProblemDetailsDto` / `ApiProblemResponse`  | Swagger model + decorator for documenting error responses                                                            |
-| `RequestContextInterceptor`                 | Sets a correlation ID per request via `AsyncLocalStorage`                                                            |
-| `RequestContextService`                     | Static wrapper — `run()`, `getCorrelationId()`, `setCorrelationId()`                                                 |
-| `Mapper<Entity, ServiceModel, ResponseDto>` | 3-layer mapper interface with `toRepository`, `toService`, `toController`                                            |
-| `SanitizePipe`                              | Recursively strips HTML tags from all string inputs                                                                  |
-| `ZodValidationPipe`                         | Validates input against Zod schemas (reads `zodSchema` static property)                                              |
-| `PaginatedRequest`                          | Zod schema for `page` (int >= 1) and `limit` (int 1-100)                                                             |
+| Export                                     | Purpose                                                                                                              |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `AppError`                                 | Catalog error — an `HttpException` carrying a `code`, a stable title and a per-occurrence `detail`                   |
+| `requireFound`                             | The value in an `Option` lookup, or an `AppError` from the given catalog entry when there is none                    |
+| `AllExceptionsFilter`                      | Global filter rendering every exception as an [RFC 7807 problem document](../errors.md) (`application/problem+json`) |
+| `ProblemDetailsDto` / `ApiProblemResponse` | Swagger model + decorator for documenting error responses                                                            |
+| `RequestContextMiddleware`                 | Opens the request's correlation ID (`RequestContextService`, from `@oppenheimer/backend-ddd`) before guards run, echoed as `x-correlation-id` |
+| `SanitizePipe`                             | Recursively strips HTML tags from all string inputs                                                                  |
+| `toPageMeta`                               | A paginated response's `meta` (`total`, `page`, `limit`, `totalPages`) from a repository's `Paginated` result        |
+| `PaginatedResponseDto(Item, Meta)`         | Base class for a paginated response DTO's `data` / `meta` properties; the subclass keeps its own OpenAPI name        |
+
+The global validation pipe is `nestjs-zod`'s `ZodValidationPipe`, registered in `apps/api/src/main.ts`. The pagination query schema is `paginationSchema` from `@oppenheimer/shared`, and the mapper interface (`toPersistence` / `toDomain` / `toResponse`) is `@oppenheimer/backend-ddd`'s.
 
 ### Usage in `app.module.ts`
 
 ```typescript
 import {
   AllExceptionsFilter,
-  RequestContextInterceptor,
+  RequestContextMiddleware,
 } from "@oppenheimer/backend-core";
 
 @Module({
-  providers: [
-    { provide: APP_FILTER, useClass: AllExceptionsFilter },
-    { provide: APP_INTERCEPTOR, useClass: RequestContextInterceptor },
-  ],
+  providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  // Middleware, not an interceptor: guards run before interceptors, and a
+  // guard's 401/403/429 must carry the correlation id too.
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestContextMiddleware).forRoutes("*");
+  }
+}
 ```
 
 ## `@oppenheimer/backend-email`
@@ -74,20 +78,37 @@ export class AppModule {}
 
 ## `@oppenheimer/backend-cache`
 
-Redis cache abstraction.
+Redis cache abstraction. Values are JSON, and every key is written under a
+prefix (`cache:` by default) so the cache never mixes with BullMQ's `bull:*` or
+the rate limiter's `throttle:*` in the same database.
 
-| Method  | Signature                                                    |
-| ------- | ------------------------------------------------------------ |
-| `get`   | `get<T>(key: string): Promise<T \| null>`                    |
-| `set`   | `set<T>(key: string, value: T, ttl?: number): Promise<void>` |
-| `del`   | `del(key: string): Promise<void>`                            |
-| `reset` | `reset(): Promise<void>`                                     |
+| Method        | Signature                                                                     |
+| ------------- | ----------------------------------------------------------------------------- |
+| `get`         | `get<T>(key: string): Promise<T \| undefined>`                                |
+| `mget`        | `mget<T>(keys: string[]): Promise<(T \| undefined)[]>`                        |
+| `set`         | `set<T>(key: string, value: T, ttl?: number): Promise<void>`                  |
+| `del`         | `del(key: string): Promise<void>`                                             |
+| `getOrSet`    | `getOrSet<T>(key: string, ttlSeconds: number, load: () => Promise<T>): Promise<T>` |
+| `setIfAbsent` | `setIfAbsent<T>(key: string, value: T, ttlSeconds: number): Promise<boolean>` |
+| `take`        | `take<T>(key: string): Promise<T \| undefined>`                               |
+
+`getOrSet` is single-flight per process: concurrent callers for one key share
+one `load`. There is no flush: the database also holds queued jobs and
+rate-limit counters.
+
+The module never owns a connection; it is handed the API's shared
+`REDIS_CLIENT` (`apps/api/src/redis/`), which is closed on shutdown:
 
 ```typescript
 import { CacheModule } from "@oppenheimer/backend-cache";
 
 @Module({
-  imports: [CacheModule.register()],
+  imports: [
+    CacheModule.registerAsync({
+      inject: [REDIS_CLIENT],
+      useFactory: (client: Redis) => ({ client, keyPrefix: "cache:" }),
+    }),
+  ],
 })
 export class AppModule {}
 ```
@@ -102,11 +123,15 @@ short, best-effort calls such as naming a session. See the package README
 
 File storage abstraction with local filesystem and S3 implementations.
 
-| Method         | Signature                                                              |
-| -------------- | ---------------------------------------------------------------------- |
-| `upload`       | `upload(file: Buffer, key: string, mimeType: string): Promise<string>` |
-| `delete`       | `delete(key: string): Promise<void>`                                   |
-| `getSignedUrl` | `getSignedUrl(key: string, expiresIn?: number): Promise<string>`       |
+| Method   | Signature                                                              |
+| -------- | ---------------------------------------------------------------------- |
+| `upload` | `upload(file: Buffer, key: string, mimeType: string): Promise<string>` |
+| `delete` | `delete(key: string): Promise<void>`                                   |
+| `getUrl` | `getUrl(key: string, expiresIn?: number): Promise<string>`             |
+
+`upload` resolves to the key on every back-end. Persist the key, never a URL,
+and resolve it with `getUrl` when responding: S3 signs the URL for `expiresIn`
+seconds, the local back-end serves `<publicUrl>/uploads/<key>`.
 
 Set `STORAGE_PROVIDER` to `local` or `s3`.
 
@@ -128,7 +153,7 @@ import { setupBullBoard } from "@oppenheimer/backend-queue";
 import { QUEUE_NAMES } from "@oppenheimer/shared";
 
 // In main.ts bootstrap
-setupBullBoard(app, [QUEUE_NAMES.EMAIL, QUEUE_NAMES.FILE_PROCESSING]);
+setupBullBoard(app, [QUEUE_NAMES.EMAIL, QUEUE_NAMES.INBOUND_EVENTS]);
 ```
 
 Bull Board UI is available at `/admin/queues`.

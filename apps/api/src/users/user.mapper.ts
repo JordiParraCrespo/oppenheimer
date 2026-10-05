@@ -4,19 +4,16 @@ import type { CredentialOwner } from '../auth/domain/scope-context.types';
 import { UserOrmEntity } from './database/user.orm-entity';
 import { UserEntity } from './domain/user.entity';
 import { Email } from './domain/value-objects/email.value-object';
+import { Username } from './domain/value-objects/username.value-object';
 import { UserResponseDto } from './dtos/user.response.dto';
 
 /**
- * Maps the user aggregate between its domain, persistence and response shapes.
- *
- * Note: `toPersistence` only writes the profile columns the application owns.
- * `name` is Better Auth's display name and is *derived* here from the first
- * and last name: the member list and the invitation email read `name`, and a
- * profile update that left it alone kept showing the old name everywhere the
- * user is not the one looking. `image` is round-tripped rather than skipped: the
- * avatar endpoints write it, and mapping it both ways means an update that does
- * not mention the avatar leaves whatever is there — including one a social
- * provider supplied at sign-up — exactly as it was.
+ * `toPersistence` writes only the profile columns the application owns. `name`, Better
+ * Auth's display name, is derived from the first and last name, so the member list and
+ * the invitation email never show a stale one. `image` round-trips, so an update that
+ * does not mention the avatar (including one a social provider supplied) leaves it as
+ * it was. The admin plugin's ban columns are read, never written: a profile save
+ * racing a ban would write a stale `banned = false` back over it.
  */
 @Injectable()
 export class UserMapper implements Mapper<UserEntity, UserOrmEntity, UserResponseDto> {
@@ -29,6 +26,7 @@ export class UserMapper implements Mapper<UserEntity, UserOrmEntity, UserRespons
     record.name = displayNameOf(entity);
     record.phone = entity.phone;
     record.jobTitle = entity.jobTitle;
+    record.username = entity.username;
     record.image = entity.avatarUrl;
     record.role = entity.role;
     record.isActive = entity.isActive;
@@ -47,10 +45,15 @@ export class UserMapper implements Mapper<UserEntity, UserOrmEntity, UserRespons
         lastName: record.lastName,
         phone: record.phone,
         jobTitle: record.jobTitle,
+        username: record.username === null ? null : Username.from(record.username),
         avatarUrl: record.image,
         role: record.role,
         isActive: record.isActive,
         emailVerified: record.emailVerified,
+        // Defaulted: the record `save` hands back is the one `toPersistence`
+        // built, which leaves the ban columns unset.
+        banned: record.banned ?? false,
+        banExpires: record.banExpires ?? null,
       },
     });
   }

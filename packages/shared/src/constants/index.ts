@@ -9,22 +9,15 @@ export const PAGINATION = {
  * ("Twelve characters minimum."). It governs every route that sets a password —
  * sign-up, reset, change, accepting an invitation — and Better Auth's own
  * `minPasswordLength`, so the server refuses what the form refuses rather than
- * leaving the rule to the client.
- *
- * Signing *in* is deliberately not bound by it: accounts created under the
- * previous eight-character minimum still hold those passwords, and checking a
- * length before checking a credential would lock them out of the reset flow
- * that is the only way to fix it.
+ * leaving the rule to the client. Signing *in* is not bound by it
+ * (`loginSchema` says why).
  */
 export const PASSWORD_MIN_LENGTH = 12;
 
 /**
  * The floor accounts created before {@link PASSWORD_MIN_LENGTH} were held to,
  * and the only thing signing *in* checks a length against.
- *
- * Named rather than written as an `8` beside the twelve, because two unnamed
- * numbers in one file is how the checklist came to promise a rule the schema
- * never enforced. It moves only if every such account has been migrated.
+ * It moves only if every such account has been migrated.
  */
 export const PASSWORD_LEGACY_MIN_LENGTH = 8;
 
@@ -35,10 +28,8 @@ export const ROLES = {
   USER: 'user',
   /**
    * Tenant administrator. Only ever assigned **scoped to an organization**
-   * (`user_role.organizationId`), to whoever creates a workspace or is invited
-   * into one as owner/admin. Its grants stop at that organization's edge — it
-   * is deliberately not `manage all`, so running a workspace never reaches the
-   * platform's user directory or another tenant.
+   * (`user_role.organizationId`); its grants (`SYSTEM_ROLE_PERMISSIONS.owner`)
+   * stop at that organization's edge.
    */
   OWNER: 'owner',
 } as const;
@@ -48,6 +39,13 @@ export const ROLES = {
  * through the API so the application's own authorization keeps working.
  */
 export const SYSTEM_ROLES = [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.OWNER, ROLES.USER] as const;
+
+/**
+ * The system roles that stand for a membership: an organization's owners and
+ * admins hold `owner` scoped to it, every other member holds `user` there. A
+ * member holds exactly one of them in each organization they belong to.
+ */
+export const MEMBERSHIP_ROLES = [ROLES.OWNER, ROLES.USER] as const;
 
 /**
  * Organization-level roles from the Better Auth organization plugin. Unlike the
@@ -62,5 +60,16 @@ export const ORGANIZATION_ROLES = {
 
 export const QUEUE_NAMES = {
   EMAIL: 'email',
-  FILE_PROCESSING: 'file-processing',
+  /** The daily purge of host networks and timeline past their retention. */
+  HOST_RETENTION: 'host-retention',
+  /** Normalise a stored webhook delivery and publish it to its consumers. */
+  INBOUND_EVENTS: 'inbound-events',
+  /** Run the dispatch-time guards of an automation run and start its session. */
+  AUTOMATION_RUNS: 'automation-runs',
+  /** The one-minute tick that fires due schedule triggers. */
+  AUTOMATION_SCHEDULES: 'automation-schedules',
+  /** The nightly purge of inbound events and old automation runs. */
+  AUTOMATION_RETENTION: 'automation-retention',
+  /** The daily purge of delivered outbox rows past their retention. */
+  OUTBOX_RETENTION: 'outbox-retention',
 } as const;

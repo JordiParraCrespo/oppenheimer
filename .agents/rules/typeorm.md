@@ -48,8 +48,8 @@ out with no offset and the browser reads it as local time, so every date was
 out by the reader's offset (#61). A tombstone such as `deletedAt` is a plain
 `@Column` like any other date; TypeORM soft-delete is not used. A migration
 that adds a date column writes `timestamptz`. What holds the rule is
-`apps/api/test/schema.integration.spec.ts`: it fails if any table the migration
-chain builds has a `timestamp without time zone` column.
+`apps/api/src/__tests__/schema.integration.spec.ts`: it fails if any table the
+migrations build has a `timestamp without time zone` column.
 
 ## Entity conventions
 
@@ -69,3 +69,33 @@ How a table is designed (keys, types, indexes, constraints, migrations) is
 - When writing only the columns the app owns (e.g. profile fields on a Better
   Auth table), leave the rest unset in `toPersistence()` so `save()` doesn't
   clobber columns another system manages
+
+## `manager.query` does not answer an `UPDATE` the way it answers a `SELECT`
+
+`PostgresQueryRunner.query` switches on the command postgres reports: a
+`SELECT` (and an `INSERT`, including `ON CONFLICT`) comes back as the rows,
+but an **`UPDATE` or `DELETE` comes back as `[rows, affected]`**. So a
+`RETURNING` clause on those two is read one level down:
+
+```ts
+// WRONG — `due` is `[rows, affected]`, so this loops twice, over an array
+// and a number, and every field it reads is `undefined`
+const due: { id: string }[] = await manager.query(
+  `UPDATE "thing" SET … RETURNING "id"`, [.. ]);
+
+// CORRECT
+const [due]: [{ id: string }[], number] = await manager.query(
+  `UPDATE "thing" SET … RETURNING "id"`, [.. ]);
+```
+
+It does not fail loudly: the wrong shape type-checks (the annotation is a
+claim, not a check), `length` is the constant 2, and the loop body runs with
+`undefined` in every field. Two claim-and-restage sweeps shipped this way and
+went unnoticed for weeks — each one staged two jobs a tick carrying an
+`undefined` id, which the processor logged as an unknown job and dropped,
+while the rows they were supposed to recover were never picked up. The only
+sign was a warning nobody read.
+
+A test that fakes `manager.query` must return the **driver's** shape for the
+statement it is faking, or it certifies the bug
+(`automation-run-restage-stalled.repository.spec.ts` is the model).

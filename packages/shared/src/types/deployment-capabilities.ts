@@ -10,11 +10,17 @@
  * signing key there is nothing to hand a machine that wants to pair, so the
  * host routes answer "not configured" and the rest of the API is unaffected.
  *
- * `session_namer` is the smallest of them: it says whether a *model* titles
- * sessions. Without one, a session is still named — from its first prompt's own
- * words — which costs nothing. It is a capability so that "why is no title ever
- * a model's" is answered by the startup log rather than by reading the naming
- * code.
+ * `session_namer` says whether a *model* titles sessions. Without one a session
+ * is still named from its first prompt's own words; it is a capability so the
+ * startup log, not the naming code, answers "why is no title ever a model's".
+ *
+ * `ip_geolocation` says whether the networks a host connects from are placed
+ * on a map: a DB-IP Lite (or MaxMind) database on disk. Without one a network
+ * is still recorded, by address, and no new-network email is ever sent,
+ * because "moved country" cannot be told.
+ *
+ * `google_calendar` says whether Plan's calendar can show a person's Google
+ * Calendar: the Google client and the key its refresh tokens are sealed under.
  */
 export const DEPLOYMENT_CAPABILITIES = [
   'google_oauth',
@@ -24,6 +30,8 @@ export const DEPLOYMENT_CAPABILITIES = [
   'github_app',
   'hosts',
   'session_namer',
+  'ip_geolocation',
+  'google_calendar',
 ] as const;
 
 export type DeploymentCapability = (typeof DEPLOYMENT_CAPABILITIES)[number];
@@ -39,7 +47,7 @@ export type DeploymentCapabilities = Record<DeploymentCapability, boolean>;
 /**
  * The subset of capabilities clients have a UI decision hanging on — served by
  * `GET /health/capabilities`. Server-internal capabilities (`s3_storage`,
- * `email_delivery`) are deliberately not on the wire: no client renders
+ * `email_delivery`, …) are deliberately not on the wire: no client renders
  * anything differently for them, and a public endpoint should not describe a
  * deployment's infrastructure beyond what its UI already reveals.
  */
@@ -51,6 +59,8 @@ export const CLIENT_CAPABILITIES = [
   // deployment has no App, so Connect GitHub will fail" — and the App slug the
   // install link is built from only exists when the capability is on.
   'github_app',
+  // Plan's calendar offers Connect Google Calendar only when it can work.
+  'google_calendar',
 ] as const satisfies readonly DeploymentCapability[];
 
 export type ClientCapability = (typeof CLIENT_CAPABILITIES)[number];
@@ -62,9 +72,8 @@ export type ClientCapabilities = Record<ClientCapability, boolean>;
  * client cannot derive from them.
  *
  * The install URL is here rather than in the browser's own environment because
- * it is built from `GITHUB_APP_SLUG`, which the server already holds. A second
- * copy in a `VITE_*` variable is a thing to keep in sync by hand, and the
- * installer fetching the hosted manifest is what that costs.
+ * it is built from `GITHUB_APP_SLUG`, which the server already holds; a second
+ * copy in a `VITE_*` variable would have to be kept in sync by hand.
  *
  * `null` whenever `github_app` is false: with no App there is no page to send
  * anyone to, and a link to `github.com/apps/undefined` is a 404 dressed as an

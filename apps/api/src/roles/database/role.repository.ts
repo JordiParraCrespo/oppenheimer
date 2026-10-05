@@ -1,30 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  type AggregateID,
-  OutboxService,
-  Paginated,
-  type PaginatedQueryParams,
-} from '@oppenheimer/backend-ddd';
+import { likeContains } from '@oppenheimer/backend-core';
+import { type AggregateID, OutboxService, Paginated } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, type FindOptionsWhere, ILike, In, IsNull, type Repository } from 'typeorm';
+import { type FindOptionsWhere, ILike, In, IsNull, type Repository } from 'typeorm';
 import type { RoleEntity } from '../domain/role.entity';
 import { RoleMapper } from '../roles.mapper';
+import { bumpForRole } from './authz-version.repository';
 import { RoleOrmEntity } from './role.orm-entity';
 import type { FindRolesParams, RoleRepositoryPort } from './role.repository.port';
 
 /**
- * TypeORM-backed adapter for the role aggregate. Translates between the domain
- * `RoleEntity` and the `RoleOrmEntity` persistence model via `RoleMapper` and
- * stages any collected domain events on the transactional outbox, atomically
- * with the write that raised them.
+ * Every write also bumps the authorization version that covers the role, in
+ * the same transaction (`bumpForRole`): a role's rules are cached by version,
+ * and an edit that did not move the version would leave a revoked permission
+ * live until the cache entry expired.
  */
 @Injectable()
 export class RoleRepository implements RoleRepositoryPort {
   constructor(
     @InjectRepository(RoleOrmEntity)
     private readonly repository: Repository<RoleOrmEntity>,
-    private readonly dataSource: DataSource,
     private readonly mapper: RoleMapper,
     private readonly outbox: OutboxService,
   ) {}
@@ -32,18 +28,24 @@ export class RoleRepository implements RoleRepositoryPort {
   async insert(entity: RoleEntity | RoleEntity[]): Promise<void> {
     const entities = Array.isArray(entity) ? entity : [entity];
     const records = entities.map((e) => this.mapper.toPersistence(e));
-    await this.outbox.writeWithEvents(entities, (manager) => {
+    await this.outbox.writeWithEvents(entities, async (manager) => {
       const repository = manager.getRepository(RoleOrmEntity);
       // Cast around TypeORM's `QueryDeepPartialEntity` recursion, which can't
       // represent the free-form `permissions` jsonb (Record<string, unknown>).
-      return repository.insert(records as Parameters<typeof repository.insert>[0]);
+      const result = await repository.insert(records as Parameters<typeof repository.insert>[0]);
+      for (const role of entities) await bumpForRole(manager, versioned(role));
+      return result;
     });
   }
 
   async save(entity: RoleEntity): Promise<RoleEntity> {
-    const record = await this.outbox.writeWithEvents([entity], (manager) =>
-      manager.getRepository(RoleOrmEntity).save(this.mapper.toPersistence(entity)),
-    );
+    const record = await this.outbox.writeWithEvents([entity], async (manager) => {
+      const saved = await manager
+        .getRepository(RoleOrmEntity)
+        .save(this.mapper.toPersistence(entity));
+      await bumpForRole(manager, versioned(entity));
+      return saved;
+    });
     return this.mapper.toDomain(record);
   }
 
@@ -69,23 +71,9 @@ export class RoleRepository implements RoleRepositoryPort {
     return records.map((record) => this.mapper.toDomain(record));
   }
 
-  async findAll(): Promise<RoleEntity[]> {
-    const records = await this.repository.find();
+  async findGlobal(): Promise<RoleEntity[]> {
+    const records = await this.repository.find({ where: { organizationId: IsNull() } });
     return records.map((record) => this.mapper.toDomain(record));
-  }
-
-  async findAllPaginated(params: PaginatedQueryParams): Promise<Paginated<RoleEntity>> {
-    const [records, count] = await this.repository.findAndCount({
-      skip: params.offset,
-      take: params.limit,
-      order: { createdAt: params.orderBy.param === 'asc' ? 'ASC' : 'DESC' },
-    });
-    return new Paginated({
-      count,
-      limit: params.limit,
-      page: params.page,
-      data: records.map((record) => this.mapper.toDomain(record)),
-    });
   }
 
   async findRoles(params: FindRolesParams): Promise<Paginated<RoleEntity>> {
@@ -108,17 +96,20 @@ export class RoleRepository implements RoleRepositoryPort {
   }
 
   async delete(entity: RoleEntity): Promise<boolean> {
-    const result = await this.outbox.writeWithEvents([entity], (manager) =>
-      manager.getRepository(RoleOrmEntity).delete({
+    const result = await this.outbox.writeWithEvents([entity], async (manager) => {
+      // Before the delete: the bump finds the role's holders through the
+      // `user_role` rows the delete cascades away.
+      await bumpForRole(manager, versioned(entity));
+      return manager.getRepository(RoleOrmEntity).delete({
         id: entity.id as AggregateID,
-      }),
-    );
+      });
+    });
     return result.affected ? result.affected > 0 : false;
   }
+}
 
-  transaction<T>(handler: () => Promise<T>): Promise<T> {
-    return this.dataSource.transaction(() => handler());
-  }
+function versioned(role: RoleEntity): { id: string; organizationId: string | null } {
+  return { id: role.id as string, organizationId: role.organizationId };
 }
 
 function scopedWhere(
@@ -149,7 +140,8 @@ function searchWhere(
 ): FindOptionsWhere<RoleOrmEntity> | FindOptionsWhere<RoleOrmEntity>[] {
   if (!search) return scopedWhere({}, organizationId);
 
-  const needle = ILike(`%${search}%`);
+  // The term's `%` and `_` match literally.
+  const needle = ILike(likeContains(search));
 
   return [{ name: needle }, { description: needle }].flatMap((match) => {
     const scoped = scopedWhere(match, organizationId);

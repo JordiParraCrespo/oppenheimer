@@ -6,8 +6,6 @@ describe('resolveFlagValue', () => {
     expect(resolveFlagValue('api_token_creation', { api_token_creation: false })).toBe(false);
   });
 
-  // Not loaded, unreachable and "this build does not know that value" are one
-  // case: the catalog's safe answer.
   it('falls back to the catalog default when the answer is missing or unusable', () => {
     expect(resolveFlagValue('api_token_creation', undefined)).toBe(true);
     expect(resolveFlagValue('api_token_creation', {})).toBe(true);

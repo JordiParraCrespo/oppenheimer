@@ -4,14 +4,19 @@ import { Logger } from '@nestjs/common';
 import { organizationSharedOptions, userAdditionalFields } from '@oppenheimer/auth';
 import { DEFAULT_OAUTH_SCOPES, PASSWORD_MIN_LENGTH, SCOPES } from '@oppenheimer/shared';
 import { betterAuth } from 'better-auth';
+import { createAuthMiddleware } from 'better-auth/api';
 import { admin, bearer, mcp, organization } from 'better-auth/plugins';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { Pool } from 'pg';
-import { orUndefined } from '../../config/env';
+import { databaseConfigFromEnv, poolOptions } from '../../config/database.config';
 import { CompleteSignUpCommand } from '../commands/complete-sign-up/complete-sign-up.command';
+import { RotateDelegatedSessionsCommand } from '../commands/rotate-delegated-sessions/rotate-delegated-sessions.command';
+import { standingChangeOf } from './admin-ban-hook.util';
 import { dispatchFromAuthHook } from './auth-command-bus.util';
+import { betterAuthSecondaryStorage, sessionStore } from './better-auth-secondary-storage.adapter';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue.util';
 import { buildInvitationUrl } from './invitation-url.util';
+import { sessionDeleteHooks } from './session-delete-hook.util';
 
 /**
  * Access-control roles for the admin plugin. Every name listed in `adminRoles`
@@ -40,16 +45,18 @@ const OAUTH_SCOPES_SUPPORTED = ['openid', 'profile', 'email', 'offline_access', 
 
 const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
 
-// Read through `orUndefined` so a blank `DB_X=` means "unset" here exactly as
-// it does in `database.config.ts`. Better Auth owns its own pool rather than
-// TypeORM's, and two connections that disagree about the credentials would
-// leave half the API unable to reach the database.
+// Parsed by the same schema as TypeORM's `database` config. Better Auth owns
+// its own pool rather than TypeORM's, and two pools that disagreed about the
+// credentials would leave half the API unable to reach the database. Its size
+// is `DB_AUTH_POOL_MAX`; the timeouts are the same as the API pool's.
+const database = databaseConfigFromEnv();
 const pool = new Pool({
-  host: orUndefined(process.env.DB_HOST) ?? 'localhost',
-  port: Number.parseInt(orUndefined(process.env.DB_PORT) ?? '5432', 10),
-  user: orUndefined(process.env.DB_USERNAME) ?? 'oppenheimer',
-  password: orUndefined(process.env.DB_PASSWORD) ?? 'oppenheimer',
-  database: orUndefined(process.env.DB_DATABASE) ?? 'oppenheimer',
+  host: database.host,
+  port: database.port,
+  user: database.username,
+  password: database.password,
+  database: database.database,
+  ...poolOptions(database, 'api-auth'),
 });
 
 // `pg` emits `error` on the pool when an *idle* client's connection drops — a
@@ -89,11 +96,32 @@ function splitName(name?: string | null): {
   return { firstName, lastName: rest.join(' ') };
 }
 
+const sessionDeletion = sessionDeleteHooks({
+  tokensOf: async (userId) =>
+    (
+      await pool.query<{ token: string }>(`SELECT "token" FROM "session" WHERE "userId" = $1`, [
+        userId,
+      ])
+    ).rows.map((row) => row.token),
+  evict: (token) => sessionStore.delete(token),
+});
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3001',
   basePath: '/api/auth',
   secret: process.env.BETTER_AUTH_SECRET,
   database: pool,
+  // Sessions are cached in Redis in front of the `session` table, so an
+  // authenticated request costs one Redis GET rather than a session-and-user
+  // query on this pool. Postgres stays the record (`storeSessionInDatabase`
+  // below): the session list, the sign-in hook and the foreign keys read it,
+  // and a Redis miss or outage falls back to it. Writes the app makes to a user
+  // or session row outside Better Auth go through `SESSION_CACHE`.
+  //
+  // `session.cookieCache` is deliberately not enabled: a signed cookie cannot
+  // be revoked, so a ban, a deletion or "sign out other devices" would wait out
+  // its `maxAge`. See `product/versions/mvp/08-auth.md`.
+  secondaryStorage: betterAuthSecondaryStorage,
   trustedOrigins: [frontendUrl],
   // Brute-force protection on the auth surface. `/api/auth/*` is mounted on the
   // HTTP adapter before Nest binds middleware, so the NestJS ThrottlerGuard
@@ -128,22 +156,17 @@ export const auth = betterAuth({
     },
   },
   session: {
+    storeSessionInDatabase: true,
+    preserveSessionInDatabase: false,
     /**
      * Two columns on Better Auth's `session` table that say a row is not a
-     * device.
-     *
-     * `DelegatedSessionAdapter` mints internal sessions so an API token or an
-     * OAuth client can reach the façades that resolve their caller through
-     * Better Auth. Those rows are bridges, not sign-ins, and the profile and
-     * security "Active sessions" lists read `delegated` to leave them out. It
-     * is a persisted fact rather than the `userAgent` prefix they also carry:
-     * a user agent is a label a client chooses, and a browser that sent
-     * `oppenheimer-api-token/...` would otherwise hide itself from the very screen
-     * that exists to expose it.
-     *
-     * `delegatedCredentialId` names the credential the row was minted for, so
-     * re-minting one after its cache entry expires can delete the row it
-     * supersedes instead of leaving a day of them behind.
+     * device. `DelegatedSessionAdapter` mints bridge sessions for API tokens
+     * and OAuth clients, and the "Active sessions" lists read `delegated` to
+     * leave them out. It is a persisted fact rather than the `userAgent` prefix
+     * they also carry: a client chooses its user agent, and a browser sending
+     * `oppenheimer-api-token/...` would otherwise hide itself from the screen
+     * that exists to expose it. `delegatedCredentialId` lets a remint delete
+     * the row it supersedes.
      */
     additionalFields: {
       delegated: {
@@ -163,6 +186,9 @@ export const auth = betterAuth({
       },
     },
   },
+  // Verification records stay in Postgres, where `InitialSchema` indexes
+  // them; the session store does not cache them either.
+  verification: { storeInDatabase: true },
   emailAndPassword: {
     enabled: true,
     // The same minimum the shared schemas hold the forms to. Better Auth
@@ -254,9 +280,32 @@ export const auth = betterAuth({
     },
   },
   user: {
-    // Declared in @oppenheimer/auth so the web/mobile clients' `inferAdditionalFields`
-    // consume the same schema and cannot drift from the server.
+    // Declared in @oppenheimer/auth so the web client's `inferAdditionalFields`
+    // consumes the same schema and cannot drift from the server.
     additionalFields: userAdditionalFields,
+    // Settings → Profile's Change. With no `sendChangeEmailConfirmation` and
+    // no `updateEmailWithoutVerification`, Better Auth takes one path for
+    // every account: the verification email goes to the *new* address, and
+    // the account moves only when that link is followed. An unverified
+    // address never becomes the sign-in address, which is what
+    // `requireLocalEmailVerified` above relies on.
+    changeEmail: { enabled: true },
+  },
+  hooks: {
+    // See `RotateDelegatedSessionsCommand`. Awaited by Better Auth, and
+    // best-effort like every dispatch from a hook.
+    after: createAuthMiddleware(async (ctx) => {
+      const userId = standingChangeOf({
+        path: ctx.path,
+        body: ctx.body,
+        returned: ctx.context.returned,
+      });
+      if (!userId) return;
+      await dispatchFromAuthHook(new RotateDelegatedSessionsCommand({ userId }), {
+        description: 'rotate the delegated sessions of an account banned or unbanned',
+        userId,
+      });
+    }),
   },
   databaseHooks: {
     user: {
@@ -267,12 +316,8 @@ export const auth = betterAuth({
             userId: user.id,
             name: user.name,
           });
-          // Sign-up finished; the application decides what that owes. This
-          // file says only that, and names no module that fulfils it — the
-          // orchestration is `CompleteSignUpCommandHandler`, which can inject a
-          // command bus where this hook cannot inject anything. See
-          // `auth-command-bus.util.ts` for why that seam exists and why the
-          // dispatch is best-effort.
+          // Names no module that fulfils sign-up; see `auth-command-bus.util.ts`
+          // for why that seam exists and why the dispatch is best-effort.
           await dispatchFromAuthHook(
             new CompleteSignUpCommand({
               userId: user.id,
@@ -297,27 +342,16 @@ export const auth = betterAuth({
               organizationId: string;
               teamId: string | null;
             }>(
-              // Which organization a returning user lands in.
+              // Which organization a returning user lands in: the one they last
+              // had open, then the most recently joined. Not the oldest: that is
+              // an invitee's personal workspace, provisioned seconds before the
+              // acceptance and without the invitation's org-scoped role, so the
+              // dashboard would answer 403. An explicit sign-out deletes the
+              // session row that remembers, hence the fallback.
               //
-              // Ordered by "the one they last had open", then by the most
-              // recently joined. It used to be the *oldest* membership, which
-              // was whichever workspace they happened to reach first — for an
-              // invitee that was the personal organization sign-up provisioned
-              // a second or two before the invitation was accepted, so they
-              // signed back in to an empty workspace of their own instead of
-              // the one that invited them, without the org-scoped role the
-              // invitation granted, and the dashboard answered 403.
-              //
-              // The session row is the memory, and an explicit sign-out
-              // deletes it; that is why the fallback is most-recently-joined
-              // rather than oldest. Someone invited to a second workspace does
-              // land there on their next sign-in, which is the same answer the
-              // acceptance itself gave them and the one they can change with
-              // the organization switcher.
-              //
-              // The workspace is chosen the same way: one the user actually
-              // belongs to, falling back to the organization's own default, so
-              // the session never points at a team they are not in.
+              // The workspace is one the user belongs to, falling back to the
+              // organization's default, so the session never points at a team
+              // they are not in.
               `SELECT m."organizationId",
                       COALESCE(mine."id", fallback."id") AS "teamId"
                  FROM "member" m
@@ -362,10 +396,20 @@ export const auth = betterAuth({
               },
             };
           } catch {
-            // Organization tables not migrated yet — leave the session as-is.
+            // Any failure leaves the session as-is: sign-in never fails over
+            // which organization it lands in.
             return;
           }
         },
+      },
+      delete: {
+        // Every session row Better Auth deletes — one revocation, a bulk
+        // sign-out, a ban, a password reset — takes its cached copy with it
+        // (`sessionDeleteHooks`). A failure here aborts the delete, so a
+        // revocation that cannot reach Redis fails loudly instead of
+        // succeeding in Postgres alone.
+        before: (session) => sessionDeletion.before(session),
+        after: async (session) => sessionDeletion.after(session),
       },
     },
   },
@@ -373,9 +417,7 @@ export const auth = betterAuth({
     admin({
       // Users whose `role` is one of these can call the admin plugin endpoints
       // (list/ban/impersonate/set-role/...). CASL still governs the app's own
-      // REST routes; this only gates `/api/auth/admin/*`. Every admin role must
-      // be defined in `roles` below (the built-in `admin`/`user` reuse Better
-      // Auth's own access-control roles; `superadmin` gets the full statement set).
+      // REST routes; this only gates `/api/auth/admin/*`.
       roles: { superadmin: superadminAc, admin: adminAc, user: userAc },
       adminRoles: ['superadmin', 'admin'],
       defaultRole: 'user',
@@ -397,7 +439,7 @@ export const auth = betterAuth({
       // shared with the clients via @oppenheimer/auth so both sides must agree.
       teams: {
         ...organizationSharedOptions.teams,
-        // The default workspace is created by `OrganizationsService.create`,
+        // The default workspace is created by the create-organization handler,
         // alongside the role that opens the organization, so organizations can
         // be created here without forcing a default team.
         allowRemovingAllTeams: false,
@@ -421,8 +463,9 @@ export const auth = betterAuth({
     }),
     // Accepts `Authorization: Bearer <session token>`. Used by the API's own
     // auth guard, which mints a short-lived delegated session for a scoped
-    // credential so the organization/admin façades — which resolve the caller
-    // through Better Auth — keep working for API tokens and MCP clients.
+    // credential so the organization, admin and profile façades — which
+    // resolve the caller through Better Auth — keep working for API tokens and
+    // MCP clients.
     bearer(),
     // Turns the app into an OAuth 2.1 provider for MCP clients: discovery
     // metadata, dynamic client registration, authorization and token endpoints.
@@ -459,8 +502,8 @@ export type Auth = typeof auth;
 /**
  * Release everything importing this module holds open.
  *
- * Configuring `auth` is a side effect of the import: it opens its own `pg` pool
- * (above), and `./email-queue` constructs a BullMQ `Queue`, whose Redis client
+ * Configuring `auth` is a side effect of the import: it opens its own `pg` pool,
+ * and `./email-queue.util` constructs a BullMQ `Queue`, whose Redis client
  * connects eagerly. Both keep the Node event loop alive, so a **short-lived
  * script** that imports `auth` — the seed — finishes its work and then hangs
  * forever instead of exiting. Long-running processes never need this: the API

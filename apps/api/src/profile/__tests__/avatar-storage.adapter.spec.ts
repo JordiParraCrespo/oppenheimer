@@ -8,52 +8,36 @@ describe('AvatarStorageAdapter', () => {
   let storage: {
     upload: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
-    getSignedUrl: ReturnType<typeof vi.fn>;
+    getUrl: ReturnType<typeof vi.fn>;
   };
   let avatars: AvatarStorageAdapter;
 
   beforeEach(() => {
     storage = {
-      upload: vi.fn().mockResolvedValue('/uploads/avatars/user-uuid.png'),
+      upload: vi.fn(async (_file: Buffer, key: string) => key),
       delete: vi.fn().mockResolvedValue(undefined),
-      getSignedUrl: vi.fn().mockResolvedValue('https://cdn.example.com/signed'),
+      getUrl: vi.fn().mockResolvedValue('https://cdn.example.com/signed'),
     };
     avatars = new AvatarStorageAdapter(storage as unknown as StorageService);
   });
 
   describe('store', () => {
-    it('returns the key, not whatever the back-end returned', async () => {
-      // Local storage answers with a path and S3 with a key; persisting the key
-      // is what keeps the two back-ends interchangeable.
-      await expect(avatars.store('user-uuid', Buffer.from('x'), 'image/png', 1)).resolves.toMatch(
-        /^avatars\/user-uuid\/[0-9a-f-]{36}\.png$/,
-      );
-    });
+    it.each([
+      ['image/png', 'png'],
+      ['image/jpeg', 'jpg'],
+      ['image/webp', 'webp'],
+    ])('stores %s under a key of its own, in the user’s prefix, named .%s', async (type, ext) => {
+      const key = await avatars.store('user-uuid', Buffer.from('x'), type, 1);
 
-    it('names the file after the type it was given', async () => {
-      await avatars.store('user-uuid', Buffer.from('x'), 'image/jpeg', 1);
-
-      expect(storage.upload).toHaveBeenCalledWith(
-        expect.any(Buffer),
-        expect.stringMatching(/\.jpg$/),
-        'image/jpeg',
-      );
+      expect(key).toMatch(new RegExp(`^avatars/user-uuid/[0-9a-f-]{36}\\.${ext}$`));
+      expect(storage.upload).toHaveBeenCalledWith(expect.any(Buffer), key, type);
     });
 
     it('never writes over the object the profile currently points at', async () => {
-      // A deterministic key would replace the live image before the profile
-      // write that adopts it, so a failed save would leave the user with a
-      // picture they did not keep.
       const first = await avatars.store('user-uuid', Buffer.from('a'), 'image/png', 1);
       const second = await avatars.store('user-uuid', Buffer.from('b'), 'image/png', 1);
 
       expect(second).not.toBe(first);
-    });
-
-    it('files every one of a user’s avatars under their own prefix', async () => {
-      const key = await avatars.store('user-uuid', Buffer.from('x'), 'image/png', 1);
-
-      expect(key.startsWith('avatars/user-uuid/')).toBe(true);
     });
 
     it('rejects a type that is not an accepted image', async () => {
@@ -98,8 +82,6 @@ describe('AvatarStorageAdapter', () => {
     });
 
     it('swallows a failure to delete', async () => {
-      // An orphaned object costs storage; a thrown error costs the user the
-      // request they made.
       storage.delete.mockRejectedValue(new Error('gone'));
 
       await expect(avatars.remove('avatars/user-uuid.png')).resolves.toBeUndefined();
@@ -111,14 +93,14 @@ describe('AvatarStorageAdapter', () => {
       await expect(avatars.resolveUrl('avatars/user-uuid.png')).resolves.toBe(
         'https://cdn.example.com/signed',
       );
-      expect(storage.getSignedUrl).toHaveBeenCalledWith('avatars/user-uuid.png');
+      expect(storage.getUrl).toHaveBeenCalledWith('avatars/user-uuid.png');
     });
 
     it('passes an absolute URL straight through', async () => {
       await expect(avatars.resolveUrl('https://lh3.googleusercontent.com/a/abc')).resolves.toBe(
         'https://lh3.googleusercontent.com/a/abc',
       );
-      expect(storage.getSignedUrl).not.toHaveBeenCalled();
+      expect(storage.getUrl).not.toHaveBeenCalled();
     });
 
     it('resolves nothing to null', async () => {

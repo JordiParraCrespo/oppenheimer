@@ -12,7 +12,6 @@ import type { WorkSessionEntity } from '../domain/work-session.entity';
 import type { WorkSessionEventEntity } from '../domain/work-session-event.entity';
 import { WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
 
-/** A name for a session, and who chose it. */
 export interface SessionNameProposal {
   name: string;
   source: Exclude<SessionNameSource, 'user'>;
@@ -21,27 +20,20 @@ export interface SessionNameProposal {
 /**
  * Names a session from its first prompt.
  *
- * **Model first, the prompt's own words if it is not quick.** The deployment's
- * `LlmService` is asked with a short deadline (`SESSION_NAMER_TIMEOUT_MS`); when
- * it answers in time the title is the model's, and when it does not — no
- * provider, a timeout, a rate limit, an empty answer — the title is the prompt's
- * opening words, which needs no network and names the same prompt the same way
- * every time. This is the one place that knows the budget and the one place that
- * decides the fallback.
+ * **Model first, the prompt's own words if it is not quick.** `LlmService` gets a
+ * short deadline (`SESSION_NAMER_TIMEOUT_MS`); on no provider, a timeout, a rate
+ * limit or an empty answer the title is `titleFromPrompt`, which needs no network.
  *
- * It is two steps, {@link propose} and {@link record}, so the create path can ask
- * the model *while* it dispatches the session and then write the answer onto the
- * aggregate it already holds. The append goes through the repository, which
- * takes the row lock and folds the entry onto that same instance.
+ * {@link propose} and {@link record} are separate so the create path can ask the
+ * model *while* it dispatches, then write onto the aggregate it holds (the repository
+ * takes the row lock and folds the entry onto that instance).
  *
- * **Two writers reach it.** The console sends the first task with the create
- * request; the runner reports `prompt.first` off the agent's transcript, which is
- * the only path for a prompt typed into the terminal. {@link alreadyNamed} is what
- * stops the second naming the session again: a session that carries a name from
- * anybody has had its first prompt.
+ * **Two writers reach it**: the console's create request, and a runner's
+ * `prompt.first` off the transcript (the only path for a prompt typed into the
+ * terminal; no runner sends it yet). {@link alreadyNamed} stops the second
+ * renaming: a session named by anybody has had its first prompt.
  *
- * Nothing here throws. A title is not worth failing a create or a runner's
- * acknowledgement over.
+ * Nothing here throws: a title is not worth failing a create or an acknowledgement.
  */
 @Injectable()
 export class SessionNamingResolver {
@@ -132,8 +124,7 @@ export class SessionNamingResolver {
   }
 
   /**
-   * Whether this session already has a name somebody or something chose. A name
-   * a person typed is never overwritten — the fold enforces that as well — and a
+   * A name a person typed is never overwritten — the fold enforces that as well — and a
    * derived name is not re-derived, because there is only one first prompt.
    */
   private alreadyNamed(session: WorkSessionEntity): boolean {

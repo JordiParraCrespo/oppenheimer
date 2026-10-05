@@ -1,7 +1,7 @@
 import { Controller, Get, Query, UseGuards, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
+import { ApiAuthProblemResponses, toPageMeta } from '@oppenheimer/backend-core';
 import type { Paginated } from '@oppenheimer/backend-ddd';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
@@ -29,10 +29,9 @@ export class FindUsersHttpController {
   // `manage User`, not `read User`: this returns the whole directory — every
   // account's email address — and the default role's `read User` is scoped to
   // the caller's own record, which a paginated list cannot honour without
-  // returning pages that are mostly holes. Administering the directory is an
-  // admin capability, the same one `PUT /v1/users/:userId/roles` requires.
-  // A non-admin browsing people wants an organization-scoped members endpoint
-  // (`GET /v1/organizations/:orgId/members`), not the global user table.
+  // returning pages that are mostly holes. A non-admin browsing people wants
+  // an organization-scoped members endpoint (`GET
+  // /v1/organizations/:orgId/members`), not the global user table.
   @CheckPolicies({ action: 'manage', subject: 'User' })
   @RequireScopes('users:read')
   @ApiOperation({ summary: 'List all users (admin)' })
@@ -58,7 +57,8 @@ export class FindUsersHttpController {
     name: 'search',
     required: false,
     type: String,
-    description: 'Search by name or email',
+    maxLength: 100,
+    description: 'Search by name or email; `%` and `_` match literally',
   })
   @ApiResponse({ status: 200, type: PaginatedUsersResponseDto })
   async findAll(@Query() query: FindUsersRequest): Promise<PaginatedUsersResponseDto> {
@@ -68,12 +68,7 @@ export class FindUsersHttpController {
 
     return {
       data: result.data.map((user) => this.mapper.toResponse(user)),
-      meta: {
-        total: result.count,
-        page: result.page,
-        limit: result.limit,
-        totalPages: Math.ceil(result.count / result.limit),
-      },
+      meta: toPageMeta(result),
     };
   }
 }

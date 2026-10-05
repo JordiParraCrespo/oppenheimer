@@ -3,9 +3,8 @@ import { DomainEvent, type DomainEventProps } from '@oppenheimer/backend-ddd';
 /**
  * Raised when a session row exists and its first log entry is written.
  *
- * Carries the host and the project because everything downstream — dispatching
- * the job, showing the row, deciding whose workspace owes the work — needs those
- * two without re-reading the aggregate.
+ * Carries the host and the project so a consumer need not re-read the aggregate
+ * for them. Nothing subscribes yet: the create handler dispatches the job itself.
  */
 export class SessionCreatedDomainEvent extends DomainEvent {
   readonly organizationId: string;

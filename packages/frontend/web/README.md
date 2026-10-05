@@ -10,32 +10,31 @@ The kit is organised by concern, not by kind: `src/<concern>/<kind>/`, with
 the same kind directories a feature has. A concern imports another only
 through that concern's `index.ts`, and the concerns are layered — `platform`,
 `theme`, `i18n`, `analytics` and `forms` are leaves, `layout` and
-`roles` build on them, `shell` and `auth` sit on top. The kit imports the
+`pairing` build on them, `shell` and `auth` sit on top. The kit imports the
 design system and `@oppenheimer/frontend-core`, never a product package: a
 component that needs a product hook is a feature in an app, not kit.
 
 ## What it exports
 
-Everything is re-exported from the package root (`src/index.ts`):
+Everything is re-exported from the package root (`src/index.ts`), one
+`export *` per concern. Each concern's `index.ts` is its catalog; this list
+names the concern and what to reach for first.
 
-- **shell** — `AppShell`, `AppSidebar`, `TopBar`, `UserMenu`,
-  `CommandPalette`, `ShellProvider`, `useShell`, `useAbility`,
-  `useAbilityState`, `useAuthorizedNav`, `useLandingRoute`, `useHotkey`, and
-  the nav types `NavItem`, `NavLink`, `NavPolicy`, `NavTo`, `ShellWorkspace`.
-- **auth** — `AuthLayout`, `AuthArtPanel`, `BrandLogo`, `PasswordInput`,
-  `SocialLoginButtons`, `OAuthCallbackNotice`, the auth primitives, the
-  password-requirement helpers, the provider icons, `redirectSignedIn`.
-- **layout** — `PageHead`, the section primitives, `ConfirmDialog`.
-- **forms** — `useZodResolver`, `useSearchDraft`;
-  `useErrorMessage` is owned by frontend core and
-  re-exported for compatibility.
-- **theme** — `ThemeProvider`, `ThemeToggle`, `BrandGlyph`.
-- **i18n** — `i18n`, `i18nReady`, `LOCALE_STORAGE_KEY`, `LanguageSwitcher`,
-  `useLocale`, `useApplyUserSettings`, the date formatters
-  (`formatMediumDate`, …) and the person-name helpers.
-- **analytics** — `PageViewTracker`, `createWebAnalyticsClient`.
+- **shell** — `AppShell`, the authenticated frame (sidebar, top bar, user
+  menu and command palette are its parts).
+- **auth** — `AuthLayout`, the split screen around sign-in and onboarding.
+- **layout** — `QueryState`, a read's failed, loading, empty and loaded
+  states; `ConfirmDialog` for the destructive confirm.
+- **forms** — `ErrorAlert` for an inline failure and `notifySuccess(key)` for
+  a success toast (a `toasts.*` key, so its copy lives in one place; when to
+  toast is `.agents/rules/frontend-ui.md`). `useErrorMessage` itself comes
+  from `@oppenheimer/frontend-core/react`.
+- **pairing** — `PairingChrome`, the column that pairs a machine.
+- **theme** — `ThemeProvider`.
+- **i18n** — `useLocale` and the formatters; `RelativeTime` for a "2 hours
+  ago" that keeps moving.
+- **analytics** — `PageViewTracker`.
 - **platform** — `LocalStorageService`, `sanitizeRedirect`.
-- **roles** — `RolePill`.
 
 `package.json` `sideEffects` names one file, `src/i18n/lib/i18n.ts`: it
 configures i18next at import.
@@ -46,7 +45,7 @@ configures i18next at import.
 kit:
 
 ```tsx
-import { AuthField, AuthFormError, useZodResolver } from '@oppenheimer/frontend-web';
+import { AuthField, AuthFormFailure, useZodResolver } from '@oppenheimer/frontend-web';
 
 const form = useForm<LoginDto>({
   resolver: useZodResolver(loginSchema),
@@ -72,5 +71,5 @@ pnpm --filter @oppenheimer/frontend-web typecheck   # tsc --noEmit; there is no 
 
 Depends on `@oppenheimer/design-system-web`, `@oppenheimer/frontend-core`,
 `@oppenheimer/shared` and `@oppenheimer/translations`; React, React Hook Form, i18next,
-nuqs and TanStack Query/Router are peer dependencies the app provides. Used
+Zod and TanStack Query/Router are peer dependencies the app provides. Used
 by `apps/web`.

@@ -2,6 +2,9 @@ package app_test
 
 import (
 	"context"
+	"crypto/ed25519"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"os"
@@ -56,12 +59,35 @@ func TestRegisterStoresTheIdentityAndPinsTheFingerprint(t *testing.T) {
 	if len(cp.Requests) != 1 || cp.Requests[0].Token != validToken {
 		t.Fatalf("requests = %+v", cp.Requests)
 	}
-	// The public key goes to the control plane; the private half never does.
-	if cp.Requests[0].PublicKey == "" || strings.Contains(string(cp.Requests[0].Facts), "PRIVATE") {
-		t.Fatalf("request = %+v", cp.Requests[0])
-	}
-	if _, _, err := store.Load(); err != nil {
+	// The key the control plane is sent is the public half of the one kept
+	// on disk: the host proves itself with a key it generated and kept.
+	_, key, err := store.Load()
+	if err != nil {
 		t.Fatalf("load after register: %v", err)
+	}
+	stored := domain.EncodePublicKey(key.Public().(ed25519.PublicKey))
+	if cp.Requests[0].PublicKey != stored || identity.PublicKey != stored {
+		t.Fatalf("sent %q, identity %q, want the stored key's public half %q",
+			cp.Requests[0].PublicKey, identity.PublicKey, stored)
+	}
+	// Nor is the private half sent under any other field. The seed's leading
+	// bytes open every encoding of the private key, the seed alone or whole.
+	body, err := json.Marshal(cp.Requests[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	seed := key.Seed()
+	for _, encoded := range []string{
+		base64.StdEncoding.EncodeToString(seed),
+		base64.URLEncoding.EncodeToString(seed),
+		hex.EncodeToString(seed),
+	} {
+		if strings.Contains(string(body), encoded[:40]) {
+			t.Fatalf("the register request carries the private key: %s", body)
+		}
+	}
+	if strings.Contains(string(body), "PRIVATE") {
+		t.Fatalf("the register request carries a private key block: %s", body)
 	}
 }
 
@@ -84,8 +110,12 @@ func TestRegisterWritesTheKey0600AndNeverStoresTheToken(t *testing.T) {
 	if strings.Contains(string(config), validToken) {
 		t.Fatal("the registration token must never be written to disk")
 	}
-	if info, err := os.Stat(store.ConfigPath()); err != nil || info.Mode().Perm() != 0o600 {
-		t.Fatalf("config.json is %v, want 0600", info.Mode().Perm())
+	info, err = os.Stat(store.ConfigPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if perm := info.Mode().Perm(); perm != 0o600 {
+		t.Fatalf("config.json is %#o, want 0600", perm)
 	}
 }
 
@@ -351,7 +381,6 @@ func TestAChosenWorkspacesDirectorySurvivesARepair(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Where this machine keeps code is the machine's setting, not the pairing's.
 	if identity.WorkspacesPath != "/srv/code" {
 		t.Fatalf("workspacesPath = %q after re-pairing", identity.WorkspacesPath)
 	}

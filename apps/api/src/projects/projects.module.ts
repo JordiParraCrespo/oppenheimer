@@ -4,7 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
+import { OrganizationsModule } from '../organizations/organizations.module';
+import { UsersModule } from '../users/user.module';
+import { OrganizationCreatedDomainEventHandler } from './application/event-handlers/organization-created.domain-event-handler';
 import { PersonalWorkspaceProvisionedDomainEventHandler } from './application/event-handlers/personal-workspace-provisioned.domain-event-handler';
+import { ProjectAccountErasure } from './application/project-account-erasure.resolver';
 import { ProjectLookupResolver } from './application/project-lookup.resolver';
 import { ProjectSettingsResolver } from './application/project-settings.resolver';
 import type { ProjectUsagePort } from './application/project-usage.port';
@@ -26,8 +30,6 @@ import { FindProjectQueryHandler } from './queries/find-project/find-project.que
 import { FindProjectsHttpController } from './queries/find-projects/find-projects.http.controller';
 import { FindProjectsQueryHandler } from './queries/find-projects/find-projects.query-handler';
 
-// Static routes before parameterized ones, so `GET /projects` is not shadowed by
-// `GET /projects/:id`.
 const httpControllers = [
   FindProjectsHttpController,
   FindProjectHttpController,
@@ -52,6 +54,8 @@ const repositories: Provider[] = [{ provide: PROJECT_REPOSITORY, useClass: Proje
     // reaches them; and whether a default host is one the caller can use.
     GithubModule,
     HostsModule,
+    // Which workspace an account owns, for deleting it.
+    OrganizationsModule,
     TypeOrmModule.forFeature([ProjectOrmEntity, ProjectRepositoryOrmEntity]),
     AuthzKernelModule.forFeature([ProjectResource]),
   ],
@@ -64,15 +68,14 @@ const repositories: Provider[] = [{ provide: PROJECT_REPOSITORY, useClass: Proje
     ProjectUsageRegistry,
     ProjectSettingsResolver,
     PersonalWorkspaceProvisionedDomainEventHandler,
+    OrganizationCreatedDomainEventHandler,
     { provide: PROJECT_LOOKUP, useClass: ProjectLookupResolver },
+    ...UsersModule.contributeAccountErasure([ProjectAccountErasure]),
   ],
-  // `PROJECT_LOOKUP` is the module's whole published surface: what owns sessions
-  // injects it to resolve the project a session is listed under — the one it
-  // named, or the workspace's Unassigned project. The repository stays inside so no consumer can read rows past the
-  // scoped lookup. `ProjectUsageRegistry` is the other half of that surface, and it
-  // is a class rather than a token because it is a kernel-style registry: the one
-  // thing another module reaches across to contribute the answer this module cannot
-  // give itself — whether archiving a project would strand work.
+  // The repository stays inside, so no consumer reads rows past the scoped
+  // lookup. `ProjectUsageRegistry` is a class, not a token, because it is a
+  // kernel-style registry: the one thing another module reaches across to
+  // contribute the answer this module cannot give itself.
   exports: [PROJECT_LOOKUP, ProjectUsageRegistry],
 })
 export class ProjectsModule {
@@ -83,25 +86,18 @@ export class ProjectsModule {
    * providers: [...ProjectsModule.contributeUsage([SessionProjectUsage])]
    * ```
    *
-   * They go in the **contributing module's** `providers`, not in an imported module
-   * of this one's, and that placement is the whole point: the implementation is
-   * constructed in the injector of the module that owns the work, so it injects that
-   * module's own repository ports without anything having to be published
-   * application-wide. The only thing reached across is the registry.
-   *
-   * Registration happens when that module is instantiated — Nest constructs every
-   * provider a module declares, so the factory below runs although nothing injects
-   * it — which means a module that is never imported contributes nothing, and the
-   * registry describes the application that is actually running.
+   * They go in the contributing module's `providers`, so the implementation is built in
+   * the injector that owns the work and injects its repository ports without publishing
+   * them; only the registry is reached across. Nest constructs every declared provider,
+   * so the factory runs although nothing injects it, and a module never imported
+   * contributes nothing.
    */
   static contributeUsage(usages: Type<ProjectUsagePort>[]): Provider[] {
     return [
       ...usages,
       {
-        // Constructing this provider *is* the registration: the implementations are
-        // instantiated as its dependencies and handed to the registry. The token is
-        // unique per call so two contributions in one module cannot overwrite one
-        // another.
+        // Unique per call, so two contributions in one module cannot overwrite
+        // one another.
         provide: Symbol('PROJECT_USAGE_CONTRIBUTION'),
         inject: [ProjectUsageRegistry, ...usages],
         useFactory: (registry: ProjectUsageRegistry, ...contributed: ProjectUsagePort[]) => {

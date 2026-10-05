@@ -13,15 +13,14 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
-// The lifecycle runs on in-memory adapters so it is fast and needs neither
-// tmux nor git installed; the real adapters have their own tests next door.
+// fakeHarness runs the service on the in-memory adapters (package fake).
 type fakeHarness struct {
 	svc       *app.Service
 	terminals *fake.Terminals
 	worktrees *fake.Worktrees
 	events    *recorder
 	store     *memoryStore
-	images    *fake.Images
+	files     *fake.Files
 }
 
 type memoryStore struct {
@@ -40,10 +39,10 @@ func (m *memoryStore) Save(sessions []domain.Session) error {
 func newFakeHarness(t *testing.T) *fakeHarness {
 	t.Helper()
 	terminals, worktrees := fake.NewTerminals(), fake.NewWorktrees()
-	events, store, images := &recorder{}, &memoryStore{}, fake.NewImages()
+	events, store, files := &recorder{}, &memoryStore{}, fake.NewFiles()
 	svc, err := app.New(app.Options{
 		Terminals: terminals, Worktrees: worktrees, Classifier: manifest.New(manifest.Options{}),
-		Store: store, Publisher: events, Images: images,
+		Store: store, Publisher: events, Files: files,
 		Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"},
 		Env: func(s domain.Session) map[string]string {
 			return map[string]string{"OPPENHEIMER_SESSION": s.ID}
@@ -52,7 +51,7 @@ func newFakeHarness(t *testing.T) *fakeHarness {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &fakeHarness{svc: svc, terminals: terminals, worktrees: worktrees, events: events, store: store, images: images}
+	return &fakeHarness{svc: svc, terminals: terminals, worktrees: worktrees, events: events, store: store, files: files}
 }
 
 func (h *fakeHarness) open(t *testing.T) domain.Session {
@@ -78,8 +77,18 @@ func TestCreateFetchesTheMirrorAddsAWorktreeAndStartsTheAgent(t *testing.T) {
 	if branch := h.worktrees.Paths[session.Worktree]; branch != session.Branch {
 		t.Fatalf("worktree %q is on %q, want %q", session.Worktree, branch, session.Branch)
 	}
-	if dir := h.terminals.Dir(session.TmuxName()); dir != session.Worktree {
-		t.Fatalf("the tmux session runs in %q, want the worktree", dir)
+	// The pane is made before the worktree is, so it starts in the directory
+	// the worktree will be in, and the agent is launched in the worktree once
+	// there is one: started in place, not typed into the shell.
+	if dir := h.terminals.Dir(session.TmuxName()); dir == session.Worktree {
+		t.Fatalf("the tmux session waited for the worktree to exist: %q", dir)
+	}
+	launched := h.terminals.Launches[session.Target(0)]
+	if launched.Dir != session.Worktree || launched.Command == "" {
+		t.Fatalf("window 0 was not launched into the worktree: %+v", launched)
+	}
+	if keys := h.terminals.Screens[session.TmuxName()]; keys != "" {
+		t.Fatalf("the launch was typed into the pane: %q", keys)
 	}
 	// Set once at creation, inherited by every window, which is how the
 	// credential helper knows which session it is answering for.
@@ -126,7 +135,7 @@ func TestRefreshMovesTheStateWithTheScreen(t *testing.T) {
 	}
 }
 
-func TestRefreshOffersTheLoginURLOnce(t *testing.T) {
+func TestRefreshPutsTheLoginURLOnTheSession(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 	h.terminals.Screens[session.Target(0)] = "Open https://claude.ai/oauth/authorize?code=true to log in"
@@ -148,8 +157,6 @@ func TestListAndGetHandOutIndependentSessions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Copying the struct alone would share the Windows backing array, and a
-	// caller editing a window would be editing the service's own state.
 	listed := h.svc.List()[0]
 	listed.Windows[0].Name = "mutated by a caller"
 	held, err := h.svc.Get(session.ID)
@@ -184,7 +191,6 @@ func TestAdoptTakesBackLiveSessionsAndStopsTheRest(t *testing.T) {
 	if stopped.State != domain.StateStopped {
 		t.Fatalf("a session whose tmux is gone is stopped, not lost: %q", stopped.State)
 	}
-	// Its worktree is untouched, which is what Restart needs.
 	if _, ok := h.worktrees.Paths[stopped.Worktree]; !ok {
 		t.Fatal("the worktree must survive a stopped session")
 	}
@@ -220,6 +226,25 @@ func TestCloseKeepsUnsavedWorkAndForceMeansIt(t *testing.T) {
 	}
 }
 
+func TestClosePushesForTheSession(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+
+	closed, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Push: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if closed.State != domain.StateClosed {
+		t.Fatalf("state = %q, want closed", closed.State)
+	}
+	if _, ok := h.worktrees.Paths[session.Worktree]; ok {
+		t.Fatal("a closed session's worktree is removed")
+	}
+	if len(h.worktrees.PushedFor) != 1 || h.worktrees.PushedFor[0] != session.ID {
+		t.Fatalf("pushed for %q, want [%q]", h.worktrees.PushedFor, session.ID)
+	}
+}
+
 func TestCloseIsIdempotentEnoughToRetry(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
@@ -234,47 +259,48 @@ func TestCloseIsIdempotentEnoughToRetry(t *testing.T) {
 	}
 }
 
-func TestAttachAndDetachDoNotEndTheSession(t *testing.T) {
+// Attach opens a live session's window. That detaching leaves the session
+// running is tmux's to prove (tmux_test.go).
+func TestAttachOpensALiveWindow(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 
 	attachment, err := h.svc.Attach(context.Background(), session.ID, 0, app.Size{Cols: 80, Rows: 24})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if h.terminals.Attached != 1 {
-		t.Fatalf("attached = %d", h.terminals.Attached)
+	if err != nil || attachment == nil || h.terminals.Attached != 1 {
+		t.Fatalf("attach to window 0: attachment=%v attached=%d err=%v", attachment, h.terminals.Attached, err)
 	}
 	if err := attachment.Close(); err != nil {
 		t.Fatal(err)
 	}
-
-	if h.terminals.Attached != 0 {
-		t.Fatalf("attached = %d after detaching", h.terminals.Attached)
-	}
-	if has, _ := h.terminals.Has(context.Background(), session.TmuxName()); !has {
-		t.Fatal("detaching must leave the session running")
-	}
 }
 
-func TestAttachRefusesAStoppedSessionAndAnUnknownWindow(t *testing.T) {
+func TestAttachRefusesAWindowThatDoesNotExist(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 
-	if _, err := h.svc.Attach(context.Background(), session.ID, 7, app.Size{}); err == nil {
-		t.Fatal("attaching to a window that does not exist must fail")
-	}
+	_, err := h.svc.Attach(context.Background(), session.ID, 7, app.Size{})
 
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != "SESS_001" {
+		t.Fatalf("err = %v, want SESS_001 for a window that does not exist", err)
+	}
+}
+
+func TestAttachRefusesAStoppedSession(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
 	if err := h.terminals.Kill(context.Background(), session.TmuxName()); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := h.svc.Refresh(context.Background(), session.ID); err != nil {
 		t.Fatal(err)
 	}
+
 	_, err := h.svc.Attach(context.Background(), session.ID, 0, app.Size{})
+
 	var prob *problem.Error
 	if !errors.As(err, &prob) || prob.Code != "SESS_003" {
-		t.Fatalf("err = %v, want SESS_003", err)
+		t.Fatalf("err = %v, want SESS_003 for a stopped session", err)
 	}
 }
 
@@ -314,7 +340,10 @@ func TestCreateReportsEachStageAsItStartsAndLands(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
+	// The terminal leads: it is made before the repository is there, which is
+	// what lets a console attach while the clone is still running.
 	want := []string{
+		"terminal:started", "terminal:landed",
 		"clone:started", "clone:landed",
 		"worktree:started", "worktree:landed",
 		"agent:started", "agent:landed",
@@ -337,28 +366,72 @@ func TestCreateThatFailsLeavesTheFailingStageUnlanded(t *testing.T) {
 	if err == nil {
 		t.Fatal("create succeeded over a failed clone")
 	}
-	if len(seen) != 1 || seen[0].Stage != domain.StageClone || seen[0].Done {
-		t.Fatalf("stages = %+v, want only clone started", seen)
+	// The terminal landed, then the clone started and never landed: the stage
+	// that started last is the one that failed.
+	var names []string
+	for _, ev := range seen {
+		state := "started"
+		if ev.Done {
+			state = "landed"
+		}
+		names = append(names, string(ev.Stage)+":"+state)
+	}
+	want := []string{"terminal:started", "terminal:landed", "clone:started"}
+	if strings.Join(names, " ") != strings.Join(want, " ") {
+		t.Fatalf("stages = %v, want %v", names, want)
+	}
+}
+
+// The clone of a repository this host has never held is a download, which on a
+// large repository is the slow part of a first session; the console says so.
+// A later session on the same repository fetches, and must not say it.
+func TestTheFirstCloneOfARepositoryOnAHostIsReportedAsADownload(t *testing.T) {
+	h := newFakeHarness(t)
+	download := func(sessionID string) bool {
+		var clone *domain.StageEvent
+		_, err := h.svc.Create(context.Background(), app.CreateInput{
+			ID: sessionID, Repo: "jordi/oppenheimer",
+			Remote: "https://github.test/jordi/oppenheimer.git", BaseBranch: "main",
+			Progress: func(ev domain.StageEvent) {
+				if ev.Stage == domain.StageClone && !ev.Done {
+					clone = &ev
+				}
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if clone == nil {
+			t.Fatal("the clone stage never started")
+		}
+		return clone.Download
+	}
+
+	if !download("11111111-1111-4111-8111-111111111111") {
+		t.Fatal("the first session on a repository was not reported as a download")
+	}
+	if download("22222222-2222-4222-8222-222222222222") {
+		t.Fatal("a session on a repository already here was reported as a download")
 	}
 }
 
 // A PNG header is all the sniffing reads.
 var png = []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
 
-const imageCommand = "0b6f3f7e-5a3c-4c8e-9a4f-2f1d8c9b7a61"
+const fileCommand = "0b6f3f7e-5a3c-4c8e-9a4f-2f1d8c9b7a61"
 
-func TestPasteImageSavesItAndPastesItsPathIntoTheWindow(t *testing.T) {
+func TestPasteFileSavesItAndPastesItsPathIntoTheWindow(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 
-	path, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png)
+	path, err := h.svc.PasteFile(context.Background(), session.ID, 0, fileCommand, "image/png", png)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasSuffix(path, "/"+session.ID+"/"+imageCommand+".png") {
+	if !strings.HasSuffix(path, "/"+session.ID+"/"+fileCommand+".png") {
 		t.Fatalf("path = %q: named by the command id, under the session", path)
 	}
-	if got := h.images.Saved[session.ID][imageCommand+".png"]; string(got) != string(png) {
+	if got := h.files.Saved[session.ID][fileCommand+".png"]; string(got) != string(png) {
 		t.Fatal("the bytes were not the ones saved")
 	}
 	if len(h.terminals.Pastes) != 1 || h.terminals.Pastes[0] != path {
@@ -366,7 +439,29 @@ func TestPasteImageSavesItAndPastesItsPathIntoTheWindow(t *testing.T) {
 	}
 }
 
-func TestPasteImageRefusesWhatIsNotTheImageItClaims(t *testing.T) {
+func TestPasteFileTakesAPDFAndTextUnderTheirOwnExtensions(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+
+	files := []struct{ command, mediaType, data, ext string }{
+		{fileCommand, "application/pdf", "%PDF-1.7\n", ".pdf"},
+		{"0198c0de-0000-7000-8000-00000000000b", "text/markdown", "# Notes\n", ".md"},
+	}
+	for _, f := range files {
+		path, err := h.svc.PasteFile(context.Background(), session.ID, 0, f.command, f.mediaType, []byte(f.data))
+		if err != nil {
+			t.Fatalf("%s: %v", f.mediaType, err)
+		}
+		if !strings.HasSuffix(path, "/"+f.command+f.ext) {
+			t.Fatalf("%s: path = %q, want it named by the command id with %s", f.mediaType, path, f.ext)
+		}
+	}
+	if len(h.terminals.Pastes) != 2 {
+		t.Fatalf("pastes = %q", h.terminals.Pastes)
+	}
+}
+
+func TestPasteFileRefusesWhatIsNotTheImageItClaims(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 
@@ -375,34 +470,36 @@ func TestPasteImageRefusesWhatIsNotTheImageItClaims(t *testing.T) {
 		data               []byte
 		code               string
 	}{
-		"bytes that are not the type":  {imageCommand, "image/jpeg", png, "SESS_005"},
-		"a type no agent reads":        {imageCommand, "image/svg+xml", []byte("<svg/>"), "SESS_005"},
-		"a window that does not exist": {imageCommand, "image/png", png, "SESS_001"},
+		"bytes that are not the type":    {fileCommand, "image/jpeg", png, "SESS_005"},
+		"a type no agent reads":          {fileCommand, "image/svg+xml", []byte("<svg/>"), "SESS_005"},
+		"a script labelled as text":      {fileCommand, "text/plain", []byte("#!/bin/sh\nrm -rf ~\n"), "SESS_005"},
+		"an executable labelled as text": {fileCommand, "text/plain", []byte("\x7fELF\x02\x01\x01\x00"), "SESS_005"},
+		"a window that does not exist":   {fileCommand, "image/png", png, "SESS_001"},
 	}
 	for name, c := range cases {
 		window := 0
 		if name == "a window that does not exist" {
 			window = 7
 		}
-		_, err := h.svc.PasteImage(context.Background(), session.ID, window, c.command, c.mediaType, c.data)
+		_, err := h.svc.PasteFile(context.Background(), session.ID, window, c.command, c.mediaType, c.data)
 		var prob *problem.Error
 		if !errors.As(err, &prob) || prob.Code != c.code {
 			t.Fatalf("%s: err = %v, want %s", name, err, c.code)
 		}
 	}
-	if len(h.images.Saved) != 0 || len(h.terminals.Pastes) != 0 {
-		t.Fatal("a refused image must leave nothing behind")
+	if len(h.files.Saved) != 0 || len(h.terminals.Pastes) != 0 {
+		t.Fatal("a refused file must leave nothing behind")
 	}
 }
 
-func TestPasteImageRefusesAStoppedSession(t *testing.T) {
+func TestPasteFileRefusesAStoppedSession(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
 	if _, err := h.svc.Stop(context.Background(), session.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	_, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png)
+	_, err := h.svc.PasteFile(context.Background(), session.ID, 0, fileCommand, "image/png", png)
 	var prob *problem.Error
 	if !errors.As(err, &prob) || prob.Code != "SESS_003" {
 		t.Fatalf("err = %v, want SESS_003", err)
@@ -414,41 +511,98 @@ func TestAPasteThatDoesNotLandTakesItsFileWithIt(t *testing.T) {
 	session := h.open(t)
 	h.terminals.FailPaste = true
 
-	if _, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png); err == nil {
+	if _, err := h.svc.PasteFile(context.Background(), session.ID, 0, fileCommand, "image/png", png); err == nil {
 		t.Fatal("a paste into a window that went away must fail")
 	}
-	if len(h.images.Saved[session.ID]) != 0 {
-		t.Fatalf("the file stayed behind: %v", h.images.Saved[session.ID])
+	if len(h.files.Saved[session.ID]) != 0 {
+		t.Fatalf("the file stayed behind: %v", h.files.Saved[session.ID])
 	}
 }
 
 func TestStoppingDropsTheSessionsImages(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
-	if _, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png); err != nil {
+	if _, err := h.svc.PasteFile(context.Background(), session.ID, 0, fileCommand, "image/png", png); err != nil {
 		t.Fatal(err)
 	}
 
 	if _, err := h.svc.Stop(context.Background(), session.ID); err != nil {
 		t.Fatal(err)
 	}
-	if len(h.images.Saved[session.ID]) != 0 {
-		t.Fatal("nothing reads an image once the tmux session is gone; stopping must drop them")
+	if len(h.files.Saved[session.ID]) != 0 {
+		t.Fatal("nothing reads a file once the tmux session is gone; stopping must drop them")
+	}
+}
+
+func TestCreateSavesTheFirstTasksImagesAndNamesThemInTheLaunch(t *testing.T) {
+	h := newFakeHarness(t)
+
+	session, err := h.svc.Create(context.Background(), app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		BaseBranch: "main", Agent: domain.AgentClaude,
+		Launch: domain.Launch{Permission: "ask", Prompt: "fix this"},
+		Files:  []app.CreateFile{{ID: fileCommand, MediaType: "image/png", Data: png}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := h.files.Saved[session.ID][fileCommand+".png"]; string(got) != string(png) {
+		t.Fatal("the attached file was not saved under the session")
+	}
+	// The agent is launched into the pane that already exists, not handed to
+	// tmux at creation, so the task and its files are in that launch.
+	command := h.terminals.Launches[session.Target(0)].Command
+	if !strings.Contains(command, "fix this") || !strings.Contains(command, "/"+session.ID+"/"+fileCommand+".png") {
+		t.Fatalf("command = %q, want the task followed by the file's path", command)
+	}
+	if session.Launch.Prompt != "fix this" {
+		t.Fatalf("stored prompt = %q: a restart must not name files that are gone", session.Launch.Prompt)
+	}
+}
+
+func TestCreateRefusesAttachedImagesThatAreNotWhatTheyClaim(t *testing.T) {
+	h := newFakeHarness(t)
+
+	_, err := h.svc.Create(context.Background(), app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		BaseBranch: "main", Agent: domain.AgentClaude, Launch: domain.Launch{Prompt: "look"},
+		Files: []app.CreateFile{{ID: fileCommand, MediaType: "image/jpeg", Data: png}},
+	})
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != "SESS_005" {
+		t.Fatalf("err = %v, want SESS_005", err)
+	}
+	if len(h.worktrees.Paths) != 0 || len(h.files.Saved) != 0 {
+		t.Fatal("a refused file must be refused before anything is made")
+	}
+}
+
+func TestCreateRefusesImagesWithNoTaskToCarryThem(t *testing.T) {
+	h := newFakeHarness(t)
+
+	_, err := h.svc.Create(context.Background(), app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		BaseBranch: "main", Agent: domain.AgentClaude,
+		Files: []app.CreateFile{{ID: fileCommand, MediaType: "image/png", Data: png}},
+	})
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != "SESS_002" {
+		t.Fatalf("err = %v, want the invalid-input refusal", err)
 	}
 }
 
 func TestCloseDropsTheSessionsImages(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
-	if _, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png); err != nil {
+	if _, err := h.svc.PasteFile(context.Background(), session.ID, 0, fileCommand, "image/png", png); err != nil {
 		t.Fatal(err)
 	}
 
 	if _, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Force: true}); err != nil {
 		t.Fatal(err)
 	}
-	if len(h.images.Saved[session.ID]) != 0 || len(h.images.Discarded) == 0 {
-		t.Fatalf("discarded = %v, want the session's images dropped on close", h.images.Discarded)
+	if len(h.files.Saved[session.ID]) != 0 || len(h.files.Discarded) == 0 {
+		t.Fatalf("discarded = %v, want the session's files dropped on close", h.files.Discarded)
 	}
 }
 
@@ -515,5 +669,46 @@ func TestRunningOnAHostWithoutTmuxIsEmpty(t *testing.T) {
 	running, err := h.svc.Running(context.Background())
 	if err != nil || len(running) != 0 {
 		t.Fatalf("running = %v, err = %v", running, err)
+	}
+}
+
+// gateRecorder is a LaunchGate that records what it held and whether each
+// hold was released before the next began.
+type gateRecorder struct {
+	held     []string
+	released int
+}
+
+func (g *gateRecorder) Hold(_ context.Context, command string) func() {
+	g.held = append(g.held, command)
+	return func() { g.released++ }
+}
+
+func TestCreateAndRestartWaitOnTheAgentsUpdate(t *testing.T) {
+	h := newFakeHarness(t)
+	gate := &gateRecorder{}
+	svc, err := app.New(app.Options{
+		Terminals: h.terminals, Worktrees: h.worktrees, Classifier: manifest.New(manifest.Options{}),
+		Store: &memoryStore{}, Publisher: h.events, Files: h.files,
+		Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"}, Gate: gate,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, err := svc.Create(context.Background(), app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		BaseBranch: "main", Agent: domain.AgentClaude,
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if err := h.terminals.Kill(context.Background(), session.TmuxName()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Restart(context.Background(), session.ID); err != nil {
+		t.Fatalf("restart: %v", err)
+	}
+	if len(gate.held) != 2 || gate.held[0] != "claude" || gate.held[1] != "claude" || gate.released != 2 {
+		t.Fatalf("held %v, released %d; want claude held and released for the create and the restart", gate.held, gate.released)
 	}
 }

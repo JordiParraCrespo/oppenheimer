@@ -1,23 +1,12 @@
 {
   "common": {
     "appName": "Oppenheimer",
-    "back": "Volver",
     "cancel": "Cancelar",
     "close": "Cerrar",
-    "confirm": "Confirmar",
-    "controlAppName": "Oppenheimer Control",
     "copied": "Copiado",
     "copy": "Copiar",
-    "create": "Crear",
-    "delete": "Eliminar",
-    "edit": "Editar",
-    "error": "Algo salió mal",
-    "github": "GitHub",
-    "google": "Google",
     "loading": "Cargando...",
-    "next": "Siguiente",
     "or": "o",
-    "orContinueWith": "O continúa con",
     "product": "Consola",
     "relative": {
       "day": "{{count}}d",
@@ -28,18 +17,47 @@
       "week": "{{count}}sem",
       "year": "{{count}}a"
     },
-    "save": "Guardar",
-    "search": "Buscar"
+    "dismiss": "Descartar",
+    "breadcrumb": "Ruta de navegación",
+    "dateField": {
+      "none": "Sin fecha",
+      "previousMonth": "Mes anterior",
+      "nextMonth": "Mes siguiente",
+      "clear": "Quitar",
+      "choose": "Elige una fecha"
+    },
+    "timeField": {
+      "none": "Sin hora",
+      "hour": "Hora",
+      "minute": "Minuto",
+      "clear": "Quitar"
+    },
+    "drag": {
+      "instructions": "Para coger un elemento, pulsa espacio o intro. Muévelo con las flechas, suéltalo con espacio o intro y cancela con escape.",
+      "pickedUp": "Has cogido {{name}}.",
+      "over": "{{name}} está sobre {{target}}.",
+      "nowhere": "{{name}} no está sobre un sitio donde pueda ir.",
+      "dropped": "{{name}} se ha soltado en {{target}}.",
+      "droppedNowhere": "{{name}} se ha soltado.",
+      "cancelled": "Se ha cancelado mover {{name}}."
+    }
   },
   "validation": {
-    "title": "Error de validación",
     "required": "Este campo es obligatorio",
     "email": "Introduce una dirección de correo válida",
     "minLength": "Debe tener al menos {{min}} caracteres",
     "maxLength": "Debe tener como máximo {{max}} caracteres",
     "minItems": "Selecciona al menos {{min}}",
     "maxItems": "Selecciona como máximo {{max}}",
-    "url": "Introduce una URL válida, incluyendo https://"
+    "url": "Introduce una URL válida, incluyendo https://",
+    "invalid": "Este valor no es válido",
+    "format": "El formato no es válido",
+    "choice": "Elige una de las opciones",
+    "date": "Introduce una fecha válida",
+    "min": "Debe ser como mínimo {{min}}",
+    "max": "Debe ser como máximo {{max}}",
+    "multipleOf": "Debe ser múltiplo de {{step}}",
+    "tooLong": "Es demasiado largo"
   },
   "errors": {
     "fallback": "Algo ha ido mal. Inténtalo de nuevo.",
@@ -50,6 +68,8 @@
       "AUTH_001": "Inicia sesión para continuar.",
       "AUTH_002": "No tienes permiso para hacer eso.",
       "USER_001": "No se ha encontrado ese usuario.",
+      "USER_002": "Ese nombre de usuario ya está en uso. Prueba con otro.",
+      "USER_003": "Escribe tu dirección de correo exactamente para confirmar.",
       "TOKEN_001": "No se ha encontrado ese token de API.",
       "TOKEN_002": "No puedes conceder a un token más acceso del que tienes tú.",
       "TOKEN_003": "Ese token de API no es válido o ha caducado.",
@@ -104,8 +124,10 @@
       "ROLE_005": "No puedes dar a un rol más acceso del que tienes tú.",
       "ROLE_006": "Ese rol pertenece a otra organización.",
       "ROLE_007": "A esta instalación le falta un rol de sistema que necesita. Ejecuta las migraciones de la base de datos.",
-      "AUTHZ_001": "No eres miembro de esa organización.",
+      "ROLE_008": "Cambia a una organización para crear un rol en ella.",
       "AUTHZ_002": "Hay un problema de configuración en el servidor. Inténtalo más tarde.",
+      "AUTHZ_003": "El identificador de esa organización no es válido.",
+      "AUTHZ_004": "Hay un problema de configuración en el servidor. Inténtalo más tarde.",
       "GRANT_001": "No se ha encontrado esa concesión de acceso.",
       "GRANT_002": "No puedes conceder más acceso del que tienes tú.",
       "GRANT_003": "Esa persona o equipo no forma parte de esta organización.",
@@ -121,6 +143,7 @@
       "GITHUB_008": "Esa instalación de GitHub está suspendida o ya no está instalada.",
       "GITHUB_009": "GitHub no ha respondido. Inténtalo de nuevo en un momento.",
       "GITHUB_010": "Ese repositorio no está cubierto por esta instalación de GitHub.",
+      "GITHUB_011": "Ese enlace de GitHub no se inició aquí. Vuelve a conectar GitHub desde esta página.",
       "PROJECTS_001": "No se ha encontrado ese proyecto.",
       "PROJECTS_002": "Elige un espacio de trabajo antes de trabajar con proyectos.",
       "PROJECTS_003": "Ahora mismo no se pueden archivar proyectos. Inténtalo en un momento.",
@@ -145,7 +168,7 @@
       "HOSTS_003": "Se ha rechazado ese token de registro. Genera uno nuevo e inténtalo de nuevo.",
       "HOSTS_004": "Este servidor todavía no tiene configurados los equipos.",
       "HOSTS_005": "Ese equipo no ha podido demostrar su identidad.",
-      "HOSTS_006": "Ya tienes varios tokens de emparejamiento sin usar. Empareja una máquina con uno o espera a que caduquen; cada uno dura una hora.",
+      "HOSTS_006": "Ya tienes varios tokens de emparejamiento sin usar. Empareja una máquina con uno o espera a que caduquen; cada uno caduca poco después de crearse.",
       "ADMIN_009": "Esa sesión ya no existe para este usuario.",
       "PROFILE_001": "No hemos encontrado tu perfil.",
       "PROFILE_002": "La contraseña actual no es correcta.",
@@ -155,8 +178,11 @@
       "PROFILE_006": "Esa nueva contraseña no es lo bastante segura.",
       "PROFILE_007": "No puedes cerrar la sesión del dispositivo que estás usando ahora.",
       "PROFILE_008": "No hemos podido contactar con el servicio de cuentas. Inténtalo de nuevo.",
+      "PROFILE_009": "Esa ya es tu dirección de correo.",
       "PROFILE_CLIENT_010": "Ese tipo de archivo no se puede usar como foto de perfil.",
       "PROFILE_CLIENT_011": "Esa imagen es demasiado grande. Elige una de menos de 2 MB.",
+      "PROFILE_CLIENT_012": "No hemos podido enviar la confirmación a esa dirección.",
+      "PROFILE_CLIENT_013": "No hemos podido eliminar tu cuenta. No se ha borrado nada.",
       "FLAG_001": "Ese feature flag no existe.",
       "FLAG_002": "Esas reglas de segmentación no son válidas para este flag.",
       "FLAG_003": "Esta funcionalidad no está disponible en este momento.",
@@ -164,23 +190,65 @@
       "FLAG_005": "Ya existe un segmento con esa clave.",
       "FLAG_006": "Ese segmento todavía lo usa un flag. Quítalo primero de sus reglas.",
       "FLAG_007": "Las condiciones de ese segmento no son válidas.",
-      "SESSIONS_012": "La imagen pesa más de 5 MB. Recórtala o guárdala más pequeña y vuelve a pegarla.",
-      "SESSIONS_013": "Solo se pueden pegar imágenes PNG, JPEG, GIF y WebP en una sesión.",
-      "SESSIONS_014": "Esta sesión está detenida. Reiníciala para pegar una imagen en su prompt.",
-      "SESSIONS_015": "No se adjuntó ninguna imagen. Vuelve a pegarla o arrastrarla.",
-      "SESSIONS_016": "El equipo de esta sesión está desconectado, así que la imagen no se envió.",
-      "SESSIONS_017": "El equipo de esta sesión necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a pegarla.",
-      "HOSTS_007": "No hay ninguna imagen esperando para esa orden."
+      "SESSIONS_012": "El archivo pesa más de 5 MB. Guarda una copia más pequeña y vuelve a intentarlo.",
+      "SESSIONS_013": "Una sesión recibe imágenes (PNG, JPEG, GIF, WebP), PDF y archivos de texto. Se rechazan ejecutables, archivos comprimidos, scripts, SVG y HTML.",
+      "SESSIONS_014": "Esta sesión está detenida. Reiníciala para darle un archivo a su prompt.",
+      "SESSIONS_015": "No se adjuntó ningún archivo. Vuelve a pegarlo o arrastrarlo.",
+      "SESSIONS_016": "El equipo está desconectado, así que el archivo no se envió.",
+      "SESSIONS_017": "Este equipo necesita un runner más reciente para recibir ese archivo. Actualízalo y vuelve a intentarlo.",
+      "SESSIONS_019": "Un archivo adjunto caducó antes de que empezara la sesión. Vuelve a enviar para subirlo de nuevo.",
+      "SESSIONS_020": "Tienes demasiados archivos en espera. Envía o quita alguno y vuelve a adjuntar.",
+      "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
+      "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
+      "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",
+      "AUTOMATIONS_003": "Alguien guardó esta automatización después de que la abrieras. Vuelve a cargarla e inténtalo de nuevo.",
+      "AUTOMATIONS_004": "Uno de los repositorios no está disponible en este espacio de trabajo.",
+      "AUTOMATIONS_005": "Ese agente no puede ejecutar una automatización.",
+      "AUTOMATIONS_006": "Un disparador no se activaría nunca. Elige una hora posterior.",
+      "AUTOMATIONS_007": "Ese proyecto no puede tener automatizaciones.",
+      "AUTOMATIONS_008": "Esa ejecución no existe.",
+      "TASKS_001": "Esa tarea no existe o se ha eliminado.",
+      "TASKS_002": "Ese objetivo no existe o se ha eliminado.",
+      "TASKS_003": "Elige un espacio de trabajo antes de trabajar con tareas.",
+      "TASKS_004": "Ese proyecto no admite tareas. Puede que se haya archivado.",
+      "TASKS_005": "Esa sesión no existe o está en otro espacio de trabajo.",
+      "TASKS_006": "El tablero cambió mientras movías esa tarea. Se ha recargado; inténtalo de nuevo.",
+      "TASKS_007": "Ese objetivo pertenece a otro proyecto.",
+      "CALENDAR_001": "Ese evento no existe o se ha eliminado.",
+      "CALENDAR_002": "Elige un espacio de trabajo antes de usar el calendario.",
+      "CALENDAR_003": "Son demasiados días para mostrarlos a la vez.",
+      "CALENDAR_004": "Google Calendar no está configurado en este servidor.",
+      "CALENDAR_005": "La conexión con Google Calendar ha caducado. Vuelve a conectarlo.",
+      "CALENDAR_006": "Google no ha compartido tu calendario. Vuelve a conectarlo y permite el acceso al calendario.",
+      "CALENDAR_007": "Google Calendar no está conectado. Vuelve a conectarlo.",
+      "CALENDAR_008": "Google Calendar no ha respondido. Inténtalo de nuevo en un momento.",
+      "CALENDAR_009": "Un evento tiene que terminar después de empezar.",
+      "INBOUND_001": "Esa fuente de eventos no se conoce.",
+      "INBOUND_002": "La entrega no incluye un identificador de entrega.",
+      "SESS_001": "El host no tiene constancia de esa sesión.",
+      "SESS_002": "El host no ha podido iniciar una sesión con esos ajustes.",
+      "SESS_003": "Esa sesión no se está ejecutando en su host.",
+      "SESS_004": "El host ya tiene una sesión en ese worktree.",
+      "SESS_005": "El host no ha podido pasar ese archivo a la sesión.",
+      "TMUX_001": "tmux no está instalado en el host. Instálalo y vuelve a intentarlo.",
+      "TMUX_002": "tmux se ha negado a iniciar la sesión en el host.",
+      "GIT_001": "El host no ha podido preparar el worktree.",
+      "GIT_002": "Ha fallado un comando de git en el host.",
+      "GIT_003": "No se ha podido subir la rama.",
+      "GIT_004": "El host no puede acceder a ese repositorio. Comprueba que la GitHub App tiene acceso.",
+      "GIT_005": "Un comando de git en el host ha tardado demasiado y se ha detenido.",
+      "CONSENT_CLIENT_002": "El servidor no ha indicado a dónde continuar."
     },
     "notFound": {
       "title": "Esta página no existe",
-      "description": "Puede que el enlace sea incorrecto o que lo que señalaba ya no esté.",
+      "description": "El enlace es incorrecto o su destino ya no existe.",
       "home": "Volver"
     },
     "unexpected": {
       "title": "No se ha podido dibujar esta pantalla",
       "retry": "Reintentar"
-    }
+    },
+    "code": "Código: {{code}}"
   },
   "auth": {
     "email": "Correo electrónico",
@@ -191,7 +259,7 @@
     "lastName": "Apellido",
     "login": {
       "title": "Simple pero potente",
-      "description": "Inicia sesión para acceder a tus espacios de trabajo.",
+      "description": "Inicia sesión en tus espacios de trabajo.",
       "submit": "Iniciar sesión",
       "submitting": "Iniciando sesión...",
       "forgotPassword": "¿Olvidaste la contraseña?",
@@ -199,11 +267,8 @@
       "signUp": "Crea una",
       "invalidCredentials": "Correo electrónico o contraseña inválidos",
       "noSocialProviders": "El inicio de sesión social no está configurado en este despliegue. Define GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET o GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET en la API para activarlo.",
-      "failedTitle": "Error al iniciar sesión",
-      "failedMessage": "No se pudo iniciar sesión.",
       "continueWithGithub": "Continuar con GitHub",
       "continueWithGoogle": "Continuar con Google",
-      "keepSignedIn": "Mantener la sesión iniciada",
       "socialFailed": "No se pudo iniciar el acceso social. Inténtalo de nuevo o inicia sesión con tu correo y contraseña."
     },
     "register": {
@@ -215,8 +280,6 @@
       "hasAccount": "¿Ya tienes una cuenta?",
       "signIn": "Iniciar sesión",
       "failed": "Error en el registro",
-      "successTitle": "Cuenta creada",
-      "successMessage": "Ya puedes iniciar sesión.",
       "passwordHint": "Doce caracteres como mínimo."
     },
     "forgotPassword": {
@@ -225,15 +288,14 @@
       "submit": "Enviar enlace",
       "submitting": "Enviando...",
       "successTitle": "Revisa tu correo",
-      "successMessage": "Si existe una cuenta con ese correo, recibirás un enlace para restablecer tu contraseña en breve.",
       "backToSignIn": "Volver a iniciar sesión",
       "error": "Algo salió mal",
-      "legal": "Solo los miembros de este espacio de trabajo pueden restablecer una contraseña.",
-      "notReceived": "¿No te ha llegado? Revisa tu carpeta de spam o <retry>prueba con otro correo</retry>.",
+      "legal": "Solo los miembros del espacio pueden restablecerla.",
       "sentMessage": "Hemos enviado un enlace para restablecer tu contraseña a <address>{{email}}</address>. Caduca en 30 minutos.",
       "emailLabel": "Correo de trabajo",
       "resend": "Reenviar enlace",
-      "differentAddress": "Usar otra dirección"
+      "differentAddress": "Usar otra dirección",
+      "resendFailed": "No se ha podido reenviar el correo. Inténtalo de nuevo en un momento."
     },
     "resetPassword": {
       "title": "Crea una nueva contraseña",
@@ -247,12 +309,11 @@
       "requestNewLink": "Solicitar un nuevo enlace",
       "successTitle": "Contraseña actualizada",
       "successMessage": "Ya puedes iniciar sesión.",
-      "failedTitle": "Error al restablecer",
       "error": "No se pudo restablecer la contraseña",
       "confirmPassword": "Confirmar contraseña",
       "confirmPasswordPlaceholder": "Repite la contraseña",
       "continue": "Ir al espacio de trabajo",
-      "legal": "Solo los miembros de este espacio de trabajo pueden restablecer una contraseña.",
+      "legal": "Solo los miembros del espacio pueden restablecerla.",
       "descriptionFor": "Elige una nueva contraseña para {{email}}.",
       "note": "Al guardar se cerrará la sesión en el resto de dispositivos."
     },
@@ -296,90 +357,65 @@
       "failed": "Ese acceso no se completó. Inténtalo de nuevo o usa tu correo y contraseña.",
       "noAccount": "Todavía no hay ninguna cuenta con ese acceso. Crea una abajo: los botones de proveedor lo hacen en un solo paso."
     },
-    "passwordRules": {
-      "length": "Al menos 12 caracteres",
-      "match": "Las dos contraseñas coinciden"
-    },
     "showPassword": "Mostrar contraseña",
-    "legal": "Al continuar aceptas nuestros <terms>Términos</terms> y la <privacy>Política de privacidad</privacy>.",
+    "legal": "Al continuar aceptas los <terms>Términos</terms> y la <privacy>Privacidad</privacy>.",
     "passwordsDoNotMatch": "Las contraseñas no coinciden"
   },
   "projects": {
-    "page": {
+    "dialog": {
       "newTitle": "Nuevo proyecto",
       "editTitle": "Ajustes del proyecto",
-      "name": "Nombre del proyecto",
+      "gone": "Ese proyecto ya no está aquí.",
+      "name": "Nombre",
       "namePlaceholder": "Ponle nombre al proyecto",
-      "back": "Atrás",
-      "crumbSessions": "Sesiones",
-      "crumbNewSession": "Nueva sesión",
+      "repositories": "Repositorios",
+      "addRepository": "Añadir un repositorio…",
+      "repositoriesHint": "Las sesiones de este proyecto pueden clonarlos. Añade al menos uno.",
+      "noMatch": "Ningún repositorio coincide con “{{query}}”",
+      "allAdded": "Ya están añadidos todos los repositorios",
+      "remove": "Quitar {{name}}",
+      "defaults": "Valores por defecto",
+      "optional": "opcional",
+      "defaultsHint": "Con lo que empieza cada sesión nueva de este proyecto. Cada uno se puede cambiar por sesión.",
+      "host": "Host",
+      "noHost": "Todavía no hay ningún host emparejado.",
+      "agent": "Agente",
+      "clonedByDefault": "Se clonan por defecto",
+      "clonedTitle": "Se clona por defecto en las sesiones nuevas",
+      "selectFirst": "Elige repositorios arriba primero.",
+      "clonedCount_one": "{{count}} clonado",
+      "clonedCount_other": "{{count}} clonados",
+      "clonedCount_many": "{{count}} clonados",
+      "branchEmpty": "No hay ninguna rama llamada “{{query}}”",
       "create": "Crear proyecto",
       "creating": "Creando…",
       "save": "Guardar cambios",
       "saving": "Guardando…",
       "failed": "No se pudo crear el proyecto.",
       "saveFailed": "No se pudo guardar el proyecto.",
-      "recap": {
-        "name": "Ponle nombre al proyecto y elige sus repositorios.",
-        "repositories": "Elige al menos un repositorio.",
-        "default": "Marca al menos un repositorio por defecto."
-      },
-      "summary": {
-        "repositories_one": "{{count}} repositorio · {{defaults}} por defecto",
-        "repositories_other": "{{count}} repositorios · {{defaults}} por defecto"
-      },
-      "steps": {
-        "repositories": {
-          "title": "Repositorios",
-          "subtitle": "El código que las sesiones de este proyecto pueden clonar.",
-          "label": "Repositorios por defecto",
-          "hint": "Marcados en cada sesión nueva. Añade otros por sesión.",
-          "defaultCount": "{{defaults}} de {{count}} por defecto",
-          "search": "Buscar repositorios…",
-          "noMatch": "Ningún repositorio coincide con “{{query}}”.",
-          "none": "Todavía no hay ningún repositorio conectado.",
-          "default": "Por defecto",
-          "defaultTitle": "Se clona por defecto en las sesiones nuevas",
-          "branchEmpty": "No hay ninguna rama llamada “{{query}}”"
-        },
-        "host": {
-          "title": "Host por defecto",
-          "subtitle": "Donde se ejecutan las sesiones nuevas salvo que elijas otro.",
-          "none": "Todavía no hay ningún host emparejado."
-        },
-        "agent": {
-          "title": "Agente por defecto",
-          "subtitle": "Se inicia en cada sesión nueva. Cámbialo por sesión."
-        }
-      },
-      "delete": {
-        "title": "Eliminar proyecto",
-        "hint": "Elimina este proyecto.",
-        "blocked_one": "Mueve o elimina su {{count}} sesión primero.",
-        "blocked_other": "Mueve o elimina sus {{count}} sesiones primero.",
-        "action": "Eliminar proyecto",
-        "deleting": "Eliminando…",
-        "failed": "No se pudo eliminar el proyecto."
-      },
-      "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar."
+      "delete": "Eliminar proyecto",
+      "deleteBlocked_one": "Este proyecto no se puede eliminar mientras tenga {{count}} sesión abierta. Muévela a otro proyecto o elimínala primero.",
+      "deleteBlocked_other": "Este proyecto no se puede eliminar mientras tenga {{count}} sesiones abiertas. Muévelas a otro proyecto o elimínalas primero.",
+      "deleteBlocked_many": "Este proyecto no se puede eliminar mientras tenga {{count}} sesiones abiertas. Muévelas a otro proyecto o elimínalas primero.",
+      "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar.",
+      "loadFailed": "No se ha podido cargar este proyecto."
     },
     "deleteDialog": {
       "title": "¿Eliminar {{name}}?",
       "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
-      "confirm": "Eliminar proyecto"
+      "confirm": "Eliminar proyecto",
+      "deleting": "Eliminando…",
+      "failed": "No se pudo eliminar el proyecto."
     },
     "unassigned": "Sin asignar"
   },
   "sessions": {
-    "home": {
-      "openTitle": "Ninguna sesión abierta",
-      "openDescription": "Elige una en la barra lateral o inicia otra."
-    },
     "provisioning": {
       "title": "Iniciando tu sesión",
       "failedTitle": "La sesión no se inició",
       "failedLead": "El host no pudo iniciar esta sesión.",
       "working": "Trabajando…",
+      "downloading": "Este host aún no tenía este repositorio, así que primero lo descarga. Esta vez tardará un poco más; las siguientes sesiones arrancan en un segundo.",
       "failed": "Error",
       "took": "{{seconds}} s",
       "steps": {
@@ -392,7 +428,8 @@
         },
         "clone": {
           "label": "Clonar {{repo}}",
-          "doing": "Descargando el repositorio…"
+          "doing": "Descargando el repositorio…",
+          "downloading": "Descargando el repositorio por primera vez…"
         },
         "worktree": {
           "label": "Crear el worktree",
@@ -407,22 +444,24 @@
       "progressFailed": "No se pudo cargar el progreso del inicio.",
       "codes": {
         "SESS_002": "Este host crea sesiones con un solo repositorio."
-      }
-    },
-    "group": {
-      "working": "Trabajando",
-      "waiting-on-you": "Te espera",
-      "ready-for-review": "Lista para revisar",
-      "landing": "Aterrizando",
-      "idle": "Inactiva",
-      "resolved": "Terminada"
+      },
+      "details": "Detalles del host: {{detail}}"
     },
     "closed": {
-      "description": "Esta sesión se ha detenido. Su trabajo está en su rama."
+      "description": "Esta sesión se ha detenido. Su trabajo está en {{branch}}, y al reiniciarla el terminal vuelve donde lo dejó.",
+      "deleted": "Esta sesión se eliminó. Su worktree ya no está en el host; los commits ya enviados siguen en el remoto.",
+      "descriptionNoBranch": "Esta sesión se ha detenido. Al reiniciarla el terminal vuelve donde lo dejó.",
+      "restart": "Reiniciar",
+      "restarting": "Reiniciando",
+      "restartFailed": "No se ha podido reiniciar la sesión."
     },
     "new": {
       "title": "Nueva sesión",
       "subtitle": "Define el alcance y describe el trabajo.",
+      "subtitleProject_one": "En {{name}} · clonando {{picked}} de {{count}} repositorio, cada uno en su propia rama opp/.",
+      "subtitleProject_other": "En {{name}} · clonando {{picked}} de {{count}} repositorios, cada uno en su propia rama opp/.",
+      "subtitleCloning_one": "En {{name}} · clonando {{count}} repositorio, en su propia rama opp/.",
+      "subtitleCloning_other": "En {{name}} · clonando {{count}} repositorios, cada uno en su propia rama opp/.",
       "host": {
         "label": "Host",
         "placeholder": "Host",
@@ -430,7 +469,8 @@
         "empty": "Ningún host coincide.",
         "loading": "Cargando hosts…",
         "add": "Añadir host…",
-        "offline": "Desconectado"
+        "offline": "Desconectado",
+        "failed": "No se han podido cargar tus hosts."
       },
       "project": {
         "label": "Proyecto",
@@ -439,7 +479,8 @@
         "empty": "Ningún proyecto coincide.",
         "loading": "Cargando proyectos…",
         "add": "Nuevo proyecto…",
-        "noRepositories": "Sin repositorios"
+        "noRepositories": "Sin repositorios",
+        "failed": "No se han podido cargar tus proyectos."
       },
       "repository": {
         "label": "Repositorios",
@@ -452,8 +493,10 @@
         "branchPane": "Rama de {{name}}",
         "changeBranch": "Cambiar de rama",
         "manage": "Gestionar el acceso a repositorios",
+        "manageFailed": "No hemos podido abrir GitHub. Inténtalo de nuevo en un momento.",
         "noApp": "Este despliegue no tiene la GitHub App, así que no hay repositorios que elegir.",
-        "archived": "Archivado"
+        "archived": "Archivado",
+        "failed": "No se han podido cargar tus repositorios."
       },
       "branch": {
         "label": "Rama",
@@ -485,11 +528,14 @@
       },
       "effort": {
         "label": "Esfuerzo",
+        "none": "Desactivado",
         "minimal": "Mínimo",
         "low": "Bajo",
         "medium": "Medio",
         "high": "Alto",
+        "xhigh": "Muy alto",
         "max": "Máximo",
+        "ultra": "Ultra",
         "faster": "Más rápido",
         "smarter": "Más inteligente",
         "hint": "Cuánto puede pensar el agente antes de responder. Más esfuerzo cuesta más y tarda más."
@@ -497,23 +543,63 @@
       "composer": {
         "placeholder": "Describe una tarea o haz una pregunta",
         "send": "Enviar",
-        "stop": "Detener"
+        "stop": "Detener",
+        "attach": "Adjuntar archivos",
+        "removeAttachment": "Quitar {{name}}",
+        "attachTooLarge": "{{name}} pesa más de 5 MB. Guarda una copia más pequeña y vuelve a adjuntarlo.",
+        "attachTooMany": "Una primera tarea lleva como mucho {{max}} archivos.",
+        "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto."
       },
-      "queued": "Tu primera tarea está en cola para este host.",
       "failed": "No se pudo crear la sesión."
     },
     "session": {
       "status": {
-        "connecting": "Conectando",
-        "live": "En vivo",
-        "offline": "Host desconectado",
         "closed": "Desconectado"
       },
-      "image": {
-        "sending": "Enviando imagen",
-        "hostOffline": "La imagen no se envió: el equipo está desconectado.",
-        "failedTitle": "La imagen no llegó a la sesión",
-        "dismiss": "Cerrar"
+      "file": {
+        "sending": "Enviando archivo",
+        "notSupported": "Ninguno de los archivos soltados es uno que el agente pueda recibir. Suelta una imagen, un PDF o un archivo de texto.",
+        "failedTitle": "El archivo no llegó a la sesión"
+      },
+      "retryNow": "Reintentar ahora",
+      "retry": "Intentar de nuevo",
+      "ended": {
+        "forbidden": "No tienes acceso al terminal de esta sesión.",
+        "refused": "El host se ha negado a abrir este terminal."
+      },
+      "starting": {
+        "title": "Todavía no hay nada en pantalla",
+        "description": "La conexión está activa. Esto se llena en cuanto el agente dibuja: una sesión nueva cuando termina de arrancar, y una anterior cuando se reenvía su historial."
+      },
+      "hostLink": {
+        "thisHost": "este host",
+        "status": {
+          "live": "En directo",
+          "reconnecting": "Conectando con {{host}}…",
+          "offline": "Host desconectado",
+          "catchingUp": "Poniéndose al día con {{host}}…",
+          "reconnected": "Reconectado"
+        },
+        "title": {
+          "offline": "{{host}} está desconectado",
+          "catchingUp": "El runner ha vuelto",
+          "reconnected": "Reconectado"
+        },
+        "line": {
+          "offline": "Se reconecta solo cuando vuelva el runner",
+          "catchingUp": "Recuperando la salida de {{host}}…",
+          "reconnected": "El historial está al día"
+        },
+        "fix": "Cómo arreglarlo",
+        "fixIntro": "Ejecútalos en {{host}}, no en este terminal, o pásale el prompt a Claude Code o Codex en esa máquina.",
+        "install": "Si está parado, reinstálalo y arráncalo:",
+        "statusCommand": "Mira qué falla:",
+        "hosts": "Ajustes → Hosts",
+        "copy": "Copiar comando",
+        "copied": "Copiado",
+        "logCommand": "Lee el log reciente del runner:",
+        "copyPrompt": "Copiar prompt de diagnóstico",
+        "prompt": "El runner de Oppenheimer en {{host}} ha perdido la conexión con Oppenheimer. Ayúdame a recuperarlo.\n\n- Primero dime en qué máquina estás (uname -n, whoami). Si no es {{host}}, para.\n- Ejecuta ~/.local/bin/oppenheimer-runner status y enséñame lo que imprime.\n- Lee las últimas 50 líneas de ~/.oppenheimer/log/runner.log y ~/.oppenheimer/log/runner.err.log\n  y dime qué ha fallado.\n- No reinstales, desinstales ni ejecutes nada como root salvo que te lo diga. Si el servicio\n  está parado, propón ~/.local/bin/oppenheimer-runner install y espera a que te dé el visto bueno."
       }
     },
     "sidebar": {
@@ -535,7 +621,8 @@
       "moveTitle": "Mover a un proyecto",
       "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
       "delete": "Eliminar",
-      "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo."
+      "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
+      "loadFailed": "No se han podido cargar tus sesiones."
     },
     "deleteSession": {
       "title": "¿Eliminar “{{name}}”?",
@@ -565,15 +652,6 @@
       "recent": "Última actividad",
       "oldest": "Más antiguas primero",
       "name": "Nombre"
-    },
-    "agents": {
-      "claude-code": "Claude Code",
-      "codex": "Codex"
-    },
-    "row": {
-      "actions": "Acciones de la sesión",
-      "move": "Mover a un proyecto…",
-      "moveTitle": "Mover a un proyecto"
     }
   },
   "automations": {
@@ -581,10 +659,17 @@
       "new": "Nueva automatización",
       "projects": "Proyectos",
       "all": "Todas las automatizaciones",
+      "search": "Buscar automatizaciones",
+      "clearSearch": "Borrar búsqueda",
+      "noMatch": "Ninguna automatización coincide con «{{query}}».",
       "emptyProject": "Todavía no hay automatizaciones.",
       "createOne": "Crea una",
       "newHere": "Nueva automatización en {{name}}",
-      "noProjects": "Todavía no hay ningún proyecto. Crea uno desde Nueva sesión y sus automatizaciones se reunirán aquí."
+      "noProjects": "Todavía no hay ningún proyecto. Crea uno desde Nueva sesión y sus automatizaciones se reunirán aquí.",
+      "noRuns": "Todavía no hay ejecuciones.",
+      "running": "En curso",
+      "paused": "En pausa",
+      "loadFailed": "No se han podido cargar tus automatizaciones."
     },
     "page": {
       "tabs": {
@@ -593,16 +678,491 @@
       },
       "new": "Nueva automatización",
       "empty": "Todavía no hay automatizaciones. Una automatización inicia una sesión según un horario o cuando pasa algo en GitHub.",
-      "runsEmpty": "Todavía no hay ejecuciones. Cada ejecución aparece aquí con la sesión que inició."
+      "runsEmpty": "Todavía no hay ejecuciones. Cada una aparece aquí con la sesión que inició.",
+      "loadFailed": "No se han podido cargar las automatizaciones.",
+      "actionFailed": "No se ha podido completar.",
+      "actionFailedFor": "«{{name}}» no se ha actualizado"
+    },
+    "status": {
+      "active": "Activa",
+      "paused": "En pausa",
+      "running": "En curso"
+    },
+    "runStatus": {
+      "queued": "En cola",
+      "running": "En curso",
+      "completed": "Completada",
+      "failed": "Fallida",
+      "cancelled": "Cancelada",
+      "skipped": "Omitida",
+      "expired": "Caducada"
+    },
+    "skipReason": {
+      "paused": "Omitida: la automatización estaba en pausa",
+      "deleted": "Omitida: la automatización se eliminó",
+      "own_event": "Omitida: el evento era nuestro",
+      "automation_rate_limited": "Omitida: límite por hora de esta automatización",
+      "workspace_rate_limited": "Omitida: límite por hora del espacio de trabajo",
+      "overlapping": "Omitida: otra ejecución seguía en curso",
+      "missed": "Omitida: se perdió el turno",
+      "not_launchable": "Omitida: la sesión no pudo iniciarse",
+      "agent_unavailable": "Omitida: el agente no está en el host"
+    },
+    "pausedReason": {
+      "user": "En pausa. Los disparadores se ignoran hasta que la reanudes; Ejecutar ahora sigue funcionando.",
+      "project_archived": "En pausa porque se eliminó su proyecto. Muévela a otro proyecto para reanudarla.",
+      "host_unpaired": "En pausa porque se quitó su host. Elige otro host en Editar para reanudarla.",
+      "owner_lost_access": "En pausa porque su propietario ya no puede ejecutarla."
+    },
+    "frequency": {
+      "once": {
+        "label": "Una vez",
+        "desc": "En una fecha y hora concretas"
+      },
+      "hourly": {
+        "label": "Cada hora",
+        "desc": "Cada hora, en un minuto concreto"
+      },
+      "daily": {
+        "label": "Diaria",
+        "desc": "Cada día a una hora concreta"
+      },
+      "weekdays": {
+        "label": "Días laborables",
+        "desc": "De lunes a viernes a una hora concreta"
+      },
+      "weekly": {
+        "label": "Semanal",
+        "desc": "Los días que elijas"
+      },
+      "monthly": {
+        "label": "Mensual",
+        "desc": "Un día del mes"
+      }
+    },
+    "event": {
+      "pr_opened": {
+        "label": "Pull request abierta",
+        "desc": "Abierta, o un borrador marcado como listo para revisión"
+      },
+      "pr_draft": {
+        "label": "Borrador abierto",
+        "desc": "Abierta como borrador, o convertida en uno"
+      },
+      "pr_sync": {
+        "label": "Push a una pull request",
+        "desc": "Nuevos commits en una pull request abierta"
+      },
+      "pr_merged": {
+        "label": "Pull request fusionada",
+        "desc": "Cuando la fusión se completa"
+      },
+      "comment": {
+        "label": "Comentario añadido",
+        "desc": "En una pull request o incidencia"
+      },
+      "push": {
+        "label": "Push a una rama",
+        "desc": "Una ejecución por push, no por commit"
+      },
+      "issue_labeled": {
+        "label": "Etiqueta añadida",
+        "desc": "En una pull request o incidencia, una vez por etiqueta"
+      },
+      "check_failed": {
+        "label": "Check fallido",
+        "desc": "Cualquier workflow de Actions o check de estado"
+      },
+      "issue_opened": {
+        "label": "Incidencia abierta",
+        "desc": "Solo incidencias nuevas, no reabiertas"
+      },
+      "mention": {
+        "label": "Mención a @oppenheimer",
+        "desc": "En una incidencia, pull request o revisión"
+      },
+      "release": {
+        "label": "Release publicada",
+        "desc": "Sin incluir pre-releases"
+      }
+    },
+    "trigger": {
+      "once": "Una vez, {{date}} a las {{time}}",
+      "hourly": "Cada hora a los :{{minute}}",
+      "daily": "Cada día a las {{time}}",
+      "weekdays": "Días laborables a las {{time}}",
+      "weekly": "Cada {{days}} a las {{time}}",
+      "monthly": "Cada mes el día {{day}} a las {{time}}",
+      "event": "Al ocurrir: {{event}}",
+      "more": "{{summary}} +{{count}}",
+      "manual": "Solo manual",
+      "monFri": "lun–vie",
+      "weekend": "sáb, dom"
+    },
+    "next": {
+      "onEvent": "En el próximo evento",
+      "none": "—",
+      "today": "Hoy, {{time}}",
+      "tomorrow": "Mañana, {{time}}",
+      "in": "en {{time}}",
+      "nextIn": "Próxima en"
+    },
+    "table": {
+      "automation": "Automatización",
+      "trigger": "Disparador",
+      "next": "Próxima ejecución",
+      "status": "Estado",
+      "actions": "Acciones de la automatización",
+      "edit": "Editar",
+      "runNow": "Ejecutar ahora",
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "duplicate": "Duplicar",
+      "delete": "Eliminar"
+    },
+    "history": {
+      "title": "Historial de ejecuciones",
+      "range": "Últimos 30 días",
+      "succeeded": "Correctas",
+      "failed": "Fallidas",
+      "runs_one": "{{count}} ejecución",
+      "runs_other": "{{count}} ejecuciones",
+      "runs_many": "{{count}} ejecuciones"
+    },
+    "runs": {
+      "all": "Todas",
+      "completed": "Completadas",
+      "failed": "Fallidas",
+      "running": "En curso",
+      "run": "Ejecución",
+      "automation": "Automatización",
+      "time": "Hora",
+      "allAutomations": "Todas las automatizaciones",
+      "allProjects": "Todos los proyectos",
+      "window": {
+        "24h": "Últimas 24 horas",
+        "7d": "Últimos 7 días",
+        "30d": "Últimos 30 días"
+      },
+      "clear": "Borrar",
+      "noMatch": "Ninguna ejecución coincide con estos filtros.",
+      "range": "{{from}}–{{to}} de {{total}}",
+      "previous": "Página anterior",
+      "next": "Página siguiente",
+      "deleted": "Automatización eliminada",
+      "noSession": "Esta ejecución no inició ninguna sesión.",
+      "loadFailed": "No se han podido cargar las ejecuciones."
+    },
+    "detail": {
+      "back": "Atrás",
+      "crumb": "Automatizaciones",
+      "runNow": "Ejecutar ahora",
+      "edit": "Editar",
+      "more": "Más acciones",
+      "pause": "Pausar automatización",
+      "resume": "Reanudar automatización",
+      "duplicate": "Duplicar",
+      "delete": "Eliminar automatización",
+      "resumeAction": "Reanudar",
+      "notFound": "Esta automatización no existe o se eliminó."
     },
     "editor": {
       "newTitle": "Nueva automatización",
-      "name": "Nombre de la automatización",
-      "namePlaceholder": "Ponle nombre a la automatización",
+      "editTitle": "Editar automatización",
+      "steps": {
+        "label": "Pasos de la automatización",
+        "task": "Tarea",
+        "trigger": "Disparador",
+        "where": "Dónde se ejecuta"
+      },
+      "name": "Nombre",
+      "namePlaceholder": "Ponle nombre a esta automatización",
+      "prompt": "¿Qué debe hacer el agente?",
+      "promptPlaceholder": "Describe el trabajo de cada ejecución…",
+      "promptHint": "La pull request, incidencia o commit que inició la ejecución se le pasa como contexto.",
+      "triggerLead": "Cualquier disparador inicia una ejecución.",
+      "addTrigger": "Añadir disparador",
+      "addAnother": "Añadir otro disparador",
+      "groupSchedule": "Horario",
+      "groupGithub": "GitHub",
+      "removeTrigger": "Quitar disparador",
+      "on": "el",
+      "at": "a las",
+      "in": "en",
+      "onThe": "el día",
+      "targeting": "hacia",
+      "labeled": "con la etiqueta",
+      "anyBranch": "cualquier rama",
+      "anyLabel": "cualquier etiqueta",
+      "branchPlaceholder": "Nombre de la rama",
+      "labelPlaceholder": "Nombre de la etiqueta",
+      "anyOfRepos": "cualquiera de {{count}} repositorios",
+      "someRepos": "{{count}} repositorios",
+      "reposHead": "Repositorios · elige uno o más",
+      "atLeastOne": "Hace falta al menos uno",
+      "hour": "Hora",
+      "minute": "Minuto",
+      "minutesPast": "Minutos de cada hora",
+      "dayOfMonth": "Día del mes",
+      "days": "Días",
+      "nextRun": "Próxima ejecución",
+      "inRel": "· en",
+      "passed": "Esa hora ya ha pasado. Elige una posterior.",
+      "listening_one": "Escuchando en {{repos}} · se habría ejecutado una vez en los últimos 7 días",
+      "listening_other": "Escuchando en {{repos}} · se habría ejecutado {{count}} veces en los últimos 7 días",
+      "listening_many": "Escuchando en {{repos}} · se habría ejecutado {{count}} veces en los últimos 7 días",
+      "listeningNone": "Escuchando en {{repos}} · nada coincidió en los últimos 7 días",
+      "code": "Código",
+      "project": "Proyecto",
+      "chooseProject": "Elige un proyecto",
+      "searchProjects": "Buscar proyectos",
+      "noRepositories": "Sin repositorios",
+      "repositories": "Repositorios",
+      "searchRepositories": "Buscar repositorios",
+      "repoCount_one": "{{count}} repositorio",
+      "repoCount_other": "{{count}} repositorios",
+      "runsOn": "Se ejecuta en",
+      "host": "Host",
+      "chooseHost": "Elige un host",
+      "searchHosts": "Buscar hosts",
+      "agent": "Agente",
+      "searchAgents": "Buscar agentes",
+      "model": "Modelo",
+      "searchModels": "Buscar modelos",
+      "agentDefault": "El predeterminado del agente",
+      "branchHint": "Cada ejecución es su propia sesión en una rama opp/ nueva: nada llega a main sin una pull request.",
+      "missingName": "Añade un nombre.",
+      "missingPrompt": "Describe el trabajo.",
+      "missingTrigger": "Añade un disparador.",
+      "missingWhere": "Elige un proyecto, un repositorio y un host.",
       "back": "Atrás",
-      "crumb": "Automatizaciones",
+      "next": "Siguiente",
+      "save": "Guardar",
       "create": "Crear automatización",
-      "recap": "Ponle nombre a la automatización y di dónde se ejecuta."
+      "saveFailed": "No se ha podido guardar la automatización.",
+      "noMatch": "Nada coincide con «{{query}}».",
+      "chooseRepositories": "Elige repositorios…",
+      "chooseAgent": "Elige un agente…",
+      "chooseModel": "Elige un modelo…"
+    },
+    "skipReasonOther": "Omitida",
+    "pausedReasonOther": "En pausa. Los disparadores se ignoran hasta que se reanude.",
+    "deleteDialog": {
+      "title": "¿Eliminar «{{name}}»?",
+      "description": "Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan.",
+      "confirm": "Eliminar",
+      "deleting": "Eliminando…",
+      "failed": "No se pudo eliminar la automatización."
+    },
+    "runClosed": {
+      "title": "El turno de esta ejecución ha terminado",
+      "description": "Su trabajo está en {{branch}}. Al abrirla en el terminal, la sesión continúa donde la ejecución la dejó.",
+      "descriptionNoBranch": "Al abrirla en el terminal, la sesión continúa donde la ejecución la dejó.",
+      "open": "Abrir en el terminal",
+      "opening": "Abriendo",
+      "backToAutomation": "Volver a la automatización"
+    }
+  },
+  "tasks": {
+    "backToTask": "Volver a la tarea",
+    "nav": {
+      "label": "Plan",
+      "tasks": "Tareas",
+      "calendar": "Calendario"
+    },
+    "sidebar": {
+      "projects": "Proyectos",
+      "all": "Todos los proyectos",
+      "unassigned": "Sin asignar",
+      "newProject": "Nuevo proyecto",
+      "loadFailed": "No se han podido cargar tus proyectos."
+    },
+    "board": {
+      "title": "Tareas",
+      "newTask": "Nueva tarea",
+      "addTask": "Añadir tarea",
+      "addTo": "Añadir una tarea a {{column}}",
+      "quickPlaceholder": "Título de la tarea",
+      "filedUnder": "En {{name}}",
+      "loadFailed": "No se ha podido cargar el tablero.",
+      "moveFailed": "No se ha podido mover la tarea. Ha vuelto a su sitio.",
+      "addFailed": "No se ha podido añadir la tarea.",
+      "stats": {
+        "open": "abiertas",
+        "doing": "en curso",
+        "done": "hechas",
+        "overdue": "vencidas"
+      },
+      "filedAll": "En todos los proyectos",
+      "keyAdd": "añadir",
+      "keyCancel": "cancelar"
+    },
+    "columns": {
+      "later": "Más adelante",
+      "todo": "Por hacer",
+      "doing": "En curso",
+      "done": "Hecho"
+    },
+    "card": {
+      "markDone": "Marcar como hecha",
+      "markNotDone": "Marcar como no hecha",
+      "start": "Iniciar sesión de trabajo",
+      "openSession": "Abrir la sesión {{name}}"
+    },
+    "sessionState": {
+      "waiting": "Necesita respuesta",
+      "queued": "En cola",
+      "running": "En marcha",
+      "failed": "Fallida",
+      "idle": "Inactiva",
+      "completed": "Completada"
+    },
+    "dates": {
+      "today": "Hoy",
+      "tomorrow": "Mañana",
+      "yesterday": "Ayer",
+      "nextMonday": "El lunes que viene",
+      "endOfMonth": "Fin de mes",
+      "inThreeMonths": "En 3 meses"
+    },
+    "goals": {
+      "label": "Objetivos",
+      "title": "Objetivos",
+      "new": "Nuevo objetivo",
+      "empty": "Los objetivos agrupan tareas y cuentan cuántas están hechas.",
+      "noTarget": "Sin fecha",
+      "progress": "{{done}} / {{total}} tareas",
+      "edit": "Editar {{name}}",
+      "loadFailed": "No se han podido cargar tus objetivos.",
+      "emptyTitle": "Aún no hay objetivos"
+    },
+    "goal": {
+      "newTitle": "Nuevo objetivo",
+      "editTitle": "Editar objetivo",
+      "name": "Objetivo",
+      "namePlaceholder": "¿Qué quieres conseguir?",
+      "target": "Fecha",
+      "add": "Añadir objetivo",
+      "delete": "Eliminar objetivo",
+      "deleteTitle": "¿Eliminar este objetivo?",
+      "deleteDescription": "Se elimina «{{name}}»; sus tareas siguen en el tablero sin objetivo.",
+      "saveFailed": "No se ha podido guardar el objetivo.",
+      "deleteFailed": "No se ha podido eliminar el objetivo."
+    },
+    "dialog": {
+      "newTitle": "Nueva tarea",
+      "editTitle": "Editar tarea",
+      "titleLabel": "Título",
+      "titlePlaceholder": "¿Qué hay que hacer?",
+      "notesLabel": "Notas",
+      "notesPlaceholder": "Añade notas",
+      "status": "Estado",
+      "project": "Proyecto",
+      "goal": "Objetivo",
+      "none": "Ninguno",
+      "due": "Vence",
+      "sessions": "Sesiones",
+      "startSession": "Iniciar sesión de trabajo",
+      "linkExisting": "Vincular existente",
+      "unlink": "Desvincular {{name}}",
+      "unlinkFailed": "No se ha podido desvincular la sesión.",
+      "add": "Añadir tarea",
+      "save": "Guardar",
+      "delete": "Eliminar tarea",
+      "deleteTitle": "¿Eliminar esta tarea?",
+      "deleteDescription": "Se elimina «{{title}}». Sus sesiones siguen como están.",
+      "saveFailed": "No se ha podido guardar la tarea.",
+      "deleteFailed": "No se ha podido eliminar la tarea.",
+      "loadFailed": "No se ha podido cargar el tablero.",
+      "gone": "Esta tarea ya no existe."
+    },
+    "link": {
+      "title": "Vincular una sesión",
+      "search": "Buscar sesiones",
+      "empty": "No hay sesiones que vincular.",
+      "inProject": "En {{name}}",
+      "others": "Otras sesiones",
+      "failed": "No se ha podido vincular la sesión."
+    },
+    "start": {
+      "title": "Iniciar sesión de trabajo",
+      "for": "Para «{{title}}»",
+      "prompt": "Instrucciones",
+      "repository": "Repositorio",
+      "repositoryPlaceholder": "Elige un repositorio",
+      "repositorySearch": "Buscar repositorios",
+      "noRepositories": "Este proyecto no tiene repositorios. Añade uno en sus ajustes.",
+      "host": "Host",
+      "hostPlaceholder": "Elige un host",
+      "hostSearch": "Buscar hosts",
+      "noHosts": "Aún no hay hosts. Añade uno en Ajustes → Hosts.",
+      "agent": "Agente y modelo",
+      "agentSearch": "Buscar modelos",
+      "agentEmpty": "Ningún modelo coincide con «{{query}}».",
+      "offlineShort": "Desconectado",
+      "offline": "{{host}} está desconectado. La sesión espera en cola y empieza cuando su runner se vuelva a conectar.",
+      "offlineSince": "{{host}} lleva desconectado desde {{when}}. La sesión espera en cola y empieza cuando su runner se vuelva a conectar.",
+      "start": "Iniciar sesión de trabajo",
+      "queue": "Poner en cola",
+      "failed": "No se ha podido iniciar la sesión."
+    }
+  },
+  "calendar": {
+    "sidebar": {
+      "layers": "Mostrar"
+    },
+    "layers": {
+      "events": "Mis eventos",
+      "google": "Google Calendar",
+      "tasks": "Tareas que vencen",
+      "automations": "Ejecuciones de automatizaciones"
+    },
+    "header": {
+      "previous": "Mes anterior",
+      "next": "Mes siguiente",
+      "today": "Hoy",
+      "newEvent": "Nuevo evento"
+    },
+    "grid": {
+      "more_one": "{{count}} más",
+      "more_other": "{{count}} más",
+      "eventsFailed": "No se han podido cargar tus eventos.",
+      "googleFailed": "No se ha podido leer Google Calendar.",
+      "moveFailed": "No se ha podido mover a otro día."
+    },
+    "event": {
+      "newTitle": "Nuevo evento",
+      "editTitle": "Editar evento",
+      "title": "Título",
+      "allDay": "Todo el día",
+      "notes": "Notas",
+      "add": "Añadir evento",
+      "save": "Guardar",
+      "delete": "Eliminar evento",
+      "deleteTitle": "¿Eliminar este evento?",
+      "deleteDescription": "Se elimina «{{title}}».",
+      "saveFailed": "No se ha podido guardar el evento.",
+      "deleteFailed": "No se ha podido eliminar el evento.",
+      "gone": "Este evento no está en el mes que se muestra o ya no existe."
+    },
+    "google": {
+      "title": "Google Calendar",
+      "description": "Muestra tus eventos de Google junto a los tuyos. Solo lectura: no se escribe nada en Google.",
+      "connect": "Conectar Google Calendar",
+      "reconnect": "Volver a conectar",
+      "revoked": "Google ya no nos deja leer este calendario. Vuelve a conectarlo para verlo.",
+      "connectedAs": "Conectado como {{email}}",
+      "disconnect": "Desconectar",
+      "disconnectTitle": "¿Desconectar Google Calendar?",
+      "disconnectDescription": "Sus eventos dejan de mostrarse. Puedes volver a conectarlo cuando quieras.",
+      "disconnectFailed": "No se ha podido desconectar Google Calendar.",
+      "startFailed": "No se ha podido contactar con Google. Inténtalo de nuevo.",
+      "loadFailed": "No se ha podido comprobar la conexión con Google Calendar.",
+      "connecting": "Conectando Google Calendar…",
+      "connectFailed": "No se ha podido conectar Google Calendar.",
+      "refused": "Google Calendar no se ha conectado: el permiso se canceló o no se completó.",
+      "back": "Volver al calendario",
+      "readOnly": "Solo lectura"
     }
   },
   "hosts": {
@@ -610,33 +1170,68 @@
       "tokenExpires": "El token caduca en {{time}} · un solo uso",
       "tokenExpired": "Token caducado: genera uno nuevo.",
       "newToken": "Nuevo token",
-      "waiting": "Escuchando a este host…",
+      "waiting": "Esperando a que el host se conecte…",
       "registered": "Registrado: esperando a su runner",
       "online": "Runner conectado",
       "mintFailed": "No hemos podido crear un token de registro.",
-      "installerDigest": "SHA-256 del instalador: {{digest}}"
+      "installerDigest": "SHA-256 del instalador: {{digest}}",
+      "copyCommand": "Copiar comando de instalación",
+      "copyPrompt": "Copiar instrucción para el agente",
+      "inspect": "Ver comando e instrucción",
+      "format": "Formato de instalación",
+      "command": "Comando",
+      "agentPrompt": "Instrucción para el agente"
     },
     "add": {
       "title": "Añadir un host",
       "meta": "Nada del host queda expuesto a internet.",
       "back": "Atrás",
-      "crumbNewSession": "Nueva sesión",
       "use": "Usar este host",
       "defaultName": "Nuevo host",
       "install": {
         "title": "Instalar",
         "subtitle": "Ejecútalo una vez en la máquina, o pásaselo a un agente que ya esté allí.",
-        "done": "Instalado",
-        "format": "Formato de instalación",
-        "command": "Comando",
-        "agentPrompt": "Instrucción para el agente"
+        "done": "Instalado"
       },
       "connect": {
         "title": "Conectar",
         "subtitle": "El runner se registra con el nombre de máquina que reporta."
       },
       "crumbHosts": "Hosts",
-      "done": "Listo"
+      "done": "Listo",
+      "description": "Ejecuta un comando en la máquina donde quieras las sesiones. Nada de ella queda expuesto a internet."
+    },
+    "settings": {
+      "state": {
+        "running_one": "En marcha · {{count}} sesión",
+        "running_other": "En marcha · {{count}} sesiones",
+        "running_many": "En marcha · {{count}} sesiones",
+        "idle": "Inactivo",
+        "offline": "Desconectado"
+      },
+      "seen": {
+        "connected": "conectado",
+        "lastSeen": "visto {{when}}",
+        "now": "ahora"
+      },
+      "meta": {
+        "cpus": "{{count}} vCPU",
+        "runner": "runner {{version}}"
+      },
+      "actions": "Acciones de {{name}}",
+      "rename": "Renombrar",
+      "renameLabel": "Nombre del equipo",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "remove": "Eliminar equipo",
+      "removing": "Eliminando…",
+      "removeTitle": "¿Eliminar {{name}}?",
+      "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_many": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan.",
+      "renameFailed": "No se ha podido renombrar este host. Inténtalo de nuevo.",
+      "removeFailed": "No se ha podido eliminar este host. Inténtalo de nuevo."
     }
   },
   "settings": {
@@ -649,44 +1244,92 @@
     },
     "profile": {
       "title": "Perfil",
+      "failed": "No se ha podido cargar el perfil.",
+      "emailChanged": "Tu dirección de correo se ha actualizado. A partir de ahora, inicia sesión con ella.",
+      "picture": "Foto de perfil",
+      "pictureHint": "Se muestra junto a tus sesiones y automatizaciones",
+      "upload": "Subir",
+      "uploading": "Subiendo…",
+      "removePicture": "Quitar",
+      "pictureFailed": "No se ha podido cambiar la foto.",
       "email": "Correo",
-      "emailHint": "Se usa para iniciar sesión y para las notificaciones de ejecuciones",
-      "failed": "No se pudo cargar el perfil."
+      "emailHint": "Para iniciar sesión y recibir avisos",
+      "unverified": "Sin verificar",
+      "change": "Cambiar",
+      "fullName": "Nombre completo",
+      "firstName": "Nombre",
+      "lastName": "Apellidos",
+      "username": "Nombre de usuario",
+      "usernameHint": "Aparece en los registros y en los commits",
+      "discard": "Descartar",
+      "saveChanges": "Guardar cambios",
+      "saving": "Guardando…",
+      "saved": "Guardado",
+      "saveFailed": "No se han podido guardar los cambios."
+    },
+    "changeEmail": {
+      "title": "Cambiar correo",
+      "description": "Enviamos un enlace a la nueva dirección. Tu cuenta pasa a ella cuando lo sigas; hasta entonces inicias sesión con {{email}}.",
+      "newEmail": "Nuevo correo",
+      "send": "Enviar enlace",
+      "sending": "Enviando…",
+      "sentTitle": "Revisa tu bandeja de entrada",
+      "sent": "Si {{email}} se puede usar, te hemos enviado un enlace. Síguelo para terminar el cambio.",
+      "done": "Hecho",
+      "failed": "No se ha podido enviar el enlace."
+    },
+    "security": {
+      "heading": "Inicio de sesión",
+      "password": "Contraseña",
+      "passwordHint": "Al cambiarla se cierra la sesión en los demás dispositivos",
+      "change": "Cambiar"
+    },
+    "changePassword": {
+      "title": "Cambiar contraseña",
+      "description": "Se cerrará la sesión en todos los demás dispositivos conectados a tu cuenta.",
+      "current": "Contraseña actual",
+      "new": "Nueva contraseña",
+      "confirm": "Confirma la nueva contraseña",
+      "mismatch": "Las contraseñas no coinciden.",
+      "submit": "Cambiar contraseña",
+      "submitting": "Cambiando…",
+      "failed": "No se ha podido cambiar la contraseña."
+    },
+    "devices": {
+      "heading": "Dispositivos",
+      "unknown": "Dispositivo desconocido",
+      "current": "Este dispositivo",
+      "lastSeen": "Activo {{when}}",
+      "activeNow": "Activo ahora",
+      "signOut": "Cerrar sesión",
+      "signingOut": "Cerrando sesión…",
+      "signOutOthers": "Cerrar sesión en los demás dispositivos",
+      "signingOutOthers": "Cerrando las demás sesiones…",
+      "failed": "No se han podido cargar los dispositivos.",
+      "revokeFailed": "No se ha podido cerrar la sesión en ese dispositivo."
+    },
+    "account": {
+      "heading": "Cuenta",
+      "delete": "Eliminar cuenta",
+      "deleteHint": "Detiene todas las sesiones y elimina tus automatizaciones y los hosts registrados. No se puede deshacer."
+    },
+    "deleteAccount": {
+      "title": "¿Eliminar tu cuenta?",
+      "description": "Todas las sesiones se detienen, tus hosts se desvinculan y se eliminan tu espacio de trabajo, tus proyectos y tus inicios de sesión. No se puede deshacer.",
+      "confirmLabel": "Escribe {{email}} para confirmar",
+      "mismatch": "Escribe tu dirección de correo exactamente.",
+      "confirm": "Eliminar cuenta",
+      "deleting": "Eliminando…",
+      "failed": "No se ha podido eliminar tu cuenta."
     },
     "hosts": {
       "title": "Hosts",
       "description": "Servidores donde se ejecutan tus sesiones. Nada del host queda expuesto a internet.",
       "add": "Añadir host",
       "empty": "Todavía no hay hosts",
-      "emptyHint": "Añade uno y tus sesiones tendrán dónde ejecutarse.",
-      "online": "En línea",
-      "offline": "Sin conexión",
+      "emptyHint": "Los equipos que conectes aparecen aquí con sus sesiones en curso. Las sesiones no pueden empezar hasta que uno esté en línea.",
       "failed": "No se pudieron cargar los hosts."
     }
-  },
-  "home": {
-    "greeting": "Hola de nuevo, {{name}}",
-    "greetingFallback": "Hola de nuevo",
-    "subtitle": "Esto es lo que está pasando con tu cuenta.",
-    "overview": "Resumen",
-    "totalUsers": "Usuarios totales",
-    "activeSessions": "Sesiones activas",
-    "apiCalls": "Llamadas a la API",
-    "uptime": "Tiempo activo",
-    "account": "Cuenta",
-    "accountDescription": "Tu perfil y estado actual.",
-    "email": "Correo electrónico",
-    "role": "Rol",
-    "status": "Estado",
-    "active": "Activa",
-    "inactive": "Inactiva",
-    "memberSince": "Miembro desde",
-    "admin": "Administrador",
-    "accountUnavailable": "No pudimos cargar tu cuenta. Comprueba tu conexión e inténtalo de nuevo.",
-    "retry": "Reintentar",
-    "retrying": "Reintentando...",
-    "signOut": "Cerrar sesión",
-    "signingOut": "Cerrando sesión..."
   },
   "nav": {
     "menu": "Menú",
@@ -700,7 +1343,7 @@
     "team": "Equipo",
     "users": "Usuarios",
     "roles": "Roles",
-    "featureFlags": "Feature flags",
+    "featureFlags": "Indicadores de funcionalidad",
     "toggleSidebar": "Mostrar u ocultar el menú",
     "sessions": "Sesiones",
     "newSession": "Nueva sesión",
@@ -709,258 +1352,9 @@
     "sidebarTitle": "Navegación",
     "sidebarDescription": "Tus sesiones, tus automatizaciones y tu cuenta.",
     "settings": "Ajustes",
-    "automations": "Automatizaciones"
-  },
-  "control": {
-    "accessDeniedTitle": "Se necesita acceso al panel de control",
-    "accessDeniedDescription": "Este espacio está reservado a los administradores de la plataforma.",
-    "auth": {
-      "headline": "Gestiona tu producto desde un panel de control seguro.",
-      "body": "Accede con una cuenta administradora de la plataforma para gestionar todas tus aplicaciones.",
-      "noAccount": "Esta identidad no tiene una cuenta del panel de control. Pide a un administrador de la plataforma que la cree.",
-      "features": {
-        "users": "Crea y gestiona cuentas de usuario",
-        "roles": "Define roles de aplicación reutilizables",
-        "security": "Cierra sesiones y bloquea el acceso al instante"
-      }
-    },
-    "roles": {
-      "title": "Roles y permisos",
-      "description": "Define reglas de acceso reutilizables para las aplicaciones de consumo.",
-      "permissionCount_one": "{{count}} permiso",
-      "permissionCount_other": "{{count}} permisos"
-    },
-    "users": {
-      "title": "Usuarios",
-      "description": "Gestiona cuentas, roles de aplicación y acceso activo.",
-      "search": "Buscar usuarios…",
-      "add": "Añadir usuario",
-      "empty": "Todavía no hay usuarios",
-      "noMatches": "Ningún usuario coincide con la búsqueda",
-      "noRoles": "Sin roles",
-      "superAdmin": "Superadministrador",
-      "consumer": "Usuario",
-      "active": "Activo",
-      "banned": "Bloqueado",
-      "columns": {
-        "name": "Usuario",
-        "email": "Correo",
-        "roles": "Roles de app",
-        "access": "Acceso de plataforma",
-        "status": "Estado",
-        "joined": "Alta"
-      },
-      "actions": {
-        "roles": "Gestionar roles de app",
-        "password": "Cambiar contraseña",
-        "sessions": "Cerrar sesiones",
-        "ban": "Bloquear usuario",
-        "unban": "Desbloquear usuario",
-        "delete": "Eliminar usuario"
-      },
-      "create": {
-        "title": "Añadir usuario",
-        "description": "Crea una cuenta de consumo. Después podrás asignarle roles de aplicación.",
-        "password": "Contraseña temporal (opcional)",
-        "submit": "Crear usuario"
-      },
-      "roles": {
-        "title": "Roles de aplicación",
-        "description": "Elige los roles que {{name}} usa en las aplicaciones de consumo.",
-        "noDescription": "Sin descripción"
-      },
-      "password": {
-        "title": "Establecer una contraseña",
-        "description": "Sustituye la contraseña de acceso de {{name}}.",
-        "label": "Nueva contraseña",
-        "submit": "Cambiar contraseña"
-      },
-      "confirm": {
-        "ban": {
-          "title": "¿Bloquear este usuario?",
-          "description": "{{name}} perderá el acceso inmediatamente.",
-          "submit": "Bloquear usuario"
-        },
-        "unban": {
-          "title": "¿Desbloquear este usuario?",
-          "description": "{{name}} podrá volver a iniciar sesión.",
-          "submit": "Desbloquear usuario"
-        },
-        "sessions": {
-          "title": "¿Cerrar todas las sesiones?",
-          "description": "Se cerrará la sesión de {{name}} en todos los dispositivos.",
-          "submit": "Cerrar sesiones"
-        },
-        "delete": {
-          "title": "¿Eliminar este usuario?",
-          "description": "La cuenta de {{name}} y sus accesos se eliminarán permanentemente.",
-          "submit": "Eliminar usuario"
-        }
-      }
-    },
-    "flags": {
-      "title": "Feature flags",
-      "description": "Lanza funcionalidades, ejecuta experimentos y activa interruptores de emergencia para todo este despliegue.",
-      "tabs": {
-        "flags": "Flags",
-        "segments": "Segmentos",
-        "history": "Historial"
-      },
-      "search": "Buscar flags",
-      "empty": "Ningún flag coincide.",
-      "columns": {
-        "flag": "Flag",
-        "kind": "Tipo",
-        "serving": "Sirve",
-        "enabled": "Activo"
-      },
-      "kinds": {
-        "release": "Lanzamiento",
-        "ops": "Operación",
-        "experiment": "Experimento"
-      },
-      "expired": "Caducado",
-      "expiredHint": "Pasó el {{date}}. Lánzalo y elimina el flag del código.",
-      "expires": "Hasta el {{date}}",
-      "serving": {
-        "default": "Por defecto: {{value}}",
-        "off": "Apagado: {{value}} para todos",
-        "value": "{{value}} para el resto",
-        "split": "Reparto {{arms}}",
-        "rules_one": "{{count}} regla y después",
-        "rules_other": "{{count}} reglas y después"
-      },
-      "actions": {
-        "edit": "Editar segmentación",
-        "explain": "Explicar",
-        "history": "Historial"
-      },
-      "toggle": {
-        "onTitle": "¿Activar {{key}}?",
-        "offTitle": "¿Apagar {{key}}?",
-        "onDescription": "Su segmentación se aplica a todo este despliegue de inmediato.",
-        "offDescription": "Todo este despliegue recibe {{value}} de inmediato. La segmentación se conserva para cuando lo vuelvas a activar.",
-        "comment": "Motivo",
-        "commentPlaceholder": "Incidencia, paso del despliegue, fin del experimento…",
-        "commentHint": "Queda en el historial con tu nombre.",
-        "confirmOn": "Activar",
-        "confirmOff": "Apagar",
-        "pending": "Cambiando…"
-      },
-      "targeting": {
-        "title": "Segmentación: {{key}}",
-        "description": "Las reglas se evalúan en orden y decide la primera cuyas condiciones se cumplen todas. El resto recibe el valor por defecto de la segmentación.",
-        "enabled": "Aplicar segmentación",
-        "enabledHint": "Apagado sirve {{value}} a todos, digan lo que digan las reglas.",
-        "rules": "Reglas",
-        "rule": "Regla {{number}}",
-        "addRule": "Añadir regla",
-        "removeRule": "Quitar regla",
-        "moveUp": "Subir",
-        "moveDown": "Bajar",
-        "ruleDescription": "Para qué es esta regla",
-        "noRules": "Sin reglas. Todos reciben el valor para el resto.",
-        "conditions": "Cuando",
-        "addCondition": "Añadir condición",
-        "removeCondition": "Quitar condición",
-        "noConditions": "Sin condiciones, así que esta regla aplica a todos.",
-        "attribute": "Atributo",
-        "operator": "Operador",
-        "values": "Valores",
-        "valuesHint": "Uno por línea.",
-        "serve": "Servir",
-        "fallthrough": "El resto",
-        "serveValue": "Un valor",
-        "serveSplit": "Reparto por porcentaje",
-        "addArm": "Añadir brazo",
-        "removeArm": "Quitar brazo",
-        "weight": "Porcentaje",
-        "splitTotal": "Total {{total}} %",
-        "comment": "Motivo",
-        "commentPlaceholder": "Para qué es este cambio",
-        "save": "Guardar segmentación",
-        "saving": "Guardando…"
-      },
-      "attributes": {
-        "userId": "ID de usuario",
-        "organizationId": "ID de organización",
-        "email": "Email",
-        "platformRole": "Rol de plataforma",
-        "platform": "Plataforma",
-        "appVersion": "Versión de la app",
-        "segment": "Segmento"
-      },
-      "operators": {
-        "in": "es uno de",
-        "not_in": "no es uno de",
-        "ends_with": "termina en",
-        "semver_gte": "es al menos la versión",
-        "semver_lt": "es anterior a la versión"
-      },
-      "explain": {
-        "title": "Explicar: {{key}}",
-        "description": "Qué sirve este flag a alguien y por qué. Describe todo lo que sepas de esa persona.",
-        "submit": "Explicar",
-        "result": "Sirve {{value}}",
-        "reasons": {
-          "DEFAULT": "Nada decidió, así que se sirvió el valor por defecto del catálogo.",
-          "DISABLED": "El flag está apagado.",
-          "TARGETING_MATCH": "Coincidió la regla «{{rule}}».",
-          "SPLIT": "Asignado por un reparto por porcentaje.",
-          "FALLTHROUGH": "No coincidió ninguna regla; lo sirvió el valor para el resto.",
-          "ERROR": "La segmentación sirvió un valor que este flag no admite, así que se sirvió el valor por defecto."
-        }
-      },
-      "segments": {
-        "search": "Buscar segmentos",
-        "empty": "Aún no hay segmentos. Un segmento es una audiencia con nombre, como el equipo o los clientes beta, a la que pueden apuntar las reglas de cualquier flag.",
-        "new": "Nuevo segmento",
-        "edit": "Editar",
-        "delete": "Eliminar",
-        "columns": {
-          "segment": "Segmento",
-          "conditions": "Condiciones",
-          "usedBy": "Usado por"
-        },
-        "conditionCount_one": "{{count}} condición",
-        "conditionCount_other": "{{count}} condiciones",
-        "unused": "Ningún flag",
-        "newTitle": "Nuevo segmento",
-        "editTitle": "Editar segmento",
-        "formDescription": "Quien cumpla todas estas condiciones está en el segmento.",
-        "key": "Clave",
-        "keyHint": "Cómo se refieren a él las reglas. Minúsculas, dígitos, - y _. No se puede cambiar después.",
-        "name": "Nombre",
-        "details": "Descripción",
-        "create": "Crear segmento",
-        "save": "Guardar segmento",
-        "saving": "Guardando…",
-        "deleteTitle": "¿Eliminar este segmento?",
-        "deleteDescription": "Ningún flag apunta a él, así que no cambia el flag de nadie.",
-        "inUse": "Lo usa {{flags}}. Quítalo primero de sus reglas."
-      },
-      "history": {
-        "search": "Filtrar por clave de flag o segmento",
-        "empty": "Aún no hay cambios.",
-        "columns": {
-          "when": "Cuándo",
-          "subject": "Flag o segmento",
-          "change": "Cambio",
-          "by": "Quién",
-          "comment": "Motivo"
-        },
-        "actions": {
-          "targeting_updated": "Segmentación cambiada",
-          "toggled": "Cambio de estado",
-          "segment_created": "Segmento creado",
-          "segment_updated": "Segmento actualizado",
-          "segment_deleted": "Segmento eliminado"
-        },
-        "switchedOn": "Activado",
-        "switchedOff": "Apagado",
-        "unknownActor": "Desconocido"
-      }
-    }
+    "automations": "Automatizaciones",
+    "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
+    "plan": "Plan"
   },
   "language": {
     "label": "Idioma",
@@ -978,30 +1372,18 @@
     "invalidTitle": "Este enlace ha caducado",
     "invalidDescription": "Vuelve a iniciar la conexión desde la aplicación que te ha traído aquí.",
     "backToSessions": "Volver a las sesiones",
-    "noRedirect": "El servidor no ha indicado a dónde continuar.",
     "sensitiveScope": "Sensible",
     "unknownClient": "Una aplicación",
     "failed": "No se ha podido completar. Inténtalo de nuevo."
   },
   "onboarding": {
-    "description": "Tu cuenta está lista. Ponle nombre al espacio de trabajo donde vivirán tus sesiones.",
-    "eyebrow": "Casi listo",
-    "signOut": "Cerrar sesión",
-    "title": "Crea tu espacio de trabajo",
-    "create": {
-      "name": "Nombre del espacio de trabajo",
-      "namePlaceholder": "Acme S.L.",
-      "hint": "Podrás cambiarle el nombre más adelante desde Ajustes.",
-      "submit": "Crear espacio de trabajo",
-      "submitting": "Creando…"
-    },
     "flow": {
       "back": "Atrás",
-      "counter": "{{step}} de {{total}}",
+      "step": "{{step}} de {{total}}",
       "continue": "Continuar",
       "workspace": {
-        "title": "Nombra tu espacio de trabajo",
-        "description": "Un espacio de trabajo reúne tus hosts, repositorios e historial de ejecuciones. Podrás cambiarle el nombre; la dirección es permanente.",
+        "title": "Nombra tu espacio",
+        "description": "Reúne tus hosts, repositorios e historial de ejecuciones. Podrás renombrarlo; la dirección es permanente.",
         "name": "Nombre del espacio de trabajo",
         "namePlaceholder": "Versio Platform",
         "address": "URL del espacio de trabajo",
@@ -1024,20 +1406,19 @@
         "title": "Conecta GitHub",
         "description": "Esto instala la GitHub App de Oppenheimer en tu cuenta. Eliges todos los repositorios o solo algunos en la propia página de GitHub.",
         "connect": "Conectar GitHub",
+        "starting": "Abriendo GitHub…",
         "skip": "Saltar por ahora",
         "skipNote": "Puedes añadir repositorios más tarde en Ajustes. El selector de repositorios quedará vacío hasta entonces.",
         "connected": "{{count}} repositorios · acceso de lectura",
         "change": "Cambiar qué repositorios",
         "failed": "No hemos podido conectar esa instalación de GitHub.",
+        "unstarted": "Este enlace de GitHub no se inició aquí. Vuelve a conectar GitHub.",
         "connectedAll": "Todos los repositorios de la cuenta",
         "connectedPending": "Conectado"
       },
       "host": {
         "title": "Añade tu primer host",
-        "description": "Un host es un servidor que controlas: una VM en la nube, una máquina de build o tu propio equipo. Las sesiones se ejecutan ahí y nada queda expuesto a internet.",
-        "installCommand": "Comando de instalación",
-        "agentPrompt": "Prompt para un agente de IA",
-        "agentNote": "Pégalo en Claude Code o Codex ya en marcha en esa máquina.",
+        "description": "Ejecuta un comando en el servidor donde quieras las sesiones: una VM en la nube, una máquina de build o tu propio equipo. Nada de él queda expuesto a internet.",
         "defaultName": "Mi primer host",
         "skip": "Saltar por ahora",
         "skipNote": "Puedes vincular una máquina más tarde. Las sesiones la necesitan para ejecutarse."
@@ -1053,141 +1434,8 @@
         "noWorkspace": "Aún sin espacio de trabajo",
         "noGithub": "Sin conectar",
         "noHost": "Aún sin host",
-        "doneLabel": "Listo"
-      }
-    }
-  },
-  "pages": {
-    "profile": {
-      "description": "Gestiona tu cuenta personal en este espacio de trabajo.",
-      "title": "Mi perfil"
-    },
-    "team": {
-      "common": {
-        "cancel": "Cancelar",
-        "error": "Algo ha fallado. Inténtalo de nuevo.",
-        "loading": "Cargando…"
-      },
-      "confirm": {
-        "cancelDescription": "El enlace de invitación dejará de funcionar.",
-        "cancelTitle": "¿Cancelar esta invitación?",
-        "deleteRoleDescription": "Los miembros asignados perderán los permisos que concede.",
-        "deleteRoleTitle": "¿Eliminar este rol?",
-        "removeDescription": "Perderá el acceso a este espacio. Su cuenta no se eliminará.",
-        "removeTitle": "¿Eliminar este miembro?"
-      },
-      "description": "Gestiona quién puede acceder al espacio de trabajo {{workspace}} y qué le permite hacer su rol.",
-      "invite": {
-        "description": "Añade compañeros por correo. Su rol puede ajustarse después de que se unan.",
-        "emails": "Direcciones de email",
-        "emailsHint": "Separa varias direcciones con comas o saltos de línea.",
-        "emailsPlaceholder": "nombre@empresa.com, otra@empresa.com",
-        "role": "Acceso a la organización",
-        "roles": {
-          "admin": "Administrador",
-          "member": "Miembro",
-          "owner": "Propietario"
-        },
-        "send": "Enviar invitación",
-        "sendMany": "Enviar {{count}} invitaciones",
-        "sending": "Enviando…",
-        "title": "Invitar miembros"
-      },
-      "memberRole": {
-        "description": "Elige el rol de aplicación de {{name}}.",
-        "noRole": "Sin rol personalizado",
-        "role": "Rol",
-        "save": "Guardar rol",
-        "title": "Editar rol del miembro"
-      },
-      "members": {
-        "cancelInvite": "Cancelar invitación",
-        "columns": {
-          "email": "Email",
-          "joined": "Alta",
-          "name": "Nombre",
-          "organizationRole": "Rol en la organización",
-          "role": "Rol",
-          "status": "Estado"
-        },
-        "editRole": "Editar rol",
-        "export": "Exportar CSV",
-        "invite": "Invitar",
-        "remove": "Eliminar miembro",
-        "search": "Buscar miembros",
-        "status": {
-          "active": "Activo",
-          "inactive": "Inactivo",
-          "invited": "Invitado"
-        },
-        "empty": "No se han encontrado miembros.",
-        "noMatches": "Ningún miembro coincide con los filtros."
-      },
-      "roleForm": {
-        "create": "Crear rol",
-        "description": "Ponle nombre al rol y elige qué puede hacer.",
-        "details": "Descripción",
-        "detailsPlaceholder": "¿Qué puede hacer este rol?",
-        "edit": "Editar",
-        "editTitle": "Editar rol",
-        "name": "Nombre del rol",
-        "namePlaceholder": "p. ej. Editor de contenido",
-        "newTitle": "Nuevo rol personalizado",
-        "noPermissionResults": "Ningún permiso coincide con la búsqueda.",
-        "none": "Ninguno",
-        "permissions": "Permisos",
-        "save": "Guardar cambios",
-        "saving": "Guardando…",
-        "searchPermissions": "Buscar permisos",
-        "view": "Ver"
-      },
-      "roles": {
-        "columns": {
-          "description": "Descripción",
-          "role": "Rol",
-          "type": "Tipo"
-        },
-        "custom": "Personalizado",
-        "delete": "Eliminar",
-        "duplicate": "Duplicar",
-        "edit": "Editar",
-        "empty": "No se han encontrado roles.",
-        "export": "Exportar CSV",
-        "new": "Nuevo rol",
-        "search": "Buscar roles",
-        "system": "Sistema"
-      },
-      "stats": {
-        "active": "Cuentas activas",
-        "members": "Miembros",
-        "pending": "Invitaciones pendientes"
-      },
-      "tabs": {
-        "members": "Miembros",
-        "roles": "Roles"
-      },
-      "title": "Equipo",
-      "permissionAreas": {
-        "team": {
-          "name": "Equipo",
-          "hint": "Miembros, invitaciones y roles"
-        },
-        "organization": {
-          "name": "Organización",
-          "hint": "Nombre, logotipo y espacios de trabajo"
-        },
-        "users": {
-          "name": "Usuarios",
-          "hint": "El directorio de usuarios"
-        },
-        "api": {
-          "name": "Claves de API",
-          "hint": "Tokens de API personales"
-        },
-        "audit": {
-          "name": "Registro de auditoría",
-          "hint": "Quién hizo qué, y cuándo"
-        }
+        "doneLabel": "Listo",
+        "failed": "No se ha podido cargar. Recarga la página para intentarlo de nuevo."
       }
     }
   },
@@ -1351,10 +1599,31 @@
     "system": "Igual que el sistema"
   },
   "toasts": {
-    "copied": "Copiado al portapapeles.",
-    "memberRemoved": "Miembro eliminado.",
-    "membersInvited": "Invitaciones enviadas.",
-    "passwordChanged": "Contraseña actualizada. Se ha cerrado la sesión en tus otros dispositivos."
+    "automationCreated": "Se ha creado «{{name}}».",
+    "automationSaved": "Se ha guardado «{{name}}».",
+    "automationDeleted": "Se ha eliminado «{{name}}».",
+    "automationDuplicated": "Duplicada como «{{name}}».",
+    "automationPaused": "Se ha pausado «{{name}}».",
+    "automationResumed": "Se ha reanudado «{{name}}».",
+    "runStarted": "Se ha iniciado una ejecución de «{{name}}».",
+    "openRun": "Abrir",
+    "emailResent": "Correo enviado de nuevo.",
+    "sessionRenamed": "Renombrada a «{{name}}».",
+    "sessionMoved": "«{{name}}» se ha movido a {{project}}.",
+    "sessionDeleteRequested": "Se ha pedido al host que elimine «{{name}}».",
+    "projectCreated": "Se ha creado «{{name}}».",
+    "projectSaved": "Se ha guardado «{{name}}».",
+    "projectDeleted": "Se ha eliminado «{{name}}».",
+    "hostRenamed": "Renombrado a «{{name}}».",
+    "hostRemoved": "Se ha quitado «{{name}}».",
+    "deviceSignedOut": "Se ha cerrado la sesión en «{{name}}».",
+    "otherDevicesSignedOut": "Se ha cerrado la sesión en tus otros dispositivos.",
+    "passwordChanged": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos.",
+    "taskAdded": "Tarea añadida.",
+    "taskDeleted": "Tarea eliminada.",
+    "goalAdded": "Objetivo añadido.",
+    "taskSessionStarted": "Sesión iniciada.",
+    "taskSessionQueued": "Sesión en cola. Empieza cuando su host se vuelva a conectar."
   },
   "emails": {
     "common": {
@@ -1420,8 +1689,20 @@
       "body": "{{hostName}} ({{machine}}) se ha emparejado con tu cuenta y ya puede ejecutar sesiones de programación para ti. La huella de su clave empieza por {{fingerprint}}.",
       "action": "Abrir Oppenheimer",
       "helper": "Si lo has emparejado tú, no tienes que hacer nada. En ese equipo, el comando status del runner muestra la misma huella, para que compruebes que es el que querías.",
-      "closing": "¿No lo reconoces? Alguien ha usado uno de tus tokens de emparejamiento. La consola aún no puede desemparejar un equipo. Si tienes acceso a ese equipo, ejecuta en él el comando uninstall del runner; si no, desemparéjalo a través de la API con DELETE /v1/hosts/{{hostId}}. Tus tokens sin usar caducan en menos de una hora.",
+      "closing": "¿No lo reconoces? Alguien ha usado uno de tus tokens de emparejamiento. La consola aún no puede desemparejar un equipo. Si tienes acceso a ese equipo, ejecuta en él el comando uninstall del runner; si no, desemparéjalo a través de la API con DELETE /v1/hosts/{{hostId}}. Tus tokens sin usar caducan solos poco después de crearse.",
       "unknownMachine": "sin nombre de equipo",
+      "footerNote": "Este es un correo de seguridad, por eso siempre lo recibirás."
+    },
+    "hostNetworkChanged": {
+      "subject": "{{hostName}} se conecta desde una red nueva",
+      "preview": "{{hostName}} ha pasado de {{from}} a {{to}}. Si no lo has movido tú, actúa ya.",
+      "heading": "Un equipo se ha movido a una red nueva",
+      "body": "{{hostName}} se conectaba desde {{from}}. Ahora se conecta desde {{to}}, con la dirección {{ip}}.",
+      "action": "Abrir Oppenheimer",
+      "helper": "Si has llevado el equipo a otro sitio, o ha cambiado su proveedor, no tienes que hacer nada. Solo escribimos cuando cambia el país o el operador de red, no por cada dirección nueva.",
+      "closing": "¿No reconoces el cambio? Puede que la clave del equipo se esté usando en otro sitio. Elimina el equipo desde Ajustes, o a través de la API con DELETE /v1/hosts/{{hostId}}; su runner queda rechazado desde ese momento y las sesiones que tenga se detienen.",
+      "unknownPlace": "una red desconocida",
+      "attribution": "Geolocalización IP de DB-IP.",
       "footerNote": "Este es un correo de seguridad, por eso siempre lo recibirás."
     }
   }

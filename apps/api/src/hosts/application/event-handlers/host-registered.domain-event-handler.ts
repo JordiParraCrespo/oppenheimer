@@ -15,21 +15,14 @@ type RegisteredHost = Pick<
 >;
 
 /**
- * Tells the owner, by email, that a machine was paired with their account.
+ * Emails the owner that a machine was paired with their account: the one moment a
+ * stolen registration token becomes a machine running work as that person, and only
+ * the owner can tell their pairing from one they did not make (GitHub mails on a new
+ * SSH key for the same reason). A security email, so always sent.
  *
- * Pairing is the one moment a stolen registration token turns into a machine
- * that can run work as that person, and the owner is the only one who can tell
- * a pairing they made from one they did not. GitHub mails you when an SSH key
- * is added for the same reason. It is a security email, so it is always sent.
- *
- * Everything it says about the machine comes from the event, which recorded it
- * when the host was raised; the only read is the owner's address.
- *
- * Queued with the host id as the job id: the outbox redelivers an event whose
- * handler failed, and a second delivery must not be a second email. The id is
- * joined with `-`, never `:` — BullMQ refuses a custom id with a colon in it
- * (it reserves `:` for its own keys), and a refused add is an email that never
- * goes out.
+ * Queued with the host id as job id, so an outbox redelivery is not a second email.
+ * The id is joined with `-`, never `:`: BullMQ reserves `:` for its own keys and
+ * refuses a custom id containing it, and a refused add is an email never sent.
  */
 @Injectable()
 export class HostRegisteredDomainEventHandler {

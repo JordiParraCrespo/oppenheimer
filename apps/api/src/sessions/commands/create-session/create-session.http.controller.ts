@@ -48,10 +48,9 @@ export class CreateSessionHttpController {
   // The limit is about what a loop can do to a laptop, not about the API.
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @ApiOperation({
-    operationId: 'createSession',
     summary: 'Start a session',
     description:
-      'Several repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the working branch is always `oppenheimer/<project>/<session>`. The project is the one whose origin is the first checkout’s repository, created on the spot if that repository has never had a session.',
+      'Several repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the control plane names the working branch (`sessionBranchName`) and each checkout on the response carries it. Without a `projectId` the session lands in the workspace’s Unassigned project (`product/versions/mvp/03-control-plane.md`).',
   })
   @ApiHeader({
     name: 'Idempotency-Key',
@@ -76,6 +75,13 @@ export class CreateSessionHttpController {
     description: "The host's runner is older than the agent picked",
     code: 'SESSIONS_011',
   })
+  @ApiProblemResponse({ status: 503, description: 'The host is offline', code: 'SESSIONS_016' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'The host’s runner takes no images',
+    code: 'SESSIONS_017',
+  })
+  @ApiProblemResponse({ status: 410, description: 'Attachment gone', code: 'SESSIONS_019' })
   @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async create(
     @CurrentAccessScope() scope: AccessScope,
@@ -92,6 +98,7 @@ export class CreateSessionHttpController {
         userId,
         input: body,
         idempotencyKey: idempotencyKey?.trim() || null,
+        origin: 'person',
       }),
     );
     const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(

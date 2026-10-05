@@ -13,11 +13,12 @@ import { mintPairingToken } from './sessions';
  *
  * Each host is a Debian container with its own Unix account, home, tmux server
  * and host key (`e2e/fleet/Dockerfile`), which is the shape the product assumes
- * — one runner per machine. Nothing about a host is faked except the agent:
- * `claude` is a shim that prints its argv and hands the pane to a shell. Git is
- * a `git daemon` container seeded with the repositories the GitHub stub lists,
- * which the hosts reach through `url.insteadOf`, so the runner still clones
- * `https://github.com/<owner>/<repo>.git` as far as it knows.
+ * — one runner per machine. Nothing about a host is faked except the agents:
+ * `claude` and `grok` are shims that print their argv and hand the pane to a
+ * shell. Git is a `git daemon` container seeded with the repositories the
+ * GitHub stub lists, which the hosts reach through `url.insteadOf`, so the
+ * runner still clones `https://github.com/<owner>/<repo>.git` as far as it
+ * knows.
  *
  * Plain `docker`, not Compose: CI's runner has the daemon but not the plugin,
  * and a test wants to start and break hosts one at a time anyway.
@@ -116,7 +117,6 @@ export function buildFleet(): void {
   ]);
 }
 
-/** Remove every container and the network a fleet run created. */
 export function teardownFleet(): void {
   if (FLEET_HOSTS === 'local') {
     teardownLocalFleet();
@@ -221,7 +221,6 @@ interface HostRow {
   online: boolean;
 }
 
-/** Wait until the caller's host named `name` is paired and in the wanted state. */
 export async function waitForHost(
   api: APIRequestContext,
   host: FleetHost,
@@ -264,9 +263,6 @@ export interface Terminal {
   send(text: string): void;
   screen(): string;
   waitFor(text: string, timeout?: number): Promise<string>;
-  /** Every byte the socket delivered, whatever the screen still keeps. */
-  bytes(): number;
-  /** The close code, once the socket has closed. */
   closeCode(): number | null;
   close(): Promise<void>;
 }
@@ -297,7 +293,6 @@ export async function attach(
   } as unknown as string[]);
   socket.binaryType = 'arraybuffer';
   let screen = '';
-  let bytes = 0;
   let closeCode: number | null = null;
   const controls: { type?: string }[] = [];
   socket.addEventListener('message', (event) => {
@@ -310,7 +305,6 @@ export async function attach(
       return;
     }
     const chunk = Buffer.from(event.data as ArrayBuffer);
-    bytes += chunk.byteLength;
     screen = (screen + chunk.toString()).slice(-keep);
     if (credit) socket.send(JSON.stringify({ type: 'credit', bytes: chunk.byteLength }));
   });
@@ -341,7 +335,6 @@ export async function attach(
         .toBe(true);
       return screen;
     },
-    bytes: () => bytes,
     closeCode: () => closeCode,
     close: () =>
       new Promise<void>((done) => {

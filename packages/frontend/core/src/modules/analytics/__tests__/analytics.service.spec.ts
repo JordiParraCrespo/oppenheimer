@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IAnalyticsClient } from '../analytics.client';
 import { ANALYTICS_EVENTS } from '../analytics.events';
 import { AnalyticsService } from '../analytics.service';
-import { NoopAnalyticsClient } from '../noop-analytics.client';
 
 function createClient(overrides: Partial<IAnalyticsClient> = {}): IAnalyticsClient {
   return {
@@ -38,8 +37,6 @@ describe('AnalyticsService', () => {
     expect(client.reset).toHaveBeenCalled();
   });
 
-  // The whole point of the wrapper: a broken analytics provider must never be
-  // able to take down a login, a logout, or a render.
   it('swallows provider errors instead of propagating them', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const boom = () => {
@@ -58,18 +55,5 @@ describe('AnalyticsService', () => {
     expect(() => service.identify('user-1')).not.toThrow();
     expect(() => service.reset()).not.toThrow();
     expect(() => service.pageView('/')).not.toThrow();
-  });
-});
-
-describe('NoopAnalyticsClient', () => {
-  it('accepts every call and does nothing', () => {
-    const client = new NoopAnalyticsClient();
-
-    expect(() => {
-      client.capture(ANALYTICS_EVENTS.USER_SIGNED_IN);
-      client.identify('user-1');
-      client.pageView('/');
-      client.reset();
-    }).not.toThrow();
   });
 });

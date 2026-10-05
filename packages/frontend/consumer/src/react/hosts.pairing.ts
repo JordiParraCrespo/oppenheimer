@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import type { HostEntity, HostPairing } from '../modules/hosts/host.entity';
-import { useCurrentPairing, useHosts, usePairingTokens, useReplacePairing } from './hosts.queries';
-
-/** How often a pairing surface asks whether its token has been spent yet. */
-const POLL_MS = 3000;
+import {
+  useCurrentPairing,
+  useHostList,
+  usePairingTokens,
+  useReplacePairing,
+} from './hosts.queries';
+import { pollWhile } from './live-poll';
 
 /** The longest delay `setTimeout` honours; a later one fires at once. */
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
@@ -16,8 +19,8 @@ export interface HostPairingFlow {
   pairing: HostPairing | undefined;
   /**
    * When that token runs out. A countdown is the surface's to draw, in the
-   * leaf that shows it (the kit's `TokenCountdown`): a tick held here
-   * re-rendered the whole dialog or step every second.
+   * leaf that shows it (the kit's `TokenCountdown`), so its per-second tick
+   * re-renders that leaf and not the whole dialog or step.
    */
   expiresAt: Date | null;
   /** Whether the token has run out, so the surface can offer a new one. */
@@ -37,32 +40,15 @@ export interface HostPairingFlow {
 
 /**
  * The pairing flow: one token, its clock, and the host that token paired.
+ * Every pairing surface (onboarding's step, the Add host dialog and screen)
+ * runs it rather than polling the host list itself.
  *
- * A file of its own rather than another export in `hosts.queries.ts`: that one
- * is the key factory and the three primitives over the endpoints, and this is
- * the surface flow composed out of them. Two surfaces run it — the onboarding
- * step and the console's Add host dialog — and both go through here rather
- * than polling the host list themselves.
- *
- * One token is minted per visit. The mint is a query, not a mutation fired
- * from an effect — a surface needs exactly one token for as long as it is open,
- * which is what a query keyed to it gives, and `regenerate()` replaces it.
- * Nothing here has to survive StrictMode by hand.
- *
- * **Correlation is the point.** "The host list is non-empty" is a different
- * question from "this token landed" — an account that already owns a machine
- * answers the first the moment the dialog opens, which would offer a machine
+ * **Correlation is the point.** An account that already owns a machine has a
+ * non-empty host list the moment the dialog opens, which would offer a machine
  * nobody had paired. So the poll watches the *token*: the pairing list reports
- * `redeemedHostId` once a runner spends it, and only then is the matching host
- * looked up. A regenerated token is a different id, so the host it offered
- * goes with it.
- *
- * One effect, and it synchronises with the clock — but only with the one
- * moment that changes what the flow does: the token's expiry, which stops the
- * poll and offers a new token. It used to tick once a second so it could hand
- * out `secondsLeft`, and that tick re-rendered every surface running the flow,
- * code blocks and all, for a number one line of it shows. The flow hands out
- * `expiresAt` now, and the countdown ticks in the leaf that draws it.
+ * `redeemedHostId` once a runner spends it, and only then is the host looked
+ * up. A regenerated token is a different id, so the host it offered goes with
+ * it.
  */
 export function useHostPairing(hostName: string): HostPairingFlow {
   const { data: pairing, isPending, error } = useCurrentPairing(hostName);
@@ -87,30 +73,28 @@ export function useHostPairing(hostName: string): HostPairingFlow {
   // arrives in: nothing here has expired it yet.
   const expired = Boolean(pairing) && expiredId === pairing?.id;
 
-  // Poll the token, not the host list. Stops once this token names a host, and
-  // once it has expired: a dead token can pair nothing, so polling past that is
-  // a request every three seconds that can only answer "no".
-  const { data: tokens } = usePairingTokens({
-    enabled: Boolean(pairing) && !expired,
-    refetchInterval: (query) => {
+  // Stops once this token names a host, and once it has expired: a dead token
+  // can pair nothing, so polling past that is a request every three seconds
+  // that can only answer "no".
+  const { data: tokens } = usePairingTokens(
+    { enabled: Boolean(pairing) && !expired },
+    pollWhile('pairing', (rows) => {
       if (!pairing || expired) return false;
-      const mine = query.state.data?.find((token) => token.id === pairing.id);
-      return mine?.redeemedHostId ? false : POLL_MS;
-    },
-  });
+      return !rows?.find((token) => token.id === pairing.id)?.redeemedHostId;
+    }),
+  );
 
   const redeemedHostId = tokens?.find((token) => token.id === pairing?.id)?.redeemedHostId ?? null;
 
   // The host row appears when the runner registers; its service may still be
   // starting, so the caller decides what `online` means for its primary action.
-  const { data: hosts } = useHosts({
-    enabled: Boolean(redeemedHostId),
-    refetchInterval: (query) => {
+  const { data: hosts } = useHostList(
+    { enabled: Boolean(redeemedHostId) },
+    pollWhile('pairing', (rows) => {
       if (!redeemedHostId) return false;
-      const host = query.state.data?.find((row) => row.id === redeemedHostId);
-      return host?.online ? false : POLL_MS;
-    },
-  });
+      return !rows?.find((row) => row.id === redeemedHostId)?.online;
+    }),
+  );
 
   const host: HostEntity | null = redeemedHostId
     ? (hosts?.find((row) => row.id === redeemedHostId) ?? null)

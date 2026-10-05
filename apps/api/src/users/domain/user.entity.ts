@@ -4,8 +4,11 @@ import {
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
 import type { Role } from '@oppenheimer/shared';
+import { isAccessAllowed } from '../../auth/domain/account-access.policy';
+import { UserDeactivatedDomainEvent } from './events/user-deactivated.domain-event';
 import { UserDeletedDomainEvent } from './events/user-deleted.domain-event';
 import { Email } from './value-objects/email.value-object';
+import { Username } from './value-objects/username.value-object';
 
 export interface UserProps {
   email: Email;
@@ -13,10 +16,17 @@ export interface UserProps {
   lastName: string;
   phone: string | null;
   jobTitle: string | null;
+  username: Username | null;
   avatarUrl: string | null;
   role: Role;
   isActive: boolean;
   emailVerified: boolean;
+  /**
+   * The admin plugin's ban, read-only here: Better Auth writes it, and the
+   * aggregate carries it only so the access rule can be asked of it.
+   */
+  banned: boolean;
+  banExpires: Date | null;
 }
 
 /**
@@ -29,15 +39,15 @@ export interface UpdateUserProps {
   lastName?: string;
   phone?: string | null;
   jobTitle?: string | null;
+  username?: string | null;
   avatarUrl?: string | null;
   role?: Role;
   isActive?: boolean;
 }
 
 /**
- * User aggregate root. Holds the profile fields the application owns on the
- * Better Auth `user` record and protects their invariants. Identity, password
- * and OAuth links remain owned by Better Auth.
+ * The profile fields the application owns on the Better Auth `user` record.
+ * Identity, password and OAuth links remain owned by Better Auth.
  */
 export class UserEntity extends AggregateRoot<UserProps> {
   static create(create: CreateEntityProps<UserProps>): UserEntity {
@@ -64,6 +74,10 @@ export class UserEntity extends AggregateRoot<UserProps> {
     return this.props.jobTitle;
   }
 
+  get username(): string | null {
+    return this.props.username?.value ?? null;
+  }
+
   get avatarUrl(): string | null {
     return this.props.avatarUrl;
   }
@@ -80,20 +94,44 @@ export class UserEntity extends AggregateRoot<UserProps> {
     return this.props.emailVerified;
   }
 
-  /** Apply a partial profile update, ignoring fields left undefined. */
+  get banned(): boolean {
+    return this.props.banned;
+  }
+
+  get banExpires(): Date | null {
+    return this.props.banExpires;
+  }
+
+  /** Whether the account may authenticate right now (see `isAccessAllowed`). */
+  mayAct(now: Date): boolean {
+    return isAccessAllowed(this.props, now);
+  }
+
   updateProfile(props: UpdateUserProps): void {
     if (props.firstName !== undefined) this.props.firstName = props.firstName;
     if (props.lastName !== undefined) this.props.lastName = props.lastName;
     if (props.phone !== undefined) this.props.phone = props.phone;
     if (props.jobTitle !== undefined) this.props.jobTitle = props.jobTitle;
+    if (props.username !== undefined) {
+      this.props.username = props.username === null ? null : Username.from(props.username);
+    }
     if (props.avatarUrl !== undefined) this.props.avatarUrl = props.avatarUrl;
     if (props.role !== undefined) this.props.role = props.role;
-    if (props.isActive !== undefined) this.props.isActive = props.isActive;
+    if (props.isActive !== undefined) {
+      if (props.isActive === false && this.props.isActive) {
+        this.addEvent(
+          new UserDeactivatedDomainEvent({
+            aggregateId: this.id,
+            reason: 'Account deactivated; its sessions and delegated sessions are revoked',
+          }),
+        );
+      }
+      this.props.isActive = props.isActive;
+    }
     this.setUpdatedAt(new Date());
     this.validate();
   }
 
-  /** Mark the user for deletion and raise the corresponding domain event. */
   delete(): void {
     this.addEvent(
       new UserDeletedDomainEvent({

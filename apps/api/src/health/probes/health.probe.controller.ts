@@ -53,18 +53,14 @@ export class HealthProbeController {
       'Which client-relevant optional features (sign-in providers, the GitHub App) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.',
   })
   deploymentCapabilities(): CapabilitiesResponseDto {
-    // Only the client-facing subset goes over the wire; the full registry
-    // (S3, email transport, …) stays in the startup log and in-process.
     const flags = this.capabilities.pick(CLIENT_CAPABILITIES);
     const slug = this.configService.get<string>('githubApp.slug');
 
     return {
       ...flags,
-      // Built here because the slug lives here. A console that had to assemble
-      // this would need its own copy of `GITHUB_APP_SLUG`, and the two would
-      // drift. Gated on the capability rather than the slug alone: the App is
-      // only usable when all six settings are present, and a link offered
-      // without them fails after the reader has left for GitHub.
+      // Gated on the capability rather than the slug alone: the App is only
+      // usable when all six settings are present, and a link offered without
+      // them fails after the reader has left for GitHub.
       github_app_install_url:
         flags.github_app && slug ? `https://github.com/apps/${slug}/installations/new` : null,
     };

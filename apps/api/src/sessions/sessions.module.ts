@@ -7,8 +7,14 @@ import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { ProjectsModule } from '../projects/projects.module';
+import { UsersModule } from '../users/user.module';
+import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
+import { SessionAccountErasure } from './application/session-account-erasure.resolver';
+import { SessionAttachmentsResolver } from './application/session-attachments.resolver';
+import { SessionHostUsage } from './application/session-host-usage.resolver';
 import { SessionLaunchSpecFactory } from './application/session-launch.factory';
+import { SessionLoaderResolver } from './application/session-loader.resolver';
 import { SessionLookupResolver } from './application/session-lookup.resolver';
 import { SessionNamingResolver } from './application/session-naming.resolver';
 import { SessionPlanFactory } from './application/session-plan.factory';
@@ -26,6 +32,8 @@ import { MoveSessionCommandHandler } from './commands/move-session/move-session.
 import { MoveSessionHttpController } from './commands/move-session/move-session.http.controller';
 import { PasteSessionImageCommandHandler } from './commands/paste-session-image/paste-session-image.command-handler';
 import { PasteSessionImageHttpController } from './commands/paste-session-image/paste-session-image.http.controller';
+import { PrepareSessionCommandHandler } from './commands/prepare-session/prepare-session.command-handler';
+import { PrepareSessionHttpController } from './commands/prepare-session/prepare-session.http.controller';
 import { RecordSessionEventsCommandHandler } from './commands/record-session-events/record-session-events.command-handler';
 import { RemoveCheckoutCommandHandler } from './commands/remove-checkout/remove-checkout.command-handler';
 import { RemoveCheckoutHttpController } from './commands/remove-checkout/remove-checkout.http.controller';
@@ -35,7 +43,10 @@ import { RestartSessionCommandHandler } from './commands/restart-session/restart
 import { RestartSessionHttpController } from './commands/restart-session/restart-session.http.controller';
 import { StopSessionCommandHandler } from './commands/stop-session/stop-session.command-handler';
 import { StopSessionHttpController } from './commands/stop-session/stop-session.http.controller';
+import { UploadSessionAttachmentCommandHandler } from './commands/upload-session-attachment/upload-session-attachment.command-handler';
+import { UploadSessionAttachmentHttpController } from './commands/upload-session-attachment/upload-session-attachment.http.controller';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
+import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import { WorkSessionRepository } from './database/work-session.repository';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
@@ -62,10 +73,12 @@ import { WorkSessionMapper } from './work-session.mapper';
 const httpControllers = [
   FindSessionsHttpController,
   CreateSessionHttpController,
+  UploadSessionAttachmentHttpController,
   FindSessionEventsHttpController,
   IssueAttachTicketHttpController,
   PasteSessionImageHttpController,
   StopSessionHttpController,
+  PrepareSessionHttpController,
   RestartSessionHttpController,
   AddCheckoutHttpController,
   RemoveCheckoutHttpController,
@@ -80,12 +93,14 @@ const commandHandlers: Provider[] = [
   RenameSessionCommandHandler,
   MoveSessionCommandHandler,
   StopSessionCommandHandler,
+  PrepareSessionCommandHandler,
   RestartSessionCommandHandler,
   CloseSessionCommandHandler,
   AddCheckoutCommandHandler,
   RemoveCheckoutCommandHandler,
   IssueAttachTicketCommandHandler,
   PasteSessionImageCommandHandler,
+  UploadSessionAttachmentCommandHandler,
   RecordSessionEventsCommandHandler,
 ];
 
@@ -101,19 +116,7 @@ const adapters: Provider[] = [
   { provide: SESSION_RECONCILIATION, useClass: SessionReconciliationResolver },
 ];
 
-/**
- * Sessions: the row, its checkouts, its append-only log and the fold of that log.
- *
- * It is the module the other three feed into. `projects/` answers which body of work
- * a session belongs to (and creates one on a repository's first session), `hosts/`
- * answers whether the caller may put work on a machine, and `github/` answers what a
- * repository is called and mints the token to check it out.
- *
- * Two ports go the other way, for the module that will own the runner link:
- * `SESSION_DISPATCH` to send a session's work to a host, and
- * `RECORD_SESSION_EVENTS` to write what the host reports back. They are the whole
- * published surface — the repository stays inside.
- */
+/** Sessions: the row, its checkouts, its append-only log and the fold of that log. */
 @Module({
   imports: [
     CqrsModule,
@@ -121,13 +124,14 @@ const adapters: Provider[] = [
       WorkSessionOrmEntity,
       SessionCheckoutOrmEntity,
       WorkSessionEventOrmEntity,
+      SessionTurnOrmEntity,
     ]),
     AuthzKernelModule.forFeature([SessionResource]),
     // The three modules this one is built on, imported rather than assumed: the
     // project a session belongs to, the machine it may run on, and what a
-    // repository is called. The one edge that runs the other way — the answer to
-    // "is this project still in use" — is contributed from this module's own
-    // providers, so `projects/` never has to import this module.
+    // repository is called. The edges that run the other way — "is this project
+    // still in use", "what runs on this host" — are contributed from this module's
+    // own providers, so neither module has to import this one.
     ProjectsModule,
     HostsModule,
     GithubModule,
@@ -135,7 +139,8 @@ const adapters: Provider[] = [
     // Importing it is what makes the port's implementation the relay's rather
     // than this module's, without this module knowing a socket exists.
     LinksModule,
-    // The workspace's slug for a launch, and nothing else of organizations'.
+    // The workspace's slug for a launch and the workspaces an account owns for
+    // its erasure, and nothing else of organizations'.
     OrganizationsModule,
   ],
   controllers: [...httpControllers],
@@ -147,13 +152,19 @@ const adapters: Provider[] = [
     SessionPlanFactory,
     SessionLaunchSpecFactory,
     SessionNamingResolver,
+    SessionLoaderResolver,
+    SessionAttachmentsResolver,
     // Contributed rather than exported: the implementation is built here, in this
     // module's injector, so it injects this module's repository port while
     // `projects/` reaches across only for the registry.
     ...ProjectsModule.contributeUsage([SessionProjectUsage]),
+    // The same shape for hosts: what runs on a machine, for its row in Settings.
+    ...HostsModule.contributeUsage([SessionHostUsage]),
+    ...UsersModule.contributeAccountErasure([SessionAccountErasure]),
+    HostUnpairedStopsSessionsDomainEventHandler,
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },
   ],
-  // The two application ports, and nothing else. The repository is this module's
+  // The three application ports, and nothing else. The repository is this module's
   // persistence adapter: publishing it would let the next slice read and append
   // past `RECORD_SESSION_EVENTS`, which is the door that checks the host.
   exports: [RECORD_SESSION_EVENTS, SESSION_LOOKUP, SESSION_RECONCILIATION],

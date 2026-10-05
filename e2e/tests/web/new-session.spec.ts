@@ -9,29 +9,16 @@ import {
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
- * New session, in a browser, against the real control plane.
+ * New session, in a browser, against the real control plane: a session created
+ * here is a row the API actually holds — in the project the page made, with the
+ * launch options the foot row was set to, the first task in its log, and a
+ * name derived from that task.
  *
- * What this covers that nothing else can: the screen's five pickers are bound
- * to four live reads and two writes, and a session created here is a row the
- * API actually holds — in the project the page made, with the launch
- * options the foot row was set to, the first task in its log, and a name
- * derived from that task.
- *
- * The only thing faked in the run is **GitHub**, which answers repositories and
- * branches live through an App this deployment does not have
- * (`support/github-stub.ts`). The browser, the console, the API's guards, its
- * Zod pipe and its Postgres are all the real ones.
- *
- * The run needs the stack up and the API pointed at the stub — see
- * `e2e/README.md`.
- *
- * An account with no machine is no longer a separate screen: the composer
- * renders either way and the host chip's foot action opens Add host, which is
- * `add-host.spec.ts`'s subject.
+ * Only GitHub is faked (`support/github-stub.ts`); the run needs the stack up
+ * and the API pointed at the stub (`e2e/README.md`).
  */
 test.describe('New session', () => {
   test('starts a session with the scope, the foot row and the first task', async ({ page }) => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const owner = await provisionedUser('newsession');
     const hostId = await pairHost(owner.api, 'E2E box');
@@ -43,40 +30,41 @@ test.describe('New session', () => {
     await expect(page.getByRole('heading', { name: 'New session' })).toBeVisible();
 
     // ── The prompt box has the size the export gives it ──────────────────────
-    // It lost that size once: `field-sizing-content` overrides the `rows`
-    // attribute, so an empty textarea collapsed to a single line while every
-    // class still looked right. Nothing in jsdom can catch it — it needs a
-    // browser that has applied the stylesheet — and the number is what
-    // `product/versions/mvp/design/_ds/…/terminal.css` states for
-    // `.op-composer__input`. Asserted here rather than in a spec of its own
-    // because the composer only renders once a host exists, and pairing a
-    // second one would trip the per-IP throttle this file already works around.
-    // 128px since the composer became tabbed (the scope band over the field
-    // grows the field to `min-h-32`, `[data-composer="tabbed"]` in console.css).
+    // `field-sizing-content` overrides `rows`, so an empty textarea once
+    // collapsed to one line with every class still right; only a browser that
+    // applied the stylesheet sees it. 128px is `min-h-32`, the tabbed composer
+    // (`Composer` with a `scope`, in the design system). Asserted here because the
+    // composer needs a host, and pairing another would trip the per-IP throttle.
     const composer = page.getByRole('textbox', { name: /Describe a task/ });
     expect((await composer.boundingBox())?.height, 'the empty composer is 128px tall').toBe(128);
 
-    // ── The project chip, and the page behind its foot row ───────────────────
+    // ── The project chip, and the dialog behind its foot row ─────────────────
     // A fresh workspace has only its Unassigned project, and the chip starts
     // there: it is where a session that names none is listed. The way to a
-    // named one is inside the chip, a page over the main column (the
-    // 2026-09-26 evening export).
+    // named one is inside the chip, a dialog over the console (the
+    // 2026-09-27 export).
     await expect(page.getByRole('button', { name: 'Project', exact: true })).toContainText(
       'Unassigned',
     );
     await page.getByRole('button', { name: 'Project', exact: true }).click();
     await page.getByRole('button', { name: 'New project…' }).click();
-    await expect(page).toHaveURL(/\/projects\/new$/);
-    // Save is off until the project is whole, and the recap says what is missing.
-    await expect(page.getByRole('button', { name: 'Create project' })).toBeDisabled();
-    await page.getByLabel('Project name').fill('XRP');
-    // Ticking a repository makes it a default.
-    await page.getByRole('checkbox', { name: new RegExp(STUB_REPOSITORIES.web.name) }).check();
-    await page.getByRole('button', { name: 'E2E box' }).click();
-    await page.getByRole('button', { name: 'Create project' }).click();
-    // Creating lands back on New session with the project in the address…
-    await expect(page).toHaveURL(/\/sessions\/new\?project=/);
-    // …and picking it prefilled the host and the repository from its defaults.
+    const projectDialog = page.getByRole('dialog', { name: 'New project' });
+    await expect(projectDialog).toBeVisible();
+    await expect(projectDialog.getByRole('button', { name: 'Create project' })).toBeDisabled();
+    await projectDialog.getByLabel('Name').fill('XRP');
+    // Adding a repository makes it cloned by default.
+    await projectDialog.getByRole('button', { name: 'Add a repository…' }).click();
+    // The picker's listbox is a popover, portaled outside the dialog.
+    await page
+      .getByRole('listbox')
+      .getByRole('option', { name: new RegExp(STUB_REPOSITORIES.web.name) })
+      .click();
+    // The default host is in the Defaults fold.
+    await projectDialog.getByRole('button', { name: /^Defaults/ }).click();
+    await projectDialog.getByRole('button', { name: 'E2E box' }).click();
+    await projectDialog.getByRole('button', { name: 'Create project' }).click();
+    await expect(projectDialog).toHaveCount(0);
+    // Picking it prefilled the host and the repository from its defaults.
     await expect(page.getByRole('button', { name: 'Project', exact: true })).toContainText('XRP');
     await expect(page.getByRole('button', { name: 'Host' })).toContainText('E2E box');
     await expect(page.getByRole('button', { name: 'Repositories' })).toContainText(
@@ -92,7 +80,7 @@ test.describe('New session', () => {
 
     // ── The repository chip, and the branch pane inside it ───────────────────
     // One repository per session in the MVP: picking another replaces the
-    // project's default, which is the per-session override 12 describes.
+    // project's default for this session only.
     await page.getByRole('button', { name: 'Repositories' }).click();
     await page.getByRole('option', { name: new RegExp(STUB_REPOSITORIES.mobile.name) }).click();
     // A selected row grows the cell that opens its own branch pane. Picking a
@@ -116,7 +104,6 @@ test.describe('New session', () => {
     await page.getByRole('textbox', { name: /Describe a task/ }).fill(task);
     await page.getByRole('button', { name: /send/i }).click();
 
-    // The pane the session opens in is its own URL.
     await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]{36}$/, { timeout: 30_000 });
     const sessionId = page.url().split('/').pop() as string;
 
@@ -164,7 +151,7 @@ test.describe('New session', () => {
     if (!prompt) throw new Error('the composer’s task was not recorded as the first prompt');
     expect((prompt.payload as { text: string }).text).toBe(task);
 
-    // Naming is not awaited by the create call, so it lands a moment later.
+    // Named within the create call, from the model or the prompt's own words.
     await expect
       .poll(
         async () => {
@@ -179,7 +166,6 @@ test.describe('New session', () => {
   });
 
   test('offers the way to GitHub when there is a host but no repository', async ({ page }) => {
-    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const owner = await provisionedUser('norepo');
     await pairHost(owner.api, 'Lonely box');
@@ -187,12 +173,24 @@ test.describe('New session', () => {
     await signInAs(page, owner.user);
     await page.goto('/sessions/new');
 
-    // The empty screens are gone: an account with nothing connected still gets
-    // the composer, and the way out is inside the chip that is empty.
+    // An account with nothing connected still gets the composer; the way out
+    // is inside the chip that is empty.
     await page.getByRole('button', { name: 'Repositories' }).click();
-    const manage = page.getByRole('link', { name: 'Manage repository access' });
-    await expect(manage).toHaveAttribute('href', STUB_INSTALL_URL);
-    await expect(manage).toHaveAttribute('target', '_blank');
+    // A button that mints the install state on click, then points a new tab
+    // at GitHub with it: there is no address to hold in an `href` at render.
+    // GitHub itself is answered here, so the run never leaves the machine.
+    await page
+      .context()
+      .route('https://github.com/**', (route) =>
+        route.fulfill({ status: 200, contentType: 'text/html', body: '<p>GitHub</p>' }),
+      );
+    const popup = page.waitForEvent('popup');
+    await page.getByRole('button', { name: 'Manage repository access' }).click();
+    const tab = await popup;
+    await tab.waitForURL((url) => url.href.startsWith(`${STUB_INSTALL_URL}?state=`));
+    expect(new URL(tab.url()).searchParams.get('state')).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    // Cut from the console, so GitHub's page cannot reach back into it.
+    expect(await tab.evaluate(() => window.opener)).toBeNull();
 
     await owner.api.dispose();
   });

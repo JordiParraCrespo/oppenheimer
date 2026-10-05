@@ -1,10 +1,6 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 /**
- * Profile domain error catalog. Surfaced as RFC 7807 problem documents by the
- * global `AllExceptionsFilter` via `AppError`; `httpStatus` is a plain status
- * code so the domain stays free of any HTTP framework.
- *
  * Every code here also needs a row in `apps/docs/docs/errors.md` and a message
  * in each locale — `src/__tests__/error-catalog-coverage.spec.ts` fails the
  * build otherwise.
@@ -34,7 +30,7 @@ export const ProfileErrors = {
     message: 'That file type is not supported for an avatar',
     httpStatus: 415,
   },
-  IMAGE_TOO_LARGE: {
+  FILE_TOO_LARGE: {
     code: 'PROFILE_005',
     message: 'That image is too large',
     httpStatus: 413,
@@ -59,5 +55,10 @@ export const ProfileErrors = {
     code: 'PROFILE_008',
     message: 'The account service could not complete that request',
     httpStatus: 502,
+  },
+  EMAIL_UNCHANGED: {
+    code: 'PROFILE_009',
+    message: 'That is already your email address',
+    httpStatus: 400,
   },
 } as const satisfies Record<string, ErrorDefinition>;

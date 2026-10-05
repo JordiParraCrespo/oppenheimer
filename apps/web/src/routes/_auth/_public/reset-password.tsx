@@ -1,14 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { resetPasswordSearchSchema } from '@/features/auth/lib/search';
 import { ResetPasswordScreen } from '@/features/auth/screens/reset-password';
 
 export const Route = createFileRoute('/_auth/_public/reset-password')({
-  validateSearch: (
-    search: Record<string, unknown>,
-  ): { token?: string; error?: string; email?: string } => ({
-    token: (search.token as string) || undefined,
-    error: (search.error as string) || undefined,
-    email: (search.email as string) || undefined,
-  }),
+  validateSearch: resetPasswordSearchSchema,
   component: ResetPasswordPage,
   staticData: { legalNoteKey: 'auth.resetPassword.legal' },
 });

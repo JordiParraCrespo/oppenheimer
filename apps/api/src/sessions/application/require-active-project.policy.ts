@@ -8,15 +8,11 @@ import { SessionErrors } from '../domain/sessions.errors';
 /**
  * The project a session may be put in, or the reason it may not.
  *
- * The two refusals are different and must stay different. A project the caller
- * cannot see — missing, or another workspace's — is **not found**, and answering
- * "archived" for it would both mislead the caller and confirm that an id exists
- * somewhere. A project that is genuinely retired is a **conflict**: the caller can
- * see it, and the reason work cannot go in it is that its directory is out of use
- * on every host that held it.
- *
- * That is why the lookup hands back archived rows rather than hiding them: only a
- * caller holding the row can tell the two apart.
+ * The two refusals must stay different. A project the caller cannot see (missing, or
+ * another workspace's) is **not found**: "archived" would mislead and confirm the id
+ * exists. A genuinely retired project is a **conflict**: the caller sees it, and
+ * nothing new may be listed under it. That is why the lookup returns
+ * archived rows: only a caller holding the row can tell the two apart.
  */
 export async function requireActiveProject(
   projects: ProjectLookupPort,

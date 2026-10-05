@@ -8,7 +8,7 @@ export type SessionSort = 'recent' | 'oldest' | 'name';
 
 /**
  * What the sidebar's filter menu holds
- * (`product/versions/mvp/design/version1/SessionsConsole.dc.html`): three
+ * (`product/versions/mvp/design/version1/SessionsConsole.dc.html`): four
  * facets that narrow the list and one order that does not.
  */
 export interface SessionFilters {
@@ -27,21 +27,20 @@ export const DEFAULT_FILTERS: SessionFilters = {
   sort: 'recent',
 };
 
-/** One row of a facet's submenu. */
 export interface FilterOption {
   value: string;
   label: string;
 }
+
+/** The facets, in the order the menu and the chips show them. */
+export const FACETS = ['project', 'repository', 'agent', 'host'] as const;
+export type SessionFacet = (typeof FACETS)[number];
 
 /**
  * Whether anything is being hidden. Sort is deliberately not part of it: the
  * artboard lights the filter button and draws the chips for what is *missing*
  * from the list, and re-ordering hides nothing.
  */
-/** The facets, in the order the menu and the chips show them. */
-export const FACETS = ['project', 'repository', 'agent', 'host'] as const;
-export type SessionFacet = (typeof FACETS)[number];
-
 export function isFiltered(filters: SessionFilters): boolean {
   return FACETS.some((facet) => filters[facet] !== ALL);
 }
@@ -57,11 +56,11 @@ export function projectOptions(
 }
 
 /** `owner/repo` is how a session names its repository; the menu wants `repo`. */
-export function repositoryLabel(repository: string): string {
+function repositoryLabel(repository: string): string {
   return repository.slice(repository.lastIndexOf('/') + 1) || repository;
 }
 
-function distinct(values: string[]): string[] {
+function distinct<T extends string>(values: T[]): T[] {
   return [...new Set(values)].sort((a, b) => a.localeCompare(b));
 }
 
@@ -74,9 +73,8 @@ function distinct(values: string[]): string[] {
 export function repositoryOptions(sessions: SessionEntity[], allLabel: string): FilterOption[] {
   return [
     { value: ALL, label: allLabel },
-    // Every checkout, not one per session: a session is several repositories
-    // now, and a repository is worth filtering by whether or not it is the one
-    // the agent happens to be launched in.
+    // Every checkout, not one per session: a repository is worth filtering by
+    // whether or not it is the one the agent happens to be launched in.
     ...distinct(
       sessions.flatMap((session) =>
         session.checkouts.map((checkout) => checkout.repositoryFullName),
@@ -91,7 +89,7 @@ export function repositoryOptions(sessions: SessionEntity[], allLabel: string): 
 export function agentOptions(
   sessions: SessionEntity[],
   allLabel: string,
-  label: (agent: string) => string,
+  label: (agent: SessionEntity['agent']) => string,
 ): FilterOption[] {
   return [
     { value: ALL, label: allLabel },

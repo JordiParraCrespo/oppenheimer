@@ -7,16 +7,22 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 
 /**
- * EditorPage — the page over the main column: New project, Add a host, the
- * automations overview and its editor (`design/version1/SessionsConsole.dc.html`,
- * `op-rpage` and `op-rp`). The frame and nothing in it: a canvas column that
- * scrolls on its own, the measured body centred in it — `wide` for a page
- * that holds a table — and the Back pill that sits above the page header.
- * `EditorPageTop` is a first row for a page that opens on view tabs and one
- * action. What a page puts in the body is the page's.
+ * EditorPage — the page over the main column: the automations overview
+ * (`design/version1/Routines.dc.html`, `op-rpage` and `op-rp`). The frame only:
+ * a canvas column that scrolls on its own, the measured body centred in it
+ * (`wide` for a page that holds a table), and the Back pill above the page
+ * header. `EditorPageTop` is a first row for a page that opens on view tabs and
+ * one action. New project, Project settings, the console's Add a host and the
+ * automation editor are dialogs, not pages.
+ *
+ * The ground is `canvas-recessed`, the export's gray-50 `--canvas`: the run
+ * history, table and runs list are white cards and the selected view tab a
+ * white pill, which would all vanish on the console's white canvas. Dark lifts
+ * the card instead, where the two grounds are one.
  *
  * `EditorPageBack` navigates, so it takes `render` for the router's link the
- * way `Link` does; on its own it is an anchor.
+ * way `Link` does; on its own it is an anchor. Settings' Add a host page uses
+ * it too.
  *
  * ```tsx
  * <EditorPage>
@@ -32,7 +38,7 @@ function EditorPage({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="editor-page"
-      className={cn('flex min-h-0 flex-1 flex-col overflow-y-auto bg-canvas', className)}
+      className={cn('flex min-h-0 flex-1 flex-col overflow-y-auto bg-canvas-recessed', className)}
       {...props}
     />
   );
@@ -49,8 +55,9 @@ function EditorPageBody({
       data-slot="editor-page-body"
       data-wide={wide || undefined}
       className={cn(
-        'mx-auto flex w-full flex-col px-8 pt-6 pb-18',
-        wide ? 'max-w-230 gap-4' : 'max-w-190',
+        'mx-auto flex w-full flex-col px-8 pb-18',
+        // `op-rp__inner` opens 28px down; the narrow `op-rpage__body`, 24px.
+        wide ? 'max-w-230 gap-4 pt-7' : 'max-w-190 pt-6',
         className,
       )}
       {...props}

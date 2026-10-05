@@ -1,6 +1,12 @@
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
-import type { AttachTicket, CreateSessionInput, SessionEntity } from './session.entity';
+import type {
+  AttachTicket,
+  CreateSessionInput,
+  PrepareSessionInput,
+  SessionAttachment,
+  SessionEntity,
+} from './session.entity';
 import { deriveSessionStartProgress, type SessionStartProgress } from './session-steps';
 import type { SessionsRepository } from './sessions.repository';
 import { AttachSessionStream, type SessionStream } from './stream/session-stream';
@@ -31,20 +37,12 @@ export class SessionsService {
     return deriveSessionStartProgress(await this.repository.findStartLog(id), { failed });
   }
 
-  /**
-   * Start a session.
-   *
-   * The `idempotencyKey` is the caller's, not this layer's: it has to survive a
-   * lost response and a second press of the same button, and only the screen
-   * holding that draft knows the two are the same attempt. Minting one here per
-   * call would key every retry differently, which is the same as having none.
-   */
   create(input: CreateSessionInput, idempotencyKey: string): Promise<SessionEntity> {
     return this.repository.create(input, idempotencyKey);
   }
 
-  stop(id: string): Promise<SessionEntity> {
-    return this.repository.stop(id);
+  prepare(input: PrepareSessionInput): Promise<string[]> {
+    return this.repository.prepare(input);
   }
 
   rename(id: string, name: string): Promise<SessionEntity> {
@@ -55,18 +53,24 @@ export class SessionsService {
     return this.repository.move(id, projectId);
   }
 
+  restart(id: string): Promise<SessionEntity> {
+    return this.repository.restart(id);
+  }
+
   close(id: string, acceptUnpushedWork = false): Promise<SessionEntity> {
     return this.repository.close(id, acceptUnpushedWork);
   }
 
-  /** A single-use pass to one window's terminal; see the repository. */
   issueAttachTicket(id: string, window = 0): Promise<AttachTicket> {
     return this.repository.issueAttachTicket(id, window);
   }
 
-  /** Give one window's prompt an image; see the repository. */
-  pasteImage(id: string, image: Blob, window = 0): Promise<void> {
-    return this.repository.pasteImage(id, image, window);
+  uploadAttachment(file: Blob): Promise<SessionAttachment> {
+    return this.repository.uploadAttachment(file);
+  }
+
+  pasteFile(id: string, file: Blob, window = 0): Promise<void> {
+    return this.repository.pasteFile(id, file, window);
   }
 
   /**

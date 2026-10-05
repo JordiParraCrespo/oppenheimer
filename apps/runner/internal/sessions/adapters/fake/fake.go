@@ -3,8 +3,7 @@
 // that has neither installed and without spawning a process per assertion.
 //
 // The adapters against the real tools live next door and are exercised by
-// their own tests, which skip when the tool is missing. This package is what
-// keeps the lifecycle itself fast and deterministic.
+// their own tests, which skip when the tool is missing.
 package fake
 
 import (
@@ -35,10 +34,11 @@ type Terminals struct {
 	// Titles is the terminal title per target, the signal an agent sets
 	// through an escape sequence.
 	Titles map[string]string
+	// Launches is what each window was last launched with.
+	Launches map[string]Launched
 
 	sessions map[string]*fakeSession
-	// Attached counts live attachments, so a test can prove that detaching
-	// does not end a session.
+	// Attached counts live attachments.
 	Attached int
 	// Pastes is every text pasted, in order.
 	Pastes []string
@@ -47,20 +47,20 @@ type Terminals struct {
 	FailPaste bool
 }
 
-// Images is app.Images in memory.
-type Images struct {
+// Files is app.Files in memory.
+type Files struct {
 	mu sync.Mutex
-	// Saved is each session's images by name.
+	// Saved is each session's files by name.
 	Saved map[string]map[string][]byte
-	// Discarded names the sessions whose images were dropped.
+	// Discarded names the sessions whose files were dropped.
 	Discarded []string
 }
 
-// NewImages returns an empty image store.
-func NewImages() *Images { return &Images{Saved: map[string]map[string][]byte{}} }
+// NewFiles returns an empty file store.
+func NewFiles() *Files { return &Files{Saved: map[string]map[string][]byte{}} }
 
-// Save implements app.Images; the path is a fixed fake root.
-func (i *Images) Save(sessionID, name string, data []byte) (string, error) {
+// Save implements app.Files; the path is a fixed fake root.
+func (i *Files) Save(sessionID, name string, data []byte) (string, error) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	if i.Saved[sessionID] == nil {
@@ -70,16 +70,16 @@ func (i *Images) Save(sessionID, name string, data []byte) (string, error) {
 	return "/home/jordi/.oppenheimer/images/" + sessionID + "/" + name, nil
 }
 
-// Delete implements app.Images.
-func (i *Images) Delete(sessionID, name string) error {
+// Delete implements app.Files.
+func (i *Files) Delete(sessionID, name string) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	delete(i.Saved[sessionID], name)
 	return nil
 }
 
-// Discard implements app.Images.
-func (i *Images) Discard(sessionID string) error {
+// Discard implements app.Files.
+func (i *Files) Discard(sessionID string) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	delete(i.Saved, sessionID)
@@ -198,6 +198,34 @@ func (t *Terminals) Capture(_ context.Context, target string) (app.Screen, error
 	return app.Screen{Body: t.Screens[target], Title: t.Titles[target]}, nil
 }
 
+// CaptureBody implements app.Terminals.
+func (t *Terminals) CaptureBody(_ context.Context, target string) (string, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.Screens[target], nil
+}
+
+// Panes implements app.Terminals: one pane per window, active, titled from
+// Titles.
+func (t *Terminals) Panes(context.Context) ([]app.Pane, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	var panes []app.Pane
+	for name, session := range t.sessions {
+		for _, w := range session.windows {
+			target := fmt.Sprintf("%s:%d", name, w.Index)
+			panes = append(panes, app.Pane{Session: name, Window: w.Index, Active: true, Title: t.Titles[target]})
+		}
+	}
+	sort.Slice(panes, func(i, j int) bool {
+		if panes[i].Session != panes[j].Session {
+			return panes[i].Session < panes[j].Session
+		}
+		return panes[i].Window < panes[j].Window
+	})
+	return panes, nil
+}
+
 // Windows implements app.Terminals.
 func (t *Terminals) Windows(_ context.Context, name string) ([]domain.Window, error) {
 	t.mu.Lock()
@@ -214,6 +242,23 @@ func (t *Terminals) SendKeys(_ context.Context, target, keys string) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.Screens[target] += keys
+	return nil
+}
+
+// Launched is what a window was last launched with.
+type Launched struct {
+	Dir     string
+	Command string
+}
+
+// Launch implements app.Terminals by recording the launch on the target.
+func (t *Terminals) Launch(_ context.Context, target, dir, command string) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.Launches == nil {
+		t.Launches = map[string]Launched{}
+	}
+	t.Launches[target] = Launched{Dir: dir, Command: command}
 	return nil
 }
 
@@ -266,6 +311,16 @@ func (t *Terminals) Dir(name string) string {
 	return ""
 }
 
+// CommandOf exposes the command line a session's window 0 was started with.
+func (t *Terminals) CommandOf(name string) string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if session, ok := t.sessions[name]; ok {
+		return session.command
+	}
+	return ""
+}
+
 type attachment struct {
 	server *Terminals
 	screen string
@@ -309,8 +364,22 @@ type Worktrees struct {
 	PushErr error
 	// EnsureErr, when set, is what Ensure returns: a clone that failed.
 	EnsureErr error
+	// Prepared records the repositories a terminal's directory was asked for.
+	Prepared []string
 	// Pushed records the branches that reached the remote.
 	Pushed []string
+	// PushedFor records the session each push was done for (domain.SessionOf),
+	// which is whose token the credential helper asks for.
+	PushedFor []string
+	// Fetched records the ref each Ensure was asked to fetch, in order.
+	Fetched []string
+}
+
+// FetchedRefs is Fetched, read under the lock.
+func (w *Worktrees) FetchedRefs() []string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return append([]string(nil), w.Fetched...)
 }
 
 // NewWorktrees returns an empty git.
@@ -319,7 +388,7 @@ func NewWorktrees() *Worktrees {
 }
 
 // Ensure implements app.Worktrees.
-func (w *Worktrees) Ensure(_ context.Context, repo, _ string) error {
+func (w *Worktrees) Ensure(_ context.Context, repo, _, ref string) error {
 	if err := domain.ValidateRepo(repo); err != nil {
 		return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
 	}
@@ -329,7 +398,24 @@ func (w *Worktrees) Ensure(_ context.Context, repo, _ string) error {
 		return w.EnsureErr
 	}
 	w.Mirrors[repo]++
+	w.Fetched = append(w.Fetched, ref)
 	return nil
+}
+
+// Has implements app.Worktrees: a repository is on the host once Ensure ran for it.
+func (w *Worktrees) Has(repo string) bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.Mirrors[repo] > 0
+}
+
+// Prepare implements app.Worktrees. Nothing is made on disk: a fake session's
+// terminal is a fake too, and the directory is only somewhere to start it.
+func (w *Worktrees) Prepare(_ context.Context, repo string) (string, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.Prepared = append(w.Prepared, repo)
+	return "/" + repo + "/worktrees", nil
 }
 
 // Add implements app.Worktrees.
@@ -362,13 +448,14 @@ func (w *Worktrees) Dirty(_ context.Context, path string) (bool, error) {
 }
 
 // Push implements app.Worktrees.
-func (w *Worktrees) Push(_ context.Context, _, branch string) (bool, error) {
+func (w *Worktrees) Push(ctx context.Context, _, branch string) (bool, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if w.PushErr != nil {
 		return false, w.PushErr
 	}
 	w.Pushed = append(w.Pushed, branch)
+	w.PushedFor = append(w.PushedFor, domain.SessionOf(ctx))
 	return true, nil
 }
 

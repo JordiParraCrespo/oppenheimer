@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
+import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, In, Repository } from 'typeorm';
 import {
@@ -23,8 +24,6 @@ const UNIQUE_VIOLATION = '23505';
 const SLUG_CONSTRAINT = 'UQ_project_organization_slug';
 
 /**
- * TypeORM adapter for the project aggregate.
- *
  * The reads carry no tenant clause of their own: extending
  * `ScopedRepositoryBase` and naming the resource is the whole of it, so a query
  * and an `ability.can()` cannot disagree about what a scope means.
@@ -41,6 +40,7 @@ export class ProjectRepository
     @InjectRepository(ProjectOrmEntity)
     protected readonly repository: Repository<ProjectOrmEntity>,
     private readonly mapper: ProjectMapper,
+    private readonly outbox: OutboxService,
   ) {
     super();
   }
@@ -96,17 +96,10 @@ export class ProjectRepository
   }
 
   /**
-   * The lock, the question and the write, in that order and in one transaction.
-   *
-   * `FOR UPDATE` on the project row is what serialises this against creating a
-   * session, whose insert transaction takes `FOR SHARE` on the same row: an archive
-   * that commits first turns that read into zero rows, and one that arrives second
-   * waits here and then sees the session it would have stranded. Asking the
-   * question between the lock and the write is the whole point — a check that ran
-   * before the lock could be true and stale by the time `archivedAt` lands.
-   *
-   * The scope's own predicate is reused verbatim as a sub-query, so a project in
-   * another workspace is `not-found` here exactly as it is on every read.
+   * The lock is the port's contract: a session create that reads after an archive
+   * commits finds zero rows, and a check asked before the lock could be stale by the
+   * time `archivedAt` lands. The scope's own predicate is reused verbatim as a
+   * sub-query, so a project in another workspace is `not-found` here as on every read.
    */
   async archiveIfUnused(
     scope: AccessScope,
@@ -118,7 +111,9 @@ export class ProjectRepository
       .getQueryAndParameters();
     const table = this.repository.metadata.tableName;
 
-    return this.repository.manager.transaction(async (manager) => {
+    // The outbox's transaction wakes the relay after commit when the archive
+    // staged its event; the early returns stage nothing and wake nothing.
+    return this.outbox.transaction(async (manager) => {
       const locked: ProjectOrmEntity[] = await manager.query(
         `SELECT * FROM "${table}"
           WHERE "id" = $${parameters.length + 1} AND "id" IN (${reachable})
@@ -129,8 +124,7 @@ export class ProjectRepository
 
       const repositories = await this.repositoriesOf([projectId], manager);
       const project = this.mapper.toDomain(locked[0], repositories.get(projectId));
-      // Already retired: nothing to ask and nothing to write, and a retried request
-      // after a lost response is not a conflict.
+      // Already retired: nothing to ask and nothing to write.
       if (project.isArchived) return { result: 'archived' as const, project };
       // Where work that names no project goes; retiring it would strand that work.
       if (project.isUnassigned) return { result: 'unassigned' as const, project };
@@ -144,6 +138,9 @@ export class ProjectRepository
         RETURNING *`,
         [projectId, project.archivedAt],
       );
+      // The archive and what it owes commit together.
+      await this.outbox.stageEvents(manager, project.domainEvents);
+      project.clearEvents();
       return {
         result: 'archived' as const,
         project: this.mapper.toDomain(updated[0], repositories.get(projectId)),
@@ -170,6 +167,10 @@ export class ProjectRepository
   async findUnassigned(scope: AccessScope): Promise<Option<ProjectEntity>> {
     const record = await this.scopedQuery(scope).andWhere('project.isUnassigned = true').getOne();
     return this.withRepositories(record);
+  }
+
+  async eraseWorkspace(organizationId: string): Promise<void> {
+    await this.repository.delete({ organizationId });
   }
 
   /**
@@ -235,7 +236,6 @@ export class ProjectRepository
   }
 }
 
-/** Whether a driver error is the slug constraint refusing the insert. */
 function isSlugConflict(error: unknown): boolean {
   const driver = error as { code?: string; constraint?: string };
   return driver?.code === UNIQUE_VIOLATION && driver?.constraint === SLUG_CONSTRAINT;

@@ -2,17 +2,16 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
+import type { SessionCachePort } from '../../../auth/application/session-cache.port';
+import { SESSION_CACHE } from '../../../auth/auth.di-tokens';
 import type { UserRepositoryPort } from '../../../users/database/user.repository.port';
 import { USER_REPOSITORY } from '../../../users/user.di-tokens';
 import { ProfileErrors } from '../../domain/profile.errors';
 import { UpdateProfileCommand } from './update-profile.command';
 
 /**
- * Applies a user's edits to their own profile.
- *
- * The command carries no `role` or `isActive`, so this can never be the path by
- * which someone promotes themselves — the fields simply are not reachable from
- * here, rather than being filtered out somewhere downstream.
+ * A username is unique across accounts. The unique constraint is the rule,
+ * and the repository reports a violation as `USER_002`.
  */
 @CommandHandler(UpdateProfileCommand)
 export class UpdateProfileCommandHandler
@@ -21,6 +20,8 @@ export class UpdateProfileCommandHandler
   constructor(
     @Inject(USER_REPOSITORY)
     private readonly userRepository: UserRepositoryPort,
+    @Inject(SESSION_CACHE)
+    private readonly sessionCache: SessionCachePort,
   ) {}
 
   async execute(command: UpdateProfileCommand): Promise<AggregateID> {
@@ -33,9 +34,11 @@ export class UpdateProfileCommandHandler
       lastName: command.lastName,
       phone: command.phone,
       jobTitle: command.jobTitle,
+      username: command.username,
     });
 
     await this.userRepository.save(user);
+    await this.sessionCache.refreshUser(user.id);
     return user.id;
   }
 }

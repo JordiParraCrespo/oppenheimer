@@ -21,7 +21,7 @@ its documentation. Never add a per-package `.env` or `.env.example`.
   overrides `.env`.
 - Entry points load it as their first import: `import '@oppenheimer/env/load';`
   (`main.ts`, `config/data-source.ts`, `database/seed.ts`,
-  `generate-openapi.ts`, `auth/infrastructure/better-auth.config.ts`). Do not import `dotenv/config` —
+  `openapi-env.ts` (for `generate-openapi.ts`), `auth/infrastructure/better-auth.config.ts`). Do not import `dotenv/config` —
   it resolves `.env` against `process.cwd()`, which is exactly the fragility
   `@oppenheimer/env` replaces.
 - `apps/web` does not use the loader: `vite.config.ts` points `envDir` at the
@@ -45,8 +45,10 @@ config**, and the code must work without it. Model absence honestly:
   `orUndefined` helper in `config/env.ts`, so `.url().optional()` and friends
   still boot. It uses whitespace to decide **blankness only** and never trims
   the value it returns — a credential may legitimately be padded, and a config
-  that quietly rewrote `DB_PASSWORD` would disagree with Better Auth's pool,
-  which reads `process.env` directly. Do not add a trim here or at a call site.
+  that quietly rewrote `DB_PASSWORD` would hand Postgres a password nobody set.
+  Do not add a trim here or at a call site. Better Auth's pool, configured at
+  module scope, reads the same parsed section through `databaseConfigFromEnv()`
+  rather than `process.env`.
 - Declare the feature in `resolveCapabilities()`
   (`src/capabilities/capabilities.module.ts`). The resolved set — currently
   `google_oauth`, `github_oauth`, `github_app`, `s3_storage`,
@@ -141,10 +143,23 @@ before parameterized ones (e.g. `:id`).
 
 All API endpoints need `@ApiOperation`, `@ApiResponse`, and `@ApiTags` decorators for the auto-generated client (`pnpm generate:api-client`).
 
+Operation names come from one factory, `apps/api/src/openapi-document.ts`,
+never from a hand-written `operationId`. A slice's `<UseCase>HttpController`
+names its operation after the use case (`FindHostsHttpController` →
+`findHosts`), which is the console client's function name; a controller that
+holds several operations names each by its method. A name two handlers share
+fails `generate:openapi` and lists the collisions, so a new controller class
+needs a name no other module uses (`FindThingsHttpController`, never
+`ListHttpController`), and a façade method a name unique in the API.
+
 ## Validation
 
 - Request DTOs use Zod schemas from `packages/shared`
-- All user input is sanitized via `SanitizePipe` (strips HTML) and validated via `ZodValidationPipe`
+- All user input is sanitized via `SanitizePipe` (strips HTML) and validated via
+  `nestjs-zod`'s `ZodValidationPipe`; both are registered globally in `apps/api/src/main.ts`
+- Paginated list queries extend `paginationSchema` from `@oppenheimer/shared` (its bounds are
+  `PAGINATION`); the controller builds the response `meta` with `toPageMeta` from
+  `@oppenheimer/backend-core`
 
 ## Rate limiting
 
@@ -163,11 +178,30 @@ hold across replicas. It is on in production and opt-in elsewhere
 (`AUTH_RATE_LIMIT_ENABLED`).
 
 **The tracker is keyed on the credential, not the IP.**
-`CredentialThrottlerGuard` (`src/throttling/`) is the app's `APP_GUARD`: it
-buckets by `credentialId`, falling back to the user id and only then to the
-IP. The default IP tracker is wrong for every machine caller — a relay forwards
+`CredentialThrottlerGuard` (`src/throttling/`) is the app's `APP_GUARD`. It
+derives the bucket from what the request presents, **without verifying it** —
+no database, no Better Auth — because a limiter that resolved credentials first
+would do its work before deciding whether to shed the request
+(`CredentialScopePort.rateLimitKey`):
+
+- a bearer or `x-api-key` → `cred:<sha256 prefix>`, one bucket per secret (a
+  host's single-use assertion is bucketed by the host it resolves to);
+- a Better Auth session cookie whose signature verifies → `session:<digest>`,
+  one bucket per signed-in browser rather than one per office NAT;
+- otherwise the user id (when applied after authentication), then the IP.
+
+The default IP tracker is wrong for every machine caller — a relay forwards
 many callers' traffic from one address, so an IP bucket is shared by all of
 them and the per-route number describes nothing anybody intended.
+
+A digest bucket costs nothing to open, so the brake on made-up credentials is
+the **auth-failure budget** (`AUTH_FAILURE_LIMITER`, bound in `throttling`):
+every refused credential (`TOKEN_003`) counts against its source IP, and past
+`RATE_LIMIT_AUTH_FAILURES` (30 by default) in `RATE_LIMIT_AUTH_FAILURE_WINDOW_SECONDS`
+that IP's bearer requests are refused with `RATE_001` for
+`RATE_LIMIT_AUTH_FAILURE_BLOCK_SECONDS` before any lookup (the `throttling`
+config section) — except a credential that recently succeeded, so one broken
+client does not lock out the others behind its address.
 
 **Counters live in Redis** (`RedisThrottlerStorage`), because the in-memory
 default multiplies every limit by the replica count without saying so. It
@@ -209,6 +243,13 @@ Request logging comes from `LoggingModule` in `@oppenheimer/backend-core`
   );
   ```
 
+- **Correlation ids are opened in middleware.** `RequestContextMiddleware`
+  (applied to every route in `AppModule.configure`) opens the
+  `RequestContextService` scope before any guard runs, so a 401/403/429 carries
+  a `correlationId` too. The id is pino's `req.id` and is echoed as the
+  `x-correlation-id` response header: a client's header is honoured only when it
+  is 1–64 characters of `[A-Za-z0-9._:-]`, otherwise a UUID replaces it. Log
+  the validated id, never the raw header.
 - **User context is automatic.** `UserContextInterceptor` attaches `userId`
   (and the credential's effective `scopes`) to the request log context once the
   auth guards resolve — never add them by hand, and never log emails or names.

@@ -3,9 +3,10 @@
 > Read the root [`CLAUDE.md`](../../../CLAUDE.md) first.
 
 The console's domain on top of `@oppenheimer/frontend-core`: `sessions` (a
-worktree with a terminal on a host), `projects` (what sessions belong to) and
-`hosts` (the machines the user owns)
-are the product; `organizations`, `profile` and `api-tokens` are the account
+worktree with a terminal on a host), `projects` (what sessions belong to),
+`hosts` (the machines the user owns) and `automations` (saved prompts that
+start sessions on a schedule or an event, and the runs they made)
+are the product; `organizations`, `profile` and `permissions` are the account
 chrome it keeps. `organizations` is the *personal workspace* only — read it,
 rename it, create one for an account that has none. Workspaces have no roster
 (`product/versions/mvp/08-auth.md`): there is no member or invitation hook
@@ -17,17 +18,19 @@ and the full "add a module" cookbook are
 ## Where things go
 
 - A new module `things` → `src/modules/things/` with `thing.entity.ts`,
-  `things.errors.ts`, `things.repository.ts`, `things.service.ts`,
-  `things.module.ts` and `index.ts`; then `export * from './things'` in
-  `src/modules/index.ts`, the two symbols in `src/di/tokens.ts`, and
+  `things.errors.ts`, `things.repository.ts`, `things.module.ts` and
+  `index.ts` — plus `things.service.ts` only when a method does more than call
+  the repository (`../ARCHITECTURE.md`, step 4); then `export * from './things'`
+  in `src/modules/index.ts`, the symbols in `src/di/tokens.ts`, and
   `ThingsModule` plus a `get things()` getter in `src/di/consumer-app.ts`.
   Only after that may `apps/web/src/features/things/` exist —
   `pnpm check:structure` allows a feature name a module carries.
 - A new query hook → `src/react/things.queries.ts`, keys derived from
   `thingsKeys.all`, hooks over `useConsumerApp()`, mutations invalidating by
   prefix through `withCacheOnSuccess(options, update)` from
-  `@oppenheimer/frontend-core/react`; export both by name from
-  `src/react/index.ts`.
+  `@oppenheimer/frontend-core/react`; export by name from
+  `src/react/index.ts` the hooks the app imports. The key factory stays in
+  its file — `pnpm check:unused` fails an export nothing outside reads.
 - Data that must not be written to storage → its key prefix in
   `CONSUMER_NON_PERSISTED_FEATURES` (`src/react/persistence.ts`).
 - Something that is not product logic (every app would need it) → promote it
@@ -48,9 +51,8 @@ pnpm --filter @oppenheimer/frontend-consumer build   # the apps import dist/
   knows kernel services; a consumer hook reads `useConsumerApp().sessions`.
 - Adding a member or invitation hook to `organizations` because the API has
   the endpoint. The console has no roster; that surface is the teams slice's.
-- Defining a query key or type here that the kernel owns, such as the member
-  list prefix: use the kernel contract (`MEMBER_LISTS_KEY` from
-  `@oppenheimer/frontend-core/react`).
+- Defining a query key or type here that the kernel owns: use the kernel's
+  contract from `@oppenheimer/frontend-core/react`.
 - Putting a component or a DOM import here. A product package holds no
   platform code; `domain-knows-no-platform` fails.
 - Importing `src/react/` from `src/modules/`. Services know nothing of React;

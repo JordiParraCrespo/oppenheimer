@@ -2,6 +2,8 @@ import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
+import { InboundEventsModule } from '../inbound-events/inbound-events.module';
+import { InstallStateResolver } from './application/install-state.resolver';
 import { RepositoryAccessResolver } from './application/repository-access.resolver';
 import { ConnectInstallationCommandHandler } from './commands/connect-installation/connect-installation.command-handler';
 import { ConnectInstallationHttpController } from './commands/connect-installation/connect-installation.http.controller';
@@ -9,11 +11,14 @@ import { DisconnectInstallationCommandHandler } from './commands/disconnect-inst
 import { DisconnectInstallationHttpController } from './commands/disconnect-installation/disconnect-installation.http.controller';
 import { HandleGithubWebhookCommandHandler } from './commands/handle-github-webhook/handle-github-webhook.command-handler';
 import { HandleGithubWebhookHttpController } from './commands/handle-github-webhook/handle-github-webhook.http.controller';
+import { StartInstallationCommandHandler } from './commands/start-installation/start-installation.command-handler';
+import { StartInstallationHttpController } from './commands/start-installation/start-installation.http.controller';
 import { GithubInstallationOrmEntity } from './database/github-installation.orm-entity';
 import { GithubInstallationRepository } from './database/github-installation.repository';
 import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY, REPOSITORY_ACCESS } from './github.di-tokens';
 import { InstallationResource } from './github.resource';
 import { GithubInstallationMapper } from './github-installation.mapper';
+import { GithubEventSource } from './infrastructure/github-event-source.adapter';
 import { GithubRestAdapter } from './infrastructure/github-rest.adapter';
 import { FindInstallationQueryHandler } from './queries/find-installation/find-installation.query-handler';
 import { FindInstallationsHttpController } from './queries/find-installations/find-installations.http.controller';
@@ -23,10 +28,10 @@ import { ListInstallationRepositoriesQueryHandler } from './queries/list-install
 import { ListRepositoryBranchesHttpController } from './queries/list-repository-branches/list-repository-branches.http.controller';
 import { ListRepositoryBranchesQueryHandler } from './queries/list-repository-branches/list-repository-branches.query-handler';
 
-// Static routes before parameterized ones, so `POST /installations` is not
-// shadowed and `:id/repositories` is registered before `:id/...` variants.
+// Static routes before parameterized ones.
 const httpControllers = [
   FindInstallationsHttpController,
+  StartInstallationHttpController,
   ConnectInstallationHttpController,
   HandleGithubWebhookHttpController,
   ListInstallationRepositoriesHttpController,
@@ -38,6 +43,7 @@ const commandHandlers: Provider[] = [
   ConnectInstallationCommandHandler,
   DisconnectInstallationCommandHandler,
   HandleGithubWebhookCommandHandler,
+  StartInstallationCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -53,6 +59,7 @@ const adapters: Provider[] = [
   { provide: GITHUB_INSTALLATION_REPOSITORY, useClass: GithubInstallationRepository },
   { provide: GITHUB_APP, useClass: GithubRestAdapter },
   { provide: REPOSITORY_ACCESS, useClass: RepositoryAccessResolver },
+  InstallStateResolver,
 ];
 
 /**
@@ -64,19 +71,24 @@ const adapters: Provider[] = [
  * two facts that would otherwise drift — what access exists, and what it covers —
  * both have their owner on GitHub's side
  * (`product/versions/mvp/03-control-plane.md`).
- *
- * `REPOSITORY_ACCESS` is the one thing exported, because it is the seam
- * `sessions/` and `relay/` use: they name a connected installation and a
- * repository, and get a credential for exactly that repository.
  */
 @Module({
   imports: [
     CqrsModule,
     TypeOrmModule.forFeature([GithubInstallationOrmEntity]),
     AuthzKernelModule.forFeature([InstallationResource]),
+    // The hub its non-installation deliveries go to, and the registry this
+    // module contributes its event source to.
+    InboundEventsModule,
   ],
   controllers: [...httpControllers],
-  providers: [...commandHandlers, ...queryHandlers, ...mappers, ...adapters],
+  providers: [
+    ...commandHandlers,
+    ...queryHandlers,
+    ...mappers,
+    ...adapters,
+    ...InboundEventsModule.contributeSources([GithubEventSource]),
+  ],
   // `REPOSITORY_ACCESS` and nothing else. The GitHub client and the unscoped
   // installation lookup are this module's own: exporting them is how `sessions/`
   // and `relay/` would end up minting with GitHub's numeric id, past the port

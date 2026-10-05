@@ -26,7 +26,24 @@ to the API.
   upgrades a request, refuses an unauthenticated one as a problem document,
   and runs the subscribe/unsubscribe loop for the connection.
 
-`conn.go` — one connection's write pump and close semantics; not exported.
+`pump.go`
+
+- `Pump(ctx, conn, Source, PumpOptions)` — the one goroutine that writes to a
+  socket: frames from a `Source` in its order, and a ping every
+  `PingInterval` bounded by `PingTimeout`, served between two frames when
+  the socket is busy. Each write is bounded by `WriteTimeout`. It returns the
+  first failure, wrapping `ErrWrite` or `ErrPing` ("write: …", "ping: …"),
+  the source's error, or ctx's; a write or ping that fails once ctx is done
+  reports ctx's error.
+- `Source` — `Next() (Frame, ready, error)`, never blocking: a `Frame`
+  (`Binary`, `Data`), or no frame and a channel that closes when there may be
+  one. The runner's control-plane link pumps its outbox through it.
+- `PumpChan(ctx, conn, frames, done, PumpOptions)` — the same loop over a
+  channel of text frames; it returns nil once `done` closes. The hub's
+  connections use it.
+
+`conn.go` — one connection's writer (`PumpChan`) and close semantics; not
+exported.
 
 ## How to use it
 

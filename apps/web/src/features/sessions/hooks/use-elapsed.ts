@@ -1,5 +1,6 @@
+import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
+import { formatElapsed } from '@oppenheimer/frontend-web';
 import { useEffect, useState } from 'react';
-import { formatElapsed } from '../lib/elapsed';
 
 /**
  * How long something has been going on, as a clock that ticks.
@@ -7,9 +8,14 @@ import { formatElapsed } from '../lib/elapsed';
  * The interval is the point: a provisioning pane whose clock is frozen reads
  * as a hung app, and the one number that says "the host is still being waited
  * on" is the one nobody has to refresh to see move. It stops when `ticking`
- * goes false — a failed start has a duration, not a clock.
+ * goes false — a failed start has a duration, not a clock. `format` writes it;
+ * a stopwatch (`formatElapsed`) unless the caller's frame says otherwise.
  */
-export function useElapsed(since: Date, ticking = true): string {
+export function useElapsed(
+  since: Date,
+  ticking = true,
+  format: (ms: number) => string = formatElapsed,
+): string {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -17,9 +23,9 @@ export function useElapsed(since: Date, ticking = true): string {
 
     // A second is the resolution the pane shows; anything finer is a render
     // per frame for a number that did not change.
-    const id = setInterval(() => setNow(Date.now()), 1000);
+    const id = setInterval(() => setNow(Date.now()), CORE_CONFIG.clock.everySecondMs);
     return () => clearInterval(id);
   }, [ticking]);
 
-  return formatElapsed(now - since.getTime());
+  return format(now - since.getTime());
 }

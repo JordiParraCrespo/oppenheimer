@@ -1,22 +1,11 @@
 {
-  "description": "Tu cuenta está lista. Ponle nombre al espacio de trabajo donde vivirán tus sesiones.",
-  "eyebrow": "Casi listo",
-  "signOut": "Cerrar sesión",
-  "title": "Crea tu espacio de trabajo",
-  "create": {
-    "name": "Nombre del espacio de trabajo",
-    "namePlaceholder": "Acme S.L.",
-    "hint": "Podrás cambiarle el nombre más adelante desde Ajustes.",
-    "submit": "Crear espacio de trabajo",
-    "submitting": "Creando…"
-  },
   "flow": {
     "back": "Atrás",
-    "counter": "{{step}} de {{total}}",
+    "step": "{{step}} de {{total}}",
     "continue": "Continuar",
     "workspace": {
-      "title": "Nombra tu espacio de trabajo",
-      "description": "Un espacio de trabajo reúne tus hosts, repositorios e historial de ejecuciones. Podrás cambiarle el nombre; la dirección es permanente.",
+      "title": "Nombra tu espacio",
+      "description": "Reúne tus hosts, repositorios e historial de ejecuciones. Podrás renombrarlo; la dirección es permanente.",
       "name": "Nombre del espacio de trabajo",
       "namePlaceholder": "Versio Platform",
       "address": "URL del espacio de trabajo",
@@ -39,20 +28,19 @@
       "title": "Conecta GitHub",
       "description": "Esto instala la GitHub App de Oppenheimer en tu cuenta. Eliges todos los repositorios o solo algunos en la propia página de GitHub.",
       "connect": "Conectar GitHub",
+      "starting": "Abriendo GitHub…",
       "skip": "Saltar por ahora",
       "skipNote": "Puedes añadir repositorios más tarde en Ajustes. El selector de repositorios quedará vacío hasta entonces.",
       "connected": "{{count}} repositorios · acceso de lectura",
       "change": "Cambiar qué repositorios",
       "failed": "No hemos podido conectar esa instalación de GitHub.",
+      "unstarted": "Este enlace de GitHub no se inició aquí. Vuelve a conectar GitHub.",
       "connectedAll": "Todos los repositorios de la cuenta",
       "connectedPending": "Conectado"
     },
     "host": {
       "title": "Añade tu primer host",
-      "description": "Un host es un servidor que controlas: una VM en la nube, una máquina de build o tu propio equipo. Las sesiones se ejecutan ahí y nada queda expuesto a internet.",
-      "installCommand": "Comando de instalación",
-      "agentPrompt": "Prompt para un agente de IA",
-      "agentNote": "Pégalo en Claude Code o Codex ya en marcha en esa máquina.",
+      "description": "Ejecuta un comando en el servidor donde quieras las sesiones: una VM en la nube, una máquina de build o tu propio equipo. Nada de él queda expuesto a internet.",
       "defaultName": "Mi primer host",
       "skip": "Saltar por ahora",
       "skipNote": "Puedes vincular una máquina más tarde. Las sesiones la necesitan para ejecutarse."
@@ -68,7 +56,8 @@
       "noWorkspace": "Aún sin espacio de trabajo",
       "noGithub": "Sin conectar",
       "noHost": "Aún sin host",
-      "doneLabel": "Listo"
+      "doneLabel": "Listo",
+      "failed": "No se ha podido cargar. Recarga la página para intentarlo de nuevo."
     }
   }
 }

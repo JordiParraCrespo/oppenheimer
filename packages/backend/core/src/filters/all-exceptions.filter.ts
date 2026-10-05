@@ -9,7 +9,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ExceptionBase } from '@oppenheimer/backend-ddd';
+import { ExceptionBase, RequestContextService } from '@oppenheimer/backend-ddd';
 import type { Request, Response } from 'express';
 import { ZodValidationException } from 'nestjs-zod';
 import type { ZodError, ZodIssue } from 'zod';
@@ -23,7 +23,6 @@ import {
   problemTypeFor,
   titleForStatus,
 } from '../errors/problem-details';
-import { RequestContextService } from '../services/request-context.service';
 
 /** What a 5xx tells the client. Anything more would leak internals. */
 const INTERNAL_ERROR_DETAIL =
@@ -77,7 +76,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
     response.status(problem.status).contentType(PROBLEM_JSON_CONTENT_TYPE).json(problem);
   }
 
-  /** Exposed for tests and for filters that want to reuse the mapping. */
   toProblemDetails(
     exception: unknown,
     context: { instance?: string; correlationId?: string } = {},

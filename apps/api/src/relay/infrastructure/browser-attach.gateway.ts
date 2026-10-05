@@ -3,7 +3,9 @@ import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { SCOPE_RESOLVER, type ScopeResolverPort } from '@oppenheimer/backend-authz';
 import { CacheService } from '@oppenheimer/backend-cache';
+import { AppError } from '@oppenheimer/backend-core';
 import {
   ATTACH_CLOSE_CODES,
   type AttachServerMessage,
@@ -12,7 +14,20 @@ import {
 
 type AttachClosedReason = Extract<AttachServerMessage, { type: 'closed' }>['reason'];
 
+/**
+ * What judging a claim concludes: attach on the session's host, or close with
+ * this reason and code. Asked at redemption and again on a timer while the
+ * attachment is open.
+ */
+type AttachVerdict =
+  | { allowed: true; hostId: string }
+  | { allowed: false; reason: AttachClosedReason; code: number };
+
 import { type WebSocket, WebSocketServer } from 'ws';
+import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
+import { CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
+import type { HostAccessPort } from '../../hosts/application/host-access.port';
+import { HOST_ACCESS } from '../../hosts/hosts.di-tokens';
 import type {
   AttachmentClosedReason,
   AttachmentSink,
@@ -52,30 +67,40 @@ const MAX_INPUT_BYTES = 64 * 1024;
 const BROWSER_MAX_BUFFERED_BYTES = 4 * 1024 * 1024;
 
 /**
+ * How often an open attachment is judged again, the way its ticket was. What
+ * can end one — a grant revoked, a membership removed (Better Auth writes it
+ * and raises no event), an account banned, a session stopped — is either not
+ * an event at all or an outbox event that reaches one replica, while the
+ * attachment lives in whichever process holds the socket. A timer on every
+ * attachment bounds revocation to this interval on every replica, with no
+ * pub/sub. Paired on purpose with `OWNER_RECHECK_MS` in
+ * hosts/application/host-presence.resolver.ts: both re-check on the same minute.
+ */
+export const REAUTHORIZE_INTERVAL_MS = 60_000;
+
+/**
  * The browser attach socket: one per attachment, unmultiplexed.
  *
  * The ticket travels in `Sec-WebSocket-Protocol` and is redeemed with a
- * read-and-delete, so a second socket presenting it is refused. What the ticket
- * authorised is re-checked at redemption — the session still live, the person
- * still a member of its workspace (through `organizations/`' port) — because
- * sixty seconds is long enough for either to have changed.
+ * read-and-delete, so a second socket presenting it is refused. What it authorised
+ * is re-checked at redemption (session live, person still a workspace member through
+ * `organizations/`' port, account allowed to act, host still usable), since sixty
+ * seconds is long enough for any of it to change, and again every
+ * `REAUTHORIZE_INTERVAL_MS`, so a revocation reaches a terminal already streaming.
  *
  * Every refusal after the handshake is **a message and a close code on an
- * established socket**, never a refused upgrade: a browser's WebSocket cannot
- * see the status of a refused upgrade, only a 1006 it would take for a dropped
- * radio and retry. So the upgrade is completed for any request that carries a
- * ticket and comes from an origin this API serves, and the ticket is judged on
- * the socket, where `closed` names the reason and the code is final. Only a
- * request with no ticket at all, or from another origin, is refused before the
- * upgrade — neither is something a browser this app serves can send.
+ * established socket**, never a refused upgrade: a browser sees a refused upgrade
+ * only as a 1006, which it takes for a dropped radio and retries. Only a request with
+ * no ticket, or from an origin this API does not serve, is refused before the
+ * upgrade; a browser this app serves sends neither.
  *
- * Then the session's host either holds a link, and the attachment is opened on
- * it with the browser's own viewport, or it does not, and the socket is told
- * `host_offline` and closed: that hint is the ticket's, not the link's, and this
- * is the one place it is said.
+ * A host with no link gets the `host_offline` hint and a close, at redemption
+ * and again when an open attachment's link is lost.
  */
 @Injectable()
 export class BrowserAttachGateway {
+  /** `REAUTHORIZE_INTERVAL_MS`; a field only so a test can shorten it. */
+  reauthorizeIntervalMs = REAUTHORIZE_INTERVAL_MS;
   private readonly logger = new Logger(BrowserAttachGateway.name);
   private readonly server = new WebSocketServer({
     noServer: true,
@@ -94,6 +119,12 @@ export class BrowserAttachGateway {
     @Inject(WORKSPACE_LOOKUP)
     private readonly workspaces: WorkspaceLookupPort,
     private readonly configService: ConfigService,
+    @Inject(SCOPE_RESOLVER)
+    private readonly scopes: ScopeResolverPort,
+    @Inject(HOST_ACCESS)
+    private readonly hostAccess: HostAccessPort,
+    @Inject(CREDENTIAL_OWNER)
+    private readonly owners: CredentialOwnerPort,
   ) {}
 
   async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
@@ -107,7 +138,21 @@ export class BrowserAttachGateway {
       refuseUpgrade(socket, 401, 'an attach ticket is presented as the subprotocol');
       return;
     }
-    this.server.handleUpgrade(request, socket, head, (ws) => void this.redeem(ws, ticket));
+    this.server.handleUpgrade(request, socket, head, (ws) => {
+      // `ws` emits 'error' for a frame it cannot accept (over maxPayload, bad
+      // UTF-8, unmasked…). An 'error' nobody listens for throws and takes the
+      // process with it, and this socket is not authenticated yet.
+      ws.on('error', (error) => {
+        this.logger.warn({ message: 'browser attach socket error', error: error.message });
+      });
+      void this.redeem(ws, ticket).catch((error: unknown) => {
+        this.logger.error({ message: 'attach ticket could not be judged', error: String(error) });
+        // No `closed` message: every reason it can carry is a final verdict,
+        // and a store that did not answer is not one. 1011 rather than
+        // SESSION_UNAVAILABLE, which the console takes as final: 1011 it retries.
+        if (ws.readyState === ws.OPEN) ws.close(1011, 'try again');
+      });
+    });
   }
 
   private async redeem(ws: WebSocket, ticket: string): Promise<void> {
@@ -125,6 +170,9 @@ export class BrowserAttachGateway {
       await this.judge(ws, ticket, early);
     } finally {
       ws.off('message', hold);
+      // An attachment took its own copy; on a refusal nothing did, and a slow
+      // close handshake must not keep the frames alive.
+      early.length = 0;
     }
   }
 
@@ -134,24 +182,12 @@ export class BrowserAttachGateway {
       this.end(ws, 'unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
       return;
     }
-    const target = await this.sessions.findAttachTarget(claim.sessionId);
-    if (!target || target.organizationId !== claim.organizationId) {
-      this.end(ws, 'missing', ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE);
+    const verdict = await this.authorize(claim);
+    if (!verdict.allowed) {
+      this.end(ws, verdict.reason, verdict.code);
       return;
     }
-    if (target.state === 'resolved') {
-      this.end(ws, 'resolved', ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE);
-      return;
-    }
-    if (target.state === 'stopped') {
-      this.end(ws, 'stopped', ATTACH_CLOSE_CODES.SESSION_STOPPED);
-      return;
-    }
-    if (!(await this.workspaces.isMember(claim.organizationId, claim.userId))) {
-      this.end(ws, 'forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
-      return;
-    }
-    const link = this.links.find(target.hostId);
+    const link = this.links.find(verdict.hostId);
     if (!link) {
       this.tell(ws, { type: 'hint', kind: 'host_offline' });
       ws.close(ATTACH_CLOSE_CODES.HOST_OFFLINE, 'host offline');
@@ -161,7 +197,53 @@ export class BrowserAttachGateway {
     // and its `close` has already fired: an attachment opened now would never
     // be detached.
     if (ws.readyState !== ws.OPEN) return;
-    new BrowserAttachment(ws, claim, link, this.logger).start(early);
+    new BrowserAttachment(ws, claim, link, {
+      authorize: () => this.authorize(claim),
+      everyMs: this.reauthorizeIntervalMs,
+      logger: this.logger,
+    }).start([...early]);
+  }
+
+  /**
+   * Whether a claim still authorises an attachment. A lookup that throws is
+   * thrown, never read as a refusal: at redemption that is a 1011 the console
+   * retries, and on the timer it keeps the socket.
+   */
+  private async authorize(claim: AttachTicket): Promise<AttachVerdict> {
+    const target = await this.sessions.findAttachTarget(claim.sessionId);
+    if (!target || target.organizationId !== claim.organizationId) {
+      return refuse('missing', ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE);
+    }
+    if (target.state === 'resolved')
+      return refuse('resolved', ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE);
+    if (target.state === 'stopped') return refuse('stopped', ATTACH_CLOSE_CODES.SESSION_STOPPED);
+    if (!(await this.workspaces.isMember(claim.organizationId, claim.userId))) {
+      return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
+    }
+    // A banned or deactivated account holds no PTY, whatever its ticket says.
+    if (!(await this.owners.findActiveOwner(claim.userId))) {
+      return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
+    }
+    // The same own-or-granted predicate a create asks, so a revoked grant or
+    // an unpaired host ends the PTY. `isPlatformAdmin: false` is deliberate: a
+    // superadmin who neither owns the host nor holds a grant on it gets no
+    // shell on it through a ticket either.
+    const scope = await this.scopes.resolve({
+      userId: claim.userId,
+      organizationId: claim.organizationId,
+      isPlatformAdmin: false,
+      hasFullAccess: false,
+    });
+    try {
+      await this.hostAccess.assertUsable(scope, target.hostId);
+    } catch (error) {
+      // The port's refusal is its not-found problem; anything else is a fault.
+      if (error instanceof AppError && error.getStatus() === 404) {
+        return refuse('forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
+      }
+      throw error;
+    }
+    return { allowed: true, hostId: target.hostId };
   }
 
   /** A final answer: the reason as a control frame, then the code. */
@@ -188,6 +270,10 @@ interface EarlyFrame {
   isBinary: boolean;
 }
 
+function refuse(reason: AttachClosedReason, code: number): AttachVerdict {
+  return { allowed: false, reason, code };
+}
+
 function sameOrigin(a: string, b: string): boolean {
   try {
     return new URL(a).origin === new URL(b).origin;
@@ -205,6 +291,8 @@ class BrowserAttachment implements AttachmentSink {
   private attachmentId: number | null = null;
   private readonly commandId = randomUUID();
   private viewportTimer: NodeJS.Timeout | null = null;
+  private recheckTimer: NodeJS.Timeout | null = null;
+  private rechecking = false;
   private attached = false;
   private finished = false;
 
@@ -212,7 +300,12 @@ class BrowserAttachment implements AttachmentSink {
     private readonly ws: WebSocket,
     private readonly claim: AttachTicket,
     private readonly link: RunnerLink,
-    private readonly logger: Logger,
+    /** The judgement the ticket passed, asked again every `everyMs`. */
+    private readonly recheck: {
+      authorize: () => Promise<AttachVerdict>;
+      everyMs: number;
+      logger: Logger;
+    },
   ) {}
 
   /** `early` is what the browser sent while its ticket was redeemed, in order. */
@@ -220,13 +313,41 @@ class BrowserAttachment implements AttachmentSink {
     this.attachmentId = this.link.openAttachment(this, this.commandId);
     this.ws.on('message', (data, isBinary) => this.onBrowserMessage(data as Buffer, isBinary));
     this.ws.on('close', () => this.detach());
-    this.ws.on('error', (error) => {
-      this.logger.warn({ message: 'browser attach socket error', error: error.message });
-    });
     // The attach carries the viewport so the pane is not resized a frame later;
     // a browser that never says its size gets a classic 80x24.
     this.viewportTimer = setTimeout(() => this.attach(DEFAULT_VIEWPORT), VIEWPORT_TIMEOUT_MS);
+    // Unref'd: an open terminal's re-check is no reason to keep a process up.
+    this.recheckTimer = setInterval(() => void this.reauthorize(), this.recheck.everyMs);
+    this.recheckTimer.unref();
     for (const frame of early) this.onBrowserMessage(frame.data, frame.isBinary);
+  }
+
+  /**
+   * Judge the claim again. A refusal ends the attachment the way redemption
+   * would have: `closed` with the reason, the runner told to detach, then the
+   * final code. A check that throws (a database blip) is logged and the socket
+   * kept, so an outage does not drop every terminal at once.
+   */
+  private async reauthorize(): Promise<void> {
+    if (this.finished || this.rechecking) return;
+    this.rechecking = true;
+    let verdict: AttachVerdict;
+    try {
+      verdict = await this.recheck.authorize();
+    } catch (error) {
+      this.recheck.logger.warn({
+        message: 'could not re-check an open attachment; keeping it',
+        sessionId: this.claim.sessionId,
+        error: String(error),
+      });
+      return;
+    } finally {
+      this.rechecking = false;
+    }
+    if (verdict.allowed || this.finished) return;
+    this.tell({ type: 'closed', reason: verdict.reason });
+    this.detach();
+    this.ws.close(verdict.code, verdict.reason);
   }
 
   deliver(bytes: Uint8Array): void {
@@ -333,6 +454,7 @@ class BrowserAttachment implements AttachmentSink {
 
   private detach(): void {
     if (this.viewportTimer) clearTimeout(this.viewportTimer);
+    if (this.recheckTimer) clearInterval(this.recheckTimer);
     if (this.attachmentId === null) return;
     const id = this.attachmentId;
     this.attachmentId = null;

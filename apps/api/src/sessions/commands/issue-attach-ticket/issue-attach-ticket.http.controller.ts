@@ -36,23 +36,20 @@ export class IssueAttachTicketHttpController {
 
   @Post(':id/attach-ticket')
   @Version('1')
-  // Opening a terminal is `update Session` behind `sessions:write`. There is no
-  // `attach` action: the scope split is what keeps a read-only credential out of a
-  // PTY, and a verb that lived only in the token picker would be a second
-  // vocabulary.
+  // Opening a terminal is `update Session`; `SessionResource` says why.
   @CheckPolicies({ action: 'update', subject: 'Session' })
   @RequireScopes('sessions:write')
   // Every reconnect mints a fresh ticket, so this is called more often than the
   // other writes — but a loop minting tickets is still a loop.
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @ApiOperation({
-    operationId: 'issueAttachTicket',
     summary: 'Mint a ticket for a terminal on this session',
     description:
       'Single use, 60 seconds, one window. Present it as a WebSocket subprotocol, never in the query string. The relay re-checks at consume that the session is still live and the caller is still a member of the workspace, so authorization is not frozen at mint.',
   })
   @ApiResponse({ status: 201, type: AttachTicketResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Session not found', code: 'SESSIONS_001' })
+  @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
   @ApiProblemResponse({ status: 409, description: 'That session is closed', code: 'SESSIONS_005' })
   @ApiProblemResponse({
     status: 503,

@@ -6,7 +6,7 @@ import {
   type MongoQuery,
   subject as tagSubject,
 } from '@casl/ability';
-import type { Role } from '../types';
+import type { Role } from '../types/index.js';
 
 /**
  * Instance-level permission check: does `ability` allow `action` on this
@@ -63,6 +63,14 @@ export const KNOWN_SUBJECTS = [
   'Project',
   'Session',
   'Installation',
+  // Workspace-owned, like sessions: an automation is a saved prompt the
+  // workspace runs, and each of its runs is a session.
+  'Automation',
+  // Plan (`product/versions/mvp/17-plan.md`), workspace-owned like the rest:
+  // `Task` covers tasks, their goals and their links to sessions; `Calendar`
+  // the workspace's own events and a person's Google Calendar connection.
+  'Task',
+  'Calendar',
   'all',
 ] as const;
 
@@ -89,9 +97,7 @@ export interface PermissionDefinition {
  * Context made available to `${...}` placeholders in permission conditions.
  *
  * `user` powers own-resource scoping (`${user.id}`); `activeOrganizationId`
- * powers tenant scoping (`${activeOrganizationId}`) — the natural hook for
- * row-level "only within my active organization" rules once resources carry an
- * `organizationId` column.
+ * powers tenant scoping (`${activeOrganizationId}`).
  */
 export interface AbilityContext {
   user?: Record<string, unknown> | null;
@@ -155,7 +161,6 @@ function resolveScopePath(segments: string[], context: AbilityContext): unknown 
   return undefined;
 }
 
-/** Resolve a dotted path (e.g. `user.id`, `scope.teamIds`) against the context. */
 function resolvePath(path: string, context: AbilityContext): unknown {
   const segments = path.split('.');
   if (segments[0] === 'scope') return resolveScopePath(segments.slice(1), context);
@@ -168,16 +173,16 @@ function resolvePath(path: string, context: AbilityContext): unknown {
   }, context);
 }
 
-/**
- * Deep-clone `conditions`, replacing any string value of the form `${path}`
- * with the corresponding value from the context. Non-placeholder values are
- * passed through untouched.
- */
 // CASL parameterizes conditions by the subject's field type. Because our
 // subjects are free-form strings (not typed records), that collapses to
 // `MongoQuery<never>`; conditions are validated at runtime instead.
 type AbilityConditions = MongoQuery<never>;
 
+/**
+ * Deep-clone `conditions`, replacing any string value of the form `${path}`
+ * with the corresponding value from the context. Non-placeholder values are
+ * passed through untouched.
+ */
 function interpolateConditions(
   conditions: Record<string, unknown>,
   context: AbilityContext,
@@ -212,6 +217,23 @@ function interpolateConditions(
 }
 
 /**
+ * Interpolate a stored rule's `${...}` placeholders exactly the way
+ * {@link defineAbilitiesFromPermissions} does when it builds an ability.
+ *
+ * Returns `undefined` when the conditions collapse to "no restriction" (every
+ * branch resolved to an `'all'` scope grant). A placeholder the context cannot
+ * resolve becomes `undefined` in place, as it does in the ability. Role-grant
+ * containment uses this to compare a requested rule with the author's rules in
+ * the same context.
+ */
+export function interpolatePermissionConditions(
+  conditions: Record<string, unknown>,
+  context: AbilityContext = {},
+): Record<string, unknown> | undefined {
+  return interpolateConditions(conditions, context) as Record<string, unknown> | undefined;
+}
+
+/**
  * Order rules so every `cannot` is applied after every `can`.
  *
  * CASL is last-rule-wins. A user holding several roles has their permissions
@@ -232,9 +254,7 @@ function denyLast(permissions: readonly PermissionDefinition[]): PermissionDefin
 
 /**
  * Build a CASL ability from a flat list of permission definitions — typically
- * the union of every role assigned to a user. This is the single source of
- * truth for authorization now that roles and their permissions live in the
- * database.
+ * the union of every role assigned to a user.
  */
 export function defineAbilitiesFromPermissions(
   permissions: PermissionDefinition[],
@@ -274,9 +294,9 @@ const OWN_USER_ID = '${user.id}';
 const ACTIVE_ORGANIZATION_ID = '${activeOrganizationId}';
 
 /**
- * Permissions granted to the seeded **system roles**. Used by the migration /
- * seed to provision `admin` and `user`, and as the fallback for the legacy
- * single-role column before a user is migrated to the join table.
+ * Permissions granted to the seeded **system roles**. The seed installs them,
+ * and the API's ability factory falls back to them for a `user.role` name that
+ * has no role row.
  */
 export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
   superadmin: [{ action: 'manage', subject: 'all' }],
@@ -287,11 +307,9 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
    *
    * Everything here is an organization resource, narrowed to the active
    * organization by the `${activeOrganizationId}` placeholder. Nothing here
-   * touches `User`, `all` or another tenant: the role used to be the global
-   * `admin` (`manage all`) assigned org-scoped, and because non-tenant routes
-   * such as `DELETE /users/:id` check only action + subject, anyone who
-   * created a workspace could delete arbitrary platform accounts while that
-   * workspace was active.
+   * may touch `User`, `all` or another tenant: non-tenant routes such as
+   * `DELETE /users/:id` check only action + subject, so a broader rule would
+   * let anyone who creates a workspace delete arbitrary platform accounts.
    */
   owner: [
     { action: 'manage', subject: 'Organization', conditions: { id: ACTIVE_ORGANIZATION_ID } },
@@ -311,15 +329,13 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     // on to keep the platform's own roles out of a tenant admin's reach.
     { action: 'manage', subject: 'Role', conditions: { organizationId: ACTIVE_ORGANIZATION_ID } },
     // The control plane's workspace-owned resources. `Host` is deliberately
-    // absent: a host belongs to the *person* who paired it and workspaces
-    // borrow it, so it sits on the `user` role below. The tenant boundary for
-    // what runs on a host is `work_session.organizationId`, not the host row.
+    // absent: it is person-owned and sits on the `user` role below. The tenant
+    // boundary for what runs on a host is `work_session.organizationId`, not
+    // the host row.
     //
-    // These grant the workspace *owner*. A workspace **member** is granted
-    // nothing here and therefore cannot yet read the workspace's projects,
-    // sessions or installations from the seed: there is no `member` entry in
-    // this constant at all, and adding one is its own change with its own
-    // migration. The product surface is not finished by this block.
+    // A workspace **member** is granted none of these: there is no `member`
+    // entry in this constant, and adding one is its own change with its own
+    // migration.
     {
       action: 'manage',
       subject: 'Project',
@@ -335,28 +351,39 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
       subject: 'Installation',
       conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
     },
+    {
+      action: 'manage',
+      subject: 'Automation',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'Task',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'Calendar',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
   ],
+  /**
+   * Deliberately small: what an account may do in a workspace comes from the
+   * org-scoped role it holds there — granted with the personal workspace at
+   * sign-up, on creating one, or by an invitation. No rule on
+   * `User`: an unconditional one lets every account list and edit every other
+   * across tenants. Profile editing goes through `/profile`; colleagues come
+   * from the `Member` resource.
+   */
   user: [
-    /**
-     * Deliberately small: a plain account holds nothing until it creates an
-     * organization or an invitation puts it in one, and whichever of those
-     * happens is what grants the org-scoped role for that workspace.
-     *
-     * It used to carry unconditional `read`/`update` on `User` — which let
-     * every account list and edit every other account across tenants — and
-     * `read`/`create` on `Article`, a subject with no module or table behind
-     * it. Self-service profile editing goes through `/profile`; colleagues come
-     * from the `Member` resource.
-     */
     // Which organizations this account belongs to, and nothing else about
     // them. Better Auth answers the read from the caller's own memberships, so
     // it discloses no organization they are not in — it is what lets the app
     // tell "you are in a workspace" from "you are waiting for an invitation".
     { action: 'read', subject: 'Organization' },
-    // Self-service sign-up: a fresh account creates its first workspace from
-    // onboarding. `OrganizationsService.create` grants the creator the
-    // org-scoped `admin` role in the same act, so this is the one door into a
-    // workspace besides an invitation.
+    // The recovery path: an account the sign-up hook left with no workspace
+    // creates its own on `/onboarding`. `CreateOrganizationCommandHandler`
+    // grants the creator the org-scoped `owner` role in the same act.
     { action: 'create', subject: 'Organization' },
     // Every user manages their own API tokens; the condition keeps them off
     // everyone else's.
@@ -389,10 +416,9 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
 };
 
 /**
- * Backwards-compatible helper that builds an ability from a single role name
- * using the seeded system-role permissions. Prefer
- * {@link defineAbilitiesFromPermissions} with the user's real, DB-backed
- * permissions; this remains for the legacy fallback path and the frontend.
+ * Legacy: an ability from a single role name, using the seeded system-role
+ * permissions. Prefer {@link defineAbilitiesFromPermissions} with the user's
+ * DB-backed permissions.
  */
 export function defineAbilitiesFor(role: Role, context: AbilityContext = {}): AppAbility {
   return defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS[role] ?? [], context);

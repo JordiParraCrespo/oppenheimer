@@ -1,4 +1,4 @@
-import type { OutboxService } from './outbox.service';
+import { DEFAULT_LEASE_MS, type OutboxService } from './outbox.service';
 import type { OutboxMessageRecord } from './outbox-message';
 
 /**
@@ -15,8 +15,14 @@ export interface OutboxRelayOptions {
   /** Poll interval for the background loop. */
   pollIntervalMs?: number;
   batchSize?: number;
-  /** Lease duration passed to `OutboxService.claim`. */
+  /** Lease duration passed to `OutboxService.claim` and renewed while a batch is delivered. */
   leaseMs?: number;
+  /**
+   * How often the lease on the batch being delivered is renewed. Defaults to a
+   * third of `leaseMs`, so two renewals can fail before another relay may
+   * claim the rows.
+   */
+  heartbeatMs?: number;
   logger?: { warn(message: string): void };
 }
 
@@ -26,18 +32,41 @@ const DEFAULT_BATCH_SIZE = 20;
 /**
  * Drains the outbox: claims due rows (leased via `FOR UPDATE SKIP LOCKED`, so
  * concurrent replicas work disjoint sets), hands each to the publisher, and
- * marks it processed or failed.
+ * marks the batch processed, or a row failed.
  *
  * Runs on two triggers: a background poll (the safety net that picks up rows
- * whose staking process died or whose post-commit drain failed) and explicit
- * `drainOnce()` calls routed through `OutboxService.wake()` right after a
- * commit, which keeps delivery latency at in-process levels in the happy path.
- * Drains are serialized through a promise chain so a wake landing mid-poll
- * queues a follow-up pass instead of racing it.
+ * whose staging process died or whose post-commit drain failed) and
+ * `OutboxService.wake()` right after a commit, which keeps delivery latency at
+ * in-process levels in the happy path. Both go through `requestDrain()`. A
+ * wake never waits for that drain, so the delivery backlog (and every
+ * listener's body) stays off the request path.
+ *
+ * A delivery can itself stage rows and wake the relay: an event handler that
+ * dispatches a command whose repository stages the next job. That wake only
+ * asks for the next pass, which delivers what it staged.
+ *
+ * While a batch is delivered, a heartbeat renews its lease (`startHeartbeat`),
+ * so a listener slower than `leaseMs` keeps its rows. The lease still lapses
+ * when the process dies or stalls past the renewals, which is the crash
+ * recovery. The marks that end a delivery are fenced on `owner`: a relay that
+ * lost its lease neither marks the other relay's claim processed nor releases it.
+ *
+ * Delivery is at least once. The rows of a batch are marked processed in one
+ * statement after the batch is published, so a process that dies in between
+ * redelivers up to `batchSize` rows once their lease lapses; `queue` rows
+ * dedupe on `jobId = row id`. One more duplicate is accepted, not fixed: an
+ * `event` row is one delivery to every listener of that event, so when one
+ * listener fails, the retry runs all of them again. Fanning a row out per
+ * listener at staging time is the fix, and a larger change. Listeners must
+ * therefore be idempotent.
  */
 export class OutboxRelay {
   private timer?: ReturnType<typeof setInterval>;
-  private tail: Promise<number> = Promise.resolve(0);
+  private running?: Promise<number>;
+  /** Set when a drain was requested while one was running: run one more pass. */
+  private again = false;
+  /** True only while a publisher's promise is pending. */
+  private delivering = false;
 
   constructor(
     private readonly outbox: OutboxService,
@@ -47,9 +76,9 @@ export class OutboxRelay {
 
   start(): void {
     if (this.timer) return;
-    this.outbox.registerDrainer(() => this.drainOnce());
+    this.outbox.registerDrainer(() => this.requestDrain());
     this.timer = setInterval(
-      () => void this.drainOnce(),
+      () => void this.requestDrain(),
       this.options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS,
     );
     // Never keep the process alive just to poll an empty table.
@@ -61,20 +90,47 @@ export class OutboxRelay {
     if (this.timer) clearInterval(this.timer);
     this.timer = undefined;
     this.outbox.registerDrainer(undefined);
-    await this.tail.catch(() => 0);
+    await this.running?.catch(() => 0);
   }
 
   /**
-   * Drain until no due rows remain. Returns the number of rows delivered.
-   * Concurrent calls are chained, never interleaved.
+   * Request a drain. At most one runs; requests that land while it runs
+   * collapse into one more pass after it. The promise resolves, with the
+   * number of rows delivered, when the drain (that extra pass included) ends.
+   */
+  requestDrain(): Promise<number> {
+    if (this.running) {
+      this.again = true;
+      return this.running;
+    }
+    const run = (async () => {
+      let delivered = 0;
+      try {
+        do {
+          this.again = false;
+          delivered += await this.drainBatches();
+        } while (this.again);
+      } finally {
+        // Cleared in the same tick as the last `again` check, so a request
+        // landing after it starts a new drain instead of being dropped.
+        this.running = undefined;
+      }
+      return delivered;
+    })();
+    this.running = run;
+    return run;
+  }
+
+  /**
+   * Drain until no due rows remain, and wait for it. Returns the number of rows
+   * delivered. Called from inside a delivery, the pass is requested and the
+   * call resolves at once with 0, since waiting would mean the drain waiting on
+   * itself. The flag is relay-wide, not per caller: an unrelated `drainOnce()`
+   * made while a publisher is pending also resolves at once with 0.
    */
   drainOnce(): Promise<number> {
-    const run = this.tail.then(
-      () => this.drainBatches(),
-      () => this.drainBatches(),
-    );
-    this.tail = run.catch(() => 0);
-    return run;
+    const run = this.requestDrain();
+    return this.delivering ? Promise.resolve(0) : run;
   }
 
   private async drainBatches(): Promise<number> {
@@ -92,25 +148,101 @@ export class OutboxRelay {
         return delivered;
       }
       if (batch.length === 0) return delivered;
-      for (const message of batch) {
-        try {
-          await this.publisher(message);
-          await this.outbox.markProcessed([message.id]);
-          delivered++;
-        } catch (error) {
-          this.options.logger?.warn(
-            `Outbox delivery of ${message.eventName} (${message.id}) failed: ${describe(error)}`,
-          );
-          try {
-            await this.outbox.markFailed(message, describe(error));
-          } catch {
-            // Can't reach the database to record the failure; the lease
-            // expires and the row is reclaimed on a later pass.
-          }
-        }
+      const published: string[] = [];
+      const leased = new Set(batch.map((message) => message.id));
+      const stopHeartbeat = this.startHeartbeat(leased);
+      try {
+        await this.deliver(batch, published, leased);
+      } finally {
+        stopHeartbeat();
       }
+      try {
+        await this.outbox.markProcessed(published, this.options.owner);
+      } catch (error) {
+        // The rows stay leased until it lapses, then are delivered again.
+        this.options.logger?.warn(
+          `Outbox could not mark ${published.length} delivered rows processed: ${describe(error)}`,
+        );
+        return delivered;
+      }
+      delivered += published.length;
       if (batch.length < batchSize) return delivered;
     }
+  }
+
+  /**
+   * Publish each row of a claimed batch, recording the ids that went out and
+   * marking the rest failed. A failed row leaves `leased`: `markFailed`
+   * releases its lease, so the heartbeat stops renewing it.
+   */
+  private async deliver(
+    batch: readonly OutboxMessageRecord[],
+    published: string[],
+    leased: Set<string>,
+  ): Promise<void> {
+    for (const message of batch) {
+      try {
+        this.delivering = true;
+        try {
+          await this.publisher(message);
+        } finally {
+          this.delivering = false;
+        }
+        published.push(message.id);
+      } catch (error) {
+        this.options.logger?.warn(
+          `Outbox delivery of ${message.eventName} (${message.id}) failed: ${describe(error)}`,
+        );
+        leased.delete(message.id);
+        try {
+          await this.outbox.markFailed(message, describe(error));
+        } catch {
+          // Can't reach the database to record the failure; the lease
+          // expires and the row is reclaimed on a later pass.
+        }
+      }
+    }
+  }
+
+  /**
+   * Renew the lease on the `leased` rows every `heartbeatMs` until the
+   * returned function is called. Rows already published stay in the set: they
+   * are leased until `markProcessed`. A row the renewal no longer finds under
+   * this owner was lost (the process stalled past `leaseMs` and another relay
+   * claimed it); it is logged and dropped from the set, and the fenced marks
+   * leave it to that relay. A failed renewal is logged, not thrown: the
+   * delivery carries on and the next tick tries again.
+   */
+  private startHeartbeat(leased: Set<string>): () => void {
+    const leaseMs = this.options.leaseMs ?? DEFAULT_LEASE_MS;
+    const heartbeatMs = this.options.heartbeatMs ?? Math.max(Math.floor(leaseMs / 3), 1);
+    let renewing = false;
+    const timer = setInterval(() => {
+      // Never stack renewals on a slow database; the next tick tries again.
+      if (renewing || leased.size === 0) return;
+      renewing = true;
+      const ids = [...leased];
+      void this.outbox
+        .extendLease(this.options.owner, ids, leaseMs)
+        .then((kept) => {
+          const lost = ids.filter((id) => leased.has(id) && !kept.includes(id));
+          for (const id of lost) leased.delete(id);
+          if (lost.length > 0) {
+            this.options.logger?.warn(
+              `Outbox lease lost on ${lost.length} row(s) still being delivered: ${lost.join(', ')}`,
+            );
+          }
+        })
+        .catch((error: unknown) => {
+          this.options.logger?.warn(`Outbox lease renewal failed: ${describe(error)}`);
+        })
+        .finally(() => {
+          renewing = false;
+        });
+    }, heartbeatMs);
+    // A renewal never keeps the process alive on its own.
+    timer.unref?.();
+    return () => clearInterval(timer);
   }
 }
 

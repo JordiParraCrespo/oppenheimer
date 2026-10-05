@@ -21,10 +21,17 @@ paths:
 >   build.
 > - **Never cache structural scope.** Team membership is written by Better Auth
 >   outside any application transaction, so nothing invalidates it. Role *rules*
->   are cached on `organization.roleVersion`, bumped in the same transaction as
->   the write.
+>   are cached (see "Caching and the version counters" below) on three
+>   counters, and **every write that changes effective permissions bumps one in
+>   the same transaction as the write** — a missed bump is a revoked
+>   permission that stays live.
 > - **Nobody grants what they do not hold.** `RoleGrantPolicy` enforces it on
->   role writes; `canGrantScope` on access grants.
+>   role writes and assignments; `canGrantScope` on access grants. Role
+>   containment respects conditions: a rule someone holds only for their
+>   organization (`{ organizationId: '${activeOrganizationId}' }`) lets them
+>   grant that rule or a narrower one, never the unconditioned rule or another
+>   organization's id. A type-level `ability.can(action, subject)` is not a
+>   containment check.
 
 Authorization is **database-backed and admin-managed** (dynamic RBAC). Roles and
 their permissions live in the `role` table (not in code); a user's effective
@@ -82,7 +89,7 @@ Add the guards and a policy. The guard resolves the caller's ability from their
 roles and checks the rule:
 
 ```ts
-@UseGuards(AuthGuard, PoliciesGuard)
+@UseGuards(ApiAuthGuard, PoliciesGuard)
 @Controller("articles")
 export class PublishArticleHttpController {
   @Post(":id/publish")
@@ -92,12 +99,18 @@ export class PublishArticleHttpController {
 }
 ```
 
-- `AuthGuard` (Better Auth) authenticates and populates `request.user`.
-- `PoliciesGuard` builds the ability via `AbilityFactory.createForUser(user)`
-  (union of the user's roles' permissions, falling back to the legacy
-  `user.role`), checks every `@CheckPolicies` rule, and attaches the built
-  ability to `request.ability`.
-- No `@CheckPolicies` ⇒ any authenticated user passes (e.g. `GET /users/me`).
+- `ApiAuthGuard` authenticates a session cookie, an API token or an OAuth
+  token, populates `request.user`, and stamps the request's tenant (below).
+- `PoliciesGuard` asks the `ABILITY` port for the caller's ability,
+  `AbilityFactory.forRequest(request)`: the union of the user's roles'
+  permissions in the request's tenant (plus the legacy `user.role`), built
+  once per request from the cached role set (see "Caching and the version
+  counters"). It checks every `@CheckPolicies` rule and
+  attaches the ability to `request.ability`.
+- **No `@CheckPolicies` is fail-closed.** A route that declares neither
+  `@CheckPolicies` nor `@NoPolicy('reason')` is refused (`AUTHZ_002`), and
+  `route-policy-coverage.spec.ts` fails the build. A route open to any
+  authenticated caller says so with `@NoPolicy` (e.g. `GET /users/me`).
 
 ### An endpoint a client gates a destination on declares its rules once
 
@@ -154,7 +167,7 @@ when the ability is built.
 
 | Method & path                   | Purpose                                    |
 | ------------------------------- | ------------------------------------------ |
-| `POST /v1/roles`                | Create a custom role                       |
+| `POST /v1/roles`                | Create a custom role in the active organization; with none, a global role for a platform admin (`manage all`), `ROLE_008` for anyone else |
 | `GET /v1/roles`                 | List roles (paginated, `?search=`)         |
 | `GET /v1/roles/:id`             | Get a role                                 |
 | `PATCH /v1/roles/:id`           | Update description and/or permissions      |
@@ -167,6 +180,34 @@ Role endpoints are gated by `Role` policies (`create`/`read`/`update`/`delete`);
 assignment endpoints by `manage User`. New sign-ups are assigned the default
 `user` role; the migration seeds the system roles and backfills existing users
 from the legacy `user.role` column.
+
+## Caching and the version counters
+
+`AbilityFactory` reads three counters in one query at the start of every
+resolution (`roles/database/authz-version.repository.ts`), then:
+
+- the caller's `user_role`-derived permissions come from Redis under
+  `authz:roles:v1:{userId}:{organizationId|-}:{org}:{catalog}:{user}` (900 s
+  TTL, which only bounds memory), computed from the database on a miss;
+- the platform roles on `user.role` come from `GlobalRoleRegistry`, each
+  process's snapshot of the global roles, reloaded when `catalog` moves;
+- the ability and the role ids are memoized per request (`requestMemo` from
+  `@oppenheimer/backend-core`), so `PoliciesGuard` and `AccessScopeInterceptor`
+  share one resolution and the interceptor never re-reads `user_role`;
+- Redis failing falls back to the database (logged once per outage).
+
+| Counter | Covers | Bumped by |
+| --- | --- | --- |
+| `organization."roleVersion"` | the organization's own roles and every assignment scoped to it | `bumpRoleVersion` / `bumpForAssignment` (scoped writes), `bumpForRole` (an org role's create/edit/delete) |
+| `role_catalog_version` (one row) | every **global** role definition (`organizationId IS NULL` — `owner`, `user`, `admin`…) | `bumpRoleCatalogVersion` via `bumpForRole` |
+| `user_role_version` (one row per user) | a user's **global** assignments | `bumpUserRoleVersion` via `bumpForAssignment`; `bumpForRole` for holders of an org role outside that org |
+
+`RoleRepository` and `UserRoleRepository` call these inside their own
+transactions; a new writer of `role` or `user_role` must do the same. **A
+migration** that edits role permissions bumps the counter for the rows it
+touches: a global role (almost always — the system roles are global rows)
+needs `UPDATE "role_catalog_version" SET "version" = "version" + 1`; an
+organization's role needs its `roleVersion`.
 
 ## Wiring notes
 
@@ -218,9 +259,10 @@ calls them through the `adminClient()` / `organizationClient()` client plugins,
   org-scoped application role — the tenant `owner` system role for a Better
   Auth owner/admin, `user` for a member in the same breath —
   `ProvisionPersonalWorkspaceCommandHandler` for the workspace sign-up gives,
-  `InvitationsService.accept` for a workspace someone joins, and
-  `OrganizationsService.create` for one the caller makes (which also
-  provisions the "General" workspace) — so "you are a member" and "you may work
+  the `accept-invitation` handler for a workspace someone joins, and the
+  `create-organization` handler for one the caller makes (which also
+  provisions the "General" workspace), all through `MembershipAccessPolicy`
+  (`organizations/application/membership-access.policy.ts`) — so "you are a member" and "you may work
   here" are never set separately. `owner` grants organization resources only
   (Organization/Member/Invitation/Workspace/Role, conditioned on
   `${activeOrganizationId}`) and never `manage all` or `User`: assigned
@@ -240,22 +282,22 @@ calls them through the `adminClient()` / `organizationClient()` client plugins,
   CASL-guarded endpoints (`/v1/organizations`, `/v1/organizations/:id/members`,
   `/v1/organizations/:id/invitations` + `/v1/invitations`, `/v1/workspaces`,
   `/v1/admin/users`) so they land in the generated `@oppenheimer/api-client`. These are
-  **delegating façades**: the controllers/services call `auth.api.*` (via
-  `auth/infrastructure/better-auth.util.ts` — `betterAuthHeaders` + `invokeBetterAuth`) rather
-  than writing the tables, so Better Auth stays the single source of truth.
-  There is no app-owned aggregate, but the module contract still applies: the
-  target is a port plus a gateway in `infrastructure/` and one use-case slice
-  per operation. Both modules still carry the pre-contract
-  controller → service → `auth.api` layout and are being migrated — add a new
-  operation as a slice, never to the old service (see `apps/api/AGENTS.md`).
+  **delegating façades**: their gateways call `auth.api.*` (via
+  `auth/infrastructure/better-auth.util.ts` — `betterAuthHeaders` + the
+  module's `betterAuthInvoker`) rather than writing the tables, so Better Auth
+  stays the single source of truth. There is no app-owned aggregate, but the
+  module contract still applies: a port plus a gateway in `infrastructure/`
+  (`admin-auth`, and `organization-auth`, `invitation-auth`, `workspace-auth`)
+  and one use-case slice per operation. A new operation is a new slice (see
+  `apps/api/AGENTS.md`).
   Impersonation forwards Better Auth's `Set-Cookie` to the client.
 - **Workspaces = teams** — modelled on the org plugin's teams feature
   (`team` / `teamMember`).
-- **Org-scoped CASL** — `PoliciesGuard` reads `session.activeOrganizationId` and
-  passes it to `AbilityFactory.createForUser(user, scope)`. Scope tenant
-  resources with a condition placeholder:
+- **Org-scoped CASL** — one request tenant, read `product/versions/mvp/08-auth.md`.
+  Read it with `tenantOrganizationIdOf(request)`. Scope tenant rows with the
+  `${activeOrganizationId}` placeholder, which resolves to the tenant:
   `{ action: 'read', subject: 'Article', conditions: { organizationId: '${activeOrganizationId}' } }`,
-  then enforce per-row in the handler via `request.ability.can('read', subject('Article', row))`.
+  then enforce per row with `canAccessRow(request.ability, 'read', 'Article', row)`.
 - **Lockout protection** — a system role that grants `manage all` cannot have
   that rule removed (`RoleErrors.ADMIN_LOCKOUT`, enforced in the update-role
   command handlers via `RoleEntity.grantsFullAccess`).

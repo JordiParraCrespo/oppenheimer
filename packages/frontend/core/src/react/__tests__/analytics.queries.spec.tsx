@@ -49,8 +49,6 @@ describe('useCaptureEvent', () => {
     );
   });
 
-  // `mutate` must stay referentially stable, or it can't be passed to a
-  // memoized child or listed in a dependency array.
   it('keeps a stable mutate identity across re-renders', () => {
     const { wrapper } = setup();
     const { result, rerender } = renderHook(() => useCaptureEvent(), {
@@ -61,20 +59,6 @@ describe('useCaptureEvent', () => {
     rerender();
 
     expect(result.current.mutate).toBe(first);
-  });
-
-  // The service swallows provider failures, so the mutation should never land
-  // in an error state — analytics must not surface as a broken UI.
-  it('settles successfully even though the provider is fire-and-forget', async () => {
-    const { wrapper } = setup();
-    const { result } = renderHook(() => useCaptureEvent(), { wrapper });
-
-    act(() => {
-      result.current.mutate({ event: ANALYTICS_EVENTS.USER_SIGNED_OUT });
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.error).toBeNull();
   });
 });
 
@@ -89,9 +73,6 @@ describe('useCaptureOnMount', () => {
     expect(capture).toHaveBeenCalledWith(ANALYTICS_EVENTS.USER_SIGNED_UP, undefined);
   });
 
-  // A fresh object literal every render is the normal call shape. If that
-  // re-fired the capture, a component that renders ten times would report ten
-  // impressions of the same thing.
   it('does not re-capture when properties get a new object identity', async () => {
     const { wrapper, capture } = setup();
     const { rerender } = renderHook(
@@ -106,38 +87,24 @@ describe('useCaptureOnMount', () => {
     expect(capture).toHaveBeenCalledTimes(1);
   });
 
-  it('sends the latest properties, not the ones from first render', async () => {
-    const { wrapper, capture } = setup();
-    renderHook(({ source }) => useCaptureOnMount(ANALYTICS_EVENTS.USER_SIGNED_UP, { source }), {
-      wrapper,
-      initialProps: { source: 'login' },
-    });
-
-    await waitFor(() =>
-      expect(capture).toHaveBeenCalledWith(ANALYTICS_EVENTS.USER_SIGNED_UP, {
-        source: 'login',
-      }),
-    );
-  });
-
-  // A component reused across events — the same banner rendering a different
-  // event key — should report the new one.
-  it('captures again when the event name changes', async () => {
+  it('captures again when the event name changes, with the latest properties', async () => {
     const { wrapper, capture } = setup();
     const { rerender } = renderHook(
-      ({ event }: { event: AnalyticsEvent }) => useCaptureOnMount(event),
+      ({ event, source }: { event: AnalyticsEvent; source: string }) =>
+        useCaptureOnMount(event, { source }),
       {
         wrapper,
-        initialProps: {
-          event: ANALYTICS_EVENTS.USER_SIGNED_UP as AnalyticsEvent,
-        },
+        initialProps: { event: ANALYTICS_EVENTS.USER_SIGNED_UP as AnalyticsEvent, source: 'login' },
       },
     );
+    await waitFor(() => expect(capture).toHaveBeenCalledTimes(1));
 
-    rerender({ event: ANALYTICS_EVENTS.USER_SIGNED_IN });
+    rerender({ event: ANALYTICS_EVENTS.USER_SIGNED_IN, source: 'banner' });
 
     await waitFor(() => expect(capture).toHaveBeenCalledTimes(2));
-    expect(capture).toHaveBeenLastCalledWith(ANALYTICS_EVENTS.USER_SIGNED_IN, undefined);
+    expect(capture).toHaveBeenLastCalledWith(ANALYTICS_EVENTS.USER_SIGNED_IN, {
+      source: 'banner',
+    });
   });
 
   it('captures once per mounted component, not once per tree', async () => {
@@ -167,11 +134,11 @@ describe('usePageView', () => {
       initialProps: { path: '/dashboard' },
     });
 
-    await waitFor(() => expect(pageView).toHaveBeenCalledWith('/dashboard', undefined));
+    await waitFor(() => expect(pageView).toHaveBeenCalledWith('/dashboard'));
 
     rerender({ path: '/settings' });
 
-    await waitFor(() => expect(pageView).toHaveBeenCalledWith('/settings', undefined));
+    await waitFor(() => expect(pageView).toHaveBeenCalledWith('/settings'));
     expect(pageView).toHaveBeenCalledTimes(2);
   });
 

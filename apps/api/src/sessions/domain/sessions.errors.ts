@@ -1,8 +1,6 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 /**
- * The sessions catalog.
- *
  * The prefix is plural because the Go runner owns `SESS_00x` in the same
  * `apps/docs/docs/errors.md` and a code may only be claimed once.
  *
@@ -41,17 +39,17 @@ export const SessionErrors = {
     httpStatus: 409,
   },
   /**
-   * Raised on a stop, restart, rename or checkout change against a session that
-   * has already been closed. Closing is final: the row stays for ever so its
-   * directory name and branch are never reissued, which is exactly why it cannot
-   * be reopened.
+   * Raised on more work for a session that has already been closed: a stop,
+   * restart, rename, move, added checkout, terminal ticket or input. Closing is
+   * final: the row is a tombstone that keeps its directory name and branch from
+   * being reissued.
    */
   ALREADY_RESOLVED: {
     code: 'SESSIONS_005',
     message: 'That session is closed',
     httpStatus: 409,
   },
-  /** The project a session was asked for is retired; its directory is out of use. */
+  /** The project a session was asked for is retired: nothing new is listed under it. */
   PROJECT_ARCHIVED: {
     code: 'SESSIONS_006',
     message: 'That project is archived',
@@ -90,27 +88,27 @@ export const SessionErrors = {
     httpStatus: 409,
   },
   /**
-   * An agent the host's runner was built without. A runner probes the command of
-   * every agent it can launch (`ProbedTools`), found or not, so an inventory with
-   * no entry for this agent's command is a runner older than the agent, and it
-   * would refuse `session.create`. Refused here, before a row is written, rather
-   * than recorded and then failed by the host.
+   * An agent the host's runner was built without (`runnerCanStart`). Refused
+   * before a row is written, rather than recorded and then failed by the host.
    */
   AGENT_UNSUPPORTED_BY_RUNNER: {
     code: 'SESSIONS_011',
     message: "This host's runner cannot start that agent",
     httpStatus: 409,
   },
-  /** An upload over `SESSION_IMAGE_MAX_BYTES`, refused by multer before it is buffered. */
-  IMAGE_TOO_LARGE: {
+  /** An upload over `SESSION_FILE_MAX_BYTES`, refused by multer before it is buffered. */
+  FILE_TOO_LARGE: {
     code: 'SESSIONS_012',
-    message: 'That image is too large to give the session',
+    message: 'That file is too large to give the session',
     httpStatus: 413,
   },
-  /** Bytes that are none of the image types a session takes, whatever their label. */
-  UNSUPPORTED_IMAGE: {
+  /**
+   * Bytes that are none of the types a session takes (the images, PDF, UTF-8
+   * text that is not a script or markup), whatever their label or name.
+   */
+  UNSUPPORTED_FILE: {
     code: 'SESSIONS_013',
-    message: 'That is not an image the session can take',
+    message: 'That is not a file the session can take',
     httpStatus: 415,
   },
   /**
@@ -122,28 +120,51 @@ export const SessionErrors = {
     message: 'That session is stopped',
     httpStatus: 409,
   },
-  /** A multipart request with no file part: nothing to judge as an image. */
-  IMAGE_MISSING: {
+  /** A multipart request with no file part: nothing to judge. */
+  FILE_MISSING: {
     code: 'SESSIONS_015',
-    message: 'No image was attached',
+    message: 'No file was attached',
     httpStatus: 400,
   },
   /**
-   * The session's host holds no link right now. Input is not queued for a
-   * host that comes back: the prompt it was meant for will have moved on.
+   * The host holds no link right now: a paste into a session on it, or a
+   * create carrying files for it. Neither is queued for a host that comes
+   * back — the prompt moves on, and the files expire.
    */
   HOST_OFFLINE: {
     code: 'SESSIONS_016',
-    message: 'The session’s host is offline',
+    message: 'The host is offline',
     httpStatus: 503,
   },
   /**
-   * The host is linked but its runner did not say it takes this command: it
-   * predates it, and updating the runner is what fixes it.
+   * The host is linked but its runner did not say it takes this file — pasted
+   * into a session or attached to a first task: no files at all
+   * (`session.image`, `session.create.images`), or images only, not PDF or
+   * text (`session.files`). It predates them, and updating the runner is
+   * what fixes it.
    */
-  HOST_CANNOT_TAKE_IMAGES: {
+  HOST_CANNOT_TAKE_FILE: {
     code: 'SESSIONS_017',
-    message: 'The session’s host cannot take images until its runner is updated',
+    message: 'The host cannot take that file until its runner is updated',
     httpStatus: 409,
+  },
+  /**
+   * A create names an attachment that is not waiting for this person: it
+   * expired, it was already used, or it was never theirs. The three are one
+   * answer, so an id cannot be probed.
+   */
+  ATTACHMENT_NOT_FOUND: {
+    code: 'SESSIONS_019',
+    message: 'An attached file is no longer waiting',
+    httpStatus: 410,
+  },
+  /**
+   * One person already has as many uploads waiting as they may. Each is up to
+   * 5 MB in the cache that also backs sign-in, so the cap is on what is held.
+   */
+  TOO_MANY_ATTACHMENTS: {
+    code: 'SESSIONS_020',
+    message: 'Too many files are waiting to be sent',
+    httpStatus: 429,
   },
 } as const satisfies Record<string, ErrorDefinition>;

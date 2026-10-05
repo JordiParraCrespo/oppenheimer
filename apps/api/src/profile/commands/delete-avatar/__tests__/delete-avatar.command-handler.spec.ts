@@ -17,10 +17,13 @@ function makeUser(avatarUrl: string | null): UserEntity {
       lastName: 'Rodrigo',
       phone: null,
       jobTitle: null,
+      username: null,
       avatarUrl,
       role: 'user',
       isActive: true,
       emailVerified: true,
+      banned: false,
+      banExpires: null,
     },
   });
 }
@@ -28,6 +31,7 @@ function makeUser(avatarUrl: string | null): UserEntity {
 describe('DeleteAvatarCommandHandler', () => {
   let repo: Pick<UserRepositoryPort, 'findOneById' | 'save'>;
   let avatars: { remove: ReturnType<typeof vi.fn> };
+  const sessionCache = { refreshUser: vi.fn().mockResolvedValue(undefined) };
   let service: DeleteAvatarCommandHandler;
   let user: UserEntity;
 
@@ -41,7 +45,27 @@ describe('DeleteAvatarCommandHandler', () => {
     service = new DeleteAvatarCommandHandler(
       repo as UserRepositoryPort,
       avatars as unknown as AvatarStorageAdapter,
+      sessionCache as never,
     );
+  });
+
+  it('saves the profile, refreshes the cached sessions, then removes the object', async () => {
+    const order: string[] = [];
+    vi.mocked(repo.save).mockImplementation(async (entity) => {
+      order.push('save');
+      return entity as never;
+    });
+    sessionCache.refreshUser.mockImplementation(async () => {
+      order.push('refresh');
+    });
+    avatars.remove.mockImplementation(async () => {
+      order.push('remove');
+    });
+
+    await service.execute(new DeleteAvatarCommand({ userId: 'user-uuid' }));
+
+    expect(sessionCache.refreshUser).toHaveBeenCalledWith('user-uuid');
+    expect(order).toEqual(['save', 'refresh', 'remove']);
   });
 
   it('clears the profile and removes the object', async () => {
@@ -51,24 +75,7 @@ describe('DeleteAvatarCommandHandler', () => {
     expect(avatars.remove).toHaveBeenCalledWith('avatars/user-uuid.png');
   });
 
-  it('saves the profile before removing the object', async () => {
-    // The other order can leave a profile pointing at a file that is gone.
-    const order: string[] = [];
-    repo.save = vi.fn().mockImplementation(async (entity) => {
-      order.push('save');
-      return entity;
-    });
-    avatars.remove.mockImplementation(async () => {
-      order.push('remove');
-    });
-
-    await service.execute(new DeleteAvatarCommand({ userId: 'user-uuid' }));
-
-    expect(order).toEqual(['save', 'remove']);
-  });
-
   it('succeeds when there is no avatar to clear', async () => {
-    // The caller asked for a state, not for an event.
     user = makeUser(null);
     repo.findOneById = vi.fn().mockResolvedValue(Some(user));
 

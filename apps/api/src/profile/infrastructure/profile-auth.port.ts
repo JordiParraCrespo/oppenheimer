@@ -17,8 +17,15 @@ export interface ChangePasswordInput {
  * revocation, are both facts about the adapter — a handler names neither.
  */
 export interface ProfileAuthPort {
-  /** Change the caller's password, verifying the current one first. */
-  changePassword(headers: IncomingHttpHeaders, input: ChangePasswordInput): Promise<void>;
+  /**
+   * Change the caller's password, verifying the current one first.
+   *
+   * Resolves to the `Set-Cookie` values the caller's client must store. When
+   * the other sessions are revoked the one making the request is replaced as
+   * well, and a client left holding the old cookie is signed out on its next
+   * request — so these have to reach it.
+   */
+  changePassword(headers: IncomingHttpHeaders, input: ChangePasswordInput): Promise<string[]>;
 
   /**
    * Revoke one session by its token. The token is never accepted from a
@@ -26,6 +33,23 @@ export interface ProfileAuthPort {
    */
   revokeSession(headers: IncomingHttpHeaders, token: string): Promise<void>;
 
-  /** Revoke every session except the one this request was made with. */
-  revokeOtherSessions(headers: IncomingHttpHeaders, userId: string): Promise<void>;
+  /**
+   * Revoke every session except the one this request was made with, named by
+   * `currentSessionId` so the sweep of what the provider missed spares it.
+   */
+  revokeOtherSessions(
+    headers: IncomingHttpHeaders,
+    userId: string,
+    currentSessionId: string | undefined,
+  ): Promise<void>;
+
+  /**
+   * Send a link to `newEmail` that moves the caller's account there when it
+   * is followed, returning to `callbackURL`. Nothing changes until then.
+   */
+  requestEmailChange(
+    headers: IncomingHttpHeaders,
+    newEmail: string,
+    callbackURL?: string,
+  ): Promise<void>;
 }

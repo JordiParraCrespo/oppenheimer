@@ -6,13 +6,17 @@
 //	runner install      write and start the launchd agent or systemd user unit
 //	runner uninstall    stop the service, revoke the host, erase the identity
 //	runner status       what a person needs to answer "is this host working"
+//	runner sessions     list, create, attach to and close sessions on this host
+//	runner workspaces   where sessions' checkouts live, or move it
 //	runner update       check, apply, pin or roll back a version
+//	runner agents       keep the agent CLIs (claude, codex, …) current
+//	runner credential-helper  git's credential helper, over the local socket
 //	runner selfcheck    what a staged binary must pass before it is activated
 //	runner serve        the control-plane-facing HTTP service (containers)
 //	runner version      version, commit, target
 //
-// `main` parses flags, builds a logger and dispatches. Every wiring decision
-// lives in internal/cli (the host agent) or internal/server (the service).
+// Every wiring decision lives in internal/cli (the host agent) or
+// internal/server (the service), never here.
 package main
 
 import (
@@ -81,6 +85,8 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		return workspaces(ctx, args)
 	case "update":
 		return update(ctx, args)
+	case "agents":
+		return agents(ctx, args)
 	case "credential-helper":
 		// git calls this with the operation as its one argument.
 		operation := ""
@@ -246,8 +252,20 @@ func update(ctx context.Context, args []string) (int, error) {
 	})
 }
 
+// agents dispatches the agent-CLI subcommands. `update` is the only one: the
+// round `run` does hourly, now, on this host.
+func agents(ctx context.Context, args []string) (int, error) {
+	if len(args) != 1 || args[0] != "update" {
+		usage(os.Stderr)
+		return cli.ExitUsage, errors.New("usage: runner agents update")
+	}
+	return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+		return app.AgentsUpdate(ctx, os.Stdout)
+	})
+}
+
 // sessions dispatches the session subcommands. They are what a person uses on
-// the host itself; the console will drive the same use cases over the link.
+// the host itself; the console drives the same use cases over the link.
 func sessions(ctx context.Context, args []string) (int, error) {
 	sub := "ls"
 	if len(args) > 0 {
@@ -397,6 +415,8 @@ func usage(w *os.File) {
   runner sessions close <id> [--no-push] [--force]
   runner status                   platform, pairing, service, tools, disk
   runner update [--check|--force|--pin V|--unpin|--rollback]
+  runner agents update            bring every installed agent CLI to its latest release
+                                  (run does it on its own unless RUNNER_AGENT_UPDATES=off)
   runner credential-helper get    git's credential protocol, answered over the socket
   runner selfcheck                what a staged binary must pass to be activated
   runner serve                    the HTTP service on a TCP port (containers)
@@ -409,10 +429,16 @@ Exit codes: 0 ok, 1 failure, 2 usage, 3 auth, 4 forbidden, 5 not found, 6 unreac
 func message(err error) string {
 	var prob *problem.Error
 	if errors.As(err, &prob) {
+		text := prob.Title
 		if prob.Detail != "" {
-			return prob.Title + ": " + prob.Detail
+			text += ": " + prob.Detail
 		}
-		return prob.Title
+		// The catalog code is the stable part of the line: what a script, a
+		// support thread or an installer can match on when the words change.
+		if prob.Code != "" {
+			text += " (" + prob.Code + ")"
+		}
+		return text
 	}
 	return err.Error()
 }

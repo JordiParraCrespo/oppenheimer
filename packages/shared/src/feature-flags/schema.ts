@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { paginationSchema } from '../schemas/pagination.schema';
-import { armWidth, FLAG_BUCKETS } from './evaluate';
-import { FLAG_ATTRIBUTES, FLAG_OPERATORS } from './types';
+import { paginationSchema } from '../schemas/pagination.schema.js';
+import { armWidth, FLAG_BUCKETS } from './evaluate.js';
+import { FLAG_ATTRIBUTES, FLAG_OPERATORS } from './types.js';
 
 /**
  * Write schemas for flag targeting and segments. Shape only: whether a served

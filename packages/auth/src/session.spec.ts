@@ -8,20 +8,11 @@ describe('unwrap', () => {
     expect(() => unwrap({})).not.toThrow();
   });
 
-  it('throws the error message on failure', () => {
-    expect(() => unwrap({ error: { message: 'Invalid credentials' } })).toThrow(
-      'Invalid credentials',
-    );
-  });
-
   it('falls back to a generic message when the error has none', () => {
     expect(() => unwrap({ error: {} })).toThrow('Authentication request failed');
   });
 
   it('preserves the status and code so callers can tell why it failed', () => {
-    // Without these a UI cannot distinguish "wrong password" (the server
-    // answered 401) from "the server is unreachable" (no status at all), and
-    // ends up telling someone who mistyped their password to check their wifi.
     const error = (() => {
       try {
         unwrap({

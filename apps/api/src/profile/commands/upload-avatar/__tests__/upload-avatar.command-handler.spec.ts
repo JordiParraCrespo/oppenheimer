@@ -17,10 +17,13 @@ function makeUser(avatarUrl: string | null): UserEntity {
       lastName: 'Rodrigo',
       phone: null,
       jobTitle: null,
+      username: null,
       avatarUrl,
       role: 'user',
       isActive: true,
       emailVerified: true,
+      banned: false,
+      banExpires: null,
     },
   });
 }
@@ -41,6 +44,7 @@ describe('UploadAvatarCommandHandler', () => {
     remove: ReturnType<typeof vi.fn>;
   };
   let service: UploadAvatarCommandHandler;
+  const sessionCache = { refreshUser: vi.fn().mockResolvedValue(undefined) };
   let user: UserEntity;
 
   beforeEach(() => {
@@ -56,7 +60,28 @@ describe('UploadAvatarCommandHandler', () => {
     service = new UploadAvatarCommandHandler(
       repo as UserRepositoryPort,
       avatars as unknown as AvatarStorageAdapter,
+      sessionCache as never,
     );
+  });
+
+  it('saves the profile, refreshes the cached sessions, then removes the previous object', async () => {
+    const order: string[] = [];
+    vi.mocked(repo.save).mockImplementation(async (entity) => {
+      order.push('save');
+      return entity as never;
+    });
+    sessionCache.refreshUser.mockImplementation(async () => {
+      order.push('refresh');
+    });
+    avatars.remove.mockImplementation(async () => {
+      order.push('remove');
+    });
+
+    await service.execute(command());
+
+    expect(sessionCache.refreshUser).toHaveBeenCalledWith('user-uuid');
+    expect(order).toEqual(['save', 'refresh', 'remove']);
+    expect(avatars.remove).toHaveBeenCalledWith('avatars/user-uuid.jpg');
   });
 
   it('points the profile at the new key', async () => {
@@ -65,24 +90,6 @@ describe('UploadAvatarCommandHandler', () => {
     expect(avatars.store).toHaveBeenCalledWith('user-uuid', expect.any(Buffer), 'image/png', 3);
     expect(user.avatarUrl).toBe('avatars/user-uuid.png');
     expect(repo.save).toHaveBeenCalledWith(user);
-  });
-
-  it('removes the previous object only after the profile is saved', async () => {
-    // The other order leaves a profile pointing at a deleted file if the save
-    // fails.
-    const order: string[] = [];
-    repo.save = vi.fn().mockImplementation(async (entity) => {
-      order.push('save');
-      return entity;
-    });
-    avatars.remove.mockImplementation(async () => {
-      order.push('remove');
-    });
-
-    await service.execute(command());
-
-    expect(order).toEqual(['save', 'remove']);
-    expect(avatars.remove).toHaveBeenCalledWith('avatars/user-uuid.jpg');
   });
 
   it('does not delete the object it just wrote when the key is unchanged', async () => {

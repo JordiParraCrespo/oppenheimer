@@ -20,10 +20,11 @@ for the detail and sources.
 | 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: one store per repo per workspace, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
-| 14 | [Reviewing at the speed agents write](14-a-developers-day-on-github.md) | Review is the bottleneck: every PR in a lane (Auto, Quick, Deep); auto-merge by a readable policy, proven in a dry run on your history; a review session prepared on your host with the context pack, the checks run and a brief waiting |
-| 15 | [Developer-tools landscape](15-developer-tools-landscape.md) | AI review, agent consoles, merge tools, analytics and sandboxes as of September 2026; almost every reviewer reads the diff and none runs the code on your host; agent PRs wait 5× longer; ten things to take |
+| 14 | [Session boot time, measured](14-session-boot-time.md) | A measurement note, not `versions/mvp/14`: each hop from Send to the agent's first byte, measured from the browser on one host, beside how Orca prepares a checkout before the click. It decides nothing; its questions are 02 open question 9 and 05 open question 8 |
+| 15 | [Reviewing at the speed agents write](15-reviewing-at-agent-speed.md) | Review is the bottleneck: every PR in a lane (Auto, Quick, Deep); auto-merge by a readable policy, proven in a dry run on your history; a review session prepared on your host with the context pack, the checks run and a brief waiting |
+| 16 | [Developer-tools landscape](16-developer-tools-landscape.md) | AI review, agent consoles, merge tools, analytics and sandboxes as of September 2026; almost every reviewer reads the diff and none runs the code on your host; agent PRs wait 5× longer; ten things to take |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
-| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 Kanban, 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
+| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 (Kanban, moved into the MVP as Plan), 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -105,6 +106,12 @@ earlier note:
   per session. The model keeps checkouts as a list with a primary, so several
   repositories returns with the runner slice that makes several worktrees.
   Recorded in 00, 05, 10 and the MVP decision log.
+- `versions/mvp/10-api-modules-and-data-model.md` said a session has zero or
+  more checkouts, zero being a session with no git. The runner makes a
+  session from exactly one repository, so a session with none was recorded,
+  then failed on the host. On 2026-09-27 the owner set the create body to
+  exactly one checkout, and the console's composer stays disabled until a
+  repository is picked. Recorded in 00, 10 and the MVP decision log.
 - `versions/mvp/08-auth.md` said first-run's gate is the claimed address
   off step 2. That still ends step 2, and it cannot end the flow: two
   steps run after the claim, so every legitimate arrival at the Ready
@@ -215,6 +222,12 @@ earlier note:
   `/hosts/new`) since the 2026-09-26 evening export, and the second rail
   item reads Automations. A project needs a repository to be saved from the
   console (2026-09-26).
+- `versions/mvp/05-screens.md` and `13-automations.md`: those pages went
+  back to dialogs over the console with the 2026-09-27 export — New
+  project and Project settings, the console's Add a host, the automation
+  editor as a three-step wizard — while Settings keeps its Add a host
+  page. Add a host copies first and shows the instruction behind a fold,
+  in the console and in onboarding (2026-09-27).
 - `versions/mvp/00-scope.md` kept routines out of the MVP whole. The
   console's automations list and its pages have their routes now, so the
   rail is whole; the automation itself — scheduler, trigger, runs — stays
@@ -225,13 +238,110 @@ earlier note:
   0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat
   display. Multi-account (note 06) is on the list with no version yet.
   VMs are not placed. See `next-steps/README.md`.
-- Note 14's first version proposed protecting the reviewer and the
+- `versions/mvp/05-screens.md` said version 1 has no settings page and
+  that hosts would be listed later in a drawer. The 2026-09-26 frames
+  draw a Settings page with a Hosts section, and
+  `versions/mvp/14-hosts-settings.md` designs its backend. Two host
+  behaviours changed with it: removing a host now stops the sessions
+  running on it (it used to close the link and leave them `open`), and
+  `GET /hosts` leaves unpaired hosts out unless `include=unpaired`
+  (2026-09-26).
+- `versions/mvp/10-api-modules-and-data-model.md` kept a host's
+  metadata on the `host` row: `hostname`, `os`, `arch`, `runnerVersion`,
+  a `capabilities` jsonb and `lastSeenAt`, rewritten whole on every
+  heartbeat. `versions/mvp/15-host-metadata.md` splits it by rate of
+  change into `host_inventory`, `host_presence`, `host_network` and
+  `host_event`; the old columns go in a later contract step (2026-09-26).
+- `versions/mvp/05-screens.md` had Settings → Hosts open the console's
+  Add a host page with `?from=settings`. It now opens the same screen
+  inside Settings, at `/settings/hosts/new`, with the settings sidebar
+  beside it, and the host menu drops Copy host ID for now (2026-09-26).
+- `versions/mvp/14-hosts-settings.md` left the host card's region or
+  "local" open. It shows the city and country code of the host's
+  connecting address, from DB-IP Lite, instead of a cloud region
+  (2026-09-26).
+- `versions/mvp/00-scope.md` kept automations out of the MVP, and
+  `versions/mvp/13-automations.md` built only their console routes. They
+  are in the MVP now, designed in `versions/mvp/16-automations-architecture.md`:
+  headless runs for any agent, an inbound-events hub for GitHub and later
+  Slack, schedules fired by a tick, a run acting as its owner. Note 05 §7's
+  API `POST /fire` trigger, its regex PR filters and its `claude/` branch
+  prefix are not in the frames and are not built; the frames' one filter
+  value per trigger and the event-dependent starting branch are
+  (2026-09-27).
+- The automations architecture capped **headless** runs per host; runs
+  are interactive sessions until the headless drive lands, so the cap
+  counts **live** runs of either drive — a run whose agent finished holds
+  no place — and a run past the run limit is stopped. A run opens in the
+  session pane under `/automations`, keeping the automations list beside
+  it (2026-09-28).
+- An automation's page opened on the large page header (44px glyph, 28px
+  title) and no Back at desktop widths; the frame draws the ordinary page
+  header under a Back pill, so the console does too. The same pass put the
+  automations pages on the grey canvas with white cards, as the frame does,
+  and drew Where it runs as rows of one card rather than stacked fields
+  (2026-09-28).
+- The frames draw run history only once there is a run; the console now
+  draws it always, thirty empty days on a new workspace, so the pages keep
+  their shape from the first visit (2026-09-28).
+- 05 put Project settings behind a cog. The version-1 export's settings
+  glyph is two sliders, so both Settings controls in the console draw
+  that, and 05 keeps one glyph per meaning (2026-09-28).
+- 03 checked an attach ticket at redemption only. An open attachment is now
+  judged again every minute (session state, membership, account standing,
+  host access), and minting a ticket or restarting a session checks the
+  host too, so a revoked grant ends a terminal already streaming
+  (2026-09-28).
+- 16 §Q6 de-duplicated deliveries by `(source, deliveryId)` alone. The
+  delivery id is an unsigned header, so the raw body's SHA-256 is unique
+  per source too, and GitHub `installation` events apply in the order of
+  GitHub's own timestamp rather than receipt (2026-09-28).
+- A host's credential ignored its owner's standing. A banned or deactivated
+  owner's runner is now refused at the link handshake and closed by a heartbeat
+  within a minute, and a session's git token is not minted for a creator who may
+  not act (2026-09-28).
+- 15's retention periods, the pairing token's lifetime and cap (00, 09) and
+  the API's default and auth-failure rate limits were fixed in code. They are
+  now deploy-tunable through the root `.env` (`RETENTION_*`, `HOSTS_*`,
+  `RATE_LIMIT_*`), with the product's numbers as the defaults (2026-09-29).
+- 05's composer drew a paperclip wired to nothing; it now attaches images
+  to the first task (03) (2026-09-28).
+- `versions/mvp/02-runner.md` had the runner build a session's tmux session
+  last, after the stores and the worktree, and `session.started` therefore
+  meant "the agent is up". Every second of the clone was then a spinner, and
+  the console's attach either waited for the whole create or was refused. On
+  2026-10-01 the terminal became the first stage: `session.started` means the
+  session has a pane, an attach is served while the create is still running,
+  and the worktree moved into a hidden directory so Spotlight stops indexing
+  it while the agent boots. Recorded in 01, 02, 05 and the MVP decision log.
+
+
+- `versions/mvp/02-runner.md` had a store's first clone be blobless
+  (`--filter=blob:none`) and the whole of a create's network work happen
+  after Send. On 2026-10-02 the first clone became shallow at the base and
+  deepened in the background into the same blobless store, and New session
+  started sending `repository.prepare` when a host and a repository are
+  picked, so the clone and the spare worktree are made while the prompt is
+  written (02 §5, 01, 05; measured in 14).
+- 03, 01 and 05 let a session take images only; on 2026-10-04 it takes files
+  (images, PDF, text) judged by their bytes, and a runner that does not
+  announce `session.files` is still sent images only (01, 02, 03, 05, 07).
+- `next-steps/` placed a kanban board in 0.3. On 2026-10-05 the design
+  export drew it as Plan (tasks, goals, a calendar) and the owner put it
+  in the MVP (`versions/mvp/17-plan.md`); 0.2 with pull requests is next.
+- 17 and 19 put Plan behind a `plan` release flag, with a task summary
+  endpoint, a `'task'` session origin and an automation occurrences
+  endpoint. The first version shipped with none of them: no flag, the
+  board's one read serves every count, a task's session is a person's and
+  its link records the task, and the console computes automation runs
+  (`versions/mvp/17-plan.md`, "As built").
+- Note 15's first version proposed protecting the reviewer and the
   evening: a WIP limit on agent PRs, quiet hours, overnight holds. The
   owner rejected it the same day (2026-09-27): the product is for people
-  who push hard. Note 14 now goes after the review bottleneck instead,
+  who push hard. Note 15 now goes after the review bottleneck instead,
   with lanes, auto-merge for easy PRs, and a review session prepared
   with the context.
-- Note 14 then settled its own questions with the owner (2026-09-27):
+- Note 15 then settled its own questions with the owner (2026-09-27):
   Jev picks the lane, and each lane has an agent (verification, summary,
   full review); review is an automation with the agent picked in its
   Agent step; auto-merge covers every PR that passes. The same day it

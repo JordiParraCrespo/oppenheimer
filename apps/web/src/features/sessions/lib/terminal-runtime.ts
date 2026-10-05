@@ -4,14 +4,19 @@ import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 import { CursorFrames } from './cursor-frames';
-import { bindImageGestures } from './terminal-images';
+import { bindFilePaste } from './terminal-files';
 import { classifyKey } from './terminal-keys';
 import {
   readTerminalTheme,
+  readUserTurnColors,
   TERMINAL_FONT,
   TERMINAL_FONT_FAMILIES,
   terminalMinimumContrastRatio,
 } from './terminal-theme';
+import { bindUserTurns } from './user-turns';
+
+/** The platform test xterm itself uses to pick its Mac behaviour. */
+const IS_MAC = typeof navigator !== 'undefined' && /^Mac/.test(navigator.platform);
 
 export interface SessionTerminalOptions {
   /**
@@ -20,33 +25,31 @@ export interface SessionTerminalOptions {
    */
   agentWindow?: boolean;
   /**
-   * An image was pasted or dropped onto the terminal. The agent cannot read
-   * the browser's clipboard, so the caller uploads it and the runner pastes
-   * its path into the prompt (05). Without a handler, images are left to
-   * xterm, which pastes nothing for them.
+   * Files were pasted onto the terminal, for the caller to upload to the
+   * host (`bindFilePaste`). Without a handler, files are left to xterm,
+   * which pastes nothing for them.
    */
-  onImage?: (image: File) => void;
+  onFiles?: (files: File[]) => void;
+  /**
+   * The first chunk on this attachment that puts a glyph on the grid; called
+   * once. A session is "started" once the host has a tmux session, before the
+   * agent has drawn anything (seconds cold, tens on a loaded machine), so the
+   * caller uses this to tell a slow start from a broken one.
+   */
+  onFirstOutput?: () => void;
 }
 
 /**
  * One session terminal: xterm.js in `container`, wired to `stream`, until the
- * returned function disposes it.
+ * returned function disposes it. Everything that talks to xterm lives here;
+ * the stream is the caller's and this never disposes it.
  *
- * Everything that talks to xterm lives here — the fit and the PTY size, the
- * console's keys, the renderer, fonts and theme — so the hook that mounts it
- * holds only a React lifetime and two pieces of state. The stream is the
- * caller's; this never disposes it.
- *
- * **Nothing moves the picture of the grid**, which is what decides where a
- * prompt sits, and the two agents land differently on purpose. Claude Code
- * lays its turn out across the whole terminal it is told about, so its prompt
- * and status band come to rest on the last rows and the pane reads as full.
- * Codex prints its output and puts the prompt straight after it, so a short
- * conversation sits at the top with the rest of the pane empty — the ordinary
- * behaviour of a terminal, and what Orca shows too: it reads `.xterm-screen`
- * for cell metrics and mouse maths and never transforms it. A console that
- * translated the grid down by its empty rows made Codex float at the bottom
- * under a tall blank band, and hid a PTY that had been left at 80x24.
+ * **Nothing moves the picture of the grid.** Claude Code lays its turn out
+ * across the whole terminal, so its prompt rests on the last rows; Codex puts
+ * its prompt straight after its output, so a short conversation sits at the
+ * top. That is ordinary terminal behaviour and Orca's too (it never transforms
+ * `.xterm-screen`). Translating the grid down by its empty rows floated Codex
+ * under a tall blank band and hid a PTY left at 80x24.
  */
 export function mountSessionTerminal(
   container: HTMLElement,
@@ -61,10 +64,6 @@ export function mountSessionTerminal(
     // A few thousand lines of build output is the normal case; the runner
     // replays its own tail on attach, so this is only what the tab keeps.
     scrollback: 5000,
-    // The ramp's bright slots repeat their normal counterparts today. This
-    // keeps a program's own colour choice readable until they diverge — at
-    // a floor that depends on the terminal's background, because one number
-    // cannot serve both themes (see `terminalMinimumContrastRatio`).
     minimumContrastRatio: terminalMinimumContrastRatio(),
     // Unicode11Addon is a proposed API; box drawing and emoji width in
     // agent output are wrong without it.
@@ -88,8 +87,19 @@ export function mountSessionTerminal(
     const verdict = classifyKey(event, {
       hasSelection: term.hasSelection(),
       agentWindow: options.agentWindow ?? false,
+      mac: IS_MAC,
     });
     if (verdict.kind === 'terminal') return true;
+    if (verdict.kind === 'copy') {
+      event.preventDefault();
+      copyToClipboard(term.getSelection());
+      return false;
+    }
+    if (verdict.kind === 'selectAll') {
+      event.preventDefault();
+      term.selectAll();
+      return false;
+    }
     if (verdict.kind === 'send') {
       // Stops the keypress and the textarea input that would follow.
       event.preventDefault();
@@ -98,26 +108,68 @@ export function mountSessionTerminal(
     return false;
   });
 
-  // Images, pasted or dropped, go to the caller rather than to xterm.
-  const unbindImages = options.onImage ? bindImageGestures(container, options.onImage) : () => {};
+  // The reader's messages drawn as the artboard draws them. Only the agent's
+  // window: the pointer-on-grey it looks for is Claude Code's.
+  const userTurns = options.agentWindow ? bindUserTurns(term, readUserTurnColors) : null;
 
-  // The wheel scrolls the session, not the program.
+  const unbindFiles = options.onFiles ? bindFilePaste(container, options.onFiles) : () => {};
+
+  // The wheel scrolls the session, not the program: tmux runs with `mouse on`,
+  // so xterm would forward every tick as a mouse report and Codex would move
+  // its own cursor instead of the reader scrolling back. The rule is the
+  // buffer, not the agent: on the normal buffer the wheel scrolls what was
+  // printed; on the alternate buffer it is the program's, since a full-screen
+  // application (an editor, a pager, tmux's copy mode) has no scrollback.
   //
-  // tmux runs with `mouse on`, so it turns mouse tracking on and xterm
-  // faithfully forwards every wheel tick to it as a mouse report. Codex reads
-  // those and moves its own cursor, so a reader trying to look back over a
-  // session drove the agent's UI instead of the scrollback — and Claude Code,
-  // which ignores them, simply did nothing.
-  //
-  // The rule is the buffer, not the agent: on the normal buffer the wheel is
-  // the reader's, and scrolls what has been printed. On the alternate buffer
-  // it is the program's, because a full-screen application — an editor, a
-  // pager, tmux's own copy mode — has no scrollback for us to move and draws
-  // its own idea of a viewport. Nothing here is per-agent; the two land
-  // differently because they use the terminal differently.
+  // On the alternate buffer the notches are the program's, but they are not
+  // sent one per event. A trackpad emits around a hundred wheel events a
+  // second and xterm would report each one separately: a hundred round trips,
+  // each making the agent redraw its whole screen (measured: ~1.6KB and ~10ms
+  // for one). That is more work per second than a second, so the queue grows
+  // and the screen keeps moving after the reader's fingers stop. Batched into
+  // one write per frame the notches cost one round trip and one redraw, and
+  // the agent still receives every one of them, in order.
+  let pendingNotches = 0;
+  let wheelCell = { col: 1, row: 1 };
+  let wheelFrame: number | null = null;
+  const flushNotches = () => {
+    wheelFrame = null;
+    const notches = pendingNotches;
+    pendingNotches = 0;
+    if (notches === 0) return;
+    // SGR wheel (1006), which is what tmux negotiates and what the measured
+    // repaint answered to. The cell is the pointer's, not the origin: a
+    // full-screen agent has regions of its own, and a notch reported at 1;1
+    // would scroll whichever of them sits in the corner.
+    const button = notches < 0 ? 64 : 65;
+    const report = `\u001b[<${button};${wheelCell.col};${wheelCell.row}M`;
+    stream.send(report.repeat(Math.abs(notches)));
+  };
+
+  /** The pointer's cell, 1-based, clamped to the grid. */
+  const cellOf = (event: WheelEvent): { col: number; row: number } => {
+    const screen = container.querySelector('.xterm-screen');
+    const box = (screen ?? container).getBoundingClientRect();
+    if (box.width === 0 || box.height === 0) return { col: 1, row: 1 };
+    const col = Math.floor(((event.clientX - box.left) / box.width) * term.cols) + 1;
+    const row = Math.floor(((event.clientY - box.top) / box.height) * term.rows) + 1;
+    return {
+      col: Math.min(Math.max(col, 1), term.cols),
+      row: Math.min(Math.max(row, 1), term.rows),
+    };
+  };
+
   term.attachCustomWheelEventHandler((event) => {
-    if (term.buffer.active.type !== 'normal') return true;
     const lines = wheelLines(event, term.rows);
+    if (term.buffer.active.type !== 'normal') {
+      // The program's, batched: never xterm's own per-event report.
+      if (lines !== 0) {
+        wheelCell = cellOf(event);
+        pendingNotches += lines;
+        wheelFrame ??= requestAnimationFrame(flushNotches);
+      }
+      return false;
+    }
     if (lines !== 0) term.scrollLines(lines);
     // Ours: xterm neither reports it to the program nor scrolls again.
     return false;
@@ -176,21 +228,30 @@ export function mountSessionTerminal(
   };
   document.fonts?.addEventListener('loadingdone', onFontsLoaded);
 
-  // `theme-provider.tsx` toggles `.dark` / `.light` on <html>. xterm holds
+  // `useAppliedTheme` toggles `.dark` / `.light` on <html>. xterm holds
   // resolved colour strings, not the tokens, so the ramp is re-read here.
   const themeObserver = new MutationObserver(() => {
     term.options.theme = readTerminalTheme();
     term.options.minimumContrastRatio = terminalMinimumContrastRatio();
+    userTurns?.repaint();
   });
   themeObserver.observe(document.documentElement, { attributeFilter: ['class'] });
 
-  // xterm's write callback fires once the parser has drained the chunk:
-  // that is the moment the bytes are consumed, and the credit goes with it.
-  // A TUI's hide, draw, show painted as one frame (02 §6).
   const cursorFrames = new CursorFrames((data) => term.write(data));
-  const offData = stream.onData((chunk, consumed) =>
-    term.write(cursorFrames.frame(chunk), consumed),
-  );
+  // Announced from the chunk rather than from the write callback: the reader
+  // waits on the far end having something to say, not on the parser draining
+  // it. A chunk counts once it carries a glyph (`hasVisibleText`), since an
+  // attachment opens with tmux's preamble, which paints nothing.
+  let announcedOutput = false;
+  const offData = stream.onData((chunk, consumed) => {
+    if (!announcedOutput && hasVisibleText(chunk)) {
+      announcedOutput = true;
+      options.onFirstOutput?.();
+    }
+    // xterm's write callback fires once the parser has drained the chunk:
+    // that is the moment the bytes are consumed, and the credit goes with it.
+    term.write(cursorFrames.frame(chunk), consumed);
+  });
   // The replay a fresh attachment opens with is written into the buffer the
   // same way live output is, and xterm follows output only when the viewport
   // is already at the end — at that moment it sits on line zero. Pinning to
@@ -199,33 +260,23 @@ export function mountSessionTerminal(
   // back afterwards is the reader's, and nothing here fights it.
   const offStatus = stream.onStatus((next) => {
     if (next !== 'live') return;
-    // The viewport, asserted on every connect.
-    //
-    // The size is otherwise sent once, from the first fit that succeeds — and
-    // the first `fit()` throws, because React has only just attached the ref
-    // and the pane has no layout yet, so the first real measurement lands a
-    // frame later. Minting an attach ticket is one request, which on a local
-    // API can finish inside that frame: the socket opens with no viewport to
-    // announce, the relay waits two seconds and attaches the classic 80x24,
-    // and the coalescer never sends the size again because it has not changed.
-    //
-    // Everything downstream then compounds it. The agent lays its turn out for
-    // the terminal it was told about, so Claude Code fills 24 rows of a
-    // 56-row grid, and the anchor below — correctly — pushes those 24 rows to
-    // the bottom, leaving a tall blank band where the session should start.
-    // The anchor was not the fault; this was.
-    //
-    // Saying it here costs one message per connect and is what a reconnect
-    // needs anyway: the relay opens a fresh attachment, and it should be
-    // opened at the size the reader is actually looking at.
+    // The size is otherwise sent once, from the first fit that succeeds, and
+    // the first `fit()` throws (the pane has no layout when React attaches the
+    // ref). On a local API the attach ticket can land inside that frame: the
+    // relay waits two seconds, attaches at 80x24, and the coalescer never
+    // resends an unchanged size, so the agent lays its turn out for 24 rows of
+    // a taller grid. A reconnect needs this anyway: the relay opens a fresh
+    // attachment, which should be at the size the reader is looking at.
     stream.resize(term.cols, term.rows);
     term.scrollToBottom();
   });
   const input = term.onData((data) => stream.send(data));
 
   return () => {
+    if (wheelFrame !== null) cancelAnimationFrame(wheelFrame);
     if (frame !== null) cancelAnimationFrame(frame);
-    unbindImages();
+    unbindFiles();
+    userTurns?.dispose();
     offData();
     offStatus();
     input.dispose();
@@ -236,6 +287,16 @@ export function mountSessionTerminal(
     ptySize.dispose();
     term.dispose();
   };
+}
+
+/**
+ * The console's own copy (05): nothing selected copies nothing, and a copy
+ * the browser refuses (no clipboard API outside a secure context, a denied
+ * permission) is a no-op rather than an error.
+ */
+function copyToClipboard(text: string) {
+  if (!text || !navigator.clipboard) return;
+  navigator.clipboard.writeText(text).catch(() => {});
 }
 
 /**
@@ -281,4 +342,46 @@ function wheelLines(event: WheelEvent, rows: number): number {
     default:
       return Math.trunc(event.deltaY / perLine);
   }
+}
+
+const VISIBLE_TEXT_DECODER = new TextDecoder('utf-8', { fatal: false });
+
+/** The escape grammar, in the order it has to be unwound (see `hasVisibleText`). */
+/* biome-ignore-start lint/suspicious/noControlCharactersInRegex: an escape sequence is control characters by definition */
+const ESCAPE_PATTERNS = [
+  // OSC: ESC ] ... BEL, or ... ST
+  /\u001b\][\s\S]*?(?:\u0007|\u001b\\)/g,
+  // DCS, SOS, PM, APC: ESC P/X/^/_ ... ST
+  /\u001b[P^_X][\s\S]*?(?:\u0007|\u001b\\)/g,
+  // CSI: ESC [ parameters intermediates final
+  /\u001b\[[0-?]*[ -/]*[@-~]/g,
+  // Whatever escape is left is ESC plus one character.
+  /\u001b[\s\S]/g,
+  // The C0 controls and DEL.
+  /[\u0000-\u001f\u007f]/g,
+];
+/* biome-ignore-end lint/suspicious/noControlCharactersInRegex: an escape sequence is control characters by definition */
+
+/**
+ * Whether a chunk from the far end would put a glyph on the grid: anything
+ * left once escape sequences, C0 controls and whitespace are taken out (a
+ * cleared screen arrives as spaces and newlines). Deliberately a scan, not a
+ * parse: it runs only until the first chunk with text, and an escape it fails
+ * to recognise can only make it answer late, which is the safe way to be
+ * wrong.
+ */
+export function hasVisibleText(chunk: string | Uint8Array): boolean {
+  // The stream hands over whatever the socket carried; a binary frame is
+  // decoded loosely here because this only has to decide "is there a glyph",
+  // and a multi-byte character split across two chunks still answers yes on
+  // one of them.
+  const text = typeof chunk === 'string' ? chunk : VISIBLE_TEXT_DECODER.decode(chunk);
+  // Taken off in the order the grammar nests: the string-terminated forms
+  // first, because their payload may contain anything, then CSI, which ends at
+  // its final byte and *not* at the next escape — reading it as "up to the
+  // next ESC" swallowed the text after a colour change, which is most of what
+  // an agent prints.
+  let withoutEscapes = text;
+  for (const pattern of ESCAPE_PATTERNS) withoutEscapes = withoutEscapes.replace(pattern, '');
+  return withoutEscapes.trim().length > 0;
 }

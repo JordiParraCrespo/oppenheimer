@@ -1,13 +1,10 @@
 {
-  "home": {
-    "openTitle": "Ninguna sesión abierta",
-    "openDescription": "Elige una en la barra lateral o inicia otra."
-  },
   "provisioning": {
     "title": "Iniciando tu sesión",
     "failedTitle": "La sesión no se inició",
     "failedLead": "El host no pudo iniciar esta sesión.",
     "working": "Trabajando…",
+    "downloading": "Este host aún no tenía este repositorio, así que primero lo descarga. Esta vez tardará un poco más; las siguientes sesiones arrancan en un segundo.",
     "failed": "Error",
     "took": "{{seconds}} s",
     "steps": {
@@ -20,7 +17,8 @@
       },
       "clone": {
         "label": "Clonar {{repo}}",
-        "doing": "Descargando el repositorio…"
+        "doing": "Descargando el repositorio…",
+        "downloading": "Descargando el repositorio por primera vez…"
       },
       "worktree": {
         "label": "Crear el worktree",
@@ -35,22 +33,24 @@
     "progressFailed": "No se pudo cargar el progreso del inicio.",
     "codes": {
       "SESS_002": "Este host crea sesiones con un solo repositorio."
-    }
-  },
-  "group": {
-    "working": "Trabajando",
-    "waiting-on-you": "Te espera",
-    "ready-for-review": "Lista para revisar",
-    "landing": "Aterrizando",
-    "idle": "Inactiva",
-    "resolved": "Terminada"
+    },
+    "details": "Detalles del host: {{detail}}"
   },
   "closed": {
-    "description": "Esta sesión se ha detenido. Su trabajo está en su rama."
+    "description": "Esta sesión se ha detenido. Su trabajo está en {{branch}}, y al reiniciarla el terminal vuelve donde lo dejó.",
+    "deleted": "Esta sesión se eliminó. Su worktree ya no está en el host; los commits ya enviados siguen en el remoto.",
+    "descriptionNoBranch": "Esta sesión se ha detenido. Al reiniciarla el terminal vuelve donde lo dejó.",
+    "restart": "Reiniciar",
+    "restarting": "Reiniciando",
+    "restartFailed": "No se ha podido reiniciar la sesión."
   },
   "new": {
     "title": "Nueva sesión",
     "subtitle": "Define el alcance y describe el trabajo.",
+    "subtitleProject_one": "En {{name}} · clonando {{picked}} de {{count}} repositorio, cada uno en su propia rama opp/.",
+    "subtitleProject_other": "En {{name}} · clonando {{picked}} de {{count}} repositorios, cada uno en su propia rama opp/.",
+    "subtitleCloning_one": "En {{name}} · clonando {{count}} repositorio, en su propia rama opp/.",
+    "subtitleCloning_other": "En {{name}} · clonando {{count}} repositorios, cada uno en su propia rama opp/.",
     "host": {
       "label": "Host",
       "placeholder": "Host",
@@ -58,7 +58,8 @@
       "empty": "Ningún host coincide.",
       "loading": "Cargando hosts…",
       "add": "Añadir host…",
-      "offline": "Desconectado"
+      "offline": "Desconectado",
+      "failed": "No se han podido cargar tus hosts."
     },
     "project": {
       "label": "Proyecto",
@@ -67,7 +68,8 @@
       "empty": "Ningún proyecto coincide.",
       "loading": "Cargando proyectos…",
       "add": "Nuevo proyecto…",
-      "noRepositories": "Sin repositorios"
+      "noRepositories": "Sin repositorios",
+      "failed": "No se han podido cargar tus proyectos."
     },
     "repository": {
       "label": "Repositorios",
@@ -80,8 +82,10 @@
       "branchPane": "Rama de {{name}}",
       "changeBranch": "Cambiar de rama",
       "manage": "Gestionar el acceso a repositorios",
+      "manageFailed": "No hemos podido abrir GitHub. Inténtalo de nuevo en un momento.",
       "noApp": "Este despliegue no tiene la GitHub App, así que no hay repositorios que elegir.",
-      "archived": "Archivado"
+      "archived": "Archivado",
+      "failed": "No se han podido cargar tus repositorios."
     },
     "branch": {
       "label": "Rama",
@@ -113,11 +117,14 @@
     },
     "effort": {
       "label": "Esfuerzo",
+      "none": "Desactivado",
       "minimal": "Mínimo",
       "low": "Bajo",
       "medium": "Medio",
       "high": "Alto",
+      "xhigh": "Muy alto",
       "max": "Máximo",
+      "ultra": "Ultra",
       "faster": "Más rápido",
       "smarter": "Más inteligente",
       "hint": "Cuánto puede pensar el agente antes de responder. Más esfuerzo cuesta más y tarda más."
@@ -125,23 +132,63 @@
     "composer": {
       "placeholder": "Describe una tarea o haz una pregunta",
       "send": "Enviar",
-      "stop": "Detener"
+      "stop": "Detener",
+      "attach": "Adjuntar archivos",
+      "removeAttachment": "Quitar {{name}}",
+      "attachTooLarge": "{{name}} pesa más de 5 MB. Guarda una copia más pequeña y vuelve a adjuntarlo.",
+      "attachTooMany": "Una primera tarea lleva como mucho {{max}} archivos.",
+      "attachNotSupported": "{{name}} no es un archivo que el agente pueda recibir. Adjunta una imagen, un PDF o un archivo de texto."
     },
-    "queued": "Tu primera tarea está en cola para este host.",
     "failed": "No se pudo crear la sesión."
   },
   "session": {
     "status": {
-      "connecting": "Conectando",
-      "live": "En vivo",
-      "offline": "Host desconectado",
       "closed": "Desconectado"
     },
-    "image": {
-      "sending": "Enviando imagen",
-      "hostOffline": "La imagen no se envió: el equipo está desconectado.",
-      "failedTitle": "La imagen no llegó a la sesión",
-      "dismiss": "Cerrar"
+    "file": {
+      "sending": "Enviando archivo",
+      "notSupported": "Ninguno de los archivos soltados es uno que el agente pueda recibir. Suelta una imagen, un PDF o un archivo de texto.",
+      "failedTitle": "El archivo no llegó a la sesión"
+    },
+    "retryNow": "Reintentar ahora",
+    "retry": "Intentar de nuevo",
+    "ended": {
+      "forbidden": "No tienes acceso al terminal de esta sesión.",
+      "refused": "El host se ha negado a abrir este terminal."
+    },
+    "starting": {
+      "title": "Todavía no hay nada en pantalla",
+      "description": "La conexión está activa. Esto se llena en cuanto el agente dibuja: una sesión nueva cuando termina de arrancar, y una anterior cuando se reenvía su historial."
+    },
+    "hostLink": {
+      "thisHost": "este host",
+      "status": {
+        "live": "En directo",
+        "reconnecting": "Conectando con {{host}}…",
+        "offline": "Host desconectado",
+        "catchingUp": "Poniéndose al día con {{host}}…",
+        "reconnected": "Reconectado"
+      },
+      "title": {
+        "offline": "{{host}} está desconectado",
+        "catchingUp": "El runner ha vuelto",
+        "reconnected": "Reconectado"
+      },
+      "line": {
+        "offline": "Se reconecta solo cuando vuelva el runner",
+        "catchingUp": "Recuperando la salida de {{host}}…",
+        "reconnected": "El historial está al día"
+      },
+      "fix": "Cómo arreglarlo",
+      "fixIntro": "Ejecútalos en {{host}}, no en este terminal, o pásale el prompt a Claude Code o Codex en esa máquina.",
+      "install": "Si está parado, reinstálalo y arráncalo:",
+      "statusCommand": "Mira qué falla:",
+      "hosts": "Ajustes → Hosts",
+      "copy": "Copiar comando",
+      "copied": "Copiado",
+      "logCommand": "Lee el log reciente del runner:",
+      "copyPrompt": "Copiar prompt de diagnóstico",
+      "prompt": "El runner de Oppenheimer en {{host}} ha perdido la conexión con Oppenheimer. Ayúdame a recuperarlo.\n\n- Primero dime en qué máquina estás (uname -n, whoami). Si no es {{host}}, para.\n- Ejecuta ~/.local/bin/oppenheimer-runner status y enséñame lo que imprime.\n- Lee las últimas 50 líneas de ~/.oppenheimer/log/runner.log y ~/.oppenheimer/log/runner.err.log\n  y dime qué ha fallado.\n- No reinstales, desinstales ni ejecutes nada como root salvo que te lo diga. Si el servicio\n  está parado, propón ~/.local/bin/oppenheimer-runner install y espera a que te dé el visto bueno."
     }
   },
   "sidebar": {
@@ -163,7 +210,8 @@
     "moveTitle": "Mover a un proyecto",
     "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
     "delete": "Eliminar",
-    "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo."
+    "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
+    "loadFailed": "No se han podido cargar tus sesiones."
   },
   "deleteSession": {
     "title": "¿Eliminar “{{name}}”?",
@@ -193,14 +241,5 @@
     "recent": "Última actividad",
     "oldest": "Más antiguas primero",
     "name": "Nombre"
-  },
-  "agents": {
-    "claude-code": "Claude Code",
-    "codex": "Codex"
-  },
-  "row": {
-    "actions": "Acciones de la sesión",
-    "move": "Mover a un proyecto…",
-    "moveTitle": "Mover a un proyecto"
   }
 }

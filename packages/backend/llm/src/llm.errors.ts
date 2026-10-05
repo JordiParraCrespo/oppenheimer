@@ -3,7 +3,8 @@ import type { LlmProviderId, LlmProviderSetting } from './llm.types';
 /**
  * Why a completion did not come back.
  *
- * - `not_configured` — the deployment has no provider, or the call named no model.
+ * - `not_configured` — the provider is `none` or lacks its key or base URL, or
+ *   the call named no model and none is configured.
  * - `timeout` — the call ran past its `timeoutMs`.
  * - `aborted` — the caller's own signal cancelled it.
  * - `network` — the request never got an HTTP answer.

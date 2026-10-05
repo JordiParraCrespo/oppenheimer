@@ -1,7 +1,7 @@
-import { Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { ThrottlerStorage } from '@nestjs/throttler';
-import Redis from 'ioredis';
+import type Redis from 'ioredis';
+import { REDIS_CLIENT } from '../../redis/redis.di-tokens';
 
 /**
  * The record `ThrottlerStorage.increment` must return.
@@ -12,29 +12,34 @@ import Redis from 'ioredis';
  */
 type ThrottlerStorageRecord = Awaited<ReturnType<ThrottlerStorage['increment']>>;
 
+/** The shared client once the increment script is registered on it as a command. */
+interface ThrottleRedis extends Redis {
+  throttleIncrement(
+    key: string,
+    ttlMs: number,
+    blockDurationMs: number,
+    limit: number,
+  ): Promise<[number, number, number, number]>;
+}
+
 /**
- * Rate-limit counters in Redis, so the limit means the same thing however many
- * API replicas are running.
+ * Rate-limit counters in Redis, so a limit means the same however many API replicas
+ * run: the default in-process `Map` multiplies every limit by the replica count (the
+ * default 100 per minute becomes 300 across three pods). Redis is already a hard
+ * dependency (BullMQ, the cache).
  *
- * The default storage is an in-process `Map`. With the Helm chart's replicas
- * that silently multiplies every limit by the replica count — a documented
- * "120 per minute" becomes 360 across three pods, and nobody finds out from
- * reading the decorator. Redis is already a hard dependency here (BullMQ and
- * the cache both use it), so there is no new infrastructure to run.
- *
- * `CacheService` is deliberately not reused: it offers get/set, and a counter
- * built from a read followed by a write is exactly the race this class exists
- * to remove. The increment below is a single atomic round trip.
+ * Not `CacheService`: a counter built from a get then a set is the race this class
+ * removes; the increment is one atomic round trip. It runs on the shared
+ * `REDIS_CLIENT`, which `RedisModule` owns and closes, under `throttle:*`, outside the
+ * cache's `cache:` namespace.
  */
 @Injectable()
-export class RedisThrottlerStorage implements ThrottlerStorage, OnModuleDestroy {
+export class RedisThrottlerStorage implements ThrottlerStorage {
   private readonly logger = new Logger(RedisThrottlerStorage.name);
-  private readonly redis: Redis;
 
   /**
-   * Increment the hit counter, set its expiry on first write, and report the
-   * block state — atomically, so two replicas incrementing the same key at the
-   * same instant cannot both read "1".
+   * Atomic, so two replicas incrementing the same key at the same instant
+   * cannot both read "1".
    *
    * `PEXPIRE ... NX` is what keeps the window *fixed* rather than sliding: the
    * TTL is set only when the key is created, so a steady stream of requests
@@ -64,23 +69,22 @@ export class RedisThrottlerStorage implements ThrottlerStorage, OnModuleDestroy 
     return { hits, ttl, blocked, blockTtl }
   `;
 
-  constructor(private readonly configService: ConfigService) {
-    this.redis = new Redis({
-      host: this.configService.get('redis.host'),
-      port: this.configService.get('redis.port'),
-      password: this.configService.get<string>('redis.password') || undefined,
-      // Never let a rate limiter be the reason a request hangs. Failing fast
-      // here lands in the catch below, which fails open — see `increment`.
-      maxRetriesPerRequest: 1,
-      enableOfflineQueue: false,
-      lazyConnect: false,
-    });
-
-    // ioredis emits `error` on every reconnect attempt; without a listener Node
-    // treats it as an unhandled exception and takes the process down.
-    this.redis.on('error', (error: Error) => {
-      this.logger.warn({ message: 'Throttler Redis unavailable', error: error.message });
-    });
+  /**
+   * The shared client fails fast (`redisCommandClientOptions`), so a rate
+   * limiter is never the reason a request hangs: a Redis outage lands in the
+   * catch in `increment`, which fails open.
+   */
+  constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {
+    // Registered once per client: ioredis then sends `EVALSHA` with the
+    // script's 40-byte hash, and falls back to `EVAL` itself on `NOSCRIPT`
+    // (after a Redis restart or `SCRIPT FLUSH`), instead of shipping and
+    // parsing the whole script on every request.
+    if (!('throttleIncrement' in redis)) {
+      redis.defineCommand('throttleIncrement', {
+        numberOfKeys: 1,
+        lua: RedisThrottlerStorage.INCREMENT,
+      });
+    }
   }
 
   async increment(
@@ -93,14 +97,9 @@ export class RedisThrottlerStorage implements ThrottlerStorage, OnModuleDestroy 
     const storageKey = `throttle:${throttlerName}:${key}`;
 
     try {
-      const [hits, ttlMs, blocked, blockTtlMs] = (await this.redis.eval(
-        RedisThrottlerStorage.INCREMENT,
-        1,
-        storageKey,
-        ttl,
-        blockDuration,
-        limit,
-      )) as [number, number, number, number];
+      const [hits, ttlMs, blocked, blockTtlMs] = await (
+        this.redis as ThrottleRedis
+      ).throttleIncrement(storageKey, ttl, blockDuration, limit);
 
       return {
         totalHits: hits,
@@ -110,16 +109,9 @@ export class RedisThrottlerStorage implements ThrottlerStorage, OnModuleDestroy 
       };
     } catch (error) {
       /*
-       * Fail **open**.
-       *
-       * A rate limiter exists to shed abusive load, not to be a second thing
-       * that can take the API down. If Redis is unreachable the honest choice
-       * is to serve the request: refusing every caller because the counter is
-       * unavailable converts a cache outage into a total outage, and on this
-       * endpoint specifically it would drop real customer enquiries on the
-       * floor. The counter is a courtesy backstop; authentication and the
-       * proof-of-human check at the edge are the actual controls, and neither
-       * depends on this.
+       * Fail open: a rate limiter sheds abusive load and must not be a second thing that
+       * takes the API down, so an unreachable Redis serves the request. The counter is a
+       * courtesy backstop; authentication is the control, and it does not depend on it.
        */
       this.logger.error(
         { message: 'Rate-limit counter unavailable; allowing the request', throttlerName },
@@ -127,9 +119,5 @@ export class RedisThrottlerStorage implements ThrottlerStorage, OnModuleDestroy 
       );
       return { totalHits: 0, timeToExpire: 0, isBlocked: false, timeToBlockExpire: 0 };
     }
-  }
-
-  async onModuleDestroy(): Promise<void> {
-    await this.redis.quit().catch(() => this.redis.disconnect());
   }
 }

@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./ds-base.js"></script>
+<link rel="stylesheet" href="./console.css">
+<style>
+html,body{margin:0;height:100%;background:var(--canvas,#f5f5f7)}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+@keyframes op-lift{from{transform:none}to{transform:rotate(1.6deg) scale(1.025)}}
+[data-noscrollbar]::-webkit-scrollbar{display:none}
+@keyframes op-rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+</style>
+<script src="./rail-order.js"></script>
+</helmet>
+<div onClick="{{ closeMenus }}" style="display:flex;height:100vh;overflow:hidden;background:var(--background);font-family:var(--font-sans);color:var(--fg);font-size:14px">
+
+<nav class="op-rail" aria-label="Sections">
+<span class="op-rail__mark" aria-hidden="true">O</span>
+<button class="op-rail__btn" type="button" aria-label="Sessions" onClick="{{ goSessions }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions</span></button>
+<a class="op-rail__btn" href="./PullRequests.dc.html" aria-label="Pull requests" title="Pull requests" style="text-decoration:none;color:inherit"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="18" hint-size="18px,18px"></x-import></a>
+<button class="op-rail__btn" type="button" aria-label="Automations" onClick="{{ goRoutines }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Automations</span></button>
+<button class="op-rail__btn" type="button" data-active="true" aria-current="page" aria-label="Plan"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Plan<span class="op-nav__count">{{ openN }}</span></span></button>
+</nav>
+<nav class="op-sidebar" style="width:264px;min-width:264px;overflow:hidden">
+<div class="op-sidebar__head">
+<span class="op-wordmark" style="font-size:18px">Oppenheimer<span class="op-wordmark__sub">Plan</span></span>
+</div>
+<div class="op-sidebar__scroll">
+<div class="op-sessionlist">
+<button class="op-session" type="button" data-active="{{ navTasks }}" onClick="{{ goTasks }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Tasks</span><span class="op-session__age" style="opacity:1">{{ openN }}</span></button>
+<button class="op-session" type="button" data-active="{{ navCal }}" onClick="{{ goCal }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="calendar" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Calendar</span><span class="op-session__age" style="opacity:1">{{ todayN }}</span></button>
+</div>
+<sc-if value="{{ isTasks }}" hint-placeholder-val="{{ true }}">
+<div class="op-listhead" style="margin-top:14px">
+<span class="op-listhead__title">Projects</span>
+<span class="op-listhead__count">{{ projCount }}</span>
+<button class="op-iconbtn-sm" type="button" aria-label="New project" title="New project" onClick="{{ newProject }}" style="margin-left:auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></button>
+</div>
+<div class="op-sessionlist">
+<sc-for list="{{ projChips }}" as="p" hint-placeholder-count="4">
+<button class="op-session" type="button" data-active="{{ p.sideOn }}" onClick="{{ p.pick }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ p.icon }}" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">{{ p.name }}</span><span class="op-session__age" style="opacity:1">{{ p.n }}</span></button>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ isCal }}">
+<div class="op-listhead" style="margin-top:14px">
+<span class="op-listhead__title">Calendars</span>
+</div>
+<div class="op-sessionlist">
+<sc-for list="{{ calLayers }}" as="l" hint-placeholder-count="4">
+<button class="op-session" type="button" aria-pressed="{{ l.on }}" onClick="{{ l.toggle }}" style="opacity:{{ l.op }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ l.icon }}" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">{{ l.name }}</span><span class="op-session__age" style="opacity:1;display:flex;width:16px;height:16px;align-items:center;justify-content:center;box-sizing:border-box;border-radius:6px;border:1.5px solid {{ l.boxBorder }};background:{{ l.boxBg }};color:var(--background)"><sc-if value="{{ l.onV }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="11" hint-size="11px,11px"></x-import></sc-if></span></button>
+</sc-for>
+</div>
+<div style="margin:16px 12px 0;padding:12px;display:flex;flex-direction:column;gap:4px;border-radius:14px;background:var(--hover-surface)">
+<span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500"><img src="./assets/brand/google-color.svg" alt="" style="width:13px;height:13px;flex:none">Google Calendar</span>
+<span style="font-size:12px;color:var(--fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">jordiparra99@gmail.com</span>
+<span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">Synced 2 min ago</span>
+</div>
+</sc-if>
+</div>
+<div class="op-sidebar__foot" style="border-top:0">
+<a class="op-navitem" href="./Settings.dc.html" style="text-decoration:none;color:inherit"><span class="op-avatar op-avatar--sm op-avatar--accent">JP</span><span class="op-navitem__label">Jordi Parra</span></a>
+</div>
+</nav>
+
+<main style="flex:1;min-width:0;overflow-x:hidden;overflow-y:auto;background:var(--canvas)">
+<div style="max-width:1400px;margin:0 auto;padding:44px 32px 80px;display:flex;flex-direction:column;gap:36px">
+<sc-if value="{{ isTasks }}" hint-placeholder-val="{{ true }}">
+<header style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap">
+<div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:8px">
+<h1 style="margin:0;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.1">{{ pageTitle }}</h1>
+<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-muted)">
+<span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ openN }}</span> open</span><span style="color:var(--fg-subtle)">·</span>
+<span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ doingN }}</span> in progress</span><span style="color:var(--fg-subtle)">·</span>
+<span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ doneN }}</span> done</span>
+<sc-if value="{{ hasOverdue }}"><span style="color:var(--fg-subtle)">·</span><span style="color:var(--danger)"><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ overdueN }}</span> overdue</span></sc-if>
+</div>
+</div>
+<sc-if value="{{ goalActive }}">
+<button class="op-pill" type="button" data-on="true" onClick="{{ clearGoal }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="layers" size="13" hint-size="13px,13px"></x-import>{{ goalActiveName }}<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button>
+</sc-if>
+<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ newTask }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import>New task</button>
+</header>
+
+<sc-if value="{{ showGoals }}" hint-placeholder-val="{{ true }}">
+<section style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:10px;padding:0 4px">
+<span style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Goals</span>
+<span style="flex:1"></span>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ newGoal }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="13" hint-size="13px,13px"></x-import>New goal</button>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+<sc-for list="{{ goalCards }}" as="g" hint-placeholder-count="3">
+<div role="button" tabindex="0" onClick="{{ g.pick }}" style="display:flex;flex-direction:column;gap:14px;padding:16px 14px 16px 18px;background:{{ g.bg }};border:1px solid {{ g.border }};border-radius:18px;cursor:pointer;transition:background 140ms cubic-bezier(.4,0,.2,1),border-color 140ms cubic-bezier(.4,0,.2,1)">
+<div style="display:flex;align-items:flex-start;gap:8px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+<span style="font-size:15px;font-weight:500;letter-spacing:-0.011em;line-height:1.35;text-wrap:pretty">{{ g.name }}</span>
+<span style="font-size:12.5px;color:var(--fg-muted)">{{ g.projName }}<span style="color:var(--fg-subtle)"> · </span><span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums">{{ g.due }}</span></span>
+</div>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Edit goal" onClick="{{ g.edit }}" style="margin:-4px 0 0"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="15" hint-size="15px,15px"></x-import></button>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="height:4px;border-radius:980px;background:var(--hover-surface);overflow:hidden"><div style="height:100%;width:{{ g.pct }};border-radius:980px;background:{{ g.barBg }};transition:width 400ms cubic-bezier(.4,0,.2,1)"></div></div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-muted)"><span style="white-space:nowrap">{{ g.countLabel }}</span><span>{{ g.pct }}</span></div>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ noGoals }}">
+<button type="button" onClick="{{ newGoal }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:16px 18px;border:1px dashed var(--border);border-radius:18px;background:none;color:var(--fg-muted);font:inherit;font-size:13px;text-align:left;cursor:pointer">
+<span style="font-size:15px;font-weight:500;color:var(--fg)">No goals for this project</span>
+Goals group tasks and track how many are done.
+</button>
+</sc-if>
+</div>
+</section>
+</sc-if>
+
+<section data-noscrollbar="true" style="overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none;margin:0 -32px;padding:0 32px;overscroll-behavior-x:contain">
+<div style="display:grid;grid-template-columns:repeat(4,minmax(272px,1fr));gap:12px;align-items:start;width:max(100%,1124px)">
+<sc-for list="{{ cols }}" as="c" hint-placeholder-count="4">
+<div data-col="{{ c.id }}" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+<div style="display:flex;align-items:center;gap:9px;height:28px;padding:0 4px 0 10px">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ c.dot }};box-shadow:{{ c.ring }}"></span>
+<span style="font-size:13.5px;font-weight:500;white-space:nowrap">{{ c.name }}</span>
+<span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ c.n }}</span>
+<span style="flex:1"></span>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="{{ c.addAria }}" onClick="{{ c.startCompose }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></button>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;min-height:140px;padding:6px;border-radius:18px;background:{{ c.trayBg }};box-shadow:{{ c.trayRing }};transition:background 140ms cubic-bezier(.4,0,.2,1),box-shadow 140ms cubic-bezier(.4,0,.2,1)">
+<sc-for list="{{ c.items }}" as="t" hint-placeholder-count="3">
+<sc-if value="{{ t.ph }}"><div data-ph="true" style="height:{{ t.h }};border-radius:14px;background:var(--selected-surface);box-shadow:inset 0 0 0 1px var(--ring)"></div></sc-if>
+<sc-if value="{{ t.card }}" hint-placeholder-val="{{ true }}">
+<div data-card="{{ t.id }}" key="{{ t.id }}" onPointerDown="{{ t.down }}" onMouseEnter="{{ t.enter }}" onMouseLeave="{{ t.leave }}" style="position:relative;display:flex;gap:10px;padding:12px 12px 12px 10px;background:var(--card);border:1px solid var(--border-subtle);border-radius:14px;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;transition:border-color 80ms cubic-bezier(.4,0,.2,1)" style-hover="border-color:var(--border)">
+<button type="button" aria-label="{{ t.checkAria }}" onPointerDown="{{ stop }}" onClick="{{ t.toggle }}" style="flex:none;width:18px;height:18px;margin-top:1px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:980px;border:1.5px solid {{ t.checkBorder }};background:{{ t.checkBg }};color:#fff;cursor:pointer;transition:background 140ms cubic-bezier(.4,0,.2,1),border-color 140ms cubic-bezier(.4,0,.2,1)" style-hover="border-color:var(--fg-muted)">
+<sc-if value="{{ t.done }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="11" hint-size="11px,11px"></x-import></sc-if>
+</button>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+<span style="padding-right:{{ t.titlePad }};font-size:14px;font-weight:500;line-height:1.38;letter-spacing:-0.006em;color:{{ t.titleFg }};text-decoration:{{ t.strike }};text-decoration-color:var(--fg-subtle);text-wrap:pretty;overflow-wrap:anywhere">{{ t.title }}</span>
+<sc-if value="{{ t.hasNotes }}"><span style="font-size:12.5px;line-height:1.45;color:var(--fg-muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ t.notes }}</span></sc-if>
+<sc-if value="{{ t.hasMeta }}">
+<div style="display:flex;align-items:center;flex-wrap:wrap;row-gap:4px;column-gap:10px;min-width:0;font-size:12px;color:var(--fg-muted)">
+<sc-if value="{{ t.hasProj }}"><span style="display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="12" hint-size="12px,12px"></x-import>{{ t.projName }}</span></sc-if>
+<sc-if value="{{ t.hasGoal }}"><span style="display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="layers" size="12" hint-size="12px,12px"></x-import><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.goalName }}</span></span></sc-if>
+<span style="flex:1"></span>
+<sc-if value="{{ t.hasDue }}"><span style="flex:none;font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:{{ t.dueFg }}">{{ t.due }}</span></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ t.hasSess }}">
+<button type="button" title="Open in console" onPointerDown="{{ stop }}" onClick="{{ t.openSess }}" style="display:flex;align-items:center;gap:7px;width:100%;min-width:0;height:28px;margin-top:2px;padding:0 8px;box-sizing:border-box;border:0;border-radius:10px;background:var(--hover-surface);color:var(--fg);font:inherit;font-size:12px;text-align:left;cursor:pointer;transition:background 80ms cubic-bezier(.4,0,.2,1)" style-hover="background:var(--control-hover)">
+<span style="width:6px;height:6px;flex:none;border-radius:980px;background:{{ t.sessDot }}"></span>
+<span style="flex:none;color:var(--fg-muted)">{{ t.sessWord }}</span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:11.5px">{{ t.sessName }}</span>
+<span style="flex:none;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ t.sessMore }}</span>
+<span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="12" hint-size="12px,12px"></x-import></span>
+</button>
+</sc-if>
+</div>
+<sc-if value="{{ t.canStart }}">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Start session" title="Start session" onPointerDown="{{ stop }}" onClick="{{ t.start }}" style="position:absolute;top:8px;right:8px;background:var(--hover-surface);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="play" size="13" hint-size="13px,13px"></x-import></button>
+</sc-if>
+</div>
+</sc-if>
+</sc-for>
+<sc-if value="{{ c.composing }}">
+<div onClick="{{ stop }}" style="display:flex;flex-direction:column;gap:10px;padding:12px;background:var(--card);border-radius:14px;box-shadow:0 0 0 1px var(--primary),0 0 0 4px var(--ring);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<textarea rows="2" placeholder="What needs doing?" aria-label="Task title" value="{{ composeText }}" onChange="{{ setCompose }}" onKeyDown="{{ composeKey }}" onBlur="{{ composeBlur }}" autoFocus="{{ true }}" style="border:0;outline:none;resize:none;padding:0;background:none;color:var(--fg);font:inherit;font-size:14px;font-weight:500;line-height:1.38"></textarea>
+<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-subtle)"><span>{{ composeHint }}</span><span style="flex:1"></span><kbd class="op-kbd">⏎</kbd>add<kbd class="op-kbd" style="margin-left:6px">esc</kbd>cancel</div>
+</div>
+</sc-if>
+<sc-if value="{{ c.notComposing }}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{ c.startCompose }}" style="display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border:0;border-radius:10px;background:none;color:var(--fg-subtle);font:inherit;font-size:13px;cursor:pointer;transition:background 80ms,color 80ms" style-hover="background:var(--hover-surface);color:var(--fg)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import>Add task</button>
+</sc-if>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isCal }}">
+<header style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap">
+<div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:8px">
+<h1 style="margin:0;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.1">{{ calTitle }}</h1>
+<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-muted)">
+<span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ calMeetN }}</span> meetings</span><span style="color:var(--fg-subtle)">·</span>
+<span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ calDueN }}</span> tasks due</span><span style="color:var(--fg-subtle)">·</span>
+<span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ calRunN }}</span> automation runs</span>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:4px">
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ calToday }}" style="margin-right:6px">Today</button>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Previous month" onClick="{{ calPrev }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="16" hint-size="16px,16px"></x-import></button>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Next month" onClick="{{ calNext }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="16" hint-size="16px,16px"></x-import></button>
+</div>
+<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ newEvent }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import>New event</button>
+</header>
+
+<section ref="{{ calRef }}" style="background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--border-subtle)">
+<sc-for list="{{ calDow }}" as="w" hint-placeholder-count="7"><span style="padding:10px 12px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">{{ w }}</span></sc-for>
+</div>
+<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr))">
+<sc-for list="{{ calDays }}" as="d" hint-placeholder-count="35">
+<div onClick="{{ d.add }}" onDragOver="{{ d.dragOver }}" onDrop="{{ d.drop }}" style="position:relative;min-width:0;min-height:150px;padding:6px 6px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-left:{{ d.bl }};border-top:{{ d.bt }};border-radius:{{ d.radius }};background:{{ d.bg }};cursor:default;transition:background 80ms cubic-bezier(.4,0,.2,1)">
+<div style="display:flex;align-items:center;gap:6px;height:26px;padding:0 2px 2px">
+<span style="min-width:24px;height:24px;padding:0 6px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;border-radius:980px;background:{{ d.numBg }};color:{{ d.numFg }};font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;font-weight:{{ d.numW }}">{{ d.label }}</span>
+</div>
+<sc-for list="{{ d.items }}" as="e" hint-placeholder-count="1">
+<button type="button" draggable="{{ e.drag }}" onDragStart="{{ e.dragStart }}" onDragEnd="{{ dragEnd }}" onClick="{{ e.open }}" title="{{ e.tip }}" style="display:flex;align-items:center;gap:6px;width:100%;min-width:0;height:24px;padding:0 6px;box-sizing:border-box;border:0;border-radius:6px;background:{{ e.bg }};color:{{ e.fg }};font:inherit;font-size:12.5px;text-align:left;cursor:pointer;opacity:{{ e.op }};transition:background 80ms cubic-bezier(.4,0,.2,1)" style-hover="background:var(--control-hover)">
+<sc-if value="{{ e.isRing }}"><span style="flex:none;width:8px;height:8px;box-sizing:border-box;border-radius:980px;border:1.5px solid {{ e.ringC }}"></span></sc-if>
+<sc-if value="{{ e.isTask }}"><span style="display:flex;flex:none;color:{{ e.ringC }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="12" hint-size="12px,12px"></x-import></span></sc-if>
+<sc-if value="{{ e.isAuto }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="11" hint-size="11px,11px"></x-import></span></sc-if>
+<sc-if value="{{ e.hasTime }}"><span style="flex:none;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ e.time }}</span></sc-if>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:{{ e.fw }};text-decoration:{{ e.strike }}">{{ e.title }}</span>
+</button>
+</sc-for>
+<sc-if value="{{ d.hasMore }}"><button type="button" onClick="{{ d.openMore }}" style="align-self:flex-start;height:22px;padding:0 6px;border:0;border-radius:6px;background:none;color:var(--fg-muted);font:inherit;font-size:12px;cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)">{{ d.moreLabel }}</button></sc-if>
+<sc-if value="{{ d.moreOpen }}">
+<div onClick="{{ stop }}" style="position:absolute;top:{{ d.popT }};bottom:{{ d.popB }};left:{{ d.popL }};right:{{ d.popR }};z-index:50;width:248px;padding:8px;display:flex;flex-direction:column;gap:2px;background:var(--popover,var(--card));border-radius:14px;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:6px;padding:2px 2px 6px 6px"><span style="flex:1;font-size:13px;font-weight:500">{{ d.longLabel }}</span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeMore }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button></div>
+<div data-noscrollbar="true" style="display:flex;flex-direction:column;gap:2px;max-height:300px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none">
+<sc-for list="{{ d.all }}" as="e" hint-placeholder-count="4">
+<button type="button" draggable="{{ e.drag }}" onDragStart="{{ e.dragStart }}" onDragEnd="{{ dragEnd }}" onClick="{{ e.open }}" style="flex:none;display:flex;align-items:center;gap:6px;width:100%;min-width:0;height:26px;padding:0 8px;box-sizing:border-box;border:0;border-radius:6px;background:{{ e.bg }};color:{{ e.fg }};font:inherit;font-size:12.5px;text-align:left;cursor:pointer;opacity:{{ e.op }}" style-hover="background:var(--control-hover)">
+<sc-if value="{{ e.isRing }}"><span style="flex:none;width:8px;height:8px;box-sizing:border-box;border-radius:980px;border:1.5px solid {{ e.ringC }}"></span></sc-if>
+<sc-if value="{{ e.isTask }}"><span style="display:flex;flex:none;color:{{ e.ringC }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="12" hint-size="12px,12px"></x-import></span></sc-if>
+<sc-if value="{{ e.isAuto }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="11" hint-size="11px,11px"></x-import></span></sc-if>
+<sc-if value="{{ e.fullTime }}"><span style="flex:none;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ e.time }}</span></sc-if>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:{{ e.fw }};text-decoration:{{ e.strike }}">{{ e.title }}</span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-if>
+
+</div>
+</main>
+
+<sc-if value="{{ dragging }}">
+<div ref="{{ ghostRef }}" style="position:fixed;left:{{ gx }};top:{{ gy }};width:{{ gw }};z-index:1000;pointer-events:none">
+<div style="display:flex;gap:10px;padding:12px 12px 12px 10px;background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-popover);cursor:grabbing;animation:op-lift 160ms cubic-bezier(.16,1,.3,1) forwards">
+<span style="flex:none;width:18px;height:18px;margin-top:1px;box-sizing:border-box;border-radius:980px;border:1.5px solid var(--border-strong)"></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+<span style="font-size:14px;font-weight:500;line-height:1.38">{{ gTitle }}</span>
+<span style="font-size:12px;color:var(--fg-muted)">{{ gMeta }}</span>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ dlgOpen }}">
+<div class="op-scrim" onClick="{{ closeDlg }}">
+<div class="op-dialog" role="dialog" aria-modal="true" aria-label="{{ dlgTitle }}" onClick="{{ dlgClick }}" style="width:min(580px,calc(100vw - 32px));max-width:none;overflow:visible">
+<div style="display:flex;flex-direction:column;gap:22px;padding:24px 28px 0">
+<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--fg-muted)"><span>{{ dlgTitle }}</span><sc-if value="{{ dIsGoogle }}"><span style="color:var(--fg-subtle)">·</span><span style="display:inline-flex;align-items:center;gap:6px"><img src="./assets/brand/google-color.svg" alt="" style="width:12px;height:12px">Google Calendar</span></sc-if><span style="flex:1"></span><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeDlg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="15" hint-size="15px,15px"></x-import></button></div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:-10px">
+<input type="text" aria-label="Title" placeholder="{{ dlgPh }}" value="{{ dTitle }}" onChange="{{ setDTitle }}" onKeyDown="{{ dlgKey }}" autoFocus="{{ true }}" style="border:0;outline:none;padding:0;background:none;color:var(--fg);font-family:var(--font-display);font-size:24px;font-weight:600;letter-spacing:-0.018em">
+<sc-if value="{{ dHasNotes }}" hint-placeholder-val="{{ true }}"><textarea rows="3" aria-label="Notes" placeholder="Notes" value="{{ dNotes }}" onChange="{{ setDNotes }}" style="border:0;outline:none;resize:none;padding:0;background:none;color:var(--fg-muted);font:inherit;font-size:14px;line-height:1.5"></textarea></sc-if>
+</div>
+<div style="display:{{ dGridDisplay }};grid-template-columns:80px minmax(0,1fr);row-gap:14px;column-gap:16px;align-items:start;padding-top:18px;border-top:1px solid var(--border-subtle)">
+<sc-if value="{{ dIsTask }}" hint-placeholder-val="{{ true }}">
+<span style="font-size:13px;color:var(--fg-muted);line-height:30px">Status</span>
+<div class="op-pills"><sc-for list="{{ dStatuses }}" as="o" hint-placeholder-count="4"><button class="op-pill" type="button" data-on="{{ o.on }}" onClick="{{ o.pick }}"><span style="width:7px;height:7px;border-radius:980px;background:{{ o.dot }};box-shadow:{{ o.ring }}"></span>{{ o.name }}</button></sc-for></div>
+</sc-if>
+<sc-if value="{{ dHasProject }}" hint-placeholder-val="{{ true }}">
+<span style="font-size:13px;color:var(--fg-muted);line-height:30px">Project</span>
+<div class="op-pills"><sc-for list="{{ dProjects }}" as="o" hint-placeholder-count="4"><button class="op-pill" type="button" data-on="{{ o.on }}" onClick="{{ o.pick }}">{{ o.name }}</button></sc-for></div>
+</sc-if>
+<sc-if value="{{ dIsTask }}" hint-placeholder-val="{{ true }}">
+<span style="font-size:13px;color:var(--fg-muted);line-height:30px">Goal</span>
+<div class="op-pills"><sc-for list="{{ dGoals }}" as="o" hint-placeholder-count="3"><button class="op-pill" type="button" data-on="{{ o.on }}" onClick="{{ o.pick }}">{{ o.name }}</button></sc-for></div>
+<span style="font-size:13px;color:var(--fg-muted);line-height:30px">Sessions</span>
+<div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+<sc-for list="{{ dSess }}" as="x" hint-placeholder-count="1">
+<div style="display:flex;align-items:center;gap:8px;min-width:0;height:36px;padding:0 4px 0 10px;border-radius:10px;background:var(--hover-surface)">
+<span style="width:6px;height:6px;flex:none;border-radius:980px;background:{{ x.dot }}"></span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:12.5px">{{ x.name }}</span>
+<span style="flex:none;font-size:12px;color:var(--fg-muted)">{{ x.word }}</span>
+<span style="flex:none;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ x.age }}</span>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Open in console" title="Open in console" onClick="{{ x.open }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up-right" size="14" hint-size="14px,14px"></x-import></button>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Unlink session" title="Unlink" onClick="{{ x.unlink }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button>
+</div>
+</sc-for>
+<div style="position:relative;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ dStartSess }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="play" size="13" hint-size="13px,13px"></x-import>Start session</button>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ dLinkToggle }}" aria-expanded="{{ dLinkOpenS }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="paperclip" size="13" hint-size="13px,13px"></x-import>Link existing</button>
+<span style="font-size:12px;color:var(--fg-subtle)">{{ dStartHint }}</span>
+<sc-if value="{{ dLinkOpen }}">
+<div role="listbox" onClick="{{ stop }}" style="position:absolute;top:{{ dLinkTop }};bottom:{{ dLinkBottom }};left:0;z-index:80;width:min(380px,100%);box-sizing:border-box;padding:6px;display:flex;flex-direction:column;gap:2px;max-height:{{ dLinkMax }};overflow-y:auto;background:var(--popover,var(--card));border-radius:14px;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div class="op-sbsearch" style="flex:none;margin:0 0 4px;position:sticky;top:0;z-index:1;background:var(--control)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search sessions" placeholder="Search sessions" value="{{ dLinkQ }}" onChange="{{ dLinkSetQ }}" onKeyDown="{{ dLinkKey }}" autoFocus="{{ true }}"></div>
+<sc-for list="{{ dLinkList }}" as="o" hint-placeholder-count="5">
+<sc-if value="{{ o.isHead }}"><span style="flex:none;padding:8px 10px 4px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">{{ o.label }}</span></sc-if>
+<sc-if value="{{ o.isRow }}" hint-placeholder-val="{{ true }}"><button type="button" role="option" onClick="{{ o.pick }}" style="flex:none;display:flex;align-items:center;gap:8px;width:100%;min-width:0;height:32px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)"><span style="width:6px;height:6px;flex:none;border-radius:980px;background:{{ o.dot }}"></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:12.5px">{{ o.name }}</span><span style="flex:none;font-family:var(--font-mono);font-size:11px;color:var(--fg-subtle)">{{ o.repo }}</span><span style="flex:none;width:28px;text-align:right;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ o.age }}</span></button></sc-if>
+</sc-for>
+<sc-if value="{{ dLinkNone }}"><span style="padding:10px;font-size:12.5px;color:var(--fg-muted)">{{ dLinkNoneText }}</span></sc-if>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ dHasDate }}" hint-placeholder-val="{{ true }}">
+<span style="font-size:13px;color:var(--fg-muted);line-height:30px">{{ dDueLabel }}</span>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<div style="position:relative">
+<button class="op-select__trigger op-input--sm" type="button" aria-haspopup="dialog" aria-expanded="{{ dpOpenS }}" onClick="{{ dpToggle }}" style="width:auto;min-width:184px;justify-content:flex-start;gap:8px;box-shadow:{{ dpRing }}">
+<span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="calendar" size="14" hint-size="14px,14px"></x-import></span>
+<span style="color:{{ dpFg }};font-size:13px">{{ dpLabel }}</span>
+<span style="flex:1"></span>
+<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span>
+</button>
+<sc-if value="{{ dpOpen }}">
+<div role="dialog" aria-label="Choose a date" onClick="{{ stop }}" style="position:absolute;top:{{ dpTop }};bottom:{{ dpBottom }};left:0;z-index:80;width:280px;box-sizing:border-box;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--popover,var(--card));border-radius:14px;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:2px;padding-left:6px">
+<span style="flex:1;font-size:14px;font-weight:500;letter-spacing:-0.008em">{{ dpMonth }}</span>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Previous month" onClick="{{ dpPrev }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import></button>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Next month" onClick="{{ dpNext }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="15" hint-size="15px,15px"></x-import></button>
+</div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr)">
+<sc-for list="{{ dpDow }}" as="w" hint-placeholder-count="7"><span style="height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--fg-subtle)">{{ w }}</span></sc-for>
+</div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);row-gap:2px">
+<sc-for list="{{ dpDays }}" as="c" hint-placeholder-count="35">
+<sc-if value="{{ c.sel }}"><button type="button" aria-pressed="true" onClick="{{ c.pick }}" style="height:34px;border:0;border-radius:980px;background:var(--fg);color:var(--background);font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums;font-weight:500;cursor:pointer">{{ c.label }}</button></sc-if>
+<sc-if value="{{ c.unsel }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ c.pick }}" style="height:34px;border:0;border-radius:980px;background:transparent;color:{{ c.fg }};box-shadow:{{ c.ring }};font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums;cursor:pointer;transition:background 80ms cubic-bezier(.4,0,.2,1)" style-hover="background:var(--hover-surface)">{{ c.label }}</button></sc-if>
+</sc-for>
+</div>
+<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding-top:10px;border-top:1px solid var(--border-subtle)">
+<sc-for list="{{ dpQuick }}" as="o" hint-placeholder-count="3"><button class="op-pill" type="button" data-on="{{ o.on }}" onClick="{{ o.pick }}" style="height:26px;padding:0 10px;font-size:12.5px">{{ o.name }}</button></sc-for>
+<span style="flex:1"></span>
+<sc-if value="{{ dpCanClear }}"><button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ dpClear }}">Clear</button></sc-if>
+</div>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ dDueTimeShow }}">
+<div style="position:relative">
+<button class="op-select__trigger op-input--sm" type="button" aria-haspopup="listbox" aria-label="Due time" onClick="{{ tpDueToggle }}" style="width:auto;min-width:104px;justify-content:flex-start;gap:8px;box-shadow:{{ tpDueRing }}">
+<span style="display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="14" hint-size="14px,14px"></x-import></span>
+<span style="color:{{ dDueTimeFg }};font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums">{{ dDueTimeLabel }}</span>
+<span style="flex:1"></span>
+<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span>
+</button>
+<sc-if value="{{ tpDueOpen }}">
+<div role="listbox" data-tp="true" onClick="{{ stop }}" style="position:absolute;top:calc(100% + 6px);left:0;z-index:80;width:150px;max-height:232px;overflow-y:auto;padding:4px;box-sizing:border-box;background:var(--popover,var(--card));border-radius:14px;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ tpDueSlots }}" as="o" hint-placeholder-count="8"><button type="button" role="option" data-slot-on="{{ o.onS }}" data-slot-def="{{ o.defS }}" onClick="{{ o.pick }}" style="display:flex;align-items:center;width:100%;height:30px;padding:0 10px;border:0;border-radius:10px;background:{{ o.bg }};color:{{ o.fg }};font-family:{{ o.font }};font-size:12.5px;font-variant-numeric:tabular-nums;cursor:pointer" style-hover="background:var(--hover-surface)">{{ o.label }}</button></sc-for>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<span style="font-size:12.5px;color:var(--fg-subtle)">{{ dpRel }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ dIsEvent }}">
+<span style="font-size:13px;color:var(--fg-muted);line-height:30px">Time</span>
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+<button class="op-pill" type="button" data-on="{{ dAllDayOn }}" onClick="{{ toggleAllDay }}">All day</button>
+<sc-if value="{{ dTimed }}" hint-placeholder-val="{{ true }}">
+<div style="position:relative">
+<button class="op-select__trigger op-input--sm" type="button" aria-haspopup="listbox" onClick="{{ tpStartToggle }}" style="width:96px;gap:6px;font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums;box-shadow:{{ tpStartRing }}">{{ dStart }}<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span></button>
+<sc-if value="{{ tpStartOpen }}">
+<div role="listbox" data-tp="true" onClick="{{ stop }}" style="position:absolute;top:calc(100% + 6px);left:0;z-index:80;width:150px;max-height:232px;overflow-y:auto;padding:4px;box-sizing:border-box;background:var(--popover,var(--card));border-radius:14px;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ tpSlots }}" as="o" hint-placeholder-count="8"><button type="button" role="option" data-slot-on="{{ o.onS }}" onClick="{{ o.pick }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;height:30px;padding:0 10px;border:0;border-radius:10px;background:{{ o.bg }};color:var(--fg);font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums;cursor:pointer" style-hover="background:var(--hover-surface)">{{ o.label }}<span style="font-size:11px;color:var(--fg-subtle)">{{ o.dur }}</span></button></sc-for>
+</div>
+</sc-if>
+</div>
+<span style="color:var(--fg-subtle)">–</span>
+<div style="position:relative">
+<button class="op-select__trigger op-input--sm" type="button" aria-haspopup="listbox" onClick="{{ tpEndToggle }}" style="width:96px;gap:6px;font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums;box-shadow:{{ tpEndRing }}">{{ dEnd }}<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span></button>
+<sc-if value="{{ tpEndOpen }}">
+<div role="listbox" data-tp="true" onClick="{{ stop }}" style="position:absolute;top:calc(100% + 6px);left:0;z-index:80;width:170px;max-height:232px;overflow-y:auto;padding:4px;box-sizing:border-box;background:var(--popover,var(--card));border-radius:14px;box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ tpSlots }}" as="o" hint-placeholder-count="8"><button type="button" role="option" data-slot-on="{{ o.onS }}" onClick="{{ o.pick }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;height:30px;padding:0 10px;border:0;border-radius:10px;background:{{ o.bg }};color:var(--fg);font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums;cursor:pointer" style-hover="background:var(--hover-surface)">{{ o.label }}<span style="font-size:11px;color:var(--fg-subtle)">{{ o.dur }}</span></button></sc-for>
+</div>
+</sc-if>
+</div>
+<span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ dDur }}</span>
+</sc-if>
+</div>
+<span style="font-size:13px;color:var(--fg-muted);line-height:30px">Show as</span>
+<div class="op-pills"><sc-for list="{{ dBusyOpts }}" as="o" hint-placeholder-count="2"><button class="op-pill" type="button" data-on="{{ o.on }}" onClick="{{ o.pick }}">{{ o.name }}</button></sc-for></div>
+</sc-if>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:8px;padding:24px 28px 24px">
+<sc-if value="{{ dCanDelete }}"><button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ deleteDlg }}" style="color:var(--danger)">{{ dDeleteLabel }}</button></sc-if>
+<span style="flex:1"></span>
+<button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ closeDlg }}">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ saveDlg }}" disabled="{{ dEmpty }}">{{ dSaveLabel }}</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ lOpen }}">
+<div class="op-scrim" onClick="{{ lClose }}" style="z-index:1100">
+<div class="op-dialog" role="dialog" aria-modal="true" aria-label="Start session" onClick="{{ stop }}" style="width:min(560px,calc(100vw - 32px));max-width:none">
+<div style="display:flex;flex-direction:column;gap:20px;padding:24px 28px 0">
+<div style="display:flex;align-items:flex-start;gap:8px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+<span style="font-family:var(--font-display);font-size:21px;font-weight:600;letter-spacing:-0.014em">Start session</span>
+<span style="font-size:13px;color:var(--fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">For “{{ lTask }}”</span>
+</div>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ lClose }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="15" hint-size="15px,15px"></x-import></button>
+</div>
+<div class="op-textarea" style="padding:0;overflow:hidden">
+<textarea rows="4" aria-label="Prompt" value="{{ lPrompt }}" onChange="{{ lSetPrompt }}" onKeyDown="{{ lKey }}" autoFocus="{{ true }}" style="display:block;width:100%;box-sizing:border-box;border:0;outline:none;resize:none;padding:12px 14px;background:none;color:var(--fg);font-family:var(--font-mono);font-size:12.5px;line-height:1.6"></textarea>
+</div>
+<div style="display:grid;grid-template-columns:88px minmax(0,1fr);row-gap:14px;column-gap:16px;align-items:start">
+<span style="font-size:13px;color:var(--fg-muted);line-height:30px">Repository</span>
+<div class="op-pills"><sc-for list="{{ lRepos }}" as="o" hint-placeholder-count="2"><button class="op-pill" type="button" data-on="{{ o.on }}" onClick="{{ o.pick }}" style="font-family:var(--font-mono);font-size:12.5px">{{ o.name }}<span class="op-pill__n">{{ o.base }}</span></button></sc-for></div>
+<span style="font-size:13px;color:var(--fg-muted);line-height:30px">Host</span>
+<div class="op-pills"><sc-for list="{{ lHosts }}" as="o" hint-placeholder-count="3"><button class="op-pill" type="button" data-on="{{ o.on }}" onClick="{{ o.pick }}" style="font-family:var(--font-mono);font-size:12.5px"><span style="width:6px;height:6px;flex:none;border-radius:980px;background:{{ o.dot }};box-shadow:{{ o.ring }}"></span>{{ o.name }}</button></sc-for></div>
+<span style="font-size:13px;color:var(--fg-muted);line-height:30px">Agent</span>
+<div class="op-pills"><sc-for list="{{ lAgents }}" as="o" hint-placeholder-count="3"><button class="op-pill" type="button" data-on="{{ o.on }}" onClick="{{ o.pick }}">{{ o.name }}</button></sc-for></div>
+<span style="font-size:13px;color:var(--fg-muted);line-height:30px">Model</span>
+<div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+<div class="op-pills"><sc-for list="{{ lModels }}" as="o" hint-placeholder-count="3"><button class="op-pill" type="button" data-on="{{ o.on }}" onClick="{{ o.pick }}">{{ o.name }}</button></sc-for></div>
+<span style="font-size:12px;color:var(--fg-subtle)">{{ lModelDesc }}</span>
+</div>
+</div>
+<sc-if value="{{ lOffline }}">
+<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:14px;background:var(--hover-surface);font-size:13px;line-height:1.45;color:var(--fg-muted)">
+<span style="width:7px;height:7px;flex:none;margin-top:6px;border-radius:980px;box-shadow:inset 0 0 0 1.5px var(--fg-subtle)"></span>
+<span style="text-wrap:pretty">{{ lOfflineText }}</span>
+</div>
+</sc-if>
+</div>
+<div style="display:flex;align-items:center;gap:8px;padding:24px 28px">
+<span style="font-size:12px;color:var(--fg-subtle);display:flex;align-items:center;gap:6px"><kbd class="op-kbd">⌘</kbd><kbd class="op-kbd">⏎</kbd>to start</span>
+<span style="flex:1"></span>
+<button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ lClose }}">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ lGo }}" disabled="{{ lEmpty }}">{{ lGoLabel }}</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;section&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;tasks&quot;,&quot;calendar&quot;],&quot;default&quot;:&quot;tasks&quot;,&quot;tsType&quot;:&quot;'tasks' | 'calendar'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;showGoals&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Display&quot;}}">
+let PROJECTS = [
+  { id: 'mobile', name: 'XRP Mobile' },
+  { id: 'atlas', name: 'Atlas' },
+  { id: 'web', name: 'Client sites' },
+];
+const COLS = [
+  { id: 'later', name: 'Later', dot: 'transparent', ring: 'inset 0 0 0 1.5px var(--fg-subtle)' },
+  { id: 'todo', name: 'To do', dot: 'var(--fg-subtle)', ring: 'none' },
+  { id: 'doing', name: 'In progress', dot: 'var(--warning)', ring: 'none' },
+  { id: 'done', name: 'Done', dot: 'var(--success)', ring: 'none' },
+];
+const KEY = 'op-tasks-v1';
+const day = n => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const SEED_GOALS = [
+  { id: 'g1', name: 'Ship XRP Mobile 2.0 to TestFlight', project: 'mobile', due: day(27) },
+  { id: 'g2', name: 'Atlas public beta', project: 'atlas', due: day(42) },
+  { id: 'g3', name: 'Move every client site to the new stack', project: 'web', due: day(58) },
+];
+const T = (id, status, title, project, goal, due, notes) => ({ id, status, title, project, goal, due: due == null ? '' : day(due), notes: notes || '' });
+const SEED_TASKS = [
+  T('t1', 'later', 'Write a migration guide for legacy wallet users', 'mobile', 'g1'),
+  T('t2', 'later', 'Evaluate Codex for nightly refactors', null, null, null, 'Compare against Claude Code on the atlas test suite before switching the default agent.'),
+  T('t3', 'later', 'Dark mode for adri-rodriguez.com', 'web', 'g3'),
+  T('t4', 'todo', 'Address review comments on PR #121', 'mobile', 'g1', 2),
+  T('t5', 'todo', 'Draft the beta waitlist email', 'atlas', 'g2', 5),
+  T('t6', 'todo', 'Rotate flama-ai API keys', 'web', null, -1),
+  T('t7', 'todo', 'Nightly test automation for atlas', 'atlas', 'g2'),
+  T('t8', 'doing', 'Biometric unlock on Android', 'mobile', 'g1', 1, 'Blocked on a keystore edge case on Pixel 6.'),
+  T('t9', 'doing', 'Atlas onboarding flow', 'atlas', 'g2', 6),
+  T('t10', 'done', 'Upgrade React Native to 0.76', 'mobile', 'g1'),
+  T('t11', 'done', 'Connect fable as a host', null, null),
+  T('t12', 'done', 'flama-ai landing copy', 'web', 'g3'),
+  T('t13', 'done', 'SSO sign-in for Atlas', 'atlas', 'g2'),
+];
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const diffDays = iso => { const [y, m, d] = iso.split('-').map(Number); const a = new Date(y, m - 1, d); const b = new Date(); b.setHours(0, 0, 0, 0); return Math.round((a - b) / 864e5); };
+const fmtDate = iso => { if (!iso) return ''; const n = diffDays(iso); if (n === 0) return 'Today'; if (n === 1) return 'Tomorrow'; if (n === -1) return 'Yesterday'; const [, m, d] = iso.split('-').map(Number); return MON[m - 1] + ' ' + d; };
+const projName = id => (PROJECTS.find(p => p.id === id) || {}).name || '';
+const pad = n => String(n).padStart(2, '0');
+const isoOf = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const parseIso = iso => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); };
+const LONGMON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const DOW3 = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const fmtLong = iso => { const d = parseIso(iso); return DOW3[d.getDay()] + ', ' + MON[d.getMonth()] + ' ' + d.getDate() + (d.getFullYear() !== new Date().getFullYear() ? ', ' + d.getFullYear() : ''); };
+const minsOf = hm => { const [h, m] = (hm || '0:0').split(':').map(Number); return h * 60 + m; };
+const hm = m => pad(Math.floor(m / 60)) + ':' + pad(m % 60);
+const fmtDur = n => n <= 0 ? '' : n < 60 ? n + ' min' : n % 60 ? Math.floor(n / 60) + 'h ' + (n % 60) + 'm' : n / 60 + ' h';
+const SLOTS = Array.from({ length: 96 }, (_, i) => i * 15);
+const E = (id, n, title, start, end, source, extra) => ({ id, date: day(n), title, start: start || '', end: end || '', allDay: !start, busy: true, source, notes: '', ...(extra || {}) });
+const buildEvents = () => {
+  const out = [];
+  for (let n = -45; n <= 90; n++) {
+    const dw = parseIso(day(n)).getDay();
+    if (dw === 2 || dw === 4) out.push(E('su' + n, n, 'Atlas standup', '09:30', '09:45', 'google'));
+    if (dw === 5 && Math.floor((n + 45) / 7) % 2 === 0) out.push(E('sr' + n, n, 'XRP Mobile sprint review', '16:00', '17:00', 'google'));
+  }
+  return out.concat([
+    E('e1', 0, 'Design review', '15:00', '16:00', 'google'),
+    E('e2', 1, '1:1 with Adri', '12:00', '12:30', 'google'),
+    E('e3', 3, 'flama-ai client call', '17:30', '18:15', 'google', { notes: 'Walk through the new landing and the migration timeline.' }),
+    E('e4', 8, 'Dentist', '08:30', '09:30', 'manual'),
+    E('e5', 10, 'Investor update prep', '15:00', '16:00', 'manual', { busy: false }),
+    E('e6', 14, 'Atlas beta go/no-go', '11:00', '12:00', 'google'),
+    E('e7', -3, 'Quarterly planning', '10:00', '12:00', 'google'),
+    E('e8', 18, 'Flight to Lisbon', '', '', 'manual'),
+    E('e9', 22, 'Hackathon judging', '16:00', '18:00', 'google'),
+    E('e10', 6, 'Lunch with Marta', '13:30', '14:30', 'manual', { busy: false }),
+  ]);
+};
+const BUSY_DAY = () => [
+  E('bd1', 2, 'Gym', '07:30', '08:30', 'manual', { busy: false }),
+  E('bd2', 2, 'Inbox and planning', '08:45', '09:15', 'manual'),
+  E('bd3', 2, 'Hiring sync', '10:00', '10:30', 'google'),
+  E('bd4', 2, 'Atlas pricing workshop', '10:45', '12:00', 'google'),
+  E('bd5', 2, 'Lunch with Pau', '12:30', '13:30', 'manual', { busy: false }),
+  E('bd6', 2, 'Candidate interview', '14:00', '14:45', 'google'),
+  E('bd7', 2, 'XRP wallet security review', '15:00', '16:00', 'google'),
+  E('bd8', 2, 'Call with accountant', '16:30', '17:00', 'manual'),
+  E('bd9', 2, 'flama-ai weekly', '17:15', '17:45', 'google'),
+  E('bd10', 2, 'Padel', '19:30', '21:00', 'manual', { busy: false }),
+];
+const SSTATE = {
+  running: { dot: 'var(--success)', word: 'Running' },
+  waiting: { dot: 'var(--warning)', word: 'Needs input' },
+  failed: { dot: 'var(--danger)', word: 'Failed' },
+  completed: { dot: 'var(--fg-subtle)', word: 'Completed' },
+  queued: { dot: 'var(--fg-subtle)', word: 'Queued' },
+  idle: { dot: 'var(--fg-subtle)', word: 'Idle' },
+};
+const REPO_OF = { mobile: 'xrp-mobile', atlas: 'atlas', web: 'flama-ai' };
+const PDEF = {
+  mobile: { repos: ['xrp-mobile'], host: 'optimus', agent: 'claude-code' },
+  atlas: { repos: ['atlas', 'flama-ai'], host: 'fable', agent: 'claude-code' },
+  web: { repos: ['flama-ai', 'adri-rodriguez', 'xrp-mobile'], host: 'optimus', agent: 'codex' },
+};
+const ALL_REPOS = ['xrp-mobile', 'atlas', 'flama-ai', 'adri-rodriguez'];
+const HOSTS = [
+  { id: 'jordis-mac-studio', status: 'running' },
+  { id: 'optimus', status: 'idle' },
+  { id: 'fable', status: 'offline' },
+];
+const MODELS = {
+  'claude-code': [
+    { id: 'opus', name: 'Opus 4.6', desc: 'Deepest reasoning, long-horizon work' },
+    { id: 'sonnet', name: 'Sonnet 4.6', desc: 'Most efficient for everyday tasks' },
+    { id: 'haiku', name: 'Haiku 4.5', desc: 'Fastest for quick answers' },
+  ],
+  codex: [
+    { id: 'gpt', name: 'GPT-5.2', desc: 'Strong at wide refactors' },
+    { id: 'gpt-codex', name: 'GPT-5.2 Codex', desc: 'Tuned for long coding runs' },
+    { id: 'gpt-mini', name: 'GPT-5.2 mini', desc: 'Fastest for quick answers' },
+  ],
+  opencode: [
+    { id: 'qwen', name: 'Qwen3 Coder 480B', desc: 'Open weights · runs on your host' },
+    { id: 'deepseek', name: 'DeepSeek V3.2', desc: 'Open weights · strong at tests' },
+  ],
+};
+const DEF_MODEL = { 'claude-code': 'sonnet', codex: 'gpt-codex', opencode: 'qwen' };
+const MODEL_NAME = id => { for (const k in MODELS) { const m = MODELS[k].find(x => x.id === id); if (m) return m.name; } return ''; };
+const sessionUrl = (x, t) => 'SessionsConsole.dc.html?' + new URLSearchParams({
+  session: x.name,
+  state: { running: 'running', waiting: 'waiting', failed: 'failed' }[x.state] || 'idle',
+  meta: [x.agent, MODEL_NAME(x.model), x.repo].filter(Boolean).join(' · '),
+  repo: x.repo || '',
+  prompt: (x.prompt || (t ? t.title + (t.notes ? '\n\n' + t.notes : '') : x.name)).slice(0, 400),
+  ...(t && t.id ? { task: t.id, taskTitle: t.title } : {}),
+}).toString();
+const AGENTS = [{ id: 'claude-code', name: 'Claude Code' }, { id: 'codex', name: 'Codex' }, { id: 'opencode', name: 'OpenCode' }];
+const PROJ_OF_REPO = { 'xrp-mobile': 'mobile', atlas: 'atlas', 'flama-ai': 'web', 'adri-rodriguez': 'web' };
+const SEED_SESSIONS = [
+  { id: 's1', name: 'PR #121 porting to peersyst', state: 'running', age: '2m', repo: 'xrp-mobile', agent: 'Claude Code' },
+  { id: 's10', name: 'biometric-unlock-android', state: 'waiting', age: '12m', repo: 'xrp-mobile', agent: 'Claude Code' },
+  { id: 's2', name: 'nightly ingest', state: 'running', age: '9m', repo: 'atlas', agent: 'Claude Code' },
+  { id: 's11', name: 'atlas-onboarding-flow', state: 'running', age: '24m', repo: 'atlas', agent: 'Codex' },
+  { id: 's3', name: 'invoice triage', state: 'waiting', age: '18m', repo: 'atlas', agent: 'Codex' },
+  { id: 's4', name: 'XRP Mobile API cleanup', state: 'waiting', age: '3h', repo: 'xrp-mobile', agent: 'OpenCode' },
+  { id: 's5', name: 'retriever eval', state: 'failed', age: '4h', repo: 'atlas', agent: 'Claude Code' },
+  { id: 's6', name: 'First version page design', state: 'completed', age: '1d', repo: 'flama-ai', agent: 'Claude Code' },
+  { id: 's12', name: 'sso-sign-in', state: 'completed', age: '3d', repo: 'atlas', agent: 'Claude Code' },
+  { id: 's7', name: 'doc summariser', state: 'idle', age: '1d', repo: 'atlas', agent: 'Codex' },
+  { id: 's8', name: 'Automatic deployments', state: 'waiting', age: '2w', repo: 'adri-rodriguez', agent: 'OpenCode' },
+  { id: 's9', name: 'tool router', state: 'idle', age: '3w', repo: 'xrp-mobile', agent: 'Codex' },
+];
+const SEED_LINKS = { t4: ['s1'], t8: ['s10', 's4'], t9: ['s11'], t12: ['s6'], t13: ['s12'] };
+const AUTOS = [
+  { id: 'a1', name: 'Dependency audit', time: '09:00', on: d => d.getDay() === 1 },
+  { id: 'a2', name: 'Release notes draft', time: '16:00', on: d => d.getDay() === 5 },
+  { id: 'a3', name: 'Monthly cost report', time: '08:00', on: d => d.getDate() === 1 },
+];
+const LAYERS = [
+  { id: 'google', name: 'Google Calendar', icon: 'calendar' },
+  { id: 'manual', name: 'Personal', icon: 'user' },
+  { id: 'tasks', name: 'Task due dates', icon: 'check-circle' },
+  { id: 'autos', name: 'Automations', icon: 'zap' },
+];
+
+class Component extends DCLogic {
+  state = (() => {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+    const now = new Date();
+    return { tasks: ((saved && saved.tasks) || SEED_TASKS).filter(t => !/^zz\d/.test(t.id)).map(t => (saved && saved.links ? t : { ...t, sessions: SEED_LINKS[t.id] || t.sessions || [] })),
+      sessions: (saved && saved.sessions) || SEED_SESSIONS, hov: null, linkOpen: false, launch: null, goals: (saved && saved.goals) || SEED_GOALS, projects: (saved && saved.projects) || PROJECTS, events: (() => { let ev = (saved && saved.events) || buildEvents(); if (!(saved && saved.busyDay)) ev = ev.filter(e => !/^bd\d/.test(e.id)).concat(BUSY_DAY()); return ev; })(), busyDay: true, project: 'all', goal: null, drag: null, compose: null, composeText: '', dlg: null,
+      section: null, cal: { y: now.getFullYear(), m: now.getMonth() }, layers: { google: true, manual: true, tasks: true, autos: true }, dp: null, tp: null, more: null, dropDay: null };
+  })();
+  ghostRef = React.createRef();
+  calRef = React.createRef();
+  watchCal() {
+    const el = this.calRef.current;
+    if (el === this._roEl) return;
+    if (this._ro) this._ro.disconnect();
+    this._roEl = el; this._ro = null;
+    if (!el) return;
+    const check = () => { const c = el.getBoundingClientRect().width / 7 < 150; if (c !== !!this.state.calCompact) this.setState({ calCompact: c }); };
+    this._ro = new ResizeObserver(check);
+    this._ro.observe(el);
+    check();
+  }
+
+  componentDidMount() {
+    const q = new URLSearchParams(window.location.search).get('section');
+    if (q === 'calendar' || q === 'tasks') this.setState({ section: q });
+    const tq = new URLSearchParams(window.location.search).get('task');
+    if (tq && this.state.tasks.some(t => t.id === tq)) this.openTask(tq);
+    this._move = e => this.onMove(e);
+    this._up = e => this.onUp(e);
+    this._key = e => {
+      if (e.key === 'Escape' && this.state.drag) { this._press = null; this.endDrag(); this.setState({ drag: null }); }
+      if (e.key === 'n' && !this.state.dlg && !this.state.compose && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); if (this.sec() === 'calendar') this.openEvent(null, day(0)); else this.openTask(null); }
+    };
+    this.watchCal();
+    window.addEventListener('pointermove', this._move);
+    window.addEventListener('pointerup', this._up);
+    window.addEventListener('keydown', this._key);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('pointermove', this._move);
+    window.removeEventListener('pointerup', this._up);
+    window.removeEventListener('keydown', this._key);
+    clearTimeout(this._drop);
+  }
+  componentDidUpdate() {
+    if (this._savedT !== this.state.tasks || this._savedG !== this.state.goals || this._savedE !== this.state.events || this._savedP !== this.state.projects || this._savedS !== this.state.sessions) {
+      this._savedS = this.state.sessions;
+      this._savedT = this.state.tasks; this._savedG = this.state.goals; this._savedE = this.state.events; this._savedP = this.state.projects;
+      try { localStorage.setItem(KEY, JSON.stringify({ tasks: this.state.tasks, goals: this.state.goals, events: this.state.events, projects: this.state.projects, sessions: this.state.sessions, links: true, busyDay: true })); } catch (e) {}
+    }
+    this.watchCal();
+    if (this.state.tp && this._tpShown !== this.state.tp) {
+      this._tpShown = this.state.tp;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const box = document.querySelector('[data-tp]'); if (!box) return;
+        const el = box.querySelector('[data-slot-on="true"]') || box.firstElementChild; if (!el) return;
+        box.scrollTop = Math.max(0, el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 96);
+      }));
+    }
+    if (!this.state.tp) this._tpShown = null;
+    if (this._flip) {
+      const before = this._flip; this._flip = null;
+      document.querySelectorAll('[data-card]').forEach(el => {
+        const a = before[el.dataset.card]; if (!a) return;
+        const b = el.getBoundingClientRect();
+        const dx = a.left - b.left, dy = a.top - b.top;
+        if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+        el.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.4,0,.2,1)' });
+      });
+    }
+  }
+  snap() { const m = {}; document.querySelectorAll('[data-card]').forEach(el => { m[el.dataset.card] = el.getBoundingClientRect(); }); this._flip = m; }
+
+  pass(t) { const s = this.state; return (s.project === 'all' || (s.project === 'none' ? !t.project : t.project === s.project)) && (!s.goal || t.goal === s.goal); }
+  visible(col, except) { return this.state.tasks.filter(t => t.status === col && this.pass(t) && t.id !== except); }
+
+  onDown(t, e) {
+    if (e.button !== 0 || this.state.drag) return;
+    this._press = { id: t.id, x: e.clientX, y: e.clientY, el: e.currentTarget };
+  }
+  onMove(e) {
+    const p = this._press; if (!p) return;
+    const d = this.state.drag;
+    if (!d) {
+      if (Math.hypot(e.clientX - p.x, e.clientY - p.y) < 5) return;
+      const r = p.el.getBoundingClientRect();
+      const t = this.state.tasks.find(x => x.id === p.id);
+      const idx = this.visible(t.status).findIndex(x => x.id === t.id);
+      document.body.style.cursor = 'grabbing'; document.body.style.userSelect = 'none';
+      this.setState({ drag: { id: t.id, x0: r.left, y0: r.top, w: r.width, h: r.height, col: t.status, idx, dropping: false }, compose: null });
+      return;
+    }
+    if (d.dropping) return;
+    const g = this.ghostRef.current;
+    if (g) g.style.transform = `translate(${e.clientX - p.x}px,${e.clientY - p.y}px)`;
+    const hit = document.elementFromPoint(e.clientX, e.clientY);
+    const colEl = hit && hit.closest('[data-col]');
+    if (!colEl) return;
+    const col = colEl.dataset.col;
+    const cards = Array.from(colEl.querySelectorAll('[data-card]'));
+    let idx = 0;
+    for (const c of cards) { const r = c.getBoundingClientRect(); if (e.clientY > r.top + r.height / 2) idx++; }
+    if (col !== d.col || idx !== d.idx) { this.snap(); this.setState({ drag: { ...d, col, idx } }); }
+  }
+  onUp() {
+    const p = this._press; this._press = null;
+    const d = this.state.drag;
+    if (!d) { if (p) this.openTask(p.id); return; }
+    if (d.dropping) return;
+    const g = this.ghostRef.current, ph = document.querySelector('[data-ph]');
+    this.setState({ drag: { ...d, dropping: true } });
+    if (g && ph) {
+      const r = ph.getBoundingClientRect();
+      g.style.transition = 'transform 200ms cubic-bezier(.16,1,.3,1)';
+      g.style.transform = `translate(${r.left - d.x0}px,${r.top - d.y0}px)`;
+      const inner = g.firstElementChild;
+      if (inner) { inner.style.animation = 'none'; inner.style.transition = 'transform 200ms cubic-bezier(.16,1,.3,1), box-shadow 200ms'; inner.style.transform = 'none'; inner.style.boxShadow = 'none'; }
+    }
+    clearTimeout(this._drop);
+    this._drop = setTimeout(() => this.commitDrop(d), g && ph ? 200 : 0);
+  }
+  endDrag() { document.body.style.cursor = ''; document.body.style.userSelect = ''; }
+  commitDrop(d) {
+    this.endDrag();
+    this.setState(s => {
+      const moving = s.tasks.find(t => t.id === d.id);
+      const rest = s.tasks.filter(t => t.id !== d.id);
+      const vis = rest.filter(t => t.status === d.col && this.pass(t));
+      const updated = { ...moving, status: d.col };
+      let at;
+      if (d.idx < vis.length) at = rest.indexOf(vis[d.idx]);
+      else if (vis.length) at = rest.indexOf(vis[vis.length - 1]) + 1;
+      else at = rest.length;
+      rest.splice(at, 0, updated);
+      return { tasks: rest, drag: null };
+    });
+  }
+
+  toggleDone(t) {
+    this.snap();
+    this.setState(s => {
+      const rest = s.tasks.filter(x => x.id !== t.id);
+      const next = { ...t, status: t.status === 'done' ? 'todo' : 'done' };
+      const first = rest.findIndex(x => x.status === next.status);
+      rest.splice(first === -1 ? rest.length : first, 0, next);
+      return { tasks: rest };
+    });
+  }
+  addTask(col, title) {
+    const s = this.state;
+    const goal = s.goal || null;
+    const project = goal ? (s.goals.find(g => g.id === goal) || {}).project : s.project === 'all' || s.project === 'none' ? null : s.project;
+    const t = { id: 't' + Date.now(), status: col, title, project: project || null, goal, due: '', notes: '' };
+    this.snap();
+    this.setState(st => {
+      const arr = st.tasks.slice();
+      const vis = arr.filter(x => x.status === col);
+      const at = vis.length ? arr.indexOf(vis[vis.length - 1]) + 1 : arr.length;
+      arr.splice(at, 0, t);
+      return { tasks: arr, composeText: '' };
+    });
+  }
+  openTask(id, status) {
+    const s = this.state;
+    const t = id && s.tasks.find(x => x.id === id);
+    const project = s.goal ? (s.goals.find(g => g.id === s.goal) || {}).project : s.project === 'all' || s.project === 'none' ? null : s.project;
+    const draft = t ? { ...t } : { id: null, status: status || 'todo', title: '', notes: '', project: project || null, goal: s.goal, due: '', sessions: [] };
+    this.setState({ dlg: { kind: 'task', draft }, compose: null, dp: null, tp: null, more: null, linkOpen: false });
+  }
+  openGoal(id) {
+    const s = this.state;
+    const g = id && s.goals.find(x => x.id === id);
+    const draft = g ? { ...g } : { id: null, name: '', project: s.project === 'all' || s.project === 'none' ? 'mobile' : s.project, due: '' };
+    this.setState({ dlg: { kind: 'goal', draft }, compose: null, dp: null, tp: null });
+  }
+  newSession(t) {
+    const id = 's' + Date.now();
+    const slug = t.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'session';
+    const sess = { id, name: slug, state: 'running', age: 'now', repo: REPO_OF[t.project] || 'xrp-mobile', agent: 'Claude Code' };
+    this.setState(s => ({ sessions: [sess].concat(s.sessions) }));
+    return id;
+  }
+  openLaunch(t, src) {
+    const def = PDEF[t.project] || { repos: ALL_REPOS, host: 'optimus', agent: 'claude-code' };
+    const prompt = t.title.trim() + (t.notes && t.notes.trim() ? '\n\n' + t.notes.trim() : '');
+    this.setState({ launch: { src, taskId: t.id, title: t.title.trim(), project: t.project, prompt, repo: def.repos[0], host: def.host, agent: def.agent, model: DEF_MODEL[def.agent] }, hov: null, linkOpen: false });
+  }
+  launchGo() {
+    const L = this.state.launch; if (!L || !L.prompt.trim()) return;
+    const offline = (HOSTS.find(h => h.id === L.host) || {}).status === 'offline';
+    const id = 's' + Date.now();
+    const slug = L.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'session';
+    const sess = { id, name: slug, state: offline ? 'queued' : 'running', age: 'now', repo: L.repo, host: L.host, agent: (AGENTS.find(a => a.id === L.agent) || {}).name || 'Claude Code', model: L.model, prompt: L.prompt };
+    if (L.src === 'card') this.snap();
+    this.setState(s => {
+      const up = x => ({ ...x, sessions: (x.sessions || []).concat(id), status: x.status === 'done' ? 'done' : 'doing' });
+      const out = { launch: null, sessions: [sess].concat(s.sessions) };
+      if (L.src === 'dlg' && s.dlg) out.dlg = { ...s.dlg, draft: up(s.dlg.draft) };
+      else out.tasks = s.tasks.map(x => (x.id === L.taskId ? up(x) : x));
+      return out;
+    });
+  }
+  startSession(taskId) {
+    const t = this.state.tasks.find(x => x.id === taskId);
+    const id = this.newSession(t);
+    this.snap();
+    this.setState(s => ({ hov: null, tasks: s.tasks.map(x => (x.id === taskId ? { ...x, sessions: (x.sessions || []).concat(id), status: x.status === 'done' ? 'done' : 'doing' } : x)) }));
+  }
+  openProject() { this.setState({ dlg: { kind: 'project', draft: { id: null, name: '' } }, dp: null, tp: null, more: null, compose: null }); }
+  sec() { return this.state.section || this.props.section || 'tasks'; }
+  openEvent(id, iso) {
+    const ev = id && this.state.events.find(x => x.id === id);
+    const draft = ev ? { ...ev } : { id: null, title: '', date: iso || day(0), start: '10:00', end: '10:30', allDay: false, busy: true, notes: '', source: 'manual' };
+    this.setState({ dlg: { kind: 'event', draft }, dp: null, tp: null, more: null });
+  }
+  dropOn(iso) {
+    const g = this._calDrag; this._calDrag = null;
+    if (!g) { this.setState({ dropDay: null }); return; }
+    if (g.kind === 'task') this.setState(s => ({ dropDay: null, tasks: s.tasks.map(t => (t.id === g.id ? { ...t, due: iso } : t)) }));
+    else this.setState(s => ({ dropDay: null, events: s.events.map(e => (e.id === g.id ? { ...e, date: iso } : e)) }));
+  }
+  patch(p) { this.setState(s => ({ dlg: { ...s.dlg, draft: { ...s.dlg.draft, ...p } } })); }
+  save() {
+    const { kind, draft } = this.state.dlg;
+    if (kind === 'project') {
+      const name = draft.name.trim(); if (!name) return;
+      const id = 'p' + Date.now();
+      this.snap();
+      this.setState(s => ({ projects: s.projects.concat({ id, name }), project: id, goal: null, section: 'tasks', dlg: null }));
+      return;
+    }
+    if (kind === 'event') {
+      if (!draft.title.trim()) return;
+      const d = { ...draft, title: draft.title.trim() };
+      if (!d.allDay && minsOf(d.end) <= minsOf(d.start)) d.end = hm(Math.min(minsOf(d.start) + 30, 1425));
+      this.setState(s => ({ events: d.id ? s.events.map(e => (e.id === d.id ? d : e)) : s.events.concat({ ...d, id: 'e' + Date.now() }), dlg: null, dp: null, tp: null }));
+      return;
+    }
+    if (kind === 'task') {
+      if (!draft.title.trim()) return;
+      const d = { ...draft, title: draft.title.trim() };
+      this.snap();
+      this.setState(s => {
+        if (d.id) {
+          const old = s.tasks.find(t => t.id === d.id);
+          if (old.status === d.status) return { tasks: s.tasks.map(t => (t.id === d.id ? d : t)), dlg: null };
+          const rest = s.tasks.filter(t => t.id !== d.id);
+          const first = rest.findIndex(x => x.status === d.status);
+          rest.splice(first === -1 ? rest.length : first, 0, d);
+          return { tasks: rest, dlg: null };
+        }
+        const arr = s.tasks.slice();
+        const vis = arr.filter(x => x.status === d.status);
+        arr.splice(vis.length ? arr.indexOf(vis[vis.length - 1]) + 1 : arr.length, 0, { ...d, id: 't' + Date.now() });
+        return { tasks: arr, dlg: null };
+      });
+    } else {
+      if (!draft.name.trim()) return;
+      const d = { ...draft, name: draft.name.trim() };
+      this.setState(s => d.id
+        ? { goals: s.goals.map(g => (g.id === d.id ? d : g)), tasks: s.tasks.map(t => (t.goal === d.id ? { ...t, project: d.project } : t)), dlg: null }
+        : { goals: s.goals.concat({ ...d, id: 'g' + Date.now() }), dlg: null });
+    }
+  }
+  remove() {
+    const { kind, draft } = this.state.dlg;
+    if (kind === 'event') { this.setState(s => ({ events: s.events.filter(e => e.id !== draft.id), dlg: null })); return; }
+    this.snap();
+    if (kind === 'task') this.setState(s => ({ tasks: s.tasks.filter(t => t.id !== draft.id), dlg: null }));
+    else this.setState(s => ({ goals: s.goals.filter(g => g.id !== draft.id), tasks: s.tasks.map(t => (t.goal === draft.id ? { ...t, goal: null } : t)), goal: s.goal === draft.id ? null : s.goal, dlg: null }));
+  }
+
+  renderVals() {
+    const s = this.state, d = s.drag;
+    PROJECTS = s.projects;
+    const stop = e => e.stopPropagation();
+    const open = s.tasks.filter(t => t.status !== 'done');
+    const overdue = open.filter(t => t.due && diffDays(t.due) < 0);
+    const goalById = id => s.goals.find(g => g.id === id);
+
+    const card = t => {
+      const done = t.status === 'done';
+      const g = t.goal && goalById(t.goal);
+      const dd = t.due ? diffDays(t.due) : null;
+      const showGoalOnCard = g && s.goal !== g.id;
+      const showProj = t.project && s.project === 'all';
+      return {
+        id: t.id, card: 'true', title: t.title, notes: t.notes,
+        hasNotes: t.notes && !done && this.props.showNotes !== false ? 'true' : undefined,
+        hasProj: showProj ? 'true' : undefined, projName: projName(t.project),
+        hasGoal: showGoalOnCard ? 'true' : undefined, goalName: g ? g.name : '',
+        hasDue: t.due && !done ? 'true' : undefined, due: fmtDate(t.due) + (t.dueTime ? ' · ' + t.dueTime : ''),
+        dueFg: dd !== null && dd < 0 ? 'var(--danger)' : dd !== null && dd <= 1 ? 'var(--fg)' : 'var(--fg-muted)',
+        hasMeta: showProj || showGoalOnCard || (t.due && !done) ? 'true' : undefined,
+        done: done ? 'true' : undefined,
+        titleFg: done ? 'var(--fg-muted)' : 'var(--fg)', strike: done ? 'line-through' : 'none',
+        checkBg: done ? 'var(--success)' : 'transparent', checkBorder: done ? 'var(--success)' : 'var(--border-strong)',
+        checkAria: done ? 'Mark as not done' : 'Mark as done',
+        down: e => this.onDown(t, e),
+        ...(() => {
+          const ls = (t.sessions || []).map(id => s.sessions.find(x => x.id === id)).filter(Boolean);
+          const rank = { waiting: 0, running: 1, failed: 2, idle: 3, completed: 4 };
+          const top = ls.slice().sort((a, b) => rank[a.state] - rank[b.state])[0];
+          return {
+            hasSess: top ? 'true' : undefined, sessDot: top ? SSTATE[top.state].dot : '', sessWord: top ? SSTATE[top.state].word : '',
+            sessName: top ? top.name : '', sessMore: ls.length > 1 ? '+' + (ls.length - 1) : '',
+            openSess: e => { e.stopPropagation(); if (top) window.location.href = sessionUrl(top, t); },
+            canStart: !top && !done && !d && s.hov === t.id ? 'true' : undefined,
+            titlePad: !top && !done ? '26px' : '0px',
+          };
+        })(),
+        enter: () => { if (!this.state.drag && this.state.hov !== t.id) this.setState({ hov: t.id }); },
+        leave: () => { if (this.state.hov === t.id) this.setState({ hov: null }); },
+        start: e => { e.stopPropagation(); this.openLaunch(t, 'card'); },
+        toggle: e => { e.stopPropagation(); this.toggleDone(t); },
+      };
+    };
+
+    const cols = COLS.map(c => {
+      const vis = this.visible(c.id, d ? d.id : null);
+      const items = vis.map(card);
+      if (d && d.col === c.id) items.splice(Math.min(d.idx, items.length), 0, { id: '__ph', ph: 'true', h: d.h + 'px' });
+      const over = d && d.col === c.id;
+      const composing = s.compose === c.id;
+      return {
+        ...c, items,
+        n: s.tasks.filter(t => t.status === c.id && this.pass(t)).length,
+        trayBg: over ? 'color-mix(in srgb, var(--selected-surface) 60%, var(--hover-surface))' : 'var(--hover-surface)',
+        trayRing: 'none',
+        addAria: 'Add task to ' + c.name,
+        composing: composing ? 'true' : undefined, notComposing: composing ? undefined : 'true',
+        startCompose: e => { e.stopPropagation(); this.setState({ compose: c.id, composeText: '' }); },
+      };
+    });
+
+    const goalsShown = s.goals.filter(g => s.project === 'all' || g.project === s.project);
+    const goalCards = goalsShown.map(g => {
+      const linked = s.tasks.filter(t => t.goal === g.id);
+      const doneN = linked.filter(t => t.status === 'done').length;
+      const pct = linked.length ? Math.round((doneN / linked.length) * 100) : 0;
+      const sel = s.goal === g.id;
+      return {
+        ...g, projName: projName(g.project), due: g.due ? fmtDate(g.due) : 'No date',
+        doneN, totalN: linked.length, pct: pct + '%', countLabel: doneN + ' / ' + linked.length + ' tasks',
+        barBg: pct === 100 ? 'var(--success)' : 'var(--fg)',
+        bg: sel ? 'var(--selected-surface)' : 'var(--card)',
+        border: sel ? 'var(--ring)' : 'var(--border-subtle)',
+        pick: () => { this.snap(); this.setState({ goal: sel ? null : g.id }); },
+        edit: e => { e.stopPropagation(); this.openGoal(g.id); },
+      };
+    });
+
+    const projChips = [{ id: 'all', name: 'All projects' }].concat(PROJECTS, [{ id: 'none', name: 'Unassigned' }]).map(p => ({
+      name: p.name, icon: p.id === 'all' ? 'layers' : 'folder', sideOn: s.project === p.id ? 'true' : 'false',
+      n: open.filter(t => p.id === 'all' || (p.id === 'none' ? !t.project : t.project === p.id)).length,
+      on: s.project === p.id ? 'true' : 'false',
+      pick: () => { this.snap(); this.setState(st => ({ project: p.id, goal: st.goal && p.id !== 'all' && (goalById(st.goal) || {}).project !== p.id ? null : st.goal })); },
+    }));
+
+    const ag = s.goal && goalById(s.goal);
+    const dt = d && s.tasks.find(t => t.id === d.id);
+
+    let dlgVals = { dlgOpen: undefined };
+    if (s.dlg) {
+      const { kind, draft } = s.dlg;
+      const isTask = kind === 'task', isGoal = kind === 'goal', isEvent = kind === 'event', isProj = kind === 'project';
+      const dk = isEvent ? 'date' : 'due';
+      const val = draft[dk] || '';
+      const setDate = iso => this.setState(st => ({ dp: null, dlg: { ...st.dlg, draft: { ...st.dlg.draft, [dk]: iso, ...(iso ? {} : { dueTime: '' }) } } }));
+      const dp = s.dp, tp = s.tp;
+      const dpDays = [];
+      if (dp) {
+        const f0 = new Date(dp.y, dp.m, 1), off = (f0.getDay() + 6) % 7, dim = new Date(dp.y, dp.m + 1, 0).getDate(), ti = day(0);
+        for (let i = 0; i < Math.ceil((off + dim) / 7) * 7; i++) {
+          const dt = new Date(dp.y, dp.m, 1 - off + i), iso = isoOf(dt), sel = iso === val;
+          dpDays.push({ label: dt.getDate(), sel: sel ? 'true' : undefined, unsel: sel ? undefined : 'true',
+            fg: dt.getMonth() === dp.m ? 'var(--fg)' : 'var(--fg-subtle)', ring: iso === ti ? 'inset 0 0 0 1px var(--border-strong)' : 'none',
+            pick: e => { e.stopPropagation(); setDate(iso); } });
+        }
+      }
+      const shift = (p, n) => { const x = new Date(p.y, p.m + n, 1); return { ...p, y: x.getFullYear(), m: x.getMonth() }; };
+      const nextMon = day(((8 - new Date().getDay()) % 7) || 7);
+      const eom = (() => { const x = new Date(); return isoOf(new Date(x.getFullYear(), x.getMonth() + 1, 0)); })();
+      const quick = isGoal ? [['End of month', eom], ['In 3 months', day(90)]] : [['Today', day(0)], ['Tomorrow', day(1)], ['Next Monday', nextMon]];
+      const rel = !val ? '' : (n => n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : n === -1 ? 'Yesterday' : n > 0 ? 'In ' + n + ' days' : -n + ' days ago')(diffDays(val));
+      const sm = minsOf(draft.start), em = minsOf(draft.end);
+      const ring = on => (on ? '0 0 0 1px var(--primary),0 0 0 4px var(--ring)' : 'none');
+      const tpSlots = !tp ? [] : (tp === 'start' ? SLOTS : SLOTS.filter(m => m > sm)).map(m => {
+        const on = tp === 'start' ? m === sm : m === em;
+        return { label: hm(m), dur: tp === 'end' ? fmtDur(m - sm) : '', onS: on ? 'true' : 'false', bg: on ? 'var(--selected-surface)' : 'transparent',
+          pick: e => { e.stopPropagation(); this.setState(st => ({ tp: null, dlg: { ...st.dlg, draft: { ...st.dlg.draft, ...(tp === 'start' ? { start: hm(m), end: hm(Math.min(m + Math.max(15, em - sm), 1425)) } : { end: hm(m) }) } } })); } };
+      });
+      dlgVals = {
+        dlgOpen: 'true', dIsTask: isTask ? 'true' : undefined, dIsEvent: isEvent ? 'true' : undefined,
+        dHasNotes: isGoal || isProj ? undefined : 'true', dHasProject: isEvent || isProj ? undefined : 'true', dHasDate: isProj ? undefined : 'true', dGridDisplay: isProj ? 'none' : 'grid',
+        dIsGoogle: isEvent && draft.source === 'google' ? 'true' : undefined,
+        dlgTitle: { task: draft.id ? 'Edit task' : 'New task', goal: draft.id ? 'Edit goal' : 'New goal', event: draft.id ? 'Edit event' : 'New event', project: 'New project' }[kind],
+        dlgPh: isTask ? 'Task title' : isGoal ? 'What are you aiming for?' : isProj ? 'Project name' : 'Event title',
+        dTitle: isGoal || isProj ? draft.name : draft.title,
+        setDTitle: e => this.patch(isGoal || isProj ? { name: e.target.value } : { title: e.target.value }),
+        dNotes: draft.notes || '', setDNotes: e => this.patch({ notes: e.target.value }),
+        dlgKey: e => { if (e.key === 'Enter') this.save(); },
+        dStatuses: COLS.map(c => ({ ...c, on: draft.status === c.id ? 'true' : 'false', pick: () => this.patch({ status: c.id }) })),
+        dProjects: (isTask ? [{ id: null, name: 'None' }] : []).concat(PROJECTS).map(p => ({
+          name: p.name, on: draft.project === p.id ? 'true' : 'false',
+          pick: () => this.patch(isTask ? { project: p.id, goal: draft.goal && (goalById(draft.goal) || {}).project !== p.id ? null : draft.goal } : { project: p.id }),
+        })),
+        dGoals: [{ id: null, name: 'None' }].concat(s.goals.filter(g => !draft.project || g.project === draft.project)).map(g => ({
+          name: g.name, on: draft.goal === g.id ? 'true' : 'false',
+          pick: () => this.patch(g.id ? { goal: g.id, project: g.project } : { goal: null }),
+        })),
+        dDueLabel: isTask ? 'Due' : isGoal ? 'Target' : 'Date',
+        ...(() => {
+          if (!isTask) return {};
+          const linked = draft.sessions || [];
+          const unlink = id => e => { e.stopPropagation(); this.patch({ sessions: linked.filter(x => x !== id) }); };
+          const q = (s.linkQ || '').trim().toLowerCase();
+          const freeAll = s.sessions.filter(x => linked.indexOf(x.id) === -1);
+          const free = freeAll.filter(x => !q || (x.name + ' ' + x.repo + ' ' + x.agent).toLowerCase().indexOf(q) !== -1);
+          const mine = free.filter(x => draft.project && PROJ_OF_REPO[x.repo] === draft.project);
+          const other = free.filter(x => mine.indexOf(x) === -1);
+          const row = x => ({ isRow: 'true', ...x, dot: SSTATE[x.state].dot, pick: e => { e.stopPropagation(); this.setState(st => ({ linkOpen: false, dlg: { ...st.dlg, draft: { ...st.dlg.draft, sessions: (st.dlg.draft.sessions || []).concat(x.id) } } })); } });
+          const list = [];
+          if (mine.length) { list.push({ isHead: 'true', label: 'In ' + projName(draft.project) }); mine.forEach(x => list.push(row(x))); }
+          if (other.length) { if (mine.length) list.push({ isHead: 'true', label: 'Other sessions' }); other.forEach(x => list.push(row(x))); }
+          return {
+            dSess: linked.map(id => s.sessions.find(x => x.id === id)).filter(Boolean).map(x => ({ ...x, dot: SSTATE[x.state].dot, word: SSTATE[x.state].word,
+              open: e => { e.stopPropagation(); window.location.href = sessionUrl(x, draft); }, unlink: unlink(x.id) })),
+            dStartSess: e => { e.stopPropagation(); if (!draft.title.trim()) return; this.openLaunch(draft, 'dlg'); },
+            dStartHint: !draft.title.trim() ? 'Add a title first' : linked.length ? '' : '',
+            dLinkToggle: e => { e.stopPropagation(); const r = e.currentTarget.parentElement.getBoundingClientRect(), H = window.innerHeight; const below = H - r.bottom - 16, above = r.top - 16; const up = below < 280 && above > below; const room = Math.max(160, Math.min(260, up ? above : below)); this.setState(st => ({ linkOpen: !st.linkOpen, linkPos: { up, room }, linkQ: '', dp: null, tp: null })); },
+            dLinkTop: s.linkPos && s.linkPos.up ? 'auto' : 'calc(100% + 6px)', dLinkBottom: s.linkPos && s.linkPos.up ? 'calc(100% + 6px)' : 'auto', dLinkMax: (s.linkPos ? s.linkPos.room : 260) + 'px',
+            dLinkOpen: s.linkOpen ? 'true' : undefined, dLinkOpenS: s.linkOpen ? 'true' : 'false',
+            dLinkList: list, dLinkNone: list.length ? undefined : 'true',
+            dLinkNoneText: freeAll.length ? 'No sessions match “' + (s.linkQ || '').trim() + '”.' : 'Every session is already linked.',
+            dLinkQ: s.linkQ || '', dLinkSetQ: e => this.setState({ linkQ: e.target.value }),
+            dLinkKey: e => { if (e.key === 'Escape') { e.stopPropagation(); this.setState({ linkOpen: false, linkQ: '' }); } if (e.key === 'Enter') { e.preventDefault(); const first = list.find(o => o.isRow); if (first) first.pick(e); } },
+          };
+        })(),
+        dpOpen: dp ? 'true' : undefined, dpOpenS: dp ? 'true' : 'false', dpRing: ring(!!dp),
+        dpLabel: val ? fmtLong(val) : 'No date', dpFg: val ? 'var(--fg)' : 'var(--fg-subtle)', dpRel: rel,
+        dpToggle: e => { e.stopPropagation(); const b0 = val ? parseIso(val) : new Date(); const r = e.currentTarget.getBoundingClientRect(); const H = 372, below = r.bottom + 6, above = r.top - 6 - H; const want = window.innerHeight - below >= H + 8 ? below : above >= 8 ? above : Math.max(8, window.innerHeight - H - 8); this.setState({ dp: s.dp ? null : { y: b0.getFullYear(), m: b0.getMonth(), off: Math.round(want - r.top) }, tp: null }); },
+        dpTop: dp ? dp.off + 'px' : '0px', dpBottom: 'auto',
+        dpMonth: dp ? LONGMON[dp.m] + ' ' + dp.y : '', dpDow: ['M', 'T', 'W', 'T', 'F', 'S', 'S'], dpDays,
+        dpPrev: e => { e.stopPropagation(); this.setState(st => ({ dp: shift(st.dp, -1) })); },
+        dpNext: e => { e.stopPropagation(); this.setState(st => ({ dp: shift(st.dp, 1) })); },
+        dpQuick: quick.map(([name, iso]) => ({ name, on: val === iso ? 'true' : 'false', pick: e => { e.stopPropagation(); setDate(iso); } })),
+        dpCanClear: !isEvent && val ? 'true' : undefined, dpClear: e => { e.stopPropagation(); setDate(''); },
+        dAllDayOn: draft.allDay ? 'true' : 'false', dTimed: draft.allDay ? undefined : 'true',
+        toggleAllDay: e => { e.stopPropagation(); this.setState(st => ({ tp: null, dlg: { ...st.dlg, draft: { ...st.dlg.draft, allDay: !st.dlg.draft.allDay, start: st.dlg.draft.start || '10:00', end: st.dlg.draft.end || '10:30' } } })); },
+        dStart: draft.start || '', dEnd: draft.end || '', dDur: isEvent && !draft.allDay ? fmtDur(em - sm) : '',
+        tpStartOpen: tp === 'start' ? 'true' : undefined, tpEndOpen: tp === 'end' ? 'true' : undefined,
+        tpStartRing: ring(tp === 'start'), tpEndRing: ring(tp === 'end'),
+        tpStartToggle: e => { e.stopPropagation(); this.setState({ tp: s.tp === 'start' ? null : 'start', dp: null }); setTimeout(() => { const box = document.querySelector('[data-tp]'); if (!box) return; const el = box.querySelector('[data-slot-on="true"]'); if (el) box.scrollTop = Math.max(0, el.offsetTop - 96); }, 20); },
+        tpEndToggle: e => { e.stopPropagation(); this.setState({ tp: s.tp === 'end' ? null : 'end', dp: null }); setTimeout(() => { const box = document.querySelector('[data-tp]'); if (!box) return; const el = box.querySelector('[data-slot-on="true"]'); if (el) box.scrollTop = Math.max(0, el.offsetTop - 96); }, 20); },
+        tpSlots,
+        dDueTimeShow: isTask ? 'true' : undefined,
+        dDueTimeLabel: draft.dueTime || 'Add time', dDueTimeFg: draft.dueTime ? 'var(--fg)' : 'var(--fg-subtle)',
+        tpDueOpen: tp === 'due' ? 'true' : undefined, tpDueRing: ring(tp === 'due'),
+        tpDueToggle: e => { e.stopPropagation(); this.setState({ tp: s.tp === 'due' ? null : 'due', dp: null }); setTimeout(() => { const box = document.querySelector('[data-tp]'); if (!box) return; const el = box.querySelector('[data-slot-on="true"]') || box.querySelector('[data-slot-def="true"]'); if (el) box.scrollTop = Math.max(0, el.offsetTop - 96); }, 20); },
+        tpDueSlots: tp !== 'due' ? [] : [{ label: 'No time', v: '' }].concat(SLOTS.map(m => ({ label: hm(m), v: hm(m) }))).map(o => {
+          const on = (draft.dueTime || '') === o.v;
+          return { label: o.label, onS: on ? 'true' : 'false', defS: o.v === '09:00' ? 'true' : 'false', bg: on ? 'var(--selected-surface)' : 'transparent',
+            fg: o.v ? 'var(--fg)' : 'var(--fg-muted)', font: o.v ? 'var(--font-mono)' : 'inherit',
+            pick: e => { e.stopPropagation(); this.setState(st => ({ tp: null, dlg: { ...st.dlg, draft: { ...st.dlg.draft, dueTime: o.v, ...(o.v && !st.dlg.draft.due ? { due: day(0) } : {}) } } })); } };
+        }),
+        dBusyOpts: [['Busy', true], ['Free', false]].map(([name, v]) => ({ name, on: draft.busy === v ? 'true' : 'false', pick: () => this.patch({ busy: v }) })),
+        dCanDelete: draft.id ? 'true' : undefined, dDeleteLabel: isTask ? 'Delete task' : isGoal ? 'Delete goal' : 'Delete event',
+        dSaveLabel: draft.id ? 'Save' : isTask ? 'Add task' : isGoal ? 'Add goal' : isProj ? 'Create project' : 'Add event',
+        dEmpty: !(isGoal || isProj ? draft.name : draft.title).trim(),
+      };
+    }
+
+    const sec = this.sec();
+    const { y: cy, m: cm } = s.cal;
+    const cf = new Date(cy, cm, 1), coff = (cf.getDay() + 6) % 7, cdim = new Date(cy, cm + 1, 0).getDate();
+    const ccount = Math.ceil((coff + cdim) / 7) * 7, todayIso = day(0), L = s.layers;
+    let calMeetN = 0, calDueN = 0, calRunN = 0;
+    const calDays = [];
+    for (let i = 0; i < ccount; i++) {
+      const dt = new Date(cy, cm, 1 - coff + i), iso = isoOf(dt), inM = dt.getMonth() === cm;
+      const meets = s.events.filter(e => e.date === iso && L[e.source]);
+      const dues = L.tasks ? s.tasks.filter(t => t.due === iso) : [];
+      const runs = L.autos ? AUTOS.filter(a => a.on(dt)) : [];
+      if (inM) { calMeetN += meets.length; calDueN += dues.length; calRunN += runs.length; }
+      const items = [].concat(
+        meets.map(e => ({ sort: e.allDay ? -2 : minsOf(e.start), key: e.id, title: e.title, time: e.allDay ? '' : e.start, kind: 'meet',
+          bg: e.allDay ? 'var(--control)' : 'transparent', fg: e.busy ? 'var(--fg)' : 'var(--fg-muted)', drag: 'true', allDay: e.allDay, busy: e.busy,
+          tip: e.title + (e.allDay ? ' · all day' : ' · ' + e.start + '–' + e.end) + (e.busy ? '' : ' · free'),
+          open: ev => { ev.stopPropagation(); this.openEvent(e.id); } })),
+        dues.map(t => ({ sort: -1, key: t.id, title: t.title, time: '', kind: 'task', done: t.status === 'done',
+          bg: 'transparent', fg: t.status === 'done' ? 'var(--fg-muted)' : 'var(--fg)', drag: 'true', tip: 'Due · ' + t.title,
+          open: ev => { ev.stopPropagation(); this.openTask(t.id); } })),
+        runs.map(a => ({ sort: minsOf(a.time), key: a.id + iso, title: a.name, time: a.time, kind: 'auto', bg: 'transparent', fg: 'var(--fg-muted)', drag: 'false',
+          tip: 'Automation · ' + a.name, open: ev => { ev.stopPropagation(); window.location.href = 'Routines.dc.html'; } })),
+      ).sort((a, b) => a.sort - b.sort).map(x => ({
+        ...x, isTask: x.kind === 'task' ? 'true' : undefined, isAuto: x.kind === 'auto' ? 'true' : undefined, hasTime: x.time && !s.calCompact ? 'true' : undefined, fullTime: x.time ? 'true' : undefined,
+        strike: x.done ? 'line-through' : 'none', op: inM ? '1' : '0.55',
+        ringC: x.done ? 'var(--success)' : x.kind === 'meet' && x.busy ? 'var(--fg-muted)' : 'var(--fg-subtle)',
+        isRing: x.kind === 'meet' && !x.allDay ? 'true' : undefined, fw: x.kind === 'auto' || x.done || (x.kind === 'meet' && !x.busy) ? '400' : '500',
+        dragStart: x.drag === 'true' ? ev => { this._calDrag = { kind: x.kind === 'task' ? 'task' : 'meet', id: x.key }; ev.dataTransfer.effectAllowed = 'move'; try { ev.dataTransfer.setData('text/plain', x.key); } catch (er) {} } : undefined,
+      }));
+      const shown = items.length > 4 ? items.slice(0, 3) : items;
+      const col = i % 7, isToday = iso === todayIso;
+      calDays.push({
+        iso, items: shown, all: items,
+        label: dt.getDate() === 1 ? MON[dt.getMonth()] + ' 1' : dt.getDate(),
+        longLabel: fmtLong(iso),
+        numBg: isToday ? 'var(--fg)' : 'transparent', numFg: isToday ? 'var(--background)' : inM ? 'var(--fg)' : 'var(--fg-subtle)', numW: isToday ? '500' : '400',
+        bg: s.dropDay === iso ? 'var(--selected-surface)' : inM ? 'transparent' : 'var(--hover-surface)',
+        bl: col ? '1px solid var(--border-subtle)' : '0', bt: i >= 7 ? '1px solid var(--border-subtle)' : '0',
+        radius: i === ccount - 7 ? '0 0 0 17px' : i === ccount - 1 ? '0 0 17px 0' : '0',
+        hasMore: items.length > 4 ? 'true' : undefined, moreLabel: (items.length - 3) + ' more',
+        moreOpen: s.more === iso ? 'true' : undefined, popL: col >= 5 ? 'auto' : '2px', popR: col >= 5 ? '2px' : 'auto',
+        popT: i >= ccount - 14 ? 'auto' : '2px', popB: i >= ccount - 14 ? '2px' : 'auto',
+        openMore: ev => { ev.stopPropagation(); this.setState({ more: iso }); },
+        add: ev => { ev.stopPropagation(); if (s.more) { this.setState({ more: null }); return; } this.openEvent(null, iso); },
+        dragOver: ev => { ev.preventDefault(); if (this.state.dropDay !== iso) this.setState({ dropDay: iso }); },
+        drop: ev => { ev.preventDefault(); this.dropOn(iso); },
+      });
+    }
+    const shiftCal = n => () => this.setState(st => { const x = new Date(st.cal.y, st.cal.m + n, 1); return { cal: { y: x.getFullYear(), m: x.getMonth() }, more: null }; });
+    const Lc = s.launch;
+    const lPatch = p => this.setState(st => ({ launch: { ...st.launch, ...p } }));
+    const lHost = Lc && HOSTS.find(h => h.id === Lc.host);
+    const lOff = !!(lHost && lHost.status === 'offline');
+    const launchVals = !Lc ? { lOpen: undefined } : {
+      lOpen: 'true', lTask: Lc.title, lPrompt: Lc.prompt,
+      lSetPrompt: e => lPatch({ prompt: e.target.value }),
+      lKey: e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); this.launchGo(); } if (e.key === 'Escape') this.setState({ launch: null }); },
+      lRepos: (PDEF[Lc.project] || { repos: ALL_REPOS }).repos.map(r => ({ name: r, base: 'main', on: Lc.repo === r ? 'true' : 'false', pick: () => lPatch({ repo: r }) })),
+      lHosts: HOSTS.map(h => ({ name: h.id, on: Lc.host === h.id ? 'true' : 'false', pick: () => lPatch({ host: h.id }),
+        dot: h.status === 'running' ? 'var(--success)' : h.status === 'idle' ? 'var(--fg-subtle)' : 'transparent', ring: h.status === 'offline' ? 'inset 0 0 0 1.5px var(--fg-subtle)' : 'none' })),
+      lAgents: AGENTS.map(a => ({ name: a.name, on: Lc.agent === a.id ? 'true' : 'false', pick: () => lPatch(Lc.agent === a.id ? {} : { agent: a.id, model: DEF_MODEL[a.id] }) })),
+      lModels: (MODELS[Lc.agent] || []).map(m => ({ name: m.name, on: Lc.model === m.id ? 'true' : 'false', pick: () => lPatch({ model: m.id }) })),
+      lModelDesc: ((MODELS[Lc.agent] || []).find(m => m.id === Lc.model) || {}).desc || '',
+      lOffline: lOff ? 'true' : undefined,
+      lOfflineText: lOff ? Lc.host + ' has been offline for 2 days. The session waits as Queued and starts when its runner reconnects.' : '',
+      lGoLabel: lOff ? 'Queue session' : 'Start session',
+      lEmpty: !Lc.prompt.trim(),
+      lClose: e => { if (e) e.stopPropagation(); this.setState({ launch: null }); },
+      lGo: e => { if (e) e.stopPropagation(); this.launchGo(); },
+    };
+    const calVals = {
+      ...launchVals,
+      isTasks: sec === 'tasks' ? 'true' : undefined, isCal: sec === 'calendar' ? 'true' : undefined,
+      navTasks: sec === 'tasks' ? 'true' : 'false', navCal: sec === 'calendar' ? 'true' : 'false',
+      goTasks: () => this.setState({ section: 'tasks', more: null }), goCal: () => this.setState({ section: 'calendar', compose: null }),
+      todayN: s.events.filter(e => e.date === todayIso).length,
+      calLayers: LAYERS.map(l => ({ ...l, on: L[l.id] ? 'true' : 'false', onV: L[l.id] ? 'true' : undefined, op: L[l.id] ? '1' : '0.6',
+        boxBg: L[l.id] ? 'var(--fg)' : 'transparent', boxBorder: L[l.id] ? 'var(--fg)' : 'var(--border-strong)',
+        toggle: () => this.setState(st => ({ layers: { ...st.layers, [l.id]: !st.layers[l.id] } })) })),
+      calTitle: LONGMON[cm] + ' ' + cy, calMeetN, calDueN, calRunN,
+      calPrev: shiftCal(-1), calNext: shiftCal(1),
+      calToday: () => { const x = new Date(); this.setState({ cal: { y: x.getFullYear(), m: x.getMonth() }, more: null }); },
+      calRef: this.calRef,
+      calDow: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], calDays,
+      closeMore: e => { e.stopPropagation(); this.setState({ more: null }); },
+      dragEnd: () => { this._calDrag = null; if (this.state.dropDay) this.setState({ dropDay: null }); },
+      newEvent: e => { if (e) e.stopPropagation(); const n0 = new Date(); this.openEvent(null, cy === n0.getFullYear() && cm === n0.getMonth() ? todayIso : isoOf(new Date(cy, cm, 1))); },
+      dlgClick: e => { e.stopPropagation(); if (s.dp || s.tp || s.linkOpen) this.setState({ dp: null, tp: null, linkOpen: false }); },
+    };
+
+    return {
+      stop,
+      closeMenus: () => { if (s.more) this.setState({ more: null }); },
+      goSessions: () => { window.location.href = 'SessionsConsole.dc.html'; },
+      goRoutines: () => { window.location.href = 'Routines.dc.html'; },
+      openN: open.length, doingN: s.tasks.filter(t => t.status === 'doing').length, doneN: s.tasks.filter(t => t.status === 'done').length,
+      hasOverdue: overdue.length ? 'true' : undefined, overdueN: overdue.length,
+      newTask: e => { if (e) e.stopPropagation(); this.openTask(null); },
+      newGoal: e => { if (e) e.stopPropagation(); this.openGoal(null); },
+      projChips, projCount: PROJECTS.length,
+      newProject: e => { e.stopPropagation(); this.openProject(); },
+      pageTitle: s.project === 'all' ? 'Tasks' : s.project === 'none' ? 'Unassigned' : projName(s.project),
+      goalActive: ag ? 'true' : undefined, goalActiveName: ag ? ag.name : '',
+      clearGoal: () => { this.snap(); this.setState({ goal: null }); },
+      showGoals: this.props.showGoals === false ? undefined : 'true',
+      goalCards, noGoals: goalsShown.length ? undefined : 'true',
+      cols,
+      composeText: s.composeText,
+      composeHint: s.goal && ag ? 'In ' + ag.name : s.project !== 'all' ? 'In ' + projName(s.project) : '',
+      setCompose: e => this.setState({ composeText: e.target.value.replace(/\n/g, '') }),
+      composeKey: e => {
+        if (e.key === 'Enter') { e.preventDefault(); const v = s.composeText.trim(); if (v) this.addTask(s.compose, v); }
+        if (e.key === 'Escape') this.setState({ compose: null, composeText: '' });
+      },
+      composeBlur: () => { if (!s.composeText.trim()) this.setState({ compose: null }); },
+      dragging: d ? 'true' : undefined, ghostRef: this.ghostRef,
+      gx: d ? d.x0 + 'px' : '0px', gy: d ? d.y0 + 'px' : '0px', gw: d ? d.w + 'px' : '0px',
+      gTitle: dt ? dt.title : '', gMeta: dt ? [projName(dt.project), dt.due ? fmtDate(dt.due) : ''].filter(Boolean).join(' · ') : '',
+      closeDlg: () => this.setState({ dlg: null, dp: null, tp: null }),
+      ...calVals,
+      saveDlg: () => this.save(), deleteDlg: () => this.remove(),
+      ...dlgVals,
+    };
+  }
+}
+</script>
+</body>
+</html>

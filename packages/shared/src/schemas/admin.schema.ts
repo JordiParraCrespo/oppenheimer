@@ -1,9 +1,8 @@
 import { z } from 'zod';
 
 /**
- * Contracts for the Better Auth admin plugin (super-admin) operations. Used for
- * client-side form validation and shared types; the plugin exposes the actual
- * endpoints under `/api/auth/admin/*`.
+ * Contracts for the Better Auth admin plugin (super-admin) operations, which the
+ * plugin serves under `/api/auth/admin/*`.
  */
 
 export const listUsersQuerySchema = z.object({

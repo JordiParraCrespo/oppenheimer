@@ -37,6 +37,16 @@ runner does with it and point back.
   indices never appear in a binary frame.
 - The control plane allocates attachment ids per link and frees them on
   detach.
+- **No frame on the link is larger than 512 KiB**, text or binary, in
+  either direction: `LINK_MAX_FRAME_BYTES` in
+  `packages/shared/src/protocol/link.ts`, from which the runner's
+  `MaxFrameBytes` is generated. The control plane closes a runner that
+  sends a bigger one with 1009 before buffering it (`ws`'s
+  `maxPayload`); the runner reads no bigger one and refuses to send one
+  rather than lose the link over it. A PTY frame is at most 32 KiB plus
+  its header, so the one message that can approach the cap is the
+  session list in `hello` and `heartbeat`, which the runner fits to it
+  (below).
 
 ### Authentication
 
@@ -77,11 +87,15 @@ runner does with it and point back.
   control frames stay small, and one paste must not queue ahead of every
   pane on the host. The control plane parks the image under the command
   id and the runner pulls it once over HTTPS with its own assertion
-  (`GET /hosts/self/images/{commandId}`); what counts as an image is one
-  table in `packages/shared/src/protocol/session-image.ts` that the
-  runner's copy is generated from. It is sent only to a runner whose
-  `hello` names the `session.image` capability, so an older runner is
-  refused up front rather than sent a frame it ignores.
+  (`GET /hosts/self/images/{commandId}`); what counts as a file a session
+  takes is one table in `packages/shared/src/protocol/session-file.ts`
+  that the runner's copy is generated from. It is sent only to a runner
+  whose `hello` names the `session.image` capability, so an older runner is
+  refused up front rather than sent a frame it ignores. Since 2026-10-04
+  the frame may carry a PDF or UTF-8 text as well as a picture (the names
+  `image`, `images` and `imageId` stay, so runners of either age parse it),
+  and those types go only to a runner whose `hello` also names
+  `session.files`.
 - **`welcome`** is the control plane's answer to `hello`: the protocol
   version the two will speak and the fingerprint of the control plane's
   signing key, which the runner compares against the one it pinned at
@@ -93,16 +107,49 @@ runner does with it and point back.
   `session.started` in its log, an attachment says so with its first
   frame. **`attachment.closed`** is the runner freeing an id whose PTY
   ended on its own.
+- **`session.started` means the session has a terminal, not that its agent
+  is up.** The host builds the tmux session *before* it clones, so the pane
+  is there about thirty milliseconds in and the clone, the worktree and the
+  agent follow it. The checkouts it reports are therefore true before they
+  are on disk: the worktree's path is known from the start. An attach is
+  served from here on. The `agent` step of `session.step` is what says the
+  agent was launched, and a console that watched the start keeps its steps
+  on screen until then (05), so the reader sees the agent and never a shell
+  waiting on a clone.
+- **`session.attach` is served while a create is still running.** It needs
+  the session's tmux name and nothing else, and that exists from
+  `session.started`; the host makes the attach wait for the pane rather than
+  refusing it or queueing it behind the clone. Every other command for that
+  session still waits for the create to land, so a `session.stop` sent
+  during a create is answered after it, not during.
 - **`session.create` carries the launch**, because how a session is
   started is part of what the runner is being asked to start. Beyond the
   checkouts: `agent`, one of the catalog's ids (`CODING_AGENT_IDS`,
   `shell` among them for the blank terminal); `launch`
   (`{ model?, permission?, effort? }`); `prompt` (the person's first task,
-  optional); and the slugs and checkouts the directory layout needs.
+  optional); `images` (up to five `{ imageId, mediaType }` attached to
+  that task, only with a `prompt`, each once — a PDF or text only for a
+  runner that named `session.files`); and the slugs and
+  checkouts the directory layout needs. Like `session.image`, `images`
+  carries no bytes: the runner pulls each with
+  `GET /hosts/self/images/{imageId}` before it starts the agent. It is
+  sent only to a runner whose `hello` names `session.create.images`
+  (2026-09-28): one that predates it would drop the field and launch the
+  task without the pictures it talks about. How the images got there is
+  the control plane's (03).
   `permission` is present exactly when the agent has approvals: the
   control plane fills an absent level in as `ask` for every such agent
   and records none for one without, so the blank terminal is sent no
   level rather than whatever the composer last held.
+  `effort` is a level name from `SESSION_EFFORTS`, the union of every
+  name any CLI here takes, and is legal only where the session's
+  **model** offers it (`CODING_AGENTS[agent].models[].effort`); absent
+  means the CLI's own default. A level the model does not offer is never
+  forwarded: the control plane records none (03) and the runner, reading
+  the same catalog, drops one it is sent (02 §5). The union is a
+  vocabulary, not a scale — which names a launch may carry, and their
+  order, are the model's (changed 2026-09-29: it was five product stops
+  every agent mapped onto its own flag).
 
   **No project travels** (2026-09-26). The slugs are the workspace's
   and the session's, the directory is `workspaces/<org>/sessions/<slug>`
@@ -115,6 +162,14 @@ runner does with it and point back.
   2026-09-26), that arrives as a field a runner advertises it takes, the
   way `session.image` is capability-gated, never as an optional field an
   older runner silently drops.
+
+  **`hello.capabilities` is open-ended** (since 2026-10-04). It was a closed
+  enum, so a runner naming a capability its control plane had never heard
+  of (a rollback, a runner released first) failed the whole hello and
+  redialled forever. It is a list of strings now, and the control plane
+  keeps the ones it knows (`knownCapabilities`). A control plane that
+  predates this still refuses an unknown name, so the release that adds
+  `session.files` ships the control plane before the runner offers it.
 
   **A new catalog agent does not move the protocol version.** A runner
   probes the command of every agent it can launch (02 §10), so its last
@@ -145,6 +200,19 @@ runner does with it and point back.
   created while its host is offline therefore keeps its task in the log
   and delivers it when the launch is finally dispatched.
 - `host.preflight`, `host.update`
+- `repository.prepare` — get a repository ready on the host before any
+  session asks for it: the store cloned or fetched and a spare worktree
+  made at the base (02 §5). The console sends it through
+  `POST /v1/sessions/prepare` the moment New session has a host and a
+  repository, so the create that follows cuts its branch from a checkout
+  that already exists. No session exists and nothing is recorded, so the
+  token its git needs **travels with the command**, minted for that one
+  repository and sealed to the host's key as `credentials.grant` seals
+  one: a credential ask names a session. The runner holds it under
+  `prepare:<commandId>` for that command's git and drops it when the
+  command ends. Fire and forget; a runner whose `hello` does not name the
+  `repository.prepare` capability is sent nothing, and the create does the
+  work as before.
 - `credentials.token` — the runner asks for the installation token for
   one session's repository; the control plane answers with
   `credentials.grant`, carrying the token sealed to the host's key and
@@ -160,12 +228,20 @@ runner does with it and point back.
   "persisted before the disconnect" from "never arrived", so the runner
   keeps a batch until an ack accounts for every key in it and resends
   otherwise; the append is `ON CONFLICT DO NOTHING` per row, which is
-  what makes the resend free. The log the batch lands in is 03's; the
+  what makes the resend free. It resends on every reconnect, after
+  hello, and also on a link that stays up: a batch the link took but
+  that has had no ack for **one minute** is sent again, together with
+  every batch made after it, in order — sending only the overdue one
+  would put it behind newer batches the control plane may not have
+  either. The timeout is generous because a control plane whose
+  database is behind stops reading the link, and a resend then only
+  adds to the backlog. The log the batch lands in is 03's; the
   wire that carries it is this note's. While a session starts, the
-  runner logs `session.step`: its kind and `{ step, status, durationMs }`
-  payload are `packages/shared/src/protocol/session-step.ts`, and the Go
-  twin is generated from it. A failure is `session.failed`, not a step
-  status.
+  runner logs `session.step`: its kind and `{ step, status, durationMs,
+  download }` payload are `packages/shared/src/protocol/session-step.ts`,
+  and the Go twin is generated from it. `download` marks the clone step
+  of a repository the host has never held, which is a first download
+  rather than a fetch. A failure is `session.failed`, not a step status.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather
@@ -205,7 +281,21 @@ grounds can still fetch, verify and install the version that fixes it
 - **Hello**, the first message after the upgrade: runner version, the
   protocol range it speaks, host facts, and a snapshot of every session
   it holds. The control plane reconciles against its own state rather
-  than replaying a queue.
+  than replaying a queue: an open session the hello leaves out is
+  recorded **stopped**, so the console offers a restart rather than a
+  terminal that will never attach, and one still starting is dispatched
+  again (the create is idempotent by session id).
+- **The session list is fitted to the frame cap**, in `hello` and
+  `heartbeat` alike, giving up a little more at each step: every
+  snapshot as built; then every session **compacted** to its id, agent,
+  state and age, with no windows and no optional fields (what
+  reconciliation reads is the id); and only if that still does not fit,
+  **truncated** to as many compact snapshots as fit, logged as an error
+  on the runner. A truncated hello therefore gets the open sessions it
+  left out recorded stopped, although tmux still runs them. No host comes near it — a compact snapshot is
+  under 190 bytes, room for some 2,800 sessions — and the step exists so
+  that one that does still has a link, where an over-cap hello would be
+  closed with 1009 on every redial.
 - **Heartbeat**, every 15 s: per-session state, host load, free disk on
   the workspaces filesystem, the versions of `git`, `tmux` and the
   agent, and the update channel.

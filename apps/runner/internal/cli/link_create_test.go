@@ -25,18 +25,20 @@ type heldClone struct {
 	mu      sync.Mutex
 	clones  int
 	forID   []string
+	refs    []string // the ref each clone was asked to fetch
 }
 
-func (h *heldClone) Ensure(ctx context.Context, repo, remote string) error {
+func (h *heldClone) Ensure(ctx context.Context, repo, remote, ref string) error {
 	h.mu.Lock()
 	h.clones++
 	h.forID = append(h.forID, sessionsdomain.SessionOf(ctx))
+	h.refs = append(h.refs, ref)
 	h.mu.Unlock()
 	<-h.release
 	if err := ctx.Err(); err != nil {
 		return sessionsdomain.ErrGitAbandoned.WithCause(err)
 	}
-	return h.Worktrees.Ensure(ctx, repo, remote)
+	return h.Worktrees.Ensure(ctx, repo, remote, ref)
 }
 
 func newCreateHarness(t *testing.T) (*linkHandler, *sessionsapp.Service, *heldClone, *fake.Terminals) {
@@ -85,7 +87,7 @@ func createMessage(t *testing.T, commandID string) link.Message {
 	return message(t, "session.create", map[string]any{
 		"commandId": commandID, "sessionId": sessionUnderTest, "agent": "claude-code",
 		"sessionSlug": "bright-lark", "checkouts": []map[string]any{{
-			"checkoutId": "c-1", "githubRepoId": 42, "repositoryFullName": "acme-labs/xrp-mobile", "baseBranch": "main",
+			"checkoutId": "c-1", "githubRepoId": 42, "repositoryFullName": "acme-labs/xrp-mobile", "baseBranch": "develop",
 		}},
 	})
 }
@@ -135,6 +137,10 @@ func TestACreateOutlivesItsLinkAndWhatWaitedOnItRunsAfter(t *testing.T) {
 	}
 	if git.forID[0] != sessionUnderTest {
 		t.Fatalf("the clone ran for session %q, want %q", git.forID[0], sessionUnderTest)
+	}
+	// The frame's base is the one ref a create fetches.
+	if git.refs[0] != "develop" {
+		t.Fatalf("the clone fetched %q, want the frame's base %q", git.refs[0], "develop")
 	}
 	if names, _ := terminals.List(context.Background()); len(names) != 0 {
 		t.Fatalf("the stop did not end the tmux session: %v", names)

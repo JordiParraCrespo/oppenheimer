@@ -20,7 +20,9 @@ whose contract the API serves.
 | **Organizations** (name, slug, logo, members) | the Better Auth `organization` + `member` tables, unchanged — there is no `url` column today; one would be a nullable column on `organization`, not a table | no |
 | **Hosts** | `hosts/` → `host` (keys inline; owned by a **person**, borrowed by workspaces), `host_pairing_token` | yes |
 | **Projects** | `projects/` → `project`, `project_repository` (the repositories a project holds, and its defaults) | yes |
-| **Sessions** | `sessions/` → `work_session`, `session_checkout` (which is also where a repository is remembered), `work_session_event` | yes |
+| **Sessions** | `sessions/` → `work_session`, `session_checkout` (which is also where a repository is remembered), `work_session_event`, `session_turn` (a session's turns, folded from its log; a run's status is its first) | yes |
+| **External events** | `inbound-events/` → `inbound_delivery` (a webhook as it arrived, 7 days), `inbound_event` (one normalized event per workspace, 30 days); provider-neutral, GitHub its first source (16 §Q6–Q7) | yes |
+| **Automations** | `automations/` → `automation`, `automation_revision`, `automation_trigger`, `automation_trigger_subject`, `automation_run` (why a run fired and what the guards decided, and the session it dispatched), `automation_settings` (a workspace's limits); the design is 16, the console 13 | yes |
 | **Repositories** | **no table** — listed live from GitHub through the installation; a checkout records the GitHub id, the installation and a name snapshot inline | no table |
 | **GitHub allowed repositories** | *not stored at all* — the installation is the allowlist, and GitHub answers it | — |
 | **Coding agents** | a closed catalog in `packages/shared`, plus what the runner last saw on `host.capabilities` — a hint, never a gate | no table |
@@ -57,6 +59,13 @@ This is the shape the whole design turns on, so it comes first.
   project of notes, documents and bots needs. herdr-projects models the
   same case as a thread of kind `tab`, and a project with `repos = []`
   is ordinary there.
+  **Changed 2026-09-27:** the create body takes **exactly one** checkout
+  in the MVP. The runner makes a session as one worktree of one
+  repository, so a session sent with none was recorded, then refused by
+  the host at launch (`SESS_002`) and shown as failed. The API refuses it
+  before a row is written, and the console keeps its composer disabled
+  until a repository is picked. The model keeps zero as a valid
+  count; a session with no git returns when a runner can make one.
 
 A project is **not** a repository, and a session is **not** a
 repository. Sessions belong to projects, and repositories are what a
@@ -346,9 +355,10 @@ a **projection**, not a second truth:
   `<runId>:<n>`, where `runId` is a random id the runner mints at
   process start and `n` its own counter, so the key depends on nothing
   the control plane hands out and survives any reconnect; from the API
-  it is the command id. The append is one
-  `INSERT … ON CONFLICT (sessionId, idempotencyKey) DO NOTHING` per
-  row, with `seq` assigned to the rows that actually land, so a batch
+  it is the command id. The append is idempotent per key: a batch lands
+  in one `INSERT` that skips the keys already in the log (with
+  `ON CONFLICT (sessionId, idempotencyKey) DO NOTHING` as the backstop),
+  with `seq` assigned to the rows that actually land, so a batch
   replayed after a dropped ack, or half-applied before a crash, appends
   only what was not yet seen and the fold runs over exactly that.
 - `payload` is capped at 8 KB and **never carries pane text**. On the
@@ -724,7 +734,7 @@ on the workspace-owned tables, exactly as `lead` does (all but
 
 **`hosts/`**
 
-- `host` — `id`, `ownerUserId`, `name`, `hostname`, `os`, `arch`,
+- `host` — (its metadata columns move to four side tables in 15) `id`, `ownerUserId`, `name`, `hostname`, `os`, `arch`,
   `runnerVersion`, `capabilities` jsonb (git/tmux/disk and the detected
   agents), `publicKey` text, `publicKeyFingerprint`,
   `previousPublicKey` text null, `previousPublicKeyFingerprint` null,
@@ -997,13 +1007,14 @@ Console-facing, all `/api/v1`, all with `@CheckPolicies` +
 `@RequireScopes` + Swagger decorators:
 
 ```
-GET    /hosts                     read Host          hosts:read
+GET    /hosts                     read Host          hosts:read    ?include=unpaired (14)
 GET    /hosts/{id}                read Host          hosts:read
+GET    /hosts/{id}/timeline       read Host          hosts:read    keyset, newest first (15)
 PATCH  /hosts/{id}                update Host        hosts:write
 DELETE /hosts/{id}                delete Host        hosts:write
 POST   /hosts/pairing             create Host        hosts:write   body: { name }
 GET    /hosts/pairing             read Host          hosts:read    (F5: source IP)
-GET    /hosts/pairing/{id}        read Host          hosts:read    → redeemedHostId
+GET    /hosts/pairing/{id}        read Host          hosts:read    → redeemedHostId, and the host (14)
 DELETE /hosts/pairing/{id}        delete Host        hosts:write
 
 GET    /installations             read Installation  repositories:read
@@ -1095,6 +1106,28 @@ with no principal.
 
 Not HTTP at all: the runner uplink (`GET /relay/runner`, WebSocket, host
 assertion) and everything it carries.
+
+The account's own routes under `/profile` (Settings → Profile, 05) are
+the starter's profile module plus three; every write that touches a
+credential is session-only (08):
+
+```
+PATCH  /profile                   the caller           profile:write  + username (unique, USER_002)
+POST   /profile/email             the caller           session only   body: { newEmail, callbackURL? }
+DELETE /profile                   the caller           session only   body: { confirmation }
+```
+
+`user.username` is the users module's column: unique
+(`UQ_user_username`, the constraint is the rule), normalised by the
+shared schema and the aggregate's `Username`, and the database checks the
+same pattern. `DELETE /profile` is the same `DeleteUserCommand` as the
+admin's `DELETE /users/{id}`. Each module that holds something for an
+account contributes its step (`UsersModule.contributeAccountErasure`),
+run in order: hosts unpaired (which stops their sessions and closes their
+links), the owned workspace's sessions, its projects, the workspace; then
+the user row, with its sign-ins, tokens, grants and preferences
+cascading from it in one write. Every step is idempotent, so a delete
+that fails part way is asked again.
 
 The install command and the agent install prompt are served from
 `POST /hosts/pairing`'s response, templated from deploy-owned runner

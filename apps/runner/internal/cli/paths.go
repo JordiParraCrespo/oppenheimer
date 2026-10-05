@@ -12,20 +12,21 @@ import (
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 )
 
-// Directory names under the runner home. They are the layout note 02 §11
-// describes, and nothing outside this file decides where a file goes.
+// Directory names under the runner home: the layout note 02 §11 describes.
 const (
 	DirBin   = "bin"
 	DirLog   = "log"
 	DirRun   = "run"
 	DirState = "state"
 	// DirManifests holds agent manifests newer than the ones compiled in.
-	// The control plane writes here; an empty directory is the normal case
-	// and means the bundled rules are in force.
+	// Nothing on the link writes here yet; an empty directory is the normal
+	// case and means the bundled rules are in force.
 	DirManifests = "manifests"
-	// DirImages holds the pictures pasted into sessions' prompts, one
-	// directory per session, dropped when the session closes.
-	DirImages = "images"
+	// DirFiles holds the files pasted into or attached to sessions' prompts
+	// (images, PDF, text), one directory per session, dropped when the
+	// session stops or closes. It keeps its first name on disk, so a runner
+	// updated mid-session still finds, and drops, what it saved before.
+	DirFiles = "images"
 )
 
 // Paths resolves every location the runner uses on a host.
@@ -45,11 +46,22 @@ type Paths struct {
 	WorkspacesSource string
 }
 
-// Environment variables that move the layout, for development and for tests.
+// Environment variables the runner reads. The first two move the layout, for
+// development and for tests.
 const (
 	EnvHome       = "RUNNER_HOME"
 	EnvWorkspaces = "RUNNER_WORKSPACES"
+	// EnvAgentUpdates set to "off" stops `run` keeping the agent CLIs
+	// current, for a host whose agents are pinned by other means (a
+	// managed image, a package the person holds back). Anything else, or
+	// unset, is on.
+	EnvAgentUpdates = "RUNNER_AGENT_UPDATES"
 )
+
+// AgentUpdatesEnabled reports whether `run` keeps the agent CLIs current.
+func AgentUpdatesEnabled() bool {
+	return !strings.EqualFold(strings.TrimSpace(os.Getenv(EnvAgentUpdates)), "off")
+}
 
 // ResolvePaths builds the layout, honouring RUNNER_HOME so a second runner
 // can be developed on a machine that already hosts one.
@@ -141,6 +153,13 @@ func ChooseWorkspaces(raw string, p Paths) (dir string, warnings []string, err e
 			break
 		}
 	}
+	// Said once, here, where the directory is settled: everything below it is
+	// checkouts and their dependencies, which nobody searches for by name.
+	// A failure is not a reason to refuse the directory — see
+	// `ExcludeFromIndexing`.
+	if err := ExcludeFromIndexing(dir); err != nil {
+		warnings = append(warnings, "could not keep "+dir+" out of the desktop search index ("+err.Error()+"); indexing a session's checkouts costs this host CPU it owes the agents")
+	}
 	return dir, warnings, nil
 }
 
@@ -158,17 +177,17 @@ func (p Paths) Current() string { return filepath.Join(p.Bin(), "current") }
 // Log is the log directory.
 func (p Paths) Log() string { return filepath.Join(p.Home, DirLog) }
 
-// Run holds the socket and the single-instance lock.
+// Run holds the socket, the single-instance lock and the agent locks.
 func (p Paths) Run() string { return filepath.Join(p.Home, DirRun) }
 
-// State holds update.json.
+// State holds update.json and sessions.json.
 func (p Paths) State() string { return filepath.Join(p.Home, DirState) }
 
 // Manifests is where newer agent manifests are dropped.
 func (p Paths) Manifests() string { return filepath.Join(p.Home, DirManifests) }
 
-// Images is where pasted images are kept.
-func (p Paths) Images() string { return filepath.Join(p.Home, DirImages) }
+// Files is where pasted files are kept.
+func (p Paths) Files() string { return filepath.Join(p.Home, DirFiles) }
 
 // Socket is the local Unix socket: the runner's only listener.
 func (p Paths) Socket() string { return filepath.Join(p.Run(), "runner.sock") }

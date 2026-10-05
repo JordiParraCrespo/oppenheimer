@@ -5,36 +5,15 @@ import { VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ProblemDetailsDto, SanitizePipe } from '@oppenheimer/backend-core';
-import { setupBullBoard } from '@oppenheimer/backend-queue';
+import { SwaggerModule } from '@nestjs/swagger';
+import { SanitizePipe } from '@oppenheimer/backend-core';
+import { BULL_BOARD_MIN_PASSWORD_LENGTH, setupBullBoard } from '@oppenheimer/backend-queue';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
-import { patchNestJsSwagger, ZodValidationPipe } from 'nestjs-zod';
+import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './app.module';
-
-patchNestJsSwagger();
-
-export function createSwaggerConfig() {
-  return new DocumentBuilder()
-    .setTitle('Oppenheimer API')
-    .setDescription('Oppenheimer REST API documentation')
-    .setVersion('0.1.0')
-    .addBearerAuth()
-    .build();
-}
-
-export function createSwaggerDocument(
-  app: ReturnType<typeof NestFactory.create> extends Promise<infer T> ? T : never,
-) {
-  return SwaggerModule.createDocument(app, createSwaggerConfig(), {
-    operationIdFactory: (_controller, method) => method,
-    // Every error response references this schema (RFC 7807), so it must be in
-    // the document even if a route documents its failures loosely.
-    extraModels: [ProblemDetailsDto],
-  });
-}
+import { createOpenApiDocument } from './openapi-document';
 
 async function bootstrap() {
   // `bodyParser: false` is required by `@thallesp/nestjs-better-auth` so that
@@ -62,20 +41,14 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Serve locally-stored avatars over HTTP. The `local` storage backend writes
-  // an avatar to `<uploadDir>/<key>` and hands the client an absolute
-  // `<publicUrl>/uploads/<key>` pointing back here (see `LocalStorageService`),
-  // so the browser loads it from the API regardless of where the SPA is hosted —
-  // the documented Tier-1 serves the web app from a different origin. Mount it
-  // outside the `api` global prefix to match that URL. The S3 backend hands back
-  // absolute signed URLs and needs no route, so this is gated on the local
-  // provider.
+  // The `local` storage backend hands the client an absolute `<publicUrl>/uploads/<key>`
+  // pointing back here (`LocalStorageService`), since the documented Tier-1 serves the
+  // SPA from another origin; it is mounted outside the `api` prefix to match. S3 hands
+  // back signed URLs and needs no route.
   //
-  // **Only the `avatars/` subtree is mounted, never the upload root.** This
-  // route has no guard — that is deliberate for avatars, which are public by
-  // nature and loaded cross-origin by an `<img>` tag. Anything else written to
-  // the upload directory must be public by nature too before it is added here,
-  // or it needs a guarded route of its own.
+  // Only the `avatars/` subtree is mounted, never the upload root: this route has no
+  // guard, which suits avatars (public, loaded cross-origin by an `<img>`). Anything
+  // else added here must be public by nature too, or it needs a guarded route.
   if ((configService.get<string>('storage.provider') ?? 'local') === 'local') {
     const uploadDir = resolve(configService.get<string>('storage.uploadDir') ?? './uploads');
     app.useStaticAssets(resolve(uploadDir, 'avatars'), {
@@ -97,7 +70,7 @@ async function bootstrap() {
   // it is only an aid to an attacker. The OpenAPI JSON for the generated client
   // is emitted at build time by `generate-openapi.ts`, not from this route.
   if (configService.get<string>('app.nodeEnv') !== 'production') {
-    const document = createSwaggerDocument(app);
+    const document = createOpenApiDocument(app);
     SwaggerModule.setup('api/docs', app, document);
   }
 
@@ -108,16 +81,35 @@ async function bootstrap() {
   const bullBoardPassword = configService.get<string>('app.bullBoardPassword');
   const bullBoardMounted = setupBullBoard(
     app,
-    [QUEUE_NAMES.EMAIL, QUEUE_NAMES.FILE_PROCESSING],
+    [
+      QUEUE_NAMES.EMAIL,
+      QUEUE_NAMES.HOST_RETENTION,
+      QUEUE_NAMES.INBOUND_EVENTS,
+      QUEUE_NAMES.AUTOMATION_RUNS,
+      QUEUE_NAMES.AUTOMATION_SCHEDULES,
+      QUEUE_NAMES.AUTOMATION_RETENTION,
+      QUEUE_NAMES.OUTBOX_RETENTION,
+    ],
     bullBoardUsername && bullBoardPassword
       ? { auth: { username: bullBoardUsername, password: bullBoardPassword } }
       : {},
   );
-  logger.log({
-    message: bullBoardMounted
-      ? 'Bull Board dashboard mounted at /admin/queues (Basic auth)'
-      : 'Bull Board dashboard disabled (set BULL_BOARD_USERNAME and BULL_BOARD_PASSWORD to enable)',
-  });
+  if (
+    !bullBoardMounted &&
+    bullBoardUsername &&
+    bullBoardPassword &&
+    bullBoardPassword.length < BULL_BOARD_MIN_PASSWORD_LENGTH
+  ) {
+    logger.warn({
+      message: `Bull Board dashboard disabled: BULL_BOARD_PASSWORD must be at least ${BULL_BOARD_MIN_PASSWORD_LENGTH} characters`,
+    });
+  } else {
+    logger.log({
+      message: bullBoardMounted
+        ? 'Bull Board dashboard mounted at /admin/queues (Basic auth)'
+        : 'Bull Board dashboard disabled (set BULL_BOARD_USERNAME and BULL_BOARD_PASSWORD to enable)',
+    });
+  }
 
   const port = configService.get('app.port');
   await app.listen(port);

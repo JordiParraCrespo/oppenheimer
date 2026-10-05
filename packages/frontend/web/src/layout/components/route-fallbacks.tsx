@@ -1,8 +1,10 @@
 import { Button, EmptyState } from '@oppenheimer/design-system-web';
-import { CircleAlert, Compass } from '@oppenheimer/design-system-web/icons';
+import { Compass } from '@oppenheimer/design-system-web/icons';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useRouter } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ScreenFailure } from './screen-failure';
 
 /**
  * What a route renders when there is nothing to render.
@@ -32,42 +34,66 @@ export function RouteNotFound({ children }: { children?: ReactNode }) {
 
 /**
  * A thrown render error, with the one action that has ever fixed one: try
- * again. `router.invalidate()` re-runs the failed match rather than reloading
- * the document, so a failure that was the network's costs a retry and not the
- * whole app's state.
+ * again. `router.invalidate()` re-runs the failed match rather than reloading,
+ * so a network failure costs a retry, not the whole app's state. `error` is
+ * `unknown`, as a route's `errorComponent` is handed, so it assigns without a
+ * cast.
  *
- * `error` is `unknown`, which is what a route's `errorComponent` is handed and
- * what a `throw` is worth: anything at all can be thrown, and a component that
- * declares `Error` is one `throw 'nope'` away from reading `.message` off a
- * string. Typing it honestly is also what makes this assignable to
- * `errorComponent` without a cast.
- *
- * The message shown is the fallback sentence, never the error's own: what a
- * bundler throws is not a sentence anyone can act on, and a server's own
- * explanation reaches the reader through the screen that asked, not here.
+ * The message is never the error's own. A request failure (it carries the
+ * server's status or a repository's code) is resolved like any other, and its
+ * code and correlation id are shown for a bug report. A plain render throw
+ * carries neither and gets the fallback sentence, since the resolver would
+ * read its missing status as the connection's fault.
  */
 export function RouteError({ error }: { error: unknown }) {
   const { t } = useTranslation();
   const router = useRouter();
+  const resolveError = useErrorMessage();
+  const resolved = isRequestFailure(error) ? resolveError(error) : undefined;
 
   return (
-    <EmptyState className="my-auto">
-      <EmptyState.Header>
-        <EmptyState.Media variant="icon">
-          <CircleAlert />
-        </EmptyState.Media>
-        <EmptyState.Title>{t('errors.unexpected.title')}</EmptyState.Title>
-        <EmptyState.Description>{t('errors.fallback')}</EmptyState.Description>
-      </EmptyState.Header>
-      <EmptyState.Content>
+    <ScreenFailure
+      title={t('errors.unexpected.title')}
+      description={resolved?.message ?? t('errors.fallback')}
+      detail={
+        resolved?.code || resolved?.correlationId
+          ? [
+              resolved.code ? t('errors.code', { code: resolved.code }) : null,
+              resolved.correlationId
+                ? t('errors.correlationId', { id: resolved.correlationId })
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')
+          : null
+      }
+      action={
         <Button variant="secondary" onClick={() => router.invalidate()}>
           {t('errors.unexpected.retry')}
         </Button>
-      </EmptyState.Content>
+      }
+    >
       {/* Not shown, but in the DOM for a bug report to carry. */}
       <p hidden data-slot="route-error-message">
-        {error instanceof Error ? error.message : String(error)}
+        {describeThrow(error)}
       </p>
-    </EmptyState>
+    </ScreenFailure>
   );
+}
+
+function isRequestFailure(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const { status, code } = error as { status?: unknown; code?: unknown };
+  return typeof status === 'number' || (typeof code === 'string' && code !== '');
+}
+
+/** The throw as text for a bug report: a message, or the object itself — never `[object Object]`. */
+function describeThrow(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error !== 'object' || error === null) return String(error);
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
 }

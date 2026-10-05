@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { WorkspaceLookupPort } from '../../organizations/application/workspace-lookup.port';
 import { WORKSPACE_LOOKUP } from '../../organizations/organizations.di-tokens';
+import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import { sessionBranchName } from '../domain/session-layout.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import type { SessionLaunchSpec } from './session-dispatch.port';
@@ -10,8 +11,7 @@ import type { SessionLaunchSpec } from './session-dispatch.port';
  * cannot read off it: the workspace's slug, asked of `organizations/` through its
  * port. One place, so every command that dispatches a launch — create, restart,
  * add a checkout, the hello reconciliation — names the same directories. No
- * project name travels: a project is metadata, and nothing on a host is named
- * after it.
+ * project name travels (see `sessionCreateSchema`).
  */
 @Injectable()
 export class SessionLaunchSpecFactory {
@@ -22,7 +22,7 @@ export class SessionLaunchSpecFactory {
 
   async build(
     session: WorkSessionEntity,
-    extra: { prompt?: string } = {},
+    extra: { prompt?: string; images?: SessionLaunchFile[] } = {},
   ): Promise<SessionLaunchSpec> {
     const organizationSlug = await this.workspaces.slugOf(session.organizationId);
     // The session row was written in this workspace; a missing slug is a broken
@@ -30,10 +30,9 @@ export class SessionLaunchSpecFactory {
     if (!organizationSlug) throw new Error(`workspace ${session.organizationId} has no slug`);
     return {
       organizationSlug,
-      // The branch the checkouts recorded wins: a session from before the flat
-      // layout keeps the name its worktrees are already on.
       branch: session.branch ?? sessionBranchName(session.slug),
       ...(extra.prompt ? { prompt: extra.prompt } : {}),
+      ...(extra.images?.length ? { images: extra.images } : {}),
     };
   }
 }

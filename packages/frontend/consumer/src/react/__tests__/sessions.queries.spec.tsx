@@ -1,11 +1,20 @@
 import { defaultQueryClientOptions, OppenheimerProvider } from '@oppenheimer/frontend-core/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { focusManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { SessionEntity } from '../../modules/sessions/session.entity';
-import { sessionsKeys, useSession, useSessions } from '../sessions.queries';
+import {
+  sessionsKeys,
+  useCloseSession,
+  useCreateSession,
+  useRenameSession,
+  useRestartSession,
+  useSession,
+  useSessionOpening,
+  useSessions,
+} from '../sessions.queries';
 import { fakeKernel } from './fake-kernel';
 
 /**
@@ -20,7 +29,15 @@ const starting = { id: 's-1', isProvisioning: true } as SessionEntity;
 const open = { id: 's-1', isProvisioning: false } as SessionEntity;
 
 function setup(
-  service: { findById?: unknown; findAll?: unknown },
+  service: {
+    findById?: unknown;
+    findAll?: unknown;
+    close?: unknown;
+    startProgress?: unknown;
+    create?: unknown;
+    rename?: unknown;
+    restart?: unknown;
+  },
   // The console's own defaults, for the specs whose rule is its stale window.
   defaultOptions: ConstructorParameters<typeof QueryClient>[0] = {
     defaultOptions: { queries: { retry: false } },
@@ -52,6 +69,27 @@ describe('useSession', () => {
     const reads = findById.mock.calls.length;
     await pause(2_500);
     expect(findById).toHaveBeenCalledTimes(reads);
+  }, 10_000);
+
+  /**
+   * TanStack Query pauses an interval while the document is hidden unless the
+   * poll says otherwise, and a start launched from a tab the reader then
+   * leaves is exactly the case: the pane came back frozen on a step that had
+   * finished a minute before (#111).
+   */
+  it('keeps reading a starting session while the tab is hidden', async () => {
+    focusManager.setFocused(false);
+    try {
+      const findById = vi.fn().mockResolvedValue(starting);
+      const { wrapper } = setup({ findById });
+      renderHook(() => useSession('s-1'), { wrapper });
+
+      await waitFor(() => expect(findById.mock.calls.length).toBeGreaterThanOrEqual(2), {
+        timeout: 5_000,
+      });
+    } finally {
+      focusManager.setFocused(undefined);
+    }
   }, 10_000);
 
   it('does not poll a session that was never starting', async () => {
@@ -116,6 +154,118 @@ describe('useSessions', () => {
 });
 
 /**
+ * Delete is a close the host answers: the request comes back with the row still
+ * `open`, and only a later read sees it resolved. The list leaves resolved rows
+ * out and keeps reading while a close it asked for is pending.
+ */
+describe('a deleted session', () => {
+  const live = { id: 'c-1', isProvisioning: false, isResolved: false } as SessionEntity;
+  const resolved = { id: 'c-1', isProvisioning: false, isResolved: true } as SessionEntity;
+
+  function closing(findAll: ReturnType<typeof vi.fn>) {
+    const close = vi.fn().mockResolvedValue(live);
+    const { wrapper } = setup({ findAll, close });
+    const { result } = renderHook(() => ({ list: useSessions(), close: useCloseSession() }), {
+      wrapper,
+    });
+    return { result, close };
+  }
+
+  it('is not listed once resolved', async () => {
+    const { wrapper } = setup({ findAll: vi.fn().mockResolvedValue([resolved]) });
+    const { result } = renderHook(() => useSessions(), { wrapper });
+    await waitFor(() => expect(result.current.data).toEqual([]));
+  });
+
+  it('is read again until its host has resolved it, then the reads stop', async () => {
+    const findAll = vi
+      .fn()
+      .mockResolvedValueOnce([live])
+      .mockResolvedValueOnce([live])
+      .mockResolvedValue([resolved]);
+    const { result } = closing(findAll);
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+
+    result.current.close.mutate({ id: 'c-1' });
+    await waitFor(() => expect(result.current.list.data).toEqual([]), { timeout: 8_000 });
+    const reads = findAll.mock.calls.length;
+    await pause(2_500);
+    expect(findAll).toHaveBeenCalledTimes(reads);
+  }, 15_000);
+
+  it('is watched by a reader that selects less than the rows', async () => {
+    const findAll = vi
+      .fn()
+      .mockResolvedValueOnce([live])
+      .mockResolvedValueOnce([live])
+      .mockResolvedValue([resolved]);
+    const close = vi.fn().mockResolvedValue(live);
+    const { wrapper } = setup({ findAll, close });
+    const { result } = renderHook(
+      () => ({
+        empty: useSessions({ select: (rows) => rows.length === 0 }),
+        close: useCloseSession(),
+      }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.empty.data).toBe(false));
+
+    result.current.close.mutate({ id: 'c-1' });
+    await waitFor(() => expect(result.current.empty.data).toBe(true), { timeout: 8_000 });
+  }, 15_000);
+
+  it('is watched by the client that asked, not by another', async () => {
+    const asked = setup({
+      findAll: vi.fn().mockResolvedValue([live]),
+      close: vi.fn().mockResolvedValue(live),
+    });
+    const other = vi.fn().mockResolvedValue([live]);
+    const bystander = setup({ findAll: other });
+    const mine = renderHook(() => ({ list: useSessions(), close: useCloseSession() }), {
+      wrapper: asked.wrapper,
+    });
+    const theirs = renderHook(() => useSessions(), { wrapper: bystander.wrapper });
+    await waitFor(() => expect(mine.result.current.list.data).toHaveLength(1));
+    await waitFor(() => expect(theirs.result.current.data).toHaveLength(1));
+
+    mine.result.current.close.mutate({ id: 'c-1' });
+    await waitFor(() => expect(mine.result.current.close.isSuccess).toBe(true));
+    // The other client reads its list for its own reasons while the watch is
+    // live; that read must not start it polling for a close it never asked.
+    await bystander.queryClient.refetchQueries();
+    const reads = other.mock.calls.length;
+    await pause(2_500);
+    expect(other).toHaveBeenCalledTimes(reads);
+  }, 10_000);
+
+  it('asked again, is watched for a full window from the second ask', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      // A host that is offline: the row never resolves.
+      const findAll = vi.fn().mockResolvedValue([live]);
+      const { result } = closing(findAll);
+      await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+
+      result.current.close.mutate({ id: 'c-1' });
+      await vi.advanceTimersByTimeAsync(50_000);
+      result.current.close.mutate({ id: 'c-1' });
+      // Past the first ask's window, inside the second's: still reading.
+      await vi.advanceTimersByTimeAsync(20_000);
+      const at70 = findAll.mock.calls.length;
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(findAll.mock.calls.length).toBeGreaterThan(at70);
+      // Past the second window: the reads stop.
+      await vi.advanceTimersByTimeAsync(40_000);
+      const after = findAll.mock.calls.length;
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(findAll).toHaveBeenCalledTimes(after);
+    } finally {
+      vi.useRealTimers();
+    }
+  }, 15_000);
+});
+
+/**
  * Opening a session from the sidebar should not wait on a second read of a row
  * the list already holds: the list writes each row through to its detail.
  */
@@ -123,14 +273,6 @@ describe('session detail from the list', () => {
   const listed = { id: 's-1', name: 'from the list', isProvisioning: false } as SessionEntity;
   const read = { id: 's-1', name: 'from the detail', isProvisioning: false } as SessionEntity;
   const consoleDefaults = { defaultOptions: defaultQueryClientOptions(60_000) };
-
-  it("writes each row it reads to that session's detail", async () => {
-    const { wrapper, queryClient } = setup({ findAll: vi.fn().mockResolvedValue([listed]) });
-    const { result } = renderHook(() => useSessions(), { wrapper });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(queryClient.getQueryData(sessionsKeys.detail('s-1'))).toBe(listed);
-  });
 
   it('opens on the list row with no read while the list is fresh', async () => {
     const findById = vi.fn().mockResolvedValue(read);
@@ -181,5 +323,73 @@ describe('session detail from the list', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(queryClient.getQueryData(sessionsKeys.detail('s-1'))).toBe(read);
+  });
+});
+
+/**
+ * The row opens when the host has made the session's pane, which is before
+ * the clone. A start the console watched stays on its pane until the agent
+ * step lands, or the reader is shown a shell in an empty directory.
+ */
+describe('useSessionOpening', () => {
+  const live = { id: 's-1', isLive: true } as SessionEntity;
+  const progress = (settled: boolean) => ({ steps: [], failure: null, settled });
+
+  it('holds a watched start that opened until the agent is running, then lets go', async () => {
+    const startProgress = vi
+      .fn()
+      .mockResolvedValueOnce(progress(false))
+      .mockResolvedValue(progress(true));
+    const { wrapper, queryClient } = setup({ startProgress });
+    // What the start pane left in the cache while the row read `starting`.
+    queryClient.setQueryData(sessionsKeys.start('s-1', false), progress(false));
+
+    const { result } = renderHook(() => useSessionOpening(live), { wrapper });
+
+    expect(result.current).toBe(true);
+    await waitFor(() => expect(result.current).toBe(false), { timeout: 5_000 });
+  }, 10_000);
+
+  it('holds a session this console sent, though its row was open before any pane mounted', async () => {
+    // On a warm host the pane is made in milliseconds: the first row the
+    // screen reads can already be `open`, with the clone still to run.
+    const startProgress = vi.fn().mockResolvedValue(progress(false));
+    const create = vi.fn().mockResolvedValue(live);
+    const { wrapper } = setup({ startProgress, create });
+    const { result: send } = renderHook(() => useCreateSession(), { wrapper });
+    await send.current.mutateAsync({ input: {} as never, idempotencyKey: 'k-1' });
+
+    const { result } = renderHook(() => useSessionOpening(live), { wrapper });
+
+    expect(result.current).toBe(true);
+    await waitFor(() => expect(startProgress).toHaveBeenCalled());
+  });
+
+  it('does not hold a live session that was only renamed or restarted', async () => {
+    // A rename answers with the row like a create does; it starts nothing, and
+    // holding its terminal behind a start pane would never let go.
+    const startProgress = vi.fn().mockResolvedValue(progress(false));
+    const rename = vi.fn().mockResolvedValue(live);
+    const restart = vi.fn().mockResolvedValue(live);
+    const { wrapper } = setup({ startProgress, rename, restart });
+    const { result: renamer } = renderHook(() => useRenameSession(), { wrapper });
+    await renamer.current.mutateAsync({ id: 's-1', name: 'renamed' });
+    const { result: restarter } = renderHook(() => useRestartSession(), { wrapper });
+    await restarter.current.mutateAsync('s-1');
+
+    const { result } = renderHook(() => useSessionOpening(live), { wrapper });
+
+    expect(result.current).toBe(false);
+  });
+
+  it('opens a session it never watched start without reading its log', async () => {
+    const startProgress = vi.fn().mockResolvedValue(progress(false));
+    const { wrapper } = setup({ startProgress });
+
+    const { result } = renderHook(() => useSessionOpening(live), { wrapper });
+
+    expect(result.current).toBe(false);
+    await pause(100);
+    expect(startProgress).not.toHaveBeenCalled();
   });
 });

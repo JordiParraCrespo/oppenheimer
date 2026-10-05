@@ -2,6 +2,8 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
+import type { SessionCachePort } from '../../../auth/application/session-cache.port';
+import { SESSION_CACHE } from '../../../auth/auth.di-tokens';
 import type { UserRepositoryPort } from '../../../users/database/user.repository.port';
 import { USER_REPOSITORY } from '../../../users/user.di-tokens';
 import { ProfileErrors } from '../../domain/profile.errors';
@@ -10,15 +12,11 @@ import { AVATAR_STORAGE } from '../../profile.di-tokens';
 import { UploadAvatarCommand } from './upload-avatar.command';
 
 /**
- * Stores a new avatar and points the user's profile at it.
- *
- * The new image is written under its own key, the profile is saved, and only
- * then is the old object retired. Every step of that order matters: the new
- * object never overwrites the live one, so a failed save leaves the user
- * looking at exactly the avatar they had; and the old object outlives the write
- * that stopped referencing it, so a failed save never strands the profile on a
- * deleted file. Cleanup itself is best-effort — an orphaned object costs
- * storage, a failed request costs the user their picture.
+ * The new image is written under its own key (see `AvatarStorageAdapter.store`),
+ * the profile is saved, and only then is the old object retired, so a failed
+ * save never strands the profile on a deleted file. Cleanup itself is
+ * best-effort — an orphaned object costs storage, a failed request costs the
+ * user their picture.
  */
 @CommandHandler(UploadAvatarCommand)
 export class UploadAvatarCommandHandler
@@ -29,6 +27,8 @@ export class UploadAvatarCommandHandler
     private readonly userRepository: UserRepositoryPort,
     @Inject(AVATAR_STORAGE)
     private readonly avatars: AvatarStoragePort,
+    @Inject(SESSION_CACHE)
+    private readonly sessionCache: SessionCachePort,
   ) {}
 
   async execute(command: UploadAvatarCommand): Promise<AggregateID> {
@@ -47,6 +47,7 @@ export class UploadAvatarCommandHandler
 
     user.updateProfile({ avatarUrl: key });
     await this.userRepository.save(user);
+    await this.sessionCache.refreshUser(user.id);
 
     if (previousKey && previousKey !== key) {
       await this.avatars.remove(previousKey);

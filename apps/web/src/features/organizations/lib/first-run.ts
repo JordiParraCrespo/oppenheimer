@@ -1,70 +1,81 @@
+import { searchFlag } from '@oppenheimer/frontend-web';
+
 /**
- * The first-run walk, as a fact the URL carries.
+ * The first-run walk, as a fact the URL carries. Onboarding is shown once
+ * (`05-screens.md`) and Ready enforces it: it is the one page under
+ * `/onboarding` meaningless to a finished account, while Connect GitHub and
+ * Add host stay reachable because New session links at them.
  *
- * Onboarding is shown once (`05-screens.md`), and Ready is the step that
- * enforces it: the workspace step already returns a claimed address to the
- * console, and Connect GitHub and Add host stay reachable for good because New
- * session links at them. Ready is the one page under `/onboarding` that means
- * nothing to a finished account — "You're all set" over a walk it took days
- * ago.
+ * Ready cannot read *when* off the account: the address is claimed by the end
+ * of step 2, so a legitimate arrival looks as finished as one a week later.
+ * The visit is the missing fact, and like `installation` and `host` it lives
+ * on the query string, cheaper than a first-run store to keep in sync. `walk`
+ * is minted when step 2's claim lands (the only thing that opens a walk) and
+ * carried by the flow's own links; a reader New session sent here has none,
+ * so Continue returns to the console. It dies with the URLs, leaving nothing
+ * for a logout, a second tab or the next account to inherit.
  *
- * What Ready cannot read off the account is *when*. The address is claimed by
- * the end of step 2, so a legitimate arrival looks exactly as finished as one
- * coming back a week later. The missing fact is the visit, and `ready.tsx`
- * already decided where a visit's facts live: on the query string, beside
- * `installation` and `host`, because the summary is a page someone can reload
- * and two ids are cheaper than a first-run store to keep in sync. `walk` is
- * the third such fact.
- *
- * It is minted by step 2's claim, the only thing that opens a walk, and
- * carried by the flow's own links. A reader New session sent here to pair a
- * second machine has no `walk`, so Continue takes them back to the console
- * rather than to a landing that congratulates them on first-run. Nothing has
- * to be cleaned up afterwards: the fact lives and dies with the URLs that
- * carry it, so there is no bit for a logout, a second tab or the next account
- * to inherit.
+ * As a search param it is on or absent: the router parses `?walk=true` into a
+ * boolean, but a re-serialised or hand-typed URL can hand over the string, so
+ * both read as on.
  */
-export interface FirstRunWalk {
-  /** Present only on a navigation that is the walk itself. */
-  walk?: true;
+export const walkParam = searchFlag;
+
+/**
+ * The echoed `state` read for the walk: `walk` from its prefix, and the prefix
+ * taken off what is left, so the callback's schema sees the nonce the API
+ * minted. For a route's `z.preprocess`.
+ */
+export function walkFromState(raw: unknown): unknown {
+  if (typeof raw !== 'object' || raw === null) return raw;
+  const search = raw as Record<string, unknown>;
+  return isWalkState(search.state)
+    ? { ...search, walk: true, state: stateWithoutWalk(search.state) }
+    : search;
 }
 
 /**
- * Read the walk off a router search object.
- *
- * Both shapes are accepted because the router parses `?walk=true` into a
- * boolean while a re-serialised or hand-typed URL can still hand over the
- * string, and a guard that answered differently to the two would be a guard
- * nobody can reason about.
+ * How the walk crosses GitHub. The install returns to `/onboarding/github`
+ * with the query *GitHub* chose, so a `walk` in the URL does not survive, and a
+ * reader who installs the App mid-walk would be turned away from Ready.
+ * `state` is the one value GitHub echoes untouched, and also the API's
+ * single-use nonce, so the walk rides as its prefix, `first-run.<nonce>`, and
+ * the GitHub route strips it before the nonce is used.
  */
-export function parseWalk(search: Record<string, unknown>): FirstRunWalk {
-  return search.walk === true || search.walk === 'true' ? { walk: true } : {};
+const WALK_STATE = 'first-run';
+
+/** The prefix a walk puts in front of the nonce; a nonce is base64url, so never a `.`. */
+const WALK_PREFIX = `${WALK_STATE}.`;
+
+/**
+ * Whether the `state` GitHub echoed says this visit is the first-run walk.
+ *
+ * The bare `first-run` is still read, for an install started before the state
+ * became a nonce: it keeps the walk, and — carrying no nonce — posts nothing.
+ */
+export function isWalkState(raw: unknown): boolean {
+  return typeof raw === 'string' && (raw === WALK_STATE || raw.startsWith(WALK_PREFIX));
+}
+
+export function stateWithoutWalk(raw: unknown): unknown {
+  return typeof raw === 'string' && raw.startsWith(WALK_PREFIX)
+    ? raw.slice(WALK_PREFIX.length)
+    : raw;
 }
 
 /**
- * How the walk crosses GitHub.
- *
- * Connect GitHub leaves the app: the browser goes to github.com and comes back
- * to `/onboarding/github` with the query *GitHub* chose, so a `walk` handed to
- * the install page is not in the URL that returns. `state` is the one value
- * GitHub echoes back untouched, which is what it is for. Without this, a
- * reader who actually installs the App mid-walk loses the walk on the return
- * leg and is turned away from Ready two clicks later.
- */
-export const WALK_STATE = 'first-run';
-
-/**
- * The deployment's install URL with the walk pinned where GitHub will return it.
- *
- * `URL` rather than string concatenation, because the deployment serves this
- * address and may already have put a query on it — and an address it cannot
- * parse is handed back untouched. Losing the walk costs the reader the
- * landing; throwing here would cost them the step.
+ * The install URL the API minted, with the walk pinned where GitHub will
+ * return it: its `state` prefixed. `URL` rather than string concatenation,
+ * because the address may already have a query — and one it cannot parse, or
+ * one with no state, is handed back untouched: losing the walk costs the
+ * reader the landing, throwing here would cost them the step.
  */
 export function installUrlCarryingWalk(installUrl: string): string {
   try {
     const url = new URL(installUrl);
-    url.searchParams.set('state', WALK_STATE);
+    const state = url.searchParams.get('state');
+    if (!state) return installUrl;
+    url.searchParams.set('state', `${WALK_PREFIX}${state}`);
     return url.toString();
   } catch {
     return installUrl;

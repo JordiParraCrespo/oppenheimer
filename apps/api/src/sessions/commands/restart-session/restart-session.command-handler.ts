@@ -1,63 +1,54 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import type { HostAccessPort } from '../../../hosts/application/host-access.port';
+import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import type { ProjectLookupPort } from '../../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../../projects/projects.di-tokens';
 import { requireActiveProject } from '../../application/require-active-project.policy';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../application/session-launch.factory';
+import { SessionLoaderResolver } from '../../application/session-loader.resolver';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
 import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
-import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
 import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
 import { RestartSessionCommand } from './restart-session.command';
 
 /**
- * Restarts a session in the worktrees it already has.
+ * Restarts a session in the worktrees it already has: after a host reboot every
+ * session shows stopped with Restart, which recreates window 0 in the same
+ * directories rather than a second set. Slug, directory and branch never change,
+ * which is why the launch spec is derived rather than stored.
  *
- * This is what a host reboot needs: every session shows as stopped with a Restart
- * button, and pressing it recreates window 0 in the same directories rather than
- * building a second set. Nothing about the session's identity changes — same slug,
- * same directory, same branch — which is why the launch spec is derived rather than
- * stored.
- *
- * What it records is a **request**, not an outcome: the session becomes `open` when
- * the host says it did, not when somebody asked. That is the difference from
- * stopping, where the control plane's decision is itself the fact. One append, and
- * what could not be delivered is a hint on the response.
+ * It records a **request**, not an outcome: the session becomes `open` when the host
+ * says it did. Stopping differs because there the control plane's decision is the
+ * fact. One append; what could not be delivered is a hint on the response.
  */
 @CommandHandler(RestartSessionCommand)
 export class RestartSessionCommandHandler
   implements ICommandHandler<RestartSessionCommand, SessionCommandResult>
 {
   constructor(
+    private readonly loader: SessionLoaderResolver,
     @Inject(WORK_SESSION_REPOSITORY)
     private readonly sessions: WorkSessionRepositoryPort,
     @Inject(PROJECT_LOOKUP)
     private readonly projects: ProjectLookupPort,
+    @Inject(HOST_ACCESS)
+    private readonly hosts: HostAccessPort,
     @Inject(SESSION_DISPATCH)
     private readonly dispatch: SessionDispatchPort,
     private readonly launches: SessionLaunchSpecFactory,
   ) {}
 
   async execute(command: RestartSessionCommand): Promise<SessionCommandResult> {
-    const found = await this.sessions.findOneById(command.scope, command.sessionId);
-    if (found.isNone()) {
-      throw new AppError(SessionErrors.NOT_FOUND, {
-        detail: `No session with id ${command.sessionId}`,
-      });
-    }
-    const session = found.unwrap();
-    if (session.isResolved) {
-      throw new AppError(SessionErrors.ALREADY_RESOLVED, {
-        detail: `Session ${session.slug} is closed`,
-      });
-    }
+    const session = await this.loader.requireLive(command.scope, command.sessionId);
 
-    // Nothing restarts under a retired project.
+    // Nothing restarts under a retired project, or on a host the caller can no
+    // longer use (a grant revoked, the host unpaired).
     await requireActiveProject(this.projects, command.scope, session.projectId);
+    await this.hosts.assertUsable(command.scope, session.hostId);
 
     await this.sessions.appendEvents(session, [
       {

@@ -29,7 +29,7 @@ function json(response: ServerResponse, status: number, body: unknown) {
   response.end(payload);
 }
 
-/** Six words, title-cased — the same brief the real system prompt gives. */
+/** At most six words, first letter capitalised — the same brief the real system prompt gives. */
 export function titleFor(prompt: string): string {
   const words = prompt.trim().split(/\s+/).slice(0, 6).join(' ');
   return words.charAt(0).toUpperCase() + words.slice(1);

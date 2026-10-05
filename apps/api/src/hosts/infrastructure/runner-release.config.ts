@@ -3,16 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { hostsAreConfigured } from '../../config/hosts.config';
 
 /**
- * What this deployment hands a machine that is about to become a host: the
- * install command, the same command wrapped for a coding agent, the release
- * channel and the base URL artifacts come from — plus the fingerprint of the
- * control plane's own key, which the runner pins and then refuses to talk to
- * anything else by.
+ * What this deployment hands a machine about to become a host: the install command,
+ * the same wrapped for a coding agent, the release channel, the artifacts base URL,
+ * and the fingerprint of the control plane's key, which the runner pins.
  *
- * All of it comes from **deploy-owned configuration**, never from a column. A
- * workspace-writable install or launch string would be remote code execution on
- * somebody's laptop, which is why the pairing response templates these here
- * instead of storing them
+ * All from **deploy-owned configuration**, never a column: a workspace-writable
+ * install or launch string would be remote code execution on somebody's laptop
  * (`product/versions/mvp/09-runner-install-and-update.md` §1).
  */
 @Injectable()
@@ -20,9 +16,10 @@ export class RunnerReleaseConfig {
   constructor(private readonly configService: ConfigService) {}
 
   /**
-   * Whether a machine can actually be paired with this deployment. False leaves
-   * every host route answering "not configured" and changes nothing else. It is
-   * the same predicate the `hosts` capability is computed from.
+   * Whether a machine can actually be paired with this deployment. False makes
+   * minting a token and registering a machine answer "not configured" and
+   * changes nothing else. It is the same predicate the `hosts` capability is
+   * computed from.
    */
   get isConfigured(): boolean {
     return hostsAreConfigured(this.configService);
@@ -61,30 +58,25 @@ export class RunnerReleaseConfig {
   }
 
   /**
-   * The one-line install command, with the registration token in it. The token
-   * can do exactly one thing — add one host, the minter's — and it expires, so
-   * this is the one place it is allowed to appear.
+   * The one-line install command, with the registration token in it: the one place
+   * it may appear, since it can only add one host (the minter's) and it expires.
    *
-   * It is an environment assignment on the pasted line, not an argument: it is
-   * in no process's argv, so other accounts on the machine cannot read it from
-   * the process list while the install runs, and the installer hands it to
-   * `runner register` the same way. It is still on the line the person pastes,
-   * and so in that shell's history until the token expires.
+   * An environment assignment, not an argument, so it is in no process's argv and
+   * other accounts cannot read it from the process list during the install; the
+   * installer hands it to `runner register` the same way. It does stay in the
+   * pasting shell's history until the token expires.
    */
   installCommandFor(secret: string): string {
     return `${this.fetchInstaller} | OPPENHEIMER_REGISTRATION_TOKEN=${secret} sh -s -- ${this.installerFlags}`;
   }
 
   /**
-   * The install command wrapped for a Claude Code or Codex already running on
-   * a machine: what to settle with the person before running it, and what to
-   * show them after. Deliberately a template, not a procedure. The procedure
-   * is the installer's and the runner's: they ask about the workspace path and
-   * missing tools on a terminal, refuse a machine that looks temporary, and
-   * say what to do next in each error. Restating those steps here would be a
-   * second copy that goes stale the next time the installer changes.
-   *
-   * The secret appears once, inside the command.
+   * The install command wrapped for a Claude Code or Codex already running on a
+   * machine: what to settle with the person before running it, and what to show them
+   * after. A template, not a procedure: asking about the workspace path and missing
+   * tools, refusing a temporary-looking machine and each error's next step belong to
+   * the installer and runner, and a copy here would go stale. The secret appears
+   * once, inside the command.
    */
   agentPromptFor(secret: string): string {
     const digest = this.installScriptSha256;
@@ -106,7 +98,7 @@ export class RunnerReleaseConfig {
       ...(digest
         ? [`The installer's SHA-256 is ${digest}. If you download it first, check it.`, '']
         : []),
-      'Do not copy the token anywhere else; it expires within the hour.',
+      'Do not copy the token anywhere else; it expires soon after it is created.',
       '',
       'Afterwards, run ~/.local/bin/oppenheimer-runner status and show me what it prints.',
       'If anything fails, stop and show me the output. The error says what to do next.',
@@ -130,12 +122,10 @@ export class RunnerReleaseConfig {
     // `stable` is the runner's own default; naming it would only add noise to
     // the line a person pastes into a terminal.
     if (this.channel !== 'stable') flags.push(`--channel ${this.channel}`);
-    // Where the installer fetches the manifest and the artifact from. The
-    // script falls back to the hosted release base when this is absent, which
-    // is the wrong host for every deployment but ours — a self-hosted install
-    // would resolve `get.oppenheimer.dev`, or fail to, and never reach the
-    // control plane it was handed. Naming it is the deployment's job precisely
-    // because the script cannot guess it.
+    // The script falls back to the hosted release base when this is absent,
+    // which is the wrong host for every deployment but ours — a self-hosted
+    // install would resolve `get.oppenheimer.dev`, or fail to, and never reach
+    // the control plane it was handed.
     if (this.releaseBaseUrl) flags.push(`--release-base ${this.releaseBaseUrl}`);
     return flags.join(' ');
   }

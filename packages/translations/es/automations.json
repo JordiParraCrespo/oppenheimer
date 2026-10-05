@@ -3,10 +3,17 @@
     "new": "Nueva automatización",
     "projects": "Proyectos",
     "all": "Todas las automatizaciones",
+    "search": "Buscar automatizaciones",
+    "clearSearch": "Borrar búsqueda",
+    "noMatch": "Ninguna automatización coincide con «{{query}}».",
     "emptyProject": "Todavía no hay automatizaciones.",
     "createOne": "Crea una",
     "newHere": "Nueva automatización en {{name}}",
-    "noProjects": "Todavía no hay ningún proyecto. Crea uno desde Nueva sesión y sus automatizaciones se reunirán aquí."
+    "noProjects": "Todavía no hay ningún proyecto. Crea uno desde Nueva sesión y sus automatizaciones se reunirán aquí.",
+    "noRuns": "Todavía no hay ejecuciones.",
+    "running": "En curso",
+    "paused": "En pausa",
+    "loadFailed": "No se han podido cargar tus automatizaciones."
   },
   "page": {
     "tabs": {
@@ -15,15 +22,288 @@
     },
     "new": "Nueva automatización",
     "empty": "Todavía no hay automatizaciones. Una automatización inicia una sesión según un horario o cuando pasa algo en GitHub.",
-    "runsEmpty": "Todavía no hay ejecuciones. Cada ejecución aparece aquí con la sesión que inició."
+    "runsEmpty": "Todavía no hay ejecuciones. Cada una aparece aquí con la sesión que inició.",
+    "loadFailed": "No se han podido cargar las automatizaciones.",
+    "actionFailed": "No se ha podido completar.",
+    "actionFailedFor": "«{{name}}» no se ha actualizado"
+  },
+  "status": {
+    "active": "Activa",
+    "paused": "En pausa",
+    "running": "En curso"
+  },
+  "runStatus": {
+    "queued": "En cola",
+    "running": "En curso",
+    "completed": "Completada",
+    "failed": "Fallida",
+    "cancelled": "Cancelada",
+    "skipped": "Omitida",
+    "expired": "Caducada"
+  },
+  "skipReason": {
+    "paused": "Omitida: la automatización estaba en pausa",
+    "deleted": "Omitida: la automatización se eliminó",
+    "own_event": "Omitida: el evento era nuestro",
+    "automation_rate_limited": "Omitida: límite por hora de esta automatización",
+    "workspace_rate_limited": "Omitida: límite por hora del espacio de trabajo",
+    "overlapping": "Omitida: otra ejecución seguía en curso",
+    "missed": "Omitida: se perdió el turno",
+    "not_launchable": "Omitida: la sesión no pudo iniciarse",
+    "agent_unavailable": "Omitida: el agente no está en el host"
+  },
+  "pausedReason": {
+    "user": "En pausa. Los disparadores se ignoran hasta que la reanudes; Ejecutar ahora sigue funcionando.",
+    "project_archived": "En pausa porque se eliminó su proyecto. Muévela a otro proyecto para reanudarla.",
+    "host_unpaired": "En pausa porque se quitó su host. Elige otro host en Editar para reanudarla.",
+    "owner_lost_access": "En pausa porque su propietario ya no puede ejecutarla."
+  },
+  "frequency": {
+    "once": {
+      "label": "Una vez",
+      "desc": "En una fecha y hora concretas"
+    },
+    "hourly": {
+      "label": "Cada hora",
+      "desc": "Cada hora, en un minuto concreto"
+    },
+    "daily": {
+      "label": "Diaria",
+      "desc": "Cada día a una hora concreta"
+    },
+    "weekdays": {
+      "label": "Días laborables",
+      "desc": "De lunes a viernes a una hora concreta"
+    },
+    "weekly": {
+      "label": "Semanal",
+      "desc": "Los días que elijas"
+    },
+    "monthly": {
+      "label": "Mensual",
+      "desc": "Un día del mes"
+    }
+  },
+  "event": {
+    "pr_opened": {
+      "label": "Pull request abierta",
+      "desc": "Abierta, o un borrador marcado como listo para revisión"
+    },
+    "pr_draft": {
+      "label": "Borrador abierto",
+      "desc": "Abierta como borrador, o convertida en uno"
+    },
+    "pr_sync": {
+      "label": "Push a una pull request",
+      "desc": "Nuevos commits en una pull request abierta"
+    },
+    "pr_merged": {
+      "label": "Pull request fusionada",
+      "desc": "Cuando la fusión se completa"
+    },
+    "comment": {
+      "label": "Comentario añadido",
+      "desc": "En una pull request o incidencia"
+    },
+    "push": {
+      "label": "Push a una rama",
+      "desc": "Una ejecución por push, no por commit"
+    },
+    "issue_labeled": {
+      "label": "Etiqueta añadida",
+      "desc": "En una pull request o incidencia, una vez por etiqueta"
+    },
+    "check_failed": {
+      "label": "Check fallido",
+      "desc": "Cualquier workflow de Actions o check de estado"
+    },
+    "issue_opened": {
+      "label": "Incidencia abierta",
+      "desc": "Solo incidencias nuevas, no reabiertas"
+    },
+    "mention": {
+      "label": "Mención a @oppenheimer",
+      "desc": "En una incidencia, pull request o revisión"
+    },
+    "release": {
+      "label": "Release publicada",
+      "desc": "Sin incluir pre-releases"
+    }
+  },
+  "trigger": {
+    "once": "Una vez, {{date}} a las {{time}}",
+    "hourly": "Cada hora a los :{{minute}}",
+    "daily": "Cada día a las {{time}}",
+    "weekdays": "Días laborables a las {{time}}",
+    "weekly": "Cada {{days}} a las {{time}}",
+    "monthly": "Cada mes el día {{day}} a las {{time}}",
+    "event": "Al ocurrir: {{event}}",
+    "more": "{{summary}} +{{count}}",
+    "manual": "Solo manual",
+    "monFri": "lun–vie",
+    "weekend": "sáb, dom"
+  },
+  "next": {
+    "onEvent": "En el próximo evento",
+    "none": "—",
+    "today": "Hoy, {{time}}",
+    "tomorrow": "Mañana, {{time}}",
+    "in": "en {{time}}",
+    "nextIn": "Próxima en"
+  },
+  "table": {
+    "automation": "Automatización",
+    "trigger": "Disparador",
+    "next": "Próxima ejecución",
+    "status": "Estado",
+    "actions": "Acciones de la automatización",
+    "edit": "Editar",
+    "runNow": "Ejecutar ahora",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "duplicate": "Duplicar",
+    "delete": "Eliminar"
+  },
+  "history": {
+    "title": "Historial de ejecuciones",
+    "range": "Últimos 30 días",
+    "succeeded": "Correctas",
+    "failed": "Fallidas",
+    "runs_one": "{{count}} ejecución",
+    "runs_other": "{{count}} ejecuciones",
+    "runs_many": "{{count}} ejecuciones"
+  },
+  "runs": {
+    "all": "Todas",
+    "completed": "Completadas",
+    "failed": "Fallidas",
+    "running": "En curso",
+    "run": "Ejecución",
+    "automation": "Automatización",
+    "time": "Hora",
+    "allAutomations": "Todas las automatizaciones",
+    "allProjects": "Todos los proyectos",
+    "window": {
+      "24h": "Últimas 24 horas",
+      "7d": "Últimos 7 días",
+      "30d": "Últimos 30 días"
+    },
+    "clear": "Borrar",
+    "noMatch": "Ninguna ejecución coincide con estos filtros.",
+    "range": "{{from}}–{{to}} de {{total}}",
+    "previous": "Página anterior",
+    "next": "Página siguiente",
+    "deleted": "Automatización eliminada",
+    "noSession": "Esta ejecución no inició ninguna sesión.",
+    "loadFailed": "No se han podido cargar las ejecuciones."
+  },
+  "detail": {
+    "back": "Atrás",
+    "crumb": "Automatizaciones",
+    "runNow": "Ejecutar ahora",
+    "edit": "Editar",
+    "more": "Más acciones",
+    "pause": "Pausar automatización",
+    "resume": "Reanudar automatización",
+    "duplicate": "Duplicar",
+    "delete": "Eliminar automatización",
+    "resumeAction": "Reanudar",
+    "notFound": "Esta automatización no existe o se eliminó."
   },
   "editor": {
     "newTitle": "Nueva automatización",
-    "name": "Nombre de la automatización",
-    "namePlaceholder": "Ponle nombre a la automatización",
+    "editTitle": "Editar automatización",
+    "steps": {
+      "label": "Pasos de la automatización",
+      "task": "Tarea",
+      "trigger": "Disparador",
+      "where": "Dónde se ejecuta"
+    },
+    "name": "Nombre",
+    "namePlaceholder": "Ponle nombre a esta automatización",
+    "prompt": "¿Qué debe hacer el agente?",
+    "promptPlaceholder": "Describe el trabajo de cada ejecución…",
+    "promptHint": "La pull request, incidencia o commit que inició la ejecución se le pasa como contexto.",
+    "triggerLead": "Cualquier disparador inicia una ejecución.",
+    "addTrigger": "Añadir disparador",
+    "addAnother": "Añadir otro disparador",
+    "groupSchedule": "Horario",
+    "groupGithub": "GitHub",
+    "removeTrigger": "Quitar disparador",
+    "on": "el",
+    "at": "a las",
+    "in": "en",
+    "onThe": "el día",
+    "targeting": "hacia",
+    "labeled": "con la etiqueta",
+    "anyBranch": "cualquier rama",
+    "anyLabel": "cualquier etiqueta",
+    "branchPlaceholder": "Nombre de la rama",
+    "labelPlaceholder": "Nombre de la etiqueta",
+    "anyOfRepos": "cualquiera de {{count}} repositorios",
+    "someRepos": "{{count}} repositorios",
+    "reposHead": "Repositorios · elige uno o más",
+    "atLeastOne": "Hace falta al menos uno",
+    "hour": "Hora",
+    "minute": "Minuto",
+    "minutesPast": "Minutos de cada hora",
+    "dayOfMonth": "Día del mes",
+    "days": "Días",
+    "nextRun": "Próxima ejecución",
+    "inRel": "· en",
+    "passed": "Esa hora ya ha pasado. Elige una posterior.",
+    "listening_one": "Escuchando en {{repos}} · se habría ejecutado una vez en los últimos 7 días",
+    "listening_other": "Escuchando en {{repos}} · se habría ejecutado {{count}} veces en los últimos 7 días",
+    "listening_many": "Escuchando en {{repos}} · se habría ejecutado {{count}} veces en los últimos 7 días",
+    "listeningNone": "Escuchando en {{repos}} · nada coincidió en los últimos 7 días",
+    "code": "Código",
+    "project": "Proyecto",
+    "chooseProject": "Elige un proyecto",
+    "searchProjects": "Buscar proyectos",
+    "noRepositories": "Sin repositorios",
+    "repositories": "Repositorios",
+    "searchRepositories": "Buscar repositorios",
+    "repoCount_one": "{{count}} repositorio",
+    "repoCount_other": "{{count}} repositorios",
+    "runsOn": "Se ejecuta en",
+    "host": "Host",
+    "chooseHost": "Elige un host",
+    "searchHosts": "Buscar hosts",
+    "agent": "Agente",
+    "searchAgents": "Buscar agentes",
+    "model": "Modelo",
+    "searchModels": "Buscar modelos",
+    "agentDefault": "El predeterminado del agente",
+    "branchHint": "Cada ejecución es su propia sesión en una rama opp/ nueva: nada llega a main sin una pull request.",
+    "missingName": "Añade un nombre.",
+    "missingPrompt": "Describe el trabajo.",
+    "missingTrigger": "Añade un disparador.",
+    "missingWhere": "Elige un proyecto, un repositorio y un host.",
     "back": "Atrás",
-    "crumb": "Automatizaciones",
+    "next": "Siguiente",
+    "save": "Guardar",
     "create": "Crear automatización",
-    "recap": "Ponle nombre a la automatización y di dónde se ejecuta."
+    "saveFailed": "No se ha podido guardar la automatización.",
+    "noMatch": "Nada coincide con «{{query}}».",
+    "chooseRepositories": "Elige repositorios…",
+    "chooseAgent": "Elige un agente…",
+    "chooseModel": "Elige un modelo…"
+  },
+  "skipReasonOther": "Omitida",
+  "pausedReasonOther": "En pausa. Los disparadores se ignoran hasta que se reanude.",
+  "deleteDialog": {
+    "title": "¿Eliminar «{{name}}»?",
+    "description": "Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan.",
+    "confirm": "Eliminar",
+    "deleting": "Eliminando…",
+    "failed": "No se pudo eliminar la automatización."
+  },
+  "runClosed": {
+    "title": "El turno de esta ejecución ha terminado",
+    "description": "Su trabajo está en {{branch}}. Al abrirla en el terminal, la sesión continúa donde la ejecución la dejó.",
+    "descriptionNoBranch": "Al abrirla en el terminal, la sesión continúa donde la ejecución la dejó.",
+    "open": "Abrir en el terminal",
+    "opening": "Abriendo",
+    "backToAutomation": "Volver a la automatización"
   }
 }

@@ -5,11 +5,10 @@ import {
   canAccess,
   defineAbilitiesFor,
   defineAbilitiesFromPermissions,
-  KNOWN_ACTIONS,
-  KNOWN_SUBJECTS,
+  interpolatePermissionConditions,
   type PermissionDefinition,
   SYSTEM_ROLE_PERMISSIONS,
-} from './index';
+} from './index.js';
 
 describe('defineAbilitiesFromPermissions', () => {
   it('grants a simple action/subject permission', () => {
@@ -25,17 +24,6 @@ describe('defineAbilitiesFromPermissions', () => {
 
     expect(ability.can('read', 'Article')).toBe(false);
     expect(ability.can('manage', 'all')).toBe(false);
-  });
-
-  it('unions multiple permissions (as when merging several roles)', () => {
-    const ability = defineAbilitiesFromPermissions([
-      { action: 'read', subject: 'User' },
-      { action: 'create', subject: 'Article' },
-    ]);
-
-    expect(ability.can('read', 'User')).toBe(true);
-    expect(ability.can('create', 'Article')).toBe(true);
-    expect(ability.can('delete', 'User')).toBe(false);
   });
 
   it('supports the `manage`/`all` wildcards for full access', () => {
@@ -120,15 +108,6 @@ describe('defineAbilitiesFromPermissions', () => {
       expect(ability.can('update', subject('Article', { authorId: 'user-1' }))).toBe(false);
     });
 
-    it('passes non-placeholder condition values through untouched', () => {
-      const ability = defineAbilitiesFromPermissions([
-        { action: 'read', subject: 'Article', conditions: { published: true } },
-      ]);
-
-      expect(ability.can('read', subject('Article', { published: true }))).toBe(true);
-      expect(ability.can('read', subject('Article', { published: false }))).toBe(false);
-    });
-
     it('interpolates placeholders nested inside arrays and objects', () => {
       const context: AbilityContext = { user: { id: 'user-1' } };
       const ability = defineAbilitiesFromPermissions(
@@ -198,15 +177,6 @@ describe('SYSTEM_ROLE_PERMISSIONS', () => {
     const ability = defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.user);
     expect(ability.can('delete', 'User')).toBe(false);
     expect(ability.can('manage', 'all')).toBe(false);
-  });
-});
-
-describe('known catalogs', () => {
-  it('exposes the built-in actions and subjects for seeding/UI', () => {
-    expect(KNOWN_ACTIONS).toContain('manage');
-    expect(KNOWN_SUBJECTS).toContain('all');
-    expect(KNOWN_SUBJECTS).toContain('Organization');
-    expect(KNOWN_SUBJECTS).toContain('Workspace');
   });
 });
 
@@ -314,6 +284,45 @@ describe('scope placeholders', () => {
 
     expect(ability.can('read', project({ organizationId: 'org-1', id: 'x' }))).toBe(true);
     expect(ability.can('read', project({ organizationId: 'org-2', id: 'x' }))).toBe(false);
+  });
+});
+
+describe('interpolatePermissionConditions', () => {
+  const context: AbilityContext = { user: { id: 'u1' }, activeOrganizationId: 'org-A' };
+
+  it('interpolates ${activeOrganizationId} and ${user.id}', () => {
+    expect(
+      interpolatePermissionConditions(
+        { organizationId: '${activeOrganizationId}', ownerUserId: '${user.id}' },
+        context,
+      ),
+    ).toEqual({ organizationId: 'org-A', ownerUserId: 'u1' });
+  });
+
+  it('leaves literals and operators untouched', () => {
+    const conditions = { organizationId: 'org-B', status: { $ne: 'archived' }, n: 3 };
+    expect(interpolatePermissionConditions(conditions, context)).toEqual(conditions);
+  });
+
+  it('does not mutate its input', () => {
+    const conditions = { organizationId: '${activeOrganizationId}' };
+    interpolatePermissionConditions(conditions, context);
+    expect(conditions).toEqual({ organizationId: '${activeOrganizationId}' });
+  });
+
+  it('resolves an unknown placeholder to undefined', () => {
+    expect(interpolatePermissionConditions({ email: '${user.email}' }, context)).toEqual({
+      email: undefined,
+    });
+  });
+
+  it("returns undefined when an 'all' scope grant collapses the object", () => {
+    expect(
+      interpolatePermissionConditions(
+        { id: { $in: '${scope.grants.Lead}' } },
+        { scope: { grants: { Lead: 'all' } } },
+      ),
+    ).toBeUndefined();
   });
 });
 

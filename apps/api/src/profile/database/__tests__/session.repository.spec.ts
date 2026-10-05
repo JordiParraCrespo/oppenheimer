@@ -77,7 +77,6 @@ describe('SessionRepository', () => {
   });
 
   it('leaves delegated credential sessions out of the device list', async () => {
-    // Two browsers and two API tokens re-minting all day: the screen says two.
     const repository = new SessionRepository(
       fakeRepository([
         sessionRow({ id: 'laptop' }),
@@ -100,8 +99,6 @@ describe('SessionRepository', () => {
   });
 
   it('does not resolve a delegated session by id either', async () => {
-    // The revoke command reads through this method, and "sign out" must not
-    // promise a revocation the credential undoes on its next request.
     const repository = new SessionRepository(
       fakeRepository([
         sessionRow({ id: 'laptop' }),

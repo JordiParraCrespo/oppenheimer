@@ -1,19 +1,38 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryColumn,
+  Unique,
+  UpdateDateColumn,
+} from 'typeorm';
 
 /**
  * Maps the Better Auth `session` table. Owned by Better Auth; declared here so
  * TypeORM creates/migrates the table alongside the rest of the schema.
+ * Foreign keys live in the migrations (`InitialSchema`), as for every entity
+ * here: `userId` and `impersonatedBy` reference `user` (ON DELETE CASCADE);
+ * `activeOrganizationId` and `activeTeamId` reference `organization` and
+ * `team` (ON DELETE SET NULL).
  */
 @Entity('session')
+@Unique('UQ_session_token', ['token'])
+@Index('IDX_session_userId', ['userId'])
+@Index('IDX_session_impersonatedBy', ['impersonatedBy'], { where: '"impersonatedBy" IS NOT NULL' })
+@Index('IDX_session_activeOrganizationId', ['activeOrganizationId'], {
+  where: '"activeOrganizationId" IS NOT NULL',
+})
+@Index('IDX_session_activeTeamId', ['activeTeamId'], { where: '"activeTeamId" IS NOT NULL' })
 export class Session {
-  @PrimaryColumn({ type: 'uuid' })
+  @PrimaryColumn({ type: 'uuid', primaryKeyConstraintName: 'PK_session' })
   id!: string;
 
   @Column({ type: 'uuid' })
   userId!: string;
 
-  @Column({ type: 'varchar', unique: true })
+  @Column({ type: 'varchar' })
   token!: string;
 
   @Column({ type: TIMESTAMP_COLUMN_TYPE })
@@ -27,10 +46,9 @@ export class Session {
 
   /**
    * True for the internal sessions `DelegatedSessionAdapter` mints so an API
-   * token or OAuth client can reach the Better Auth façades. They are bridges,
-   * not devices, so the profile session list leaves them out.
+   * token or OAuth client can reach the Better Auth façades.
    *
-   * Declared to Better Auth as a session `additionalField` in `auth.ts` — it
+   * Declared to Better Auth as a session `additionalField` in `better-auth.config.ts` — it
    * owns every write to this table, and a column it does not know about would
    * be dropped on the way in.
    */

@@ -15,24 +15,10 @@ CI runs the **`api` project** on every pull request, in the `End-to-End Tests
 started from its build, then `e2e:api`. No browser is involved, so that job
 needs none.
 
-The **`web` project does not run in CI yet, and does not pass.** On `main` it is
-15 failures out of 64, and they are not flakes — the suite drifted while nothing
-ran it:
-
-- six `team.spec.ts` specs, and the profile spec that opens the team page, drive
-  a `/team` route that `apps/web` no longer has. Organization surfaces now live
-  in `apps/web/src/features/organizations/` — the onboarding and
-  accept-invitation screens, and the general pane of `/settings` — and the
-  console has no roles or users screens at all. The specs did not follow
-- `nav-permissions.spec.ts` asserts a nav catalog that has the same problem
-- the rest — an avatar upload, a password change signing other devices out, a
-  wrong-password error, the language switch — are individually stale or broken
-  and need diagnosing one at a time
-
-Fixing that is its own piece of work: port or retire each spec against the
-surface the console has now, then add `--project=web` to the CI job. Until then a green CI says
-nothing about the browser journeys, so run `pnpm --filter @oppenheimer/e2e e2e:web`
-locally when you touch them.
+The **`web` project passes but is not a CI row yet.** Run
+`pnpm --filter @oppenheimer/e2e e2e:web` locally when you touch the browser
+journeys. Adding it to `scripts/ci/local.mjs` is a separate CI decision: the
+scheduled workflow would need a Chromium.
 
 ## The two stubs, and what they are for
 
@@ -102,7 +88,10 @@ docker exec -it <host> fleet-host cut|restore|kill-runner
 ```
 
 It is opt-in (`E2E_FLEET=1`, which `e2e:fleet` sets), so `e2e` and `e2e:api`
-never select it. Two things about the hosts are deliberate:
+never select it. The specs that open the console
+(`console.spec.ts`, `delete-session.spec.ts`, `remove-host.spec.ts`,
+`project-journey.spec.ts`) need it
+running (`stack.mjs up --web`) and skip without it. Two things about the hosts are deliberate:
 
 - **The API is reached on the host's loopback.** The runner speaks plain HTTP
   only to loopback, so each container forwards `127.0.0.1:3001` to the API with

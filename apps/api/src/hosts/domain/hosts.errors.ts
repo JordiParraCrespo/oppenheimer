@@ -1,8 +1,6 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
 
 /**
- * The hosts catalog.
- *
  * The prefix is plural because the Go runner owns `HOST_00x` and `PAIR_00x` in
  * the same `apps/docs/docs/errors.md`, and a code may only be claimed once.
  *
@@ -44,8 +42,8 @@ export const HostErrors = {
     httpStatus: 401,
   },
   /**
-   * Every unspent token is a live way to add a machine to the account for an
-   * hour, so one person may hold only a few at once.
+   * Every unspent token is a live way to add a machine to the account until it
+   * expires, so one person may hold only a few at once.
    */
   TOO_MANY_PAIRING_TOKENS: {
     code: 'HOSTS_006',
@@ -57,9 +55,9 @@ export const HostErrors = {
    * pulled, it expired, or it was parked for another host — the three are one
    * answer, so the route cannot be used to probe which.
    */
-  IMAGE_NOT_PARKED: {
+  FILE_NOT_PARKED: {
     code: 'HOSTS_007',
-    message: 'No image is waiting for that command',
+    message: 'No file is waiting for that command',
     httpStatus: 404,
   },
 } as const satisfies Record<string, ErrorDefinition>;

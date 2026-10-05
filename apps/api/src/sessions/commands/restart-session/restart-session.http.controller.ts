@@ -41,23 +41,19 @@ export class RestartSessionHttpController {
 
   @Post(':id/restart')
   // 200, not Nest's default 201 for a POST: this creates nothing. It acts on a
-  // session that already exists and answers with that session. The Swagger
-  // response below has always said 200 — the runtime did not, and the one test
-  // that would have caught it was skipped for want of an installation.
+  // session that already exists and answers with that session.
   @HttpCode(HttpStatus.OK)
   @Version('1')
-  // `update Session`, not a verb of its own: the CASL model stays CRUD plus
-  // `manage`, and what separates this from a read is the `sessions:write` scope.
   @CheckPolicies({ action: 'update', subject: 'Session' })
   @RequireScopes('sessions:write')
   @ApiOperation({
-    operationId: 'restartSession',
     summary: 'Restart a session',
     description:
       'Recreates window 0 in the worktrees the session already has — what a host reboot needs. It records a request: the session becomes open when the host says it did.',
   })
   @ApiResponse({ status: 200, type: SessionResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Session not found', code: 'SESSIONS_001' })
+  @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
   @ApiProblemResponse({ status: 409, description: 'That session is closed', code: 'SESSIONS_005' })
   async restart(
     @CurrentAccessScope() scope: AccessScope,

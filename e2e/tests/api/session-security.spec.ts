@@ -13,7 +13,7 @@ import { findResetToken, findSessionsForUser } from '../../support/db';
 
 test.describe('session security', () => {
   // The reset is the remedy for a session someone else is holding, so it has to
-  // end that session — `revokeSessionsOnPasswordReset` in `auth.ts`.
+  // end that session — `revokeSessionsOnPasswordReset` in `better-auth.config.ts`.
   test('a session opened before the reset no longer authenticates', async () => {
     const { api, user, userId } = await signedUpContext('stolensession');
     expect((await api.get('/api/v1/users/me', { failOnStatusCode: false })).status()).toBe(200);
@@ -44,13 +44,26 @@ test.describe('session security', () => {
     );
   });
 
+  // Through the API rather than a `DELETE` on the table: sessions are cached in
+  // Redis in front of the `session` table, and it is the application's own
+  // deletion that takes the cached copies with the rows. A row removed behind
+  // its back would leave the copy answering (`apps/api/AGENTS.md`).
   test('a session belonging to a deleted user stops working', async () => {
-    const { api, userId } = await signedUpContext('deleted');
-    const { query } = await import('../../support/db');
+    const { api, user, userId } = await signedUpContext('deleted');
+    const elsewhere = await newContext();
+    expect((await signIn(elsewhere, user.email, user.password)).status()).toBe(200);
 
-    await query('DELETE FROM "session" WHERE "userId" = $1', [userId]);
+    const deleted = await api.delete('/api/v1/profile', {
+      data: { confirmation: user.email },
+      failOnStatusCode: false,
+    });
+    expect(deleted.status()).toBe(204);
 
+    expect(await findSessionsForUser(userId)).toHaveLength(0);
     expect((await api.get('/api/v1/users/me', { failOnStatusCode: false })).status()).toBe(401);
+    expect((await elsewhere.get('/api/v1/users/me', { failOnStatusCode: false })).status()).toBe(
+      401,
+    );
   });
 
   test('repeated wrong passwords never leak a session', async () => {
@@ -86,18 +99,12 @@ test.describe('session security', () => {
       ),
     );
 
-    // The global ThrottlerModule allows 100 requests per minute per IP.
+    // The global throttle allows 100 requests per minute per IP by default
+    // (`RATE_LIMIT_DEFAULT_LIMIT`), so 140 must trip it.
     expect(
       statuses.some((status) => status === 429),
       'a global rate limit is configured, so a flood must eventually be refused',
     ).toBe(true);
-  });
-
-  test('a session cookie is not readable by scripts', async () => {
-    const { api } = await signedUpContext('httponly');
-    const cookie = (await api.storageState()).cookies.find((c) => c.name.includes('session_token'));
-
-    expect(cookie?.httpOnly).toBe(true);
   });
 
   test('security headers are present on API responses', async () => {

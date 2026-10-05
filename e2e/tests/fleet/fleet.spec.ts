@@ -6,6 +6,7 @@ import {
   createProject,
   createSession,
   STUB_REPOSITORIES,
+  waitForLifecycle,
 } from '../../support/sessions';
 
 /**
@@ -15,9 +16,9 @@ import {
  * row: that a real runner pairs through `runner register`, holds the link, runs
  * a session in tmux on *its* machine and streams it back through the relay —
  * and keeps doing so when its network drops or its process dies. Every host
- * here is a container running the real binary (`support/fleet.ts`).
+ * here runs the real binary (`support/fleet.ts`).
  *
- * The hosts are started by `fleet.setup.ts`'s image, one fresh set per test, so
+ * The hosts run what `fleet.setup.ts` built, one fresh set per test, so
  * a test that breaks a host breaks only its own.
  */
 
@@ -58,7 +59,8 @@ test('three machines pair, and each session runs on the machine it names', async
   const branches = hosts[0].host.exec(
     'find ~/oppenheimer-ai -name README.md -execdir git rev-parse --abbrev-ref HEAD \\;',
   );
-  expect(branches.split('\n').filter((branch) => branch !== 'main')).not.toHaveLength(0);
+  const { checkouts } = await waitForLifecycle(api, sessions[0], 'open');
+  expect(branches.split('\n').map((branch) => branch.trim())).toContain(checkouts[0].branch);
 
   await Promise.all(terminals.map((terminal) => terminal.close()));
 });
@@ -79,7 +81,6 @@ test('a machine that loses its network goes offline alone and comes back to the 
 
   cutLink();
   await waitForHost(api, flaky.host, false);
-  // Only the machine that lost its cable: the other is still online.
   await waitForHost(api, steady.host, true, 5_000);
 
   restoreLink();
@@ -142,6 +143,5 @@ test('another account neither sees a machine nor runs a session on it', async ()
   });
   expect(refused.status()).toBeGreaterThanOrEqual(400);
   expect(refused.status()).toBeLessThan(500);
-  // …and nothing started on the machine.
   expect(box.host.exec('tmux -L oppenheimer list-sessions 2>/dev/null || true')).toBe('');
 });

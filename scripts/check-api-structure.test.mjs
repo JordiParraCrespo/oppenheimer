@@ -8,6 +8,7 @@
  * rename here is a visible, deliberate change rather than a silent one.
  */
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -86,19 +87,14 @@ test('the dissolved buckets each report their own kind', () => {
   }
 });
 
-test('a service or a controller at a module root is named as such', () => {
-  assert.deepEqual(kinds(check({ ...CONFORMING, 'widget/widget.service.ts': '' })), [
-    'service-at-module-root',
-  ]);
-  assert.deepEqual(kinds(check({ ...CONFORMING, 'widget/widget.controller.ts': 'class C {}' })), [
-    'controller-at-module-root',
-  ]);
-});
-
-test('a plural mappers file is rejected', () => {
-  assert.deepEqual(kinds(check({ ...CONFORMING, 'widget/widget.mappers.ts': '' })), [
-    'plural-mappers-file',
-  ]);
+test('a service, a controller or a plural mappers file at a module root is named as such', () => {
+  for (const [file, kind] of [
+    ['widget/widget.service.ts', 'service-at-module-root'],
+    ['widget/widget.controller.ts', 'controller-at-module-root'],
+    ['widget/widget.mappers.ts', 'plural-mappers-file'],
+  ]) {
+    assert.deepEqual(kinds(check({ ...CONFORMING, [file]: 'class C {}' })), [kind], file);
+  }
 });
 
 test('a route outside a use-case controller is reported, a probe is not', () => {
@@ -178,7 +174,7 @@ test('a ledger entry silences exactly its own (path, kind), and nothing else', (
   const ledger = [{ path: 'src/widget/widget.service.ts', kind: 'service-at-module-root' }];
   assert.deepEqual(check(broken, { ledger }).outstanding, []);
 
-  // A different kind at the same path is still reported.
+  // A finding the entry does not name, at another path, is still reported.
   assert.deepEqual(
     kinds(check({ ...broken, 'widget/widget.controller.ts': 'class C {}' }, { ledger })),
     ['controller-at-module-root'],
@@ -190,14 +186,14 @@ test('a ledger entry that no longer matches is itself an error', () => {
   assert.deepEqual(kinds(check(CONFORMING, { ledger })), ['stale-ledger-entry']);
 });
 
-test("the repository's own ledger is current", async () => {
-  // The real run, with the real ledger: this is what CI asserts, and it fails
-  // both on a new violation and on an entry whose debt has been paid.
-  const { checkApiStructure: run, LEDGER } = await import('./check-api-structure.mjs');
-  const apiSrc = fileURLToPath(new URL('../apps/api/src', import.meta.url));
-  const result = run(apiSrc, { ledger: LEDGER });
-  assert.deepEqual(
-    result.outstanding.map((e) => e.message),
-    [],
-  );
+test('the CLI checks apps/api against the ledger in the script, and it is current', () => {
+  // `fileURLToPath`, not `.pathname`: a URL's path is percent-encoded, so a
+  // checkout under a directory with a space in it ("Macintosh SSD") spawns
+  // node on a path that does not exist and the run fails for a reason that
+  // has nothing to do with the contract under test.
+  const script = fileURLToPath(new URL('./check-api-structure.mjs', import.meta.url));
+  const run = spawnSync(process.execPath, [script], { encoding: 'utf8' });
+
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /API structure: \d+ modules conform/);
 });

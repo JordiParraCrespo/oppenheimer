@@ -12,7 +12,6 @@ import { z } from 'zod/v4';
  * build failure rather than a step that stays pending forever.
  */
 
-/** The kind a start step is logged as. */
 export const SESSION_STEP_EVENT_KIND = 'session.step';
 
 /** The kind a failed start is logged as; its payload is {@link sessionFailedPayloadSchema}. */
@@ -43,6 +42,12 @@ export const sessionStepPayloadSchema = z.object({
   status: sessionStepStatusSchema,
   /** On `done`: how long the step took, measured on the host. */
   durationMs: z.number().int().nonnegative().optional(),
+  /**
+   * On the clone step's `running`: the repository is not on this host yet, so
+   * the step is its first download rather than a fetch, and takes seconds to
+   * tens of seconds on a large repository where a fetch takes one.
+   */
+  download: z.boolean().optional(),
 });
 
 export type SessionStepPayload = z.infer<typeof sessionStepPayloadSchema>;

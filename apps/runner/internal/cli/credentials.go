@@ -19,10 +19,9 @@ import (
 // token the control plane minted for that session's repository.
 //
 // Nothing is written to disk and nothing is passed on a command line. A
-// runner that has no token — today, because the control-plane link is the
-// next slice — answers nothing, which is how git's protocol says "I have no
-// credentials for that"; git then falls back to whatever else is configured,
-// exactly as it would with no helper at all.
+// runner that has no token answers nothing, which is how git's protocol says
+// "I have no credentials for that"; git then falls back to whatever else is
+// configured, exactly as it would with no helper at all.
 func (a *App) CredentialHelper(ctx context.Context, operation string, in io.Reader, out io.Writer) error {
 	request := map[string]string{}
 	scanner := bufio.NewScanner(in)

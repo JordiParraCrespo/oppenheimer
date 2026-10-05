@@ -1,34 +1,13 @@
 'use client';
 
-import { ChevronDownIcon, GitBranchIcon, SearchIcon } from 'lucide-react';
+import { ChevronDownIcon, GitBranchIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { Checkbox } from './checkbox';
-import { Chip } from './chip';
 import { ChipSelectEmpty, ChipSelectItem, ChipSelectPopup, ChipSelectSearch } from './chip-select';
 import { Popover, PopoverTrigger } from './popover';
 
-/**
- * RepositoryRowList — the project dialog's repository picker: a 14px card
- * with a search row on top and one row per repository the App can see. A
- * row is a checkbox and the mono name; once ticked it grows a "Default"
- * toggle chip (cloned into every new session) and a 168px pill for the base
- * branch, which opens the same searchable pane the scope chips use. Untied
- * rows keep the two controls' space but not their ink, so ticking a row
- * never reflows the list.
- *
- * It is a form control, not a menu: the caller owns `value` and renders the
- * label, the help glyph and the "1 of 4 by default" count above it.
- *
- * ```tsx
- * <RepositoryRowList
- *   repositories={[{ id: 'xrp-mobile', name: 'xrp-mobile', defaultBranch: 'main', branches: [...] }]}
- *   value={[{ id: 'xrp-mobile', isDefault: true, branch: 'main' }]}
- *   onValueChange={setRows}
- * />
- * ```
- */
 type RepositoryRowBranch = { value: string; label?: string; description?: string };
 
 type RepositoryRowOption = {
@@ -47,17 +26,32 @@ type RepositoryRowValue = {
   branch: string;
 };
 
-const defaultEmptyText = (query: string): React.ReactNode => `No repository matches “${query}”.`;
 const defaultBranchEmptyText = (query: string): React.ReactNode => `No branch named “${query}”`;
 const defaultBranchLabel = (name: string): string => `Base branch for ${name}`;
 
+/**
+ * RepositoryRowList — "Cloned by default", inside the project dialog's
+ * Defaults fold (`design/version1/SessionsConsole.dc.html`, `op-prepo`): a
+ * 14px card with one 40px row per repository the project holds — a checkbox
+ * (ticked, it is cloned into every new session of the project), the mono name,
+ * and a 168px base-branch pill opening the scope chips' searchable pane. Which
+ * repositories are in the project is `RepositoryAddField`'s to decide.
+ *
+ * A form control, not a menu: the caller owns `value`, one row per repository
+ * in the project's order.
+ *
+ * ```tsx
+ * <RepositoryRowList
+ *   repositories={[{ id: 'xrp-mobile', name: 'xrp-mobile', defaultBranch: 'main', branches: [...] }]}
+ *   value={[{ id: 'xrp-mobile', isDefault: true, branch: 'main' }]}
+ *   onValueChange={setRows}
+ * />
+ * ```
+ */
 function RepositoryRowList({
   repositories,
   value,
   onValueChange,
-  searchPlaceholder = 'Search repositories…',
-  emptyText: emptyTextProp,
-  defaultLabel = 'Default',
   defaultTitle = 'Cloned by default in new sessions',
   branchSearchPlaceholder = 'Search branches',
   branchEmptyText: branchEmptyTextProp,
@@ -68,72 +62,43 @@ function RepositoryRowList({
   repositories: RepositoryRowOption[];
   value: RepositoryRowValue[];
   onValueChange: (value: RepositoryRowValue[]) => void;
-  searchPlaceholder?: string;
-  emptyText?: (query: string) => React.ReactNode;
-  defaultLabel?: React.ReactNode;
   defaultTitle?: string;
   branchSearchPlaceholder?: string;
   branchEmptyText?: (query: string) => React.ReactNode;
   branchLabel?: (name: string) => string;
 }) {
-  // Defaults resolved in the body, not the signature: the React Compiler
-  // leaves a component whose default parameter is a function uncompiled.
-  const emptyText = emptyTextProp ?? defaultEmptyText;
+  // Not a default parameter: the React Compiler skips a function-valued one.
   const branchEmptyText = branchEmptyTextProp ?? defaultBranchEmptyText;
   const branchLabel = branchLabelProp ?? defaultBranchLabel;
-  const [query, setQuery] = React.useState('');
-  const term = query.trim().toLowerCase();
-  const shown = repositories.filter((repo) => (term ? repo.name.toLowerCase().includes(term) : true));
-  const byId = new Map(value.map((row) => [row.id, row]));
+  const byId = new Map(repositories.map((repo) => [repo.id, repo]));
 
-  function patch(id: string, next: Partial<RepositoryRowValue> | null) {
-    if (next === null) return onValueChange(value.filter((row) => row.id !== id));
-    const current = byId.get(id);
-    if (current) return onValueChange(value.map((row) => (row.id === id ? { ...row, ...next } : row)));
-    const repo = repositories.find((r) => r.id === id);
-    if (!repo) return;
-    onValueChange([...value, { id, isDefault: true, branch: repo.defaultBranch, ...next }]);
+  function patch(id: string, next: Partial<RepositoryRowValue>) {
+    onValueChange(value.map((row) => (row.id === id ? { ...row, ...next } : row)));
   }
 
   return (
     <div
       data-slot="repository-row-list"
-      className={cn(
-        'flex flex-col overflow-hidden rounded-md border border-border-subtle bg-card',
-        className,
-      )}
+      className={cn('flex flex-col overflow-hidden rounded-md border border-border-subtle', className)}
       {...props}
     >
-      <div className="flex items-center gap-[7px] border-b border-border-subtle px-3 py-2 text-fg-subtle">
-        <SearchIcon className="size-3.5 shrink-0" aria-hidden />
-        <input
-          type="text"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder={searchPlaceholder}
-          aria-label={searchPlaceholder}
-          className="min-w-0 flex-1 bg-transparent text-[13px] text-fg outline-none placeholder:text-fg-subtle"
-        />
-      </div>
-      {shown.length === 0 ? (
-        <p className="m-0 p-3 text-[12.5px] text-fg-subtle">{emptyText(query)}</p>
-      ) : (
-        shown.map((repo) => (
+      {value.map((row) => {
+        const repo = byId.get(row.id);
+        if (!repo) return null;
+        return (
           <RepositoryRow
-            key={repo.id}
+            key={row.id}
             repository={repo}
-            row={byId.get(repo.id)}
-            onToggle={(on) => patch(repo.id, on ? {} : null)}
-            onDefaultChange={(isDefault) => patch(repo.id, { isDefault })}
-            onBranchChange={(branch) => patch(repo.id, { branch })}
-            defaultLabel={defaultLabel}
+            row={row}
+            onDefaultChange={(isDefault) => patch(row.id, { isDefault })}
+            onBranchChange={(branch) => patch(row.id, { branch })}
             defaultTitle={defaultTitle}
             branchSearchPlaceholder={branchSearchPlaceholder}
             branchEmptyText={branchEmptyText}
             branchLabel={branchLabel(repo.name)}
           />
-        ))
-      )}
+        );
+      })}
     </div>
   );
 }
@@ -141,21 +106,17 @@ function RepositoryRowList({
 function RepositoryRow({
   repository,
   row,
-  onToggle,
   onDefaultChange,
   onBranchChange,
-  defaultLabel,
   defaultTitle,
   branchSearchPlaceholder,
   branchEmptyText,
   branchLabel,
 }: {
   repository: RepositoryRowOption;
-  row: RepositoryRowValue | undefined;
-  onToggle: (on: boolean) => void;
+  row: RepositoryRowValue;
   onDefaultChange: (isDefault: boolean) => void;
   onBranchChange: (branch: string) => void;
-  defaultLabel: React.ReactNode;
   defaultTitle: string;
   branchSearchPlaceholder: string;
   branchEmptyText: (query: string) => React.ReactNode;
@@ -163,7 +124,6 @@ function RepositoryRow({
 }) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
-  const on = row !== undefined;
   const term = query.trim().toLowerCase();
   const branches = repository.branches.filter((branch) =>
     term ? (branch.label ?? branch.value).toLowerCase().includes(term) : true,
@@ -173,28 +133,24 @@ function RepositoryRow({
   return (
     <div
       data-slot="repository-row"
-      data-on={on || undefined}
-      className="flex min-h-10 items-center gap-3 border-b border-border-subtle py-1.5 pr-2.5 pl-3 last:border-b-0"
+      data-on={row.isDefault || undefined}
+      className="flex min-h-10 items-center gap-3 border-t border-border-subtle py-1.5 pr-2.5 pl-3 first:border-t-0"
     >
       <Checkbox
         id={id}
-        checked={on}
-        onCheckedChange={(checked) => onToggle(checked === true)}
+        checked={row.isDefault}
+        onCheckedChange={(checked) => onDefaultChange(checked === true)}
+        title={defaultTitle}
         className="size-4"
       />
-      <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer truncate font-mono text-[12.5px] text-fg">
+      <label
+        htmlFor={id}
+        className="min-w-0 flex-1 cursor-pointer truncate font-mono text-[12.5px] text-fg"
+        title={repository.name}
+      >
         {repository.name}
       </label>
-      <Chip
-        selected={row?.isDefault ?? false}
-        aria-pressed={row?.isDefault ?? false}
-        title={defaultTitle}
-        onClick={() => onDefaultChange(!(row?.isDefault ?? false))}
-        className={cn('shrink-0', !on && 'invisible')}
-      >
-        {defaultLabel}
-      </Chip>
-      <div className={cn('relative flex w-[168px] shrink-0 items-center', !on && 'invisible')}>
+      <div className="relative flex w-[168px] shrink-0 items-center">
         <Popover
           open={open}
           onOpenChange={(next) => {
@@ -215,7 +171,7 @@ function RepositoryRow({
           >
             <GitBranchIcon className="size-3.5 shrink-0" aria-hidden />
             <span className="min-w-0 flex-1 truncate text-left font-mono text-xs text-fg">
-              {row?.branch}
+              {row.branch}
             </span>
             <ChevronDownIcon className="size-3 shrink-0" aria-hidden />
           </PopoverTrigger>
@@ -231,7 +187,7 @@ function RepositoryRow({
                 branches.map((branch) => (
                   <ChipSelectItem
                     key={branch.value}
-                    selected={branch.value === row?.branch}
+                    selected={branch.value === row.branch}
                     description={branch.description}
                     mono
                     onClick={() => {

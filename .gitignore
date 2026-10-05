@@ -55,5 +55,19 @@ dump.rdb
 # Claude Code agent worktrees (isolated checkouts, never repo content)
 .claude/worktrees/
 
+# oppenheimer:begin runner
+# go.work is a dev convenience — each module carries the relative replaces the
+# Docker build needs — so its checksum file is a local byproduct. Go writes it
+# whenever a workspace-aware command runs, which otherwise stops `pnpm ci:local`
+# on a dirty tree every time.
+go.work.sum
+# oppenheimer:end runner
+
+# pnpm ci:local's report and the dockerd log it may start
+.ci-local/
+
 # The local stack (scripts/stack/stack.mjs): pids, logs, the host account
 .stack/
+
+# IP databases fetched by scripts/geoip/fetch-dbip.mjs
+.data/

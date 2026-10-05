@@ -4,10 +4,12 @@ import { Guard } from './guard';
 import { RequestContextService } from './request-context.service';
 
 export interface DomainEventMetadata {
-  /** Timestamp when this domain event occurred. */
+  /**
+   * Epoch milliseconds when the event was raised: `Date.now()` unless the caller
+   * passes one.
+   */
   readonly timestamp: number;
 
-  /** Correlation id (integration events, log correlation, etc). */
   readonly correlationId: string;
 
   /** Causation id used to reconstruct execution order if needed. */
@@ -31,13 +33,9 @@ export type DomainEventProps<T> = Omit<T, 'id' | 'metadata'> & {
 export abstract class DomainEvent {
   public readonly id: string;
 
-  /** Aggregate id where the domain event occurred. */
   public readonly aggregateId: string;
 
-  /**
-   * Why this event's side effects are owed, in words. Recorded on the outbox
-   * row so a queued item is self-explaining when someone opens the table.
-   */
+  /** Why this event's side effects are owed, in words: its outbox row's `reason`. */
   public readonly reason?: string;
 
   public readonly metadata: DomainEventMetadata;

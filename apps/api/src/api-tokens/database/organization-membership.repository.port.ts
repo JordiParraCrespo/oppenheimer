@@ -5,6 +5,5 @@
  * organizations module's persistence model.
  */
 export interface OrganizationMembershipReaderPort {
-  /** Ids of the organizations this user is a member of. */
   findOrganizationIdsForUser(userId: string): Promise<string[]>;
 }

@@ -1,7 +1,7 @@
 import { generateKeyPairSync } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { HostUnpairedDomainEvent } from '../domain/events/host-unpaired.domain-event';
-import { HostEntity } from '../domain/host.entity';
+import { HostEntity, platformLabelOf } from '../domain/host.entity';
 import { keyFingerprint } from '../infrastructure/host-assertion.util';
 
 function key() {
@@ -64,8 +64,6 @@ describe('HostEntity.register', () => {
       pairingTokenId: 'token-1',
     });
 
-    // The id is the one the redemption statement recorded, not one the aggregate
-    // minted for itself — the row the statement named has to be this row.
     expect(registered.id).toBe('host-1');
     expect(registered.publicKey).toBe(current.base64);
     expect(registered.hasFingerprint(current.fingerprint)).toBe(true);
@@ -81,8 +79,6 @@ describe('unpair', () => {
     subject.unpair(at);
     subject.unpair(new Date('2026-09-20T12:00:00Z'));
 
-    // The console and the machine itself both unpair, and neither knows whether
-    // the other already did; the first answer is the one that stands.
     expect(subject.unpairedAt).toEqual(at);
     expect(subject.isUnpaired).toBe(true);
   });
@@ -111,5 +107,24 @@ describe('invariants', () => {
   it('refuses an empty name, on create and on rename', () => {
     expect(() => host({ name: '' })).toThrow();
     expect(() => host().rename('  ')).toThrow();
+  });
+});
+
+describe('platformLabelOf', () => {
+  it('puts the platform before a bare release', () => {
+    expect(platformLabelOf('macos', '15.2')).toBe('macos 15.2');
+    expect(platformLabelOf('ubuntu', '24.04')).toBe('ubuntu 24.04');
+  });
+
+  it('lets a distribution name that already says the platform stand alone', () => {
+    expect(platformLabelOf('ubuntu', 'Ubuntu 24.04.4 LTS')).toBe('Ubuntu 24.04.4 LTS');
+    expect(platformLabelOf('debian', 'Debian GNU/Linux 12 (bookworm)')).toBe(
+      'Debian GNU/Linux 12 (bookworm)',
+    );
+  });
+
+  it('is the platform alone when no release is known', () => {
+    expect(platformLabelOf('linux', null)).toBe('linux');
+    expect(platformLabelOf('linux', '')).toBe('linux');
   });
 });

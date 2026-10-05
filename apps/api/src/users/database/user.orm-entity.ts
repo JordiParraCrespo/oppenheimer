@@ -1,25 +1,38 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import type { Role } from '@oppenheimer/shared';
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryColumn,
+  Unique,
+  UpdateDateColumn,
+} from 'typeorm';
 
 /**
- * Persistence model for the Better Auth `user` table. This is infrastructure —
- * the domain `UserEntity` is mapped to/from this record by `UserMapper`.
- *
  * Better Auth owns writes to identity columns (sign-up, OAuth, verification);
  * the application reads/updates the profile columns through TypeORM for the
  * `/users` endpoints. `firstName`, `lastName`, `phone`, `jobTitle`, `role` and
- * `isActive` are Better Auth "additional fields" declared in `auth.ts`.
+ * `isActive` are Better Auth "additional fields" declared in `@oppenheimer/auth`
+ * (`userAdditionalFields`).
  */
 @Entity('user')
+@Unique('UQ_user_email', ['email'])
+// Named once, here and in the migration: the repository maps a violation of
+// exactly this constraint to USER_002.
+@Unique('UQ_user_username', ['username'])
+// A trigram GIN over firstName, lastName and email for the admin search
+// (created in InitialSchema); TypeORM cannot express GIN.
+@Index('IDX_user_search_trgm', { synchronize: false })
 export class UserOrmEntity {
-  @PrimaryColumn({ type: 'uuid' })
+  @PrimaryColumn({ type: 'uuid', primaryKeyConstraintName: 'PK_user' })
   id!: string;
 
   @Column({ type: 'varchar' })
   name!: string;
 
-  @Column({ type: 'varchar', unique: true })
+  @Column({ type: 'varchar' })
   email!: string;
 
   @Column({ type: 'boolean', default: false })
@@ -39,6 +52,14 @@ export class UserOrmEntity {
 
   @Column({ type: 'varchar', nullable: true })
   jobTitle!: string | null;
+
+  /**
+   * The handle the account chose, unique across accounts (`UQ_user_username`
+   * above). The application's alone: Better Auth does not know the column, so
+   * sign-up leaves it `null`.
+   */
+  @Column({ type: 'varchar', length: 39, nullable: true })
+  username!: string | null;
 
   @Column({ type: 'varchar', default: 'user' })
   role!: Role;

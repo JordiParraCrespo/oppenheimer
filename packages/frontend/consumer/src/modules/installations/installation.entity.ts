@@ -1,7 +1,6 @@
 /** Whether the App can see every repository on the account, or a chosen few. */
 export type RepositorySelection = 'all' | 'selected';
 
-/** Whether the App is installed on a person's account or an organization's. */
 export type InstallationAccountType = 'User' | 'Organization';
 
 /**
@@ -25,10 +24,32 @@ export class InstallationEntity {
     public readonly createdAt: Date,
   ) {}
 
-  /** Whether the App was given the whole account rather than a chosen list. */
   get coversEveryRepository(): boolean {
     return this.repositorySelection === 'all';
   }
+}
+
+/**
+ * A GitHub App install the API has just started: the App's install URL with a
+ * single-use `state` already on it, minted for this person in this workspace.
+ */
+export interface InstallationStart {
+  /** Where to send the browser. Carries `state`. */
+  url: string;
+  /** The nonce GitHub will echo back on the redirect. */
+  state: string;
+  /** When the state stops being redeemable. */
+  expiresAt: Date;
+}
+
+/** What GitHub's install redirect carries, and the connect call posts. */
+export interface InstallationCallback {
+  /** GitHub's own installation id, not the control plane's. */
+  githubInstallationId: number;
+  /** The OAuth code, exchanged once server-side and never stored. */
+  code: string;
+  /** The install state, nonce only: without the console's walk prefix. */
+  state: string;
 }
 
 /** A repository the installation can reach, for the picker and the summary. */
@@ -56,7 +77,6 @@ export class BranchEntity {
   constructor(
     public readonly name: string,
     public readonly commitSha: string,
-    /** Whether a branch protection rule applies. */
     public readonly isProtected: boolean,
     public readonly isDefault: boolean,
   ) {}

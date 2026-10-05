@@ -4,6 +4,8 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 
+type RunState = 'completed' | 'failed' | 'running';
+
 /**
  * RunsList — the Runs tab: a filter row (status pill tabs with counts,
  * then the facet tokens and a Clear link), a head, a 44px row per run and
@@ -13,8 +15,6 @@ import { IconButton } from './icon-button';
  * a finished run, not a live state; a run still going shows the pulsing
  * dot instead.
  */
-type RunState = 'completed' | 'failed' | 'running';
-
 function RunsList({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -31,7 +31,7 @@ function RunsListFilters({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="runs-list-filters"
-      className={cn('mb-0.5 flex flex-wrap items-center gap-2 border-b border-border-subtle px-1.5 pt-1.5 pb-2', className)}
+      className={cn('mb-0.5 flex flex-wrap items-center gap-2 px-1.5 pt-1.5 pb-2', className)}
       {...props}
     />
   );
@@ -84,7 +84,7 @@ function RunRow({
       data-state={state}
       className={cn(
         GRID,
-        'h-11 w-full rounded-sm text-left text-sm text-fg outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2',
+        'h-11 w-full rounded-sm text-left text-operate text-fg outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2',
         className,
       )}
       {...props}

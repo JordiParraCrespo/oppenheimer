@@ -8,7 +8,6 @@ export interface ResourceScope {
   organizationIds: string[] | null;
 }
 
-/** A credential with no organization restriction. */
 export const UNRESTRICTED_RESOURCE_SCOPE: ResourceScope = {
   organizationIds: null,
 };
@@ -31,7 +30,7 @@ export function isOrganizationAllowed(
   return allowed.includes(organizationId);
 }
 
-/** Normalize a stored/user-supplied organization list into a {@link ResourceScope}. */
+/** An empty or absent organization list is unrestricted. */
 export function toResourceScope(
   organizationIds: readonly string[] | null | undefined,
 ): ResourceScope {

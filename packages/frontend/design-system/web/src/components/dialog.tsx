@@ -12,6 +12,10 @@ import { IconButton } from './icon-button';
  * shadow (one of three layers allowed one), over a scrim with a 3px blur.
  * Enters with the 4px rise plus fade over 220ms; nothing slides in from an edge.
  *
+ * Three widths, and no others: `md` (440px) for a confirm and a short form,
+ * `form` (540px) for the console's forms — New project, Add a host — and
+ * `lg` (640px) for the automation editor. A caller never sets a width.
+ *
  * Anatomy from the welcome modal: `DialogHeader` (title, optional close),
  * `DialogDescription`, `DialogBody`, `DialogFooter` with one primary block
  * button. Destructive copy states the cost, and the button says exactly what
@@ -54,7 +58,7 @@ function DialogContent({
   closeLabel = 'Close',
   ...props
 }: DialogPrimitive.Popup.Props & {
-  size?: 'md' | 'lg';
+  size?: 'md' | 'form' | 'lg';
   showCloseButton?: boolean;
   closeLabel?: string;
 }) {
@@ -66,7 +70,7 @@ function DialogContent({
         data-size={size}
         className={cn(
           'fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100svh-3rem)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-popover text-fg shadow-modal outline-none transition-[opacity,transform] duration-base ease-out data-starting-style:translate-y-[calc(-50%+4px)] data-starting-style:scale-[0.98] data-starting-style:opacity-0 data-ending-style:translate-y-[calc(-50%+4px)] data-ending-style:scale-[0.98] data-ending-style:opacity-0',
-          size === 'lg' ? 'max-w-[640px]' : 'max-w-[440px]',
+          size === 'lg' ? 'max-w-160' : size === 'form' ? 'max-w-135' : 'max-w-110',
           className,
         )}
         {...props}
@@ -78,11 +82,11 @@ function DialogContent({
               <IconButton
                 aria-label={closeLabel}
                 size="sm"
-                className="absolute top-5 right-5"
+                className="absolute top-6 right-5.5"
               />
             }
           >
-            <XIcon />
+            <XIcon className="size-4" />
           </DialogPrimitive.Close>
         ) : null}
       </DialogPrimitive.Popup>
@@ -104,7 +108,7 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn('text-h3 font-semibold text-fg', className)}
+      className={cn('text-h3 leading-(--leading-body) font-semibold text-fg', className)}
       {...props}
     />
   );
@@ -120,12 +124,16 @@ function DialogDescription({ className, ...props }: DialogPrimitive.Description.
   );
 }
 
-/** The only part of a tall dialog that scrolls; header and footer stay put. */
+/**
+ * The only part of a tall dialog that scrolls; header and footer stay put.
+ * 20px above and below, and the footer's own 12px on top (`op-dialog__body`,
+ * `op-dialog__foot`), so a body's last line sits 32px over the buttons.
+ */
 function DialogBody({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-body"
-      className={cn('min-h-0 flex-1 overflow-y-auto px-7 pt-5 text-operate text-fg', className)}
+      className={cn('min-h-0 flex-1 overflow-y-auto px-7 py-5 text-operate text-fg', className)}
       {...props}
     />
   );
@@ -136,7 +144,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="dialog-footer"
       className={cn(
-        'flex flex-col-reverse gap-2 px-7 pt-5 pb-7 sm:flex-row sm:justify-end',
+        'flex flex-col-reverse gap-2 px-7 pt-3 pb-7 sm:flex-row sm:justify-end',
         className,
       )}
       {...props}
@@ -145,9 +153,8 @@ function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 /**
- * Legacy: the starter's gradient hero band. Gradients are not part of this
- * system; it now renders a flat tonal panel so the unported screens keep
- * their layout until they are rebuilt.
+ * Legacy: the starter's gradient hero band, drawn as a flat tonal panel
+ * because gradients are not part of this system. No screen uses it.
  */
 function DialogHero({
   className,

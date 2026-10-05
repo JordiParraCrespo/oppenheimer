@@ -1,6 +1,6 @@
 'use client';
 
-import type { UseMutationOptions } from '@tanstack/react-query';
+import type { QueryClient, UseMutationOptions } from '@tanstack/react-query';
 
 type HookMutationOptions<TData, TError, TVariables, TOnMutateResult> = Omit<
   UseMutationOptions<TData, TError, TVariables, TOnMutateResult>,
@@ -15,11 +15,8 @@ type OnSuccessArgs<TData, TError, TVariables, TOnMutateResult> = Parameters<
  * A mutation hook's `options` with the hook's own cache update in front of the
  * caller's `onSuccess`.
  *
- * Every mutation hook takes `options` and has a cache write of its own to make.
- * Spread by hand, the order decides whether that write happens: `...options`
- * after the hook's `onSuccess` replaces it, which is how logout once navigated
- * to `/login` without clearing the cache. Going through this makes the order a
- * function's, not each hook's:
+ * Spread by hand, `...options` after the hook's `onSuccess` replaces it, which
+ * is how logout once navigated to `/login` without clearing the cache:
  *
  * ```ts
  * return useMutation({
@@ -43,4 +40,17 @@ export function withCacheOnSuccess<TData, TError, TVariables, TOnMutateResult = 
       return options?.onSuccess?.(...args);
     },
   };
+}
+
+/**
+ * Refetch every cached read, because the caller now stands somewhere else.
+ *
+ * Only a write that changes which workspace the caller is in may do this —
+ * claiming their first one (`useClaimPersonalWorkspace`) — since the shell, the
+ * nav's permissions and every org-scoped list answered "who are you and
+ * where". Anything else invalidates by the narrowest key; the name is here so
+ * a bare `invalidateQueries()` is never copied from one of those.
+ */
+export function refetchEverythingForNewIdentity(queryClient: QueryClient): Promise<void> {
+  return queryClient.invalidateQueries();
 }

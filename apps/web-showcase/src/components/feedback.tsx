@@ -21,11 +21,11 @@ import { Swatch } from './page-shell';
 export function AlertDemo() {
   return (
     <div className="grid w-full max-w-lg gap-3">
-      <Alert variant="destructive">
+      <Alert tone="danger">
         <AlertTitle>Could not sign in</AlertTitle>
         <AlertDescription>The email or password is wrong.</AlertDescription>
       </Alert>
-      <Alert>
+      <Alert tone="warning">
         <AlertTitle>Host offline</AlertTitle>
         <AlertDescription>The runner has not reported for five minutes.</AlertDescription>
       </Alert>
@@ -58,6 +58,7 @@ export function BadgeDemo() {
 export function SkeletonDemo() {
   return (
     <div className="grid w-full max-w-sm gap-2">
+      <Skeleton shape="pill" className="size-7" />
       <Skeleton className="h-4 w-2/3" />
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-1/2" />

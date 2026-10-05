@@ -1,8 +1,3 @@
-/**
- * DI tokens for the feature-flags module. Handlers depend on the ports these
- * name, never on the TypeORM adapters or the snapshot implementation behind
- * them.
- */
 export const FEATURE_FLAG_REPOSITORY = Symbol('FEATURE_FLAG_REPOSITORY');
 export const FLAG_SEGMENT_REPOSITORY = Symbol('FLAG_SEGMENT_REPOSITORY');
 export const FLAG_CHANGE_REPOSITORY = Symbol('FLAG_CHANGE_REPOSITORY');

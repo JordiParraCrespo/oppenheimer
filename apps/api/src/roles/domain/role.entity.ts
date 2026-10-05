@@ -11,7 +11,7 @@ export interface RoleProps {
   /** Unique, immutable, machine-readable name (e.g. `editor`, `support`). */
   name: string;
   description: string | null;
-  /** System roles (`admin`, `user`) are seeded and cannot be deleted/renamed. */
+  /** The `SYSTEM_ROLES`, installed by the migrations; they cannot be deleted. */
   isSystem: boolean;
   /** Owning organization, or `null` for a global/system role template. */
   organizationId: string | null;
@@ -62,7 +62,6 @@ export class RoleEntity extends AggregateRoot<RoleProps> {
     return this.props.isSystem;
   }
 
-  /** `null` for a global role; otherwise the tenant that owns it. */
   get organizationId(): string | null {
     return this.props.organizationId;
   }
@@ -94,7 +93,6 @@ export class RoleEntity extends AggregateRoot<RoleProps> {
     );
   }
 
-  /** Whether this role currently grants full access (`manage all`). */
   hasFullAccess(): boolean {
     return RoleEntity.grantsFullAccess(this.props.permissions);
   }
@@ -105,7 +103,6 @@ export class RoleEntity extends AggregateRoot<RoleProps> {
     this.validate();
   }
 
-  /** Replace the role's full permission set (granular permission editing). */
   replacePermissions(permissions: Permission[]): void {
     this.props.permissions = permissions;
     this.setUpdatedAt(new Date());

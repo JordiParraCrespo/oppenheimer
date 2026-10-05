@@ -9,8 +9,8 @@ import { cn } from '../lib/utils';
  * Avatar — a pill with initials or an image. Three sizes from the system's
  * ramp: sm 22px (sidebar footer, session rows), md 28px, lg 38px. Neutral by
  * default; `accent` is the blue tint used for the signed-in account. No
- * gradients: the system forbids them, and `AVATAR_GRADIENTS` below is kept only
- * so the unported components compile — every entry resolves to the accent tint.
+ * gradients: the system forbids them, and `AVATAR_GRADIENTS` below is a legacy
+ * export no screen uses — every entry resolves to the accent tint.
  */
 function Avatar({
   className,
@@ -109,7 +109,6 @@ function AvatarGroupCount({ className, ...props }: React.ComponentProps<'div'>) 
   );
 }
 
-/** Legacy: gradients are not part of the system. Every key maps to the accent tint. */
 const AVATAR_GRADIENTS = {
   purple: 'var(--info-surface)',
   blue: 'var(--info-surface)',

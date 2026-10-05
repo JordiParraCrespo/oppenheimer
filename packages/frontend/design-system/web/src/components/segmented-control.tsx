@@ -7,7 +7,7 @@ import { cn } from '../lib/utils';
 
 /**
  * SegmentedControl — two or three ways to read the same thing, one of them
- * always on: Command / Agent prompt in the Add host dialog. A pill on the
+ * always on (Command / Agent prompt). A pill on the
  * hover surface with 2px of inset; the active segment lifts onto the card
  * colour in full ink, the others sit muted. 11.5px, because it labels a panel
  * rather than acting on it. Never a form value: for that, `RadioGroup`.

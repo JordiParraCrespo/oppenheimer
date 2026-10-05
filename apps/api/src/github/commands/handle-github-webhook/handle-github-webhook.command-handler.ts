@@ -1,35 +1,27 @@
 import { Inject, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { CommandBus, CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import type {
-  GithubInstallationRepositoryPort,
-  InstallationStatusChange,
-} from '../../database/github-installation.repository.port';
+import { ReceiveInboundDeliveryCommand } from '../../../inbound-events/commands/receive-inbound-delivery/receive-inbound-delivery.command';
+import type { GithubInstallationRepositoryPort } from '../../database/github-installation.repository.port';
 import { GithubErrors } from '../../domain/github.errors';
 import { GITHUB_INSTALLATION_REPOSITORY } from '../../github.di-tokens';
 import {
-  type InstallationWebhookAction,
+  installationStatusChange,
+  parseDeliveryBody,
   parseInstallationEvent,
+  payloadDigest,
   verifyWebhookSignature,
 } from '../../infrastructure/github-webhook.util';
 import { HandleGithubWebhookCommand } from './handle-github-webhook.command';
 
 /**
- * The `installation` webhook: suspend, unsuspend, uninstall.
- *
- * Those are the three facts about an installation that change without us and
- * that a token mint has to respect, and they are the only reason this module
- * subscribes to anything. Nothing here mirrors the repository set, so there is
- * no `installation_repositories` subscription and nothing to resync.
- *
- * Each delivery is a status write and is idempotent to repeat, which is why
- * there is no delivery table and no de-duplication key.
- *
- * It writes through a **conditional update rather than the aggregate**. Loading
- * the row, mutating it and saving it back would let a delivery that read the
- * world a moment before a disconnect committed write the whole row again,
- * `deletedAt` included, and resurrect a claim the workspace had given up.
+ * The App's one webhook endpoint, verified once, then split in two.
+ * `installation` (suspend, unsuspend, uninstall) is this module's own; see
+ * `github-webhook.util.ts`. Every other event goes to the inbound-events hub
+ * (`product/versions/mvp/16-automations-architecture.md` §Q6), keyed by
+ * GitHub's delivery id and normalized for automations: one endpoint and one
+ * secret for the App, whatever consumes its events.
  */
 @CommandHandler(HandleGithubWebhookCommand)
 export class HandleGithubWebhookCommandHandler
@@ -41,6 +33,7 @@ export class HandleGithubWebhookCommandHandler
     @Inject(GITHUB_INSTALLATION_REPOSITORY)
     private readonly installations: GithubInstallationRepositoryPort,
     private readonly configService: ConfigService,
+    private readonly commandBus: CommandBus,
   ) {}
 
   async execute(command: HandleGithubWebhookCommand): Promise<void> {
@@ -53,36 +46,56 @@ export class HandleGithubWebhookCommandHandler
       throw new AppError(GithubErrors.WEBHOOK_SIGNATURE_INVALID);
     }
 
+    if (command.event !== 'installation') {
+      await this.handToHub(command);
+      return;
+    }
+
     const delivery = parseInstallationEvent(command.event, command.payload);
     if (delivery.type === 'ignored') return;
 
-    // Keyed by GitHub's own id and matched across every workspace: a delivery
-    // arrives with no notion of our tenants. Only a live row is touched — a
-    // disconnected one is history, and GitHub's news about it changes nothing.
-    const applied = await this.installations.applyStatusChange({
-      githubInstallationId: delivery.githubInstallationId,
-      ...changeFor(delivery.action),
-    });
-
-    if (!applied) {
+    const facts = { githubInstallationId: delivery.githubInstallationId, action: delivery.action };
+    if (!delivery.occurredAt) {
       this.logger.warn({
-        message: 'Ignoring an installation webhook for an installation no workspace holds',
-        githubInstallationId: delivery.githubInstallationId,
-        action: delivery.action,
+        message: 'Installation webhook carries no time; using receipt',
+        ...facts,
       });
     }
+    const result = await this.installations.applyStatusChange(
+      installationStatusChange(delivery, new Date()),
+    );
+
+    if (result === 'missing') {
+      this.logger.warn({
+        message: 'Ignoring an installation webhook for an installation no workspace holds',
+        ...facts,
+      });
+    } else if (result === 'stale') {
+      this.logger.log({ message: 'Ignoring an out-of-order installation webhook', ...facts });
+    }
+  }
+
+  /**
+   * A verified delivery the hub stores and normalizes. A body that is not a
+   * JSON object is dropped. The digest is of the raw bytes (see
+   * `payloadDigest`): the same signed bytes are one delivery, whatever id the
+   * unsigned `X-GitHub-Delivery` header claims.
+   */
+  private async handToHub(command: HandleGithubWebhookCommand): Promise<void> {
+    const body = parseDeliveryBody(command.payload);
+    if (!body) return;
+    await this.commandBus.execute(
+      new ReceiveInboundDeliveryCommand({
+        source: 'github',
+        deliveryId: command.deliveryId,
+        eventName: command.event,
+        payload: body,
+        payloadDigest: payloadDigest(command.payload),
+      }),
+    );
   }
 
   private get webhookSecret(): string | undefined {
     return this.configService.get<string>('githubApp.webhookSecret');
   }
-}
-
-/** Only the columns the action is about. Everything else is left alone. */
-function changeFor(
-  action: InstallationWebhookAction,
-): Omit<InstallationStatusChange, 'githubInstallationId'> {
-  if (action === 'suspend') return { suspendedAt: new Date() };
-  if (action === 'unsuspend') return { suspendedAt: null };
-  return { deletedAt: new Date() };
 }

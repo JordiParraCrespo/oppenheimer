@@ -54,9 +54,7 @@ export class UploadAvatarHttpController {
   @RequireScopes('profile:write')
   // Memory storage: an avatar is capped at a couple of megabytes and goes
   // straight to the storage back-end, so writing it to a temp file first would
-  // only add a path to clean up. The interceptor carries multer's size limit
-  // *and* maps its rejection onto PROFILE_005, which a plain `FileInterceptor`
-  // would surface as a codeless 413.
+  // only add a path to clean up.
   @UseInterceptors(AvatarFileInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiBody({

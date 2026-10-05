@@ -10,13 +10,28 @@ import { OAuthConsentOrmEntity } from '../auth/database/oauth-consent.orm-entity
 import { Session } from '../auth/database/session.orm-entity';
 import { Verification } from '../auth/database/verification.orm-entity';
 import { auth, closeAuthConnections } from '../auth/infrastructure/better-auth.config';
+import { BetterAuthSessionCacheAdapter } from '../auth/infrastructure/better-auth-session-cache.adapter';
 import { AccessGrantOrmEntity } from '../authz/database/access-grant.orm-entity';
+import { AutomationOrmEntity } from '../automations/database/automation.orm-entity';
+import { AutomationRevisionOrmEntity } from '../automations/database/automation-revision.orm-entity';
+import { AutomationRunOrmEntity } from '../automations/database/automation-run.orm-entity';
+import { AutomationSettingsOrmEntity } from '../automations/database/automation-settings.orm-entity';
+import { AutomationTriggerOrmEntity } from '../automations/database/automation-trigger.orm-entity';
+import { AutomationTriggerSubjectOrmEntity } from '../automations/database/automation-trigger-subject.orm-entity';
+import { CalendarConnectionOrmEntity } from '../calendar/database/calendar-connection.orm-entity';
+import { CalendarEventOrmEntity } from '../calendar/database/calendar-event.orm-entity';
 import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm-entity';
 import { FlagChangeOrmEntity } from '../feature-flags/database/flag-change.orm-entity';
 import { FlagSegmentOrmEntity } from '../feature-flags/database/flag-segment.orm-entity';
 import { GithubInstallationOrmEntity } from '../github/database/github-installation.orm-entity';
 import { HostOrmEntity } from '../hosts/database/host.orm-entity';
+import { HostEventOrmEntity } from '../hosts/database/host-event.orm-entity';
+import { HostInventoryOrmEntity } from '../hosts/database/host-inventory.orm-entity';
+import { HostNetworkOrmEntity } from '../hosts/database/host-network.orm-entity';
 import { HostPairingTokenOrmEntity } from '../hosts/database/host-pairing-token.orm-entity';
+import { HostPresenceOrmEntity } from '../hosts/database/host-presence.orm-entity';
+import { InboundDeliveryOrmEntity } from '../inbound-events/database/inbound-delivery.orm-entity';
+import { InboundEventOrmEntity } from '../inbound-events/database/inbound-event.orm-entity';
 import { ProvisionPersonalWorkspaceCommand } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command';
 import { ProvisionPersonalWorkspaceCommandHandler } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command-handler';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
@@ -30,12 +45,18 @@ import { AssignDefaultRoleCommand } from '../roles/commands/assign-default-role/
 import { AssignDefaultRoleCommandHandler } from '../roles/commands/assign-default-role/assign-default-role.command-handler';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
 import { RoleRepository } from '../roles/database/role.repository';
+import { RoleCatalogVersionOrmEntity } from '../roles/database/role-catalog-version.orm-entity';
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
 import { UserRoleRepository } from '../roles/database/user-role.repository';
+import { UserRoleVersionOrmEntity } from '../roles/database/user-role-version.orm-entity';
 import { RoleMapper } from '../roles/roles.mapper';
 import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
+import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
 import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
+import { GoalOrmEntity } from '../tasks/database/goal.orm-entity';
+import { TaskOrmEntity } from '../tasks/database/task.orm-entity';
+import { TaskSessionOrmEntity } from '../tasks/database/task-session.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 
 const dataSource = new DataSource({
@@ -59,7 +80,13 @@ const dataSource = new DataSource({
     AccessGrantOrmEntity,
     HostOrmEntity,
     HostPairingTokenOrmEntity,
+    HostInventoryOrmEntity,
+    HostPresenceOrmEntity,
+    HostNetworkOrmEntity,
+    HostEventOrmEntity,
     UserRoleOrmEntity,
+    RoleCatalogVersionOrmEntity,
+    UserRoleVersionOrmEntity,
     GithubInstallationOrmEntity,
     OrganizationOrmEntity,
     MemberOrmEntity,
@@ -69,6 +96,20 @@ const dataSource = new DataSource({
     WorkSessionOrmEntity,
     SessionCheckoutOrmEntity,
     WorkSessionEventOrmEntity,
+    SessionTurnOrmEntity,
+    InboundDeliveryOrmEntity,
+    InboundEventOrmEntity,
+    AutomationOrmEntity,
+    AutomationRevisionOrmEntity,
+    AutomationTriggerOrmEntity,
+    AutomationTriggerSubjectOrmEntity,
+    AutomationRunOrmEntity,
+    AutomationSettingsOrmEntity,
+    TaskOrmEntity,
+    GoalOrmEntity,
+    TaskSessionOrmEntity,
+    CalendarEventOrmEntity,
+    CalendarConnectionOrmEntity,
     FeatureFlagOrmEntity,
     FlagSegmentOrmEntity,
     FlagChangeOrmEntity,
@@ -121,10 +162,7 @@ const DEFAULT_SEED_PASSWORDS = new Set(['superadmin123456', 'admin123456', 'user
 const MIN_PRODUCTION_SEED_PASSWORD_LENGTH = 12;
 
 async function seed() {
-  // Never seed a production database with these well-known accounts. The
-  // published default passwords would be an instant account-takeover; a
-  // deliberate override (ALLOW_PRODUCTION_SEED=true, with strong SEED_*
-  // passwords set) is required to proceed.
+  // The published default passwords would be an instant account takeover.
   if (process.env.NODE_ENV === 'production') {
     if (process.env.ALLOW_PRODUCTION_SEED !== 'true') {
       throw new Error(
@@ -157,32 +195,20 @@ async function seed() {
   const roleRepo = dataSource.getRepository(RoleOrmEntity);
   const userRoleRepo = dataSource.getRepository(UserRoleOrmEntity);
 
-  // The use cases sign-up owes a new account, hand-wired.
-  //
-  // The seed runs as a standalone script with its own DataSource rather than
-  // inside the injector, and booting the whole application to seed three rows
-  // would drag in Redis, the queues and the outbox relay. The handlers and
-  // their adapters are plain classes, so constructing them here costs one
-  // expression each and keeps there being exactly one implementation of "the
-  // default role" and "a personal workspace".
-  //
-  // The sign-up hook fires while seeding too, but finds no command bus outside
-  // the API and does nothing — so this script owes itself these side effects,
-  // and calls the handlers directly rather than installing a second bus for
-  // the hook to reach. That is also what repairs a database seeded before the
-  // personal workspace existed: both handlers are idempotent.
+  // The use cases sign-up owes a new account, hand-wired: the seed is a standalone
+  // script with its own DataSource, and booting the application for three rows would
+  // drag in Redis, the queues and the outbox relay. Constructing the handlers keeps one
+  // implementation of "the default role" and "a personal workspace". The sign-up hook
+  // finds no command bus outside the API and does nothing, so the script calls the
+  // handlers itself.
   const roleMapper = new RoleMapper();
-  const roleRepository = new RoleRepository(
-    roleRepo,
-    dataSource,
-    roleMapper,
-    new OutboxService(dataSource),
-  );
+  const roleRepository = new RoleRepository(roleRepo, roleMapper, new OutboxService(dataSource));
   const userRoleRepository = new UserRoleRepository(userRoleRepo, roleRepo, roleMapper);
   const assignDefaultRole = new AssignDefaultRoleCommandHandler(roleRepository, userRoleRepository);
   const provisionPersonalWorkspace = new ProvisionPersonalWorkspaceCommandHandler(
     new PersonalWorkspaceRepository(dataSource, new OutboxService(dataSource), userRoleRepository),
     roleRepository,
+    new BetterAuthSessionCacheAdapter(),
   );
 
   for (const seedUser of seedUsers) {
@@ -201,12 +227,12 @@ async function seed() {
       },
     });
 
-    // Elevate the role and mark the email verified (not settable on sign-up).
+    // Neither `role` nor `emailVerified` is settable on sign-up.
     await userRepo.update({ email: seedUser.email }, { role: seedUser.role, emailVerified: true });
 
-    // Elevate this account to its seed role. Only the elevation is written
-    // here: the default `user` grant every account gets belongs to
-    // `AssignDefaultRoleCommandHandler`, which the loop below runs for all of them.
+    // Only the elevation is written here: the default `user` grant every
+    // account gets belongs to `AssignDefaultRoleCommandHandler`, which the loop
+    // below runs for all of them.
     const user = await userRepo.findOneBy({ email: seedUser.email });
     const role = await roleRepo.findOneBy({ name: seedUser.role });
     if (user && role && seedUser.role !== ROLES.USER) {
@@ -216,10 +242,9 @@ async function seed() {
     console.log(`Created ${seedUser.role} user: ${seedUser.email}`);
   }
 
-  // What sign-up owes every account: the default `user` role, and the personal
-  // workspace — one organization, one owner member, no team. Run for all seed
-  // accounts, not only the ones just created, so a database seeded before
-  // either existed is repaired. Both handlers are idempotent.
+  // For every seed account, not only the ones just created, so a database
+  // seeded before the default role or personal workspace existed is repaired.
+  // Both handlers are idempotent.
   for (const seedUser of seedUsers) {
     const user = await userRepo.findOneBy({ email: seedUser.email });
     if (!user) continue;

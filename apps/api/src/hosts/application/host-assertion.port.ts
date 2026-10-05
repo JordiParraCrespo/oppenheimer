@@ -18,16 +18,17 @@ export interface HostPrincipalIdentity {
 
 /**
  * Verifies the boot assertion a runner presents as an ordinary
- * `Authorization: Bearer` — on `DELETE /hosts/self` today, and on the relay's
- * WebSocket handshake when that arrives
- * (`product/versions/mvp/03-control-plane.md`).
+ * `Authorization: Bearer`, on the `/hosts/self` routes and on the runner link's
+ * WebSocket handshake (`product/versions/mvp/03-control-plane.md`).
  *
- * This is **identity only**. It answers "which host signed this", and every
- * `jti` it accepts is burned for the token's remaining lifetime so the same
- * assertion cannot be replayed. What that host is then allowed to do is a
- * separate question, and `HostAccessPort` is where it is asked — which is why an
- * unpaired host can still authenticate: its own uninstall call must be able to
- * say so twice and get the same answer.
+ * **Identity only**: "which host signed this", with every accepted `jti` burned for
+ * the token's remaining lifetime so an assertion cannot be replayed. What the host
+ * may then do is the caller's question, which is why an unpaired host still
+ * authenticates: its uninstall call must be able to say so twice and get one answer.
+ *
+ * The one standing it checks is the owner's: a host acts for the person who paired
+ * it, so a banned or deactivated owner (`isAccessAllowed`) takes its credential down
+ * with every other one they hold, uninstall included.
  */
 export interface HostAssertionPort {
   /**

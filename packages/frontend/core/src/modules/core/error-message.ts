@@ -12,9 +12,8 @@ import { AppError, toAppError } from './errors';
 export type ErrorMessageKey = 'errors.fallback' | 'errors.unreachable';
 
 /**
- * Message lookup. Narrower than i18next's `t` on purpose: a `t` typed over the
- * full catalog is assignable to this, so the apps pass theirs straight in and
- * still catch a missing key at compile time.
+ * Message lookup, narrower than i18next's `t` for the reason `TranslateFn`
+ * (`validation/zod-error-map.ts`) gives.
  */
 export type ErrorMessageTranslateFn = (key: ErrorMessageKey) => string;
 
@@ -26,8 +25,9 @@ export interface ErrorMessageResolverOptions {
    *
    * Kept separate from {@link t} because the key is built at runtime: a typed
    * `t` cannot accept `errors.byCode.${string}`, and widening it to `string`
-   * would give up compile-time checking on every other key too. The app does
-   * the one unchecked lookup, guarded by an existence check.
+   * would give up compile-time checking on every other key too.
+   * `useErrorMessage` does the one unchecked lookup, guarded by an existence
+   * check.
    */
   translateCode: (code: string) => string | undefined;
 }
@@ -36,7 +36,7 @@ export interface ErrorMessageResolverOptions {
 export interface ResolvedErrorMessage {
   /** Translated, user-facing sentence. Never a raw server string. */
   message: string;
-  /** The catalog code, when the failure came from the API. */
+  /** The API's catalog code, or whatever code the failure named (Better Auth's, say). */
   code?: string;
   /** Quote-in-a-bug-report id, when the server sent one. */
   correlationId?: string;
@@ -45,19 +45,11 @@ export interface ResolvedErrorMessage {
 }
 
 /**
- * Turns anything thrown by a repository call into a **translated** message.
- *
- * The server's problem document is authoritative about *what* went wrong — its
- * `code` — but not about how to say it: `detail` and `title` are English,
- * written for operators and API clients. Rendering them straight into the UI (the
- * `error instanceof Error ? error.message : t(…)` pattern this replaces) means
- * a Spanish user reads English for every failure the API can actually produce,
- * because the translated fallback only fires when the throw was not an `Error`
- * at all.
- *
- * So the code picks the message and the locale supplies it. A code with no
- * entry — a new one this client has not learned yet — falls back to a
- * translated sentence rather than leaking the server's wording.
+ * The problem document's `code` says *what* went wrong, but its `detail` and
+ * `title` are English written for operators: rendering them would show a
+ * Spanish user English for every failure the API produces. So the code picks
+ * the message and the locale supplies it; a code this client has not learned
+ * yet falls back to a translated sentence, never the server's wording.
  */
 export function createErrorMessageResolver({ t, translateCode }: ErrorMessageResolverOptions) {
   /**
@@ -87,8 +79,6 @@ export function createErrorMessageResolver({ t, translateCode }: ErrorMessageRes
 
     return {
       message: translated ?? generic,
-      // The API's catalog code, or whatever code the failure named (Better
-      // Auth's, say) — undefined when it named none.
       code: problem?.code ?? (code || undefined),
       correlationId: appError.correlationId,
       fieldErrors: appError.fieldErrors,

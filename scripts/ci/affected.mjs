@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 /**
- * Decides what a CI run has to do from what the push or pull request changed.
+ * Decides what a CI run has to do from what the branch changed.
  *
- * On a pull request, Turborepo's change detection (`turbo ls --affected`)
- * names the workspace packages the diff touches plus everything that depends
- * on them; the jobs then build, test and package only those. A push to main,
- * or a change to something no package owns but every job relies on (the
- * workflow itself, the lockfile, the Docker context), runs everything — the
- * safety net that keeps a selection mistake on a branch from reaching main.
+ * Given a base (`--base`, as `local.mjs` passes it, or `GITHUB_BASE_REF`),
+ * Turborepo's change detection (`turbo ls --affected`) names the workspace
+ * packages the diff touches plus everything that depends on them; the jobs
+ * then build, test and package only those. No base (the scheduled run on
+ * main), or a change to something no package owns but every job relies on
+ * (the workflow itself, the lockfile, the Docker context), runs everything —
+ * the safety net that keeps a selection mistake on a branch from reaching
+ * main.
  *
  * Outputs, written to $GITHUB_OUTPUT (and printed when run by hand):
  *
@@ -75,7 +77,7 @@ function turboPackages(args, env = {}) {
 function baseRef() {
   const flag = process.argv.indexOf('--base');
   if (flag !== -1) return process.argv[flag + 1];
-  // Set by GitHub on pull_request events only; a push has no base to diff against.
+  // Set by GitHub on pull_request events only; the scheduled run has no base.
   const branch = process.env.GITHUB_BASE_REF;
   if (!branch) return null;
   // Make the remote-tracking ref exist and be current, whatever the checkout

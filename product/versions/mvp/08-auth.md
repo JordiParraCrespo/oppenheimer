@@ -110,6 +110,42 @@ history) to work on the MVP.
   refuses it is the answer, so a stale credential never falls back to a
   session. What a credential authorizes (`ScopeContext`) and what the
   guards do with it are unchanged.
+- **The organization a route names is the organization authorization
+  runs in.** A route scoped to an organization — in its path, or in the
+  query or body where a route takes one — is authorized in the
+  organization it names; any other route is authorized in the session's
+  organization. A malformed organization id is refused (`AUTHZ_003`),
+  never replaced by the session's. A caller who is not a member of that
+  organization holds no roles there and is refused by the policy check
+  (`AUTH_002`); a route's "not a member" error (`ORG_003`) is only for a
+  caller whose global roles pass that check but who has no membership
+  there. There is no header to act in another organization; it stays out
+  until a client needs it. (Decided 2026-09-27.)
+- **Sessions are cached in Redis, and a cached session never outlives its
+  revocation.** Better Auth keeps each session in Redis in front of the
+  `session` table (`secondaryStorage`), so a signed-in request costs one
+  Redis read instead of a session-and-user query; the table stays the
+  record, written on sign-in and read whenever Redis misses or is down.
+  Keys are SHA-256 digests (`ba:<hex>`), never the token. Deleting a
+  session row deletes its cached copy first and fails if Redis cannot be
+  reached, and every write the API makes to a user or session row outside
+  Better Auth — a deactivation, a profile edit, a removed member, the
+  provisioned workspace, a deleted account — updates or drops the copy in
+  the same request. The signed cookie cache (`session.cookieCache`) was
+  considered and rejected: nothing server-side can revoke it, so a ban, a
+  deletion or "sign out other devices" would wait out its lifetime.
+  Sessions signed in before the cache existed keep answering from
+  Postgres until they are refreshed or expire. (Decided 2026-09-28.)
+  Anything that lists a user's sessions reads the table, not the cache:
+  Better Auth's own list walks its Redis index, which never saw those
+  sessions, so the admin list (and revoking one by id) reads the rows. A
+  delete of more rows than Better Auth hands its hook (100) evicts the
+  copy of every row the user holds. (Added 2026-09-28.)
+- **Credential writes are session-only.** Changing the password or the
+  email, signing devices out and deleting the account carry no scope, so
+  no API token or OAuth client reaches them: a leaked token that could do
+  any of them is the account. A new email is used only once a link sent
+  to it is followed (10 lists the routes).
 - **Roles.** The platform roles (`user`, `admin`, `superadmin`) and the
   org-scoped `owner` role are the only ones the MVP needs. The role
   editor and the admin console are carried for later, not part of the

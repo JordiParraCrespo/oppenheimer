@@ -13,12 +13,13 @@ directives so it stays buildable and tidy-able on its own.
 | `httpx`      | `@oppenheimer/go-httpx`  | `net/http` router with middleware groups, error-returning handlers, JSON, server |
 | `health`     | `@oppenheimer/go-health` | `/healthz`, `/readyz` with registered checkers, `/health/capabilities`           |
 | `auth`       | `@oppenheimer/go-auth`   | Bearer middleware, `Principal`, scope grammar and guard, HS256 service tokens    |
-| `ws`         | `@oppenheimer/go-ws`     | WebSocket hub: topics, backpressure, keepalive, graceful going-away              |
+| `ws`         | `@oppenheimer/go-ws`     | WebSocket hub: topics, backpressure, keepalive, graceful going-away; the one writer pump (`Pump`) |
 | `postgres`   | `@oppenheimer/go-postgres` | Pooled `pgx` connection, forward-only SQL migrator (advisory-locked), readiness checker |
 | `selfupdate` | `@oppenheimer/go-selfupdate` | Signed release manifests, digest-checked downloads, atomic versioned binary swaps |
+| `execx`      | `@oppenheimer/go-execx`  | Runs a command to completion: timeout, collected output, bounded wait, process-group kill |
 
 Dependency flow: `core` ← `httpx` ← `health`, `auth` ← `ws`; `config`,
-`postgres` and `selfupdate` stand alone. A module never imports an app.
+`postgres`, `selfupdate` and `execx` stand alone. A module never imports an app.
 
 ## How Turborepo sees them
 

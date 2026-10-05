@@ -8,17 +8,13 @@ import { CHECK_POLICIES_KEY, type PolicyRule } from '../decorators/check-policie
 import { AuthErrors } from '../domain/auth.errors';
 
 /**
- * Authorization guard. Resolves the caller's effective CASL ability from their
- * database-backed roles and checks it against the `@CheckPolicies` rules on the
- * route. The ability is attached to `request.ability` so handlers can perform
- * instance-level checks.
+ * Resolves the caller's CASL ability from their database-backed roles, checks
+ * it against the route's `@CheckPolicies`, and attaches it to `request.ability`
+ * for instance-level checks.
  *
- * **Fails closed.** A route that declares neither `@CheckPolicies` nor an
- * explicit `@NoPolicy('reason')` is rejected. The previous behaviour — allow
- * any authenticated caller — meant a forgotten decorator silently opened an
- * endpoint, which is the opposite of how `ScopesGuard` treats the same
- * omission. `route-policy-coverage.spec.ts` turns that rejection into a build
- * failure so it is caught when the route is written.
+ * Fails closed: a route with neither `@CheckPolicies` nor `@NoPolicy('reason')`
+ * is rejected, as in `ScopesGuard`, so a forgotten decorator cannot open an
+ * endpoint; `route-policy-coverage.spec.ts` makes that a build failure.
  */
 @Injectable()
 export class PoliciesGuard implements CanActivate {
@@ -41,8 +37,6 @@ export class PoliciesGuard implements CanActivate {
 
     if (!rules || rules.length === 0) {
       if (exemption) return true;
-      // A programming error, not a client one: the route reached production
-      // without saying what it requires.
       throw new AppError(AuthErrors.ROUTE_HAS_NO_POLICY);
     }
 
@@ -58,8 +52,9 @@ export class PoliciesGuard implements CanActivate {
       });
     }
 
-    // Memoized on the request: four call sites resolve the ability during a
-    // single request, and `forRequest` also attaches it to `request.ability`.
+    // Built in the organization stamped on the request — on an
+    // `@OrganizationScoped` route, the one the path names — and memoized on the
+    // request, which `forRequest` also attaches it to as `request.ability`.
     const ability = await this.abilities.forRequest(request);
 
     // Returning `false` would hand back Nest's own codeless 403; throw the

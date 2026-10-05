@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	filestore "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/files"
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
-	imagestore "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/images"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
 	statestore "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/state"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/tmux"
@@ -18,10 +18,11 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
-// These two tests are the ones that must run against the real tmux and the
-// real git, because they are the claims the product rests on: a session is a
-// worktree with a terminal, and it survives the runner going away. Everything
-// else about the lifecycle is covered on the in-memory adapters next door.
+// These tests must run against the real tmux and the real git, because they
+// are the claims the product rests on: a session is a worktree with a
+// terminal, it survives the runner going away, and a pasted file reaches its
+// shell. Everything else about the lifecycle is covered on the in-memory
+// adapters next door.
 
 type recorder struct{ states []domain.State }
 
@@ -33,7 +34,7 @@ type realHarness struct {
 	layout   domain.Layout
 	terminal *tmux.Server
 	store    *statestore.Store
-	images   string
+	files    string
 	remote   string
 }
 
@@ -48,11 +49,11 @@ func newRealHarness(t *testing.T) *realHarness {
 	}
 	layout := domain.Layout{Root: t.TempDir()}
 	store := statestore.New(t.TempDir())
-	images := t.TempDir()
+	files := t.TempDir()
 	svc, err := app.New(app.Options{
 		Terminals: terminal, Worktrees: gitadapter.New(gitadapter.Options{Layout: layout}),
 		Classifier: manifest.New(manifest.Options{}), Store: store, Publisher: &recorder{}, Layout: layout,
-		Images: imagestore.New(images),
+		Files: filestore.New(files),
 		Env: func(s domain.Session) map[string]string {
 			return map[string]string{"OPPENHEIMER_SESSION": s.ID}
 		},
@@ -60,21 +61,17 @@ func newRealHarness(t *testing.T) *realHarness {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &realHarness{svc: svc, layout: layout, terminal: terminal, store: store, images: images, remote: origin(t)}
+	return &realHarness{svc: svc, layout: layout, terminal: terminal, store: store, files: files, remote: origin(t)}
 }
 
-// requireWorkingTmux skips unless a tmux server can actually be started.
-// Checking PATH is not enough: a container without a usable pty layer has the
-// binary and cannot fork a server, and that is the environment's problem, not
-// this package's.
+// requireWorkingTmux skips unless a tmux server can actually be started; why
+// PATH is not enough, and why the probe gets its own socket: `server` in
+// adapters/tmux/tmux_test.go.
 func requireWorkingTmux(t *testing.T) string {
 	t.Helper()
 	if _, err := exec.LookPath("tmux"); err != nil {
 		t.Skip("tmux is not installed")
 	}
-	// Probe on a socket of its own: `-f` is read when a server starts, so
-	// starting one here would leave the test talking to a server that never
-	// read the config the runner passes.
 	probe := "opp-probe-" + strings.ReplaceAll(t.Name(), "/", "-")
 	if out, err := exec.Command("tmux", "-L", probe, "start-server").CombinedOutput(); err != nil {
 		t.Skipf("tmux cannot start a server here (%s): %v", strings.TrimSpace(string(out)), err)
@@ -201,7 +198,7 @@ func TestARealSessionSurvivesTheRunnerGoingAway(t *testing.T) {
 	}
 }
 
-// An image pasted into a real shell session: the file is on disk, private,
+// A file pasted into a real shell session: the file is on disk, private,
 // outside the worktree, and its path sits on the prompt line — pasted, not
 // run — until the session closes and takes the file with it.
 func TestARealSessionTakesAPastedImage(t *testing.T) {
@@ -216,13 +213,13 @@ func TestARealSessionTakesAPastedImage(t *testing.T) {
 	png := []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
 	const command = "7d9f2c1e-3b4a-4f6e-8a9b-0c1d2e3f4a5b"
 
-	path, err := h.svc.PasteImage(ctx, session.ID, 0, command, "image/png", png)
+	path, err := h.svc.PasteFile(ctx, session.ID, 0, command, "image/png", png)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !strings.HasPrefix(path, h.images) || strings.HasPrefix(path, session.Worktree) {
-		t.Fatalf("path = %q: under the runner's images, never the worktree", path)
+	if !strings.HasPrefix(path, h.files) || strings.HasPrefix(path, session.Worktree) {
+		t.Fatalf("path = %q: under the runner's files, never the worktree", path)
 	}
 	info, err := os.Stat(path)
 	if err != nil {
@@ -250,6 +247,6 @@ func TestARealSessionTakesAPastedImage(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Dir(path)); !os.IsNotExist(err) {
-		t.Fatalf("closing kept the session's images: %v", err)
+		t.Fatalf("closing kept the session's files: %v", err)
 	}
 }

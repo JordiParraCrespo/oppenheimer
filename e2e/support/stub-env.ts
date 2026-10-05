@@ -5,15 +5,11 @@ import { readFileSync } from 'node:fs';
  * The configuration the two stubs need, printed as `.env` lines.
  *
  * `node --experimental-strip-types e2e/support/stub-env.ts >> .env`, before the
- * API is started. It exists because the suite's two stand-ins are only useful
- * if the API is *pointed at them*, and the API reads that at boot — so this is
- * part of standing the stack up rather than something a test can arrange.
+ * API is started: the API reads where the stubs are at boot, so a test cannot
+ * arrange it.
  *
- * The keys are generated per run and thrown away with the job. They are
- * credentials for a GitHub App that does not exist and a control plane no
- * runner will ever dial, so there is nothing here worth committing — and
- * generating them is what keeps a real key from ever being the thing that makes
- * the suite pass.
+ * The keys are generated here (`scripts/stack/stack.mjs` keeps them per
+ * `.stack/`), so a real key can never be what makes the suite pass.
  */
 const GITHUB_STUB = process.env.GITHUB_STUB_URL ?? 'http://127.0.0.1:4319';
 const NAMER_STUB = process.env.NAMER_STUB_URL ?? 'http://127.0.0.1:4320';

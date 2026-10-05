@@ -1,17 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { MEMBERSHIP_ROLES } from '@oppenheimer/shared';
 import { type EntityManager, In, IsNull, type Repository } from 'typeorm';
 import type { RoleEntity } from '../domain/role.entity';
 import { RoleMapper } from '../roles.mapper';
+import { bumpForAssignment, bumpRoleVersion } from './authz-version.repository';
 import { RoleOrmEntity } from './role.orm-entity';
 import { UserRoleOrmEntity } from './user-role.orm-entity';
 import type { UserRoleRepositoryPort } from './user-role.repository.port';
 
-/**
- * TypeORM-backed adapter for the user ↔ role join. Reads resolve to domain
- * `RoleEntity` instances (via `RoleMapper`) so callers — notably the
- * `AbilityFactory` — work in domain terms.
- */
 @Injectable()
 export class UserRoleRepository implements UserRoleRepositoryPort {
   constructor(
@@ -37,21 +34,11 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
     return [...new Set(links.map((link) => link.roleId))];
   }
 
-  /**
-   * The roles in effect for a user.
-   *
-   * Passing an organization returns their global assignments plus the ones
-   * scoped to that organization — the union that makes a role granted in one
-   * tenant inert in another. Omitting it returns every assignment regardless of
-   * scope, which is what role-management screens need.
-   */
   async findRolesForUser(userId: string, organizationId?: string | null): Promise<RoleEntity[]> {
     const roleIds = await this.findRoleIdsForUser(userId, organizationId);
     if (roleIds.length === 0) return [];
-    // Ordered, because callers index into this. Without it Postgres answers in
-    // whatever physical order the rows happen to sit in, so two users holding
-    // the *same* roles came back in different orders — and the team table,
-    // which labelled a row with the first one, showed them different roles.
+    // Ordered, so two users holding the same roles get them (and the permission
+    // union built from them) in the same order, not Postgres's physical row order.
     const records = await this.roleRepository.find({
       where: { id: In(roleIds) },
       order: { name: 'ASC' },
@@ -63,8 +50,17 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
     userId: string,
     roleId: string,
     organizationId: string | null = null,
-    manager: EntityManager = this.userRoleRepository.manager,
+    manager?: EntityManager,
   ): Promise<void> {
+    // The grant and its version bump commit together, in the caller's
+    // transaction or in one of our own: a grant whose bump was lost would stay
+    // invisible to a cached reader until the entry expired.
+    if (!manager) {
+      await this.userRoleRepository.manager.transaction((own) =>
+        this.assignRoleToUser(userId, roleId, organizationId, own),
+      );
+      return;
+    }
     // `ON CONFLICT DO NOTHING` against the migration's two partial unique
     // indexes (one per scope), so a repeat grant is silent rather than a
     // constraint violation the caller has to tell apart from a real failure.
@@ -75,48 +71,64 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
       .values({ userId, roleId, organizationId })
       .orIgnore()
       .execute();
-    if (organizationId) await bumpRoleVersion(manager, organizationId);
+    await bumpForAssignment(manager, userId, organizationId);
+  }
+
+  async replaceMembershipRole(
+    userId: string,
+    organizationId: string,
+    roleId: string,
+  ): Promise<void> {
+    await this.userRoleRepository.manager.transaction(async (manager) => {
+      // The global system roles a membership maps onto, read in the same
+      // transaction as the swap: the rows it may remove. Anything else scoped
+      // to the organization is left alone.
+      const membershipRoles = await manager.find(RoleOrmEntity, {
+        where: { name: In([...MEMBERSHIP_ROLES]), organizationId: IsNull() },
+        select: { id: true },
+      });
+      const replaced = membershipRoles.map((role) => role.id).filter((id) => id !== roleId);
+      if (replaced.length > 0) {
+        await manager.delete(UserRoleOrmEntity, {
+          userId,
+          organizationId,
+          roleId: In(replaced),
+        });
+      }
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(UserRoleOrmEntity)
+        .values({ userId, roleId, organizationId })
+        .orIgnore()
+        .execute();
+      await bumpRoleVersion(manager, organizationId);
+    });
   }
 
   async setRolesForUser(
     userId: string,
     roleIds: string[],
     organizationId: string | null = null,
+    manager?: EntityManager,
   ): Promise<void> {
-    // Replace the full set for this scope atomically. Assignments in other
-    // organizations are left alone: replacing a user's roles in one tenant must
-    // not silently revoke them in another.
+    // Assignments in other organizations are left alone: replacing a user's
+    // roles in one tenant must not silently revoke them in another.
     const uniqueRoleIds = [...new Set(roleIds)];
-    await this.userRoleRepository.manager.transaction(async (manager) => {
-      await manager.delete(UserRoleOrmEntity, {
+    const replace = async (tx: EntityManager) => {
+      await tx.delete(UserRoleOrmEntity, {
         userId,
         organizationId: organizationId ?? IsNull(),
       });
       if (uniqueRoleIds.length > 0) {
-        await manager.insert(
+        await tx.insert(
           UserRoleOrmEntity,
           uniqueRoleIds.map((roleId) => ({ userId, roleId, organizationId })),
         );
       }
-      if (organizationId) await bumpRoleVersion(manager, organizationId);
-    });
+      await bumpForAssignment(tx, userId, organizationId);
+    };
+    if (manager) await replace(manager);
+    else await this.userRoleRepository.manager.transaction(replace);
   }
-}
-
-/**
- * Invalidate every cached ability in an organization by bumping its version.
- *
- * Written inside the caller's transaction on purpose. Routing this through the
- * outbox would be eventually consistent — `OutboxService.wake()` swallows
- * delivery failures and leaves rows for the next poll — and permission
- * revocation is exactly the case that cannot tolerate that.
- */
-export async function bumpRoleVersion(
-  manager: { query: (sql: string, parameters?: unknown[]) => Promise<unknown> },
-  organizationId: string,
-): Promise<void> {
-  await manager.query(
-    'UPDATE "organization" SET "roleVersion" = "roleVersion" + 1 WHERE "id" = $1',
-    [organizationId],
-  );
 }

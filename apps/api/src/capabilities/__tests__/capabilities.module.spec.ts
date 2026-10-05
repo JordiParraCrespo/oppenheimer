@@ -16,13 +16,35 @@ describe('resolveCapabilities', () => {
       github_app: false,
       hosts: false,
       session_namer: false,
+      ip_geolocation: false,
+      google_calendar: false,
     });
   });
 
+  it('reports Google Calendar only with the Google client and a 32-byte sealing key', () => {
+    const client = { 'oauth.google.clientId': 'id', 'oauth.google.clientSecret': 'secret' };
+    const key = Buffer.alloc(32, 7).toString('base64');
+    expect(resolveCapabilities(configWith(client)).google_calendar).toBe(false);
+    expect(
+      resolveCapabilities(configWith({ ...client, 'calendar.tokenKey': 'too-short' }))
+        .google_calendar,
+    ).toBe(false);
+    expect(resolveCapabilities(configWith({ 'calendar.tokenKey': key })).google_calendar).toBe(
+      false,
+    );
+    expect(
+      resolveCapabilities(configWith({ ...client, 'calendar.tokenKey': key })).google_calendar,
+    ).toBe(true);
+  });
+
+  it('reports IP geolocation once either database is named', () => {
+    expect(
+      resolveCapabilities(configWith({ 'hosts.geoipAsnDb': '/data/dbip-asn-lite.mmdb' }))
+        .ip_geolocation,
+    ).toBe(true);
+  });
+
   it('only reports a session namer once a model can actually be called', () => {
-    // A provider switched on without its key is not configured: sessions are
-    // then named from their prompt's words, which is a supported outcome. The
-    // capability is how that shows up in the startup log.
     const noKey = configWith({ 'llm.provider': 'openrouter', 'llm.model': 'a-model-id' });
     expect(resolveCapabilities(noKey).session_namer).toBe(false);
 
@@ -67,10 +89,7 @@ describe('resolveCapabilities', () => {
   it('reports hosts from the same predicate the host routes refuse on', () => {
     // Two of the three is not a working pairing flow: without the install URL
     // there is no command to print, and without a usable signing key there is no
-    // fingerprint for the runner to pin. The key is validated when the config is
-    // parsed, so what is read here is the fingerprint — a capability that said
-    // yes while every route answered HOSTS_004 would be the second source of
-    // truth the console reads first.
+    // fingerprint for the runner to pin.
     const partial = configWith({
       'hosts.signingKeyFingerprint': 'f'.repeat(64),
       'hosts.releaseBaseUrl': 'https://releases.example.com',
@@ -127,9 +146,6 @@ describe('resolveCapabilities', () => {
     };
     expect(resolveCapabilities(configWith(configured)).github_app).toBe(true);
 
-    // A partial set is off rather than half-on: the token mint needs the key,
-    // the claim proof needs the OAuth pair, and a suspension is only trustworthy
-    // with the webhook secret. Any one missing removes the whole feature.
     for (const key of Object.keys(configured)) {
       const partial = { ...configured, [key]: undefined };
       expect(resolveCapabilities(configWith(partial)).github_app).toBe(false);

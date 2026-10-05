@@ -8,10 +8,9 @@ import { ApiTokenErrors } from '../../domain/api-token.errors';
 import { RevokeApiTokenCommand } from './revoke-api-token.command';
 
 /**
- * Revokes a token. The record is kept (revoked, not deleted) so the audit trail
- * survives. Revoking raises `ApiTokenRevokedDomainEvent`, which the auth layer
- * handles by dropping the credential's cached delegated session — so revocation
- * takes effect immediately rather than at the end of that window.
+ * The record is kept (revoked, not deleted) so the audit trail survives.
+ * Revoking raises `ApiTokenRevokedDomainEvent`, whose handler drops the
+ * credential's cached delegated session.
  */
 @CommandHandler(RevokeApiTokenCommand)
 export class RevokeApiTokenCommandHandler

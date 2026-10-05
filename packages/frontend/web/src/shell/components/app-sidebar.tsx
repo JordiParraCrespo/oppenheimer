@@ -24,36 +24,36 @@ function workspaceInitial(name: string): string {
 
 /**
  * The workspace sidebar: brand row, the app's own body, and the user menu
- * pinned to the bottom. 264px and the hairline against the canvas both come
- * from the design system's `Sidebar`, which is already cut to this brand.
+ * pinned to the bottom. Width and hairline come from the design system's
+ * `Sidebar`.
  *
- * The measurements are the design export's, not this file's invention: the
- * head is one `--topbar-h` tall with 16px of leading space (`.op-sidebar__head`)
- * and the foot is 10px/12px (`.op-sidebar__foot`), which is what keeps the
- * brand row level with the content bar of an app that has one.
+ * Per the export, the head is one `--topbar-h` tall with 16px leading space
+ * (`.op-sidebar__head`) and the foot 10px/12px (`.op-sidebar__foot`), which
+ * keeps the brand row level with an app's content bar.
  *
- * The body is the nav list unless the app passed a `sidebar` of its own. The
- * console's is its session list, which is a feature rather than kit because
- * it reads a product hook; the brand row and the account menu stay here, so
- * an app that replaces the middle still gets both.
+ * The body is the nav list unless the app passes its own `sidebar` (the
+ * console's session list, a feature because it reads a product hook); the
+ * brand row and account menu stay here either way.
  */
 export function AppSidebar() {
   const { t } = useTranslation();
-  const { workspace, sidebar, brand, chrome = true } = useShell();
+  const { workspace, sidebar, brand, rail, chrome = true } = useShell();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
 
-  // Only the routes this user's permissions actually reach — a restricted user
-  // never sees a row that would answer with "No tienes permiso para hacer eso".
   const entries = useAuthorizedNav();
-  // What the app calls the workspace: the console passes the caller's
-  // organization (from the same query General Settings reads, so a saved name
-  // or logo shows here at once); an app with none falls back to its name.
   const workspaceName = workspace?.name ?? t('common.appName');
 
   return (
-    <Sidebar mobileTitle={t('nav.sidebarTitle')} mobileDescription={t('nav.sidebarDescription')}>
+    <Sidebar
+      mobileTitle={t('nav.sidebarTitle')}
+      mobileDescription={t('nav.sidebarDescription')}
+      // The sidebar's panel is fixed to the viewport's left edge, and its gap
+      // alone makes room for it in the flow; with a rail in front, the panel
+      // starts past the rail's 56px too, or the rail covers its first column.
+      className={rail ? 'data-[side=left]:left-14' : undefined}
+    >
       <SidebarHeader className="h-14 flex-none flex-row items-center justify-between gap-2 py-0 pr-3 pl-4">
         {brand ?? (
           <div className="flex min-w-0 items-center gap-2.5">
@@ -83,8 +83,7 @@ export function AppSidebar() {
               <SidebarMenu className="gap-px">
                 {entries.map((entry) => {
                   const Icon = entry.icon;
-                  // `/sessions/new` should still light up Sessions, so match on
-                  // the prefix rather than the exact path.
+                  // A nested route lights its parent's row.
                   const active = pathname === entry.to || pathname.startsWith(`${entry.to}/`);
 
                   return (

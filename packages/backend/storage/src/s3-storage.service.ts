@@ -44,7 +44,7 @@ export class S3StorageService extends StorageService {
     await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
   }
 
-  async getSignedUrl(key: string, expiresIn = 3600): Promise<string> {
+  async getUrl(key: string, expiresIn = 3600): Promise<string> {
     const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
     return getSignedUrl(this.s3, command, { expiresIn });
   }

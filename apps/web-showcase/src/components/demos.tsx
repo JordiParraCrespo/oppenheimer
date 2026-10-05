@@ -59,7 +59,7 @@ import {
   DropdownMenuValue,
 } from '@oppenheimer/design-system-web/dropdown-menu';
 import { EmptyState } from '@oppenheimer/design-system-web/empty-state';
-import { FilterChip } from '@oppenheimer/design-system-web/chip';
+import { Chip, FilterChip } from '@oppenheimer/design-system-web/chip';
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import { ImageCarousel } from '@oppenheimer/design-system-web/image-carousel';
 import { Rail, RailItem, RailMark } from '@oppenheimer/design-system-web/rail';
@@ -70,6 +70,8 @@ import {
 import { SessionItem, SessionList } from '@oppenheimer/design-system-web/session-item';
 import {
   SidebarEmptyRow,
+  SidebarListHead,
+  SidebarProjectGroup,
   SidebarProjectHeader,
   SidebarSearch,
 } from '@oppenheimer/design-system-web/sidebar';
@@ -93,8 +95,13 @@ import {
 } from '@oppenheimer/design-system-web/tooltip';
 import { Wordmark } from '@oppenheimer/design-system-web/wordmark';
 import { Callout } from '@oppenheimer/design-system-web/callout';
-import { FieldSelect } from '@oppenheimer/design-system-web/field-select';
+import {
+  FieldSelect,
+  FieldSelectGroup,
+  FieldSelectRow,
+} from '@oppenheimer/design-system-web/field-select';
 import { HostCard } from '@oppenheimer/design-system-web/host-card';
+import { fixCommands } from './host-link-demos';
 import {
   AddRow,
   InlineToken,
@@ -115,6 +122,9 @@ import {
   PageHeaderTitleInput,
 } from '@oppenheimer/design-system-web/page-header';
 import { PillTab, PillTabs } from '@oppenheimer/design-system-web/pill-tabs';
+import { Disclosure, DisclosurePanel, DisclosureTrigger } from '@oppenheimer/design-system-web/disclosure';
+import { RepositoryAddField } from '@oppenheimer/design-system-web/repository-add-field';
+import { BotIcon, CopyIcon } from '@oppenheimer/design-system-web/icons';
 import { Popover, PopoverTrigger } from '@oppenheimer/design-system-web/popover';
 import {
   RoutineItem,
@@ -149,6 +159,7 @@ import {
   RunsListHead,
 } from '@oppenheimer/design-system-web/runs-list';
 import {
+  SettingsForm,
   SettingsGroup,
   SettingsHeading,
   SettingsRow,
@@ -167,6 +178,7 @@ import { Input } from '@oppenheimer/design-system-web/input';
 import { Checkbox } from '@oppenheimer/design-system-web/checkbox';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 import {
+  ArrowUpRightIcon,
   ChevronDownIcon,
   ClockIcon,
   CpuIcon,
@@ -181,9 +193,8 @@ import {
   PlusIcon,
   ServerIcon,
   Settings2Icon,
-  SettingsIcon,
   ShieldCheckIcon,
-  SlidersHorizontalIcon,
+  SlidersVerticalIcon,
   TerminalIcon,
   TriangleAlertIcon,
   UserIcon,
@@ -197,9 +208,18 @@ const INSTALL = 'curl -fsSL https://app.oppenheimer.dev/install.sh \\\n  | sh -s
 const PROMPT =
   'Install the oppenheimer runner here, then run\noppenheimer-runner status and report the hostname.\ncurl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c';
 
+/** The copy `FieldSelect` requires, in the showcase's one language. */
+const SELECT_COPY = {
+  placeholder: 'Choose…',
+  searchPlaceholder: 'Search…',
+  emptyText: (query: string) => `No match for “${query}”.`,
+};
+
 /**
- * The one dialog in v1. One instruction, two ways to read it, and a status
- * line that resolves in place so nothing below it moves.
+ * Add a host, from the inventory: one sentence, two copy Buttons, the token
+ * line, the instruction as a CodeBlock panel behind a Disclosure, and a
+ * StatusDot line that resolves in place so nothing under it moves. The
+ * product draws the same column from the kit's pairing parts.
  */
 export function AddHostDialogDemo() {
   const [tab, setTab] = React.useState('cmd');
@@ -207,55 +227,70 @@ export function AddHostDialogDemo() {
   return (
     <Dialog onOpenChange={(open) => !open && setRegistered(false)}>
       <DialogTrigger render={<Button variant="secondary" />}>Add a host…</DialogTrigger>
-      <DialogContent>
+      <DialogContent size="form">
         <DialogHeader>
           <DialogTitle>Add a host</DialogTitle>
+          <DialogDescription>
+            Run one command on the machine you want sessions on. Nothing on it is exposed to the internet.
+          </DialogDescription>
         </DialogHeader>
-        <DialogBody className="flex flex-col gap-[18px]">
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-fg">Run this once on the host</span>
-            <CodeBlock
-              layout="panel"
-              code={tab === 'cmd' ? INSTALL : PROMPT}
-              tabs={[
-                { value: 'cmd', label: 'Command' },
-                { value: 'prompt', label: 'Agent prompt' },
-              ]}
-              tab={tab}
-              onTabChange={setTab}
-            />
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="figures text-[11.5px] whitespace-nowrap text-fg-subtle">
-                Token expires in 59:41 · single use
-              </span>
-              <Link href="#dialog" className="text-[11.5px] whitespace-nowrap">
-                New token
-              </Link>
-            </div>
-          </div>
-          <div className="h-px bg-border-subtle" />
-          <div className="flex min-h-[52px] items-center">
-            {registered ? (
-              <div className="flex w-full flex-wrap items-center gap-2.5">
-                <StatusDot state="running" className="items-center">
-                  <span className="figures text-[13px]">mac-studio</span>
-                </StatusDot>
-                <span className="text-xs text-fg-muted">macOS 15 · echo 38 ms</span>
-                <span className="flex-1" />
-                <span className="text-xs text-fg-muted">git, tmux, claude ready</span>
+        <DialogBody>
+          <div className="flex flex-col gap-4.5">
+            <div className="flex flex-col gap-2.5">
+              <div className="flex flex-wrap gap-2">
+                <Button variant="secondary">
+                  <CopyIcon />
+                  Copy install command
+                </Button>
+                <Button variant="ghost">
+                  <BotIcon />
+                  Copy agent prompt
+                </Button>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setRegistered(true)}
-                className="text-left"
-                title="Click to simulate the host registering"
-              >
-                <StatusDot state="pending" pulse>
-                  Listening for this host…
+              <div className="flex flex-wrap items-baseline gap-2.5 text-xs">
+                <span className="figures whitespace-nowrap text-fg-subtle">
+                  Token expires in 59:41 · single use
+                </span>
+                <Link href="#dialog" className="whitespace-nowrap">
+                  New token
+                </Link>
+              </div>
+            </div>
+            <Disclosure>
+              <DisclosureTrigger tone="muted">Inspect command and prompt</DisclosureTrigger>
+              <DisclosurePanel className="mt-2.5">
+                <CodeBlock
+                  layout="panel"
+                  code={tab === 'cmd' ? INSTALL : PROMPT}
+                  tabs={[
+                    { value: 'cmd', label: 'Command' },
+                    { value: 'prompt', label: 'Agent prompt' },
+                  ]}
+                  tab={tab}
+                  onTabChange={setTab}
+                />
+              </DisclosurePanel>
+            </Disclosure>
+            <div className="h-px bg-border-subtle" />
+            <div className="flex min-h-10.5 items-center">
+              {registered ? (
+                <StatusDot state="running" className="items-center">
+                  <span className="figures text-sm">mac-studio</span>
+                  <span className="text-xs text-fg-muted">macOS 15 · git, tmux, claude ready</span>
                 </StatusDot>
-              </button>
-            )}
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setRegistered(true)}
+                  className="text-left"
+                  title="Click to simulate the host registering"
+                >
+                  <StatusDot state="pending" pulse>
+                    Waiting for the host to connect…
+                  </StatusDot>
+                </button>
+              )}
+            </div>
           </div>
         </DialogBody>
         <DialogFooter>
@@ -293,7 +328,7 @@ export function FilterMenuDemo() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<IconButton aria-label="Filter sessions" size="xs" variant="quiet" />}>
-        <Settings2Icon />
+        <SlidersVerticalIcon />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="min-w-57.5">
         <DropdownMenuSub>
@@ -378,7 +413,7 @@ export function AccountMenuDemo() {
           <>
             <DropdownMenuHeader>jordiparra99@gmail.com</DropdownMenuHeader>
             <DropdownMenuItem>
-              <SlidersHorizontalIcon /> Settings
+              <Settings2Icon /> Settings
             </DropdownMenuItem>
             <DropdownMenuPaneItem value={themeLabel} onClick={() => setPane('theme')}>
               <MoonIcon /> Appearance
@@ -453,16 +488,27 @@ export function AgentModelDemo() {
   return <AgentModelSelect agents={HARNESSES} value={engine} onValueChange={setEngine} />;
 }
 
+// A model's own levels, as the console passes them: the stops are the caller's.
+const EFFORT_LEVELS = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'xhigh', label: 'Extra high' },
+  { value: 'max', label: 'Max' },
+] as const;
+
+type EffortLevel = (typeof EFFORT_LEVELS)[number]['value'];
+
 export function EffortDemo({ bare }: { bare?: boolean }) {
-  const [effort, setEffort] = React.useState('medium');
+  const [effort, setEffort] = React.useState<EffortLevel>('medium');
   if (bare) {
     return (
-      <div className="w-[240px]">
-        <EffortSlider value={effort} onValueChange={setEffort} />
+      <div className="w-60">
+        <EffortSlider stops={EFFORT_LEVELS} value={effort} onValueChange={setEffort} />
       </div>
     );
   }
-  return <EffortPicker value={effort} onValueChange={setEffort} />;
+  return <EffortPicker stops={EFFORT_LEVELS} value={effort} onValueChange={setEffort} />;
 }
 
 export function PermissionDemo({ initial = 'auto' }: { initial?: PermissionLevel }) {
@@ -478,7 +524,7 @@ export function TooltipDemo() {
       <div className="flex items-center gap-2">
         <Tooltip>
           <TooltipTrigger render={<IconButton aria-label="Filter sessions" />}>
-            <Settings2Icon />
+            <SlidersVerticalIcon />
           </TooltipTrigger>
           <TooltipContent>Filter sessions</TooltipContent>
         </Tooltip>
@@ -498,7 +544,9 @@ export function TooltipDemo() {
 const HOSTS: ChipSelectOption[] = [
   { value: 'optimus', label: 'optimus', description: '32 vCPU · eu-west · idle' },
   { value: 'mac-studio', label: 'jordis-mac-studio', description: 'local · 2 sessions running' },
-  { value: 'fable', label: 'fable', description: '16 vCPU · us-east · idle' },
+  // An offline host stays listed, so the choice is visible, but cannot be
+  // picked: a session needs a live runner to start.
+  { value: 'fable', label: 'fable', description: 'Offline · last seen 2 days ago', disabled: true },
 ];
 
 const BRANCHES = (extra: string[]) => [
@@ -575,6 +623,7 @@ export function ScopeChips({ variant }: { variant?: 'chip' | 'tab' }) {
         action={{
           label: 'Manage repository access',
           icon: <BrandGlyph name="github" size={15} />,
+          trailing: <ArrowUpRightIcon />,
           href: 'https://github.com/settings/installations',
         }}
       />
@@ -612,7 +661,7 @@ export function SlugFieldDemo() {
     timer.current = setTimeout(() => setStatus(TAKEN.includes(clean) ? 'taken' : 'ok'), 550);
   }
   return (
-    <Field className="w-full max-w-[400px]" data-invalid={status === 'taken' || undefined}>
+    <Field className="w-full max-w-100" data-invalid={status === 'taken' || undefined}>
       <FieldLabel htmlFor="ws-slug">Workspace URL</FieldLabel>
       <SlugInput
         id="ws-slug"
@@ -653,7 +702,7 @@ export function SegmentedDemo() {
 export function CheckboxDemo() {
   const [discard, setDiscard] = React.useState(false);
   return (
-    <FieldLabel className="flex items-center gap-2.5">
+    <FieldLabel className="items-center">
       <Checkbox checked={discard} onCheckedChange={(checked) => setDiscard(checked === true)} />
       Discard work that is not pushed
     </FieldLabel>
@@ -662,20 +711,21 @@ export function CheckboxDemo() {
 
 /* ── Composer ────────────────────────────────────────────────────────────── */
 
-export function ComposerDemo({ full }: { full?: boolean }) {
-  const [value, setValue] = React.useState('');
+export function ComposerDemo({ full, blocked }: { full?: boolean; blocked?: string }) {
+  const [value, setValue] = React.useState(blocked ? 'Fix the flaky retriever eval' : '');
   const [busy, setBusy] = React.useState(false);
   const [files, setFiles] = React.useState<{ id: string; name: string }[]>(
     full ? [{ id: '1', name: 'Screenshot from 2026-09-20 11-42-07.png' }] : [],
   );
   const [recording, setRecording] = React.useState(false);
   return (
-    <div className="w-full max-w-[720px]">
+    <div className="w-full max-w-180">
       <Composer
         value={value}
         onValueChange={setValue}
         placeholder={full ? 'Describe a task or ask a question' : 'Name or first task'}
         busy={busy}
+        sendBlockedReason={blocked}
         onSubmit={() => {
           setBusy(true);
           setTimeout(() => {
@@ -797,7 +847,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
   const projects = empty ? [] : PROJECTS;
   const total = projects.reduce((n, p) => n + p.sessions.length, 0);
   return (
-    <div className="flex h-[600px] shrink-0 overflow-hidden">
+    <div className="flex h-150 shrink-0 overflow-hidden">
       <Rail>
         <RailMark>O</RailMark>
         <RailItem label="Sessions" count={total} active>
@@ -807,7 +857,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
           <ZapIcon />
         </RailItem>
       </Rail>
-      <div className="flex w-[264px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+      <div className="flex w-66 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="flex h-14 items-center px-4">
           <Wordmark product="Console" />
         </div>
@@ -816,14 +866,12 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
             New session
           </Button>
         </div>
-        <div className="mt-4 flex h-[26px] items-center gap-2 pr-2.5 pl-5">
-          <span className="eyebrow">Projects</span>
-          <span className="figures ml-auto text-[11px] text-sidebar-muted">{projects.length}</span>
+        <SidebarListHead label="Projects" count={projects.length} className="mt-4">
           <IconButton aria-label="New project" size="xs" variant="quiet">
             <PlusIcon />
           </IconButton>
           <FilterMenuDemo />
-        </div>
+        </SidebarListHead>
         <SidebarSearch value={query} onValueChange={setQuery} placeholder="Search sessions" />
         {filters.length ? (
           <div className="flex flex-wrap gap-1 px-3 pb-2">
@@ -852,7 +900,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                 term ? (names[name] ?? name).toLowerCase().includes(term) : true,
               );
               return (
-                <div key={project.name} className="mt-1.5 flex flex-col">
+                <SidebarProjectGroup key={project.name}>
                   <SidebarProjectHeader
                     name={project.name}
                     count={project.sessions.length}
@@ -867,7 +915,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                           <PlusIcon />
                         </IconButton>
                         <IconButton aria-label={`${project.name} settings`} size="xs" variant="quiet">
-                          <SettingsIcon />
+                          <Settings2Icon />
                         </IconButton>
                       </>
                     }
@@ -878,7 +926,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                         No sessions yet. <button type="button">Start one</button>
                       </SidebarEmptyRow>
                     ) : (
-                      <SessionList className="px-3">
+                      <SessionList>
                         {rows.map(([name, age, state]) => (
                           <SessionItem
                             key={name}
@@ -914,7 +962,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
                       </SessionList>
                     )
                   ) : null}
-                </div>
+                </SidebarProjectGroup>
               );
             })
           )}
@@ -947,7 +995,7 @@ export function StepperDemo() {
     return () => clearInterval(id);
   }, []);
   return (
-    <div className="w-full max-w-[420px]">
+    <div className="w-full max-w-105">
       <div className="eyebrow figures">mac-studio</div>
       <h3 className="mt-2 text-h2 font-semibold">Starting your session</h3>
       <p className="mt-1.5 text-operate text-fg-muted">JordiParraCrespo/xrp-mobile · main</p>
@@ -957,6 +1005,10 @@ export function StepperDemo() {
           id,
           label,
           meta: i < step ? `${(0.6 + i * 0.7).toFixed(1)}s` : i === step ? meta : undefined,
+          note:
+            id === 'clone' && i === step
+              ? 'First session on mac-studio with this repository, so it downloads in full once. Later sessions here start in about a second.'
+              : undefined,
           state: i < step ? 'done' : i === step ? 'running' : 'pending',
         }))}
         elapsed={`${(t * 0.9).toFixed(1)}s`}
@@ -984,7 +1036,7 @@ function LinkDemo() {
 
 export function TerminalDemo() {
   return (
-    <div className="h-[520px] w-full overflow-hidden rounded-lg border border-term-border">
+    <div className="h-130 w-full overflow-hidden rounded-lg border border-term-border">
       <Terminal>
         <TerminalScrollback>
           <TerminalLine command>gh auth login --web</TerminalLine>
@@ -1040,7 +1092,7 @@ const SLIDES = [
 
 export function CarouselDemo() {
   return (
-    <div className="h-[460px] w-full max-w-[420px]">
+    <div className="h-115 w-full max-w-105">
       <ImageCarousel
         slides={SLIDES.map(([file, alt, caption, position]) => ({
           src: `/imagery/${file}.webp`,
@@ -1053,30 +1105,117 @@ export function CarouselDemo() {
   );
 }
 
-/* ── RepositoryRowList ───────────────────────────────────────────────────── */
+/* ── RepositoryAddField · RepositoryRowList ──────────────────────────────── */
 
 const PROJECT_REPOS = [
-  { id: 'xrp-mobile', name: 'xrp-mobile', defaultBranch: 'main', branches: [{ value: 'main', description: 'default · updated 3h ago' }, { value: 'develop', description: 'updated 1d ago' }, { value: 'port/121-api-config-hardening', description: 'ahead 4 · updated 32m ago' }] },
-  { id: 'atlas', name: 'atlas', defaultBranch: 'develop', branches: [{ value: 'develop', description: 'default' }, { value: 'main' }] },
-  { id: 'flama-ai', name: 'flama-ai', defaultBranch: 'main', branches: [{ value: 'main', description: 'default' }] },
-  { id: 'adri-rodriguez', name: 'adri-rodriguez', defaultBranch: 'main', branches: [{ value: 'main', description: 'default' }] },
+  { id: 'xrp-mobile', name: 'acme/xrp-mobile', description: 'TypeScript · pushed 3h ago', defaultBranch: 'main', branches: [{ value: 'main', description: 'default · updated 3h ago' }, { value: 'develop', description: 'updated 1d ago' }, { value: 'port/121-api-config-hardening', description: 'ahead 4 · updated 32m ago' }] },
+  { id: 'atlas', name: 'acme/atlas', description: 'Go · pushed yesterday', defaultBranch: 'develop', branches: [{ value: 'develop', description: 'default' }, { value: 'main' }] },
+  { id: 'flama-ai', name: 'acme/flama-ai', description: 'Python · pushed 2d ago', defaultBranch: 'main', branches: [{ value: 'main', description: 'default' }] },
+  { id: 'adri-rodriguez', name: 'acme/adri-rodriguez', description: 'Astro · pushed last week', defaultBranch: 'main', branches: [{ value: 'main', description: 'default' }] },
 ];
 
+/**
+ * The project dialog's two repository controls: the field that decides which
+ * repositories are in the project, and, in the Defaults fold under it, the
+ * list that says what each does in a new session. One `rows` state feeds
+ * both: adding a repository adds a row cloned by default on its own branch.
+ */
 export function RepositoryRowListDemo() {
   const [rows, setRows] = React.useState<RepositoryRowValue[]>([
     { id: 'xrp-mobile', isDefault: true, branch: 'main' },
     { id: 'atlas', isDefault: false, branch: 'develop' },
   ]);
-  const defaults = rows.filter((r) => r.isDefault).length;
+  const [host, setHost] = React.useState<string | null>('mac-studio');
+  const summary = [host, rows.filter((r) => r.isDefault).length + ' cloned'].filter(Boolean).join(' · ');
   return (
-    <div className="flex w-full max-w-[484px] flex-col gap-2">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-medium text-fg">Default repositories</span>
-        <span className="figures text-[11.5px] text-fg-subtle">
-          {defaults} of {rows.length} by default
-        </span>
+    <div className="flex w-full max-w-121 flex-col gap-5.5">
+      <div className="flex flex-col gap-2">
+        <span className="text-sm font-medium text-fg">Repositories</span>
+        <RepositoryAddField
+          repositories={PROJECT_REPOS}
+          value={rows.map((r) => r.id)}
+          onValueChange={(ids) =>
+            setRows(
+              ids.map(
+                (id) =>
+                  rows.find((r) => r.id === id) ?? {
+                    id,
+                    isDefault: true,
+                    branch: PROJECT_REPOS.find((r) => r.id === id)?.defaultBranch ?? 'main',
+                  },
+              ),
+            )
+          }
+        />
+        {rows.length === 0 ? (
+          <span className="text-xs text-fg-subtle">Sessions in this project can clone these. Add at least one.</span>
+        ) : null}
       </div>
-      <RepositoryRowList repositories={PROJECT_REPOS} value={rows} onValueChange={setRows} />
+      <Disclosure>
+        <DisclosureTrigger meta="optional" summary={summary}>
+          Defaults
+        </DisclosureTrigger>
+        <DisclosurePanel>
+          <div className="flex flex-col gap-4.5">
+          <p className="m-0 text-sm text-fg-muted">
+            What every new session in this project starts with. Each can be changed per session.
+          </p>
+          <div className="flex flex-col gap-2">
+            <span className="text-sm text-fg-muted">Host</span>
+            <div className="flex flex-wrap gap-1.5">
+              {['mac-studio', 'optimus', 'hetzner-1'].map((name) => (
+                <Chip key={name} selected={host === name} onClick={() => setHost(host === name ? null : name)}>
+                  {name}
+                </Chip>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-sm text-fg-muted">Cloned by default</span>
+            {rows.length ? (
+              <RepositoryRowList repositories={PROJECT_REPOS} value={rows} onValueChange={setRows} />
+            ) : (
+              <p className="m-0 text-sm text-fg-subtle">Select repositories above first.</p>
+            )}
+          </div>
+          </div>
+        </DisclosurePanel>
+      </Disclosure>
+    </div>
+  );
+}
+
+/* ── Disclosure ──────────────────────────────────────────────────────────── */
+
+export function DisclosureDemo() {
+  const [tab, setTab] = React.useState('cmd');
+  return (
+    <div className="flex w-full max-w-110 flex-col gap-6">
+      <Disclosure>
+        <DisclosureTrigger tone="muted">Inspect command and prompt</DisclosureTrigger>
+        <DisclosurePanel className="mt-2.5">
+          <CodeBlock
+            layout="panel"
+            code={tab === 'cmd' ? INSTALL : PROMPT}
+            tabs={[
+              { value: 'cmd', label: 'Command' },
+              { value: 'prompt', label: 'Agent prompt' },
+            ]}
+            tab={tab}
+            onTabChange={setTab}
+          />
+        </DisclosurePanel>
+      </Disclosure>
+      <Disclosure>
+        <DisclosureTrigger meta="optional" summary="mac-studio · Claude Code">
+          Defaults
+        </DisclosureTrigger>
+        <DisclosurePanel>
+          <p className="m-0 text-sm text-fg-muted">
+            What every new session in this project starts with. Each can be changed per session.
+          </p>
+        </DisclosurePanel>
+      </Disclosure>
     </div>
   );
 }
@@ -1085,7 +1224,7 @@ export function RepositoryRowListDemo() {
 
 export function CalloutDemo() {
   return (
-    <div className="flex w-full max-w-[440px] flex-col gap-3.5">
+    <div className="flex w-full max-w-110 flex-col gap-3.5">
       <Callout>No account yet for that sign-in. The provider buttons create one in a single step.</Callout>
       <Callout tone="info">
         A worktree is created per session, so two runs on one repository never share a checkout.
@@ -1137,7 +1276,7 @@ export function EditorPageDemo() {
         <EditorPageBody>
         <EditorPageBack href="#editorpage">Back</EditorPageBack>
         <PageHeader className="mb-7">
-          <PageHeaderCrumbs>
+          <PageHeaderCrumbs aria-label="Breadcrumb">
             <button type="button">New session</button>
             <span>/</span>
             <PageHeaderHere>Add a host</PageHeaderHere>
@@ -1202,13 +1341,12 @@ export function PageHeaderDemo() {
   return (
     <div className="flex w-full flex-col gap-8">
       <PageHeader>
-        <PageHeaderCrumbs>
+        <PageHeaderCrumbs aria-label="Breadcrumb">
           <button type="button">Routines</button>
           <span>/</span>
           <PageHeaderHere>Nightly dependency audit</PageHeaderHere>
         </PageHeaderCrumbs>
         <PageHeaderRow
-          size="lg"
           icon={<ClockIcon />}
           title="Nightly dependency audit"
           actions={
@@ -1226,7 +1364,7 @@ export function PageHeaderDemo() {
           }
         />
         <PageHeaderMeta>
-          <StatusDot state={paused ? 'paused' : 'active'} className="items-center text-[13px]">
+          <StatusDot state={paused ? 'paused' : 'active'} density="compact">
             {paused ? 'Paused' : 'Active'}
           </StatusDot>
           <PageHeaderSep />
@@ -1247,7 +1385,7 @@ export function PageHeaderDemo() {
         ) : null}
       </PageHeader>
       <PageHeader>
-        <PageHeaderCrumbs>
+        <PageHeaderCrumbs aria-label="Breadcrumb">
           <button type="button">Routines</button>
           <span>/</span>
           <PageHeaderHere>New routine</PageHeaderHere>
@@ -1385,7 +1523,7 @@ export function TemplateGridDemo() {
   return (
     <div className="flex w-full flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
-        <h3 className="m-0 flex-1 text-[17px] font-semibold tracking-[-0.012em]">Templates</h3>
+        <h3 className="m-0 flex-1 text-lg font-semibold">Templates</h3>
         <PillTabs value={cat} onValueChange={setCat} size="sm" aria-label="Category">
           <PillTab value="all">All</PillTab>
           <PillTab value="review">Review</PillTab>
@@ -1469,20 +1607,61 @@ export function TimeTokenDemo() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger render={<InlineToken mono open={open} />}>{time}</PopoverTrigger>
-      <ChipSelectPopup width={292} maxHeight={480} side="bottom" align="start" className="p-3">
-        <TimeGrid
-          groups={[
-            { label: 'Morning', cells: HOURS.slice(0, 6).map((h) => ({ value: h, label: h, disabled: h < '08:00' })) },
-            { label: 'Afternoon', cells: HOURS.slice(6).map((h) => ({ value: h, label: h })) },
-          ]}
-          value={time}
-          onValueChange={(next) => {
-            setTime(next);
-            setOpen(false);
-          }}
-        />
+      <ChipSelectPopup width={292} maxHeight={480} side="bottom" align="start">
+        {/* The popup keeps its own 4px inset; the grid wants 12, so the rest is a wrapper's. */}
+        <div className="p-2">
+          <TimeGrid
+            groups={[
+              { label: 'Morning', cells: HOURS.slice(0, 6).map((h) => ({ value: h, label: h, disabled: h < '08:00' })) },
+              { label: 'Afternoon', cells: HOURS.slice(6).map((h) => ({ value: h, label: h })) },
+            ]}
+            value={time}
+            onValueChange={(next) => {
+              setTime(next);
+              setOpen(false);
+            }}
+          />
+        </div>
       </ChipSelectPopup>
     </Popover>
+  );
+}
+
+/** Where it runs, as the editor draws it: pickers as the rows of one hairline card. */
+export function FieldSelectGroupDemo() {
+  const [host, setHost] = React.useState<string | null>('optimus');
+  const [agent, setAgent] = React.useState<string | null>('claude-code');
+  return (
+    <FieldSelectGroup className="w-full max-w-146">
+      <FieldSelectRow icon={<CpuIcon />} label="Host">
+        <FieldSelect
+          {...SELECT_COPY}
+          variant="quiet"
+          aria-label="Host"
+          value={host}
+          onValueChange={setHost}
+          searchPlaceholder="Search hosts"
+          options={[
+            { value: 'optimus', label: 'optimus', description: 'Ubuntu 24.04 · idle' },
+            { value: 'mac', label: 'jordis-mac-studio', description: 'macOS 15 · running' },
+          ]}
+        />
+      </FieldSelectRow>
+      <FieldSelectRow icon={<BotIcon />} label="Agent">
+        <FieldSelect
+          {...SELECT_COPY}
+          variant="quiet"
+          aria-label="Agent"
+          value={agent}
+          onValueChange={setAgent}
+          searchPlaceholder="Search agents"
+          options={[
+            { value: 'claude-code', label: 'Claude Code' },
+            { value: 'codex', label: 'Codex' },
+          ]}
+        />
+      </FieldSelectRow>
+    </FieldSelectGroup>
   );
 }
 
@@ -1500,6 +1679,8 @@ export function RoutineEditorDemo() {
           <Field>
             <FieldLabel>Project</FieldLabel>
             <FieldSelect
+             {...SELECT_COPY}
+              {...SELECT_COPY}
               value={project}
               onValueChange={setProject}
               meta="1 repo"
@@ -1514,6 +1695,8 @@ export function RoutineEditorDemo() {
           <Field>
             <FieldLabel>Repositories</FieldLabel>
             <FieldSelect
+             {...SELECT_COPY}
+              {...SELECT_COPY}
               multiple
               value={repos}
               onValueChange={setRepos}
@@ -1528,6 +1711,8 @@ export function RoutineEditorDemo() {
           <Field>
             <FieldLabel>Host</FieldLabel>
             <FieldSelect
+             {...SELECT_COPY}
+              {...SELECT_COPY}
               value={host}
               onValueChange={setHost}
               meta="idle"
@@ -1610,18 +1795,18 @@ export function RoutineEditorDemo() {
         title="Agent"
         subtitle="Each run is its own session."
         done
-        summary="Claude Code · Claude Sonnet 4.6"
+        summary="Claude Code · Claude Sonnet 5.5"
         note="Works on a fresh opp/ branch, so nothing lands on main without a pull request."
         last
       >
         <RoutineStepFields>
           <Field>
             <FieldLabel>Agent</FieldLabel>
-            <FieldSelect value="claude" onValueChange={() => {}} options={[{ value: 'claude', label: 'Claude Code' }, { value: 'codex', label: 'Codex' }]} />
+            <FieldSelect {...SELECT_COPY} value="claude" onValueChange={() => {}} options={[{ value: 'claude', label: 'Claude Code' }, { value: 'codex', label: 'Codex' }]} />
           </Field>
           <Field>
             <FieldLabel>Model</FieldLabel>
-            <FieldSelect value="sonnet" onValueChange={() => {}} options={[{ value: 'sonnet', label: 'Claude Sonnet 4.6' }, { value: 'opus', label: 'Claude Opus 4.2' }]} />
+            <FieldSelect {...SELECT_COPY} value="sonnet" onValueChange={() => {}} options={[{ value: 'sonnet', label: 'Claude Sonnet 5.5' }, { value: 'opus', label: 'Claude Opus 5.5' }]} />
           </Field>
         </RoutineStepFields>
       </RoutineStep>
@@ -1633,23 +1818,42 @@ export function RoutineEditorDemo() {
 
 export function RoutineItemsDemo() {
   const [active, setActive] = React.useState('review');
+  const [menu, setMenu] = React.useState<string | null>(null);
+  const action = (id: string, paused?: boolean) => (
+    <DropdownMenu open={menu === id} onOpenChange={(open) => setMenu(open ? id : null)}>
+      <DropdownMenuTrigger render={<IconButton aria-label="Automation actions" size="sm" />}>
+        <EllipsisIcon />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-47">
+        <DropdownMenuItem>Run now</DropdownMenuItem>
+        <DropdownMenuItem>Edit</DropdownMenuItem>
+        <DropdownMenuItem>{paused ? 'Resume' : 'Pause'}</DropdownMenuItem>
+        <DropdownMenuItem>Duplicate</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
   return (
-    <div className="flex w-[264px] flex-col gap-px rounded-lg border border-sidebar-border bg-sidebar p-3">
-      <RoutineItem name="Review new pull requests" meta={26} icon={<BrandGlyph name="github" size={13} className="opacity-80" />} running active={active === 'review'} onClick={() => setActive('review')} />
-      {active === 'review' ? (
+    <div className="flex w-full flex-wrap gap-6">
+      <div className="flex w-66 flex-col gap-px rounded-lg border border-sidebar-border bg-sidebar p-3">
+        <RoutineItem name="Review new pull requests" meta="Running" icon={<BrandGlyph name="github" size={13} />} running lastRun="running" lastRunLabel="Last run: running" active={active === 'review'} onClick={() => setActive('review')} action={action('review')} menuOpen={menu === 'review'} />
+        <RoutineItem name="Nightly dependency audit" meta="in 11m" lastRun="failed" lastRunLabel="Last run: failed" active={active === 'audit'} onClick={() => setActive('audit')} action={action('audit')} menuOpen={menu === 'audit'} />
+        <RoutineItem name="Standup digest" meta="in 45h" lastRun="completed" lastRunLabel="Last run: completed" active={active === 'standup'} onClick={() => setActive('standup')} action={action('standup')} menuOpen={menu === 'standup'} />
+        <RoutineItem name="Triage bug reports" meta="Paused" paused icon={<BrandGlyph name="github" size={13} />} active={active === 'triage'} onClick={() => setActive('triage')} action={action('triage', true)} menuOpen={menu === 'triage'} />
+      </div>
+      <div className="flex w-66 flex-col gap-px rounded-lg border border-sidebar-border bg-sidebar p-3">
+        <RoutineItem name="Review new pull requests" meta={26} icon={<BrandGlyph name="github" size={13} />} active />
         <RoutineRunList>
           <RoutineRun title="Review #124 · Harden API config loading" ago="17h" active />
           <RoutineRun title="Review #123 · Bump react-native to 0.76.3" ago="18h" />
           <RoutineRun title="Review #118 · Split wallet store by account" ago="2d" state="failed" />
         </RoutineRunList>
-      ) : null}
-      <RoutineItem name="Standup digest" meta="in 45h" active={active === 'standup'} onClick={() => setActive('standup')} />
-      {active === 'standup' ? (
+        <RoutineItem name="Standup digest" meta="in 45h" />
         <RoutineRunList>
           <RoutineRunsEmpty>No runs yet.</RoutineRunsEmpty>
         </RoutineRunList>
-      ) : null}
-      <RoutineItem name="Triage bug reports" meta="Paused" paused icon={<BrandGlyph name="github" size={13} className="opacity-80" />} active={active === 'triage'} onClick={() => setActive('triage')} />
+      </div>
     </div>
   );
 }
@@ -1689,19 +1893,22 @@ export function SettingsShellDemo() {
 export function SettingsNavDemo() {
   const [page, setPage] = React.useState('profile');
   return (
-    <SettingsNav className="h-[360px] rounded-lg border border-sidebar-border">
-      <SettingsNavBack>Back to console</SettingsNavBack>
-      <SettingsNavGroup label="Account">
-        <SettingsNavItem icon={<UserIcon />} active={page === 'profile'} onClick={() => setPage('profile')}>
-          Profile
-        </SettingsNavItem>
-      </SettingsNavGroup>
-      <SettingsNavGroup label="Workspace">
-        <SettingsNavItem icon={<CpuIcon />} count={3} active={page === 'hosts'} onClick={() => setPage('hosts')}>
-          Hosts
-        </SettingsNavItem>
-      </SettingsNavGroup>
-    </SettingsNav>
+    <div className="flex h-90 w-full max-w-150 overflow-hidden rounded-lg border border-sidebar-border">
+      <SettingsNav>
+        <SettingsNavBack>Back to console</SettingsNavBack>
+        <SettingsNavGroup label="Account">
+          <SettingsNavItem icon={<UserIcon />} active={page === 'profile'} onClick={() => setPage('profile')}>
+            Profile
+          </SettingsNavItem>
+        </SettingsNavGroup>
+        <SettingsNavGroup label="Workspace">
+          <SettingsNavItem icon={<CpuIcon />} count={3} active={page === 'hosts'} onClick={() => setPage('hosts')}>
+            Hosts
+          </SettingsNavItem>
+        </SettingsNavGroup>
+      </SettingsNav>
+      <div className="flex-1 bg-canvas" />
+    </div>
   );
 }
 
@@ -1709,8 +1916,8 @@ export function SettingsGroupDemo() {
   const [name, setName] = React.useState('Jordi Parra Crespo');
   const dirty = name !== 'Jordi Parra Crespo';
   return (
-    <div className="flex w-full max-w-[680px] flex-col gap-6">
-      <SettingsGroup>
+    <div className="flex w-full max-w-170 flex-col gap-6">
+      <SettingsForm onSubmit={(event) => event.preventDefault()}>
         <SettingsRow label="Profile picture" hint="Shown beside your sessions and routines">
           <Avatar size="lg" variant="accent">
             <AvatarFallback>JP</AvatarFallback>
@@ -1725,18 +1932,20 @@ export function SettingsGroupDemo() {
             Change
           </Button>
         </SettingsRow>
-        <SettingsRow label="Full name">
-          <Input value={name} onChange={(e) => setName(e.target.value)} aria-label="Full name" className="w-[280px]" />
+        <SettingsRow label="Full name" control="field">
+          <Input value={name} onChange={(e) => setName(e.target.value)} aria-label="Full name" />
         </SettingsRow>
         {dirty ? (
           <SettingsSaveRow>
-            <Button variant="ghost" size="sm" onClick={() => setName('Jordi Parra Crespo')}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setName('Jordi Parra Crespo')}>
               Discard
             </Button>
-            <Button size="sm">Save changes</Button>
+            <Button type="submit" size="sm">
+              Save changes
+            </Button>
           </SettingsSaveRow>
         ) : null}
-      </SettingsGroup>
+      </SettingsForm>
       <SettingsHeading>Account</SettingsHeading>
       <SettingsGroup>
         <SettingsRow label="Delete account" hint="Stops every session and removes your routines and host registrations. This cannot be undone.">
@@ -1758,7 +1967,7 @@ export function HostCardsDemo() {
       <DropdownMenuContent align="end" className="min-w-50">
         <DropdownMenuItem>Rename</DropdownMenuItem>
         <DropdownMenuItem>
-          Copy host ID <DropdownMenuShortcut className="figures">h_b40e</DropdownMenuShortcut>
+          Copy host ID <DropdownMenuShortcut><span className="figures">h_b40e</span></DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive">Remove host</DropdownMenuItem>
@@ -1766,10 +1975,48 @@ export function HostCardsDemo() {
     </DropdownMenu>
   );
   return (
-    <div className="flex w-full max-w-[680px] flex-col gap-2.5">
+    <div className="flex w-full max-w-170 flex-col gap-2.5">
       <HostCard name="jordis-mac-studio" meta="macOS 15 · local · runner 0.14.2" status="running" state="Running · 2 sessions" seen="connected" action={action} />
       <HostCard name="optimus" meta="Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2" status="idle" state="Idle" seen="connected" action={action} />
-      <HostCard name="fable" meta="Debian 12 · 16 vCPU · us-east · runner 0.13.8" status="offline" state="Offline" seen="last seen 2 days ago" action={action} />
+      <FableHostCard action={action} />
     </div>
+  );
+}
+
+/** Fable, offline: what waits on it, the fix, and Check again. */
+function FableHostCard({ action }: { action: React.ReactNode }) {
+  const [checking, setChecking] = React.useState(false);
+  const [checked, setChecked] = React.useState(false);
+  return (
+    <HostCard
+      name="fable"
+      meta="Debian 12 · 16 vCPU · us-east · runner 0.13.8"
+      status="offline"
+      state="Offline"
+      seen="last seen 2 days ago"
+      action={action}
+      offline={{
+        note: '3 sessions reconnect on their own when its runner is back, and 1 automation run waits as Queued. Its runner (0.13.8) is out of date; installing updates it to 0.14.2.',
+        commands: fixCommands('fable').map(([lead, command]) => ({ lead, command })),
+        action: (
+          <Button
+            variant="secondary"
+            size="sm"
+            pending={checking}
+            pendingLabel="Checking…"
+            onClick={() => {
+              setChecking(true);
+              setTimeout(() => {
+                setChecking(false);
+                setChecked(true);
+              }, 1500);
+            }}
+          >
+            Check again
+          </Button>
+        ),
+        actionNote: checked && !checking ? 'still offline · checked just now' : undefined,
+      }}
+    />
   );
 }

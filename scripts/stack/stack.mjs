@@ -235,16 +235,16 @@ function parseEnv(file) {
 }
 
 /**
+ * The keys a stack keeps across `up`s: a paired host pinned the control
+ * plane's key.
+ */
+const KEPT_KEYS = ['CONTROL_PLANE_SIGNING_KEY', 'GITHUB_APP_PRIVATE_KEY'];
+
+/**
  * What the API runs with on top of the checkout's `.env`: the stubs'
  * configuration, with its keys kept per `.stack/`. A checkout with no `.env` gets
  * `.env.example`'s defaults the same way — as environment, never as a file.
  */
-/**
- * The keys a stack keeps across `up`s: a paired host pinned the control
- * plane's key, and the GitHub stub trusts the App key it was handed.
- */
-const KEPT_KEYS = ['CONTROL_PLANE_SIGNING_KEY', 'GITHUB_APP_PRIVATE_KEY'];
-
 function apiEnv() {
   // Regenerated on every `up`, so a change to `stub-env.ts` (a new stub, a new
   // variable) is never missed, with the previous run's keys carried over.
@@ -276,26 +276,20 @@ async function startStub(name, port) {
   await waitFor(name, () => portOpen(port), { logFile: out });
 }
 
-async function startApi(build) {
-  const health = `${API_URL}/api/v1/health`;
-  if (await httpOk(health)) {
-    log(`the API is already answering on ${API_URL}; leaving it`);
-    return;
-  }
-  if (build)
-    run('pnpm', ['turbo', 'run', 'build', '--filter=@oppenheimer/api...'], { stdio: 'inherit' });
+const API_HEALTH = `${API_URL}/api/v1/health`;
+
+async function startApi() {
   const env = apiEnv();
   run('pnpm', ['--filter', '@oppenheimer/api', 'migration:run'], {
     env: { ...process.env, ...env },
   });
   const out = daemon('api', 'node', ['apps/api/dist/main.js'], env);
-  await waitFor('the API', () => httpOk(health), { logFile: out });
+  await waitFor('the API', () => httpOk(API_HEALTH), { logFile: out });
   log(`API on ${API_URL} (log: ${out})`);
 }
 
 // oppenheimer:begin web
 async function startWeb() {
-  if (await httpOk(WEB_URL)) return;
   const out = daemon('web', 'pnpm', ['--filter', '@oppenheimer/web', 'dev']);
   await waitFor('the console', () => httpOk(WEB_URL), { timeout: 120_000, logFile: out });
   log(`console on ${WEB_URL} (log: ${out})`);
@@ -308,14 +302,26 @@ async function up(flags) {
   await startInfrastructure();
   await startStub('github-stub', 4319);
   await startStub('namer-stub', 4320);
-  await startApi(!flags.has('--no-build'));
+  // Asked once: what is already answering is left alone, and what is not is
+  // built — in one turbo run — and started. The console's Vite serves the
+  // app's own source but resolves the workspace packages it imports from their
+  // `dist/`, so it needs its dependencies built as much as the API does.
+  const startsApi = !(await httpOk(API_HEALTH));
+  const filters = startsApi ? ['--filter=@oppenheimer/api...'] : [];
   // oppenheimer:begin web
-  if (flags.has('--web')) await startWeb();
+  const startsWeb = flags.has('--web') && !(await httpOk(WEB_URL));
+  if (startsWeb) filters.push('--filter=@oppenheimer/web^...');
+  // oppenheimer:end web
+  if (filters.length && !flags.has('--no-build'))
+    run('pnpm', ['turbo', 'run', 'build', ...filters], { stdio: 'inherit' });
+  if (startsApi) await startApi();
+  else log(`the API is already answering on ${API_URL}; leaving it`);
+  // oppenheimer:begin web
+  if (startsWeb) await startWeb();
   // oppenheimer:end web
   log(`up. The API's log is ${join(STATE, 'api.log')}, where the suites read it`);
 }
 
-/** Stop a recorded process group and wait for it to go, killing it at 20 s. */
 /**
  * Whether any process in the group is still running. A zombie is not: it has
  * exited and waits only for whoever inherited it to reap it, and counting it
@@ -332,6 +338,7 @@ function groupAlive(pgid) {
   }
 }
 
+/** Stop a recorded process group and wait for it to go, killing it at 20 s. */
 async function stop(pid) {
   if (!groupAlive(pid)) return;
   try {
@@ -363,7 +370,7 @@ async function status() {
     ['redis', await portOpen(6379)],
     ['github-stub', await portOpen(4319)],
     ['namer-stub', await portOpen(4320)],
-    ['api', await httpOk(`${API_URL}/api/v1/health`)],
+    ['api', await httpOk(API_HEALTH)],
     ['web', await httpOk(WEB_URL)],
   ];
   for (const [name, isUp] of rows) console.log(`${isUp ? 'up  ' : 'down'}  ${name}`);

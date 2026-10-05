@@ -1,36 +1,19 @@
-import {
-  Alert,
-  AlertDescription,
-  Button,
-  Checkbox,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  FieldLabel,
-} from '@oppenheimer/design-system-web';
+import { Checkbox, FieldLabel } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useCloseSession } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { ConfirmDialog, notifySuccess } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Delete a session, from the row's menu.
+ * Delete a session: the console's word for the API's close. The worktree and
+ * transcript go, and the row stays resolved so its directory name and branch
+ * are never reissued, which is why the list drops it rather than the API.
  *
- * "Delete" is the console's word for the API's close: the session stops,
- * its worktree leaves the host, the transcript is gone, and the row stays
- * resolved so its directory name and branch are never reissued — which is
- * why the list drops it rather than the API.
- *
- * The close refuses a worktree with work that is not pushed unless the
- * caller accepts losing it, and this dialog is where that is accepted: a
- * sentence and a box, not a hidden flag. Unticked, the copy says the delete
- * stops on such work, so a refusal is the expected answer rather than a
- * surprise. The dialog owns the mutation; a failure stays on screen next to
- * the button, never a toast.
+ * The close refuses unpushed work unless the caller accepts losing it; this
+ * dialog's box is where that is accepted, not a hidden flag. A failure stays
+ * next to the button, never a toast. An accepted delete toasts that it was
+ * asked for, not that it happened: the host may still refuse.
  */
 export function DeleteSessionDialog({
   session,
@@ -40,52 +23,34 @@ export function DeleteSessionDialog({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
   const [discard, setDiscard] = useState(false);
-  const close = useCloseSession({ onSuccess: onClose });
+  const close = useCloseSession({
+    onSuccess: () => {
+      notifySuccess('sessionDeleteRequested', { name: session.name });
+      onClose();
+    },
+  });
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={t('common.close')} className="sm:max-w-105">
-        <DialogHeader>
-          <DialogTitle>{t('sessions.deleteSession.title', { name: session.name })}</DialogTitle>
-          <DialogDescription>
-            {t('sessions.deleteSession.description')} {t('sessions.deleteSession.keeps')}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-col gap-3 px-7">
-          <FieldLabel className="flex items-center gap-2.5">
-            <Checkbox
-              checked={discard}
-              onCheckedChange={(checked) => setDiscard(checked === true)}
-              disabled={close.isPending}
-            />
-            {t('sessions.deleteSession.discard')}
-          </FieldLabel>
-          {close.isError ? (
-            <Alert variant="destructive">
-              <AlertDescription>
-                {resolveError(close.error, t('sessions.deleteSession.failed')).message}
-              </AlertDescription>
-            </Alert>
-          ) : null}
-        </div>
-        <DialogFooter>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={close.isPending}>
-            {t('common.cancel')}
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            disabled={close.isPending}
-            onClick={() => close.mutate({ id: session.id, acceptUnpushedWork: discard })}
-          >
-            {close.isPending
-              ? t('sessions.deleteSession.deleting')
-              : t('sessions.deleteSession.confirm')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmDialog
+      title={t('sessions.deleteSession.title', { name: session.name })}
+      description={`${t('sessions.deleteSession.description')} ${t('sessions.deleteSession.keeps')}`}
+      confirmLabel={t('sessions.deleteSession.confirm')}
+      pendingLabel={t('sessions.deleteSession.deleting')}
+      pending={close.isPending}
+      error={close.error}
+      errorFallback={t('sessions.deleteSession.failed')}
+      onClose={onClose}
+      onConfirm={() => close.mutate({ id: session.id, acceptUnpushedWork: discard })}
+    >
+      <FieldLabel className="items-center">
+        <Checkbox
+          checked={discard}
+          onCheckedChange={(checked) => setDiscard(checked === true)}
+          disabled={close.isPending}
+        />
+        {t('sessions.deleteSession.discard')}
+      </FieldLabel>
+    </ConfirmDialog>
   );
 }

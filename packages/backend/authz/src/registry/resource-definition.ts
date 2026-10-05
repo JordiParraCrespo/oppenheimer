@@ -47,7 +47,7 @@ export interface ResourceDefinition {
   /** CASL subject string. Unique across the application. */
   subject: string;
   label: string;
-  /** Groups resources in the role builder, e.g. `crm`, `platform`. */
+  /** Groups resources in the role builder, e.g. `control-plane`, `platform`. */
   group: string;
   actions: readonly ResourceActionDefinition[];
   /** Fields the role builder may offer for field-level grants (CASL `fields`). */
@@ -57,7 +57,8 @@ export interface ResourceDefinition {
   /**
    * The credential-scope group this resource belongs to, so API tokens and MCP
    * clients can reach it. Resources without one are unreachable by scoped
-   * credentials — which is the correct default for internal subjects.
+   * credentials — the correct default for internal subjects, and a silent
+   * failure for a public one.
    */
   credentialScope?: string;
 }

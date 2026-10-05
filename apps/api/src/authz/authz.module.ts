@@ -11,7 +11,6 @@ import { ORGANIZATION_RESOURCES } from '../organizations/organizations.resource'
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
 import { RoleResource } from '../roles/roles.resource';
 import { UserResource } from '../users/users.resource';
-import { ActiveOrganizationResolver } from './application/active-organization.resolver';
 import { PrincipalResidencyChecker } from './application/principal-residency.policy';
 import { ScopeResolver } from './application/scope.resolver';
 import { ACCESS_GRANT_REPOSITORY } from './authz.di-tokens';
@@ -53,16 +52,10 @@ const repositories: Provider[] = [
 
 /**
  * Wires the authorization kernel into the application and owns the
- * access-grant aggregate.
- *
- * Like `RolesModule`, this mixes a DDD slice set (the grants) with
- * request-scoped infrastructure (`ScopeResolver`, `AccessScopeInterceptor`) —
- * the grants are the data the resolver reads, so splitting them into a separate
- * module would only buy a circular import.
- *
- * Global for the same reason `RolesModule` is: any feature module's controllers
- * apply `AccessScopeInterceptor`, and importing this everywhere would create
- * cycles with the modules it already depends on.
+ * access-grant aggregate. The grants are the data `ScopeResolver` reads, so
+ * splitting them into their own module would only buy a circular import.
+ * Global like `RolesModule`: any feature's controllers apply
+ * `AccessScopeInterceptor`, and importing this everywhere would create cycles.
  */
 @Global()
 @Module({
@@ -89,7 +82,6 @@ const repositories: Provider[] = [
     ...queryHandlers,
     ...mappers,
     ...repositories,
-    ActiveOrganizationResolver,
     PrincipalResidencyChecker,
     AccessScopeInterceptor,
     // Behind the port, so an application needing hierarchical scope resolution
@@ -97,12 +89,6 @@ const repositories: Provider[] = [
     // substitutes its own implementation without touching a call site.
     { provide: SCOPE_RESOLVER, useClass: ScopeResolver },
   ],
-  exports: [
-    SCOPE_RESOLVER,
-    ACCESS_GRANT_REPOSITORY,
-    AccessScopeInterceptor,
-    ActiveOrganizationResolver,
-    TypeOrmModule,
-  ],
+  exports: [SCOPE_RESOLVER, ACCESS_GRANT_REPOSITORY, AccessScopeInterceptor, TypeOrmModule],
 })
 export class AuthzModule {}

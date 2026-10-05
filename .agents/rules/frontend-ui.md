@@ -19,8 +19,16 @@ multi-line, so a grep for `export` misses most of them.
 
 | Need                                  | Use                           | Not                                                   |
 | ------------------------------------- | ----------------------------- | ----------------------------------------------------- |
-| Whole-form or whole-page failure      | `Alert variant="destructive"` | a styled `div`, a bare `<p class="text-destructive">` |
-| A success                             | `toast.success()`             | an `Alert`, an inline row                             |
+| A failure inside a screen that still draws its chrome (a form, a section, a dialog) | the kit's `ErrorAlert`: `error` + `fallback` to resolve a raw failure, `message` for one a form already resolved, `onDismiss` or `action` for its one button | a hand-built destructive `Alert`, a styled `div`, a bare `<p class="text-destructive">` |
+| A failure that is the whole screen (the app cannot start, a route threw) | the kit's `ScreenFailure` | an `ErrorAlert` alone on an empty canvas, a hand-built `EmptyState` |
+| A refusal about one field (a name the server rejected) | `FieldError` under the field | an `ErrorAlert` above the form |
+| A section that draws a read's failed, loading, empty and loaded states | the kit's `QueryState` (`combineQueries` for two reads, `stale="keep"` to keep a drawn page beside a later failure, `renderError` for a 404 said as "not found") | a hand-written ternary ladder, a forged `{ isPending, error, data }` |
+| A picker chip whose loading and failure show inside its popup | its `loading` and `failure` props — the chip stays on screen in every state, so it is not a `QueryState` site | a skeleton in the chip's place |
+| "Are you sure?" before something that cannot be undone | the kit's `ConfirmDialog` | a hand-built `Dialog` with its own Cancel |
+| A button whose request is in flight | `Button pending pendingLabel`; `pending` locks that button only, so a sibling that must wait (the other provider, Deny beside Allow) takes `disabled` | `disabled={isPending}` and a ternary label |
+| One "2 hours ago" line that has to keep moving | the kit's `RelativeTime`, which owns its tick | `useNow` in the row around it |
+| A list whose rows all show an age | one `useNow` in the list, `now` handed to the rows, the words from `formatAge` / `common.relative` — one tick per list, not one timer per row | a `RelativeTime` per row |
+| A success (when it earns one, below)  | the kit's `notifySuccess()`   | an `Alert`, an inline row, `toast.success()` directly |
 | Field validation                      | `Field` + `FieldError`        | either of the above                                   |
 | "Nothing here" / "still loading"      | `EmptyState`, `Skeleton`      | a centred paragraph                                   |
 | Picking one value out of a list the workspace grows | `ChipSelect` (searchable) | a `<select>` over the first page of an endpoint |
@@ -38,23 +46,49 @@ multi-line, so a grep for `export` misses most of them.
 | How hard the agent thinks | `EffortPicker` | a dropdown of five words |
 | What the agent may touch unattended | `PermissionMenu` | a toggle |
 | Switching between the console's lists (sessions, routines) | `Rail` | a second `Sidebar`, tabs |
-| Which repositories a project clones, and from which branch | `RepositoryRowList` | a `RepositorySelect` in a dialog, a table |
+| Which repositories are in a project | `RepositoryAddField` | a `RepositorySelect` in a dialog, a table of checkboxes |
+| What each of a project's repositories does in a new session, and from which branch | `RepositoryRowList` | a second `RepositoryAddField`, a table |
+| A fold inside a dialog or a step (Defaults, Inspect command and prompt) | `Disclosure` | a chevron button over a `useState`, Base UI's Collapsible directly |
+| Pairing a host: the copy buttons, the token line, the instruction, the status | the kit's `PairingChrome`, or its parts with `PairingInstruction` in its `panel` layout | two `CodeBlock`s, a `CodeBlock` alone, a second status row |
 | A menu row that opens a pane in place (Appearance, Move to project…) | `DropdownMenuPaneItem` + `DropdownMenuBack` | `DropdownMenuSub` for a two-level pick |
 | A note under a form, in any tone | `Callout` | `Alert`, a tinted `div` |
 | Views inside one page (Routines / Runs, categories, run status) | `PillTabs` with `count` | a tab strip, `SegmentedControl` |
 | How a routine page opens | `PageHeader` parts | a hand-built title row |
 | A labelled picker in the routine editor | `FieldSelect` | `ChipSelect`, a `<select>` |
+| Several labelled picks read as one card (the automation editor's Where it runs is one) | `FieldSelectGroup` + `FieldSelectRow` around a `FieldSelect variant="quiet"` | a stack of labelled `FieldSelect`s |
 | A trigger's variable parts | `InlineToken` in a `TokenSentence` | a form of pickers |
 | A time or weekday pick | `TimeGrid` in a popover | a `<select>` of hours |
 | Runs per day | `RunHistory` | a chart library |
 | The routines overview, the runs, the templates | `RoutineTable`, `RunsList`, `TemplateGrid` | a hand-built `<table>`, cards |
-| A page over the main column that fills a thing in steps (New project, Add a host) | `EditorPage` from the `_editor` layout route, then `PageHeader` parts + `RoutineSteps` | a `Dialog`, a `Card` of `Field`s, a hand-rolled scroll column |
+| The automations overview, the one page over the main column | `EditorPage` from its layout route (`routes/_authenticated/automations.tsx`), `EditorPageTop` for its tabs; inside Settings, `PageHeader` parts + `RoutineSteps` | a `Card` of `Field`s, a hand-rolled scroll column, a new layout route |
+| A form over the console (New project, Add a host, the automation editor) | a `Dialog` at its `form` or `lg` size, opened through `useConsoleDialog` (`apps/web/src/lib/console.ts`, over the kit's `createDialogSlot`) | a page under a layout route, a `useState` per surface, a width on the caller |
 | A settings page's rows | `SettingsGroup` + `SettingsRow` | a form of `Field`s in a `Card` |
 | A host on Settings | `HostCard` | a `Card`, a table row |
+| What an offline host is holding up, and its fix, on Settings | `HostCard`'s `offline` | an `Alert` under the card |
+| A session whose host went offline, reconnects or catches up | `Terminal hostLink={{ phase, host }}` with `HostLinkChrome` in the status bar's place (the banner; the notice form only if the product chose it) | an `Alert` or `ErrorAlert` above the terminal, a hand-built banner |
+| A command someone runs on their own machine to fix it | `CommandRow` in a `CommandRowList` | a `CodeBlock` per command, inline `<code>` in a sentence |
+| Attaching files by dropping them on a pane | `DropZone` | `dragenter` listeners in a feature |
+| Moving or reordering things by dragging (cards between columns, an entry to another day) | the drag layer: `DragProvider` with `SortableGroup` / `SortableItem` or `useDraggable` / `useDroppable` | `draggable` attributes, pointer listeners, dnd-kit imported in a feature |
+| Plan's tasks by status | `TaskBoard`, `TaskColumn`, `TaskCard`, `TaskSessionChip`, `TaskComposer`; `GoalCard` above | a `Card` grid, a table |
+| A month with things on its days | `MonthCalendar` (`CalendarEntry` per item) inside the page's `DragProvider` | a grid of `div`s, a calendar library |
+| Picking a day | `DatePicker` | `<input type="date">`, a `ChipSelect` of dates |
+| A page that opens on its own name with a line of counts | `PageHeaderRow size="display"` + `PageHeaderStat`s in `PageHeaderMeta indent={false}` | a hand-built `h1` and a paragraph |
+| The bar over a session's terminal | `SessionPaneHeader` (and `SessionPaneBack` from a task) | a row of spans over the `Terminal` |
+| A choice that exists but cannot be picked now (an offline host) | a `disabled` `ChipSelect` option whose `description` says why | hiding it, an error after the pick |
 
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, and empty and loading states in five while `EmptyState` was used by
 one.
+
+## A success toasts when the reader could miss it
+
+A failure stays inline, next to what the reader has to fix. A success toasts,
+through the kit's `notifySuccess('<toasts key>', values)`, only when its result
+is not where the reader is looking: out of sight, off the page, or easy to miss
+in a long list. When the screen navigates to the result, shows a "done" view,
+or changes the very control that was pressed, it says nothing more. A form
+whose save row already says "Saved" beside the button keeps that and does not
+also toast.
 
 ## A picker over a list the workspace grows is an autocomplete
 
@@ -92,11 +126,12 @@ card scroll instead; the two breakpoints are complements, leave them so.
 
 ## A list's query lives in the URL
 
-No console screen pages, searches or filters a long list yet. When the first
-one does, these hold:
+The runs list is the worked example (`features/automations/lib/runs-search.ts`,
+`hooks/use-runs-filters.ts`):
 
-- Search, filters, sort and page live in the URL (nuqs), never in
-  `useState`, and the list resets to page one when it narrows.
+- Search, filters, sort and page live in the URL, as the route's search schema
+  (the `/tanstack-routing` skill), never in `useState`; the list resets to page
+  one when it narrows, and a default is no key.
 - **Search and facets are the server's job.** Send the query and the facet
   ids in the request; never filter one page in the browser to answer a
   search box. A search matches everything the row shows: widen the endpoint
@@ -105,9 +140,8 @@ one does, these hold:
   and hands the list the settled value; nothing else debounces, and a live
   value never reaches the rows (the render rules in
   [`frontend-architecture.md`](./frontend-architecture.md)).
-- A route with `validateSearch` must carry unknown keys through, or it
-  deletes what the list wrote on the next navigation. `/login` does, and says
-  so in its own comment.
+- Every route that shows the list declares its schema; a key a route does
+  not name is dropped, so a filter lives on the routes that draw it.
 
 Build those pieces in the feature that needs them and promote them to the kit
 when a second list does.
@@ -116,7 +150,7 @@ when a second list does.
 
 A row in `apps/web/src/lib/nav.ts` that needs a permission takes its `policies`
 from `ENDPOINT_POLICIES` in `@oppenheimer/shared/permissions`, keyed by the endpoint
-the screen reads — `policies: ENDPOINT_POLICIES['/tokens']`. Never a literal
+the screen reads — `policies: ENDPOINT_POLICIES['GET /tokens']`. Never a literal
 `[{ action, subject }]`: that is a second copy of a rule the server already
 owns, and `apps/api/src/auth/__tests__/endpoint-policies.spec.ts` holds the
 controller to the catalog entry, not to your copy. Why: a row declared
@@ -129,10 +163,7 @@ look one up in — the nav row names the endpoint directly. Today both
 `apps/web` rows are ungated (`policies: []`), so the first gated row is still
 to be written.
 
-A screen the product picks for the reader (the dashboard `/` redirects to)
-checks its own policies through `useLandingRoute` and answers `null` rather
-than bouncing between errors. An org-less account goes to `/onboarding` from
-the `_authenticated` layout.
+An org-less account goes to `/onboarding` from the `_authenticated` layout.
 
 ## One colour vocabulary: the brand primitives
 
@@ -170,7 +201,10 @@ Biome owns correctness; oxlint's own categories are off.
 Rules sit at `warn` while inherited findings are worked off. Promote a rule to
 `error` in `oxlint.design.json` once its count reaches zero; never lower one
 back to `warn` to land a change. Known false positive before promoting
-`no-raw-colors`: `shadow-panel` is read as a colour.
+`no-raw-colors`: `shadow-panel` is read as a colour. The linter's grammar reads every font
+size the theme adds (`text-operate`, `text-h2`, `text-micro`…) as a colour
+too; those are an `allow` list on `no-raw-colors` in `oxlint.design.json`,
+kept in step with `FONT_SIZES` in the design system's `cn()`.
 
 ## The design system is its folder
 

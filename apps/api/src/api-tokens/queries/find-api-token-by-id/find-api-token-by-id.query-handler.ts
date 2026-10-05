@@ -18,11 +18,11 @@ export class FindApiTokenByIdQueryHandler
 
   async execute(query: FindApiTokenByIdQuery): Promise<ApiTokenEntity> {
     const found = await this.apiTokens.findOneById(query.tokenId);
-    // A token belonging to someone else is reported as missing rather than
-    // forbidden, so token ids cannot be probed for existence.
     if (found.isNone()) throw new AppError(ApiTokenErrors.NOT_FOUND);
 
     const token = found.unwrap();
+    // A token belonging to someone else is reported as missing rather than
+    // forbidden, so token ids cannot be probed for existence.
     if (token.userId !== query.userId) throw new AppError(ApiTokenErrors.NOT_FOUND);
 
     return token;

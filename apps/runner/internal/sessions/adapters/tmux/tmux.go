@@ -22,12 +22,24 @@ import (
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/execx"
 )
 
 var _ app.Terminals = (*Server)(nil)
 
 // commandTimeout bounds a control command. Attaching is not one of these.
 const commandTimeout = 10 * time.Second
+
+// launchCols and launchRows are the grid a session starts on, before any
+// browser has attached and said how wide it really is: a laptop-width
+// console. An agent lays its turn out for the size it is told, and tmux's
+// detached 80x24 made a session nobody had opened yet (every automation's)
+// reflow into the console's ~130 columns with wrapped tables and broken box
+// drawing.
+const (
+	launchCols = 132
+	launchRows = 40
+)
 
 // Server is the runner's tmux server.
 type Server struct {
@@ -52,13 +64,10 @@ type Options struct {
 // its own chrome), mouse on, a large scrollback, and no prefix key, because
 // every keystroke in the browser belongs to the program in the terminal.
 //
-// `window-size latest` is what makes a browser's viewport the one that counts.
-// tmux sizes a window to fit *every* attached client, so one client left on
-// the 80x24 a detached session starts at pins the window there however wide
-// the reader's pane is — and the agent, which lays its turn out to the size it
-// is told, draws an 80-column block with its prompt on row 21 of 24 while the
-// browser shows a grid half as tall again. `latest` hands the window to
-// whoever resized last, which is the person actually looking at it.
+// `window-size latest` makes a browser's viewport the one that counts: tmux
+// otherwise fits a window to *every* attached client, so one left at a
+// detached session's 80x24 pins the agent's layout there however large the
+// reader's pane is. `latest` hands the window to whoever resized last.
 const Config = `set -g status off
 set -g mouse on
 set -g history-limit 50000
@@ -102,13 +111,10 @@ func (s *Server) Available(ctx context.Context) error {
 // args prefixes every invocation with the socket and the config.
 //
 // `-u` tells tmux the terminal is UTF-8 rather than letting it infer that from
-// the locale. A service has no locale to infer from: launchd passes neither
-// LANG nor LC_ALL, and a tmux client that cannot prove UTF-8 replaces every
-// non-ASCII character it writes with `_`. The pane keeps the real bytes — it
-// is the client that downgrades — so a session looked right in `capture-pane`
-// and arrived in the browser with an underscore where each agent's turn
-// marker, spinner and prompt chevron should be. The unit carries a UTF-8
-// locale as well, and this does not depend on it having one.
+// the locale, which a service lacks: launchd passes neither LANG nor LC_ALL,
+// and a tmux client that cannot prove UTF-8 writes every non-ASCII character
+// as `_`. The pane keeps the real bytes, so `capture-pane` looks right while
+// the attached browser does not. The unit's UTF-8 locale is not relied on.
 func (s *Server) args(rest ...string) []string {
 	args := []string{"-u", "-L", s.socket}
 	if s.config != "" {
@@ -117,12 +123,17 @@ func (s *Server) args(rest ...string) []string {
 	return append(args, rest...)
 }
 
+// run is one control command. It is not run in a process group of its own:
+// the first command starts the tmux server, which must outlive it, and a
+// group kill on a timeout would take the server and every session with it.
 func (s *Server) run(ctx context.Context, args ...string) (string, error) {
-	ctx, cancel := context.WithTimeout(ctx, commandTimeout)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, s.binary, s.args(args...)...) //nolint:gosec // the binary is looked up from PATH and the arguments are built here
-	out, err := cmd.CombinedOutput()
-	return strings.TrimRight(string(out), "\n"), err
+	res, err := execx.Run(ctx, execx.Spec{
+		Name:    s.binary,
+		Args:    s.args(args...),
+		Timeout: commandTimeout,
+		Output:  execx.Combined,
+	})
+	return res.Out, execx.Cause(err)
 }
 
 func (s *Server) command(ctx context.Context, args ...string) (string, error) {
@@ -138,7 +149,10 @@ func (s *Server) command(ctx context.Context, args ...string) (string, error) {
 // when command is empty. The environment is set on the session, so every
 // window opened later inherits it.
 func (s *Server) Create(ctx context.Context, name, dir, command string, env map[string]string) error {
-	args := []string{"new-session", "-d", "-s", name, "-c", dir}
+	args := []string{
+		"new-session", "-d", "-s", name, "-c", dir,
+		"-x", strconv.Itoa(launchCols), "-y", strconv.Itoa(launchRows),
+	}
 	for key, value := range env {
 		args = append(args, "-e", key+"="+value)
 	}
@@ -216,17 +230,62 @@ func (s *Server) Has(ctx context.Context, name string) (bool, error) {
 // get at it — `capture-pane` returns the grid, and the title was never part
 // of the grid.
 func (s *Server) Capture(ctx context.Context, target string) (app.Screen, error) {
-	body, err := s.command(ctx, "capture-pane", "-p", "-t", target)
+	body, err := s.CaptureBody(ctx, target)
 	if err != nil {
 		return app.Screen{}, err
 	}
 	title, err := s.command(ctx, "display-message", "-p", "-t", target, "#{pane_title}")
 	if err != nil {
-		// A pane that will not report its title is not a reason to lose the
-		// screen we already have.
 		return app.Screen{Body: body}, nil //nolint:nilerr // the body is still worth classifying
 	}
 	return app.Screen{Body: body, Title: strings.TrimSpace(title)}, nil
+}
+
+// CaptureBody returns a pane's visible text alone: `capture-pane`, without
+// the `display-message` that Capture adds for the title.
+func (s *Server) CaptureBody(ctx context.Context, target string) (string, error) {
+	return s.command(ctx, "capture-pane", "-p", "-t", target)
+}
+
+// paneFormat is one line per pane. The title comes last because it is the
+// one field a program chooses: it may hold spaces, or even a tab, and as the
+// last of a bounded split it arrives whole.
+const paneFormat = "#{session_name}\t#{window_index}\t#{pane_index}\t#{pane_active}\t#{pane_title}"
+
+// Panes lists every pane on the server in one `list-panes -a`: which
+// sessions still exist and the title each program set, for every session at
+// once. No server at all is an empty list, as in List.
+func (s *Server) Panes(ctx context.Context) ([]app.Pane, error) {
+	out, err := s.run(ctx, "list-panes", "-a", "-F", paneFormat)
+	if err != nil {
+		if noServer(out) {
+			return nil, nil
+		}
+		return nil, domain.ErrTmuxCommand.WithDetail("tmux list-panes: %s", firstLine(out, err)).WithCause(err)
+	}
+	return parsePanes(out), nil
+}
+
+// parsePanes reads list-panes output in paneFormat. Lines it cannot read are
+// skipped rather than failing the listing.
+func parsePanes(out string) []app.Pane {
+	var panes []app.Pane
+	for _, line := range strings.Split(out, "\n") {
+		fields := strings.SplitN(line, "\t", 5)
+		if len(fields) != 5 || fields[0] == "" {
+			continue
+		}
+		window, werr := strconv.Atoi(fields[1])
+		pane, perr := strconv.Atoi(fields[2])
+		if werr != nil || perr != nil {
+			continue
+		}
+		panes = append(panes, app.Pane{
+			Session: fields[0], Window: window, Pane: pane,
+			Active: fields[3] == "1", Title: strings.TrimSpace(fields[4]),
+		})
+	}
+	return panes
 }
 
 // Windows lists a session's windows, marking window 0 as the agent's.
@@ -259,6 +318,20 @@ func (s *Server) SendKeys(ctx context.Context, target, keys string) error {
 	return err
 }
 
+// Launch replaces the shell a window was made with by command, in dir.
+// `respawn-pane -k` makes the program the pane's own process, as `exec` would,
+// on a fresh screen: no line is typed for it, and neither the shell's prompt
+// nor its scrollback survives. The command runs with the session's
+// environment, under the runner's PATH rather than a login shell's.
+func (s *Server) Launch(ctx context.Context, target, dir, command string) error {
+	args := []string{"respawn-pane", "-k", "-t", target, "-c", dir}
+	if command != "" {
+		args = append(args, command)
+	}
+	_, err := s.command(ctx, args...)
+	return err
+}
+
 // Paste puts text into a window through a tmux buffer. `-p` makes it a
 // bracketed paste when the program asked for one, which is what lets an
 // agent tell a pasted path from typed keys and take the file it names. The
@@ -281,7 +354,7 @@ func (s *Server) Paste(ctx context.Context, target, id, text string) error {
 // and a session ending.
 func (s *Server) Attach(ctx context.Context, target string, size app.Size) (app.Attachment, error) {
 	// -d would detach other clients; several devices may watch one window.
-	cmd := exec.CommandContext(ctx, s.binary, s.args("attach-session", "-t", target)...) //nolint:gosec // same as run: fixed binary, arguments built here
+	cmd := exec.CommandContext(ctx, s.binary, s.args("attach-session", "-t", target)...) //nolint:gosec // fixed binary, arguments built here
 	cmd.Env = append(os.Environ(), "TERM=xterm-256color")
 	file, err := pty.StartWithSize(cmd, &pty.Winsize{Cols: size.Cols, Rows: size.Rows})
 	if err != nil {

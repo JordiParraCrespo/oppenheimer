@@ -1,12 +1,6 @@
 import type { ProblemDetails } from '@oppenheimer/shared';
 
-/**
- * Local twin of `@oppenheimer/shared`'s `isProblemDetails`.
- *
- * `apps/web` may only import *types* from `@oppenheimer/shared` — Rollup cannot
- * tree-shake that package's CJS build — so this module keeps to `import type`
- * and carries the one runtime check it needs.
- */
+/** Local twin of `@oppenheimer/shared`'s `isProblemDetails`. */
 function isProblemDetails(value: unknown): value is ProblemDetails {
   if (typeof value !== 'object' || value === null) return false;
   const candidate = value as Record<string, unknown>;
@@ -30,7 +24,7 @@ export interface AppErrorOptions {
  * A failure surfaced to the presentation layer.
  *
  * When the API is the source, the error keeps its RFC 7807 problem document so
- * a screen can show the server's `detail`, highlight the fields listed in
+ * a screen can translate its `code`, highlight the fields listed in
  * `invalidParams`, and quote the `correlationId` in a bug report — instead of
  * a generic "Failed to fetch users".
  */
@@ -49,12 +43,10 @@ export class AppError extends Error {
     this.name = 'AppError';
   }
 
-  /** Correlation id to quote when reporting the failure. */
   get correlationId(): string | undefined {
     return this.problem?.correlationId;
   }
 
-  /** Field-level validation failures, keyed by field name. */
   get fieldErrors(): Record<string, string> {
     const entries = this.problem?.invalidParams?.map((param) => [param.name, param.reason]) ?? [];
     return Object.fromEntries(entries);
@@ -62,16 +54,13 @@ export class AppError extends Error {
 }
 
 /**
- * Normalises anything thrown by a repository call into an {@link AppError}.
+ * {@link unwrap} hands a generated SDK call's failure over as
+ * `{ status, body }`; when the body is a problem document, the server's
+ * explanation wins over the caller's fallback.
  *
- * The generated api-client throws its own `ApiError` with the parsed response
- * on `body`; when that body is a problem document the server's own explanation
- * wins over the caller's generic fallback.
- *
- * Not every failure arrives that way. Better Auth's client rejects through
- * `@oppenheimer/auth`'s `AuthRequestError`, which carries a `status` and its own
- * `code` but no problem document — so both are read off the error directly when
- * there is none. `status` is what distinguishes a failure the server answered
+ * Better Auth's client rejects through `@oppenheimer/auth`'s `AuthRequestError`
+ * instead, with a `status` and `code` but no problem document, so both are read
+ * off the error directly. `status` distinguishes a failure the server answered
  * from one that never reached it.
  */
 export function toAppError(error: unknown, fallback: ErrorDefinition): AppError {
@@ -98,10 +87,68 @@ export function toAppError(error: unknown, fallback: ErrorDefinition): AppError 
     });
   }
 
-  const code = typeof candidate?.code === 'string' ? candidate.code : undefined;
+  // Better Auth answers with `{ code, message }` rather than a problem
+  // document; its code is still the one thing the resolver can translate.
+  const bodyCode = (body as { code?: unknown } | undefined)?.code;
+  const code =
+    typeof candidate?.code === 'string'
+      ? candidate.code
+      : typeof bodyCode === 'string'
+        ? bodyCode
+        : undefined;
 
   return new AppError(code ? { ...fallback, code } : fallback, {
     status: candidate?.status,
     cause: error,
   });
+}
+
+/** What a generated hey-api SDK call resolves to: it never throws. */
+export interface SdkResult<T> {
+  data?: T;
+  error?: unknown;
+  response?: Response;
+}
+
+/**
+ * A generated SDK call's answer, unwrapped: the body, or the failure as an
+ * {@link AppError} built on `fallback` that keeps the problem document the API
+ * sent and the response's status.
+ *
+ * Throwing `new AppError(fallback)` instead drops both, and a failure with no
+ * status reads to the error resolver as a request that never reached the
+ * server — so every refusal the API explains ("that host is offline") would
+ * render as "check your connection". A network failure has no response, and so
+ * keeps no status, which is the one case that sentence is right for.
+ */
+export async function unwrap<T>(
+  call: Promise<SdkResult<T>> | SdkResult<T>,
+  fallback: ErrorDefinition,
+): Promise<T> {
+  const { data, error, response } = await call;
+  if (error !== undefined) throw toAppError({ status: response?.status, body: error }, fallback);
+  return data as T;
+}
+
+/**
+ * {@link unwrap}, for a call whose success is a body. An empty one is a failed
+ * read, not an empty result: returning `[]` or `{}` would render "nothing here"
+ * over a request that never succeeded.
+ *
+ * `isComplete` states what else the body must hold — a paginated envelope's
+ * `data`, say — so a repository does not check it again and throw a second,
+ * status-less error of its own. Either way the failure keeps the response's
+ * status: the server answered, so it is not "could not reach the server".
+ */
+export async function unwrapBody<T>(
+  call: Promise<SdkResult<T>> | SdkResult<T>,
+  fallback: ErrorDefinition,
+  isComplete: (body: NonNullable<T>) => boolean = () => true,
+): Promise<NonNullable<T>> {
+  const { data, error, response } = await call;
+  if (error !== undefined) throw toAppError({ status: response?.status, body: error }, fallback);
+  if (data === undefined || data === null || !isComplete(data as NonNullable<T>)) {
+    throw new AppError(fallback, { status: response?.status });
+  }
+  return data as NonNullable<T>;
 }

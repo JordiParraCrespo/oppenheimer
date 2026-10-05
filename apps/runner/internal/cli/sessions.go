@@ -42,12 +42,21 @@ func (a *App) CreateSession(ctx context.Context, out io.Writer, opts CreateSessi
 	p.printf("branch   %s from %s\n", session.Branch, session.BaseBranch)
 	p.printf("worktree %s\n", session.Worktree)
 	p.printf("attach   %s sessions attach %s\n", binaryName(), session.ID)
+	// The next create's worktree is being checked out now; a process that
+	// exits under it leaves half a spare for the next one to throw away.
+	if a.Worktrees != nil {
+		a.Worktrees.Wait()
+	}
 	return p.err
 }
 
 // ListSessions prints what this host is running.
 func (a *App) ListSessions(ctx context.Context, out io.Writer) error {
-	sessions := a.Sessions.List()
+	// Refresh live sessions so the state is what the screen says now, not
+	// what it said when the runner last looked. A failed pass still returns
+	// the recorded list, and a listing that could not ask tmux is better than
+	// none.
+	sessions, _ := a.Sessions.RefreshAll(ctx)
 	if len(sessions) == 0 {
 		p := newPrinter(out)
 		p.println("no sessions on this host")
@@ -57,13 +66,6 @@ func (a *App) ListSessions(ctx context.Context, out io.Writer) error {
 	p := newPrinter(tw)
 	p.printf("ID\tSTATE\tAGENT\tREPO\tBRANCH\tWINDOWS\tAGE\n")
 	for _, session := range sessions {
-		// Refresh live sessions so the state is what the screen says now,
-		// not what it said when the runner last looked.
-		if session.State.Live() {
-			if refreshed, err := a.Sessions.Refresh(ctx, session.ID); err == nil {
-				session = refreshed
-			}
-		}
 		p.printf("%s\t%s\t%s\t%s\t%s\t%d\t%s\n", session.ID, session.State, session.Agent,
 			session.Repo, session.Branch, len(session.Windows), age(session.Created))
 	}
@@ -73,7 +75,7 @@ func (a *App) ListSessions(ctx context.Context, out io.Writer) error {
 	if err := tw.Flush(); err != nil {
 		return err
 	}
-	for _, session := range a.Sessions.List() {
+	for _, session := range sessions {
 		if session.LoginURL != "" {
 			if _, err := fmt.Fprintf(out, "\n%s is waiting for a login: %s\n", session.ID, session.LoginURL); err != nil {
 				return err

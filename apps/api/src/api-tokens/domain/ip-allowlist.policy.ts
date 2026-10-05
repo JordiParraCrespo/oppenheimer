@@ -1,8 +1,6 @@
 /**
  * Source-IP allowlist matching for API tokens. Entries are plain addresses
  * (`203.0.113.7`, `2001:db8::1`) or CIDR blocks (`203.0.113.0/24`).
- *
- * Pure functions with no dependencies — the domain layer owns this rule.
  */
 
 /** Parse an IPv4 address into its four octets, or `null` if malformed. */
@@ -60,8 +58,19 @@ function parseIPv6(address: string): number[] | null {
   return groups.flatMap((group) => [(group >> 8) & 0xff, group & 0xff]);
 }
 
+/** The four bytes of an IPv4-mapped IPv6 address (`::ffff:203.0.113.7`), else null. */
+function mappedIPv4(address: string): number[] | null {
+  const mapped = /^::ffff:(.+)$/i.exec(address);
+  return mapped ? parseIPv4(mapped[1]) : null;
+}
+
+/** The sixteen bytes of `::ffff:a.b.c.d` for an IPv4 address's four. */
+function mappedIPv6(ipv4: number[]): number[] {
+  return [...new Array(10).fill(0), 0xff, 0xff, ...ipv4];
+}
+
 /**
- * Normalize any address to its byte form. IPv4 and IPv4-mapped IPv6
+ * Normalize an address to its byte form. IPv4 and IPv4-mapped IPv6
  * (`::ffff:203.0.113.7`, which is what a dual-stack Node server reports for an
  * IPv4 client) both collapse to four bytes, so an IPv4 rule matches either.
  */
@@ -69,45 +78,70 @@ function toBytes(address: string): number[] | null {
   const trimmed = address.trim();
   if (!trimmed) return null;
 
-  const mapped = /^::ffff:(.+)$/i.exec(trimmed);
-  if (mapped) {
-    const ipv4 = parseIPv4(mapped[1]);
-    if (ipv4) return ipv4;
-  }
-
+  const ipv4 = mappedIPv4(trimmed);
+  if (ipv4) return ipv4;
   if (trimmed.includes(':')) return parseIPv6(trimmed);
   return parseIPv4(trimmed);
 }
 
-/** Does `address` fall inside the single allowlist `entry`? */
-export function matchesIpRule(entry: string, address: string): boolean {
+/**
+ * Read one allowlist entry once, as network bytes and a prefix length in bits
+ * of those bytes. A mapped network (`::ffff:203.0.113.0/120`) counts its prefix
+ * in 128 bits: from /96 it is the IPv4 rule with 96 fewer bits; shorter, it
+ * reaches past the mapped range and stays sixteen bytes.
+ */
+function parseRule(entry: string): { bytes: number[]; bits: number } | null {
   const segments = entry.trim().split('/');
   // A rule is `address` or `address/prefix` — anything else is malformed and
   // must not be silently reinterpreted as a wider block.
-  if (segments.length > 2) return false;
+  if (segments.length > 2) return null;
 
   const [network, prefix] = segments;
-  const networkBytes = toBytes(network);
-  const addressBytes = toBytes(address);
+  const requested = prefix === undefined ? undefined : Number(prefix);
+  if (requested !== undefined && !Number.isInteger(requested)) return null;
 
-  if (!networkBytes || !addressBytes) return false;
-  // Never compare an IPv4 rule against IPv6 bytes (or vice versa).
-  if (networkBytes.length !== addressBytes.length) return false;
+  let bytes: number[] | null;
+  let bits = requested;
+  const ipv4 = mappedIPv4(network.trim());
+  if (ipv4) {
+    if (bits === undefined) bytes = ipv4;
+    else if (bits >= 96) {
+      bytes = ipv4;
+      bits -= 96;
+    } else bytes = mappedIPv6(ipv4);
+  } else {
+    bytes = toBytes(network);
+  }
+  if (!bytes) return null;
 
-  const totalBits = networkBytes.length * 8;
-  const bits = prefix === undefined ? totalBits : Number(prefix);
-  if (!Number.isInteger(bits) || bits < 0 || bits > totalBits) return false;
+  bits ??= bytes.length * 8;
+  if (bits < 0 || bits > bytes.length * 8) return null;
+  return { bytes, bits };
+}
 
-  const wholeBytes = Math.floor(bits / 8);
+/** Does `address` fall inside the single allowlist `entry`? */
+export function matchesIpRule(entry: string, address: string): boolean {
+  const rule = parseRule(entry);
+  let addressBytes = toBytes(address);
+  if (!rule || !addressBytes) return false;
+
+  // A rule kept at sixteen bytes holds an IPv4 client as its mapped address.
+  if (rule.bytes.length === 16 && addressBytes.length === 4) {
+    addressBytes = mappedIPv6(addressBytes);
+  }
+  // Never compare an IPv4 rule against IPv6 bytes.
+  if (rule.bytes.length !== addressBytes.length) return false;
+
+  const wholeBytes = Math.floor(rule.bits / 8);
   for (let index = 0; index < wholeBytes; index += 1) {
-    if (networkBytes[index] !== addressBytes[index]) return false;
+    if (rule.bytes[index] !== addressBytes[index]) return false;
   }
 
-  const remainder = bits % 8;
+  const remainder = rule.bits % 8;
   if (remainder === 0) return true;
 
   const mask = 0xff << (8 - remainder);
-  return (networkBytes[wholeBytes] & mask) === (addressBytes[wholeBytes] & mask);
+  return (rule.bytes[wholeBytes] & mask) === (addressBytes[wholeBytes] & mask);
 }
 
 /**

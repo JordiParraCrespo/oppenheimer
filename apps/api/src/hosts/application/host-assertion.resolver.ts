@@ -2,15 +2,18 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
+import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
+import { CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
 import type { HostRepositoryPort } from '../database/host.repository.port';
 import { HostErrors } from '../domain/hosts.errors';
-import { HOST_REPOSITORY } from '../hosts.di-tokens';
+import { HOST_REPOSITORY, LEGACY_REPLAY_MARKER } from '../hosts.di-tokens';
 import {
   assertionIsSignedBy,
   type DecodedHostAssertion,
   decodeHostAssertion,
   looksLikeHostAssertion,
 } from '../infrastructure/host-assertion.util';
+import type { LegacyReplayMarkerPort } from '../infrastructure/legacy-replay-marker.port';
 import type { HostAssertionPort, HostPrincipalIdentity } from './host-assertion.port';
 
 /**
@@ -24,31 +27,27 @@ import type { HostAssertionPort, HostPrincipalIdentity } from './host-assertion.
  */
 const MAX_LIFETIME_SECONDS = 5 * 60;
 
-/** Clock skew tolerated on the expiry, in seconds. */
 const CLOCK_SKEW_SECONDS = 30;
 
 /** Namespace of the burned-`jti` markers in Redis. */
 const REPLAY_KEY_PREFIX = 'host-assertion:jti';
 
 /**
- * Verifies a runner's boot assertion.
+ * Four things about the token must hold, and any failure produces one answer:
  *
- * Four things have to hold, and a failure of any of them produces one answer:
- *
- * 1. it is a compact EdDSA JWS whose `iss` and `sub` are the same host id — the
- *    runner issues its own credential, so anything else is a different scheme;
- * 2. the audience is this control plane, so an assertion minted for another
- *    deployment cannot be replayed here;
- * 3. it has not expired, was not issued in the future, and was minted with no
- *    more life than a boot token has — the claimed lifetime, not just what is
- *    left of it;
+ * 1. a compact EdDSA JWS, signed by the key its host registered, whose `iss` and
+ *    `sub` are the same host id (the runner issues its own credential; anything
+ *    else is a different scheme);
+ * 2. the audience is this control plane, so another deployment's assertion cannot
+ *    be replayed here;
+ * 3. not expired, not issued in the future, and minted with no more life than a
+ *    boot token has (the claimed lifetime, not just what is left of it);
  * 4. its `jti` has not been seen before.
  *
- * The fourth is why this is not a pure function. A captured assertion cannot
- * *read* anything — job payloads are sealed to the host's key — but it could open
- * a link and inject events into a session's log, which is the source of truth.
- * One atomic set-if-absent, with the token's own remaining lifetime as the TTL,
- * closes that.
+ * The fourth makes this impure. Only the installation token on `credentials.grant` is
+ * sealed to the host's key; a captured assertion could still open a link as that host
+ * and inject events into a session's log, the source of truth. One atomic
+ * set-if-absent, with the token's remaining lifetime as TTL, closes that.
  */
 @Injectable()
 export class HostAssertionResolver implements HostAssertionPort {
@@ -57,6 +56,10 @@ export class HostAssertionResolver implements HostAssertionPort {
     private readonly hosts: HostRepositoryPort,
     private readonly cache: CacheService,
     private readonly configService: ConfigService,
+    @Inject(CREDENTIAL_OWNER)
+    private readonly owners: CredentialOwnerPort,
+    @Inject(LEGACY_REPLAY_MARKER)
+    private readonly legacyMarkers: LegacyReplayMarkerPort,
   ) {}
 
   recognises(bearer: string): boolean {
@@ -79,11 +82,14 @@ export class HostAssertionResolver implements HostAssertionPort {
     if (found.isNone()) throw this.rejected('no such host');
 
     const host = found.unwrap();
-    // One key, because nothing can rotate one yet. The verifier takes a list so
-    // that the retired key joins it, and nothing else changes, when the link can
-    // carry a rotation (09 §3).
+    // One key until the link can carry a rotation (09 §3).
     if (!assertionIsSignedBy(decoded, [host.publicKey])) {
       throw this.rejected('not signed by this host');
+    }
+    // The owner's standing is read per dial, never cached, so lifting a ban
+    // lets the runner's next dial through.
+    if (!(await this.owners.findActiveOwner(host.ownerUserId))) {
+      throw this.rejected('the owner may not act');
     }
 
     await this.burn(hostId, jti, expiresAt, now);
@@ -114,11 +120,11 @@ export class HostAssertionResolver implements HostAssertionPort {
     const secondsLeft = (expiresAt.getTime() - now.getTime()) / 1000;
     if (secondsLeft <= -CLOCK_SKEW_SECONDS) throw this.rejected('expired');
 
-    // **Claimed life, not remaining life.** The protocol says a boot token is
-    // minted with a five-minute expiry, so a token issued last week with four
-    // minutes left on it was not minted as one — and capping only what is left
-    // would accept it. Both bounds matter: the first is what the token says about
-    // itself, the second is what the replay window below is sized against.
+    // **Claimed life, not remaining life.** A token issued last week with four
+    // minutes left on it was not minted as a boot token, and capping only what
+    // is left would accept it. Both bounds matter: the first is what the token
+    // says about itself, the second is what the replay window below is sized
+    // against.
     const claimedLifetime = (expiresAt.getTime() - issuedAt.getTime()) / 1000;
     if (claimedLifetime > MAX_LIFETIME_SECONDS + CLOCK_SKEW_SECONDS) {
       throw this.rejected('minted with a longer life than a boot token');
@@ -154,8 +160,14 @@ export class HostAssertionResolver implements HostAssertionPort {
    * Claim the `jti` for the rest of the token's life. Losing the race means the
    * assertion has already been used, which is a replay whether or not the first
    * use was legitimate.
+   *
+   * TODO(remove after #162 has been live once): a marker written before the
+   * cache prefixed its keys is invisible to `setIfAbsent`, so an assertion used
+   * in the five and a half minutes before that deploy could otherwise be used
+   * once more after it. See `LegacyReplayMarkerPort`.
    */
   private async burn(hostId: string, jti: string, expiresAt: Date, now: Date): Promise<void> {
+    if (await this.legacyMarkers.isBurned(hostId, jti)) throw this.rejected('already used');
     const ttlSeconds = Math.max(
       1,
       Math.ceil((expiresAt.getTime() - now.getTime()) / 1000) + CLOCK_SKEW_SECONDS,
@@ -172,11 +184,7 @@ export class HostAssertionResolver implements HostAssertionPort {
     return (this.configService.get<string>('hosts.controlPlaneUrl') ?? '').replace(/\/+$/, '');
   }
 
-  /**
-   * One problem document for every failure. The reason is a `detail` for the
-   * operator reading a log, never a branch a caller can take: telling a caller
-   * which check refused it is telling them what to change.
-   */
+  /** The reason is a `detail` for an operator's log, never a branch a caller can take. */
   private rejected(reason: string): AppError {
     return new AppError(HostErrors.ASSERTION_REJECTED, { detail: reason });
   }

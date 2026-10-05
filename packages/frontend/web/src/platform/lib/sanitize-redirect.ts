@@ -1,17 +1,14 @@
 /**
  * Accepts only a path on this origin.
  *
- * The value arrives in the URL, so anyone can put anything in it. A
- * protocol-relative (`//evil.example`) or absolute (`https://evil.example`)
- * value would send someone who just typed their password — or who is already
- * signed in and merely opened the link — to another site that looks like a
- * login screen. So anything that is not a single-slash path is dropped rather
- * than sanitised; a same-origin path keeps its search string.
+ * The value arrives in the URL, so anyone can set it. A protocol-relative
+ * (`//evil.example`) or absolute value would send someone who just signed in,
+ * or merely opened the link while signed in, to a lookalike login screen. So
+ * anything but a single-slash path is dropped, not sanitised; a same-origin
+ * path keeps its search string.
  *
- * Shared by the login route (where the reader signs in and is sent on) and the
- * `_auth` layout (where an already-authenticated reader is sent on at once):
- * the two used to check different things, which is exactly how an open
- * redirect gets in.
+ * Shared by the login search schema and `redirectSignedIn`: two different
+ * checks is how an open redirect gets in.
  */
 export function sanitizeRedirect(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;

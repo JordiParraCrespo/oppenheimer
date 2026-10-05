@@ -77,11 +77,12 @@ version `1`), so the paths below carry that prefix and the runner's
 
 ## The `github/` module, as built
 
-The installations half of the control plane, implemented. Six routes, one
+The installations half of the control plane, implemented. Seven routes, one
 table, and one port for the slices that follow.
 
 ```
 GET    /api/v1/installations                                            read Installation    repositories:read
+POST   /api/v1/installations/install-state                              create Installation  repositories:write
 POST   /api/v1/installations                                            create Installation  repositories:write
 DELETE /api/v1/installations/{id}                                       delete Installation  repositories:write
 GET    /api/v1/installations/{id}/repositories                          read Installation    repositories:read
@@ -96,6 +97,17 @@ and `deletedAt`. There is no repository table. The picker asks GitHub
 through the installation's own token (one Redis key per installation, a
 minute), branches are read live, and a repository is remembered only by the
 checkout that took it.
+
+**The install redirect must carry a state this console minted.** The
+redirect's OAuth `code` proves which GitHub account can see an installation,
+not which console user's browser posts it, so a callback someone stopped
+halfway through their own install would connect their installation to
+whoever opened it. `POST /installations/install-state` mints a single-use
+state bound to the caller and the workspace (a Redis key, fifteen minutes)
+and answers the App's install URL carrying it; `POST /installations`
+requires it back and spends it before GitHub is called. Missing, expired,
+reused and someone else's are one refusal, `GITHUB_011`. The console mints
+on click, never on render.
 
 **A claim is something a workspace holds, not something it once touched.**
 `githubInstallationId` is unique among live rows only, so a disconnected or
@@ -204,13 +216,38 @@ a host comes back as a `host_offline` hint on the response, not as a second
 entry from a second writer.
 
 **Creating a session sets how it is launched, and what it is for.**
-`POST /sessions` takes the host, the agent, the checkouts and an optional
-name, plus two fields the composer's foot row and text area set:
+`POST /sessions` takes the host, the agent, the checkouts (exactly one in
+the MVP, 10) and an optional name, plus two fields the composer's foot row and text area set:
 
 ```ts
-launch?: { model?: string, permission?: 'ask' | 'auto' | 'full', effort?: Effort }
+launch?: { model?: string, permission?: 'ask' | 'auto' | 'full', effort?: SessionEffort }  // effort: a level the model offers (01)
 prompt?: string                         // ≤ 2 KB of UTF-8, the cap 02 §7 already states
 ```
+
+A third field names the files attached to the task:
+
+```ts
+attachmentIds?: string[]                // ≤ 5, only with a prompt, each once
+```
+
+Each is uploaded first with `POST /sessions/attachments`, which judges the
+bytes (a PNG, JPEG, GIF or WebP of at most 5 MB, whatever the browser
+called it; since 2026-10-04 also a PDF, or UTF-8 text with no control
+bytes that opens neither with `#!` nor as HTML, SVG or XML, saved as
+plain text, Markdown, CSV or JSON — executables, archives and scripts are
+refused, and the runner names every file itself) and **stages** it for its uploader for ten minutes, named by its
+owner and its content: the same file uploaded again is the same id, so a
+create retried after a lost response is the body it first was. One person
+has at most ten waiting (`SESSIONS_020`), because the store is the Redis
+that also backs sign-in. The create checks the host — a live link whose
+runner named `session.create.images`, and `session.files` too for a PDF
+or text, or `SESSIONS_016`/`017` — and then
+**claims** each upload before the row is written: a copy is parked for this
+session on this host under a fresh id, which is what `session.create`'s
+`images` names (01). An id not staged for the caller is `SESSIONS_019`.
+The parked ids go on `prompt.first` beside the task's text, so the hello
+reconciliation sends them again with a create the host never carried out;
+a parked file waits an hour and is handed over once.
 
 `launch` is **one object rather than four fields spelled four times**,
 because the four travel together everywhere — the route body, the
@@ -233,6 +270,17 @@ projection of its log — so `launchModel`, `launchPermission` and
 existing rows are `ask` with no model, which is what they were launched
 with. Changing them on a live session is a later slice and brings its own
 event kind with its writer, never before.
+
+An effort is recorded only when the session's model offers it
+(`effortLevelFor` in the catalog, 01): the create, the fold of
+`session.requested` and an automation's revision all ask that one
+function, so a replay lands on what the create recorded and a revision
+never names a level no run starts at — a revision is judged whole, so a
+model switch drops a level the new model lacks. Stored efforts were
+rewritten once to the level each launch had run at, in the column, the
+`session.requested` entry and the revision alike, with the originals
+kept so the migration's `down()` restores them exactly (changed
+2026-09-29).
 
 **The first task is written once, by whichever end has it.** A `prompt`
 on the create is appended as `prompt.first` in the same transaction as
@@ -367,8 +415,16 @@ the rows do not know is logged and left alone.
 **The attach socket.** The ticket in the subprotocol is redeemed with a
 `GETDEL` (single use), and what it authorised is re-checked at redemption:
 the session through `SESSION_LOOKUP`, which answers `live`, `stopped` or
-`resolved` — three answers, because they end differently — and the
-person's membership through `organizations/`' `WORKSPACE_LOOKUP`. Every
+`resolved` — three answers, because they end differently — the
+person's membership through `organizations/`' `WORKSPACE_LOOKUP`, their
+account's standing (`CREDENTIAL_OWNER`), and whether they may still use the
+session's host (`HOST_ACCESS`, the own-or-granted predicate a create asks,
+never as a platform admin). The same judgement runs again every minute
+while the attachment is open, and a refusal closes it the same way: a
+revoked grant, a membership Better Auth removed, a ban or a stop reaches a
+terminal already streaming, on whichever replica holds it, without an event
+(2026-09-28; it used to be checked at redemption only). Minting the ticket
+and restarting the session check the host too, and answer `HOSTS_001`. Every
 refusal after the handshake is a `closed` control frame naming the reason
 and then a final close code on an **established** socket, never a refused
 upgrade: a browser's WebSocket cannot see the status of a refused
@@ -430,9 +486,10 @@ of its authorization:
 
 | Route | Credential |
 |---|---|
-| `GET /hosts`, `GET /hosts/{id}` | the person's, plus `read Host` and `hosts:read` |
-| `POST /hosts/pairing`, `GET /hosts/pairing`, `DELETE /hosts/pairing/{id}` | the person's, plus `create`/`read`/`delete Host` and `hosts:*` — pairing is a Host verb, not a noun of its own |
+| `GET /hosts`, `GET /hosts/{id}` | the person's, plus `read Host` and `hosts:read`. The list leaves unpaired hosts out unless `include=unpaired`; both carry a derived `status` and `runningSessionCount` (14) |
+| `POST /hosts/pairing`, `GET /hosts/pairing`, `GET /hosts/pairing/{id}`, `DELETE /hosts/pairing/{id}` | the person's, plus `create`/`read`/`delete Host` and `hosts:*` — pairing is a Host verb, not a noun of its own |
 | `PATCH /hosts/{id}`, `DELETE /hosts/{id}` | the person's: rename, and the console's unpair |
+| `GET /hosts/{id}/timeline` | the person's, plus `read Host` and `hosts:read`: what changed about the host, newest first (15) |
 | `POST /hosts/register` | the registration token in the body, and nothing else |
 | `DELETE /hosts/self` | the host's boot JWT as a bearer; the host is the token's subject, so the path names no id and a host can only ever remove itself |
 
@@ -440,7 +497,8 @@ Two routes therefore delete a host and they are not the same operation:
 `DELETE /hosts/{id}` is a person unpairing a machine they own, guarded by
 policies; `DELETE /hosts/self` is the machine saying it has been
 uninstalled, guarded by the assertion alone. Both set `unpairedAt` and
-neither deletes the row.
+neither deletes the row, and both stop the sessions running on the host
+(one `session.stopped` each, from `sessions/`, on the unpaired event; 13).
 
 **The machine's own read of its host row is unscoped, by design.** A host
 is not tenant-scoped and there is no person on that request to scope by:

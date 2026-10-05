@@ -4,8 +4,9 @@ import { SCOPES, type Scope } from '@oppenheimer/shared';
 export class CurrentCredentialResponseDto {
   /**
    * Typed `string` because credential kinds are contributed to the auth kernel
-   * by the modules that own them: the enum below is the set this API registers
-   * today, and a module adding a kind adds itself to it.
+   * by the modules that own them: the enum below is the set this route can
+   * answer (a host's credential never reaches it), and a module adding a
+   * person's kind adds itself to it.
    */
   @ApiProperty({
     description: 'How the caller authenticated.',

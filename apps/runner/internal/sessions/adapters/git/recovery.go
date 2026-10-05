@@ -3,8 +3,8 @@ package git
 // What an earlier attempt left at a worktree's path, and what Add does about
 // it. A create can be cut short anywhere — a runner killed, a context ended —
 // and the next attempt for the same session arrives at the same path, since
-// the path is derived from the session id. Add inspects the path and then
-// adopts, recreates, refuses, or finds it vacant.
+// the path is derived from the session id; pathKind is what Add can find
+// there.
 
 import (
 	"context"
@@ -31,6 +31,9 @@ const (
 	recreate
 	// refuse: something that is not this session's to take over.
 	refuse
+	// claimed: a spare worktree moved to this session's path by a claim
+	// that was cut short before it checked out the session's branch.
+	claimed
 )
 
 // found is what inspect saw at a path.
@@ -57,6 +60,10 @@ func (c *Client) inspect(ctx context.Context, mirror, path, branch string) (foun
 	_, statErr := os.Stat(path)
 	onDisk := statErr == nil
 	switch {
+	case record != nil && record.branch == "" && onDisk:
+		// Detached at a path derived from a session id: only a claim makes
+		// that (spares.go), and the claim's next step is what is missing.
+		return found{kind: claimed, record: record}, nil
 	case record != nil && record.branch != "refs/heads/"+branch:
 		return found{kind: refuse, reason: path + " already exists, on " + describeBranch(record.branch)}, nil
 	case record != nil && onDisk:

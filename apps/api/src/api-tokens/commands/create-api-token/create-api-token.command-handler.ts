@@ -10,7 +10,6 @@ import { ApiTokenEntity } from '../../domain/api-token.entity';
 import { ApiTokenErrors } from '../../domain/api-token.errors';
 import { CreateApiTokenCommand } from './create-api-token.command';
 
-/** How many usable tokens one user may hold at a time. */
 const MAX_ACTIVE_TOKENS_PER_USER = 50;
 
 /**
@@ -24,8 +23,6 @@ export interface CreateApiTokenResult {
 }
 
 /**
- * Mints an API token.
- *
  * The guard that admitted this request has already confirmed the caller may
  * create tokens at all. This handler enforces the rule that makes scoped
  * credentials safe: **a token may never carry more reach than its creator**.
@@ -47,7 +44,7 @@ export class CreateApiTokenCommandHandler
   async execute(command: CreateApiTokenCommand): Promise<CreateApiTokenResult> {
     const ability = await this.abilityFactory.createForUser(
       { id: command.actor.id, role: command.actor.role },
-      { activeOrganizationId: command.actor.activeOrganizationId ?? null },
+      { organizationId: command.actor.organizationId ?? null },
     );
 
     const exceeded = ungrantableScopes(ability, command.scopes);
@@ -60,14 +57,6 @@ export class CreateApiTokenCommandHandler
 
     await this.assertMemberOfRequestedOrganizations(command);
 
-    const activeCount = await this.apiTokenRepository.countActiveForUser(
-      command.actor.id,
-      new Date(),
-    );
-    if (activeCount >= MAX_ACTIVE_TOKENS_PER_USER) {
-      throw new AppError(ApiTokenErrors.LIMIT_REACHED);
-    }
-
     const { token, secret } = ApiTokenEntity.issue({
       userId: command.actor.id,
       name: command.name,
@@ -77,7 +66,12 @@ export class CreateApiTokenCommandHandler
       expiresInDays: command.expiresInDays,
     });
 
-    await this.apiTokenRepository.insert(token);
+    const outcome = await this.apiTokenRepository.insertWithinLimit(
+      token,
+      MAX_ACTIVE_TOKENS_PER_USER,
+      new Date(),
+    );
+    if (outcome === 'limit_reached') throw new AppError(ApiTokenErrors.LIMIT_REACHED);
 
     return { tokenId: token.id, secret };
   }

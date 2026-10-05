@@ -57,7 +57,6 @@ export class SessionCheckoutEntity {
     /** A display snapshot of `owner/repo` from when the checkout was created. */
     public readonly repositoryFullName: string,
     public readonly directoryName: string,
-    /** What the session's branch was created from. */
     public readonly baseBranch: string,
     /** Always the session's own branch, never the base. */
     public readonly branch: string,
@@ -69,16 +68,6 @@ export class SessionCheckoutEntity {
   }
 }
 
-/**
- * A session as the console needs it: a terminal, an agent, and a set of
- * checkouts on a host.
- *
- * Two state words, because the API has two and they answer different questions:
- * `state` is the derived group the sidebar dot shows, and `lifecycle` is the
- * stored fold of the log. Collapsing them was the error an earlier version of
- * this file made — it carried one `running | idle | stopped` union that the API
- * had already stopped sending.
- */
 /**
  * A single-use pass to one window of a session's terminal, as
  * `POST /sessions/{id}/attach-ticket` mints it. It travels in
@@ -92,6 +81,14 @@ export interface AttachTicket {
   window: number;
 }
 
+/**
+ * A session as the console needs it: a terminal, an agent, and a set of
+ * checkouts on a host.
+ *
+ * Two state words, because the API has two and they answer different questions:
+ * `state` is the derived group the sidebar dot shows, and `lifecycle` is the
+ * stored fold of the log.
+ */
 export class SessionEntity {
   constructor(
     public readonly id: string,
@@ -121,6 +118,11 @@ export class SessionEntity {
    */
   get isLive(): boolean {
     return this.lifecycle === 'open' && this.stoppedAt === null;
+  }
+
+  /** Whether the host closed it: pushed, removed its worktrees, done for good. */
+  get isResolved(): boolean {
+    return this.lifecycle === 'resolved';
   }
 
   /** Whether the host has not picked this session up yet. */
@@ -162,12 +164,28 @@ export interface CreateSessionCheckout {
 export interface CreateSessionInput {
   hostId: string;
   agent: SessionAgent;
-  checkouts: CreateSessionCheckout[];
+  /** Exactly one: a runner makes a session as one worktree of one repository. */
+  checkouts: [CreateSessionCheckout];
   /** Which checkout the agent is launched in. Must name one of `checkouts`. */
   cwdGithubRepoId?: number;
   launch?: Partial<SessionLaunch>;
   /** The composer's first task. It names the session and reaches the agent. */
   prompt?: string;
+  /** Images uploaded with `uploadAttachment`, given to the agent with the task. */
+  attachmentIds?: string[];
   name?: string;
   projectId?: string;
+}
+
+/** What a host is asked to get ready while New session is still being written. */
+export interface PrepareSessionInput {
+  hostId: string;
+  checkouts: [CreateSessionCheckout];
+}
+
+/** An image uploaded for a first task, waiting for the create that names it. */
+export interface SessionAttachment {
+  id: string;
+  mediaType: string;
+  size: number;
 }

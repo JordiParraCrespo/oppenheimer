@@ -29,8 +29,9 @@ describe('UserSettingsEntity', () => {
   });
 
   it('does not share its props with the defaults object', () => {
-    // A shallow copy would let one user's first save mutate the module-level
-    // defaults, silently changing what every later account starts with.
+    // Holding the object itself would let one user's first save mutate the
+    // module-level defaults, silently changing what every later account starts
+    // with.
     const settings = UserSettingsEntity.createDefault('user-uuid');
     settings.update(SAVED);
 
@@ -73,9 +74,6 @@ describe('UserSettingsEntity', () => {
   });
 
   it('rejects an unknown value coming back out of the database', () => {
-    // The columns are plain varchar, so a hand-edited row is the realistic way
-    // an unknown value reaches the aggregate — validation on construction is
-    // what stops it reaching a client that branches on the value.
     expect(() =>
       UserSettingsEntity.create({
         id: 'user-uuid',

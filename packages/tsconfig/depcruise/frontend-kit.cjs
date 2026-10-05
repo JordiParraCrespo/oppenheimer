@@ -1,10 +1,11 @@
 /**
- * Dependency-cruiser rules for a platform kit (`packages/frontend/web`). A kit is organised by concern; each concern
- * has the kind directories a feature has. The concerns are layered, and the
- * layering is what keeps `shell` from becoming everything's dependency.
+ * Dependency-cruiser rules for a platform kit (`packages/frontend/web`). A kit
+ * is organised by concern; each concern has the kind directories a feature
+ * has. The concerns are layered, and the layering is what keeps `shell` from
+ * becoming everything's dependency.
  *
  * @param {object} options
- * @param {string[]} options.leaves concerns that import only the design system and the kernel
+ * @param {string[]} options.leaves concerns that import the design system, the kernel and each other
  * @param {string[]} options.middle concerns that build on the leaves
  * @param {string[]} options.top concerns that may import anything below
  */
@@ -16,8 +17,7 @@ module.exports = function frontendKit({ leaves, middle, top }) {
         name: 'no-circular',
         severity: 'error',
         from: {},
-        // A type-only edge (a route importing the app's `RouterContext` type)
-        // cannot cause a runtime cycle; only value imports count.
+        // A type-only edge cannot cause a runtime cycle; only value imports count.
         to: { circular: true, viaOnly: { dependencyTypesNot: ['type-only'] } },
       },
       {

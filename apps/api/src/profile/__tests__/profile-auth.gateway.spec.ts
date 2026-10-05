@@ -21,21 +21,37 @@ vi.mock('../../auth/infrastructure/better-auth.config', () => ({
 
 describe('ProfileAuthGateway', () => {
   let delegatedSessions: { invalidateForUser: ReturnType<typeof vi.fn> };
+  let sessionCache: { revokeOtherSessions: ReturnType<typeof vi.fn> };
   let facade: ProfileAuthGateway;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    changePassword.mockResolvedValue({
+      headers: new Headers([['set-cookie', 'session_token=new; Path=/; HttpOnly']]),
+      response: { status: true },
+    });
     delegatedSessions = {
       invalidateForUser: vi.fn().mockResolvedValue(undefined),
     };
-    facade = new ProfileAuthGateway(delegatedSessions as unknown as DelegatedSessionAdapter);
+    sessionCache = { revokeOtherSessions: vi.fn().mockResolvedValue(undefined) };
+    facade = new ProfileAuthGateway(
+      delegatedSessions as unknown as DelegatedSessionAdapter,
+      sessionCache as never,
+    );
   });
 
   describe('changePassword', () => {
+    it('hands back the reissued session cookie', async () => {
+      const cookies = await facade.changePassword(
+        {},
+        { userId: 'user-1', currentPassword: 'old', newPassword: 'new', revokeOtherSessions: true },
+      );
+
+      expect(changePassword).toHaveBeenCalledWith(expect.objectContaining({ returnHeaders: true }));
+      expect(cookies).toEqual(['session_token=new; Path=/; HttpOnly']);
+    });
+
     it('evicts the caller’s delegated sessions when it revoked the others', async () => {
-      // Better Auth deletes the delegated session rows along with the rest; a
-      // credential still holding the cached token would fail every façade call
-      // for the next ten minutes.
       await facade.changePassword(
         {},
         {
@@ -84,16 +100,27 @@ describe('ProfileAuthGateway', () => {
 
   describe('revokeOtherSessions', () => {
     it('evicts the caller’s delegated sessions', async () => {
-      await facade.revokeOtherSessions({}, 'user-1');
+      await facade.revokeOtherSessions({}, 'user-1', 'session-1');
 
       expect(delegatedSessions.invalidateForUser).toHaveBeenCalledWith('user-1');
+    });
+
+    it('sweeps the sessions Better Auth’s cache index missed, sparing this one', async () => {
+      await facade.revokeOtherSessions({}, 'user-1', 'session-1');
+
+      expect(revokeOtherSessions).toHaveBeenCalled();
+      expect(sessionCache.revokeOtherSessions).toHaveBeenCalledWith('user-1', 'session-1');
+    });
+
+    it('sweeps nothing when the current session is not known', async () => {
+      await facade.revokeOtherSessions({}, 'user-1', undefined);
+
+      expect(sessionCache.revokeOtherSessions).not.toHaveBeenCalled();
     });
   });
 
   describe('revokeSession', () => {
     it('evicts nothing', async () => {
-      // One revocation names a device session. A delegated session is minted
-      // per credential and is not something the user chose to sign out.
       await facade.revokeSession({}, 'session-token');
 
       expect(delegatedSessions.invalidateForUser).not.toHaveBeenCalled();

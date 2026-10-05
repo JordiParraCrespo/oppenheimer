@@ -1,10 +1,9 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { SessionLoaderResolver } from '../../application/session-loader.resolver';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
 import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
-import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
 import { WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
 import { RenameSessionCommand } from './rename-session.command';
@@ -22,23 +21,13 @@ export class RenameSessionCommandHandler
   implements ICommandHandler<RenameSessionCommand, SessionCommandResult>
 {
   constructor(
+    private readonly loader: SessionLoaderResolver,
     @Inject(WORK_SESSION_REPOSITORY)
     private readonly sessions: WorkSessionRepositoryPort,
   ) {}
 
   async execute(command: RenameSessionCommand): Promise<SessionCommandResult> {
-    const found = await this.sessions.findOneById(command.scope, command.sessionId);
-    if (found.isNone()) {
-      throw new AppError(SessionErrors.NOT_FOUND, {
-        detail: `No session with id ${command.sessionId}`,
-      });
-    }
-    const session = found.unwrap();
-    if (session.isResolved) {
-      throw new AppError(SessionErrors.ALREADY_RESOLVED, {
-        detail: `Session ${session.slug} is closed`,
-      });
-    }
+    const session = await this.loader.requireLive(command.scope, command.sessionId);
 
     await this.sessions.appendEvents(session, [
       {

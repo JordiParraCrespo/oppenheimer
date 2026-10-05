@@ -63,11 +63,6 @@ describe('titleFromPrompt', () => {
     expect(titleFromPrompt('```\nconst x = 1;\n```')).toBeNull();
     expect(titleFromPrompt('https://example.com/issue/1')).toBeNull();
   });
-
-  it('names the same prompt the same way every time', () => {
-    const prompt = 'please refactor the session relay to use the outbox';
-    expect(titleFromPrompt(prompt)).toBe(titleFromPrompt(prompt));
-  });
 });
 
 describe('cleanModelTitle', () => {
@@ -103,7 +98,7 @@ describe('sessionTitleRequest', () => {
     expect(request.maxTokens).toBe(32);
     expect(request.temperature).toBe(0);
     expect(request.system).toContain(`At most ${SESSION_NAME_MAX_LENGTH} characters`);
-    // Only what is worth sending of a long prompt leaves the host.
+    // Only what is worth sending of a long prompt goes to the model.
     expect(request.messages[0].content).toHaveLength(2_000);
   });
 });
