@@ -97,6 +97,7 @@ and point here.
 - **The sealer's key** is `CALENDAR_TOKEN_KEY`, 32 bytes in base64 (20 §5),
   and the Google redirect URI is `${FRONTEND_URL}/plan/calendar/google`, a
   console route that posts the code to the API.
-- **Not built yet:** dragging an event or a task on the calendar, and a
-  Settings → Integrations page; the Google card in the calendar's sidebar
-  is the one place to connect and disconnect.
+- **Dragging on the calendar** moves a personal event or a task's due
+  date to another day; Google's events and automation runs stay put.
+- **Not built yet:** a Settings → Integrations page; the Google card in
+  the calendar's sidebar is the one place to connect and disconnect.
