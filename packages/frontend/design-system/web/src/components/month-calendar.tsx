@@ -117,15 +117,15 @@ function DraggableEntry({
   onOpen?: (id: string) => void;
 }) {
   const movable = entry.draggable !== false;
-  const drag = useDraggable({ id: entry.id, data: { type: 'calendar-entry', label: entry.title }, disabled: !movable });
+  const { ref, handleProps, isDragging } = useDraggable({ id: entry.id, data: { type: 'calendar-entry', label: entry.title }, disabled: !movable });
   return (
     <CalendarEntry
-      ref={drag.ref}
+      ref={ref}
       entry={entry}
       full={full}
-      data-dragging={drag.isDragging || undefined}
+      data-dragging={isDragging || undefined}
       className="touch-none data-dragging:opacity-40"
-      {...(movable ? drag.handleProps : {})}
+      {...(movable ? handleProps : {})}
       onClick={(event) => {
         event.stopPropagation();
         onOpen?.(entry.id);
@@ -157,23 +157,23 @@ function CalendarDay({
   onOpenEntry?: (id: string) => void;
   onAddDay?: (date: IsoDate) => void;
 }) {
-  const drop = useDroppable({ id: day.iso, data: { label: dayLabel }, accepts: ['calendar-entry'] });
+  const { ref, isOver } = useDroppable({ id: day.iso, data: { label: dayLabel }, accepts: ['calendar-entry'] });
   const shown = entries.length > 4 ? entries.slice(0, 3) : entries;
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: adding from a day is also the page's New event button.
     // biome-ignore lint/a11y/noStaticElementInteractions: the day's empty space is a shortcut, not the only way to add.
     <div
-      ref={drop.ref}
+      ref={ref}
       data-slot="calendar-day"
       data-today={today || undefined}
       data-outside={!day.inMonth || undefined}
-      data-over={drop.isOver || undefined}
+      data-over={isOver || undefined}
       onClick={() => onAddDay?.(day.iso)}
       className={cn(
         '@container/day relative flex min-h-[150px] min-w-0 flex-col gap-0.5 px-1.5 pt-1.5 pb-2 transition-[background-color] duration-instant ease-standard',
         'border-border-subtle not-first:border-l [&:nth-child(7n+1)]:border-l-0 [&:nth-child(n+8)]:border-t',
         !day.inMonth && 'bg-hover-surface',
-        drop.isOver && 'bg-selected-surface',
+        isOver && 'bg-selected-surface',
         last.row && last.first && 'rounded-bl-[17px]',
         last.row && last.end && 'rounded-br-[17px]',
       )}
@@ -236,6 +236,8 @@ function CloseButton({ label }: { label: string }) {
   );
 }
 
+const moreInEnglish = (n: number) => `${n} more`;
+
 function MonthCalendar({
   year,
   month,
@@ -245,7 +247,7 @@ function MonthCalendar({
   onMove,
   onOpenEntry,
   onAddDay,
-  moreLabel = (n) => `${n} more`,
+  moreLabel = moreInEnglish,
   closeLabel = 'Close',
   className,
 }: {

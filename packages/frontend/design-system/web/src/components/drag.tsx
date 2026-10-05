@@ -374,19 +374,19 @@ function SortableItem({
   children,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'id'> & { id: string; data?: DragData; disabled?: boolean }) {
-  const item = useSortableItem({ id, data, disabled });
+  const { ref, handleProps, style: slide, isDragging } = useSortableItem({ id, data, disabled });
   return (
     <div
-      ref={item.ref}
+      ref={ref}
       data-slot="sortable-item"
-      data-dragging={item.isDragging || undefined}
-      style={{ ...style, ...item.style }}
+      data-dragging={isDragging || undefined}
+      style={{ ...style, ...slide }}
       className={cn(
         'relative touch-none outline-none select-none focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-ring',
         'data-dragging:rounded-md data-dragging:bg-selected-surface data-dragging:shadow-[inset_0_0_0_1px_var(--ring)] data-dragging:[&>*]:invisible',
         className,
       )}
-      {...item.handleProps}
+      {...handleProps}
       {...props}
     >
       {children}
