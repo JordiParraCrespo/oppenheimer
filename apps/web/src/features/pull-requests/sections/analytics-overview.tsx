@@ -1,5 +1,6 @@
 import {
   BarList,
+  Callout,
   ChartRow,
   PageHeader,
   PageHeaderMeta,
@@ -19,6 +20,7 @@ import { QueryState, useLocale } from '@oppenheimer/frontend-web';
 import { PULL_REQUEST_ANALYTICS_RANGES } from '@oppenheimer/shared/schemas/pull-request';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsDelta } from '../components/analytics-figure';
+import { ReadNotices } from '../components/read-notices';
 import { useAnalyticsRange } from '../hooks/use-analytics-range';
 import { LANE_TONE, rangeLabel, shareOf } from '../lib/analytics-view';
 import { deltaOf, formatHours } from '../lib/view';
@@ -82,6 +84,12 @@ export function AnalyticsOverview() {
           const from = (value: string) => t('pullRequests.analytics.from', { value });
           return (
             <>
+              <ReadNotices unreadable={data.unreadable} checksRefused={false} />
+              {data.complete ? null : (
+                <Callout>
+                  {t('pullRequests.analytics.capped', { n: data.closedCeiling, range: rangeWord })}
+                </Callout>
+              )}
               <CreatedMergedPanel analytics={data} />
               <div className="grid gap-3 md:grid-cols-3">
                 <StatCard

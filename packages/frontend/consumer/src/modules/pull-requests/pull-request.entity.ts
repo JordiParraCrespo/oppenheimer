@@ -25,7 +25,19 @@ export interface PullRequestAddress {
   number: number;
 }
 
-export type PullRequestChecks = 'passing' | 'failing' | 'running' | 'none';
+/** `unavailable`: GitHub would not show them, which is not the same as a commit with none. */
+export type PullRequestChecks = 'passing' | 'failing' | 'running' | 'none' | 'unavailable';
+
+/** Why GitHub did not answer a read: no access, gone, asked to wait, or no answer. */
+export type ReadRefusal = 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
+
+/** A watched repository a read could not fully answer. */
+export interface UnreadableRepository {
+  fullName: string;
+  refusal: ReadRefusal;
+  /** Some of its pull requests were read, some were not. */
+  partial: boolean;
+}
 
 /** What holds a pull request, the first that applies; null when it can merge. */
 export type PullRequestBlocker =
@@ -70,6 +82,8 @@ export class PullRequestEntity {
     public readonly waitingSeconds: number,
     public readonly draft: boolean,
     public readonly htmlUrl: string,
+    /** Why the checks are `unavailable`; null otherwise. */
+    public readonly checksRefusal: ReadRefusal | null = null,
   ) {}
 
   get address(): PullRequestAddress {
@@ -96,6 +110,10 @@ export class PullRequestEntity {
 
 export interface PullRequestQueue {
   items: PullRequestEntity[];
+  /** Watched repositories this read could not fully answer (#244). */
+  unreadable: UnreadableRepository[];
+  /** GitHub refused checks for want of access: the App needs Checks and Commit statuses read. */
+  checksRefused: boolean;
   scopes: Record<PullRequestScope, number>;
   /** Within the scope asked for. */
   lanes: Record<PullRequestLane, number>;
@@ -150,6 +168,7 @@ export class PullRequestDetailEntity extends PullRequestEntity {
       row.waitingSeconds,
       row.draft,
       row.htmlUrl,
+      row.checksRefusal,
     );
   }
 
@@ -213,6 +232,10 @@ export interface AnalyticsMedian {
 
 export interface PullRequestAnalytics {
   range: PullRequestAnalyticsRange;
+  /** False when more closed in the window than one read takes; the figures count the most recent `closedCeiling`. */
+  complete: boolean;
+  closedCeiling: number;
+  unreadable: UnreadableRepository[];
   from: Date;
   to: Date;
   created: AnalyticsFigure;

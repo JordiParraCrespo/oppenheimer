@@ -62,7 +62,8 @@
     "passing": "Pasan",
     "failing": "Fallan",
     "running": "En curso",
-    "none": "Sin checks"
+    "none": "Sin checks",
+    "unavailable": "Checks no disponibles"
   },
   "conflicts": {
     "none": "Sin conflictos",
@@ -246,6 +247,22 @@
     "medianHold": "Abiertas {{hours}} (mediana)",
     "nothingWaits": "Ahora mismo nada frena ninguna pull request abierta.",
     "loadFailed": "No se pudo cargar la analítica.",
-    "none": "—"
+    "none": "—",
+    "capped": "Calculado con las {{n}} pull requests cerradas más recientes: en este {{range}} se cerraron más de las que cabe leer de una vez."
+  },
+  "notices": {
+    "checksRefused": "GitHub no muestra los checks. La app de GitHub necesita Checks: read y Commit statuses: read; acepta la actualización de permisos en GitHub y aparecerán aquí.",
+    "unreadable": {
+      "forbidden": "{{name}}: GitHub denegó el acceso, así que no se muestran sus pull requests.",
+      "not_found": "{{name}}: GitHub ya no lo encuentra, así que no se muestran sus pull requests.",
+      "rate_limited": "{{name}}: GitHub nos pidió ir más despacio. Sus pull requests aparecerán en la próxima lectura.",
+      "failed": "{{name}}: GitHub no respondió, así que no se muestran sus pull requests."
+    },
+    "partial": {
+      "forbidden": "{{name}}: GitHub denegó algunas de sus pull requests; se muestran las demás.",
+      "not_found": "{{name}}: algunas de sus pull requests ya no existen; se muestran las demás.",
+      "rate_limited": "{{name}}: GitHub nos pidió ir más despacio antes de leerlas todas; las demás aparecerán en la próxima lectura.",
+      "failed": "{{name}}: GitHub no respondió para algunas de sus pull requests; se muestran las demás."
+    }
   }
 }
