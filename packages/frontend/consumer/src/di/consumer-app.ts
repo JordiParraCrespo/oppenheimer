@@ -7,6 +7,8 @@ import type { HostsRepository } from '../modules/hosts';
 import { HostsModule } from '../modules/hosts';
 import type { InstallationsRepository } from '../modules/installations';
 import { InstallationsModule } from '../modules/installations';
+import type { LiveService } from '../modules/live';
+import { LiveModule } from '../modules/live';
 import type { OrganizationsService } from '../modules/organizations';
 import { OrganizationsModule } from '../modules/organizations';
 import type { PermissionsRepository } from '../modules/permissions';
@@ -36,6 +38,7 @@ export const consumerModules = [
   CalendarModule,
   HostsModule,
   InstallationsModule,
+  LiveModule,
   PermissionsModule,
   OrganizationsModule,
   ProfileModule,
@@ -70,6 +73,11 @@ export class ConsumerApp {
 
   get users() {
     return this.kernel.users;
+  }
+
+  /** The live stream: which of the workspace's rows changed, as the API hears it. */
+  get live(): LiveService {
+    return this.kernel.container.get(TOKENS.LiveService);
   }
 
   /** The product: sessions on hosts the user owns. */

@@ -598,6 +598,19 @@ through to Google and never stored. See `product/versions/mvp/20-plan-calendar.m
 | `CALENDAR_006` <a id="calendar_006" />   | Google did not grant read access to the calendar    | 400  |
 | `CALENDAR_007` <a id="calendar_007" />   | Google Calendar is not connected                    | 409  |
 | `CALENDAR_008` <a id="calendar_008" />   | Google Calendar did not answer                      | 502  |
+
+## Live
+
+The console's live stream (`GET /v1/live`): which of the workspace's rows
+changed, pushed instead of polled. See `product/versions/mvp/21-live-events.md`.
+
+| Code                                     | Title                                               | HTTP |
+| ---------------------------------------- | --------------------------------------------------- | ---- |
+| `LIVE_001` <a id="live_001" />           | The live stream is unavailable                      | 503  |
+| `LIVE_002` <a id="live_002" />           | The live stream belongs to a workspace              | 400  |
+
+`LIVE_001` is a stream refused because the API cannot reach its event bus. The
+console keeps polling and dials again later; nothing is lost.
 | `CALENDAR_009` <a id="calendar_009" />   | An event ends after it starts, on its day           | 400  |
 
 `CALENDAR_003` is a range that runs backwards or covers more than 62 days.

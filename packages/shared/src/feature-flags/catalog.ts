@@ -41,6 +41,21 @@ export const FEATURE_FLAGS = {
     client: true,
     bucketBy: 'user',
   },
+  /**
+   * The console's live stream (`GET /v1/live`): sessions change on screen when
+   * the API hears they did, instead of on a poll. Off, the console polls as it
+   * always has, so turning it off is always safe
+   * (`product/versions/mvp/21-live-events.md`).
+   */
+  live_events: {
+    description: 'Push session changes to the console over a live stream instead of polling.',
+    kind: 'release',
+    owner: 'platform',
+    type: 'boolean',
+    defaultValue: false,
+    client: true,
+    expiresAt: '2026-12-31',
+  },
 } as const satisfies Record<string, FlagDefinition>;
 
 export type FeatureFlagKey = keyof typeof FEATURE_FLAGS;

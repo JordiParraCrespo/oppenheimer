@@ -17,4 +17,7 @@ export const TOKENS = {
   SessionsService: Symbol.for('SessionsService'),
   TasksRepository: Symbol.for('TasksRepository'),
   CalendarRepository: Symbol.for('CalendarRepository'),
+  LiveService: Symbol.for('LiveService'),
+  /** What opens the live stream's `EventSource`; bound only where a platform has no global one. */
+  LiveSourceFactory: Symbol.for('LiveSourceFactory'),
 } as const;

@@ -349,3 +349,8 @@ earlier note:
   2026-09-28 the owner changed that: we approve and merge in the user's
   name, with their own authorization, and when GitHub will not allow it
   the PR waits.
+- 05 and the 2026-10-01 decision made polling the console's one way to
+  learn what changed (`LIVE_POLL`). Note 21 (2026-10-06) moves the session
+  list and a session's row to a pushed stream behind the `live_events`
+  flag; the polls stay as the fallback, and the other polls move slice by
+  slice (JordiParraCrespo/oppenheimer#239).

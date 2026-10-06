@@ -2,6 +2,7 @@ import { Wordmark } from '@oppenheimer/design-system-web';
 import { AppShell, RouteError } from '@oppenheimer/frontend-web';
 import { createFileRoute, Outlet, redirect, useMatches } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { LiveUpdates } from '@/features/live/sections/live-updates';
 import { WorkspaceGate } from '@/features/organizations/sections/workspace-gate';
 import { NotFoundScreen } from '@/features/public/screens/not-found';
 import { ConsoleRail } from '@/features/sessions/sections/console-rail';
@@ -55,6 +56,7 @@ function AuthenticatedShell() {
   if (ownShell) {
     return (
       <WorkspaceGate>
+        <LiveUpdates />
         <Outlet />
       </WorkspaceGate>
     );
@@ -62,6 +64,7 @@ function AuthenticatedShell() {
 
   return (
     <WorkspaceGate>
+      <LiveUpdates />
       <ConsoleDialogProvider>
         <AppShell
           nav={NAV}

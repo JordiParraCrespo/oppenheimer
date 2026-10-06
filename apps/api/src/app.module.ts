@@ -61,6 +61,7 @@ import { GithubModule } from './github/github.module';
 import { HealthModule } from './health/health.module';
 import { HostsModule } from './hosts/hosts.module';
 import { InboundEventsModule } from './inbound-events/inbound-events.module';
+import { LiveModule } from './live/live.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
@@ -245,6 +246,7 @@ import { UsersModule } from './users/user.module';
     CalendarModule,
     PullRequestsModule,
     RelayModule,
+    LiveModule,
     HealthModule,
     QueueModule,
   ],

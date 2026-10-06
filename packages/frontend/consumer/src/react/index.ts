@@ -47,6 +47,7 @@ export {
   useRepositoryBranchesFor,
   useStartInstallation,
 } from './installations.queries';
+export { useLiveEvents } from './live';
 export {
   type ClaimPersonalWorkspaceVariables,
   useCheckSlug,

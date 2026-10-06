@@ -13465,6 +13465,72 @@
         "tags": ["Pull requests"]
       }
     },
+    "/api/v1/live": {
+      "get": {
+        "description": "Server-sent events. Each `live` event names a row that changed (`{ \"type\": \"session.changed\", \"sessionId\": … }`), never the row itself: read it again from its own endpoint. A `ping` keeps the connection open; the stream ends after five minutes and the client dials again, which is when the caller is authorized afresh.",
+        "operationId": "streamLiveEvents",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The event stream",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "LIVE_002 — The caller has no active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"live_events\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "LIVE_001 — The event bus cannot be reached; poll instead",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Hear which of the workspace’s sessions changed",
+        "tags": ["Live"]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "check",

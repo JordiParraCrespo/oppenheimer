@@ -2,6 +2,7 @@ export * from './automations';
 export * from './calendar';
 export * from './hosts';
 export * from './installations';
+export * from './live';
 export * from './organizations';
 export * from './permissions';
 export * from './profile';

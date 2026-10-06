@@ -741,6 +741,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <span class="k">now</span><span>The terminal is built first, and New session asks the host to clone the repository and make a spare worktree as soon as a host and a repository are picked. With ten seconds between the pick and Send, a first session on vscode reaches the agent in under a second.</span>
   <span class="k">opening</span><span>The console keeps the start's steps on screen until the agent is running, then opens on the agent: never a shell waiting for a clone.</span>
   <span class="k">clone</span><span>A first clone is shallow at the base, 9 s to a ready worktree on vscode instead of 26, and its history follows in the background into the same blobless store.</span>
+  <span class="k">push</span><span>Behind the <code>live_events</code> flag the console no longer polls for a session's state: one server-sent stream per tab says which session changed, and the console reads it again (note 21, 2026-10-06). The polls stay as the fallback.</span>
   <span class="k">Orca</span><span>Orca never clones. It fetches and prepares spare checkouts while the create composer is open, so pressing create is a move and a branch. Herdr runs <code>git worktree add</code> in a server that is already up.</span>
 </div>
 <div class="verdict"><p><strong>Decided 2026-10-02:</strong> the network work happens before Send (02 §5). Still open: a first session sent the instant its repository is picked is bounded by the shallow clone, 4 s on react and 12 s on vscode.</p></div>

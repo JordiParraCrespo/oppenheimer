@@ -32,6 +32,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 18 | [Plan: the product](18-plan-product.md) | What the Plan frames say, screen by screen: the board, the dialogs, tasks that start or link sessions, and the gaps the frames leave |
 | 19 | [Plan: tasks and goals](19-plan-tasks-and-goals.md) | The `tasks` module: tables, ordering, the API, starting a session from a task, the attach rule, Queued |
 | 20 | [Plan: the calendar](20-plan-calendar.md) | The month view from four reads, personal events, read-only Google Calendar through a port |
+| 21 | [Live events](21-live-events.md) | The console hears what changed instead of polling: SSE, ids not rows, Redis between replicas, polls as the fallback; sessions first, behind `live_events` |
 
 ## Decision log
 
@@ -603,3 +604,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   session started from a task is a person's, linked with `started`; the
   calendar computes automation runs from the automations list; event
   times are wall-clock; archiving a project is not blocked by its tasks.
+- 2026-10-06: **The console hears session changes instead of polling for
+  them** (21, behind `live_events`). One SSE stream per tab carries which
+  session changed, never the row; Redis pub/sub carries it between replicas;
+  the session list and a session's row stop polling while the stream is up
+  and poll again the moment it drops. It replaces the 2026-10-01 opening
+  phase for the row a reader is watching once the flag is on, and adds what
+  no poll covered: a session's turn.

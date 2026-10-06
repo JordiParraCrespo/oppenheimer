@@ -271,7 +271,10 @@ name the jobs and split *those*.
   (`useHostPresence`). A poll that watches something finish keeps running on
   a hidden tab, because that is the tab the reader leaves while it runs;
   presence, which never settles, does not. `pnpm check:structure` fails a
-  `refetchInterval` anywhere but that file.
+  `refetchInterval` anywhere but that file. A fact the live stream carries
+  (`product/versions/mvp/21-live-events.md`) still polls, as the fallback: its
+  hook passes `pollWhile(…, { streamed: useLiveStreamed() })`, and nothing
+  polls while the stream is up.
 
 ## Routing is its own skill
 

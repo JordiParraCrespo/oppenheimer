@@ -9035,6 +9035,43 @@ export type MergePullRequestResponses = {
 
 export type MergePullRequestResponse = MergePullRequestResponses[keyof MergePullRequestResponses];
 
+export type StreamLiveEventsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/live';
+};
+
+export type StreamLiveEventsErrors = {
+    /**
+     * LIVE_002 — The caller has no active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "live_events" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * LIVE_001 — The event bus cannot be reached; poll instead
+     */
+    503: ProblemDetailsDto;
+};
+
+export type StreamLiveEventsError = StreamLiveEventsErrors[keyof StreamLiveEventsErrors];
+
+export type StreamLiveEventsResponses = {
+    /**
+     * The event stream
+     */
+    200: string;
+};
+
+export type StreamLiveEventsResponse = StreamLiveEventsResponses[keyof StreamLiveEventsResponses];
+
 export type CheckData = {
     body?: never;
     path?: never;

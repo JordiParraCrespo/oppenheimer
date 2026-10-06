@@ -17,6 +17,15 @@ export const CONSUMER_CONFIG = {
     /** The delays between reconnect attempts, with jitter on top (`product/12-lessons-from-grok-bot.md`). */
     reconnectLadderMs: [500, 1_000, 2_000, 5_000, 10_000, 30_000],
   },
+  /** The live stream (`product/versions/mvp/21-live-events.md`). */
+  live: {
+    /**
+     * How long to wait before dialling again once the API refused the stream
+     * (signed out, the flag off, its bus down). The console polls meanwhile,
+     * so this only decides how soon pushing comes back.
+     */
+    redialAfterRefusalMs: 60_000,
+  },
   automations: {
     /** How long a GitHub trigger's "would have matched" preview stays fresh. */
     triggerPreviewStaleMs: 30_000,

@@ -21,6 +21,7 @@ import {
 } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
 import { CLOSE_WATCH_MS, type PollKeys, pollWhile, RESTART_WATCH_MS } from './live-poll';
+import { useLiveStreamed } from './live-status';
 import { seedDetails } from './seed-details';
 
 export const sessionsKeys = {
@@ -107,7 +108,8 @@ function unwatchRestart(queryClient: QueryClient, id: string): void {
  * A resolved session is a tombstone the API keeps so its directory and branch
  * are never reissued; the list leaves it out, though its detail is still
  * written for a screen that has it open. It polls while a row is starting or a
- * close this console asked for has not resolved.
+ * close this console asked for has not resolved, unless the live stream is up
+ * and tells it instead.
  *
  * Each row is also written to that session's detail, so opening a session from
  * the list renders on the click; a detail read after this list was asked for
@@ -121,6 +123,7 @@ export function useSessions<TData = SessionEntity[]>(
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
+  const streamed = useLiveStreamed();
 
   return useQuery<SessionEntity[], Error, TData>({
     queryKey: sessionsKeys.list(),
@@ -141,6 +144,7 @@ export function useSessions<TData = SessionEntity[]>(
       (rows) =>
         rows?.some((session) => session.isProvisioning || closesOf(queryClient).has(session.id)) ??
         false,
+      { streamed },
     ),
   });
 }
@@ -150,8 +154,8 @@ export function useSession(
   options?: Omit<UseQueryOptions<SessionEntity, Error>, 'queryKey' | 'queryFn' | PollKeys>,
 ) {
   const app = useConsumerApp();
-
   const queryClient = useQueryClient();
+  const streamed = useLiveStreamed();
 
   return useQuery({
     queryKey: sessionsKeys.detail(id),
@@ -168,6 +172,7 @@ export function useSession(
       'sessionOpening',
       (session) =>
         (session?.isProvisioning ?? false) || (id ? restartsOf(queryClient).has(id) : false),
+      { streamed },
     ),
   });
 }
