@@ -164,9 +164,14 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   from one map, the `--file-icon-*` tokens in `globals.css`, which the
   tree reads too: an identity, like an agent's vendor colour, never a
   state. Never a redrawn logo, never a hue table in a component.
-- **The rail's order is the reader's.** Its items are `SortableRailItem`s
-  in a vertical `SortableGroup` inside the shell's `DragProvider`; where
-  the order is kept is the app's.
+- **The rail's and the sidebar's order is the reader's.** The rail's items
+  are `SortableRailItem`s in a vertical `SortableGroup`; a project's
+  sessions are `SortableSessionItem`s in a `SortableGroup` per project, so a
+  row reorders in its project or moves to another (a folded or empty
+  project still takes it), the drag standing in for Move to project….
+  Both sit in the shell's `DragProvider`; where the order and the project
+  are kept is the app's. A row that is a link picks up on Space and opens
+  on Enter (`pickUp: 'space'`), and a filtered list does not drag.
 - **A sidebar row's actions are its ellipsis.** `SessionItem` and
   `RoutineItem` take `action` and `menuOpen` through one row shell; a
   routine row adds `lastRun`, a dot before the meta for how the last run

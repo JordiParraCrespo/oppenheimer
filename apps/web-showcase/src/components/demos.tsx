@@ -68,7 +68,7 @@ import {
   RepositoryRowList,
   type RepositoryRowValue,
 } from '@oppenheimer/design-system-web/repository-row-list';
-import { SessionItem, SessionList } from '@oppenheimer/design-system-web/session-item';
+import { SessionItem, SessionList, SortableSessionItem } from '@oppenheimer/design-system-web/session-item';
 import {
   SidebarEmptyRow,
   SidebarListHead,
@@ -796,6 +796,9 @@ const PROJECTS: DemoProject[] = [
   { name: 'Client sites', sessions: [] },
 ];
 
+/** Each session's age and state, by name, wherever it has been dragged. */
+const SESSIONS = new Map(PROJECTS.flatMap((p) => p.sessions.map(([name, age, state]) => [name, { age, state }] as const)));
+
 function RowMenu({
   open,
   onOpenChange,
@@ -902,9 +905,14 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
   const [menu, setMenu] = React.useState<string | null>(null);
   const [renaming, setRenaming] = React.useState<{ name: string; draft: string } | null>(null);
   const [names, setNames] = React.useState<Record<string, string>>({});
+  // Each project's sessions, in the reader's order: drag a row up or down, or into another project.
+  const [order, setOrder] = React.useState<SortableGroups>(() =>
+    Object.fromEntries(PROJECTS.map((p) => [p.name, p.sessions.map(([name]) => name)])),
+  );
+  const sortable = useSortableGroups(order, setOrder);
   const term = query.trim().toLowerCase();
   const projects = empty ? [] : PROJECTS;
-  const total = projects.reduce((n, p) => n + p.sessions.length, 0);
+  const total = projects.reduce((n, p) => n + (order[p.name]?.length ?? 0), 0);
   return (
     <div className="flex h-150 shrink-0 overflow-hidden">
       <SortableRail sessions={total} />
@@ -945,77 +953,99 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
               </EmptyState>
             </div>
           ) : (
-            projects.map((project) => {
-              const open = !closed.includes(project.name);
-              const rows = project.sessions.filter(([name]) =>
-                term ? (names[name] ?? name).toLowerCase().includes(term) : true,
-              );
-              return (
-                <SidebarProjectGroup key={project.name}>
-                  <SidebarProjectHeader
-                    name={project.name}
-                    count={project.sessions.length}
-                    open={open}
-                    onOpenChange={(next) =>
-                      setClosed((c) => (next ? c.filter((n) => n !== project.name) : [...c, project.name]))
-                    }
-                    current={project.sessions.some(([name]) => name === active)}
-                    actions={
-                      <>
-                        <IconButton aria-label="New session here" size="xs" variant="quiet">
-                          <PlusIcon />
-                        </IconButton>
-                        <IconButton aria-label={`${project.name} settings`} size="xs" variant="quiet">
-                          <Settings2Icon />
-                        </IconButton>
-                      </>
-                    }
-                  />
-                  {open ? (
-                    project.sessions.length === 0 ? (
-                      <SidebarEmptyRow>
-                        No sessions yet. <button type="button">Start one</button>
-                      </SidebarEmptyRow>
-                    ) : (
-                      <SessionList>
-                        {rows.map(([name, age, state]) => (
-                          <SessionItem
-                            key={name}
-                            name={names[name] ?? name}
-                            age={age || undefined}
-                            state={state}
-                            active={name === active}
-                            onClick={() => setActive(name)}
-                            menuOpen={menu === name}
-                            rename={
-                              renaming?.name === name
-                                ? {
-                                    value: renaming.draft,
-                                    onValueChange: (draft) => setRenaming({ name, draft }),
-                                    onCommit: () => {
-                                      setNames((n) => ({ ...n, [name]: renaming.draft || name }));
-                                      setRenaming(null);
-                                    },
-                                    onCancel: () => setRenaming(null),
+            <DragProvider
+              {...sortable}
+              labels={{
+                instructions:
+                  'To pick up a session, press space. Use the arrow keys to move it, space to drop it, and escape to cancel.',
+              }}
+              overlay={(item) => {
+                const session = SESSIONS.get(item.id);
+                return session ? (
+                  <div className="w-60 rounded-sm bg-card">
+                    <SessionItem name={names[item.id] ?? item.id} age={session.age || undefined} state={session.state} active />
+                  </div>
+                ) : null;
+              }}
+            >
+              {projects.map((project) => {
+                const open = !closed.includes(project.name);
+                const ids = order[project.name] ?? [];
+                const rows = ids.filter((name) => (term ? (names[name] ?? name).toLowerCase().includes(term) : true));
+                return (
+                  <SortableGroup key={project.name} id={project.name} items={open ? rows : []} data={{ label: project.name }}>
+                    <SidebarProjectGroup>
+                      <SidebarProjectHeader
+                        name={project.name}
+                        count={ids.length}
+                        open={open}
+                        onOpenChange={(next) =>
+                          setClosed((c) => (next ? c.filter((n) => n !== project.name) : [...c, project.name]))
+                        }
+                        current={ids.includes(active)}
+                        actions={
+                          <>
+                            <IconButton aria-label="New session here" size="xs" variant="quiet">
+                              <PlusIcon />
+                            </IconButton>
+                            <IconButton aria-label={`${project.name} settings`} size="xs" variant="quiet">
+                              <Settings2Icon />
+                            </IconButton>
+                          </>
+                        }
+                      />
+                      {open ? (
+                        ids.length === 0 ? (
+                          <SidebarEmptyRow>
+                            No sessions yet. <button type="button">Start one</button>
+                          </SidebarEmptyRow>
+                        ) : (
+                          <SessionList>
+                            {rows.map((name) => {
+                              const session = SESSIONS.get(name);
+                              return (
+                                <SortableSessionItem
+                                  key={name}
+                                  id={name}
+                                  disabled={term !== ''}
+                                  name={names[name] ?? name}
+                                  age={session?.age || undefined}
+                                  state={session?.state}
+                                  active={name === active}
+                                  onClick={() => setActive(name)}
+                                  menuOpen={menu === name}
+                                  rename={
+                                    renaming?.name === name
+                                      ? {
+                                          value: renaming.draft,
+                                          onValueChange: (draft) => setRenaming({ name, draft }),
+                                          onCommit: () => {
+                                            setNames((n) => ({ ...n, [name]: renaming.draft || name }));
+                                            setRenaming(null);
+                                          },
+                                          onCancel: () => setRenaming(null),
+                                        }
+                                      : undefined
                                   }
-                                : undefined
-                            }
-                            action={
-                              <RowMenu
-                                open={menu === name}
-                                onOpenChange={(next) => setMenu(next ? name : null)}
-                                onRename={() => setRenaming({ name, draft: names[name] ?? name })}
-                                projects={PROJECTS.filter((p) => p.name !== project.name).map((p) => p.name)}
-                              />
-                            }
-                          />
-                        ))}
-                      </SessionList>
-                    )
-                  ) : null}
-                </SidebarProjectGroup>
-              );
-            })
+                                  action={
+                                    <RowMenu
+                                      open={menu === name}
+                                      onOpenChange={(next) => setMenu(next ? name : null)}
+                                      onRename={() => setRenaming({ name, draft: names[name] ?? name })}
+                                      projects={PROJECTS.filter((p) => p.name !== project.name).map((p) => p.name)}
+                                    />
+                                  }
+                                />
+                              );
+                            })}
+                          </SessionList>
+                        )
+                      ) : null}
+                    </SidebarProjectGroup>
+                  </SortableGroup>
+                );
+              })}
+            </DragProvider>
           )}
         </div>
         <div className="border-t border-sidebar-border px-2 py-2">

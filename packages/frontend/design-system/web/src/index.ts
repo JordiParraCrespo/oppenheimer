@@ -286,7 +286,7 @@ export {
 export { SegmentedControl, SegmentedControlItem } from './components/segmented-control';
 export { Separator } from './components/separator';
 export type { SessionRename } from './components/session-item';
-export { SessionItem, SessionList } from './components/session-item';
+export { SessionItem, SessionList, SortableSessionItem } from './components/session-item';
 export { SessionPaneBack, SessionPaneHeader } from './components/session-pane-header';
 export {
   SettingsForm,

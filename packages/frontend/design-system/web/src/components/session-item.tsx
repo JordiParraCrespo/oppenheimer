@@ -6,6 +6,7 @@ import type * as React from 'react';
 
 import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
+import { useSortableItem } from './drag';
 import type { StatusState } from './status-dot';
 
 function SessionList({ className, ...props }: React.ComponentProps<'div'>) {
@@ -144,5 +145,49 @@ function SessionItem({
   );
 }
 
-export { SessionItem, SessionList };
+/**
+ * SortableSessionItem — a `SessionItem` the reader can drag: up or down in
+ * its project, or into another project's list (the project is the
+ * `SortableGroup`, so a folded or empty one still takes it). It sits in the
+ * shell's `DragProvider`; where the order and the project are kept is the
+ * app's (`useSortableGroups`' `onMove`). A click still opens the session and
+ * a drag starts after 5px; on the keyboard Enter opens it and Space picks
+ * it up. The row is still while it is being renamed, and its place is the
+ * drop slot while it moves.
+ */
+function SortableSessionItem({
+  id,
+  disabled,
+  className,
+  ...props
+}: Omit<React.ComponentProps<typeof SessionItem>, 'onPointerDown' | 'onKeyDown' | 'disabled'> & {
+  id: string;
+  /** No drag: a filtered list, where the neighbours on screen are not the order. */
+  disabled?: boolean;
+}) {
+  const { ref, handleProps, style, isDragging } = useSortableItem({
+    id,
+    data: { type: 'session', label: props.name },
+    disabled: disabled || props.rename !== undefined,
+    pickUp: 'space',
+  });
+  // The row keeps its own role (a list item, or the button inside one) and is never announced as disabled.
+  const { role: _role, 'aria-disabled': _disabled, ...handle } = handleProps;
+  return (
+    <div
+      ref={ref}
+      data-slot="sortable-session"
+      data-dragging={isDragging || undefined}
+      style={style}
+      className={cn(
+        'touch-none rounded-sm data-dragging:bg-selected-surface data-dragging:shadow-[inset_0_0_0_1px_var(--ring)] data-dragging:[&>*]:invisible',
+        className,
+      )}
+    >
+      <SessionItem {...props} {...handle} />
+    </div>
+  );
+}
+
+export { SessionItem, SessionList, SortableSessionItem };
 export type { SessionRename };

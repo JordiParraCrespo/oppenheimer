@@ -68,7 +68,7 @@ multi-line, so a grep for `export` misses most of them.
 | A session whose host went offline, reconnects or catches up | `Terminal hostLink={{ phase, host }}` with `HostLinkChrome` in the status bar's place (the banner; the notice form only if the product chose it) | an `Alert` or `ErrorAlert` above the terminal, a hand-built banner |
 | A command someone runs on their own machine to fix it | `CommandRow` in a `CommandRowList` | a `CodeBlock` per command, inline `<code>` in a sentence |
 | Attaching files by dropping them on a pane | `DropZone` | `dragenter` listeners in a feature |
-| Moving or reordering things by dragging (cards between columns, an entry to another day) | the drag layer: `DragProvider` with `SortableGroup` / `SortableItem` or `useDraggable` / `useDroppable` | `draggable` attributes, pointer listeners, dnd-kit imported in a feature |
+| Moving or reordering things by dragging (cards between columns, an entry to another day, a session to another project, the rail's order) | the drag layer: `DragProvider` with `SortableGroup` / `SortableItem` or `useDraggable` / `useDroppable`; `SortableSessionItem` and `SortableRailItem` for the sidebar and the rail | `draggable` attributes, pointer listeners, dnd-kit imported in a feature |
 | Plan's tasks by status | `TaskBoard`, `TaskColumn`, `TaskCard`, `TaskSessionChip`, `TaskComposer`; `GoalCard` above | a `Card` grid, a table |
 | A month with things on its days | `MonthCalendar` (`CalendarEntry` per item) inside the page's `DragProvider` | a grid of `div`s, a calendar library |
 | Picking a day | `DatePicker` | `<input type="date">`, a `ChipSelect` of dates |

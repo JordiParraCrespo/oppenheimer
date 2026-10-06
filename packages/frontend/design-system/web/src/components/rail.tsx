@@ -148,6 +148,7 @@ function SortableRailItem({
   const { ref, handleProps, style: slide, isDragging } = useSortableItem({
     id,
     data: { type: 'rail-item', label: props.label },
+    pickUp: 'space',
   });
   // The drag contract goes last: the caller's props never replace the ref, the listeners or the slide.
   return (

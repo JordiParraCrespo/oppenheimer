@@ -355,9 +355,21 @@ function SortableGroup({
 
 /**
  * One item of a `SortableGroup`. Returns the ref, the handle's props, and
- * the style that slides it while its neighbours move.
+ * the style that slides it while its neighbours move. An item that is also
+ * a link or a button takes `pickUp="space"`, so Enter still opens it and
+ * only Space picks it up.
  */
-function useSortableItem({ id, data, disabled }: { id: string; data?: DragData; disabled?: boolean }) {
+function useSortableItem({
+  id,
+  data,
+  disabled,
+  pickUp = 'space-or-enter',
+}: {
+  id: string;
+  data?: DragData;
+  disabled?: boolean;
+  pickUp?: 'space' | 'space-or-enter';
+}) {
   const reduced = React.useContext(ReducedMotion);
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id,
@@ -365,9 +377,18 @@ function useSortableItem({ id, data, disabled }: { id: string; data?: DragData; 
     disabled,
     transition: reduced ? null : { duration: SLIDE_MS, easing: EASE_STANDARD },
   });
+  const onKeyDown = listeners?.onKeyDown;
+  const keys =
+    pickUp === 'space' && onKeyDown
+      ? {
+          onKeyDown: (event: React.KeyboardEvent) => {
+            if (event.key !== 'Enter' || isDragging) onKeyDown(event);
+          },
+        }
+      : {};
   return {
     ref: setNodeRef,
-    handleProps: { ...attributes, ...listeners },
+    handleProps: { ...attributes, ...listeners, ...keys },
     style: { transform: CSS.Translate.toString(transform), transition } as React.CSSProperties,
     isDragging,
   };
