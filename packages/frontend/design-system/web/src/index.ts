@@ -157,6 +157,7 @@ export {
   DropdownMenuTrigger,
   DropdownMenuValue,
 } from './components/dropdown-menu';
+export type { EditorPageSize } from './components/editor-page';
 export {
   EditorPage,
   EditorPageBack,

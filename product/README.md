@@ -349,3 +349,8 @@ earlier note:
   2026-09-28 the owner changed that: we approve and merge in the user's
   name, with their own authorization, and when GitHub will not allow it
   the PR waits.
+- `globals.css` made the console's ground white while the design export,
+  New session, the automations and Pull requests kept the grey, so Plan
+  alone was white. On 2026-10-06 every console page moved onto the
+  export's grey, in one frame the shell draws at the route's measure
+  (`versions/mvp/README.md`).

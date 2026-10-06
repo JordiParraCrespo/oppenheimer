@@ -96,17 +96,18 @@
        ================================================================== */
 
     /* ---- Surfaces ---------------------------------------------------- */
-    /* The page. It was `--op-gray-50` on the principle that light mode is
-       never white, which gave every full-bleed surface — the console pane,
-       the terminal frame, the composer page — a grey ground with white cards
-       floating on it. The console is one surface, so the ground is white and
-       the card no longer reads as a card. Dark mode is unchanged: there the
-       lift between `--canvas` and `--card` is what separates them. */
+    /* The page: the auth and public screens, the sidebar's lit row, and
+       what a control sits on. It was `--op-gray-50` on the principle that
+       light mode is never white; those screens are one surface, so it is
+       white. Dark mode is unchanged: there the lift between `--canvas` and
+       `--card` is what separates them. */
     --canvas: var(--op-white);
     --background: var(--canvas);
-    /* The grey ground a page of cards sits on. The console is one white
-       surface, but Settings still draws white cards on the old grey
-       (`design/version1/Settings.dc.html`), so that ground keeps a name. */
+    /* The console's ground: the export's grey `--canvas`
+       (`design/version1/console.css`), under every pane the shell draws and
+       under Settings, so white cards float on it without a border. The shell
+       paints it once (`AppShell`'s column and `EditorPage`); a screen never
+       does. */
     --canvas-recessed: var(--op-gray-50);
     --card: var(--op-white); /* the only lit surface on the canvas */
     /* A lit surface that is also a control — the social sign-in buttons — needs

@@ -19,6 +19,7 @@ import { Route as AuthPublicRouteImport } from './routes/_auth/_public'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
 import { Route as AuthenticatedSplatRouteImport } from './routes/_authenticated/$'
 import { Route as AuthenticatedAutomationsRouteImport } from './routes/_authenticated/automations'
+import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/plan'
 import { Route as AuthenticatedPullsRouteImport } from './routes/_authenticated/pulls'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
@@ -97,6 +98,11 @@ const AuthenticatedAutomationsRoute =
     path: '/automations',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPlanRoute = AuthenticatedPlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedPullsRoute = AuthenticatedPullsRouteImport.update({
   id: '/pulls',
   path: '/pulls',
@@ -177,15 +183,15 @@ const AuthenticatedAutomationsRunsRoute =
     getParentRoute: () => AuthenticatedAutomationsRoute,
   } as any)
 const AuthenticatedPlanIndexRoute = AuthenticatedPlanIndexRouteImport.update({
-  id: '/plan/',
-  path: '/plan/',
-  getParentRoute: () => AuthenticatedRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedPlanRoute,
 } as any)
 const AuthenticatedPlanCalendarRoute =
   AuthenticatedPlanCalendarRouteImport.update({
-    id: '/plan/calendar',
-    path: '/plan/calendar',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
 const AuthenticatedPullsIndexRoute = AuthenticatedPullsIndexRouteImport.update({
   id: '/',
@@ -230,9 +236,9 @@ const AuthenticatedSettingsProfileRoute =
   } as any)
 const AuthenticatedPlanCalendarGoogleRoute =
   AuthenticatedPlanCalendarGoogleRouteImport.update({
-    id: '/plan/calendar_/google',
-    path: '/plan/calendar/google',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/calendar_/google',
+    path: '/calendar/google',
+    getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
 const AuthenticatedSettingsHostsIndexRoute =
   AuthenticatedSettingsHostsIndexRouteImport.update({
@@ -267,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthOnboardingRouteWithChildren
   '/$': typeof AuthenticatedSplatRoute
   '/automations': typeof AuthenticatedAutomationsRouteWithChildren
+  '/plan': typeof AuthenticatedPlanRouteWithChildren
   '/pulls': typeof AuthenticatedPullsRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/oauth/consent': typeof OauthConsentRoute
@@ -343,6 +350,7 @@ export interface FileRoutesById {
   '/_auth/onboarding': typeof AuthOnboardingRouteWithChildren
   '/_authenticated/$': typeof AuthenticatedSplatRoute
   '/_authenticated/automations': typeof AuthenticatedAutomationsRouteWithChildren
+  '/_authenticated/plan': typeof AuthenticatedPlanRouteWithChildren
   '/_authenticated/pulls': typeof AuthenticatedPullsRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/oauth/consent': typeof OauthConsentRoute
@@ -383,6 +391,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/$'
     | '/automations'
+    | '/plan'
     | '/pulls'
     | '/settings'
     | '/oauth/consent'
@@ -458,6 +467,7 @@ export interface FileRouteTypes {
     | '/_auth/onboarding'
     | '/_authenticated/$'
     | '/_authenticated/automations'
+    | '/_authenticated/plan'
     | '/_authenticated/pulls'
     | '/_authenticated/settings'
     | '/oauth/consent'
@@ -571,6 +581,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAutomationsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/plan': {
+      id: '/_authenticated/plan'
+      path: '/plan'
+      fullPath: '/plan'
+      preLoaderRoute: typeof AuthenticatedPlanRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/pulls': {
       id: '/_authenticated/pulls'
       path: '/pulls'
@@ -678,17 +695,17 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/plan/': {
       id: '/_authenticated/plan/'
-      path: '/plan'
+      path: '/'
       fullPath: '/plan/'
       preLoaderRoute: typeof AuthenticatedPlanIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedPlanRoute
     }
     '/_authenticated/plan/calendar': {
       id: '/_authenticated/plan/calendar'
-      path: '/plan/calendar'
+      path: '/calendar'
       fullPath: '/plan/calendar'
       preLoaderRoute: typeof AuthenticatedPlanCalendarRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedPlanRoute
     }
     '/_authenticated/pulls/': {
       id: '/_authenticated/pulls/'
@@ -741,10 +758,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/plan/calendar_/google': {
       id: '/_authenticated/plan/calendar_/google'
-      path: '/plan/calendar/google'
+      path: '/calendar/google'
       fullPath: '/plan/calendar/google'
       preLoaderRoute: typeof AuthenticatedPlanCalendarGoogleRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedPlanRoute
     }
     '/_authenticated/settings/hosts/': {
       id: '/_authenticated/settings/hosts/'
@@ -846,6 +863,21 @@ const AuthenticatedAutomationsRouteWithChildren =
     AuthenticatedAutomationsRouteChildren,
   )
 
+interface AuthenticatedPlanRouteChildren {
+  AuthenticatedPlanCalendarRoute: typeof AuthenticatedPlanCalendarRoute
+  AuthenticatedPlanIndexRoute: typeof AuthenticatedPlanIndexRoute
+  AuthenticatedPlanCalendarGoogleRoute: typeof AuthenticatedPlanCalendarGoogleRoute
+}
+
+const AuthenticatedPlanRouteChildren: AuthenticatedPlanRouteChildren = {
+  AuthenticatedPlanCalendarRoute: AuthenticatedPlanCalendarRoute,
+  AuthenticatedPlanIndexRoute: AuthenticatedPlanIndexRoute,
+  AuthenticatedPlanCalendarGoogleRoute: AuthenticatedPlanCalendarGoogleRoute,
+}
+
+const AuthenticatedPlanRouteWithChildren =
+  AuthenticatedPlanRoute._addFileChildren(AuthenticatedPlanRouteChildren)
+
 interface AuthenticatedPullsRouteChildren {
   AuthenticatedPullsAnalyticsRoute: typeof AuthenticatedPullsAnalyticsRoute
   AuthenticatedPullsIndexRoute: typeof AuthenticatedPullsIndexRoute
@@ -881,14 +913,12 @@ const AuthenticatedSettingsRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
   AuthenticatedAutomationsRoute: typeof AuthenticatedAutomationsRouteWithChildren
+  AuthenticatedPlanRoute: typeof AuthenticatedPlanRouteWithChildren
   AuthenticatedPullsRoute: typeof AuthenticatedPullsRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
-  AuthenticatedPlanCalendarRoute: typeof AuthenticatedPlanCalendarRoute
   AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRoute
   AuthenticatedSessionsNewRoute: typeof AuthenticatedSessionsNewRoute
-  AuthenticatedPlanIndexRoute: typeof AuthenticatedPlanIndexRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
-  AuthenticatedPlanCalendarGoogleRoute: typeof AuthenticatedPlanCalendarGoogleRoute
   AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute: typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
   AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute: typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
 }
@@ -896,14 +926,12 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSplatRoute: AuthenticatedSplatRoute,
   AuthenticatedAutomationsRoute: AuthenticatedAutomationsRouteWithChildren,
+  AuthenticatedPlanRoute: AuthenticatedPlanRouteWithChildren,
   AuthenticatedPullsRoute: AuthenticatedPullsRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
-  AuthenticatedPlanCalendarRoute: AuthenticatedPlanCalendarRoute,
   AuthenticatedSessionsSessionIdRoute: AuthenticatedSessionsSessionIdRoute,
   AuthenticatedSessionsNewRoute: AuthenticatedSessionsNewRoute,
-  AuthenticatedPlanIndexRoute: AuthenticatedPlanIndexRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,
-  AuthenticatedPlanCalendarGoogleRoute: AuthenticatedPlanCalendarGoogleRoute,
   AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute:
     AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute,
   AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute:

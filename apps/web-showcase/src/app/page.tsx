@@ -1066,9 +1066,9 @@ export default function Page() {
         id="editorpage"
         title="EditorPage"
         meta="editor-page.tsx"
-        desc="The page over the main column — the automations overview, and Add a host inside Settings — and nothing in it. EditorPage is the canvas column that scrolls on its own; EditorPageBody the measured body, wide for a page that holds a table; EditorPageBack the pill above the page header; EditorPageTop a first row for a page that opens on view tabs and one action. The console mounts the frame from a layout route and each page fills the body."
+        desc="The frame of every console page — Plan, the automations, and the measure Add a host borrows inside Settings — and nothing in it. EditorPage is the grey canvas column that scrolls on its own; EditorPageBody the measured body at a size (narrow 760px, wide 920px for a table, board 1240px for Plan's columns) that publishes its gutter as --page-gutter; EditorPageBack the pill above the page header; EditorPageTop a first row for a page that opens on view tabs and one action. The console's shell draws the frame from the route's staticData.pane, so a page renders only its content."
         code={`<EditorPage><EditorPageBody><EditorPageBack render={<Link to="/sessions" />}>Back</EditorPageBack><PageHeader>…</PageHeader><RoutineSteps>…</RoutineSteps></EditorPageBody></EditorPage>
-<EditorPage><EditorPageBody wide><EditorPageTop><PillTabs …>…</PillTabs><Button size="sm" variant="secondary">New automation</Button></EditorPageTop>…</EditorPageBody></EditorPage>`}
+<EditorPage><EditorPageBody size="wide"><EditorPageTop><PillTabs …>…</PillTabs><Button size="sm" variant="secondary">New automation</Button></EditorPageTop>…</EditorPageBody></EditorPage>`}
       >
         <div className="flex w-full flex-col gap-6">
           <EditorPageDemo />
