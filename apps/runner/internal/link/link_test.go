@@ -316,7 +316,7 @@ func TestCarriesFramesAndControlMessagesBothWays(t *testing.T) {
 	if err := c.SendFrame(ctx, 7, []byte("$ ")); err != nil {
 		t.Fatal(err)
 	}
-	kind, data, err := conn.Read(ctx)
+	kind, data, err := readPastHeartbeats(ctx, conn)
 	if err != nil || kind != websocket.MessageBinary {
 		t.Fatalf("expected a binary frame first: %v %v", kind, err)
 	}
@@ -326,7 +326,7 @@ func TestCarriesFramesAndControlMessagesBothWays(t *testing.T) {
 	if err := c.Send(link.CommandFailed{Type: "command.failed", CommandID: "c2", Code: "SESS_003"}); err != nil {
 		t.Fatal(err)
 	}
-	kind, data, err = conn.Read(ctx)
+	kind, data, err = readPastHeartbeats(ctx, conn)
 	if err != nil || kind != websocket.MessageText || !strings.Contains(string(data), `"command.failed"`) {
 		t.Fatalf("expected command.failed: %v %s %v", kind, data, err)
 	}
@@ -343,6 +343,18 @@ func TestCarriesFramesAndControlMessagesBothWays(t *testing.T) {
 		}
 	}
 	t.Fatal("no heartbeat within 2 s")
+}
+
+// readPastHeartbeats reads the next message that is not a heartbeat. The
+// runner sends one every Heartbeat interval on its own clock, so one can land
+// between anything the test sends and what it reads back.
+func readPastHeartbeats(ctx context.Context, conn *websocket.Conn) (websocket.MessageType, []byte, error) {
+	for {
+		kind, data, err := conn.Read(ctx)
+		if err != nil || kind != websocket.MessageText || !strings.Contains(string(data), `"heartbeat"`) {
+			return kind, data, err
+		}
+	}
 }
 
 func TestSendBetweenLinksIsRefusedNotQueued(t *testing.T) {
