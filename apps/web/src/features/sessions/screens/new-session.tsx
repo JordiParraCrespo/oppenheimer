@@ -22,19 +22,16 @@ export function NewSessionScreen() {
 
   return (
     <NewSessionDropContext value={drop}>
-      <DropZone
-        onFiles={drop.deliver}
-        listen="window"
-        outline="pane"
-        className="flex flex-col gap-4.5"
-      >
-        <NewSessionForm
-          heading={
-            <h1 className="font-display text-metric font-semibold text-fg">
-              {t('sessions.new.title')}
-            </h1>
-          }
-        />
+      <DropZone onFiles={drop.deliver} listen="window" outline="pane">
+        <div className="flex flex-col gap-4.5">
+          <NewSessionForm
+            heading={
+              <h1 className="font-display text-metric font-semibold text-fg">
+                {t('sessions.new.title')}
+              </h1>
+            }
+          />
+        </div>
       </DropZone>
     </NewSessionDropContext>
   );

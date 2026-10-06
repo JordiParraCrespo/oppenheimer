@@ -52,6 +52,7 @@ import {
 } from '@oppenheimer/design-system-web/icons';
 import {
   DropZoneNewSessionDemo,
+  DropZonePaneDemo,
   DropZoneTerminalDemo,
   TerminalHostLinkDemo,
 } from '../components/host-link-demos';
@@ -857,15 +858,19 @@ export default function Page() {
         id="dropzone"
         title="DropZone"
         meta="drop-zone.tsx"
-        desc="Files are attached by dropping them on the pane, not only through the paperclip. A drag that carries files outlines the whole pane in the action blue, 3px, square and flush with its edge: no fill, no radius, no label. In the console the zone wraps the main column beside the sidebar. On New session the files join the composer's attachments; in a running session each goes into the prompt as an @path. The outline exists only during the drag and never takes the pointer. The zone is its own box, so two on a page each get only their own drops; the window listener catches a near miss too, for a page with exactly one zone. A dragged link or text is left alone. Drag a file from your desktop onto either pane."
+        desc="Files are attached by dropping them on the pane, not only through the paperclip. A drag that carries files outlines the whole pane in the action blue, 3px, square and flush with its edge: no fill, no radius, no label. In the console the zone wraps the main column beside the sidebar. On New session the files join the composer's attachments; in a running session each goes into the prompt as an @path. The outline exists only during the drag and never takes the pointer. The zone is its own box, so two on a page each get only their own drops; content inside a page the shell frames and scrolls takes the pane outline, which traces the positioned pane around the scroller instead of the zone, wherever the page has scrolled; the window listener catches a near miss too, for a page with exactly one zone. A dragged link or text is left alone. Drag a file from your desktop onto either pane."
         code={`<DropZone onFiles={(files) => attach(files)}>
   <NewSessionPane />
 </DropZone>
-<DropZone listen="window" onFiles={attach}>…</DropZone>  // the page's only zone`}
+<DropZone listen="window" onFiles={attach}>…</DropZone>  // the page's only zone
+<DropZone listen="window" outline="pane" onFiles={attach}>…</DropZone>  // content in a framed page`}
       >
-        <div className="grid w-full gap-4 lg:grid-cols-2">
-          <DropZoneNewSessionDemo />
-          <DropZoneTerminalDemo />
+        <div className="flex w-full flex-col gap-4">
+          <div className="grid w-full gap-4 lg:grid-cols-2">
+            <DropZoneNewSessionDemo />
+            <DropZoneTerminalDemo />
+          </div>
+          <DropZonePaneDemo />
         </div>
       </Spec>
 

@@ -3,6 +3,7 @@
 import { Composer, type ComposerAttachment } from '@oppenheimer/design-system-web/composer';
 import { CommandRow, CommandRowList } from '@oppenheimer/design-system-web/command-row';
 import { DropZone } from '@oppenheimer/design-system-web/drop-zone';
+import { EditorPage, EditorPageBody } from '@oppenheimer/design-system-web/editor-page';
 import { HostLinkChrome, type HostLinkForm, type HostLinkPhase } from '@oppenheimer/design-system-web/host-link';
 import { Link } from '@oppenheimer/design-system-web/link';
 import { SegmentedControl, SegmentedControlItem } from '@oppenheimer/design-system-web/segmented-control';
@@ -164,6 +165,40 @@ export function DropZoneNewSessionDemo() {
       </div>
       </div>
     </DropZone>
+  );
+}
+
+/**
+ * The console's New session: the zone is content inside a page the shell
+ * frames and scrolls, so `outline="pane"` traces the positioned pane around
+ * that scroller. Scroll the page, then drag a file onto the content: the
+ * outline stays on the pane's edge, not on the content or the scrolled area.
+ * It listens on its own box here, since this page holds other zones; New
+ * session, the console's only zone, listens on the window.
+ */
+export function DropZonePaneDemo() {
+  const [dropped, setDropped] = React.useState<string[]>([]);
+  return (
+    <div className="relative flex h-90 w-full overflow-hidden border border-border-subtle bg-canvas-recessed">
+      <EditorPage>
+        <EditorPageBody size="composer">
+          <DropZone
+            outline="pane"
+            onFiles={(files) => setDropped((d) => [...d, ...files.map((file) => file.name)])}
+          >
+            <div className="flex flex-col gap-4">
+              <h3 className="m-0 font-display text-h2 font-semibold text-fg">A page taller than its pane</h3>
+              {Array.from({ length: 8 }, (_, i) => (
+                <div key={i} className="h-16 shrink-0 rounded-lg bg-card" />
+              ))}
+              <p className="m-0 text-operate text-fg-muted">
+                {dropped.length ? dropped.join(', ') : 'Nothing dropped yet.'}
+              </p>
+            </div>
+          </DropZone>
+        </EditorPageBody>
+      </EditorPage>
+    </div>
   );
 }
 
