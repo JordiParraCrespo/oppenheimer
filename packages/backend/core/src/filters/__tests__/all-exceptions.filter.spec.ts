@@ -23,9 +23,10 @@ function capture() {
   const json = vi.fn();
   const contentType = vi.fn().mockReturnValue({ json });
   const status = vi.fn().mockReturnValue({ contentType });
+  const setHeader = vi.fn();
   const host = {
     switchToHttp: () => ({
-      getResponse: () => ({ status }),
+      getResponse: () => ({ status, setHeader }),
       getRequest: () => ({ originalUrl: '/api/v1/users/42' }),
     }),
   } as unknown as ArgumentsHost;
@@ -34,6 +35,7 @@ function capture() {
     host,
     status,
     contentType,
+    setHeader,
     problem: () => json.mock.calls[0][0] as ProblemDetails,
   };
 }
@@ -45,6 +47,21 @@ function handle(exception: unknown) {
 }
 
 describe('AllExceptionsFilter', () => {
+  it('tells the client when an upstream rate limit lifts, as Retry-After', () => {
+    const limited: ErrorDefinition = { code: 'GITHUB_015', message: 'Slow down', httpStatus: 429 };
+    const { status, setHeader, problem } = handle(
+      new AppError(limited, { extensions: { retryAfterSeconds: 41.2 } }),
+    );
+
+    expect(status).toHaveBeenCalledWith(429);
+    expect(setHeader).toHaveBeenCalledWith('Retry-After', '42');
+    expect(problem()).toMatchObject({ retryAfterSeconds: 41.2 });
+  });
+
+  it('sends no Retry-After for an error that does not carry one', () => {
+    expect(handle(new AppError(USER_NOT_FOUND)).setHeader).not.toHaveBeenCalled();
+  });
+
   it('serves problem documents as application/problem+json', () => {
     const { status, contentType, problem } = handle(new AppError(USER_NOT_FOUND));
 

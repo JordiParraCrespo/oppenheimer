@@ -14,6 +14,7 @@ import type {
   GithubUserAuthorization,
   GithubUserTokens,
 } from './github-app.port';
+import { type GithubBucket, GithubRateLimit, tokenBucket } from './github-rate-limit.adapter';
 
 const OAUTH_TOKEN_PATH = '/login/oauth/access_token';
 
@@ -92,6 +93,8 @@ export type GithubFetch = typeof globalThis.fetch;
 type StatusMap = Partial<Record<number, ErrorDefinition>>;
 
 interface RequestOptions {
+  /** What GitHub counts this call against, and so what a rate-limit pause covers. */
+  bucket: GithubBucket;
   /** Bearer credential. Absent for the OAuth exchange, which authenticates by body. */
   token?: string;
   method?: string;
@@ -119,6 +122,7 @@ interface RequestOptions {
 export class GithubRestAdapter implements GithubAppPort {
   private readonly logger = new Logger(GithubRestAdapter.name);
   private readonly http: GithubFetch;
+  private readonly limits: GithubRateLimit;
 
   constructor(
     private readonly configService: ConfigService,
@@ -126,8 +130,11 @@ export class GithubRestAdapter implements GithubAppPort {
     @Optional()
     @Inject(GITHUB_FETCH)
     fetchImpl?: GithubFetch,
+    @Optional()
+    rateLimit?: GithubRateLimit,
   ) {
     this.http = fetchImpl ?? globalThis.fetch;
+    this.limits = rateLimit ?? new GithubRateLimit();
   }
 
   /**
@@ -166,12 +173,15 @@ export class GithubRestAdapter implements GithubAppPort {
     this.assertConfigured();
 
     const tokens = await this.exchangeCode({ code });
+    const bucket = tokenBucket(tokens.accessToken);
     const installations = await this.paginate<RawInstallation>(
       `${this.api}/user/installations`,
       tokens.accessToken,
+      bucket,
       (body) => collectionOf<RawInstallation>(body, 'installations'),
     );
     const { body: user } = await this.request<RawUser>(`${this.api}/user`, {
+      bucket,
       token: tokens.accessToken,
     });
 
@@ -204,6 +214,7 @@ export class GithubRestAdapter implements GithubAppPort {
     const { body } = await this.request<RawInstallation>(
       `${this.api}/app/installations/${githubInstallationId}`,
       {
+        bucket: 'app',
         token: this.appJwt(),
         onStatus: { 404: GithubErrors.INSTALLATION_NOT_FOUND },
       },
@@ -224,6 +235,7 @@ export class GithubRestAdapter implements GithubAppPort {
     const repositories = await this.paginate<RawRepository>(
       `${this.api}/installation/repositories`,
       token,
+      `installation:${githubInstallationId}`,
       (body) => collectionOf<RawRepository>(body, 'repositories'),
     );
 
@@ -235,15 +247,22 @@ export class GithubRestAdapter implements GithubAppPort {
     githubRepoId: number,
   ): Promise<GithubRepository> {
     const token = await this.installationToken(githubInstallationId);
-    return toRepository(await this.rawRepository(token, githubRepoId));
+    return toRepository(
+      await this.rawRepository(token, `installation:${githubInstallationId}`, githubRepoId),
+    );
   }
 
   /**
    * The raw row, so `readRepository` and `listRepositoryBranches` cannot drift
    * on the refusal mapping.
    */
-  private async rawRepository(token: string, githubRepoId: number): Promise<RawRepository> {
+  private async rawRepository(
+    token: string,
+    bucket: GithubBucket,
+    githubRepoId: number,
+  ): Promise<RawRepository> {
     const { body } = await this.request<RawRepository>(`${this.api}/repositories/${githubRepoId}`, {
+      bucket,
       token,
       onStatus: {
         403: GithubErrors.REPOSITORY_NOT_IN_INSTALLATION,
@@ -258,12 +277,14 @@ export class GithubRestAdapter implements GithubAppPort {
     githubRepoId: number,
   ): Promise<{ branches: GithubBranch[]; defaultBranch: string }> {
     const token = await this.installationToken(githubInstallationId);
-    const repository = await this.rawRepository(token, githubRepoId);
+    const bucket: GithubBucket = `installation:${githubInstallationId}`;
+    const repository = await this.rawRepository(token, bucket, githubRepoId);
 
     const [owner, name] = repository.full_name.split('/');
     const branches = await this.paginate<RawBranch>(
       `${this.api}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/branches`,
       token,
+      bucket,
       (body) => (Array.isArray(body) ? (body as RawBranch[]) : []),
       {
         403: GithubErrors.REPOSITORY_NOT_IN_INSTALLATION,
@@ -323,6 +344,7 @@ export class GithubRestAdapter implements GithubAppPort {
     const { body } = await this.request<RawAccessToken>(
       `${this.api}/app/installations/${githubInstallationId}/access_tokens`,
       {
+        bucket: 'app',
         method: 'POST',
         token: this.appJwt(),
         body: {
@@ -346,6 +368,7 @@ export class GithubRestAdapter implements GithubAppPort {
    */
   private async exchangeCode(grant: Record<string, string>): Promise<GithubUserTokens> {
     const { body } = await this.request<RawOauthToken>(this.oauthTokenUrl, {
+      bucket: 'oauth',
       method: 'POST',
       accept: 'application/json',
       body: { client_id: this.clientId, client_secret: this.clientSecret, ...grant },
@@ -408,6 +431,7 @@ export class GithubRestAdapter implements GithubAppPort {
   private async paginate<T>(
     url: string,
     token: string,
+    bucket: GithubBucket,
     pick: (body: unknown) => T[],
     onStatus?: StatusMap,
   ): Promise<T[]> {
@@ -415,7 +439,7 @@ export class GithubRestAdapter implements GithubAppPort {
     let next: string | undefined = withPageSize(url);
 
     for (let page = 0; page < MAX_PAGES && next; page += 1) {
-      const { body, link } = await this.request<unknown>(next, { token, onStatus });
+      const { body, link } = await this.request<unknown>(next, { bucket, token, onStatus });
       items.push(...pick(body));
       next = nextPageUrl(link);
     }
@@ -424,7 +448,9 @@ export class GithubRestAdapter implements GithubAppPort {
   }
 
   /**
-   * One request, with its failure folded onto the catalog.
+   * One request, with its failure folded onto the catalog, inside GitHub's
+   * rate limit: a paused bucket is refused without a call, and a refusal for
+   * rate is `GITHUB_015` whatever the call site maps its status to.
    *
    * The credential travels in the `Authorization` header and never in the URL,
    * which is what lets the log line and the problem document name the request at
@@ -437,19 +463,22 @@ export class GithubRestAdapter implements GithubAppPort {
   ): Promise<{ body: T; link: string | null }> {
     let response: Response;
     try {
-      response = await this.http(url, {
-        method: options.method ?? 'GET',
-        headers: {
-          accept: options.accept ?? 'application/vnd.github+json',
-          'x-github-api-version': API_VERSION,
-          'user-agent': USER_AGENT,
-          ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
-          ...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
-        },
-        body: options.body === undefined ? undefined : JSON.stringify(options.body),
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      });
+      response = await this.limits.call(options.bucket, () =>
+        this.http(url, {
+          method: options.method ?? 'GET',
+          headers: {
+            accept: options.accept ?? 'application/vnd.github+json',
+            'x-github-api-version': API_VERSION,
+            'user-agent': USER_AGENT,
+            ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
+            ...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
+          },
+          body: options.body === undefined ? undefined : JSON.stringify(options.body),
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        }),
+      );
     } catch (error) {
+      if (error instanceof AppError) throw error;
       // A timeout, a DNS failure, a reset: GitHub did not answer at all, which is
       // never a 4xx no matter what the call site expected.
       this.logger.warn(
@@ -472,12 +501,14 @@ export class GithubRestAdapter implements GithubAppPort {
       // success body of this same endpoint does, which is why only this branch
       // reads one.
       const upstreamMessage = await messageOf(response);
+      await this.limits.refuseIfLimited(options.bucket, response, upstreamMessage);
       throw new AppError(errorFor(response.status, options.onStatus), {
         detail: upstreamMessage ?? 'GitHub answered this request with an error.',
         extensions: { upstreamStatus: response.status },
       });
     }
 
+    await this.limits.observe(options.bucket, response);
     return { body: (await response.json()) as T, link: response.headers.get('link') };
   }
 

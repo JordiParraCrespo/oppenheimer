@@ -39,6 +39,7 @@ interface Answer {
   status?: number;
   body?: unknown;
   link?: string;
+  headers?: Record<string, string>;
 }
 
 /** Records every call and answers them in order. */
@@ -51,7 +52,10 @@ function fakeFetch(answers: Answer[]) {
       ok: (answer.status ?? 200) < 400,
       status: answer.status ?? 200,
       json: async () => answer.body ?? {},
-      headers: { get: (name: string) => (name === 'link' ? (answer.link ?? null) : null) },
+      headers: {
+        get: (name: string) =>
+          name === 'link' ? (answer.link ?? null) : (answer.headers?.[name] ?? null),
+      },
     } as unknown as Response;
   });
   return { impl: impl as unknown as GithubFetch, calls, raw: impl };
@@ -361,5 +365,60 @@ describe('the installation claim proof', () => {
         { body: { ...INSTALLATION, account: { login: 'acme-labs', type: 'Enterprise' } } },
       ]).adapter.readInstallation(45678901),
     ).rejects.toMatchObject({ code: 'GITHUB_009' });
+  });
+});
+
+describe('GitHub’s rate limit', () => {
+  const inAMinute = () => String(Math.floor(Date.now() / 1000) + 60);
+
+  it('reports an exhausted limit as GITHUB_015, not as the 403 the call site expected', async () => {
+    // A 403 on this route means "suspended installation". Read as that, a rate
+    // limit would tell the person to reinstall the App.
+    const { adapter } = build([
+      TOKEN_ANSWER,
+      {
+        status: 403,
+        body: { message: 'API rate limit exceeded for installation ID 45678901.' },
+        headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': inAMinute() },
+      },
+    ]);
+
+    await expect(adapter.listInstallationRepositories(45678901)).rejects.toMatchObject({
+      code: 'GITHUB_015',
+      extensions: { upstream: 'GitHub', retryAfterSeconds: expect.any(Number) },
+    });
+  });
+
+  it('recognises a secondary limit from GitHub’s sentence when no header says so', async () => {
+    const { adapter } = build([
+      TOKEN_ANSWER,
+      { status: 403, body: { message: 'You have exceeded a secondary rate limit.' } },
+    ]);
+
+    await expect(adapter.listInstallationRepositories(45678901)).rejects.toMatchObject({
+      code: 'GITHUB_015',
+    });
+  });
+
+  it('stops asking GitHub until the reset once a call spent the last request', async () => {
+    const { adapter, http } = build([
+      TOKEN_ANSWER,
+      {
+        body: { repositories: [REPOSITORY] },
+        headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': inAMinute() },
+      },
+      TOKEN_ANSWER,
+    ]);
+
+    await expect(adapter.listInstallationRepositories(45678901)).resolves.toHaveLength(1);
+    await expect(adapter.listInstallationRepositories(45678901)).rejects.toMatchObject({
+      code: 'GITHUB_015',
+    });
+    // The second listing minted its token (the App's own budget) and never sent the read.
+    expect(http.calls.map((call) => new URL(call.url).pathname)).toEqual([
+      '/app/installations/45678901/access_tokens',
+      '/installation/repositories',
+      '/app/installations/45678901/access_tokens',
+    ]);
   });
 });

@@ -22,6 +22,7 @@ src/
 ├── requests/       # request-scoped helpers
 ├── responses/      # paginated response helpers (toPageMeta, PaginatedResponseDto)
 ├── services/       # shared base services
+├── upstream/       # calling systems we do not run: rate-limit signals, the shared pause, the concurrency cap
 └── index.ts        # public surface
 ```
 

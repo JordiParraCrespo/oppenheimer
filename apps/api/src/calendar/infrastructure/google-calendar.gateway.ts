@@ -1,10 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { createHash } from 'node:crypto';
+import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { CacheService } from '@oppenheimer/backend-cache';
+import { readRateLimit, UpstreamPause } from '@oppenheimer/backend-core';
 import {
   type CalendarGrant,
   CalendarGrantRevokedError,
   CalendarProviderError,
   type CalendarProviderPort,
+  CalendarRateLimitedError,
   GOOGLE_CALENDAR_SCOPE,
   type ProviderCalendarEvent,
 } from './calendar-provider.port';
@@ -14,15 +18,28 @@ import { emailOfIdToken, googleEventsToProvider, nextDay } from './google-calend
 const PAGE_SIZE = 2500;
 const MAX_PAGES = 4;
 const TIMEOUT_MS = 10_000;
+/** The reasons Google gives a quota refusal, which it sends as a 403 as often as a 429. */
+const QUOTA_REASONS = /rateLimitExceeded|userRateLimitExceeded|quotaExceeded|RESOURCE_EXHAUSTED/;
 
 /**
  * Google Calendar, read-only, through the same OAuth client as Google sign-in. The
  * redirect lands on the console (`/plan/calendar/google`), which posts the code back,
  * as Connect GitHub does; so the redirect URI is the console's.
+ *
+ * Google counts reads per person and per project. A grant Google refused for
+ * quota is paused until it says, shared through Redis, and is not asked again
+ * before then (`.agents/rules/integrations.md`).
  */
 @Injectable()
 export class GoogleCalendarGateway implements CalendarProviderPort {
-  constructor(private readonly configService: ConfigService) {}
+  private readonly pauses: UpstreamPause;
+
+  constructor(
+    private readonly configService: ConfigService,
+    @Optional() cache?: CacheService,
+  ) {
+    this.pauses = new UpstreamPause('google-calendar', cache);
+  }
 
   isConfigured(): boolean {
     return Boolean(this.clientId && this.clientSecret);
@@ -60,6 +77,10 @@ export class GoogleCalendarGateway implements CalendarProviderPort {
     refreshToken: string,
     range: { from: string; to: string; timeZone: string },
   ): Promise<ProviderCalendarEvent[]> {
+    const bucket = `grant:${createHash('sha256').update(refreshToken).digest('hex').slice(0, 16)}`;
+    const paused = await this.pauses.pausedUntil(bucket);
+    if (paused) throw new CalendarRateLimitedError(paused);
+
     const accessToken = await this.accessToken(refreshToken);
     const events: ProviderCalendarEvent[] = [];
     let pageToken: string | undefined;
@@ -80,7 +101,17 @@ export class GoogleCalendarGateway implements CalendarProviderPort {
         headers: { authorization: `Bearer ${accessToken}` },
       });
       if (response.status === 401) throw new CalendarGrantRevokedError('Google refused the token');
-      if (!response.ok) throw new CalendarProviderError(`Google answered ${response.status}`);
+      if (!response.ok) {
+        const signal = readRateLimit(response);
+        const reason = await response.text().catch(() => '');
+        if (
+          signal.limited ||
+          ((response.status === 403 || response.status === 429) && QUOTA_REASONS.test(reason))
+        ) {
+          throw new CalendarRateLimitedError(await this.pauses.pause(bucket, signal.resetAt));
+        }
+        throw new CalendarProviderError(`Google answered ${response.status}`);
+      }
       const body = (await response.json()) as { nextPageToken?: unknown };
       events.push(...googleEventsToProvider(body, range));
       pageToken = typeof body.nextPageToken === 'string' ? body.nextPageToken : undefined;

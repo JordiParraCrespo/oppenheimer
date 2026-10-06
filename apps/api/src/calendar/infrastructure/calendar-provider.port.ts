@@ -22,6 +22,12 @@ export interface ProviderCalendarEvent {
 /** Why a read failed, in the words the handlers act on. */
 export class CalendarGrantRevokedError extends Error {}
 export class CalendarProviderError extends Error {}
+/** The provider's rate limit stopped the read, or an earlier answer said to wait until `resetAt`. */
+export class CalendarRateLimitedError extends CalendarProviderError {
+  constructor(readonly resetAt: Date) {
+    super(`Rate limited until ${resetAt.toISOString()}`);
+  }
+}
 
 /**
  * A calendar provider, read-only: Google today, Outlook or iCloud as a second

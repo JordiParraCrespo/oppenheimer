@@ -14,6 +14,7 @@ import type {
   GithubReviewComment,
   GithubReviewInput,
 } from './github-pulls.port';
+import { GithubRateLimit, tokenBucket } from './github-rate-limit.adapter';
 import type { GithubFetch } from './github-rest.adapter';
 
 const API_VERSION = '2022-11-28';
@@ -91,7 +92,8 @@ interface RawCombinedStatus {
  * GitHub's pull request endpoints on the platform `fetch`, like the App adapter
  * beside it. The token is the caller's: an installation token to read, the
  * person's own to comment, review and merge, so what GitHub records is what that
- * person did.
+ * person did. Every call is counted against that token's bucket in
+ * {@link GithubRateLimit}, the same one the App adapter goes through.
  *
  * **Nothing here logs a token or a response body.**
  */
@@ -99,14 +101,18 @@ interface RawCombinedStatus {
 export class GithubPullsAdapter implements GithubPullsPort {
   private readonly logger = new Logger(GithubPullsAdapter.name);
   private readonly http: GithubFetch;
+  private readonly limits: GithubRateLimit;
 
   constructor(
     private readonly configService: ConfigService,
     @Optional()
     @Inject(GITHUB_FETCH)
     fetchImpl?: GithubFetch,
+    @Optional()
+    rateLimit?: GithubRateLimit,
   ) {
     this.http = fetchImpl ?? globalThis.fetch;
+    this.limits = rateLimit ?? new GithubRateLimit();
   }
 
   private get api(): string {
@@ -346,21 +352,25 @@ export class GithubPullsAdapter implements GithubPullsPort {
       onStatus?: Partial<Record<number, ErrorDefinition>>;
     },
   ): Promise<{ body: T; link: string | null }> {
+    const bucket = tokenBucket(options.token);
     let response: Response;
     try {
-      response = await this.http(url, {
-        method: options.method ?? 'GET',
-        headers: {
-          accept: 'application/vnd.github+json',
-          'x-github-api-version': API_VERSION,
-          'user-agent': USER_AGENT,
-          authorization: `Bearer ${options.token}`,
-          ...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
-        },
-        body: options.body === undefined ? undefined : JSON.stringify(options.body),
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      });
+      response = await this.limits.call(bucket, () =>
+        this.http(url, {
+          method: options.method ?? 'GET',
+          headers: {
+            accept: 'application/vnd.github+json',
+            'x-github-api-version': API_VERSION,
+            'user-agent': USER_AGENT,
+            authorization: `Bearer ${options.token}`,
+            ...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
+          },
+          body: options.body === undefined ? undefined : JSON.stringify(options.body),
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        }),
+      );
     } catch (error) {
+      if (error instanceof AppError) throw error;
       this.logger.warn({ message: 'GitHub could not be reached', url: pathOf(url) }, String(error));
       throw new AppError(GithubErrors.UPSTREAM_FAILED, {
         detail: 'GitHub could not be reached.',
@@ -375,6 +385,7 @@ export class GithubPullsAdapter implements GithubPullsPort {
         status: response.status,
       });
       const upstreamMessage = await messageOf(response);
+      await this.limits.refuseIfLimited(bucket, response, upstreamMessage);
       const named = options.onStatus?.[response.status];
       throw new AppError(
         named ??
@@ -388,6 +399,7 @@ export class GithubPullsAdapter implements GithubPullsPort {
       );
     }
 
+    await this.limits.observe(bucket, response);
     const text = await response.text();
     return { body: (text ? JSON.parse(text) : {}) as T, link: response.headers.get('link') };
   }

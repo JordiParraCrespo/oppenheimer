@@ -51,3 +51,15 @@ export {
   CapabilitiesService,
   type CapabilityMap,
 } from './services/capabilities.service';
+export { ConcurrencyLimit } from './upstream/concurrency-limit';
+export {
+  type RateLimitedResponse,
+  type RateLimitSignal,
+  readRateLimit,
+} from './upstream/rate-limit-signal';
+export {
+  UpstreamPause,
+  type UpstreamPauseOptions,
+  type UpstreamPauseStore,
+} from './upstream/upstream-pause';
+export { upstreamRateLimited } from './upstream/upstream-rate-limited.error';
