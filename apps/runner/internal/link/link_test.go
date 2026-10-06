@@ -316,9 +316,9 @@ func TestCarriesFramesAndControlMessagesBothWays(t *testing.T) {
 	if err := c.SendFrame(ctx, 7, []byte("$ ")); err != nil {
 		t.Fatal(err)
 	}
-	kind, data, err := conn.Read(ctx)
-	if err != nil || kind != websocket.MessageBinary {
-		t.Fatalf("expected a binary frame first: %v %v", kind, err)
+	kind, data := readUntil(t, conn, "the PTY frame", notHeartbeat)
+	if kind != websocket.MessageBinary {
+		t.Fatalf("expected a binary frame first: %v %s", kind, data)
 	}
 	if id, bytes, _ := link.DecodeFrame(data); id != 7 || string(bytes) != "$ " {
 		t.Fatalf("frame = %d %q", id, bytes)
@@ -326,23 +326,50 @@ func TestCarriesFramesAndControlMessagesBothWays(t *testing.T) {
 	if err := c.Send(link.CommandFailed{Type: "command.failed", CommandID: "c2", Code: "SESS_003"}); err != nil {
 		t.Fatal(err)
 	}
-	kind, data, err = conn.Read(ctx)
-	if err != nil || kind != websocket.MessageText || !strings.Contains(string(data), `"command.failed"`) {
-		t.Fatalf("expected command.failed: %v %s %v", kind, data, err)
+	kind, data = readUntil(t, conn, "command.failed", notHeartbeat)
+	if kind != websocket.MessageText || messageType(data) != "command.failed" {
+		t.Fatalf("expected command.failed: %v %s", kind, data)
 	}
 
 	// The heartbeat arrives on its own.
-	deadline := time.Now().Add(2 * time.Second)
-	for time.Now().Before(deadline) {
-		_, data, err = conn.Read(ctx)
+	readUntil(t, conn, "a heartbeat", func(kind websocket.MessageType, data []byte) bool {
+		return !notHeartbeat(kind, data)
+	})
+}
+
+// readUntil reads what the runner sends until accept takes a message, and
+// fails the test if none does within 2 s. The runner heartbeats every
+// Heartbeat interval on its own clock, so a heartbeat can land between
+// anything the test sends and what it reads back.
+func readUntil(t *testing.T, conn *websocket.Conn, what string, accept func(websocket.MessageType, []byte) bool) (websocket.MessageType, []byte) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	for {
+		kind, data, err := conn.Read(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("waited 2 s for %s: %v", what, err)
 		}
-		if strings.Contains(string(data), `"heartbeat"`) {
-			return
+		if accept(kind, data) {
+			return kind, data
 		}
 	}
-	t.Fatal("no heartbeat within 2 s")
+}
+
+// notHeartbeat accepts anything but a control message whose type is heartbeat.
+func notHeartbeat(kind websocket.MessageType, data []byte) bool {
+	return kind != websocket.MessageText || messageType(data) != "heartbeat"
+}
+
+// messageType is a control message's `type`, or "" for anything else.
+func messageType(data []byte) string {
+	var envelope struct {
+		Type string `json:"type"`
+	}
+	if json.Unmarshal(data, &envelope) != nil {
+		return ""
+	}
+	return envelope.Type
 }
 
 func TestSendBetweenLinksIsRefusedNotQueued(t *testing.T) {
