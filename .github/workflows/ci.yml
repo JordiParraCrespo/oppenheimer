@@ -10,15 +10,10 @@ on:
     - cron: '17 */8 * * *'
   workflow_dispatch:
   workflow_call:
-    inputs:
-      ref:
-        description: Exact release commit to validate
-        required: true
-        type: string
 
 # A scheduled run is never cancelled by the next one; it waits.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-ci
+  group: ${{ github.workflow }}-${{ github.sha }}-ci
   cancel-in-progress: false
 
 jobs:
@@ -67,7 +62,6 @@ jobs:
       # The whole history, so `affected.mjs` can diff.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ inputs.ref || github.sha }}
           fetch-depth: 0
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -92,15 +86,15 @@ jobs:
       - name: Report
         if: ${{ !cancelled() }}
         run: cat .ci-local/report.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
-      - name: Retain release validation report
-        if: ${{ inputs.ref && !cancelled() }}
+      - name: Retain CI report
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: release-ci-${{ inputs.ref }}
+          name: ci-report-${{ github.sha }}
           path: .ci-local/report.md
           if-no-files-found: error
       - name: Open or close the main-red issue
-        if: ${{ !cancelled() && !inputs.ref && github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # The job's status so far: failure once any step above failed.
@@ -113,7 +107,7 @@ jobs:
     runs-on: gha-vm
     # Only an image of a commit that passed every job.
     needs: ci
-    if: ${{ !inputs.ref }}
+    if: github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write

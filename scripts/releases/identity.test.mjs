@@ -5,29 +5,36 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { releaseIdentity } from './identity.mjs';
+import { parseReleaseTag, releaseIdentity } from './identity.mjs';
 
 test('a release cannot label a different component or package version', () => {
   assert.throws(() =>
-    releaseIdentity('api-v1.2.3', { name: '@oppenheimer/api', version: '1.2.4' }),
+    releaseIdentity(parseReleaseTag('api-v1.2.3'), { name: '@oppenheimer/api', version: '1.2.4' }),
   );
   assert.throws(() =>
-    releaseIdentity('api-v1.2.3', { name: '@oppenheimer/other', version: '1.2.3' }),
+    releaseIdentity(parseReleaseTag('api-v1.2.3'), {
+      name: '@oppenheimer/other',
+      version: '1.2.3',
+    }),
+  );
+});
+
+test('final API tags select stable', () => {
+  assert.equal(
+    releaseIdentity(parseReleaseTag('api-v1.3.0'), { name: '@oppenheimer/api', version: '1.3.0' })
+      .channel,
+    'stable',
   );
 });
 
 // oppenheimer:begin runner
-test('beta tags select beta while final tags select stable', () => {
+test('runner beta tags select beta', () => {
   assert.equal(
-    releaseIdentity('runner-v0.8.1-beta.2', {
+    releaseIdentity(parseReleaseTag('runner-v0.8.1-beta.2'), {
       name: '@oppenheimer/runner',
       version: '0.8.1-beta.2',
     }).channel,
     'beta',
-  );
-  assert.equal(
-    releaseIdentity('api-v1.3.0', { name: '@oppenheimer/api', version: '1.3.0' }).channel,
-    'stable',
   );
 });
 
@@ -42,7 +49,7 @@ test('malformed tags cannot become image tags or output lines', () => {
     'api-v1.2.3/other',
     'api-v1.2.3-beta.01',
   ]) {
-    assert.throws(() => releaseIdentity(tag, { name: '@oppenheimer/api', version: '1.2.3' }));
+    assert.throws(() => parseReleaseTag(tag));
   }
 });
 
@@ -55,7 +62,7 @@ test('CLI binds the release to its tagged commit on main before exporting deploy
       stdio: ['ignore', 'pipe', 'pipe'],
     }).trim();
   const output = join(root, 'output');
-  const cli = () =>
+  const cli = (overrides = {}) =>
     spawnSync(process.execPath, [fileURLToPath(new URL('./identity.mjs', import.meta.url))], {
       cwd: root,
       encoding: 'utf8',
@@ -64,6 +71,7 @@ test('CLI binds the release to its tagged commit on main before exporting deploy
         RELEASE_TAG: 'api-v1.2.3',
         GITHUB_REPOSITORY: 'Example/Project',
         GITHUB_OUTPUT: output,
+        ...overrides,
       },
     });
   try {
@@ -86,6 +94,25 @@ test('CLI binds the release to its tagged commit on main before exporting deploy
       readFileSync(output, 'utf8'),
       /image=ghcr.io\/example\/project\/oppenheimer-api\n/,
     );
+
+    const missingRepository = cli({ GITHUB_REPOSITORY: '' });
+    assert.notEqual(missingRepository.status, 0);
+    assert.match(missingRepository.stderr, /GITHUB_REPOSITORY must identify/);
+
+    // oppenheimer:begin runner
+    mkdirSync(join(root, 'apps/runner'), { recursive: true });
+    writeFileSync(
+      join(root, 'apps/runner/package.json'),
+      JSON.stringify({ name: '@oppenheimer/runner', version: '1.2.3' }),
+    );
+    git('add', 'apps/runner');
+    git('commit', '-m', 'runner');
+    git('update-ref', 'refs/remotes/origin/main', git('rev-parse', 'HEAD'));
+    git('tag', 'runner-v1.2.3');
+    const runnerOutput = join(root, 'runner-output');
+    assert.equal(cli({ RELEASE_TAG: 'runner-v1.2.3', GITHUB_OUTPUT: runnerOutput }).status, 0);
+    assert.doesNotMatch(readFileSync(runnerOutput, 'utf8'), /image=/);
+    // oppenheimer:end runner
 
     git('commit', '--allow-empty', '-m', 'later');
     assert.notEqual(cli().status, 0, 'a checkout ahead of the release tag must fail');

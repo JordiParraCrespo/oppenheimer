@@ -34,15 +34,15 @@ need a compatibility plan before release.
    ```
 
    Tags start the **Release artifacts** workflow. You can also run it manually
-   with an existing tag:
+   with the existing tag selected as its workflow ref:
 
    ```sh
-   gh workflow run release-artifacts.yml --ref main -f tag=api-v0.3.0
+   gh workflow run release-artifacts.yml --ref api-v0.3.0
    ```
 
 The tag must match the component's package version and point to a commit on
 `main`'s history. The workflow resolves it to a SHA and calls the existing CI
-workflow to run `pnpm ci:local --all` on that exact commit. PR validation remains
+workflow from the same tag to run `pnpm ci:local --all` on that exact commit. PR validation remains
 local. Release validation uses the same pipeline; it adds no second test suite.
 
 After validation, the workflow reserves a draft release, builds artifacts from

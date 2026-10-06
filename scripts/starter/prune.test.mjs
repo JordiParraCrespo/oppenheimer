@@ -37,6 +37,21 @@ test('resolveRemoval drops a shared path only when every dependant is gone', () 
   ]);
 });
 
+test('pruning every optional publisher keeps the mandatory API release workflow', () => {
+  const withRequiredWorkflow = {
+    ...manifest,
+    shared: {
+      ...manifest.shared,
+      '.github/workflows/release-artifacts.yml': { neededBy: ['web', 'mobile'], required: true },
+    },
+  };
+  assert.ok(
+    !resolveRemoval(withRequiredWorkflow, ['web', 'mobile']).shared.includes(
+      '.github/workflows/release-artifacts.yml',
+    ),
+  );
+});
+
 test('annotate records nested blocks outer first and flags marker lines', () => {
   const lines = annotate(
     'x.yml',

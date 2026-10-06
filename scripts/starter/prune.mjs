@@ -122,7 +122,7 @@ export function resolveRemoval(manifest, removed) {
     }
   }
   const shared = Object.entries(manifest.shared)
-    .filter(([, entry]) => entry.neededBy.every((dep) => set.has(dep)))
+    .filter(([, entry]) => !entry.required && entry.neededBy.every((dep) => set.has(dep)))
     .map(([path]) => path);
   return { features: [...set], shared };
 }

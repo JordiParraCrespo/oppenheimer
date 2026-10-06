@@ -11,15 +11,13 @@ on:
       - 'runner-v*'
       # oppenheimer:end runner
   workflow_dispatch:
-    inputs:
-      tag:
-        description: Existing component tag, X.Y.Z or X.Y.Z-beta.N
-        required: true
-        type: string
 
 concurrency:
-  group: release-${{ inputs.tag || github.ref_name }}
+  group: release-${{ github.ref_name }}
   cancel-in-progress: false
+
+env:
+  GH_REPO: ${{ github.repository }}
 
 permissions:
   contents: write
@@ -39,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+          ref: refs/tags/${{ github.ref_name }}
           fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -47,8 +45,10 @@ jobs:
       - name: Resolve and verify release identity
         id: release
         env:
-          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
-        run: node scripts/releases/identity.mjs
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          node scripts/releases/identity.mjs
       # oppenheimer:begin runner
       - name: Require runner release configuration
         if: steps.release.outputs.component == 'runner'
@@ -74,11 +74,9 @@ jobs:
   validate:
     needs: identity
     uses: ./.github/workflows/ci.yml
-    with:
-      ref: ${{ needs.identity.outputs.sha }}
     secrets: inherit
 
-  publish:
+  reserve:
     needs: [identity, validate]
     runs-on: gha-vm
     env:
@@ -88,35 +86,36 @@ jobs:
       CHANNEL: ${{ needs.identity.outputs.channel }}
       RELEASE_TAG: ${{ needs.identity.outputs.tag }}
       RELEASE_SHA: ${{ needs.identity.outputs.sha }}
+    steps:
+      - name: Reserve immutable release version
+        run: |
+          test "$(gh api "repos/$GITHUB_REPOSITORY/commits/$RELEASE_TAG" --jq .sha)" = "$RELEASE_SHA"
+          flags=(--draft --verify-tag --title "$COMPONENT $VERSION" --generate-notes)
+          if [ "$CHANNEL" = beta ]; then flags+=(--prerelease); fi
+          gh release create "$RELEASE_TAG" "${flags[@]}"
+
+  publish-image:
+    needs: [identity, reserve]
+    if: needs.identity.outputs.component != 'runner'
+    runs-on: gha-vm
+    env:
+      COMPONENT: ${{ needs.identity.outputs.component }}
+      VERSION: ${{ needs.identity.outputs.version }}
+      RELEASE_TAG: ${{ needs.identity.outputs.tag }}
+      RELEASE_SHA: ${{ needs.identity.outputs.sha }}
       IMAGE: ${{ needs.identity.outputs.image }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ needs.identity.outputs.sha }}
-          fetch-depth: 0
-      - name: Check tag has not moved
-        run: test "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")" = "$RELEASE_SHA"
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: release-ci-${{ needs.identity.outputs.sha }}
-          path: dist/release
-      - name: Reserve immutable release version
-        run: |
-          flags=(--draft --verify-tag --title "$COMPONENT $VERSION" --generate-notes)
-          if [ "$CHANNEL" = beta ]; then flags+=(--prerelease); fi
-          gh release create "$RELEASE_TAG" "${flags[@]}"
-
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
-        if: env.COMPONENT != 'runner'
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
-        if: env.COMPONENT != 'runner'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ github.token }}
       - name: Build and publish image
         id: image
-        if: env.COMPONENT != 'runner'
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
@@ -131,34 +130,51 @@ jobs:
           cache-from: type=gha,scope=release-${{ env.COMPONENT }}
           cache-to: type=gha,mode=max,scope=release-${{ env.COMPONENT }}
       - name: Record image digest for deployment
-        if: env.COMPONENT != 'runner'
         env:
           IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
         run: |
+          mkdir -p dist/release
           jq -n --arg component "$COMPONENT" --arg version "$VERSION" --arg tag "$RELEASE_TAG" \
             --arg commit "$RELEASE_SHA" --arg image "$IMAGE@$IMAGE_DIGEST" \
             '{schema: "oppenheimer.artifact-release/v1", component: $component, version: $version, tag: $tag, commit: $commit, image: $image, platforms: ["linux/amd64"]}' \
             > dist/release/release.json
           echo "Pull for deployment: docker pull $IMAGE@$IMAGE_DIGEST" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-manifest-${{ needs.identity.outputs.tag }}
+          path: dist/release/release.json
+          if-no-files-found: error
 
-      # oppenheimer:begin runner
+  # oppenheimer:begin runner
+  publish-runner:
+    needs: [identity, reserve]
+    if: needs.identity.outputs.component == 'runner'
+    runs-on: gha-vm
+    env:
+      GH_TOKEN: ${{ github.token }}
+      COMPONENT: ${{ needs.identity.outputs.component }}
+      VERSION: ${{ needs.identity.outputs.version }}
+      CHANNEL: ${{ needs.identity.outputs.channel }}
+      RELEASE_TAG: ${{ needs.identity.outputs.tag }}
+      RELEASE_SHA: ${{ needs.identity.outputs.sha }}
+      RELEASE_PUBLIC_KEYS: ${{ vars.RUNNER_RELEASE_PUBLIC_KEYS }}
+      RELEASE_BASE_URL: ${{ vars.RUNNER_RELEASE_BASE_URL }}
+      MIN_SUPPORTED: ${{ vars.RUNNER_MIN_SUPPORTED }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.identity.outputs.sha }}
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
-        if: env.COMPONENT == 'runner'
         with:
           go-version-file: apps/runner/go.mod
           cache-dependency-path: apps/runner/go.sum
       - name: Build signed-update artifacts
-        if: env.COMPONENT == 'runner'
-        env:
-          RELEASE_PUBLIC_KEYS: ${{ vars.RUNNER_RELEASE_PUBLIC_KEYS }}
-          RELEASE_BASE_URL: ${{ vars.RUNNER_RELEASE_BASE_URL }}
-          MIN_SUPPORTED: ${{ vars.RUNNER_MIN_SUPPORTED }}
         run: |
-          test -n "$RELEASE_PUBLIC_KEYS" || { echo 'Set RUNNER_RELEASE_PUBLIC_KEYS before releasing.' >&2; exit 1; }
           scripts/runner/release.sh "$VERSION" "$CHANNEL"
           (cd dist/runner && sha256sum install.sh >> SHA256SUMS)
           tar -xzf "dist/runner/runner_${VERSION}_linux_amd64.tar.gz" -C dist
           "dist/runner_${VERSION}_linux_amd64/runner" version
+          mkdir -p dist/release
           jq -n --arg component "$COMPONENT" --arg version "$VERSION" --arg tag "$RELEASE_TAG" \
             --arg commit "$RELEASE_SHA" --arg manifest "$CHANNEL.json" \
             '{schema: "oppenheimer.artifact-release/v1", component: $component, version: $version, tag: $tag, commit: $commit, manifest: $manifest, signing: "offline-pending"}' \
@@ -166,15 +182,42 @@ jobs:
           gh release upload "$RELEASE_TAG" dist/runner/*.tar.gz dist/runner/SHA256SUMS \
             "dist/runner/$CHANNEL.json" dist/runner/install.sh
       - name: Explain offline activation
-        if: env.COMPONENT == 'runner'
         run: |
           {
             echo "Runner $VERSION requires offline signing before installation or updates."
             echo "Download $CHANNEL.json, sign it with scripts/runner/sign-release.sh, then upload $CHANNEL.json.sig."
             echo 'Publish the archives, installer, channel manifest and signature to the configured release host.'
           } >> "$GITHUB_STEP_SUMMARY"
-      # oppenheimer:end runner
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-manifest-${{ needs.identity.outputs.tag }}
+          path: dist/release/release.json
+          if-no-files-found: error
+  # oppenheimer:end runner
 
+  attach:
+    needs:
+      - identity
+      - reserve
+      - publish-image
+      # oppenheimer:begin runner
+      - publish-runner
+      # oppenheimer:end runner
+    if: ${{ !cancelled() && needs.reserve.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    runs-on: gha-vm
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ needs.identity.outputs.tag }}
+      RELEASE_SHA: ${{ needs.identity.outputs.sha }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ci-report-${{ needs.identity.outputs.sha }}
+          path: dist/release
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-manifest-${{ needs.identity.outputs.tag }}
+          path: dist/release
       - name: Attach manifest and validation evidence
         run: gh release upload "$RELEASE_TAG" dist/release/release.json dist/release/report.md
       - name: Publish completed release

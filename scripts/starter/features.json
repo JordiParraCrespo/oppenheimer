@@ -92,6 +92,12 @@
     }
   },
   "shared": {
+    ".github/workflows/release-artifacts.yml": {
+      "$comment": "The API is mandatory, so its release workflow remains when optional publishers are pruned.",
+      "identifiers": ["release-artifacts.yml"],
+      "neededBy": ["web", "runner"],
+      "required": true
+    },
     "packages/frontend/design-system/web": {
       "identifiers": ["packages/frontend/design-system/web", "@oppenheimer/design-system-web"],
       "neededBy": ["web", "web-showcase"]
