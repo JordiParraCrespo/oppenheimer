@@ -22,9 +22,12 @@ export function BoardScreen() {
   return (
     // The pane is `full`, so the screen keeps its own scroll.
     <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto flex w-full max-w-310 flex-col gap-7 px-4 py-7 sm:px-8">
-        <BoardHeader onNew={openNew} />
-        <GoalsStrip />
+      <div className="mx-auto flex w-full max-w-310 flex-col gap-7 py-7">
+        {/* The gutter is the header's and the strip's: the columns scroll to the column's edge. */}
+        <div className="flex flex-col gap-7 px-4 sm:px-8">
+          <BoardHeader onNew={openNew} />
+          <GoalsStrip />
+        </div>
         <BoardColumns />
         <TaskDialog />
         <StartSessionDialog />

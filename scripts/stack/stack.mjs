@@ -262,11 +262,15 @@ function apiEnv() {
       .join('\n'),
   );
   // `@oppenheimer/env` still loads `.env.local` over this, but environment
-  // wins over both files: a default is injected only for a key `.env.local`
-  // does not set, or it would silently replace the developer's value.
+  // wins over both files: a default is injected only for a key neither
+  // `.env.local` nor the shell sets (an exported `GOOGLE_CLIENT_ID` is the
+  // value meant), or it would silently replace the developer's value. The
+  // stub env still wins over everything: it is the stack's own config.
   const defaults = existsSync(join(ROOT, '.env')) ? {} : parseEnv(join(ROOT, '.env.example'));
   const local = existsSync(join(ROOT, '.env.local')) ? parseEnv(join(ROOT, '.env.local')) : {};
-  for (const key of Object.keys(local)) delete defaults[key];
+  for (const key of new Set([...Object.keys(local), ...Object.keys(process.env)])) {
+    delete defaults[key];
+  }
   return { ...defaults, ...parseEnv(stubEnvFile) };
 }
 

@@ -1,5 +1,5 @@
 import { createDialogSlot } from '@oppenheimer/frontend-web';
-import { useMatchRoute } from '@tanstack/react-router';
+import { useMatches } from '@tanstack/react-router';
 
 /**
  * The console's dialogs, named by what opens them
@@ -38,17 +38,23 @@ export const useConsoleDialogRequest = consoleDialogs.useDialogRequest;
 export type ConsoleList = 'sessions' | 'automations' | 'tasks' | 'calendar';
 
 /**
- * Which of the console's lists the address is under: `automations` for
- * everything under `/automations`, the editor included; Plan's two, `calendar`
- * under `/plan/calendar` (Google's return included) and `tasks` for the rest
- * of `/plan`; and `sessions` for everything else. One predicate, asked of the
- * router, so the rail's current item and the sidebar beside it can never
- * disagree.
+ * Which of the console's lists the matched routes are under: `automations`
+ * for everything under `/automations`, the editor included; Plan's two,
+ * `calendar` under `/plan/calendar` (Google's return included) and `tasks`
+ * for the rest of `/plan`; and `sessions` for everything else. One predicate,
+ * so the rail's current item and the sidebar beside it can never disagree.
+ * It reads the matches, not the address: the address moves on while the next
+ * route still loads, and a list drawn ahead of its route reads a match that
+ * is not there yet.
  */
 export function useConsoleList(): ConsoleList {
-  const matchRoute = useMatchRoute();
-  if (matchRoute({ to: '/automations', fuzzy: true })) return 'automations';
-  if (matchRoute({ to: '/plan/calendar', fuzzy: true })) return 'calendar';
-  if (matchRoute({ to: '/plan', fuzzy: true })) return 'tasks';
-  return 'sessions';
+  return useMatches({
+    select: (matches): ConsoleList => {
+      const ids = matches.map((match) => match.routeId);
+      if (ids.some((id) => id.startsWith('/_authenticated/automations'))) return 'automations';
+      if (ids.some((id) => id.startsWith('/_authenticated/plan/calendar'))) return 'calendar';
+      if (ids.some((id) => id.startsWith('/_authenticated/plan/'))) return 'tasks';
+      return 'sessions';
+    },
+  });
 }
