@@ -131,6 +131,8 @@ export async function insertRunWithin(
   );
   if (inserted.length === 0) return false;
   if (run.isPending) await stageDispatch(manager, outbox, run);
+  await outbox.stageEvents(manager, run.domainEvents);
+  run.clearEvents();
   return true;
 }
 
@@ -357,6 +359,11 @@ export class AutomationRunRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async findOneBySessionForSystem(sessionId: string): Promise<Option<AutomationRunEntity>> {
+    const record = await this.repository.findOneBy({ sessionId });
+    return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
   async save(run: AutomationRunEntity): Promise<void> {
     const record = this.mapper.toRecord(run);
     await this.outbox.transaction(async (manager) => {
@@ -378,7 +385,9 @@ export class AutomationRunRepository
       );
       // A deferral owes another look later; the delay rides the outbox row.
       if (run.isPending) await stageDispatch(manager, this.outbox, run);
+      await this.outbox.stageEvents(manager, run.domainEvents);
     });
+    run.clearEvents();
   }
 
   async countLiveForAutomation(

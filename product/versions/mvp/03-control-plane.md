@@ -446,6 +446,32 @@ decorator, so `route-policy-coverage.spec.ts` does not see them; the
 gateway specs, which run both sockets on a real HTTP server, are the
 coverage they get.
 
+## The workspace event stream
+
+`GET /api/v1/events` streams to a console tab what changes in its
+workspace, as Server-Sent Events, behind the `workspace_event_stream`
+flag (issue #239).
+
+- **Invalidations, never rows.** A change is `{ type, id, … }`
+  (`@oppenheimer/shared/workspace-events`): a session, a host, a pairing
+  token spent, an automation run. The console re-reads the row through the
+  endpoint that already authorises that read.
+- **Published from the outbox.** The owning modules raise domain events as
+  they always do; the stream's own handlers turn them into changes after
+  the commit, and a publish that fails is delivered again. No repository
+  publishes.
+- **Fanned out over Redis pub/sub,** one channel per workspace and one per
+  person: a host and its pairing tokens belong to the person who paired
+  them, not to a workspace. Each replica holds one subscriber connection
+  for all its streams, and a stream says `ready` once it is subscribed.
+- **Opened to whoever may read one kind of change, carrying only those
+  kinds**: a role's ability, and a credential's scopes on top.
+- **Ended by the API after a while**, so the browser's redial is
+  authenticated again and an expired or revoked session stops receiving.
+- **Presence is not on it.** Online is derived from `lastSeenAt` on every
+  read and never written as a transition, so there is nothing to announce;
+  the console's presence poll stays how it learns a host came or went.
+
 ## Data model, first cut
 
 users, installations, repositories (**not a table**: listed live from
