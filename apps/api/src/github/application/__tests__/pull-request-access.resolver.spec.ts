@@ -256,3 +256,77 @@ describe('who the reader is on GitHub', () => {
     expect(await resolver.viewerLogin(SCOPE)).toBeNull();
   });
 });
+
+/**
+ * #247: one page view asked GitHub for five requests times every pull request
+ * it found — on a real account, hundreds in a burst, which GitHub answers with
+ * a secondary rate limit. A view now spends a budget: every pull request comes
+ * back, as many as the budget allows with their parts filled, and the next
+ * read fills more from a cache that keeps what it already has.
+ */
+describe('what one read spends', () => {
+  const pullNumbered = (number: number) => ({ ...PULL, number });
+
+  function budgeted(count: number) {
+    const listFiles = vi.fn().mockResolvedValue([]);
+    const readChecks = vi
+      .fn()
+      .mockResolvedValue({ state: 'passing', total: 1, passed: 1, failed: 0, pending: 0 });
+    const listReviews = vi.fn().mockResolvedValue([]);
+    const pulls = Array.from({ length: count }, (_, i) => pullNumbered(i + 1));
+    const { resolver, repository } = build({
+      listPullRequests: vi.fn().mockResolvedValue(pulls),
+      readPullRequest: vi.fn(async (_t: string, _r: string, number: number) =>
+        pullNumbered(number),
+      ),
+      listFiles,
+      readChecks,
+      listReviews,
+    });
+    return { resolver, repository, listFiles, readChecks, listReviews };
+  }
+
+  it('draws every pull request, and fills the parts of as many as the budget allows', async () => {
+    const { resolver, repository, listFiles } = budgeted(30);
+
+    const read = await resolver.openPullRequests(SCOPE, repository, { left: 12 });
+
+    expect(read.snapshots).toHaveLength(30);
+    expect(listFiles).toHaveBeenCalledTimes(12);
+    const filled = read.snapshots.filter((s) => s.files.value !== null);
+    expect(filled).toHaveLength(12);
+  });
+
+  // An unasked part is not a refused one: it owes the reader no notice.
+  it('reports no gap for a part it never asked for', async () => {
+    const { resolver, repository } = budgeted(30);
+
+    const read = await resolver.openPullRequests(SCOPE, repository, { left: 1 });
+
+    expect(read.gaps).toEqual([]);
+  });
+
+  // The budget is the view's: two repositories share it, or an account with
+  // eighty of them has no ceiling at all.
+  it('spends one budget across repositories', async () => {
+    const { resolver, repository, listFiles } = budgeted(10);
+    const second = { ...repository, githubRepoId: repository.githubRepoId + 1 };
+    const budget = { left: 12 };
+
+    await resolver.openPullRequests(SCOPE, repository, budget);
+    await resolver.openPullRequests(SCOPE, second, budget);
+
+    expect(listFiles).toHaveBeenCalledTimes(12);
+  });
+
+  // A pull request already in the cache is free, and never takes a place from
+  // one that would cost a read: that is what lets the next view fill more.
+  it('spends nothing on a pull request it has already filled', async () => {
+    const { resolver, repository, listFiles } = budgeted(10);
+
+    await resolver.openPullRequests(SCOPE, repository, { left: 12 });
+    await resolver.openPullRequests(SCOPE, repository, { left: 12 });
+
+    expect(listFiles).toHaveBeenCalledTimes(10);
+  });
+});

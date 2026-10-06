@@ -45,8 +45,11 @@ export class FindPullRequestsQueryHandler
       this.access.viewerLogin(scope),
     ]);
     // A repository GitHub will not answer costs its own rows, not the queue (#244).
+    // One budget for the whole view: the rows all draw, and as many of them as
+    // it allows come back filled, the rest on the reads after this one (#247).
+    const budget = this.access.readBudget();
     const reads = await Promise.all(
-      repositories.map((repository) => this.access.openPullRequests(scope, repository)),
+      repositories.map((repository) => this.access.openPullRequests(scope, repository, budget)),
     );
     const now = new Date();
     const rows = reads.flatMap((read) =>

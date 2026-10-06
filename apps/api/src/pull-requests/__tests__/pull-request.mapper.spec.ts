@@ -76,6 +76,8 @@ describe('a pull request read in part', () => {
         window: analyticsWindow('week', NOW),
         open: [],
         closed: [closed],
+        // The figures count listings; this read filled the one it has.
+        counted: [closed.pull],
         viewerLogin: 'ana',
         now: NOW,
         complete: true,

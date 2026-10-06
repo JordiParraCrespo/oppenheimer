@@ -4,6 +4,7 @@ import type {
   GithubPullRequestDetail,
   GithubPullRequestFile,
   GithubPullRequestReview,
+  GithubPullRequestSummary,
   GithubRefusal,
   GithubReviewComment,
 } from '../infrastructure/github-pulls.port';
@@ -27,10 +28,32 @@ export interface PullRequestAddress {
 }
 
 /**
- * One part of a pull request as GitHub answered it: the value, or the refusal
- * GitHub gave instead. An unread part is never an empty one (#244).
+ * One part of a pull request as GitHub answered it: the value, the refusal
+ * GitHub gave instead, or neither — a part nobody asked for. An unread part is
+ * never an empty one (#244).
+ *
+ * The third state is what makes a read bounded (#247): a page view asks for as
+ * many parts as its budget allows and leaves the rest unasked, and the next
+ * read fills more. A reader tells the three apart by `value` and `refusal`
+ * together — a value is a read, a refusal is GitHub saying no, and neither is
+ * "not yet".
  */
-export type Part<T> = { value: T; refusal: null } | { value: null; refusal: GithubRefusal };
+export type Part<T> =
+  | { value: T; refusal: null }
+  | { value: null; refusal: GithubRefusal }
+  | { value: null; refusal: null };
+
+/** A part this read did not ask for. The next one may. */
+export const UNASKED: { value: null; refusal: null } = { value: null, refusal: null };
+
+/**
+ * What one page view may still spend on filling parts. A cached part costs
+ * nothing and never draws on it; past it, a pull request comes back from its
+ * own read alone and the next view fills more.
+ */
+export interface ReadBudget {
+  left: number;
+}
 
 /**
  * A pull request as the queue and the briefing read it: GitHub's own detail,
@@ -80,8 +103,18 @@ export interface PullRequestAccessPort {
   repositories(scope: AccessScope): Promise<WorkspaceRepository[]>;
   /** The caller's GitHub login: their stored grant's, or the account of a personal installation they connected. */
   viewerLogin(scope: AccessScope): Promise<string | null>;
+  /**
+   * What one page view may spend on filling pull requests' parts, shared by
+   * every call it makes. Opened by `readBudget()` and passed along, so the
+   * ceiling belongs to the view and not to each repository under it (#247).
+   */
+  readBudget(): ReadBudget;
   /** One repository's open pull requests, each with its paths, checks and reviews. Never throws for GitHub's refusals. */
-  openPullRequests(scope: AccessScope, repository: WorkspaceRepository): Promise<RepositoryPulls>;
+  openPullRequests(
+    scope: AccessScope,
+    repository: WorkspaceRepository,
+    budget?: ReadBudget,
+  ): Promise<RepositoryPulls>;
   /**
    * The pull requests closed since a moment across the repositories, the
    * `limit` most recently closed of them read in full; `complete` is false
@@ -92,7 +125,13 @@ export interface PullRequestAccessPort {
     repositories: WorkspaceRepository[],
     since: Date,
     limit: number,
-  ): Promise<{ pulls: RepositoryPulls[]; complete: boolean }>;
+    budget?: ReadBudget,
+  ): Promise<{
+    pulls: RepositoryPulls[];
+    /** Every pull request in the window as its listing gave it, filled or not: what the figures count. */
+    counted: GithubPullRequestSummary[];
+    complete: boolean;
+  }>;
   pullRequest(scope: AccessScope, address: PullRequestAddress): Promise<PullRequestSnapshot>;
   files(scope: AccessScope, address: PullRequestAddress): Promise<GithubPullRequestFile[]>;
   reviewComments(scope: AccessScope, address: PullRequestAddress): Promise<GithubReviewComment[]>;

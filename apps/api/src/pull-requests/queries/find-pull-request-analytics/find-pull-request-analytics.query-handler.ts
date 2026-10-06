@@ -39,6 +39,7 @@ export class FindPullRequestAnalyticsQueryHandler
         window,
         open: [],
         closed: [],
+        counted: [],
         viewerLogin: null,
         now,
         complete: true,
@@ -49,18 +50,30 @@ export class FindPullRequestAnalyticsQueryHandler
       this.watched.watched(scope),
       this.access.viewerLogin(scope),
     ]);
-    // The closed reads are capped, newest first, so a page view costs the window and not the installation (#247).
+    // The closed reads are capped, newest first, so a page view costs the window
+    // and not the installation (#247). One budget across both halves bounds what
+    // filling those pull requests' parts costs: the counts and the day chart are
+    // the listings', which every pull request has, and the medians and the lane
+    // mix deepen over the next few reads as more parts land in the cache.
+    const budget = this.access.readBudget();
     const [open, closed] = await Promise.all([
       Promise.all(
-        repositories.map((repository) => this.access.openPullRequests(scope, repository)),
+        repositories.map((repository) => this.access.openPullRequests(scope, repository, budget)),
       ),
-      this.access.closedPullRequests(scope, repositories, window.previousFrom, CLOSED_CEILING),
+      this.access.closedPullRequests(
+        scope,
+        repositories,
+        window.previousFrom,
+        CLOSED_CEILING,
+        budget,
+      ),
     ]);
     return this.mapper.toAnalytics({
       range,
       window,
       open: open.flatMap((read) => read.snapshots),
       closed: closed.pulls.flatMap((read) => read.snapshots),
+      counted: closed.counted,
       viewerLogin,
       now,
       complete: closed.complete,
