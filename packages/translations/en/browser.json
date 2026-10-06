@@ -34,12 +34,17 @@
     },
     "drag": {
       "instructions": "To pick up an item, press space or enter. Use the arrow keys to move it, space or enter to drop it, and escape to cancel.",
+      "controlInstructions": "To pick up an item, press space; enter opens it. Use the arrow keys to move it, space or enter to drop it, and escape to cancel.",
       "pickedUp": "Picked up {{name}}.",
       "over": "{{name}} is over {{target}}.",
       "nowhere": "{{name}} is not over a place it can go.",
       "dropped": "{{name}} was dropped on {{target}}.",
       "droppedNowhere": "{{name}} was dropped.",
       "cancelled": "Moving {{name}} was cancelled."
+    },
+    "repositoryAccess": {
+      "manage": "Manage repository access",
+      "failed": "Could not open GitHub. Try again in a moment."
     }
   },
   "validation": {
@@ -494,8 +499,6 @@
         "branchEmpty": "No branch matches.",
         "branchPane": "Branch for {{name}}",
         "changeBranch": "Change branch",
-        "manage": "Manage repository access",
-        "manageFailed": "Could not open GitHub. Try again in a moment.",
         "noApp": "This deployment has no GitHub App, so there are no repositories to pick.",
         "archived": "Archived",
         "failed": "Could not load your repositories."
@@ -1655,7 +1658,7 @@
       },
       "github": {
         "title": "Connect GitHub",
-        "description": "This installs the Oppenheimer GitHub App on your account. You pick all repositories or selected ones on GitHub's own page.",
+        "description": "This installs the Oppenheimer GitHub App on your account or on an organization. You pick all repositories or selected ones on GitHub's own page.",
         "connect": "Connect GitHub",
         "starting": "Opening GitHub…",
         "skip": "Skip for now",
@@ -1665,7 +1668,8 @@
         "failed": "We could not connect that GitHub installation.",
         "unstarted": "This GitHub link was not started here. Connect GitHub again.",
         "connectedAll": "Every repository on the account",
-        "connectedPending": "Connected"
+        "connectedPending": "Connected",
+        "requested": "Request sent. An owner of the organization has to approve the install on GitHub. Once they have, choose Connect GitHub again and pick the organization to add its repositories here."
       },
       "host": {
         "title": "Add your first host",

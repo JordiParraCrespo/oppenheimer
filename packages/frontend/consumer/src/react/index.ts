@@ -44,6 +44,7 @@ export {
   useInstallationRepositories,
   useInstallationRepositoriesFor,
   useInstallations,
+  useRefreshInstallations,
   useRepositoryBranchesFor,
   useStartInstallation,
 } from './installations.queries';

@@ -259,6 +259,38 @@ export const useThings = (options) =>
   assert.doesNotMatch(report, /live-poll\.ts: sets/);
 });
 
+test('a screen that paints the ground or draws the page frame is reported; public pages pass', () => {
+  const painted = check({
+    'src/features/things/screens/things.tsx': `export function ThingsScreen() {
+  return <div className="min-h-0 flex-1 overflow-y-auto bg-canvas-recessed">things</div>;
+}
+`,
+  });
+  assert.equal(painted.status, 1);
+  assert.match(painted.report, /screens\/things\.tsx: `bg-canvas`/);
+
+  const framed = check({
+    'src/routes/things.tsx': `import { EditorPage, EditorPageBody } from '@oppenheimer/design-system-web';
+export const Route = () => <EditorPage><EditorPageBody size="wide" /></EditorPage>;
+`,
+  });
+  assert.equal(framed.status, 1);
+  assert.match(framed.report, /routes\/things\.tsx: `<EditorPage`/);
+
+  const content = check({
+    'src/features/things/screens/thing.tsx': `import { EditorPageBack } from '@oppenheimer/design-system-web';
+export function ThingScreen() {
+  return <EditorPageBack href="/things">Back</EditorPageBack>;
+}
+`,
+    'src/features/public/sections/public-layout.tsx': `export function PublicLayout() {
+  return <div className="min-h-svh bg-canvas">page</div>;
+}
+`,
+  });
+  assert.equal(content.status, 0, content.report);
+});
+
 test('two components side by side in an app file are reported; one passes', () => {
   const { report } = check({
     'src/features/things/sections/two.tsx': `export function ThingList() {

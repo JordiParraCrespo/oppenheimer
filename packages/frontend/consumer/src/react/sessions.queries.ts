@@ -1,6 +1,6 @@
 'use client';
 
-import { shareEntities, useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   type QueryClient,
   skipToken,
@@ -21,6 +21,7 @@ import {
 } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
 import { CLOSE_WATCH_MS, type PollKeys, pollWhile, RESTART_WATCH_MS } from './live-poll';
+import { seedDetails } from './seed-details';
 
 export const sessionsKeys = {
   all: ['sessions'] as const,
@@ -126,13 +127,7 @@ export function useSessions<TData = SessionEntity[]>(
     queryFn: async () => {
       const askedAt = Date.now();
       const sessions = await app.sessions.findAll();
-      for (const session of sessions) {
-        const key = sessionsKeys.detail(session.id);
-        if ((queryClient.getQueryState(key)?.dataUpdatedAt ?? 0) >= askedAt) continue;
-        // Shared against what the detail already holds, so a poll that
-        // changed nothing leaves the open session's screen alone.
-        queryClient.setQueryData<SessionEntity>(key, (current) => shareEntities(current, session));
-      }
+      seedDetails(queryClient, sessions, sessionsKeys.detail, askedAt);
       const listed = sessions.filter((session) => !session.isResolved);
       for (const id of closesOf(queryClient).keys()) {
         if (!listed.some((session) => session.id === id)) unwatchClose(queryClient, id);

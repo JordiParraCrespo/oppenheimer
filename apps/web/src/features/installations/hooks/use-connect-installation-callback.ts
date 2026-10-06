@@ -18,6 +18,12 @@ import { useEffect, useRef } from 'react';
  * re-posting a dead code. Clearing is the route's (`onExchanged`): it owns the
  * search and what else the URL must keep.
  *
+ * **A request is an outcome too.** A member who is not an owner of the
+ * organization they picked can only ask for the install: GitHub comes back with
+ * `setup_action=request` and no installation, and the approval reaches the
+ * owner, not this tab. Nothing is posted, and `requested` says so, so the
+ * screen offers Connect GitHub again rather than an older installation.
+ *
  * Returns the installation it connected, so the caller renders that row rather
  * than guessing at the head of a list.
  */
@@ -25,6 +31,7 @@ export function useConnectInstallationCallback(
   githubInstallationId?: number,
   code?: string,
   state?: string,
+  setupAction?: string,
   onExchanged?: () => void,
 ) {
   const { mutate, data: connected, isPending, error } = useConnectInstallation();
@@ -43,6 +50,8 @@ export function useConnectInstallationCallback(
     connected: connected as InstallationEntity | undefined,
     /** A GitHub callback that carried no state this console minted: never posted. */
     unstarted: Boolean(githubInstallationId && code && !state),
+    /** GitHub came back from an install request: an owner has to approve it first. */
+    requested: setupAction === 'request' && !githubInstallationId,
     error,
   };
 }

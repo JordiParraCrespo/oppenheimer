@@ -6,7 +6,8 @@ import { githubStepSearchSchema } from '@/features/organizations/lib/onboarding-
 /**
  * Step 3. GitHub returns here after an install with `installation_id`, `code`
  * and the `state` the API minted, parsed at the boundary and dropped once
- * exchanged (all one-shot). The screen gets the bare nonce; the walk is pinned
+ * exchanged (all one-shot), and `setup_action`, which says whether it was an
+ * install at all. The screen gets the bare nonce; the walk is pinned
  * on the install URL on the way out and kept through the rewrite.
  */
 export const Route = createFileRoute('/_auth/onboarding/github')({
@@ -18,13 +19,20 @@ function GithubStep() {
   const navigate = useNavigate();
   // The search keeps GitHub's snake_case keys because it is the URL; the
   // rename to the shared schema's name happens here, at the boundary.
-  const { installation_id: githubInstallationId, code, state, walk } = Route.useSearch();
+  const {
+    installation_id: githubInstallationId,
+    code,
+    state,
+    setup_action: setupAction,
+    walk,
+  } = Route.useSearch();
 
   return (
     <OnboardingGithubScreen
       githubInstallationId={githubInstallationId}
       code={code}
       state={state}
+      setupAction={setupAction}
       installUrlFor={(url) => (walk ? installUrlCarryingWalk(url) : url)}
       onExchanged={() =>
         navigate({ to: '/onboarding/github', search: walk ? { walk } : {}, replace: true })

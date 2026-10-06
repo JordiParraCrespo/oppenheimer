@@ -1,14 +1,10 @@
-import { OppenheimerProvider } from '@oppenheimer/frontend-core/react';
+import { defaultQueryClientOptions, OppenheimerProvider } from '@oppenheimer/frontend-core/react';
 import { type Query, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
-import type {
-  AutomationEntity,
-  AutomationRunEntity,
-  RunPage,
-} from '../../modules/automations/automation.entity';
+import type { AutomationEntity, RunPage } from '../../modules/automations/automation.entity';
 import {
   automationsKeys,
   useAutomation,
@@ -27,11 +23,11 @@ import { fakeKernel } from './fake-kernel';
 
 /**
  * The automations hooks. What matters: every key lives under
- * `automationsKeys.all`, because every write can change the runs as well as the
- * automation; the list, a detail and a run page read again only while
- * something is running; nothing is asked for an id or a trigger that is not
- * there yet; and each write refreshes the whole subtree before the caller's
- * own `onSuccess` runs.
+ * `automationsKeys.all`; the list, a detail and a run page read again only
+ * while something is running; nothing is asked for an id or a trigger that is
+ * not there yet; the list hands each row to its detail; and each write
+ * refreshes what it changed, and only that, before the caller's own
+ * `onSuccess` runs.
  */
 
 // Real class instances: shareEntities compares them field by field, and a
@@ -54,9 +50,15 @@ const automation = (id: string, isRunning = false) =>
 const page = (...runs: Run[]) =>
   ({ items: runs, total: runs.length, page: 1, limit: 20, counts: {} }) as unknown as RunPage;
 
-function setup(service: Record<string, unknown>) {
+function setup(
+  service: Record<string, unknown>,
+  // The console's own defaults, for the specs whose rule is its stale window.
+  defaultOptions: ConstructorParameters<typeof QueryClient>[0] = {
+    defaultOptions: { queries: { retry: false } },
+  },
+) {
   const app = fakeKernel({ [TOKENS.AutomationsRepository]: service });
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient(defaultOptions);
   function wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
@@ -124,6 +126,23 @@ describe('useAutomations', () => {
     await waitFor(() => expect(result.current.data).not.toBe(first));
     expect(result.current.data?.[0]).toBe(first?.[0]);
     expect(result.current.data?.[1]).not.toBe(first?.[1]);
+  });
+});
+
+describe('useAutomations and useAutomation', () => {
+  it('opens an automation from the list without asking for it again', async () => {
+    const findById = vi.fn();
+    const { wrapper } = setup(
+      { findAll: vi.fn().mockResolvedValue([automation('a-1'), automation('a-2')]), findById },
+      { defaultOptions: defaultQueryClientOptions(60_000) },
+    );
+    const { result: list } = renderHook(() => useAutomations(), { wrapper });
+    await waitFor(() => expect(list.current.isSuccess).toBe(true));
+
+    const { result: detail } = renderHook(() => useAutomation('a-2'), { wrapper });
+
+    expect(detail.current.data).toBe(list.current.data?.[1]);
+    expect(findById).not.toHaveBeenCalled();
   });
 });
 
@@ -215,104 +234,151 @@ describe('useTriggerPreview', () => {
 });
 
 describe('automation writes', () => {
-  /**
-   * Seed a read from each branch of the tree: the list, a detail, a run page.
-   * A write must leave every one of them stale.
-   */
-  function seeded(queryClient: QueryClient) {
-    const keys = [
-      automationsKeys.list(),
-      automationsKeys.detail('a-1'),
-      automationsKeys.runList({ page: 1 }),
-    ];
-    for (const key of keys) queryClient.setQueryData(key, 'cached');
-    return keys;
+  /** The reads a write may touch: the source's list row and detail, a run page, a preview. */
+  const reads = {
+    list: automationsKeys.list(),
+    detail: automationsKeys.detail('a-1'),
+    runs: automationsKeys.runList({ page: 1 }),
+    preview: automationsKeys.preview(undefined),
+  };
+  type Read = keyof typeof reads;
+
+  const source = automation('a-1');
+  const saved = automation('a-1', true);
+  const copy = automation('a-2');
+
+  interface WriteCase {
+    name: string;
+    service: Record<string, unknown>;
+    write: (hooks: ReturnType<typeof useWrites>) => Promise<unknown>;
+    stale: Read[];
+    /** Where the answer must land, if the answer is an automation. */
+    lands?: { detail: string; listRow: boolean };
+    /** Whether the source's detail is gone afterwards. */
+    removed?: boolean;
   }
 
-  const cases = [
+  function useWrites() {
+    return {
+      create: useCreateAutomation(),
+      update: useUpdateAutomation(),
+      paused: useSetAutomationPaused(),
+      duplicate: useDuplicateAutomation(),
+      remove: useDeleteAutomation(),
+      run: useRunAutomation(),
+    };
+  }
+
+  const cases: WriteCase[] = [
     {
       name: 'create',
-      method: 'create',
-      hook: useCreateAutomation,
-      variables: { name: 'Nightly' },
-      called: [{ name: 'Nightly' }],
-    },
-    {
-      name: 'update',
-      method: 'update',
-      hook: useUpdateAutomation,
-      variables: { id: 'a-1', input: { name: 'Renamed' } },
-      called: ['a-1', { name: 'Renamed' }],
-    },
-    {
-      name: 'pause',
-      method: 'pause',
-      hook: useSetAutomationPaused,
-      variables: { id: 'a-1', paused: true },
-      called: ['a-1'],
-    },
-    {
-      name: 'resume',
-      method: 'resume',
-      hook: useSetAutomationPaused,
-      variables: { id: 'a-1', paused: false },
-      called: ['a-1'],
+      service: { create: vi.fn().mockResolvedValue(copy) },
+      write: ({ create }) => create.mutateAsync({ name: 'Nightly' } as never),
+      stale: ['list'],
+      lands: { detail: 'a-2', listRow: false },
     },
     {
       name: 'duplicate',
-      method: 'duplicate',
-      hook: useDuplicateAutomation,
-      variables: 'a-1',
-      called: ['a-1'],
+      service: { duplicate: vi.fn().mockResolvedValue(copy) },
+      write: ({ duplicate }) => duplicate.mutateAsync('a-1'),
+      stale: ['list'],
+      lands: { detail: 'a-2', listRow: false },
+    },
+    {
+      name: 'update',
+      service: { update: vi.fn().mockResolvedValue(saved) },
+      write: ({ update }) => update.mutateAsync({ id: 'a-1', input: { version: 1 } }),
+      // Every run row carries the automation's name.
+      stale: ['runs'],
+      lands: { detail: 'a-1', listRow: true },
+    },
+    {
+      name: 'pause',
+      service: { pause: vi.fn().mockResolvedValue(saved) },
+      write: ({ paused }) => paused.mutateAsync({ id: 'a-1', paused: true }),
+      stale: [],
+      lands: { detail: 'a-1', listRow: true },
+    },
+    {
+      name: 'resume',
+      service: { resume: vi.fn().mockResolvedValue(saved) },
+      write: ({ paused }) => paused.mutateAsync({ id: 'a-1', paused: false }),
+      stale: [],
+      lands: { detail: 'a-1', listRow: true },
     },
     {
       name: 'run now',
-      method: 'run',
-      hook: useRunAutomation,
-      variables: { id: 'a-1', idempotencyKey: 'click-1' },
-      called: ['a-1', 'click-1'],
+      service: { run: vi.fn().mockResolvedValue({ id: 'r-1' }) },
+      write: ({ run }) => run.mutateAsync({ id: 'a-1', idempotencyKey: 'click-1' }),
+      stale: ['list', 'detail', 'runs'],
     },
-  ] as const;
+    {
+      name: 'delete',
+      service: { remove: vi.fn().mockResolvedValue(undefined) },
+      write: ({ remove }) => remove.mutateAsync('a-1'),
+      stale: ['list', 'runs'],
+      removed: true,
+    },
+  ];
 
-  for (const { name, method, hook, variables, called } of cases) {
-    it(`${name} calls the repository, leaves every automations read stale, then runs the caller's onSuccess`, async () => {
-      const answer = { id: 'a-1' } as unknown as AutomationRunEntity;
-      const service = { [method]: vi.fn().mockResolvedValue(answer) };
+  for (const { name, service, write, stale, lands, removed } of cases) {
+    it(`${name} refreshes what it changed, and only that`, async () => {
       const { wrapper, queryClient } = setup(service);
-      const keys = seeded(queryClient);
-      const staleWhenCalled: boolean[] = [];
-      const onSuccess = vi.fn(() => {
-        for (const key of keys) {
-          staleWhenCalled.push(queryClient.getQueryState(key)?.isInvalidated ?? false);
-        }
-      });
-      const useHook = hook as unknown as (options: { onSuccess: typeof onSuccess }) => {
-        mutateAsync: (variables: unknown) => Promise<unknown>;
-      };
-      const { result } = renderHook(() => useHook({ onSuccess }), { wrapper });
+      queryClient.setQueryData(reads.list, [source]);
+      queryClient.setQueryData(reads.detail, source);
+      queryClient.setQueryData(reads.runs, 'cached');
+      queryClient.setQueryData(reads.preview, 'cached');
+      const { result } = renderHook(() => useWrites(), { wrapper });
 
-      await act(() => result.current.mutateAsync(variables));
+      await act(() => write(result.current));
 
-      expect(service[method]).toHaveBeenCalledWith(...called);
-      expect(onSuccess).toHaveBeenCalledTimes(1);
-      expect(onSuccess.mock.calls[0]).toContain(variables);
-      expect(staleWhenCalled).toEqual(keys.map(() => true));
+      const isStale = (read: Read) => queryClient.getQueryState(reads[read])?.isInvalidated;
+      expect((Object.keys(reads) as Read[]).filter(isStale)).toEqual(stale);
+      if (lands) {
+        const answer = lands.listRow ? saved : copy;
+        expect(queryClient.getQueryData(automationsKeys.detail(lands.detail))).toBe(answer);
+        expect(queryClient.getQueryData<AutomationEntity[]>(reads.list)?.[0]).toBe(
+          lands.listRow ? answer : source,
+        );
+        if (!lands.listRow) expect(queryClient.getQueryData(reads.detail)).toBe(source);
+      }
+      if (removed) expect(queryClient.getQueryState(reads.detail)).toBeUndefined();
     });
   }
 
-  it("delete forgets the deleted automation, leaves the other reads stale, then runs the caller's onSuccess", async () => {
-    const service = { remove: vi.fn().mockResolvedValue(undefined) };
-    const { wrapper, queryClient } = setup(service);
-    const [list, detail, runs] = seeded(queryClient);
-    const onSuccess = vi.fn(() => ({
-      detail: queryClient.getQueryState(detail),
-      stale: [list, runs].map((key) => queryClient.getQueryState(key)?.isInvalidated),
-    }));
-    const { result } = renderHook(() => useDeleteAutomation({ onSuccess }), { wrapper });
+  it("runs the caller's onSuccess after its own refresh", async () => {
+    const { wrapper, queryClient } = setup({ pause: vi.fn().mockResolvedValue(saved) });
+    queryClient.setQueryData(reads.detail, source);
+    const onSuccess = vi.fn(() => queryClient.getQueryData(reads.detail));
+    const { result } = renderHook(() => useSetAutomationPaused({ onSuccess }), { wrapper });
 
-    await act(() => result.current.mutateAsync('a-1'));
+    await act(() => result.current.mutateAsync({ id: 'a-1', paused: true }));
 
-    expect(service.remove).toHaveBeenCalledWith('a-1');
-    expect(onSuccess.mock.results[0]?.value).toEqual({ detail: undefined, stale: [true, true] });
+    expect(onSuccess.mock.results[0]?.value).toBe(saved);
+  });
+
+  it('keeps a pause it settled over a detail read that was already on its way', async () => {
+    let answerStale!: (value: AutomationEntity) => void;
+    const findById = vi
+      .fn()
+      .mockResolvedValueOnce(source)
+      .mockReturnValueOnce(
+        new Promise<AutomationEntity>((resolve) => {
+          answerStale = resolve;
+        }),
+      );
+    const { wrapper, queryClient } = setup({ findById, pause: vi.fn().mockResolvedValue(saved) });
+    const { result } = renderHook(
+      () => ({ detail: useAutomation('a-1'), paused: useSetAutomationPaused() }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.detail.isSuccess).toBe(true));
+    act(() => void queryClient.refetchQueries({ queryKey: reads.detail }));
+    await waitFor(() => expect(findById).toHaveBeenCalledTimes(2));
+
+    await act(() => result.current.paused.mutateAsync({ id: 'a-1', paused: true }));
+    await act(async () => answerStale(source));
+
+    await waitFor(() => expect(result.current.detail.data).toBe(saved));
   });
 });

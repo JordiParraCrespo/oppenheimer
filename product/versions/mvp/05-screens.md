@@ -11,7 +11,10 @@
   permanent address under `oppenheimer.dev/`, checked for availability
   as you type with a spinner, a green check or a red cross and a hint
   in the same tone; Continue waits for an available address. (3)
-  Connect GitHub, all or selected repos, skippable; until it is done the
+  Connect GitHub, on the account or an organization, all or selected
+  repos, skippable; a member who can only request an organization's
+  install is told an owner has to approve it (`setup_action=request`),
+  then connects it by choosing the organization again; until it is done the
   repo chip lists nothing and its foot row is the way out (below). (4) Add a host: Copy install command and
   Copy agent prompt, the one-hour token's line under them, the
   instruction itself behind an Inspect fold, and the status line
@@ -122,8 +125,10 @@
   which is where a session that names none is listed, so the chip and
   the session never disagree. Its foot action is **New project…**, a
   dialog over the console: the name; Repositories as a field that
-  adds one at a time from the App's list (`RepositoryAddField`), the
-  added ones listed under it with an X; then a **Defaults** fold,
+  adds one at a time from the App's list (`RepositoryAddField`), whose
+  pane ends in the same **Manage repository access** row as the
+  repository chip — an organization's repositories appear once the App is
+  installed on it — the added ones listed under it with an X; then a **Defaults** fold,
   optional, that reads what is set while closed — the host as chips, the
   agent as chips, and Cloned by default (`RepositoryRowList`: a checkbox
   per added repository with its base-branch pill). Create project is off

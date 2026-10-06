@@ -33,11 +33,16 @@
   },
   "drag": {
     "instructions": "Para coger un elemento, pulsa espacio o intro. Muévelo con las flechas, suéltalo con espacio o intro y cancela con escape.",
+    "controlInstructions": "Para coger un elemento, pulsa espacio; intro lo abre. Muévelo con las flechas, suéltalo con espacio o intro y cancela con escape.",
     "pickedUp": "Has cogido {{name}}.",
     "over": "{{name}} está sobre {{target}}.",
     "nowhere": "{{name}} no está sobre un sitio donde pueda ir.",
     "dropped": "{{name}} se ha soltado en {{target}}.",
     "droppedNowhere": "{{name}} se ha soltado.",
     "cancelled": "Se ha cancelado mover {{name}}."
+  },
+  "repositoryAccess": {
+    "manage": "Gestionar el acceso a repositorios",
+    "failed": "No hemos podido abrir GitHub. Inténtalo de nuevo en un momento."
   }
 }

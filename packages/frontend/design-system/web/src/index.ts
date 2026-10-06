@@ -131,6 +131,7 @@ export {
   SortableItem,
   useDraggable,
   useDroppable,
+  useSortableControl,
   useSortableGroups,
   useSortableItem,
 } from './components/drag';
@@ -156,6 +157,7 @@ export {
   DropdownMenuTrigger,
   DropdownMenuValue,
 } from './components/dropdown-menu';
+export type { EditorPageSize } from './components/editor-page';
 export {
   EditorPage,
   EditorPageBack,
@@ -286,7 +288,7 @@ export {
 export { SegmentedControl, SegmentedControlItem } from './components/segmented-control';
 export { Separator } from './components/separator';
 export type { SessionRename } from './components/session-item';
-export { SessionItem, SessionList } from './components/session-item';
+export { SessionItem, SessionList, SortableSessionItem } from './components/session-item';
 export { SessionPaneBack, SessionPaneHeader } from './components/session-pane-header';
 export {
   SettingsForm,

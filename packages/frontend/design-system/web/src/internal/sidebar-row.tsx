@@ -1,5 +1,8 @@
 import type * as React from 'react';
 
+import { dragIgnore } from '../components/drag';
+import { cn } from '../lib/utils';
+
 /**
  * Added to a sidebar row's button when the row has an action, so its hover
  * wash stays lit while the pointer is on the ellipsis or its menu is open.
@@ -23,20 +26,31 @@ export function SidebarRow({
   slot,
   action,
   menuOpen,
+  className,
   children,
-}: {
+  ...props
+}: React.ComponentProps<'div'> & {
   /** `data-slot` of the shell ("session-row", "routine-row"). */
   slot: string;
   /** The ellipsis; left out while the row hides it (an inline rename). */
   action?: React.ReactNode;
   menuOpen?: boolean;
-  children: React.ReactNode;
 }) {
   return (
-    <div role="listitem" data-slot={slot} data-menu-open={menuOpen || undefined} className="group/row relative">
+    <div
+      role="listitem"
+      data-slot={slot}
+      data-menu-open={menuOpen || undefined}
+      className={cn('group/row relative', className)}
+      {...props}
+    >
       {children}
       {action ? (
-        <span className="absolute top-1/2 right-1.5 flex -translate-y-1/2 opacity-0 transition-opacity duration-fast group-hover/row:opacity-100 group-focus-within/row:opacity-100 group-data-menu-open/row:opacity-100 [&_button]:size-5 [&_button]:rounded-xs [&_button]:text-fg-muted [&_button:hover]:text-fg [&_svg:not([class*=size-])]:size-3.5">
+        // A press on the ellipsis or its menu is the menu's, never the start of a row's drag.
+        <span
+          {...dragIgnore}
+          className="absolute top-1/2 right-1.5 flex -translate-y-1/2 opacity-0 transition-opacity duration-fast group-hover/row:opacity-100 group-focus-within/row:opacity-100 group-data-menu-open/row:opacity-100 [&_button]:size-5 [&_button]:rounded-xs [&_button]:text-fg-muted [&_button:hover]:text-fg [&_svg:not([class*=size-])]:size-3.5"
+        >
           {action}
         </span>
       ) : null}
