@@ -18,26 +18,32 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Search repositories to watch: every repository the installations reach, the
- * watched ones first with a check. Picking a row toggles it and the list stays
- * open, so several are chosen in one visit, the way a multi-select quick pick
- * works.
+ * Search repositories to watch: every repository the installations reach, in
+ * name order, a check on the watched ones. Picking a row toggles it and the
+ * list stays open, so several are chosen in one visit, the way a multi-select
+ * quick pick works. A pick shows at once and holds until the refetch lands, so
+ * a second click on the same row asks for the opposite of what it shows.
  */
 export function WatchRepositorySearch() {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [picks, setPicks] = useState<ReadonlyMap<string, boolean>>(new Map());
   const { data: repositories, isPending } = useWatchedRepositories();
   const watch = useSetRepositoryWatch({
     onError: (error) => toast.error(resolveError(error, t('pullRequests.watch.failed')).message),
+    onSettled: (_data, _error, { repository }) =>
+      setPicks((current) => {
+        const next = new Map(current);
+        next.delete(keyOf(repository));
+        return next;
+      }),
   });
   const term = query.trim().toLowerCase();
-  const options = (repositories ?? [])
-    .filter((row) => !term || row.fullName.toLowerCase().includes(term))
-    .sort(
-      (a, b) => Number(b.watching) - Number(a.watching) || a.fullName.localeCompare(b.fullName),
-    );
+  const options = (repositories ?? []).filter(
+    (row) => !term || row.fullName.toLowerCase().includes(term),
+  );
   const label = t('pullRequests.watch.search');
 
   return (
@@ -61,18 +67,25 @@ export function WatchRepositorySearch() {
         />
         <div role="listbox" aria-label={label} aria-multiselectable>
           {options.length ? (
-            options.map((repository) => (
-              <ChipSelectItem
-                key={`${repository.installationId}:${repository.githubRepoId}`}
-                mono
-                density="menu"
-                selected={repository.watching}
-                description={repository.isPrivate ? t('pullRequests.watch.private') : undefined}
-                onClick={() => watch.mutate({ repository, watching: !repository.watching })}
-              >
-                {repository.fullName}
-              </ChipSelectItem>
-            ))
+            options.map((repository) => {
+              const key = keyOf(repository);
+              const watching = picks.get(key) ?? repository.watching;
+              return (
+                <ChipSelectItem
+                  key={key}
+                  mono
+                  density="menu"
+                  selected={watching}
+                  description={repository.isPrivate ? t('pullRequests.watch.private') : undefined}
+                  onClick={() => {
+                    setPicks((current) => new Map(current).set(key, !watching));
+                    watch.mutate({ repository, watching: !watching });
+                  }}
+                >
+                  {repository.fullName}
+                </ChipSelectItem>
+              );
+            })
           ) : (
             <ChipSelectEmpty live={isPending}>
               {isPending
@@ -86,4 +99,8 @@ export function WatchRepositorySearch() {
       </ChipSelectPopup>
     </Popover>
   );
+}
+
+function keyOf(repository: { installationId: string; githubRepoId: number }) {
+  return `${repository.installationId}:${repository.githubRepoId}`;
 }

@@ -32,20 +32,28 @@ export class WatchedRepositoryRepository
     return rows.map((row) => ({
       installationId: row.installationId,
       githubRepoId: Number(row.githubRepoId),
-      watching: row.watching,
     }));
   }
 
-  async setOwn(scope: AccessScope, watch: RepositoryWatch): Promise<void> {
-    await this.repository.upsert(
-      {
-        organizationId: scope.organizationId as string,
-        userId: scope.userId,
-        installationId: watch.installationId,
-        githubRepoId: String(watch.githubRepoId),
-        watching: watch.watching,
-      },
-      { conflictPaths: ['organizationId', 'userId', 'installationId', 'githubRepoId'] },
-    );
+  async watch(scope: AccessScope, watch: RepositoryWatch): Promise<void> {
+    await this.repository
+      .createQueryBuilder()
+      .insert()
+      .values(this.rowOf(scope, watch))
+      .orIgnore()
+      .execute();
+  }
+
+  async unwatch(scope: AccessScope, watch: RepositoryWatch): Promise<void> {
+    await this.repository.delete(this.rowOf(scope, watch));
+  }
+
+  private rowOf(scope: AccessScope, watch: RepositoryWatch) {
+    return {
+      organizationId: scope.organizationId as string,
+      userId: scope.userId,
+      installationId: watch.installationId,
+      githubRepoId: String(watch.githubRepoId),
+    };
   }
 }

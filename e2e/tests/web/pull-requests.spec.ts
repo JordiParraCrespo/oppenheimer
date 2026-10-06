@@ -86,23 +86,32 @@ test.describe('Pull requests', () => {
     await page.getByRole('button', { name: 'Watch repositories' }).click();
     await page.getByRole('textbox', { name: 'Search repositories' }).fill('web');
     await page.getByRole('option', { name: 'acme-labs/xrp-web' }).click();
-    await expect(page.getByRole('option', { name: 'acme-labs/xrp-web' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
     await page.keyboard.press('Escape');
+    const unwatch = page.getByRole('button', { name: 'Stop watching acme-labs/xrp-web' });
+    await expect(unwatch).toBeVisible({ timeout: 30_000 });
     // What holds a row names itself; the conflicted migration cannot merge.
     await expect(held.getByRole('button', { name: 'Merge' })).toBeDisabled({ timeout: 30_000 });
-    await page.getByRole('button', { name: 'Stop watching acme-labs/xrp-web' }).click();
-    await expect(held).toHaveCount(0, { timeout: 30_000 });
 
-    // ── Analytics ────────────────────────────────────────────────────────────
+    // ── Analytics reads the picks ────────────────────────────────────────────
     // The sidebar's rows are the design system's routine items: list items that navigate.
-    await page.locator('[data-slot="routine-item"]', { hasText: 'Analytics' }).click();
+    const analytics = page.locator('[data-slot="routine-item"]', { hasText: 'Analytics' });
+    const merged = page
+      .locator('[data-slot="chart-hero"]', { hasText: 'PRs merged' })
+      .locator('.figures');
+    await analytics.click();
     await expect(page).toHaveURL(/\/pulls\/analytics/);
     await expect(page.getByRole('heading', { name: 'Your review month' })).toBeVisible();
-    await expect(page.getByText('PRs merged').first()).toBeVisible({ timeout: 30_000 });
+    // xrp-web's merged pull requests count only because it is watched.
+    await expect(merged).toHaveText(/^[1-9]\d*$/, { timeout: 30_000 });
     await expect(page.getByText('Lane mix')).toBeVisible();
+
+    // Unwatched, its pull requests leave the queue and the month.
+    await page.goto('/pulls');
+    await page.getByRole('button', { name: /^Watching/ }).click();
+    await unwatch.click();
+    await expect(held).toHaveCount(0, { timeout: 30_000 });
+    await analytics.click();
+    await expect(merged).toHaveText('0', { timeout: 30_000 });
   });
 });
 

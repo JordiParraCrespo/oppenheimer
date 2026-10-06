@@ -1,11 +1,10 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
-import { Column, Entity, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
 /**
- * Whether a person watches one repository in one workspace. A repository
- * nobody has a row for is not watched: a person picks the repositories they
- * want under Watching, so the rows are the choices they made, not a copy of
- * GitHub's list.
+ * One repository a person watches in one workspace. A row is a watch and its
+ * absence is not: unwatching deletes the row, and the unique key is the
+ * identity.
  */
 @Entity('watched_repository')
 @Unique('UQ_watched_repository', ['organizationId', 'userId', 'installationId', 'githubRepoId'])
@@ -26,9 +25,6 @@ export class WatchedRepositoryOrmEntity {
   @Column({ type: 'bigint' })
   githubRepoId!: string;
 
-  @Column({ type: 'boolean' })
-  watching!: boolean;
-
-  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
-  updatedAt!: Date;
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
+  createdAt!: Date;
 }

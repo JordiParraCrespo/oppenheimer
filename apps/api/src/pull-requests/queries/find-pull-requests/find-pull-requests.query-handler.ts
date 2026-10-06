@@ -3,6 +3,7 @@ import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
 import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
 import { WatchedRepositoriesResolver } from '../../application/watched-repositories.resolver';
+import { visibleInQueue } from '../../domain/pull-request-merge.policy';
 import type { PullRequestQueueResponseDto } from '../../dtos/pull-request.response.dto';
 import { PullRequestMapper } from '../../pull-request.mapper';
 import { FindPullRequestsQuery } from './find-pull-requests.query';
@@ -30,23 +31,18 @@ export class FindPullRequestsQueryHandler
       this.watched.all(scope),
       this.access.viewerLogin(scope.userId),
     ]);
-    const watched = new Set(
-      repositories
-        .filter((entry) => entry.watching)
-        .map(({ repository }) => `${repository.installationId}:${repository.githubRepoId}`),
-    );
-    const snapshots = (
+    const now = new Date();
+    const rows = (
       await Promise.all(
-        repositories.map(({ repository }) => this.access.openPullRequests(scope, repository)),
+        repositories.map(async ({ repository, watching }) =>
+          (
+            await this.access.openPullRequests(scope, repository)
+          )
+            .map((snapshot) => this.mapper.toRow(snapshot, viewerLogin, now))
+            .filter((row) => visibleInQueue(row.scope, watching)),
+        ),
       )
     ).flat();
-    const now = new Date();
-    const rows = snapshots
-      .map((snapshot) => this.mapper.toRow(snapshot, viewerLogin, now))
-      .filter(
-        (row) =>
-          row.scope !== 'watching' || watched.has(`${row.installationId}:${row.githubRepoId}`),
-      );
     return this.mapper.toQueue(rows, queue, viewerLogin);
   }
 }
