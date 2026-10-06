@@ -128,6 +128,22 @@ interface BarDatum {
   values: Record<string, number>;
 }
 
+/**
+ * How many x labels the axis draws at most. A day chart over a quarter is
+ * ninety bars of eight pixels, and a label on every one of them is a label on
+ * none: they overlap into a single grey smear. Past this many, the axis keeps
+ * an evenly spaced subset — every bar still draws, and still answers the
+ * pointer and the screen reader with its own date.
+ */
+const MAX_X_LABELS = 16;
+
+/** The bars whose label is drawn: evenly spaced, and always a month's first day. */
+function labelledBars(data: readonly BarDatum[]): (datum: BarDatum, index: number) => boolean {
+  if (data.length <= MAX_X_LABELS) return () => true;
+  const stride = Math.ceil(data.length / MAX_X_LABELS);
+  return (datum, index) => index % stride === 0 || datum.sublabel !== undefined;
+}
+
 function BarChart({
   series,
   data,
@@ -149,6 +165,7 @@ function BarChart({
   const [hover, setHover] = React.useState<number | null>(null);
   const max = Math.max(1, ...data.flatMap((d) => series.map((s) => d.values[s.key] ?? 0)));
   const hovered = hover === null ? null : data[hover];
+  const labelled = labelledBars(data);
   return (
     <figure data-slot="bar-chart" className={cn('m-0 flex min-w-0 flex-col gap-2', className)} aria-label={ariaLabel}>
       <ChartReadout
@@ -189,15 +206,24 @@ function BarChart({
         ))}
       </div>
       <div aria-hidden className="flex gap-[5px]">
-        {data.map((d, i) => (
-          <span
-            key={d.key}
-            className="flex min-w-0 flex-1 flex-col items-center gap-0.5 overflow-visible text-[11px] leading-[14px] whitespace-nowrap"
-          >
-            <span className={cn('figures', hover === i ? 'text-fg' : 'text-fg-subtle')}>{d.label}</span>
-            {d.sublabel ? <span className="text-fg-muted">{d.sublabel}</span> : null}
-          </span>
-        ))}
+        {data.map((d, i) => {
+          // The hovered bar names itself even where the axis is thinned, so a
+          // reader can always read the day under the pointer.
+          const drawn = labelled(d, i) || hover === i;
+          return (
+            <span
+              key={d.key}
+              className="flex min-w-0 flex-1 flex-col items-center gap-0.5 overflow-visible text-[11px] leading-[14px] whitespace-nowrap"
+            >
+              {drawn ? (
+                <span className={cn('figures', hover === i ? 'text-fg' : 'text-fg-subtle')}>
+                  {d.label}
+                </span>
+              ) : null}
+              {drawn && d.sublabel ? <span className="text-fg-muted">{d.sublabel}</span> : null}
+            </span>
+          );
+        })}
       </div>
     </figure>
   );
