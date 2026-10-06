@@ -78,7 +78,6 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
             fullName: repository.fullName,
             defaultBranch: repository.defaultBranch,
             private: repository.private,
-            pushedAt: repository.pushedAt,
           }));
       }),
     );
@@ -114,10 +113,10 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     since: Date,
     limit: number,
   ): Promise<{ pulls: RepositoryPulls[]; complete: boolean }> {
-    // A repository not pushed to since the window began merged nothing in it.
-    const active = repositories.filter((r) => !r.pushedAt || new Date(r.pushedAt) >= since);
+    // Every repository is listed: a fork's pull request, or one closed unmerged,
+    // moves nothing on the base repository's `pushedAt`. The ceiling bounds the cost.
     const listed = await Promise.all(
-      active.map(async (repository) => {
+      repositories.map(async (repository) => {
         try {
           const token = await this.readToken(scope, repository.installationId);
           const closed = await this.cache.getOrSet(
@@ -336,7 +335,6 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
       fullName: repository.fullName,
       defaultBranch: repository.defaultBranch,
       private: repository.private,
-      pushedAt: repository.pushedAt,
     };
   }
 

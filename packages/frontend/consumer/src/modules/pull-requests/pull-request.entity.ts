@@ -55,7 +55,9 @@ export type LaneReason =
   | { code: 'large_change'; lines: number }
   | { code: 'docs_tests_config'; files: number }
   | { code: 'small_change'; lines: number; files: number }
-  | { code: 'medium_change'; lines: number; files: number };
+  | { code: 'medium_change'; lines: number; files: number }
+  /** GitHub did not give the files: size alone, never quick. */
+  | { code: 'files_unread'; lines: number };
 
 /** One row of the queue. */
 export class PullRequestEntity {
@@ -84,6 +86,8 @@ export class PullRequestEntity {
     public readonly htmlUrl: string,
     /** Why the checks are `unavailable`; null otherwise. */
     public readonly checksRefusal: ReadRefusal | null = null,
+    /** What GitHub did not give on this read; an unread part is not an empty one. */
+    public readonly unread: readonly ('files' | 'reviews')[] = [],
   ) {}
 
   get address(): PullRequestAddress {
@@ -169,6 +173,7 @@ export class PullRequestDetailEntity extends PullRequestEntity {
       row.draft,
       row.htmlUrl,
       row.checksRefusal,
+      row.unread,
     );
   }
 

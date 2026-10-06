@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CONCURRENCY_PER_TOKEN,
+  GithubPausedError,
   GithubRequestGate,
   readRateLimit,
   sleep,
@@ -109,5 +110,28 @@ describe('the request gate', () => {
       ...Array.from({ length: 10 }, () => gate.run('token-b', work)),
     ]);
     expect(peak).toBe(CONCURRENCY_PER_TOKEN * 2);
+  });
+
+  it('sends nothing while GitHub’s pause outlasts what a request holds, and says when to ask again', async () => {
+    const gate = new GithubRequestGate();
+    const until = Date.now() + 10 * 60_000;
+    gate.pause('ghs_token', until);
+    let sent = false;
+    await expect(
+      gate.run('ghs_token', async () => {
+        sent = true;
+      }),
+    ).rejects.toEqual(new GithubPausedError(until));
+    expect(sent).toBe(false);
+  });
+
+  it('keeps no lane for a token once it is idle and unpaused: installation tokens turn over hourly', async () => {
+    const gate = new GithubRequestGate();
+    await Promise.all(['a', 'b', 'c'].map((token) => gate.run(token, async () => undefined)));
+    expect(gate.size).toBe(0);
+
+    gate.pause('expired', Date.now() - 1);
+    await gate.run('fresh', async () => undefined);
+    expect(gate.size).toBe(0);
   });
 });

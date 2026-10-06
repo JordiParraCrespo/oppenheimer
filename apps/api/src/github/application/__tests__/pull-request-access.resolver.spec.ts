@@ -93,7 +93,6 @@ function build(pulls: Partial<Record<keyof GithubPullsPort, unknown>>) {
     fullName: 'acme-labs/xrp',
     defaultBranch: 'main',
     private: true,
-    pushedAt: null,
   };
   return { resolver, repository, store };
 }
@@ -180,19 +179,5 @@ describe('the closed pull requests Analytics reads', () => {
     expect(complete).toBe(false);
     expect(pulls[0]?.snapshots.map((s) => s.pull.number).sort()).toEqual([103, 104]);
     expect(readPullRequest).toHaveBeenCalledTimes(2);
-  });
-
-  it('skips a repository nobody has pushed to since the window began', async () => {
-    const listPullRequests = vi.fn().mockResolvedValue([]);
-    const { resolver, repository } = build({ listPullRequests });
-
-    await resolver.closedPullRequests(
-      SCOPE,
-      [{ ...repository, pushedAt: '2026-01-01T00:00:00Z' }],
-      new Date('2026-09-01T00:00:00Z'),
-      150,
-    );
-
-    expect(listPullRequests).not.toHaveBeenCalled();
   });
 });

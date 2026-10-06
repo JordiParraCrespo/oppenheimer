@@ -52,7 +52,7 @@ const LANES: PullRequestLane[] = ['deep', 'medium', 'quick'];
 export class PullRequestMapper {
   toRow(snapshot: PullRequestSnapshot, viewerLogin: string | null, now: Date): PullRequestRowDto {
     const { pull, repository } = snapshot;
-    const decision = decideLane(snapshot.filePaths, pull.additions, pull.deletions);
+    const decision = decideLane(pathsOf(snapshot), pull.additions, pull.deletions);
     return {
       installationId: repository.installationId,
       githubRepoId: repository.githubRepoId,
@@ -69,6 +69,7 @@ export class PullRequestMapper {
       deletions: pull.deletions,
       checks: snapshot.checks.state,
       checksRefusal: snapshot.checks.refusal ?? null,
+      unread: snapshot.missing.filter((part): part is 'files' | 'reviews' => part !== 'checks'),
       mergeable: pull.mergeable !== false && pull.mergeableState !== 'dirty',
       blocker: mergeBlocker(this.factsOf(snapshot)),
       waitingSeconds: Math.max(
@@ -206,11 +207,14 @@ export class PullRequestMapper {
       value: all.filter((s) => periodOf(at(s), window) === 'current').length,
       previous: all.filter((s) => periodOf(at(s), window) === 'previous').length,
     });
+    // A snapshot whose reviews GitHub did not give counts in neither review figure (an empty list is not "no reviews").
+    const reviewsRead = (s: PullRequestSnapshot) => !s.missing.includes('reviews');
     const reviewedAt = (s: PullRequestSnapshot) =>
-      viewerLogin
+      viewerLogin && reviewsRead(s)
         ? (s.reviews.find((r) => r.login === viewerLogin && r.submittedAt)?.submittedAt ?? null)
         : null;
     const firstReviewHours = (s: PullRequestSnapshot) => {
+      if (!reviewsRead(s)) return null;
       const first = s.reviews
         .filter((r) => r.login !== s.pull.authorLogin && r.submittedAt)
         .map((r) => r.submittedAt as string)
@@ -236,8 +240,11 @@ export class PullRequestMapper {
       created: all.filter((s) => s.pull.createdAt.slice(0, 10) === date).length,
       merged: all.filter((s) => s.pull.mergedAt?.slice(0, 10) === date).length,
     }));
+    // The lane mix counts only pull requests whose files were read: a guessed lane would skew it.
     const laneOf = (s: PullRequestSnapshot) =>
-      decideLane(s.filePaths, s.pull.additions, s.pull.deletions).lane;
+      s.missing.includes('files')
+        ? null
+        : decideLane(s.filePaths, s.pull.additions, s.pull.deletions).lane;
     const waiting = new Map<MergeBlocker, number[]>();
     for (const s of input.open) {
       const blocker = mergeBlocker(this.factsOf(s));
@@ -335,4 +342,9 @@ function dedupe(snapshots: PullRequestSnapshot[]): PullRequestSnapshot[] {
   for (const s of snapshots)
     seen.set(`${s.repository.installationId}:${s.repository.githubRepoId}:${s.pull.number}`, s);
   return [...seen.values()];
+}
+
+/** The paths the lane policy reads; `null` when GitHub did not give the files. */
+function pathsOf(snapshot: PullRequestSnapshot): string[] | null {
+  return snapshot.missing.includes('files') ? null : snapshot.filePaths;
 }

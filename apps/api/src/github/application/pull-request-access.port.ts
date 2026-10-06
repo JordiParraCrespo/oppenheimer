@@ -17,8 +17,6 @@ export interface WorkspaceRepository {
   fullName: string;
   defaultBranch: string;
   private: boolean;
-  /** ISO 8601; a repository not pushed to since a window began merged nothing in it. */
-  pushedAt: string | null;
 }
 
 /** The address of one pull request. */

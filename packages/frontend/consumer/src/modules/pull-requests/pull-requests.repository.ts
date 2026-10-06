@@ -37,6 +37,8 @@ function laneReasonOf(dto: PullRequestRowDto['laneReason']): LaneReason {
       return { code: 'docs_tests_config', files };
     case 'small_change':
       return { code: 'small_change', lines, files };
+    case 'files_unread':
+      return { code: 'files_unread', lines };
     default:
       return { code: 'medium_change', lines, files };
   }
@@ -64,6 +66,7 @@ function toEntity(dto: PullRequestRowDto): PullRequestEntity {
     dto.draft,
     dto.htmlUrl,
     dto.checksRefusal ?? null,
+    dto.unread,
   );
 }
 

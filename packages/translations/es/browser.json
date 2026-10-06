@@ -1029,7 +1029,8 @@
       "large_change": "{{lines}} líneas cambiadas.",
       "docs_tests_config": "Solo documentación, tests y configuración.",
       "small_change": "Un cambio pequeño: {{lines}} líneas en {{files}} archivos.",
-      "medium_change": "{{lines}} líneas en {{files}} archivos."
+      "medium_change": "{{lines}} líneas en {{files}} archivos.",
+      "files_unread": "GitHub no devolvió sus archivos, así que el carril sale solo de su tamaño ({{lines}} líneas)."
     },
     "checks": {
       "passing": "Pasan",
@@ -1133,7 +1134,9 @@
         "commented": "Comentó",
         "requested": "Pedida"
       },
-      "opened": "{{author}} quiere fusionar {{head}} en {{base}}"
+      "opened": "{{author}} quiere fusionar {{head}} en {{base}}",
+      "reviewsUnread": "GitHub no devolvió las revisiones en esta lectura.",
+      "filesUnread": "GitHub no devolvió los archivos en esta lectura."
     },
     "review": {
       "submit": "Enviar revisión",

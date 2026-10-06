@@ -18,6 +18,17 @@ export const MAX_WAIT_MS = 20_000;
 const SECONDARY_DEFAULT_MS = 60_000;
 
 /**
+ * A request not sent because GitHub's pause on its token outlasts what one
+ * request will wait: the caller hears "wait until `resumeAt`", and GitHub is
+ * not asked again before then.
+ */
+export class GithubPausedError extends Error {
+  constructor(readonly resumeAt: number) {
+    super('GitHub asked this token to wait');
+  }
+}
+
+/**
  * One token's lane: at most `CONCURRENCY_PER_TOKEN` requests at a time, and
  * none at all until `pausedUntil` when GitHub has asked for a pause.
  */
@@ -26,14 +37,20 @@ class TokenLane {
   private readonly waiting: (() => void)[] = [];
   pausedUntil = 0;
 
+  get idle(): boolean {
+    return this.running === 0 && this.waiting.length === 0 && this.pausedUntil <= Date.now();
+  }
+
   async run<T>(work: () => Promise<T>): Promise<T> {
     if (this.running >= CONCURRENCY_PER_TOKEN) {
       await new Promise<void>((resolve) => this.waiting.push(resolve));
     }
     this.running += 1;
     try {
+      // Read after the slot is ours: a pause can land while a request waits for one.
       const pause = this.pausedUntil - Date.now();
-      if (pause > 0) await sleep(Math.min(pause, MAX_WAIT_MS));
+      if (pause > MAX_WAIT_MS) throw new GithubPausedError(this.pausedUntil);
+      if (pause > 0) await sleep(pause);
       return await work();
     } finally {
       this.running -= 1;
@@ -42,29 +59,49 @@ class TokenLane {
   }
 }
 
-/** The lanes of every token this process reads with, keyed by a digest so no token is held as a key. */
+/**
+ * The lanes of every token this process reads with, keyed by a digest so no
+ * token is held as a key. Installation tokens turn over hourly, so a lane is
+ * dropped once it is idle and unpaused rather than kept for the process's life.
+ */
 export class GithubRequestGate {
   private readonly lanes = new Map<string, TokenLane>();
 
-  run<T>(token: string, work: () => Promise<T>): Promise<T> {
-    return this.laneOf(token).run(work);
+  async run<T>(token: string, work: () => Promise<T>): Promise<T> {
+    const key = keyOf(token);
+    const lane = this.laneOf(key);
+    try {
+      return await lane.run(work);
+    } finally {
+      if (lane.idle && this.lanes.get(key) === lane) this.lanes.delete(key);
+    }
   }
 
   /** Holds every request on this token until `until` (epoch ms). */
   pause(token: string, until: number): void {
-    const lane = this.laneOf(token);
+    const lane = this.laneOf(keyOf(token));
     lane.pausedUntil = Math.max(lane.pausedUntil, until);
   }
 
-  private laneOf(token: string): TokenLane {
-    const key = createHash('sha256').update(token).digest('hex').slice(0, 16);
+  /** How many tokens have a lane now: idle, unpaused ones are not kept. */
+  get size(): number {
+    return this.lanes.size;
+  }
+
+  private laneOf(key: string): TokenLane {
     let lane = this.lanes.get(key);
     if (!lane) {
+      // A paused lane whose token was never used again is swept once its pause is over.
+      for (const [other, candidate] of this.lanes) if (candidate.idle) this.lanes.delete(other);
       lane = new TokenLane();
       this.lanes.set(key, lane);
     }
     return lane;
   }
+}
+
+function keyOf(token: string): string {
+  return createHash('sha256').update(token).digest('hex').slice(0, 16);
 }
 
 /** What GitHub's headers and status say about the limits on this answer. */

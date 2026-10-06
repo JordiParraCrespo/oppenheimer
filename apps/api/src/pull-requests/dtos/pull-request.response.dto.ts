@@ -12,6 +12,7 @@ const LANE_REASONS = [
   'docs_tests_config',
   'small_change',
   'medium_change',
+  'files_unread',
 ] as const;
 const BLOCKERS = [
   'draft',
@@ -93,6 +94,14 @@ export class PullRequestRowDto {
 
   @ApiPropertyOptional({ enum: REFUSALS, nullable: true })
   checksRefusal!: (typeof REFUSALS)[number] | null;
+
+  @ApiProperty({
+    enum: ['files', 'reviews'],
+    isArray: true,
+    description:
+      'What GitHub did not give on this read: unread files make the lane size-only, unread reviews leave the review gate pending.',
+  })
+  unread!: ('files' | 'reviews')[];
 
   @ApiProperty({
     description: 'False on a conflict with the base; true while GitHub is still computing it.',

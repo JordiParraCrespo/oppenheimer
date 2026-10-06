@@ -1025,7 +1025,8 @@
       "large_change": "{{lines}} changed lines.",
       "docs_tests_config": "Only docs, tests and configuration.",
       "small_change": "A small change: {{lines}} lines in {{files}} files.",
-      "medium_change": "{{lines}} lines in {{files}} files."
+      "medium_change": "{{lines}} lines in {{files}} files.",
+      "files_unread": "GitHub did not give its files, so the lane is from its size alone ({{lines}} lines)."
     },
     "checks": {
       "passing": "Passing",
@@ -1129,7 +1130,9 @@
         "commented": "Commented",
         "requested": "Requested"
       },
-      "opened": "{{author}} wants to merge {{head}} into {{base}}"
+      "opened": "{{author}} wants to merge {{head}} into {{base}}",
+      "reviewsUnread": "GitHub did not return the reviews on this read.",
+      "filesUnread": "GitHub did not return the files on this read."
     },
     "review": {
       "submit": "Submit review",

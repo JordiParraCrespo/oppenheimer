@@ -186,9 +186,11 @@ export function PullRequestBriefing({
               </p>
               <FactGrid>
                 <FactTile label={t('pullRequests.detail.whatChanges')}>
-                  {pull.folders.length
-                    ? t('pullRequests.detail.where', { folders: folderList(pull.folders) })
-                    : '—'}
+                  {pull.unread.includes('files')
+                    ? t('pullRequests.detail.filesUnread')
+                    : pull.folders.length
+                      ? t('pullRequests.detail.where', { folders: folderList(pull.folders) })
+                      : '—'}
                 </FactTile>
                 <FactTile label={t('pullRequests.detail.risk')}>
                   {t(`pullRequests.lanes.${pull.lane}`)}: {laneReasonText(pull, t)}
@@ -200,7 +202,11 @@ export function PullRequestBriefing({
             </Panel>
             <PanelGrid>
               <Panel title={t('pullRequests.detail.reviewers')}>
-                {pull.reviewers.length ? (
+                {pull.unread.includes('reviews') ? (
+                  <p className="m-0 text-sm text-fg-muted">
+                    {t('pullRequests.detail.reviewsUnread')}
+                  </p>
+                ) : pull.reviewers.length ? (
                   pull.reviewers.map((reviewer) => (
                     <ReviewerRow key={reviewer.login} reviewer={reviewer} />
                   ))

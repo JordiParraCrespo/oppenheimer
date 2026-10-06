@@ -45,4 +45,12 @@ describe('the lane policy', () => {
   it('does not read a code change as light because a test rides along', () => {
     expect(decideLane(['src/a.ts', 'src/a.spec.ts'], 200, 100).lane).toBe('medium');
   });
+
+  it('never calls a change quick when GitHub did not give its files: a risky path cannot be ruled out', () => {
+    expect(decideLane(null, 3, 1)).toEqual({
+      lane: 'medium',
+      reason: { code: 'files_unread', lines: 4 },
+    });
+    expect(decideLane(null, 900, 200).lane).toBe('deep');
+  });
 });

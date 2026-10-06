@@ -15,6 +15,7 @@ import type {
   GithubReviewInput,
 } from './github-pulls.port';
 import {
+  GithubPausedError,
   GithubRequestGate,
   MAX_WAIT_MS,
   readRateLimit,
@@ -357,7 +358,20 @@ export class GithubPullsAdapter implements GithubPullsPort {
     },
   ): Promise<{ body: T; link: string | null }> {
     for (let attempt = 0; ; attempt += 1) {
-      const response = await this.gate.run(options.token, () => this.send(url, options));
+      let response: Response;
+      try {
+        response = await this.gate.run(options.token, () => this.send(url, options));
+      } catch (error) {
+        if (!(error instanceof GithubPausedError)) throw error;
+        // GitHub's pause outlasts what a request holds: say when, without asking it again.
+        throw new AppError(GithubErrors.RATE_LIMITED, {
+          detail: 'GitHub asked to wait before the next request.',
+          extensions: {
+            upstreamStatus: null,
+            retryAfterSeconds: Math.max(1, Math.ceil((error.resumeAt - Date.now()) / 1000)),
+          },
+        });
+      }
       const upstreamMessage = response.ok ? null : ((await messageOf(response)) ?? null);
       const limit = readRateLimit(response.status, response.headers, upstreamMessage);
       if (limit.resumeAt) {

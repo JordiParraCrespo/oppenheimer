@@ -2199,7 +2199,7 @@ export type ConnectGoogleCalendarRequest = {
 };
 
 export type PullRequestLaneReasonDto = {
-    code: 'risky_path' | 'large_change' | 'docs_tests_config' | 'small_change' | 'medium_change';
+    code: 'risky_path' | 'large_change' | 'docs_tests_config' | 'small_change' | 'medium_change' | 'files_unread';
     /**
      * The risky directory, for `risky_path`.
      */
@@ -2239,6 +2239,10 @@ export type PullRequestRowDto = {
      */
     checks: 'passing' | 'failing' | 'running' | 'none' | 'unavailable';
     checksRefusal?: 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
+    /**
+     * What GitHub did not give on this read: unread files make the lane size-only, unread reviews leave the review gate pending.
+     */
+    unread: Array<'files' | 'reviews'>;
     /**
      * False on a conflict with the base; true while GitHub is still computing it.
      */
@@ -2450,6 +2454,10 @@ export type PullRequestDetailResponseDto = {
      */
     checks: 'passing' | 'failing' | 'running' | 'none' | 'unavailable';
     checksRefusal?: 'forbidden' | 'not_found' | 'rate_limited' | 'failed';
+    /**
+     * What GitHub did not give on this read: unread files make the lane size-only, unread reviews leave the review gate pending.
+     */
+    unread: Array<'files' | 'reviews'>;
     /**
      * False on a conflict with the base; true while GitHub is still computing it.
      */
