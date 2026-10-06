@@ -165,6 +165,8 @@
     "CALENDAR_006": "Google didn't share your calendar. Connect again and allow calendar access.",
     "CALENDAR_007": "Google Calendar isn't connected. Connect it again.",
     "CALENDAR_008": "Google Calendar didn't answer. Try again in a moment.",
+    "LIVE_001": "Live updates are unavailable right now; the console will keep checking for changes.",
+    "LIVE_002": "Choose a workspace before opening live updates.",
     "CALENDAR_009": "An event has to end after it starts.",
     "INBOUND_001": "That event source isn't known.",
     "INBOUND_002": "The delivery carries no delivery id.",

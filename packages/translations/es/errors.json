@@ -165,6 +165,8 @@
     "CALENDAR_006": "Google no ha compartido tu calendario. Vuelve a conectarlo y permite el acceso al calendario.",
     "CALENDAR_007": "Google Calendar no está conectado. Vuelve a conectarlo.",
     "CALENDAR_008": "Google Calendar no ha respondido. Inténtalo de nuevo en un momento.",
+    "LIVE_001": "Las actualizaciones en directo no están disponibles ahora; la consola seguirá comprobando los cambios.",
+    "LIVE_002": "Elige un espacio de trabajo antes de abrir las actualizaciones en directo.",
     "CALENDAR_009": "Un evento tiene que terminar después de empezar.",
     "INBOUND_001": "Esa fuente de eventos no se conoce.",
     "INBOUND_002": "La entrega no incluye un identificador de entrega.",
