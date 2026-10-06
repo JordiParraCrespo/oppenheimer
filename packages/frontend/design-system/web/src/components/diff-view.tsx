@@ -57,8 +57,8 @@ const DIFF_TOKENS = {
   '--diffs-font-size': '12.5px',
   '--diffs-line-height': '20px',
   '--diffs-bg-context-override': 'var(--card)',
-  // Split view leaves the missing side blank, as the frames do: its hatching is drawn in the card.
-  '--diffs-bg-buffer-override': 'var(--card)',
+  // Split view hatches the side a hunk does not reach, in a faint tint of the text.
+  '--diffs-bg-buffer-override': 'color-mix(in oklab, var(--card) 90%, var(--fg))',
   '--diffs-bg-separator-override': 'color-mix(in oklab, var(--card) 94%, var(--info))',
   // The hues lines mix toward; the library sets how far for each theme.
   '--diffs-bg-addition-override': 'var(--success)',
