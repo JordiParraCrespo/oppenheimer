@@ -60,6 +60,16 @@ test.describe('Pull requests', () => {
       page.getByText('The wallet screen showed a spinner forever').first(),
     ).toBeVisible();
 
+    // Its description, GitHub's Markdown as elements: no syntax, no template comment.
+    await page.getByRole('button', { name: 'Description' }).click();
+    await expect(page).toHaveURL(/view=description/);
+    await expect(page.getByRole('heading', { name: 'How to test' })).toBeVisible();
+    await expect(
+      page.getByRole('listitem').filter({ hasText: 'shows the prompt' }).getByRole('checkbox'),
+    ).toBeChecked();
+    await expect(page.getByRole('cell', { name: 'Spinner' })).toBeVisible();
+    await expect(page.getByText('What did you change')).toHaveCount(0);
+
     // Its changes, from GitHub's patch.
     await page.getByRole('button', { name: /^Changes/ }).click();
     await expect(page).toHaveURL(/view=changes/);
