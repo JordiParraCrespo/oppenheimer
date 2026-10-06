@@ -388,18 +388,23 @@ export function createPullsStub(
 ): PullsStub {
   const byRepository = new Map<string, StubPull[]>();
   const [first, second] = repositories;
-  if (first) {
-    byRepository.set(first.full_name, [
-      ...firstRepositorySeeds(viewerLogin).map((seed) => pullOf(first, seed, now)),
-      ...mergedSeeds(viewerLogin, 100, 26).map((seed) => pullOf(first, seed, now)),
-    ]);
-  }
-  if (second) {
-    byRepository.set(second.full_name, [
-      ...secondRepositorySeeds(viewerLogin).map((seed) => pullOf(second, seed, now)),
-      ...mergedSeeds(viewerLogin, 200, 14).map((seed) => pullOf(second, seed, now)),
-    ]);
-  }
+  /** Every pull request back as seeded: a suite that merges one resets first, so a rerun finds it open. */
+  const seed = () => {
+    byRepository.clear();
+    if (first) {
+      byRepository.set(first.full_name, [
+        ...firstRepositorySeeds(viewerLogin).map((s) => pullOf(first, s, now)),
+        ...mergedSeeds(viewerLogin, 100, 26).map((s) => pullOf(first, s, now)),
+      ]);
+    }
+    if (second) {
+      byRepository.set(second.full_name, [
+        ...secondRepositorySeeds(viewerLogin).map((s) => pullOf(second, s, now)),
+        ...mergedSeeds(viewerLogin, 200, 14).map((s) => pullOf(second, s, now)),
+      ]);
+    }
+  };
+  seed();
 
   const touch = (pull: StubPull) => {
     pull.updated_at = new Date().toISOString();
@@ -441,6 +446,10 @@ export function createPullsStub(
 
   return {
     handle(method, path, query, body) {
+      if (path === '/__stub/pulls/reset' && method === 'POST') {
+        seed();
+        return { status: 200, body: { reset: true } };
+      }
       const repo = /^\/repos\/([^/]+)\/([^/]+)\/(.+)$/.exec(path);
       if (!repo) return null;
       const fullName = `${decodeURIComponent(repo[1] ?? '')}/${decodeURIComponent(repo[2] ?? '')}`;
