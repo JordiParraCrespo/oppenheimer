@@ -104,7 +104,7 @@ hands the content area to a screen whose box *is* the pane — the terminal, New
 session's drop zone — and keeps no scroll or ground of its own.
 `resolveContentPane` reads the innermost match that declares one, the same way
 `AuthLayout` reads its legal note, so a layout route declares it once for its
-subtree (`plan.tsx`, `automations.tsx`) and renders only its `Outlet`. The
+subtree (`plan.tsx`, `automations.tsx`, `pulls.tsx`) and renders only its `Outlet`. The
 frame is keyed by the leaf route, so a new page starts at the top while a
 search param over the same page keeps its place.
 

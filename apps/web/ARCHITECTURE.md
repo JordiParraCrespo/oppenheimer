@@ -115,7 +115,7 @@ step, past the point where the reader agreed to the terms, and
 
 A route also says how the shell should frame it, and the shell is the only
 thing that does: `staticData.pane` names the page's measure — `narrow` (the
-default), `wide` (`automations.tsx`, a table) or `board` (`plan.tsx`, four
+default), `wide` (`automations.tsx`, `pulls.tsx`: tables) or `board` (`plan.tsx`, four
 columns) — and the shell draws the canvas, the scroll and the gutter around
 the `Outlet`. A layout route that declares it renders nothing else; the
 screens under it render content only, and `pnpm check:structure` fails a

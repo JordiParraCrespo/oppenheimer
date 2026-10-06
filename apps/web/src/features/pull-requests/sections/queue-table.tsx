@@ -47,7 +47,7 @@ export function QueueTable() {
         if (!data.items.length) {
           const watching = scope === 'watching';
           return (
-            <div className="rounded-xl bg-card py-6">
+            <div className="rounded-lg border border-border-subtle bg-card py-6">
               <EmptyState>
                 <EmptyState.Header>
                   <EmptyState.Media variant="icon">
