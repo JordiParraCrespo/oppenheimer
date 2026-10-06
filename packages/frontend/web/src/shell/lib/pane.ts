@@ -11,7 +11,8 @@ import type { EditorPageSize } from '@oppenheimer/design-system-web';
  *
  * `full` is only a box that is the pane and must not scroll outside itself:
  * the session terminal, which sizes itself from the pane and loses scrollback
- * to every pixel of padding.
+ * to every pixel of padding, and a pull request's changes, whose diff scrolls
+ * beside a file tree that must not scroll with it.
  *
  * A route declares it as `staticData`, as an auth page declares its legal
  * note, so the shell reads it off the match instead of a screen reaching up

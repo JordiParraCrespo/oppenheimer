@@ -10,11 +10,12 @@ export const pullRequestSearchSchema = z.object({
 
 /**
  * The page each view is: the description an article, the briefing a page of
- * cards, the changes a diff as wide as the pane. The route declares it from
- * its search, so the shell frames every view and the bar stays above them.
+ * cards, the changes the whole pane, so the diff scrolls beside a file tree
+ * that stays put. The route declares it from its search, so the shell frames
+ * every view and the bar stays above them.
  */
-export function pullRequestPane(view: unknown): 'narrow' | 'wide' | 'fluid' {
+export function pullRequestPane(view: unknown): 'narrow' | 'wide' | 'full' {
   if (view === 'description') return 'narrow';
-  if (view === 'changes') return 'fluid';
+  if (view === 'changes') return 'full';
   return 'wide';
 }
