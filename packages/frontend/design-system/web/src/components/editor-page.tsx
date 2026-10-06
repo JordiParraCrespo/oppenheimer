@@ -7,27 +7,33 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 
 /**
- * EditorPage — the page over the main column: the automations overview
- * (`design/version1/Routines.dc.html`, `op-rpage` and `op-rp`). The frame only:
- * a canvas column that scrolls on its own, the measured body centred in it
- * (`wide` for a page that holds a table), and the Back pill above the page
- * header. `EditorPageTop` is a first row for a page that opens on view tabs and
- * one action. New project, Project settings, the console's Add a host and the
- * automation editor are dialogs, not pages.
+ * EditorPage — the frame of a console page: the canvas column that scrolls on
+ * its own, and the measured body centred in it. The console's shell draws it
+ * around every route whose pane is a page (`pane` in the web kit's
+ * `shell/lib/pane.ts`), so a screen renders its content and nothing of the
+ * frame: the ground, the scroll, the measure and the gutter are said once,
+ * here (`design/version1/Routines.dc.html`, `op-rpage` and `op-rp`).
  *
- * The ground is `canvas-recessed`, the export's gray-50 `--canvas`: the run
- * history, table and runs list are white cards and the selected view tab a
- * white pill, which would all vanish on the console's white canvas. Dark lifts
- * the card instead, where the two grounds are one.
+ * The ground is `canvas-recessed`, the export's grey `--canvas`, the same
+ * under every console page and under Settings: the run history, the tables
+ * and the selected view tab are white on it, which is all the lift they
+ * need. Dark lifts the card instead, where the two grounds are one.
  *
- * `EditorPageBack` navigates, so it takes `render` for the router's link the
- * way `Link` does; on its own it is an anchor. Settings' Add a host page uses
- * it too.
+ * `EditorPageBody` takes the measure as `size`: `narrow` (760px) for a form
+ * or a single card, `wide` (920px) for a page that holds a table, `board`
+ * (1240px) for Plan's columns. It publishes its gutter as `--page-gutter`, so
+ * a child that has to bleed to the frame's edge — the task board's sideways
+ * scroller — cancels it without knowing how wide it is.
+ *
+ * `EditorPageTop` is a first row for a page that opens on view tabs and one
+ * action. `EditorPageBack` navigates, so it takes `render` for the router's
+ * link the way `Link` does; on its own it is an anchor. Settings' Add a host
+ * page uses it too.
  *
  * ```tsx
  * <EditorPage>
- *   <EditorPageBody>
- *     <EditorPageBack render={<RouterLink to="/sessions" />}>Back</EditorPageBack>
+ *   <EditorPageBody size="wide">
+ *     <EditorPageBack render={<RouterLink to="/automations" />}>Back</EditorPageBack>
  *     <PageHeader>…</PageHeader>
  *     <RoutineSteps>…</RoutineSteps>
  *   </EditorPageBody>
@@ -44,20 +50,28 @@ function EditorPage({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-/** The measured column inside the page, centred; `wide` is the overview's, which holds a table. */
+type EditorPageSize = 'narrow' | 'wide' | 'board';
+
+const EDITOR_PAGE_SIZE: Record<EditorPageSize, string> = {
+  // `op-rpage__body` opens 24px down; `op-rp__inner`, 28px.
+  narrow: 'max-w-190 pt-6',
+  wide: 'max-w-230 pt-7',
+  board: 'max-w-310 pt-7',
+};
+
+/** The measured column inside the page, centred, with the gutter its children can bleed through. */
 function EditorPageBody({
-  wide,
+  size = 'narrow',
   className,
   ...props
-}: React.ComponentProps<'div'> & { wide?: boolean }) {
+}: React.ComponentProps<'div'> & { size?: EditorPageSize }) {
   return (
     <div
       data-slot="editor-page-body"
-      data-wide={wide || undefined}
+      data-size={size}
       className={cn(
-        'mx-auto flex w-full flex-col px-8 pb-18',
-        // `op-rp__inner` opens 28px down; the narrow `op-rpage__body`, 24px.
-        wide ? 'max-w-230 gap-4 pt-7' : 'max-w-190 pt-6',
+        'mx-auto flex w-full flex-1 flex-col gap-4 px-(--page-gutter) pb-18 [--page-gutter:1rem] sm:[--page-gutter:2rem]',
+        EDITOR_PAGE_SIZE[size],
         className,
       )}
       {...props}
@@ -103,4 +117,5 @@ function EditorPageBack({
   });
 }
 
+export type { EditorPageSize };
 export { EditorPage, EditorPageBack, EditorPageBody, EditorPageTop };

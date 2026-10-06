@@ -50,7 +50,7 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
   );
 
   return (
-    <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas-recessed">
+    <div className="flex min-h-0 flex-1 overflow-y-auto">
       {/* A 420px column centred in whatever room the shell gives it
           (`.op-provision__inner`). */}
       <div className="m-auto w-full max-w-105 p-8">
