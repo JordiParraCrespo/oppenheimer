@@ -8,6 +8,8 @@ import type { LlmProviderId, LlmProviderSetting } from './llm.types';
  * - `timeout` — the call ran past its `timeoutMs`.
  * - `aborted` — the caller's own signal cancelled it.
  * - `network` — the request never got an HTTP answer.
+ * - `rate_limited` — the provider answered `429`, or an earlier `429` said to
+ *   wait and it was not called again; `resetAt` says when it may be.
  * - `http` — it did, and the status was not 2xx (`status` says which).
  * - `invalid_response` — a 2xx whose body is not the shape the provider documents.
  */
@@ -16,6 +18,7 @@ export type LlmErrorCode =
   | 'timeout'
   | 'aborted'
   | 'network'
+  | 'rate_limited'
   | 'http'
   | 'invalid_response';
 
@@ -26,14 +29,17 @@ export type LlmErrorCode =
  */
 export class LlmError extends Error {
   override readonly name = 'LlmError';
+  /** When a `rate_limited` provider may be called again. */
+  readonly resetAt?: Date;
 
   constructor(
     readonly code: LlmErrorCode,
     readonly provider: LlmProviderId | LlmProviderSetting,
     message: string,
     readonly status?: number,
-    options?: { cause?: unknown },
+    options?: { cause?: unknown; resetAt?: Date },
   ) {
     super(message, options);
+    this.resetAt = options?.resetAt;
   }
 }

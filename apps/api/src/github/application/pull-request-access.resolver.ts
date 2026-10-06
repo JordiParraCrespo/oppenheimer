@@ -8,6 +8,7 @@ import type { GithubInstallationEntity } from '../domain/github-installation.ent
 import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY, GITHUB_PULLS } from '../github.di-tokens';
 import type { GithubAppPort } from '../infrastructure/github-app.port';
 import type {
+  GithubCredential,
   GithubPullRequestDetail,
   GithubPullRequestFile,
   GithubPullsPort,
@@ -85,15 +86,15 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     scope: AccessScope,
     repository: WorkspaceRepository,
   ): Promise<PullRequestSnapshot[]> {
-    const token = await this.readToken(scope, repository.installationId);
+    const credential = await this.readCredential(scope, repository.installationId);
     const open = await this.cache.getOrSet(
       `github:pulls:open:${repository.installationId}:${repository.githubRepoId}`,
       OPEN_TTL_SECONDS,
-      () => this.pulls.listPullRequests(token, repository.fullName, 'open', 1),
+      () => this.pulls.listPullRequests(credential, repository.fullName, 'open', 1),
     );
     return Promise.all(
       open.map((pull) =>
-        this.snapshot(token, repository, pull.number, pull.updatedAt, OPEN_TTL_SECONDS),
+        this.snapshot(credential, repository, pull.number, pull.updatedAt, OPEN_TTL_SECONDS),
       ),
     );
   }
@@ -103,32 +104,39 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     repository: WorkspaceRepository,
     since: Date,
   ): Promise<PullRequestSnapshot[]> {
-    const token = await this.readToken(scope, repository.installationId);
+    const credential = await this.readCredential(scope, repository.installationId);
     const closed = await this.cache.getOrSet(
       `github:pulls:closed:${repository.installationId}:${repository.githubRepoId}`,
       OPEN_TTL_SECONDS * 4,
-      () => this.pulls.listPullRequests(token, repository.fullName, 'closed', CLOSED_PAGES),
+      () => this.pulls.listPullRequests(credential, repository.fullName, 'closed', CLOSED_PAGES),
     );
     const recent = closed.filter((pull) => new Date(pull.closedAt ?? pull.updatedAt) >= since);
     return Promise.all(
       recent.map((pull) =>
-        this.snapshot(token, repository, pull.number, pull.updatedAt, SNAPSHOT_TTL_SECONDS),
+        this.snapshot(credential, repository, pull.number, pull.updatedAt, SNAPSHOT_TTL_SECONDS),
       ),
     );
   }
 
   async pullRequest(scope: AccessScope, address: PullRequestAddress): Promise<PullRequestSnapshot> {
     const repository = await this.repositoryOf(scope, address);
-    const token = await this.readToken(scope, address.installationId);
+    const credential = await this.readCredential(scope, address.installationId);
     // Read live once to learn `updated_at`, so the snapshot key changes the moment GitHub's answer does.
-    const pull = await this.pulls.readPullRequest(token, repository.fullName, address.number);
-    return this.snapshot(token, repository, pull.number, pull.updatedAt, OPEN_TTL_SECONDS, pull);
+    const pull = await this.pulls.readPullRequest(credential, repository.fullName, address.number);
+    return this.snapshot(
+      credential,
+      repository,
+      pull.number,
+      pull.updatedAt,
+      OPEN_TTL_SECONDS,
+      pull,
+    );
   }
 
   async files(scope: AccessScope, address: PullRequestAddress): Promise<GithubPullRequestFile[]> {
     const repository = await this.repositoryOf(scope, address);
-    const token = await this.readToken(scope, address.installationId);
-    return this.pulls.listFiles(token, repository.fullName, address.number);
+    const credential = await this.readCredential(scope, address.installationId);
+    return this.pulls.listFiles(credential, repository.fullName, address.number);
   }
 
   async reviewComments(
@@ -136,8 +144,8 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     address: PullRequestAddress,
   ): Promise<GithubReviewComment[]> {
     const repository = await this.repositoryOf(scope, address);
-    const token = await this.readToken(scope, address.installationId);
-    return this.pulls.listReviewComments(token, repository.fullName, address.number);
+    const credential = await this.readCredential(scope, address.installationId);
+    return this.pulls.listReviewComments(credential, repository.fullName, address.number);
   }
 
   async submitReview(
@@ -147,7 +155,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     review: ReviewSubmission,
   ): Promise<void> {
     const { repository, actor, head } = await this.forWrite(scope, userId, address);
-    await this.pulls.createReview(actor.token, repository.fullName, address.number, {
+    await this.pulls.createReview(actorCredential(actor), repository.fullName, address.number, {
       ...review,
       commitId: head,
     });
@@ -161,10 +169,15 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     comment: { path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string },
   ): Promise<void> {
     const { repository, actor, head } = await this.forWrite(scope, userId, address);
-    await this.pulls.createReviewComment(actor.token, repository.fullName, address.number, {
-      ...comment,
-      commitId: head,
-    });
+    await this.pulls.createReviewComment(
+      actorCredential(actor),
+      repository.fullName,
+      address.number,
+      {
+        ...comment,
+        commitId: head,
+      },
+    );
   }
 
   async merge(
@@ -174,7 +187,13 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     method: 'squash' | 'merge' | 'rebase',
   ): Promise<void> {
     const { repository, actor, head } = await this.forWrite(scope, userId, address);
-    await this.pulls.merge(actor.token, repository.fullName, address.number, method, head);
+    await this.pulls.merge(
+      actorCredential(actor),
+      repository.fullName,
+      address.number,
+      method,
+      head,
+    );
     await this.forget(repository);
   }
 
@@ -187,8 +206,8 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
         detail: 'Connect GitHub from Settings so reviews and merges are made in your name.',
       });
     }
-    const token = await this.readToken(scope, address.installationId);
-    const pull = await this.pulls.readPullRequest(token, repository.fullName, address.number);
+    const credential = await this.readCredential(scope, address.installationId);
+    const pull = await this.pulls.readPullRequest(credential, repository.fullName, address.number);
     return { repository, actor, head: pull.headSha };
   }
 
@@ -199,7 +218,7 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
   }
 
   private async snapshot(
-    token: string,
+    credential: GithubCredential,
     repository: WorkspaceRepository,
     number: number,
     updatedAt: string,
@@ -208,11 +227,12 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
   ): Promise<PullRequestSnapshot> {
     const key = `github:pulls:snapshot:${repository.installationId}:${repository.githubRepoId}:${number}:${updatedAt}`;
     const read = async (): Promise<PullRequestSnapshot> => {
-      const pull = known ?? (await this.pulls.readPullRequest(token, repository.fullName, number));
+      const pull =
+        known ?? (await this.pulls.readPullRequest(credential, repository.fullName, number));
       const [files, checks, reviews] = await Promise.all([
-        this.pulls.listFiles(token, repository.fullName, number),
-        this.pulls.readChecks(token, repository.fullName, pull.headSha),
-        this.pulls.listReviews(token, repository.fullName, number),
+        this.pulls.listFiles(credential, repository.fullName, number),
+        this.pulls.readChecks(credential, repository.fullName, pull.headSha),
+        this.pulls.listReviews(credential, repository.fullName, number),
       ]);
       return { repository, pull, filePaths: files.map((file) => file.path), checks, reviews };
     };
@@ -248,16 +268,25 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     };
   }
 
-  private async readToken(scope: AccessScope, installationId: string): Promise<string> {
+  /**
+   * The installation's token, held for most of its hour, and the budget GitHub
+   * counts it against: the installation, whichever token was minted for it.
+   */
+  private async readCredential(
+    scope: AccessScope,
+    installationId: string,
+  ): Promise<GithubCredential> {
     const installation = await this.usableInstallation(scope, installationId);
-    const held = this.installationTokens.get(installation.githubInstallationId);
-    if (held && held.expiresAt - Date.now() > TOKEN_MARGIN_MS) return held.token;
-    const minted = await this.github.mintInstallationToken(installation.githubInstallationId);
-    this.installationTokens.set(installation.githubInstallationId, {
+    const githubInstallationId = installation.githubInstallationId;
+    const bucket = `installation:${githubInstallationId}` as const;
+    const held = this.installationTokens.get(githubInstallationId);
+    if (held && held.expiresAt - Date.now() > TOKEN_MARGIN_MS) return { token: held.token, bucket };
+    const minted = await this.github.mintInstallationToken(githubInstallationId);
+    this.installationTokens.set(githubInstallationId, {
       token: minted.token,
       expiresAt: minted.expiresAt.getTime(),
     });
-    return minted.token;
+    return { token: minted.token, bucket };
   }
 
   private async usableInstallation(
@@ -278,4 +307,9 @@ export class PullRequestAccessResolver implements PullRequestAccessPort {
     }
     return installation;
   }
+}
+
+/** A person's own token, counted against them: every token of theirs shares one budget. */
+function actorCredential(actor: GithubActor): GithubCredential {
+  return { token: actor.token, bucket: `user:${actor.githubUserId}` };
 }

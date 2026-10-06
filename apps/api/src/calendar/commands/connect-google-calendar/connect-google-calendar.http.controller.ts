@@ -39,6 +39,11 @@ export class ConnectGoogleCalendarHttpController {
       'The `code` and `state` Google put on the redirect. The state is spent first; the code is exchanged once, and the refresh token is kept sealed. A new grant replaces the caller’s old one.',
   })
   @ApiResponse({ status: 201, type: GoogleCalendarConnectionResponseDto })
+  @ApiProblemResponse({
+    status: 429,
+    description: "Google Calendar's rate limit was reached; try again after Retry-After",
+    code: 'CALENDAR_010',
+  })
   @ApiProblemResponse({ status: 400, description: 'State rejected', code: 'CALENDAR_005' })
   @ApiProblemResponse({ status: 400, description: 'Google refused', code: 'CALENDAR_006' })
   @ApiProblemResponse({ status: 503, description: 'Not configured', code: 'CALENDAR_004' })

@@ -42,6 +42,11 @@ export class ConnectInstallationHttpController {
   })
   @ApiResponse({ status: 201, type: InstallationResponseDto })
   @ApiProblemResponse({
+    status: 429,
+    description: "GitHub's rate limit was reached; try again after Retry-After",
+    code: 'GITHUB_015',
+  })
+  @ApiProblemResponse({
     status: 400,
     description:
       'The install state was missing, expired, used or someone else’s; the authorization code was expired or already used; or no organization is active',

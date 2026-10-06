@@ -181,6 +181,10 @@ need a row in `apps/docs/docs/errors.md` — see `nestjs-architecture.md`.
   `useFeatureFlag` / `@RequireFlag`, what is not a flag
 - `go.md` — the Go service template (`apps/runner`): layout, ports, errors,
   auth, what to reach for instead of a framework
+- `integrations.md` — every call to a system we do not run respects its rate
+  limit: the budget written down first, then every call through one
+  `UpstreamLimiter.exchange` (`@oppenheimer/backend-core`), with buckets named
+  for what the provider counts and a `429` code of its own
 - `rbac-roles.md` — database-backed roles & permissions, `@CheckPolicies`/`PoliciesGuard`, resource scoping, role-management endpoints
 - `scopes-and-credentials.md` — the scope catalog, `@RequireScopes`/`ScopesGuard`, API tokens, OAuth for MCP clients
 

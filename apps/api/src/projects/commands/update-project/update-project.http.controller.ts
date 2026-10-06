@@ -47,6 +47,11 @@ export class UpdateProjectHttpController {
   })
   @ApiResponse({ status: 200, type: ProjectResponseDto })
   @ApiProblemResponse({
+    status: 429,
+    description: "GitHub's rate limit was reached; try again after Retry-After",
+    code: 'GITHUB_015',
+  })
+  @ApiProblemResponse({
     status: 400,
     description: 'The repository list is not one a project can hold',
     code: 'PROJECTS_006',

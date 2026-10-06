@@ -4739,6 +4739,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "503": {
             "description": "GITHUB_002 — The GitHub App is not configured on this server",
             "content": {
@@ -4893,6 +4903,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -4991,6 +5011,16 @@
           },
           "409": {
             "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8050,6 +8080,16 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -8200,6 +8240,16 @@
           },
           "409": {
             "description": "PROJECTS_008 — The Unassigned project cannot be renamed or archived",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8524,7 +8574,7 @@
             }
           },
           "429": {
-            "description": "RATE_001 — Rate limit reached",
+            "description": "RATE_001 / GITHUB_015 — Rate limit",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9116,7 +9166,7 @@
             }
           },
           "429": {
-            "description": "RATE_001 — Rate limit reached",
+            "description": "RATE_001 / GITHUB_015 — Rate limit",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9277,6 +9327,16 @@
           },
           "409": {
             "description": "SESSIONS_010 — A session checks out one repository\n\nSESSIONS_005 — That session is closed\n\nSESSIONS_004 — That repository is already checked out here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9795,6 +9855,16 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -9991,6 +10061,16 @@
           },
           "409": {
             "description": "AUTOMATIONS_003 — The automation was changed by someone else",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12097,6 +12177,16 @@
               }
             }
           },
+          "429": {
+            "description": "CALENDAR_010 — Google Calendar's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "503": {
             "description": "CALENDAR_004 — Not configured",
             "content": {
@@ -12299,6 +12389,16 @@
               }
             }
           },
+          "429": {
+            "description": "CALENDAR_010 — Google Calendar's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "CALENDAR_008 — Google did not answer",
             "content": {
@@ -12398,6 +12498,16 @@
           },
           "409": {
             "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12513,6 +12623,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -12604,6 +12724,16 @@
           },
           "409": {
             "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12728,6 +12858,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -12841,6 +12981,16 @@
           },
           "409": {
             "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12973,6 +13123,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -13097,6 +13257,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -13211,6 +13381,16 @@
           },
           "409": {
             "description": "GITHUB_012 / GITHUB_014 — No GitHub user token to act with, or GitHub would not merge yet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13350,6 +13530,16 @@
               }
             }
           },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "502": {
             "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
             "content": {
@@ -13466,6 +13656,16 @@
           },
           "409": {
             "description": "GITHUB_012 / GITHUB_014 — No GitHub user token to act with, or GitHub would not merge yet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After",
             "content": {
               "application/problem+json": {
                 "schema": {

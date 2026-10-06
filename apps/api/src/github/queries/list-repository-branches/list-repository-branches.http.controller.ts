@@ -48,6 +48,11 @@ export class ListRepositoryBranchesHttpController {
   })
   @ApiResponse({ status: 200, type: [RepositoryBranchResponseDto] })
   @ApiProblemResponse({
+    status: 429,
+    description: "GitHub's rate limit was reached; try again after Retry-After",
+    code: 'GITHUB_015',
+  })
+  @ApiProblemResponse({
     status: 404,
     description: 'The installation is not connected, or does not cover that repository',
     code: ['GITHUB_001', 'GITHUB_010'],

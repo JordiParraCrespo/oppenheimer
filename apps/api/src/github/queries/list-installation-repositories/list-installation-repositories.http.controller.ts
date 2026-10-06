@@ -49,6 +49,11 @@ export class ListInstallationRepositoriesHttpController {
   })
   @ApiResponse({ status: 200, type: [RepositoryResponseDto] })
   @ApiProblemResponse({
+    status: 429,
+    description: "GitHub's rate limit was reached; try again after Retry-After",
+    code: 'GITHUB_015',
+  })
+  @ApiProblemResponse({
     status: 404,
     description: 'GitHub installation not found',
     code: 'GITHUB_001',
