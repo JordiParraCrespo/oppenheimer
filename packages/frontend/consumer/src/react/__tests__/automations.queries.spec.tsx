@@ -379,6 +379,6 @@ describe('automation writes', () => {
     await act(() => result.current.paused.mutateAsync({ id: 'a-1', paused: true }));
     await act(async () => answerStale(source));
 
-    expect(result.current.detail.data).toBe(saved);
+    await waitFor(() => expect(result.current.detail.data).toBe(saved));
   });
 });
