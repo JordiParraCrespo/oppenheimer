@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   FieldDescription,
+  Skeleton,
 } from '@oppenheimer/design-system-web';
 import {
   useCalendarEvents,
@@ -13,7 +14,7 @@ import {
   useUpdateCalendarEvent,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { ConfirmDialog } from '@oppenheimer/frontend-web';
+import { ConfirmDialog, QueryState } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -34,9 +35,10 @@ export function EventDialog() {
   const { event: open, day } = calendar.useSearch();
   const navigate = calendar.useNavigate();
   const { today, range } = useMonth();
-  const { data: event } = useCalendarEvents(range, {
-    select: (rows) => rows.find((row) => row.id === open),
+  const events = useCalendarEvents(range, {
+    select: (rows) => rows.find((row) => row.id === open) ?? null,
   });
+  const event = events.data;
   const [deleting, setDeleting] = useState(false);
   const close = () =>
     navigate({ search: (previous) => ({ ...previous, event: undefined, day: undefined }) });
@@ -66,6 +68,18 @@ export function EventDialog() {
         busy: true,
       };
   const failure = create.error ?? update.error;
+  const form = (
+    <EventForm
+      values={values}
+      today={today}
+      pending={create.isPending || update.isPending}
+      error={failure ? resolveError(failure, t('calendar.event.saveFailed')) : null}
+      submitLabel={t(isNew ? 'calendar.event.add' : 'calendar.event.save')}
+      onCancel={close}
+      onDelete={event ? () => setDeleting(true) : undefined}
+      onSubmit={(input) => (event ? update.mutate({ id: event.id, input }) : create.mutate(input))}
+    />
+  );
 
   return (
     <Dialog open onOpenChange={(next) => !next && close()}>
@@ -77,21 +91,20 @@ export function EventDialog() {
         </DialogHeader>
         <DialogBody>
           <div className="pb-6">
-            {!isNew && !event ? (
-              <FieldDescription>{t('calendar.event.gone')}</FieldDescription>
+            {isNew ? (
+              form
             ) : (
-              <EventForm
-                values={values}
-                today={today}
-                pending={create.isPending || update.isPending}
-                error={failure ? resolveError(failure, t('calendar.event.saveFailed')) : null}
-                submitLabel={t(isNew ? 'calendar.event.add' : 'calendar.event.save')}
-                onCancel={close}
-                onDelete={event ? () => setDeleting(true) : undefined}
-                onSubmit={(input) =>
-                  event ? update.mutate({ id: event.id, input }) : create.mutate(input)
-                }
-              />
+              <QueryState
+                query={events}
+                pending={<Skeleton className="h-60 w-full" />}
+                errorFallback={t('calendar.event.loadFailed')}
+                empty={{
+                  when: (row) => row === null,
+                  show: <FieldDescription>{t('calendar.event.gone')}</FieldDescription>,
+                }}
+              >
+                {() => form}
+              </QueryState>
             )}
           </div>
         </DialogBody>

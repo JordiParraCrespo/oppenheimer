@@ -1139,6 +1139,7 @@
       "deleteDescription": "“{{title}}” is deleted.",
       "saveFailed": "Couldn’t save the event.",
       "deleteFailed": "Couldn’t delete the event.",
+      "loadFailed": "Couldn’t load the event.",
       "gone": "This event is not in the month shown, or no longer exists."
     },
     "google": {

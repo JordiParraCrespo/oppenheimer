@@ -34,6 +34,7 @@
     "deleteDescription": "Se elimina «{{title}}».",
     "saveFailed": "No se ha podido guardar el evento.",
     "deleteFailed": "No se ha podido eliminar el evento.",
+    "loadFailed": "No se ha podido cargar el evento.",
     "gone": "Este evento no está en el mes que se muestra o ya no existe."
   },
   "google": {
