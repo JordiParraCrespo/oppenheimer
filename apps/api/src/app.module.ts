@@ -32,6 +32,7 @@ import { bindSessionStore } from './auth/infrastructure/better-auth-secondary-st
 import { AuthzModule } from './authz/authz.module';
 import { AutomationsModule } from './automations/automations.module';
 import { CalendarModule } from './calendar/calendar.module';
+import { PullRequestsModule } from './pull-requests/pull-requests.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
 import {
   appConfig,
@@ -242,6 +243,7 @@ import { UsersModule } from './users/user.module';
     AutomationsModule,
     TasksModule,
     CalendarModule,
+    PullRequestsModule,
     RelayModule,
     HealthModule,
     QueueModule,

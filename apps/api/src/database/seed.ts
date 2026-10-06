@@ -19,6 +19,8 @@ import { AutomationSettingsOrmEntity } from '../automations/database/automation-
 import { AutomationTriggerOrmEntity } from '../automations/database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from '../automations/database/automation-trigger-subject.orm-entity';
 import { CalendarConnectionOrmEntity } from '../calendar/database/calendar-connection.orm-entity';
+import { GithubUserGrantOrmEntity } from '../github/database/github-user-grant.orm-entity';
+import { WatchedRepositoryOrmEntity } from '../pull-requests/database/watched-repository.orm-entity';
 import { CalendarEventOrmEntity } from '../calendar/database/calendar-event.orm-entity';
 import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm-entity';
 import { FlagChangeOrmEntity } from '../feature-flags/database/flag-change.orm-entity';
@@ -110,6 +112,8 @@ const dataSource = new DataSource({
     TaskSessionOrmEntity,
     CalendarEventOrmEntity,
     CalendarConnectionOrmEntity,
+    GithubUserGrantOrmEntity,
+    WatchedRepositoryOrmEntity,
     FeatureFlagOrmEntity,
     FlagSegmentOrmEntity,
     FlagChangeOrmEntity,

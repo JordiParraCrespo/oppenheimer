@@ -1,4 +1,4 @@
-import { generateKeyPairSync } from 'node:crypto';
+import { generateKeyPairSync, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 /**
@@ -51,6 +51,8 @@ const lines = [
   `GITHUB_APP_SLUG=${GITHUB_APP_SLUG}`,
   `GITHUB_APP_API_URL=${GITHUB_STUB}`,
   `GITHUB_APP_OAUTH_URL=${GITHUB_STUB}`,
+  '# Seals the stub user token the install exchange hands over.',
+  `GITHUB_USER_TOKEN_KEY=${randomBytes(32).toString('base64')}`,
   '',
   '# Enough for the hosts capability: a signing key and somewhere to point an',
   '# install command. No runner ever fetches these URLs in this suite.',
