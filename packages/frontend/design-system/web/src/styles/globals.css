@@ -203,6 +203,73 @@
     --term-magenta: #6a4bdb;
     --term-cyan: #00808d;
 
+    /* File-type marks (`FileIcon`, `DiffFileTree`) wear their language's hue,
+       the way an agent wears its vendor's: an identity, never a state. The
+       hues are the published icon set's own (@pierre/trees), named here so
+       the tree's shadow DOM and the header's mark read one source. */
+    --file-icon-gray: #84848a;
+    --file-icon-red: #d52c36;
+    --file-icon-orange: #d47628;
+    --file-icon-yellow: #d5a910;
+    --file-icon-green: #199f43;
+    --file-icon-teal: #17a5af;
+    --file-icon-cyan: #1ca1c7;
+    --file-icon-blue: #1a85d4;
+    --file-icon-indigo: #693acf;
+    --file-icon-purple: #a631be;
+    --file-icon-pink: #d32a61;
+    --file-icon-mauve: #594c5b;
+    /* Each file type the set knows, on those hues: the one map `FileIcon` and
+       the tree both read. A type the set adds later falls back to gray. */
+    --file-icon-default: var(--file-icon-gray);
+    --file-icon-astro: var(--file-icon-purple);
+    --file-icon-babel: var(--file-icon-yellow);
+    --file-icon-bash: var(--file-icon-green);
+    --file-icon-biome: var(--file-icon-blue);
+    --file-icon-bootstrap: var(--file-icon-indigo);
+    --file-icon-browserslist: var(--file-icon-yellow);
+    --file-icon-bun: var(--file-icon-mauve);
+    --file-icon-c: var(--file-icon-blue);
+    --file-icon-cpp: var(--file-icon-blue);
+    --file-icon-claude: var(--file-icon-orange);
+    --file-icon-css: var(--file-icon-indigo);
+    --file-icon-database: var(--file-icon-purple);
+    --file-icon-docker: var(--file-icon-blue);
+    --file-icon-eslint: var(--file-icon-indigo);
+    --file-icon-go: var(--file-icon-cyan);
+    --file-icon-graphql: var(--file-icon-pink);
+    --file-icon-html: var(--file-icon-orange);
+    --file-icon-image: var(--file-icon-pink);
+    --file-icon-javascript: var(--file-icon-yellow);
+    --file-icon-json: var(--file-icon-orange);
+    --file-icon-markdown: var(--file-icon-green);
+    --file-icon-mcp: var(--file-icon-teal);
+    --file-icon-npm: var(--file-icon-red);
+    --file-icon-postcss: var(--file-icon-red);
+    --file-icon-prettier: var(--file-icon-teal);
+    --file-icon-python: var(--file-icon-blue);
+    --file-icon-react: var(--file-icon-cyan);
+    --file-icon-ruby: var(--file-icon-red);
+    --file-icon-rust: var(--file-icon-orange);
+    --file-icon-sass: var(--file-icon-pink);
+    --file-icon-svg: var(--file-icon-orange);
+    --file-icon-svelte: var(--file-icon-red);
+    --file-icon-svgo: var(--file-icon-green);
+    --file-icon-swift: var(--file-icon-orange);
+    --file-icon-table: var(--file-icon-teal);
+    --file-icon-text: var(--file-icon-gray);
+    --file-icon-tailwind: var(--file-icon-cyan);
+    --file-icon-terraform: var(--file-icon-indigo);
+    --file-icon-typescript: var(--file-icon-blue);
+    --file-icon-vite: var(--file-icon-purple);
+    --file-icon-vscode: var(--file-icon-blue);
+    --file-icon-vue: var(--file-icon-green);
+    --file-icon-wasm: var(--file-icon-indigo);
+    --file-icon-webpack: var(--file-icon-blue);
+    --file-icon-yml: var(--file-icon-red);
+    --file-icon-zig: var(--file-icon-orange);
+    --file-icon-zip: var(--file-icon-orange);
+
     /* ---- Elevation ----------------------------------------------------
        Surfaces never cast shadows; depth is tonal. Only three transient
        layers detach from the page, all soft and ambient, never directional. */
@@ -473,8 +540,8 @@
     --sidebar-item-active: rgba(255, 255, 255, 0.1);
 
     --chart-1: var(--op-blue-400);
-    --chart-2: #39d6e6;
-    --chart-3: #a68cff;
+    --chart-2: #0fa89a; /* validated against --chart-1 on the dark card: L in band, ΔE ≥ 15 */
+    --chart-3: #9473ff; /* with --chart-1 and --chart-2, the validated categorical three on the dark card */
     --chart-4: var(--op-green-400);
     --chart-5: var(--op-amber-400);
     --chart-grid: #2a2a2d;
@@ -497,6 +564,19 @@
     --term-selection: rgba(41, 151, 255, 0.24);
     --term-magenta: var(--op-violet-500);
     --term-cyan: var(--op-teal-500);
+
+    --file-icon-gray: #adadb1;
+    --file-icon-red: #ff6762;
+    --file-icon-orange: #ffa359;
+    --file-icon-yellow: #ffd452;
+    --file-icon-green: #5ecc71;
+    --file-icon-teal: #64d1db;
+    --file-icon-cyan: #68cdf2;
+    --file-icon-blue: #69b1ff;
+    --file-icon-indigo: #9d6afb;
+    --file-icon-purple: #d568ea;
+    --file-icon-pink: #ff678d;
+    --file-icon-mauve: #79697b;
 
     --shadow-popover: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 32px -8px rgba(0, 0, 0, 0.7);
     --shadow-modal: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 32px 80px -16px rgba(0, 0, 0, 0.8);
@@ -1035,4 +1115,57 @@
     width: 0;
     height: 0;
   }
+}
+
+/* The file tree draws its marks inside a shadow root; its per-type colour
+   properties are pointed at the same --file-icon-* map from the host. */
+[data-slot='diff-file-tree'] file-tree-container {
+  --trees-file-icon-color-default: var(--file-icon-default);
+  --trees-file-icon-color-astro: var(--file-icon-astro);
+  --trees-file-icon-color-babel: var(--file-icon-babel);
+  --trees-file-icon-color-bash: var(--file-icon-bash);
+  --trees-file-icon-color-biome: var(--file-icon-biome);
+  --trees-file-icon-color-bootstrap: var(--file-icon-bootstrap);
+  --trees-file-icon-color-browserslist: var(--file-icon-browserslist);
+  --trees-file-icon-color-bun: var(--file-icon-bun);
+  --trees-file-icon-color-c: var(--file-icon-c);
+  --trees-file-icon-color-cpp: var(--file-icon-cpp);
+  --trees-file-icon-color-claude: var(--file-icon-claude);
+  --trees-file-icon-color-css: var(--file-icon-css);
+  --trees-file-icon-color-database: var(--file-icon-database);
+  --trees-file-icon-color-docker: var(--file-icon-docker);
+  --trees-file-icon-color-eslint: var(--file-icon-eslint);
+  --trees-file-icon-color-go: var(--file-icon-go);
+  --trees-file-icon-color-graphql: var(--file-icon-graphql);
+  --trees-file-icon-color-html: var(--file-icon-html);
+  --trees-file-icon-color-image: var(--file-icon-image);
+  --trees-file-icon-color-javascript: var(--file-icon-javascript);
+  --trees-file-icon-color-json: var(--file-icon-json);
+  --trees-file-icon-color-markdown: var(--file-icon-markdown);
+  --trees-file-icon-color-mcp: var(--file-icon-mcp);
+  --trees-file-icon-color-npm: var(--file-icon-npm);
+  --trees-file-icon-color-postcss: var(--file-icon-postcss);
+  --trees-file-icon-color-prettier: var(--file-icon-prettier);
+  --trees-file-icon-color-python: var(--file-icon-python);
+  --trees-file-icon-color-react: var(--file-icon-react);
+  --trees-file-icon-color-ruby: var(--file-icon-ruby);
+  --trees-file-icon-color-rust: var(--file-icon-rust);
+  --trees-file-icon-color-sass: var(--file-icon-sass);
+  --trees-file-icon-color-svg: var(--file-icon-svg);
+  --trees-file-icon-color-svelte: var(--file-icon-svelte);
+  --trees-file-icon-color-svgo: var(--file-icon-svgo);
+  --trees-file-icon-color-swift: var(--file-icon-swift);
+  --trees-file-icon-color-table: var(--file-icon-table);
+  --trees-file-icon-color-text: var(--file-icon-text);
+  --trees-file-icon-color-tailwind: var(--file-icon-tailwind);
+  --trees-file-icon-color-terraform: var(--file-icon-terraform);
+  --trees-file-icon-color-typescript: var(--file-icon-typescript);
+  --trees-file-icon-color-vite: var(--file-icon-vite);
+  --trees-file-icon-color-vscode: var(--file-icon-vscode);
+  --trees-file-icon-color-vue: var(--file-icon-vue);
+  --trees-file-icon-color-wasm: var(--file-icon-wasm);
+  --trees-file-icon-color-webpack: var(--file-icon-webpack);
+  --trees-file-icon-color-yml: var(--file-icon-yml);
+  --trees-file-icon-color-zig: var(--file-icon-zig);
+  --trees-file-icon-color-zip: var(--file-icon-zip);
 }

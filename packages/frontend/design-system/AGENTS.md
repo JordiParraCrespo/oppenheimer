@@ -135,6 +135,38 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   `PageHeaderRow size="display"`. `TaskBoard` lays out whatever columns it
   is given at its parent's width; `MonthCalendar` and `DatePicker` are the
   two faces of one month grid.
+- **A gate is a status, not a new vocabulary.** Whether something may go
+  ahead (checks, conflicts, a merge step) is a `StatusDot` gate state
+  (`passing`, `blocked`, `waiting`), worded by the caller; a run's state
+  stays a run state. A component never adds its own state union for a
+  colour the dot already has.
+- **A section is a `Card`.** `Panel` and `StatCard` compose `Card`; a
+  numbered sequence is `Stepper` (`MergePath` is its horizontal
+  orientation in a `Panel`); a share of a whole is `StatBar`, wherever it
+  sits; a weight in ink (a pull request's lane) is a `Badge` variant
+  (`strong`, `soft`), not a component per meaning.
+- **Data colours are one set of tones.** Charts, stat bars and fact dots
+  take a `DataTone` (`chart-1` to `chart-5`, the status hues, `muted`);
+  `--chart-1` to `--chart-3` are a categorical order validated for
+  colour-blind separation in both themes. Values sit in text ink, one
+  axis, every chart answers the pointer and every multi-series one has a
+  legend. No chart library.
+- **One comment field.** A review's comment and a diff's draft are the
+  same field: ⌘/Ctrl+Enter submits when there is something to submit, Esc
+  cancels. A choice of a few described options is a `RadioGroup`.
+- **Diffs are @pierre/diffs and the file tree is @pierre/trees**, wrapped
+  so no app imports them. They draw in a shadow root, so their colours,
+  type and radius reach them only as the tokens passed through their
+  custom properties. The theme is the app's: `DiffView` takes
+  `colorScheme` from the caller and never reads the OS or the document.
+- **A file wears its type's mark.** `FileIcon` and the tree draw the same
+  published icon set (@pierre/trees, its `complete` set). Its hue comes
+  from one map, the `--file-icon-*` tokens in `globals.css`, which the
+  tree reads too: an identity, like an agent's vendor colour, never a
+  state. Never a redrawn logo, never a hue table in a component.
+- **The rail's order is the reader's.** Its items are `SortableRailItem`s
+  in a vertical `SortableGroup` inside the shell's `DragProvider`; where
+  the order is kept is the app's.
 - **A sidebar row's actions are its ellipsis.** `SessionItem` and
   `RoutineItem` take `action` and `menuOpen` through one row shell; a
   routine row adds `lastRun`, a dot before the meta for how the last run
