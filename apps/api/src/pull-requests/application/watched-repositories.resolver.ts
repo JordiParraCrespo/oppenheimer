@@ -10,9 +10,12 @@ import type { WatchedRepositoryRepositoryPort } from '../database/watched-reposi
 import { PullRequestsErrors } from '../domain/pull-requests.errors';
 import { WATCHED_REPOSITORY_REPOSITORY } from '../pull-requests.di-tokens';
 
+const keyOf = (r: { installationId: string; githubRepoId: number }) =>
+  `${r.installationId}:${r.githubRepoId}`;
+
 /**
- * Which of the workspace's repositories the caller watches: every repository
- * the installations cover, less the ones they switched off. The queue and the
+ * Which of the workspace's repositories the caller watches: the ones they
+ * have a watch row for, and nothing until they pick one. The queue's Watching scope and the
  * analytics read through this, so both look at the same repositories.
  */
 @Injectable()
@@ -31,12 +34,10 @@ export class WatchedRepositoriesResolver {
       this.access.repositories(scope),
       this.watches.findOwn(scope),
     ]);
-    const choice = new Map(
-      watches.map((w) => [`${w.installationId}:${w.githubRepoId}`, w.watching]),
-    );
+    const watched = new Set(watches.map(keyOf));
     return repositories.map((repository) => ({
       repository,
-      watching: choice.get(`${repository.installationId}:${repository.githubRepoId}`) ?? true,
+      watching: watched.has(keyOf(repository)),
     }));
   }
 

@@ -3,15 +3,17 @@ import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
 import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
 import { WatchedRepositoriesResolver } from '../../application/watched-repositories.resolver';
+import { visibleInQueue } from '../../domain/pull-request-merge.policy';
 import type { PullRequestQueueResponseDto } from '../../dtos/pull-request.response.dto';
 import { PullRequestMapper } from '../../pull-request.mapper';
 import { FindPullRequestsQuery } from './find-pull-requests.query';
 
 /**
- * The queue: the open pull requests of every watched repository, read through
- * the installations, each sorted into whose it is and which lane it needs. All
- * three scopes are counted from the one read, so the scope control's numbers
- * and the list never disagree.
+ * The queue: the open pull requests the installations reach, each sorted into
+ * whose it is and which lane it needs. Yours and the ones asking for your
+ * review come from every repository; the rest only from the repositories you
+ * watch, which start as none. All three scopes are counted from the one read,
+ * so the scope control's numbers and the list never disagree.
  */
 @QueryHandler(FindPullRequestsQuery)
 export class FindPullRequestsQueryHandler
@@ -26,16 +28,21 @@ export class FindPullRequestsQueryHandler
 
   async execute({ scope, queue }: FindPullRequestsQuery): Promise<PullRequestQueueResponseDto> {
     const [repositories, viewerLogin] = await Promise.all([
-      this.watched.watched(scope),
+      this.watched.all(scope),
       this.access.viewerLogin(scope.userId),
     ]);
-    const snapshots = (
+    const now = new Date();
+    const rows = (
       await Promise.all(
-        repositories.map((repository) => this.access.openPullRequests(scope, repository)),
+        repositories.map(async ({ repository, watching }) =>
+          (
+            await this.access.openPullRequests(scope, repository)
+          )
+            .map((snapshot) => this.mapper.toRow(snapshot, viewerLogin, now))
+            .filter((row) => visibleInQueue(row.scope, watching)),
+        ),
       )
     ).flat();
-    const now = new Date();
-    const rows = snapshots.map((snapshot) => this.mapper.toRow(snapshot, viewerLogin, now));
     return this.mapper.toQueue(rows, queue, viewerLogin);
   }
 }

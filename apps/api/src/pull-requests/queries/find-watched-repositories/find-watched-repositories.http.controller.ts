@@ -30,7 +30,7 @@ export class FindWatchedRepositoriesHttpController {
   @ApiOperation({
     summary: 'The repositories the queue can watch',
     description:
-      'Every repository the workspace’s installations cover, and whether the caller watches it. Watched unless they switched it off.',
+      'Every repository the workspace’s installations cover, and whether the caller watches it. None is watched until they switch it on.',
   })
   @ApiResponse({ status: 200, type: [WatchedRepositoryDto] })
   async list(@CurrentAccessScope() scope: AccessScope): Promise<WatchedRepositoryDto[]> {

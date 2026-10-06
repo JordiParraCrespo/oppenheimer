@@ -33,7 +33,7 @@
     "emptyTitle": "No hay nada en esta vista",
     "emptyHint": "Las pull requests que abren tus sesiones o tus compañeros llegan aquí con el carril ya elegido.",
     "emptyWatchingTitle": "No sigues ningún repositorio",
-    "emptyWatchingHint": "Elige repositorios en Gestionar repositorios. Sus pull requests abiertas aparecen aquí.",
+    "emptyWatchingHint": "Busca repositorios en Seguir repositorios. Sus pull requests abiertas aparecen aquí.",
     "loadFailed": "No se pudieron cargar las pull requests.",
     "notConnectedTitle": "Conecta GitHub para ver pull requests",
     "notConnectedHint": "Instala la app de GitHub en la cuenta que tiene tus repositorios.",
@@ -78,10 +78,11 @@
     "approval_required": "Espera una aprobación obligatoria"
   },
   "watch": {
-    "add": "Seguir un repositorio",
+    "add": "Seguir repositorios",
     "search": "Buscar repositorios",
     "noMatch": "Ningún repositorio coincide con «{{query}}»",
-    "allWatched": "Ya sigues todos los repositorios",
+    "loading": "Cargando repositorios…",
+    "none": "Aún no hay repositorios que seguir",
     "unwatch": "Dejar de seguir {{name}}",
     "private": "Privado",
     "failed": "No se pudieron actualizar los repositorios seguidos."

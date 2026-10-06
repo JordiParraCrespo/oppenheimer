@@ -29,10 +29,8 @@ export class SetRepositoryWatchCommandHandler
         detail: `Repository ${command.githubRepoId} is not covered by this workspace's installations`,
       });
     }
-    await this.watches.setOwn(command.scope, {
-      installationId: command.installationId,
-      githubRepoId: command.githubRepoId,
-      watching: command.watching,
-    });
+    const watch = { installationId: command.installationId, githubRepoId: command.githubRepoId };
+    if (command.watching) await this.watches.watch(command.scope, watch);
+    else await this.watches.unwatch(command.scope, watch);
   }
 }
