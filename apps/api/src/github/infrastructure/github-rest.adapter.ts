@@ -9,9 +9,10 @@ import type {
   GithubAppPort,
   GithubBranch,
   GithubInstallationClaim,
-  GithubInstallationRef,
   GithubRepository,
   GithubRepositoryToken,
+  GithubUserAuthorization,
+  GithubUserTokens,
 } from './github-app.port';
 
 const OAUTH_TOKEN_PATH = '/login/oauth/access_token';
@@ -72,7 +73,16 @@ interface RawAccessToken {
 /** The OAuth exchange answers 200 with an `error` code rather than a 4xx. */
 interface RawOauthToken {
   access_token?: string;
+  /** Seconds. Present only with expiring user tokens. */
+  expires_in?: number;
+  refresh_token?: string;
+  refresh_token_expires_in?: number;
   error?: string;
+}
+
+interface RawUser {
+  id: number;
+  login: string;
 }
 
 /** What this adapter needs of `fetch`, so a double can stand in for it. */
@@ -152,17 +162,40 @@ export class GithubRestAdapter implements GithubAppPort {
     return `${base}${OAUTH_TOKEN_PATH}`;
   }
 
-  async listUserInstallations(code: string): Promise<GithubInstallationRef[]> {
+  async listUserInstallations(code: string): Promise<GithubUserAuthorization> {
     this.assertConfigured();
 
-    const userToken = await this.exchangeCode(code);
+    const tokens = await this.exchangeCode({ code });
     const installations = await this.paginate<RawInstallation>(
       `${this.api}/user/installations`,
-      userToken,
+      tokens.accessToken,
       (body) => collectionOf<RawInstallation>(body, 'installations'),
     );
+    const { body: user } = await this.request<RawUser>(`${this.api}/user`, {
+      token: tokens.accessToken,
+    });
 
-    return installations.map((installation) => ({ githubInstallationId: installation.id }));
+    return {
+      installations: installations.map((installation) => ({
+        githubInstallationId: installation.id,
+      })),
+      user: { githubUserId: user.id, login: user.login },
+      tokens,
+    };
+  }
+
+  async refreshUserToken(refreshToken: string): Promise<GithubUserTokens> {
+    this.assertConfigured();
+    return this.exchangeCode({ grant_type: 'refresh_token', refresh_token: refreshToken });
+  }
+
+  async mintInstallationToken(githubInstallationId: number): Promise<GithubRepositoryToken> {
+    return this.createInstallationToken(githubInstallationId, {
+      onStatus: {
+        403: GithubErrors.INSTALLATION_SUSPENDED,
+        404: GithubErrors.INSTALLATION_NOT_FOUND,
+      },
+    });
   }
 
   async readInstallation(githubInstallationId: number): Promise<GithubInstallationClaim> {
@@ -304,17 +337,18 @@ export class GithubRestAdapter implements GithubAppPort {
   }
 
   /**
-   * The OAuth code from the install redirect, exchanged for a user token.
+   * The OAuth code from the install redirect — or a refresh token — exchanged
+   * for a user token.
    *
    * GitHub answers a rejected code with **200** and an `error` field rather than
    * a 4xx, so the status alone would report success on the one failure that
    * matters here.
    */
-  private async exchangeCode(code: string): Promise<string> {
+  private async exchangeCode(grant: Record<string, string>): Promise<GithubUserTokens> {
     const { body } = await this.request<RawOauthToken>(this.oauthTokenUrl, {
       method: 'POST',
       accept: 'application/json',
-      body: { client_id: this.clientId, client_secret: this.clientSecret, code },
+      body: { client_id: this.clientId, client_secret: this.clientSecret, ...grant },
       onStatus: {
         400: GithubErrors.AUTHORIZATION_CODE_REJECTED,
         401: GithubErrors.AUTHORIZATION_CODE_REJECTED,
@@ -330,7 +364,15 @@ export class GithubRestAdapter implements GithubAppPort {
         extensions: { upstreamError: body.error ?? null },
       });
     }
-    return body.access_token;
+    const now = Date.now();
+    return {
+      accessToken: body.access_token,
+      accessExpiresAt: body.expires_in ? new Date(now + body.expires_in * 1000) : null,
+      refreshToken: body.refresh_token ?? null,
+      refreshExpiresAt: body.refresh_token_expires_in
+        ? new Date(now + body.refresh_token_expires_in * 1000)
+        : null,
+    };
   }
 
   /**

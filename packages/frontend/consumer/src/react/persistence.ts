@@ -4,6 +4,7 @@ import { hostsKeys } from './hosts.queries';
 import { installationsKeys } from './installations.queries';
 import { profileKeys } from './profile.queries';
 import { projectsKeys } from './projects.queries';
+import { pullRequestsKeys } from './pull-requests.queries';
 import { sessionsKeys } from './sessions.queries';
 import { tasksKeys } from './tasks.queries';
 
@@ -14,7 +15,8 @@ import { tasksKeys } from './tasks.queries';
  * repositories, a project names its repositories and its host, and a profile
  * is not a thing to leave in a browser's storage either, nor an automation's
  * prompt or the events its runs were started by. Plan's tasks name the work
- * and the sessions on it, and a calendar is someone's day, Google's included. A consumer app passes this
+ * and the sessions on it, and a calendar is someone's day, Google's included. Pull requests are
+ * private repositories' code, diffs included. A consumer app passes this
  * to `createQueryPersistOptions`.
  */
 export const CONSUMER_NON_PERSISTED_FEATURES: readonly string[] = [
@@ -26,4 +28,5 @@ export const CONSUMER_NON_PERSISTED_FEATURES: readonly string[] = [
   automationsKeys.all[0],
   tasksKeys.all[0],
   calendarKeys.all[0],
+  pullRequestsKeys.all[0],
 ];

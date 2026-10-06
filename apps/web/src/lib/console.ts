@@ -35,11 +35,12 @@ export const useConsoleDialog = consoleDialogs.useDialogActions;
 export const useConsoleDialogRequest = consoleDialogs.useDialogRequest;
 
 /** The console's lists: what the rail switches and the sidebar shows. */
-export type ConsoleList = 'sessions' | 'automations' | 'tasks' | 'calendar';
+export type ConsoleList = 'sessions' | 'automations' | 'pulls' | 'tasks' | 'calendar';
 
 /**
  * Which of the console's lists the matched routes are under: `automations`
- * for everything under `/automations`, the editor included; Plan's two,
+ * for everything under `/automations`, the editor included; `pulls` for the
+ * queue, a pull request and analytics under `/pulls`; Plan's two,
  * `calendar` under `/plan/calendar` (Google's return included) and `tasks`
  * for the rest of `/plan`; and `sessions` for everything else. One predicate,
  * so the rail's current item and the sidebar beside it can never disagree.
@@ -52,6 +53,8 @@ export function useConsoleList(): ConsoleList {
     select: (matches): ConsoleList => {
       const ids = matches.map((match) => match.routeId);
       if (ids.some((id) => id.startsWith('/_authenticated/automations'))) return 'automations';
+      // The queue and analytics under the `pulls` layout, and a pull request un-nested from it (`pulls_`).
+      if (ids.some((id) => id.startsWith('/_authenticated/pulls'))) return 'pulls';
       if (ids.some((id) => id.startsWith('/_authenticated/plan/calendar'))) return 'calendar';
       if (ids.some((id) => id.startsWith('/_authenticated/plan/'))) return 'tasks';
       return 'sessions';

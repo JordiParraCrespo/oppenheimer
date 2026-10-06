@@ -12,7 +12,7 @@ there.
 | Version | Document | Theme |
 |---------|----------|-------|
 | 0.1 | [`../versions/mvp/`](../versions/mvp/README.md) | The MVP: hosts you own, sessions as worktrees with a tmux terminal, Claude Code first |
-| 0.2 | [Git and GitHub](0.2-git-and-github.md) | Git, aka GitHub support: diff, review, commit, push and PRs from the console |
+| 0.2 | [Git and GitHub](0.2-git-and-github.md), [Pull requests](0.2-pull-requests.md) | Git, aka GitHub support: diff, review, commit, push and PRs from the console; a Pull requests area in the rail with a queue and analytics |
 | 0.3 | — | Kanban moved into the MVP as Plan ([`../versions/mvp/17-plan.md`](../versions/mvp/17-plan.md)) | Plan: a task board with goals, tasks that start or link sessions, and a calendar beside Google Calendar |
 | 0.4 | [Slack](0.4-slack.md) | The Slack integration |
 | 0.5 | [Mobile](0.5-mobile.md) | Mobile |
@@ -44,3 +44,24 @@ where these land is the first open question below.
   Kanban, 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and
   chat display.
 - 2026-09-26: multi-account added, version not yet set.
+- 2026-09-27: 0.2 gains a second document, the Pull requests area:
+  a rail item with a rule-based queue (whose turn it is), saved views
+  and analytics, algorithmic first with any agent help later.
+- 2026-09-27: the owner set the Pull requests area's first cut to the
+  simplest version: a PR list like Codex's plus a keyboard triage that
+  always opens the next PR to review. Sections, views and analytics
+  stay the direction, after it.
+- 2026-09-27: PR classification (type, risk and effort, priority, area)
+  is rules first, with TypeSafe's Jev only for what rules cannot read,
+  gated by confidence, opt-in per workspace, and never reordering
+  triage in 0.2 (`0.2-pull-requests.md` §8).
+- 2026-09-28: analytics stays inside the Pull requests area for now
+  (`0.2-pull-requests.md` §5); it becomes its own rail item, with PRs as
+  one tab, once it covers sessions, agents, hosts or automations.
+- 2026-10-05: version 1 of the Pull requests area is the queue with a
+  summary on every PR, plus Analytics; lanes, auto-merge and prepared
+  review sessions come after. Design handoff:
+  `0.2-pull-requests-design-handoff.md`.
+- 2026-10-05: the 2026-10-05 evening frames (`PullRequests.dc.html`) are
+  the spec for the Pull requests area's first version, over the notes;
+  the API plan is `0.2-pull-requests-api-plan.md`.

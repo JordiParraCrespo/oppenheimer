@@ -5,9 +5,7 @@ import {
   TaskCard,
   TaskColumn,
   TaskColumnAdd,
-  TaskComposer,
   TaskSessionChip,
-  toast,
 } from '@oppenheimer/design-system-web';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
 import {
@@ -19,12 +17,19 @@ import {
   useSessions,
   useTasks,
 } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, formatCalendarDay, useDragLabels, useLocale } from '@oppenheimer/frontend-web';
+import {
+  ErrorAlert,
+  formatCalendarDay,
+  notifySuccess,
+  useDragLabels,
+  useLocale,
+} from '@oppenheimer/frontend-web';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BoardSkeleton } from '../components/board-skeleton';
+import { ColumnComposer } from '../components/column-composer';
 import { useBoardDrag } from '../hooks/use-board-drag';
 import { useBoardFilter } from '../hooks/use-board-filter';
 import { useToday } from '../hooks/use-today';
@@ -63,9 +68,8 @@ export function BoardColumns() {
   });
   const { data: hosts } = useHosts({ select: (rows) => new Map(rows.map((row) => [row.id, row])) });
   const move = useMoveTask();
-  const create = useCreateTask({ onSuccess: () => toast.success(t('toasts.taskAdded')) });
+  const create = useCreateTask({ onSuccess: () => notifySuccess('taskAdded') });
   const [composing, setComposing] = useState<TaskStatus | null>(null);
-  const [draft, setDraft] = useState('');
   const rows = tasks.data ?? [];
   const byId = new Map(rows.map((row) => [row.id, row]));
   const drag = useBoardDrag(
@@ -177,9 +181,7 @@ export function BoardColumns() {
                 addLabel={t('tasks.board.addTo', { column: label })}
                 foot={
                   composing === status ? (
-                    <TaskComposer
-                      value={draft}
-                      onValueChange={setDraft}
+                    <ColumnComposer
                       label={t('tasks.board.quickPlaceholder')}
                       placeholder={t('tasks.board.quickPlaceholder')}
                       hint={
@@ -188,19 +190,15 @@ export function BoardColumns() {
                           : t('tasks.board.filedAll')
                       }
                       keys={{ add: t('tasks.board.keyAdd'), cancel: t('tasks.board.keyCancel') }}
-                      onCancel={() => {
-                        setComposing(null);
-                        setDraft('');
-                      }}
-                      onSubmit={(title) => {
+                      onCancel={() => setComposing(null)}
+                      onSubmit={(title) =>
                         create.mutate({
                           title,
                           status,
                           projectId: filter.projectId || unassignedId,
                           goalId: filter.goalId ?? null,
-                        });
-                        setDraft('');
-                      }}
+                        })
+                      }
                     />
                   ) : (
                     <TaskColumnAdd onClick={() => setComposing(status)}>

@@ -76,6 +76,22 @@ export {
   useUpdateProject,
 } from './projects.queries';
 export {
+  type AddCommentVariables,
+  type MergePullRequestVariables,
+  type SetRepositoryWatchVariables,
+  type SubmitReviewVariables,
+  useAddPullRequestComment,
+  useMergePullRequest,
+  usePullRequest,
+  usePullRequestAnalytics,
+  usePullRequestComments,
+  usePullRequestFiles,
+  usePullRequestQueue,
+  useSetRepositoryWatch,
+  useSubmitPullRequestReview,
+  useWatchedRepositories,
+} from './pull-requests.queries';
+export {
   type CloseSessionVariables,
   type CreateSessionVariables,
   type MoveSessionVariables,

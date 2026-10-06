@@ -1,0 +1,27 @@
+export {
+  type AnalyticsFigure,
+  type AnalyticsMedian,
+  type LaneReason,
+  type LineCommentInput,
+  type MergeGateId,
+  type MergeGateState,
+  type MergeMethod,
+  type PullRequestAddress,
+  type PullRequestAnalytics,
+  type PullRequestAnalyticsRange,
+  type PullRequestBlocker,
+  type PullRequestChecks,
+  type PullRequestComment,
+  PullRequestDetailEntity,
+  PullRequestEntity,
+  type PullRequestFile,
+  type PullRequestLane,
+  type PullRequestQueue,
+  type PullRequestReviewer,
+  type PullRequestScope,
+  type ReviewInput,
+  type ReviewVerdict,
+  type WatchedRepository,
+} from './pull-request.entity';
+export { PullRequestsModule } from './pull-requests.module';
+export { PullRequestsRepository } from './pull-requests.repository';

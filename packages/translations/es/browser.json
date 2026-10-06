@@ -144,6 +144,9 @@
       "GITHUB_009": "GitHub no ha respondido. Inténtalo de nuevo en un momento.",
       "GITHUB_010": "Ese repositorio no está cubierto por esta instalación de GitHub.",
       "GITHUB_011": "Ese enlace de GitHub no se inició aquí. Vuelve a conectar GitHub desde esta página.",
+      "GITHUB_012": "Vuelve a conectar GitHub para que las revisiones y los merges se hagan en tu nombre.",
+      "GITHUB_013": "No se ha encontrado esa pull request.",
+      "GITHUB_014": "GitHub todavía no fusionará esta pull request. Espera hasta que pueda.",
       "PROJECTS_001": "No se ha encontrado ese proyecto.",
       "PROJECTS_002": "Elige un espacio de trabajo antes de trabajar con proyectos.",
       "PROJECTS_003": "Ahora mismo no se pueden archivar proyectos. Inténtalo en un momento.",
@@ -152,6 +155,7 @@
       "PROJECTS_006": "Un proyecto necesita al menos un repositorio, y al menos uno de ellos ofrecido por defecto.",
       "PROJECTS_007": "No hemos encontrado un nombre libre para ese proyecto. Prueba con otro nombre.",
       "PROJECTS_008": "El proyecto Sin asignar conserva su nombre y no se puede eliminar.",
+      "PULLS_001": "Elige un espacio de trabajo antes de trabajar con pull requests.",
       "SESSIONS_001": "No hemos encontrado esa sesión.",
       "SESSIONS_002": "Elige un espacio de trabajo antes de trabajar con sesiones.",
       "SESSIONS_003": "No hemos encontrado ese checkout en esta sesión.",
@@ -963,6 +967,257 @@
       "backToAutomation": "Volver a la automatización"
     }
   },
+  "pullRequests": {
+    "sidebar": {
+      "title": "Pull requests",
+      "views": "Vistas",
+      "queue": "Cola de PR",
+      "analytics": "Analítica",
+      "repositories": "Repositorios",
+      "allRepositories": "Todos los repositorios",
+      "noRepositories": "Aún no sigues ningún repositorio."
+    },
+    "queue": {
+      "title": "Cola de PR",
+      "ready": "listas para fusionar",
+      "conflicts": "con conflictos",
+      "oldest": "la que más espera",
+      "reviewNext": "Revisar la siguiente",
+      "scopesLabel": "De quién son las pull requests",
+      "scopes": {
+        "mine": "Mías",
+        "requested": "Revisiones pedidas",
+        "watching": "Seguidas"
+      },
+      "scopeHint": {
+        "mine": "Abiertas por ti o por tus sesiones. Mira qué frena cada una y fusiónala.",
+        "requested": "Pull requests en las que alguien pidió tu revisión.",
+        "watching": "Pull requests abiertas en repositorios que sigues, donde nadie pidió tu revisión."
+      },
+      "search": "Busca por título, repositorio, #número o autor",
+      "clearSearch": "Borrar la búsqueda",
+      "laneLabel": "Carril",
+      "all": "Todas",
+      "noMatch": "Ninguna pull request coincide con «{{query}}».",
+      "emptyTitle": "No hay nada en esta vista",
+      "emptyHint": "Las pull requests que abren tus sesiones o tus compañeros llegan aquí con el carril ya elegido.",
+      "emptyWatchingTitle": "No sigues ningún repositorio",
+      "emptyWatchingHint": "Elige repositorios en Gestionar repositorios. Sus pull requests abiertas aparecen aquí.",
+      "loadFailed": "No se pudieron cargar las pull requests.",
+      "notConnectedTitle": "Conecta GitHub para ver pull requests",
+      "notConnectedHint": "Instala la app de GitHub en la cuenta que tiene tus repositorios.",
+      "connect": "Conectar GitHub",
+      "range": "{{first}}–{{last}} de {{total}}",
+      "openChanges": "Abrir cambios",
+      "review": "Revisar",
+      "session": "Sesión",
+      "merged": "Fusionada",
+      "mergeFailed": "GitHub no la fusionó.",
+      "mergedToast": "{{reference}} fusionada."
+    },
+    "lanes": {
+      "deep": "A fondo",
+      "medium": "Media",
+      "quick": "Rápida"
+    },
+    "laneReason": {
+      "risky_path": "Toca {{path}}, donde conviene leer con calma.",
+      "large_change": "{{lines}} líneas cambiadas.",
+      "docs_tests_config": "Solo documentación, tests y configuración.",
+      "small_change": "Un cambio pequeño: {{lines}} líneas en {{files}} archivos.",
+      "medium_change": "{{lines}} líneas en {{files}} archivos."
+    },
+    "checks": {
+      "passing": "Pasan",
+      "failing": "Fallan",
+      "running": "En curso",
+      "none": "Sin checks"
+    },
+    "conflicts": {
+      "none": "Sin conflictos",
+      "some": "Conflictos"
+    },
+    "blocker": {
+      "draft": "Todavía es un borrador",
+      "conflicts": "Resuelve primero los conflictos con la base",
+      "checks_failing": "Fallan los checks",
+      "checks_running": "Los checks están en curso",
+      "changes_requested": "Se pidieron cambios",
+      "behind": "Va por detrás de la rama base",
+      "approval_required": "Espera una aprobación obligatoria"
+    },
+    "watch": {
+      "manage": "Gestionar repositorios",
+      "title": "Repositorios seguidos",
+      "hint": "Los repositorios a los que llegan tus instalaciones de GitHub. Las pull requests abiertas de los que sigues aparecen aquí.",
+      "private": "Privado",
+      "public": "Público",
+      "loadFailed": "No se pudieron cargar los repositorios.",
+      "toggle": "Seguir {{name}}"
+    },
+    "detail": {
+      "back": "Volver a la cola",
+      "viewLabel": "Vista",
+      "views": {
+        "briefing": "Resumen",
+        "description": "Descripción",
+        "changes": "Cambios"
+      },
+      "openOnGithub": "Abrir en GitHub",
+      "loadFailed": "No se pudo cargar la pull request.",
+      "state": {
+        "open": "Abierta",
+        "merged": "Fusionada",
+        "closed": "Cerrada",
+        "draft": "Borrador"
+      },
+      "into": "en",
+      "size": "Tamaño",
+      "files": "Archivos",
+      "inFolders_one": "en {{count}} carpeta",
+      "inFolders_other": "en {{count}} carpetas",
+      "inFolders_many": "en {{count}} carpetas",
+      "checks": "Checks",
+      "conflicts": "Conflictos",
+      "mergesCleanly": "Se fusiona sin conflictos en {{base}}",
+      "withBase": "Con {{base}} · haz rebase antes de fusionar",
+      "noneWord": "Ninguno",
+      "pathToMerge": "Camino a la fusión",
+      "gatesDone": "{{done}} de {{total}} hechos",
+      "gates": {
+        "checks": "Checks",
+        "conflicts": "Conflictos",
+        "review": "Revisión",
+        "merge": "Fusión"
+      },
+      "gateMeta": {
+        "checks": {
+          "done": "Todos pasan",
+          "failed": "{{failed}} fallan",
+          "pending": "{{pending}} en curso"
+        },
+        "conflicts": {
+          "done": "Sin conflictos",
+          "failed": "Rebase sobre {{base}}",
+          "pending": "GitHub lo está comprobando"
+        },
+        "review": {
+          "done": "Aprobada",
+          "failed": "Se pidieron cambios",
+          "pending": "Espera revisión"
+        },
+        "merge": {
+          "done": "Fusionada",
+          "pending": "Squash en {{base}}"
+        }
+      },
+      "mergeNote": "Squash y fusión en {{base}} como @{{login}}.",
+      "mergeNoteNoLogin": "Vuelve a conectar GitHub para que la fusión se haga en tu nombre.",
+      "mergedInto": "Fusionada en {{base}}.",
+      "reviewChanges": "Revisar los cambios",
+      "brief": "Resumen",
+      "noDescription": "Sin descripción.",
+      "whatChanges": "Qué cambia",
+      "risk": "Carril",
+      "where": "Sobre todo {{folders}}",
+      "reviewers": "Revisores",
+      "noReviewers": "Nadie la ha revisado todavía.",
+      "reviewer": {
+        "approved": "Aprobada",
+        "changes_requested": "Pidió cambios",
+        "commented": "Comentó",
+        "requested": "Pedida"
+      },
+      "opened": "{{author}} quiere fusionar {{head}} en {{base}}"
+    },
+    "review": {
+      "submit": "Enviar revisión",
+      "title": "Decisión de revisión",
+      "verdicts": {
+        "comment": {
+          "label": "Comentar",
+          "description": "Publica tus comentarios sin veredicto."
+        },
+        "approve": {
+          "label": "Aprobar y fusionar",
+          "description": "Aprueba como tú y fusiona en cuanto GitHub lo permita."
+        },
+        "request_changes": {
+          "label": "Pedir cambios",
+          "description": "Devuelve tus comentarios para que se corrijan."
+        }
+      },
+      "comment": "Comentario de la revisión",
+      "placeholder": "Deja un comentario",
+      "pending_one": "{{count}} comentario pendiente. Solo tú lo ves hasta que envíes.",
+      "pending_other": "{{count}} comentarios pendientes. Solo tú los ves hasta que envíes.",
+      "pending_many": "{{count}} comentarios pendientes. Solo tú los ves hasta que envíes.",
+      "postsAs": "Se publica como @{{login}}.",
+      "discard": "Descartar",
+      "close": "Cerrar",
+      "submitted": "Revisión enviada.",
+      "approvedMerged": "Aprobada y fusionada.",
+      "approvedWaiting": "Aprobada. GitHub todavía no la fusiona, así que espera.",
+      "failed": "La revisión no se envió."
+    },
+    "changes": {
+      "layout": "Disposición",
+      "unified": "Unificada",
+      "split": "Dividida",
+      "files": "Archivos",
+      "viewed": "{{done}} / {{total}} vistos",
+      "filter": "Filtrar archivos",
+      "noPatch": "GitHub no muestra diff para este archivo.",
+      "loadFailed": "No se pudieron cargar los cambios.",
+      "empty": "Sin cambios.",
+      "pending": "Pendiente, se publica con tu revisión",
+      "posted": "Publicado en GitHub",
+      "discard": "Descartar",
+      "addToReview": "Añadir a la revisión",
+      "addSingle": "Añadir un comentario suelto",
+      "hint": "⌘⏎ lo añade a la revisión",
+      "commentPlaceholder": "Deja un comentario",
+      "cancel": "Cancelar",
+      "commentAdded": "Comentario publicado."
+    },
+    "analytics": {
+      "title": "Tu {{range}} de revisiones",
+      "ranges": {
+        "week": "Semana",
+        "month": "Mes",
+        "quarter": "Trimestre"
+      },
+      "rangeWord": {
+        "week": "semana",
+        "month": "mes",
+        "quarter": "trimestre"
+      },
+      "compared": "comparado con los {{days}} días anteriores · repositorios seguidos",
+      "rangeLabel": "Periodo",
+      "created": "PR creadas",
+      "merged": "PR fusionadas",
+      "from": "desde {{value}}",
+      "series": "Series",
+      "both": "Creadas y fusionadas",
+      "perDay": "Pull requests creadas y fusionadas por día",
+      "hover": "Pasa por encima de un día",
+      "reviewedByYou": "Revisadas por ti",
+      "waitForReview": "Espera mediana a revisión",
+      "timeToMerge": "Tiempo mediano hasta fusionar",
+      "waitTitle": "Espera mediana a revisión",
+      "vsPrevious": "frente al {{range}} anterior",
+      "agents": "Sesiones de agente",
+      "people": "Personas",
+      "laneMix": "Mezcla de carriles",
+      "mergedWord": "Fusionadas",
+      "waited": "Qué frena las pull requests abiertas",
+      "waitedMeta": "{{n}} abiertas ahora",
+      "medianHold": "Abiertas {{hours}} (mediana)",
+      "nothingWaits": "Ahora mismo nada frena ninguna pull request abierta.",
+      "loadFailed": "No se pudo cargar la analítica.",
+      "none": "—"
+    }
+  },
   "tasks": {
     "backToTask": "Volver a la tarea",
     "nav": {
@@ -1143,6 +1398,7 @@
       "deleteDescription": "Se elimina «{{title}}».",
       "saveFailed": "No se ha podido guardar el evento.",
       "deleteFailed": "No se ha podido eliminar el evento.",
+      "loadFailed": "No se ha podido cargar el evento.",
       "gone": "Este evento no está en el mes que se muestra o ya no existe."
     },
     "google": {
@@ -1354,7 +1610,8 @@
     "settings": "Ajustes",
     "automations": "Automatizaciones",
     "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
-    "plan": "Plan"
+    "plan": "Plan",
+    "pullRequests": "Pull requests"
   },
   "language": {
     "label": "Idioma",

@@ -28,12 +28,10 @@ import { GithubTriggerCard } from './github-trigger-card';
 export function EditorTriggerStep({
   triggers,
   repositories,
-  now,
   onChange,
 }: {
   triggers: TriggerCard[];
   repositories: { id: number; name: string }[];
-  now: number;
   onChange: (triggers: TriggerCard[]) => void;
 }) {
   const { t } = useTranslation();
@@ -51,7 +49,6 @@ export function EditorTriggerStep({
           <ScheduleTriggerCard
             key={card.key}
             card={card}
-            now={now}
             onChange={replace}
             onRemove={() => remove(card.key)}
           />
@@ -79,7 +76,7 @@ export function EditorTriggerStep({
                 <DropdownMenuItem
                   key={frequency}
                   onClick={() =>
-                    onChange([...triggers, scheduleCard(frequency, now, viewerTimeZone())])
+                    onChange([...triggers, scheduleCard(frequency, Date.now(), viewerTimeZone())])
                   }
                 >
                   <Clock />

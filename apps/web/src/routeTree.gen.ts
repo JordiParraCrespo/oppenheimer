@@ -20,6 +20,7 @@ import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
 import { Route as AuthenticatedSplatRouteImport } from './routes/_authenticated/$'
 import { Route as AuthenticatedAutomationsRouteImport } from './routes/_authenticated/automations'
 import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/plan'
+import { Route as AuthenticatedPullsRouteImport } from './routes/_authenticated/pulls'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as AuthPublicForgotPasswordRouteImport } from './routes/_auth/_public/forgot-password'
@@ -36,6 +37,8 @@ import { Route as AuthenticatedAutomationsAutomationIdRouteImport } from './rout
 import { Route as AuthenticatedAutomationsRunsRouteImport } from './routes/_authenticated/automations/runs'
 import { Route as AuthenticatedPlanIndexRouteImport } from './routes/_authenticated/plan/index'
 import { Route as AuthenticatedPlanCalendarRouteImport } from './routes/_authenticated/plan/calendar'
+import { Route as AuthenticatedPullsIndexRouteImport } from './routes/_authenticated/pulls/index'
+import { Route as AuthenticatedPullsAnalyticsRouteImport } from './routes/_authenticated/pulls/analytics'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
@@ -45,6 +48,7 @@ import { Route as AuthenticatedPlanCalendarGoogleRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsHostsIndexRouteImport } from './routes/_authenticated/settings/hosts/index'
 import { Route as AuthenticatedSettingsHostsNewRouteImport } from './routes/_authenticated/settings/hosts/new'
 import { Route as AuthenticatedAutomationsAutomationIdSessionsSessionIdRouteImport } from './routes/_authenticated/automations_.$automationId.sessions.$sessionId'
+import { Route as AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport } from './routes/_authenticated/pulls_.$installationId.$githubRepoId.$number'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -97,6 +101,11 @@ const AuthenticatedAutomationsRoute =
 const AuthenticatedPlanRoute = AuthenticatedPlanRouteImport.update({
   id: '/plan',
   path: '/plan',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPullsRoute = AuthenticatedPullsRouteImport.update({
+  id: '/pulls',
+  path: '/pulls',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
@@ -184,6 +193,17 @@ const AuthenticatedPlanCalendarRoute =
     path: '/calendar',
     getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
+const AuthenticatedPullsIndexRoute = AuthenticatedPullsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedPullsRoute,
+} as any)
+const AuthenticatedPullsAnalyticsRoute =
+  AuthenticatedPullsAnalyticsRouteImport.update({
+    id: '/analytics',
+    path: '/analytics',
+    getParentRoute: () => AuthenticatedPullsRoute,
+  } as any)
 const AuthenticatedSessionsIndexRoute =
   AuthenticatedSessionsIndexRouteImport.update({
     id: '/sessions/',
@@ -238,6 +258,12 @@ const AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute =
     path: '/automations/$automationId/sessions/$sessionId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute =
+  AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport.update({
+    id: '/pulls_/$installationId/$githubRepoId/$number',
+    path: '/pulls/$installationId/$githubRepoId/$number',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -248,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/$': typeof AuthenticatedSplatRoute
   '/automations': typeof AuthenticatedAutomationsRouteWithChildren
   '/plan': typeof AuthenticatedPlanRouteWithChildren
+  '/pulls': typeof AuthenticatedPullsRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/oauth/consent': typeof OauthConsentRoute
   '/forgot-password': typeof AuthPublicForgotPasswordRoute
@@ -261,18 +288,21 @@ export interface FileRoutesByFullPath {
   '/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
+  '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
   '/automations/': typeof AuthenticatedAutomationsIndexRoute
   '/plan/': typeof AuthenticatedPlanIndexRoute
+  '/pulls/': typeof AuthenticatedPullsIndexRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/plan/calendar/google': typeof AuthenticatedPlanCalendarGoogleRoute
   '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
   '/automations/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
+  '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -292,18 +322,21 @@ export interface FileRoutesByTo {
   '/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
+  '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
   '/automations': typeof AuthenticatedAutomationsIndexRoute
   '/plan': typeof AuthenticatedPlanIndexRoute
+  '/pulls': typeof AuthenticatedPullsIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/plan/calendar/google': typeof AuthenticatedPlanCalendarGoogleRoute
   '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/settings/hosts': typeof AuthenticatedSettingsHostsIndexRoute
   '/automations/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
+  '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -318,6 +351,7 @@ export interface FileRoutesById {
   '/_authenticated/$': typeof AuthenticatedSplatRoute
   '/_authenticated/automations': typeof AuthenticatedAutomationsRouteWithChildren
   '/_authenticated/plan': typeof AuthenticatedPlanRouteWithChildren
+  '/_authenticated/pulls': typeof AuthenticatedPullsRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/oauth/consent': typeof OauthConsentRoute
   '/_auth/_public/forgot-password': typeof AuthPublicForgotPasswordRoute
@@ -331,18 +365,21 @@ export interface FileRoutesById {
   '/_authenticated/automations/$automationId': typeof AuthenticatedAutomationsAutomationIdRoute
   '/_authenticated/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/_authenticated/plan/calendar': typeof AuthenticatedPlanCalendarRoute
+  '/_authenticated/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/_authenticated/automations/': typeof AuthenticatedAutomationsIndexRoute
   '/_authenticated/plan/': typeof AuthenticatedPlanIndexRoute
+  '/_authenticated/pulls/': typeof AuthenticatedPullsIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/plan/calendar_/google': typeof AuthenticatedPlanCalendarGoogleRoute
   '/_authenticated/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/_authenticated/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
   '/_authenticated/automations_/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
+  '/_authenticated/pulls_/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -355,6 +392,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/automations'
     | '/plan'
+    | '/pulls'
     | '/settings'
     | '/oauth/consent'
     | '/forgot-password'
@@ -368,18 +406,21 @@ export interface FileRouteTypes {
     | '/automations/$automationId'
     | '/automations/runs'
     | '/plan/calendar'
+    | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/settings/profile'
     | '/onboarding/'
     | '/automations/'
     | '/plan/'
+    | '/pulls/'
     | '/sessions/'
     | '/settings/'
     | '/plan/calendar/google'
     | '/settings/hosts/new'
     | '/settings/hosts/'
     | '/automations/$automationId/sessions/$sessionId'
+    | '/pulls/$installationId/$githubRepoId/$number'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -399,18 +440,21 @@ export interface FileRouteTypes {
     | '/automations/$automationId'
     | '/automations/runs'
     | '/plan/calendar'
+    | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/settings/profile'
     | '/onboarding'
     | '/automations'
     | '/plan'
+    | '/pulls'
     | '/sessions'
     | '/settings'
     | '/plan/calendar/google'
     | '/settings/hosts/new'
     | '/settings/hosts'
     | '/automations/$automationId/sessions/$sessionId'
+    | '/pulls/$installationId/$githubRepoId/$number'
   id:
     | '__root__'
     | '/'
@@ -424,6 +468,7 @@ export interface FileRouteTypes {
     | '/_authenticated/$'
     | '/_authenticated/automations'
     | '/_authenticated/plan'
+    | '/_authenticated/pulls'
     | '/_authenticated/settings'
     | '/oauth/consent'
     | '/_auth/_public/forgot-password'
@@ -437,18 +482,21 @@ export interface FileRouteTypes {
     | '/_authenticated/automations/$automationId'
     | '/_authenticated/automations/runs'
     | '/_authenticated/plan/calendar'
+    | '/_authenticated/pulls/analytics'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
     | '/_authenticated/settings/profile'
     | '/_auth/onboarding/'
     | '/_authenticated/automations/'
     | '/_authenticated/plan/'
+    | '/_authenticated/pulls/'
     | '/_authenticated/sessions/'
     | '/_authenticated/settings/'
     | '/_authenticated/plan/calendar_/google'
     | '/_authenticated/settings/hosts/new'
     | '/_authenticated/settings/hosts/'
     | '/_authenticated/automations_/$automationId/sessions/$sessionId'
+    | '/_authenticated/pulls_/$installationId/$githubRepoId/$number'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -538,6 +586,13 @@ declare module '@tanstack/react-router' {
       path: '/plan'
       fullPath: '/plan'
       preLoaderRoute: typeof AuthenticatedPlanRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pulls': {
+      id: '/_authenticated/pulls'
+      path: '/pulls'
+      fullPath: '/pulls'
+      preLoaderRoute: typeof AuthenticatedPullsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings': {
@@ -652,6 +707,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanCalendarRouteImport
       parentRoute: typeof AuthenticatedPlanRoute
     }
+    '/_authenticated/pulls/': {
+      id: '/_authenticated/pulls/'
+      path: '/'
+      fullPath: '/pulls/'
+      preLoaderRoute: typeof AuthenticatedPullsIndexRouteImport
+      parentRoute: typeof AuthenticatedPullsRoute
+    }
+    '/_authenticated/pulls/analytics': {
+      id: '/_authenticated/pulls/analytics'
+      path: '/analytics'
+      fullPath: '/pulls/analytics'
+      preLoaderRoute: typeof AuthenticatedPullsAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedPullsRoute
+    }
     '/_authenticated/sessions/': {
       id: '/_authenticated/sessions/'
       path: '/sessions'
@@ -713,6 +782,13 @@ declare module '@tanstack/react-router' {
       path: '/automations/$automationId/sessions/$sessionId'
       fullPath: '/automations/$automationId/sessions/$sessionId'
       preLoaderRoute: typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pulls_/$installationId/$githubRepoId/$number': {
+      id: '/_authenticated/pulls_/$installationId/$githubRepoId/$number'
+      path: '/pulls/$installationId/$githubRepoId/$number'
+      fullPath: '/pulls/$installationId/$githubRepoId/$number'
+      preLoaderRoute: typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
   }
@@ -802,6 +878,19 @@ const AuthenticatedPlanRouteChildren: AuthenticatedPlanRouteChildren = {
 const AuthenticatedPlanRouteWithChildren =
   AuthenticatedPlanRoute._addFileChildren(AuthenticatedPlanRouteChildren)
 
+interface AuthenticatedPullsRouteChildren {
+  AuthenticatedPullsAnalyticsRoute: typeof AuthenticatedPullsAnalyticsRoute
+  AuthenticatedPullsIndexRoute: typeof AuthenticatedPullsIndexRoute
+}
+
+const AuthenticatedPullsRouteChildren: AuthenticatedPullsRouteChildren = {
+  AuthenticatedPullsAnalyticsRoute: AuthenticatedPullsAnalyticsRoute,
+  AuthenticatedPullsIndexRoute: AuthenticatedPullsIndexRoute,
+}
+
+const AuthenticatedPullsRouteWithChildren =
+  AuthenticatedPullsRoute._addFileChildren(AuthenticatedPullsRouteChildren)
+
 interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
@@ -825,23 +914,28 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
   AuthenticatedAutomationsRoute: typeof AuthenticatedAutomationsRouteWithChildren
   AuthenticatedPlanRoute: typeof AuthenticatedPlanRouteWithChildren
+  AuthenticatedPullsRoute: typeof AuthenticatedPullsRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRoute
   AuthenticatedSessionsNewRoute: typeof AuthenticatedSessionsNewRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
   AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute: typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
+  AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute: typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSplatRoute: AuthenticatedSplatRoute,
   AuthenticatedAutomationsRoute: AuthenticatedAutomationsRouteWithChildren,
   AuthenticatedPlanRoute: AuthenticatedPlanRouteWithChildren,
+  AuthenticatedPullsRoute: AuthenticatedPullsRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedSessionsSessionIdRoute: AuthenticatedSessionsSessionIdRoute,
   AuthenticatedSessionsNewRoute: AuthenticatedSessionsNewRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,
   AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute:
     AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute,
+  AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute:
+    AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

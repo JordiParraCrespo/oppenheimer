@@ -21,5 +21,6 @@
   "settings": "Ajustes",
   "automations": "Automatizaciones",
   "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
-  "plan": "Plan"
+  "plan": "Plan",
+  "pullRequests": "Pull requests"
 }
