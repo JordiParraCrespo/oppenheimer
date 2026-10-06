@@ -113,11 +113,17 @@ its layout by declaring its own: `_auth/onboarding.tsx` says `null` for every
 step, past the point where the reader agreed to the terms, and
 `_auth/onboarding/host.tsx` widens the column for its two code cards.
 
-A route also says how the shell should frame it: `staticData.pane` is
-`measure` (the padded reading column) unless the route asks for `full`, which
-every screen under `/sessions` does because a terminal is the viewport rather
-than something inside it. `resolveContentPane` in `@oppenheimer/frontend-web`
-reads it off the innermost match.
+A route also says how the shell should frame it, and the shell is the only
+thing that does: `staticData.pane` names the page's measure — `narrow` (the
+default), `wide` (`automations.tsx`, a table) or `board` (`plan.tsx`, four
+columns) — and the shell draws the canvas, the scroll and the gutter around
+the `Outlet`. A layout route that declares it renders nothing else; the
+screens under it render content only, and `pnpm check:structure` fails a
+screen that paints `bg-canvas*` or wraps itself in `EditorPage`. `full` is for
+a screen whose box is the pane: every screen under `/sessions`, because a
+terminal is the viewport rather than something inside it and New session's
+drop outline traces the pane. `resolveContentPane` in
+`@oppenheimer/frontend-web` reads it off the innermost match.
 
 
 ## Render rules

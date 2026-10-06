@@ -333,3 +333,7 @@ earlier note:
   board's one read serves every count, a task's session is a person's and
   its link records the task, and the console computes automation runs
   (`versions/mvp/17-plan.md`, "As built").
+- 05 and the design export put New session and the automations on a grey
+  ground and Plan on white. On 2026-10-06 every console page moved onto
+  the white canvas, in one frame the shell draws at the route's measure;
+  only Settings keeps the grey (`versions/mvp/README.md`).

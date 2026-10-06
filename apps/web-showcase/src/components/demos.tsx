@@ -1369,7 +1369,7 @@ export function EditorPageWideDemo() {
   return (
     <div className="flex h-105 w-full overflow-hidden rounded-2xl border border-border-subtle">
       <EditorPage>
-        <EditorPageBody wide>
+        <EditorPageBody size="wide">
           <EditorPageTop>
             <PillTabs value={tab} onValueChange={setTab}>
               <PillTab value="automations">Automations</PillTab>

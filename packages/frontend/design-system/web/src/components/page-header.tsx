@@ -6,8 +6,9 @@ import { cn } from '../lib/utils';
  * PageHeader — how every routine page opens: a breadcrumb line, then the
  * row with a round glyph, the title (an inline input while editing) and the
  * actions on the right, then a meta line of facts. A `note` band appears
- * only when the state needs explaining (paused), on the card surface with
- * one small action.
+ * only when the state needs explaining (paused), on the hover wash with one
+ * small action. The glyph sits on the same wash: the page is the canvas, so
+ * a card-coloured disc would vanish into it.
  *
  * `size="lg"` is the routine page itself (28px title, 44px glyph); `md` is
  * the editor and every other page (24px, 36px); `display` is a page that
@@ -82,7 +83,7 @@ function PageHeaderRow({
       {icon && size !== 'display' ? (
         <span
           className={cn(
-            'flex shrink-0 items-center justify-center rounded-pill bg-card text-fg',
+            'flex shrink-0 items-center justify-center rounded-pill bg-hover-surface text-fg',
             size === 'lg' ? 'size-11 [&_svg:not([class*=size-])]:size-[18px]' : 'size-9 [&_svg:not([class*=size-])]:size-4',
           )}
           aria-hidden
@@ -188,7 +189,7 @@ function PageHeaderNote({
     <div
       data-slot="page-header-note"
       className={cn(
-        'mt-1 ml-12 flex items-center gap-3 rounded-md bg-card py-2.5 pr-2.5 pl-3.5 text-[13px] text-fg-muted motion-safe:animate-label-in',
+        'mt-1 ml-12 flex items-center gap-3 rounded-md bg-hover-surface py-2.5 pr-2.5 pl-3.5 text-[13px] text-fg-muted motion-safe:animate-label-in',
         className,
       )}
       {...props}

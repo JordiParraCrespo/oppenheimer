@@ -104,8 +104,10 @@
        lift between `--canvas` and `--card` is what separates them. */
     --canvas: var(--op-white);
     --background: var(--canvas);
-    /* The grey ground a page of cards sits on. The console is one white
-       surface, but Settings still draws white cards on the old grey
+    /* Settings' ground, and only Settings'. The console is one white
+       surface — every page in it is drawn on `--canvas` by the shell's page
+       frame (`EditorPage`), and a card there carries a hairline — but
+       Settings has its own shell and still draws white cards on the old grey
        (`design/version1/Settings.dc.html`), so that ground keeps a name. */
     --canvas-recessed: var(--op-gray-50);
     --card: var(--op-white); /* the only lit surface on the canvas */

@@ -7,9 +7,10 @@ const GRID = 'grid grid-cols-[minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,1fr)_96px
 
 /**
  * RoutineTable — the Routines overview: one row per routine in an 18px
- * card, four columns (the routine with its glyph and agent · model ·
- * project line, the trigger in words, the next run as clock time plus a
- * mono countdown, the status) and an ellipsis. Rows are 54px on a 10px
+ * card with a hairline (white on the white canvas has no lift), four
+ * columns (the routine with its glyph and agent · model · project line, the
+ * trigger in words, the next run as clock time plus a mono countdown, the
+ * status) and an ellipsis. Rows are 54px on a 10px
  * radius and take the hover wash; a paused routine dims its title. Headers
  * are 12.5px subtle text, not a table header.
  *
@@ -21,7 +22,7 @@ function RoutineTable({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="routine-table"
       role="table"
-      className={cn('flex flex-col rounded-lg bg-card p-1.5', className)}
+      className={cn('flex flex-col rounded-lg border border-border-subtle bg-card p-1.5', className)}
       {...props}
     />
   );

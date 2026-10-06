@@ -1,22 +1,29 @@
-/**
- * How the shell frames the screen under it. A settings pane is prose and reads
- * best in a measured column; the console's terminal *is* the viewport, and
- * every pixel of padding is scrollback taken away.
- *
- * A screen declares it as route `staticData`, as an auth page declares its
- * legal note, so the shell reads it off the match instead of a screen reaching
- * up into the layout.
- */
-export type ContentPane = 'measure' | 'full';
+import type { EditorPageSize } from '@oppenheimer/design-system-web';
 
-const DEFAULT_CONTENT_PANE: ContentPane = 'measure';
+/**
+ * How the shell frames the screen under it. Almost every screen is a page:
+ * the canvas ground, a column that scrolls, a measure and a gutter, which
+ * the shell draws once (the design system's `EditorPage`) so no screen
+ * repaints the ground or keeps a scroll of its own. The pane's value is the
+ * page's measure. The one exception is a screen whose box *is* the pane —
+ * the session terminal, which sizes itself from it and loses scrollback to
+ * every pixel of padding, and New session, whose drop outline traces it.
+ *
+ * A route declares it as `staticData`, as an auth page declares its legal
+ * note, so the shell reads it off the match instead of a screen reaching up
+ * into the layout. A layout route declares it for its subtree (Plan,
+ * Automations) and renders only its `Outlet`.
+ */
+export type ContentPane = EditorPageSize | 'full';
+
+const DEFAULT_CONTENT_PANE: ContentPane = 'narrow';
 
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
     /**
-     * `measure` (the default) — the padded 1080px reading column.
-     * `full` — the screen owns the pane: no padding, no measure, no scroll of
-     * the shell's, because the screen brings its own (the session terminal).
+     * `narrow` (the default), `wide` or `board` — a page at that measure
+     * (`EditorPageBody`'s `size`). `full` — the screen owns the pane: no
+     * ground, padding, measure or scroll of the shell's.
      */
     pane?: ContentPane;
   }

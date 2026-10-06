@@ -4,7 +4,8 @@ import { NewSessionScreen } from '@/features/sessions/screens/new-session';
 
 /**
  * New session. `full`, like the rest of `/sessions`: the composer is the
- * console's main pane in the artboards, not a page inside it.
+ * console's main pane in the artboards, not a page inside it, and the pane
+ * is its drop zone, whose outline has to trace the pane's edge.
  *
  * `?project=` and `?host=`: see `newSessionSearchSchema`.
  */

@@ -8,6 +8,8 @@
  *  - a feature holds only the kind directories, and a kind directory holds
  *    files, never a sub-directory
  *  - a route file composes; past 120 lines it contains
+ *  - the console's ground and page frame are the shell's: no screen paints
+ *    the canvas or draws `EditorPage` around itself
  *  - an app never re-creates a file the platform kit already ships
  *  - every workspace package carries a README.md and an AGENTS.md, every
  *    frontend app, `packages/frontend` and each platform kit an
@@ -395,6 +397,31 @@ for (const { app } of APPS) {
     if (names.length > 1) {
       fail(
         `${relative(root, file)}: ${names.length} components (${names.join(', ')}) — one component per file; give each its own file in the kind it belongs to`,
+      );
+    }
+  }
+}
+
+// The page frame is the shell's. A route declares its measure (`pane` in the
+// kit's `shell/lib/pane.ts`) and the shell draws the canvas, the scroll and
+// the gutter once; a screen that paints the ground or wraps itself in
+// `EditorPage` is how five pages ended up on two greys at four widths.
+// `public` is exempt: its pages render outside any shell, so they own their
+// ground. A tripwire on the class and the tag, not a parser.
+const GROUND = /\bbg-(?:canvas|background)\b|<EditorPage(?:Body)?\b/;
+const GROUND_OWNERS = ['public'];
+for (const { app, features } of APPS) {
+  const src = join(root, app, 'src');
+  if (!existsSync(src)) continue;
+  const owners = GROUND_OWNERS.map((name) => `${join(root, app, features, name)}/`);
+  for (const file of walk(src)) {
+    if (!file.endsWith('.tsx') || /\.(spec|test)\.tsx$/.test(file) || file.includes('/__tests__/'))
+      continue;
+    if (owners.some((owner) => file.startsWith(owner))) continue;
+    const match = readFileSync(file, 'utf8').match(GROUND);
+    if (match) {
+      fail(
+        `${relative(root, file)}: \`${match[0]}\` — the console's ground and page frame are the shell's. Declare the page's measure as the route's \`staticData.pane\` (narrow, wide, board) and render only the content. See .agents/rules/frontend-architecture.md`,
       );
     }
   }

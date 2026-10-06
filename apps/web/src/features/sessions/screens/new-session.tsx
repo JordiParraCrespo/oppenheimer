@@ -5,9 +5,9 @@ import { NewSessionForm } from '../sections/new-session-form';
 
 /**
  * New session, the console's pane when nothing is open
- * (`product/versions/mvp/05-screens.md`, the export's `.op-newsession`). It
- * sits on the grey `canvas-recessed` ground so the white composer reads as the
- * one surface. The screen only composes; every read belongs to the section.
+ * (`product/versions/mvp/05-screens.md`, the export's `.op-newsession`), on
+ * the console's canvas like every page. The screen only composes; every read
+ * belongs to the section.
  *
  * The pane is the drop zone: files dropped anywhere on it are handed to the
  * composer, which holds the task's files, and the outline traces the pane
@@ -21,7 +21,7 @@ export function NewSessionScreen() {
   return (
     <NewSessionDropContext value={drop}>
       <DropZone onFiles={drop.deliver} className="flex min-h-0 flex-1">
-        <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas-recessed">
+        <div className="flex min-h-0 flex-1 overflow-y-auto">
           <div className="m-auto flex w-full max-w-180 flex-col gap-4.5 px-8 py-12">
             <NewSessionForm
               heading={
